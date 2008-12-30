@@ -46,7 +46,7 @@ class ServerContextFactory(object):
         return ctx
 
 log.startLogging(sys.stdout)
-log.startLogging(open(radicale.config.get("server", "log"), "w"))
+#log.startLogging(open(radicale.config.get("server", "log"), "w"))
 factory = server.Site(radicale.HttpResource())
 reactor.listenSSL(radicale.config.getint("server", "port"), factory, ServerContextFactory())
 reactor.run()
