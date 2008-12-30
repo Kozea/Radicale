@@ -21,10 +21,7 @@
 # TODO: Manage smart and configurable logs
 # TODO: Manage authentication
 
-# TODO: remove this hack
 import sys
-sys.path.append("/usr/local/lib/python2.5/site-packages")
-
 from twisted.web import server
 from twisted.internet import reactor
 from twisted.python import log

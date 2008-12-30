@@ -35,7 +35,7 @@ _initial = {
         "certificate": "/etc/apache2/ssl/server.crt",
         "privatekey": "/etc/apache2/ssl/server.key",
         "log": "/var/www/radicale/server.log",
-        "port": "1001",
+        "port": "5232",
         },
     "encoding": {
         "request": "utf-8",
@@ -48,14 +48,17 @@ _initial = {
         },
     "status": {
         "200": "HTTP/1.1 200 OK",
+        "204": "HTTP/1.1 204 No Content",
         },
     "acl": {
-        "type": "htpasswd",
+        "type": "fake",
         "filename": "/etc/radicale/users",
+        "defaultUser": "radicale",
         },
     "support": {
         "type": "plain",
-        "folder": "/var/local/radicale",
+        "folder": "~/.config/radicale",
+        "defaultCalendar": "radicale/calendar",
         },
     }
 

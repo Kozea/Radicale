@@ -22,23 +22,35 @@ import posixpath
 from .. import ical
 from .. import config
 
+_folder = os.path.expanduser(config.get("support", "folder"))
+
 def calendars():
     """
     List Available Calendars Paths
     """
     calendars = []
 
-    for folder in os.listdir(config.get("support", "folder")):
-        for cal in os.listdir(os.path.join(config.get("support", "folder"), folder)):
+    for folder in os.listdir(_folder):
+        for cal in os.listdir(os.path.join(_folder, folder)):
             calendars.append(posixpath.join(folder, cal))
 
     return calendars
+
+def mkcalendar(name):
+    """
+    Write new calendar
+    """
+    user, cal = name.split(posixpath.sep)
+    if not os.path.exists(os.path.join(_folder, user)):
+        os.makedirs(os.path.join(_folder, user))
+    fd = open(os.path.join(_folder, user, cal), "w")
+    fd.write(ical.writeCalendar())
 
 def read(cal):
     """
     Read cal
     """
-    path = os.path.join(config.get("support", "folder"), cal.replace(posixpath.sep, os.path.sep))
+    path = os.path.join(_folder, cal.replace(posixpath.sep, os.path.sep))
     return open(path).read()
 
 def append(cal, vcalendar):
@@ -47,7 +59,7 @@ def append(cal, vcalendar):
     """
     oldCalendar = read(cal)
     oldTzs = [tz.tzid for tz in ical.timezones(oldCalendar)]
-    path = os.path.join(config.get("support", "folder"), cal.replace(posixpath.sep, os.path.sep))
+    path = os.path.join(_folder, cal.replace(posixpath.sep, os.path.sep))
 
     oldObjects = []
     oldObjects.extend([event.etag() for event in ical.events(oldCalendar)])
@@ -89,7 +101,7 @@ def remove(cal, etag):
     """
     Remove object named uid from cal
     """
-    path = os.path.join(config.get("support", "folder"), cal.replace(posixpath.sep, os.path.sep))
+    path = os.path.join(_folder, cal.replace(posixpath.sep, os.path.sep))
 
     cal = read(cal)
 
@@ -101,4 +113,9 @@ def remove(cal, etag):
     fd = open(path, "w")
     fd.write(ical.writeCalendar(headers, timezones, todos, events))
     fd.close()
+
+if config.get("support", "defaultCalendar"):
+    user, cal = config.get("support", "defaultCalendar").split(posixpath.sep)
+    if not os.path.exists(os.path.join(_folder, user, cal)):
+        mkcalendar(config.get("support", "defaultCalendar"))
 

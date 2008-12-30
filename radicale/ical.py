@@ -21,18 +21,21 @@
 
 import calendar
 
-def writeCalendar(headers=[], timezones=[], todos=[], events=[]):
+def writeCalendar(headers=[calendar.Header("PRODID:-//The Radicale Team//NONSGML Radicale Server//EN"),
+                           calendar.Header("VERSION:2.0")],
+                  timezones=[], todos=[], events=[]):
     """
     Create calendar from headers, timezones, todos, events
     """
     # TODO: Manage encoding and EOL
-    return "\n".join((
+    cal = "\n".join((
         "BEGIN:VCALENDAR",
         "\n".join([header.text for header in headers]),
         "\n".join([timezone.text for timezone in timezones]),
         "\n".join([todo.text for todo in todos]),
         "\n".join([event.text for event in events]),
         "END:VCALENDAR"))
+    return "\n".join([line for line in cal.splitlines() if line])
 
 def events(vcalendar):
     """

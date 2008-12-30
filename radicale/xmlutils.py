@@ -171,6 +171,19 @@ def report(xmlRequest, calendar, url):
         objects.extend(ical.events(calendar.vcalendar()))
         objects.extend(ical.todos(calendar.vcalendar()))
 
+        if not objects:
+            # TODO: Read rfc4791-9.[6|10] to find a right answer
+            response = ET.Element(_tag("D", "response"))
+            multistatus.append(response)
+
+            href = ET.Element(_tag("D", "href"))
+            href.text = url
+            response.append(href)
+
+            status = ET.Element(_tag("D", "status"))
+            status.text = config.get("status", "204")
+            response.append(status)
+
         for obj in objects:
             # TODO: Use the hreference to read data and create href.text
             #       We assume here that hreference is url

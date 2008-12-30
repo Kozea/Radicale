@@ -18,10 +18,8 @@
 
 from .. import config
 
-_support = __import__(config.get("support", "type"), locals(), globals())
-
-append = _support.append
-calendars =_support.calendars
-mkcalendar =_support.mkcalendar
-read = _support.read
-remove = _support.remove
+def users():
+    """
+    Get the List of all Users
+    """
+    return [config.get("acl", "defaultUser")]
