@@ -31,6 +31,7 @@ items = _config.items
 # Default config
 _initial = {
     "server": {
+        "type": "http",
         "certificate": "/etc/apache2/ssl/server.crt",
         "privatekey": "/etc/apache2/ssl/server.key",
         "log": "/var/www/radicale/server.log",

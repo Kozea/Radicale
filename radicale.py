@@ -25,7 +25,6 @@
 import sys
 sys.path.append("/usr/local/lib/python2.5/site-packages")
 
-from OpenSSL import SSL
 from twisted.web import server
 from twisted.internet import reactor
 from twisted.python import log
@@ -40,6 +39,7 @@ class ServerContextFactory(object):
         """
         Get SSL context for the HTTP server
         """
+        from OpenSSL import SSL
         ctx = SSL.Context(SSL.SSLv23_METHOD)
         ctx.use_certificate_file(radicale.config.get("server", "certificate"))
         ctx.use_privatekey_file(radicale.config.get("server", "privatekey"))
@@ -48,5 +48,10 @@ class ServerContextFactory(object):
 log.startLogging(sys.stdout)
 #log.startLogging(open(radicale.config.get("server", "log"), "w"))
 factory = server.Site(radicale.HttpResource())
-reactor.listenSSL(radicale.config.getint("server", "port"), factory, ServerContextFactory())
+
+if radicale.config.get("server", "type") == "http":
+    reactor.listenTCP(radicale.config.getint("server", "port"), factory)
+elif radicale.config.get("server", "type") == "https":
+    reactor.listenSSL(radicale.config.getint("server", "port"), factory, ServerContextFactory())
+
 reactor.run()
