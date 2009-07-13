@@ -57,7 +57,7 @@ def append(cal, vcalendar):
     """
     Append vcalendar to cal
     """
-    oldCalendar = read(cal)
+    oldCalendar = unicode(read(cal), config.get("encoding", "stock"))
     oldTzs = [tz.tzid for tz in ical.timezones(oldCalendar)]
     path = os.path.join(_folder, cal.replace(posixpath.sep, os.path.sep))
 
@@ -103,7 +103,7 @@ def remove(cal, etag):
     """
     path = os.path.join(_folder, cal.replace(posixpath.sep, os.path.sep))
 
-    cal = read(cal)
+    cal = unicode(read(cal), config.get("encoding", "stock"))
 
     headers = ical.headers(cal)
     timezones = ical.timezones(cal)
