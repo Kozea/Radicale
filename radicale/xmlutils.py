@@ -152,7 +152,7 @@ def report(xmlRequest, calendar, url):
 
     if root.tag == _tag("C", "calendar-multiget"):
         # Read rfc4791-7.9 for info
-        hreferences = [hrefElement.text for hrefElement in root.findall(_tag("D", "href"))]
+        hreferences = set([hrefElement.text for hrefElement in root.findall(_tag("D", "href"))])
     else:
         hreferences = [url]
 
