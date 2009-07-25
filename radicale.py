@@ -20,6 +20,8 @@
 # TODO: Manage depth and calendars/collections (see xmlutils)
 # TODO: Manage smart and configurable logs
 # TODO: Manage authentication
+# TODO: Magage command-line options
+# TODO: Forget twisted?
 
 import sys
 from twisted.web import server

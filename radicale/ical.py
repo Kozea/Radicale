@@ -17,7 +17,6 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: Manage filters (see xmlutils)
-# TODO: Factorize code
 
 import calendar
 
@@ -28,37 +27,14 @@ def writeCalendar(headers=[calendar.Header("PRODID:-//The Radicale Team//NONSGML
     Create calendar from headers, timezones, todos, events
     """
     # TODO: Manage encoding and EOL
-    cal = "\n".join((
-        "BEGIN:VCALENDAR",
-        "\n".join([header.text for header in headers]),
-        "\n".join([timezone.text for timezone in timezones]),
-        "\n".join([todo.text for todo in todos]),
-        "\n".join([event.text for event in events]),
-        "END:VCALENDAR"))
-    return "\n".join([line for line in cal.splitlines() if line])
-
-def events(vcalendar):
-    """
-    Find VEVENT Items in vcalendar
-    """
-    events = []
-
-    lines = vcalendar.splitlines()
-    inEvent = False
-    eventLines = []
-
-    for line in lines:
-        if line.startswith("BEGIN:VEVENT"):
-            inEvent = True
-            eventLines = []
-
-        if inEvent:
-            # TODO: Manage encoding
-            eventLines.append(line)
-            if line.startswith("END:VEVENT"):
-                events.append(calendar.Event("\n".join(eventLines)))
-
-    return events
+    cal = u"\n".join((
+        u"BEGIN:VCALENDAR",
+        u"\n".join([header.text for header in headers]),
+        u"\n".join([timezone.text for timezone in timezones]),
+        u"\n".join([todo.text for todo in todos]),
+        u"\n".join([event.text for event in events]),
+        u"END:VCALENDAR"))
+    return u"\n".join([line for line in cal.splitlines() if line])
 
 def headers(vcalendar):
     """
@@ -75,48 +51,27 @@ def headers(vcalendar):
             headers.append(calendar.Header(line))
 
     return headers
-    
-def timezones(vcalendar):
-    """
-    Find VTIMEZONE Items in vcalendar
-    """
-    timezones = []
+
+def _parse(vcalendar, tag, obj):
+    items = []
 
     lines = vcalendar.splitlines()
-    inTz = False
-    tzLines = []
+    inItem = False
+    itemLines = []
 
     for line in lines:
-        if line.startswith("BEGIN:VTIMEZONE"):
-            inTz = True
-            tzLines = []
+        if line.startswith("BEGIN:%s" % tag):
+            inItem = True
+            itemLines = []
 
-        if inTz:
-            tzLines.append(line)
-            if line.startswith("END:VTIMEZONE"):
-                timezones.append(calendar.Timezone("\n".join(tzLines)))
-
-    return timezones
-
-def todos(vcalendar):
-    """
-    Find VTODO Items in vcalendar
-    """
-    todos = []
-
-    lines = vcalendar.splitlines()
-    inTodo = False
-    todoLines = []
-
-    for line in lines:
-        if line.startswith("BEGIN:VTODO"):
-            inTodo = True
-            todoLines = []
-
-        if inTodo:
+        if inItem:
             # TODO: Manage encoding
-            todoLines.append(line)
-            if line.startswith("END:VTODO"):
-                todos.append(calendar.Todo("\n".join(todoLines)))
+            itemLines.append(line)
+            if line.startswith("END:%s" % tag):
+                items.append(obj("\n".join(itemLines)))
 
-    return todos
+    return items
+
+events = lambda vcalendar: _parse(vcalendar, "VEVENT", calendar.Event)
+todos = lambda vcalendar: _parse(vcalendar, "VTODO", calendar.Todo)
+timezones = lambda vcalendar: _parse(vcalendar, "VTIMEZONE", calendar.Timezone)

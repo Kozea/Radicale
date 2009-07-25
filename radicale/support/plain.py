@@ -44,7 +44,7 @@ def mkcalendar(name):
     if not os.path.exists(os.path.join(_folder, user)):
         os.makedirs(os.path.join(_folder, user))
     fd = open(os.path.join(_folder, user, cal), "w")
-    fd.write(ical.writeCalendar())
+    fd.write(ical.writeCalendar().encode(config.get("encoding", "stock")))
 
 def read(cal):
     """
@@ -77,7 +77,7 @@ def append(cal, vcalendar):
             fd.close()
 
             for i,line in enumerate(tz.text.splitlines()):
-                lines.insert(2+i, line.encode("utf-8")+"\n")
+                lines.insert(2+i, line.encode(config.get("encoding", "stock"))+"\n")
 
             fd = open(path, "w")
             fd.writelines(lines)
@@ -91,7 +91,7 @@ def append(cal, vcalendar):
             fd.close()
 
             for line in obj.text.splitlines():
-                lines.insert(-1, line.encode("utf-8")+"\n")
+                lines.insert(-1, line.encode(config.get("encoding", "stock"))+"\n")
 
             fd = open(path, "w")
             fd.writelines(lines)
@@ -111,7 +111,7 @@ def remove(cal, etag):
     events = [event for event in ical.events(cal) if event.etag() != etag]
 
     fd = open(path, "w")
-    fd.write(ical.writeCalendar(headers, timezones, todos, events))
+    fd.write(ical.writeCalendar(headers, timezones, todos, events).encode(config.get("encoding", "stock")))
     fd.close()
 
 if config.get("support", "defaultCalendar"):
