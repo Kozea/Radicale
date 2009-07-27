@@ -1,7 +1,9 @@
 # -*- coding: utf-8; indent-tabs-mode: nil; -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008 The Radicale Team
+# Copyright © 2008-2009 Guillaume Ayoub
+# Copyright © 2008 Nicolas Kandel
+# Copyright © 2008 Pascal Halter
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +18,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Plain text storage.
+"""
+
 import os
 import posixpath
 
@@ -25,9 +31,7 @@ from .. import config
 _folder = os.path.expanduser(config.get("support", "folder"))
 
 def calendars():
-    """
-    List Available Calendars Paths
-    """
+    """List available calendars paths."""
     calendars = []
 
     for folder in os.listdir(_folder):
@@ -37,40 +41,34 @@ def calendars():
     return calendars
 
 def mkcalendar(name):
-    """
-    Write new calendar
-    """
+    """Write a new calendar called ``name``."""
     user, cal = name.split(posixpath.sep)
     if not os.path.exists(os.path.join(_folder, user)):
         os.makedirs(os.path.join(_folder, user))
     fd = open(os.path.join(_folder, user, cal), "w")
-    fd.write(ical.writeCalendar().encode(config.get("encoding", "stock")))
+    fd.write(ical.write_calendar().encode(config.get("encoding", "stock")))
 
 def read(cal):
-    """
-    Read cal
-    """
+    """Read calendar ``cal``."""
     path = os.path.join(_folder, cal.replace(posixpath.sep, os.path.sep))
     return open(path).read()
 
 def append(cal, vcalendar):
-    """
-    Append vcalendar to cal
-    """
-    oldCalendar = unicode(read(cal), config.get("encoding", "stock"))
-    oldTzs = [tz.tzid for tz in ical.timezones(oldCalendar)]
+    """Append ``vcalendar`` to ``cal``."""
+    old_calendar = unicode(read(cal), config.get("encoding", "stock"))
+    old_tzs = [tz.tzid for tz in ical.timezones(old_calendar)]
     path = os.path.join(_folder, cal.replace(posixpath.sep, os.path.sep))
 
-    oldObjects = []
-    oldObjects.extend([event.etag() for event in ical.events(oldCalendar)])
-    oldObjects.extend([todo.etag() for todo in ical.todos(oldCalendar)])
+    old_objects = []
+    old_objects.extend([event.etag() for event in ical.events(old_calendar)])
+    old_objects.extend([todo.etag() for todo in ical.todos(old_calendar)])
 
     objects = []
     objects.extend(ical.events(vcalendar))
     objects.extend(ical.todos(vcalendar))
 
     for tz in ical.timezones(vcalendar):
-        if tz.tzid not in oldTzs:
+        if tz.tzid not in old_tzs:
             # TODO: Manage position, encoding and EOL
             fd = open(path)
             lines = [line for line in fd.readlines() if line]
@@ -84,7 +82,7 @@ def append(cal, vcalendar):
             fd.close()
 
     for obj in objects:
-        if obj.etag() not in oldObjects:
+        if obj.etag() not in old_objects:
             # TODO: Manage position, encoding and EOL
             fd = open(path)
             lines = [line for line in fd.readlines() if line]
@@ -98,9 +96,7 @@ def append(cal, vcalendar):
             fd.close()
 
 def remove(cal, etag):
-    """
-    Remove object named uid from cal
-    """
+    """Remove object named ``etag`` from ``cal``."""
     path = os.path.join(_folder, cal.replace(posixpath.sep, os.path.sep))
 
     cal = unicode(read(cal), config.get("encoding", "stock"))
@@ -111,11 +107,10 @@ def remove(cal, etag):
     events = [event for event in ical.events(cal) if event.etag() != etag]
 
     fd = open(path, "w")
-    fd.write(ical.writeCalendar(headers, timezones, todos, events).encode(config.get("encoding", "stock")))
+    fd.write(ical.write_calendar(headers, timezones, todos, events).encode(config.get("encoding", "stock")))
     fd.close()
 
-if config.get("support", "defaultCalendar"):
-    user, cal = config.get("support", "defaultCalendar").split(posixpath.sep)
+if config.get("support", "calendar"):
+    user, cal = config.get("support", "calendar").split(posixpath.sep)
     if not os.path.exists(os.path.join(_folder, user, cal)):
-        mkcalendar(config.get("support", "defaultCalendar"))
-
+        mkcalendar(config.get("support", "calendar"))

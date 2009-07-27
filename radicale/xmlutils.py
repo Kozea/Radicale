@@ -1,7 +1,9 @@
 # -*- coding: utf-8; indent-tabs-mode: nil; -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008 The Radicale Team
+# Copyright © 2008-2009 Guillaume Ayoub
+# Copyright © 2008 Nicolas Kandel
+# Copyright © 2008 Pascal Halter
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +19,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-XML and iCal requests manager
+XML and iCal requests manager.
 
 Note that all these functions need to receive unicode objects for full
 iCal requests (PUT) and string objects with charset correctly defined
@@ -32,22 +34,21 @@ import xml.etree.ElementTree as ET
 import config
 import ical
 
-# TODO: This is a well-known and accepted hack for ET
+# TODO: This is a well-known and accepted hack for ET to avoid ET from renaming
+#       namespaces, which is accepted in XML norm but often not in XML
+#       readers. Is there another clean solution to force namespaces?
 for key,value in config.items("namespace"):
     ET._namespace_map[value] = key
 
-def _tag(shortName, local):
-    """
-    Get XML Clark notation {uri(shortName)}local
-    """
-    return "{%s}%s"%(config.get("namespace", shortName), local)
+def _tag(short_name, local):
+    """Get XML Clark notation {uri(``short_name``)}``local``."""
+    return "{%s}%s"%(config.get("namespace", short_name), local)
 
 def delete(obj, calendar, url):
-    """
-    Read and answer DELETE requests
-    """
-    # Read rfc4918-9.6 for info
+    """Read and answer DELETE requests.
 
+    Read rfc4918-9.6 for info.
+    """
     # Reading request
     calendar.remove(obj)
 
@@ -66,14 +67,13 @@ def delete(obj, calendar, url):
 
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
-def propfind(xmlRequest, calendar, url):
-    """
-    Read and answer PROPFIND requests
-    """
-    # Read rfc4918-9.1 for info
+def propfind(xml_request, calendar, url):
+    """Read and answer PROPFIND requests.
 
+    Read rfc4918-9.1 for info.
+    """
     # Reading request
-    root = ET.fromstring(xmlRequest)
+    root = ET.fromstring(xml_request)
 
     propElement = root.find(_tag("D", "prop"))
     propList = propElement.getchildren()
@@ -117,9 +117,7 @@ def propfind(xmlRequest, calendar, url):
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
 def put(icalRequest, calendar, url, obj):
-    """
-    Read PUT requests
-    """
+    """Read PUT requests."""
     if obj:
         # PUT is modifying obj
         calendar.replace(obj, icalRequest)
@@ -127,14 +125,13 @@ def put(icalRequest, calendar, url, obj):
         # PUT is adding a new object
         calendar.append(icalRequest)
 
-def report(xmlRequest, calendar, url):
-    """
-    Read and answer REPORT requests
-    """
-    # Read rfc3253-3.6 for info
+def report(xml_request, calendar, url):
+    """Read and answer REPORT requests.
 
+    Read rfc3253-3.6 for info.
+    """
     # Reading request
-    root = ET.fromstring(xmlRequest)
+    root = ET.fromstring(xml_request)
 
     propElement = root.find(_tag("D", "prop"))
     propList = propElement.getchildren()
@@ -209,7 +206,7 @@ def report(xmlRequest, calendar, url):
             if _tag("C", "calendar-data") in properties:
                 cdata = ET.Element(_tag("C", "calendar-data"))
                 # TODO: Maybe assume that events and todos are not the same
-                cdata.text = ical.writeCalendar(headers, timezones, [obj])
+                cdata.text = ical.write_calendar(headers, timezones, [obj])
                 prop.append(cdata)
 
             status = ET.Element(_tag("D", "status"))

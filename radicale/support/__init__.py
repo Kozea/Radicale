@@ -1,7 +1,9 @@
 # -*- coding: utf-8; indent-tabs-mode: nil; -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008 The Radicale Team
+# Copyright © 2008-2009 Guillaume Ayoub
+# Copyright © 2008 Nicolas Kandel
+# Copyright © 2008 Pascal Halter
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +17,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+Calendar storage support configuration.
+"""
 
 from .. import config
 

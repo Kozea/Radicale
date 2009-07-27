@@ -2,7 +2,9 @@
 # -*- coding: utf-8; indent-tabs-mode: nil; -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008 The Radicale Team
+# Copyright © 2008-2009 Guillaume Ayoub
+# Copyright © 2008 Nicolas Kandel
+# Copyright © 2008 Pascal Halter
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +25,12 @@
 # TODO: Magage command-line options
 # TODO: Forget twisted?
 
+"""
+Radicale Server entry point.
+
+Launch the Radicale Serve according to the configuration.
+"""
+
 import sys
 from twisted.web import server
 from twisted.internet import reactor
@@ -31,18 +39,14 @@ from twisted.python import log
 import radicale
 
 class ServerContextFactory(object):
-    """
-    SSL context factory
-    """
-    def getContext(self):
-        """
-        Get SSL context for the HTTP server
-        """
+    """SSL context factory."""
+    def get_context(self):
+        """Get SSL context for the HTTP server."""
         from OpenSSL import SSL
-        ctx = SSL.Context(SSL.SSLv23_METHOD)
-        ctx.use_certificate_file(radicale.config.get("server", "certificate"))
-        ctx.use_privatekey_file(radicale.config.get("server", "privatekey"))
-        return ctx
+        context = SSL.Context(SSL.SSLv23_METHOD)
+        context.use_certificate_file(radicale.config.get("server", "certificate"))
+        context.use_privatekey_file(radicale.config.get("server", "privatekey"))
+        return context
 
 log.startLogging(sys.stdout)
 #log.startLogging(open(radicale.config.get("server", "log"), "w"))

@@ -1,7 +1,9 @@
 # -*- coding: utf-8; indent-tabs-mode: nil; -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008 The Radicale Team
+# Copyright © 2008-2009 Guillaume Ayoub
+# Copyright © 2008 Nicolas Kandel
+# Copyright © 2008 Pascal Halter
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,16 +18,19 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+iCal parsing functions.
+"""
+
 # TODO: Manage filters (see xmlutils)
 
 import calendar
 
-def writeCalendar(headers=[calendar.Header("PRODID:-//The Radicale Team//NONSGML Radicale Server//EN"),
-                           calendar.Header("VERSION:2.0")],
+def write_calendar(headers=[
+        calendar.Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
+        calendar.Header("VERSION:2.0")],
                   timezones=[], todos=[], events=[]):
-    """
-    Create calendar from headers, timezones, todos, events
-    """
+    """Create calendar from ``headers``, ``timezones``, ``todos``, ``events``."""
     # TODO: Manage encoding and EOL
     cal = u"\n".join((
         u"BEGIN:VCALENDAR",
@@ -37,9 +42,7 @@ def writeCalendar(headers=[calendar.Header("PRODID:-//The Radicale Team//NONSGML
     return u"\n".join([line for line in cal.splitlines() if line])
 
 def headers(vcalendar):
-    """
-    Find Headers Items in vcalendar
-    """
+    """Find Headers items in ``vcalendar``."""
     headers = []
 
     lines = vcalendar.splitlines()
@@ -53,6 +56,10 @@ def headers(vcalendar):
     return headers
 
 def _parse(vcalendar, tag, obj):
+    """Find ``tag`` items in ``vcalendar``.
+    
+    Return a list of items of type ``obj``.
+    """
     items = []
 
     lines = vcalendar.splitlines()

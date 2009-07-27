@@ -1,7 +1,9 @@
 # -*- coding: utf-8; indent-tabs-mode: nil; -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008 The Radicale Team
+# Copyright © 2008-2009 Guillaume Ayoub
+# Copyright © 2008 Nicolas Kandel
+# Copyright © 2008 Pascal Halter
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,73 +18,68 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-# TODO: Manage inheritance for classes
+"""
+Radicale calendar classes.
 
-from time import time
+Define the main classes of a calendar as seen from the server.
+"""
 
 import support
 
+hash_tag = lambda vcalendar: str(hash(vcalendar))
+
 class Calendar(object):
-    """
-    Internal Calendar Class
-    """
+    """Internal calendar class."""
     def __init__(self, user, cal):
-        # TODO: Use properties from the calendar
+        """Initialize the calendar with ``cal`` and ``user`` parameters."""
+        # TODO: Use properties from the calendar configuration
         self.encoding = "utf-8"
         self.owner = "lize"
         self.user = user
         self.cal = cal
         self.version = "2.0"
-        self.ctag = str(hash(self.vcalendar()))
+        self.ctag = hash_tag(self.vcalendar())
 
     def append(self, vcalendar):
-        """
-        Append vcalendar
-        """
-        self.ctag = str(hash(self.vcalendar()))
+        """Append vcalendar to the calendar."""
+        self.ctag = hash_tag(self.vcalendar())
         support.append(self.cal, vcalendar)
 
     def remove(self, uid):
-        """
-        Remove Object Named uid
-        """
-        self.ctag = str(hash(self.vcalendar()))
+        """Remove object named ``uid`` from the calendar."""
+        self.ctag = hash_tag(self.vcalendar())
         support.remove(self.cal, uid)
 
     def replace(self, uid, vcalendar):
-        """
-        Replace Objet Named uid by vcalendar
-        """
-        self.ctag = str(hash(self.vcalendar()))
+        """Replace objet named ``uid`` by ``vcalendar`` in the calendar."""
+        self.ctag = hash_tag(self.vcalendar())
         support.remove(self.cal, uid)
         support.append(self.cal, vcalendar)
 
     def vcalendar(self):
+        """Return unicode calendar from the calendar."""
         return unicode(support.read(self.cal), self.encoding)
 
 class Event(object):
-    """
-    Internal Event Class
-    """
-    # TODO: Fix the behaviour if no UID is given
+    """Internal event class."""
     def __init__(self, vcalendar):
+        """Initialize event from ``vcalendar``."""
         self.text = vcalendar
 
     def etag(self):
-        return str(hash(self.text))
+        """Return etag from event."""
+        return hash_tag(self.text)
 
 class Header(object):
-    """
-    Internal Headers Class
-    """
+    """Internal header class."""
     def __init__(self, vcalendar):
+        """Initialize header from ``vcalendar``."""
         self.text = vcalendar
 
 class Timezone(object):
-    """
-    Internal Timezone Class
-    """
+    """Internal timezone class."""
     def __init__(self, vcalendar):
+        """Initialize timezone from ``vcalendar``."""
         lines = vcalendar.splitlines()
         for line in lines:
             if line.startswith("TZID:"):
@@ -92,12 +89,11 @@ class Timezone(object):
         self.text = vcalendar
 
 class Todo(object):
-    """
-    Internal Todo Class
-    """
-    # TODO: Fix the behaviour if no UID is given
+    """Internal todo class."""
     def __init__(self, vcalendar):
+        """Initialize todo from ``vcalendar``."""
         self.text = vcalendar
 
     def etag(self):
-        return str(hash(self.text))
+        """Return etag from todo."""
+        return hash_tag(self.text)

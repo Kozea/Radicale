@@ -1,7 +1,9 @@
 # -*- coding: utf-8; indent-tabs-mode: nil; -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008 The Radicale Team
+# Copyright © 2008-2009 Guillaume Ayoub
+# Copyright © 2008 Nicolas Kandel
+# Copyright © 2008 Pascal Halter
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,9 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Radicale configuration module.
+
+Give a configparser-like interface to read and write configuration.
+"""
+
 from ConfigParser import RawConfigParser as ConfigParser
 
-# Default functions
 _config = ConfigParser()
 get = _config.get
 set = _config.set
@@ -28,7 +35,6 @@ getfloat = _config.getfloat
 options = _config.options
 items = _config.items
 
-# Default config
 _initial = {
     "server": {
         "type": "http",
@@ -53,20 +59,19 @@ _initial = {
     "acl": {
         "type": "fake",
         "filename": "/etc/radicale/users",
-        "defaultUser": "radicale",
+        "user": "radicale",
         },
     "support": {
         "type": "plain",
         "folder": "~/.config/radicale",
-        "defaultCalendar": "radicale/calendar",
+        "calendar": "radicale/calendar",
         },
     }
 
-# Set the default config
 for section, values in _initial.iteritems():
     _config.add_section(section)
     for key, value in values.iteritems():
         _config.set(section, key, value)
 
-# Set the user config
+# TODO: Use abstract filename for other platforms
 _config.read("/etc/radicale/config")
