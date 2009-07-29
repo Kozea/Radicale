@@ -1,0 +1,91 @@
+====================
+ User Documentation
+====================
+
+:Author: Guillaume Ayoub
+
+:Date: 2009-07-21
+
+:Abstract: This document is a short description for installing and using the
+ Radicale Calendar Server.
+
+.. contents::
+
+Installation
+============
+
+Dependencies
+------------
+
+Radicale is written in pure python and depends on the following librabry, that
+must be installed first:
+
+- ``python-twisted-web``
+
+On a Debian-based systems, you can install this packages with the following
+command, with superuser rights::
+
+  apt-get install python-twisted-web
+
+Other Linux and \*BSD distributions should provide Twisted packages too.
+
+For Windows and MacOS users, please install Python [#]_ and Twisted [#]_ thanks
+to the adequate installers. Version 2.6.\* for Python is a good choice.
+
+.. [#] `Python download page <http://python.org/download/>`_.
+.. [#] `Twisted download page <http://twistedmatrix.com/trac/wiki/Downloads>`_.
+
+Radicale
+--------
+
+Radicale can be freely downloaded on the `project website, download section
+<http://www.radicale.org/download>`_. Just get the file and unzip it in a
+folder of your choice.
+
+CalDAV Clients
+--------------
+
+At this time Radicale has been tested and works fine with the latest version of
+Mozilla Sunbird (version 0.9+). More clients will be supported in the
+future. However, it may work with any calendar client which implements CalDAV
+specifications too (luck is highly recommanded).
+
+To download Sunbird, go to the `Sunbird project website
+<http://www.mozilla.org/projects/calendar/sunbird/>`_ and choose the latest
+version. Follow the instructions depending on your operating system.
+
+
+Simple Usage
+============
+
+Starting Server
+---------------
+
+To start Radicale CalDAV server, you have to launch the file called
+``radicale.py`` located in the root folder of the software.
+
+Using Sunbird
+-------------
+
+After starting Sunbird, click on ``File`` and ``New Calendar``. Upcoming window
+asks you about your calendar storage. Chose a calendar ``On the Network``,
+otherwise Sunbird will use its own file system storage instead of Radicale's
+one and your calendar won't be remotely accessible.
+
+Next window asks you to provide information about remote calendar
+access. Protocol used by Radicale is ``CalDAV``. Standard location for a basic
+use of a Radicale calendar is ``http://localhost:5232/radicale/calendar``.
+
+You can now customize your calendar by giving it a nickname and a color. This
+is only used by Sunbird to identify calendars among others.
+
+If no warning sign appears next to the calendar name, you can now add events
+and tasks to your calendar. All events and tasks are stored in the server, they
+can be accessed and modified from multiple clients by multiple users at the
+same time.
+
+
+Complex Configuration
+=====================
+
+*To be written…*
