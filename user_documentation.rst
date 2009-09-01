@@ -88,4 +88,48 @@ same time.
 Complex Configuration
 =====================
 
-*To be written…*
+.. note::
+   This section is only for Linux users. Windows and MacOS advanced support
+   will be available later.
+
+Installing
+----------
+
+You can install Radicale CalDAV server with the following command, with
+superuser rights::
+
+  python setup.py install
+
+Then, launching the server can be easily done by typing as a normal user::
+
+  radicale
+
+.. note::
+   Radicale has no daemon mode yet. Please use external programs (such as
+   ``screen``) to use Radicale as a resident program.
+
+Configuring
+-----------
+
+The server configuration can be modified in ``/etc/radicale.conf``. Here is the
+default configuration file, with the main parameters::
+
+  [server]
+  # CalDAV server port
+  port = 5232
+  
+  [encoding]
+  # Encoding for responding requests
+  request = utf-8
+  # Encoding for storing local calendars
+  stock = utf-8
+
+  [support]
+  # Folder for storing local calendars
+  folder = ~/.config/radicale
+  # Default calendar path
+  calendar = radicale/calendar
+
+This configuration file is read each time the server is launched. If some
+values are not given, the default ones are used. If no configuration file is
+available, all the default values are used.
