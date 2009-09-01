@@ -4,7 +4,7 @@
 
 :Author: Guillaume Ayoub
 
-:Date: 2009-07-21
+:Date: 2009-09-01
 
 :Abstract: This document is a short description for installing and using the
  Radicale Calendar Server.
@@ -92,8 +92,8 @@ Complex Configuration
    This section is only for Linux users. Windows and MacOS advanced support
    will be available later.
 
-Installing
-----------
+Installing Server
+-----------------
 
 You can install Radicale CalDAV server with the following command, with
 superuser rights::
@@ -108,8 +108,8 @@ Then, launching the server can be easily done by typing as a normal user::
    Radicale has no daemon mode yet. Please use external programs (such as
    ``screen``) to use Radicale as a resident program.
 
-Configuring
------------
+Configuring Server
+------------------
 
 The server configuration can be modified in ``/etc/radicale.conf``. Here is the
 default configuration file, with the main parameters::
