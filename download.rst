@@ -14,7 +14,7 @@ the `git repository on Gitorious
 Source Packages
 ===============
 
-Source packages will be available soon.
+- `Radicale-0.1.tar.gz </src/radicale/Radicale-0.1.tar.gz>`_
 
 Linux Distribution Packages
 ===========================
