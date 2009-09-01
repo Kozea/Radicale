@@ -1,0 +1,28 @@
+==========================
+ Radicale - CalDAV Server
+==========================
+
+------
+ TODO
+------
+
+0.2
+===
+
+* SSL connections and authentications
+
+
+0.5
+===
+
+* Calendar collections
+* Windows and MacOS tested support
+
+
+1.0
+===
+
+* No Twisted dependency
+* Python 3 support
+* iCal filters and rights
+* Other CalDAV clients supports
