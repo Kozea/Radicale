@@ -63,7 +63,7 @@ class Clean(Command):
 
 setup(
     name="Radicale",
-    version="0.0",
+    version="0.1",
     description="Radicale CalDAV Server",
     author="Guillaume Ayoub",
     author_email="guillaume.ayoub@kozea.fr",
