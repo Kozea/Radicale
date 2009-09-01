@@ -2,9 +2,7 @@
 # -*- coding: utf-8; indent-tabs-mode: nil; -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008-2009 Guillaume Ayoub
-# Copyright © 2008 Nicolas Kandel
-# Copyright © 2008 Pascal Halter
+# Copyright © 2009 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +27,7 @@ class BuildScripts(build_scripts):
     def run(self):
         self.mkpath(self.build_dir)
         for script in self.scripts:
-            root, ext = os.path.splitext(script)
+            root, _ = os.path.splitext(script)
             self.copy_file(script, os.path.join(self.build_dir, root))
 
 class Clean(Command):
@@ -57,8 +55,8 @@ class Clean(Command):
 
     @staticmethod
     def _should_remove(filename):
-        return (os.path.splitext(filename) == ".pyc" or
-                os.path.splitext(filename) == ".pyo" or
+        return (os.path.splitext(filename)[1] == ".pyc" or
+                os.path.splitext(filename)[1] == ".pyo" or
                 filename.endswith("~") or
                 (filename.startswith("#") and filename.endswith("#")))
         
