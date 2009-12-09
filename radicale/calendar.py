@@ -60,6 +60,10 @@ class Calendar(object):
         """Return unicode calendar from the calendar."""
         return unicode(support.read(self.cal), self.encoding)
 
+    def etag(self):
+        """Return etag from calendar."""
+        return hash_tag(self.vcalendar())
+
 class Event(object):
     """Internal event class."""
     def __init__(self, vcalendar):

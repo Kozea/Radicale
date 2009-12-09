@@ -105,6 +105,16 @@ def propfind(xml_request, calendar, url):
         owner.text = calendar.owner
         prop.append(owner)
 
+    if _tag("D", "getcontenttype") in properties:
+        getcontenttype = ET.Element(_tag("D", "getcontenttype"))
+        getcontenttype.text = "text/calendar"
+        prop.append(getcontenttype)
+
+    if _tag("D", "getetag") in properties:
+        getetag = ET.Element(_tag("D", "getetag"))
+        getetag.text = calendar.etag()
+        prop.append(getetag)
+
     if _tag("CS", "getctag") in properties:
         getctag = ET.Element(_tag("CS", "getctag"))
         getctag.text = calendar.ctag
