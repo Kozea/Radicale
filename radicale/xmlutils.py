@@ -96,7 +96,6 @@ def propfind(xml_request, calendar, url):
 
     if _tag("D", "resourcetype") in properties:
         resourcetype = ET.Element(_tag("D", "resourcetype"))
-        resourcetype.append(ET.Element(_tag("D", "collection")))
         resourcetype.append(ET.Element(_tag("C", "calendar")))
         prop.append(resourcetype)
 
