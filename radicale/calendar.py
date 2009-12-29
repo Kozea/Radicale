@@ -62,7 +62,7 @@ class Calendar(object):
 
     def etag(self):
         """Return etag from calendar."""
-        return hash_tag(self.vcalendar())
+        return '"%s"' % hash_tag(self.vcalendar())
 
 class Event(object):
     """Internal event class."""
@@ -72,7 +72,7 @@ class Event(object):
 
     def etag(self):
         """Return etag from event."""
-        return hash_tag(self.text)
+        return '"%s"' % hash_tag(self.text)
 
 class Header(object):
     """Internal header class."""
