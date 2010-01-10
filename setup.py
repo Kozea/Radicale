@@ -69,7 +69,6 @@ setup(
     author_email="guillaume.ayoub@kozea.fr",
     url="http://www.radicale.org/",
     license="GNU GPL v3",
-    requires=["twisted.web"],
     packages=["radicale", "radicale.acl", "radicale.support"],
     scripts=["radicale.py"],
     cmdclass={'clean': Clean,

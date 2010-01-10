@@ -19,11 +19,10 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 # TODO: Manage errors (see xmlutils)
-# TODO: Forget twisted?
 
-from twisted.web.resource import Resource
-from twisted.web import http
 import posixpath
+import httplib
+import BaseHTTPServer
 
 import config
 import support
@@ -34,90 +33,66 @@ import calendar
 _users = acl.users()
 _calendars = support.calendars()
 
-class CalendarResource(Resource):
-    """Twisted resource for requests at calendar depth (/user/calendar)."""
-    # Tell twisted this is a leaf for requests
-    isLeaf = True
+class CalendarHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    """HTTP requests handler for calendars."""
+    def _parse_path(self):
+        path = self.path.strip("/").split("/")
+        if len(path) >= 2:
+            cal = "%s/%s" % (path[0], path[1])
+            self.calendar = calendar.Calendar(_users[0], cal)
 
-    def __init__(self, user, cal):
-        """Initialize by creating a calendar object.
-
-        The calendar object corresponds to the stocked calendar named
-        ``user``/``cal``.
-        """
-        Resource.__init__(self)
-        self.calendar = calendar.Calendar(user, cal)
-
-    def render_DELETE(self, request):
+    def do_DELETE(self):
         """Manage DELETE ``request``."""
-        obj = request.getHeader("if-match")
-        answer = xmlutils.delete(obj, self.calendar, str(request.URLPath()))
-        request.setResponseCode(http.NO_CONTENT)
-        return answer
+        self._parse_path()
+        obj = self.headers.get("if-match", None)
+        answer = xmlutils.delete(obj, self.calendar, self.path)
 
-    def render_OPTIONS(self, request):
+        self.send_response(httplib.NO_CONTENT)
+        self.send_header("Content-Length", len(answer))
+        self.end_headers()
+        self.wfile.write(answer)
+
+    def do_OPTIONS(self):
         """Manage OPTIONS ``request``."""
-        request.setHeader("Allow", "DELETE, OPTIONS, PROPFIND, PUT, REPORT")
-        request.setHeader("DAV", "1, calendar-access")
-        request.setResponseCode(http.OK)
-        return ""
+        self.send_response(httplib.OK)
+        self.send_header("Allow", "DELETE, OPTIONS, PROPFIND, PUT, REPORT")
+        self.send_header("DAV", "1, calendar-access")
+        self.end_headers()
 
-    def render_PROPFIND(self, request):
+    def do_PROPFIND(self):
         """Manage PROPFIND ``request``."""
-        xml_request = request.content.read()
-        answer = xmlutils.propfind(xml_request, self.calendar, str(request.URLPath()))
-        request.setResponseCode(http.MULTI_STATUS)
-        return answer
+        self._parse_path()
+        xml_request = self.rfile.read(int(self.headers["Content-Length"]))
+        answer = xmlutils.propfind(xml_request, self.calendar, self.path)
 
-    def render_PUT(self, request):
+        self.send_response(httplib.MULTI_STATUS)
+        self.send_header("DAV", "1, calendar-access")
+        self.send_header("Content-Length", len(answer))
+        self.end_headers()
+        self.wfile.write(answer)
+
+    def do_PUT(self):
         """Manage PUT ``request``."""
         # TODO: Improve charset detection
-        contentType = request.getHeader("content-type")
+        self._parse_path()
+        contentType = self.headers["content-type"]
         if contentType and "charset=" in contentType:
             charset = contentType.split("charset=")[1].strip()
         else:
             charset = config.get("encoding", "request")
-        ical_request = request.content.read().decode(charset)
-        obj = request.getHeader("if-match")
-        xmlutils.put(ical_request, self.calendar, str(request.URLPath()), obj)
-        request.setResponseCode(http.CREATED)
-        return ""
+        ical_request = self.rfile.read(int(self.headers["Content-Length"])).decode(charset)
+        obj = self.headers.get("if-match", None)
+        xmlutils.put(ical_request, self.calendar, self.path, obj)
 
-    def render_REPORT(self, request):
+        self.send_response(httplib.CREATED)
+
+    def do_REPORT(self):
         """Manage REPORT ``request``."""
-        xml_request = request.content.read()
-        answer = xmlutils.report(xml_request, self.calendar, str(request.URLPath()))
-        request.setResponseCode(http.MULTI_STATUS)
-        return answer
+        self._parse_path()
+        xml_request = self.rfile.read(int(self.headers["Content-Length"]))
+        answer = xmlutils.report(xml_request, self.calendar, self.path)
 
-class UserResource(Resource):
-    """Twisted resource for requests at user depth (/user)."""
-    def __init__(self, user):
-        """Initialize by connecting requests to ``user`` calendars resources."""
-        Resource.__init__(self)
-        for cal in _calendars:
-            if cal.startswith("%s%s"%(user, posixpath.sep)):
-                cal_name = cal.split(posixpath.sep)[1]
-                self.putChild(cal_name, CalendarResource(user, cal))
-    
-    def getChild(self, cal, request):
-        """Get calendar resource if ``cal`` exists."""
-        if cal in _calendars:
-            return Resource.getChild(self, cal, request)
-        else:
-            return self
-
-class HttpResource(Resource):
-    """Twisted resource for requests at root depth (/)."""
-    def __init__(self):
-        """Initialize by connecting requests to the users resources."""
-        Resource.__init__(self)
-        for user in _users:
-            self.putChild(user, UserResource(user))
-
-    def getChild(self, user, request):
-        """Get user resource if ``user`` exists."""
-        if user in _users:
-            return Resource.getChild(self, user, request)
-        else:
-            return self
+        self.send_response(httplib.MULTI_STATUS)
+        self.send_header("Content-Length", len(answer))
+        self.end_headers()
+        self.wfile.write(answer)

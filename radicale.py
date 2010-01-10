@@ -23,7 +23,6 @@
 # TODO: Manage smart and configurable logs
 # TODO: Manage authentication
 # TODO: Magage command-line options
-# TODO: Forget twisted?
 
 """
 Radicale Server entry point.
@@ -32,29 +31,12 @@ Launch the Radicale Serve according to the configuration.
 """
 
 import sys
-from twisted.web import server
-from twisted.internet import reactor
-from twisted.python import log
+import BaseHTTPServer
 
 import radicale
 
-class ServerContextFactory(object):
-    """SSL context factory."""
-    def get_context(self):
-        """Get SSL context for the HTTP server."""
-        from OpenSSL import SSL
-        context = SSL.Context(SSL.SSLv23_METHOD)
-        context.use_certificate_file(radicale.config.get("server", "certificate"))
-        context.use_privatekey_file(radicale.config.get("server", "privatekey"))
-        return context
-
-log.startLogging(sys.stdout)
-#log.startLogging(open(radicale.config.get("server", "log"), "w"))
-factory = server.Site(radicale.HttpResource())
-
 if radicale.config.get("server", "type") == "http":
-    reactor.listenTCP(radicale.config.getint("server", "port"), factory)
-elif radicale.config.get("server", "type") == "https":
-    reactor.listenSSL(radicale.config.getint("server", "port"), factory, ServerContextFactory())
-
-reactor.run()
+    server = BaseHTTPServer.HTTPServer(
+        ("", radicale.config.getint("server", "port")),
+        radicale.CalendarHandler)
+    server.serve_forever()
