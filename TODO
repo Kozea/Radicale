@@ -6,6 +6,11 @@
  TODO
 ------
 
+0.1.1
+=====
+
+* [IN PROGRESS] Sunbird 1.0 support
+
 0.2
 ===
 
@@ -24,7 +29,7 @@
 1.0
 ===
 
-* No Twisted dependency
-* Python 3 support
+* [DONE] No Twisted dependency
+* [IN PROGRESS] Python 3 support
 * iCal filters and rights
 * Other CalDAV clients supports
