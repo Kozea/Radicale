@@ -2,6 +2,13 @@
  News
 ======
 
+Monday, January 11, 2010
+========================
+
+Good news! Radicale 0.1.1 will support Sunbird 1.0, but it has another great
+feature: it has no external dependency! Twisted is no longer required for the
+git version, removing about 50 lines of code.
+
 Thursday, December 31, 2009
 ===========================
 

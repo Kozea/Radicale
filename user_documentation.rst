@@ -4,7 +4,7 @@
 
 :Author: Guillaume Ayoub
 
-:Date: 2009-09-01
+:Date: 2010-01-11
 
 :Abstract: This document is a short description for installing and using the
  Radicale Calendar Server.
@@ -17,23 +17,13 @@ Installation
 Dependencies
 ------------
 
-Radicale is written in pure python and depends on the following librabry, that
-must be installed first:
+Radicale is written in pure python and does not depend on any librabry. It is
+known to work on Python 2.6.*.
 
-- ``python-twisted-web``
-
-On a Debian-based systems, you can install this packages with the following
-command, with superuser rights::
-
-  apt-get install python-twisted-web
-
-Other Linux and \*BSD distributions should provide Twisted packages too.
-
-For Windows and MacOS users, please install Python [#]_ and Twisted [#]_ thanks
-to the adequate installers. Version 2.6.\* for Python is a good choice.
+Linux users certainly have Python already installed. For Windows and MacOS
+users, please install Python [#]_ thanks to the adequate installer.
 
 .. [#] `Python download page <http://python.org/download/>`_.
-.. [#] `Twisted download page <http://twistedmatrix.com/trac/wiki/Downloads>`_.
 
 Radicale
 --------
@@ -45,10 +35,10 @@ folder of your choice.
 CalDAV Clients
 --------------
 
-At this time Radicale has been tested and works fine with the latest version of
-Mozilla Sunbird (version 0.9+). More clients will be supported in the
-future. However, it may work with any calendar client which implements CalDAV
-specifications too (luck is highly recommanded).
+At this time Radicale has been tested and works fine with the latests version
+of Mozilla Sunbird (versions 0.9 and 1.0). More clients will be supported in
+the future. However, it may work with any calendar client which implements
+CalDAV specifications too (luck is highly recommanded).
 
 To download Sunbird, go to the `Sunbird project website
 <http://www.mozilla.org/projects/calendar/sunbird/>`_ and choose the latest
