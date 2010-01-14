@@ -1,7 +1,7 @@
-# -*- coding: utf-8; indent-tabs-mode: nil; -*-
+# -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008-2009 Guillaume Ayoub
+# Copyright © 2008-2010 Guillaume Ayoub
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 #
