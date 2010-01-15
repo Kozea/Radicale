@@ -18,7 +18,7 @@ Dependencies
 ------------
 
 Radicale is written in pure python and does not depend on any librabry. It is
-known to work on Python 2.6.*.
+known to work on Python 2.5, 2.6, 3.0 and 3.1.
 
 Linux users certainly have Python already installed. For Windows and MacOS
 users, please install Python [#]_ thanks to the adequate installer.
