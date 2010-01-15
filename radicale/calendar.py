@@ -24,7 +24,7 @@ Radicale calendar classes.
 Define the main classes of a calendar as seen from the server.
 """
 
-import support
+from radicale import support
 
 hash_tag = lambda vcalendar: str(hash(vcalendar))
 
@@ -33,8 +33,9 @@ class Calendar(object):
     def __init__(self, user, cal):
         """Initialize the calendar with ``cal`` and ``user`` parameters."""
         # TODO: Use properties from the calendar configuration
+        self.support = support.load()
         self.encoding = "utf-8"
-        self.owner = "lize"
+        self.owner = "radicale"
         self.user = user
         self.cal = cal
         self.version = "2.0"
@@ -43,22 +44,22 @@ class Calendar(object):
     def append(self, vcalendar):
         """Append vcalendar to the calendar."""
         self.ctag = hash_tag(self.vcalendar())
-        support.append(self.cal, vcalendar)
+        self.support.append(self.cal, vcalendar)
 
     def remove(self, uid):
         """Remove object named ``uid`` from the calendar."""
         self.ctag = hash_tag(self.vcalendar())
-        support.remove(self.cal, uid)
+        self.support.remove(self.cal, uid)
 
     def replace(self, uid, vcalendar):
         """Replace objet named ``uid`` by ``vcalendar`` in the calendar."""
         self.ctag = hash_tag(self.vcalendar())
-        support.remove(self.cal, uid)
-        support.append(self.cal, vcalendar)
+        self.support.remove(self.cal, uid)
+        self.support.append(self.cal, vcalendar)
 
     def vcalendar(self):
         """Return unicode calendar from the calendar."""
-        return unicode(support.read(self.cal), self.encoding)
+        return self.support.read(self.cal)
 
     def etag(self):
         """Return etag from calendar."""

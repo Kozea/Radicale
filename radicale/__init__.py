@@ -21,25 +21,21 @@
 # TODO: Manage errors (see xmlutils)
 
 import posixpath
-import httplib
-import BaseHTTPServer
+try:
+    from http import client, server
+except ImportError:
+    import httplib as client
+    import BaseHTTPServer as server
 
-import config
-import support
-import acl
-import xmlutils
-import calendar
+from radicale import config, support, xmlutils
 
-_users = acl.users()
-_calendars = support.calendars()
-
-class CalendarHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class CalendarHandler(server.BaseHTTPRequestHandler):
     """HTTP requests handler for calendars."""
     def _parse_path(self):
         path = self.path.strip("/").split("/")
         if len(path) >= 2:
             cal = "%s/%s" % (path[0], path[1])
-            self.calendar = calendar.Calendar(_users[0], cal)
+            self.calendar = calendar.Calendar("radicale", cal)
 
     def do_DELETE(self):
         """Manage DELETE ``request``."""
@@ -47,14 +43,14 @@ class CalendarHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         obj = self.headers.get("if-match", None)
         answer = xmlutils.delete(obj, self.calendar, self.path)
 
-        self.send_response(httplib.NO_CONTENT)
+        self.send_response(client.NO_CONTENT)
         self.send_header("Content-Length", len(answer))
         self.end_headers()
         self.wfile.write(answer)
 
     def do_OPTIONS(self):
         """Manage OPTIONS ``request``."""
-        self.send_response(httplib.OK)
+        self.send_response(client.OK)
         self.send_header("Allow", "DELETE, OPTIONS, PROPFIND, PUT, REPORT")
         self.send_header("DAV", "1, calendar-access")
         self.end_headers()
@@ -65,7 +61,7 @@ class CalendarHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
         answer = xmlutils.propfind(xml_request, self.calendar, self.path)
 
-        self.send_response(httplib.MULTI_STATUS)
+        self.send_response(client.MULTI_STATUS)
         self.send_header("DAV", "1, calendar-access")
         self.send_header("Content-Length", len(answer))
         self.end_headers()
@@ -84,7 +80,7 @@ class CalendarHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         obj = self.headers.get("if-match", None)
         xmlutils.put(ical_request, self.calendar, self.path, obj)
 
-        self.send_response(httplib.CREATED)
+        self.send_response(client.CREATED)
 
     def do_REPORT(self):
         """Manage REPORT ``request``."""
@@ -92,7 +88,7 @@ class CalendarHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
         answer = xmlutils.report(xml_request, self.calendar, self.path)
 
-        self.send_response(httplib.MULTI_STATUS)
+        self.send_response(client.MULTI_STATUS)
         self.send_header("Content-Length", len(answer))
         self.end_headers()
         self.wfile.write(answer)

@@ -24,7 +24,10 @@ Radicale configuration module.
 Give a configparser-like interface to read and write configuration.
 """
 
-from ConfigParser import RawConfigParser as ConfigParser
+try:
+    from configparser import RawConfigParser as ConfigParser
+except ImportError:
+    from ConfigParser import RawConfigParser as ConfigParser
 
 _config = ConfigParser()
 get = _config.get
@@ -68,9 +71,9 @@ _initial = {
         },
     }
 
-for section, values in _initial.iteritems():
+for section, values in _initial.items():
     _config.add_section(section)
-    for key, value in values.iteritems():
+    for key, value in values.items():
         _config.set(section, key, value)
 
 # TODO: Use abstract filename for other platforms

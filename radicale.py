@@ -30,13 +30,10 @@ Radicale Server entry point.
 Launch the Radicale Serve according to the configuration.
 """
 
-import sys
-import BaseHTTPServer
-
 import radicale
 
 if radicale.config.get("server", "type") == "http":
-    server = BaseHTTPServer.HTTPServer(
+    server = radicale.server.HTTPServer(
         ("", radicale.config.getint("server", "port")),
         radicale.CalendarHandler)
     server.serve_forever()

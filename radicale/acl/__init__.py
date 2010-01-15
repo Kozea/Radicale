@@ -25,7 +25,7 @@ This module loads a list of users with access rights, according to the acl
 configuration.
 """
 
-from .. import config
+from radicale import config
 
 _acl = __import__(config.get("acl", "type"), locals(), globals())
 

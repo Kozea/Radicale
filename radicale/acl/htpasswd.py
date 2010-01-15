@@ -26,7 +26,7 @@ Load the list of users according to the htpasswd configuration.
 
 # TODO: Manage rights
 
-from .. import config
+from radicale import config
 
 def users():
     """Get the list of all users."""

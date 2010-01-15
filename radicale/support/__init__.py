@@ -22,12 +22,9 @@
 Calendar storage support configuration.
 """
 
-from .. import config
+from radicale import config
 
-_support = __import__(config.get("support", "type"), locals(), globals())
-
-append = _support.append
-calendars =_support.calendars
-mkcalendar =_support.mkcalendar
-read = _support.read
-remove = _support.remove
+def load():
+    module = __import__("radicale.support", globals(), locals(),
+                        [config.get("support", "type")])
+    return getattr(module, config.get("support", "type"))

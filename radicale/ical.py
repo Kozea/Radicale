@@ -24,7 +24,7 @@ iCal parsing functions.
 
 # TODO: Manage filters (see xmlutils)
 
-import calendar
+from radicale import calendar
 
 def write_calendar(headers=[
         calendar.Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
@@ -32,14 +32,14 @@ def write_calendar(headers=[
                   timezones=[], todos=[], events=[]):
     """Create calendar from ``headers``, ``timezones``, ``todos``, ``events``."""
     # TODO: Manage encoding and EOL
-    cal = u"\n".join((
-        u"BEGIN:VCALENDAR",
-        u"\n".join([header.text for header in headers]),
-        u"\n".join([timezone.text for timezone in timezones]),
-        u"\n".join([todo.text for todo in todos]),
-        u"\n".join([event.text for event in events]),
-        u"END:VCALENDAR"))
-    return u"\n".join([line for line in cal.splitlines() if line])
+    cal = "\n".join((
+        "BEGIN:VCALENDAR",
+        "\n".join([header.text for header in headers]),
+        "\n".join([timezone.text for timezone in timezones]),
+        "\n".join([todo.text for todo in todos]),
+        "\n".join([event.text for event in events]),
+        "END:VCALENDAR"))
+    return "\n".join([line for line in cal.splitlines() if line])
 
 def headers(vcalendar):
     """Find Headers items in ``vcalendar``."""

@@ -24,7 +24,7 @@ Fake ACL.
 Just load the default user set in configuration, with no rights management.
 """
 
-from .. import config
+from radicale import config
 
 def users():
     """Get the list of all users."""

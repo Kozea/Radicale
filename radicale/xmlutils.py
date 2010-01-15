@@ -31,8 +31,7 @@ in them for XML requests (all but PUT).
 
 import xml.etree.ElementTree as ET
 
-import config
-import ical
+from radicale import config, ical
 
 # TODO: This is a well-known and accepted hack for ET to avoid ET from renaming
 #       namespaces, which is accepted in XML norm but often not in XML
