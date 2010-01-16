@@ -24,6 +24,8 @@ Radicale configuration module.
 Give a configparser-like interface to read and write configuration.
 """
 
+# TODO: Use abstract filenames for other platforms
+
 try:
     from configparser import RawConfigParser as ConfigParser
 except ImportError:
@@ -40,11 +42,12 @@ items = _config.items
 
 _initial = {
     "server": {
-        "type": "http",
-        "certificate": "/etc/apache2/ssl/server.crt",
-        "privatekey": "/etc/apache2/ssl/server.key",
-        "log": "/var/www/radicale/server.log",
+        "protocol": "http",
+        "name": "",
         "port": "5232",
+        #"certificate": "/etc/apache2/ssl/server.crt",
+        #"privatekey": "/etc/apache2/ssl/server.key",
+        #"log": "/var/www/radicale/server.log",
         },
     "encoding": {
         "request": "utf-8",
@@ -55,14 +58,9 @@ _initial = {
         "D": "DAV:",
         "CS": "http://calendarserver.org/ns/",
         },
-    "status": {
-        "200": "HTTP/1.1 200 OK",
-        "204": "HTTP/1.1 204 No Content",
-        },
     "acl": {
         "type": "fake",
-        "filename": "/etc/radicale/users",
-        "user": "radicale",
+        #"filename": "/etc/radicale/users",
         },
     "support": {
         "type": "plain",
@@ -76,5 +74,4 @@ for section, values in _initial.items():
     for key, value in values.items():
         _config.set(section, key, value)
 
-# TODO: Use abstract filename for other platforms
 _config.read("/etc/radicale/config")

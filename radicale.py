@@ -27,13 +27,14 @@
 """
 Radicale Server entry point.
 
-Launch the Radicale Serve according to the configuration.
+Launch the Radicale Server according to the configuration.
 """
 
 import radicale
 
-if radicale.config.get("server", "type") == "http":
+if radicale.config.get("server", "protocol") == "http":
     server = radicale.server.HTTPServer(
-        ("", radicale.config.getint("server", "port")),
+        (radicale.config.get("server", "name"),
+         radicale.config.getint("server", "port")),
         radicale.CalendarHandler)
     server.serve_forever()

@@ -31,17 +31,21 @@ in them for XML requests (all but PUT).
 
 import xml.etree.ElementTree as ET
 
-from radicale import config, ical
+from radicale import client, config, ical
 
 # TODO: This is a well-known and accepted hack for ET to avoid ET from renaming
 #       namespaces, which is accepted in XML norm but often not in XML
 #       readers. Is there another clean solution to force namespaces?
-for key,value in config.items("namespace"):
+for key, value in config.items("namespace"):
     ET._namespace_map[value] = key
 
 def _tag(short_name, local):
     """Get XML Clark notation {uri(``short_name``)}``local``."""
-    return "{%s}%s"%(config.get("namespace", short_name), local)
+    return "{%s}%s" % (config.get("namespace", short_name), local)
+
+def _response(code):
+    """Return full W3C names from HTTP status codes."""
+    return "HTTP/1.1 %i %s" % (code, client.responses[code])
 
 def delete(obj, calendar, url):
     """Read and answer DELETE requests.
@@ -61,7 +65,7 @@ def delete(obj, calendar, url):
     response.append(href)
 
     status = ET.Element(_tag("D", "status"))
-    status.text = config.get("status", "200")
+    status.text = _response(200)
     response.append(status)
 
     return ET.tostring(multistatus, config.get("encoding", "request"))
@@ -119,7 +123,7 @@ def propfind(xml_request, calendar, url):
         prop.append(getctag)
 
     status = ET.Element(_tag("D", "status"))
-    status.text = config.get("status", "200")
+    status.text = _response(200)
     propstat.append(status)
 
     return ET.tostring(multistatus, config.get("encoding", "request"))
@@ -186,7 +190,7 @@ def report(xml_request, calendar, url):
             response.append(href)
 
             status = ET.Element(_tag("D", "status"))
-            status.text = config.get("status", "204")
+            status.text = _response(204)
             response.append(status)
 
         for obj in objects:
@@ -218,7 +222,7 @@ def report(xml_request, calendar, url):
                 prop.append(cdata)
 
             status = ET.Element(_tag("D", "status"))
-            status.text = config.get("status", "200")
+            status.text = _response(200)
             propstat.append(status)
 
     return ET.tostring(multistatus, config.get("encoding", "request"))

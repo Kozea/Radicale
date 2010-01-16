@@ -37,6 +37,16 @@ class CalendarHandler(server.BaseHTTPRequestHandler):
             cal = "%s/%s" % (path[0], path[1])
             self.calendar = calendar.Calendar("radicale", cal)
 
+    def do_GET(self):
+        """Manage GET ``request``."""
+        self._parse_path()
+        answer = self.calendar.vcalendar().encode(config.get("encoding", "request"))
+
+        self.send_response(client.OK)
+        self.send_header("Content-Length", len(answer))
+        self.end_headers()
+        self.wfile.write(answer)
+
     def do_DELETE(self):
         """Manage DELETE ``request``."""
         self._parse_path()
@@ -51,7 +61,7 @@ class CalendarHandler(server.BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         """Manage OPTIONS ``request``."""
         self.send_response(client.OK)
-        self.send_header("Allow", "DELETE, OPTIONS, PROPFIND, PUT, REPORT")
+        self.send_header("Allow", "DELETE, GET, OPTIONS, PROPFIND, PUT, REPORT")
         self.send_header("DAV", "1, calendar-access")
         self.end_headers()
 
