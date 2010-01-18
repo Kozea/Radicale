@@ -19,22 +19,49 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-# TODO: Manage depth and calendars/collections (see xmlutils)
-# TODO: Manage smart and configurable logs
-# TODO: Manage authentication
-# TODO: Magage command-line options
-
 """
 Radicale Server entry point.
 
-Launch the Radicale Server according to the configuration.
+Launch the Radicale Serve according to configuration and command-line
+arguments.
 """
+
+# TODO: Manage depth and calendars/collections (see xmlutils)
+# TODO: Manage smart and configurable logs
+# TODO: Manage authentication
+
+import os
+import sys
+import optparse
 
 import radicale
 
-if radicale.config.get("server", "protocol") == "http":
+parser = optparse.OptionParser()
+parser.add_option(
+    "-d", "--daemon", action="store_true",
+    default=radicale.config.getboolean("server", "daemon"),
+    help="launch as daemon")
+parser.add_option(
+    "-n", "--name",
+    default=radicale.config.get("server", "name"),
+    help="set server name")
+parser.add_option(
+    "-p", "--port",
+    default=radicale.config.getint("server", "port"),
+    help="set server port")
+parser.add_option(
+    "-P", "--protocol",
+    default=radicale.config.get("server", "protocol"),
+    help="set server protocol")
+options, args = parser.parse_args()
+
+if options.daemon:
+    if os.fork():
+        sys.exit()
+    sys.stdout = sys.stderr = open(os.devnull, "w")
+if options.protocol == "http":
     server = radicale.server.HTTPServer(
-        (radicale.config.get("server", "name"),
-         radicale.config.getint("server", "port")),
-        radicale.CalendarHandler)
+        (options.name, options.port), radicale.CalendarHandler)
     server.serve_forever()
+else:
+    raise StandardError("%s: unsupported protocol" % options.protocol)

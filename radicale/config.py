@@ -26,6 +26,7 @@ Give a configparser-like interface to read and write configuration.
 
 # TODO: Use abstract filenames for other platforms
 
+import os
 try:
     from configparser import RawConfigParser as ConfigParser
 except ImportError:
@@ -45,6 +46,7 @@ _initial = {
         "protocol": "http",
         "name": "",
         "port": "5232",
+        "daemon": "False",
         #"certificate": "/etc/apache2/ssl/server.crt",
         #"privatekey": "/etc/apache2/ssl/server.key",
         #"log": "/var/www/radicale/server.log",
@@ -64,7 +66,7 @@ _initial = {
         },
     "support": {
         "type": "plain",
-        "folder": "~/.config/radicale",
+        "folder": os.path.expanduser("~/.config/radicale"),
         "calendar": "radicale/calendar",
         },
     }
@@ -75,3 +77,4 @@ for section, values in _initial.items():
         _config.set(section, key, value)
 
 _config.read("/etc/radicale/config")
+_config.read(os.path.expanduser("~/.config/radicale/config"))
