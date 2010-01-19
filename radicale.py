@@ -36,32 +36,48 @@ import optparse
 
 import radicale
 
+# Get command-line options
 parser = optparse.OptionParser()
 parser.add_option(
     "-d", "--daemon", action="store_true",
     default=radicale.config.getboolean("server", "daemon"),
     help="launch as daemon")
 parser.add_option(
-    "-n", "--name",
-    default=radicale.config.get("server", "name"),
-    help="set server name")
+    "-H", "--host",
+    default=radicale.config.get("server", "host"),
+    help="set server hostname")
 parser.add_option(
-    "-p", "--port",
+    "-p", "--port", type="int",
     default=radicale.config.getint("server", "port"),
     help="set server port")
 parser.add_option(
-    "-P", "--protocol",
-    default=radicale.config.get("server", "protocol"),
-    help="set server protocol")
+    "-s", "--ssl", action="store_true",
+    default=radicale.config.getboolean("server", "ssl"),
+    help="use SSL connection")
+parser.add_option(
+    "-k", "--key",
+    default=radicale.config.get("server", "key"),
+    help="private key file ")
+parser.add_option(
+    "-c", "--certificate",
+    default=radicale.config.get("server", "certificate"),
+    help="certificate file ")
 options, args = parser.parse_args()
 
+# Update radicale configuration according to options
+for option in parser.option_list:
+    key = option.dest
+    if key:
+        value = getattr(options, key)
+        radicale.config.set("server", key, value)
+
+# Fork if Radicale is launched as daemon
 if options.daemon:
     if os.fork():
         sys.exit()
     sys.stdout = sys.stderr = open(os.devnull, "w")
-if options.protocol == "http":
-    server = radicale.server.HTTPServer(
-        (options.name, options.port), radicale.CalendarHandler)
-    server.serve_forever()
-else:
-    raise StandardError("%s: unsupported protocol" % options.protocol)
+
+# Launch calendar server
+server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
+server = server_class((options.host, options.port), radicale.CalendarHTTPHandler)
+server.serve_forever()

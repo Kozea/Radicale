@@ -43,12 +43,12 @@ items = _config.items
 
 _initial = {
     "server": {
-        "protocol": "http",
-        "name": "",
+        "host": "",
         "port": "5232",
         "daemon": "False",
-        #"certificate": "/etc/apache2/ssl/server.crt",
-        #"privatekey": "/etc/apache2/ssl/server.key",
+        "ssl": "False",
+        "certificate": "/etc/apache2/ssl/server.crt",
+        "key": "/etc/apache2/ssl/server.key",
         #"log": "/var/www/radicale/server.log",
         },
     "encoding": {

@@ -20,7 +20,7 @@
 
 # TODO: Manage errors (see xmlutils)
 
-import posixpath
+import socket
 try:
     from http import client, server
 except ImportError:
@@ -29,7 +29,24 @@ except ImportError:
 
 from radicale import config, support, xmlutils
 
-class CalendarHandler(server.BaseHTTPRequestHandler):
+HTTPServer = server.HTTPServer
+
+class HTTPSServer(HTTPServer):
+    def __init__(self, address, handler):
+        # Fails with Python 2.5, import if needed
+        import ssl
+
+        super(HTTPSServer, self).__init__(address, handler)
+        self.socket = ssl.wrap_socket(
+            socket.socket(self.address_family, self.socket_type),
+            server_side=True, 
+            certfile=config.get("server", "certificate"),
+            keyfile=config.get("server", "key"),
+            ssl_version=ssl.PROTOCOL_SSLv23)
+        self.server_bind()
+        self.server_activate()        
+
+class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     """HTTP requests handler for calendars."""
     def _parse_path(self):
         path = self.path.strip("/").split("/")

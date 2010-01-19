@@ -14,7 +14,8 @@
 0.2
 ===
 
-* SSL connections and authentications
+* [DONE] SSL connections
+* Authentications
 * [DONE] Daemon mode
 * [DONE] User configuration
 
