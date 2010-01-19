@@ -39,31 +39,33 @@ class Calendar(object):
         self.user = user
         self.cal = cal
         self.version = "2.0"
-        self.ctag = hash_tag(self.vcalendar())
+        self.ctag = hash_tag(self.vcalendar)
 
     def append(self, vcalendar):
         """Append vcalendar to the calendar."""
-        self.ctag = hash_tag(self.vcalendar())
+        self.ctag = hash_tag(self.vcalendar)
         self.support.append(self.cal, vcalendar)
 
     def remove(self, uid):
         """Remove object named ``uid`` from the calendar."""
-        self.ctag = hash_tag(self.vcalendar())
+        self.ctag = hash_tag(self.vcalendar)
         self.support.remove(self.cal, uid)
 
     def replace(self, uid, vcalendar):
         """Replace objet named ``uid`` by ``vcalendar`` in the calendar."""
-        self.ctag = hash_tag(self.vcalendar())
+        self.ctag = hash_tag(self.vcalendar)
         self.support.remove(self.cal, uid)
         self.support.append(self.cal, vcalendar)
 
+    @property
     def vcalendar(self):
-        """Return unicode calendar from the calendar."""
+        """Unicode calendar from the calendar."""
         return self.support.read(self.cal)
 
+    @property
     def etag(self):
-        """Return etag from calendar."""
-        return '"%s"' % hash_tag(self.vcalendar())
+        """Etag from calendar."""
+        return '"%s"' % hash_tag(self.vcalendar)
 
 class Event(object):
     """Internal event class."""
@@ -71,8 +73,9 @@ class Event(object):
         """Initialize event from ``vcalendar``."""
         self.text = vcalendar
 
+    @property
     def etag(self):
-        """Return etag from event."""
+        """Etag from event."""
         return '"%s"' % hash_tag(self.text)
 
 class Header(object):
@@ -99,6 +102,7 @@ class Todo(object):
         """Initialize todo from ``vcalendar``."""
         self.text = vcalendar
 
+    @property
     def etag(self):
-        """Return etag from todo."""
+        """Etag from todo."""
         return hash_tag(self.text)

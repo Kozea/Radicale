@@ -64,7 +64,7 @@ parser.add_option(
     help="certificate file ")
 options, args = parser.parse_args()
 
-# Update radicale configuration according to options
+# Update Radicale configuration according to options
 for option in parser.option_list:
     key = option.dest
     if key:

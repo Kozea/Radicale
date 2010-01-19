@@ -114,7 +114,7 @@ def propfind(xml_request, calendar, url):
 
     if _tag("D", "getetag") in properties:
         getetag = ET.Element(_tag("D", "getetag"))
-        getetag.text = calendar.etag()
+        getetag.text = calendar.etag
         prop.append(getetag)
 
     if _tag("CS", "getctag") in properties:
@@ -172,13 +172,13 @@ def report(xml_request, calendar, url):
     #       is that really what is needed?
     #       Read rfc4791-9.[6|10] for info
     for hreference in hreferences:
-        headers = ical.headers(calendar.vcalendar())
+        headers = ical.headers(calendar.vcalendar)
         # TODO: Define timezones by obj
-        timezones = ical.timezones(calendar.vcalendar())
+        timezones = ical.timezones(calendar.vcalendar)
 
         objects = []
-        objects.extend(ical.events(calendar.vcalendar()))
-        objects.extend(ical.todos(calendar.vcalendar()))
+        objects.extend(ical.events(calendar.vcalendar))
+        objects.extend(ical.todos(calendar.vcalendar))
 
         if not objects:
             # TODO: Read rfc4791-9.[6|10] to find a right answer
@@ -212,7 +212,7 @@ def report(xml_request, calendar, url):
             if _tag("D", "getetag") in properties:
                 # TODO: Can UID and ETAG be the same?
                 getetag = ET.Element(_tag("D", "getetag"))
-                getetag.text = obj.etag()
+                getetag.text = obj.etag
                 prop.append(getetag)
 
             if _tag("C", "calendar-data") in properties:

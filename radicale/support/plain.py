@@ -63,8 +63,8 @@ def append(cal, vcalendar):
     path = os.path.join(_folder, cal.replace(posixpath.sep, os.path.sep))
 
     old_objects = []
-    old_objects.extend([event.etag() for event in ical.events(old_calendar)])
-    old_objects.extend([todo.etag() for todo in ical.todos(old_calendar)])
+    old_objects.extend([event.etag for event in ical.events(old_calendar)])
+    old_objects.extend([todo.etag for todo in ical.todos(old_calendar)])
 
     objects = []
     objects.extend(ical.events(vcalendar))
@@ -85,7 +85,7 @@ def append(cal, vcalendar):
             fd.close()
 
     for obj in objects:
-        if obj.etag() not in old_objects:
+        if obj.etag not in old_objects:
             # TODO: Manage position and EOL
             fd = _open(path)
             lines = [line for line in fd.readlines() if line]
@@ -106,8 +106,8 @@ def remove(cal, etag):
 
     headers = ical.headers(cal)
     timezones = ical.timezones(cal)
-    todos = [todo for todo in ical.todos(cal) if todo.etag() != etag]
-    events = [event for event in ical.events(cal) if event.etag() != etag]
+    todos = [todo for todo in ical.todos(cal) if todo.etag != etag]
+    events = [event for event in ical.events(cal) if event.etag != etag]
 
     fd = _open(path, "w")
     fd.write(ical.write_calendar(headers, timezones, todos, events))
