@@ -27,6 +27,7 @@ configuration.
 
 from radicale import config
 
-_acl = __import__(config.get("acl", "type"), locals(), globals())
-
-users = _acl.users
+def load():
+    module = __import__("radicale.acl", globals(), locals(),
+                        [config.get("acl", "type")])
+    return getattr(module, config.get("acl", "type"))

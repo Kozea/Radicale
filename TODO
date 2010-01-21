@@ -14,8 +14,8 @@
 0.2
 ===
 
-* [DONE] SSL connections
-* Authentications
+* [DONE] SSL connection
+* [DONE] Htpasswd authentication
 * [DONE] Daemon mode
 * [DONE] User configuration
 
@@ -24,7 +24,7 @@
 ===
 
 * Calendar collections
-* Windows and MacOS tested support
+* [IN PROGRESS] Windows and MacOS tested support
 
 
 1.0

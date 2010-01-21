@@ -21,14 +21,39 @@
 """
 Htpasswd ACL.
 
-Load the list of users according to the htpasswd configuration.
+Load the list of login/password couples according a the configuration file
+created by Apache ``htpasswd`` command. Plain-text, crypt and sha1 are
+supported, but md5 is not (see ``htpasswd`` man page to understand why).
+
 """
 
-# TODO: Manage rights
+import base64
+import crypt
+import hashlib
 
 from radicale import config
 
-def users():
-    """Get the list of all users."""
-    return [line.split(":")[0] for line
-            in open(config.get("acl", "filename")).readlines()]
+def _plain(hash, password):
+    return hash == password
+
+def _crypt(hash, password):
+    return crypt.crypt(password, hash) == hash
+
+def _sha1(hash, password):
+    hash = hash.lstrip("{SHA}").encode("ascii")
+    password = password.encode(config.get("encoding", "stock"))
+    sha1 = hashlib.sha1()
+    sha1.update(password)
+    return sha1.digest() == base64.b64decode(hash)
+
+_filename = config.get("acl", "filename")
+_check_password = locals()["_%s" % config.get("acl", "encryption")]
+
+def has_right(user, password):
+    """Check if ``user``/``password`` couple is valid."""
+    for line in open(_filename).readlines():
+        if line.strip():
+            login, hash = line.strip().split(":")
+            if login == user:
+                return _check_password(hash, password)
+    return False

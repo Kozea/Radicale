@@ -62,7 +62,8 @@ _initial = {
         },
     "acl": {
         "type": "fake",
-        #"filename": "/etc/radicale/users",
+        "filename": "/etc/radicale/users",
+        "encryption": "crypt",
         },
     "support": {
         "type": "plain",

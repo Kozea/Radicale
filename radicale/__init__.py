@@ -35,6 +35,7 @@ should have been included in this package.
 
 # TODO: Manage errors (see xmlutils)
 
+import base64
 import socket
 try:
     from http import client, server
@@ -42,11 +43,36 @@ except ImportError:
     import httplib as client
     import BaseHTTPServer as server
 
-from radicale import config, support, xmlutils
+from radicale import acl, config, support, xmlutils
+
+def check(request, function):
+    """Check if user has sufficient rights for performing ``request``."""
+    authorization = request.headers.get("Authorization", None)
+    if authorization:
+        challenge = authorization.lstrip("Basic").strip().encode("ascii")
+        plain = request.decode(base64.b64decode(challenge))
+        user, password = plain.split(":")
+    else:
+        user = password = None
+
+    if request.server.acl.has_right(user, password):
+        function(request)
+    else:
+        request.send_response(client.UNAUTHORIZED)
+        request.send_header(
+            "WWW-Authenticate",
+            "Basic realm=\"Radicale Server - Password Required\"")
+        request.end_headers()
+
+# Decorator checking rights before performing request
+check_rights = lambda function: lambda request: check(request, function)
 
 class HTTPServer(server.HTTPServer):
     """HTTP server."""
-    pass
+    def __init__(self, address, handler):
+        """Create server."""
+        server.HTTPServer.__init__(self, address, handler)
+        self.acl = acl.load()
 
 class HTTPSServer(HTTPServer):
     """HTTPS server."""
@@ -55,7 +81,7 @@ class HTTPSServer(HTTPServer):
         # Fails with Python 2.5, import if needed
         import ssl
 
-        super(HTTPSServer, self).__init__(address, handler)
+        HTTPServer.__init__(self, address, handler)
         self.socket = ssl.wrap_socket(
             socket.socket(self.address_family, self.socket_type),
             server_side=True, 
@@ -77,6 +103,30 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
             cal = "%s/%s" % (path[0], path[1])
             return calendar.Calendar("radicale", cal)
 
+    def decode(self, text):
+        """Try to decode text according to various parameters."""
+        # List of charsets to try
+        charsets = []
+
+        # First append content charset given in the request
+        contentType = self.headers["Content-Type"]
+        if contentType and "charset=" in contentType:
+            charsets.append(contentType.split("charset=")[1].strip())
+        # Then append default Radicale charset
+        charsets.append(self._encoding)
+        # Then append various fallbacks
+        charsets.append("utf-8")
+        charsets.append("iso8859-1")
+
+        # Try to decode
+        for charset in charsets:
+            try:
+                return text.decode(charset)
+            except UnicodeDecodeError:
+                pass
+        raise UnicodeDecodeError
+
+    @check_rights
     def do_GET(self):
         """Manage GET request."""
         answer = self.calendar.vcalendar.encode(_encoding)
@@ -86,9 +136,10 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(answer)
 
+    @check_rights
     def do_DELETE(self):
         """Manage DELETE request."""
-        obj = self.headers.get("if-match", None)
+        obj = self.headers.get("If-Match", None)
         answer = xmlutils.delete(obj, self.calendar, self.path)
 
         self.send_response(client.NO_CONTENT)
@@ -114,20 +165,17 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(answer)
 
+    @check_rights
     def do_PUT(self):
         """Manage PUT request."""
-        # TODO: Improve charset detection
-        contentType = self.headers["content-type"]
-        if contentType and "charset=" in contentType:
-            charset = contentType.split("charset=")[1].strip()
-        else:
-            charset = self._encoding
-        ical_request = self.rfile.read(int(self.headers["Content-Length"])).decode(charset)
-        obj = self.headers.get("if-match", None)
+        ical_request = self.decode(
+            self.rfile.read(int(self.headers["Content-Length"])))
+        obj = self.headers.get("If-Match", None)
         xmlutils.put(ical_request, self.calendar, self.path, obj)
 
         self.send_response(client.CREATED)
 
+    @check_rights
     def do_REPORT(self):
         """Manage REPORT request."""
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))

@@ -21,11 +21,10 @@
 """
 Fake ACL.
 
-Just load the default user "radicale", with no rights management.
+No rights management.
+
 """
 
-from radicale import config
-
-def users():
-    """Get the list of all users."""
-    return ["radicale"]
+def has_right(user, password):
+    """Check if ``user``/``password`` couple is valid."""
+    return True
