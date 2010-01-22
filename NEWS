@@ -6,6 +6,18 @@
  NEWS
 ------
 
+0.2 - Snowflakes
+================
+
+* Sunbird 1.0 support
+* SSL connection
+* Htpasswd authentication
+* Daemon mode
+* User configuration
+* Twisted dependency removed
+* Python 3 support
+
+
 0.1 - Crazy Vegetables
 ======================
 

@@ -6,20 +6,6 @@
  TODO
 ------
 
-0.1.1
-=====
-
-* [IN PROGRESS] Sunbird 1.0 support
-
-0.2
-===
-
-* [DONE] SSL connection
-* [DONE] Htpasswd authentication
-* [DONE] Daemon mode
-* [DONE] User configuration
-
-
 0.5
 ===
 
@@ -30,7 +16,5 @@
 1.0
 ===
 
-* [DONE] No Twisted dependency
-* [DONE] Python 3 support
 * iCal filters and rights
 * Other CalDAV clients supports
