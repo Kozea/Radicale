@@ -4,7 +4,7 @@
 
 :Author: Guillaume Ayoub
 
-:Date: 2009-07-21
+:Date: 2010-01-22
 
 :Abstract: This document describes the global technical choices of the
  Radicale Project and the global architectures of its different parts.
@@ -75,7 +75,7 @@ you have a possibly heterogeneous list of user agents.
 
 The Radicale Server does not and **will not** support the CalDAV standard. It
 supports the CalDAV implementation of different clients (only Sunbird 0.9+ [#]_ and
-Lightning 0.9+ [#]_ for the moment).
+Lightning 0.9+ [#]_ for the moment, including 1.0).
 
 .. [#] `Cosmo <http://chandlerproject.org/Projects/CosmoHome>`_, the web
    contents and calendars sharing server build to support the Chandler Project.
@@ -95,9 +95,9 @@ Simple
 The Radicale Server is designed to be simple to install, simple to configure,
 simple to use.
 
-The installation is very easy, particularly with Linux: few dependances, no
+The installation is very easy, particularly with Linux: no dependances, no
 superuser rights needed, no configuration required. Launching the main script
-out-of-the-box, as anormal user, is often the only step to have a simple remote
+out-of-the-box, as a normal user, is often the only step to have a simple remote
 calendar access.
 
 Contrary to other servers that are often complicated, require high privileges

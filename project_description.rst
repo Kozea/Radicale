@@ -4,7 +4,7 @@
 
 :Author: Guillaume Ayoub
 
-:Date: 2009-07-21
+:Date: 2010-01-22
 
 :Abstract: This document defines the main goals of the Radicale
  Project, what it covers and what it does not.
@@ -18,8 +18,7 @@ The Radicale Project is a complete calendar storing and manipulating
 solution. It can store multiple calendars.
 
 Calendar manipulation is available from both local and distant
-accesses, possibly limited through authentification policies and
-calendar-based rules.
+accesses, possibly limited through authentication policies.
 
 
 What Radicale Is
@@ -30,7 +29,11 @@ Calendar Server
 
 The Radicale Project is mainly a calendar server, giving local and
 distant accessess for reading, creating, modifying and deleting
-multiple calendars.
+multiple calendars through a simplified CalDAV protocol.
+
+Data can be encrypted by SSL, and their access can be restricted thanks to
+different authentication methods.
+
 
 What Radicale will Be
 =====================

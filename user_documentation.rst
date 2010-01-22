@@ -4,7 +4,7 @@
 
 :Author: Guillaume Ayoub
 
-:Date: 2010-01-11
+:Date: 2010-01-22
 
 :Abstract: This document is a short description for installing and using the
  Radicale Calendar Server.
@@ -18,10 +18,15 @@ Dependencies
 ------------
 
 Radicale is written in pure python and does not depend on any librabry. It is
-known to work on Python 2.5, 2.6, 3.0 and 3.1.
+known to work on Python 2.5, 2.6, 3.0 and 3.1 [#]_.
 
 Linux users certainly have Python already installed. For Windows and MacOS
 users, please install Python [#]_ thanks to the adequate installer.
+
+
+.. [#] HTTPS support depends on the ``ssl`` module, only available from Python
+   2.6. Nevertheless, Radicale without TLS encryption works well with Python
+   2.5.
 
 .. [#] `Python download page <http://python.org/download/>`_.
 
@@ -52,7 +57,7 @@ Starting Server
 ---------------
 
 To start Radicale CalDAV server, you have to launch the file called
-``radicale.py`` located in the root folder of the software.
+``radicale.py`` located in the root folder of the software package.
 
 Using Sunbird
 -------------
@@ -94,19 +99,29 @@ Then, launching the server can be easily done by typing as a normal user::
 
   radicale
 
-.. note::
-   Radicale has no daemon mode yet. Please use external programs (such as
-   ``screen``) to use Radicale as a resident program.
-
 Configuring Server
 ------------------
 
-The server configuration can be modified in ``/etc/radicale.conf``. Here is the
-default configuration file, with the main parameters::
+Configuration File
+~~~~~~~~~~~~~~~~~~
+
+The server configuration can be modified in ``/etc/radicale.conf`` or in
+``~/.config/radicale/config``. Here is the default configuration file, with the
+main parameters::
 
   [server]
+  # CalDAV server hostname, empty means all hostnames
+  host = 
   # CalDAV server port
   port = 5232
+  # Daemon flag
+  daemon = False
+  # SSL flag, enable HTTPS protocol
+  ssl = False
+  # SSL certificate path (if needed)
+  certificate = /etc/apache2/ssl/server.crt
+  # SSL private key (if needed)
+  key = /etc/apache2/ssl/server.key
   
   [encoding]
   # Encoding for responding requests
@@ -114,12 +129,33 @@ default configuration file, with the main parameters::
   # Encoding for storing local calendars
   stock = utf-8
 
+  [acl]
+  # Access method
+  # Value: fake | htpasswd
+  type = fake
+  # Htpasswd filename (if needed)
+  filename = /etc/radicale/users
+  # Htpasswd encryption method (if needed)
+  # Value: plain | sha1 | crypt
+  encryption = crypt
+
   [support]
+  # Storage method
+  # Value: plain
+  type = plain
   # Folder for storing local calendars
   folder = ~/.config/radicale
-  # Default calendar path
+  # Default calendar path, automatically created if not present
   calendar = radicale/calendar
 
 This configuration file is read each time the server is launched. If some
 values are not given, the default ones are used. If no configuration file is
 available, all the default values are used.
+
+Command Line Options
+~~~~~~~~~~~~~~~~~~~~
+
+All the options of the ``server`` part can be changed with command line
+options. These options are available by typing::
+
+  radicale --help
