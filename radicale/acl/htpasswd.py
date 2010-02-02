@@ -40,7 +40,7 @@ def _crypt(hash, password):
     return crypt.crypt(password, hash) == hash
 
 def _sha1(hash, password):
-    hash = hash.lstrip("{SHA}").encode("ascii")
+    hash = hash.replace("{SHA}", "").encode("ascii")
     password = password.encode(config.get("encoding", "stock"))
     sha1 = hashlib.sha1()
     sha1.update(password)
