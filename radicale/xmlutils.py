@@ -24,33 +24,42 @@ XML and iCal requests manager.
 Note that all these functions need to receive unicode objects for full
 iCal requests (PUT) and string objects with charset correctly defined
 in them for XML requests (all but PUT).
+
 """
 
-# TODO: Manage errors (see __init__)
-# TODO: Manage depth and calendars/collections (see main)
+# TODO: Manage depth and calendars/collections
 
 import xml.etree.ElementTree as ET
 
 from radicale import client, config, ical
 
+
 # TODO: This is a well-known and accepted hack for ET to avoid ET from renaming
 #       namespaces, which is accepted in XML norm but often not in XML
 #       readers. Is there another clean solution to force namespaces?
-for key, value in config.items("namespace"):
+PROTECTED_NAMESPACES = {
+    "C": "urn:ietf:params:xml:ns:caldav",
+    "D": "DAV:",
+    "CS": "http://calendarserver.org/ns/"}
+for key, value in PROTECTED_NAMESPACES.items():
     ET._namespace_map[value] = key
+
 
 def _tag(short_name, local):
     """Get XML Clark notation {uri(``short_name``)}``local``."""
-    return "{%s}%s" % (config.get("namespace", short_name), local)
+    return "{%s}%s" % (PROTECTED_NAMESPACES[short_name], local)
+
 
 def _response(code):
     """Return full W3C names from HTTP status codes."""
     return "HTTP/1.1 %i %s" % (code, client.responses[code])
 
+
 def delete(obj, calendar, url):
     """Read and answer DELETE requests.
 
     Read rfc4918-9.6 for info.
+
     """
     # Reading request
     calendar.remove(obj)
@@ -74,13 +83,14 @@ def propfind(xml_request, calendar, url):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
+
     """
     # Reading request
     root = ET.fromstring(xml_request)
 
-    propElement = root.find(_tag("D", "prop"))
-    propList = propElement.getchildren()
-    properties = [property.tag for property in propList]
+    prop_element = root.find(_tag("D", "prop"))
+    prop_list = prop_element.getchildren()
+    props = [prop.tag for prop in prop_list]
     
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -97,30 +107,30 @@ def propfind(xml_request, calendar, url):
     prop = ET.Element(_tag("D", "prop"))
     propstat.append(prop)
 
-    if _tag("D", "resourcetype") in properties:
-        resourcetype = ET.Element(_tag("D", "resourcetype"))
-        resourcetype.append(ET.Element(_tag("C", "calendar")))
-        prop.append(resourcetype)
+    if _tag("D", "resourcetype") in props:
+        element = ET.Element(_tag("D", "resourcetype"))
+        element.append(ET.Element(_tag("C", "calendar")))
+        prop.append(element)
 
-    if _tag("D", "owner") in properties:
-        owner = ET.Element(_tag("D", "owner"))
-        owner.text = calendar.owner
-        prop.append(owner)
+    if _tag("D", "owner") in props:
+        element = ET.Element(_tag("D", "owner"))
+        element.text = calendar.owner
+        prop.append(element)
 
-    if _tag("D", "getcontenttype") in properties:
-        getcontenttype = ET.Element(_tag("D", "getcontenttype"))
-        getcontenttype.text = "text/calendar"
-        prop.append(getcontenttype)
+    if _tag("D", "getcontenttype") in props:
+        element = ET.Element(_tag("D", "getcontenttype"))
+        element.text = "text/calendar"
+        prop.append(element)
 
-    if _tag("D", "getetag") in properties:
-        getetag = ET.Element(_tag("D", "getetag"))
-        getetag.text = calendar.etag
-        prop.append(getetag)
+    if _tag("D", "getetag") in props:
+        element = ET.Element(_tag("D", "getetag"))
+        element.text = calendar.etag
+        prop.append(element)
 
-    if _tag("CS", "getctag") in properties:
-        getctag = ET.Element(_tag("CS", "getctag"))
-        getctag.text = calendar.ctag
-        prop.append(getctag)
+    if _tag("CS", "getctag") in props:
+        element = ET.Element(_tag("CS", "getctag"))
+        element.text = calendar.ctag
+        prop.append(element)
 
     status = ET.Element(_tag("D", "status"))
     status.text = _response(200)
@@ -128,40 +138,32 @@ def propfind(xml_request, calendar, url):
 
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
-def put(icalRequest, calendar, url, obj):
+def put(ical_request, calendar, url, obj):
     """Read PUT requests."""
     if obj:
         # PUT is modifying obj
-        calendar.replace(obj, icalRequest)
+        calendar.replace(obj, ical_request)
     else:
         # PUT is adding a new object
-        calendar.append(icalRequest)
+        calendar.append(ical_request)
 
 def report(xml_request, calendar, url):
     """Read and answer REPORT requests.
 
     Read rfc3253-3.6 for info.
+
     """
     # Reading request
     root = ET.fromstring(xml_request)
 
-    propElement = root.find(_tag("D", "prop"))
-    propList = propElement.getchildren()
-    properties = [property.tag for property in propList]
-
-    filters = {}
-    filterElement = root.find(_tag("C", "filter"))
-    filterList = propElement.getchildren()
-    # TODO: This should be recursive
-    # TODO: Really manage filters (see ical)
-    for filter in filterList:
-        sub = filters[filter.get("name")] = {}
-        for subfilter in filter.getchildren():
-            sub[subfilter.get("name")] = {}
+    prop_element = root.find(_tag("D", "prop"))
+    prop_list = prop_element.getchildren()
+    props = [prop.tag for prop in prop_list]
 
     if root.tag == _tag("C", "calendar-multiget"):
         # Read rfc4791-7.9 for info
-        hreferences = set([hrefElement.text for hrefElement in root.findall(_tag("D", "href"))])
+        hreferences = set([href_element.text for href_element
+                           in root.findall(_tag("D", "href"))])
     else:
         hreferences = [url]
 
@@ -173,12 +175,10 @@ def report(xml_request, calendar, url):
     #       Read rfc4791-9.[6|10] for info
     for hreference in hreferences:
         headers = ical.headers(calendar.vcalendar)
-        # TODO: Define timezones by obj
         timezones = ical.timezones(calendar.vcalendar)
 
-        objects = []
-        objects.extend(ical.events(calendar.vcalendar))
-        objects.extend(ical.todos(calendar.vcalendar))
+        objects = \
+            ical.events(calendar.vcalendar) + ical.todos(calendar.vcalendar)
 
         if not objects:
             # TODO: Read rfc4791-9.[6|10] to find a right answer
@@ -209,17 +209,16 @@ def report(xml_request, calendar, url):
             prop = ET.Element(_tag("D", "prop"))
             propstat.append(prop)
 
-            if _tag("D", "getetag") in properties:
-                # TODO: Can UID and ETAG be the same?
-                getetag = ET.Element(_tag("D", "getetag"))
-                getetag.text = obj.etag
-                prop.append(getetag)
+            if _tag("D", "getetag") in props:
+                element = ET.Element(_tag("D", "getetag"))
+                element.text = obj.etag
+                prop.append(element)
 
-            if _tag("C", "calendar-data") in properties:
-                cdata = ET.Element(_tag("C", "calendar-data"))
+            if _tag("C", "calendar-data") in props:
+                element = ET.Element(_tag("C", "calendar-data"))
                 # TODO: Maybe assume that events and todos are not the same
-                cdata.text = ical.write_calendar(headers, timezones, [obj])
-                prop.append(cdata)
+                element.text = ical.write_calendar(headers, timezones, [obj])
+                prop.append(element)
 
             status = ET.Element(_tag("D", "status"))
             status.text = _response(200)

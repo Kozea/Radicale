@@ -33,8 +33,6 @@ should have been included in this package.
 
 """
 
-# TODO: Manage errors (see xmlutils)
-
 import base64
 import socket
 try:
@@ -43,9 +41,10 @@ except ImportError:
     import httplib as client
     import BaseHTTPServer as server
 
-from radicale import acl, config, support, xmlutils
+from radicale import acl, calendar, config, support, xmlutils
 
-def check(request, function):
+
+def _check(request, function):
     """Check if user has sufficient rights for performing ``request``."""
     authorization = request.headers.get("Authorization", None)
     if authorization:
@@ -64,8 +63,6 @@ def check(request, function):
             "Basic realm=\"Radicale Server - Password Required\"")
         request.end_headers()
 
-# Decorator checking rights before performing request
-check_rights = lambda function: lambda request: check(request, function)
 
 class HTTPServer(server.HTTPServer):
     """HTTP server."""
@@ -73,6 +70,7 @@ class HTTPServer(server.HTTPServer):
         """Create server."""
         server.HTTPServer.__init__(self, address, handler)
         self.acl = acl.load()
+
 
 class HTTPSServer(HTTPServer):
     """HTTPS server."""
@@ -91,9 +89,13 @@ class HTTPSServer(HTTPServer):
         self.server_bind()
         self.server_activate()
 
+
 class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     """HTTP requests handler for calendars."""
     _encoding = config.get("encoding", "request")
+
+    # Decorator checking rights before performing request
+    check_rights = lambda function: lambda request: _check(request, function)
 
     @property
     def calendar(self):
@@ -109,9 +111,9 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         charsets = []
 
         # First append content charset given in the request
-        contentType = self.headers["Content-Type"]
-        if contentType and "charset=" in contentType:
-            charsets.append(contentType.split("charset=")[1].strip())
+        content_type = self.headers["Content-Type"]
+        if content_type and "charset=" in content_type:
+            charsets.append(content_type.split("charset=")[1].strip())
         # Then append default Radicale charset
         charsets.append(self._encoding)
         # Then append various fallbacks
@@ -126,10 +128,13 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
                 pass
         raise UnicodeDecodeError
 
+    # Naming methods ``do_*`` is OK here
+    # pylint: disable-msg=C0103
+
     @check_rights
     def do_GET(self):
         """Manage GET request."""
-        answer = self.calendar.vcalendar.encode(_encoding)
+        answer = self.calendar.vcalendar.encode(self._encoding)
 
         self.send_response(client.OK)
         self.send_header("Content-Length", len(answer))

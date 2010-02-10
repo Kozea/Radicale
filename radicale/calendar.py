@@ -22,11 +22,16 @@
 Radicale calendar classes.
 
 Define the main classes of a calendar as seen from the server.
+
 """
 
 from radicale import support
 
-hash_tag = lambda vcalendar: str(hash(vcalendar))
+
+def hash_tag(vcalendar):
+    """Hash an vcalendar string."""
+    return str(hash(vcalendar))
+
 
 class Calendar(object):
     """Internal calendar class."""
@@ -67,6 +72,7 @@ class Calendar(object):
         """Etag from calendar."""
         return '"%s"' % hash_tag(self.vcalendar)
 
+
 class Event(object):
     """Internal event class."""
     def __init__(self, vcalendar):
@@ -78,11 +84,13 @@ class Event(object):
         """Etag from event."""
         return '"%s"' % hash_tag(self.text)
 
+
 class Header(object):
     """Internal header class."""
     def __init__(self, vcalendar):
         """Initialize header from ``vcalendar``."""
         self.text = vcalendar
+
 
 class Timezone(object):
     """Internal timezone class."""
@@ -91,10 +99,11 @@ class Timezone(object):
         lines = vcalendar.splitlines()
         for line in lines:
             if line.startswith("TZID:"):
-                self.tzid = line.lstrip("TZID:")
+                self.id = line.lstrip("TZID:")
                 break
 
         self.text = vcalendar
+
 
 class Todo(object):
     """Internal todo class."""

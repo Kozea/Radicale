@@ -20,6 +20,7 @@
 
 """
 Plain text storage.
+
 """
 
 import os
@@ -28,39 +29,47 @@ import codecs
 
 from radicale import config, ical
 
-_folder = os.path.expanduser(config.get("support", "folder"))
+FOLDER = os.path.expanduser(config.get("support", "folder"))
+DEFAULT_CALENDAR = config.get("support", "calendar")
+
 
 def _open(path, mode="r"):
+    """Open file at ``path`` with ``mode``, automagically managing encoding."""
     return codecs.open(path, mode, config.get("encoding", "stock"))
+
 
 def calendars():
     """List available calendars paths."""
-    calendars = []
+    available_calendars = []
 
-    for folder in os.listdir(_folder):
-        for cal in os.listdir(os.path.join(_folder, folder)):
-            calendars.append(posixpath.join(folder, cal))
+    for filename in os.listdir(FOLDER):
+        if os.path.isdir(os.path.join(FOLDER, filename)):
+            for cal in os.listdir(os.path.join(FOLDER, filename)):
+                available_calendars.append(posixpath.join(filename, cal))
 
-    return calendars
+    return available_calendars
+
 
 def mkcalendar(name):
     """Write a new calendar called ``name``."""
     user, cal = name.split(posixpath.sep)
-    if not os.path.exists(os.path.join(_folder, user)):
-        os.makedirs(os.path.join(_folder, user))
-    fd = _open(os.path.join(_folder, user, cal), "w")
-    fd.write(ical.write_calendar())
+    if not os.path.exists(os.path.join(FOLDER, user)):
+        os.makedirs(os.path.join(FOLDER, user))
+    descriptor = _open(os.path.join(FOLDER, user, cal), "w")
+    descriptor.write(ical.write_calendar())
+
 
 def read(cal):
     """Read calendar ``cal``."""
-    path = os.path.join(_folder, cal.replace(posixpath.sep, os.path.sep))
+    path = os.path.join(FOLDER, cal.replace(posixpath.sep, os.path.sep))
     return _open(path).read()
+
 
 def append(cal, vcalendar):
     """Append ``vcalendar`` to ``cal``."""
     old_calendar = read(cal)
-    old_tzs = [tz.tzid for tz in ical.timezones(old_calendar)]
-    path = os.path.join(_folder, cal.replace(posixpath.sep, os.path.sep))
+    old_timezones = [timezone.id for timezone in ical.timezones(old_calendar)]
+    path = os.path.join(FOLDER, cal.replace(posixpath.sep, os.path.sep))
 
     old_objects = []
     old_objects.extend([event.etag for event in ical.events(old_calendar)])
@@ -70,37 +79,36 @@ def append(cal, vcalendar):
     objects.extend(ical.events(vcalendar))
     objects.extend(ical.todos(vcalendar))
 
-    for tz in ical.timezones(vcalendar):
-        if tz.tzid not in old_tzs:
-            # TODO: Manage position and EOL
-            fd = _open(path)
-            lines = [line for line in fd.readlines() if line]
-            fd.close()
+    for timezone in ical.timezones(vcalendar):
+        if timezone.id not in old_timezones:
+            descriptor = _open(path)
+            lines = [line for line in descriptor.readlines() if line]
+            descriptor.close()
 
-            for i,line in enumerate(tz.text.splitlines()):
+            for i, line in enumerate(timezone.text.splitlines()):
                 lines.insert(2 + i, line + "\n")
 
-            fd = _open(path, "w")
-            fd.writelines(lines)
-            fd.close()
+            descriptor = _open(path, "w")
+            descriptor.writelines(lines)
+            descriptor.close()
 
     for obj in objects:
         if obj.etag not in old_objects:
-            # TODO: Manage position and EOL
-            fd = _open(path)
-            lines = [line for line in fd.readlines() if line]
-            fd.close()
+            descriptor = _open(path)
+            lines = [line for line in descriptor.readlines() if line]
+            descriptor.close()
 
             for line in obj.text.splitlines():
                 lines.insert(-1, line + "\n")
 
-            fd = _open(path, "w")
-            fd.writelines(lines)
-            fd.close()
+            descriptor = _open(path, "w")
+            descriptor.writelines(lines)
+            descriptor.close()
+
 
 def remove(cal, etag):
     """Remove object named ``etag`` from ``cal``."""
-    path = os.path.join(_folder, cal.replace(posixpath.sep, os.path.sep))
+    path = os.path.join(FOLDER, cal.replace(posixpath.sep, os.path.sep))
 
     cal = read(cal)
 
@@ -109,11 +117,12 @@ def remove(cal, etag):
     todos = [todo for todo in ical.todos(cal) if todo.etag != etag]
     events = [event for event in ical.events(cal) if event.etag != etag]
 
-    fd = _open(path, "w")
-    fd.write(ical.write_calendar(headers, timezones, todos, events))
-    fd.close()
+    descriptor = _open(path, "w")
+    descriptor.write(ical.write_calendar(headers, timezones, todos, events))
+    descriptor.close()
 
-if config.get("support", "calendar"):
-    user, cal = config.get("support", "calendar").split(posixpath.sep)
-    if not os.path.exists(os.path.join(_folder, user, cal)):
-        mkcalendar(config.get("support", "calendar"))
+
+# Create default calendar if not present
+if DEFAULT_CALENDAR:
+    if DEFAULT_CALENDAR not in calendars():
+        mkcalendar(DEFAULT_CALENDAR)

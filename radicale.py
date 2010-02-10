@@ -19,16 +19,21 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+# This file is just a script, allow [a-z0-9]* variable names
+# pylint: disable-msg=C0103
+
+# ``import radicale`` refers to the ``radicale`` module, not ``radicale.py`` 
+# pylint: disable-msg=W0406
+
 """
 Radicale Server entry point.
 
 Launch the Radicale Serve according to configuration and command-line
 arguments.
+
 """
 
-# TODO: Manage depth and calendars/collections (see xmlutils)
 # TODO: Manage smart and configurable logs
-# TODO: Manage authentication
 
 import os
 import sys
@@ -62,7 +67,7 @@ parser.add_option(
     "-c", "--certificate",
     default=radicale.config.get("server", "certificate"),
     help="certificate file ")
-options, args = parser.parse_args()
+options = parser.parse_args()[0]
 
 # Update Radicale configuration according to options
 for option in parser.option_list:
@@ -79,5 +84,6 @@ if options.daemon:
 
 # Launch calendar server
 server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
-server = server_class((options.host, options.port), radicale.CalendarHTTPHandler)
+server = server_class(
+    (options.host, options.port), radicale.CalendarHTTPHandler)
 server.serve_forever()

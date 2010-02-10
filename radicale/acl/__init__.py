@@ -23,11 +23,14 @@ Users and rights management.
 
 This module loads a list of users with access rights, according to the acl
 configuration.
+
 """
 
 from radicale import config
 
+
 def load():
+    """Load list of available ACL managers."""
     module = __import__("radicale.acl", globals(), locals(),
                         [config.get("acl", "type")])
     return getattr(module, config.get("acl", "type"))

@@ -20,11 +20,13 @@
 
 """
 Calendar storage support configuration.
+
 """
 
 from radicale import config
 
 def load():
+    """Load list of available storage support managers."""
     module = __import__("radicale.support", globals(), locals(),
                         [config.get("support", "type")])
     return getattr(module, config.get("support", "type"))

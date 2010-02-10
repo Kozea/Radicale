@@ -20,18 +20,19 @@
 
 """
 iCal parsing functions.
+
 """
 
 # TODO: Manage filters (see xmlutils)
 
 from radicale import calendar
 
-def write_calendar(headers=[
+
+def write_calendar(headers=(
         calendar.Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
-        calendar.Header("VERSION:2.0")],
-                  timezones=[], todos=[], events=[]):
-    """Create calendar from ``headers``, ``timezones``, ``todos``, ``events``."""
-    # TODO: Manage encoding and EOL
+        calendar.Header("VERSION:2.0")),
+                   timezones=(), todos=(), events=()):
+    """Create calendar from given parameters."""
     cal = "\n".join((
         "BEGIN:VCALENDAR",
         "\n".join([header.text for header in headers]),
@@ -41,44 +42,57 @@ def write_calendar(headers=[
         "END:VCALENDAR"))
     return "\n".join([line for line in cal.splitlines() if line])
 
-def headers(vcalendar):
-    """Find Headers items in ``vcalendar``."""
-    headers = []
-
-    lines = vcalendar.splitlines()
-    for line in lines:
-        if line.startswith("PRODID:"):
-            headers.append(calendar.Header(line))
-    for line in lines:
-        if line.startswith("VERSION:"):
-            headers.append(calendar.Header(line))
-
-    return headers
 
 def _parse(vcalendar, tag, obj):
     """Find ``tag`` items in ``vcalendar``.
     
     Return a list of items of type ``obj``.
+
     """
     items = []
 
     lines = vcalendar.splitlines()
-    inItem = False
-    itemLines = []
+    in_item = False
+    item_lines = []
 
     for line in lines:
         if line.startswith("BEGIN:%s" % tag):
-            inItem = True
-            itemLines = []
+            in_item = True
+            item_lines = []
 
-        if inItem:
-            # TODO: Manage encoding
-            itemLines.append(line)
+        if in_item:
+            item_lines.append(line)
             if line.startswith("END:%s" % tag):
-                items.append(obj("\n".join(itemLines)))
+                items.append(obj("\n".join(item_lines)))
 
     return items
 
-events = lambda vcalendar: _parse(vcalendar, "VEVENT", calendar.Event)
-todos = lambda vcalendar: _parse(vcalendar, "VTODO", calendar.Todo)
-timezones = lambda vcalendar: _parse(vcalendar, "VTIMEZONE", calendar.Timezone)
+
+def headers(vcalendar):
+    """Find Headers items in ``vcalendar``."""
+    header_lines = []
+
+    lines = vcalendar.splitlines()
+    for line in lines:
+        if line.startswith("PRODID:"):
+            header_lines.append(calendar.Header(line))
+    for line in lines:
+        if line.startswith("VERSION:"):
+            header_lines.append(calendar.Header(line))
+
+    return header_lines
+
+
+def events(vcalendar):
+    """Get list of ``Event`` from VEVENTS items in ``vcalendar``."""
+    return _parse(vcalendar, "VEVENT", calendar.Event)
+
+
+def todos(vcalendar):
+    """Get list of ``Todo`` from VTODO items in ``vcalendar``."""
+    return _parse(vcalendar, "VTODO", calendar.Todo)
+
+
+def timezones(vcalendar):
+    """Get list of ``Timezome`` from VTIMEZONE items in ``vcalendar``."""
+    return _parse(vcalendar, "VTIMEZONE", calendar.Timezone)

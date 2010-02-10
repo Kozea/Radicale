@@ -33,27 +33,35 @@ import hashlib
 
 from radicale import config
 
-def _plain(hash, password):
-    return hash == password
 
-def _crypt(hash, password):
-    return crypt.crypt(password, hash) == hash
+FILENAME = config.get("acl", "filename")
+CHECK_PASSWORD = locals()["_%s" % config.get("acl", "encryption")]
 
-def _sha1(hash, password):
-    hash = hash.replace("{SHA}", "").encode("ascii")
+
+def _plain(hash_value, password):
+    """Check if ``hash_value`` and ``password`` match using plain method."""
+    return hash_value == password
+
+
+def _crypt(hash_value, password):
+    """Check if ``hash_value`` and ``password`` match using crypt method."""
+    return crypt.crypt(password, hash_value) == hash_value
+
+
+def _sha1(hash_value, password):
+    """Check if ``hash_value`` and ``password`` match using sha1 method."""
+    hash_value = hash_value.replace("{SHA}", "").encode("ascii")
     password = password.encode(config.get("encoding", "stock"))
     sha1 = hashlib.sha1()
     sha1.update(password)
-    return sha1.digest() == base64.b64decode(hash)
+    return sha1.digest() == base64.b64decode(hash_value)
 
-_filename = config.get("acl", "filename")
-_check_password = locals()["_%s" % config.get("acl", "encryption")]
 
 def has_right(user, password):
     """Check if ``user``/``password`` couple is valid."""
-    for line in open(_filename).readlines():
+    for line in open(FILENAME).readlines():
         if line.strip():
-            login, hash = line.strip().split(":")
+            login, hash_value = line.strip().split(":")
             if login == user:
-                return _check_password(hash, password)
+                return CHECK_PASSWORD(hash_value, password)
     return False

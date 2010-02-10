@@ -22,26 +22,21 @@
 Radicale configuration module.
 
 Give a configparser-like interface to read and write configuration.
+
 """
 
 # TODO: Use abstract filenames for other platforms
 
 import os
+import sys
 try:
     from configparser import RawConfigParser as ConfigParser
 except ImportError:
     from ConfigParser import RawConfigParser as ConfigParser
 
-_config = ConfigParser()
-get = _config.get
-set = _config.set
-getboolean = _config.getboolean
-getint = _config.getint
-getfloat = _config.getfloat
-options = _config.options
-items = _config.items
 
-_initial = {
+# Default configuration
+INITIAL_CONFIG = {
     "server": {
         "host": "",
         "port": "5232",
@@ -49,16 +44,10 @@ _initial = {
         "ssl": "False",
         "certificate": "/etc/apache2/ssl/server.crt",
         "key": "/etc/apache2/ssl/server.key",
-        #"log": "/var/www/radicale/server.log",
         },
     "encoding": {
         "request": "utf-8",
         "stock": "utf-8",
-        },
-    "namespace": {
-        "C": "urn:ietf:params:xml:ns:caldav",
-        "D": "DAV:",
-        "CS": "http://calendarserver.org/ns/",
         },
     "acl": {
         "type": "fake",
@@ -68,14 +57,20 @@ _initial = {
     "support": {
         "type": "plain",
         "folder": os.path.expanduser("~/.config/radicale"),
-        "calendar": "radicale/calendar",
+        "calendar": "radicale/cal",
         },
     }
 
-for section, values in _initial.items():
-    _config.add_section(section)
-    for key, value in values.items():
-        _config.set(section, key, value)
+# Create a ConfigParser and configure it
+_CONFIG = ConfigParser()
 
-_config.read("/etc/radicale/config")
-_config.read(os.path.expanduser("~/.config/radicale/config"))
+for section, values in INITIAL_CONFIG.items():
+    _CONFIG.add_section(section)
+    for key, value in values.items():
+        _CONFIG.set(section, key, value)
+
+_CONFIG.read("/etc/radicale/config")
+_CONFIG.read(os.path.expanduser("~/.config/radicale/config"))
+
+# Wrap config module into ConfigParser instance
+sys.modules[__name__] = _CONFIG
