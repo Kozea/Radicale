@@ -140,6 +140,7 @@ def propfind(xml_request, calendar, url):
 
 def put(ical_request, calendar, url, obj):
     """Read PUT requests."""
+    # TODO: use url to set hreference
     if obj:
         # PUT is modifying obj
         calendar.replace(obj, ical_request)
@@ -174,11 +175,10 @@ def report(xml_request, calendar, url):
     #       is that really what is needed?
     #       Read rfc4791-9.[6|10] for info
     for hreference in hreferences:
-        headers = ical.headers(calendar.vcalendar)
-        timezones = ical.timezones(calendar.vcalendar)
+        headers = ical.headers(calendar.text)
+        timezones = ical.timezones(calendar.text)
 
-        objects = \
-            ical.events(calendar.vcalendar) + ical.todos(calendar.vcalendar)
+        objects = ical.events(calendar.text) + ical.todos(calendar.text)
 
         if not objects:
             # TODO: Read rfc4791-9.[6|10] to find a right answer

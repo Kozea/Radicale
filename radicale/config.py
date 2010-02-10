@@ -29,10 +29,13 @@ Give a configparser-like interface to read and write configuration.
 
 import os
 import sys
+# Manage Python2/3 different modules
+# pylint: disable-msg=F0401
 try:
     from configparser import RawConfigParser as ConfigParser
 except ImportError:
     from ConfigParser import RawConfigParser as ConfigParser
+# pylint: enable-msg=F0401
 
 
 # Default configuration
@@ -43,34 +46,27 @@ INITIAL_CONFIG = {
         "daemon": "False",
         "ssl": "False",
         "certificate": "/etc/apache2/ssl/server.crt",
-        "key": "/etc/apache2/ssl/server.key",
-        },
+        "key": "/etc/apache2/ssl/server.key"},
     "encoding": {
         "request": "utf-8",
-        "stock": "utf-8",
-        },
+        "stock": "utf-8"},
     "acl": {
         "type": "fake",
         "filename": "/etc/radicale/users",
-        "encryption": "crypt",
-        },
-    "support": {
-        "type": "plain",
-        "folder": os.path.expanduser("~/.config/radicale"),
-        "calendar": "radicale/cal",
-        },
-    }
+        "encryption": "crypt"},
+    "storage": {
+        "folder": os.path.expanduser("~/.config/radicale/calendars")}}
 
 # Create a ConfigParser and configure it
-_CONFIG = ConfigParser()
+_CONFIG_PARSER = ConfigParser()
 
 for section, values in INITIAL_CONFIG.items():
-    _CONFIG.add_section(section)
+    _CONFIG_PARSER.add_section(section)
     for key, value in values.items():
-        _CONFIG.set(section, key, value)
+        _CONFIG_PARSER.set(section, key, value)
 
-_CONFIG.read("/etc/radicale/config")
-_CONFIG.read(os.path.expanduser("~/.config/radicale/config"))
+_CONFIG_PARSER.read("/etc/radicale/config")
+_CONFIG_PARSER.read(os.path.expanduser("~/.config/radicale/config"))
 
 # Wrap config module into ConfigParser instance
-sys.modules[__name__] = _CONFIG
+sys.modules[__name__] = _CONFIG_PARSER

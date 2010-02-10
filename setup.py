@@ -69,7 +69,7 @@ setup(
     author_email="guillaume.ayoub@kozea.fr",
     url="http://www.radicale.org/",
     license="GNU GPL v3",
-    packages=["radicale", "radicale.acl", "radicale.support"],
+    packages=["radicale", "radicale.acl"],
     scripts=["radicale.py"],
     cmdclass={'clean': Clean,
               "build_scripts": BuildScripts})

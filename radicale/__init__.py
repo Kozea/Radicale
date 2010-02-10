@@ -33,15 +33,19 @@ should have been included in this package.
 
 """
 
+import os
 import base64
 import socket
+# Manage Python2/3 different modules
+# pylint: disable-msg=F0401
 try:
     from http import client, server
 except ImportError:
     import httplib as client
     import BaseHTTPServer as server
+# pylint: enable-msg=F0401
 
-from radicale import acl, calendar, config, support, xmlutils
+from radicale import acl, calendar, config, xmlutils
 
 
 def _check(request, function):
@@ -77,7 +81,9 @@ class HTTPSServer(HTTPServer):
     def __init__(self, address, handler):
         """Create server by wrapping HTTP socket in an SSL socket."""
         # Fails with Python 2.5, import if needed
+        # pylint: disable-msg=F0401
         import ssl
+        # pylint: enable-msg=F0401
 
         HTTPServer.__init__(self, address, handler)
         self.socket = ssl.wrap_socket(
@@ -98,14 +104,15 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     check_rights = lambda function: lambda request: _check(request, function)
 
     @property
-    def calendar(self):
+    def _calendar(self):
         """The ``calendar.Calendar`` object corresponding to the given path."""
-        path = self.path.strip("/").split("/")
-        if len(path) >= 2:
-            cal = "%s/%s" % (path[0], path[1])
-            return calendar.Calendar("radicale", cal)
+        # ``normpath`` should clean malformed and malicious request paths
+        attributes = os.path.normpath(self.path.strip("/")).split("/")
+        if len(attributes) >= 2:
+            path = "%s/%s" % (attributes[0], attributes[1])
+            return calendar.Calendar(path)
 
-    def decode(self, text):
+    def _decode(self, text):
         """Try to decode text according to various parameters."""
         # List of charsets to try
         charsets = []
@@ -134,7 +141,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_GET(self):
         """Manage GET request."""
-        answer = self.calendar.vcalendar.encode(self._encoding)
+        answer = self._calendar.read().encode(self._encoding)
 
         self.send_response(client.OK)
         self.send_header("Content-Length", len(answer))
@@ -145,7 +152,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     def do_DELETE(self):
         """Manage DELETE request."""
         obj = self.headers.get("If-Match", None)
-        answer = xmlutils.delete(obj, self.calendar, self.path)
+        answer = xmlutils.delete(obj, self._calendar, self.path)
 
         self.send_response(client.NO_CONTENT)
         self.send_header("Content-Length", len(answer))
@@ -162,7 +169,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     def do_PROPFIND(self):
         """Manage PROPFIND request."""
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
-        answer = xmlutils.propfind(xml_request, self.calendar, self.path)
+        answer = xmlutils.propfind(xml_request, self._calendar, self.path)
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("DAV", "1, calendar-access")
@@ -173,10 +180,10 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_PUT(self):
         """Manage PUT request."""
-        ical_request = self.decode(
+        ical_request = self._decode(
             self.rfile.read(int(self.headers["Content-Length"])))
         obj = self.headers.get("If-Match", None)
-        xmlutils.put(ical_request, self.calendar, self.path, obj)
+        xmlutils.put(ical_request, self._calendar, self.path, obj)
 
         self.send_response(client.CREATED)
 
@@ -184,9 +191,11 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     def do_REPORT(self):
         """Manage REPORT request."""
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
-        answer = xmlutils.report(xml_request, self.calendar, self.path)
+        answer = xmlutils.report(xml_request, self._calendar, self.path)
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("Content-Length", len(answer))
         self.end_headers()
         self.wfile.write(answer)
+
+    # pylint: enable-msg=C0103

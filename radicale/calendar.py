@@ -25,93 +25,209 @@ Define the main classes of a calendar as seen from the server.
 
 """
 
-from radicale import support
+import os
+import codecs
+
+from radicale import config
 
 
-def hash_tag(vcalendar):
-    """Hash an vcalendar string."""
-    return str(hash(vcalendar))
+FOLDER = os.path.expanduser(config.get("storage", "folder"))
+    
 
-
-class Calendar(object):
-    """Internal calendar class."""
-    def __init__(self, user, cal):
-        """Initialize the calendar with ``cal`` and ``user`` parameters."""
-        # TODO: Use properties from the calendar configuration
-        self.support = support.load()
-        self.encoding = "utf-8"
-        self.owner = "radicale"
-        self.user = user
-        self.cal = cal
-        self.version = "2.0"
-        self.ctag = hash_tag(self.vcalendar)
-
-    def append(self, vcalendar):
-        """Append vcalendar to the calendar."""
-        self.ctag = hash_tag(self.vcalendar)
-        self.support.append(self.cal, vcalendar)
-
-    def remove(self, uid):
-        """Remove object named ``uid`` from the calendar."""
-        self.ctag = hash_tag(self.vcalendar)
-        self.support.remove(self.cal, uid)
-
-    def replace(self, uid, vcalendar):
-        """Replace objet named ``uid`` by ``vcalendar`` in the calendar."""
-        self.ctag = hash_tag(self.vcalendar)
-        self.support.remove(self.cal, uid)
-        self.support.append(self.cal, vcalendar)
-
-    @property
-    def vcalendar(self):
-        """Unicode calendar from the calendar."""
-        return self.support.read(self.cal)
-
-    @property
-    def etag(self):
-        """Etag from calendar."""
-        return '"%s"' % hash_tag(self.vcalendar)
-
-
-class Event(object):
-    """Internal event class."""
-    def __init__(self, vcalendar):
-        """Initialize event from ``vcalendar``."""
-        self.text = vcalendar
-
-    @property
-    def etag(self):
-        """Etag from event."""
-        return '"%s"' % hash_tag(self.text)
+# This function overrides the builtin ``open`` function for this module
+# pylint: disable-msg=W0622
+def open(path, mode="r"):
+    """Open file at ``path`` with ``mode``, automagically managing encoding."""
+    return codecs.open(path, mode, config.get("encoding", "stock"))
+# pylint: enable-msg=W0622
 
 
 class Header(object):
     """Internal header class."""
-    def __init__(self, vcalendar):
-        """Initialize header from ``vcalendar``."""
-        self.text = vcalendar
+    def __init__(self, text):
+        """Initialize header from ``text``."""
+        self.text = text
 
 
-class Timezone(object):
-    """Internal timezone class."""
-    def __init__(self, vcalendar):
-        """Initialize timezone from ``vcalendar``."""
-        lines = vcalendar.splitlines()
-        for line in lines:
-            if line.startswith("TZID:"):
-                self.id = line.lstrip("TZID:")
-                break
+class Event(object):
+    """Internal event class."""
+    tag = "VEVENT"
 
-        self.text = vcalendar
+    def __init__(self, text):
+        """Initialize event from ``text``."""
+        self.text = text
+
+    @property
+    def etag(self):
+        """Etag from event."""
+        return '"%s"' % hash(self.text)
 
 
 class Todo(object):
     """Internal todo class."""
-    def __init__(self, vcalendar):
-        """Initialize todo from ``vcalendar``."""
-        self.text = vcalendar
+    # This is not a TODO!
+    # pylint: disable-msg=W0511
+    tag = "VTODO"
+    # pylint: enable-msg=W0511
+
+    def __init__(self, text):
+        """Initialize todo from ``text``."""
+        self.text = text
 
     @property
     def etag(self):
         """Etag from todo."""
-        return hash_tag(self.text)
+        return '"%s"' % hash(self.text)
+
+
+class Timezone(object):
+    """Internal timezone class."""
+    tag = "VTIMEZONE"
+
+    def __init__(self, text):
+        """Initialize timezone from ``text``."""
+        lines = text.splitlines()
+        for line in lines:
+            if line.startswith("TZID:"):
+                self.name = line.replace("TZID:", "")
+                break
+
+        self.text = text
+
+
+class Calendar(object):
+    """Internal calendar class."""
+    def __init__(self, path):
+        """Initialize the calendar with ``cal`` and ``user`` parameters."""
+        # TODO: Use properties from the calendar configuration
+        self.encoding = "utf-8"
+        self.owner = path.split("/")[0]
+        self.path = os.path.join(FOLDER, path.replace("/", os.path.sep))
+        self.ctag = self.etag
+
+    @staticmethod
+    def _parse(text, obj):
+        """Find ``obj.tag`` items in ``text`` text.
+
+        Return a list of items of type ``obj``.
+
+        """
+        items = []
+
+        lines = text.splitlines()
+        in_item = False
+        item_lines = []
+
+        for line in lines:
+            if line.startswith("BEGIN:%s" % obj.tag):
+                in_item = True
+                item_lines = []
+
+            if in_item:
+                item_lines.append(line)
+                if line.startswith("END:%s" % obj.tag):
+                    items.append(obj("\n".join(item_lines)))
+
+        return items
+
+    def append(self, text):
+        """Append ``text`` to calendar."""
+        self.ctag = self.etag
+
+        timezones = self.timezones
+        events = self.events
+        todos = self.todos
+
+        for new_timezone in self._parse(text, Timezone):
+            if new_timezone.name not in [timezone.name
+                                         for timezone in timezones]:
+                timezones.append(new_timezone)
+
+        for new_event in self._parse(text, Event):
+            if new_event.etag not in [event.etag for event in events]:
+                events.append(new_event)
+
+        for new_todo in self._parse(text, Todo):
+            if new_todo.etag not in [todo.etag for todo in todos]:
+                todos.append(new_todo)
+
+        self.write(timezones=timezones, events=events, todos=todos)
+
+    def remove(self, etag):
+        """Remove object named ``etag`` from the calendar."""
+        self.ctag = self.etag
+        todos = [todo for todo in self.todos if todo.etag != etag]
+        events = [event for event in self.events if event.etag != etag]
+
+        self.write(todos=todos, events=events)
+
+    def replace(self, etag, text):
+        """Replace objet named ``etag`` by ``text`` in the calendar."""
+        self.ctag = self.etag
+        self.remove(etag)
+        self.append(text)
+
+    def write(self, headers=None, timezones=None, events=None, todos=None):
+        """Write calendar with given parameters."""
+        headers = headers or self.headers or (
+            Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
+            Header("VERSION:2.0"))
+        timezones = timezones or self.timezones
+        events = events or self.events
+        todos = todos or self.todos
+
+        # Create folder if absent
+        if not os.path.exists(os.path.dirname(self.path)):
+            os.makedirs(os.path.dirname(self.path))
+            
+        text = "\n".join((
+                "BEGIN:VCALENDAR",
+                "\n".join([header.text for header in headers]),
+                "\n".join([timezone.text for timezone in timezones]),
+                "\n".join([todo.text for todo in todos]),
+                "\n".join([event.text for event in events]),
+                "END:VCALENDAR"))
+        return open(self.path, "w").write(text)
+
+    @property
+    def etag(self):
+        """Etag from calendar."""
+        return '"%s"' % hash(self.text)
+
+    @property
+    def text(self):
+        """Calendar as plain text."""
+        try:
+            return open(self.path).read()
+        except IOError:
+            return ""
+
+    @property
+    def headers(self):
+        """Find headers items in calendar."""
+        header_lines = []
+
+        lines = self.text.splitlines()
+        for line in lines:
+            if line.startswith("PRODID:"):
+                header_lines.append(Header(line))
+        for line in lines:
+            if line.startswith("VERSION:"):
+                header_lines.append(Header(line))
+
+        return header_lines
+
+    @property
+    def events(self):
+        """Get list of ``Event`` items in calendar."""
+        return self._parse(self.text, Event)
+
+    @property
+    def todos(self):
+        """Get list of ``Todo`` items in calendar."""
+        return self._parse(self.text, Todo)
+
+    @property
+    def timezones(self):
+        """Get list of ``Timezome`` items in calendar."""
+        return self._parse(self.text, Timezone)
