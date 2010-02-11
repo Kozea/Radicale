@@ -4,7 +4,7 @@
 
 :Author: Guillaume Ayoub
 
-:Date: 2010-01-22
+:Date: 2010-02-11
 
 :Abstract: This document is a short description for installing and using the
  Radicale Calendar Server.
@@ -68,8 +68,10 @@ otherwise Sunbird will use its own file system storage instead of Radicale's
 one and your calendar won't be remotely accessible.
 
 Next window asks you to provide information about remote calendar
-access. Protocol used by Radicale is ``CalDAV``. Standard location for a basic
-use of a Radicale calendar is ``http://localhost:5232/radicale/calendar``.
+access. Protocol used by Radicale is ``CalDAV``. A standard location for a basic
+use of a Radicale calendar is ``http://localhost:5232/user/calendar``, where
+you can replace ``user`` and ``calendar`` by some strings of your
+choice. Calendars are automatically created if needed.
 
 You can now customize your calendar by giving it a nickname and a color. This
 is only used by Sunbird to identify calendars among others.
@@ -143,10 +145,8 @@ main parameters::
   # Storage method
   # Value: plain
   type = plain
-  # Folder for storing local calendars
-  folder = ~/.config/radicale
-  # Default calendar path, automatically created if not present
-  calendar = radicale/calendar
+  # Folder for storing local calendars, created in not present
+  folder = ~/.config/radicale/calendars
 
 This configuration file is read each time the server is launched. If some
 values are not given, the default ones are used. If no configuration file is
