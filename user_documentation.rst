@@ -141,10 +141,7 @@ main parameters::
   # Value: plain | sha1 | crypt
   encryption = crypt
 
-  [support]
-  # Storage method
-  # Value: plain
-  type = plain
+  [storage]
   # Folder for storing local calendars, created in not present
   folder = ~/.config/radicale/calendars
 
