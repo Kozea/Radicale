@@ -45,7 +45,7 @@ except ImportError:
     import BaseHTTPServer as server
 # pylint: enable-msg=F0401
 
-from radicale import acl, calendar, config, xmlutils
+from radicale import acl, config, ical, xmlutils
 
 
 def _check(request, function):
@@ -105,12 +105,12 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
 
     @property
     def _calendar(self):
-        """The ``calendar.Calendar`` object corresponding to the given path."""
+        """The ``ical.Calendar`` object corresponding to the given path."""
         # ``normpath`` should clean malformed and malicious request paths
         attributes = os.path.normpath(self.path.strip("/")).split("/")
         if len(attributes) >= 2:
             path = "%s/%s" % (attributes[0], attributes[1])
-            return calendar.Calendar(path)
+            return ical.Calendar(path)
 
     def _decode(self, text):
         """Try to decode text according to various parameters."""

@@ -175,10 +175,7 @@ def report(xml_request, calendar, url):
     #       is that really what is needed?
     #       Read rfc4791-9.[6|10] for info
     for hreference in hreferences:
-        headers = ical.headers(calendar.text)
-        timezones = ical.timezones(calendar.text)
-
-        objects = ical.events(calendar.text) + ical.todos(calendar.text)
+        objects = calendar.events + calendar.todos
 
         if not objects:
             # TODO: Read rfc4791-9.[6|10] to find a right answer
@@ -216,8 +213,12 @@ def report(xml_request, calendar, url):
 
             if _tag("C", "calendar-data") in props:
                 element = ET.Element(_tag("C", "calendar-data"))
-                # TODO: Maybe assume that events and todos are not the same
-                element.text = ical.write_calendar(headers, timezones, [obj])
+                if isinstance(obj, ical.Event):
+                    element.text = ical.serialize(
+                        calendar.headers, calendar.timezones, events=[obj])
+                elif isinstance(obj, ical.Todo):
+                    element.text = ical.serialize(
+                        calendar.headers, calendar.timezones, todos=[obj])
                 prop.append(element)
 
             status = ET.Element(_tag("D", "status"))

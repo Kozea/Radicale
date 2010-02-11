@@ -42,6 +42,15 @@ def open(path, mode="r"):
 # pylint: enable-msg=W0622
 
 
+def serialize(headers=(), timezones=(), events=(), todos=()):
+    items = ["BEGIN:VCALENDAR"]
+    for part in (headers, timezones, todos, events):
+        if part:
+            items.append("\n".join(item.text for item in part))
+    items.append("END:VCALENDAR")
+    return "\n".join(items)
+
+
 class Header(object):
     """Internal header class."""
     def __init__(self, text):
@@ -179,14 +188,8 @@ class Calendar(object):
         # Create folder if absent
         if not os.path.exists(os.path.dirname(self.path)):
             os.makedirs(os.path.dirname(self.path))
-            
-        text = "\n".join((
-                "BEGIN:VCALENDAR",
-                "\n".join([header.text for header in headers]),
-                "\n".join([timezone.text for timezone in timezones]),
-                "\n".join([todo.text for todo in todos]),
-                "\n".join([event.text for event in events]),
-                "END:VCALENDAR"))
+        
+        text = serialize(headers, timezones, events, todos)
         return open(self.path, "w").write(text)
 
     @property
