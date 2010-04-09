@@ -54,7 +54,7 @@ def _check(request, function):
     authorization = request.headers.get("Authorization", None)
     if authorization:
         challenge = authorization.lstrip("Basic").strip().encode("ascii")
-        plain = request.decode(base64.b64decode(challenge))
+        plain = request._decode(base64.b64decode(challenge))
         user, password = plain.split(":")
     else:
         user = password = None
