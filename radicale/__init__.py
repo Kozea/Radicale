@@ -141,7 +141,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_GET(self):
         """Manage GET request."""
-        answer = self._calendar.read().encode(self._encoding)
+        answer = self._calendar.text.encode(self._encoding)
 
         self.send_response(client.OK)
         self.send_header("Content-Length", len(answer))
