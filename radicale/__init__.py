@@ -34,6 +34,7 @@ should have been included in this package.
 """
 
 import os
+import posixpath
 import base64
 import socket
 # Manage Python2/3 different modules
@@ -106,8 +107,9 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @property
     def _calendar(self):
         """The ``ical.Calendar`` object corresponding to the given path."""
+        # ``self.path`` must be something like a posix path
         # ``normpath`` should clean malformed and malicious request paths
-        attributes = os.path.normpath(self.path.strip("/")).split("/")
+        attributes = posixpath.normpath(self.path.strip("/")).split("/")
         if len(attributes) >= 2:
             path = "%s/%s" % (attributes[0], attributes[1])
             return ical.Calendar(path)
