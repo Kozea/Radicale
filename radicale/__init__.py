@@ -120,7 +120,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         charsets = []
 
         # First append content charset given in the request
-        content_type = self.headers["Content-Type"]
+        content_type = self.headers.get("Content-Type", None)
         if content_type and "charset=" in content_type:
             charsets.append(content_type.split("charset=")[1].strip())
         # Then append default Radicale charset
