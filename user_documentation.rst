@@ -24,9 +24,7 @@ Linux users certainly have Python already installed. For Windows and MacOS
 users, please install Python [#]_ thanks to the adequate installer.
 
 
-.. [#] HTTPS support depends on the ``ssl`` module, only available from Python
-   2.6. Nevertheless, Radicale without TLS encryption works well with Python
-   2.5.
+.. [#] See `Python Versions and OS Support`_ for further information.
 
 .. [#] `Python download page <http://python.org/download/>`_.
 
@@ -156,3 +154,24 @@ All the options of the ``server`` part can be changed with command line
 options. These options are available by typing::
 
   radicale --help
+
+
+Python Versions and OS Support
+==============================
+
+TLS Support
+-----------
+
+HTTPS support depends on the ``ssl`` module, only available from Python
+2.6. Nevertheless, Radicale without TLS encryption works well with Python 2.5.
+
+Moreover, python 2.6 suffers `a bug <http://bugs.python.org/issue5103>`_
+causing huge timeout problems with SSL. No workaround will be added in
+Radicale, please ask the Python developpers for a fix or use Python 3.x.
+
+Crypt Support
+-------------
+
+With the htpasswd access, many encryption methods are available, and crypt is the
+default one in Radicale. Unfortunately, the ``crypt`` module is not unavailable on
+Windows, you have to pick another method on this OS.
