@@ -28,7 +28,6 @@ supported, but md5 is not (see ``htpasswd`` man page to understand why).
 """
 
 import base64
-import crypt
 import hashlib
 
 from radicale import config
@@ -45,6 +44,8 @@ def _plain(hash_value, password):
 
 def _crypt(hash_value, password):
     """Check if ``hash_value`` and ``password`` match using crypt method."""
+    # The ``crypt`` module is only present on Unix, import if needed
+    import crypt
     return crypt.crypt(password, hash_value) == hash_value
 
 
