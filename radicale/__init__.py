@@ -89,7 +89,7 @@ class HTTPSServer(HTTPServer):
         HTTPServer.__init__(self, address, handler)
         self.socket = ssl.wrap_socket(
             socket.socket(self.address_family, self.socket_type),
-            server_side=True, 
+            server_side=True,
             certfile=config.get("server", "certificate"),
             keyfile=config.get("server", "key"),
             ssl_version=ssl.PROTOCOL_SSLv23)
