@@ -33,10 +33,6 @@ import hashlib
 from radicale import config
 
 
-FILENAME = config.get("acl", "filename")
-CHECK_PASSWORD = locals()["_%s" % config.get("acl", "encryption")]
-
-
 def _plain(hash_value, password):
     """Check if ``hash_value`` and ``password`` match using plain method."""
     return hash_value == password
@@ -66,3 +62,7 @@ def has_right(user, password):
             if login == user:
                 return CHECK_PASSWORD(hash_value, password)
     return False
+
+
+FILENAME = config.get("acl", "filename")
+CHECK_PASSWORD = locals()["_%s" % config.get("acl", "encryption")]
