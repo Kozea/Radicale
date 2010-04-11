@@ -50,14 +50,19 @@ def _response(code):
     return "HTTP/1.1 %i %s" % (code, client.responses[code])
 
 
-def delete(obj, calendar, url):
+def _name_from_path(path):
+    """Return Radicale item name from ``path``."""
+    return path.split("/")[-1]
+
+
+def delete(path, calendar):
     """Read and answer DELETE requests.
 
     Read rfc4918-9.6 for info.
 
     """
     # Reading request
-    calendar.remove(obj)
+    calendar.remove(_name_from_path(path))
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -65,7 +70,7 @@ def delete(obj, calendar, url):
     multistatus.append(response)
 
     href = ET.Element(_tag("D", "href"))
-    href.text = url
+    href.text = path
     response.append(href)
 
     status = ET.Element(_tag("D", "status"))
@@ -74,7 +79,8 @@ def delete(obj, calendar, url):
 
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
-def propfind(xml_request, calendar, url):
+
+def propfind(path, xml_request, calendar):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -93,7 +99,7 @@ def propfind(xml_request, calendar, url):
     multistatus.append(response)
 
     href = ET.Element(_tag("D", "href"))
-    href.text = url
+    href.text = path
     response.append(href)
 
     propstat = ET.Element(_tag("D", "propstat"))
@@ -133,17 +139,19 @@ def propfind(xml_request, calendar, url):
 
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
-def put(ical_request, calendar, url, obj):
-    """Read PUT requests."""
-    # TODO: use url to set hreference
-    if obj:
-        # PUT is modifying obj
-        calendar.replace(obj, ical_request)
-    else:
-        # PUT is adding a new object
-        calendar.append(ical_request)
 
-def report(xml_request, calendar, url):
+def put(path, ical_request, calendar):
+    """Read PUT requests."""
+    name = _name_from_path(path)
+    if name in (item.name for item in calendar.items):
+        # PUT is modifying an existing item
+        calendar.replace(name, ical_request)
+    else:
+        # PUT is adding a new item
+        calendar.append(name, ical_request)
+
+
+def report(path, xml_request, calendar):
     """Read and answer REPORT requests.
 
     Read rfc3253-3.6 for info.
@@ -158,41 +166,45 @@ def report(xml_request, calendar, url):
 
     if root.tag == _tag("C", "calendar-multiget"):
         # Read rfc4791-7.9 for info
-        hreferences = set([href_element.text for href_element
-                           in root.findall(_tag("D", "href"))])
+        hreferences = set((href_element.text for href_element
+                           in root.findall(_tag("D", "href"))))
     else:
-        hreferences = [url]
+        hreferences = (path,)
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
-    # TODO: WTF, sunbird needs one response by object,
-    #       is that really what is needed?
-    #       Read rfc4791-9.[6|10] for info
     for hreference in hreferences:
-        objects = calendar.events + calendar.todos
+        # Check if the reference is an item or a calendar
+        name = hreference.split("/")[-1]
+        if name:
+            # Reference is an item
+            path = "/".join(hreference.split("/")[:-1]) + "/"
+            items = (item for item in calendar.items if item.name == name)
+        else:
+            # Reference is a calendar
+            path = hreference
+            items = calendar.events + calendar.todos
 
-        if not objects:
+        if not items:
             # TODO: Read rfc4791-9.[6|10] to find a right answer
             response = ET.Element(_tag("D", "response"))
             multistatus.append(response)
 
             href = ET.Element(_tag("D", "href"))
-            href.text = url
+            href.text = path
             response.append(href)
 
             status = ET.Element(_tag("D", "status"))
             status.text = _response(204)
             response.append(status)
 
-        for obj in objects:
-            # TODO: Use the hreference to read data and create href.text
-            #       We assume here that hreference is url
+        for item in items:
             response = ET.Element(_tag("D", "response"))
             multistatus.append(response)
 
             href = ET.Element(_tag("D", "href"))
-            href.text = url
+            href.text = path + item.name
             response.append(href)
 
             propstat = ET.Element(_tag("D", "propstat"))
@@ -203,17 +215,17 @@ def report(xml_request, calendar, url):
 
             if _tag("D", "getetag") in props:
                 element = ET.Element(_tag("D", "getetag"))
-                element.text = obj.etag
+                element.text = item.etag
                 prop.append(element)
 
             if _tag("C", "calendar-data") in props:
                 element = ET.Element(_tag("C", "calendar-data"))
-                if isinstance(obj, ical.Event):
+                if isinstance(item, ical.Event):
                     element.text = ical.serialize(
-                        calendar.headers, calendar.timezones, events=[obj])
-                elif isinstance(obj, ical.Todo):
+                        calendar.headers, calendar.timezones + [item])
+                elif isinstance(item, ical.Todo):
                     element.text = ical.serialize(
-                        calendar.headers, calendar.timezones, todos=[obj])
+                        calendar.headers, calendar.timezones + [item])
                 prop.append(element)
 
             status = ET.Element(_tag("D", "status"))

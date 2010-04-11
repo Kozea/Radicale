@@ -153,8 +153,9 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_DELETE(self):
         """Manage DELETE request."""
-        obj = self.headers.get("If-Match", None)
-        answer = xmlutils.delete(obj, self._calendar, self.path)
+        # TODO: Check etag before deleting
+        etag = self.headers.get("If-Match", None)
+        answer = xmlutils.delete(self.path, self._calendar)
 
         self.send_response(client.NO_CONTENT)
         self.send_header("Content-Length", len(answer))
@@ -171,7 +172,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     def do_PROPFIND(self):
         """Manage PROPFIND request."""
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
-        answer = xmlutils.propfind(xml_request, self._calendar, self.path)
+        answer = xmlutils.propfind(self.path, xml_request, self._calendar)
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("DAV", "1, calendar-access")
@@ -182,10 +183,11 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_PUT(self):
         """Manage PUT request."""
+        # TODO: Check etag before putting
+        etag = self.headers.get("If-Match", None)
         ical_request = self._decode(
             self.rfile.read(int(self.headers["Content-Length"])))
-        obj = self.headers.get("If-Match", None)
-        xmlutils.put(ical_request, self._calendar, self.path, obj)
+        xmlutils.put(self.path, ical_request, self._calendar)
 
         self.send_response(client.CREATED)
 
@@ -193,7 +195,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     def do_REPORT(self):
         """Manage REPORT request."""
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
-        answer = xmlutils.report(xml_request, self._calendar, self.path)
+        answer = xmlutils.report(self.path, xml_request, self._calendar)
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("Content-Length", len(answer))

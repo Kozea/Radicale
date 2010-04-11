@@ -42,66 +42,90 @@ def open(path, mode="r"):
 # pylint: enable-msg=W0622
 
 
-def serialize(headers=(), timezones=(), events=(), todos=()):
-    items = ["BEGIN:VCALENDAR"]
-    for part in (headers, timezones, todos, events):
+def serialize(headers=(), items=()):
+    """Return an iCal text corresponding to given ``headers`` and ``items``."""
+    lines = ["BEGIN:VCALENDAR"]
+    for part in (headers, items):
         if part:
-            items.append("\n".join(item.text for item in part))
-    items.append("END:VCALENDAR")
-    return "\n".join(items)
+            lines.append("\n".join(item.text for item in part))
+    lines.append("END:VCALENDAR")
+    return "\n".join(lines)
 
 
-class Header(object):
-    """Internal header class."""
-    def __init__(self, text):
-        """Initialize header from ``text``."""
+class Item(object):
+    """Internal iCal item."""
+    def __init__(self, text, name=None):
+        """Initialize object from ``text`` and different ``kwargs``."""
         self.text = text
+        self._name = name
 
+        # We must synchronize the name in the text and in the object.
+        # An item must have a name, determined in order by:
+        #
+        # - the ``name`` parameter
+        # - the ``X-RADICALE-NAME`` iCal property (for Events and Todos)
+        # - the ``UID`` iCal property (for Events and Todos)
+        # - the ``TZID`` iCal property (for Timezones)
+        if not self._name:
+            for line in self.text.splitlines():
+                if line.startswith("X-RADICALE-NAME:"):
+                    self._name = line.replace("X-RADICALE-NAME:", "").strip()
+                    break
+                elif line.startswith("TZID:"):
+                    self._name = line.replace("TZID:", "").strip()
+                    break
+                elif line.startswith("UID:"):
+                    self._name = line.replace("UID:", "").strip()
+                    # Do not break, a ``X-RADICALE-NAME`` can appear next
 
-class Event(object):
-    """Internal event class."""
-    tag = "VEVENT"
-
-    def __init__(self, text):
-        """Initialize event from ``text``."""
-        self.text = text
+        if "\nX-RADICALE-NAME:" in text:
+            for line in self.text.splitlines():
+                if line.startswith("X-RADICALE-NAME:"):
+                    self.text = self.text.replace(
+                        line, "X-RADICALE-NAME:%s" % self._name)
+        else:
+            self.text = self.text.replace(
+                "\nUID:", "\nX-RADICALE-NAME:%s\nUID:" % self._name)
 
     @property
     def etag(self):
-        """Etag from event."""
+        """Item etag.
+
+        Etag is mainly used to know if an item has changed.
+
+        """
         return '"%s"' % hash(self.text)
 
+    @property
+    def name(self):
+        """Item name.
 
-class Todo(object):
+        Name is mainly used to give an URL to the item.
+
+        """
+        return self._name
+
+
+class Header(Item):
+    """Internal header class."""
+
+
+class Event(Item):
+    """Internal event class."""
+    tag = "VEVENT"
+
+
+class Todo(Item):
     """Internal todo class."""
     # This is not a TODO!
     # pylint: disable-msg=W0511
     tag = "VTODO"
     # pylint: enable-msg=W0511
 
-    def __init__(self, text):
-        """Initialize todo from ``text``."""
-        self.text = text
 
-    @property
-    def etag(self):
-        """Etag from todo."""
-        return '"%s"' % hash(self.text)
-
-
-class Timezone(object):
+class Timezone(Item):
     """Internal timezone class."""
     tag = "VTIMEZONE"
-
-    def __init__(self, text):
-        """Initialize timezone from ``text``."""
-        lines = text.splitlines()
-        for line in lines:
-            if line.startswith("TZID:"):
-                self.name = line.replace("TZID:", "")
-                break
-
-        self.text = text
 
 
 class Calendar(object):
@@ -115,81 +139,84 @@ class Calendar(object):
         self.ctag = self.etag
 
     @staticmethod
-    def _parse(text, obj):
-        """Find ``obj.tag`` items in ``text`` text.
+    def _parse(text, item_types, name=None):
+        """Find items with type in ``item_types`` in ``text`` text.
 
-        Return a list of items of type ``obj``.
+        If ``name`` is given, give this name to new items in ``text``.
+
+        Return a list of items.
 
         """
+        item_tags = {}
+        for item_type in item_types:
+            item_tags[item_type.tag] = item_type
+
         items = []
 
         lines = text.splitlines()
         in_item = False
-        item_lines = []
 
         for line in lines:
-            if line.startswith("BEGIN:%s" % obj.tag):
-                in_item = True
-                item_lines = []
+            if line.startswith("BEGIN:") and not in_item:
+                item_tag = line.replace("BEGIN:", "").strip()
+                if item_tag in item_tags:
+                    in_item = True
+                    item_lines = []
 
             if in_item:
                 item_lines.append(line)
-                if line.startswith("END:%s" % obj.tag):
-                    items.append(obj("\n".join(item_lines)))
+                if line.startswith("END:%s" % item_tag):
+                    in_item = False
+                    item_type = item_tags[item_tag]
+                    item_text = "\n".join(item_lines)
+                    item_name = None if item_tag == "VTIMEZONE" else name
+                    items.append(item_type(item_text, item_name))
 
         return items
 
-    def append(self, text):
-        """Append ``text`` to calendar."""
+    def append(self, name, text):
+        """Append items from ``text`` to calendar.
+
+        If ``name`` is given, give this name to new items in ``text``.
+
+        """
         self.ctag = self.etag
 
-        timezones = self.timezones
-        events = self.events
-        todos = self.todos
+        items = self.items
 
-        for new_timezone in self._parse(text, Timezone):
-            if new_timezone.name not in [timezone.name
-                                         for timezone in timezones]:
-                timezones.append(new_timezone)
+        for new_item in self._parse(text, (Timezone, Event, Todo), name):
+            if new_item.name not in (item.name for item in items):
+                items.append(new_item)
 
-        for new_event in self._parse(text, Event):
-            if new_event.etag not in [event.etag for event in events]:
-                events.append(new_event)
+        self.write(items=items)
 
-        for new_todo in self._parse(text, Todo):
-            if new_todo.etag not in [todo.etag for todo in todos]:
-                todos.append(new_todo)
-
-        self.write(timezones=timezones, events=events, todos=todos)
-
-    def remove(self, etag):
-        """Remove object named ``etag`` from the calendar."""
+    def remove(self, name):
+        """Remove object named ``name`` from calendar."""
         self.ctag = self.etag
-        todos = [todo for todo in self.todos if todo.etag != etag]
-        events = [event for event in self.events if event.etag != etag]
+        todos = [todo for todo in self.todos if todo.name != name]
+        events = [event for event in self.events if event.name != name]
 
-        self.write(todos=todos, events=events)
+        items = self.timezones + todos + events
+        self.write(items=items)
 
-    def replace(self, etag, text):
-        """Replace objet named ``etag`` by ``text`` in the calendar."""
+    def replace(self, name, text):
+        """Replace content by ``text`` in objet named ``name`` in calendar."""
         self.ctag = self.etag
-        self.remove(etag)
-        self.append(text)
+        self.remove(name)
+        self.append(name, text)
 
-    def write(self, headers=None, timezones=None, events=None, todos=None):
+    def write(self, headers=None, items=None):
         """Write calendar with given parameters."""
         headers = headers or self.headers or (
             Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
             Header("VERSION:2.0"))
-        timezones = timezones or self.timezones
-        events = events or self.events
-        todos = todos or self.todos
+        items = items or self.items
 
         # Create folder if absent
         if not os.path.exists(os.path.dirname(self.path)):
             os.makedirs(os.path.dirname(self.path))
         
-        text = serialize(headers, timezones, events, todos)
+        text = serialize(headers, items)
         return open(self.path, "w").write(text)
 
     @property
@@ -221,16 +248,21 @@ class Calendar(object):
         return header_lines
 
     @property
+    def items(self):
+        """Get list of all items in calendar."""
+        return self._parse(self.text, (Event, Todo, Timezone))
+
+    @property
     def events(self):
         """Get list of ``Event`` items in calendar."""
-        return self._parse(self.text, Event)
+        return self._parse(self.text, (Event,))
 
     @property
     def todos(self):
         """Get list of ``Todo`` items in calendar."""
-        return self._parse(self.text, Todo)
+        return self._parse(self.text, (Todo,))
 
     @property
     def timezones(self):
         """Get list of ``Timezome`` items in calendar."""
-        return self._parse(self.text, Timezone)
+        return self._parse(self.text, (Timezone,))
