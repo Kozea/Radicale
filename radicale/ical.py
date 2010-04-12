@@ -174,6 +174,12 @@ class Calendar(object):
 
         return items
 
+    def get_item(self, name):
+        """Get calendar item called ``name``."""
+        for item in self.items:
+            if item.name == name:
+                return item
+
     def append(self, name, text):
         """Append items from ``text`` to calendar.
 

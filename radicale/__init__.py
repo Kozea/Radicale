@@ -153,14 +153,18 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_DELETE(self):
         """Manage DELETE request."""
-        # TODO: Check etag before deleting
-        etag = self.headers.get("If-Match", None)
-        answer = xmlutils.delete(self.path, self._calendar)
+        item = self._calendar.get_item(xmlutils.name_from_path(self.path))
+        if item and self.headers.get("If-Match", item.etag) == item.etag:
+            # No ETag precondition or precondition verified, delete item
+            answer = xmlutils.delete(self.path, self._calendar)
 
-        self.send_response(client.NO_CONTENT)
-        self.send_header("Content-Length", len(answer))
-        self.end_headers()
-        self.wfile.write(answer)
+            self.send_response(client.NO_CONTENT)
+            self.send_header("Content-Length", len(answer))
+            self.end_headers()
+            self.wfile.write(answer)
+        else:
+            # No item or ETag precondition not verified, do not delete item
+            self.send_response(client.PRECONDITION_FAILED)
 
     def do_OPTIONS(self):
         """Manage OPTIONS request."""
@@ -183,13 +187,17 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_PUT(self):
         """Manage PUT request."""
-        # TODO: Check etag before putting
-        etag = self.headers.get("If-Match", None)
-        ical_request = self._decode(
-            self.rfile.read(int(self.headers["Content-Length"])))
-        xmlutils.put(self.path, ical_request, self._calendar)
+        item = self._calendar.get_item(xmlutils.name_from_path(self.path))
+        if not item or self.headers.get("If-Match", item.etag) == item.etag:
+            # No item, no ETag precondition or precondition verified, put item
+            ical_request = self._decode(
+                self.rfile.read(int(self.headers["Content-Length"])))
+            xmlutils.put(self.path, ical_request, self._calendar)
 
-        self.send_response(client.CREATED)
+            self.send_response(client.CREATED)
+        else:
+            # ETag precondition not verified, do not put item
+            self.send_response(client.PRECONDITION_FAILED)
 
     @check_rights
     def do_REPORT(self):
