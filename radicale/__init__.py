@@ -54,7 +54,10 @@ def _check(request, function):
     authorization = request.headers.get("Authorization", None)
     if authorization:
         challenge = authorization.lstrip("Basic").strip().encode("ascii")
+        # ``_check`` decorator can access ``request`` protected functions
+        # pylint: disable-msg=W0212
         plain = request._decode(base64.b64decode(challenge))
+        # pylint: enable-msg=W0212
         user, password = plain.split(":")
     else:
         user = password = None
@@ -71,10 +74,13 @@ def _check(request, function):
 
 class HTTPServer(server.HTTPServer):
     """HTTP server."""
+    # Maybe a Pylint bug, ``__init__`` calls ``server.HTTPServer.__init__``
+    # pylint: disable-msg=W0231
     def __init__(self, address, handler):
         """Create server."""
         server.HTTPServer.__init__(self, address, handler)
         self.acl = acl.load()
+    # pylint: enable-msg=W0231
 
 
 class HTTPSServer(HTTPServer):
