@@ -17,6 +17,7 @@
 * Twisted dependency removed
 * Python 3 support
 * Real URLs for PUT and DELETE
+* Concurrent modification reported to users
 * Many bugs fixed by Roger Wenham
 
 

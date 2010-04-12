@@ -188,15 +188,19 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     def do_PUT(self):
         """Manage PUT request."""
         item = self._calendar.get_item(xmlutils.name_from_path(self.path))
-        if not item or self.headers.get("If-Match", item.etag) == item.etag:
-            # No item, no ETag precondition or precondition verified, put item
+        if (not item and not self.headers.get("If-Match")) or \
+                (item and self.headers.get("If-Match", item.etag) == item.etag):
+            # PUT allowed in 3 cases
+            # Case 1: No item and no ETag precondition: Add new item
+            # Case 2: Item and ETag precondition verified: Modify item
+            # Case 3: Item and no Etag precondition: Force modifying item
             ical_request = self._decode(
                 self.rfile.read(int(self.headers["Content-Length"])))
             xmlutils.put(self.path, ical_request, self._calendar)
 
             self.send_response(client.CREATED)
         else:
-            # ETag precondition not verified, do not put item
+            # PUT rejected in all other cases
             self.send_response(client.PRECONDITION_FAILED)
 
     @check_rights
