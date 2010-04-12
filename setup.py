@@ -17,6 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Radicale setup file.
+
+To install, type ``python setup.py install`` as superuser.
+
+"""
+
 import os
 import shutil
 
@@ -24,23 +31,29 @@ from distutils.core import setup, Command
 from distutils.command.build_scripts import build_scripts
 
 class BuildScripts(build_scripts):
+    """Build the package."""
     def run(self):
+        """Run building."""
         self.mkpath(self.build_dir)
         for script in self.scripts:
             root, _ = os.path.splitext(script)
             self.copy_file(script, os.path.join(self.build_dir, root))
 
 class Clean(Command):
+    """Clean up package temporary files."""
     description = "clean up package temporary files"
     user_options = []
 
     def initialize_options(self):
+        """Pre-processing."""
         pass
 
     def finalize_options(self):
+        """Post-processing."""
         pass
 
     def run(self):
+        """Run clean up."""
         path = os.path.abspath(os.path.dirname(__file__))
         for pathname, _, files in os.walk(path):
             for filename in filter(self._should_remove, files):
@@ -55,6 +68,7 @@ class Clean(Command):
 
     @staticmethod
     def _should_remove(filename):
+        """Return if ``filename`` should be considered as temporary."""
         return (os.path.splitext(filename)[1] == ".pyc" or
                 os.path.splitext(filename)[1] == ".pyo" or
                 filename.endswith("~") or
