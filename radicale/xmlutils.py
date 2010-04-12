@@ -128,11 +128,6 @@ def propfind(path, xml_request, calendar):
         element.text = calendar.etag
         prop.append(element)
 
-    if _tag("CS", "getctag") in props:
-        element = ET.Element(_tag("CS", "getctag"))
-        element.text = calendar.ctag
-        prop.append(element)
-
     status = ET.Element(_tag("D", "status"))
     status.text = _response(200)
     propstat.append(status)
@@ -185,19 +180,6 @@ def report(path, xml_request, calendar):
             # Reference is a calendar
             path = hreference
             items = calendar.events + calendar.todos
-
-        if not items:
-            # TODO: Read rfc4791-9.[6|10] to find a right answer
-            response = ET.Element(_tag("D", "response"))
-            multistatus.append(response)
-
-            href = ET.Element(_tag("D", "href"))
-            href.text = path
-            response.append(href)
-
-            status = ET.Element(_tag("D", "status"))
-            status.text = _response(204)
-            response.append(status)
 
         for item in items:
             response = ET.Element(_tag("D", "response"))

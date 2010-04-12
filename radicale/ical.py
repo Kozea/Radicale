@@ -136,7 +136,6 @@ class Calendar(object):
         self.encoding = "utf-8"
         self.owner = path.split("/")[0]
         self.path = os.path.join(FOLDER, path.replace("/", os.path.sep))
-        self.ctag = self.etag
 
     @staticmethod
     def _parse(text, item_types, name=None):
@@ -186,8 +185,6 @@ class Calendar(object):
         If ``name`` is given, give this name to new items in ``text``.
 
         """
-        self.ctag = self.etag
-
         items = self.items
 
         for new_item in self._parse(text, (Timezone, Event, Todo), name):
@@ -198,7 +195,6 @@ class Calendar(object):
 
     def remove(self, name):
         """Remove object named ``name`` from calendar."""
-        self.ctag = self.etag
         todos = [todo for todo in self.todos if todo.name != name]
         events = [event for event in self.events if event.name != name]
 
@@ -207,7 +203,6 @@ class Calendar(object):
 
     def replace(self, name, text):
         """Replace content by ``text`` in objet named ``name`` in calendar."""
-        self.ctag = self.etag
         self.remove(name)
         self.append(name, text)
 
