@@ -26,7 +26,7 @@ solution, easy to use, easy to install, easy to configure.  As a consequence,
 it requires few software dependances and is pre-configured to work
 out-of-the-box.
 
-The Radicale Project runs on most of the UNIX-like platforms (Linux, *BSD,
+The Radicale Project runs on most of the UNIX-like platforms (Linux, BSD,
 MacOS X) and Windows.  It is known to work with Lightning and Sunbird 0.9+. It
 is free and open-source software, released under GPL version 3.
 
