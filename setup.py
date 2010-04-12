@@ -94,6 +94,7 @@ setup(
     author="Guillaume Ayoub",
     author_email="guillaume.ayoub@kozea.fr",
     url="http://www.radicale.org/",
+    download_url = "http://radicale.org/src/radicale/Radicale-0.2.tar.gz",
     license="GNU GPL v3",
     platforms="Any",
     packages=["radicale", "radicale.acl"],
@@ -101,6 +102,7 @@ setup(
     scripts=["radicale.py"],
     cmdclass={"clean": Clean,
               "build_scripts": BuildScripts},
+    keywords=["calendar", "CalDAV"],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
