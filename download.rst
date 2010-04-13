@@ -2,6 +2,13 @@
  Download
 ==========
 
+PyPI
+====
+
+Radicale is available on PyPI. To install, just type as superuser::
+
+  easy_install radicale
+
 Git Repository
 ==============
 
@@ -14,6 +21,7 @@ the `git repository on Gitorious
 Source Packages
 ===============
 
+- `Radicale-0.2.tar.gz </src/radicale/Radicale-0.2.tar.gz>`_
 - `Radicale-0.1.tar.gz </src/radicale/Radicale-0.1.tar.gz>`_
 
 Linux Distribution Packages

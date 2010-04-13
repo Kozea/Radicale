@@ -2,6 +2,36 @@
  News
 ======
 
+Tuesday, April 13, 2010
+=======================
+
+Radicale 0.2 is out! Here is what’s new:
+
+0.2 - Snowflakes
+----------------
+
+* Sunbird pre-1.0 support
+* SSL connection
+* Htpasswd authentication
+* Daemon mode
+* User configuration
+* Twisted dependency removed
+* Python 3 support
+* Real URLs for PUT and DELETE
+* Concurrent modification reported to users
+* Many bugs fixed by Roger Wenham
+
+First of all, we would like to thank Roger Wenham for his bugfixes and his
+supercool words.
+
+You may have noticed that Sunbird 1.0 has not been released, but according to
+the Mozilla developpers, 1.0pre is something like a final version.
+
+You may have noticed too that Radicale can be `downloaded from PyPI
+<http://pypi.python.org/pypi/Radicale/0.2>`_. Of course, it is also available
+on the `download page </download>`_.
+
+
 Thursday, January 21, 2010
 ==========================
 
@@ -20,6 +50,7 @@ Authentication
   authentication) and ``htpasswd`` (authentication with an ``htpasswd`` file
   created by the Apache tool). More methods such as LDAP are coming soon!
 
+
 Friday, January 15, 2010
 ========================
 
@@ -28,12 +59,14 @@ Radicale now works with Python 3! The code was given a small cleanup, with some
 simplifications mainly about encoding. Before the 0.1.1 release, feel free to
 test the git repository, all Python versions from 2.5 should be OK.
 
+
 Monday, January 11, 2010
 ========================
 
 Good news! Radicale 0.1.1 will support Sunbird 1.0, but it has another great
 feature: it has no external dependency! Twisted is no longer required for the
 git version, removing about 50 lines of code.
+
 
 Thursday, December 31, 2009
 ===========================
@@ -42,6 +75,7 @@ Lightning/Sunbird 1.0b2pre is out, adding minor changes in CalDAV support. A
 `new commit <http://www.gitorious.org/radicale/radicale/commit/330283e>`_ makes
 Radicale work with versions 0.9, 1.0b1 et 1.0b2. Moreover, etags are now quoted
 according to the :RFC:`2616`.
+
 
 Wednesday, December 9, 2009
 ===========================
@@ -52,6 +86,7 @@ Lightning/Sunbird 1.0 should be released in a few days. The `last commit in git
 <http://gitorious.org/radicale/radicale/commit/6545bc8>`_ should make Radicale
 work with versions 0.9 and 1.0b1pre. Radicale 0.1.1 will soon be released
 adding support for version 1.0.
+
 
 Tuesday, September 1, 2009
 ==========================
@@ -74,6 +109,7 @@ Tuesday, July 28, 2009
 Radicale code has been released on Gitorious! Take a look at the `Radicale main
 page on Gitorious <http://www.gitorious.org/radicale>`_ to view and download
 source code.
+
 
 Monday, July 27, 2009
 =====================
