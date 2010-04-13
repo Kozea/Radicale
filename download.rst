@@ -5,7 +5,8 @@
 PyPI
 ====
 
-Radicale is available on PyPI. To install, just type as superuser::
+Radicale is `available on PyPI <http://pypi.python.org/pypi/Radicale/>`_. To
+install, just type as superuser::
 
   easy_install radicale
 
