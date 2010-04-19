@@ -23,7 +23,6 @@ known to work on Python 2.5, 2.6, 3.0 and 3.1 [#]_.
 Linux users certainly have Python already installed. For Windows and MacOS
 users, please install Python [#]_ thanks to the adequate installer.
 
-
 .. [#] See `Python Versions and OS Support`_ for further information.
 
 .. [#] `Python download page <http://python.org/download/>`_.
@@ -39,9 +38,10 @@ CalDAV Clients
 --------------
 
 At this time Radicale has been tested and works fine with the latests version
-of Mozilla Sunbird (versions 0.9 and 1.0). More clients will be supported in
-the future. However, it may work with any calendar client which implements
-CalDAV specifications too (luck is highly recommanded).
+of Mozilla Sunbird (versions 0.9+), Mozilla Lightning (0.9+), and Evolution
+(2.30+). More clients will be supported in the future. However, it may work
+with any calendar client which implements CalDAV specifications too (luck is
+highly recommanded).
 
 To download Sunbird, go to the `Sunbird project website
 <http://www.mozilla.org/projects/calendar/sunbird/>`_ and choose the latest
@@ -57,13 +57,14 @@ Starting Server
 To start Radicale CalDAV server, you have to launch the file called
 ``radicale.py`` located in the root folder of the software package.
 
-Using Sunbird
--------------
+Using Sunbird or Lightning
+--------------------------
 
-After starting Sunbird, click on ``File`` and ``New Calendar``. Upcoming window
-asks you about your calendar storage. Chose a calendar ``On the Network``,
-otherwise Sunbird will use its own file system storage instead of Radicale's
-one and your calendar won't be remotely accessible.
+After starting Sunbird or Lightning, click on ``File`` and ``New
+Calendar``. Upcoming window asks you about your calendar storage. Chose a
+calendar ``On the Network``, otherwise Sunbird will use its own file system
+storage instead of Radicale's one and your calendar won't be remotely
+accessible.
 
 Next window asks you to provide information about remote calendar
 access. Protocol used by Radicale is ``CalDAV``. A standard location for a basic
@@ -78,6 +79,20 @@ If no warning sign appears next to the calendar name, you can now add events
 and tasks to your calendar. All events and tasks are stored in the server, they
 can be accessed and modified from multiple clients by multiple users at the
 same time.
+
+Using Evolution
+---------------
+
+First of all, show the calendar page in Evolution by clicking on the calendar
+icon at the bottom of the side pane. Then add a new calendar by choosing in the
+menu ``File``, ``New``, ``Calendar``.
+
+A new window opens. The calendar ``type`` is ``CalDAV``, and the location is
+something like ``caldav://localhost:5232/user/calendar``. You can fill other
+attributes like the color and the name, these are only used for Evolution and
+are not uploaded.
+
+Click on ``OK``, and your calendar should be ready for use.
 
 
 Complex Configuration
