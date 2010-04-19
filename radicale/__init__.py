@@ -149,10 +149,25 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_GET(self):
         """Manage GET request."""
-        answer = self._calendar.text.encode(self._encoding)
+        item_name = (xmlutils.name_from_path(self.path))
+        if item_name:
+            # Get calendar item
+            items = self._calendar.timezones
+            item = self._calendar.get_item(item_name)
+            items.append(item)
+            answer_text = ical.serialize(
+                headers=self._calendar.headers, items=items)
+            etag = item.etag
+        else:
+            # Get whole calendar
+            answer_text = self._calendar.text
+            etag = self._calendar.etag
 
+        answer = answer_text.encode(self._encoding)
         self.send_response(client.OK)
         self.send_header("Content-Length", len(answer))
+        self.send_header("Content-Type", "text/calendar")
+        self.send_header("ETag", etag)
         self.end_headers()
         self.wfile.write(answer)
 
@@ -193,7 +208,8 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_PUT(self):
         """Manage PUT request."""
-        item = self._calendar.get_item(xmlutils.name_from_path(self.path))
+        item_name = xmlutils.name_from_path(self.path)
+        item = self._calendar.get_item(item_name)
         if (not item and not self.headers.get("If-Match")) or \
                 (item and self.headers.get("If-Match", item.etag) == item.etag):
             # PUT allowed in 3 cases
@@ -203,8 +219,11 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
             ical_request = self._decode(
                 self.rfile.read(int(self.headers["Content-Length"])))
             xmlutils.put(self.path, ical_request, self._calendar)
+            etag = self._calendar.get_item(item_name).etag
 
             self.send_response(client.CREATED)
+            self.send_header("ETag", etag)
+            self.end_headers()
         else:
             # PUT rejected in all other cases
             self.send_response(client.PRECONDITION_FAILED)
