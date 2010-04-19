@@ -118,7 +118,7 @@ The CalDAV RFC defines what must be done, what can be done and what cannot be
 done. Many violations of the protocol are totally defined and behaviours are
 given in such cases.
 
-The Radicale Server assumes that the clients are perfect and that protocole
+The Radicale Server assumes that the clients are perfect and that protocol
 violations do not exist. That is why most of the errors in client requests have
 undetermined consequences for the lazy server that can reply good answers, bad
 answers, or even no answer.
@@ -154,4 +154,4 @@ The Radical Project is **only the server part** of this architecture.
 Code Architecture
 -----------------
 
-*To be written…*
+*To be written*
