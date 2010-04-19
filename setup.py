@@ -84,17 +84,18 @@ class Clean(Command):
                 os.path.splitext(filename)[1] == ".pyo" or
                 filename.endswith("~") or
                 (filename.startswith("#") and filename.endswith("#")))
-        
 
+# When the version is updated, ``version`` and ``download_url`` must be modified
+# A new section in the ``NEWS`` file must be added too
 setup(
     name="Radicale",
-    version="0.2",
+    version="0.5-git",
     description="CalDAV Server",
     long_description=__doc__,
     author="Guillaume Ayoub",
     author_email="guillaume.ayoub@kozea.fr",
     url="http://www.radicale.org/",
-    download_url = "http://radicale.org/src/radicale/Radicale-0.2.tar.gz",
+    #download_url = "http://radicale.org/src/radicale/Radicale-0.5.tar.gz",
     license="GNU GPL v3",
     platforms="Any",
     packages=["radicale", "radicale.acl"],
