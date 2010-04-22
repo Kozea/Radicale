@@ -1,6 +1,9 @@
-====================================
- Radicale, a Simple Calendar Server
-====================================
+==========
+ Radicale
+==========
+
+A Simple Calendar Server
+========================
 
 The Radicale Project is a complete CalDAV calendar server solution. It can
 store multiple calendars.

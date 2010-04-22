@@ -7,8 +7,7 @@ User documentation
 
 This document gives describes how to install and configure the server.
 
-- `User documentation (HTML) </user_documentation>`_
-- `User documentation (Plain Text) </_plain/user_documentation>`_
+- `User documentation (HTML) <user_documentation>`_
 
 Project description
 ===================
@@ -16,8 +15,7 @@ Project description
 This document defines the main goals of the Radicale Project, what it covers
 and what it does not.
 
-- `Project description (HTML) </project_description>`_
-- `Project description (Plain Text)  </_plain/project_description>`_
+- `Project description (HTML) <project_description>`_
 
 Technical choices
 =================
@@ -25,5 +23,4 @@ Technical choices
 This document describes the global technical choices of the Radicale Project
 and the global architectures of its different parts.
 
-- `Technical choices (HTML) </technical_choices>`_
-- `Technical choices (Plain Text) </_plain/technical_choices>`_
+- `Technical choices (HTML) <technical_choices>`_
