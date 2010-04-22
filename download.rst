@@ -13,14 +13,16 @@ install, just type as superuser::
 Git Repository
 ==============
 
-The Radicale Server is not stable yet, but you can try it now. Take a look at
-the `git repository on Gitorious
-<http://www.gitorious.org/radicale/radicale>`_, or clone it thanks to::
+If you want the development version of Radicale, take a look at the `git
+repository on Gitorious <http://www.gitorious.org/radicale/radicale>`_, or
+clone it thanks to::
 
   git clone git://gitorious.org/radicale/radicale.git
 
 Source Packages
 ===============
+
+You can download the Radicale package for each release:
 
 - `Radicale-0.2.tar.gz </src/radicale/Radicale-0.2.tar.gz>`_
 - `Radicale-0.1.tar.gz </src/radicale/Radicale-0.1.tar.gz>`_
