@@ -37,7 +37,7 @@ First of all, we would like to thank Roger Wenham for his bugfixes and his
 supercool words.
 
 You may have noticed that Sunbird 1.0 has not been released, but according to
-the Mozilla developpers, 1.0pre is something like a final version.
+the Mozilla developers, 1.0pre is something like a final version.
 
 You may have noticed too that Radicale can be `downloaded from PyPI
 <http://pypi.python.org/pypi/Radicale/0.2>`_. Of course, it is also available

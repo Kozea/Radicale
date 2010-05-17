@@ -80,7 +80,7 @@ Original Calendar Store Implementation
 
 Radicale stores iCal files, and nothing else. No easy way to store anything
 else, as our iCal library does not know anything of the iCal norm: it just
-recieves iCal strings from the client and stores it after a really minimal
+receives iCal strings from the client and stores it after a really minimal
 parsing.
 
 Radicale has no idea of most of the iCal semantics. No joke! Dates, timezones,
@@ -92,7 +92,7 @@ Radicale.
 Original Calendar Access Protocol
 ---------------------------------
 
-CalDAV is not a perfect protocol. We think that its main default is its
+CalDAV is not a perfect protocol. We think that its main problem is its
 complexity [#]_, that is why we decided not to implement the whole standard but
 just enough to understand some of its client-side implementations [#]_.
 

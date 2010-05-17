@@ -19,7 +19,7 @@ General Description
 
 The Radicale Project aims to be a light solution, easy to use, easy to
 install, easy to configure. As a consequence, it requires few software
-dependances and is pre-configured to work out-of-the-box.
+dependencies and is pre-configured to work out-of-the-box.
 
 The Radicale Project runs on most of the UNIX-like platforms (Linux,
 \*BSD, MacOS X) and Windows. It is free and open-source software.
@@ -81,7 +81,7 @@ supports the CalDAV implementation of different clients (only Sunbird 0.9+
    contents and calendars sharing server build to support the Chandler Project.
 
 .. [#] `Darwin Calendar Server <http://trac.calendarserver.org/>`_, a
-   standards-compliant calendar server mainly developped by Apple.
+   standards-compliant calendar server mainly developed by Apple.
 
 .. [#] `Mozilla Sunbird <http://www.mozilla.org/projects/calendar/sunbird/>`_,
    a cross-platform calendar client built upon Mozilla Toolkit.
@@ -98,7 +98,7 @@ Simple
 The Radicale Server is designed to be simple to install, simple to configure,
 simple to use.
 
-The installation is very easy, particularly with Linux: no dependances, no
+The installation is very easy, particularly with Linux: no dependencies, no
 superuser rights needed, no configuration required. Launching the main script
 out-of-the-box, as a normal user, is often the only step to have a simple remote
 calendar access.
@@ -111,7 +111,7 @@ Documentation <http://www.radicale.org/user_documentation>`_.
 Lazy
 ~~~~
 
-We, Radicale Project developpers, are lazy. That is why we have chosen Python:
+We, Radicale Project developers, are lazy. That is why we have chosen Python:
 no more ``;`` or ``{}`` [#]_. This is also why our server is lazy.
 
 The CalDAV RFC defines what must be done, what can be done and what cannot be

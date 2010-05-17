@@ -182,7 +182,7 @@ HTTPS support depends on the ``ssl`` module, only available from Python
 
 Moreover, python 2.6 suffers `a bug <http://bugs.python.org/issue5103>`_
 causing huge timeout problems with SSL. No workaround will be added in
-Radicale, please ask the Python developpers for a fix or use Python 3.x.
+Radicale, please ask the Python developers for a fix or use Python 3.x.
 
 Crypt Support
 -------------

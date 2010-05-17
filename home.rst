@@ -15,7 +15,7 @@ General description
 ===================
 
 The Radicale Project aims to be a light solution, easy to use, easy to install,
-easy to configure. As a consequence, it requires few software dependances and
+easy to configure. As a consequence, it requires few software dependencies and
 is pre-configured to work out-of-the-box.
 
 The Radicale Project runs on most of the UNIX-like platforms (Linux, \*BSD,
