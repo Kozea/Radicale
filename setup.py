@@ -41,50 +41,6 @@ import shutil
 from distutils.core import setup, Command
 from distutils.command.build_scripts import build_scripts
 
-class BuildScripts(build_scripts):
-    """Build the package."""
-    def run(self):
-        """Run building."""
-        self.mkpath(self.build_dir)
-        for script in self.scripts:
-            root, _ = os.path.splitext(script)
-            self.copy_file(script, os.path.join(self.build_dir, root))
-
-class Clean(Command):
-    """Clean up package temporary files."""
-    description = "clean up package temporary files"
-    user_options = []
-
-    def initialize_options(self):
-        """Pre-processing."""
-        pass
-
-    def finalize_options(self):
-        """Post-processing."""
-        pass
-
-    def run(self):
-        """Run clean up."""
-        path = os.path.abspath(os.path.dirname(__file__))
-        for pathname, _, files in os.walk(path):
-            for filename in filter(self._should_remove, files):
-                os.unlink(os.path.join(pathname, filename))
-
-        for folder in ("build", "dist"):
-            if os.path.isdir(os.path.join(path, folder)):
-                shutil.rmtree(os.path.join(path, folder))
-
-        if os.path.isfile(os.path.join(path, "MANIFEST")):
-            os.unlink(os.path.join(path, "MANIFEST"))
-
-    @staticmethod
-    def _should_remove(filename):
-        """Return if ``filename`` should be considered as temporary."""
-        return (os.path.splitext(filename)[1] == ".pyc" or
-                os.path.splitext(filename)[1] == ".pyo" or
-                filename.endswith("~") or
-                (filename.startswith("#") and filename.endswith("#")))
-
 # When the version is updated, ``version`` and ``download_url`` must be modified
 # A new section in the ``NEWS`` file must be added too
 setup(
@@ -101,8 +57,6 @@ setup(
     packages=["radicale", "radicale.acl"],
     provides=["radicale"],
     scripts=["radicale.py"],
-    cmdclass={"clean": Clean,
-              "build_scripts": BuildScripts},
     keywords=["calendar", "CalDAV"],
     classifiers=[
         "Development Status :: 4 - Beta",
