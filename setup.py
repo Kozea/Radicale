@@ -35,11 +35,7 @@ For further information, please visit the `Radicale Website
 
 """
 
-import os
-import shutil
-
-from distutils.core import setup, Command
-from distutils.command.build_scripts import build_scripts
+from distutils.core import setup
 
 # When the version is updated, ``version`` and ``download_url`` must be modified
 # A new section in the ``NEWS`` file must be added too
