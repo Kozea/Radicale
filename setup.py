@@ -36,9 +36,22 @@ For further information, please visit the `Radicale Website
 
 """
 
+import os
 from distutils.core import setup
+from distutils.command.build_scripts import build_scripts
 
 import radicale
+
+
+class BuildScripts(build_scripts):
+    """Build the package."""
+    def run(self):
+        """Run building."""
+        # These lines remove the .py extension from the radicale executable
+        self.mkpath(self.build_dir)
+        for script in self.scripts:
+            root, _ = os.path.splitext(script)
+            self.copy_file(script, os.path.join(self.build_dir, root))
 
 
 # When the version is updated, ``radicale.VERSION`` must be modified and
@@ -59,6 +72,7 @@ setup(
     packages=["radicale", "radicale.acl"],
     provides=["radicale"],
     scripts=["radicale.py"],
+    cmdclass={"build_scripts": BuildScripts},
     keywords=["calendar", "CalDAV"],
     classifiers=[
         "Development Status :: 4 - Beta",
