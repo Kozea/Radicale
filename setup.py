@@ -38,17 +38,22 @@ For further information, please visit the `Radicale Website
 
 from distutils.core import setup
 
-# When the version is updated, ``version`` and ``download_url`` must be modified
-# A new section in the ``NEWS`` file must be added too
+import radicale
+
+
+# When the version is updated, ``radicale.VERSION`` must be modified and
+# ``download_url`` must be uncommented.  A new section in the ``NEWS`` file
+# must be added too.
 setup(
     name="Radicale",
-    version="0.5-git",
+    version=radicale.VERSION,
     description="CalDAV Server",
     long_description=__doc__,
     author="Guillaume Ayoub",
     author_email="guillaume.ayoub@kozea.fr",
     url="http://www.radicale.org/",
-    #download_url="http://radicale.org/src/radicale/Radicale-0.5.tar.gz",
+    #download_url="http://www.radicale.org/src/radicale/Radicale-%s.tar.gz" % \
+    #    radicale.VERSION,
     license="GNU GPL v3",
     platforms="Any",
     packages=["radicale", "radicale.acl"],

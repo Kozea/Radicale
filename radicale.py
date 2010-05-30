@@ -44,6 +44,10 @@ import radicale
 # Get command-line options
 parser = optparse.OptionParser()
 parser.add_option(
+    "-v", "--version", action="store_true",
+    default=False,
+    help="show version and exit")
+parser.add_option(
     "-d", "--daemon", action="store_true",
     default=radicale.config.getboolean("server", "daemon"),
     help="launch as daemon")
@@ -75,6 +79,11 @@ for option in parser.option_list:
     if key:
         value = getattr(options, key)
         radicale.config.set("server", key, value)
+
+# Print version and exit if the option is given
+if options.version:
+    print(radicale.VERSION)
+    sys.exit()
 
 # Fork if Radicale is launched as daemon
 if options.daemon:

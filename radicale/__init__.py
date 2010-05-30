@@ -49,6 +49,8 @@ except ImportError:
 from radicale import acl, config, ical, xmlutils
 
 
+VERSION = "0.3-git"
+
 def _check(request, function):
     """Check if user has sufficient rights for performing ``request``."""
     authorization = request.headers.get("Authorization", None)
