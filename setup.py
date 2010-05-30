@@ -27,8 +27,9 @@ it requires few software dependances and is pre-configured to work
 out-of-the-box.
 
 The Radicale Project runs on most of the UNIX-like platforms (Linux, BSD,
-MacOS X) and Windows.  It is known to work with Lightning and Sunbird 0.9+. It
-is free and open-source software, released under GPL version 3.
+MacOS X) and Windows.  It is known to work with Evolution 2.30+, Lightning 0.9+
+and Sunbird 0.9+. It is free and open-source software, released under GPL
+version 3.
 
 For further information, please visit the `Radicale Website
 <http://www.radicale.org/>`_.
@@ -47,7 +48,7 @@ setup(
     author="Guillaume Ayoub",
     author_email="guillaume.ayoub@kozea.fr",
     url="http://www.radicale.org/",
-    #download_url = "http://radicale.org/src/radicale/Radicale-0.5.tar.gz",
+    #download_url="http://radicale.org/src/radicale/Radicale-0.5.tar.gz",
     license="GNU GPL v3",
     platforms="Any",
     packages=["radicale", "radicale.acl"],
