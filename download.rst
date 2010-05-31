@@ -30,5 +30,9 @@ You can download the Radicale package for each release:
 Linux Distribution Packages
 ===========================
 
-If you are interested in creating packages for Linux distributions, read the
-`"Contribute" page </contribute>`_.
+Radicale has been packaged for:
+
+- `Debian <http://packages.debian.org/radicale>`_ by Jonas Smedegaard
+
+If you are interested in creating packages for other Linux distributions, read
+the `"Contribute" page </contribute>`_.
