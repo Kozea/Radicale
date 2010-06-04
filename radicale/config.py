@@ -30,12 +30,12 @@ Give a configparser-like interface to read and write configuration.
 import os
 import sys
 # Manage Python2/3 different modules
-# pylint: disable-msg=F0401
+# pylint: disable=F0401
 try:
     from configparser import RawConfigParser as ConfigParser
 except ImportError:
     from ConfigParser import RawConfigParser as ConfigParser
-# pylint: enable-msg=F0401
+# pylint: enable=F0401
 
 
 # Default configuration

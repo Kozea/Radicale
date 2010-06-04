@@ -35,11 +35,11 @@ FOLDER = os.path.expanduser(config.get("storage", "folder"))
     
 
 # This function overrides the builtin ``open`` function for this module
-# pylint: disable-msg=W0622
+# pylint: disable=W0622
 def open(path, mode="r"):
     """Open file at ``path`` with ``mode``, automagically managing encoding."""
     return codecs.open(path, mode, config.get("encoding", "stock"))
-# pylint: enable-msg=W0622
+# pylint: enable=W0622
 
 
 def serialize(headers=(), items=()):
@@ -118,9 +118,9 @@ class Event(Item):
 class Todo(Item):
     """Internal todo class."""
     # This is not a TODO!
-    # pylint: disable-msg=W0511
+    # pylint: disable=W0511
     tag = "VTODO"
-    # pylint: enable-msg=W0511
+    # pylint: enable=W0511
 
 
 class Timezone(Item):

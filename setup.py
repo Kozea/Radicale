@@ -43,6 +43,8 @@ from distutils.command.build_scripts import build_scripts
 import radicale
 
 
+# build_scripts is known to have a lot of public methods
+# pylint: disable=R0904
 class BuildScripts(build_scripts):
     """Build the package."""
     def run(self):
@@ -52,6 +54,7 @@ class BuildScripts(build_scripts):
         for script in self.scripts:
             root, _ = os.path.splitext(script)
             self.copy_file(script, os.path.join(self.build_dir, root))
+# pylint: enable=R0904
 
 
 # When the version is updated, ``radicale.VERSION`` must be modified.

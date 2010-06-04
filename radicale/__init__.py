@@ -38,13 +38,13 @@ import posixpath
 import base64
 import socket
 # Manage Python2/3 different modules
-# pylint: disable-msg=F0401
+# pylint: disable=F0401
 try:
     from http import client, server
 except ImportError:
     import httplib as client
     import BaseHTTPServer as server
-# pylint: enable-msg=F0401
+# pylint: enable=F0401
 
 from radicale import acl, config, ical, xmlutils
 
@@ -57,9 +57,9 @@ def _check(request, function):
     if authorization:
         challenge = authorization.lstrip("Basic").strip().encode("ascii")
         # ``_check`` decorator can access ``request`` protected functions
-        # pylint: disable-msg=W0212
+        # pylint: disable=W0212
         plain = request._decode(base64.b64decode(challenge))
-        # pylint: enable-msg=W0212
+        # pylint: enable=W0212
         user, password = plain.split(":")
     else:
         user = password = None
@@ -77,12 +77,12 @@ def _check(request, function):
 class HTTPServer(server.HTTPServer):
     """HTTP server."""
     # Maybe a Pylint bug, ``__init__`` calls ``server.HTTPServer.__init__``
-    # pylint: disable-msg=W0231
+    # pylint: disable=W0231
     def __init__(self, address, handler):
         """Create server."""
         server.HTTPServer.__init__(self, address, handler)
         self.acl = acl.load()
-    # pylint: enable-msg=W0231
+    # pylint: enable=W0231
 
 
 class HTTPSServer(HTTPServer):
@@ -90,9 +90,9 @@ class HTTPSServer(HTTPServer):
     def __init__(self, address, handler):
         """Create server by wrapping HTTP socket in an SSL socket."""
         # Fails with Python 2.5, import if needed
-        # pylint: disable-msg=F0401
+        # pylint: disable=F0401
         import ssl
-        # pylint: enable-msg=F0401
+        # pylint: enable=F0401
 
         HTTPServer.__init__(self, address, handler)
         self.socket = ssl.wrap_socket(
@@ -146,7 +146,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         raise UnicodeDecodeError
 
     # Naming methods ``do_*`` is OK here
-    # pylint: disable-msg=C0103
+    # pylint: disable=C0103
 
     @check_rights
     def do_GET(self):
@@ -241,4 +241,4 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(answer)
 
-    # pylint: enable-msg=C0103
+    # pylint: enable=C0103
