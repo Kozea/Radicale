@@ -19,6 +19,10 @@ clone it thanks to::
 
   git clone git://gitorious.org/radicale/radicale.git
 
+You can also download the Radicale package of the git repository:
+
+- `Radicale-git.tar.gz </src/radicale/Radicale-git.tar.gz>`_
+
 Source Packages
 ===============
 
