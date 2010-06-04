@@ -54,9 +54,8 @@ class BuildScripts(build_scripts):
             self.copy_file(script, os.path.join(self.build_dir, root))
 
 
-# When the version is updated, ``radicale.VERSION`` must be modified and
-# ``download_url`` must be uncommented.  A new section in the ``NEWS`` file
-# must be added too.
+# When the version is updated, ``radicale.VERSION`` must be modified.
+# A new section in the ``NEWS`` file must be added too.
 setup(
     name="Radicale",
     version=radicale.VERSION,
@@ -65,8 +64,8 @@ setup(
     author="Guillaume Ayoub",
     author_email="guillaume.ayoub@kozea.fr",
     url="http://www.radicale.org/",
-    #download_url="http://www.radicale.org/src/radicale/Radicale-%s.tar.gz" % \
-    #    radicale.VERSION,
+    download_url="http://www.radicale.org/src/radicale/Radicale-%s.tar.gz" % \
+        radicale.VERSION,
     license="GNU GPL v3",
     platforms="Any",
     packages=["radicale", "radicale.acl"],
