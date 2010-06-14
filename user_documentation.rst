@@ -125,7 +125,7 @@ The server configuration can be modified in ``/etc/radicale.conf`` or in
 main parameters::
 
   [server]
-  # CalDAV server hostname, empty means all hostnames
+  # CalDAV server hostname, empty for all hostnames
   host = 
   # CalDAV server port
   port = 5232
@@ -155,7 +155,8 @@ main parameters::
   encryption = crypt
 
   [storage]
-  # Folder for storing local calendars, created in not present
+  # Folder for storing local calendars,
+  # created if not present
   folder = ~/.config/radicale/calendars
 
 This configuration file is read each time the server is launched. If some

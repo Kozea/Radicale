@@ -28,8 +28,9 @@ Source Packages
 
 You can download the Radicale package for each release:
 
-- `Radicale-0.2.tar.gz </src/radicale/Radicale-0.2.tar.gz>`_
-- `Radicale-0.1.tar.gz </src/radicale/Radicale-0.1.tar.gz>`_
+- `Radicale-0.3.tar.gz </src/radicale/Radicale-0.3.tar.gz>`_ (22 kio)
+- `Radicale-0.2.tar.gz </src/radicale/Radicale-0.2.tar.gz>`_ (22 kio)
+- `Radicale-0.1.tar.gz </src/radicale/Radicale-0.1.tar.gz>`_ (20 kio)
 
 Linux Distribution Packages
 ===========================
