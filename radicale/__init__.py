@@ -49,7 +49,7 @@ except ImportError:
 from radicale import acl, config, ical, xmlutils
 
 
-VERSION = "git"
+VERSION = "0.3"
 
 def _check(request, function):
     """Check if user has sufficient rights for performing ``request``."""
