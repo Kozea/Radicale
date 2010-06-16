@@ -28,9 +28,9 @@ released under GPL version 3.
 Main Features
 =============
 
-- Share calendars through CalDAV and HTTP
-- Support events and todos
-- Work out-of-the-box, no installation nor configuration required
-- Warn user on concurrent edition
-- Limit access by authentication
-- Secure connections
+- Shares calendars through CalDAV and HTTP
+- Supports events and todos
+- Works out-of-the-box, no installation nor configuration required
+- Warns users on concurrent edition
+- Limits access by authentication
+- Secures connections
