@@ -135,19 +135,19 @@ General Architecture
 Here is a simple overview of the global architecture for reaching a 
 calendar through network:
 
-+-----------+-----------------+---------------------+
-| Part      | Layer           | Protocol or Format  |
-+===========+=================+=====================+
-| Server    | Calendar Store  | iCal                |
-|           +-----------------+---------------------+
-|           | Calendar Server | CalDAV Server       |
-+-----------+-----------------+---------------------+
-| Transfert | Network         | CalDAV (HTTP + TLS) |
-+-----------+-----------------+---------------------+
-| Client    | Calendar Client | CalDAV Client       |
-|           +-----------------+---------------------+
-|           | GUI             | Terminal, GTK, etc. |
-+-----------+-----------------+---------------------+
++-----------+---------------------+--------------------------+
+|   Part    |        Layer        |    Protocol or Format    |
++===========+=====================+==========================+
+| Server    | Calendar Storage    | iCal                     |
+|           +---------------------+--------------------------+
+|           | Calendar Server     | CalDAV Server            |
++-----------+---------------------+--------------------------+
+| Transfert | Network             | CalDAV (HTTP + TLS)      |
++-----------+---------------------+--------------------------+
+| Client    | Calendar Client     | CalDAV Client            |
+|           +---------------------+--------------------------+
+|           | GUI                 | Terminal, GTK, etc.      |
++-----------+---------------------+--------------------------+
 
 The Radical Project is **only the server part** of this architecture. 
 
