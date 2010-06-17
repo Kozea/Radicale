@@ -2,14 +2,22 @@
  Contribute
 ============
 
-You Don’t Know what to Do
-=========================
+As a Lazy Person
+================
 
-Interested in hacking? Please contact ``guillaume.ayoub[a]kozea.fr``.
+Want to write kind words? Please contact guillaume.ayoub[a]kozea.fr.
 
-You Know what to Do
-===================
 
-Feel free to clone the `git repository on Gitorious
-<http://www.gitorious.org/radicale/radicale>`_ if you want to add new features
-or fix bugs.
+As a Simple User
+================
+
+Found a bug? Want a new feature? Report a new issue on the `Radicale bug-tracker
+<http://redmine.kozea.fr/projects/radicale>`_ (registration needed).
+
+
+As a Hacker
+===========
+
+Interested in hacking? Feel free to clone the `git repository on Gitorious
+<http://www.gitorious.org/radicale/radicale>`_ if you want to add new features,
+fix bugs or update documentation.
