@@ -120,7 +120,7 @@ Configuring Server
 Configuration File
 ~~~~~~~~~~~~~~~~~~
 
-The server configuration can be modified in ``/etc/radicale.conf`` or in
+The server configuration can be modified in ``/etc/radicale/config`` or in
 ``~/.config/radicale/config``. Here is the default configuration file, with the
 main parameters::
 
