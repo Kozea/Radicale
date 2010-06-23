@@ -151,7 +151,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_GET(self):
         """Manage GET request."""
-        item_name = (xmlutils.name_from_path(self.path))
+        item_name = xmlutils.name_from_path(self.path)
         if item_name:
             # Get calendar item
             items = self._calendar.timezones
