@@ -169,6 +169,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         self.send_response(client.OK)
         self.send_header("Content-Length", len(answer))
         self.send_header("Content-Type", "text/calendar")
+        self.send_header("Last-Modified", self._calendar.last_modified)
         self.send_header("ETag", etag)
         self.end_headers()
         self.wfile.write(answer)

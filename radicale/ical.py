@@ -27,6 +27,7 @@ Define the main classes of a calendar as seen from the server.
 
 import os
 import codecs
+import time
 
 from radicale import config
 
@@ -136,6 +137,9 @@ class Calendar(object):
         self.encoding = "utf-8"
         self.owner = path.split("/")[0]
         self.path = os.path.join(FOLDER, path.replace("/", os.path.sep))
+        # Create calendar if needed, useful for ``self.last_modified``
+        if not os.path.exists(self.path):
+            self.write()
 
     @staticmethod
     def _parse(text, item_types, name=None):
@@ -267,3 +271,13 @@ class Calendar(object):
     def timezones(self):
         """Get list of ``Timezome`` items in calendar."""
         return self._parse(self.text, (Timezone,))
+
+    @property
+    def last_modified(self):
+        """Get the last time the calendar has been modified.
+
+        The date is formatted according to rfc1123-5.2.14.
+
+        """
+        modification_time = time.localtime(os.path.getmtime(self.path))
+        return time.strftime("%a, %d %b %Y %H:%M:%S %Z", modification_time)
