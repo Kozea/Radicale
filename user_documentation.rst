@@ -68,7 +68,7 @@ accessible.
 
 Next window asks you to provide information about remote calendar
 access. Protocol used by Radicale is ``CalDAV``. A standard location for a basic
-use of a Radicale calendar is ``http://localhost:5232/user/calendar``, where
+use of a Radicale calendar is ``http://localhost:5232/user/calendar/``, where
 you can replace ``user`` and ``calendar`` by some strings of your
 choice. Calendars are automatically created if needed.
 
@@ -88,9 +88,12 @@ icon at the bottom of the side pane. Then add a new calendar by choosing in the
 menu ``File``, ``New``, ``Calendar``.
 
 A new window opens. The calendar ``type`` is ``CalDAV``, and the location is
-something like ``caldav://localhost:5232/user/calendar``. You can fill other
-attributes like the color and the name, these are only used for Evolution and
-are not uploaded.
+something like ``caldav://localhost:5232/user/calendar/``, where you can
+replace ``user`` and ``calendar`` by some strings of your choice. Calendars are
+automatically created if needed.
+
+You can fill other attributes like the color and the name, these are only used
+for Evolution and are not uploaded.
 
 Click on ``OK``, and your calendar should be ready for use.
 
