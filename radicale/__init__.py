@@ -148,9 +148,14 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     # Naming methods ``do_*`` is OK here
     # pylint: disable=C0103
 
-    @check_rights
     def do_GET(self):
         """Manage GET request."""
+        self.do_HEAD()
+        self.wfile.write(self._answer)
+
+    @check_rights
+    def do_HEAD(self):
+        """Manage HEAD request."""
         item_name = xmlutils.name_from_path(self.path)
         if item_name:
             # Get calendar item
@@ -165,14 +170,13 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
             answer_text = self._calendar.text
             etag = self._calendar.etag
 
-        answer = answer_text.encode(self._encoding)
+        self._answer = answer_text.encode(self._encoding)
         self.send_response(client.OK)
-        self.send_header("Content-Length", len(answer))
+        self.send_header("Content-Length", len(self._answer))
         self.send_header("Content-Type", "text/calendar")
         self.send_header("Last-Modified", self._calendar.last_modified)
         self.send_header("ETag", etag)
         self.end_headers()
-        self.wfile.write(answer)
 
     @check_rights
     def do_DELETE(self):
@@ -180,12 +184,12 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         item = self._calendar.get_item(xmlutils.name_from_path(self.path))
         if item and self.headers.get("If-Match", item.etag) == item.etag:
             # No ETag precondition or precondition verified, delete item
-            answer = xmlutils.delete(self.path, self._calendar)
+            self._answer = xmlutils.delete(self.path, self._calendar)
 
             self.send_response(client.NO_CONTENT)
-            self.send_header("Content-Length", len(answer))
+            self.send_header("Content-Length", len(self._answer))
             self.end_headers()
-            self.wfile.write(answer)
+            self.wfile.write(self._answer)
         else:
             # No item or ETag precondition not verified, do not delete item
             self.send_response(client.PRECONDITION_FAILED)
@@ -193,20 +197,20 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         """Manage OPTIONS request."""
         self.send_response(client.OK)
-        self.send_header("Allow", "DELETE, GET, OPTIONS, PROPFIND, PUT, REPORT")
+        self.send_header("Allow", "DELETE, HEAD, GET, OPTIONS, PROPFIND, PUT, REPORT")
         self.send_header("DAV", "1, calendar-access")
         self.end_headers()
 
     def do_PROPFIND(self):
         """Manage PROPFIND request."""
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
-        answer = xmlutils.propfind(self.path, xml_request, self._calendar)
+        self._answer = xmlutils.propfind(self.path, xml_request, self._calendar)
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("DAV", "1, calendar-access")
-        self.send_header("Content-Length", len(answer))
+        self.send_header("Content-Length", len(self._answer))
         self.end_headers()
-        self.wfile.write(answer)
+        self.wfile.write(self._answer)
 
     @check_rights
     def do_PUT(self):
@@ -235,11 +239,11 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     def do_REPORT(self):
         """Manage REPORT request."""
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
-        answer = xmlutils.report(self.path, xml_request, self._calendar)
+        self._answer = xmlutils.report(self.path, xml_request, self._calendar)
 
         self.send_response(client.MULTI_STATUS)
-        self.send_header("Content-Length", len(answer))
+        self.send_header("Content-Length", len(self._answer))
         self.end_headers()
-        self.wfile.write(answer)
+        self.wfile.write(self._answer)
 
     # pylint: enable=C0103
