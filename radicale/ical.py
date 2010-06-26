@@ -279,5 +279,5 @@ class Calendar(object):
         The date is formatted according to rfc1123-5.2.14.
 
         """
-        modification_time = time.localtime(os.path.getmtime(self.path))
-        return time.strftime("%a, %d %b %Y %H:%M:%S %Z", modification_time)
+        modification_time = time.gmtime(os.path.getmtime(self.path))
+        return time.strftime("%a, %d %b %Y %H:%M:%S +0000", modification_time)
