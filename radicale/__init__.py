@@ -53,18 +53,17 @@ VERSION = "git"
 
 def _check(request, function):
     """Check if user has sufficient rights for performing ``request``."""
+    # ``_check`` decorator can access ``request`` protected functions
+    # pylint: disable=W0212
     authorization = request.headers.get("Authorization", None)
     if authorization:
         challenge = authorization.lstrip("Basic").strip().encode("ascii")
-        # ``_check`` decorator can access ``request`` protected functions
-        # pylint: disable=W0212
         plain = request._decode(base64.b64decode(challenge))
-        # pylint: enable=W0212
         user, password = plain.split(":")
     else:
         user = password = None
 
-    if request.server.acl.has_right(user, password):
+    if request.server.acl.has_right(request._calendar.owner, user, password):
         function(request)
     else:
         request.send_response(client.UNAUTHORIZED)
@@ -72,6 +71,7 @@ def _check(request, function):
             "WWW-Authenticate",
             "Basic realm=\"Radicale Server - Password Required\"")
         request.end_headers()
+    # pylint: enable=W0212
 
 
 class HTTPServer(server.HTTPServer):

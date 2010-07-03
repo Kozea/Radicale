@@ -52,6 +52,7 @@ INITIAL_CONFIG = {
         "stock": "utf-8"},
     "acl": {
         "type": "fake",
+        "personal": "False",
         "filename": "/etc/radicale/users",
         "encryption": "crypt"},
     "storage": {
