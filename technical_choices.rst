@@ -149,9 +149,53 @@ calendar through network:
 |           | GUI                 | Terminal, GTK, etc.      |
 +-----------+---------------------+--------------------------+
 
-The Radical Project is **only the server part** of this architecture. 
+The Radicale Project is **only the server part** of this architecture. 
 
 Code Architecture
 -----------------
 
-*To be written*
+The code is split into 2 parts: the module and the server. The module offers
+the complex functions to create a CalDAV server, and the server is the
+executable using the module to launch the server.
+
+Server
+~~~~~~
+
+The server is a simple executable. Its main work is to read the configuration
+from the configuration file and from the options given in the command line;
+then it creates a server, according to the configuration, thanks to the module.
+
+Module
+~~~~~~
+
+The module offers 5 sub-modules.
+
+``__init__``
+  This is the core part of the module, with the code for the CalDAV server. The
+  server inherits from a HTTP or HTTPS server class, which relies on the
+  default HTTP server class given by Python. The code managing the different
+  HTTP requests according to the CalDAV normalization is written here.
+
+``config``
+  This part gives a dict-like access to the server configuration, read from
+  the configuration file. The configuration can be altered when launching the
+  executable with some command line options.
+
+``ical``
+  In this sub-module are written the classes to represent calendars and
+  calendar items in Radicale. The simple iCalendar readers and writers are
+  included in this file, to read and write requests and internally stored
+  calendars. The readers and writers are stupid
+
+``xmlutils``
+  The functions defined in this sub-module are mainly called by the CalDAV
+  server class to read the XML part of the request, read or alter the
+  calendars, and create the XML part of the response. The main part of this
+  code relies on ElementTree.
+
+``acl``
+  This sub-module is a set of Access Control Lists, a set of methods used by
+  Radicale to manage rights to access the calendars. When the CalDAV server is
+  launched, an Access Control List is chosen in the set, according to the
+  configuration. The HTTP requests are then filtered to restrict the access
+  using a list of login/password-based access controls.
