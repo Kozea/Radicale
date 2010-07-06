@@ -1,0 +1,22 @@
+Radicale 0.3 Released
+=====================
+
+Radicale 0.3 is out! Here is what’s new:
+
+0.3 - Dancing Flowers
+---------------------
+
+* Evolution support
+* Version management
+
+The website changed a little bit too, with some small HTML5 and CSS3 features
+such as articles, sections, transitions, opacity, box shadows and rounded
+corners. If you’re reading this website with Internet Explorer, you should
+consider using a standard-compliant browser!
+
+Radicale is now included in Squeeze, the testing branch of Debian. A `Radicale
+ebuild for Gentoo <http://bugs.gentoo.org/show_bug.cgi?id=322811>`_ has been
+proposed too. If you want to package Radicale for another distribution, you’re
+welcome!
+
+Next step is 0.5, with calendar collections, and Windows and MacOS support.
