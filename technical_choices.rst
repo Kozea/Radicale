@@ -185,7 +185,8 @@ The module offers 5 sub-modules.
   In this sub-module are written the classes to represent calendars and
   calendar items in Radicale. The simple iCalendar readers and writers are
   included in this file, to read and write requests and internally stored
-  calendars. The readers and writers are stupid
+  calendars. The readers and writers are small and stupid: they do not
+  fully understand the iCalendar format and do not know at all what a date is.
 
 ``xmlutils``
   The functions defined in this sub-module are mainly called by the CalDAV
