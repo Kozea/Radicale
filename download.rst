@@ -21,7 +21,7 @@ clone it thanks to::
 
 You can also download the Radicale package of the git repository:
 
-- `Radicale-git.tar.gz </src/radicale/Radicale-git.tar.gz>`_
+- `Radicale-git.tar.gz <http://gitorious.org/radicale/radicale/archive-tarball/master>`_
 
 Source Packages
 ===============
