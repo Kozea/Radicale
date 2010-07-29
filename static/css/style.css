@@ -1,0 +1,329 @@
+@font-face {
+font-family: "Fontin Sans";
+src: url(Fontin-Sans.otf);
+font-style: normal;
+}
+
+html {
+background: #eeeeec url(img/radicale_back.png) 130% -150px no-repeat;
+color: #2e3436;
+font-family: "Fontin Sans", sans-serif;
+padding: 0;
+}
+
+body {
+width: 600px;
+margin: 100px auto;
+border: 1px solid #babdb6;
+background: white;
+padding: 20px 40px;
+text-align: justify;
+opacity: .8;
+border-radius: 40px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+color: #111;
+}
+
+h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+color: #111;
+}
+
+a {
+border-radius: .3em;
+color: #4e9a06;
+margin: 0 -.3em;
+outline: none;
+padding: 0 .3em;
+text-decoration: none;
+transition-property: background-color, color;
+transition-duration: 0.25s;
+}
+
+a:hover,
+a:focus {
+background: #eeeeec;
+}
+
+dt {
+font-weight: bold;
+margin-top: 1em;
+}
+
+dd {
+margin: .5em 1.5em 0 1.5em;
+}
+
+h1 a {
+display: block;
+width: 100px;
+height: 175px;
+background: url(img/radicale.png);
+font-size: 0;
+color: transparent;
+margin: -15px 0 0 -20px;
+border-radius: 10px;
+position: relative;
+}
+
+h1 a:hover,
+h1 a:focus {
+background: #eeeeec url(img/radicale.png);
+box-shadow: 1px 1px 1px #ddd;
+font-size: 0;
+}
+
+h2, h3, h4, h5, h6 {
+margin-left: -.05em;
+text-shadow: #eeeeec .1em .1em;
+}
+
+h2 {
+counter-reset: title;
+font-size: 1.45em;
+margin: 3em 0 0 0;
+}
+
+h3 a:before {
+content: counter(title, upper-roman) ". ";
+counter-increment: title;
+}
+
+h3 {
+counter-reset: subtitle;
+margin-top: 2em;
+font-size: 1.3em;
+}
+
+h4 a:before {
+content: counter(subtitle, decimal) ". ";
+counter-increment: subtitle;
+}
+
+h4 {
+margin-top: 2em;
+counter-reset: subsubtitle;
+font-size: 1.2em;
+}
+
+h5 a:before {
+content: counter(subsubtitle, lower-latin) ". ";
+counter-increment: subsubtitle;
+}
+
+h5 {
+counter-reset: subsubsubtitle;
+font-size: 100%;
+}
+
+h6 a:before {
+content: counter(subsubsubtitle, lower-greek) ". ";
+counter-increment: subsubsubtitle;
+}
+
+ul {
+padding: .25em 0 .25em 1.5em;
+}
+
+table {
+border: gray 1px solid;
+border-collapse: collapse;
+box-shadow: 3px 3px 3px #ddd;
+margin: 1em auto;
+}
+
+th, td {
+padding: .35em;
+}
+
+th {
+background: #eeeeec;
+border: gray 1px solid;
+font-variant: small-caps;
+text-shadow: #eeeeec .1em .1em;
+}
+
+td {
+border: 1px solid #babdb6;
+}
+
+pre {
+background: #2e3436 url(img/radicale_back.png) 20% 60% no-repeat;
+border-radius: 1em;
+box-shadow: 3px 3px 3px #ddd;
+color: #eeeeec;
+font-size: 1.1em;
+font-family: monospace;
+margin: 1em;
+padding: 1em;
+text-shadow: 1px 1px 1px #111;
+}
+
+input {
+border: 1px solid #babdb6;
+border-radius: .75em;
+padding: .5em;
+background: #eeeeec;
+color: #2e3436;
+}
+
+nav ul {
+box-shadow: 3px 3px 3px #ccc;
+display: block;
+background: #a40000;
+text-align: center;
+padding: .75em;
+margin: -4.5em 0 6em 100px;
+border-radius: 1.5em;
+text-transform: lowercase;
+}
+
+nav li {
+display: inline;
+opacity: 0.95;
+}
+
+nav li a {
+color: #eeeeec;
+padding: .25em .5em;
+margin: 0;
+border-radius: 1em;
+}
+
+nav li a:hover,
+nav li a:focus {
+background: white;
+box-shadow: 1px 1px 3px #600;
+color: #a40000;
+text-decoration: none;
+}
+
+footer ul {
+display: block;
+text-align: center;
+margin: 8em 0 -10px 0;
+padding: 0;
+font-size: 90%;
+color: #babdb6;
+font-variant: small-caps;
+}
+
+footer li {
+display: inline;
+padding: .5em;
+}
+
+footer li a {
+color: #babdb6;
+padding: .25em .5em;
+border-radius: 10px;
+}
+
+footer li a:hover,
+footer li a:focus {
+box-shadow: 1px 1px 1px #ddd;
+}
+
+.contents {
+background: #eeeeec;
+padding: .5em 2em;
+margin: 2.5em 0;
+border-radius: 3em;
+box-shadow: 3px 3px 3px #ddd;
+}
+
+.contents a:hover,
+.contents a:focus,
+.note a:hover,
+.note a:focus {
+background: white;
+}
+
+.contents ul {
+padding: .25em 0 .25em 2em;
+list-style-type: upper-roman;
+}
+
+.contents ul ul {
+list-style-type: decimal;
+}
+
+.contents ul ul ul {
+list-style-type: lower-latin;
+}
+
+.contents ul ul ul ul {
+list-style-type: lower-greek;
+}
+
+.contents li {
+margin: 0;
+}
+
+.note {
+background: #eeeeec url(img/radicale_back.png) 20% 60% no-repeat;
+padding: .5em 2.5em;
+margin: 2em 0;
+border-radius: 3em;
+box-shadow: 3px 3px 3px #ddd;
+}
+
+.admonition-title,
+.topic-title {
+font-weight: bold;
+}
+
+.abstract {
+font-size: .9em;
+font-style: italic;
+padding: 0 .25em;
+}
+
+.abstract .topic-title {
+display: none;
+}
+
+.footnote tr, .footnote td {
+border: 0;
+padding: 0 .5em;
+vertical-align: top;
+}
+
+.footnote {
+border: 0;
+display: block;
+box-shadow: none;
+opacity: .8;
+font-size: .8em;
+margin: 0;
+padding: 0 1em;
+}
+
+.footnote td {
+margin: 0;
+padding: 0 .2em;
+}
+
+.footnote td.label:after {
+content: " ";
+}
+
+input[type=submit] {
+display: block;
+margin: 1em 0;
+}
+
+label {
+display: block;
+margin: 1em 0 .25em .25em;
+}
+
+fieldset {
+border: 0;
+padding: 0;
+}
+
+.docinfo {
+display: none;
+}
