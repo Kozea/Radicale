@@ -1,7 +1,6 @@
 {
   "title": "Radicale CalDAV Server",
   "menu": [
-    {"name": "Home", "link": "/home"},
     {"name": "News", "link": "/news"},
     {"name": "Documentation", "link": "/documentation"},
     {"name": "Contribute", "link": "/contribute"},
