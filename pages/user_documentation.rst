@@ -185,8 +185,12 @@ HTTPS support depends on the ``ssl`` module, only available from Python
 2.6. Nevertheless, Radicale without TLS encryption works well with Python 2.5.
 
 Moreover, python 2.6 suffers `a bug <http://bugs.python.org/issue5103>`_
-causing huge timeout problems with SSL. No workaround will be added in
-Radicale, please ask the Python developers for a fix or use Python 3.x.
+causing huge timeout problems with TLS. The bug has been fixed in the Python
+trunk, but no stable Python 2.6 version has been released since then.
+
+Python 2.7 and Python 3 do not suffer this bug.
+
+No workaround will be added in Radicale.
 
 Crypt Support
 -------------
