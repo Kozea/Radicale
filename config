@@ -1,0 +1,43 @@
+# Config file for radicale - a simple calendar server
+#
+# Place it into /etc/radicale/config (global) 
+# or ~/.config/radicale/config (user)
+#
+# The current values are the default ones
+
+[server]
+# CalDAV server hostname, empty for all hostnames
+host =
+# CalDAV server port
+port = 5232
+# Daemon flag
+daemon = False
+# SSL flag, enable HTTPS protocol
+ssl = False
+# SSL certificate path (if needed)
+certificate = /etc/apache2/ssl/server.crt
+# SSL private key (if needed)
+key = /etc/apache2/ssl/server.key
+
+[encoding]
+# Encoding for responding requests
+request = utf-8
+# Encoding for storing local calendars
+stock = utf-8
+
+[acl]
+# Access method
+# Value: fake | htpasswd
+type = fake
+# Htpasswd filename (if needed)
+filename = /etc/radicale/users
+# Htpasswd encryption method (if needed)
+# Value: plain | sha1 | crypt
+encryption = crypt
+
+[storage]
+# Folder for storing local calendars,
+# created if not present
+folder = ~/.config/radicale/calendars
+
+# vim:ft=cfg
