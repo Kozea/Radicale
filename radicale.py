@@ -67,6 +67,9 @@ parser.add_option(
     default=radicale.config.getboolean("server", "ssl"),
     help="use SSL connection")
 parser.add_option(
+    "-S", "--no-ssl", action="store_false", dest="ssl",
+    help="do not use SSL connection (opposite of --ssl)")
+parser.add_option(
     "-k", "--key",
     default=radicale.config.get("server", "key"),
     help="private key file ")
