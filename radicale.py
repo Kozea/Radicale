@@ -52,6 +52,9 @@ parser.add_option(
     default=radicale.config.getboolean("server", "daemon"),
     help="launch as daemon")
 parser.add_option(
+    "-f", "--foreground", action="store_false", dest="daemon",
+    help="launch in foreground (opposite of --daemon)")
+parser.add_option(
     "-H", "--host",
     default=radicale.config.get("server", "host"),
     help="set server hostname")
