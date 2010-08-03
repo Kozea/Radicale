@@ -1,4 +1,4 @@
-# Config file for radicale - a simple calendar server
+# Config file for Radicale - A simple calendar server
 #
 # Place it into /etc/radicale/config (global) 
 # or ~/.config/radicale/config (user)
