@@ -151,6 +151,8 @@ main parameters::
   # Access method
   # Value: fake | htpasswd
   type = fake
+  # Personal calendars only available for logged in users (if needed)
+  personal = False
   # Htpasswd filename (if needed)
   filename = /etc/radicale/users
   # Htpasswd encryption method (if needed)
