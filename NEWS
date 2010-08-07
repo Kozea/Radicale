@@ -6,12 +6,14 @@
  NEWS
 ------
 
-0.5 - **Not released yet**
-==========================
+0.4 - Hot Days Back
+===================
 
 * Personal calendars
 * HEAD requests
 * Last-Modified HTTP header
+* ``no-ssl`` and ``foreground`` options
+* Default configuration file
 
 
 0.3 - Dancing Flowers
