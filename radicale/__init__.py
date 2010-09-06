@@ -159,12 +159,16 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         item_name = xmlutils.name_from_path(self.path)
         if item_name:
             # Get calendar item
-            items = self._calendar.timezones
             item = self._calendar.get_item(item_name)
-            items.append(item)
-            answer_text = ical.serialize(
-                headers=self._calendar.headers, items=items)
-            etag = item.etag
+            if item:
+                items = self._calendar.timezones
+                items.append(item)
+                answer_text = ical.serialize(
+                    headers=self._calendar.headers, items=items)
+                etag = item.etag
+            else:
+                self.send_response(client.GONE)
+                return
         else:
             # Get whole calendar
             answer_text = self._calendar.text
