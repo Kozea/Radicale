@@ -39,6 +39,7 @@ Linux Distribution Packages
 Radicale has been packaged for:
 
 - `Debian <http://packages.debian.org/radicale>`_ by Jonas Smedegaard
+- `Gentoo (Sunrise Overlay) <http://bugs.gentoo.org/show_bug.cgi?id=322811>`_ by René Neumann
 
 If you are interested in creating packages for other Linux distributions, read
 the `"Contribute" page </contribute>`_.
