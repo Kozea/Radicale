@@ -80,7 +80,7 @@ def delete(path, calendar):
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
 
-def propfind(path, xml_request, calendar):
+def propfind(path, xml_request, calendar, request):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -108,24 +108,24 @@ def propfind(path, xml_request, calendar):
     prop = ET.Element(_tag("D", "prop"))
     propstat.append(prop)
 
-    if _tag("D", "resourcetype") in props:
-        element = ET.Element(_tag("D", "resourcetype"))
-        element.append(ET.Element(_tag("C", "calendar")))
-        prop.append(element)
+    for tag in props:
+        element = ET.Element(tag)
 
-    if _tag("D", "owner") in props:
-        element = ET.Element(_tag("D", "owner"))
-        element.text = calendar.owner
-        prop.append(element)
+        if tag == _tag("D", "resourcetype"):
+            element.append(ET.Element(_tag("C", "calendar")))
+        elif tag == _tag("D", "owner"):
+            element.text = calendar.owner
+        elif tag == _tag("D", "getcontenttype"):
+            element.text = "text/calendar"
+        elif tag == _tag("D", "getetag"):
+            element.text = calendar.etag
+        elif tag == _tag("D", "displayname"):
+            element.text = calendar.name
+        elif tag == _tag("D", "principal-URL"):
+            # TODO: use a real principal URL, read rfc3744-4.2 for info
+            element.text = "%s://%s%s" % (
+                request.server.PROTOCOL, request.headers["Host"], request.path)
 
-    if _tag("D", "getcontenttype") in props:
-        element = ET.Element(_tag("D", "getcontenttype"))
-        element.text = "text/calendar"
-        prop.append(element)
-
-    if _tag("D", "getetag") in props:
-        element = ET.Element(_tag("D", "getetag"))
-        element.text = calendar.etag
         prop.append(element)
 
     status = ET.Element(_tag("D", "status"))

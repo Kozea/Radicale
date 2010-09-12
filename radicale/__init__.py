@@ -76,6 +76,8 @@ def _check(request, function):
 
 class HTTPServer(server.HTTPServer):
     """HTTP server."""
+    PROTOCOL = "http"
+
     # Maybe a Pylint bug, ``__init__`` calls ``server.HTTPServer.__init__``
     # pylint: disable=W0231
     def __init__(self, address, handler):
@@ -87,6 +89,7 @@ class HTTPServer(server.HTTPServer):
 
 class HTTPSServer(HTTPServer):
     """HTTPS server."""
+    PROTOCOL = "https"
     def __init__(self, address, handler):
         """Create server by wrapping HTTP socket in an SSL socket."""
         # Fails with Python 2.5, import if needed
@@ -208,7 +211,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     def do_PROPFIND(self):
         """Manage PROPFIND request."""
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
-        self._answer = xmlutils.propfind(self.path, xml_request, self._calendar)
+        self._answer = xmlutils.propfind(self.path, xml_request, self._calendar, self)
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("DAV", "1, calendar-access")

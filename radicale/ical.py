@@ -230,6 +230,11 @@ class Calendar(object):
         return '"%s"' % hash(self.text)
 
     @property
+    def name(self):
+        """Calendar name."""
+        return self.path.split(os.path.sep)[-1]
+
+    @property
     def text(self):
         """Calendar as plain text."""
         try:
