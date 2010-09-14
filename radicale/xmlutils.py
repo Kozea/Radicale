@@ -121,6 +121,12 @@ def propfind(path, xml_request, calendar, request):
             element.text = calendar.etag
         elif tag == _tag("D", "displayname"):
             element.text = calendar.name
+        elif tag == _tag("D", "supported-report-set"):
+            supported_report = ET.Element(_tag("D", "supported-report"))
+            report = ET.Element(_tag("D", "report"))
+            report.append(ET.Element(_tag("C", "calendar-multiget")))
+            supported_report.append(report)
+            element.append(supported_report)
         elif tag == _tag("D", "principal-URL"):
             # TODO: use a real principal URL, read rfc3744-4.2 for info
             element.text = "%s://%s%s" % (
