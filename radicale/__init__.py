@@ -204,14 +204,16 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         """Manage OPTIONS request."""
         self.send_response(client.OK)
-        self.send_header("Allow", "DELETE, HEAD, GET, OPTIONS, PROPFIND, PUT, REPORT")
+        self.send_header(
+            "Allow", "DELETE, HEAD, GET, OPTIONS, PROPFIND, PUT, REPORT")
         self.send_header("DAV", "1, calendar-access")
         self.end_headers()
 
     def do_PROPFIND(self):
         """Manage PROPFIND request."""
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
-        self._answer = xmlutils.propfind(self.path, xml_request, self._calendar, self)
+        self._answer = xmlutils.propfind(
+            self.path, xml_request, self._calendar, self)
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("DAV", "1, calendar-access")
