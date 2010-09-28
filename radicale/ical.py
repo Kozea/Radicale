@@ -131,6 +131,8 @@ class Timezone(Item):
 
 class Calendar(object):
     """Internal calendar class."""
+    tag = "VCALENDAR"
+
     def __init__(self, path):
         """Initialize the calendar with ``cal`` and ``user`` parameters."""
         # TODO: Use properties from the calendar configuration

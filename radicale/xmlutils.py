@@ -95,48 +95,62 @@ def propfind(path, xml_request, calendar, request):
     
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
-    response = ET.Element(_tag("D", "response"))
-    multistatus.append(response)
 
-    href = ET.Element(_tag("D", "href"))
-    href.text = path
-    response.append(href)
+    for item in (calendar,) + tuple(calendar.events) + tuple(calendar.todos):
+        response = ET.Element(_tag("D", "response"))
 
-    propstat = ET.Element(_tag("D", "propstat"))
-    response.append(propstat)
+        href = ET.Element(_tag("D", "href"))
+        if item.tag == "VCALENDAR":
+            href.text = path
+        else:
+            href.text = "%s/%s" % (path.rstrip("/"), item.name)
+        response.append(href)
 
-    prop = ET.Element(_tag("D", "prop"))
-    propstat.append(prop)
+        propstat = ET.Element(_tag("D", "propstat"))
+        response.append(propstat)
 
-    for tag in props:
-        element = ET.Element(tag)
+        prop = ET.Element(_tag("D", "prop"))
+        propstat.append(prop)
 
-        if tag == _tag("D", "resourcetype"):
-            element.append(ET.Element(_tag("C", "calendar")))
-        elif tag == _tag("D", "owner"):
-            element.text = calendar.owner
-        elif tag == _tag("D", "getcontenttype"):
-            element.text = "text/calendar"
-        elif tag == _tag("D", "getetag"):
-            element.text = calendar.etag
-        elif tag == _tag("D", "displayname"):
-            element.text = calendar.name
-        elif tag == _tag("D", "supported-report-set"):
-            supported_report = ET.Element(_tag("D", "supported-report"))
-            report = ET.Element(_tag("D", "report"))
-            report.append(ET.Element(_tag("C", "calendar-multiget")))
-            supported_report.append(report)
-            element.append(supported_report)
-        elif tag == _tag("D", "principal-URL"):
-            # TODO: use a real principal URL, read rfc3744-4.2 for info
-            element.text = "%s://%s%s" % (
-                request.server.PROTOCOL, request.headers["Host"], request.path)
+        for tag in props:
+            element = ET.Element(tag)
+            if tag == _tag("D", "resourcetype"):
+                if item.tag == "VCALENDAR":
+                    # Item is a calendar
+                    tag = ET.Element(_tag("C", "calendar"))
+                else:
+                    # Item is an event or a todo
+                    tag = ET.Element(_tag("C", "comp"))
+                    tag.set("name", item.tag)
+                element.append(tag)
+            elif tag == _tag("D", "owner"):
+                element.text = calendar.owner
+            elif tag == _tag("D", "getcontenttype"):
+                element.text = "text/calendar"
+            elif tag == _tag("D", "getetag"):
+                element.text = item.etag
+            elif tag == _tag("D", "displayname"):
+                element.text = calendar.name
+            elif tag == _tag("D", "supported-report-set"):
+                supported_report = ET.Element(_tag("D", "supported-report"))
+                report_set = ET.Element(_tag("D", "report"))
+                report_set.append(ET.Element(_tag("C", "calendar-multiget")))
+                supported_report.append(report_set)
+                element.append(supported_report)
+            elif tag == _tag("D", "principal-URL"):
+                # TODO: use a real principal URL, read rfc3744-4.2 for info
+                element.text = "%s://%s%s" % (
+                    request.server.PROTOCOL, request.headers["Host"],
+                    request.path)
 
-        prop.append(element)
+            prop.append(element)
 
-    status = ET.Element(_tag("D", "status"))
-    status.text = _response(200)
-    propstat.append(status)
+        status = ET.Element(_tag("D", "status"))
+        status.text = _response(200)
+        propstat.append(status)
+
+        # Add calendar to answers
+        multistatus.append(response)
 
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
