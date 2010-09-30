@@ -217,7 +217,7 @@ class Calendar(object):
         headers = headers or self.headers or (
             Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
             Header("VERSION:2.0"))
-        items = items or self.items
+        items = items if items is not None else self.items
 
         # Create folder if absent
         if not os.path.exists(os.path.dirname(self.path)):
