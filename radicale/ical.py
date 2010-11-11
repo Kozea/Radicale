@@ -139,9 +139,6 @@ class Calendar(object):
         self.encoding = "utf-8"
         self.owner = path.split("/")[0]
         self.path = os.path.join(FOLDER, path.replace("/", os.path.sep))
-        # Create calendar if needed, useful for ``self.last_modified``
-        if not os.path.exists(self.path):
-            self.write()
 
     @staticmethod
     def _parse(text, item_types, name=None):
@@ -286,5 +283,9 @@ class Calendar(object):
         The date is formatted according to rfc1123-5.2.14.
 
         """
+        # Create calendar if needed
+        if not os.path.exists(self.path):
+            self.write()
+
         modification_time = time.gmtime(os.path.getmtime(self.path))
         return time.strftime("%a, %d %b %Y %H:%M:%S +0000", modification_time)
