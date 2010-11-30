@@ -213,11 +213,13 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         """Manage PROPFIND request."""
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
         self._answer = xmlutils.propfind(
-            self.path, xml_request, self._calendar, self)
+            self.path, xml_request, self._calendar,
+            self.headers.get("depth", "infinity"), self)
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("DAV", "1, calendar-access")
         self.send_header("Content-Length", len(self._answer))
+        self.send_header("Content-Type", "text/xml")
         self.end_headers()
         self.wfile.write(self._answer)
 
