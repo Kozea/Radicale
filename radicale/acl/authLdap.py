@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import sys, ldap
+import sys, ldap, syslog
 
-from radicale import config
+from radicale import config, log
 
 def has_right(owner, user, password):
 	if user == None:
@@ -13,10 +13,11 @@ def has_right(owner, user, password):
 		return False
 	try:
 		l=ldap.open(LDAPSERVER, 389)
-		cn="%s%s,%s" % (LDAPPREPEND, user, LDAPAPPEND)
-		l.simple_bind_s(cn, password);
+		dn="%s%s,%s" % (LDAPPREPEND, user, LDAPAPPEND)
+		l.simple_bind_s(dn, password);
 		return True
 	except:
+		log.error(sys.exc_info()[0])
 		return False
 
 LDAPSERVER = config.get("authLdap", "LDAPServer")

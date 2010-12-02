@@ -56,7 +56,15 @@ INITIAL_CONFIG = {
         "filename": "/etc/radicale/users",
         "encryption": "crypt"},
     "storage": {
-        "folder": os.path.expanduser("~/.config/radicale/calendars")}}
+        "folder": os.path.expanduser("~/.config/radicale/calendars")},
+	"authLdap": {
+		"LDAPServer": "127.0.0.1",
+		"LDAPPrepend": "uid=",
+		"LDAPAppend": "ou=users,dc=example,dc=com"},
+	"logging": {
+		"file": os.path.expanduser("~/.config/radicale/radicale.log"),
+		"level": "error"}
+	}
 
 # Create a ConfigParser and configure it
 _CONFIG_PARSER = ConfigParser()
