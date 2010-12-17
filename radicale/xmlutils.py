@@ -97,22 +97,22 @@ def propfind(path, xml_request, calendar, depth, request):
     multistatus = ET.Element(_tag("D", "multistatus"))
 
     if depth == "0":
-        elements = [calendar]
+        items = [calendar]
     elif depth == "1":
-        elements = [calendar] + calendar.events + calendar.todos
+        items = [calendar] + calendar.events + calendar.todos
     else:
         # depth is infinity or not specified
         # we limit ourselves to depth == 1
-        elements = [calendar] + calendar.events + calendar.todos
+        items = [calendar] + calendar.events + calendar.todos
 
-    for element in elements:
-        is_calendar = isinstance(element, ical.Calendar)
+    for item in items:
+        is_calendar = isinstance(item, ical.Calendar)
 
         response = ET.Element(_tag("D", "response"))
         multistatus.append(response)
 
         href = ET.Element(_tag("D", "href"))
-        href.text = path if is_calendar else "%s/%s" % (path, element.name)
+        href.text = path if is_calendar else "%s/%s" % (path, item.name)
         response.append(href)
 
         propstat = ET.Element(_tag("D", "propstat"))
@@ -138,7 +138,7 @@ def propfind(path, xml_request, calendar, depth, request):
             elif tag == _tag("D", "getcontenttype"):
                 element.text = "text/calendar"
             elif tag == _tag("D", "getetag"):
-                element.text = element.etag
+                element.text = item.etag
             elif tag == _tag("D", "displayname"):
                 element.text = calendar.name
             elif tag == _tag("D", "supported-report-set"):
