@@ -154,7 +154,8 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
         """Manage GET request."""
         self.do_HEAD()
-        self.wfile.write(self._answer)
+        if self._answer:
+            self.wfile.write(self._answer)
 
     @check_rights
     def do_HEAD(self):
@@ -170,6 +171,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
                     headers=self._calendar.headers, items=items)
                 etag = item.etag
             else:
+                self._answer = None
                 self.send_response(client.GONE)
                 return
         else:

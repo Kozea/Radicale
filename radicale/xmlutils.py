@@ -52,7 +52,8 @@ def _response(code):
 
 def name_from_path(path):
     """Return Radicale item name from ``path``."""
-    return path.split("/")[-1]
+    path_parts = path.strip("/").split("/")
+    return path_parts[-1] if len(path_parts) > 2 else None
 
 
 def delete(path, calendar):
