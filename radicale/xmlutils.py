@@ -84,7 +84,7 @@ def propfind(path, xml_request, calendar, depth, request):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
-
+    
     """
     # Reading request
     root = ET.fromstring(xml_request)
@@ -138,7 +138,7 @@ def propfind(path, xml_request, calendar, depth, request):
             elif tag == _tag("D", "getcontenttype"):
                 element.text = "text/calendar"
             elif tag == _tag("D", "getetag"):
-                element.text = element.etag
+                element.text = element.tag
             elif tag == _tag("D", "displayname"):
                 element.text = calendar.name
             elif tag == _tag("D", "supported-report-set"):

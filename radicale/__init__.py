@@ -46,7 +46,7 @@ except ImportError:
     import BaseHTTPServer as server
 # pylint: enable=F0401
 
-from radicale import acl, config, ical, xmlutils
+from radicale import acl, config, ical, xmlutils, log
 
 
 VERSION = "git"
