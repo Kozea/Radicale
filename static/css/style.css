@@ -3,7 +3,7 @@ background: #eeeeec url(img/radicale_back.png) 130% -150px no-repeat;
 }
 
 h1 a {
-background: url(img/radicale.png);
+background: url(img/radicale.png) 50% 50% no-repeat;
 color: transparent;
 display: block;
 font-size: 0;
