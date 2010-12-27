@@ -19,7 +19,7 @@ color: #4e9a06;
 
 h1 a:hover,
 h1 a:focus {
-background: #eeeeec url(img/radicale.png);
+background: #eeeeec url(img/radicale.png) 50% 50% no-repeat;
 }
 
 pre {
