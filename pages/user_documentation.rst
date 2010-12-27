@@ -18,7 +18,7 @@ Dependencies
 ------------
 
 Radicale is written in pure python and does not depend on any librabry. It is
-known to work on Python 2.5, 2.6, 3.0 and 3.1 [#]_.
+known to work on Python 2.5, 2.6, 2.7, 3.0 and 3.1 [#]_.
 
 Linux users certainly have Python already installed. For Windows and MacOS
 users, please install Python [#]_ thanks to the adequate installer.
@@ -189,7 +189,7 @@ HTTPS support depends on the ``ssl`` module, only available from Python
 Moreover, python 2.6 suffered `a bug <http://bugs.python.org/issue5103>`_
 causing huge timeout problems with TLS. The bug is fixed since Python 2.6.6.
 
-Python 2.7 and Python 3 do not suffer this bug.
+Python 2.7 and Python 3.x do not suffer this bug.
 
 Crypt Support
 -------------
