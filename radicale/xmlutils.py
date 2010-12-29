@@ -27,8 +27,6 @@ in them for XML requests (all but PUT).
 
 """
 
-# TODO: Manage depth and calendars/collections
-
 import xml.etree.ElementTree as ET
 
 from radicale import client, config, ical
