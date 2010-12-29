@@ -6,6 +6,15 @@
  NEWS
 ------
 
+0.5 - *Not released yet*
+========================
+
+* Calendar depth
+* MacOS and Windows support
+* HEAD requests management
+* htpasswd user from calendar path
+
+
 0.4 - Hot Days Back
 ===================
 
