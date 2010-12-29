@@ -151,6 +151,12 @@ def propfind(path, xml_request, calendar, depth, request):
                 element.text = "%s://%s%s" % (
                     request.server.PROTOCOL, request.headers["Host"],
                     request.path)
+            elif tag == _tag("C", "calendar-home-set"):
+                tag = ET.Element(_tag("D", "href"))
+                tag.text = "%s://%s%s" % (
+                    request.server.PROTOCOL, request.headers["Host"],
+                    request.path)
+                element.append(tag)
 
             prop.append(element)
 
