@@ -9,9 +9,16 @@
 0.5
 ===
 
-* Calendar collections
-* Group calendars
-* [IN PROGRESS] Windows and MacOS tested support
+* iCal and iPhone support
+
+
+0.6
+===
+
+* [IN PROGRESS] Group calendars
+* [IN PROGRESS] LDAP and databases auth support
+* CalDAV rights
+* Read-only access for foreign users
 
 
 1.0
