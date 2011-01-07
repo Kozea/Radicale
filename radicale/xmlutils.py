@@ -79,7 +79,7 @@ def delete(path, calendar):
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
 
-def propfind(path, xml_request, calendar, depth, request):
+def propfind(path, xml_request, calendar, depth):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -97,10 +97,8 @@ def propfind(path, xml_request, calendar, depth, request):
 
     if depth == "0":
         items = [calendar]
-    elif depth == "1":
-        items = [calendar] + calendar.events + calendar.todos
     else:
-        # depth is infinity or not specified
+        # depth is 1, infinity or not specified
         # we limit ourselves to depth == 1
         items = [calendar] + calendar.events + calendar.todos
 
@@ -111,7 +109,7 @@ def propfind(path, xml_request, calendar, depth, request):
         multistatus.append(response)
 
         href = ET.Element(_tag("D", "href"))
-        href.text = path if is_calendar else "%s/%s" % (path, item.name)
+        href.text = path if is_calendar else path + item.name
         response.append(href)
 
         propstat = ET.Element(_tag("D", "propstat"))
@@ -122,42 +120,45 @@ def propfind(path, xml_request, calendar, depth, request):
 
         for tag in props:
             element = ET.Element(tag)
-            if tag == _tag("D", "resourcetype"):
-                if is_calendar:
-                    tag = ET.Element(_tag("C", "calendar"))
-                    element.append(tag)
-                    tag = ET.Element(_tag("D", "collection"))
-                    element.append(tag)
-                else:
-                    tag = ET.Element(_tag("C", "comp"))
-                    tag.set("name", element.tag)
-                    element.append(tag)
+            if tag == _tag("D", "resourcetype") and is_calendar:
+                tag = ET.Element(_tag("C", "calendar"))
+                element.append(tag)
+                tag = ET.Element(_tag("D", "collection"))
+                element.append(tag)
             elif tag == _tag("D", "owner"):
                 element.text = calendar.owner
             elif tag == _tag("D", "getcontenttype"):
                 element.text = "text/calendar"
+            elif tag == _tag("CS", "getctag") and is_calendar:
+                element.text = item.etag
             elif tag == _tag("D", "getetag"):
                 element.text = item.etag
-            elif tag == _tag("D", "displayname"):
+            elif tag == _tag("D", "displayname") and is_calendar:
                 element.text = calendar.name
-            elif tag == _tag("D", "supported-report-set"):
-                supported_report = ET.Element(_tag("D", "supported-report"))
-                report_set = ET.Element(_tag("D", "report"))
-                report_set.append(ET.Element(_tag("C", "calendar-multiget")))
-                supported_report.append(report_set)
-                element.append(supported_report)
             elif tag == _tag("D", "principal-URL"):
                 # TODO: use a real principal URL, read rfc3744-4.2 for info
-                element.text = "%s://%s%s" % (
-                    request.server.PROTOCOL, request.headers["Host"],
-                    request.path)
+                tag = ET.Element(_tag("D", "href"))
+                tag.text = path
+                element.append(tag)
+            elif tag == _tag("D", "principal-collection-set"):
+                tag = ET.Element(_tag("D", "href"))
+                tag.text = path
+                element.append(tag)
             elif tag == _tag("C", "calendar-home-set"):
                 tag = ET.Element(_tag("D", "href"))
-                tag.text = "%s://%s%s" % (
-                    request.server.PROTOCOL, request.headers["Host"],
-                    request.path)
+                tag.text = path
                 element.append(tag)
-
+            elif tag == _tag("C", "supported-calendar-component-set"):
+                comp = ET.Element(_tag("C", "comp"))
+                comp.set("name", "VTODO")
+                element.append(comp)
+                comp = ET.Element(_tag("C", "comp"))
+                comp.set("name", "VEVENT")
+                element.append(comp)
+            elif tag == _tag("D", "current-user-privilege-set"):
+                privilege = ET.Element(_tag("D", "privilege"))
+                privilege.append(ET.Element(_tag("D", "all")))
+                element.append(privilege)
             prop.append(element)
 
         status = ET.Element(_tag("D", "status"))
@@ -227,19 +228,14 @@ def report(path, xml_request, calendar):
             prop = ET.Element(_tag("D", "prop"))
             propstat.append(prop)
 
-            if _tag("D", "getetag") in props:
-                element = ET.Element(_tag("D", "getetag"))
-                element.text = item.etag
-                prop.append(element)
-
-            if _tag("C", "calendar-data") in props:
-                element = ET.Element(_tag("C", "calendar-data"))
-                if isinstance(item, ical.Event):
-                    element.text = ical.serialize(
-                        calendar.headers, calendar.timezones + [item])
-                elif isinstance(item, ical.Todo):
-                    element.text = ical.serialize(
-                        calendar.headers, calendar.timezones + [item])
+            for tag in props:
+                element = ET.Element(tag)
+                if tag == _tag("D", "getetag"):
+                    element.text = item.etag
+                elif tag == _tag("C", "calendar-data"):
+                    if isinstance(item, (ical.Event, ical.Todo)):
+                        element.text = ical.serialize(
+                            calendar.headers, calendar.timezones + [item])
                 prop.append(element)
 
             status = ET.Element(_tag("D", "status"))

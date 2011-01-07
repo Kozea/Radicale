@@ -216,7 +216,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
         self._answer = xmlutils.propfind(
             self.path, xml_request, self._calendar,
-            self.headers.get("depth", "infinity"), self)
+            self.headers.get("depth", "infinity"))
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("DAV", "1, calendar-access")
