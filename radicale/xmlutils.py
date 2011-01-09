@@ -150,7 +150,7 @@ def propfind(path, xml_request, calendar, depth):
                 element.append(tag)
             elif tag == _tag("C", "supported-calendar-component-set"):
                 comp = ET.Element(_tag("C", "comp"))
-                comp.set("name", "VTODO")
+                comp.set("name", "VTODO") # pylint: disable=W0511
                 element.append(comp)
                 comp = ET.Element(_tag("C", "comp"))
                 comp.set("name", "VEVENT")

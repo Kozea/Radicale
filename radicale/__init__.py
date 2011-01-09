@@ -90,6 +90,7 @@ class HTTPServer(server.HTTPServer):
 class HTTPSServer(HTTPServer):
     """HTTPS server."""
     PROTOCOL = "https"
+
     def __init__(self, address, handler):
         """Create server by wrapping HTTP socket in an SSL socket."""
         # Fails with Python 2.5, import if needed

@@ -25,8 +25,6 @@ Give a configparser-like interface to read and write configuration.
 
 """
 
-# TODO: Use abstract filenames for other platforms
-
 import os
 import sys
 # Manage Python2/3 different modules

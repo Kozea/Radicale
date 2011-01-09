@@ -135,7 +135,6 @@ class Calendar(object):
 
     def __init__(self, path):
         """Initialize the calendar with ``cal`` and ``user`` parameters."""
-        # TODO: Use properties from the calendar configuration
         self.encoding = "utf-8"
         self.owner = path.split("/")[0]
         self.path = os.path.join(FOLDER, path.replace("/", os.path.sep))
