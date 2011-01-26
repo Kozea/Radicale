@@ -38,27 +38,37 @@ CalDAV Clients
 --------------
 
 At this time Radicale has been tested and works fine with the latests version
-of Mozilla Sunbird (versions 0.9+), Mozilla Lightning (0.9+), and Evolution
-(2.30+). More clients will be supported in the future. However, it may work
-with any calendar client which implements CalDAV specifications too (luck is
-highly recommanded).
+of:
 
-To download Sunbird, go to the `Sunbird project website
-<http://www.mozilla.org/projects/calendar/sunbird/>`_ and choose the latest
+- `Mozilla Lightning <http://www.mozilla.org/projects/calendar/lightning/>`_
+- `GNOME Evolution <http://projects.gnome.org/evolution/>`_
+- `Google Android <http://www.android.com/>`_
+- `Apple iCal (coming soon) <http://www.apple.com/support/ical/>`_
+- `Apple iPhone (coming soon) <http://www.apple.com/iphone/>`_
+
+More clients will be supported in the future. However, it may work with any
+calendar client which implements CalDAV specifications too (luck is highly
+recommanded).
+
+To download Lightning, go to the `Lightning project website
+<http://www.mozilla.org/projects/calendar/lightning/>`_ and choose the latest
 version. Follow the instructions depending on your operating system.
 
 
 Simple Usage
 ============
 
-Starting Server
----------------
+Starting the Server
+-------------------
 
 To start Radicale CalDAV server, you have to launch the file called
 ``radicale.py`` located in the root folder of the software package.
 
-Using Sunbird or Lightning
---------------------------
+Starting the Client
+-------------------
+
+Sunbird or Lightning
+~~~~~~~~~~~~~~~~~~~~
 
 After starting Sunbird or Lightning, click on ``File`` and ``New
 Calendar``. Upcoming window asks you about your calendar storage. Chose a
@@ -80,8 +90,8 @@ and tasks to your calendar. All events and tasks are stored in the server, they
 can be accessed and modified from multiple clients by multiple users at the
 same time.
 
-Using Evolution
----------------
+Evolution
+~~~~~~~~~
 
 First of all, show the calendar page in Evolution by clicking on the calendar
 icon at the bottom of the side pane. Then add a new calendar by choosing in the
@@ -96,6 +106,21 @@ You can fill other attributes like the color and the name, these are only used
 for Evolution and are not uploaded.
 
 Click on ``OK``, and your calendar should be ready for use.
+
+Android
+~~~~~~~
+
+*Coming soon*
+
+iPhone
+~~~~~~
+
+*Coming soon*
+
+iCal
+~~~~
+
+*Coming soon*
 
 
 Complex Configuration

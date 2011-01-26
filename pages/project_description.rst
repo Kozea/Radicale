@@ -35,35 +35,6 @@ Data can be encrypted by SSL, and their access can be restricted thanks to
 different authentication methods.
 
 
-What Radicale will Be
-=====================
-
-Calendar Access Rights Manager
-------------------------------
-
-Different users, identified by authentification, can have different
-rights of reading, creating, modifying and deleting calendars. These
-rights are defined through the administration interfaces.
-
-Calendar Server Console-Based Administration Interface
-------------------------------------------------------
-
-This is a console-based interface to add and remove calendars and manage
-rights, useful for remote servers.
-
-Calendar Server Web-Based Administration Interface
---------------------------------------------------
-
-This is a web-based interface to add and remove calendars and manage
-rights, useful for remote servers.
-
-Calendar Server Graphical Administration Interface
---------------------------------------------------
-
-This is a toolkit-based (GTK+, Qt, whatever…) interface to add and remove
-calendars and manage rights, useful for local servers.
-
-
 What Radicale Is not and will not Be
 ====================================
 
