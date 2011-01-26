@@ -140,11 +140,10 @@ def propfind(path, xml_request, calendar, depth):
                 tag = ET.Element(_tag("D", "href"))
                 tag.text = path
                 element.append(tag)
-            elif tag == _tag("D", "principal-collection-set"):
-                tag = ET.Element(_tag("D", "href"))
-                tag.text = path
-                element.append(tag)
-            elif tag == _tag("C", "calendar-home-set"):
+            elif tag in (
+                _tag("D", "principal-collection-set"),
+                _tag("C", "calendar-user-address-set"),
+                _tag("C", "calendar-home-set")):
                 tag = ET.Element(_tag("D", "href"))
                 tag.text = path
                 element.append(tag)
