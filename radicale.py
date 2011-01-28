@@ -28,7 +28,7 @@
 """
 Radicale Server entry point.
 
-Launch the Radicale Serve according to configuration and command-line
+Launch the Radicale Server according to configuration and command-line
 arguments.
 
 """
