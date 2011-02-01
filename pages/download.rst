@@ -40,6 +40,7 @@ Radicale has been packaged for:
 
 - `Debian <http://packages.debian.org/radicale>`_ by Jonas Smedegaard
 - `Gentoo (Sunrise Overlay) <http://bugs.gentoo.org/show_bug.cgi?id=322811>`_ by René Neumann
+- `Ubuntu <http://packages.ubuntu.com/radicale>`_ by the MOTU and Jonas Smedegaard
 
 If you are interested in creating packages for other Linux distributions, read
 the `"Contribute" page </contribute>`_.
