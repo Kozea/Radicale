@@ -29,17 +29,7 @@ background: #2e3436 url(img/radicale_back.png) 20% 60% no-repeat;
 nav ul {
 background: #a40000;
 color: white;
-text-shadow: 0 0 1px white;
 margin: -4.5em 0 6em 100px;
-}
-
-nav ul li {
-padding: .25em .5em;
-}
-
-nav ul li a {
-margin: -.25em -.5em;
-text-shadow: none;
 }
 
 nav li a:hover,
