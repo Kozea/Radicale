@@ -204,11 +204,18 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
             # No item or ETag precondition not verified, do not delete item
             self.send_response(client.PRECONDITION_FAILED)
 
+    @check_rights
+    def do_MKCALENDAR(self):
+        """Manage MKCALENDAR request."""
+        self.send_response(client.CREATED)
+        self.end_headers()
+
     def do_OPTIONS(self):
         """Manage OPTIONS request."""
         self.send_response(client.OK)
         self.send_header(
-            "Allow", "DELETE, HEAD, GET, OPTIONS, PROPFIND, PUT, REPORT")
+            "Allow", "DELETE, HEAD, GET, MKCALENDAR, "
+            "OPTIONS, PROPFIND, PUT, REPORT")
         self.send_header("DAV", "1, calendar-access")
         self.end_headers()
 
