@@ -5,8 +5,13 @@
 As a Lazy Person
 ================
 
-Want to write kind words? Please contact `guillaume.ayoub@kozea.fr
-<mailto:guillaume.ayoub@kozea.fr>`_.
+Want to write kind words? Please contact guillaume.ayoub@kozea.fr.
+
+
+As a Jabberer
+=============
+
+Want to say something? Join our Jabber room: radicale@room.jabber.kozea.fr.
 
 
 As a Simple User
