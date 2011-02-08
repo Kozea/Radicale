@@ -129,9 +129,11 @@ signal.signal(signal.SIGTERM, lambda *a: exit(servers))
 try:
     while threads:
         threads[0].join(1) # try one second
-        if threading.active_count() <= len(threads): # one thread died
+        if threading.active_count() <= len(threads):
+            # at least one thread died -- exit all
             break
 except KeyboardInterrupt:
+    # no unwanted traceback :)
     pass
 finally:
     exit(servers)
