@@ -220,5 +220,5 @@ Crypt Support
 -------------
 
 With the htpasswd access, many encryption methods are available, and crypt is the
-default one in Radicale. Unfortunately, the ``crypt`` module is not unavailable on
+default one in Radicale. Unfortunately, the ``crypt`` module is unavailable on
 Windows, you have to pick another method on this OS.
