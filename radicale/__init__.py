@@ -55,6 +55,11 @@ def _check(request, function):
     """Check if user has sufficient rights for performing ``request``."""
     # ``_check`` decorator can access ``request`` protected functions
     # pylint: disable=W0212
+
+    # If we have no calendar, don't check rights
+    if not request._calendar:
+        return function(request)
+
     authorization = request.headers.get("Authorization", None)
     if authorization:
         challenge = authorization.lstrip("Basic").strip().encode("ascii")

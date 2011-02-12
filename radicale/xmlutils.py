@@ -95,12 +95,15 @@ def propfind(path, xml_request, calendar, depth):
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
-    if depth == "0":
-        items = [calendar]
+    if calendar:
+        if depth == "0":
+            items = [calendar]
+        else:
+            # depth is 1, infinity or not specified
+            # we limit ourselves to depth == 1
+            items = [calendar] + calendar.events + calendar.todos
     else:
-        # depth is 1, infinity or not specified
-        # we limit ourselves to depth == 1
-        items = [calendar] + calendar.events + calendar.todos
+        items = []
 
     for item in items:
         is_calendar = isinstance(item, ical.Calendar)
@@ -191,12 +194,15 @@ def report(path, xml_request, calendar):
     prop_list = prop_element.getchildren()
     props = [prop.tag for prop in prop_list]
 
-    if root.tag == _tag("C", "calendar-multiget"):
-        # Read rfc4791-7.9 for info
-        hreferences = set((href_element.text for href_element
-                           in root.findall(_tag("D", "href"))))
+    if calendar:
+        if root.tag == _tag("C", "calendar-multiget"):
+            # Read rfc4791-7.9 for info
+            hreferences = set((href_element.text for href_element
+                               in root.findall(_tag("D", "href"))))
+        else:
+            hreferences = (path,)
     else:
-        hreferences = (path,)
+        hreferences = ()
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
