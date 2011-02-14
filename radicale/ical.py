@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008-2010 Guillaume Ayoub
+# Copyright © 2008-2011 Guillaume Ayoub
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 #
@@ -135,7 +135,6 @@ class Calendar(object):
 
     def __init__(self, path):
         """Initialize the calendar with ``cal`` and ``user`` parameters."""
-        # TODO: Use properties from the calendar configuration
         self.encoding = "utf-8"
         self.owner = path.split("/")[0]
         self.path = os.path.join(FOLDER, path.replace("/", os.path.sep))

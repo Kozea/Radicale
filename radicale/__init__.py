@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008-2010 Guillaume Ayoub
+# Copyright © 2008-2011 Guillaume Ayoub
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 #
@@ -55,6 +55,11 @@ def _check(request, function):
     """Check if user has sufficient rights for performing ``request``."""
     # ``_check`` decorator can access ``request`` protected functions
     # pylint: disable=W0212
+
+    # If we have no calendar, don't check rights
+    if not request._calendar:
+        return function(request)
+
     authorization = request.headers.get("Authorization", None)
     if authorization:
         challenge = authorization.lstrip("Basic").strip().encode("ascii")
@@ -90,6 +95,7 @@ class HTTPServer(server.HTTPServer):
 class HTTPSServer(HTTPServer):
     """HTTPS server."""
     PROTOCOL = "https"
+
     def __init__(self, address, handler):
         """Create server by wrapping HTTP socket in an SSL socket."""
         # Fails with Python 2.5, import if needed
@@ -203,11 +209,18 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
             # No item or ETag precondition not verified, do not delete item
             self.send_response(client.PRECONDITION_FAILED)
 
+    @check_rights
+    def do_MKCALENDAR(self):
+        """Manage MKCALENDAR request."""
+        self.send_response(client.CREATED)
+        self.end_headers()
+
     def do_OPTIONS(self):
         """Manage OPTIONS request."""
         self.send_response(client.OK)
         self.send_header(
-            "Allow", "DELETE, HEAD, GET, OPTIONS, PROPFIND, PUT, REPORT")
+            "Allow", "DELETE, HEAD, GET, MKCALENDAR, "
+            "OPTIONS, PROPFIND, PUT, REPORT")
         self.send_header("DAV", "1, calendar-access")
         self.end_headers()
 
@@ -216,7 +229,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
         self._answer = xmlutils.propfind(
             self.path, xml_request, self._calendar,
-            self.headers.get("depth", "infinity"), self)
+            self.headers.get("depth", "infinity"))
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("DAV", "1, calendar-access")

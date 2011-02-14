@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008-2010 Guillaume Ayoub
+# Copyright © 2008-2011 Guillaume Ayoub
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 #
@@ -24,8 +24,6 @@ Radicale configuration module.
 Give a configparser-like interface to read and write configuration.
 
 """
-
-# TODO: Use abstract filenames for other platforms
 
 import os
 import sys
