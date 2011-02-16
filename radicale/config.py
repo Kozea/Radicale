@@ -63,11 +63,7 @@ INITIAL_CONFIG = {
 	"authLdap": {
 		"LDAPServer": "127.0.0.1",
 		"LDAPPrepend": "uid=",
-		"LDAPAppend": "ou=users,dc=example,dc=com"},
-	"logging": {
-		"logfile": os.path.expanduser("~/.config/radicale/radicale.log"),
-		"facility": "error"}
-	}
+		"LDAPAppend": "ou=users,dc=example,dc=com"}}
 
 # Create a ConfigParser and configure it
 _CONFIG_PARSER = ConfigParser()
