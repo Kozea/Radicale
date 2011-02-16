@@ -27,7 +27,7 @@ stock = utf-8
 
 [acl]
 # Access method
-# Value: fake | htpasswd
+# Value: fake | htpasswd | authLdap
 type = fake
 # Personal calendars only available for logged in users (if needed)
 personal = False
@@ -36,6 +36,16 @@ filename = /etc/radicale/users
 # Htpasswd encryption method (if needed)
 # Value: plain | sha1 | crypt
 encryption = crypt
+
+[authLdap]
+#LDAP Host
+LDAPServer = 127.0.0.1
+#Fields to create a LDAP bind
+#Value to add before the user name in a LDAP bind
+LDAPPrepend = uid=
+#Value to add after the user name in a LDAP bind
+LDAPAppend = ou=users,dc=exmaple,dc=dom
+#=> uid=corentin,ou=users,dc=exmaple,dc=dom
 
 [storage]
 # Folder for storing local calendars,

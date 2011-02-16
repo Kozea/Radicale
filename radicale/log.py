@@ -20,3 +20,4 @@ class log:
 _LOGGING = log()
 
 sys.modules[__name__] = _LOGGING
+

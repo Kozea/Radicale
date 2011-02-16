@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sys, ldap
+import sys, ldap, syslog
 
 from radicale import config, log
 
