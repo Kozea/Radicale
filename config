@@ -42,4 +42,10 @@ encryption = crypt
 # created if not present
 folder = ~/.config/radicale/calendars
 
+[Logging]
+# Logging filename
+logfile = ~/.config/radicale/radicale.log
+# Log facility 10: DEBUG, 20: INFO, 30 WARNING, 40 ERROR, 50 CRITICAL
+facility = 50
+
 # vim:ft=cfg
