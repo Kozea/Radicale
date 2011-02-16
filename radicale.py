@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008-2010 Guillaume Ayoub
+# Copyright © 2008-2011 Guillaume Ayoub
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 #
@@ -28,7 +28,7 @@
 """
 Radicale Server entry point.
 
-Launch the Radicale Serve according to configuration and command-line
+Launch the Radicale Server according to configuration and command-line
 arguments.
 
 """
