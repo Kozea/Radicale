@@ -52,11 +52,10 @@ LDAPAppend = ou=users,dc=exmaple,dc=dom
 # created if not present
 folder = ~/.config/radicale/calendars
 
-[logging]
-# Full path of logfile
-file = ~/.config/radicale/radicale.log
-# Logging messages which are less severe than level will be ignored
-# Log level are (debug, info, warning, error, critical)
-level = error
+[Logging]
+# Logging filename
+logfile = ~/.config/radicale/radicale.log
+# Log facility 10: DEBUG, 20: INFO, 30 WARNING, 40 ERROR, 50 CRITICAL
+facility = 50
 
 # vim:ft=cfg

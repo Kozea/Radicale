@@ -1,29 +1,23 @@
 # -*- coding: utf-8 -*-
 
-import sys
-import logging
-import os
-
+import logging, sys
 from radicale import config
 
-LEVELS = {	'debug': logging.DEBUG,
-			'info': logging.INFO,
-			'warning': logging.WARNING,
-			'error': logging.ERROR,
-			'critical': logging.CRITICAL}
-
-level=LEVELS.get(config.get("logging", "level"), logging.NOTSET)
-
-logger=logging.getLogger("radicale")
-logger.setLevel(level=level)
-
-handler=logging.FileHandler(os.path.expanduser(config.get("logging", "file")))
-handler.setLevel(level=level)
+class log:
+	def __init__(self):
+		self.logger=logging.getLogger("radicale")
+		self.logger.setLevel(config.get("logging", "facility"))
 		
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+		handler=logging.FileHandler(config.get("logging", "logfile"))
 		
-handler.setFormatter(formatter)
-		
-logger.addHandler(handler)
+		formatter = logging.Formatter('%(name)s %(asctime)s %(levelname)s %(message)s')
+		handler.setFormatter(formatter)
 
-sys.modules[__name__] = logger
+		self.logger.addHandler(handler)
+	def log(self, level, msg):
+		self.logger.log(level, msg)
+
+_LOGGING = log()
+
+sys.modules[__name__] = _LOGGING
+
