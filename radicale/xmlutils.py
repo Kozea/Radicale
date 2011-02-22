@@ -86,7 +86,7 @@ def propfind(path, xml_request, calendar, depth):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
-
+    
     """
     # Reading request
     log.log(10, "Read and answer PROPFIND requests.")

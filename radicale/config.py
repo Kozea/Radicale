@@ -56,7 +56,7 @@ INITIAL_CONFIG = {
     "storage": {
         "folder": os.path.expanduser("~/.config/radicale/calendars")},
     "logging": {
-		"logfile": os.path.expanduser("~/.config/radicale/radicale.log"),
+		"type": "syslog",
 		"facility": 10},
 	"authLdap": {
 		"LDAPServer": "127.0.0.1",
