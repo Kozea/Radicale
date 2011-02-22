@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging, sys
+from logging.handlers import SysLogHandler
 from radicale import config
 
 class log:
@@ -8,8 +9,14 @@ class log:
 		self.logger=logging.getLogger("radicale")
 		self.logger.setLevel(config.get("logging", "facility"))
 		
-		handler=logging.FileHandler(config.get("logging", "logfile"))
-		
+		loggingType=config.get("logging", "type")
+		if loggingType == "stdout": 
+			handler=logging.StreamHandler(sys.stdout)
+		elif loggingType == "file": 
+			handler=logging.FileHandler(config.get("logging", "logfile"))
+		else:
+			handler=logging.handlers.SysLogHandler("/dev/log")
+			
 		formatter = logging.Formatter('%(name)s %(asctime)s %(levelname)s %(message)s')
 		handler.setFormatter(formatter)
 

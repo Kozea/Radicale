@@ -53,7 +53,10 @@ LDAPAppend = ou=users,dc=exmaple,dc=dom
 folder = ~/.config/radicale/calendars
 
 [Logging]
-# Logging filename
+# Logging type
+# Value: syslog | file | stdout
+type = file
+# Logging filename (if needed)
 logfile = ~/.config/radicale/radicale.log
 # Log facility 10: DEBUG, 20: INFO, 30 WARNING, 40 ERROR, 50 CRITICAL
 facility = 50
