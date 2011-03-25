@@ -135,8 +135,16 @@ class Calendar(object):
 
     def __init__(self, path):
         """Initialize the calendar with ``cal`` and ``user`` parameters."""
+
+        split_path = path.split("/")
+
         self.encoding = "utf-8"
-        self.owner = path.split("/")[0]
+        
+        if len(split_path) > 1:
+            self.owner = split_path[0]
+        else:
+            self.owner = None
+
         self.path = os.path.join(FOLDER, path.replace("/", os.path.sep))
 
     @staticmethod

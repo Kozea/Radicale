@@ -129,7 +129,12 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         attributes = posixpath.normpath(self.path.strip("/")).split("/")
         if len(attributes) >= 2:
             path = "%s/%s" % (attributes[0], attributes[1])
-            return ical.Calendar(path)
+        elif len(attributes) == 1: # no owner
+            path = attributes[0]
+        else:
+            return
+            
+        return ical.Calendar(path)
 
     def _decode(self, text):
         """Try to decode text according to various parameters."""
