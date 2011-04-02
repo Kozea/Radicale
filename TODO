@@ -6,12 +6,6 @@
  TODO
 ------
 
-0.5
-===
-
-* iCal and iPhone support
-
-
 0.6
 ===
 
@@ -19,6 +13,7 @@
 * [IN PROGRESS] LDAP and databases auth support
 * CalDAV rights
 * Read-only access for foreign users
+* Smart, verbose and configurable logs
 
 
 1.0

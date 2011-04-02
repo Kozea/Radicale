@@ -6,10 +6,11 @@
  NEWS
 ------
 
-0.5 - *Not released yet*
-========================
+0.5 - Historical Artifacts
+==========================
 
 * Calendar depth
+* iPhone support
 * MacOS and Windows support
 * HEAD requests management
 * htpasswd user from calendar path
