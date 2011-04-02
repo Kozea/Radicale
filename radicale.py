@@ -26,10 +26,9 @@
 # pylint: disable-msg=W0406
 
 """
-Radicale Server entry point.
+Radicale CalDAV Server.
 
-Launch the Radicale Server according to configuration and command-line
-arguments.
+Launch the server according to configuration and command-line options.
 
 """
 
@@ -44,11 +43,7 @@ import threading
 import radicale
 
 # Get command-line options
-parser = optparse.OptionParser()
-parser.add_option(
-    "-v", "--version", action="store_true",
-    default=False,
-    help="show version and exit")
+parser = optparse.OptionParser(version=radicale.VERSION)
 parser.add_option(
     "-d", "--daemon", action="store_true",
     default=radicale.config.getboolean("server", "daemon"),
@@ -59,7 +54,7 @@ parser.add_option(
 parser.add_option(
     "-H", "--hosts",
     default=radicale.config.get("server", "hosts"),
-    help="set server hostnames")
+    help="set server hostnames and ports")
 parser.add_option(
     "-s", "--ssl", action="store_true",
     default=radicale.config.getboolean("server", "ssl"),
@@ -70,11 +65,11 @@ parser.add_option(
 parser.add_option(
     "-k", "--key",
     default=radicale.config.get("server", "key"),
-    help="private key file ")
+    help="set private key file")
 parser.add_option(
     "-c", "--certificate",
     default=radicale.config.get("server", "certificate"),
-    help="certificate file ")
+    help="set certificate file")
 options = parser.parse_args()[0]
 
 # Update Radicale configuration according to options
@@ -83,11 +78,6 @@ for option in parser.option_list:
     if key:
         value = getattr(options, key)
         radicale.config.set("server", key, value)
-
-# Print version and exit if the option is given
-if options.version:
-    print(radicale.VERSION)
-    sys.exit()
 
 # Fork if Radicale is launched as daemon
 if options.daemon:
