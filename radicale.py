@@ -38,6 +38,7 @@ arguments.
 import os
 import sys
 import optparse
+import threading, signal
 
 import radicale
 
@@ -97,8 +98,42 @@ if options.daemon:
         sys.exit()
     sys.stdout = sys.stderr = open(os.devnull, "w")
 
+def exit (servers):
+    """Cleanly shutdown all servers.
+    
+    Might be called multiple times."""
+    for s in servers:
+        s.shutdown()
+
 # Launch calendar server
 server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
-server = server_class(
-    (options.host, options.port), radicale.CalendarHTTPHandler)
-server.serve_forever()
+servers = []
+threads = []
+
+for host in (x.strip() for x in options.host.split(',')):
+    try:
+        server = server_class(
+            (host, options.port), radicale.CalendarHTTPHandler)
+        servers.append(server)
+        
+        t = threading.Thread(target = server.serve_forever)
+        threads.append(t)
+        t.start()
+    except:
+        exit(servers)
+        raise
+
+# clean exit on SIGTERM
+signal.signal(signal.SIGTERM, lambda *a: exit(servers))
+
+try:
+    while threads:
+        threads[0].join(1) # try one second
+        if threading.active_count() <= len(threads):
+            # at least one thread died -- exit all
+            break
+except KeyboardInterrupt:
+    # no unwanted traceback :)
+    pass
+finally:
+    exit(servers)

@@ -7,6 +7,10 @@
 
 [server]
 # CalDAV server hostname, empty for all hostnames
+# if you want to bind to multiple interfaces, seperate them with a comma
+# NOTE: IPv6 adresses are configured to only allow IPv6 connections
+# hence for binding to all IPv4 and IPv6 interfaces: 
+# host = ::, 0.0.0.0
 host =
 # CalDAV server port
 port = 5232

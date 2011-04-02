@@ -85,9 +85,24 @@ class HTTPServer(server.HTTPServer):
 
     # Maybe a Pylint bug, ``__init__`` calls ``server.HTTPServer.__init__``
     # pylint: disable=W0231
-    def __init__(self, address, handler):
+    def __init__(self, address, handler, bind_and_activate = True):
         """Create server."""
-        server.HTTPServer.__init__(self, address, handler)
+        self.use_ipv6 = ':' in address[0]
+
+        if self.use_ipv6:
+            self.address_family = socket.AF_INET6
+
+        # call superclass, but do NOT bind and activate, as we might change socketopts
+        server.HTTPServer.__init__(self, address, handler, bind_and_activate = False)
+
+        if self.use_ipv6:
+            # only allow IPv6 connections to the IPv6 socket
+            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+
+        if bind_and_activate:
+            self.server_bind()
+            self.server_activate()
+
         self.acl = acl.load()
     # pylint: enable=W0231
 
@@ -96,22 +111,24 @@ class HTTPSServer(HTTPServer):
     """HTTPS server."""
     PROTOCOL = "https"
 
-    def __init__(self, address, handler):
+    def __init__(self, address, handler, bind_and_activate = True):
         """Create server by wrapping HTTP socket in an SSL socket."""
         # Fails with Python 2.5, import if needed
         # pylint: disable=F0401
         import ssl
         # pylint: enable=F0401
 
-        HTTPServer.__init__(self, address, handler)
+        HTTPServer.__init__(self, address, handler, False)
         self.socket = ssl.wrap_socket(
-            socket.socket(self.address_family, self.socket_type),
+            self.socket, # we can use this, it is not bound yet
             server_side=True,
             certfile=config.get("server", "certificate"),
             keyfile=config.get("server", "key"),
             ssl_version=ssl.PROTOCOL_SSLv23)
-        self.server_bind()
-        self.server_activate()
+
+        if bind_and_activate:
+            self.server_bind()
+            self.server_activate()
 
 
 class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
