@@ -6,14 +6,11 @@
 # The current values are the default ones
 
 [server]
-# CalDAV server hostname, empty for all hostnames
-# if you want to bind to multiple interfaces, seperate them with a comma
-# NOTE: IPv6 adresses are configured to only allow IPv6 connections
-# hence for binding to all IPv4 and IPv6 interfaces: 
-# host = ::, 0.0.0.0
-host =
-# CalDAV server port
-port = 5232
+# CalDAV server hostnames separated by a comma
+# IPv4: address:port
+# IPv6: [address]:port
+# IPv6 adresses are configured to only allow IPv6 connections
+hosts = [::]:5232, 0.0.0.0:5232
 # Daemon flag
 daemon = False
 # SSL flag, enable HTTPS protocol

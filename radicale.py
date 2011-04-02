@@ -38,7 +38,8 @@ arguments.
 import os
 import sys
 import optparse
-import threading, signal
+import signal
+import threading
 
 import radicale
 
@@ -56,13 +57,9 @@ parser.add_option(
     "-f", "--foreground", action="store_false", dest="daemon",
     help="launch in foreground (opposite of --daemon)")
 parser.add_option(
-    "-H", "--host",
-    default=radicale.config.get("server", "host"),
-    help="set server hostname")
-parser.add_option(
-    "-p", "--port", type="int",
-    default=radicale.config.getint("server", "port"),
-    help="set server port")
+    "-H", "--hosts",
+    default=radicale.config.get("server", "hosts"),
+    help="set server hostnames")
 parser.add_option(
     "-s", "--ssl", action="store_true",
     default=radicale.config.getboolean("server", "ssl"),
@@ -98,42 +95,36 @@ if options.daemon:
         sys.exit()
     sys.stdout = sys.stderr = open(os.devnull, "w")
 
-def exit (servers):
-    """Cleanly shutdown all servers.
-    
-    Might be called multiple times."""
-    for s in servers:
-        s.shutdown()
-
-# Launch calendar server
-server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
+# Launch calendar servers
 servers = []
-threads = []
+server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
 
-for host in (x.strip() for x in options.host.split(',')):
+def exit():
+    """Cleanly shutdown servers."""
+    while servers:
+        servers.pop().shutdown()
+
+def serve_forever(server):
+    """Serve a server forever with no traceback on keyboard interrupts."""
     try:
-        server = server_class(
-            (host, options.port), radicale.CalendarHTTPHandler)
-        servers.append(server)
-        
-        t = threading.Thread(target = server.serve_forever)
-        threads.append(t)
-        t.start()
-    except:
-        exit(servers)
-        raise
+        server.serve_forever()
+    except KeyboardInterrupt:
+        # No unwanted traceback
+        pass
+    finally:
+        exit()
 
-# clean exit on SIGTERM
-signal.signal(signal.SIGTERM, lambda *a: exit(servers))
+# Clean exit on SIGTERM
+signal.signal(signal.SIGTERM, lambda *_: exit())
 
-try:
-    while threads:
-        threads[0].join(1) # try one second
-        if threading.active_count() <= len(threads):
-            # at least one thread died -- exit all
-            break
-except KeyboardInterrupt:
-    # no unwanted traceback :)
-    pass
-finally:
-    exit(servers)
+for host in options.hosts.split(','):
+    address, port = host.strip().rsplit(':', 1)
+    address, port = address.strip('[] '), int(port)
+    servers.append(server_class((address, port), radicale.CalendarHTTPHandler))
+
+for server in servers[:-1]:
+    # More servers to come, launch a new thread
+    threading.Thread(target=serve_forever, args=(server,)).start()
+
+# Last server, no more thread
+serve_forever(servers[-1])
