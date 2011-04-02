@@ -42,5 +42,4 @@ Supported Clients
 - `Mozilla Lightning <http://www.mozilla.org/projects/calendar/lightning/>`_
 - `GNOME Evolution <http://projects.gnome.org/evolution/>`_
 - `Google Android <http://www.android.com/>`_
-- `Apple iCal (coming soon) <http://www.apple.com/support/ical/>`_
-- `Apple iPhone (coming soon) <http://www.apple.com/iphone/>`_
+- `Apple iPhone <http://www.apple.com/iphone/>`_

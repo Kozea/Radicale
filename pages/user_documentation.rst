@@ -18,7 +18,7 @@ Dependencies
 ------------
 
 Radicale is written in pure python and does not depend on any librabry. It is
-known to work on Python 2.5, 2.6, 2.7, 3.0 and 3.1 [#]_.
+known to work on Python from 2.5 to 3.2 [#]_.
 
 Linux users certainly have Python already installed. For Windows and MacOS
 users, please install Python [#]_ thanks to the adequate installer.
@@ -43,8 +43,7 @@ of:
 - `Mozilla Lightning <http://www.mozilla.org/projects/calendar/lightning/>`_
 - `GNOME Evolution <http://projects.gnome.org/evolution/>`_
 - `Google Android <http://www.android.com/>`_
-- `Apple iCal (coming soon) <http://www.apple.com/support/ical/>`_
-- `Apple iPhone (coming soon) <http://www.apple.com/iphone/>`_
+- `Apple iPhone <http://www.apple.com/iphone/>`_
 
 More clients will be supported in the future. However, it may work with any
 calendar client which implements CalDAV specifications too (luck is highly
@@ -67,23 +66,22 @@ To start Radicale CalDAV server, you have to launch the file called
 Starting the Client
 -------------------
 
-Sunbird or Lightning
-~~~~~~~~~~~~~~~~~~~~
+Lightning
+~~~~~~~~~
 
-After starting Sunbird or Lightning, click on ``File`` and ``New
-Calendar``. Upcoming window asks you about your calendar storage. Chose a
-calendar ``On the Network``, otherwise Sunbird will use its own file system
-storage instead of Radicale's one and your calendar won't be remotely
-accessible.
+After starting Lightning, click on ``File`` and ``New Calendar``. Upcoming
+window asks you about your calendar storage. Chose a calendar ``On the
+Network``, otherwise Lightning will use its own file system storage instead of
+Radicale's one and your calendar won't be remotely accessible.
 
 Next window asks you to provide information about remote calendar
-access. Protocol used by Radicale is ``CalDAV``. A standard location for a basic
-use of a Radicale calendar is ``http://localhost:5232/user/calendar/``, where
-you can replace ``user`` and ``calendar`` by some strings of your
+access. Protocol used by Radicale is ``CalDAV``. A standard location for a
+basic use of a Radicale calendar is ``http://localhost:5232/user/calendar/``,
+where you can replace ``user`` and ``calendar`` by some strings of your
 choice. Calendars are automatically created if needed.
 
 You can now customize your calendar by giving it a nickname and a color. This
-is only used by Sunbird to identify calendars among others.
+is only used by Lightning to identify calendars among others.
 
 If no warning sign appears next to the calendar name, you can now add events
 and tasks to your calendar. All events and tasks are stored in the server, they
@@ -110,17 +108,12 @@ Click on ``OK``, and your calendar should be ready for use.
 Android
 ~~~~~~~
 
-*Coming soon*
+*To be written*
 
 iPhone
 ~~~~~~
 
-*Coming soon*
-
-iCal
-~~~~
-
-*Coming soon*
+*To be written*
 
 
 Complex Configuration
