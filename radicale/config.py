@@ -39,7 +39,7 @@ except ImportError:
 # Default configuration
 INITIAL_CONFIG = {
     "server": {
-        "hosts": "[::]:5232, 0.0.0.0:5232",
+        "hosts": "0.0.0.0:5232",
         "daemon": "False",
         "ssl": "False",
         "certificate": "/etc/apache2/ssl/server.crt",

@@ -7,10 +7,10 @@
 
 [server]
 # CalDAV server hostnames separated by a comma
-# IPv4: address:port
-# IPv6: [address]:port
+# IPv4 syntax: address:port
+# IPv6 syntax: [address]:port
 # IPv6 adresses are configured to only allow IPv6 connections
-hosts = [::]:5232, 0.0.0.0:5232
+hosts = 0.0.0.0:5232
 # Daemon flag
 daemon = False
 # SSL flag, enable HTTPS protocol
