@@ -122,7 +122,7 @@ try:
         # the number is irrelevant -- the only thing that matters, is that it is
         # larger than 0.05
         # this is due to python implementing its own busy-waiting logic
-        server_exited.wait(10.0)
+        server_exited.wait(5.0)
         if server_exited.is_set():
             break
 finally:
