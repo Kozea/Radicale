@@ -85,36 +85,54 @@ if options.daemon:
         sys.exit()
     sys.stdout = sys.stderr = open(os.devnull, "w")
 
-# Launch calendar servers
+# Create calendar servers
 servers = []
 server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
-
-def exit():
-    """Cleanly shutdown servers."""
-    while servers:
-        servers.pop().shutdown()
-
-def serve_forever(server):
-    """Serve a server forever with no traceback on keyboard interrupts."""
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        # No unwanted traceback
-        pass
-    finally:
-        exit()
-
-# Clean exit on SIGTERM
-signal.signal(signal.SIGTERM, lambda *_: exit())
 
 for host in options.hosts.split(','):
     address, port = host.strip().rsplit(':', 1)
     address, port = address.strip('[] '), int(port)
+
     servers.append(server_class((address, port), radicale.CalendarHTTPHandler))
 
-for server in servers[:-1]:
-    # More servers to come, launch a new thread
+# this event marks that the program should be shut down
+server_exited = threading.Event()
+
+# SIGTERM and SIGINT (aka KeyboardInterrupt) should just mark this for shutdown
+signal.signal(signal.SIGTERM, lambda *_: server_exited.set())
+signal.signal(signal.SIGINT, lambda *_: server_exited.set())
+
+def serve_forever(server):
+    """Serve a server forever, and mark the process for shut down if things go wrong."""
+    try:
+        server.serve_forever()
+    finally:
+        server_exited.set()
+
+# start the servers in a different loop to avoid possible race-conditions,
+# when a server exists but another server is added to the list at the same time
+for server in servers:
     threading.Thread(target=serve_forever, args=(server,)).start()
 
-# Last server, no more thread
-serve_forever(servers[-1])
+# mainloop: wait until all servers are exited
+# we must do the busy-waiting here, as all ".join()"-calls
+# completly block the thread, such that signals are not received
+try:
+    while True:
+        # the number is irrelevant -- the only thing that matters, is that it is
+        # larger than 0.05
+        # this is due to python implementing its own busy-waiting logic
+        server_exited.wait(10.0)
+        if server_exited.is_set():
+            break
+finally:
+    #
+    # Cleanly shutdown server
+    #
+
+    # ignore signals, s.t. they cannot interfere
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+
+    for server in servers:             
+        server.shutdown()
