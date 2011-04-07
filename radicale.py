@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
@@ -26,10 +26,9 @@
 # pylint: disable-msg=W0406
 
 """
-Radicale Server entry point.
+Radicale CalDAV Server.
 
-Launch the Radicale Server according to configuration and command-line
-arguments.
+Launch the server according to configuration and command-line options.
 
 """
 
@@ -38,15 +37,13 @@ arguments.
 import os
 import sys
 import optparse
+import signal
+import threading
 
 import radicale
 
 # Get command-line options
-parser = optparse.OptionParser()
-parser.add_option(
-    "-v", "--version", action="store_true",
-    default=False,
-    help="show version and exit")
+parser = optparse.OptionParser(version=radicale.VERSION)
 parser.add_option(
     "-d", "--daemon", action="store_true",
     default=radicale.config.getboolean("server", "daemon"),
@@ -55,13 +52,9 @@ parser.add_option(
     "-f", "--foreground", action="store_false", dest="daemon",
     help="launch in foreground (opposite of --daemon)")
 parser.add_option(
-    "-H", "--host",
-    default=radicale.config.get("server", "host"),
-    help="set server hostname")
-parser.add_option(
-    "-p", "--port", type="int",
-    default=radicale.config.getint("server", "port"),
-    help="set server port")
+    "-H", "--hosts",
+    default=radicale.config.get("server", "hosts"),
+    help="set server hostnames and ports")
 parser.add_option(
     "-s", "--ssl", action="store_true",
     default=radicale.config.getboolean("server", "ssl"),
@@ -72,11 +65,11 @@ parser.add_option(
 parser.add_option(
     "-k", "--key",
     default=radicale.config.get("server", "key"),
-    help="private key file ")
+    help="set private key file")
 parser.add_option(
     "-c", "--certificate",
     default=radicale.config.get("server", "certificate"),
-    help="certificate file ")
+    help="set certificate file")
 options = parser.parse_args()[0]
 
 # Update Radicale configuration according to options
@@ -86,19 +79,42 @@ for option in parser.option_list:
         value = getattr(options, key)
         radicale.config.set("server", key, value)
 
-# Print version and exit if the option is given
-if options.version:
-    print(radicale.VERSION)
-    sys.exit()
-
 # Fork if Radicale is launched as daemon
 if options.daemon:
     if os.fork():
         sys.exit()
     sys.stdout = sys.stderr = open(os.devnull, "w")
 
-# Launch calendar server
+# Launch calendar servers
+servers = []
 server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
-server = server_class(
-    (options.host, options.port), radicale.CalendarHTTPHandler)
-server.serve_forever()
+
+def exit():
+    """Cleanly shutdown servers."""
+    while servers:
+        servers.pop().shutdown()
+
+def serve_forever(server):
+    """Serve a server forever with no traceback on keyboard interrupts."""
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        # No unwanted traceback
+        pass
+    finally:
+        exit()
+
+# Clean exit on SIGTERM
+signal.signal(signal.SIGTERM, lambda *_: exit())
+
+for host in options.hosts.split(','):
+    address, port = host.strip().rsplit(':', 1)
+    address, port = address.strip('[] '), int(port)
+    servers.append(server_class((address, port), radicale.CalendarHTTPHandler))
+
+for server in servers[:-1]:
+    # More servers to come, launch a new thread
+    threading.Thread(target=serve_forever, args=(server,)).start()
+
+# Last server, no more thread
+serve_forever(servers[-1])
