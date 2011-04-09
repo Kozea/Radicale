@@ -88,49 +88,41 @@ if options.daemon:
 # Create calendar servers
 servers = []
 server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
+shutdown_program = threading.Event()
 
 for host in options.hosts.split(','):
     address, port = host.strip().rsplit(':', 1)
     address, port = address.strip('[] '), int(port)
-
     servers.append(server_class((address, port), radicale.CalendarHTTPHandler))
 
-# this event marks that the program should be shut down
-server_exited = threading.Event()
-
 # SIGTERM and SIGINT (aka KeyboardInterrupt) should just mark this for shutdown
-signal.signal(signal.SIGTERM, lambda *_: server_exited.set())
-signal.signal(signal.SIGINT, lambda *_: server_exited.set())
+signal.signal(signal.SIGTERM, lambda *_: shutdown_program.set())
+signal.signal(signal.SIGINT, lambda *_: shutdown_program.set())
 
 def serve_forever(server):
-    """Serve a server forever, and mark the process for shut down if things go wrong."""
+    """Serve a server forever, cleanly shutdown when things go wrong."""
     try:
         server.serve_forever()
     finally:
-        server_exited.set()
+        shutdown_program.set()
 
-# start the servers in a different loop to avoid possible race-conditions,
-# when a server exists but another server is added to the list at the same time
+# Start the servers in a different loop to avoid possible race-conditions, when
+# a server exists but another server is added to the list at the same time
 for server in servers:
     threading.Thread(target=serve_forever, args=(server,)).start()
 
-# mainloop: wait until all servers are exited
-# we must do the busy-waiting here, as all ".join()"-calls
-# completly block the thread, such that signals are not received
+# Main loop: wait until all servers are exited
 try:
+    # We must do the busy-waiting here, as all ``.join()`` calls completly
+    # block the thread, such that signals are not received
     while True:
-        # the number is irrelevant -- the only thing that matters, is that it is
-        # larger than 0.05
-        # this is due to python implementing its own busy-waiting logic
-        server_exited.wait(5.0)
-        if server_exited.is_set():
+        # The number is irrelevant, it only needs to be greater than 0.05 due
+        # to python implementing its own busy-waiting logic
+        shutdown_program.wait(5.0)
+        if shutdown_program.is_set():
             break
 finally:
-    #
-    # Cleanly shutdown server
-    #
-
-    # ignore signals, s.t. they cannot interfere
+    # Ignore signals, so that they cannot interfere
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
