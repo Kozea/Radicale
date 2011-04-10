@@ -1,6 +1,6 @@
 {
   "name": "Radicale",
-  "title": "Radicale CalDAV Server",
+  "description": "CalDAV Server",
   "menu": [
     {"name": "News", "link": "/news"},
     {"name": "Documentation", "link": "/documentation"},
