@@ -28,13 +28,8 @@ stock = utf-8
 
 [acl]
 # Access method
-<<<<<<< HEAD
-# Value: fake | htpasswd | authLdap
-type = fake
-=======
 # Value: None | htpasswd
 type = None
->>>>>>> d9ea784e31687b03f1451bc5b543122f05c5deb1
 # Personal calendars only available for logged in users (if needed)
 personal = False
 # Htpasswd filename (if needed)
@@ -58,16 +53,6 @@ LDAPAppend = ou=users,dc=exmaple,dc=dom
 # created if not present
 folder = ~/.config/radicale/calendars
 
-<<<<<<< HEAD
-[Logging]
-# Logging type
-# Value: syslog | file | stdout
-type = file
-# Logging filename (if needed)
-logfile = ~/.config/radicale/radicale.log
-# Log facility 10: DEBUG, 20: INFO, 30 WARNING, 40 ERROR, 50 CRITICAL
-facility = 50
-=======
 [logging]
 # Logging configuration file
 # If no config is given, simple information is printed on the standard output
@@ -76,6 +61,5 @@ facility = 50
 config = /etc/radicale/logging
 # Set the default logging level to debug
 debug = False
->>>>>>> d9ea784e31687b03f1451bc5b543122f05c5deb1
 
 # vim:ft=cfg
