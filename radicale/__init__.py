@@ -175,14 +175,9 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         # ``self.path`` must be something like a posix path
         # ``normpath`` should clean malformed and malicious request paths
         attributes = posixpath.normpath(self.path.strip("/")).split("/")
-        if len(attributes) >= 2:
-            path = "%s/%s" % (attributes[0], attributes[1])
-        elif len(attributes) == 1: # no owner
-            path = attributes[0]
-        else:
-            return
-            
-        return ical.Calendar(path)
+        if attributes:
+            path = "/".join(attributes[:min(len(attributes), 2)])
+            return ical.Calendar(path)
 
     def _decode(self, text):
         """Try to decode text according to various parameters."""
