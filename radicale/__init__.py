@@ -46,11 +46,7 @@ except ImportError:
     import BaseHTTPServer as server
 # pylint: enable=F0401
 
-<<<<<<< HEAD
-from radicale import acl, config, ical, xmlutils, log
-=======
 from radicale import acl, config, ical, log, xmlutils
->>>>>>> d9ea784e31687b03f1451bc5b543122f05c5deb1
 
 
 VERSION = "git"
@@ -60,17 +56,7 @@ VERSION = "git"
 
 def _check(request, function):
     """Check if user has sufficient rights for performing ``request``."""
-<<<<<<< HEAD
-    log.log(10, "Check if user has sufficient rights for performing ``request`` %s." % (request.command))
-    # ``_check`` decorator can access ``request`` protected functions
-    # pylint: disable=W0212
-
-    # If we have no calendar, don't check rights
-    if not request._calendar:
-=======
-    # If we have no calendar or no acl, don't check rights
     if not request._calendar or not request.server.acl:
->>>>>>> d9ea784e31687b03f1451bc5b543122f05c5deb1
         return function(request)
 
     log.LOGGER.info("Checking rights for %s" % request._calendar.owner)
@@ -84,11 +70,9 @@ def _check(request, function):
         user = password = None
 
     if request.server.acl.has_right(request._calendar.owner, user, password):
-        log.log(20, "Sufficient rights for performing ``request`` %s." % (request.command))
         function(request)
         log.LOGGER.info("%s allowed" % request._calendar.owner)
     else:
-        log.log(40, "No sufficient rights for performing ``request``.")
         request.send_response(client.UNAUTHORIZED)
         request.send_header(
             "WWW-Authenticate",
@@ -122,8 +106,6 @@ class HTTPServer(server.HTTPServer):
     # pylint: disable=W0231
     def __init__(self, address, handler, bind_and_activate=True):
         """Create server."""
-        log.log(10, "Create HTTP server.")
-        server.HTTPServer.__init__(self, address, handler)
         ipv6 = ":" in address[0]
 
         if ipv6:
@@ -150,7 +132,6 @@ class HTTPSServer(HTTPServer):
 
     def __init__(self, address, handler, bind_and_activate=True):
         """Create server by wrapping HTTP socket in an SSL socket."""
-        log.log(10, "Create server by wrapping HTTP socket in an SSL socket.")
         # Fails with Python 2.5, import if needed
         # pylint: disable=F0401
         import ssl
@@ -171,7 +152,6 @@ class HTTPSServer(HTTPServer):
 
 class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     """HTTP requests handler for calendars."""
-    log.log(10, "HTTP requests handler for calendars.")
     _encoding = config.get("encoding", "request")
 
     # Request handlers decorators
@@ -191,17 +171,15 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @property
     def _calendar(self):
         """The ``ical.Calendar`` object corresponding to the given path."""
-        log.log(10, "The ``ical.Calendar`` object corresponding to the given path. (%s)" % (self.path))
         # ``self.path`` must be something like a posix path
         # ``normpath`` should clean malformed and malicious request paths
         attributes = posixpath.normpath(self.path.strip("/")).split("/")
-        if len(attributes) >= 2:
-            path = "%s/%s" % (attributes[0], attributes[1])
+        if attributes:
+            path = "/".join(attributes[:min(len(attributes), 2)])
             return ical.Calendar(path)
 
     def _decode(self, text):
         """Try to decode text according to various parameters."""
-        log.log(10, "Try to decode text according to various parameters.")
         # List of charsets to try
         charsets = []
 
@@ -232,7 +210,6 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @log_request_content
     def do_GET(self):
         """Manage GET request."""
-        log.log(10, "Manage GET request.")
         self.do_HEAD()
         if self._answer:
             self.wfile.write(self._answer)
@@ -241,7 +218,6 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_HEAD(self):
         """Manage HEAD request."""
-        log.log(10, "Manage HEAD request.")
         item_name = xmlutils.name_from_path(self.path)
         if item_name:
             # Get calendar item
@@ -273,7 +249,6 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_DELETE(self):
         """Manage DELETE request."""
-        log.log(10, "Manage DELETE request.")
         item = self._calendar.get_item(xmlutils.name_from_path(self.path))
         if item and self.headers.get("If-Match", item.etag) == item.etag:
             # No ETag precondition or precondition verified, delete item
@@ -297,7 +272,6 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @log_request_content
     def do_OPTIONS(self):
         """Manage OPTIONS request."""
-        log.log(10, "Manage OPTIONS request.")
         self.send_response(client.OK)
         self.send_header(
             "Allow", "DELETE, HEAD, GET, MKCALENDAR, "
@@ -308,11 +282,6 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @log_request_content
     def do_PROPFIND(self):
         """Manage PROPFIND request."""
-<<<<<<< HEAD
-        log.log(10, "Manage PROPFIND request.")
-        xml_request = self.rfile.read(int(self.headers["Content-Length"]))
-=======
->>>>>>> d9ea784e31687b03f1451bc5b543122f05c5deb1
         self._answer = xmlutils.propfind(
             self.path, self._content, self._calendar,
             self.headers.get("depth", "infinity"))
@@ -328,7 +297,6 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_PUT(self):
         """Manage PUT request."""
-        log.log(10, "Manage PUT request.")
         item_name = xmlutils.name_from_path(self.path)
         item = self._calendar.get_item(item_name)
         if (not item and not self.headers.get("If-Match")) or \
@@ -352,20 +320,11 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_REPORT(self):
         """Manage REPORT request."""
-<<<<<<< HEAD
-        log.log(10, "Manage REPORT request.")
-        xml_request = self.rfile.read(int(self.headers["Content-Length"]))
-        self._answer = xmlutils.report(self.path, xml_request, self._calendar)
-=======
         self._answer = xmlutils.report(self.path, self._content, self._calendar)
->>>>>>> d9ea784e31687b03f1451bc5b543122f05c5deb1
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("Content-Length", len(self._answer))
         self.end_headers()
         self.wfile.write(self._answer)
-
-    def log_message(self, format, *args):
-		log.log(10, format % (args))
 
     # pylint: enable=C0103

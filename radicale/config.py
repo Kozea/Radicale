@@ -55,18 +55,12 @@ INITIAL_CONFIG = {
     "storage": {
         "folder": os.path.expanduser("~/.config/radicale/calendars")},
     "logging": {
-<<<<<<< HEAD
-		"type": "stdout",
-        "logfile": os.path.expanduser("~/.config/radicale/radicale.log"),
-		"facility": 10},
+        "config": "/etc/radicale/logging",
+        "debug": "False"},
 	"authLdap": {
 		"LDAPServer": "127.0.0.1",
 		"LDAPPrepend": "uid=",
 		"LDAPAppend": "ou=users,dc=example,dc=com"}}
-=======
-        "config": "/etc/radicale/logging",
-        "debug": "False"}}
->>>>>>> d9ea784e31687b03f1451bc5b543122f05c5deb1
 
 # Create a ConfigParser and configure it
 _CONFIG_PARSER = ConfigParser()
@@ -77,7 +71,7 @@ for section, values in INITIAL_CONFIG.items():
         _CONFIG_PARSER.set(section, key, value)
 
 _CONFIG_PARSER.read("/etc/radicale/config")
-_CONFIG_PARSER.read(os.path.expdanuser("~/.config/radicale/config"))
+_CONFIG_PARSER.read(os.path.expanduser("~/.config/radicale/config"))
 
 # Wrap config module into ConfigParser instance
 sys.modules[__name__] = _CONFIG_PARSER
