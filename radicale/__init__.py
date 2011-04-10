@@ -53,7 +53,7 @@ VERSION = "git"
 
 def _check(request, function):
     """Check if user has sufficient rights for performing ``request``."""
-    log.log(10, "Check if user has sufficient rights for performing ``request``.")
+    log.log(10, "Check if user has sufficient rights for performing ``request`` %s." % (request.command))
     # ``_check`` decorator can access ``request`` protected functions
     # pylint: disable=W0212
 
@@ -70,7 +70,7 @@ def _check(request, function):
         user = password = None
 
     if request.server.acl.has_right(request._calendar.owner, user, password):
-        log.log(20, "Sufficient rights for performing ``request``.")
+        log.log(20, "Sufficient rights for performing ``request`` %s." % (request.command))
         function(request)
     else:
         log.log(40, "No sufficient rights for performing ``request``.")
@@ -148,7 +148,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @property
     def _calendar(self):
         """The ``ical.Calendar`` object corresponding to the given path."""
-        log.log(10, "The ``ical.Calendar`` object corresponding to the given path.")
+        log.log(10, "The ``ical.Calendar`` object corresponding to the given path. (%s)" % (self.path))
         # ``self.path`` must be something like a posix path
         # ``normpath`` should clean malformed and malicious request paths
         attributes = posixpath.normpath(self.path.strip("/")).split("/")
