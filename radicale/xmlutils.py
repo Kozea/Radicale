@@ -51,7 +51,7 @@ def _response(code):
 def name_from_path(path):
     """Return Radicale item name from ``path``."""
     path_parts = path.strip("/").split("/")
-    return path_parts[-1] if len(path_parts) > 2 else None
+    return path_parts[-1] if len(path_parts) >= 2 else None
 
 
 def delete(path, calendar):
@@ -129,7 +129,8 @@ def propfind(path, xml_request, calendar, depth):
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
             elif tag == _tag("D", "owner"):
-                element.text = calendar.owner
+                if calendar.owner:
+                    element.text = calendar.owner
             elif tag == _tag("D", "getcontenttype"):
                 element.text = "text/calendar"
             elif tag == _tag("CS", "getctag") and is_calendar:
