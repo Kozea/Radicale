@@ -45,13 +45,11 @@ def _tag(short_name, local):
 
 def _response(code):
     """Return full W3C names from HTTP status codes."""
-    log.log(10, "Return full W3C names from HTTP status codes.")
     return "HTTP/1.1 %i %s" % (code, client.responses[code])
 
 
 def name_from_path(path):
     """Return Radicale item name from ``path``."""
-    log.log(10, "Return Radicale item name from ``path``.")
     path_parts = path.strip("/").split("/")
     return path_parts[-1] if len(path_parts) >= 2 else None
 
@@ -63,7 +61,6 @@ def delete(path, calendar):
 
     """
     # Reading request
-    log.log(10, "Read and answer DELETE requests.")
     calendar.remove(name_from_path(path))
 
     # Writing answer
@@ -89,7 +86,6 @@ def propfind(path, xml_request, calendar, depth):
     
     """
     # Reading request
-    log.log(10, "Read and answer PROPFIND requests.")
     root = ET.fromstring(xml_request)
     
     prop_element = root.find(_tag("D", "prop"))
@@ -177,7 +173,6 @@ def propfind(path, xml_request, calendar, depth):
 
 def put(path, ical_request, calendar):
     """Read PUT requests."""
-    log.log(10, "Read PUT requests.")
     name = name_from_path(path)
     if name in (item.name for item in calendar.items):
         # PUT is modifying an existing item
@@ -194,7 +189,6 @@ def report(path, xml_request, calendar):
 
     """
     # Reading request
-    log.log(10, "Read and answer REPORT requests.")
     root = ET.fromstring(xml_request)
 
     prop_element = root.find(_tag("D", "prop"))
