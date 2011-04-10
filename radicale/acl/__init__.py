@@ -31,5 +31,9 @@ from radicale import config
 
 def load():
     """Load list of available ACL managers."""
-    module = __import__("radicale.acl", fromlist=[config.get("acl", "type")])
-    return getattr(module, config.get("acl", "type"))
+    acl_type = config.get("acl", "type")
+    if acl_type == "None":
+        return None
+    else:
+        module = __import__("radicale.acl", fromlist=[acl_type])
+        return getattr(module, acl_type)

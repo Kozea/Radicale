@@ -46,20 +46,34 @@ except ImportError:
     import BaseHTTPServer as server
 # pylint: enable=F0401
 
+<<<<<<< HEAD
 from radicale import acl, config, ical, xmlutils, log
+=======
+from radicale import acl, config, ical, log, xmlutils
+>>>>>>> d9ea784e31687b03f1451bc5b543122f05c5deb1
 
 
 VERSION = "git"
 
+# Decorators can access ``request`` protected functions
+# pylint: disable=W0212
+
 def _check(request, function):
     """Check if user has sufficient rights for performing ``request``."""
+<<<<<<< HEAD
     log.log(10, "Check if user has sufficient rights for performing ``request`` %s." % (request.command))
     # ``_check`` decorator can access ``request`` protected functions
     # pylint: disable=W0212
 
     # If we have no calendar, don't check rights
     if not request._calendar:
+=======
+    # If we have no calendar or no acl, don't check rights
+    if not request._calendar or not request.server.acl:
+>>>>>>> d9ea784e31687b03f1451bc5b543122f05c5deb1
         return function(request)
+
+    log.LOGGER.info("Checking rights for %s" % request._calendar.owner)
 
     authorization = request.headers.get("Authorization", None)
     if authorization:
@@ -72,6 +86,7 @@ def _check(request, function):
     if request.server.acl.has_right(request._calendar.owner, user, password):
         log.log(20, "Sufficient rights for performing ``request`` %s." % (request.command))
         function(request)
+        log.LOGGER.info("%s allowed" % request._calendar.owner)
     else:
         log.log(40, "No sufficient rights for performing ``request``.")
         request.send_response(client.UNAUTHORIZED)
@@ -79,7 +94,24 @@ def _check(request, function):
             "WWW-Authenticate",
             "Basic realm=\"Radicale Server - Password Required\"")
         request.end_headers()
-    # pylint: enable=W0212
+        log.LOGGER.info("%s refused" % request._calendar.owner)
+
+def _log_request_content(request, function):
+    """Log the content of the request and store it in the request object."""
+    log.LOGGER.info(
+        "%s request at %s recieved from %s" % (
+            request.command, request.path, request.client_address[0]))
+
+    content_length = int(request.headers.get("Content-Length", 0))
+    if content_length:
+        request._content = request.rfile.read(content_length)
+        log.LOGGER.debug("Request content:\n%s" % request._content)
+    else:
+        request._content = None
+
+    return function(request)
+
+# pylint: enable=W0212
 
 
 class HTTPServer(server.HTTPServer):
@@ -142,8 +174,19 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     log.log(10, "HTTP requests handler for calendars.")
     _encoding = config.get("encoding", "request")
 
-    # Decorator checking rights before performing request
+    # Request handlers decorators
     check_rights = lambda function: lambda request: _check(request, function)
+    log_request_content = \
+        lambda function: lambda request: _log_request_content(request, function)
+
+    # Maybe a Pylint bug, ``__init__`` calls ``server.HTTPServer.__init__``
+    # pylint: disable=W0231
+    def __init__(self, request, client_address, http_server):
+        self._content = None
+        self._answer = None
+        server.BaseHTTPRequestHandler.__init__(
+            self, request, client_address, http_server)
+    # pylint: enable=W0231
 
     @property
     def _calendar(self):
@@ -180,9 +223,13 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
                 pass
         raise UnicodeDecodeError
 
+    def log_message(self, *args, **kwargs):
+        """Disable inner logging management."""
+
     # Naming methods ``do_*`` is OK here
     # pylint: disable=C0103
 
+    @log_request_content
     def do_GET(self):
         """Manage GET request."""
         log.log(10, "Manage GET request.")
@@ -190,6 +237,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         if self._answer:
             self.wfile.write(self._answer)
 
+    @log_request_content
     @check_rights
     def do_HEAD(self):
         """Manage HEAD request."""
@@ -221,6 +269,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         self.send_header("ETag", etag)
         self.end_headers()
 
+    @log_request_content
     @check_rights
     def do_DELETE(self):
         """Manage DELETE request."""
@@ -238,12 +287,14 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
             # No item or ETag precondition not verified, do not delete item
             self.send_response(client.PRECONDITION_FAILED)
 
+    @log_request_content
     @check_rights
     def do_MKCALENDAR(self):
         """Manage MKCALENDAR request."""
         self.send_response(client.CREATED)
         self.end_headers()
 
+    @log_request_content
     def do_OPTIONS(self):
         """Manage OPTIONS request."""
         log.log(10, "Manage OPTIONS request.")
@@ -254,12 +305,16 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         self.send_header("DAV", "1, calendar-access")
         self.end_headers()
 
+    @log_request_content
     def do_PROPFIND(self):
         """Manage PROPFIND request."""
+<<<<<<< HEAD
         log.log(10, "Manage PROPFIND request.")
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
+=======
+>>>>>>> d9ea784e31687b03f1451bc5b543122f05c5deb1
         self._answer = xmlutils.propfind(
-            self.path, xml_request, self._calendar,
+            self.path, self._content, self._calendar,
             self.headers.get("depth", "infinity"))
 
         self.send_response(client.MULTI_STATUS)
@@ -269,6 +324,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(self._answer)
 
+    @log_request_content
     @check_rights
     def do_PUT(self):
         """Manage PUT request."""
@@ -281,8 +337,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item
             # Case 3: Item and no Etag precondition: Force modifying item
-            ical_request = self._decode(
-                self.rfile.read(int(self.headers["Content-Length"])))
+            ical_request = self._decode(self._content)
             xmlutils.put(self.path, ical_request, self._calendar)
             etag = self._calendar.get_item(item_name).etag
 
@@ -293,12 +348,17 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
             # PUT rejected in all other cases
             self.send_response(client.PRECONDITION_FAILED)
 
+    @log_request_content
     @check_rights
     def do_REPORT(self):
         """Manage REPORT request."""
+<<<<<<< HEAD
         log.log(10, "Manage REPORT request.")
         xml_request = self.rfile.read(int(self.headers["Content-Length"]))
         self._answer = xmlutils.report(self.path, xml_request, self._calendar)
+=======
+        self._answer = xmlutils.report(self.path, self._content, self._calendar)
+>>>>>>> d9ea784e31687b03f1451bc5b543122f05c5deb1
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("Content-Length", len(self._answer))

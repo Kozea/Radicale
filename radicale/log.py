@@ -1,30 +1,50 @@
 # -*- coding: utf-8 -*-
+#
+# This file is part of Radicale Server - Calendar Server
+# Copyright © 2011 Guillaume Ayoub
+#
+# This library is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging, sys
-from logging.handlers import SysLogHandler
+"""
+Radicale logging module.
+
+Manage logging from a configuration file. For more information, see:
+http://docs.python.org/library/logging.config.html
+
+"""
+
+import os
+import sys
+import logging
+import logging.config
+
 from radicale import config
 
-class log:
-	def __init__(self):
-		self.logger=logging.getLogger("radicale")
-		self.logger.setLevel(config.get("logging", "facility"))
-		
-		loggingType=config.get("logging", "type")
-		if loggingType == "stdout": 
-			handler=logging.StreamHandler(sys.stdout)
-		elif loggingType == "file": 
-			handler=logging.FileHandler(config.get("logging", "logfile"))
-		else:
-			handler=logging.handlers.SysLogHandler("/dev/log")
-			
-		formatter = logging.Formatter('%(name)s %(asctime)s %(levelname)s %(message)s')
-		handler.setFormatter(formatter)
 
-		self.logger.addHandler(handler)
-	def log(self, level, msg):
-		self.logger.log(level, msg)
+LOGGER = logging.getLogger("radicale")
+FILENAME = os.path.expanduser(config.get("logging", "config"))
 
-_LOGGING = log()
+def start(debug=False):
+    """Start the logging according to the configuration."""
+    if debug:
+        LOGGER.setLevel(logging.DEBUG)
 
-sys.modules[__name__] = _LOGGING
-
+    if os.path.exists(FILENAME):
+        # Configuration taken from file
+        logging.config.fileConfig(FILENAME)
+    else:
+        # Default configuration, standard output
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+        LOGGER.addHandler(handler)

@@ -32,8 +32,6 @@ Launch the server according to configuration and command-line options.
 
 """
 
-# TODO: Manage smart and configurable logs
-
 import os
 import sys
 import optparse
@@ -70,20 +68,30 @@ parser.add_option(
     "-c", "--certificate",
     default=radicale.config.get("server", "certificate"),
     help="set certificate file")
+parser.add_option(
+    "-D", "--debug", action="store_true",
+    default=radicale.config.getboolean("logging", "debug"),
+    help="print debug information")
 options = parser.parse_args()[0]
 
 # Update Radicale configuration according to options
 for option in parser.option_list:
     key = option.dest
     if key:
+        section = "logging" if key == "debug" else "server"
         value = getattr(options, key)
-        radicale.config.set("server", key, value)
+        radicale.config.set(section, key, value)
+
+# Start logging
+radicale.log.start(options.debug)
 
 # Fork if Radicale is launched as daemon
 if options.daemon:
     if os.fork():
         sys.exit()
     sys.stdout = sys.stderr = open(os.devnull, "w")
+
+radicale.log.LOGGER.info("Starting Radicale")
 
 # Create calendar servers
 servers = []
@@ -110,6 +118,10 @@ def serve_forever(server):
 # a server exists but another server is added to the list at the same time
 for server in servers:
     threading.Thread(target=serve_forever, args=(server,)).start()
+    radicale.log.LOGGER.debug(
+        "Listening to %s port %s" % (server.server_name, server.server_port))
+
+radicale.log.LOGGER.debug("Radicale server ready")
 
 # Main loop: wait until all servers are exited
 try:
@@ -126,5 +138,10 @@ finally:
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
+    radicale.log.LOGGER.info("Stopping Radicale")
+
     for server in servers:             
+        radicale.log.LOGGER.debug(
+            "Closing server listening to %s port %s" % (
+                server.server_name, server.server_port))
         server.shutdown()
