@@ -48,12 +48,15 @@ INITIAL_CONFIG = {
         "request": "utf-8",
         "stock": "utf-8"},
     "acl": {
-        "type": "fake",
+        "type": "None",
         "personal": "False",
         "filename": "/etc/radicale/users",
         "encryption": "crypt"},
     "storage": {
-        "folder": os.path.expanduser("~/.config/radicale/calendars")}}
+        "folder": os.path.expanduser("~/.config/radicale/calendars")},
+    "logging": {
+        "config": "/etc/radicale/logging",
+        "debug": "False"}}
 
 # Create a ConfigParser and configure it
 _CONFIG_PARSER = ConfigParser()

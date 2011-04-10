@@ -28,8 +28,8 @@ stock = utf-8
 
 [acl]
 # Access method
-# Value: fake | htpasswd
-type = fake
+# Value: None | htpasswd
+type = None
 # Personal calendars only available for logged in users (if needed)
 personal = False
 # Htpasswd filename (if needed)
@@ -42,5 +42,14 @@ encryption = crypt
 # Folder for storing local calendars,
 # created if not present
 folder = ~/.config/radicale/calendars
+
+[logging]
+# Logging configuration file
+# If no config is given, simple information is printed on the standard output
+# For more information about the syntax of the configuration file, see:
+# http://docs.python.org/library/logging.config.html
+config = /etc/radicale/logging
+# Set the default logging level to debug
+debug = False
 
 # vim:ft=cfg
