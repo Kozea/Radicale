@@ -141,13 +141,21 @@ Configuring Server
 Configuration File
 ~~~~~~~~~~~~~~~~~~
 
+.. note::
+   This section is following the latest git master changes. Please look at the
+   default configuration file included in your package if you have an older
+   version of Radicale.
+
 The server configuration can be modified in ``/etc/radicale/config`` or in
 ``~/.config/radicale/config``. Here is the default configuration file, with the
 main parameters::
 
   [server]
-  # CalDAV server hostname, empty for all hostnames
-  host = 
+  # CalDAV server hostnames separated by a comma
+  # IPv4 syntax: address:port
+  # IPv6 syntax: [address]:port
+  # IPv6 adresses are configured to only allow IPv6 connections
+  hosts = 0.0.0.0:5232
   # CalDAV server port
   port = 5232
   # Daemon flag
@@ -167,8 +175,8 @@ main parameters::
 
   [acl]
   # Access method
-  # Value: fake | htpasswd
-  type = fake
+  # Value: None | htpasswd
+  type = None
   # Personal calendars only available for logged in users (if needed)
   personal = False
   # Htpasswd filename (if needed)
@@ -181,6 +189,15 @@ main parameters::
   # Folder for storing local calendars,
   # created if not present
   folder = ~/.config/radicale/calendars
+
+  [logging]
+  # Logging configuration file
+  # If no config is given, simple information is printed on the standard output
+  # For more information about the syntax of the configuration file, see:
+  # http://docs.python.org/library/logging.config.html
+  config = /etc/radicale/logging
+  # Set the default logging level to debug
+  debug = False
 
 This configuration file is read each time the server is launched. If some
 values are not given, the default ones are used. If no configuration file is
