@@ -156,8 +156,6 @@ main parameters::
   # IPv6 syntax: [address]:port
   # IPv6 adresses are configured to only allow IPv6 connections
   hosts = 0.0.0.0:5232
-  # CalDAV server port
-  port = 5232
   # Daemon flag
   daemon = False
   # SSL flag, enable HTTPS protocol
