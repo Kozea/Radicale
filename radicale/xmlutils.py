@@ -162,6 +162,15 @@ def propfind(path, xml_request, calendar, depth):
                 privilege = ET.Element(_tag("D", "privilege"))
                 privilege.append(ET.Element(_tag("D", "all")))
                 element.append(privilege)
+            elif tag == _tag("D", "supported-report-set"):
+                for report_name in (
+                    "principal-property-search", "principal-search-property-set",
+                    "expand-property", "sync-collection"):
+                    supported = ET.Element(_tag("D", "supported-report"))
+                    report = ET.Element(_tag("D", "report"))
+                    report.text = report_name
+                    supported.append(report)
+                    element.append(supported)
             prop.append(element)
 
         status = ET.Element(_tag("D", "status"))
