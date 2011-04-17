@@ -8,7 +8,7 @@ PyPI
 Radicale is `available on PyPI <http://pypi.python.org/pypi/Radicale/>`_. To
 install, just type as superuser::
 
-  pip radicale
+  pip install radicale
 
 Git Repository
 ==============
