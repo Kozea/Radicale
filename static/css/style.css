@@ -26,11 +26,6 @@ pre {
 background: #2e3436 url(img/radicale_back.png) 20% 60% no-repeat;
 }
 
-.highlight pre {
-background: #eeeeec;
-text-shadow: 0 0 1px white;
-}
-
 nav ul {
 background: #a40000;
 color: white;
