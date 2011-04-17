@@ -148,7 +148,9 @@ Configuration File
 
 The server configuration can be modified in ``/etc/radicale/config`` or in
 ``~/.config/radicale/config``. Here is the default configuration file, with the
-main parameters::
+main parameters:
+
+.. code-block:: ini
 
   [server]
   # CalDAV server hostnames separated by a comma
