@@ -68,14 +68,17 @@ is a good protocol, covering lots of features and use cases, but it is quite
 hard to implement fully.
 
 Some calendar servers have been created to follow the CalDAV RFC as much as
-possible: Cosmo [#]_ and Darwin Calendar Server [#]_, for example, are much
-more respectful of CalDAV and can be used with a large number of clients. They
-are very good choices if you want to develop and test new CalDAV clients, or if
-you have a possibly heterogeneous list of user agents.
+possible: Davical [#]_, Cosmo [#]_ and Darwin Calendar Server [#]_, for
+example, are much more respectful of CalDAV and can be used with a large number
+of clients. They are very good choices if you want to develop and test new
+CalDAV clients, or if you have a possibly heterogeneous list of user agents.
 
 The Radicale Server does not and **will not** support the CalDAV standard. It
-supports the CalDAV implementation of different clients (only Sunbird 0.9+
-[#]_, Lightning 0.9+ [#]_ and Evolution [#]_ for the moment).
+supports the CalDAV implementation of different clients (Lightning, Evolution,
+Android and iPhone, more are coming [#]_).
+
+.. [#] `Davical <http://www.davical.org/>`_, a standards-compliant calendar
+   server.
 
 .. [#] `Cosmo <http://chandlerproject.org/Projects/CosmoHome>`_, the web
    contents and calendars sharing server build to support the Chandler Project.
@@ -83,14 +86,9 @@ supports the CalDAV implementation of different clients (only Sunbird 0.9+
 .. [#] `Darwin Calendar Server <http://trac.calendarserver.org/>`_, a
    standards-compliant calendar server mainly developed by Apple.
 
-.. [#] `Mozilla Sunbird <http://www.mozilla.org/projects/calendar/sunbird/>`_,
-   a cross-platform calendar client built upon Mozilla Toolkit.
-
-.. [#] `Lightning <http://www.mozilla.org/projects/calendar/lightning/>`_, a
-   calendar plugin bringing Sunbird in Mozilla Thunderbird.
-
-.. [#] `Evolution <http://projects.gnome.org/evolution/>`_, the default mail,
-   addressbook and calendaring client for Gnome.
+.. [#] A feature request called `Support for additional clients
+   <http://redmine.kozea.fr/issues/55>`_ is open to follow the work done to
+   support more clients.
 
 Simple
 ~~~~~~
