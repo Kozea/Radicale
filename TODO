@@ -6,12 +6,17 @@
  TODO
 ------
 
-0.6
+0.7
 ===
 
-* [IN PROGRESS] Group calendars
-* [IN PROGRESS] LDAP and databases auth support
+* WSGI support
+
+
+0.8
+===
+
 * CalDAV rights
+* CalDAV filters
 * Read-only access for foreign users
 
 

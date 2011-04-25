@@ -11,6 +11,8 @@
 
 * IPv6 support
 * Smart, verbose and configurable logs
+* LDAP auth support
+* Journal entries support
 
 
 0.5 - Historical Artifacts
