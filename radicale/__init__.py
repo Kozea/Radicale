@@ -60,26 +60,30 @@ def _check(request, function):
     if not request._calendar or not request.server.acl:
         return function(request)
 
-    log.LOGGER.info("Checking rights for %s" % request._calendar.owner)
+    if request._calendar.owner is None and PERSONAL:
+        # No owner and personal calendars, don't check rights
+        return function(request)
+
+    log.LOGGER.info(
+        "Checking rights for calendar owned by %s" % request._calendar.owner)
 
     authorization = request.headers.get("Authorization", None)
     if authorization:
         challenge = authorization.lstrip("Basic").strip().encode("ascii")
-        plain = request._decode(base64.b64decode(challenge))
-        user, password = plain.split(":")
+        user, password = request._decode(base64.b64decode(challenge)).split(":")
     else:
         user = password = None
 
     if request.server.acl.has_right(request._calendar.owner, user, password):
-        function(request)
         log.LOGGER.info("%s allowed" % request._calendar.owner)
+        return function(request)
     else:
+        log.LOGGER.info("%s refused" % request._calendar.owner)
         request.send_response(client.UNAUTHORIZED)
         request.send_header(
             "WWW-Authenticate",
             "Basic realm=\"Radicale Server - Password Required\"")
         request.end_headers()
-        log.LOGGER.info("%s refused" % request._calendar.owner)
 
 def _log_request_content(request, function):
     """Log the content of the request and store it in the request object."""

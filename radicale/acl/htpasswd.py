@@ -33,6 +33,11 @@ import hashlib
 from radicale import config
 
 
+FILENAME = config.get("acl", "htpasswd_filename")
+PERSONAL = config.getboolean("acl", "personal")
+ENCRYPTION = config.get("acl", "htpasswd_encryption")
+
+
 def _plain(hash_value, password):
     """Check if ``hash_value`` and ``password`` match using plain method."""
     return hash_value == password
@@ -48,7 +53,7 @@ def _crypt(hash_value, password):
 def _sha1(hash_value, password):
     """Check if ``hash_value`` and ``password`` match using sha1 method."""
     hash_value = hash_value.replace("{SHA}", "").encode("ascii")
-    password = password.encode(config.get("encoding", "stock"))
+    password = password.encode(config.get("htpasswd_encoding", "stock"))
     sha1 = hashlib.sha1() # pylint: disable=E1101
     sha1.update(password)
     return sha1.digest() == base64.b64decode(hash_value)
@@ -56,18 +61,9 @@ def _sha1(hash_value, password):
 
 def has_right(owner, user, password):
     """Check if ``user``/``password`` couple is valid."""
-    if owner is None and PERSONAL:
-        # No owner and personal calendars, everybody is allowed
-        return True
-
     for line in open(FILENAME).readlines():
         if line.strip():
             login, hash_value = line.strip().split(":")
             if login == user and (not PERSONAL or user == owner):
-                return CHECK_PASSWORD(hash_value, password)
+                return locals()["_%s" % ENCRYPTION](hash_value, password)
     return False
-
-
-FILENAME = config.get("acl", "filename")
-PERSONAL = config.getboolean("acl", "personal")
-CHECK_PASSWORD = locals()["_%s" % config.get("acl", "encryption")]

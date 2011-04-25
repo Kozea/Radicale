@@ -50,17 +50,16 @@ INITIAL_CONFIG = {
     "acl": {
         "type": "None",
         "personal": "False",
-        "filename": "/etc/radicale/users",
-        "encryption": "crypt"},
+        "httpasswd_filename": "/etc/radicale/users",
+        "httpasswd_encryption": "crypt",
+        "ldap_url": "ldap://localhost:389/",
+        "ldap_base": "ou=users,dc=example,dc=com",
+        "ldap_attribute": "uid"},
     "storage": {
         "folder": os.path.expanduser("~/.config/radicale/calendars")},
     "logging": {
         "config": "/etc/radicale/logging",
-        "debug": "False"},
-	"authLdap": {
-		"LDAPServer": "127.0.0.1",
-		"LDAPPrepend": "uid=",
-		"LDAPAppend": "ou=users,dc=example,dc=com"}}
+        "debug": "False"}}
 
 # Create a ConfigParser and configure it
 _CONFIG_PARSER = ConfigParser()
