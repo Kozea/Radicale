@@ -29,7 +29,7 @@ in them for XML requests (all but PUT).
 
 import xml.etree.ElementTree as ET
 
-from radicale import client, config, ical, log
+from radicale import client, config, ical
 
 
 NAMESPACES = {
@@ -83,11 +83,11 @@ def propfind(path, xml_request, calendar, depth):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
-    
+
     """
     # Reading request
     root = ET.fromstring(xml_request)
-    
+
     prop_element = root.find(_tag("D", "prop"))
     prop_list = prop_element.getchildren()
     props = [prop.tag for prop in prop_list]
