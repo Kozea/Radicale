@@ -94,15 +94,16 @@ def _log_request_content(request, function):
     content_length = int(request.headers.get("Content-Length", 0))
     if content_length:
         request._content = request.rfile.read(content_length)
+        log.LOGGER.debug(
+            "Request headers:\n%s" % "\n".join(
+                ": ".join((key, value))
+                for key, value in request.headers.items()))
         log.LOGGER.debug("Request content:\n%s" % request._content)
     else:
         request._content = None
 
     function(request)
 
-    log.LOGGER.debug(
-        "Response headers:\n%s" % "\n".join(
-            ": ".join((key, value)) for key, value in request.headers.items()))
     if getattr(request, "_answer"):
         log.LOGGER.debug(
             "Response content:\n%s" % request._answer)
