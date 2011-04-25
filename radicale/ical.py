@@ -53,6 +53,21 @@ def serialize(headers=(), items=()):
     return "\n".join(lines)
 
 
+def unfold(text):
+    """Unfold multi-lines attributes.
+
+    Read rfc5545-3.1 for info.
+
+    """
+    lines = []
+    for line in text.splitlines():
+        if lines and (line.startswith(" ") or line.startswith("\t")):
+            lines[-1] += line[1:]
+        else:
+            lines.append(line)
+    return lines
+
+
 class Item(object):
     """Internal iCal item."""
     def __init__(self, text, name=None):
@@ -68,7 +83,7 @@ class Item(object):
         # - the ``UID`` iCal property (for Events, Todos, Journals)
         # - the ``TZID`` iCal property (for Timezones)
         if not self._name:
-            for line in self.text.splitlines():
+            for line in unfold(self.text):
                 if line.startswith("X-RADICALE-NAME:"):
                     self._name = line.replace("X-RADICALE-NAME:", "").strip()
                     break
@@ -80,7 +95,7 @@ class Item(object):
                     # Do not break, a ``X-RADICALE-NAME`` can appear next
 
         if "\nX-RADICALE-NAME:" in text:
-            for line in self.text.splitlines():
+            for line in unfold(self.text):
                 if line.startswith("X-RADICALE-NAME:"):
                     self.text = self.text.replace(
                         line, "X-RADICALE-NAME:%s" % self._name)
@@ -161,7 +176,7 @@ class Calendar(object):
 
         items = []
 
-        lines = text.splitlines()
+        lines = unfold(text)
         in_item = False
 
         for line in lines:
@@ -254,7 +269,7 @@ class Calendar(object):
         """Find headers items in calendar."""
         header_lines = []
 
-        lines = self.text.splitlines()
+        lines = unfold(self.text)
         for line in lines:
             if line.startswith("PRODID:"):
                 header_lines.append(Header(line))
