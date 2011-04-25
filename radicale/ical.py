@@ -64,8 +64,8 @@ class Item(object):
         # An item must have a name, determined in order by:
         #
         # - the ``name`` parameter
-        # - the ``X-RADICALE-NAME`` iCal property (for Events and Todos)
-        # - the ``UID`` iCal property (for Events and Todos)
+        # - the ``X-RADICALE-NAME`` iCal property (for Events, Todos, Journals)
+        # - the ``UID`` iCal property (for Events, Todos, Journals)
         # - the ``TZID`` iCal property (for Timezones)
         if not self._name:
             for line in self.text.splitlines():
@@ -122,6 +122,11 @@ class Todo(Item):
     # pylint: disable=W0511
     tag = "VTODO"
     # pylint: enable=W0511
+
+
+class Journal(Item):
+    """Internal journal class."""
+    tag = "VJOURNAL"
 
 
 class Timezone(Item):
@@ -190,7 +195,8 @@ class Calendar(object):
         """
         items = self.items
 
-        for new_item in self._parse(text, (Timezone, Event, Todo), name):
+        for new_item in self._parse(
+            text, (Timezone, Event, Todo, Journal), name):
             if new_item.name not in (item.name for item in items):
                 items.append(new_item)
 
@@ -198,10 +204,11 @@ class Calendar(object):
 
     def remove(self, name):
         """Remove object named ``name`` from calendar."""
-        todos = [todo for todo in self.todos if todo.name != name]
-        events = [event for event in self.events if event.name != name]
+        components = [
+            component for component in self.components
+            if component.name != name]
 
-        items = self.timezones + todos + events
+        items = self.timezones + components
         self.write(items=items)
 
     def replace(self, name, text):
@@ -259,7 +266,12 @@ class Calendar(object):
     @property
     def items(self):
         """Get list of all items in calendar."""
-        return self._parse(self.text, (Event, Todo, Timezone))
+        return self._parse(self.text, (Event, Todo, Journal, Timezone))
+
+    @property
+    def components(self):
+        """Get list of all components in calendar."""
+        return self._parse(self.text, (Event, Todo, Journal))
 
     @property
     def events(self):
@@ -270,6 +282,11 @@ class Calendar(object):
     def todos(self):
         """Get list of ``Todo`` items in calendar."""
         return self._parse(self.text, (Todo,))
+
+    @property
+    def journals(self):
+        """Get list of ``Journal`` items in calendar."""
+        return self._parse(self.text, (Journal,))
 
     @property
     def timezones(self):

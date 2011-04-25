@@ -101,7 +101,7 @@ def propfind(path, xml_request, calendar, depth):
         else:
             # depth is 1, infinity or not specified
             # we limit ourselves to depth == 1
-            items = [calendar] + calendar.events + calendar.todos
+            items = [calendar] + calendar.components
     else:
         items = []
 
@@ -152,12 +152,10 @@ def propfind(path, xml_request, calendar, depth):
                 tag.text = path
                 element.append(tag)
             elif tag == _tag("C", "supported-calendar-component-set"):
-                comp = ET.Element(_tag("C", "comp"))
-                comp.set("name", "VTODO") # pylint: disable=W0511
-                element.append(comp)
-                comp = ET.Element(_tag("C", "comp"))
-                comp.set("name", "VEVENT")
-                element.append(comp)
+                for component in ("VTODO", "VEVENT", "VJOURNAL"):
+                    comp = ET.Element(_tag("C", "comp"))
+                    comp.set("name", component)
+                    element.append(comp)
             elif tag == _tag("D", "current-user-privilege-set"):
                 privilege = ET.Element(_tag("D", "privilege"))
                 privilege.append(ET.Element(_tag("D", "all")))
@@ -227,7 +225,7 @@ def report(path, xml_request, calendar):
         else:
             # Reference is a calendar
             path = hreference
-            items = calendar.events + calendar.todos
+            items = calendar.components
 
         for item in items:
             response = ET.Element(_tag("D", "response"))
@@ -248,7 +246,7 @@ def report(path, xml_request, calendar):
                 if tag == _tag("D", "getetag"):
                     element.text = item.etag
                 elif tag == _tag("C", "calendar-data"):
-                    if isinstance(item, (ical.Event, ical.Todo)):
+                    if isinstance(item, (ical.Event, ical.Todo, ical.Journal)):
                         element.text = ical.serialize(
                             calendar.headers, calendar.timezones + [item])
                 prop.append(element)
