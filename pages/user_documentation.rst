@@ -18,7 +18,9 @@ Dependencies
 ------------
 
 Radicale is written in pure python and does not depend on any librabry. It is
-known to work on Python from 2.5 to 3.2 [#]_.
+known to work on Python from 2.5 to 3.2 [#]_. The only optional dependency is
+`the python-ldap module <http://www.python-ldap.org/>`_ for LDAP
+authentication.
 
 Linux users certainly have Python already installed. For Windows and MacOS
 users, please install Python [#]_ thanks to the adequate installer.
@@ -237,3 +239,10 @@ Crypt Support
 With the htpasswd access, many encryption methods are available, and crypt is the
 default one in Radicale. Unfortunately, the ``crypt`` module is unavailable on
 Windows, you have to pick another method on this OS.
+
+LDAP Authentication
+-------------------
+
+The LDAP authentication module relies on `the python-ldap module
+<http://www.python-ldap.org/>`_, and thus only works with 2.x versions
+of Python.
