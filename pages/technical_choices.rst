@@ -38,14 +38,14 @@ Protocols and Formats
 The main protocols and formats fully or partially implemented in the
 Radicale Project are described by RFCs:
 
-- iCalendar format (iCal) :RFC:`2445`
-- HTTP Extensions for Distributed Authoring (WebDAV) :RFC:`2518`
 - HyperText Transfer Protocol (HTTP) :RFC:`2616`
 - WebDAV Access Control Protocol (ACL) :RFC:`3744`
 - Calendaring Extensions to WebDAV (CalDAV) :RFC:`4791`
 - HTTP Extensions for Web Distributed Authoring and Versioning
   (WebDAV) :RFC:`4918`
 - Transport Layer Security (TLS) :RFC:`5246`
+- iCalendar format (iCal) :RFC:`5545`
+- HTTP Extensions for Distributed Authoring (WebDAV) :RFC:`5689`
 
 .. note::
    CalDAV implementation **requires** iCal, ACL, WebDAV, HTTP and TLS. The
