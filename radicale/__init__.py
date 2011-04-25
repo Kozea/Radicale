@@ -76,7 +76,7 @@ def _check(request, function):
 
     if request.server.acl.has_right(request._calendar.owner, user, password):
         log.LOGGER.info("%s allowed" % request._calendar.owner)
-        return function(request)
+        function(request)
     else:
         log.LOGGER.info("%s refused" % request._calendar.owner)
         request.send_response(client.UNAUTHORIZED)
@@ -98,7 +98,14 @@ def _log_request_content(request, function):
     else:
         request._content = None
 
-    return function(request)
+    function(request)
+
+    log.LOGGER.debug(
+        "Response headers:\n%s" % "\n".join(
+            ": ".join((key, value)) for key, value in request.headers.items()))
+    if getattr(request, "_answer"):
+        log.LOGGER.debug(
+            "Response content:\n%s" % request._answer)
 
 # pylint: enable=W0212
 
