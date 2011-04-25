@@ -188,6 +188,8 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         # ``normpath`` should clean malformed and malicious request paths
         attributes = posixpath.normpath(self.path.strip("/")).split("/")
         if attributes:
+            if attributes[-1].endswith('.ics'):
+                attributes.pop()
             path = "/".join(attributes[:min(len(attributes), 2)])
             return ical.Calendar(path)
 
@@ -231,7 +233,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_HEAD(self):
         """Manage HEAD request."""
-        item_name = xmlutils.name_from_path(self.path)
+        item_name = xmlutils.name_from_path(self.path, self._calendar)
         if item_name:
             # Get calendar item
             item = self._calendar.get_item(item_name)
@@ -262,7 +264,8 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_DELETE(self):
         """Manage DELETE request."""
-        item = self._calendar.get_item(xmlutils.name_from_path(self.path))
+        item = self._calendar.get_item(
+            xmlutils.name_from_path(self.path, self._calendar))
         if item and self.headers.get("If-Match", item.etag) == item.etag:
             # No ETag precondition or precondition verified, delete item
             self._answer = xmlutils.delete(self.path, self._calendar)
@@ -310,7 +313,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @check_rights
     def do_PUT(self):
         """Manage PUT request."""
-        item_name = xmlutils.name_from_path(self.path)
+        item_name = xmlutils.name_from_path(self.path, self._calendar)
         item = self._calendar.get_item(item_name)
         if (not item and not self.headers.get("If-Match")) or \
                 (item and self.headers.get("If-Match", item.etag) == item.etag):

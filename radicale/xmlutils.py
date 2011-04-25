@@ -48,10 +48,11 @@ def _response(code):
     return "HTTP/1.1 %i %s" % (code, client.responses[code])
 
 
-def name_from_path(path):
+def name_from_path(path, calendar):
     """Return Radicale item name from ``path``."""
+    calendar_parts = calendar.local_path.strip("/").split("/")
     path_parts = path.strip("/").split("/")
-    return path_parts[-1] if len(path_parts) >= 2 else None
+    return path_parts[-1] if (len(path_parts) - len(calendar_parts)) else None
 
 
 def delete(path, calendar):
@@ -61,7 +62,7 @@ def delete(path, calendar):
 
     """
     # Reading request
-    calendar.remove(name_from_path(path))
+    calendar.remove(name_from_path(path, calendar))
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -180,7 +181,7 @@ def propfind(path, xml_request, calendar, depth):
 
 def put(path, ical_request, calendar):
     """Read PUT requests."""
-    name = name_from_path(path)
+    name = name_from_path(path, calendar)
     if name in (item.name for item in calendar.items):
         # PUT is modifying an existing item
         calendar.replace(name, ical_request)
@@ -217,7 +218,7 @@ def report(path, xml_request, calendar):
 
     for hreference in hreferences:
         # Check if the reference is an item or a calendar
-        name = name_from_path(hreference)
+        name = name_from_path(hreference, calendar)
         if name:
             # Reference is an item
             path = "/".join(hreference.split("/")[:-1]) + "/"

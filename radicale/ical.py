@@ -144,6 +144,7 @@ class Calendar(object):
         split_path = path.split("/")
         self.owner = split_path[0] if len(split_path) > 1 else None
         self.path = os.path.join(FOLDER, path.replace("/", os.path.sep))
+        self.local_path = path
 
     @staticmethod
     def _parse(text, item_types, name=None):
