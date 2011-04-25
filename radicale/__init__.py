@@ -56,6 +56,7 @@ VERSION = "git"
 
 def _check(request, function):
     """Check if user has sufficient rights for performing ``request``."""
+    # If we have no calendar or no acl, don't check rights
     if not request._calendar or not request.server.acl:
         return function(request)
 
