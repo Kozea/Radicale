@@ -162,11 +162,11 @@ main parameters:
   daemon = False
   # SSL flag, enable HTTPS protocol
   ssl = False
-  # SSL certificate path (if needed)
+  # SSL certificate path
   certificate = /etc/apache2/ssl/server.crt
-  # SSL private key (if needed)
+  # SSL private key
   key = /etc/apache2/ssl/server.key
-  
+
   [encoding]
   # Encoding for responding requests
   request = utf-8
@@ -175,19 +175,24 @@ main parameters:
 
   [acl]
   # Access method
-  # Value: None | htpasswd
+  # Value: None | htpasswd | LDAP
   type = None
-  # Personal calendars only available for logged in users (if needed)
+  # Personal calendars only available for logged in users
   personal = False
-  # Htpasswd filename (if needed)
-  filename = /etc/radicale/users
-  # Htpasswd encryption method (if needed)
+  # Htpasswd filename
+  htpasswd_filename = /etc/radicale/users
+  # Htpasswd encryption method
   # Value: plain | sha1 | crypt
-  encryption = crypt
+  htpasswd_encryption = crypt
+  # LDAP server URL, with protocol and port
+  ldap_url = ldap://localhost:389/
+  # LDAP base path
+  ldap_base = ou=users,dc=example,dc=com
+  # LDAP login attribute
+  ldap_attribute = uid
 
   [storage]
-  # Folder for storing local calendars,
-  # created if not present
+  # Folder for storing local calendars, created if not present
   folder = ~/.config/radicale/calendars
 
   [logging]
