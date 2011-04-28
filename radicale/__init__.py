@@ -291,7 +291,7 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         self.send_response(client.OK)
         self.send_header(
             "Allow", "DELETE, HEAD, GET, MKCALENDAR, "
-            "OPTIONS, PROPFIND, PUT, REPORT")
+            "OPTIONS, PROPFIND, PROPPATCH, PUT, REPORT")
         self.send_header("DAV", "1, calendar-access")
         self.end_headers()
 
@@ -301,6 +301,18 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
         self._answer = xmlutils.propfind(
             self.path, self._content, self._calendar,
             self.headers.get("depth", "infinity"))
+
+        self.send_response(client.MULTI_STATUS)
+        self.send_header("DAV", "1, calendar-access")
+        self.send_header("Content-Length", len(self._answer))
+        self.send_header("Content-Type", "text/xml")
+        self.end_headers()
+        self.wfile.write(self._answer)
+
+    @log_request_content
+    def do_PROPPATCH(self):
+        """Manage PROPPATCH request."""
+        self._answer = xmlutils.proppatch()
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("DAV", "1, calendar-access")

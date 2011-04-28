@@ -179,6 +179,46 @@ def propfind(path, xml_request, calendar, depth):
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
 
+def proppatch(path, xml_request, calendar):
+    """Read and answer PROPPATCH requests.
+
+    Read rfc4918-9.2 for info.
+
+    """
+    # Reading request
+    root = ET.fromstring(xml_request)
+
+    prop_element = root.find(_tag("D", "prop"))
+    prop_list = prop_element.getchildren()
+    props = [prop.tag for prop in prop_list]
+
+    # Writing answer
+    multistatus = ET.Element(_tag("D", "multistatus"))
+
+    response = ET.Element(_tag("D", "response"))
+    multistatus.append(response)
+
+    href = ET.Element(_tag("D", "href"))
+    href.text = path
+    response.append(href)
+
+    propstat = ET.Element(_tag("D", "propstat"))
+    response.append(propstat)
+
+    prop = ET.Element(_tag("D", "prop"))
+    propstat.append(prop)
+
+    for tag in props:
+        element = ET.Element(tag)
+        prop.append(element)
+
+    status = ET.Element(_tag("D", "status"))
+    status.text = _response(200)
+    propstat.append(status)
+
+    return ET.tostring(multistatus, config.get("encoding", "request"))
+
+
 def put(path, ical_request, calendar):
     """Read PUT requests."""
     name = name_from_path(path, calendar)
