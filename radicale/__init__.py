@@ -312,7 +312,8 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
     @log_request_content
     def do_PROPPATCH(self):
         """Manage PROPPATCH request."""
-        self._answer = xmlutils.proppatch()
+        self._answer = xmlutils.proppatch(
+            self.path, self._content, self._calendar)
 
         self.send_response(client.MULTI_STATUS)
         self.send_header("DAV", "1, calendar-access")

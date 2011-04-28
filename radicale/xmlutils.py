@@ -187,10 +187,14 @@ def proppatch(path, xml_request, calendar):
     """
     # Reading request
     root = ET.fromstring(xml_request)
+    props = []
 
-    prop_element = root.find(_tag("D", "prop"))
-    prop_list = prop_element.getchildren()
-    props = [prop.tag for prop in prop_list]
+    for action in ("set", "remove"):
+        action_element = root.find(_tag("D", action))
+        if action_element:
+            prop_element = action_element.find(_tag("D", "prop"))
+            prop_list = prop_element.getchildren()
+            props.extend(prop.tag for prop in prop_list)
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
