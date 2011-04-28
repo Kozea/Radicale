@@ -98,7 +98,8 @@ def _log_request_content(request, function):
             "Request headers:\n%s" % "\n".join(
                 ": ".join((key, value))
                 for key, value in request.headers.items()))
-        log.LOGGER.debug("Request content:\n%s" % request._content)
+        log.LOGGER.debug(
+            "Request content:\n%s" % request._decode(request._content))
     else:
         request._content = None
 
