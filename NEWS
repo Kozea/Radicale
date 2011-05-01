@@ -9,9 +9,12 @@
 0.6 - *Not released yet*
 ========================
 
+* WSGI support
 * IPv6 support
 * Smart, verbose and configurable logs
-* LDAP auth support
+* Apple iCal 4 support
+* LDAP auth backend (by Corentin Le Bail)
+* Owner-less calendars (by René Neumann)
 * Journal entries support
 
 
@@ -29,7 +32,6 @@
 ===================
 
 * Personal calendars
-* HEAD requests
 * Last-Modified HTTP header
 * ``no-ssl`` and ``foreground`` options
 * Default configuration file
@@ -54,7 +56,7 @@
 * Python 3 support
 * Real URLs for PUT and DELETE
 * Concurrent modification reported to users
-* Many bugs fixed by Roger Wenham
+* Many bugs fixed (by Roger Wenham)
 
 
 0.1 - Crazy Vegetables

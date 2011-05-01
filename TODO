@@ -9,12 +9,6 @@
 0.7
 ===
 
-* WSGI support
-
-
-0.8
-===
-
 * CalDAV rights
 * CalDAV filters
 * Read-only access for foreign users
