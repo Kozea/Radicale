@@ -151,6 +151,7 @@ class Application(object):
         # Get function corresponding to method
         function = getattr(self, environ["REQUEST_METHOD"].lower())
 
+        # Check rights
         if not calendar or not self.acl:
             # No calendar or no acl, don't check rights
             status, headers, answer = function(environ, calendar, content)
@@ -158,7 +159,7 @@ class Application(object):
             # No owner and personal calendars, don't check rights
             status, headers, answer = function(environ, calendar, content)
         else:
-            # Check rights
+            # Ask authentication backend to check rights
             log.LOGGER.info(
                 "Checking rights for calendar owned by %s" % calendar.owner)
             authorization = environ.get("HTTP_AUTHORIZATION", None)
@@ -192,6 +193,9 @@ class Application(object):
 
         # Return response content
         return [answer] if answer else []
+
+    # All these functions must have the same parameters, some are useless
+    # pylint: disable=W0612,W0613,R0201
 
     def get(self, environ, calendar, content):
         """Manage GET request."""
@@ -291,3 +295,5 @@ class Application(object):
         """Manage REPORT request."""
         answer = xmlutils.report(environ["PATH_INFO"], content, calendar)
         return client.MULTI_STATUS, {}, answer
+
+    # pylint: enable=W0612,W0613,R0201

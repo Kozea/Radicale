@@ -41,10 +41,10 @@ def has_right(owner, user, password):
         # User is not owner and personal calendars, or no user given, forbidden
         return False
 
-    dn = "%s=%s" % (ATTRIBUTE, ldap.dn.escape_dn_chars(user))
-    log.LOGGER.debug("LDAP bind for %s in base %s" % (dn, BASE))
+    distinguished_name = "%s=%s" % (ATTRIBUTE, ldap.dn.escape_dn_chars(user))
+    log.LOGGER.debug("LDAP bind for %s in base %s" % (distinguished_name, BASE))
 
-    users = CONNEXION.search_s(BASE, ldap.SCOPE_ONELEVEL, dn)
+    users = CONNEXION.search_s(BASE, ldap.SCOPE_ONELEVEL, distinguished_name)
     if users:
         log.LOGGER.debug("User %s found" % user)
         try:

@@ -153,22 +153,25 @@ def propfind(path, xml_request, calendar, depth):
                 tag.text = path
                 element.append(tag)
             elif tag == _tag("C", "supported-calendar-component-set"):
+                # This is not a Todo
+                # pylint: disable=W0511
                 for component in ("VTODO", "VEVENT", "VJOURNAL"):
                     comp = ET.Element(_tag("C", "comp"))
                     comp.set("name", component)
                     element.append(comp)
+                # pylint: enable=W0511
             elif tag == _tag("D", "current-user-privilege-set"):
                 privilege = ET.Element(_tag("D", "privilege"))
                 privilege.append(ET.Element(_tag("D", "all")))
                 element.append(privilege)
             elif tag == _tag("D", "supported-report-set"):
                 for report_name in (
-                    "principal-property-search", "principal-search-property-set",
-                    "expand-property", "sync-collection"):
+                    "principal-property-search", "sync-collection"
+                    "expand-property", "principal-search-property-set"):
                     supported = ET.Element(_tag("D", "supported-report"))
-                    report = ET.Element(_tag("D", "report"))
-                    report.text = report_name
-                    supported.append(report)
+                    report_tag = ET.Element(_tag("D", "report"))
+                    report_tag.text = report_name
+                    supported.append(report_tag)
                     element.append(supported)
             prop.append(element)
 
