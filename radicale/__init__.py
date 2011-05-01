@@ -48,7 +48,7 @@ from radicale import acl, config, ical, log, xmlutils
 VERSION = "git"
 
 
-class HTTPServer(wsgiref.simple_server.WSGIServer):
+class HTTPServer(wsgiref.simple_server.WSGIServer, object):
     """HTTP server."""
     def __init__(self, address, handler, bind_and_activate=True):
         """Create server."""
@@ -57,8 +57,8 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
         if ipv6:
             self.address_family = socket.AF_INET6
 
-        # Do not bind and activate, as we might change socketopts
-        wsgiref.simple_server.WSGIServer.__init__(self, address, handler, False)
+        # Do not bind and activate, as we might change socket options
+        super(HTTPServer, self).__init__(address, handler, False)
 
         if ipv6:
             # Only allow IPv6 connections to the IPv6 socket
@@ -71,14 +71,15 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
 
 class HTTPSServer(HTTPServer):
     """HTTPS server."""
-    def __init__(self, address, handler, bind_and_activate=True):
+    def __init__(self, address, handler):
         """Create server by wrapping HTTP socket in an SSL socket."""
         # Fails with Python 2.5, import if needed
         # pylint: disable=F0401
         import ssl
         # pylint: enable=F0401
 
-        HTTPServer.__init__(self, address, handler, False)
+        super(HTTPSServer, self).__init__(address, handler, False)
+
         self.socket = ssl.wrap_socket(
             self.socket,
             server_side=True,
@@ -86,9 +87,8 @@ class HTTPSServer(HTTPServer):
             keyfile=config.get("server", "key"),
             ssl_version=ssl.PROTOCOL_SSLv23)
 
-        if bind_and_activate:
-            self.server_bind()
-            self.server_activate()
+        self.server_bind()
+        self.server_activate()
 
 
 class Application(object):
