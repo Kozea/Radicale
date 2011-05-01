@@ -188,7 +188,7 @@ class Application(object):
 
         # Start response
         status = "%i %s" % (status, client.responses.get(status, ""))
-        start_response(status, headers.items())
+        start_response(status, list(headers.items()))
 
         # Return response content
         return [answer] if answer else []
