@@ -31,6 +31,8 @@ should have been included in this package.
 import os
 import posixpath
 import base64
+import socket
+import wsgiref.simple_server
 # Manage Python2/3 different modules
 # pylint: disable=F0401
 try:
@@ -44,6 +46,49 @@ from radicale import acl, config, ical, log, xmlutils
 
 
 VERSION = "git"
+
+
+class HTTPServer(wsgiref.simple_server.WSGIServer):
+    """HTTP server."""
+    def __init__(self, address, handler, bind_and_activate=True):
+        """Create server."""
+        ipv6 = ":" in address[0]
+
+        if ipv6:
+            self.address_family = socket.AF_INET6
+
+        # Do not bind and activate, as we might change socketopts
+        wsgiref.simple_server.WSGIServer.__init__(self, address, handler, False)
+
+        if ipv6:
+            # Only allow IPv6 connections to the IPv6 socket
+            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+
+        if bind_and_activate:
+            self.server_bind()
+            self.server_activate()
+
+
+class HTTPSServer(HTTPServer):
+    """HTTPS server."""
+    def __init__(self, address, handler, bind_and_activate=True):
+        """Create server by wrapping HTTP socket in an SSL socket."""
+        # Fails with Python 2.5, import if needed
+        # pylint: disable=F0401
+        import ssl
+        # pylint: enable=F0401
+
+        HTTPServer.__init__(self, address, handler, False)
+        self.socket = ssl.wrap_socket(
+            self.socket,
+            server_side=True,
+            certfile=config.get("server", "certificate"),
+            keyfile=config.get("server", "key"),
+            ssl_version=ssl.PROTOCOL_SSLv23)
+
+        if bind_and_activate:
+            self.server_bind()
+            self.server_activate()
 
 
 class Application(object):

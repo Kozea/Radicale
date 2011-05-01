@@ -96,12 +96,14 @@ radicale.log.LOGGER.info("Starting Radicale")
 
 # Create calendar servers
 servers = []
+server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
 shutdown_program = threading.Event()
 
 for host in options.hosts.split(','):
     address, port = host.strip().rsplit(':', 1)
     address, port = address.strip('[] '), int(port)
-    servers.append(make_server(address, port, radicale.Application()))
+    servers.append(
+        make_server(address, port, radicale.Application(), server_class))
 
 # SIGTERM and SIGINT (aka KeyboardInterrupt) should just mark this for shutdown
 signal.signal(signal.SIGTERM, lambda *_: shutdown_program.set())
@@ -117,9 +119,11 @@ def serve_forever(server):
 # Start the servers in a different loop to avoid possible race-conditions, when
 # a server exists but another server is added to the list at the same time
 for server in servers:
-    threading.Thread(target=serve_forever, args=(server,)).start()
     radicale.log.LOGGER.debug(
         "Listening to %s port %s" % (server.server_name, server.server_port))
+    if options.ssl:
+        radicale.log.LOGGER.debug("Using SSL")
+    threading.Thread(target=serve_forever, args=(server,)).start()
 
 radicale.log.LOGGER.debug("Radicale server ready")
 
