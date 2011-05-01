@@ -37,6 +37,7 @@ import sys
 import optparse
 import signal
 import threading
+from wsgiref.simple_server import make_server
 
 import radicale
 
@@ -95,13 +96,12 @@ radicale.log.LOGGER.info("Starting Radicale")
 
 # Create calendar servers
 servers = []
-server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
 shutdown_program = threading.Event()
 
 for host in options.hosts.split(','):
     address, port = host.strip().rsplit(':', 1)
     address, port = address.strip('[] '), int(port)
-    servers.append(server_class((address, port), radicale.CalendarHTTPHandler))
+    servers.append(make_server(address, port, radicale.Application()))
 
 # SIGTERM and SIGINT (aka KeyboardInterrupt) should just mark this for shutdown
 signal.signal(signal.SIGTERM, lambda *_: shutdown_program.set())

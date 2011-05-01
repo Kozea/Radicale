@@ -21,12 +21,7 @@
 """
 Radicale Server module.
 
-This module offers 3 useful classes:
-
-- ``HTTPServer`` is a simple HTTP server;
-- ``HTTPSServer`` is a HTTPS server, wrapping the HTTP server in a socket
-  managing SSL connections;
-- ``CalendarHTTPHandler`` is a CalDAV request handler for HTTP(S) servers.
+This module offers a WSGI application class.
 
 To use this module, you should take a look at the file ``radicale.py`` that
 should have been included in this package.
@@ -36,7 +31,6 @@ should have been included in this package.
 import os
 import posixpath
 import base64
-import socket
 # Manage Python2/3 different modules
 # pylint: disable=F0401
 try:
@@ -51,160 +45,26 @@ from radicale import acl, config, ical, log, xmlutils
 
 VERSION = "git"
 
-# Decorators can access ``request`` protected functions
-# pylint: disable=W0212
 
-def _check(request, function):
-    """Check if user has sufficient rights for performing ``request``."""
-    # If we have no calendar or no acl, don't check rights
-    if not request._calendar or not request.server.acl:
-        return function(request)
-
-    if request._calendar.owner is None and PERSONAL:
-        # No owner and personal calendars, don't check rights
-        return function(request)
-
-    log.LOGGER.info(
-        "Checking rights for calendar owned by %s" % request._calendar.owner)
-
-    authorization = request.headers.get("Authorization", None)
-    if authorization:
-        challenge = authorization.lstrip("Basic").strip().encode("ascii")
-        user, password = request._decode(base64.b64decode(challenge)).split(":")
-    else:
-        user = password = None
-
-    if request.server.acl.has_right(request._calendar.owner, user, password):
-        log.LOGGER.info("%s allowed" % request._calendar.owner)
-        function(request)
-    else:
-        log.LOGGER.info("%s refused" % request._calendar.owner)
-        request.send_response(client.UNAUTHORIZED)
-        request.send_header(
-            "WWW-Authenticate",
-            "Basic realm=\"Radicale Server - Password Required\"")
-        request.end_headers()
-
-def _log_request_content(request, function):
-    """Log the content of the request and store it in the request object."""
-    log.LOGGER.info(
-        "%s request at %s recieved from %s" % (
-            request.command, request.path, request.client_address[0]))
-
-    content_length = int(request.headers.get("Content-Length", 0))
-    if content_length:
-        request._content = request.rfile.read(content_length)
-        log.LOGGER.debug(
-            "Request headers:\n%s" % "\n".join(
-                ": ".join((key, value))
-                for key, value in request.headers.items()))
-        log.LOGGER.debug(
-            "Request content:\n%s" % request._decode(request._content))
-    else:
-        request._content = None
-
-    function(request)
-
-    if getattr(request, "_answer"):
-        log.LOGGER.debug(
-            "Response content:\n%s" % request._answer)
-
-# pylint: enable=W0212
-
-
-class HTTPServer(server.HTTPServer):
-    """HTTP server."""
-    PROTOCOL = "http"
-
-    # Maybe a Pylint bug, ``__init__`` calls ``server.HTTPServer.__init__``
-    # pylint: disable=W0231
-    def __init__(self, address, handler, bind_and_activate=True):
-        """Create server."""
-        ipv6 = ":" in address[0]
-
-        if ipv6:
-            self.address_family = socket.AF_INET6
-
-        # Do not bind and activate, as we might change socketopts
-        server.HTTPServer.__init__(self, address, handler, False)
-
-        if ipv6:
-            # Only allow IPv6 connections to the IPv6 socket
-            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
-
-        if bind_and_activate:
-            self.server_bind()
-            self.server_activate()
-
+class Application(object):
+    """WSGI application managing calendars."""
+    def __init__(self):
+        """Initialize application."""
+        super(Application, self).__init__()
         self.acl = acl.load()
-    # pylint: enable=W0231
+        self.encoding = config.get("encoding", "request")
 
-
-class HTTPSServer(HTTPServer):
-    """HTTPS server."""
-    PROTOCOL = "https"
-
-    def __init__(self, address, handler, bind_and_activate=True):
-        """Create server by wrapping HTTP socket in an SSL socket."""
-        # Fails with Python 2.5, import if needed
-        # pylint: disable=F0401
-        import ssl
-        # pylint: enable=F0401
-
-        HTTPServer.__init__(self, address, handler, False)
-        self.socket = ssl.wrap_socket(
-            self.socket,
-            server_side=True,
-            certfile=config.get("server", "certificate"),
-            keyfile=config.get("server", "key"),
-            ssl_version=ssl.PROTOCOL_SSLv23)
-
-        if bind_and_activate:
-            self.server_bind()
-            self.server_activate()
-
-
-class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
-    """HTTP requests handler for calendars."""
-    _encoding = config.get("encoding", "request")
-
-    # Request handlers decorators
-    check_rights = lambda function: lambda request: _check(request, function)
-    log_request_content = \
-        lambda function: lambda request: _log_request_content(request, function)
-
-    # Maybe a Pylint bug, ``__init__`` calls ``server.HTTPServer.__init__``
-    # pylint: disable=W0231
-    def __init__(self, request, client_address, http_server):
-        self._content = None
-        self._answer = None
-        server.BaseHTTPRequestHandler.__init__(
-            self, request, client_address, http_server)
-    # pylint: enable=W0231
-
-    @property
-    def _calendar(self):
-        """The ``ical.Calendar`` object corresponding to the given path."""
-        # ``self.path`` must be something like a posix path
-        # ``normpath`` should clean malformed and malicious request paths
-        attributes = posixpath.normpath(self.path.strip("/")).split("/")
-        if attributes:
-            if attributes[-1].endswith('.ics'):
-                attributes.pop()
-            path = "/".join(attributes[:min(len(attributes), 2)])
-            return ical.Calendar(path)
-
-    def _decode(self, text):
-        """Try to decode text according to various parameters."""
+    def decode(self, text, environ):
+        """Try to magically decode ``text`` according to given ``environ``."""
         # List of charsets to try
         charsets = []
 
         # First append content charset given in the request
-        content_type = self.headers.get("Content-Type", None)
+        content_type = environ.get("CONTENT_TYPE")
         if content_type and "charset=" in content_type:
             charsets.append(content_type.split("charset=")[1].strip())
         # Then append default Radicale charset
-        charsets.append(self._encoding)
+        charsets.append(self.encoding)
         # Then append various fallbacks
         charsets.append("utf-8")
         charsets.append("iso8859-1")
@@ -217,144 +77,172 @@ class CalendarHTTPHandler(server.BaseHTTPRequestHandler):
                 pass
         raise UnicodeDecodeError
 
-    def log_message(self, *args, **kwargs):
-        """Disable inner logging management."""
+    def __call__(self, environ, start_response):
+        """Manage a request."""
+        log.LOGGER.info("%s request at %s recieved" % (
+                environ["REQUEST_METHOD"], environ["PATH_INFO"]))
+        log.LOGGER.debug("Request headers:\n%s" % environ.items())
 
-    # Naming methods ``do_*`` is OK here
-    # pylint: disable=C0103
+        # Get content
+        content_length = int(environ["CONTENT_LENGTH"] or 0)
+        if content_length:
+            content = self.decode(
+                environ["wsgi.input"].read(content_length), environ)
+            log.LOGGER.debug("Request content:\n%s" % content)
+        else:
+            content = None
 
-    @log_request_content
-    def do_GET(self):
+        # Find calendar
+        attributes = posixpath.normpath(
+            environ["PATH_INFO"].strip("/")).split("/")
+        if attributes:
+            if attributes[-1].endswith(".ics"):
+                attributes.pop()
+            path = "/".join(attributes[:min(len(attributes), 2)])
+            calendar = ical.Calendar(path)
+        else:
+            calendar = None
+
+        # Get function corresponding to method
+        function = getattr(self, environ["REQUEST_METHOD"].lower())
+
+        if not calendar or not self.acl:
+            # No calendar or no acl, don't check rights
+            status, headers, answer = function(environ, calendar, content)
+        elif calendar.owner is None and config.getboolean("acl", "personal"):
+            # No owner and personal calendars, don't check rights
+            status, headers, answer = function(environ, calendar, content)
+        else:
+            # Check rights
+            log.LOGGER.info(
+                "Checking rights for calendar owned by %s" % calendar.owner)
+            authorization = environ.get("HTTP_AUTHORIZATION", None)
+
+            if authorization:
+                auth = authorization.lstrip("Basic").strip().encode("ascii")
+                user, password = self.decode(
+                    base64.b64decode(auth), environ).split(":")
+            else:
+                user = password = None
+
+            if self.acl.has_right(calendar.owner, user, password):
+                log.LOGGER.info("%s allowed" % calendar.owner)
+                status, headers, answer = function(environ, calendar, content)
+            else:
+                log.LOGGER.info("%s refused" % calendar.owner)
+                status = client.UNAUTHORIZED
+                headers = {
+                    "WWW-Authenticate":
+                    "Basic realm=\"Radicale Server - Password Required\""}
+                answer = None
+
+        # Set content length
+        if answer:
+            log.LOGGER.debug("Response content:\n%s" % answer)
+            headers["Content-Length"] = "%i" % len(answer)
+
+        # Start response
+        status = "%i %s" % (status, client.responses.get(status, ""))
+        start_response(status, headers.items())
+
+        # Return response content
+        return [answer] if answer else []
+
+    def get(self, environ, calendar, content):
         """Manage GET request."""
-        self.do_HEAD()
-        if self._answer:
-            self.wfile.write(self._answer)
-
-    @log_request_content
-    @check_rights
-    def do_HEAD(self):
-        """Manage HEAD request."""
-        item_name = xmlutils.name_from_path(self.path, self._calendar)
+        item_name = xmlutils.name_from_path(environ["PATH_INFO"], calendar)
         if item_name:
             # Get calendar item
-            item = self._calendar.get_item(item_name)
+            item = calendar.get_item(item_name)
             if item:
-                items = self._calendar.timezones
+                items = calendar.timezones
                 items.append(item)
                 answer_text = ical.serialize(
-                    headers=self._calendar.headers, items=items)
+                    headers=calendar.headers, items=items)
                 etag = item.etag
             else:
-                self._answer = None
-                self.send_response(client.GONE)
-                return
+                return client.GONE, {}, None
         else:
             # Get whole calendar
-            answer_text = self._calendar.text
-            etag = self._calendar.etag
+            answer_text = calendar.text
+            etag = calendar.etag
 
-        self._answer = answer_text.encode(self._encoding)
-        self.send_response(client.OK)
-        self.send_header("Content-Length", len(self._answer))
-        self.send_header("Content-Type", "text/calendar")
-        self.send_header("Last-Modified", self._calendar.last_modified)
-        self.send_header("ETag", etag)
-        self.end_headers()
+        headers = {
+            "Content-Type": "text/calendar",
+            "Last-Modified": calendar.last_modified,
+            "ETag": etag}
+        answer = answer_text.encode(self.encoding)
+        return client.OK, headers, answer
 
-    @log_request_content
-    @check_rights
-    def do_DELETE(self):
+    def head(self, environ, calendar, content):
+        """Manage HEAD request."""
+        status, headers, answer = self.get(environ, calendar, content)
+        return status, headers, None
+
+    def delete(self, environ, calendar, content):
         """Manage DELETE request."""
-        item = self._calendar.get_item(
-            xmlutils.name_from_path(self.path, self._calendar))
-        if item and self.headers.get("If-Match", item.etag) == item.etag:
+        item = calendar.get_item(
+            xmlutils.name_from_path(environ["PATH_INFO"], calendar))
+        if item and environ.get("HTTP_IF_MATCH", item.etag) == item.etag:
             # No ETag precondition or precondition verified, delete item
-            self._answer = xmlutils.delete(self.path, self._calendar)
-
-            self.send_response(client.NO_CONTENT)
-            self.send_header("Content-Length", len(self._answer))
-            self.end_headers()
-            self.wfile.write(self._answer)
+            answer = xmlutils.delete(environ["PATH_INFO"], calendar)
+            status = client.NO_CONTENT
         else:
             # No item or ETag precondition not verified, do not delete item
-            self.send_response(client.PRECONDITION_FAILED)
+            answer = None
+            status = client.PRECONDITION_FAILED
+        return status, {}, answer
 
-    @log_request_content
-    @check_rights
-    def do_MKCALENDAR(self):
+    def mkcalendar(self, environ, calendar, content):
         """Manage MKCALENDAR request."""
-        self.send_response(client.CREATED)
-        self.end_headers()
+        return client.CREATED, {}, None
 
-    @log_request_content
-    def do_OPTIONS(self):
+    def options(self, environ, calendar, content):
         """Manage OPTIONS request."""
-        self.send_response(client.OK)
-        self.send_header(
-            "Allow", "DELETE, HEAD, GET, MKCALENDAR, "
-            "OPTIONS, PROPFIND, PROPPATCH, PUT, REPORT")
-        self.send_header("DAV", "1, calendar-access")
-        self.end_headers()
+        headers = {
+            "Allow": "DELETE, HEAD, GET, MKCALENDAR, " \
+                "OPTIONS, PROPFIND, PROPPATCH, PUT, REPORT",
+            "DAV": "1, calendar-access"}
+        return client.OK, headers, None
 
-    @log_request_content
-    def do_PROPFIND(self):
+    def propfind(self, environ, calendar, content):
         """Manage PROPFIND request."""
-        self._answer = xmlutils.propfind(
-            self.path, self._content, self._calendar,
-            self.headers.get("depth", "infinity"))
+        headers = {
+            "DAV": "1, calendar-access",
+            "Content-Type": "text/xml"}
+        answer = xmlutils.propfind(
+            environ["PATH_INFO"], content, calendar,
+            environ.get("HTTP_DEPTH", "infinity"))
+        return client.MULTI_STATUS, headers, answer
 
-        self.send_response(client.MULTI_STATUS)
-        self.send_header("DAV", "1, calendar-access")
-        self.send_header("Content-Length", len(self._answer))
-        self.send_header("Content-Type", "text/xml")
-        self.end_headers()
-        self.wfile.write(self._answer)
-
-    @log_request_content
-    def do_PROPPATCH(self):
+    def proppatch(self, environ, calendar, content):
         """Manage PROPPATCH request."""
-        self._answer = xmlutils.proppatch(
-            self.path, self._content, self._calendar)
+        xmlutils.proppatch(environ["PATH_INFO"], content, calendar)
+        headers = {
+            "DAV": "1, calendar-access",
+            "Content-Type": "text/xml"}
+        return client.MULTI_STATUS, headers, None
 
-        self.send_response(client.MULTI_STATUS)
-        self.send_header("DAV", "1, calendar-access")
-        self.send_header("Content-Length", len(self._answer))
-        self.send_header("Content-Type", "text/xml")
-        self.end_headers()
-        self.wfile.write(self._answer)
-
-    @log_request_content
-    @check_rights
-    def do_PUT(self):
+    def put(self, environ, calendar, content):
         """Manage PUT request."""
-        item_name = xmlutils.name_from_path(self.path, self._calendar)
-        item = self._calendar.get_item(item_name)
-        if (not item and not self.headers.get("If-Match")) or \
-                (item and self.headers.get("If-Match", item.etag) == item.etag):
+        headers = {}
+        item_name = xmlutils.name_from_path(environ["PATH_INFO"], calendar)
+        item = calendar.get_item(item_name)
+        if (not item and not environ.get("HTTP_IF_MATCH")) or (
+            item and environ.get("HTTP_IF_MATCH", item.etag) == item.etag):
             # PUT allowed in 3 cases
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item
             # Case 3: Item and no Etag precondition: Force modifying item
-            ical_request = self._decode(self._content)
-            xmlutils.put(self.path, ical_request, self._calendar)
-            etag = self._calendar.get_item(item_name).etag
-
-            self.send_response(client.CREATED)
-            self.send_header("ETag", etag)
-            self.end_headers()
+            xmlutils.put(environ["PATH_INFO"], content, calendar)
+            status = client.CREATED
+            headers["ETag"] = calendar.get_item(item_name).etag
         else:
             # PUT rejected in all other cases
-            self.send_response(client.PRECONDITION_FAILED)
+            status = client.PRECONDITION_FAILED
+        return status, headers, None
 
-    @log_request_content
-    @check_rights
-    def do_REPORT(self):
+    def report(self, environ, calendar, content):
         """Manage REPORT request."""
-        self._answer = xmlutils.report(self.path, self._content, self._calendar)
-
-        self.send_response(client.MULTI_STATUS)
-        self.send_header("Content-Length", len(self._answer))
-        self.end_headers()
-        self.wfile.write(self._answer)
-
-    # pylint: enable=C0103
+        answer = xmlutils.report(environ["PATH_INFO"], content, calendar)
+        return client.MULTI_STATUS, {}, answer
