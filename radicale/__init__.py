@@ -129,7 +129,7 @@ class Application(object):
         log.LOGGER.debug("Request headers:\n%s" % environ.items())
 
         # Get content
-        content_length = int(environ.get("CONTENT_LENGTH", 0))
+        content_length = int(environ.get("CONTENT_LENGTH") or 0)
         if content_length:
             content = self.decode(
                 environ["wsgi.input"].read(content_length), environ)
