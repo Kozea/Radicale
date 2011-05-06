@@ -49,7 +49,7 @@ def has_right(owner, user, password):
         log.LOGGER.debug("User %s found" % user)
         try:
             CONNEXION.simple_bind_s(users[0][0], password or "")
-        except ldap.INVALID_CREDENTIALS:
+        except ldap.LDAPError:
             log.LOGGER.debug("Invalid credentials")
         else:
             log.LOGGER.debug("LDAP bind OK")
