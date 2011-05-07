@@ -14,50 +14,47 @@
 
 [loggers]
 # Loggers names, main configuration slots
-keys=root
+keys = root
 
 [handlers]
 # Logging handlers, defining logging output methods
-keys=console,file
+keys = console,file
 
 [formatters]
 # Logging formatters
-keys=simple,full
+keys = simple,full
 
 
 # Loggers
 
 [logger_root]
 # Root logger
-level=DEBUG
-handlers=console,file
+level = DEBUG
+handlers = console,file
 
 
 # Handlers
 
 [handler_console]
 # Console handler
-class=StreamHandler
-level=INFO
-args=(sys.stdout,)
-formatter=simple
+class = StreamHandler
+level = INFO
+args = (sys.stdout,)
+formatter = simple
 
 [handler_file]
 # File handler
-class=FileHandler
-level=DEBUG
-args=('/var/log/radicale',)
-formatter=full
+class = FileHandler
+args = ('/var/log/radicale',)
+formatter = full
 
 
 # Formatter
 
 [formatter_simple]
 # Simple output format
-format=%(message)s
-datefmt=
+format = %(message)s
 
 [formatter_full]
 # Full output format
-format=%(asctime)s - %(levelname)s: %(message)s
-datefmt=
+format = %(asctime)s - %(levelname)s: %(message)s
