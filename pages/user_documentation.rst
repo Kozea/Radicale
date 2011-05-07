@@ -117,13 +117,18 @@ iPhone
 
 *To be written*
 
+iCal
+~~~~
+
+*To be written*
+
 
 Complex Configuration
 =====================
 
 .. note::
-   This section is only for Linux users. Windows and MacOS advanced support
-   will be available later.
+   This section is written for Linux users, but can be easily adapted for
+   Windows and MacOS users.
 
 Installing Server
 -----------------

@@ -16,13 +16,13 @@ clients on mobile phones or computers.
 Technical Description
 =====================
 
-The Radicale Project aims to be a light solution, easy to use, easy to install,
-easy to configure. As a consequence, it requires few software dependencies and
-is pre-configured to work out-of-the-box.
+Radicale aims to be a light solution, easy to use, easy to install, easy to
+configure. As a consequence, it requires few software dependencies and is
+pre-configured to work out-of-the-box.
 
-The Radicale Project runs on most of the UNIX-like platforms (Linux, \*BSD,
-MacOS X) and Windows. It is free and open-source software, written in Python,
-released under GPL version 3.
+Radicale runs on most of the UNIX-like platforms (Linux, \*BSD, MacOS X) and
+Windows. It is free and open-source software, written in Python, released under
+GPL version 3.
 
 
 Main Features
@@ -39,7 +39,11 @@ Main Features
 Supported Clients
 =================
 
+Radicale supports the latest versions of:
+
 - `Mozilla Lightning <http://www.mozilla.org/projects/calendar/lightning/>`_
 - `GNOME Evolution <http://projects.gnome.org/evolution/>`_
 - `Google Android <http://www.android.com/>`_
 - `Apple iPhone <http://www.apple.com/iphone/>`_
+- `Apple iCal
+  <http://www.apple.com/macosx/what-is-macosx/mail-ical-address-book.html>`_

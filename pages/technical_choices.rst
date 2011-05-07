@@ -75,7 +75,7 @@ CalDAV clients, or if you have a possibly heterogeneous list of user agents.
 
 The Radicale Server does not and **will not** support the CalDAV standard. It
 supports the CalDAV implementation of different clients (Lightning, Evolution,
-Android and iPhone, more are coming [#]_).
+Android, iPhone and iCal, more are coming [#]_).
 
 .. [#] `Davical <http://www.davical.org/>`_, a standards-compliant calendar
    server.
