@@ -130,7 +130,7 @@ class Application(object):
 
     def __call__(self, environ, start_response):
         """Manage a request."""
-        log.LOGGER.info("%s request at %s recieved" % (
+        log.LOGGER.info("%s request at %s received" % (
                 environ["REQUEST_METHOD"], environ["PATH_INFO"]))
         log.LOGGER.debug("Request headers:\n%s" % environ.items())
 
