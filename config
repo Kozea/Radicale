@@ -1,9 +1,13 @@
+# -*- mode: conf -*-
+# vim:ft=cfg
+
 # Config file for Radicale - A simple calendar server
 #
 # Place it into /etc/radicale/config (global) 
 # or ~/.config/radicale/config (user)
 #
 # The current values are the default ones
+
 
 [server]
 # CalDAV server hostnames separated by a comma
@@ -31,6 +35,7 @@ stock = utf-8
 # Value: None | htpasswd | LDAP
 type = None
 # Personal calendars only available for logged in users
+# If True, /alice/calendar will only be available for alice
 personal = False
 # Htpasswd filename
 htpasswd_filename = /etc/radicale/users
@@ -56,5 +61,3 @@ folder = ~/.config/radicale/calendars
 config = /etc/radicale/logging
 # Set the default logging level to debug
 debug = False
-
-# vim:ft=cfg

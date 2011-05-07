@@ -32,7 +32,7 @@ import logging.config
 from radicale import config
 
 
-LOGGER = logging.getLogger("radicale")
+LOGGER = logging.getLogger()
 FILENAME = os.path.expanduser(config.get("logging", "config"))
 
 def start(debug=False):
@@ -46,5 +46,5 @@ def start(debug=False):
     else:
         # Default configuration, standard output
         handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+        handler.setFormatter(logging.Formatter("%(message)s"))
         LOGGER.addHandler(handler)
