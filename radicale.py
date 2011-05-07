@@ -103,7 +103,8 @@ for host in options.hosts.split(','):
     address, port = host.strip().rsplit(':', 1)
     address, port = address.strip('[] '), int(port)
     servers.append(
-        make_server(address, port, radicale.Application(), server_class))
+        make_server(address, port, radicale.Application(),
+                    server_class, radicale.RequestHandler))
 
 # SIGTERM and SIGINT (aka KeyboardInterrupt) should just mark this for shutdown
 signal.signal(signal.SIGTERM, lambda *_: shutdown_program.set())

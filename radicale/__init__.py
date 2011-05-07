@@ -91,6 +91,12 @@ class HTTPSServer(HTTPServer):
         self.server_activate()
 
 
+class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
+    """HTTP requests handler."""
+    def log_message(self, *args, **kwargs):
+        """Disable inner logging management."""
+
+
 class Application(object):
     """WSGI application managing calendars."""
     def __init__(self):
