@@ -39,11 +39,20 @@ Linux Distribution Packages
 
 Radicale has been packaged for:
 
-- `ArchLinux (AUR) <http://aur.archlinux.org/packages.php?ID=46522>`_ by Guillaume Bouchard
+- `ArchLinux (AUR) <http://aur.archlinux.org/packages.php?ID=46522>`_ by
+  Guillaume Bouchard
 - `Debian <http://packages.debian.org/radicale>`_ by Jonas Smedegaard
-- `Gentoo (Sunrise Overlay) <http://bugs.gentoo.org/show_bug.cgi?id=322811>`_ by René Neumann
-- `Mandriva <http://sophie.zarb.org/search/results?search=radicale>`_ by Jani Välimaa
-- `Ubuntu <http://packages.ubuntu.com/radicale>`_ by the MOTU and Jonas Smedegaard
+- `Gentoo (Sunrise Overlay) <http://bugs.gentoo.org/show_bug.cgi?id=322811>`_
+  by René Neumann
+- `Mandriva <http://sophie.zarb.org/search/results?search=radicale>`_ by Jani
+  Välimaa
+- `OpenBSD <http://openports.se/productivity/radicale>`_ by Sergey Bronnikov,
+  Stuart Henderson and Ian Darwin
+- `openSUSE
+  <https://build.opensuse.org/package/show?package=radicale&project=home%3Acbosdonnat>`_
+  by Cédric Bosdonnat
+- `Ubuntu <http://packages.ubuntu.com/radicale>`_ by the MOTU and Jonas
+  Smedegaard
 
 If you are interested in creating packages for other Linux distributions, read
 the `"Contribute" page </contribute>`_.
