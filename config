@@ -36,7 +36,7 @@ stock = utf-8
 type = None
 # Personal calendars only available for logged in users
 # If True, /alice/calendar will only be available for alice
-personal = False
+personal = True
 # Htpasswd filename
 htpasswd_filename = /etc/radicale/users
 # Htpasswd encryption method
