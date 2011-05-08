@@ -145,8 +145,8 @@ Then, launching the server can be easily done by typing as a normal user::
 Configuring Server
 ------------------
 
-Configuration File
-~~~~~~~~~~~~~~~~~~
+Main Configuration File
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. note::
    This section is following the latest git master changes. Please look at the
@@ -185,7 +185,7 @@ main parameters:
   # Value: None | htpasswd | LDAP
   type = None
   # Personal calendars only available for logged in users
-  personal = False
+  personal = True
   # Htpasswd filename
   htpasswd_filename = /etc/radicale/users
   # Htpasswd encryption method
@@ -214,6 +214,72 @@ main parameters:
 This configuration file is read each time the server is launched. If some
 values are not given, the default ones are used. If no configuration file is
 available, all the default values are used.
+
+Logging Configuration File
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Radicale uses the default logging facility for Python. The default
+configuration prints the information messages to the standard output. It is
+possible to print debug messages thanks to::
+
+  radicale --debug
+
+Radicale can also be configured to send the messages to the console, logging
+files, syslog, etc. For more information about the syntax of the configuration
+file, see: http://docs.python.org/library/logging.config.html. Here is an
+example of logging configuration file:
+
+.. code-block:: ini
+
+  # Loggers, handlers and formatters keys
+
+  [loggers]
+  # Loggers names, main configuration slots
+  keys = root
+
+  [handlers]
+  # Logging handlers, defining logging output methods
+  keys = console,file
+
+  [formatters]
+  # Logging formatters
+  keys = simple,full
+
+
+  # Loggers
+
+  [logger_root]
+  # Root logger
+  level = DEBUG
+  handlers = console,file
+
+
+  # Handlers
+
+  [handler_console]
+  # Console handler
+  class = StreamHandler
+  level = INFO
+  args = (sys.stdout,)
+  formatter = simple
+
+  [handler_file]
+  # File handler
+  class = FileHandler
+  args = ('/var/log/radicale',)
+  formatter = full
+
+
+  # Formatter
+
+  [formatter_simple]
+  # Simple output format
+  format = %(message)s
+
+  [formatter_full]
+  # Full output format
+  format = %(asctime)s - %(levelname)s: %(message)s
+
 
 Command Line Options
 ~~~~~~~~~~~~~~~~~~~~
