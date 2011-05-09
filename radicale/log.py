@@ -35,10 +35,8 @@ from radicale import config
 LOGGER = logging.getLogger()
 FILENAME = os.path.expanduser(config.get("logging", "config"))
 
-def start(debug=False):
+def start():
     """Start the logging according to the configuration."""
-    if debug:
-        LOGGER.setLevel(logging.DEBUG)
 
     if os.path.exists(FILENAME):
         # Configuration taken from file
@@ -48,3 +46,8 @@ def start(debug=False):
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(logging.Formatter("%(message)s"))
         LOGGER.addHandler(handler)
+
+    if config.getboolean("logging", "debug"):
+        LOGGER.setLevel(logging.DEBUG)
+        for handler in LOGGER.handlers:
+            handler.setLevel(logging.DEBUG)

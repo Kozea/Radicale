@@ -81,10 +81,10 @@ for option in parser.option_list:
     if key:
         section = "logging" if key == "debug" else "server"
         value = getattr(options, key)
-        radicale.config.set(section, key, value)
+        radicale.config.set(section, key, str(value))
 
 # Start logging
-radicale.log.start(options.debug)
+radicale.log.start()
 
 # Fork if Radicale is launched as daemon
 if options.daemon:
