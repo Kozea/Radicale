@@ -194,7 +194,7 @@ def proppatch(path, xml_request, calendar):
 
     for action in ("set", "remove"):
         action_element = root.find(_tag("D", action))
-        if action_element:
+        if action_element is not None:
             prop_element = action_element.find(_tag("D", "prop"))
             prop_list = prop_element.getchildren()
             props.extend(prop.tag for prop in prop_list)
