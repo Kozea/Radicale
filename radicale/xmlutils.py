@@ -38,6 +38,22 @@ NAMESPACES = {
     "CS": "http://calendarserver.org/ns/"}
 
 
+def _et_indent(elem, level=0):
+    i = "\n" + level * "  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            _et_indent(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+
+
 def _tag(short_name, local):
     """Get XML Clark notation {uri(``short_name``)}``local``."""
     return "{%s}%s" % (NAMESPACES[short_name], local)
@@ -76,6 +92,9 @@ def delete(path, calendar):
     status = ET.Element(_tag("D", "status"))
     status.text = _response(200)
     response.append(status)
+
+    if config.getboolean("logging", "debug"):
+        _et_indent(multistatus)
 
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
@@ -179,6 +198,9 @@ def propfind(path, xml_request, calendar, depth):
         status.text = _response(200)
         propstat.append(status)
 
+    if config.getboolean("logging", "debug"):
+        _et_indent(multistatus)
+
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
 
@@ -222,6 +244,9 @@ def proppatch(path, xml_request, calendar):
     status = ET.Element(_tag("D", "status"))
     status.text = _response(200)
     propstat.append(status)
+
+    if config.getboolean("logging", "debug"):
+        _et_indent(multistatus)
 
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
@@ -302,5 +327,8 @@ def report(path, xml_request, calendar):
             status = ET.Element(_tag("D", "status"))
             status.text = _response(200)
             propstat.append(status)
+
+    if config.getboolean("logging", "debug"):
+        _et_indent(multistatus)
 
     return ET.tostring(multistatus, config.get("encoding", "request"))
