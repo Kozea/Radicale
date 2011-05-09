@@ -38,6 +38,10 @@ NAMESPACES = {
     "CS": "http://calendarserver.org/ns/"}
 
 
+for short, url in NAMESPACES.iteritems():
+    ET._namespace_map[url] = short
+
+
 def _et_indent(elem, level=0):
     i = "\n" + level * "  "
     if len(elem):
