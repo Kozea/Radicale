@@ -54,7 +54,9 @@ INITIAL_CONFIG = {
         "httpasswd_encryption": "crypt",
         "ldap_url": "ldap://localhost:389/",
         "ldap_base": "ou=users,dc=example,dc=com",
-        "ldap_attribute": "uid"},
+        "ldap_attribute": "uid",
+        "ldap_binddn": "",
+        "ldap_password": ""},
     "storage": {
         "folder": os.path.expanduser("~/.config/radicale/calendars")},
     "logging": {

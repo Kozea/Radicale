@@ -33,6 +33,8 @@ BASE = config.get("acl", "ldap_base")
 ATTRIBUTE = config.get("acl", "ldap_attribute")
 CONNEXION = ldap.initialize(config.get("acl", "ldap_url"))
 PERSONAL = config.getboolean("acl", "personal")
+BINDDN = config.get("acl", "ldap_binddn")
+PASSWORD = config.get("acl", "ldap_password")
 
 
 def has_right(owner, user, password):
@@ -40,6 +42,10 @@ def has_right(owner, user, password):
     if (user != owner and PERSONAL) or not user:
         # User is not owner and personal calendars, or no user given, forbidden
         return False
+
+    if BINDDN and PASSWORD:
+        log.LOGGER.debug("Initial LDAP bind as %s" % BINDDN)
+        CONNEXION.simple_bind_s(BINDDN, PASSWORD)
 
     distinguished_name = "%s=%s" % (ATTRIBUTE, ldap.dn.escape_dn_chars(user))
     log.LOGGER.debug("LDAP bind for %s in base %s" % (distinguished_name, BASE))
