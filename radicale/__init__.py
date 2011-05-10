@@ -190,7 +190,11 @@ class Application(object):
 
         # Set content length
         if answer:
-            log.LOGGER.debug("Response content:\n%s" % answer)
+            # decoding the answer for logging purposes on Python 3
+            log_answer = answer
+            if not isinstance(log_answer, str):
+                log_answer = log_answer.decode(config.get("encoding", "request"))
+            log.LOGGER.debug("Response content:\n%s" % log_answer)
             headers["Content-Length"] = "%i" % len(answer)
 
         # Start response

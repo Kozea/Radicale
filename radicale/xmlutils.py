@@ -38,7 +38,7 @@ NAMESPACES = {
     "CS": "http://calendarserver.org/ns/"}
 
 
-for short, url in NAMESPACES.iteritems():
+for short, url in NAMESPACES.items():
     ET._namespace_map[url] = short
 
 
