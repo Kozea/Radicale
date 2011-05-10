@@ -113,9 +113,8 @@ def propfind(path, xml_request, calendar, depth):
     root = ET.fromstring(xml_request)
 
     prop_element = root.find(_tag("D", "prop"))
-    prop_list = prop_element.getchildren()
-    props = [prop.tag for prop in prop_list]
-    
+    props = [prop.tag for prop in prop_element]
+
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
@@ -222,8 +221,7 @@ def proppatch(path, xml_request, calendar):
         action_element = root.find(_tag("D", action))
         if action_element is not None:
             prop_element = action_element.find(_tag("D", "prop"))
-            prop_list = prop_element.getchildren()
-            props.extend(prop.tag for prop in prop_list)
+            props.extend(prop.tag for prop in prop_element)
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -276,8 +274,7 @@ def report(path, xml_request, calendar):
     root = ET.fromstring(xml_request)
 
     prop_element = root.find(_tag("D", "prop"))
-    prop_list = prop_element.getchildren()
-    props = [prop.tag for prop in prop_list]
+    props = [prop.tag for prop in prop_element]
 
     if calendar:
         if root.tag == _tag("C", "calendar-multiget"):
