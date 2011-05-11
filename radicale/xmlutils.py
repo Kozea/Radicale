@@ -42,7 +42,7 @@ for short, url in NAMESPACES.items():
     ET._namespace_map[url] = short
 
 
-def _et_indent(element, level=0):
+def _pretty_xml(element, level=0):
     """Indent an ElementTree ``element`` and its children."""
     i = "\n" + level * "  "
     if len(element):
@@ -51,7 +51,7 @@ def _et_indent(element, level=0):
         if not element.tail or not element.tail.strip():
             element.tail = i
         for sub_element in element:
-            _et_indent(sub_element, level + 1)
+            _pretty_xml(sub_element, level + 1)
         # ``sub_element`` is always defined as len(element) > 0
         # pylint: disable=W0631
         if not sub_element.tail or not sub_element.tail.strip():
@@ -60,6 +60,8 @@ def _et_indent(element, level=0):
     else:
         if level and (not element.tail or not element.tail.strip()):
             element.tail = i
+    if not level:
+        return ET.tostring(element, config.get("encoding", "request"))
 
 
 def _tag(short_name, local):
@@ -99,10 +101,7 @@ def delete(path, calendar):
     status.text = _response(200)
     response.append(status)
 
-    if config.getboolean("logging", "debug"):
-        _et_indent(multistatus)
-
-    return ET.tostring(multistatus, config.get("encoding", "request"))
+    return _pretty_xml(multistatus)
 
 
 def propfind(path, xml_request, calendar, depth):
@@ -203,10 +202,7 @@ def propfind(path, xml_request, calendar, depth):
         status.text = _response(200)
         propstat.append(status)
 
-    if config.getboolean("logging", "debug"):
-        _et_indent(multistatus)
-
-    return ET.tostring(multistatus, config.get("encoding", "request"))
+    return _pretty_xml(multistatus)
 
 
 def proppatch(path, xml_request, calendar):
@@ -249,10 +245,7 @@ def proppatch(path, xml_request, calendar):
     status.text = _response(200)
     propstat.append(status)
 
-    if config.getboolean("logging", "debug"):
-        _et_indent(multistatus)
-
-    return ET.tostring(multistatus, config.get("encoding", "request"))
+    return _pretty_xml(multistatus)
 
 
 def put(path, ical_request, calendar):
@@ -332,7 +325,4 @@ def report(path, xml_request, calendar):
             status.text = _response(200)
             propstat.append(status)
 
-    if config.getboolean("logging", "debug"):
-        _et_indent(multistatus)
-
-    return ET.tostring(multistatus, config.get("encoding", "request"))
+    return _pretty_xml(multistatus)
