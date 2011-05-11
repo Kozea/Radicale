@@ -296,7 +296,8 @@ class Application(object):
 
     def report(self, environ, calendar, content):
         """Manage REPORT request."""
+        headers = {'Content-Type': 'text/xml'}
         answer = xmlutils.report(environ["PATH_INFO"], content, calendar)
-        return client.MULTI_STATUS, {}, answer
+        return client.MULTI_STATUS, headers, answer
 
     # pylint: enable=W0612,W0613,R0201
