@@ -41,6 +41,8 @@ NAMESPACES = {
 
 
 for short, url in NAMESPACES.items():
+    if short == "D":
+        short = ""
     ET._namespace_map[url] = short
 
 
