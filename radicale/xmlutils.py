@@ -38,6 +38,26 @@ NAMESPACES = {
     "CS": "http://calendarserver.org/ns/"}
 
 
+for short, url in NAMESPACES.items():
+    ET._namespace_map[url] = short
+
+
+def _et_indent(elem, level=0):
+    i = "\n" + level * "  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            _et_indent(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+
+
 def _tag(short_name, local):
     """Get XML Clark notation {uri(``short_name``)}``local``."""
     return "{%s}%s" % (NAMESPACES[short_name], local)
@@ -77,6 +97,9 @@ def delete(path, calendar):
     status.text = _response(200)
     response.append(status)
 
+    if config.getboolean("logging", "debug"):
+        _et_indent(multistatus)
+
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
 
@@ -90,9 +113,8 @@ def propfind(path, xml_request, calendar, depth):
     root = ET.fromstring(xml_request)
 
     prop_element = root.find(_tag("D", "prop"))
-    prop_list = prop_element.getchildren()
-    props = [prop.tag for prop in prop_list]
-    
+    props = [prop.tag for prop in prop_element]
+
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
@@ -179,6 +201,9 @@ def propfind(path, xml_request, calendar, depth):
         status.text = _response(200)
         propstat.append(status)
 
+    if config.getboolean("logging", "debug"):
+        _et_indent(multistatus)
+
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
 
@@ -194,10 +219,9 @@ def proppatch(path, xml_request, calendar):
 
     for action in ("set", "remove"):
         action_element = root.find(_tag("D", action))
-        if action_element:
+        if action_element is not None:
             prop_element = action_element.find(_tag("D", "prop"))
-            prop_list = prop_element.getchildren()
-            props.extend(prop.tag for prop in prop_list)
+            props.extend(prop.tag for prop in prop_element)
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -223,6 +247,9 @@ def proppatch(path, xml_request, calendar):
     status.text = _response(200)
     propstat.append(status)
 
+    if config.getboolean("logging", "debug"):
+        _et_indent(multistatus)
+
     return ET.tostring(multistatus, config.get("encoding", "request"))
 
 
@@ -247,8 +274,7 @@ def report(path, xml_request, calendar):
     root = ET.fromstring(xml_request)
 
     prop_element = root.find(_tag("D", "prop"))
-    prop_list = prop_element.getchildren()
-    props = [prop.tag for prop in prop_list]
+    props = [prop.tag for prop in prop_element]
 
     if calendar:
         if root.tag == _tag("C", "calendar-multiget"):
@@ -302,5 +328,8 @@ def report(path, xml_request, calendar):
             status = ET.Element(_tag("D", "status"))
             status.text = _response(200)
             propstat.append(status)
+
+    if config.getboolean("logging", "debug"):
+        _et_indent(multistatus)
 
     return ET.tostring(multistatus, config.get("encoding", "request"))

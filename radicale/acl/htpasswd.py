@@ -65,5 +65,5 @@ def has_right(owner, user, password):
         if line.strip():
             login, hash_value = line.strip().split(":")
             if login == user and (not PERSONAL or user == owner):
-                return locals()["_%s" % ENCRYPTION](hash_value, password)
+                return globals()["_%s" % ENCRYPTION](hash_value, password)
     return False
