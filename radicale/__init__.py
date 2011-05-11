@@ -30,6 +30,7 @@ should have been included in this package.
 
 import os
 import posixpath
+import pprint
 import base64
 import socket
 import ssl
@@ -100,6 +101,16 @@ class Application(object):
         super(Application, self).__init__()
         self.acl = acl.load()
         self.encoding = config.get("encoding", "request")
+        if config.getboolean('logging', 'full_environment'):
+            self.headers_log = lambda environ: environ
+
+    def headers_log(self, environ):
+        request_environ = dict(environ)
+        for shell_variable in os.environ:
+            #if shell_variable not in request_environ:
+            #    continue
+            del request_environ[shell_variable]
+        return request_environ
 
     def decode(self, text, environ):
         """Try to magically decode ``text`` according to given ``environ``."""
@@ -128,7 +139,8 @@ class Application(object):
         """Manage a request."""
         log.LOGGER.info("%s request at %s received" % (
                 environ["REQUEST_METHOD"], environ["PATH_INFO"]))
-        log.LOGGER.debug("Request headers:\n%s" % environ.items())
+        headers = pprint.pformat(self.headers_log(environ))
+        log.LOGGER.debug("Request headers:\n%s" % headers)
 
         # Get content
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
