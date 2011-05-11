@@ -35,7 +35,9 @@ from radicale import client, config, ical
 NAMESPACES = {
     "C": "urn:ietf:params:xml:ns:caldav",
     "D": "DAV:",
-    "CS": "http://calendarserver.org/ns/"}
+    "CS": "http://calendarserver.org/ns/",
+    "ICAL": "http://apple.com/ns/ical/",
+}
 
 
 for short, url in NAMESPACES.items():
