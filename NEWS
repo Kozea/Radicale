@@ -16,6 +16,7 @@
 * LDAP auth backend (by Corentin Le Bail)
 * Owner-less calendars (by René Neumann)
 * Journal entries support
+* Drop Python 2.5 support
 
 
 0.5 - Historical Artifacts

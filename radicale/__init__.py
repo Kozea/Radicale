@@ -32,6 +32,7 @@ import os
 import posixpath
 import base64
 import socket
+import ssl
 import wsgiref.simple_server
 # Manage Python2/3 different modules
 # pylint: disable=F0401
@@ -73,11 +74,6 @@ class HTTPSServer(HTTPServer):
     """HTTPS server."""
     def __init__(self, address, handler):
         """Create server by wrapping HTTP socket in an SSL socket."""
-        # Fails with Python 2.5, import if needed
-        # pylint: disable=F0401
-        import ssl
-        # pylint: enable=F0401
-
         super(HTTPSServer, self).__init__(address, handler, False)
 
         self.socket = ssl.wrap_socket(
