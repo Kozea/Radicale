@@ -42,20 +42,21 @@ for short, url in NAMESPACES.items():
     ET._namespace_map[url] = short
 
 
-def _et_indent(elem, level=0):
+def _et_indent(element, level=0):
+    """Indent an ElementTree ``element`` and its children."""
     i = "\n" + level * "  "
-    if len(elem):
-        if not elem.text or not elem.text.strip():
-            elem.text = i + "  "
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
-        for elem in elem:
-            _et_indent(elem, level+1)
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
+    if len(element):
+        if not element.text or not element.text.strip():
+            element.text = i + "  "
+        if not element.tail or not element.tail.strip():
+            element.tail = i
+        for sub_element in element:
+            _et_indent(sub_element, level + 1)
+        if not sub_element.tail or not sub_element.tail.strip():
+            sub_element.tail = i
     else:
-        if level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
+        if level and (not element.tail or not element.tail.strip()):
+            element.tail = i
 
 
 def _tag(short_name, local):
@@ -279,8 +280,9 @@ def report(path, xml_request, calendar):
     if calendar:
         if root.tag == _tag("C", "calendar-multiget"):
             # Read rfc4791-7.9 for info
-            hreferences = set((href_element.text for href_element
-                               in root.findall(_tag("D", "href"))))
+            hreferences = set(
+                href_element.text for href_element
+                in root.findall(_tag("D", "href")))
         else:
             hreferences = (path,)
     else:
