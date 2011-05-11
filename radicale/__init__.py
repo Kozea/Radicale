@@ -177,7 +177,7 @@ class Application(object):
                 log.LOGGER.info("%s allowed" % calendar.owner)
                 status, headers, answer = function(environ, calendar, content)
             else:
-                log.LOGGER.info("%s refused" % calendar.owner)
+                log.LOGGER.info("%s refused" % (user or "anonymous user"))
                 status = client.UNAUTHORIZED
                 headers = {
                     "WWW-Authenticate":
