@@ -52,7 +52,7 @@ def _et_indent(element, level=0):
             element.tail = i
         for sub_element in element:
             _et_indent(sub_element, level + 1)
-        # sub_element is always defined as len(element) > 0
+        # ``sub_element`` is always defined as len(element) > 0
         # pylint: disable=W0631
         if not sub_element.tail or not sub_element.tail.strip():
             sub_element.tail = i
@@ -126,8 +126,8 @@ def propfind(path, xml_request, calendar, depth):
         if depth == "0":
             items = [calendar]
         else:
-            # depth is 1, infinity or not specified
-            # we limit ourselves to depth == 1
+            # Depth is 1, infinity or not specified
+            # We limit ourselves to depth == 1
             items = [calendar] + calendar.components
     else:
         items = []
