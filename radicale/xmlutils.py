@@ -91,13 +91,15 @@ def delete(path, calendar):
     calendar.remove(name_from_path(path, calendar))
 
     # Writing answer
-    multistatus = ET.Element("{D}multistatus")
-    response = ET.Element("{D}response")
+    multistatus = ET.Element(_tag("D", "multistatus"))
+    response = ET.Element(_tag("D", "response"))
     multistatus.append(response)
+
+    href = ET.Element(_tag("D", "href"))
     href.text = path
     response.append(href)
 
-    status = ET.Element("{D}status")
+    status = ET.Element(_tag("D", "status"))
     status.text = _response(200)
     response.append(status)
 
@@ -117,7 +119,7 @@ def propfind(path, xml_request, calendar, depth):
     props = [prop.tag for prop in prop_element]
 
     # Writing answer
-    multistatus = ET.Element("{D}multistatus")
+    multistatus = ET.Element(_tag("D", "multistatus"))
 
     if calendar:
         if depth == "0":
@@ -132,25 +134,25 @@ def propfind(path, xml_request, calendar, depth):
     for item in items:
         is_calendar = isinstance(item, ical.Calendar)
 
-        response = ET.Element("{D}response")
+        response = ET.Element(_tag("D", "response"))
         multistatus.append(response)
 
-        href = ET.Element("{D}href")
+        href = ET.Element(_tag("D", "href"))
         href.text = path if is_calendar else path + item.name
         response.append(href)
 
-        propstat = ET.Element("{D}propstat")
+        propstat = ET.Element(_tag("D", "propstat"))
         response.append(propstat)
 
-        prop = ET.Element("{D}prop")
+        prop = ET.Element(_tag("D", "prop"))
         propstat.append(prop)
 
         for tag in props:
             element = ET.Element(tag)
             if tag == _tag("D", "resourcetype") and is_calendar:
-                tag = ET.Element("{C}calendar")
+                tag = ET.Element(_tag("C", "calendar"))
                 element.append(tag)
-                tag = ET.Element("{D}collection")
+                tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
             elif tag == _tag("D", "owner"):
                 if calendar.owner:
@@ -165,40 +167,40 @@ def propfind(path, xml_request, calendar, depth):
                 element.text = calendar.name
             elif tag == _tag("D", "principal-URL"):
                 # TODO: use a real principal URL, read rfc3744-4.2 for info
-                tag = ET.Element("{D}href")
+                tag = ET.Element(_tag("D", "href"))
                 tag.text = path
                 element.append(tag)
             elif tag in (
                 _tag("D", "principal-collection-set"),
                 _tag("C", "calendar-user-address-set"),
                 _tag("C", "calendar-home-set")):
-                tag = ET.Element("{D}href")
+                tag = ET.Element(_tag("D", "href"))
                 tag.text = path
                 element.append(tag)
             elif tag == _tag("C", "supported-calendar-component-set"):
                 # This is not a Todo
                 # pylint: disable=W0511
                 for component in ("VTODO", "VEVENT", "VJOURNAL"):
-                    comp = ET.Element("{C}comp")
+                    comp = ET.Element(_tag("C", "comp"))
                     comp.set("name", component)
                     element.append(comp)
                 # pylint: enable=W0511
             elif tag == _tag("D", "current-user-privilege-set"):
-                privilege = ET.Element("{D}privilege")
-                privilege.append(ET.Element("{D}all"))
+                privilege = ET.Element(_tag("D", "privilege"))
+                privilege.append(ET.Element(_tag("D", "all")))
                 element.append(privilege)
             elif tag == _tag("D", "supported-report-set"):
                 for report_name in (
                     "principal-property-search", "sync-collection"
                     "expand-property", "principal-search-property-set"):
-                    supported = ET.Element("{D}supported-report")
-                    report_tag = ET.Element("{D}report")
+                    supported = ET.Element(_tag("D", "supported-report"))
+                    report_tag = ET.Element(_tag("D", "report"))
                     report_tag.text = report_name
                     supported.append(report_tag)
                     element.append(supported)
             prop.append(element)
 
-        status = ET.Element("{D}status")
+        status = ET.Element(_tag("D", "status"))
         status.text = _response(200)
         propstat.append(status)
 
@@ -222,26 +224,26 @@ def proppatch(path, xml_request, calendar):
             props.extend(prop.tag for prop in prop_element)
 
     # Writing answer
-    multistatus = ET.Element("{D}multistatus")
+    multistatus = ET.Element(_tag("D", "multistatus"))
 
-    response = ET.Element("{D}response")
+    response = ET.Element(_tag("D", "response"))
     multistatus.append(response)
 
-    href = ET.Element("{D}href")
+    href = ET.Element(_tag("D", "href"))
     href.text = path
     response.append(href)
 
-    propstat = ET.Element("{D}propstat")
+    propstat = ET.Element(_tag("D", "propstat"))
     response.append(propstat)
 
-    prop = ET.Element("{D}prop")
+    prop = ET.Element(_tag("D", "prop"))
     propstat.append(prop)
 
     for tag in props:
         element = ET.Element(tag)
         prop.append(element)
 
-    status = ET.Element("{D}status")
+    status = ET.Element(_tag("D", "status"))
     status.text = _response(200)
     propstat.append(status)
 
@@ -283,7 +285,7 @@ def report(path, xml_request, calendar):
         hreferences = ()
 
     # Writing answer
-    multistatus = ET.Element("{D}multistatus")
+    multistatus = ET.Element(_tag("D", "multistatus"))
 
     for hreference in hreferences:
         # Check if the reference is an item or a calendar
@@ -298,17 +300,17 @@ def report(path, xml_request, calendar):
             items = calendar.components
 
         for item in items:
-            response = ET.Element("{D}response")
+            response = ET.Element(_tag("D", "response"))
             multistatus.append(response)
 
-            href = ET.Element("{D}href")
+            href = ET.Element(_tag("D", "href"))
             href.text = path + item.name
             response.append(href)
 
-            propstat = ET.Element("{D}propstat")
+            propstat = ET.Element(_tag("D", "propstat"))
             response.append(propstat)
 
-            prop = ET.Element("{D}prop")
+            prop = ET.Element(_tag("D", "prop"))
             propstat.append(prop)
 
             for tag in props:
@@ -321,7 +323,7 @@ def report(path, xml_request, calendar):
                             calendar.headers, calendar.timezones + [item])
                 prop.append(element)
 
-            status = ET.Element("{D}status")
+            status = ET.Element(_tag("D", "status"))
             status.text = _response(200)
             propstat.append(status)
 
