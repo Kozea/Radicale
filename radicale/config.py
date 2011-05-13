@@ -61,7 +61,8 @@ INITIAL_CONFIG = {
         "folder": os.path.expanduser("~/.config/radicale/calendars")},
     "logging": {
         "config": "/etc/radicale/logging",
-        "debug": "False"}}
+        "debug": "False",
+        "full_environment": "False"}}
 
 # Create a ConfigParser and configure it
 _CONFIG_PARSER = ConfigParser()
