@@ -48,6 +48,10 @@ parser.add_option(
     default=radicale.config.getboolean("server", "daemon"),
     help="launch as daemon")
 parser.add_option(
+    "-p", "--pid",
+    default=radicale.config.get("server", "pid"),
+    help="set PID filename for daemon mode")
+parser.add_option(
     "-f", "--foreground", action="store_false", dest="daemon",
     help="launch in foreground (opposite of --daemon)")
 parser.add_option(
@@ -88,8 +92,13 @@ radicale.log.start()
 
 # Fork if Radicale is launched as daemon
 if options.daemon:
-    if os.fork():
-        sys.exit()
+    pid = os.fork()
+    if pid:
+        try:
+            if options.pid:
+                open(options.pid, 'w').write(str(pid))
+        finally:
+            sys.exit()
     sys.stdout = sys.stderr = open(os.devnull, "w")
 
 radicale.log.LOGGER.info("Starting Radicale")

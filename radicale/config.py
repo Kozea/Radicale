@@ -41,6 +41,7 @@ INITIAL_CONFIG = {
     "server": {
         "hosts": "0.0.0.0:5232",
         "daemon": "False",
+        "pid": "",
         "ssl": "False",
         "certificate": "/etc/apache2/ssl/server.crt",
         "key": "/etc/apache2/ssl/server.key"},
