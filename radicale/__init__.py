@@ -186,7 +186,7 @@ class Application(object):
                 user = password = None
 
             if self.acl.has_right(calendar.owner, user, password):
-                log.LOGGER.info("%s allowed" % calendar.owner)
+                log.LOGGER.info("%s allowed" % (user or "anonymous user"))
                 status, headers, answer = function(environ, calendar, content)
             else:
                 log.LOGGER.info("%s refused" % (user or "anonymous user"))
