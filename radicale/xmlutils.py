@@ -40,7 +40,12 @@ NAMESPACES = {
 
 
 for short, url in NAMESPACES.items():
-    ET._namespace_map[url] = "" if short == "D" else short
+    if hasattr(ET, "register_namespace"):
+        # Register namespaces cleanly with Python 2.7+ and 3.2+ ...
+        ET.register_namespace("" if short == "D" else short, url)
+    else:
+        # ... and badly with Python 2.6- and 3.1-
+        ET._namespace_map[url] = short
 
 
 def _pretty_xml(element, level=0):
