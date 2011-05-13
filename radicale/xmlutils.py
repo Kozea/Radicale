@@ -36,14 +36,11 @@ NAMESPACES = {
     "C": "urn:ietf:params:xml:ns:caldav",
     "D": "DAV:",
     "CS": "http://calendarserver.org/ns/",
-    "ICAL": "http://apple.com/ns/ical/",
-}
+    "ICAL": "http://apple.com/ns/ical/"}
 
 
 for short, url in NAMESPACES.items():
-    if short == "D":
-        short = ""
-    ET._namespace_map[url] = short
+    ET._namespace_map[url] = "" if short == "D" else short
 
 
 def _pretty_xml(element, level=0):
