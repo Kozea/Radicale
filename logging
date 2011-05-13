@@ -49,7 +49,7 @@ args = ('/var/log/radicale',)
 formatter = full
 
 
-# Formatter
+# Formatters
 
 [formatter_simple]
 # Simple output format
