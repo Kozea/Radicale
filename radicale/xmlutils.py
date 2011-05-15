@@ -44,7 +44,7 @@ for short, url in NAMESPACES.items():
         # Register namespaces cleanly with Python 2.7+ and 3.2+ ...
         ET.register_namespace("" if short == "D" else short, url)
     else:
-        # ... and badly with Python 2.6- and 3.1-
+        # ... and badly with Python 2.6 and 3.1
         ET._namespace_map[url] = short
 
 
