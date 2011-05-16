@@ -215,6 +215,7 @@ This configuration file is read each time the server is launched. If some
 values are not given, the default ones are used. If no configuration file is
 available, all the default values are used.
 
+
 Logging Configuration File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -288,6 +289,20 @@ All the options of the ``server`` part can be changed with command line
 options. These options are available by typing::
 
   radicale --help
+
+
+Authentication and URLs
+~~~~~~~~~~~~~~~~~~~~~~~
+
+If no authentication method is set, calendars are available at ``/calendar``
+and ``/folder/calendar`` URLs.
+
+If an authentication method is set:
+
+- calendars at ``/calendar`` URLs are available for all the authenticated
+  people;
+- calendars at ``/user/calendar`` URLs are only available for the authenticated
+  person called ``user``.
 
 
 Python Versions and OS Support
