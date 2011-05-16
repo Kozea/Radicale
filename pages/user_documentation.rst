@@ -271,7 +271,7 @@ example of logging configuration file:
   formatter = full
 
 
-  # Formatter
+  # Formatters
 
   [formatter_simple]
   # Simple output format
