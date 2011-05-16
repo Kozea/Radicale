@@ -32,15 +32,14 @@ from radicale import config, log
 BASE = config.get("acl", "ldap_base")
 ATTRIBUTE = config.get("acl", "ldap_attribute")
 CONNEXION = ldap.initialize(config.get("acl", "ldap_url"))
-PERSONAL = config.getboolean("acl", "personal")
 BINDDN = config.get("acl", "ldap_binddn")
 PASSWORD = config.get("acl", "ldap_password")
 
 
 def has_right(owner, user, password):
     """Check if ``user``/``password`` couple is valid."""
-    if (user != owner and PERSONAL) or not user:
-        # User is not owner and personal calendars, or no user given, forbidden
+    if not user or (owner and user != owner):
+        # No user given, or owner is set and is not user, forbidden
         return False
 
     if BINDDN and PASSWORD:

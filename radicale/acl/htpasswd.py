@@ -34,7 +34,6 @@ from radicale import config
 
 
 FILENAME = config.get("acl", "htpasswd_filename")
-PERSONAL = config.getboolean("acl", "personal")
 ENCRYPTION = config.get("acl", "htpasswd_encryption")
 
 
@@ -64,6 +63,6 @@ def has_right(owner, user, password):
     for line in open(FILENAME).readlines():
         if line.strip():
             login, hash_value = line.strip().split(":")
-            if login == user and (not PERSONAL or user == owner):
+            if login == user and (not owner or owner == user):
                 return globals()["_%s" % ENCRYPTION](hash_value, password)
     return False

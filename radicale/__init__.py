@@ -169,9 +169,6 @@ class Application(object):
         if not calendar or not self.acl:
             # No calendar or no acl, don't check rights
             status, headers, answer = function(environ, calendar, content)
-        elif calendar.owner is None and config.getboolean("acl", "personal"):
-            # No owner and personal calendars, don't check rights
-            status, headers, answer = function(environ, calendar, content)
         else:
             # Ask authentication backend to check rights
             log.LOGGER.info(

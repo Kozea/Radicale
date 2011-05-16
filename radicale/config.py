@@ -50,7 +50,6 @@ INITIAL_CONFIG = {
         "stock": "utf-8"},
     "acl": {
         "type": "None",
-        "personal": "True",
         "httpasswd_filename": "/etc/radicale/users",
         "httpasswd_encryption": "crypt",
         "ldap_url": "ldap://localhost:389/",
