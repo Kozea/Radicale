@@ -184,8 +184,6 @@ main parameters:
   # Access method
   # Value: None | htpasswd | LDAP
   type = None
-  # Personal calendars only available for logged in users
-  personal = True
   # Htpasswd filename
   htpasswd_filename = /etc/radicale/users
   # Htpasswd encryption method
@@ -210,6 +208,8 @@ main parameters:
   config = /etc/radicale/logging
   # Set the default logging level to debug
   debug = False
+  # Store all environment variables (including those set in the shell)
+  full_environment = False
 
 This configuration file is read each time the server is launched. If some
 values are not given, the default ones are used. If no configuration file is
