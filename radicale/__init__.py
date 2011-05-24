@@ -256,6 +256,11 @@ class Application(object):
 
     def mkcalendar(self, environ, calendar, content):
         """Manage MKCALENDAR request."""
+        props = xmlutils.props_from_request(content)
+        tz = props.get('C:calendar-timezone')
+        if tz:
+            calendar.replace('', tz)
+        calendar.write()
         return client.CREATED, {}, None
 
     def options(self, environ, calendar, content):

@@ -27,6 +27,12 @@ in them for XML requests (all but PUT).
 
 """
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    # Python 2.6
+    OrderedDict = dict
+import re
 import xml.etree.ElementTree as ET
 
 from radicale import client, config, ical
@@ -39,13 +45,25 @@ NAMESPACES = {
     "ICAL": "http://apple.com/ns/ical/"}
 
 
+NAMESPACES_REV = {}
+
+
 for short, url in NAMESPACES.items():
+    NAMESPACES_REV[url] = short
     if hasattr(ET, "register_namespace"):
         # Register namespaces cleanly with Python 2.7+ and 3.2+ ...
         ET.register_namespace("" if short == "D" else short, url)
     else:
         # ... and badly with Python 2.6 and 3.1
         ET._namespace_map[url] = short
+
+
+CLARK_TAG_REGEX = re.compile(r"""
+    {                        # {
+    (?P<namespace>[^}]*)     # namespace URL
+    }                        # }
+    (?P<tag>.*)              # short tag name
+    """, re.VERBOSE)
 
 
 def _pretty_xml(element, level=0):
@@ -85,6 +103,31 @@ def name_from_path(path, calendar):
     calendar_parts = calendar.local_path.strip("/").split("/")
     path_parts = path.strip("/").split("/")
     return path_parts[-1] if (len(path_parts) - len(calendar_parts)) else None
+
+
+def props_from_request(xml_request):
+    """Returns a list of properties as a dictionary."""
+
+    result = OrderedDict()
+    root = ET.fromstring(xml_request.encode("utf8"))
+
+    set_element = root.find(_tag("D", "set"))
+    if not set_element:
+        set_element = root
+
+    prop_element = set_element.find(_tag("D", "prop"))
+    if prop_element:
+        for prop in prop_element:
+            match = CLARK_TAG_REGEX.match(prop.tag)
+            if match and match.group('namespace') in NAMESPACES_REV:
+                args = {
+                    'ns': NAMESPACES_REV[match.group('namespace')],
+                    'tag': match.group('tag')}
+                tag_name = '%(ns)s:%(tag)s' % args
+            else:
+                tag_name = prop.tag
+            result[tag_name] = prop.text
+    return result
 
 
 def delete(path, calendar):

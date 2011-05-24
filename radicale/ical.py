@@ -33,7 +33,7 @@ from radicale import config
 
 
 FOLDER = os.path.expanduser(config.get("storage", "folder"))
-    
+
 
 # This function overrides the builtin ``open`` function for this module
 # pylint: disable=W0622
@@ -242,7 +242,7 @@ class Calendar(object):
         # Create folder if absent
         if not os.path.exists(os.path.dirname(self.path)):
             os.makedirs(os.path.dirname(self.path))
-        
+
         text = serialize(headers, items)
         return open(self.path, "w").write(text)
 
