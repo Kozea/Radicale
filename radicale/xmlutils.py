@@ -93,6 +93,23 @@ def _tag(short_name, local):
     return "{%s}%s" % (NAMESPACES[short_name], local)
 
 
+def _tag_from_clark(name):
+    """For a given name using the XML Clark notation returns a human-readable
+    variant of the tag name for known namespaces. Otherwise returns the name
+    as is.
+
+    """
+    match = CLARK_TAG_REGEX.match(name)
+    if match and match.group('namespace') in NAMESPACES_REV:
+        args = {
+            'ns': NAMESPACES_REV[match.group('namespace')],
+            'tag': match.group('tag')}
+        tag_name = '%(ns)s:%(tag)s' % args
+    else:
+        tag_name = prop.tag
+    return tag_name
+
+
 def _response(code):
     """Return full W3C names from HTTP status codes."""
     return "HTTP/1.1 %i %s" % (code, client.responses[code])
@@ -105,28 +122,24 @@ def name_from_path(path, calendar):
     return path_parts[-1] if (len(path_parts) - len(calendar_parts)) else None
 
 
-def props_from_request(xml_request):
+def props_from_request(root, actions=("set", "remove")):
     """Returns a list of properties as a dictionary."""
 
     result = OrderedDict()
-    root = ET.fromstring(xml_request.encode("utf8"))
+    if not isinstance(root, ET.Element):
+        root = ET.fromstring(root.encode("utf8"))
 
-    set_element = root.find(_tag("D", "set"))
-    if not set_element:
-        set_element = root
+    for action in actions:
+        action_element = root.find(_tag("D", action))
+        if action_element is not None:
+            break
+    else:
+        action_element = root
 
-    prop_element = set_element.find(_tag("D", "prop"))
-    if prop_element:
+    prop_element = action_element.find(_tag("D", "prop"))
+    if prop_element is not None:
         for prop in prop_element:
-            match = CLARK_TAG_REGEX.match(prop.tag)
-            if match and match.group('namespace') in NAMESPACES_REV:
-                args = {
-                    'ns': NAMESPACES_REV[match.group('namespace')],
-                    'tag': match.group('tag')}
-                tag_name = '%(ns)s:%(tag)s' % args
-            else:
-                tag_name = prop.tag
-            result[tag_name] = prop.text
+            result[_tag_from_clark(prop.tag)] = prop.text
     return result
 
 
@@ -256,6 +269,27 @@ def propfind(path, xml_request, calendar, depth):
     return _pretty_xml(multistatus)
 
 
+def _add_propstat_to(element, tag, status_number):
+    """Adds a propstat structure to the given element for the
+    following `tag` with the given `status_number`."""
+    propstat = ET.Element(_tag("D", "propstat"))
+    element.append(propstat)
+
+    prop = ET.Element(_tag("D", "prop"))
+    propstat.append(prop)
+
+    if '{' in tag:
+        clark_tag = tag
+    else:
+        clark_tag = _tag(*tag.split(':', 1))
+    prop_tag = ET.Element(clark_tag)
+    prop.append(prop_tag)
+
+    status = ET.Element(_tag("D", "status"))
+    status.text = _response(status_number)
+    propstat.append(status)
+
+
 def proppatch(path, xml_request, calendar):
     """Read and answer PROPPATCH requests.
 
@@ -264,13 +298,8 @@ def proppatch(path, xml_request, calendar):
     """
     # Reading request
     root = ET.fromstring(xml_request.encode("utf8"))
-    props = []
-
-    for action in ("set", "remove"):
-        action_element = root.find(_tag("D", action))
-        if action_element is not None:
-            prop_element = action_element.find(_tag("D", "prop"))
-            props.extend(prop.tag for prop in prop_element)
+    props_to_set = props_from_request(root, actions=('set',))
+    props_to_remove = props_from_request(root, actions=('remove',))
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -282,19 +311,17 @@ def proppatch(path, xml_request, calendar):
     href.text = path
     response.append(href)
 
-    propstat = ET.Element(_tag("D", "propstat"))
-    response.append(propstat)
-
-    prop = ET.Element(_tag("D", "prop"))
-    propstat.append(prop)
-
-    for tag in props:
-        element = ET.Element(tag)
-        prop.append(element)
-
-    status = ET.Element(_tag("D", "status"))
-    status.text = _response(200)
-    propstat.append(status)
+    with calendar.props as calendar_props:
+        for short_name, value in props_to_set.items():
+            calendar_props[short_name] = value
+            _add_propstat_to(response, short_name, 200)
+        for short_name in props_to_remove:
+            try:
+                del calendar_props[short_name]
+            except KeyError:
+                _add_propstat_to(response, short_name, 412)
+            else:
+                _add_propstat_to(response, short_name, 200)
 
     return _pretty_xml(multistatus)
 

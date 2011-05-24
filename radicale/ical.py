@@ -25,8 +25,10 @@ Define the main classes of a calendar as seen from the server.
 
 """
 
-import os
 import codecs
+from contextlib import contextmanager
+import json
+import os
 import time
 
 from radicale import config
@@ -254,7 +256,9 @@ class Calendar(object):
     @property
     def name(self):
         """Calendar name."""
-        return self.path.split(os.path.sep)[-1]
+        with self.props as props:
+            return props.get('D:displayname',
+                self.path.split(os.path.sep)[-1])
 
     @property
     def text(self):
@@ -322,3 +326,17 @@ class Calendar(object):
 
         modification_time = time.gmtime(os.path.getmtime(self.path))
         return time.strftime("%a, %d %b %Y %H:%M:%S +0000", modification_time)
+
+    @property
+    @contextmanager
+    def props(self):
+        props_path = self.path + '.props'
+        # on enter
+        properties = {}
+        if os.path.exists(props_path):
+            with open(props_path) as prop_file:
+                properties.update(json.load(prop_file))
+        yield properties
+        # on exit
+        with open(props_path, 'w') as prop_file:
+            json.dump(properties, prop_file)

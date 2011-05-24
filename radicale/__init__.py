@@ -260,6 +260,10 @@ class Application(object):
         tz = props.get('C:calendar-timezone')
         if tz:
             calendar.replace('', tz)
+            del props['C:calendar-timezone']
+        with calendar.props as calendar_props:
+            for key, value in props.items():
+                calendar_props[key] = value
         calendar.write()
         return client.CREATED, {}, None
 
@@ -283,11 +287,11 @@ class Application(object):
 
     def proppatch(self, environ, calendar, content):
         """Manage PROPPATCH request."""
-        xmlutils.proppatch(environ["PATH_INFO"], content, calendar)
+        answer = xmlutils.proppatch(environ["PATH_INFO"], content, calendar)
         headers = {
             "DAV": "1, calendar-access",
             "Content-Type": "text/xml"}
-        return client.MULTI_STATUS, headers, None
+        return client.MULTI_STATUS, headers, answer
 
     def put(self, environ, calendar, content):
         """Manage PUT request."""
