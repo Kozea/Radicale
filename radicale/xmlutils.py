@@ -119,7 +119,7 @@ def propfind(path, xml_request, calendar, depth):
 
     """
     # Reading request
-    root = ET.fromstring(xml_request)
+    root = ET.fromstring(xml_request.encode("utf8"))
 
     prop_element = root.find(_tag("D", "prop"))
     props = [prop.tag for prop in prop_element]
@@ -220,7 +220,7 @@ def proppatch(path, xml_request, calendar):
 
     """
     # Reading request
-    root = ET.fromstring(xml_request)
+    root = ET.fromstring(xml_request.encode("utf8"))
     props = []
 
     for action in ("set", "remove"):
@@ -274,7 +274,7 @@ def report(path, xml_request, calendar):
 
     """
     # Reading request
-    root = ET.fromstring(xml_request)
+    root = ET.fromstring(xml_request.encode("utf8"))
 
     prop_element = root.find(_tag("D", "prop"))
     props = [prop.tag for prop in prop_element]
