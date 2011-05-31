@@ -55,4 +55,4 @@ Radicale has been packaged for:
   Smedegaard
 
 If you are interested in creating packages for other Linux distributions, read
-the `"Contribute" page </contribute>`_.
+the `"Contribute" page </contribute/>`_.

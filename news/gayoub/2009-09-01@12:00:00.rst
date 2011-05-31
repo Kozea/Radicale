@@ -10,4 +10,4 @@ First Radicale release! Here is the changelog:
 * Lightning/Sunbird 0.9 compatibility
 * Easy installer
 
-You can download this version on the `download page </download>`_.
+You can download this version on the `download page </download/>`_.

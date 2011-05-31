@@ -25,4 +25,4 @@ the Mozilla developers, 1.0pre is something like a final version.
 
 You may have noticed too that Radicale can be `downloaded from PyPI
 <http://pypi.python.org/pypi/Radicale/0.2>`_. Of course, it is also available
-on the `download page </download>`_.
+on the `download page </download/>`_.
