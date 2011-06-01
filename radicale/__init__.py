@@ -169,6 +169,7 @@ class Application(object):
                 auth = authorization.lstrip("Basic").strip().encode("ascii")
                 user, password = self.decode(
                     base64.b64decode(auth), environ).split(":")
+                environ['USER'] = user
             else:
                 user = password = None
 
@@ -290,7 +291,7 @@ class Application(object):
             "DAV": "1, calendar-access",
             "Content-Type": "text/xml"}
         answer = xmlutils.propfind(
-            environ["PATH_INFO"], content, calendars)
+            environ["PATH_INFO"], content, calendars, environ.get("USER"))
         return client.MULTI_STATUS, headers, answer
 
     def proppatch(self, environ, calendars, content):

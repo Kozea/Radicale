@@ -167,7 +167,7 @@ def delete(path, calendar):
     return _pretty_xml(multistatus)
 
 
-def propfind(path, xml_request, calendars):
+def propfind(path, xml_request, calendars, user=None):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -183,13 +183,13 @@ def propfind(path, xml_request, calendars):
     multistatus = ET.Element(_tag("D", "multistatus"))
 
     for calendar in calendars:
-        response = _propfind_response(path, calendar, props)
+        response = _propfind_response(path, calendar, props, user)
         multistatus.append(response)
 
     return _pretty_xml(multistatus)
 
 
-def _propfind_response(path, item, props):
+def _propfind_response(path, item, props, user):
     is_calendar = isinstance(item, ical.Calendar)
     if is_calendar:
         with item.props as cal_props:
@@ -217,10 +217,11 @@ def _propfind_response(path, item, props):
         if tag == _tag("D", "getetag"):
             element.text = item.etag
         elif tag == _tag("D", "principal-URL"):
-            # TODO: use a real principal URL, read rfc3744-4.2 for info
             tag = ET.Element(_tag("D", "href"))
             if item.owner_url:
                 tag.text = item.owner_url
+            elif user:
+                tag.text = '/{}/'.format(user)
             else:
                 tag.text = path
             element.append(tag)
@@ -239,6 +240,10 @@ def _propfind_response(path, item, props):
                 comp.set("name", component)
                 element.append(comp)
             # pylint: enable=W0511
+        elif tag == _tag("D", "current-user-principal") and user:
+            tag = ET.Element(_tag("D", "href"))
+            tag.text = '/{}/'.format(user)
+            element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
             privilege.append(ET.Element(_tag("D", "all")))

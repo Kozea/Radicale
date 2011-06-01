@@ -162,7 +162,7 @@ class Calendar(object):
         split_path = path.split("/")
         self.owner = split_path[0] if len(split_path) > 1 else None
         self.path = os.path.join(FOLDER, path.replace("/", os.sep))
-        self.local_path = path
+        self.local_path = path if path != '.' else ''
         self.is_principal = principal
 
     @classmethod
