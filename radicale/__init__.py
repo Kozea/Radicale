@@ -29,7 +29,6 @@ should have been included in this package.
 """
 
 import os
-import posixpath
 import pprint
 import base64
 import socket
@@ -151,28 +150,19 @@ class Application(object):
         else:
             content = None
 
-        # Find calendar
-        attributes = posixpath.normpath(
-            environ["PATH_INFO"].strip("/")).split("/")
-        if attributes:
-            if attributes[-1].endswith(".ics"):
-                attributes.pop()
-            path = "/".join(attributes[:min(len(attributes), 2)])
-            calendar = ical.Calendar(path)
-        else:
-            calendar = None
+        # Find calendar(s)
+        items = ical.Calendar.from_path(environ["PATH_INFO"],
+            environ.get("HTTP_DEPTH", "0"))
 
         # Get function corresponding to method
         function = getattr(self, environ["REQUEST_METHOD"].lower())
 
         # Check rights
-        if not calendar or not self.acl:
+        if not items or not self.acl:
             # No calendar or no acl, don't check rights
-            status, headers, answer = function(environ, calendar, content)
+            status, headers, answer = function(environ, items, content)
         else:
             # Ask authentication backend to check rights
-            log.LOGGER.info(
-                "Checking rights for calendar owned by %s" % calendar.owner)
             authorization = environ.get("HTTP_AUTHORIZATION", None)
 
             if authorization:
@@ -182,11 +172,27 @@ class Application(object):
             else:
                 user = password = None
 
-            if self.acl.has_right(calendar.owner, user, password):
-                log.LOGGER.info("%s allowed" % (user or "anonymous user"))
-                status, headers, answer = function(environ, calendar, content)
+            last_allowed = False
+            calendars = []
+            for calendar in items:
+                if not isinstance(calendar, ical.Calendar):
+                    if last_allowed:
+                        calendars.append(calendar)
+                    continue
+                log.LOGGER.info(
+                    "Checking rights for calendar owned by %s" % calendar.owner)
+
+                if self.acl.has_right(calendar.owner, user, password):
+                    log.LOGGER.info("%s allowed" % (user or "anonymous user"))
+                    calendars.append(calendar)
+                    last_allowed = True
+                else:
+                    log.LOGGER.info("%s refused" % (user or "anonymous user"))
+                    last_allowed = False
+
+            if calendars:
+                status, headers, answer = function(environ, calendars, content)
             else:
-                log.LOGGER.info("%s refused" % (user or "anonymous user"))
                 status = client.UNAUTHORIZED
                 headers = {
                     "WWW-Authenticate":
@@ -209,8 +215,9 @@ class Application(object):
     # All these functions must have the same parameters, some are useless
     # pylint: disable=W0612,W0613,R0201
 
-    def get(self, environ, calendar, content):
+    def get(self, environ, calendars, content):
         """Manage GET request."""
+        calendar = calendars[0]
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], calendar)
         if item_name:
             # Get calendar item
@@ -235,13 +242,14 @@ class Application(object):
         answer = answer_text.encode(self.encoding)
         return client.OK, headers, answer
 
-    def head(self, environ, calendar, content):
+    def head(self, environ, calendars, content):
         """Manage HEAD request."""
-        status, headers, answer = self.get(environ, calendar, content)
+        status, headers, answer = self.get(environ, calendars, content)
         return status, headers, None
 
-    def delete(self, environ, calendar, content):
+    def delete(self, environ, calendars, content):
         """Manage DELETE request."""
+        calendar = calendars[0]
         item = calendar.get_item(
             xmlutils.name_from_path(environ["PATH_INFO"], calendar))
         if item and environ.get("HTTP_IF_MATCH", item.etag) == item.etag:
@@ -254,8 +262,9 @@ class Application(object):
             status = client.PRECONDITION_FAILED
         return status, {}, answer
 
-    def mkcalendar(self, environ, calendar, content):
+    def mkcalendar(self, environ, calendars, content):
         """Manage MKCALENDAR request."""
+        calendar = calendars[0]
         props = xmlutils.props_from_request(content)
         tz = props.get('C:calendar-timezone')
         if tz:
@@ -267,7 +276,7 @@ class Application(object):
         calendar.write()
         return client.CREATED, {}, None
 
-    def options(self, environ, calendar, content):
+    def options(self, environ, calendars, content):
         """Manage OPTIONS request."""
         headers = {
             "Allow": "DELETE, HEAD, GET, MKCALENDAR, " \
@@ -275,26 +284,27 @@ class Application(object):
             "DAV": "1, calendar-access"}
         return client.OK, headers, None
 
-    def propfind(self, environ, calendar, content):
+    def propfind(self, environ, calendars, content):
         """Manage PROPFIND request."""
         headers = {
             "DAV": "1, calendar-access",
             "Content-Type": "text/xml"}
         answer = xmlutils.propfind(
-            environ["PATH_INFO"], content, calendar,
-            environ.get("HTTP_DEPTH", "infinity"))
+            environ["PATH_INFO"], content, calendars)
         return client.MULTI_STATUS, headers, answer
 
-    def proppatch(self, environ, calendar, content):
+    def proppatch(self, environ, calendars, content):
         """Manage PROPPATCH request."""
+        calendar = calendars[0]
         answer = xmlutils.proppatch(environ["PATH_INFO"], content, calendar)
         headers = {
             "DAV": "1, calendar-access",
             "Content-Type": "text/xml"}
         return client.MULTI_STATUS, headers, answer
 
-    def put(self, environ, calendar, content):
+    def put(self, environ, calendars, content):
         """Manage PUT request."""
+        calendar = calendars[0]
         headers = {}
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], calendar)
         item = calendar.get_item(item_name)
@@ -312,8 +322,10 @@ class Application(object):
             status = client.PRECONDITION_FAILED
         return status, headers, None
 
-    def report(self, environ, calendar, content):
+    def report(self, environ, calendars, content):
         """Manage REPORT request."""
+        # TODO: support multiple calendars here 
+        calendar = calendars[0]
         headers = {'Content-Type': 'text/xml'}
         answer = xmlutils.report(environ["PATH_INFO"], content, calendar)
         return client.MULTI_STATUS, headers, answer

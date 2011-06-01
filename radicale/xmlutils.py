@@ -42,7 +42,8 @@ NAMESPACES = {
     "C": "urn:ietf:params:xml:ns:caldav",
     "D": "DAV:",
     "CS": "http://calendarserver.org/ns/",
-    "ICAL": "http://apple.com/ns/ical/"}
+    "ICAL": "http://apple.com/ns/ical/",
+    "ME": "http://me.com/_namespace/"}
 
 
 NAMESPACES_REV = {}
@@ -104,10 +105,8 @@ def _tag_from_clark(name):
         args = {
             'ns': NAMESPACES_REV[match.group('namespace')],
             'tag': match.group('tag')}
-        tag_name = '%(ns)s:%(tag)s' % args
-    else:
-        tag_name = prop.tag
-    return tag_name
+        return '%(ns)s:%(tag)s' % args
+    return name
 
 
 def _response(code):
@@ -168,7 +167,7 @@ def delete(path, calendar):
     return _pretty_xml(multistatus)
 
 
-def propfind(path, xml_request, calendar, depth):
+def propfind(path, xml_request, calendars):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -183,90 +182,115 @@ def propfind(path, xml_request, calendar, depth):
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
-    if calendar:
-        if depth == "0":
-            items = [calendar]
-        else:
-            # Depth is 1, infinity or not specified
-            # We limit ourselves to depth == 1
-            items = [calendar] + calendar.components
-    else:
-        items = []
-
-    for item in items:
-        is_calendar = isinstance(item, ical.Calendar)
-
-        response = ET.Element(_tag("D", "response"))
+    for calendar in calendars:
+        response = _propfind_response(path, calendar, props)
         multistatus.append(response)
 
-        href = ET.Element(_tag("D", "href"))
-        href.text = path if is_calendar else path + item.name
-        response.append(href)
+    return _pretty_xml(multistatus)
 
-        propstat = ET.Element(_tag("D", "propstat"))
-        response.append(propstat)
 
-        prop = ET.Element(_tag("D", "prop"))
-        propstat.append(prop)
+def _propfind_response(path, item, props):
+    is_calendar = isinstance(item, ical.Calendar)
+    if is_calendar:
+        with item.props as cal_props:
+            calendar_props = cal_props
 
-        for tag in props:
-            element = ET.Element(tag)
-            if tag == _tag("D", "resourcetype") and is_calendar:
-                tag = ET.Element(_tag("C", "calendar"))
-                element.append(tag)
+    response = ET.Element(_tag("D", "response"))
+
+    href = ET.Element(_tag("D", "href"))
+    href.text = item.url if is_calendar else path + item.name
+    response.append(href)
+
+    propstat404 = ET.Element(_tag("D", "propstat"))
+    propstat200 = ET.Element(_tag("D", "propstat"))
+    response.append(propstat200)
+
+    prop200 = ET.Element(_tag("D", "prop"))
+    propstat200.append(prop200)
+
+    prop404 = ET.Element(_tag("D", "prop"))
+    propstat404.append(prop404)
+
+    for tag in props:
+        element = ET.Element(tag)
+        is404 = False
+        if tag == _tag("D", "owner"):
+            if item.owner:
+                element.text = item.owner
+        elif tag == _tag("D", "getcontenttype"):
+            element.text = "text/calendar"
+        elif tag == _tag("D", "getetag"):
+            element.text = item.etag
+        elif tag == _tag("D", "principal-URL"):
+            # TODO: use a real principal URL, read rfc3744-4.2 for info
+            tag = ET.Element(_tag("D", "href"))
+            if item.owner:
+                tag.text = "/{}/".format(item.owner).replace("//", "/")
+            else:
+                tag.text = path
+            element.append(tag)
+        elif tag in (
+            _tag("D", "principal-collection-set"),
+            _tag("C", "calendar-user-address-set"),
+            _tag("C", "calendar-home-set")):
+            tag = ET.Element(_tag("D", "href"))
+            tag.text = path
+            element.append(tag)
+        elif tag == _tag("C", "supported-calendar-component-set"):
+            # This is not a Todo
+            # pylint: disable=W0511
+            for component in ("VTODO", "VEVENT", "VJOURNAL"):
+                comp = ET.Element(_tag("C", "comp"))
+                comp.set("name", component)
+                element.append(comp)
+            # pylint: enable=W0511
+        elif tag == _tag("D", "current-user-privilege-set"):
+            privilege = ET.Element(_tag("D", "privilege"))
+            privilege.append(ET.Element(_tag("D", "all")))
+            element.append(privilege)
+        elif tag == _tag("D", "supported-report-set"):
+            for report_name in (
+                "principal-property-search", "sync-collection"
+                "expand-property", "principal-search-property-set"):
+                supported = ET.Element(_tag("D", "supported-report"))
+                report_tag = ET.Element(_tag("D", "report"))
+                report_tag.text = report_name
+                supported.append(report_tag)
+                element.append(supported)
+        elif is_calendar:
+            if tag == _tag("D", "resourcetype"):
+                if is_calendar and not item.is_principal:
+                    tag = ET.Element(_tag("C", "calendar"))
+                    element.append(tag)
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
-            elif tag == _tag("D", "owner"):
-                if calendar.owner:
-                    element.text = calendar.owner
-            elif tag == _tag("D", "getcontenttype"):
-                element.text = "text/calendar"
-            elif tag == _tag("CS", "getctag") and is_calendar:
+            elif tag == _tag("CS", "getctag"):
                 element.text = item.etag
-            elif tag == _tag("D", "getetag"):
-                element.text = item.etag
-            elif tag == _tag("D", "displayname") and is_calendar:
-                element.text = calendar.name
-            elif tag == _tag("D", "principal-URL"):
-                # TODO: use a real principal URL, read rfc3744-4.2 for info
-                tag = ET.Element(_tag("D", "href"))
-                tag.text = path
-                element.append(tag)
-            elif tag in (
-                _tag("D", "principal-collection-set"),
-                _tag("C", "calendar-user-address-set"),
-                _tag("C", "calendar-home-set")):
-                tag = ET.Element(_tag("D", "href"))
-                tag.text = path
-                element.append(tag)
-            elif tag == _tag("C", "supported-calendar-component-set"):
-                # This is not a Todo
-                # pylint: disable=W0511
-                for component in ("VTODO", "VEVENT", "VJOURNAL"):
-                    comp = ET.Element(_tag("C", "comp"))
-                    comp.set("name", component)
-                    element.append(comp)
-                # pylint: enable=W0511
-            elif tag == _tag("D", "current-user-privilege-set"):
-                privilege = ET.Element(_tag("D", "privilege"))
-                privilege.append(ET.Element(_tag("D", "all")))
-                element.append(privilege)
-            elif tag == _tag("D", "supported-report-set"):
-                for report_name in (
-                    "principal-property-search", "sync-collection"
-                    "expand-property", "principal-search-property-set"):
-                    supported = ET.Element(_tag("D", "supported-report"))
-                    report_tag = ET.Element(_tag("D", "report"))
-                    report_tag.text = report_name
-                    supported.append(report_tag)
-                    element.append(supported)
-            prop.append(element)
+            else:
+                human_tag = _tag_from_clark(tag)
+                if human_tag in calendar_props:
+                    element.text = calendar_props[human_tag]
+                else:
+                    is404 = True
+        else:
+            is404 = True
 
-        status = ET.Element(_tag("D", "status"))
-        status.text = _response(200)
-        propstat.append(status)
+        if is404:
+            prop404.append(element)
+        else:
+            prop200.append(element)
 
-    return _pretty_xml(multistatus)
+    status200 = ET.Element(_tag("D", "status"))
+    status200.text = _response(200)
+    propstat200.append(status200)
+
+    status404 = ET.Element(_tag("D", "status"))
+    status404.text = _response(404)
+    propstat404.append(status404)
+    if len(prop404):
+        response.append(propstat404)
+
+    return response
 
 
 def _add_propstat_to(element, tag, status_number):

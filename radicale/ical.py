@@ -29,6 +29,7 @@ import codecs
 from contextlib import contextmanager
 import json
 import os
+import posixpath
 import time
 
 from radicale import config
@@ -155,13 +156,60 @@ class Calendar(object):
     """Internal calendar class."""
     tag = "VCALENDAR"
 
-    def __init__(self, path):
+    def __init__(self, path, principal=False):
         """Initialize the calendar with ``cal`` and ``user`` parameters."""
         self.encoding = "utf-8"
         split_path = path.split("/")
         self.owner = split_path[0] if len(split_path) > 1 else None
-        self.path = os.path.join(FOLDER, path.replace("/", os.path.sep))
+        self.path = os.path.join(FOLDER, path.replace("/", os.sep))
         self.local_path = path
+        self.is_principal = principal
+
+    @classmethod
+    def from_path(cls, path, depth="infinite", include_container=True):
+        """Return a list of calendars and/or sub-items under the given ``path``
+        relative to the storage folder. If ``depth`` is "0", only the actual
+        object under `path` is returned. Otherwise, also sub-items are appended
+        to the result. If `include_container` is True (the default), the
+        containing object is included in the result.
+
+        """
+        attributes = posixpath.normpath(path.strip("/")).split("/")
+        if not attributes:
+            return None
+        if attributes[-1].endswith(".ics"):
+            attributes.pop()
+
+        result = []
+
+        path = "/".join(attributes[:min(len(attributes), 2)])
+        path = path.replace("/", os.sep)
+        abs_path = os.path.join(FOLDER, path)
+        if os.path.isdir(abs_path):
+            if depth == "0":
+                result.append(cls(path, principal=True))
+            else:
+                if include_container:
+                    result.append(cls(path, principal=True))
+                for f in os.walk(abs_path).next()[2]:
+                    f_path = os.path.join(path, f)
+                    if cls.is_vcalendar(os.path.join(abs_path, f)):
+                        result.append(cls(f_path))
+        else:
+            calendar = cls(path)
+            if depth == "0":
+                result.append(calendar)
+            else:
+                if include_container:
+                    result.append(calendar)
+                result.extend(calendar.components)
+        return result
+
+    @staticmethod
+    def is_vcalendar(path):
+        """Return `True` if there is a VCALENDAR file under `path`."""
+        with open(path) as f:
+            return 'BEGIN:VCALENDAR' == f.read(15)
 
     @staticmethod
     def _parse(text, item_types, name=None):
@@ -340,3 +388,7 @@ class Calendar(object):
         # on exit
         with open(props_path, 'w') as prop_file:
             json.dump(properties, prop_file)
+
+    @property
+    def url(self):
+        return '/{}/'.format(self.local_path).replace('//', '/')
