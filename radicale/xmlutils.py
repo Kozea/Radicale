@@ -340,7 +340,11 @@ def proppatch(path, xml_request, calendar):
 
     with calendar.props as calendar_props:
         for short_name, value in props_to_set.items():
-            calendar_props[short_name] = value
+            if short_name == 'C:calendar-timezone':
+                calendar.replace('', value)
+                calendar.write()
+            else:
+                calendar_props[short_name] = value
             _add_propstat_to(response, short_name, 200)
         for short_name in props_to_remove:
             try:
