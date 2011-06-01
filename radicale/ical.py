@@ -295,12 +295,16 @@ class Calendar(object):
             Header("VERSION:2.0"))
         items = items if items is not None else self.items
 
-        # Create folder if absent
-        if not os.path.exists(os.path.dirname(self.path)):
-            os.makedirs(os.path.dirname(self.path))
+        self._create_dirs(self.path)
 
         text = serialize(headers, items)
         return open(self.path, "w").write(text)
+
+    @staticmethod
+    def _create_dirs(path):
+        """Create folder if absent."""
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
 
     @property
     def etag(self):
@@ -392,6 +396,7 @@ class Calendar(object):
                 properties.update(json.load(prop_file))
         yield properties
         # on exit
+        self._create_dirs(props_path)
         with open(props_path, 'w') as prop_file:
             json.dump(properties, prop_file)
 
