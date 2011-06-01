@@ -52,7 +52,7 @@ def serialize(headers=(), items=()):
     for part in (headers, items):
         if part:
             lines.append("\n".join(item.text for item in part))
-    lines.append("END:VCALENDAR")
+    lines.append("END:VCALENDAR\n")
     return "\n".join(lines)
 
 
