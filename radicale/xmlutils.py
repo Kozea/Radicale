@@ -214,18 +214,15 @@ def _propfind_response(path, item, props):
     for tag in props:
         element = ET.Element(tag)
         is404 = False
-        if tag == _tag("D", "owner"):
-            if item.owner:
-                element.text = item.owner
-        elif tag == _tag("D", "getcontenttype"):
+        if tag == _tag("D", "getcontenttype"):
             element.text = "text/calendar"
         elif tag == _tag("D", "getetag"):
             element.text = item.etag
         elif tag == _tag("D", "principal-URL"):
             # TODO: use a real principal URL, read rfc3744-4.2 for info
             tag = ET.Element(_tag("D", "href"))
-            if item.owner:
-                tag.text = "/{}/".format(item.owner).replace("//", "/")
+            if item.owner_url:
+                tag.text = item.owner_url
             else:
                 tag.text = path
             element.append(tag)
@@ -259,11 +256,13 @@ def _propfind_response(path, item, props):
                 element.append(supported)
         elif is_calendar:
             if tag == _tag("D", "resourcetype"):
-                if is_calendar and not item.is_principal:
+                if not item.is_principal:
                     tag = ET.Element(_tag("C", "calendar"))
                     element.append(tag)
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
+            elif tag == _tag("D", "owner") and item.owner_url:
+                element.text = item.owner_url
             elif tag == _tag("CS", "getctag"):
                 element.text = item.etag
             else:
@@ -272,6 +271,10 @@ def _propfind_response(path, item, props):
                     element.text = calendar_props[human_tag]
                 else:
                     is404 = True
+        # not for calendars
+        elif tag == _tag("D", "resourcetype"):
+            tag = ET.Element(_tag("D", "collection"))
+            element.append(tag)
         else:
             is404 = True
 

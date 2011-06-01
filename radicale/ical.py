@@ -390,5 +390,12 @@ class Calendar(object):
             json.dump(properties, prop_file)
 
     @property
+    def owner_url(self):
+        if self.owner:
+            return '/{}/'.format(self.owner).replace('//', '/')
+        else:
+            return None
+
+    @property
     def url(self):
         return '/{}/'.format(self.local_path).replace('//', '/')
