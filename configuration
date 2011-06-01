@@ -2,9 +2,9 @@
   "name": "Radicale",
   "description": "CalDAV Server",
   "menu": [
-    {"name": "News", "link": "/news/},
-    {"name": "Documentation", "link": "/documentation/},
-    {"name": "Contribute", "link": "/contribute/},
-    {"name": "Download", "link": "/download/}
+    {"name": "News", "link": "/news/"},
+    {"name": "Documentation", "link": "/documentation/"},
+    {"name": "Contribute", "link": "/contribute/"},
+    {"name": "Download", "link": "/download/"}
   ]
 }
