@@ -191,7 +191,7 @@ class Calendar(object):
             else:
                 if include_container:
                     result.append(cls(path, principal=True))
-                for f in os.walk(abs_path).next()[2]:
+                for f in next(os.walk(abs_path))[2]:
                     f_path = os.path.join(path, f)
                     if cls.is_vcalendar(os.path.join(abs_path, f)):
                         result.append(cls(f_path))
