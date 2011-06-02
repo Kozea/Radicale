@@ -12,7 +12,7 @@
 * WSGI support
 * IPv6 support
 * Smart, verbose and configurable logs
-* Apple iCal 4 support
+* Apple iCal 4 and iPhone support (by Łukasz Langa)
 * LDAP auth backend (by Corentin Le Bail)
 * Owner-less calendars (by René Neumann)
 * Journal entries support
@@ -23,7 +23,6 @@
 ==========================
 
 * Calendar depth
-* iPhone support
 * MacOS and Windows support
 * HEAD requests management
 * htpasswd user from calendar path
