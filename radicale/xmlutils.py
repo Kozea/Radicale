@@ -30,8 +30,8 @@ in them for XML requests (all but PUT).
 try:
     from collections import OrderedDict
 except ImportError:
-    # Python 2.6
-    OrderedDict = dict
+    # Python 2.6 has no OrderedDict, use a dict instead
+    OrderedDict = dict # pylint: disable=C0103
 import re
 import xml.etree.ElementTree as ET
 
@@ -56,7 +56,7 @@ for short, url in NAMESPACES.items():
         ET.register_namespace("" if short == "D" else short, url)
     else:
         # ... and badly with Python 2.6 and 3.1
-        ET._namespace_map[url] = short
+        ET._namespace_map[url] = short # pylint: disable=W0212
 
 
 CLARK_TAG_REGEX = re.compile(r"""
@@ -95,9 +95,11 @@ def _tag(short_name, local):
 
 
 def _tag_from_clark(name):
-    """For a given name using the XML Clark notation returns a human-readable
-    variant of the tag name for known namespaces. Otherwise returns the name
-    as is.
+    """Get a human-readable variant of the XML Clark notation tag ``name``.
+
+    For a given name using the XML Clark notation, return a human-readable
+    variant of the tag name for known namespaces. Otherwise, return the name as
+    is.
 
     """
     match = CLARK_TAG_REGEX.match(name)
@@ -122,8 +124,7 @@ def name_from_path(path, calendar):
 
 
 def props_from_request(root, actions=("set", "remove")):
-    """Returns a list of properties as a dictionary."""
-
+    """Return a list of properties as a dictionary."""
     result = OrderedDict()
     if not isinstance(root, ET.Element):
         root = ET.fromstring(root.encode("utf8"))
@@ -139,6 +140,7 @@ def props_from_request(root, actions=("set", "remove")):
     if prop_element is not None:
         for prop in prop_element:
             result[_tag_from_clark(prop.tag)] = prop.text
+
     return result
 
 
@@ -190,6 +192,7 @@ def propfind(path, xml_request, calendars, user=None):
 
 
 def _propfind_response(path, item, props, user):
+    """Build and return a PROPFIND response."""
     is_calendar = isinstance(item, ical.Calendar)
     if is_calendar:
         with item.props as cal_props:
@@ -278,7 +281,7 @@ def _propfind_response(path, item, props, user):
                     element.text = calendar_props[human_tag]
                 else:
                     is404 = True
-        # not for calendars
+        # Not for calendars
         elif tag == _tag("D", "getcontenttype"):
             element.text = \
                 "text/calendar; component={}".format(item.tag.lower())
@@ -304,8 +307,13 @@ def _propfind_response(path, item, props, user):
 
 
 def _add_propstat_to(element, tag, status_number):
-    """Adds a propstat structure to the given element for the
-    following `tag` with the given `status_number`."""
+    """Add a PROPSTAT response structure to an element.
+
+    The PROPSTAT answer structure is defined in rfc4918-9.1. It is added to the
+    given ``element``, for the following ``tag`` with the given
+    ``status_number``.
+
+    """
     propstat = ET.Element(_tag("D", "propstat"))
     element.append(propstat)
 

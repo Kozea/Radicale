@@ -103,13 +103,16 @@ class Application(object):
         if config.getboolean('logging', 'full_environment'):
             self.headers_log = lambda environ: environ
 
-    def headers_log(self, environ):
+    # This method is overriden in __init__ if full_environment is set
+    # pylint: disable=E0202
+    @staticmethod
+    def headers_log(environ):
+        """Remove environment variables from the headers for logging purpose."""
         request_environ = dict(environ)
         for shell_variable in os.environ:
-            #if shell_variable not in request_environ:
-            #    continue
             del request_environ[shell_variable]
         return request_environ
+    # pylint: enable=E0202
 
     def decode(self, text, environ):
         """Try to magically decode ``text`` according to given ``environ``."""
@@ -267,9 +270,9 @@ class Application(object):
         """Manage MKCALENDAR request."""
         calendar = calendars[0]
         props = xmlutils.props_from_request(content)
-        tz = props.get('C:calendar-timezone')
-        if tz:
-            calendar.replace('', tz)
+        timezone = props.get('C:calendar-timezone')
+        if timezone:
+            calendar.replace('', timezone)
             del props['C:calendar-timezone']
         with calendar.props as calendar_props:
             for key, value in props.items():

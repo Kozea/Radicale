@@ -192,10 +192,10 @@ class Calendar(object):
                 if include_container:
                     result.append(cls(path, principal=True))
                 try:
-                    for f in next(os.walk(abs_path))[2]:
-                        f_path = os.path.join(path, f)
-                        if cls.is_vcalendar(os.path.join(abs_path, f)):
-                            result.append(cls(f_path))
+                    for filename in next(os.walk(abs_path))[2]:
+                        file_path = os.path.join(path, filename)
+                        if cls.is_vcalendar(os.path.join(abs_path, filename)):
+                            result.append(cls(file_path))
                 except StopIteration:
                     # directory does not exist yet
                     pass
@@ -211,13 +211,13 @@ class Calendar(object):
 
     @staticmethod
     def is_vcalendar(path):
-        """Return `True` if there is a VCALENDAR file under `path`."""
-        with open(path) as f:
-            return 'BEGIN:VCALENDAR' == f.read(15)
+        """Return ``True`` if there is a VCALENDAR file under ``path``."""
+        with open(path) as stream:
+            return 'BEGIN:VCALENDAR' == stream.read(15)
 
     @staticmethod
     def _parse(text, item_types, name=None):
-        """Find items with type in ``item_types`` in ``text`` text.
+        """Find items with type in ``item_types`` in ``text``.
 
         If ``name`` is given, give this name to new items in ``text``.
 
@@ -388,20 +388,22 @@ class Calendar(object):
     @property
     @contextmanager
     def props(self):
+        """Get the calendar properties."""
         props_path = self.path + '.props'
-        # on enter
+        # On enter
         properties = {}
         if os.path.exists(props_path):
             with open(props_path) as prop_file:
                 properties.update(json.load(prop_file))
         yield properties
-        # on exit
+        # On exit
         self._create_dirs(props_path)
         with open(props_path, 'w') as prop_file:
             json.dump(properties, prop_file)
 
     @property
     def owner_url(self):
+        """Get the calendar URL according to its owner."""
         if self.owner:
             return '/{}/'.format(self.owner).replace('//', '/')
         else:
@@ -409,4 +411,5 @@ class Calendar(object):
 
     @property
     def url(self):
+        """Get the standard calendar URL."""
         return '/{}/'.format(self.local_path).replace('//', '/')
