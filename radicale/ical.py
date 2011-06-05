@@ -173,11 +173,14 @@ class Calendar(object):
 
     @classmethod
     def from_path(cls, path, depth="infinite", include_container=True):
-        """Return a list of calendars and/or sub-items under the given ``path``
-        relative to the storage folder. If ``depth`` is "0", only the actual
-        object under `path` is returned. Otherwise, also sub-items are appended
-        to the result. If `include_container` is True (the default), the
-        containing object is included in the result.
+        """Return a list of calendars and items under the given ``path``.
+
+        If ``depth`` is "0", only the actual object under ``path`` is
+        returned. Otherwise, also sub-items are appended to the result. If
+        ``include_container`` is ``True`` (the default), the containing object
+        is included in the result.
+
+        The ``path`` is relative to the storage folder.
 
         """
         attributes = posixpath.normpath(path.strip("/")).split("/")
