@@ -120,7 +120,43 @@ iPhone
 iCal
 ~~~~
 
-*To be written*
+.. note::
+   This description assumes you do not have any authentication or encryption
+   configured. The procedure will change accordingly if you do.
+
+In iCal 4.0:
+
+1. Open the ``Preferences`` dialog and select the ``Accounts`` tab
+2. Click the ``+`` button at the lower left to open the account creation wizard
+3. As ``Account type`` select ``CalDAV``
+4. Select any ``User name`` you like
+5. The ``Password`` field can be left empty (we did not configure
+   authentication)
+6. As ``Server address`` use ``domain:port``, for example ``localhost:5232``
+   (this would be the case if you start an unconfigured radicale on your local
+   machine)
+
+Click ``Create``. The wizard will now tell you, that no encryption is in place
+(``Unsecured Connection``). This is expected and will change if you configure
+radicale to use SSL. Click ``Continue``.
+
+The wizard will close, leaving you in the ``Account`` tab again.
+
+.. note::
+   You *might* want to change the ``Server path`` in the ``Server settings``
+   panel as iCal uses your Mac Account name as the default path and not the
+   ``User name`` you chose in the wizard.
+
+The account is now set-up. You can close the ``Preferences`` window.
+
+.. important::
+   To add a calendar to your shiny new account you have to go to the menu and
+   select ``File → New Calendar → <your shiny new account>``. A new calendar
+   appears in the left panel waiting for you to enter a name.
+
+   This is needed because the behaviour of the big ``+`` button in the main
+   window is confusing as you can't focus an empty account and iCal will just
+   add a calendar to another account.
 
 
 Complex Configuration
