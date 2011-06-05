@@ -411,11 +411,11 @@ class Calendar(object):
     def owner_url(self):
         """Get the calendar URL according to its owner."""
         if self.owner:
-            return '/{}/'.format(self.owner).replace('//', '/')
+            return ('/%s/' % self.owner).replace('//', '/')
         else:
             return None
 
     @property
     def url(self):
         """Get the standard calendar URL."""
-        return '/{}/'.format(self.local_path).replace('//', '/')
+        return ('/%s/' % self.local_path).replace('//', '/')

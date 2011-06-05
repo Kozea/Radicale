@@ -224,7 +224,7 @@ def _propfind_response(path, item, props, user):
             if item.owner_url:
                 tag.text = item.owner_url
             elif user:
-                tag.text = '/{}/'.format(user)
+                tag.text = '/%s/' % user
             else:
                 tag.text = path
             element.append(tag)
@@ -245,7 +245,7 @@ def _propfind_response(path, item, props, user):
             # pylint: enable=W0511
         elif tag == _tag("D", "current-user-principal") and user:
             tag = ET.Element(_tag("D", "href"))
-            tag.text = '/{}/'.format(user)
+            tag.text = '/%s/' % user
             element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
@@ -283,8 +283,7 @@ def _propfind_response(path, item, props, user):
                     is404 = True
         # Not for calendars
         elif tag == _tag("D", "getcontenttype"):
-            element.text = \
-                "text/calendar; component={}".format(item.tag.lower())
+            element.text = "text/calendar; component=%s" % item.tag.lower()
         else:
             is404 = True
 
