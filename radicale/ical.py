@@ -31,6 +31,7 @@ import json
 import os
 import posixpath
 import time
+import uuid
 
 from radicale import config
 
@@ -97,14 +98,19 @@ class Item(object):
                     self._name = line.replace("UID:", "").strip()
                     # Do not break, a ``X-RADICALE-NAME`` can appear next
 
-        if "\nX-RADICALE-NAME:" in text:
-            for line in unfold(self.text):
-                if line.startswith("X-RADICALE-NAME:"):
-                    self.text = self.text.replace(
-                        line, "X-RADICALE-NAME:%s" % self._name)
+        if self._name:
+            if "\nX-RADICALE-NAME:" in text:
+                for line in unfold(self.text):
+                    if line.startswith("X-RADICALE-NAME:"):
+                        self.text = self.text.replace(
+                            line, "X-RADICALE-NAME:%s" % self._name)
+            else:
+                self.text = self.text.replace(
+                    "\nUID:", "\nX-RADICALE-NAME:%s\nUID:" % self._name)
         else:
+            self._name = str(uuid.uuid4())
             self.text = self.text.replace(
-                "\nUID:", "\nX-RADICALE-NAME:%s\nUID:" % self._name)
+                "\nEND:", "\nUID:%s\nEND:" % self._name)
 
     @property
     def etag(self):
