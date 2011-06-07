@@ -162,4 +162,4 @@ finally:
 
     # remove pidfile
     if options.pid:
-       os.unlink(options.pid)
+        os.unlink(options.pid)
