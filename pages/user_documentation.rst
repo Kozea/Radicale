@@ -95,7 +95,7 @@ Evolution
 
 First of all, show the calendar page in Evolution by clicking on the calendar
 icon at the bottom of the side pane. Then add a new calendar by choosing in the
-menu ``File``, ``New``, ``Calendar``.
+menu ``File → New → Calendar``.
 
 A new window opens. The calendar ``type`` is ``CalDAV``, and the location is
 something like ``caldav://localhost:5232/user/calendar/``, where you can
