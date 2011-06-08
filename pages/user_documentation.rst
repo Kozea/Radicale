@@ -190,8 +190,9 @@ Main Configuration File
    version of Radicale.
 
 The server configuration can be modified in ``/etc/radicale/config`` or in
-``~/.config/radicale/config``. Here is the default configuration file, with the
-main parameters:
+``~/.config/radicale/config``. You can also set the ``RADICALE_CONFIG``
+environment variable to a path of your choice. Here is the default
+configuration file, with the main parameters:
 
 .. code-block:: ini
 
