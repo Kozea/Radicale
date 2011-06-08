@@ -18,7 +18,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Radicale wsgi file (mod_wsgi and uWSGI compliant).
+Radicale WSGI file (mod_wsgi and uWSGI compliant).
 
 """
 
