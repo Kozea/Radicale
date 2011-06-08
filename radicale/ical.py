@@ -194,7 +194,7 @@ class Calendar(object):
         path = "/".join(attributes[:min(len(attributes), 2)])
         path = path.replace("/", os.sep)
         abs_path = os.path.join(FOLDER, path)
-        if os.path.isdir(abs_path) or len(attributes) == 1:
+        if os.path.isdir(abs_path):
             if depth == "0":
                 result.append(cls(path, principal=True))
             else:
@@ -297,8 +297,6 @@ class Calendar(object):
 
     def write(self, headers=None, items=None):
         """Write calendar with given parameters."""
-        if self.is_principal:
-            return
         headers = headers or self.headers or (
             Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
             Header("VERSION:2.0"))

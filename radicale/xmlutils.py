@@ -264,9 +264,11 @@ def _propfind_response(path, item, props, user):
             if tag == _tag("D", "getcontenttype"):
                 element.text = "text/calendar"
             elif tag == _tag("D", "resourcetype"):
-                if not item.is_principal:
-                    tag = ET.Element(_tag("C", "calendar"))
+                if item.is_principal:
+                    tag = ET.Element(_tag("D", "principal"))
                     element.append(tag)
+                tag = ET.Element(_tag("C", "calendar"))
+                element.append(tag)
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
             elif tag == _tag("D", "owner") and item.owner_url:
@@ -284,6 +286,9 @@ def _propfind_response(path, item, props, user):
         # Not for calendars
         elif tag == _tag("D", "getcontenttype"):
             element.text = "text/calendar; component=%s" % item.tag.lower()
+        elif tag == _tag("D", "resourcetype"):
+            # resourcetype must be returned empty for non-collection elements
+            pass
         else:
             is404 = True
 
