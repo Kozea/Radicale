@@ -159,3 +159,7 @@ finally:
             "Closing server listening to %s port %s" % (
                 server.server_name, server.server_port))
         server.shutdown()
+
+    # remove pidfile
+    if options.pid and options.daemon:
+        os.unlink(options.pid)
