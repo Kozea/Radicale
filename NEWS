@@ -15,6 +15,7 @@
 * Apple iCal 4 and iPhone support (by Łukasz Langa)
 * LDAP auth backend (by Corentin Le Bail)
 * Owner-less calendars (by René Neumann)
+* PID file
 * Journal entries support
 * Drop Python 2.5 support
 
