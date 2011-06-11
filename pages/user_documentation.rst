@@ -166,8 +166,8 @@ Complex Configuration
    This section is written for Linux users, but can be easily adapted for
    Windows and MacOS users.
 
-Installing Server
------------------
+Installing the Server
+---------------------
 
 You can install Radicale CalDAV server with the following command, with
 superuser rights::
@@ -178,8 +178,8 @@ Then, launching the server can be easily done by typing as a normal user::
 
   radicale
 
-Configuring Server
-------------------
+Configuring the Server
+----------------------
 
 Main Configuration File
 ~~~~~~~~~~~~~~~~~~~~~~~
