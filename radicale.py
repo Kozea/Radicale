@@ -160,6 +160,6 @@ finally:
                 server.server_name, server.server_port))
         server.shutdown()
 
-    # remove pidfile
+    # Remove PID file
     if options.pid and options.daemon:
         os.unlink(options.pid)
