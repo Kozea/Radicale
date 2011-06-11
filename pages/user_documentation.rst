@@ -18,8 +18,8 @@ Dependencies
 ------------
 
 Radicale is written in pure python and does not depend on any librabry. It is
-known to work on Python from 2.5 to 3.2 [#]_. The only optional dependency is
-`the python-ldap module <http://www.python-ldap.org/>`_ for LDAP
+known to work on Python 2.6, 2.7, 3.1 and 3.2 [#]_. The only optional
+dependency is `the python-ldap module <http://www.python-ldap.org/>`_ for LDAP
 authentication.
 
 Linux users certainly have Python already installed. For Windows and MacOS
@@ -348,11 +348,8 @@ Python Versions and OS Support
 TLS Support
 -----------
 
-HTTPS support depends on the ``ssl`` module, only available from Python
-2.6. Nevertheless, Radicale without TLS encryption works well with Python 2.5.
-
-Moreover, python 2.6 suffered `a bug <http://bugs.python.org/issue5103>`_
-causing huge timeout problems with TLS. The bug is fixed since Python 2.6.6.
+Python 2.6 suffered `a bug <http://bugs.python.org/issue5103>`_ causing huge
+timeout problems with TLS. The bug is fixed since Python 2.6.6.
 
 Python 2.7 and Python 3.x do not suffer this bug.
 
