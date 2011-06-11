@@ -184,7 +184,8 @@ class Application(object):
                         calendars.append(calendar)
                     continue
                 log.LOGGER.info(
-                    "Checking rights for calendar owned by %s" % calendar.owner)
+                    "Checking rights for calendar owned by %s" % (
+                        calendar.owner or "nobody"))
 
                 if self.acl.has_right(calendar.owner, user, password):
                     log.LOGGER.info("%s allowed" % (user or "anonymous user"))
