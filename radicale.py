@@ -32,6 +32,7 @@ Launch the server according to configuration and command-line options.
 
 """
 
+import atexit
 import os
 import sys
 import optparse
@@ -101,6 +102,14 @@ if options.daemon:
             sys.exit()
     sys.stdout = sys.stderr = open(os.devnull, "w")
 
+# Register exit function
+def cleanup():
+    radicale.log.LOGGER.debug("Cleaning up")
+    # Remove PID file
+    if options.pid and options.daemon:
+        os.unlink(options.pid)
+
+atexit.register(cleanup)
 radicale.log.LOGGER.info("Starting Radicale")
 
 # Create calendar servers
@@ -159,7 +168,3 @@ finally:
             "Closing server listening to %s port %s" % (
                 server.server_name, server.server_port))
         server.shutdown()
-
-    # Remove PID file
-    if options.pid and options.daemon:
-        os.unlink(options.pid)
