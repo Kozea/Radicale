@@ -30,7 +30,7 @@ from radicale import config
 
 
 PUBLIC_USERS = []
-PRIVATE_USERS = [None]
+PRIVATE_USERS = []
 
 
 def _config_users(name):
@@ -40,7 +40,9 @@ def _config_users(name):
     stripped at the beginning and at the end of the values.
 
     """
-    return (user.strip() for user in config.get("acl", name).split(","))
+    for user in config.get("acl", name).split(","):
+        user = user.strip()
+        yield None if user == "None" else user
 
 
 def load():
