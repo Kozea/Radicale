@@ -183,16 +183,24 @@ class Application(object):
                     if last_allowed:
                         calendars.append(calendar)
                     continue
-                log.LOGGER.info(
-                    "Checking rights for calendar owned by %s" % calendar.owner)
 
-                if self.acl.has_right(calendar.owner, user, password):
-                    log.LOGGER.info("%s allowed" % (user or "anonymous user"))
+                if calendar.owner in acl.PUBLIC_USERS:
+                    log.LOGGER.info("Public calendar")
                     calendars.append(calendar)
                     last_allowed = True
                 else:
-                    log.LOGGER.info("%s refused" % (user or "anonymous user"))
-                    last_allowed = False
+                    log.LOGGER.info(
+                        "Checking rights for calendar owned by %s" % (
+                            calendar.owner or "nobody"))
+                    if self.acl.has_right(calendar.owner, user, password):
+                        log.LOGGER.info(
+                            "%s allowed" % (user or "Anonymous user"))
+                        calendars.append(calendar)
+                        last_allowed = True
+                    else:
+                        log.LOGGER.info(
+                            "%s refused" % (user or "Anonymous user"))
+                        last_allowed = False
 
             if calendars:
                 status, headers, answer = function(environ, calendars, content)

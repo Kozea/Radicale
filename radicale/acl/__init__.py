@@ -29,11 +29,29 @@ configuration.
 from radicale import config
 
 
+PUBLIC_USERS = []
+PRIVATE_USERS = []
+
+
+def _config_users(name):
+    """Get an iterable of strings from the configuraton string [acl] ``name``.
+
+    The values must be separated by a comma. The whitespace characters are
+    stripped at the beginning and at the end of the values.
+
+    """
+    for user in config.get("acl", name).split(","):
+        user = user.strip()
+        yield None if user == "None" else user
+
+
 def load():
     """Load list of available ACL managers."""
     acl_type = config.get("acl", "type")
     if acl_type == "None":
         return None
     else:
+        PUBLIC_USERS.extend(_config_users("public_users"))
+        PRIVATE_USERS.extend(_config_users("private_users"))
         module = __import__("radicale.acl", fromlist=[acl_type])
         return getattr(module, acl_type)

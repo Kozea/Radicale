@@ -30,7 +30,7 @@ supported, but md5 is not (see ``htpasswd`` man page to understand why).
 import base64
 import hashlib
 
-from radicale import config
+from radicale import acl, config
 
 
 FILENAME = config.get("acl", "htpasswd_filename")
@@ -63,6 +63,6 @@ def has_right(owner, user, password):
     for line in open(FILENAME).readlines():
         if line.strip():
             login, hash_value = line.strip().split(":")
-            if login == user and (not owner or owner == user):
+            if login == user and (owner in acl.PRIVATE_USERS or owner == user):
                 return globals()["_%s" % ENCRYPTION](hash_value, password)
     return False
