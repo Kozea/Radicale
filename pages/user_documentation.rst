@@ -221,6 +221,10 @@ configuration file, with the main parameters:
   # Access method
   # Value: None | htpasswd | LDAP
   type = None
+  # Usernames used for public calendars, separated by a comma
+  public_users = public
+  # Usernames used for private calendars, separated by a comma
+  private_users = private
   # Htpasswd filename
   htpasswd_filename = /etc/radicale/users
   # Htpasswd encryption method
@@ -334,17 +338,47 @@ options. These options are available by typing::
 
 
 Authentication and URLs
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 If no authentication method is set, calendars are available at ``/calendar``
-and ``/folder/calendar`` URLs.
+and ``/folder/calendar`` URLs. Else, calendars are public, private or personal,
+depending on their URLs.
 
-If an authentication method is set:
+Public Calendars
+~~~~~~~~~~~~~~~~
 
-- calendars at ``/calendar`` URLs are available for all the authenticated
-  people;
-- calendars at ``/user/calendar`` URLs are only available for the authenticated
-  person called ``user``.
+Public users are available for everybody, authenticated or not.
+
+Calendars at ``/public_user/calendar`` URLs are public. Public users are
+defined in the ``acl → public_users`` configuration variable. If ``None`` is in
+the list of public users, public calendars are also available at ``/calendar``
+URLs.
+
+.. important::
+
+   Public calendars allow anybody to create calendars, leading to possible
+   security problems. If you do not want to allow public calendars, just use an
+   empty string in the ``acl → public_users`` configuration variable.
+
+
+Private Calendars
+~~~~~~~~~~~~~~~~~
+
+Private calendars are available for all the authenticated users.
+
+Calendars at ``/private_user/calendar`` URLs are private. Private users are
+defined in the ``acl → public_users`` configuration variable. If ``None`` is in
+the list of private users, private calendars are also available at
+``/calendar`` URLs.
+
+
+Personal Calendars
+~~~~~~~~~~~~~~~~~~
+
+Personal calendars are only available for the calendar owner.
+
+Calendars at ``/owner/calendar`` URLs are personal. They are only available for
+the authenticated user called ``owner``.
 
 
 Python Versions and OS Support
