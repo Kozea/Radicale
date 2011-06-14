@@ -31,6 +31,7 @@ should have been included in this package.
 import os
 import pprint
 import base64
+import posixpath
 import socket
 import ssl
 import wsgiref.simple_server
@@ -38,9 +39,11 @@ import wsgiref.simple_server
 # pylint: disable=F0401
 try:
     from http import client, server
+    import urllib.parse as urllib
 except ImportError:
     import httplib as client
     import BaseHTTPServer as server
+    import urllib
 # pylint: enable=F0401
 
 from radicale import acl, config, ical, log, xmlutils
@@ -137,12 +140,22 @@ class Application(object):
                 pass
         raise UnicodeDecodeError
 
+    @staticmethod
+    def sanitize_uri(uri):
+        """Clean URI: unquote and remove /../ to prevent access to other data."""
+        uri = posixpath.normpath(urllib.unquote(uri))
+        return uri
+
     def __call__(self, environ, start_response):
         """Manage a request."""
         log.LOGGER.info("%s request at %s received" % (
                 environ["REQUEST_METHOD"], environ["PATH_INFO"]))
         headers = pprint.pformat(self.headers_log(environ))
         log.LOGGER.debug("Request headers:\n%s" % headers)
+
+        # Sanitize request URI
+        environ["PATH_INFO"] = self.sanitize_uri(environ["PATH_INFO"])
+        log.LOGGER.debug("Sanitized path: %s", environ["PATH_INFO"])
 
         # Get content
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
