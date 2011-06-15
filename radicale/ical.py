@@ -183,7 +183,8 @@ class Calendar(object):
         The ``path`` is relative to the storage folder.
 
         """
-        attributes = posixpath.normpath(path.strip("/")).split("/")
+        # First do normpath and then strip, to prevent access to FOLDER/../
+        attributes = posixpath.normpath(path).strip("/").split("/")
         if not attributes:
             return None
         if attributes[-1].endswith(".ics"):
