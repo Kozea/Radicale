@@ -143,8 +143,7 @@ class Application(object):
     @staticmethod
     def sanitize_uri(uri):
         """Clean URI: unquote and remove /../ to prevent access to other data."""
-        uri = posixpath.normpath(urllib.unquote(uri))
-        return uri
+        return posixpath.normpath(urllib.unquote(uri))
 
     def __call__(self, environ, start_response):
         """Manage a request."""
