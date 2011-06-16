@@ -201,7 +201,7 @@ def _propfind_response(path, item, props, user):
     response = ET.Element(_tag("D", "response"))
 
     href = ET.Element(_tag("D", "href"))
-    href.text = item.url if is_calendar else path + item.name
+    href.text = item.url if is_calendar else "%s/%s" % (path, item.name)
     response.append(href)
 
     propstat404 = ET.Element(_tag("D", "propstat"))
