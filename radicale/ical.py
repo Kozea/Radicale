@@ -163,7 +163,12 @@ class Calendar(object):
     tag = "VCALENDAR"
 
     def __init__(self, path, principal=False):
-        """Initialize the calendar with ``cal`` and ``user`` parameters."""
+        """Initialize the calendar.
+
+        ``path`` must be the normalized relative path of the calendar, using
+        the slash as the folder delimiter, with no leading nor trailing slash.
+
+        """
         self.encoding = "utf-8"
         split_path = path.split("/")
         self.owner = split_path[0] if len(split_path) > 1 else None
@@ -193,8 +198,7 @@ class Calendar(object):
         result = []
 
         path = "/".join(attributes[:min(len(attributes), 2)])
-        path = path.replace("/", os.sep)
-        abs_path = os.path.join(FOLDER, path)
+        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
         if os.path.isdir(abs_path):
             if depth == "0":
                 result.append(cls(path, principal=True))
@@ -203,9 +207,8 @@ class Calendar(object):
                     result.append(cls(path, principal=True))
                 try:
                     for filename in next(os.walk(abs_path))[2]:
-                        file_path = os.path.join(path, filename)
                         if cls.is_vcalendar(os.path.join(abs_path, filename)):
-                            result.append(cls(file_path))
+                            result.append(cls(os.path.join(path, filename)))
                 except StopIteration:
                     # directory does not exist yet
                     pass
@@ -413,11 +416,11 @@ class Calendar(object):
     def owner_url(self):
         """Get the calendar URL according to its owner."""
         if self.owner:
-            return ('/%s/' % self.owner).replace('//', '/')
+            return "/%s/" % self.owner
         else:
             return None
 
     @property
     def url(self):
         """Get the standard calendar URL."""
-        return ('/%s/' % self.local_path).replace('//', '/')
+        return "/%s/" % self.local_path
