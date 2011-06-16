@@ -210,7 +210,7 @@ class Calendar(object):
                         if cls.is_vcalendar(os.path.join(abs_path, filename)):
                             result.append(cls(os.path.join(path, filename)))
                 except StopIteration:
-                    # directory does not exist yet
+                    # Directory does not exist yet
                     pass
         else:
             calendar = cls(path)
