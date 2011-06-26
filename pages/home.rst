@@ -45,5 +45,4 @@ Radicale supports the latest versions of:
 - `GNOME Evolution <http://projects.gnome.org/evolution/>`_
 - `Google Android <http://www.android.com/>`_
 - `Apple iPhone <http://www.apple.com/iphone/>`_
-- `Apple iCal
-  <http://www.apple.com/macosx/what-is-macosx/mail-ical-address-book.html>`_
+- `Apple iCal <http://www.apple.com/macosx/apps/>`_
