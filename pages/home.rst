@@ -29,7 +29,7 @@ Main Features
 =============
 
 - Shares calendars through CalDAV and HTTP
-- Supports events and todos
+- Supports events, todos and journal entries
 - Works out-of-the-box, no installation nor configuration required
 - Warns users on concurrent edition
 - Limits access by authentication
