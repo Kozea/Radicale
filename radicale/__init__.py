@@ -166,8 +166,8 @@ class Application(object):
             content = None
 
         # Find calendar(s)
-        items = ical.Calendar.from_path(environ["PATH_INFO"],
-            environ.get("HTTP_DEPTH", "0"))
+        items = ical.Calendar.from_path(
+            environ["PATH_INFO"], environ.get("HTTP_DEPTH", "0"))
 
         # Get function corresponding to method
         function = getattr(self, environ["REQUEST_METHOD"].lower())
