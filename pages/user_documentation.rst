@@ -52,10 +52,6 @@ More clients will be supported in the future. However, it may work with any
 calendar client which implements CalDAV specifications too (luck is highly
 recommanded).
 
-To download Lightning, go to the `Lightning project website
-<http://www.mozilla.org/projects/calendar/lightning/>`_ and choose the latest
-version. Follow the instructions depending on your operating system.
-
 
 Simple Usage
 ============
