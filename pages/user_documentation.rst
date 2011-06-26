@@ -46,6 +46,7 @@ of:
 - `GNOME Evolution <http://projects.gnome.org/evolution/>`_
 - `Google Android <http://www.android.com/>`_
 - `Apple iPhone <http://www.apple.com/iphone/>`_
+- `Apple iCal <http://www.apple.com/macosx/apps/>`_
 
 More clients will be supported in the future. However, it may work with any
 calendar client which implements CalDAV specifications too (luck is highly
