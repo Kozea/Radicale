@@ -239,6 +239,21 @@ class Application(object):
     # All these functions must have the same parameters, some are useless
     # pylint: disable=W0612,W0613,R0201
 
+    def delete(self, environ, calendars, content):
+        """Manage DELETE request."""
+        calendar = calendars[0]
+        item = calendar.get_item(
+            xmlutils.name_from_path(environ["PATH_INFO"], calendar))
+        if item and environ.get("HTTP_IF_MATCH", item.etag) == item.etag:
+            # No ETag precondition or precondition verified, delete item
+            answer = xmlutils.delete(environ["PATH_INFO"], calendar)
+            status = client.NO_CONTENT
+        else:
+            # No item or ETag precondition not verified, do not delete item
+            answer = None
+            status = client.PRECONDITION_FAILED
+        return status, {}, answer
+
     def get(self, environ, calendars, content):
         """Manage GET request."""
         calendar = calendars[0]
@@ -270,21 +285,6 @@ class Application(object):
         """Manage HEAD request."""
         status, headers, answer = self.get(environ, calendars, content)
         return status, headers, None
-
-    def delete(self, environ, calendars, content):
-        """Manage DELETE request."""
-        calendar = calendars[0]
-        item = calendar.get_item(
-            xmlutils.name_from_path(environ["PATH_INFO"], calendar))
-        if item and environ.get("HTTP_IF_MATCH", item.etag) == item.etag:
-            # No ETag precondition or precondition verified, delete item
-            answer = xmlutils.delete(environ["PATH_INFO"], calendar)
-            status = client.NO_CONTENT
-        else:
-            # No item or ETag precondition not verified, do not delete item
-            answer = None
-            status = client.PRECONDITION_FAILED
-        return status, {}, answer
 
     def mkcalendar(self, environ, calendars, content):
         """Manage MKCALENDAR request."""
