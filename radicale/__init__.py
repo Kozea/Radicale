@@ -39,11 +39,12 @@ import wsgiref.simple_server
 # pylint: disable=F0401
 try:
     from http import client, server
-    import urllib.parse as urllib
+    from urllib.parse import unquote, urlparse
 except ImportError:
     import httplib as client
     import BaseHTTPServer as server
-    import urllib
+    from urllib import unquote
+    from urlparse import urlparse
 # pylint: enable=F0401
 
 from radicale import acl, config, ical, log, xmlutils
@@ -143,7 +144,7 @@ class Application(object):
     @staticmethod
     def sanitize_uri(uri):
         """Clean URI: unquote and remove /../ to prevent access to other data."""
-        return posixpath.normpath(urllib.unquote(uri))
+        return posixpath.normpath(unquote(uri))
 
     def __call__(self, environ, start_response):
         """Manage a request."""
@@ -300,10 +301,36 @@ class Application(object):
         calendar.write()
         return client.CREATED, {}, None
 
+    def move(self, environ, calendars, content):
+        """Manage MOVE request."""
+        from_calendar = calendars[0]
+        from_name = xmlutils.name_from_path(environ["PATH_INFO"], from_calendar)
+        if from_name:
+            item = calendar.get_item(from_name)
+            if item:
+                # Move the item
+                to_url_parts = urlparse(environ["HTTP_DESTINATION"])
+                if to_url_parts.netloc == environ["HTTP_HOST"]:
+                    to_path, to_name = posixpath.split(to_url_parts.path)
+                    to_calendar = ical.Calendar.from_path(to_path)
+                    to_calendar.append(to_name, item.text)
+                    from_calendar.remove(from_name)
+                    return client.CREATED, {}, None
+                else:
+                    # Remote destination server, not supported
+                    return client.BAD_GATEWAY, {}, None
+            else:
+                # No item found
+                return client.GONE, {}, None
+        else:
+            # Moving calendars, not supported
+            return client.FORBIDDEN, {}, None
+
+
     def options(self, environ, calendars, content):
         """Manage OPTIONS request."""
         headers = {
-            "Allow": "DELETE, HEAD, GET, MKCALENDAR, " \
+            "Allow": "DELETE, HEAD, GET, MKCALENDAR, MOVE, " \
                 "OPTIONS, PROPFIND, PROPPATCH, PUT, REPORT",
             "DAV": "1, calendar-access"}
         return client.OK, headers, None
