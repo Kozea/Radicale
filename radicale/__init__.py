@@ -176,7 +176,7 @@ class Application(object):
         # Check rights
         if not items or not self.acl:
             # No calendar or no acl, don't check rights
-            status, headers, answer = function(environ, items, content)
+            status, headers, answer = function(environ, items, content, None)
         else:
             # Ask authentication backend to check rights
             authorization = environ.get("HTTP_AUTHORIZATION", None)
@@ -185,7 +185,6 @@ class Application(object):
                 auth = authorization.lstrip("Basic").strip().encode("ascii")
                 user, password = self.decode(
                     base64.b64decode(auth), environ).split(":")
-                environ['USER'] = user
             else:
                 user = password = None
 
@@ -216,7 +215,8 @@ class Application(object):
                         last_allowed = False
 
             if calendars:
-                status, headers, answer = function(environ, calendars, content)
+                status, headers, answer = function(
+                    environ, calendars, content, user)
             else:
                 status = client.UNAUTHORIZED
                 headers = {
@@ -240,7 +240,7 @@ class Application(object):
     # All these functions must have the same parameters, some are useless
     # pylint: disable=W0612,W0613,R0201
 
-    def delete(self, environ, calendars, content):
+    def delete(self, environ, calendars, content, user):
         """Manage DELETE request."""
         calendar = calendars[0]
         item = calendar.get_item(
@@ -255,7 +255,7 @@ class Application(object):
             status = client.PRECONDITION_FAILED
         return status, {}, answer
 
-    def get(self, environ, calendars, content):
+    def get(self, environ, calendars, content, user):
         """Manage GET request."""
         calendar = calendars[0]
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], calendar)
@@ -282,12 +282,12 @@ class Application(object):
         answer = answer_text.encode(self.encoding)
         return client.OK, headers, answer
 
-    def head(self, environ, calendars, content):
+    def head(self, environ, calendars, content, user):
         """Manage HEAD request."""
         status, headers, answer = self.get(environ, calendars, content)
         return status, headers, None
 
-    def mkcalendar(self, environ, calendars, content):
+    def mkcalendar(self, environ, calendars, content, user):
         """Manage MKCALENDAR request."""
         calendar = calendars[0]
         props = xmlutils.props_from_request(content)
@@ -301,7 +301,7 @@ class Application(object):
         calendar.write()
         return client.CREATED, {}, None
 
-    def move(self, environ, calendars, content):
+    def move(self, environ, calendars, content, user):
         """Manage MOVE request."""
         from_calendar = calendars[0]
         from_name = xmlutils.name_from_path(environ["PATH_INFO"], from_calendar)
@@ -327,7 +327,7 @@ class Application(object):
             return client.FORBIDDEN, {}, None
 
 
-    def options(self, environ, calendars, content):
+    def options(self, environ, calendars, content, user):
         """Manage OPTIONS request."""
         headers = {
             "Allow": "DELETE, HEAD, GET, MKCALENDAR, MOVE, " \
@@ -335,16 +335,16 @@ class Application(object):
             "DAV": "1, calendar-access"}
         return client.OK, headers, None
 
-    def propfind(self, environ, calendars, content):
+    def propfind(self, environ, calendars, content, user):
         """Manage PROPFIND request."""
         headers = {
             "DAV": "1, calendar-access",
             "Content-Type": "text/xml"}
         answer = xmlutils.propfind(
-            environ["PATH_INFO"], content, calendars, environ.get("USER"))
+            environ["PATH_INFO"], content, calendars, user)
         return client.MULTI_STATUS, headers, answer
 
-    def proppatch(self, environ, calendars, content):
+    def proppatch(self, environ, calendars, content, user):
         """Manage PROPPATCH request."""
         calendar = calendars[0]
         answer = xmlutils.proppatch(environ["PATH_INFO"], content, calendar)
@@ -353,7 +353,7 @@ class Application(object):
             "Content-Type": "text/xml"}
         return client.MULTI_STATUS, headers, answer
 
-    def put(self, environ, calendars, content):
+    def put(self, environ, calendars, content, user):
         """Manage PUT request."""
         calendar = calendars[0]
         headers = {}
@@ -373,7 +373,7 @@ class Application(object):
             status = client.PRECONDITION_FAILED
         return status, headers, None
 
-    def report(self, environ, calendars, content):
+    def report(self, environ, calendars, content, user):
         """Manage REPORT request."""
         # TODO: support multiple calendars here 
         calendar = calendars[0]
