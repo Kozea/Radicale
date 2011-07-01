@@ -192,12 +192,12 @@ class Calendar(object):
         attributes = posixpath.normpath(path).strip("/").split("/")
         if not attributes:
             return None
-        if attributes[-1].endswith(".ics"):
+        if not (os.path.isfile(os.path.join(FOLDER, *attributes)) or path.endswith("/")):
             attributes.pop()
 
         result = []
 
-        path = "/".join(attributes[:min(len(attributes), 2)])
+        path = "/".join(attributes)
         abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
         if os.path.isdir(abs_path):
             if depth == "0":
@@ -213,10 +213,10 @@ class Calendar(object):
                     # Directory does not exist yet
                     pass
         else:
-            calendar = cls(path)
             if depth == "0":
-                result.append(calendar)
+                result.append(cls(path))
             else:
+                calendar = cls(path, principal=True)
                 if include_container:
                     result.append(calendar)
                 result.extend(calendar.components)

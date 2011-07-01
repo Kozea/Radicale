@@ -201,7 +201,7 @@ def _propfind_response(path, item, props, user):
     response = ET.Element(_tag("D", "response"))
 
     href = ET.Element(_tag("D", "href"))
-    href.text = item.url if is_calendar else "%s/%s" % (path, item.name)
+    href.text = (item.url if is_calendar else "%s/%s" % (path, item.name)).replace('//', '/')
     response.append(href)
 
     propstat404 = ET.Element(_tag("D", "propstat"))
@@ -221,12 +221,7 @@ def _propfind_response(path, item, props, user):
             element.text = item.etag
         elif tag == _tag("D", "principal-URL"):
             tag = ET.Element(_tag("D", "href"))
-            if item.owner_url:
-                tag.text = item.owner_url
-            elif user:
-                tag.text = '/%s/' % user
-            else:
-                tag.text = path
+            tag.text = path
             element.append(tag)
         elif tag in (
             _tag("D", "principal-collection-set"),
@@ -267,8 +262,9 @@ def _propfind_response(path, item, props, user):
                 if item.is_principal:
                     tag = ET.Element(_tag("D", "principal"))
                     element.append(tag)
-                tag = ET.Element(_tag("C", "calendar"))
-                element.append(tag)
+                else:
+                    tag = ET.Element(_tag("C", "calendar"))
+                    element.append(tag)
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
             elif tag == _tag("D", "owner") and item.owner_url:
