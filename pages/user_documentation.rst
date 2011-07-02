@@ -44,7 +44,9 @@ of:
 
 - `Mozilla Lightning <http://www.mozilla.org/projects/calendar/lightning/>`_
 - `GNOME Evolution <http://projects.gnome.org/evolution/>`_
-- `Google Android <http://www.android.com/>`_
+- `KDE KOrganizer <http://userbase.kde.org/KOrganizer/>`_
+- `aCal <http://wiki.acal.me/wiki/Main_Page>`_ for `Google Android
+  <http://www.android.com/>`_
 - `Apple iPhone <http://www.apple.com/iphone/>`_
 - `Apple iCal <http://www.apple.com/macosx/apps/>`_
 
@@ -104,8 +106,13 @@ for Evolution and are not uploaded.
 
 Click on ``OK``, and your calendar should be ready for use.
 
-Android
-~~~~~~~
+KOrganizer
+~~~~~~~~~~
+
+*To be written*
+
+aCal for Android
+~~~~~~~~~~~~~~~~
 
 *To be written*
 
@@ -137,14 +144,8 @@ Click ``Create``. The wizard will now tell you, that no encryption is in place
 (``Unsecured Connection``). This is expected and will change if you configure
 radicale to use SSL. Click ``Continue``.
 
-The wizard will close, leaving you in the ``Account`` tab again.
-
-.. note::
-   You *might* want to change the ``Server path`` in the ``Server settings``
-   panel as iCal uses your Mac Account name as the default path and not the
-   ``User name`` you chose in the wizard.
-
-The account is now set-up. You can close the ``Preferences`` window.
+The wizard will close, leaving you in the ``Account`` tab again. The account is
+now set-up. You can close the ``Preferences`` window.
 
 .. important::
    To add a calendar to your shiny new account you have to go to the menu and

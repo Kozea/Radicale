@@ -43,6 +43,8 @@ Radicale supports the latest versions of:
 
 - `Mozilla Lightning <http://www.mozilla.org/projects/calendar/lightning/>`_
 - `GNOME Evolution <http://projects.gnome.org/evolution/>`_
-- `Google Android <http://www.android.com/>`_
+- `KDE KOrganizer <http://userbase.kde.org/KOrganizer/>`_
+- `aCal <http://wiki.acal.me/wiki/Main_Page>`_ for `Google Android
+  <http://www.android.com/>`_
 - `Apple iPhone <http://www.apple.com/iphone/>`_
 - `Apple iCal <http://www.apple.com/macosx/apps/>`_
