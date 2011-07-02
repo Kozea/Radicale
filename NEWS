@@ -13,9 +13,11 @@
 * IPv6 support
 * Smart, verbose and configurable logs
 * Apple iCal 4 and iPhone support (by Łukasz Langa)
+* KDE KOrganizer support
 * LDAP auth backend (by Corentin Le Bail)
 * Public and private calendars (by René Neumann)
 * PID file
+* MOVE requests management
 * Journal entries support
 * Drop Python 2.5 support
 
