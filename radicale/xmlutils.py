@@ -86,7 +86,8 @@ def _pretty_xml(element, level=0):
         if level and (not element.tail or not element.tail.strip()):
             element.tail = i
     if not level:
-        return ET.tostring(element, config.get("encoding", "request"))
+        return '<?xml version="1.0"?>\n' + ET.tostring(
+            element, config.get("encoding", "request"))
 
 
 def _tag(short_name, local):
