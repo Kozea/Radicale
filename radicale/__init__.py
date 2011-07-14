@@ -39,11 +39,11 @@ import wsgiref.simple_server
 # pylint: disable=F0401
 try:
     from http import client, server
-    from urllib.parse import unquote, urlparse
+    from urllib.parse import quote, unquote, urlparse
 except ImportError:
     import httplib as client
     import BaseHTTPServer as server
-    from urllib import unquote
+    from urllib import quote, unquote
     from urlparse import urlparse
 # pylint: enable=F0401
 
@@ -221,6 +221,14 @@ class Application(object):
             if calendars:
                 status, headers, answer = function(
                     environ, calendars, content, user)
+            elif user and self.acl.has_right(user, user, password):
+                # Check if the user/password couple matches,
+                # redirect user to his principal home in this case
+                location = "/%s/" % str(quote(user))
+                log.LOGGER.info("redirecting to %s" % location)
+                status = client.FOUND
+                headers = {"Location": location}
+                answer = "Redirecting to %s" % location
             else:
                 status = client.UNAUTHORIZED
                 headers = {

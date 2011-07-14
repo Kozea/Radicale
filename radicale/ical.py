@@ -171,7 +171,10 @@ class Calendar(object):
         """
         self.encoding = "utf-8"
         split_path = path.split("/")
-        self.owner = split_path[0] if len(split_path) > 1 else None
+        if (principal and split_path) or len(split_path) > 1:
+            self.owner = split_path[0]
+        else:
+            self.owner = None
         self.path = os.path.join(FOLDER, path.replace("/", os.sep))
         self.local_path = path if path != '.' else ''
         self.is_principal = principal
