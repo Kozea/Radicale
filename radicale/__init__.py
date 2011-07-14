@@ -36,16 +36,15 @@ import socket
 import ssl
 import wsgiref.simple_server
 # Manage Python2/3 different modules
-# pylint: disable=F0401
+# pylint: disable=F0401,E0611
 try:
-    from http import client, server
+    from http import client
     from urllib.parse import quote, unquote, urlparse
 except ImportError:
     import httplib as client
-    import BaseHTTPServer as server
     from urllib import quote, unquote
     from urlparse import urlparse
-# pylint: enable=F0401
+# pylint: enable=F0401,E0611
 
 from radicale import acl, config, ical, log, xmlutils
 
@@ -143,7 +142,7 @@ class Application(object):
 
     @staticmethod
     def sanitize_uri(uri):
-        """Clean URI: unquote and remove /../ to prevent access to other data."""
+        """Unquote and remove /../ to prevent access to other data."""
         uri = unquote(uri)
         trailing_slash = "/" if uri.endswith("/") else ""
         uri = posixpath.normpath(uri)
@@ -318,7 +317,7 @@ class Application(object):
         from_calendar = calendars[0]
         from_name = xmlutils.name_from_path(environ["PATH_INFO"], from_calendar)
         if from_name:
-            item = calendar.get_item(from_name)
+            item = from_calendar.get_item(from_name)
             if item:
                 # Move the item
                 to_url_parts = urlparse(environ["HTTP_DESTINATION"])

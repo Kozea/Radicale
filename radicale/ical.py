@@ -195,7 +195,8 @@ class Calendar(object):
         attributes = posixpath.normpath(path).strip("/").split("/")
         if not attributes:
             return None
-        if not (os.path.isfile(os.path.join(FOLDER, *attributes)) or path.endswith("/")):
+        if not (os.path.isfile(os.path.join(FOLDER, *attributes)) or
+                path.endswith("/")):
             attributes.pop()
 
         result = []
