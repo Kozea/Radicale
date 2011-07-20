@@ -242,7 +242,7 @@ class Application(object):
             headers["Content-Length"] = str(len(answer))
 
         # Start response
-        status = "%i %s" % (status, client.responses.get(status, ""))
+        status = "%i %s" % (status, client.responses.get(status, "Unknown"))
         start_response(status, list(headers.items()))
 
         # Return response content
