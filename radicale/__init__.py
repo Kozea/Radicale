@@ -295,7 +295,7 @@ class Application(object):
 
     def head(self, environ, calendars, content, user):
         """Manage HEAD request."""
-        status, headers, answer = self.get(environ, calendars, content)
+        status, headers, answer = self.get(environ, calendars, content, user)
         return status, headers, None
 
     def mkcalendar(self, environ, calendars, content, user):
