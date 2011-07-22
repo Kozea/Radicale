@@ -177,7 +177,7 @@ class Calendar(object):
             self.owner = split_path[0]
         elif len(split_path) > 1:
             # URL with at least one folder
-            self.owner = split_path[-1]
+            self.owner = split_path[0]
         else:
             self.owner = None
         self.local_path = path if path != '.' else ''
