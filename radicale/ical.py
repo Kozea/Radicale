@@ -171,11 +171,15 @@ class Calendar(object):
         """
         self.encoding = "utf-8"
         split_path = path.split("/")
-        if (principal and split_path) or len(split_path) > 1:
+        self.path = os.path.join(FOLDER, path.replace("/", os.sep))
+        if principal and split_path and os.path.isdir(self.path):
+            # Already existing principal calendar
             self.owner = split_path[0]
+        elif len(split_path) > 1:
+            # URL with at least one folder
+            self.owner = split_path[-1]
         else:
             self.owner = None
-        self.path = os.path.join(FOLDER, path.replace("/", os.sep))
         self.local_path = path if path != '.' else ''
         self.is_principal = principal
 
