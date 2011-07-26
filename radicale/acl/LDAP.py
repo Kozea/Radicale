@@ -47,7 +47,8 @@ def has_right(owner, user, password):
         CONNEXION.simple_bind_s(BINDDN, PASSWORD)
 
     distinguished_name = "%s=%s" % (ATTRIBUTE, ldap.dn.escape_dn_chars(user))
-    log.LOGGER.debug("LDAP bind for %s in base %s" % (distinguished_name, BASE))
+    log.LOGGER.debug(
+        "LDAP bind for %s in base %s" % (distinguished_name, BASE))
 
     users = CONNEXION.search_s(BASE, ldap.SCOPE_ONELEVEL, distinguished_name)
     if users:
@@ -61,6 +62,6 @@ def has_right(owner, user, password):
             return True
     else:
         log.LOGGER.debug("User %s not found" % user)
-        
+
     log.LOGGER.debug("LDAP bind failed")
     return False

@@ -110,7 +110,7 @@ class Application(object):
     # pylint: disable=E0202
     @staticmethod
     def headers_log(environ):
-        """Remove environment variables from the headers for logging purpose."""
+        """Remove environment variables from the headers for logging."""
         request_environ = dict(environ)
         for shell_variable in os.environ:
             del request_environ[shell_variable]
@@ -315,7 +315,8 @@ class Application(object):
     def move(self, environ, calendars, content, user):
         """Manage MOVE request."""
         from_calendar = calendars[0]
-        from_name = xmlutils.name_from_path(environ["PATH_INFO"], from_calendar)
+        from_name = xmlutils.name_from_path(
+            environ["PATH_INFO"], from_calendar)
         if from_name:
             item = from_calendar.get_item(from_name)
             if item:
@@ -336,7 +337,6 @@ class Application(object):
         else:
             # Moving calendars, not supported
             return client.FORBIDDEN, {}, None
-
 
     def options(self, environ, calendars, content, user):
         """Manage OPTIONS request."""
@@ -386,7 +386,7 @@ class Application(object):
 
     def report(self, environ, calendars, content, user):
         """Manage REPORT request."""
-        # TODO: support multiple calendars here 
+        # TODO: support multiple calendars here
         calendar = calendars[0]
         headers = {'Content-Type': 'text/xml'}
         answer = xmlutils.report(environ["PATH_INFO"], content, calendar)

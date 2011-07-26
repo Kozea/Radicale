@@ -53,7 +53,7 @@ def _sha1(hash_value, password):
     """Check if ``hash_value`` and ``password`` match using sha1 method."""
     hash_value = hash_value.replace("{SHA}", "").encode("ascii")
     password = password.encode(config.get("htpasswd_encoding", "stock"))
-    sha1 = hashlib.sha1() # pylint: disable=E1101
+    sha1 = hashlib.sha1()  # pylint: disable=E1101
     sha1.update(password)
     return sha1.digest() == base64.b64decode(hash_value)
 

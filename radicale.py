@@ -22,7 +22,7 @@
 # This file is just a script, allow [a-z0-9]* variable names
 # pylint: disable-msg=C0103
 
-# ``import radicale`` refers to the ``radicale`` module, not ``radicale.py`` 
+# ``import radicale`` refers to the ``radicale`` module, not ``radicale.py``
 # pylint: disable-msg=W0406
 
 """
@@ -163,7 +163,7 @@ finally:
 
     radicale.log.LOGGER.info("Stopping Radicale")
 
-    for server in servers:             
+    for server in servers:
         radicale.log.LOGGER.debug(
             "Closing server listening to %s port %s" % (
                 server.server_name, server.server_port))

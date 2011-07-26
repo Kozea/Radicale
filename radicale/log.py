@@ -35,9 +35,9 @@ from radicale import config
 LOGGER = logging.getLogger()
 FILENAME = os.path.expanduser(config.get("logging", "config"))
 
+
 def start():
     """Start the logging according to the configuration."""
-
     if os.path.exists(FILENAME):
         # Configuration taken from file
         logging.config.fileConfig(FILENAME)
