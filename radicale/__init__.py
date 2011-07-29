@@ -113,7 +113,8 @@ class Application(object):
         """Remove environment variables from the headers for logging."""
         request_environ = dict(environ)
         for shell_variable in os.environ:
-            del request_environ[shell_variable]
+            if shell_variable in request_environ:
+                del request_environ[shell_variable]
         return request_environ
     # pylint: enable=E0202
 
