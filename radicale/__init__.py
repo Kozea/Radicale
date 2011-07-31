@@ -49,7 +49,7 @@ except ImportError:
 from radicale import acl, config, ical, log, xmlutils
 
 
-VERSION = "git"
+VERSION = "0.6"
 
 
 class HTTPServer(wsgiref.simple_server.WSGIServer, object):
