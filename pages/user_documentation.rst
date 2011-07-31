@@ -111,8 +111,13 @@ KOrganizer
 
 *To be written*
 
-aCal for Android
-~~~~~~~~~~~~~~~~
+CalDAV-Sync
+~~~~~~~~~~~
+
+*To be written*
+
+aCal
+~~~~
 
 *To be written*
 
