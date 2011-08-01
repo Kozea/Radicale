@@ -17,6 +17,11 @@ a {
 color: #4e9a06;
 }
 
+b, strong {
+font-weight: normal;
+text-outline: 0.5px black;
+}
+
 h1 a:hover,
 h1 a:focus {
 background: #eeeeec url(img/radicale.png) 50% 50% no-repeat;
