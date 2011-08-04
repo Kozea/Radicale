@@ -340,6 +340,46 @@ options. These options are available by typing::
   radicale --help
 
 
+Use Radicale with Apache2 and mod_wsgi
+--------------------------------------
+
+For using Radicale with Apache's ``mod_wsgi``, you first have to write
+your ``.wsgi`` file (in ``/var/www`` for example):
+
+.. code-block:: python
+
+  import radicale
+  application = radicale.Application()
+
+.. note::
+   We assume that Radicale is installed in your Python path.
+
+Next you have to create the apache virtual host (adapt the configuration
+to your environment):
+
+.. code-block:: apache
+
+  <VirtualHost *:80>
+      ServerName cal.yourdomaine.org
+
+      WSGIDaemonProcess radicale user=www-data group=www-data threads=1
+      WSGIScriptAlias / /var/www/radicale.wsgi
+
+      <Directory /var/www>
+          WSGIProcessGroup radicale
+          WSGIApplicationGroup %{GLOBAL}
+          AllowOverride None
+          Order allow,deny
+          allow from all
+      </Directory>
+  </VirtualHost>
+
+.. note::
+  You should use the root of the (sub)domain (``WSGIScriptAlias /``), else
+  some CalDAV features will not work.
+  
+
+
 Authentication and URLs
 -----------------------
 
