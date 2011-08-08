@@ -1,52 +1,235 @@
+@font-face {
+  font-family: "menu";
+  src: url(LANENAR_.ttf);
+}
+
 html {
-background: #eeeeec url(img/radicale_back.png) 130% -150px no-repeat;
+  background: url(img/top.jpg)repeat-x 0 82px,
+              url(img/back.jpg);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body{
+  background:  url(img/radicale_back.png)no-repeat 100% 100% fixed , 
+               url(img/r.jpg)no-repeat 100%;
+  color: #818181;
+  margin:0;
+}
+
+a{
+  color: #4e9a06;
+  text-decoration: none;
+  transition: color 0.3s linear;
+}
+
+a:hover{
+  color: #376e04;
+}
+
+h2{
+  background: url(img/icon.png) no-repeat top left;
+  color: #a40000;
+  font-family: "menu";
+  margin-bottom:35px;
+  padding: 8px 0 0 35px ;
+  text-transform: uppercase;
+}
+
+h3{
+  color: #a40000;
+  font-family: Courier,monospace;
+}
+
+h3 a{
+  background: url(img/fleche.png) no-repeat 0 35%;
+  color: #a40000;
+  font-family: Courier,monospace;
+  padding-left:20px;
+}
+
+h3 a:hover{
+  color: #a40000;
+}
+
+h4, h4 a{
+  border-bottom: 1px dotted #e6e6e6;
+  color: #cb0000;
+  font-family: "menu";
+  font-size: 1.1em;
+}
+
+section h4 a:hover{
+  color: #cb0000;
+}
+
+h5,h5 a {
+  font-family: "menu";
+  font-size: 1em;
+  padding-left: 5px;
+  text-transform: uppercase;
+}
+
+/*---HEADER---*/
+header {
+  position: absolute;
+  background: #5ea309 url(img/green.jpg)repeat;
+  height: 82px;
+  left: 0;
+  right: 0;
+  z-index: -1;
 }
 
 h1 a {
-background: url(img/radicale.png) 50% 50% no-repeat;
-color: transparent;
-display: block;
-font-size: 0;
-height: 175px;
-margin: -15px 0 0 -20px;
-position: relative;
-width: 100px;
-}
-
-a {
-color: #4e9a06;
+  background: url(img/radicale.png)white center center no-repeat;
+  box-shadow:0px 0px 10px #D6D6D6;
+  color: transparent;
+  height: 250px;
+  position: absolute;
+  top:-40px;
+  transform:rotate(-35deg);
+  width: 165px;
 }
 
 b, strong {
-font-weight: normal;
-text-outline: 0.5px black;
+  font-weight: normal;
+  text-outline: 0.5px black;
 }
 
-h1 a:hover,
-h1 a:focus {
-background: #eeeeec url(img/radicale.png) 50% 50% no-repeat;
+/*---NAV---*/
+nav{
+  display: table;
+  margin: 0 auto 150px;
+  table-layout: fixed;
+  width: 900px;
+  z-index:-1;
 }
 
-pre {
-background: #2e3436 url(img/radicale_back.png) 20% 60% no-repeat;
+nav ul{
+  display: table-row;
+  font-family: "menu";
+  font-size: 1.3em;
+  text-align: center;
 }
 
-nav ul {
-background: #a40000;
-color: white;
-margin: -4.5em 0 6em 100px;
+nav li{
+  color: white; 
+  display: table-cell;
+}
+
+nav li a {
+  background-image: linear-gradient(white, white);
+  background-position: 0 -84px;
+  background-repeat: no-repeat;
+  color: white;
+  display: block;
+  margin: auto;
+  padding:29px;
+  text-align:center;
+  transition: all 0.6s;
 }
 
 nav li a:hover,
 nav li a:focus {
-box-shadow: 1px 1px 3px #600;
-color: #a40000;
+  background-position: 0 0;
+  box-shadow:0px 0px 10px #636363;
+  color: #4e9a06;
+}
+
+/*---SECTION--*/
+section{
+  margin:0 auto 0;
+  width: 900px;
+}
+
+.contents{
+  background: rgba(164, 0, 0, 0.8) ;
+  border-radius: 5px;
+  font-family: "menu";
+  margin: 0 auto;
+  padding: 15px 100px;
+  width:400px;
+}
+
+.contents p{   
+  color: #97ff00;
+  font-size: 2em;
+  margin: 10px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.contents a{ 
+  color: white;
+}
+
+.contents a:hover{
+  color: #97ff00;
+}
+
+.contents ul{
+  list-style-image: url(img/puce1.png);
+}
+
+.contents ul li li{
+  list-style: disc;
+  color: white;
+}
+
+article{
+  background: rgba(255, 255,254, 0.5);
+  border-radius: 5px;
+  box-shadow:0px 0px 10px #D6D6D6;
+  margin: -30px auto 50px;
+  padding: 20px;
+  width: 900px;
 }
 
 .note {
-background: #eeeeec url(img/radicale_back.png) 20% 60% no-repeat;
+  background:rgba(78, 154,6, 0.1);
+  border: 1px dotted #4e9a06;
+  border-radius: 3px;
+  padding:  2px 15px;
 }
 
-#rss {
-background-color: #a40000;
+#rss{
+  background-color: #a40000;
+  position: relative;
+  right:-85%;
+  transition: background-color 0.3s linear;
 }
+
+#rss:hover, #rss:focus{
+  background-color: #E70;
+  box-shadow: 0 0 5px #D60;
+}
+
+pre {
+  background: rgba(46, 52,54, 0.9);
+  border-radius: 3px;
+  padding: 15px;
+}
+
+/*---FOOTER--*/
+footer {
+  border-bottom: 2px dotted #4e9a06;
+  text-align: center;
+}
+
+footer ul{
+  margin: 0 auto;
+}
+
+footer li{
+  display: inline;
+}
+
+footer li a{
+  color: #a40000;
+ font-variant: small-caps;
+  padding: 10px;
+}
+
+footer li a:hover{ 
+  color: #3f0000;
+}
+
