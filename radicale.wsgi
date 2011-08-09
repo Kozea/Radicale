@@ -23,4 +23,7 @@ Radicale WSGI file (mod_wsgi and uWSGI compliant).
 """
 
 import radicale
+
+
+radicale.log.start()
 application = radicale.Application()

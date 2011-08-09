@@ -1,1 +1,1 @@
-include COPYING NEWS TODO config
+include COPYING NEWS TODO config logging radicale.fcgi radicale.wsgi

@@ -28,9 +28,7 @@ from flup.server.fcgi import WSGIServer
 import radicale
 
 
-radicale.log.start(radicale.config.get("logging", "config"))
+radicale.log.start()
 radicale.log.LOGGER.info("Starting Radicale FastCGI server")
-
 WSGIServer(radicale.Application()).run()
-
 radicale.log.LOGGER.info("Stopping Radicale FastCGI server")
