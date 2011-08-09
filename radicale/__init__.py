@@ -161,18 +161,6 @@ class Application(object):
         environ["PATH_INFO"] = self.sanitize_uri(environ["PATH_INFO"])
         log.LOGGER.debug("Sanitized path: %s", environ["PATH_INFO"])
 
-        # Display an "It Works" message if the root URL is requested with
-        # the GET method
-        if environ["REQUEST_METHOD"].lower() == "get" \
-        and environ["PATH_INFO"] == "/":
-            headers = {"Content-type": "text/html"}
-            start_response("200 OK", list(headers.items()))
-            return ["<html>\n",
-                    "<head><title>Radicale Works!</title></head>\n",
-                    "<body><h1>Radicale Works!</h1>",
-                    '<a href="http://radicale.org/">radicale.org</a></body>',
-                    "\n</html>"]
-
         # Get content
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
         if content_length:
@@ -281,6 +269,12 @@ class Application(object):
 
     def get(self, environ, calendars, content, user):
         """Manage GET request."""
+        # Display a "Radicale works!" message if the root URL is requested
+        if environ["PATH_INFO"] == "/":
+            headers = {"Content-type": "text/html"}
+            answer = "<!DOCTYPE html>\n<title>Radicale</title>Radicale works!"
+            return client.OK, headers, answer
+
         calendar = calendars[0]
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], calendar)
         if item_name:
