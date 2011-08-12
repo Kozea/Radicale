@@ -340,44 +340,54 @@ options. These options are available by typing::
   radicale --help
 
 
-Use Radicale with Apache2 and mod_wsgi
---------------------------------------
+WSGI, CGI and FastCGI
+---------------------
 
-For using Radicale with Apache's ``mod_wsgi``, you first have to write
-your ``.wsgi`` file (in ``/var/www`` for example):
+Radicale comes with a `WSGI <http://wsgi.org/>`_ support, allowing the software
+to be used behind any HTTP server supporting WSGI such as Apache.
+
+Moreover, it is possible to use `flup
+<http://trac.saddi.com/flup/wiki/FlupServers>`_ to wrap Radicale into a CGI,
+FastCGI, SCGI or AJP application, and therefore use it with Lighttpd, Nginx or
+even Tomcat.
+
+Apache and mod_wsgi
+~~~~~~~~~~~~~~~~~~~
+
+To use Radicale with Apache's ``mod_wsgi``, you first have to write your
+``.wsgi`` file (in ``/var/www`` for example):
 
 .. code-block:: python
 
-  import radicale
-  application = radicale.Application()
+   import radicale
+   application = radicale.Application()
 
 .. note::
-   We assume that Radicale is installed in your Python path.
+   We assume that the Radicale module is installed in your Python path.
 
-Next you have to create the apache virtual host (adapt the configuration
+Next you have to create the Apache virtual host (adapt the configuration
 to your environment):
 
 .. code-block:: apache
 
-  <VirtualHost *:80>
-      ServerName cal.yourdomaine.org
+   <VirtualHost *:80>
+       ServerName cal.yourdomain.org
 
-      WSGIDaemonProcess radicale user=www-data group=www-data threads=1
-      WSGIScriptAlias / /var/www/radicale.wsgi
+       WSGIDaemonProcess radicale user=www-data group=www-data threads=1
+       WSGIScriptAlias / /var/www/radicale.wsgi
 
-      <Directory /var/www>
-          WSGIProcessGroup radicale
-          WSGIApplicationGroup %{GLOBAL}
-          AllowOverride None
-          Order allow,deny
-          allow from all
-      </Directory>
-  </VirtualHost>
+       <Directory /var/www>
+           WSGIProcessGroup radicale
+           WSGIApplicationGroup %{GLOBAL}
+           AllowOverride None
+           Order allow,deny
+           allow from all
+       </Directory>
+   </VirtualHost>
 
 .. note::
-  You should use the root of the (sub)domain (``WSGIScriptAlias /``), else
-  some CalDAV features will not work.
-  
+   You should use the root of the (sub)domain (``WSGIScriptAlias /``), else
+   some CalDAV features will not work.
 
 
 Authentication and URLs

@@ -24,6 +24,8 @@ Radicale runs on most of the UNIX-like platforms (Linux, \*BSD, MacOS X) and
 Windows. It is free and open-source software, written in Python, released under
 GPL version 3.
 
+.. log::
+
 
 Main Features
 =============
