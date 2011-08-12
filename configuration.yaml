@@ -1,0 +1,46 @@
+name: Radicale
+description: CalDAV Server
+license: GPLv3
+public: true
+url: http://www.radicale.org/
+
+menu:
+  - News:
+      link: /news/
+  - Documentation:
+      link: /documentation/
+  - Contribute:
+      link: /contribute/
+  - Download:
+      link: /download/
+
+vcs:
+  git:
+    url: git://gitorious.org/radicale/radicale.git
+    path: /home/lize/Informatique/radicale
+
+code browser:
+  gitorious:
+    project name: radicale
+    repository name: radicale
+  redmine:
+    base url: http://redmine.kozea.fr/
+    project name: radicale
+
+bug tracker:
+  redmine:
+    base url: http://redmine.kozea.fr/
+    project name: radicale
+    database: /var/
+
+mailing list:
+  mbox:
+    folder: /var/local/
+
+room:
+  jabber:
+    address: radicale@room.jabber.kozea.fr
+
+package repository:
+  pypi:
+    project name: radicale
