@@ -16,13 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Courier-Authdaemon ACL.
-
-Authentication based on the ``python-ldap`` module
-(http://www.python-ldap.org/).
-
-"""
 import socket,os,sys
 from radicale import acl, config, log
 
