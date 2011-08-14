@@ -34,7 +34,7 @@ stock = utf-8
 
 [acl]
 # Access method
-# Value: None | htpasswd | LDAP | PAM
+# Value: None | htpasswd | LDAP | PAM | Courier-Authdaemon
 type = None
 # Usernames used for public calendars, separated by a comma
 public_users = public
@@ -58,6 +58,8 @@ ldap_binddn =
 ldap_password =
 # PAM group user should be member of
 group_membership =
+# Path to the Courier Authdaemon socket (should be writable by Radicale)
+courier-auth_socket = 
 
 [storage]
 # Folder for storing local calendars, created if not present
