@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2011 Corentin Le Bail
-# Copyright © 2011 Guillaume Ayoub
+# Copyright © 2011 Henry-Nicolas Tourneur
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +19,7 @@
 """
 PAM ACL.
 
-Authentication based on the ``python-ldap`` module
-(http://www.python-ldap.org/).
+Authentication based on the ``python-pam`` module
 
 """
 
