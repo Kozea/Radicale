@@ -1,10 +1,6 @@
-==========================
- Radicale - CalDAV Server
-==========================
-
---------
- README
---------
+=========
+ Read Me
+=========
 
 The Radicale Project is a free and open-source CalDAV calendar server.
 
