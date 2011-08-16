@@ -1,93 +1,103 @@
 @font-face {
   font-family: "menu";
-  src: url(LANENAR_.ttf);
+  src: url(CaviarDreams_Bold.ttf);
 }
 
 html {
   background: url(img/top.jpg)repeat-x 0 82px,
               url(img/back.jpg);
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+  width: 100%;
 }
 
-body{
+body {
   background:  url(img/radicale_back.png)no-repeat 100% 100% fixed , 
-               url(img/r.jpg)no-repeat 100%;
+               url(img/r.jpg)no-repeat 100%,
+               url(img/green.jpg)repeat-x left 2em ;
   color: #818181;
-  margin:0;
+  margin: -2em 0 0 0;
+  min-height: 100%;
+  width:100%;
+    position: absolute;
+    padding-bottom:2em;
 }
 
-a{
+a {
   color: #4e9a06;
   text-decoration: none;
   transition: color 0.3s linear;
 }
 
-a:hover{
+a:hover {
   color: #376e04;
 }
 
-h2{
+h2 {
   background: url(img/icon.png) no-repeat top left;
   color: #a40000;
+
   font-family: "menu";
+
   margin-bottom:35px;
   padding: 8px 0 0 35px ;
   text-transform: uppercase;
 }
 
-h3{
+h3 {
   color: #a40000;
-  font-family: Courier,monospace;
+  font-family: "menu";
 }
 
-h3 a{
+h3 a {
   background: url(img/fleche.png) no-repeat 0 35%;
   color: #a40000;
-  font-family: Courier,monospace;
+  font-family: "menu";
   padding-left:20px;
 }
 
-h3 a:hover{
+h3 a:hover {
   color: #a40000;
 }
 
-h4, h4 a{
+h4, h4 a {
   border-bottom: 1px dotted #e6e6e6;
   color: #cb0000;
-  font-family: "menu";
+  font-family: Courier,monospace;
   font-size: 1.1em;
 }
 
-section h4 a:hover{
+section h4 a:hover {
   color: #cb0000;
 }
 
 h5,h5 a {
   font-family: "menu";
   font-size: 1em;
-  padding-left: 5px;
   text-transform: uppercase;
 }
 
 /*---HEADER---*/
 header {
   position: absolute;
-  background: #5ea309 url(img/green.jpg)repeat;
-  height: 82px;
-  left: 0;
-  right: 0;
-  z-index: -1;
+   top:2em;
 }
 
 h1 a {
   background: url(img/radicale.png)white center center no-repeat;
   box-shadow:0px 0px 10px #D6D6D6;
   color: transparent;
+  display: block;
   height: 250px;
-  position: absolute;
-  top:-40px;
+  position: relative;
+  top: -50px;
   transform:rotate(-35deg);
   width: 165px;
+  z-index:2;
+}
+
+h1 a:hover {
+  color: transparent;
 }
 
 b, strong {
@@ -96,22 +106,23 @@ b, strong {
 }
 
 /*---NAV---*/
-nav{
+nav {
   display: table;
-  margin: 0 auto 150px;
+  margin: 2em auto 150px;
   table-layout: fixed;
   width: 900px;
   z-index:-1;
 }
 
-nav ul{
+nav ul {
   display: table-row;
   font-family: "menu";
   font-size: 1.3em;
   text-align: center;
+  padding:0;
 }
 
-nav li{
+nav li {
   color: white; 
   display: table-cell;
 }
@@ -136,52 +147,51 @@ nav li a:focus {
 }
 
 /*---SECTION--*/
-section{
+body > section {
   margin:0 auto 0;
-  width: 900px;
+  width: 75%;
 }
 
-.contents{
+.contents {
   background: rgba(164, 0, 0, 0.8) ;
   border-radius: 5px;
-  font-family: "menu";
+  font-family: Courier,monospace;
   margin: 0 auto;
   padding: 15px 100px;
-  width:400px;
+  width:50%;
 }
 
-.contents p{   
-  color: #97ff00;
+.contents p {   
+  background: none;
+  color: #80d800;
   font-size: 2em;
   margin: 10px;
-  text-align: center;
   text-transform: uppercase;
 }
 
-.contents a{ 
+.contents a { 
   color: white;
 }
 
-.contents a:hover{
+.contents a:hover {
   color: #97ff00;
 }
 
-.contents ul{
+.contents ul {
   list-style-image: url(img/puce1.png);
 }
 
-.contents ul li li{
+.contents ul li li {
   list-style: disc;
   color: white;
 }
 
-article{
+article {
   background: rgba(255, 255,254, 0.5);
   border-radius: 5px;
   box-shadow:0px 0px 10px #D6D6D6;
   margin: -30px auto 50px;
   padding: 20px;
-  width: 900px;
 }
 
 .note {
@@ -191,14 +201,34 @@ article{
   padding:  2px 15px;
 }
 
-#rss{
+.footnote {
+  font-size: 0.8em;
+  opacity: 0.5;
+  padding-left: 20px;
+}
+
+.docinfo {
+  display: none;
+}
+
+.abstract .topic-title {
+  display: none;
+}
+
+.abstract{
+opacity:0.8;
+font-style: italic;
+margin-top:-1em;
+}
+
+#rss {
   background-color: #a40000;
-  position: relative;
-  right:-85%;
+  margin-right:12.5%;
+  float: right;
   transition: background-color 0.3s linear;
 }
 
-#rss:hover, #rss:focus{
+#rss:hover, #rss:focus {
   background-color: #E70;
   box-shadow: 0 0 5px #D60;
 }
@@ -212,24 +242,27 @@ pre {
 /*---FOOTER--*/
 footer {
   border-bottom: 2px dotted #4e9a06;
+  bottom:0;
+  height:2em;
+  left:0;
+  right: 0;
+  position: absolute;
   text-align: center;
-}
+ }
 
-footer ul{
+footer ul {
   margin: 0 auto;
 }
 
-footer li{
+footer li {
   display: inline;
 }
 
-footer li a{
+footer li a {
   color: #a40000;
  font-variant: small-caps;
-  padding: 10px;
 }
 
-footer li a:hover{ 
+footer li a:hover { 
   color: #3f0000;
 }
-
