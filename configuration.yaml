@@ -14,33 +14,22 @@ menu:
   - Download:
       link: /download/
 
-vcs:
-  git:
-    url: git://gitorious.org/radicale/radicale.git
-    path: /var/db/git/radicale.git
+vcs (git):
+  url: git://gitorious.org/radicale/radicale.git
+  path: /var/db/git/radicale.git
 
-code browser:
-  gitorious:
-    project name: radicale
-    repository name: radicale
-  redmine:
-    base url: http://redmine.kozea.fr/
-    project name: radicale
+code browser (github):
+  project name: Kozea/Radicale
 
-bug tracker:
-  redmine:
-    base url: http://redmine.kozea.fr/
-    project name: radicale
-    database: /var/
+# bug tracker (redmine):
+#   base url: http://redmine.kozea.fr/
+#   project name: radicale
 
-mailing list:
-  mbox:
-    folder: /var/local/
+# mailing list (mbox):
+#   folder: /var/local/
 
-room:
-  jabber:
-    address: radicale@room.jabber.kozea.fr
+# room (jabber):
+#   address: radicale@room.jabber.kozea.fr
 
-package repository:
-  pypi:
-    project name: radicale
+# package repository (pypi):
+#   project name: radicale
