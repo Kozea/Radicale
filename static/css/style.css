@@ -29,7 +29,7 @@ a {
   transition: color 0.3s linear;
 }
 
-a:hover {
+a:hover, a:focus {
   color: #376e04;
 }
 
@@ -94,9 +94,12 @@ h1 a {
   transform:rotate(-35deg);
   width: 165px;
   z-index:2;
+  transition: all 0.7s;
 }
 
-h1 a:hover {
+h1 a:hover, h1 a:focus {
+  background-color:  #f9f9f9;
+    box-shadow:0px 0px 5px rgba(0, 0, 0, 0.6);
   color: transparent;
 }
 
@@ -123,24 +126,33 @@ nav ul {
 }
 
 nav li {
-  color: white; 
+
   display: table-cell;
 }
 
-nav li a {
-  background-image: linear-gradient(white, white);
-  background-position: 0 -84px;
-  background-repeat: no-repeat;
-  color: white;
+
+nav li a{
+color: #83dd00;
   display: block;
   margin: auto;
-  padding:29px;
-  text-align:center;
+  line-height:82px;
+    text-align:center;
+}
+
+nav li a:hover, nav li a:focus{
+  color: #83dd00;
+}
+
+nav li a[href] {
+  background-image: linear-gradient(white, white);
+  background-position: 0 -82px;
+  background-repeat: no-repeat;
+  color: white;
   transition: all 0.6s;
 }
 
-nav li a:hover,
-nav li a:focus {
+nav li a[href]:hover,
+nav li a[href]:focus {
   background-position: 0 0;
   box-shadow:0px 0px 10px #636363;
   color: #4e9a06;
@@ -216,15 +228,15 @@ article {
 }
 
 .abstract{
-opacity:0.8;
-font-style: italic;
-margin-top:-1em;
+  opacity:0.8;
+  font-style: italic;
+  margin-top:-1em;
 }
 
 #rss {
   background-color: #a40000;
-  margin-right:12.5%;
   float: right;
+  margin-right:12.5%;
   transition: background-color 0.3s linear;
 }
 
