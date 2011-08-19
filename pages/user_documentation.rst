@@ -420,8 +420,8 @@ Private Calendars
 Private calendars are available for all the authenticated users.
 
 Calendars at ``/private_user/calendar`` URLs are private. Private users are
-defined in the ``acl → public_users`` configuration variable. If ``None`` is in
-the list of private users, private calendars are also available at
+defined in the ``acl → private_users`` configuration variable. If ``None`` is
+in the list of private users, private calendars are also available at
 ``/calendar`` URLs.
 
 
