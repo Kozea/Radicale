@@ -28,12 +28,21 @@ Source Packages
 
 You can download the Radicale package for each release:
 
-- `Radicale-0.6.tar.gz </src/radicale/Radicale-0.6.tar.gz>`_ (30 KiB)
-- `Radicale-0.5.tar.gz </src/radicale/Radicale-0.5.tar.gz>`_ (24 KiB)
-- `Radicale-0.4.tar.gz </src/radicale/Radicale-0.4.tar.gz>`_ (23 KiB)
-- `Radicale-0.3.tar.gz </src/radicale/Radicale-0.3.tar.gz>`_ (22 KiB)
-- `Radicale-0.2.tar.gz </src/radicale/Radicale-0.2.tar.gz>`_ (22 KiB)
-- `Radicale-0.1.tar.gz </src/radicale/Radicale-0.1.tar.gz>`_ (20 KiB)
+- `Radicale-0.6.tar.gz
+  <http://pypi.python.org/packages/source/R/Radicale/Radicale-0.6.tar.gz>`_
+  (30 KiB)
+- `Radicale-0.5.tar.gz
+  <http://pypi.python.org/packages/source/R/Radicale/Radicale-0.5.tar.gz>`_
+  (24 KiB)
+- `Radicale-0.4.tar.gz
+  <http://pypi.python.org/packages/source/R/Radicale/Radicale-0.4.tar.gz>`_
+  (23 KiB)
+- `Radicale-0.3.tar.gz
+  <http://pypi.python.org/packages/source/R/Radicale/Radicale-0.3.tar.gz>`_
+  (22 KiB)
+- `Radicale-0.2.tar.gz
+  <http://pypi.python.org/packages/source/R/Radicale/Radicale-0.2.tar.gz>`_
+  (22 KiB)
 
 Linux Distribution Packages
 ===========================
