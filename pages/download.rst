@@ -13,11 +13,10 @@ install, just type as superuser::
 Git Repository
 ==============
 
-If you want the development version of Radicale, take a look at the `git
-repository on Gitorious <http://www.gitorious.org/radicale/radicale>`_, or
-clone it thanks to::
+If you want the development version of Radicale, take a look at the
+:codelink:`git repository on GitHub`, or clone it thanks to::
 
-  git clone git://gitorious.org/radicale/radicale.git
+  git clone git://github.com/Kozea/Radicale.git
 
 You can also download the Radicale package of the git repository:
 
