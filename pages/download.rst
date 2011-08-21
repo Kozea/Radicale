@@ -18,9 +18,8 @@ If you want the development version of Radicale, take a look at the
 
   git clone git://github.com/Kozea/Radicale.git
 
-You can also download the Radicale package of the git repository:
-
-- `Radicale-git.tar.gz <http://gitorious.org/radicale/radicale/archive-tarball/master>`_
+You can also download `the Radicale package of the git repository
+<https://github.com/Kozea/Radicale/tarball/master>`_.
 
 Source Packages
 ===============
