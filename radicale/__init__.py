@@ -192,7 +192,7 @@ class Application(object):
             else:
                 user = password = None
 
-            last_allowed = False
+            last_allowed = None
             calendars = []
             for calendar in items:
                 if not isinstance(calendar, ical.Calendar):
@@ -222,7 +222,7 @@ class Application(object):
                 # Calendars found
                 status, headers, answer = function(
                     environ, calendars, content, user)
-            elif user and last_allowed:
+            elif user and last_allowed is None:
                 # Good user and no calendars found, redirect user to home
                 location = "/%s/" % str(quote(user))
                 log.LOGGER.info("redirecting to %s" % location)
