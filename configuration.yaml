@@ -15,7 +15,7 @@ menu:
       link: /download/
 
 vcs (git):
-  url: git://gitorious.org/radicale/radicale.git
+  url: git://github.com/Kozea/Radicale.git
   path: /var/db/git/radicale.git
 
 code browser (github):
