@@ -360,6 +360,7 @@ To use Radicale with Apache's ``mod_wsgi``, you first have to write your
 .. code-block:: python
 
    import radicale
+   radicale.log.start()
    application = radicale.Application()
 
 .. note::
