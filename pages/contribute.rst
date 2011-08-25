@@ -5,7 +5,9 @@
 As a Lazy Person
 ================
 
-Want to write kind words? Please contact guillaume.ayoub@kozea.fr.
+Want to write kind words? You can send a mail on `our Librelist mailing-list
+<radicale@librelist.com>`_ and even take a look at `the archives
+<http://librelist.com/browser/radicale>`_.
 
 
 As a Jabberer
