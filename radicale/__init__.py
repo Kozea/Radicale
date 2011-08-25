@@ -223,12 +223,18 @@ class Application(object):
                 status, headers, answer = function(
                     environ, calendars, content, user)
             elif user and last_allowed is None:
-                # Good user and no calendars found, redirect user to home
+                # Good user and no calendars found
                 location = "/%s/" % str(quote(user))
-                log.LOGGER.info("redirecting to %s" % location)
-                status = client.FOUND
-                headers = {"Location": location}
-                answer = "Redirecting to %s" % location
+                if location == environ["PATH_INFO"]:
+                    # We already have redirected the client
+                    status, headers, answer = function(
+                        environ, calendars, content, user)
+                else:
+                    # Redirect the client
+                    log.LOGGER.info("redirecting to %s" % location)
+                    status = client.FOUND
+                    headers = {"Location": location}
+                    answer = "Redirecting to %s" % location
             else:
                 # Unknown or unauthorized user
                 status = client.UNAUTHORIZED
