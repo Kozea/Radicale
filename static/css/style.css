@@ -268,11 +268,12 @@ footer ul {
 
 footer li {
   display: inline;
+  padding: 0 0.75em;
 }
 
 footer li a {
   color: #a40000;
- font-variant: small-caps;
+  font-variant: small-caps;
 }
 
 footer li a:hover { 
