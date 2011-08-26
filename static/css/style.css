@@ -12,15 +12,15 @@ html {
 }
 
 body {
-  background:  url(img/radicale_back.png)no-repeat 100% 100% fixed , 
-               url(img/r.jpg)no-repeat 100%,
-               url(img/green.jpg)repeat-x left 2em ;
+  background: url(img/radicale_back.png)no-repeat 100% 100% fixed,
+              url(img/r.jpg)no-repeat 100%,
+              url(img/green.jpg)repeat-x left 2em;
   color: #818181;
   margin: -2em 0 0 0;
   min-height: 100%;
+  padding-bottom:2em;
+  position: absolute;
   width:100%;
-    position: absolute;
-    padding-bottom:2em;
 }
 
 a {
@@ -36,9 +36,7 @@ a:hover, a:focus {
 h2 {
   background: url(img/icon.png) no-repeat top left;
   color: #a40000;
-
   font-family: "menu";
-
   margin-bottom:35px;
   padding: 8px 0 0 35px ;
   text-transform: uppercase;
@@ -47,6 +45,8 @@ h2 {
 h3 {
   color: #a40000;
   font-family: "menu";
+  font-size: 1.4em;
+  margin-top: 2em;
 }
 
 h3 a {
@@ -71,7 +71,7 @@ section h4 a:hover {
   color: #cb0000;
 }
 
-h5,h5 a {
+h5, h5 a {
   font-family: "menu";
   font-size: 1em;
   text-transform: uppercase;
@@ -80,7 +80,7 @@ h5,h5 a {
 /*---HEADER---*/
 header {
   position: absolute;
-   top:2em;
+  top:2em;
 }
 
 h1 a {
@@ -161,6 +161,7 @@ nav li a[href]:focus {
 /*---SECTION--*/
 body > section {
   margin:0 auto 0;
+  max-width: 70em;
   width: 75%;
 }
 
@@ -194,14 +195,14 @@ body > section {
 }
 
 .contents ul li li {
-  list-style: disc;
   color: white;
+  list-style: disc;
 }
 
 article {
   background: rgba(255, 255,254, 0.5);
   border-radius: 5px;
-  box-shadow:0px 0px 10px #D6D6D6;
+  box-shadow: 0px 0px 10px #D6D6D6;
   margin: -30px auto 50px;
   padding: 20px;
 }
@@ -210,7 +211,7 @@ article {
   background:rgba(78, 154,6, 0.1);
   border: 1px dotted #4e9a06;
   border-radius: 3px;
-  padding:  2px 15px;
+  padding: 2px 15px;
 }
 
 .footnote {
