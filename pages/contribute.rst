@@ -5,9 +5,8 @@
 As a Lazy Person
 ================
 
-Want to write kind words? You can send a mail on `our Librelist mailing-list
-<radicale@librelist.com>`_ and even take a look at `the archives
-<http://librelist.com/browser/radicale>`_.
+Want to write kind words? You can send a mail on :mailaddress:`our Librelist
+mailing-list` and even take a look at :mailarchives:`the archives`.
 
 
 As a Jabberer
@@ -19,8 +18,8 @@ Want to say something? Join our Jabber room: radicale@room.jabber.kozea.fr.
 As a Simple User
 ================
 
-Found a bug? Want a new feature? Report a new issue on the `Radicale bug-tracker
-<http://redmine.kozea.fr/projects/radicale>`_ (registration needed).
+Found a bug? Want a new feature? Report a new issue on the :buglink:`Radicale
+bug-tracker` (registration needed).
 
 
 As a Hacker

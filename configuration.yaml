@@ -21,12 +21,11 @@ vcs (git):
 code browser (github):
   project name: Kozea/Radicale
 
-# bug tracker (redmine):
-#   base url: http://redmine.kozea.fr/
-#   project name: radicale
+bug tracker (redmine):
+  base url: http://redmine.kozea.fr/
 
-# mailing list (mbox):
-#   folder: /var/local/
+mailing list (librelist):
+  project name: radicale
 
 # room (jabber):
 #   address: radicale@room.jabber.kozea.fr
