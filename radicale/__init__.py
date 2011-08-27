@@ -49,7 +49,7 @@ except ImportError:
 from radicale import acl, config, ical, log, xmlutils
 
 
-VERSION = "git"
+VERSION = "0.6.1"
 
 
 class HTTPServer(wsgiref.simple_server.WSGIServer, object):
@@ -223,18 +223,12 @@ class Application(object):
                 status, headers, answer = function(
                     environ, calendars, content, user)
             elif user and last_allowed is None:
-                # Good user and no calendars found
+                # Good user and no calendars found, redirect user to home
                 location = "/%s/" % str(quote(user))
-                if location == environ["PATH_INFO"]:
-                    # We already have redirected the client
-                    status, headers, answer = function(
-                        environ, calendars, content, user)
-                else:
-                    # Redirect the client
-                    log.LOGGER.info("redirecting to %s" % location)
-                    status = client.FOUND
-                    headers = {"Location": location}
-                    answer = "Redirecting to %s" % location
+                log.LOGGER.info("redirecting to %s" % location)
+                status = client.FOUND
+                headers = {"Location": location}
+                answer = "Redirecting to %s" % location
             else:
                 # Unknown or unauthorized user
                 status = client.UNAUTHORIZED

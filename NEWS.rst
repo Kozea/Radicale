@@ -2,6 +2,15 @@
  News
 ======
 
+0.6.1 - Growing Up
+==================
+
+* Example files included in the tarball
+* htpasswd support fixed
+* Redirection loop bug fixed
+* Testing message on GET requests
+
+
 0.6 - Sapling
 =============
 
