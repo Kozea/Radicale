@@ -1,0 +1,54 @@
+Radicale 0.6.1, Changes, Future
+===============================
+
+As previously imagined, a new 0.6.1 version has been released, mainly fixing
+obvious bugs.
+
+
+0.6.1 - Growing Up
+------------------
+
+* Example files included in the tarball
+* htpasswd support fixed
+* Redirection loop bug fixed
+* Testing message on GET requests
+
+The changelog is really small, so there should be no real new problems since
+0.6. The example files for logging, FastCGI and WSGI are now included in the
+tarball, for the pleasure of our dear packagers!
+
+A new branch has been created for various future bug fixes. You can expect to
+get more 0.6.x versions, making this branch a kind of "stable" branch with no
+big changes.
+
+
+GitHub, Mailing List, New Website
+---------------------------------
+
+A lot of small changes occurred during the last weeks.
+
+If you're interested in code and new features, please note that we moved the
+project from Gitorious to :codelink:`GitHub`. Being hosted by Gitorious was a
+nice experience, but the service was not that good and we were missing some
+useful features such as git hooks. Moreover, GitHub is really popular, we're
+sure that we'll meet a lot of kind users and coders there.
+
+We've also created a :mailarchives:`mailing-list on Librelist` to keep a public
+trace of the mails we're receiving. It a bit empty now, but we're sure that
+you'll soon write us some kind words. For example, you can tell us what you
+think of our new website!
+
+
+Future Features
+---------------
+
+In the next weeks, new exciting features are coming in the master branch! Some
+of them are almost ready:
+
+- Henry-Nicolas has added the support for the PAM and Courier-Authdaemon
+  authentication mechanisms.
+- An anonymous called Keith Packard has prepared some small changes, such as
+  one file per event, cache and git versioning. Yes. Really.
+
+As you can find in the `Radicale Roadmap <http://redmine.kozea.fr/versions/>`_,
+tests, rights and filters are expected for 0.7.
