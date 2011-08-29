@@ -79,6 +79,16 @@ class HTTPSServer(HTTPServer):
         """Create server by wrapping HTTP socket in an SSL socket."""
         super(HTTPSServer, self).__init__(address, handler, False)
 
+        # Test if the SSL files can be read
+        for name in ("certificate", "key"):
+            filename = config.get("server", name)
+            try:
+                open(filename, "r").close()
+            except IOError, (_, message):
+                log.LOGGER.warn(
+                    "Error while reading SSL %s %r: %s" % (
+                        name, filename, message))
+
         self.socket = ssl.wrap_socket(
             self.socket,
             server_side=True,
