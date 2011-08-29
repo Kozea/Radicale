@@ -192,7 +192,7 @@ class Application(object):
             else:
                 user = password = None
 
-            last_allowed = False
+            last_allowed = None
             calendars = []
             for calendar in items:
                 if not isinstance(calendar, ical.Calendar):
@@ -219,17 +219,18 @@ class Application(object):
                         last_allowed = False
 
             if calendars:
+                # Calendars found
                 status, headers, answer = function(
                     environ, calendars, content, user)
-            elif user and self.acl.has_right(user, user, password):
-                # Check if the user/password couple matches,
-                # redirect user to his principal home in this case
+            elif user and last_allowed is None:
+                # Good user and no calendars found, redirect user to home
                 location = "/%s/" % str(quote(user))
                 log.LOGGER.info("redirecting to %s" % location)
                 status = client.FOUND
                 headers = {"Location": location}
                 answer = "Redirecting to %s" % location
             else:
+                # Unknown or unauthorized user
                 status = client.UNAUTHORIZED
                 headers = {
                     "WWW-Authenticate":
