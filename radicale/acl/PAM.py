@@ -19,7 +19,7 @@
 """
 PAM ACL.
 
-Authentication based on the ``python-pam`` module
+Authentication based on the ``pam-python`` module.
 
 """
 
@@ -29,7 +29,7 @@ import pwd
 from radicale import acl, config, log
 
 
-GROUP_MEMBERSHIP = config.get("acl", "group_membership")
+GROUP_MEMBERSHIP = config.get("acl", "pam_group_membership")
 
 
 def has_right(owner, user, password):
@@ -37,26 +37,40 @@ def has_right(owner, user, password):
     if not user or (owner not in acl.PRIVATE_USERS and user != owner):
         # No user given, or owner is not private and is not user, forbidden
         return False
-    
-    try: # 1 - Does the user exist in the PAM system?
-      pwd.getpwnam(user).pw_uid
-      log.LOGGER.debug("User %s found" % user)
-    except KeyError: # No such user in the PAM system
-      log.LOGGER.debug("User %s not found" % user)
-      return False
-    
-    try: # 2 - Does the user belong to the required group?
-      for member in grp.getgrnam(GROUP_MEMBERSHIP):
-	if member == user:
-	  raise Exception()
-      log.LOGGER.debug("The user doesn't belong to the required group (%s)" % GROUP_MEMBERSHIP)
-      return False
+
+    # Check whether the user exists in the PAM system
+    try:
+        pwd.getpwnam(user).pw_uid
     except KeyError:
-      log.LOGGER.debug("The membership required group (%s) doesn't exist" % GROUP_MEMBERSHIP)
-      return False
-    except Exception:
-      log.LOGGER.debug("The user belong to the required group (%s)" % GROUP_MEMBERSHIP)
-        
-    if pam.authenticate(user, password): # 3 - Does the password match ?
-      return True
-    return False # Authentication failled
+        log.LOGGER.debug("User %s not found" % user)
+        return False
+    else:
+        log.LOGGER.debug("User %s found" % user)
+
+    # Check whether the group exists
+    try:
+        members = grp.getgrnam(GROUP_MEMBERSHIP)
+    except KeyError:
+        log.LOGGER.debug(
+            "The PAM membership required group (%s) doesn't exist" %
+            GROUP_MEMBERSHIP)
+        return False
+
+    # Check whether the user belongs to the required group
+    for member in members:
+        if member == user:
+            log.LOGGER.debug(
+                "The PAM user belongs to the required group (%s)" %
+                GROUP_MEMBERSHIP)
+            # Check the password
+            if pam.authenticate(user, password):
+                return True
+            else:
+                log.LOGGER.debug("Wrong PAM password")
+            break
+    else:
+        log.LOGGER.debug(
+            "The PAM user doesn't belong to the required group (%s)" %
+            GROUP_MEMBERSHIP)
+
+    return False
