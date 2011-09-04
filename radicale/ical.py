@@ -249,7 +249,7 @@ class Calendar(object):
         for item_type in item_types:
             item_tags[item_type.tag] = item_type
 
-        items = []
+        items = {}
 
         lines = unfold(text)
         in_item = False
@@ -268,9 +268,14 @@ class Calendar(object):
                     item_type = item_tags[item_tag]
                     item_text = "\n".join(item_lines)
                     item_name = None if item_tag == "VTIMEZONE" else name
-                    items.append(item_type(item_text, item_name))
+                    item = item_type(item_text, item_name)
+                    if item.name in items:
+                        text = "\n".join((item.text, items[item.name].text))
+                        items[item.name] = item_type(text, item.name)
+                    else:
+                        items[item.name] = item
 
-        return items
+        return list(items.values())
 
     def get_item(self, name):
         """Get calendar item called ``name``."""
