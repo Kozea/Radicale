@@ -2,6 +2,12 @@
  News
 ======
 
+0.7 - **Not released yet**
+==========================
+
+* Support repeating events
+
+
 0.6.1 - Growing Up
 ==================
 
