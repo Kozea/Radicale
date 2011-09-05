@@ -114,7 +114,29 @@ KOrganizer
 CalDAV-Sync
 ~~~~~~~~~~~
 
-*To be written*
+CalDAV-Sync is implemented as sync adapter to integrate seamlessly with 
+any calendar app and widget. Therefor you have to access it via 
+``Accounts & Sync`` settings after installing it from the Market.
+
+So, to add new calendars to your phone open ``Accounts & Sync`` settings 
+and tap on ``Add account``, selecting CalDAV as type. In the next view, 
+you have to switch to Manual Mode. Enter the full CalDAV URL of your Radicale 
+account (e.g. http://example.com:5232/Username/) and corresponding login data.
+
+Tap on ``Next`` and the app checks for all available calendars 
+on your account, listing them in the next view. You can now select calendars 
+you want to sync and set a local nickname and color for each. Hitting ``Next`` 
+again brings up the last page. Enter your email address and uncheck ``Sync 
+from server to phone only`` if you want to use two-way-sync.
+
+.. note::
+    CalDAV-Sync officially is in alpha state and two-way-sync is marked as 
+    an experimental feature. Tough it works fine for me, using two-way-sync 
+    is on your own risk!
+    
+Tap on ``Finish`` and you're done. You're now able to use the new calendars 
+in the same way you were using Google calendars before.
+
 
 aCal
 ~~~~
