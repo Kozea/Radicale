@@ -207,11 +207,21 @@ article {
   padding: 20px;
 }
 
-.note {
-  background:rgba(78, 154,6, 0.1);
-  border: 1px dotted #4e9a06;
+.important, .note {
   border-radius: 3px;
+  font-size: 0.9em;
+  margin: 1em 10%;
   padding: 2px 15px;
+}
+
+.important {
+  background:rgba(180, 0, 0, 0.1);
+  border: 1px dotted #a40000;
+}
+
+.note {
+  background:rgba(78, 154, 6, 0.1);
+  border: 1px dotted #4e9a06;
 }
 
 .footnote {
@@ -249,6 +259,7 @@ article {
 pre {
   background: rgba(46, 52,54, 0.9);
   border-radius: 3px;
+  margin: 1em 2%;
   padding: 15px;
 }
 
