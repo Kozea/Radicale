@@ -376,8 +376,9 @@ even Tomcat.
 Apache and mod_wsgi
 ~~~~~~~~~~~~~~~~~~~
 
-To use Radicale with Apache's ``mod_wsgi``, you first have to write your
-``.wsgi`` file (in ``/var/www`` for example):
+To use Radicale with Apache's ``mod_wsgi``, you first have to install the
+Radicale module in your Python path and write your ``.wsgi`` file (in
+``/var/www`` for example):
 
 .. code-block:: python
 
@@ -386,7 +387,7 @@ To use Radicale with Apache's ``mod_wsgi``, you first have to write your
    application = radicale.Application()
 
 .. note::
-   We assume that the Radicale module is installed in your Python path.
+   The ``[server]`` part of the configuration is ignored.
 
 Next you have to create the Apache virtual host (adapt the configuration
 to your environment):
@@ -410,7 +411,15 @@ to your environment):
 
 .. note::
    You should use the root of the (sub)domain (``WSGIScriptAlias /``), else
-   some CalDAV features will not work.
+   some CalDAV features may not work.
+
+.. important::
+   If you want to use authentication with Apache, you *really* should use one
+   of the Apache authentication modules, instead of the ones from Radicale:
+   they're just better. If you're still convinced that access control is better
+   with Radicale, you have to add ``WSGIPassAuthorization On`` in your Apache
+   configuration files, as explained in `the mod_wsgi documentation
+   <http://code.google.com/p/modwsgi/wiki/ConfigurationGuidelines#User_Authentication>`_.
 
 
 Authentication and URLs
