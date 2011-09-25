@@ -196,7 +196,8 @@ class Calendar(object):
 
         """
         # First do normpath and then strip, to prevent access to FOLDER/../
-        attributes = posixpath.normpath(path).strip("/").split("/")
+        sane_path = posixpath.normpath(path.replace(os.sep, "/")).strip("/")
+        attributes = sane_path.split("/")
         if not attributes:
             return None
         if not (os.path.isfile(os.path.join(FOLDER, *attributes)) or
