@@ -208,12 +208,13 @@ class Calendar(object):
 
         path = "/".join(attributes)
         abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
+        principal = len(attributes) <= 1
         if os.path.isdir(abs_path):
             if depth == "0":
-                result.append(cls(path, principal=True))
+                result.append(cls(path, principal))
             else:
                 if include_container:
-                    result.append(cls(path, principal=True))
+                    result.append(cls(path, principal))
                 try:
                     for filename in next(os.walk(abs_path))[2]:
                         if cls.is_vcalendar(os.path.join(abs_path, filename)):
@@ -225,7 +226,7 @@ class Calendar(object):
             if depth == "0":
                 result.append(cls(path))
             else:
-                calendar = cls(path, principal=True)
+                calendar = cls(path, principal)
                 if include_container:
                     result.append(calendar)
                 result.extend(calendar.components)
