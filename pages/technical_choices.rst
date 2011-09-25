@@ -45,7 +45,6 @@ Radicale Project are described by RFCs:
   (WebDAV) :RFC:`4918`
 - Transport Layer Security (TLS) :RFC:`5246`
 - iCalendar format (iCal) :RFC:`5545`
-- HTTP Extensions for Distributed Authoring (WebDAV) :RFC:`5689`
 
 .. note::
    CalDAV implementation **requires** iCal, ACL, WebDAV, HTTP and TLS. The
