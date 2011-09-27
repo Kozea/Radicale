@@ -7,6 +7,7 @@
 =============
 
 * iPhone and iPad support fixed
+* Backslashes replaced by slashes in PROPFIND answers on Windows
 * PyPI archive set as default download URL
 
 
