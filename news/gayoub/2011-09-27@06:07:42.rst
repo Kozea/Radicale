@@ -1,0 +1,11 @@
+Radicale 0.6.2
+==============
+
+0.6.2 is out with minor bugfixes.
+
+0.6.2 - Seeds
+=============
+
+* iPhone and iPad support fixed
+* Backslashes replaced by slashes in PROPFIND answers on Windows
+* PyPI archive set as default download URL
