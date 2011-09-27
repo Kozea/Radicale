@@ -2,6 +2,14 @@
  News
 ======
 
+
+0.6.2 - Seeds
+=============
+
+* iPhone and iPad support fixed
+* PyPI archive set as default download URL
+
+
 0.6.1 - Growing Up
 ==================
 
