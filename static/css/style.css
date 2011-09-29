@@ -15,7 +15,7 @@ body {
   background: url(img/radicale_back.png)no-repeat 100% 100% fixed,
               url(img/r.jpg)no-repeat 100%,
               url(img/green.jpg)repeat-x left 2em;
-  color: #818181;
+  color: #444;
   margin: -2em 0 0 0;
   min-height: 100%;
   padding-bottom:2em;
@@ -226,7 +226,7 @@ article {
 
 .footnote {
   font-size: 0.8em;
-  opacity: 0.5;
+  opacity: 0.7;
   padding-left: 20px;
 }
 
