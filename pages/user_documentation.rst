@@ -137,11 +137,35 @@ from server to phone only`` if you want to use two-way-sync.
 Tap on ``Finish`` and you're done. You're now able to use the new calendars 
 in the same way you were using Google calendars before.
 
-
 aCal
 ~~~~
 
-*To be written*
+aCal is a CalDAV client for Android. It comes with its own calendar application
+and does not integrate in the Android calendar. It is a "CalDAV only" calendar,
+i.e. it only works in combination with a CalDAV server. It can connect to
+several calendars on the server and will display them all in one calendar. It
+works nice with Radicale.
+
+To configure aCal, start aCal, go to the ``Settings`` screen, select
+``Server``, then ``Add server``. Choose ``Manual Configuration`` and select
+``Advanced`` (bottom of the screen). Then enter the host name of your server,
+check ``Active``, enter your user name and password. The ``Simple Domain`` of
+your server is the domain part of your fully qualified host name (e.g. if your
+server is ``myserver.mydomain.org``, choose ``mydomain.org``).
+
+As ``Simple Path`` you need to specify ``/<user>`` where user is the user you
+use to connect to Radicale. ``Server Name`` is the fully qualified name of your
+server machine (``myserver.mydomain.org``). The ``Server Path`` is
+``/<user>/``.
+
+For ``Authentication Type`` you need to specify the method you chose for
+Radicale. Check ``Use SSL`` if your Radicale is configured to use SSL.
+
+As the last thing you need to specify the port Radicale listens to. When your
+server is configured you can go back to the first ``Settings`` screen, and
+select ``Calendars and Addressbooks``. You should find all the calendars that
+are available to your user on the Radicale server. You can then configure each
+of them (display colour, notifications, etc.).
 
 iPhone
 ~~~~~~
