@@ -17,10 +17,9 @@ Installation
 Dependencies
 ------------
 
-Radicale is written in pure python and does not depend on any librabry. It is
-known to work on Python 2.6, 2.7, 3.1 and 3.2 [#]_. The only optional
-dependency is `the python-ldap module <http://www.python-ldap.org/>`_ for LDAP
-authentication.
+Radicale is written in pure Python and does not depend on any librabry. It is
+known to work on Python 2.6, 2.7, 3.1 and 3.2. The dependencies are optional,
+as they are only needed for various authentication methods [#]_.
 
 Linux users certainly have Python already installed. For Windows and MacOS
 users, please install Python [#]_ thanks to the adequate installer.
@@ -253,6 +252,8 @@ configuration file, with the main parameters:
   hosts = 0.0.0.0:5232
   # Daemon flag
   daemon = False
+  # File storing the PID in daemon mode
+  pid =
   # SSL flag, enable HTTPS protocol
   ssl = False
   # SSL certificate path
@@ -268,17 +269,20 @@ configuration file, with the main parameters:
 
   [acl]
   # Access method
-  # Value: None | htpasswd | LDAP
+  # Value: None | htpasswd | LDAP | PAM | courier
   type = None
+
   # Usernames used for public calendars, separated by a comma
   public_users = public
   # Usernames used for private calendars, separated by a comma
   private_users = private
+
   # Htpasswd filename
   htpasswd_filename = /etc/radicale/users
   # Htpasswd encryption method
   # Value: plain | sha1 | crypt
   htpasswd_encryption = crypt
+
   # LDAP server URL, with protocol and port
   ldap_url = ldap://localhost:389/
   # LDAP base path
@@ -290,6 +294,12 @@ configuration file, with the main parameters:
   ldap_binddn =
   # LDAP password for initial login, used with ldap_binddn
   ldap_password =
+
+  # PAM group user should be member of
+  pam_group_membership =
+
+  # Path to the Courier Authdaemon socket
+  courier_socket =
 
   [storage]
   # Folder for storing local calendars, created if not present
@@ -514,3 +524,10 @@ LDAP Authentication
 The LDAP authentication module relies on `the python-ldap module
 <http://www.python-ldap.org/>`_, and thus only works with 2.x versions
 of Python.
+
+PAM Authentication
+------------------
+
+The PAM authentication module relies on `the pam module
+<http://atlee.ca/software/pam/>`_, and thus only works with 2.x versions of
+Python.
