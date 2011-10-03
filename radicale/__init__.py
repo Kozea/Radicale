@@ -255,6 +255,7 @@ class Application(object):
 
         # Start response
         status = "%i %s" % (status, client.responses.get(status, "Unknown"))
+        log.LOGGER.debug("Answer status: %s" % status)
         start_response(status, list(headers.items()))
 
         # Return response content
