@@ -331,8 +331,10 @@ class Application(object):
                 # Move the item
                 to_url_parts = urlparse(environ["HTTP_DESTINATION"])
                 if to_url_parts.netloc == environ["HTTP_HOST"]:
-                    to_path, to_name = posixpath.split(to_url_parts.path)
-                    to_calendar = ical.Calendar.from_path(to_path)
+                    to_url = to_url_parts.path
+                    to_path, to_name = to_url.rstrip("/").rsplit("/", 1)
+                    to_calendar = ical.Calendar.from_path(
+                        to_path, depth="0")[0]
                     to_calendar.append(to_name, item.text)
                     from_calendar.remove(from_name)
                     return client.CREATED, {}, None
