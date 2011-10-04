@@ -84,7 +84,7 @@ class HTTPSServer(HTTPServer):
             filename = config.get("server", name)
             try:
                 open(filename, "r").close()
-            except IOError, (_, message):
+            except IOError as (_, message):
                 log.LOGGER.warn(
                     "Error while reading SSL %s %r: %s" % (
                         name, filename, message))
