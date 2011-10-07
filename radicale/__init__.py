@@ -192,6 +192,10 @@ class Application(object):
             else:
                 user = password = None
 
+            # check for wsgi auth
+            if config.get("acl", "type") == "wsgi":
+                user = password = environ.get("REMOTE_USER");
+
             last_allowed = None
             calendars = []
             for calendar in items:
