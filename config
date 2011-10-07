@@ -34,7 +34,7 @@ stock = utf-8
 
 [acl]
 # Access method
-# Value: None | htpasswd | LDAP
+# Value: None | htpasswd | LDAP | wsgi
 type = None
 # Usernames used for public calendars, separated by a comma
 public_users = public
