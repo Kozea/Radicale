@@ -43,6 +43,10 @@ table:not(.footnote) td {
   padding: 0.5em;
 }
 
+dt {
+  margin: 0.8em 0 0.2em 0;
+}
+
 h2 {
   background: url(img/icon.png) no-repeat top left;
   color: #a40000;
@@ -132,12 +136,12 @@ nav li {
   display: table-cell;
 }
 
-nav li a{
+nav li a {
 color: #83dd00;
   display: block;
   margin: auto;
   line-height:82px;
-    text-align:center;
+  text-align:center;
 }
 
 nav li a:hover, nav li a:focus{
