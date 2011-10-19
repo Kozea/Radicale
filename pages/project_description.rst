@@ -75,5 +75,6 @@ and we will not use another one.
    implement it. Then try to read it again.
 .. [#] Radicale is `oriented to calendar user agents
    <http://www.radicale.org/technical_choices#oriented-to-calendar-user-agents>`_.
-.. [#] `Popularity of CalDAV <http://en.wikipedia.org/wiki/CalDAV#Popularity>`_,
+.. [#] `CalDAV implementations
+   <http://en.wikipedia.org/wiki/CalDAV#Implementations>`_,
    by Wikipedia.
