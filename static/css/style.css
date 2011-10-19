@@ -33,6 +33,16 @@ a:hover, a:focus {
   color: #376e04;
 }
 
+table:not(.footnote) {
+  border-collapse: collapse;
+  margin: auto;
+}
+
+table:not(.footnote) td {
+  border: 1px #cbb solid;
+  padding: 0.5em;
+}
+
 h2 {
   background: url(img/icon.png) no-repeat top left;
   color: #a40000;
@@ -119,7 +129,6 @@ nav ul {
 }
 
 nav li {
-
   display: table-cell;
 }
 
