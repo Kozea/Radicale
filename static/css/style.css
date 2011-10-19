@@ -77,7 +77,6 @@ h5, h5 a {
   text-transform: uppercase;
 }
 
-/*---HEADER---*/
 header {
   position: absolute;
   top:2em;
@@ -103,12 +102,6 @@ h1 a:hover, h1 a:focus {
   color: transparent;
 }
 
-b, strong {
-  font-weight: normal;
-  text-outline: 0.5px black;
-}
-
-/*---NAV---*/
 nav {
   display: table;
   margin: 2em auto 150px;
@@ -129,7 +122,6 @@ nav li {
 
   display: table-cell;
 }
-
 
 nav li a{
 color: #83dd00;
@@ -158,7 +150,6 @@ nav li a[href]:focus {
   color: #4e9a06;
 }
 
-/*---SECTION--*/
 body > section {
   margin:0 auto 0;
   max-width: 70em;
@@ -264,7 +255,6 @@ pre {
   padding: 15px;
 }
 
-/*---FOOTER--*/
 footer {
   border-bottom: 2px dotted #4e9a06;
   bottom:0;
@@ -273,7 +263,7 @@ footer {
   right: 0;
   position: absolute;
   text-align: center;
- }
+}
 
 footer ul {
   margin: 0 auto;
