@@ -21,7 +21,7 @@ Radicale is written in pure Python and does not depend on any librabry. It is
 known to work on Python 2.6, 2.7, 3.1 and 3.2. The dependencies are optional,
 as they are only needed for various authentication methods [#]_.
 
-Linux users certainly have Python already installed. For Windows and MacOS
+Linux and MacOS users certainly have Python already installed. For Windows
 users, please install Python [#]_ thanks to the adequate installer.
 
 .. [#] See `Python Versions and OS Support`_ for further information.
