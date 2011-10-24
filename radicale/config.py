@@ -58,7 +58,9 @@ INITIAL_CONFIG = {
         "ldap_base": "ou=users,dc=example,dc=com",
         "ldap_attribute": "uid",
         "ldap_binddn": "",
-        "ldap_password": ""},
+        "ldap_password": "",
+        "pam_group_membership": "",
+        "courier_socket": ""},
     "storage": {
         "folder": os.path.expanduser("~/.config/radicale/calendars")},
     "logging": {
