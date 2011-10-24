@@ -412,13 +412,17 @@ def report(path, xml_request, calendar):
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
+    calendar_items = calendar.items
+    calendar_headers = calendar.headers
+    calendar_timezones = calendar.timezones
+
     for hreference in hreferences:
         # Check if the reference is an item or a calendar
         name = name_from_path(hreference, calendar)
         if name:
             # Reference is an item
             path = "/".join(hreference.split("/")[:-1]) + "/"
-            items = (item for item in calendar.items if item.name == name)
+            items = (item for item in calendar_items if item.name == name)
         else:
             # Reference is a calendar
             path = hreference
@@ -445,7 +449,7 @@ def report(path, xml_request, calendar):
                 elif tag == _tag("C", "calendar-data"):
                     if isinstance(item, (ical.Event, ical.Todo, ical.Journal)):
                         element.text = ical.serialize(
-                            calendar.headers, calendar.timezones + [item])
+                            calendar_headers, calendar_timezones + [item])
                 prop.append(element)
 
             status = ET.Element(_tag("D", "status"))
