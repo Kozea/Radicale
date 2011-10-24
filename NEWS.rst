@@ -3,6 +3,13 @@
 ======
 
 
+0.6.3 - **Not released yet**
+============================
+
+* MOVE requests fixed     
+* Faster REPORT answers 
+
+
 0.6.2 - Seeds
 =============
 
