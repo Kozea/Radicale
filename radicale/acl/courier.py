@@ -44,9 +44,9 @@ def has_right(owner, user, password):
         sock.send(line)
         data = sock.recv(1024)
         sock.close()
-    except socket.error, (_, message):
+    except socket.error as exception:
         log.LOGGER.debug(
-            "Unable to communicate with Courier socket: %s" % message)
+            "Unable to communicate with Courier socket: %s" % exception)
         return False
 
     log.LOGGER.debug("Got Courier socket response: %r" % data)
