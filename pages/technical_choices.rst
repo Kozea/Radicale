@@ -151,7 +151,7 @@ The Radicale Project is **only the server part** of this architecture.
 Code Architecture
 -----------------
 
-The package offers 6 modules.
+The package offers 7 modules.
 
 ``__main__``
   The main module provides a simple function called ``run``. Its main work is
@@ -171,20 +171,25 @@ The package offers 6 modules.
   executable with some command line options.
 
 ``ical``
-  In this sub-module are written the classes to represent calendars and
-  calendar items in Radicale. The simple iCalendar readers and writers are
-  included in this file, to read and write requests and internally stored
-  calendars. The readers and writers are small and stupid: they do not
-  fully understand the iCalendar format and do not know at all what a date is.
+  In this module are written the classes to represent calendars and calendar
+  items in Radicale. The simple iCalendar readers and writers are included in
+  this file, to read and write requests and internally stored calendars. The
+  readers and writers are small and stupid: they do not fully understand the
+  iCalendar format and do not know at all what a date is.
 
 ``xmlutils``
-  The functions defined in this sub-module are mainly called by the CalDAV
-  server class to read the XML part of the request, read or alter the
-  calendars, and create the XML part of the response. The main part of this
-  code relies on ElementTree.
+  The functions defined in this module are mainly called by the CalDAV server
+  class to read the XML part of the request, read or alter the calendars, and
+  create the XML part of the response. The main part of this code relies on
+  ElementTree.
+
+``log``
+  The ``start`` function provided by this module starts a logging mechanism
+  based on the default Python logging module. Logging options can be stored in
+  a logging configuration file.
 
 ``acl``
-  This sub-module is a set of Access Control Lists, a set of methods used by
+  This module is a set of Access Control Lists, a set of methods used by
   Radicale to manage rights to access the calendars. When the CalDAV server is
   launched, an Access Control List is chosen in the set, according to the
   configuration. The HTTP requests are then filtered to restrict the access
