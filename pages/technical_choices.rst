@@ -151,21 +151,13 @@ The Radicale Project is **only the server part** of this architecture.
 Code Architecture
 -----------------
 
-The code is split into 2 parts: the module and the server. The module offers
-the complex functions to create a CalDAV server, and the server is the
-executable using the module to launch the server.
+The package offers 6 modules.
 
-Server
-~~~~~~
-
-The server is a simple executable. Its main work is to read the configuration
-from the configuration file and from the options given in the command line;
-then it creates a server, according to the configuration, thanks to the module.
-
-Module
-~~~~~~
-
-The module offers 5 sub-modules.
+``__main__``
+  The main module provides a simple function called ``run``. Its main work is
+  to read the configuration from the configuration file and from the options
+  given in the command line; then it creates a server, according to the
+  configuration.
 
 ``__init__``
   This is the core part of the module, with the code for the CalDAV server. The
