@@ -1,1 +1,1 @@
-include COPYING NEWS.rst TODO.rst README.rst config logging radicale.fcgi radicale.wsgi
+include COPYING NEWS.rst TODO.rst README.rst config logging radicale.py radicale.fcgi radicale.wsgi
