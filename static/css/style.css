@@ -47,6 +47,11 @@ dt {
   margin: 0.8em 0 0.2em 0;
 }
 
+code {
+  background: rgba(0, 150, 0, 0.03);
+  border-radius: 0.25em;
+}
+
 h2 {
   background: url(img/icon.png) no-repeat top left;
   color: #a40000;
