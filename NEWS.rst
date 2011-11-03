@@ -12,8 +12,9 @@
 0.6.3 - **Not released yet**
 ============================
 
-* MOVE requests fixed
-* Faster REPORT answers
+* MOVE requests fixed     
+* Faster REPORT answers 
+* Executable put in the package
 
 
 0.6.2 - Seeds
