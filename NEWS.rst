@@ -3,12 +3,12 @@
 ======
 
 
-0.6.3 - **Not released yet**
-============================
+0.6.3 - Red Roses
+=================
 
 * MOVE requests fixed     
 * Faster REPORT answers 
-* Executable put in the package
+* Executable script moved into the package
 
 
 0.6.2 - Seeds
