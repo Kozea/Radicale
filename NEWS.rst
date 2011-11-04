@@ -3,11 +3,18 @@
 ======
 
 
+1.0 - *not released yet*
+========================
+
+* Repeating events
+* Courier and PAM authentication methods
+
+
 0.6.3 - Red Roses
 =================
 
-* MOVE requests fixed     
-* Faster REPORT answers 
+* MOVE requests fixed
+* Faster REPORT answers
 * Executable script moved into the package
 
 
