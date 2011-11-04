@@ -407,7 +407,6 @@ class Application(object):
 
     def report(self, environ, calendars, content, user):
         """Manage REPORT request."""
-        # TODO: support multiple calendars here
         calendar = calendars[0]
         headers = {'Content-Type': 'text/xml'}
         answer = xmlutils.report(environ["PATH_INFO"], content, calendar)
