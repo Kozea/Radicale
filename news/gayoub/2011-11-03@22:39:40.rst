@@ -1,0 +1,66 @@
+Radicale 0.6.3
+==============
+
+Radicale version 0.6.3 has been released, with bugfixes that could be
+interesting for you!
+
+
+0.6.3 - Red Roses
+=================
+
+* MOVE requests fixed     
+* Faster REPORT answers 
+* Executable script moved into the package
+
+
+What's New Since 0.6.2?
+=======================
+
+The MOVE requests were suffering a little bug that is fixed now. These requests
+are only sent by Apple clients, Mac users will be happy.
+
+The REPORT request were really, really slow (several minutes for large
+calendars). This was caused by an awful algorithm parsing the entire calendar
+for each event in the calendar. The calendar is now only parsed three times,
+and the events are found in a Python list, turning minutes into seconds! Much
+better, but far from perfection…
+
+Finally, the executable script parsing the command line options and starting
+the HTTP servers has been moved from the ``radicale.py`` file into the
+``radicale`` package. Two executable are now present in the archive: the good
+old ``radicale.py``, and ``bin/radicale``. The second one is only used by
+``setup.py``, where the hack used to rename ``radicale.py`` into ``radicale``
+has therefore been removed. As a consequence, you can now launch Radicale with
+the simple ``python -m radicale`` command, without relying on an executable.
+
+
+Time for a Stable Release!
+==========================
+
+The next release may be a stable release, symbolically called 1.0. Guess what's
+missing? Tests, of course!
+
+A non-regression testing suite, based on the clients' requests, will soon be
+added to Radicale. We're now thinking about a smart solution to store the
+tests, to represent the expected answers and to launch the requests. We've got
+crazy ideas, so be prepared: you'll definitely *want* to write tests during the
+next weeks!
+
+Repeating events, PAM and Courier authentication methods have already been
+added in master. You'll find them in the 1.0 release!
+
+
+What's Next?
+============
+
+Being stable is one thing, being cool is another one. If you want some cool new
+features, you may be interested in:
+
+- WebDAV and CardDAV support
+- Filters and rights management
+- Multiple storage backends, such as databases and git
+- Freebusy periods
+- Email alarms
+
+Issues have been reported in the bug tracker, you can follow there the latest
+news about these features. Your beloved text editor is waiting for you!
