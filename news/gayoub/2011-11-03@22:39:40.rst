@@ -6,7 +6,7 @@ interesting for you!
 
 
 0.6.3 - Red Roses
-=================
+-----------------
 
 * MOVE requests fixed     
 * Faster REPORT answers 
@@ -14,7 +14,7 @@ interesting for you!
 
 
 What's New Since 0.6.2?
-=======================
+-----------------------
 
 The MOVE requests were suffering a little bug that is fixed now. These requests
 are only sent by Apple clients, Mac users will be happy.
@@ -35,7 +35,7 @@ the simple ``python -m radicale`` command, without relying on an executable.
 
 
 Time for a Stable Release!
-==========================
+--------------------------
 
 The next release may be a stable release, symbolically called 1.0. Guess what's
 missing? Tests, of course!
@@ -51,7 +51,7 @@ added in master. You'll find them in the 1.0 release!
 
 
 What's Next?
-============
+------------
 
 Being stable is one thing, being cool is another one. If you want some cool new
 features, you may be interested in:
