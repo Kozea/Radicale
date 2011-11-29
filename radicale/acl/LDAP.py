@@ -34,12 +34,7 @@ ATTRIBUTE = config.get("acl", "ldap_attribute")
 CONNEXION = ldap.initialize(config.get("acl", "ldap_url"))
 BINDDN = config.get("acl", "ldap_binddn")
 PASSWORD = config.get("acl", "ldap_password")
-
-SCOPE = ldap.SCOPE_ONELEVEL
-if config.get("acl", "ldap_scope").lower() == 'subtree':
-    SCOPE = ldap.SCOPE_SUBTREE
-elif config.get("acl", "ldap_scope").lower() == 'base':
-    SCOPE = ldap.SCOPE_BASE
+SCOPE = getattr(ldap, "SCOPE_%s" % config.get("acl", "ldap_scope").upper())
 
 
 def has_right(owner, user, password):
