@@ -35,6 +35,12 @@ CONNEXION = ldap.initialize(config.get("acl", "ldap_url"))
 BINDDN = config.get("acl", "ldap_binddn")
 PASSWORD = config.get("acl", "ldap_password")
 
+SCOPE = ldap.SCOPE_ONELEVEL
+if config.get("acl", "ldap_scope").lower() == 'subtree':
+    SCOPE = ldap.SCOPE_SUBTREE
+elif config.get("acl", "ldap_scope").lower() == 'base':
+    SCOPE = ldap.SCOPE_BASE
+
 
 def has_right(owner, user, password):
     """Check if ``user``/``password`` couple is valid."""
@@ -50,7 +56,7 @@ def has_right(owner, user, password):
     log.LOGGER.debug(
         "LDAP bind for %s in base %s" % (distinguished_name, BASE))
 
-    users = CONNEXION.search_s(BASE, ldap.SCOPE_ONELEVEL, distinguished_name)
+    users = CONNEXION.search_s(BASE, SCOPE, distinguished_name)
     if users:
         log.LOGGER.debug("User %s found" % user)
         try:

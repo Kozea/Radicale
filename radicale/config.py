@@ -59,6 +59,7 @@ INITIAL_CONFIG = {
         "ldap_attribute": "uid",
         "ldap_binddn": "",
         "ldap_password": "",
+        "ldap_scope": "OneLevel",
         "pam_group_membership": "",
         "courier_socket": ""},
     "storage": {
