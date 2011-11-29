@@ -7,6 +7,7 @@
 ========================
 
 * Repeating events
+* Calendar deletion
 * Courier and PAM authentication methods
 
 
