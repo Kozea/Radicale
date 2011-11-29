@@ -172,6 +172,7 @@ class Calendar(object):
         self.encoding = "utf-8"
         split_path = path.split("/")
         self.path = os.path.join(FOLDER, path.replace("/", os.sep))
+        self.props_path = self.path + '.props'
         if principal and split_path and os.path.isdir(self.path):
             # Already existing principal calendar
             self.owner = split_path[0]
@@ -300,6 +301,11 @@ class Calendar(object):
 
         self.write(items=items)
 
+    def delete(self):
+        """Delete the calendar."""
+        os.remove(self.path)
+        os.remove(self.props_path)
+
     def remove(self, name):
         """Remove object named ``name`` from calendar."""
         components = [
@@ -415,16 +421,15 @@ class Calendar(object):
     @contextmanager
     def props(self):
         """Get the calendar properties."""
-        props_path = self.path + '.props'
         # On enter
         properties = {}
-        if os.path.exists(props_path):
-            with open(props_path) as prop_file:
+        if os.path.exists(self.props_path):
+            with open(self.props_path) as prop_file:
                 properties.update(json.load(prop_file))
         yield properties
         # On exit
-        self._create_dirs(props_path)
-        with open(props_path, 'w') as prop_file:
+        self._create_dirs(self.props_path)
+        with open(self.props_path, 'w') as prop_file:
             json.dump(properties, prop_file)
 
     @property

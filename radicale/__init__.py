@@ -267,8 +267,15 @@ class Application(object):
     def delete(self, environ, calendars, content, user):
         """Manage DELETE request."""
         calendar = calendars[0]
-        item = calendar.get_item(
-            xmlutils.name_from_path(environ["PATH_INFO"], calendar))
+
+        if calendar.local_path == environ["PATH_INFO"].strip("/"):
+            # Path matching the calendar, the item to delete is the calendar
+            item = calendar
+        else:
+            # Try to get an item matching the path
+            item = calendar.get_item(
+                xmlutils.name_from_path(environ["PATH_INFO"], calendar))
+
         if item and environ.get("HTTP_IF_MATCH", item.etag) == item.etag:
             # No ETag precondition or precondition verified, delete item
             answer = xmlutils.delete(environ["PATH_INFO"], calendar)

@@ -153,7 +153,12 @@ def delete(path, calendar):
 
     """
     # Reading request
-    calendar.remove(name_from_path(path, calendar))
+    if calendar.local_path == path.strip("/"):
+        # Delete the whole calendar
+        calendar.delete()
+    else:
+        # Remove an item from the calendar
+        calendar.remove(name_from_path(path, calendar))
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
