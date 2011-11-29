@@ -61,6 +61,8 @@ ldap_attribute = uid
 ldap_binddn =
 # LDAP password for initial login, used with ldap_binddn
 ldap_password =
+# LDAP scope of the search
+ldap_scope = OneLevel
 
 # PAM group user should be member of
 pam_group_membership =
