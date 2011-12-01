@@ -14,6 +14,10 @@ menu:
   - Download:
       link: /download/
 
+project (git):
+  url: git://github.com/Kozea/Radicale.git
+  path: radicale
+
 vcs (git):
   url: git://github.com/Kozea/Radicale.git
   path: /var/db/git/radicale.git
