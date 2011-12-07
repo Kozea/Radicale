@@ -438,7 +438,7 @@ def report(path, xml_request, calendar):
             multistatus.append(response)
 
             href = ET.Element(_tag("D", "href"))
-            href.text = "%s/%s" % (path, item.name)
+            href.text = "%s/%s" % (path.rstrip("/"), item.name)
             response.append(href)
 
             propstat = ET.Element(_tag("D", "propstat"))
