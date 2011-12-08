@@ -68,6 +68,8 @@ Radicale has been packaged for:
 - `openSUSE
   <https://build.opensuse.org/package/show?package=radicale&project=home%3Acbosdonnat>`_
   by Cédric Bosdonnat
+- `Slackware <http://schoepfer.info/slackware.xhtml#packages-network>`_ by
+  Johannes Schöpfer
 - `Trisquel <http://packages.trisquel.info/search?searchon=names&keywords=radicale>`_
 - `Ubuntu <http://packages.ubuntu.com/radicale>`_ by the MOTU and Jonas
   Smedegaard
