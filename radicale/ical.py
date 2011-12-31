@@ -47,13 +47,17 @@ def open(path, mode="r"):
 # pylint: enable=W0622
 
 
-def serialize(headers=(), items=()):
-    """Return an iCal text corresponding to given ``headers`` and ``items``."""
-    lines = ["BEGIN:VCALENDAR"]
+def serialize(tag, headers=(), items=()):
+    """Return a collection text corresponding to given ``tag``.
+
+    The collection has the given ``headers`` and ``items``.
+
+    """
+    lines = ["BEGIN:%s" % tag]
     for part in (headers, items):
         if part:
             lines.append("\n".join(item.text for item in part))
-    lines.append("END:VCALENDAR\n")
+    lines.append("END:%s\n" % tag)
     return "\n".join(lines)
 
 
@@ -135,37 +139,45 @@ class Header(Item):
     """Internal header class."""
 
 
-class Event(Item):
-    """Internal event class."""
-    tag = "VEVENT"
-
-
-class Todo(Item):
-    """Internal todo class."""
-    # This is not a TODO!
-    # pylint: disable=W0511
-    tag = "VTODO"
-    # pylint: enable=W0511
-
-
-class Journal(Item):
-    """Internal journal class."""
-    tag = "VJOURNAL"
-
-
 class Timezone(Item):
     """Internal timezone class."""
     tag = "VTIMEZONE"
 
 
-class Calendar(object):
-    """Internal calendar class."""
-    tag = "VCALENDAR"
+class Component(Item):
+    """Internal main component of a collection."""
 
+
+class Event(Component):
+    """Internal event class."""
+    tag = "VEVENT"
+    mimetype = "text/calendar"
+
+
+class Todo(Component):
+    """Internal todo class."""
+    tag = "VTODO"  # pylint: disable=W0511
+    mimetype = "text/calendar"
+
+
+class Journal(Component):
+    """Internal journal class."""
+    tag = "VJOURNAL"
+    mimetype = "text/calendar"
+
+
+class Card(Component):
+    """Internal card class."""
+    tag = "VCARD"
+    mimetype = "text/vcard"
+
+
+class Collection(object):
+    """Internal collection item."""
     def __init__(self, path, principal=False):
-        """Initialize the calendar.
+        """Initialize the collection.
 
-        ``path`` must be the normalized relative path of the calendar, using
+        ``path`` must be the normalized relative path of the collection, using
         the slash as the folder delimiter, with no leading nor trailing slash.
 
         """
@@ -174,7 +186,7 @@ class Calendar(object):
         self.path = os.path.join(FOLDER, path.replace("/", os.sep))
         self.props_path = self.path + '.props'
         if principal and split_path and os.path.isdir(self.path):
-            # Already existing principal calendar
+            # Already existing principal collection
             self.owner = split_path[0]
         elif len(split_path) > 1:
             # URL with at least one folder
@@ -186,7 +198,7 @@ class Calendar(object):
 
     @classmethod
     def from_path(cls, path, depth="infinite", include_container=True):
-        """Return a list of calendars and items under the given ``path``.
+        """Return a list of collections and items under the given ``path``.
 
         If ``depth`` is "0", only the actual object under ``path`` is
         returned. Otherwise, also sub-items are appended to the result. If
@@ -218,7 +230,7 @@ class Calendar(object):
                     result.append(cls(path, principal))
                 try:
                     for filename in next(os.walk(abs_path))[2]:
-                        if cls.is_vcalendar(os.path.join(abs_path, filename)):
+                        if cls.is_collection(os.path.join(abs_path, filename)):
                             result.append(cls(os.path.join(path, filename)))
                 except StopIteration:
                     # Directory does not exist yet
@@ -227,17 +239,52 @@ class Calendar(object):
             if depth == "0":
                 result.append(cls(path))
             else:
-                calendar = cls(path, principal)
+                collection = cls(path, principal)
                 if include_container:
-                    result.append(calendar)
-                result.extend(calendar.components)
+                    result.append(collection)
+                result.extend(collection.components)
         return result
 
-    @staticmethod
-    def is_vcalendar(path):
-        """Return ``True`` if there is a VCALENDAR file under ``path``."""
+    def is_collection(self, path):
+        """Return ``True`` if there is a collection file under ``path``."""
+        beginning_string = 'BEGIN:%s' % self.tag
         with open(path) as stream:
-            return 'BEGIN:VCALENDAR' == stream.read(15)
+            beginning_string = stream.read(len(beginning_string))
+
+    @property
+    def items(self):
+        """Get list of all items in collection."""
+        return self._parse(self.text, (Card, Event, Todo, Journal, Timezone))
+
+    @property
+    def components(self):
+        """Get list of all components in collection."""
+        return self._parse(self.text, (Card, Event, Todo, Journal))
+
+    @property
+    def events(self):
+        """Get list of ``Event`` items in collection."""
+        return self._parse(self.text, (Event,))
+
+    @property
+    def cards(self):
+        """Get list of all cards in collection."""
+        return self._parse(self.text, (Card,))
+
+    @property
+    def todos(self):
+        """Get list of ``Todo`` items in collection."""
+        return self._parse(self.text, (Todo,))
+
+    @property
+    def journals(self):
+        """Get list of ``Journal`` items in collection."""
+        return self._parse(self.text, (Journal,))
+
+    @property
+    def timezones(self):
+        """Get list of ``Timezome`` items in collection."""
+        return self._parse(self.text, (Timezone,))
 
     @staticmethod
     def _parse(text, item_types, name=None):
@@ -329,7 +376,7 @@ class Calendar(object):
 
         self._create_dirs(self.path)
 
-        text = serialize(headers, items)
+        text = serialize(self.tag, headers, items)
         return open(self.path, "w").write(text)
 
     @staticmethod
@@ -339,20 +386,47 @@ class Calendar(object):
             os.makedirs(os.path.dirname(path))
 
     @property
+    def tag(self):
+        """Type of the collection."""
+        with self.props as props:
+            if "tag" not in props:
+                try:
+                    props["tag"] = open(self.path).readlines()[0][6:].rstrip()
+                except IOError:
+                    props["tag"] = "VCALENDAR"
+            return props["tag"]
+
+    @property
+    def mimetype(self):
+        """Mimetype of the collection."""
+        if self.tag == "VADDRESSBOOK":
+            return "text/vcard"
+        elif self.tag == "VCALENDAR":
+            return "text/calendar"
+
+    @property
+    def resource_type(self):
+        """Resource type of the collection."""
+        if self.tag == "VADDRESSBOOK":
+            return "addressbook"
+        elif self.tag == "VCALENDAR":
+            return "calendar"
+
+    @property
     def etag(self):
-        """Etag from calendar."""
+        """Etag from collection."""
         return '"%s"' % hash(self.text)
 
     @property
     def name(self):
-        """Calendar name."""
+        """Collection name."""
         with self.props as props:
             return props.get('D:displayname',
                 self.path.split(os.path.sep)[-1])
 
     @property
     def text(self):
-        """Calendar as plain text."""
+        """Collection as plain text."""
         try:
             return open(self.path).read()
         except IOError:
@@ -360,7 +434,7 @@ class Calendar(object):
 
     @property
     def headers(self):
-        """Find headers items in calendar."""
+        """Find headers items in collection."""
         header_lines = []
 
         lines = unfold(self.text)
@@ -374,38 +448,8 @@ class Calendar(object):
         return header_lines
 
     @property
-    def items(self):
-        """Get list of all items in calendar."""
-        return self._parse(self.text, (Event, Todo, Journal, Timezone))
-
-    @property
-    def components(self):
-        """Get list of all components in calendar."""
-        return self._parse(self.text, (Event, Todo, Journal))
-
-    @property
-    def events(self):
-        """Get list of ``Event`` items in calendar."""
-        return self._parse(self.text, (Event,))
-
-    @property
-    def todos(self):
-        """Get list of ``Todo`` items in calendar."""
-        return self._parse(self.text, (Todo,))
-
-    @property
-    def journals(self):
-        """Get list of ``Journal`` items in calendar."""
-        return self._parse(self.text, (Journal,))
-
-    @property
-    def timezones(self):
-        """Get list of ``Timezome`` items in calendar."""
-        return self._parse(self.text, (Timezone,))
-
-    @property
     def last_modified(self):
-        """Get the last time the calendar has been modified.
+        """Get the last time the collection has been modified.
 
         The date is formatted according to rfc1123-5.2.14.
 
@@ -420,7 +464,7 @@ class Calendar(object):
     @property
     @contextmanager
     def props(self):
-        """Get the calendar properties."""
+        """Get the collection properties."""
         # On enter
         properties = {}
         if os.path.exists(self.props_path):
@@ -434,7 +478,7 @@ class Calendar(object):
 
     @property
     def owner_url(self):
-        """Get the calendar URL according to its owner."""
+        """Get the collection URL according to its owner."""
         if self.owner:
             return "/%s/" % self.owner
         else:
@@ -442,5 +486,5 @@ class Calendar(object):
 
     @property
     def url(self):
-        """Get the standard calendar URL."""
+        """Get the standard collection URL."""
         return "/%s/" % self.local_path

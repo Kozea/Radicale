@@ -31,7 +31,7 @@ try:
     from collections import OrderedDict
 except ImportError:
     # Python 2.6 has no OrderedDict, use a dict instead
-    OrderedDict = dict # pylint: disable=C0103
+    OrderedDict = dict  # pylint: disable=C0103
 import re
 import xml.etree.ElementTree as ET
 
@@ -40,6 +40,7 @@ from radicale import client, config, ical
 
 NAMESPACES = {
     "C": "urn:ietf:params:xml:ns:caldav",
+    "CR": "urn:ietf:params:xml:ns:carddav",
     "D": "DAV:",
     "CS": "http://calendarserver.org/ns/",
     "ICAL": "http://apple.com/ns/ical/",
@@ -56,7 +57,7 @@ for short, url in NAMESPACES.items():
         ET.register_namespace("" if short == "D" else short, url)
     else:
         # ... and badly with Python 2.6 and 3.1
-        ET._namespace_map[url] = short # pylint: disable=W0212
+        ET._namespace_map[url] = short  # pylint: disable=W0212
 
 
 CLARK_TAG_REGEX = re.compile(r"""
@@ -118,11 +119,12 @@ def _response(code):
     return "HTTP/1.1 %i %s" % (code, client.responses[code])
 
 
-def name_from_path(path, calendar):
+def name_from_path(path, collection):
     """Return Radicale item name from ``path``."""
-    calendar_parts = calendar.local_path.strip("/").split("/")
+    collection_parts = collection.local_path.strip("/").split("/")
     path_parts = path.strip("/").split("/")
-    return path_parts[-1] if (len(path_parts) - len(calendar_parts)) else None
+    if (len(path_parts) - len(collection_parts)):
+        return path_parts[-1]
 
 
 def props_from_request(root, actions=("set", "remove")):
@@ -142,23 +144,29 @@ def props_from_request(root, actions=("set", "remove")):
     if prop_element is not None:
         for prop in prop_element:
             result[_tag_from_clark(prop.tag)] = prop.text
+            if prop.tag == "resourcetype":
+                for resource_type in prop:
+                    if resource_type.tag in ("calendar", "addressbook"):
+                        result["resourcetype"] = \
+                            "V%s" % resource_type.tag.upper()
+                        break
 
     return result
 
 
-def delete(path, calendar):
+def delete(path, collection):
     """Read and answer DELETE requests.
 
     Read rfc4918-9.6 for info.
 
     """
     # Reading request
-    if calendar.local_path == path.strip("/"):
-        # Delete the whole calendar
-        calendar.delete()
+    if collection.local_path == path.strip("/"):
+        # Delete the whole collection
+        collection.delete()
     else:
-        # Remove an item from the calendar
-        calendar.remove(name_from_path(path, calendar))
+        # Remove an item from the collection
+        collection.remove(name_from_path(path, collection))
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -176,7 +184,7 @@ def delete(path, calendar):
     return _pretty_xml(multistatus)
 
 
-def propfind(path, xml_request, calendars, user=None):
+def propfind(path, xml_request, collections, user=None):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -191,8 +199,8 @@ def propfind(path, xml_request, calendars, user=None):
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
-    for calendar in calendars:
-        response = _propfind_response(path, calendar, props, user)
+    for collection in collections:
+        response = _propfind_response(path, collection, props, user)
         multistatus.append(response)
 
     return _pretty_xml(multistatus)
@@ -200,15 +208,15 @@ def propfind(path, xml_request, calendars, user=None):
 
 def _propfind_response(path, item, props, user):
     """Build and return a PROPFIND response."""
-    is_calendar = isinstance(item, ical.Calendar)
-    if is_calendar:
-        with item.props as cal_props:
-            calendar_props = cal_props
+    is_collection = isinstance(item, ical.Collection)
+    if is_collection:
+        with item.props as properties:
+            collection_props = properties
 
     response = ET.Element(_tag("D", "response"))
 
     href = ET.Element(_tag("D", "href"))
-    uri = item.url if is_calendar else "%s/%s" % (path, item.name)
+    uri = item.url if is_collection else "%s/%s" % (path, item.name)
     href.text = uri.replace("//", "/")
     response.append(href)
 
@@ -263,15 +271,15 @@ def _propfind_response(path, item, props, user):
                 report_tag.text = report_name
                 supported.append(report_tag)
                 element.append(supported)
-        elif is_calendar:
+        elif is_collection:
             if tag == _tag("D", "getcontenttype"):
-                element.text = "text/calendar"
+                element.text = item.mimetype
             elif tag == _tag("D", "resourcetype"):
                 if item.is_principal:
                     tag = ET.Element(_tag("D", "principal"))
                     element.append(tag)
                 else:
-                    tag = ET.Element(_tag("C", "calendar"))
+                    tag = ET.Element(_tag("C", item.resource_type))
                     element.append(tag)
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
@@ -280,16 +288,18 @@ def _propfind_response(path, item, props, user):
             elif tag == _tag("CS", "getctag"):
                 element.text = item.etag
             elif tag == _tag("C", "calendar-timezone"):
-                element.text = ical.serialize(item.headers, item.timezones)
+                element.text = ical.serialize(
+                    item.tag, item.headers, item.timezones)
             else:
                 human_tag = _tag_from_clark(tag)
-                if human_tag in calendar_props:
-                    element.text = calendar_props[human_tag]
+                if human_tag in collection_props:
+                    element.text = collection_props[human_tag]
                 else:
                     is404 = True
-        # Not for calendars
+        # Not for collections
         elif tag == _tag("D", "getcontenttype"):
-            element.text = "text/calendar; component=%s" % item.tag.lower()
+            element.text = "%s; component=%s" % (
+                item.mimetype, item.tag.lower())
         elif tag == _tag("D", "resourcetype"):
             # resourcetype must be returned empty for non-collection elements
             pass
@@ -340,7 +350,7 @@ def _add_propstat_to(element, tag, status_number):
     propstat.append(status)
 
 
-def proppatch(path, xml_request, calendar):
+def proppatch(path, xml_request, collection):
     """Read and answer PROPPATCH requests.
 
     Read rfc4918-9.2 for info.
@@ -361,17 +371,17 @@ def proppatch(path, xml_request, calendar):
     href.text = path
     response.append(href)
 
-    with calendar.props as calendar_props:
+    with collection.props as collection_props:
         for short_name, value in props_to_set.items():
             if short_name == 'C:calendar-timezone':
-                calendar.replace('', value)
-                calendar.write()
+                collection.replace('', value)
+                collection.write()
             else:
-                calendar_props[short_name] = value
+                collection_props[short_name] = value
             _add_propstat_to(response, short_name, 200)
         for short_name in props_to_remove:
             try:
-                del calendar_props[short_name]
+                del collection_props[short_name]
             except KeyError:
                 _add_propstat_to(response, short_name, 412)
             else:
@@ -380,18 +390,18 @@ def proppatch(path, xml_request, calendar):
     return _pretty_xml(multistatus)
 
 
-def put(path, ical_request, calendar):
+def put(path, ical_request, collection):
     """Read PUT requests."""
-    name = name_from_path(path, calendar)
-    if name in (item.name for item in calendar.items):
+    name = name_from_path(path, collection)
+    if name in (item.name for item in collection.items):
         # PUT is modifying an existing item
-        calendar.replace(name, ical_request)
+        collection.replace(name, ical_request)
     else:
         # PUT is adding a new item
-        calendar.append(name, ical_request)
+        collection.append(name, ical_request)
 
 
-def report(path, xml_request, calendar):
+def report(path, xml_request, collection):
     """Read and answer REPORT requests.
 
     Read rfc3253-3.6 for info.
@@ -403,7 +413,7 @@ def report(path, xml_request, calendar):
     prop_element = root.find(_tag("D", "prop"))
     props = [prop.tag for prop in prop_element]
 
-    if calendar:
+    if collection:
         if root.tag == _tag("C", "calendar-multiget"):
             # Read rfc4791-7.9 for info
             hreferences = set(
@@ -417,21 +427,22 @@ def report(path, xml_request, calendar):
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
-    calendar_items = calendar.items
-    calendar_headers = calendar.headers
-    calendar_timezones = calendar.timezones
+    collection_tag = collection.tag
+    collection_items = collection.items
+    collection_headers = collection.headers
+    collection_timezones = collection.timezones
 
     for hreference in hreferences:
-        # Check if the reference is an item or a calendar
-        name = name_from_path(hreference, calendar)
+        # Check if the reference is an item or a collection
+        name = name_from_path(hreference, collection)
         if name:
             # Reference is an item
             path = "/".join(hreference.split("/")[:-1]) + "/"
-            items = (item for item in calendar_items if item.name == name)
+            items = (item for item in collection_items if item.name == name)
         else:
-            # Reference is a calendar
+            # Reference is a collection
             path = hreference
-            items = calendar.components
+            items = collection.components
 
         for item in items:
             response = ET.Element(_tag("D", "response"))
@@ -452,9 +463,10 @@ def report(path, xml_request, calendar):
                 if tag == _tag("D", "getetag"):
                     element.text = item.etag
                 elif tag == _tag("C", "calendar-data"):
-                    if isinstance(item, (ical.Event, ical.Todo, ical.Journal)):
+                    if isinstance(item, ical.Component):
                         element.text = ical.serialize(
-                            calendar_headers, calendar_timezones + [item])
+                            collection_tag, collection_headers,
+                            collection_timezones + [item])
                 prop.append(element)
 
             status = ET.Element(_tag("D", "status"))
