@@ -110,11 +110,11 @@ class Item(object):
                             line, "X-RADICALE-NAME:%s" % self._name)
             else:
                 self.text = self.text.replace(
-                    "\nUID:", "\nX-RADICALE-NAME:%s\nUID:" % self._name)
+                    "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
         else:
             self._name = str(uuid.uuid4())
             self.text = self.text.replace(
-                "\nEND:", "\nUID:%s\nEND:" % self._name)
+                "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
 
     @property
     def etag(self):
@@ -342,7 +342,7 @@ class Collection(object):
         items = self.items
 
         for new_item in self._parse(
-            text, (Timezone, Event, Todo, Journal), name):
+            text, (Timezone, Event, Todo, Journal, Card), name):
             if new_item.name not in (item.name for item in items):
                 items.append(new_item)
 
@@ -371,13 +371,22 @@ class Collection(object):
         """Write calendar with given parameters."""
         headers = headers or self.headers or (
             Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
-            Header("VERSION:2.0"))
+            Header("VERSION:%s" % self.version))
         items = items if items is not None else self.items
 
         self._create_dirs(self.path)
 
         text = serialize(self.tag, headers, items)
         return open(self.path, "w").write(text)
+
+    def set_mimetype(self, mimetype):
+        """Set the mimetype of the collection."""
+        with self.props as props:
+            if "tag" not in props:
+                if mimetype == "text/vcard":
+                    props["tag"] = "VADDRESSBOOK"
+                else:
+                    props["tag"] = "VCALENDAR"
 
     @staticmethod
     def _create_dirs(path):
@@ -438,12 +447,11 @@ class Collection(object):
         header_lines = []
 
         lines = unfold(self.text)
-        for line in lines:
-            if line.startswith("PRODID:"):
-                header_lines.append(Header(line))
-        for line in lines:
-            if line.startswith("VERSION:"):
-                header_lines.append(Header(line))
+        for header in ("PRODID", "VERSION"):
+            for line in lines:
+                if line.startswith("%s:" % header):
+                    header_lines.append(Header(line))
+                    break
 
         return header_lines
 
@@ -488,3 +496,8 @@ class Collection(object):
     def url(self):
         """Get the standard collection URL."""
         return "/%s/" % self.local_path
+
+    @property
+    def version(self):
+        """Get the version of the collection type."""
+        return "3.0" if self.tag == "VADDRESSBOOK" else "2.0"

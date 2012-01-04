@@ -405,6 +405,7 @@ class Application(object):
     def put(self, environ, collections, content, user):
         """Manage PUT request."""
         collection = collections[0]
+        collection.set_mimetype(environ.get("CONTENT_TYPE"))
         headers = {}
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
         item = collection.get_item(item_name)
