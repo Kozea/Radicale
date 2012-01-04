@@ -216,7 +216,7 @@ article {
   padding: 20px;
 }
 
-.important, .note {
+.important, .warning, .note {
   border-radius: 3px;
   font-size: 0.9em;
   margin: 1em 10%;
@@ -224,13 +224,23 @@ article {
 }
 
 .important {
-  background:rgba(180, 0, 0, 0.1);
+  background: rgba(180, 0, 0, 0.1);
   border: 1px dotted #a40000;
 }
 
+.warning {
+  background: rgba(220, 120, 0, 0.1);
+  border: 1px dotted #a46600;
+}
+
 .note {
-  background:rgba(78, 154, 6, 0.1);
+  background: rgba(78, 154, 6, 0.1);
   border: 1px dotted #4e9a06;
+}
+
+.admonition-title {
+  font-variant: small-caps;
+  text-decoration: underline;
 }
 
 .footnote {

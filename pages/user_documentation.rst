@@ -178,7 +178,7 @@ iCal
    This description assumes you do not have any authentication or encryption
    configured. The procedure will change accordingly if you do.
 
-In iCal 4.0:
+In iCal 4.0 or iCal 5.0:
 
 1. Open the ``Preferences`` dialog and select the ``Accounts`` tab
 2. Click the ``+`` button at the lower left to open the account creation wizard
@@ -193,6 +193,10 @@ In iCal 4.0:
 Click ``Create``. The wizard will now tell you, that no encryption is in place
 (``Unsecured Connection``). This is expected and will change if you configure
 radicale to use SSL. Click ``Continue``.
+
+.. warning::
+   In iCal 5.0, please check twice that the ``Sync all entries`` option is
+   activated, otherwise some events may not be shown in your calendar.
 
 The wizard will close, leaving you in the ``Account`` tab again. The account is
 now set-up. You can close the ``Preferences`` window.
@@ -443,17 +447,28 @@ to your environment):
        </Directory>
    </VirtualHost>
 
-.. note::
+.. warning::
    You should use the root of the (sub)domain (``WSGIScriptAlias /``), else
    some CalDAV features may not work.
 
 .. important::
    If you want to use authentication with Apache, you *really* should use one
    of the Apache authentication modules, instead of the ones from Radicale:
-   they're just better. If you're still convinced that access control is better
-   with Radicale, you have to add ``WSGIPassAuthorization On`` in your Apache
-   configuration files, as explained in `the mod_wsgi documentation
+   they're just better.
+
+   Deactivate any ACL module in Radicale and use your favourite Apache
+   authentication backend. You can then restrict the access: allow the
+   ``alice`` user to access ``/alice/*`` URLs, and everything should work as
+   expected.
+
+   If you're still convinced that access control is better with Radicale, you
+   have to add ``WSGIPassAuthorization On`` in your Apache configuration files,
+   as explained in `the mod_wsgi documentation
    <http://code.google.com/p/modwsgi/wiki/ConfigurationGuidelines#User_Authentication>`_.
+
+.. note::
+   Read-only calendars can also be served by a simple Apache HTTP server, as
+   Radicale stores full-text icalendar files.
 
 
 Authentication and URLs
