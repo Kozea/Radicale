@@ -3,6 +3,12 @@
 ======
 
 
+0.6.4 - Tulips
+==============
+
+* Fix the installation with Python 3.1
+
+
 0.6.3 - Red Roses
 =================
 
