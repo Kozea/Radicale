@@ -230,8 +230,9 @@ class Collection(object):
                     result.append(cls(path, principal))
                 try:
                     for filename in next(os.walk(abs_path))[2]:
-                        if cls.is_collection(os.path.join(abs_path, filename)):
-                            result.append(cls(os.path.join(path, filename)))
+                        collection = cls(os.path.join(path, filename))
+                        if collection.exists:
+                            result.append(collection)
                 except StopIteration:
                     # Directory does not exist yet
                     pass
@@ -245,11 +246,12 @@ class Collection(object):
                 result.extend(collection.components)
         return result
 
-    def is_collection(self, path):
-        """Return ``True`` if there is a collection file under ``path``."""
+    @property
+    def exists(self):
+        """Return ``True`` if there is a collection file exists."""
         beginning_string = 'BEGIN:%s' % self.tag
-        with open(path) as stream:
-            beginning_string = stream.read(len(beginning_string))
+        with open(self.path) as stream:
+            return beginning_string == stream.read(len(beginning_string))
 
     @property
     def items(self):

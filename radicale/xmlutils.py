@@ -242,6 +242,7 @@ def _propfind_response(path, item, props, user):
         elif tag in (
             _tag("D", "principal-collection-set"),
             _tag("C", "calendar-user-address-set"),
+            _tag("CR", "addressbook-home-set"),
             _tag("C", "calendar-home-set")):
             tag = ET.Element(_tag("D", "href"))
             tag.text = path
