@@ -230,9 +230,10 @@ class Collection(object):
                     result.append(cls(path, principal))
                 try:
                     for filename in next(os.walk(abs_path))[2]:
-                        collection = cls(os.path.join(path, filename))
-                        if collection.exists:
-                            result.append(collection)
+                        if not filename.endswith(".props"):
+                            collection = cls(os.path.join(path, filename))
+                            if collection.exists:
+                                result.append(collection)
                 except StopIteration:
                     # Directory does not exist yet
                     pass
