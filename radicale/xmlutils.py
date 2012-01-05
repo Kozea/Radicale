@@ -415,7 +415,9 @@ def report(path, xml_request, collection):
     props = [prop.tag for prop in prop_element]
 
     if collection:
-        if root.tag == _tag("C", "calendar-multiget"):
+        if root.tag in (
+            _tag("C", "calendar-multiget"),
+            _tag("CR", "addressbook-multiget")):
             # Read rfc4791-7.9 for info
             hreferences = set(
                 href_element.text for href_element
@@ -463,7 +465,8 @@ def report(path, xml_request, collection):
                 element = ET.Element(tag)
                 if tag == _tag("D", "getetag"):
                     element.text = item.etag
-                elif tag == _tag("C", "calendar-data"):
+                elif tag in (
+                    _tag("C", "calendar-data"), _tag("CR", "address-data")):
                     if isinstance(item, ical.Component):
                         element.text = ical.serialize(
                             collection_tag, collection_headers,
