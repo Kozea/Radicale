@@ -47,13 +47,17 @@ def open(path, mode="r"):
 # pylint: enable=W0622
 
 
-def serialize(tag, headers=(), items=()):
-    """Return a collection text corresponding to given ``tag``.
+def serialize(tag, headers=(), items=(), whole=False):
+    """Return a text corresponding to given collection ``tag``.
 
-    The collection has the given ``headers`` and ``items``.
+    The text may have the given ``headers`` and ``items`` added around the
+    items if needed (ie. for calendars).
+
+    If ``whole`` is ``True``, the collection tags and headers are added, even
+    for address books.
 
     """
-    if tag == "VCARD" or (tag == "VADDRESSBOOK" and items and len(items) == 1):
+    if tag == "VADDRESSBOOK" and not whole:
         lines = [items[0].text]
     else:
         lines = ["BEGIN:%s" % tag]
@@ -382,7 +386,7 @@ class Collection(object):
 
         self._create_dirs(self.path)
 
-        text = serialize(self.tag, headers, items)
+        text = serialize(self.tag, headers, items, True)
         return open(self.path, "w").write(text)
 
     def set_mimetype(self, mimetype):
