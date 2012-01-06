@@ -53,11 +53,14 @@ def serialize(tag, headers=(), items=()):
     The collection has the given ``headers`` and ``items``.
 
     """
-    lines = ["BEGIN:%s" % tag]
-    for part in (headers, items):
-        if part:
-            lines.append("\n".join(item.text for item in part))
-    lines.append("END:%s\n" % tag)
+    if tag == "VCARD" or (tag == "VADDRESSBOOK" and items and len(items) == 1):
+        lines = [items[0].text]
+    else:
+        lines = ["BEGIN:%s" % tag]
+        for part in (headers, items):
+            if part:
+                lines.append("\n".join(item.text for item in part))
+        lines.append("END:%s\n" % tag)
     return "\n".join(lines)
 
 
