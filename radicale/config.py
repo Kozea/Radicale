@@ -63,7 +63,11 @@ INITIAL_CONFIG = {
         "pam_group_membership": "",
         "courier_socket": ""},
     "storage": {
-        "folder": os.path.expanduser("~/.config/radicale/calendars")},
+        "type": "filesystem",
+        "filesystem_folder":
+            os.path.expanduser("~/.config/radicale/calendars"),
+        "git_folder":
+            os.path.expanduser("~/.config/radicale/calendars")},
     "logging": {
         "config": "/etc/radicale/logging",
         "debug": "False",

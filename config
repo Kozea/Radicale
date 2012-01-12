@@ -72,8 +72,14 @@ courier_socket =
 
 
 [storage]
+# Storage backend
+type = filesystem
+
 # Folder for storing local calendars, created if not present
-folder = ~/.config/radicale/calendars
+filesystem_folder = ~/.config/radicale/calendars
+
+# Git repository for storing local calendars, created if not present
+filesystem_folder = ~/.config/radicale/calendars
 
 
 [logging]
