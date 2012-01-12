@@ -33,33 +33,15 @@ from radicale import config, ical
 FOLDER = os.path.expanduser(config.get("storage", "filesystem_folder"))
 
 
+# This function overrides the builtin ``open`` function for this module
+# pylint: disable=W0622
+def open(path, mode="r"):
+    abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
+    return codecs.open(abs_path, mode, config.get("encoding", "stock"))
+# pylint: enable=W0622
+
+
 class Calendar(ical.Calendar):
-    @staticmethod
-    def open(path, mode="r"):
-        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
-        return codecs.open(abs_path, mode, config.get("encoding", "stock"))
-
-    @classmethod
-    def is_collection(cls, path):
-        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
-        return os.path.isdir(abs_path)
-
-    @classmethod
-    def is_item(cls, path):
-        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
-        return os.path.isfile(abs_path)
-
-    @classmethod
-    def children(cls, path):
-        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
-        for filename in next(os.walk(abs_path))[2]:
-            if cls.is_collection(path):
-                yield cls(path)
-
-    def delete(self):
-        os.remove(self._path)
-        os.remove(self._props_path)
-
     @property
     def _path(self):
         """Absolute path of the file at local ``path``."""
@@ -75,6 +57,47 @@ class Calendar(ical.Calendar):
         if not os.path.exists(os.path.dirname(self._path)):
             os.makedirs(os.path.dirname(self._path))
 
+    def save(self, text):
+        self._create_dirs()
+        open(self._path, "w").write(text)
+
+    def delete(self):
+        os.remove(self._path)
+        os.remove(self._props_path)
+
+    @property
+    def text(self):
+        try:
+            return open(self._path).read()
+        except IOError:
+            return ""
+
+    @classmethod
+    def children(cls, path):
+        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
+        for filename in next(os.walk(abs_path))[2]:
+            if cls.is_collection(path):
+                yield cls(path)
+
+    @classmethod
+    def is_collection(cls, path):
+        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
+        return os.path.isdir(abs_path)
+
+    @classmethod
+    def is_item(cls, path):
+        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
+        return os.path.isfile(abs_path)
+
+    @property
+    def last_modified(self):
+        # Create calendar if needed
+        if not os.path.exists(self._path):
+            self.write()
+
+        modification_time = time.gmtime(os.path.getmtime(self._path))
+        return time.strftime("%a, %d %b %Y %H:%M:%S +0000", modification_time)
+
     @property
     @contextmanager
     def props(self):
@@ -88,26 +111,6 @@ class Calendar(ical.Calendar):
         self._create_dirs()
         with open(self._props_path, 'w') as prop_file:
             json.dump(properties, prop_file)
-
-    @property
-    def last_modified(self):
-        # Create calendar if needed
-        if not os.path.exists(self._path):
-            self.write()
-
-        modification_time = time.gmtime(os.path.getmtime(self._path))
-        return time.strftime("%a, %d %b %Y %H:%M:%S +0000", modification_time)
-
-    @property
-    def text(self):
-        try:
-            return open(self._path).read()
-        except IOError:
-            return ""
-
-    def save(self, text):
-        self._create_dirs()
-        self.open(self._path, "w").write(text)
 
 
 ical.Calendar = Calendar

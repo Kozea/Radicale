@@ -269,7 +269,7 @@ class Application(object):
         """Manage DELETE request."""
         calendar = calendars[0]
 
-        if calendar.local_path == environ["PATH_INFO"].strip("/"):
+        if calendar.path == environ["PATH_INFO"].strip("/"):
             # Path matching the calendar, the item to delete is the calendar
             item = calendar
         else:

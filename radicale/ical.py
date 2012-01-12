@@ -143,7 +143,11 @@ class Timezone(Item):
 
 
 class Calendar(object):
-    """Internal calendar class."""
+    """Internal calendar class.
+
+    This class must be overridden and replaced by a storage backend.
+
+    """
     tag = "VCALENDAR"
 
     def __init__(self, path, principal=False):
@@ -155,7 +159,7 @@ class Calendar(object):
         """
         self.encoding = "utf-8"
         split_path = path.split("/")
-        self.path = path
+        self.path = path if path != '.' else ''
         if principal and split_path and self.is_collection(self.path):
             # Already existing principal calendar
             self.owner = split_path[0]
@@ -164,7 +168,6 @@ class Calendar(object):
             self.owner = split_path[0]
         else:
             self.owner = None
-        self.local_path = path if path != '.' else ''
         self.is_principal = principal
 
     @classmethod
@@ -209,8 +212,22 @@ class Calendar(object):
                 result.extend(calendar.components)
         return result
 
-    def open(self, path):
-        """Return the content of the calendar under ``path``."""
+    def save(self, text):
+        """Save the text into the calendar."""
+        raise NotImplemented
+
+    def delete(self):
+        """Delete the calendar."""
+        raise NotImplemented
+
+    @property
+    def text(self):
+        """Calendar as plain text."""
+        raise NotImplemented
+
+    @classmethod
+    def children(cls, path):
+        """Yield the children of the collection at local ``path``."""
         raise NotImplemented
 
     @classmethod
@@ -223,15 +240,24 @@ class Calendar(object):
         """Return ``True`` if relative ``path`` is a collection item."""
         raise NotImplemented
 
+    @property
+    def last_modified(self):
+        """Get the last time the calendar has been modified.
+
+        The date is formatted according to rfc1123-5.2.14.
+
+        """
+        raise NotImplemented
+
+    @property
+    @contextmanager
+    def props(self):
+        """Get the calendar properties."""
+        raise NotImplemented
+
     def is_vcalendar(self, path):
         """Return ``True`` if there is a VCALENDAR under relative ``path``."""
-        with self.open(path) as stream:
-            return 'BEGIN:VCALENDAR' == stream.read(15)
-
-    @classmethod
-    def children(cls, path):
-        """Yield the children of the collection at local ``path``."""
-        raise NotImplemented
+        return self.text.startswith('BEGIN:VCALENDAR')
 
     @staticmethod
     def _parse(text, item_types, name=None):
@@ -295,10 +321,6 @@ class Calendar(object):
 
         self.write(items=items)
 
-    def delete(self):
-        """Delete the calendar."""
-        raise NotImplemented
-
     def remove(self, name):
         """Remove object named ``name`` from calendar."""
         components = [
@@ -323,10 +345,6 @@ class Calendar(object):
         text = serialize(headers, items)
         self.save(text)
 
-    def save(self, text):
-        """Save the text into the calendar."""
-        raise NotImplemented
-
     @property
     def etag(self):
         """Etag from calendar."""
@@ -338,11 +356,6 @@ class Calendar(object):
         with self.props as props:
             return props.get('D:displayname',
                 self.path.split(os.path.sep)[-1])
-
-    @property
-    def text(self):
-        """Calendar as plain text."""
-        raise NotImplemented
 
     @property
     def headers(self):
@@ -390,21 +403,6 @@ class Calendar(object):
         return self._parse(self.text, (Timezone,))
 
     @property
-    def last_modified(self):
-        """Get the last time the calendar has been modified.
-
-        The date is formatted according to rfc1123-5.2.14.
-
-        """
-        raise NotImplemented
-
-    @property
-    @contextmanager
-    def props(self):
-        """Get the calendar properties."""
-        raise NotImplemented
-
-    @property
     def owner_url(self):
         """Get the calendar URL according to its owner."""
         if self.owner:
@@ -415,4 +413,4 @@ class Calendar(object):
     @property
     def url(self):
         """Get the standard calendar URL."""
-        return "/%s/" % self.local_path
+        return "/%s/" % self.path
