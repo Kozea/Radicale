@@ -99,6 +99,8 @@ class Item(object):
                     # Do not break, a ``X-RADICALE-NAME`` can appear next
 
         if self._name:
+            # Remove brackets that may have been put by Outlook
+            self._name = self._name.strip("{}")
             if "\nX-RADICALE-NAME:" in text:
                 for line in unfold(self.text):
                     if line.startswith("X-RADICALE-NAME:"):
