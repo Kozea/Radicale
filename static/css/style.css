@@ -144,15 +144,17 @@ nav li {
 }
 
 nav li a {
-color: #83dd00;
+  color: #83dd00;
   display: block;
   margin: auto;
   line-height:82px;
   text-align:center;
+  text-shadow: 0 0 3px black;
 }
 
 nav li a:hover, nav li a:focus{
   color: #83dd00;
+  text-shadow: none;
 }
 
 nav li a[href] {
