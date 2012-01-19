@@ -4,17 +4,19 @@
 }
 
 html {
-  background: url(img/top.jpg)repeat-x 0 82px,
-              url(img/back.jpg);
+  background: url(img/back.jpg) #f4f2f2; /* fallback */
+  background: url(img/top.jpg) repeat-x 0 82px,
+              url(img/back.jpg) #f4f2f2;
   font-family: sans-serif;
   min-height: 100%;
   width: 100%;
 }
 
 body {
-  background: url(img/radicale_back.png)no-repeat 100% 100% fixed,
-              url(img/r.jpg)no-repeat 100%,
-              url(img/green.jpg)repeat-x left 2em;
+  background: url(img/green.jpg) repeat-x left 2em #5ca309; /* fallback */
+  background: url(img/radicale_back.png) no-repeat 100% 100% fixed,
+              url(img/r.jpg) no-repeat 100%,
+              url(img/green.jpg) repeat-x left 2em #5ca309;
   color: #444;
   margin: -2em 0 0 0;
   min-height: 100%;
