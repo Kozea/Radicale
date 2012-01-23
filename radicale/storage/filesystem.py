@@ -36,12 +36,14 @@ FOLDER = os.path.expanduser(config.get("storage", "filesystem_folder"))
 # This function overrides the builtin ``open`` function for this module
 # pylint: disable=W0622
 def open(path, mode="r"):
+    """Open a file at ``path`` with encoding set in the configuration."""
     abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
     return codecs.open(abs_path, mode, config.get("encoding", "stock"))
 # pylint: enable=W0622
 
 
-class Calendar(ical.Calendar):
+class Collection(ical.Collection):
+    """Collection stored in a flat ical file."""
     @property
     def _path(self):
         """Absolute path of the file at local ``path``."""
@@ -49,11 +51,11 @@ class Calendar(ical.Calendar):
 
     @property
     def _props_path(self):
-        """Absolute path of the file storing the calendar properties."""
+        """Absolute path of the file storing the collection properties."""
         return self._path + ".props"
 
     def _create_dirs(self):
-        """Create folder storing the calendar if absent."""
+        """Create folder storing the collection if absent."""
         if not os.path.exists(os.path.dirname(self._path)):
             os.makedirs(os.path.dirname(self._path))
 
@@ -74,10 +76,12 @@ class Calendar(ical.Calendar):
 
     @classmethod
     def children(cls, path):
-        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
+        rel_path = path.replace("/", os.sep)
+        abs_path = os.path.join(FOLDER, rel_path)
         for filename in next(os.walk(abs_path))[2]:
-            if cls.is_collection(path):
-                yield cls(path)
+            rel_filename = os.path.join(rel_path, filename)
+            if cls.is_collection(rel_filename):
+                yield cls(rel_filename)
 
     @classmethod
     def is_collection(cls, path):
@@ -91,7 +95,7 @@ class Calendar(ical.Calendar):
 
     @property
     def last_modified(self):
-        # Create calendar if needed
+        # Create collection if needed
         if not os.path.exists(self._path):
             self.write()
 
@@ -113,4 +117,4 @@ class Calendar(ical.Calendar):
             json.dump(properties, prop_file)
 
 
-ical.Calendar = Calendar
+ical.Collection = Collection

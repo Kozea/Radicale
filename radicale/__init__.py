@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008-2011 Guillaume Ayoub
+# Copyright © 2008-2012 Guillaume Ayoub
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 #
@@ -107,7 +107,7 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
 
 
 class Application(object):
-    """WSGI application managing calendars."""
+    """WSGI application managing collections."""
     def __init__(self):
         """Initialize application."""
         super(Application, self).__init__()
@@ -181,8 +181,8 @@ class Application(object):
         else:
             content = None
 
-        # Find calendar(s)
-        items = ical.Calendar.from_path(
+        # Find collection(s)
+        items = ical.Collection.from_path(
             environ["PATH_INFO"], environ.get("HTTP_DEPTH", "0"))
 
         # Get function corresponding to method
@@ -190,7 +190,7 @@ class Application(object):
 
         # Check rights
         if not items or not self.acl:
-            # No calendar or no acl, don't check rights
+            # No collection or no acl, don't check rights
             status, headers, answer = function(environ, items, content, None)
         else:
             # Ask authentication backend to check rights
@@ -204,37 +204,37 @@ class Application(object):
                 user = password = None
 
             last_allowed = None
-            calendars = []
-            for calendar in items:
-                if not isinstance(calendar, ical.Calendar):
+            collections = []
+            for collection in items:
+                if not isinstance(collection, ical.Collection):
                     if last_allowed:
-                        calendars.append(calendar)
+                        collections.append(collection)
                     continue
 
-                if calendar.owner in acl.PUBLIC_USERS:
-                    log.LOGGER.info("Public calendar")
-                    calendars.append(calendar)
+                if collection.owner in acl.PUBLIC_USERS:
+                    log.LOGGER.info("Public collection")
+                    collections.append(collection)
                     last_allowed = True
                 else:
                     log.LOGGER.info(
-                        "Checking rights for calendar owned by %s" % (
-                            calendar.owner or "nobody"))
-                    if self.acl.has_right(calendar.owner, user, password):
+                        "Checking rights for collection owned by %s" % (
+                            collection.owner or "nobody"))
+                    if self.acl.has_right(collection.owner, user, password):
                         log.LOGGER.info(
                             "%s allowed" % (user or "Anonymous user"))
-                        calendars.append(calendar)
+                        collections.append(collection)
                         last_allowed = True
                     else:
                         log.LOGGER.info(
                             "%s refused" % (user or "Anonymous user"))
                         last_allowed = False
 
-            if calendars:
-                # Calendars found
+            if collections:
+                # Collections found
                 status, headers, answer = function(
-                    environ, calendars, content, user)
+                    environ, collections, content, user)
             elif user and last_allowed is None:
-                # Good user and no calendars found, redirect user to home
+                # Good user and no collections found, redirect user to home
                 location = "/%s/" % str(quote(user))
                 log.LOGGER.info("redirecting to %s" % location)
                 status = client.FOUND
@@ -265,21 +265,21 @@ class Application(object):
     # All these functions must have the same parameters, some are useless
     # pylint: disable=W0612,W0613,R0201
 
-    def delete(self, environ, calendars, content, user):
+    def delete(self, environ, collections, content, user):
         """Manage DELETE request."""
-        calendar = calendars[0]
+        collection = collections[0]
 
-        if calendar.path == environ["PATH_INFO"].strip("/"):
-            # Path matching the calendar, the item to delete is the calendar
-            item = calendar
+        if collection.path == environ["PATH_INFO"].strip("/"):
+            # Path matching the collection, the collection must be deleted
+            item = collection
         else:
             # Try to get an item matching the path
-            item = calendar.get_item(
-                xmlutils.name_from_path(environ["PATH_INFO"], calendar))
+            item = collection.get_item(
+                xmlutils.name_from_path(environ["PATH_INFO"], collection))
 
         if item and environ.get("HTTP_IF_MATCH", item.etag) == item.etag:
             # No ETag precondition or precondition verified, delete item
-            answer = xmlutils.delete(environ["PATH_INFO"], calendar)
+            answer = xmlutils.delete(environ["PATH_INFO"], collection)
             status = client.NO_CONTENT
         else:
             # No item or ETag precondition not verified, do not delete item
@@ -287,7 +287,7 @@ class Application(object):
             status = client.PRECONDITION_FAILED
         return status, {}, answer
 
-    def get(self, environ, calendars, content, user):
+    def get(self, environ, collections, content, user):
         """Manage GET request."""
         # Display a "Radicale works!" message if the root URL is requested
         if environ["PATH_INFO"] == "/":
@@ -295,67 +295,77 @@ class Application(object):
             answer = "<!DOCTYPE html>\n<title>Radicale</title>Radicale works!"
             return client.OK, headers, answer
 
-        calendar = calendars[0]
-        item_name = xmlutils.name_from_path(environ["PATH_INFO"], calendar)
+        collection = collections[0]
+        item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
         if item_name:
-            # Get calendar item
-            item = calendar.get_item(item_name)
+            # Get collection item
+            item = collection.get_item(item_name)
             if item:
-                items = calendar.timezones
+                items = collection.timezones
                 items.append(item)
                 answer_text = ical.serialize(
-                    headers=calendar.headers, items=items)
+                    collection.tag, collection.headers, items)
                 etag = item.etag
             else:
                 return client.GONE, {}, None
         else:
-            # Get whole calendar
-            answer_text = calendar.text
-            etag = calendar.etag
+            # Get whole collection
+            answer_text = collection.text
+            etag = collection.etag
 
         headers = {
-            "Content-Type": "text/calendar",
-            "Last-Modified": calendar.last_modified,
+            "Content-Type": collection.mimetype,
+            "Last-Modified": collection.last_modified,
             "ETag": etag}
         answer = answer_text.encode(self.encoding)
         return client.OK, headers, answer
 
-    def head(self, environ, calendars, content, user):
+    def head(self, environ, collections, content, user):
         """Manage HEAD request."""
-        status, headers, answer = self.get(environ, calendars, content, user)
+        status, headers, answer = self.get(environ, collections, content, user)
         return status, headers, None
 
-    def mkcalendar(self, environ, calendars, content, user):
+    def mkcalendar(self, environ, collections, content, user):
         """Manage MKCALENDAR request."""
-        calendar = calendars[0]
+        collection = collections[0]
         props = xmlutils.props_from_request(content)
         timezone = props.get('C:calendar-timezone')
         if timezone:
-            calendar.replace('', timezone)
+            collection.replace('', timezone)
             del props['C:calendar-timezone']
-        with calendar.props as calendar_props:
+        with collection.props as collection_props:
             for key, value in props.items():
-                calendar_props[key] = value
-        calendar.write()
+                collection_props[key] = value
+        collection.write()
         return client.CREATED, {}, None
 
-    def move(self, environ, calendars, content, user):
+    def mkcol(self, environ, collections, content, user):
+        """Manage MKCOL request."""
+        collection = collections[0]
+        props = xmlutils.props_from_request(content)
+        with collection.props as collection_props:
+            for key, value in props.items():
+                collection_props[key] = value
+        collection.write()
+        return client.CREATED, {}, None
+
+    def move(self, environ, collections, content, user):
         """Manage MOVE request."""
-        from_calendar = calendars[0]
+        from_collection = collections[0]
         from_name = xmlutils.name_from_path(
-            environ["PATH_INFO"], from_calendar)
+            environ["PATH_INFO"], from_collection)
         if from_name:
-            item = from_calendar.get_item(from_name)
+            item = from_collection.get_item(from_name)
             if item:
                 # Move the item
                 to_url_parts = urlparse(environ["HTTP_DESTINATION"])
                 if to_url_parts.netloc == environ["HTTP_HOST"]:
                     to_url = to_url_parts.path
                     to_path, to_name = to_url.rstrip("/").rsplit("/", 1)
-                    to_calendar = ical.Calendar.from_path(
+                    to_collection = ical.Collection.from_path(
                         to_path, depth="0")[0]
-                    to_calendar.append(to_name, item.text)
-                    from_calendar.remove(from_name)
+                    to_collection.append(to_name, item.text)
+                    from_collection.remove(from_name)
                     return client.CREATED, {}, None
                 else:
                     # Remote destination server, not supported
@@ -364,60 +374,61 @@ class Application(object):
                 # No item found
                 return client.GONE, {}, None
         else:
-            # Moving calendars, not supported
+            # Moving collections, not supported
             return client.FORBIDDEN, {}, None
 
-    def options(self, environ, calendars, content, user):
+    def options(self, environ, collections, content, user):
         """Manage OPTIONS request."""
         headers = {
-            "Allow": "DELETE, HEAD, GET, MKCALENDAR, MOVE, " \
+            "Allow": "DELETE, HEAD, GET, MKCALENDAR, MKCOL, MOVE, " \
                 "OPTIONS, PROPFIND, PROPPATCH, PUT, REPORT",
-            "DAV": "1, calendar-access"}
+            "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol"}
         return client.OK, headers, None
 
-    def propfind(self, environ, calendars, content, user):
+    def propfind(self, environ, collections, content, user):
         """Manage PROPFIND request."""
         headers = {
-            "DAV": "1, calendar-access",
+            "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
             "Content-Type": "text/xml"}
         answer = xmlutils.propfind(
-            environ["PATH_INFO"], content, calendars, user)
+            environ["PATH_INFO"], content, collections, user)
         return client.MULTI_STATUS, headers, answer
 
-    def proppatch(self, environ, calendars, content, user):
+    def proppatch(self, environ, collections, content, user):
         """Manage PROPPATCH request."""
-        calendar = calendars[0]
-        answer = xmlutils.proppatch(environ["PATH_INFO"], content, calendar)
+        collection = collections[0]
+        answer = xmlutils.proppatch(environ["PATH_INFO"], content, collection)
         headers = {
-            "DAV": "1, calendar-access",
+            "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
             "Content-Type": "text/xml"}
         return client.MULTI_STATUS, headers, answer
 
-    def put(self, environ, calendars, content, user):
+    def put(self, environ, collections, content, user):
         """Manage PUT request."""
-        calendar = calendars[0]
+        collection = collections[0]
+        collection.set_mimetype(environ.get("CONTENT_TYPE"))
         headers = {}
-        item_name = xmlutils.name_from_path(environ["PATH_INFO"], calendar)
-        item = calendar.get_item(item_name)
+        item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
+        item = collection.get_item(item_name)
         if (not item and not environ.get("HTTP_IF_MATCH")) or (
             item and environ.get("HTTP_IF_MATCH", item.etag) == item.etag):
             # PUT allowed in 3 cases
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item
             # Case 3: Item and no Etag precondition: Force modifying item
-            xmlutils.put(environ["PATH_INFO"], content, calendar)
+            xmlutils.put(environ["PATH_INFO"], content, collection)
             status = client.CREATED
-            headers["ETag"] = calendar.get_item(item_name).etag
+            headers["ETag"] = collection.get_item(item_name).etag
         else:
             # PUT rejected in all other cases
             status = client.PRECONDITION_FAILED
         return status, headers, None
 
-    def report(self, environ, calendars, content, user):
+    def report(self, environ, collections, content, user):
         """Manage REPORT request."""
-        calendar = calendars[0]
+        collection = collections[0]
         headers = {'Content-Type': 'text/xml'}
-        answer = xmlutils.report(environ["PATH_INFO"], content, calendar)
+        answer = xmlutils.report(environ["PATH_INFO"], content, collection)
         return client.MULTI_STATUS, headers, answer
 
     # pylint: enable=W0612,W0613,R0201

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008-2011 Guillaume Ayoub
+# Copyright © 2008-2012 Guillaume Ayoub
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 #
@@ -19,9 +19,9 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Radicale calendar classes.
+Radicale collection classes.
 
-Define the main classes of a calendar as seen from the server.
+Define the main classes of a collection as seen from the server.
 
 """
 
@@ -31,13 +31,24 @@ import uuid
 from contextlib import contextmanager
 
 
-def serialize(headers=(), items=()):
-    """Return an iCal text corresponding to given ``headers`` and ``items``."""
-    lines = ["BEGIN:VCALENDAR"]
-    for part in (headers, items):
-        if part:
-            lines.append("\n".join(item.text for item in part))
-    lines.append("END:VCALENDAR\n")
+def serialize(tag, headers=(), items=(), whole=False):
+    """Return a text corresponding to given collection ``tag``.
+
+    The text may have the given ``headers`` and ``items`` added around the
+    items if needed (ie. for calendars).
+
+    If ``whole`` is ``True``, the collection tags and headers are added, even
+    for address books.
+
+    """
+    if tag == "VADDRESSBOOK" and not whole:
+        lines = [items[0].text]
+    else:
+        lines = ["BEGIN:%s" % tag]
+        for part in (headers, items):
+            if part:
+                lines.append("\n".join(item.text for item in part))
+        lines.append("END:%s\n" % tag)
     return "\n".join(lines)
 
 
@@ -92,11 +103,11 @@ class Item(object):
                             line, "X-RADICALE-NAME:%s" % self._name)
             else:
                 self.text = self.text.replace(
-                    "\nUID:", "\nX-RADICALE-NAME:%s\nUID:" % self._name)
+                    "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
         else:
             self._name = str(uuid.uuid4())
             self.text = self.text.replace(
-                "\nEND:", "\nUID:%s\nEND:" % self._name)
+                "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
 
     @property
     def etag(self):
@@ -121,41 +132,49 @@ class Header(Item):
     """Internal header class."""
 
 
-class Event(Item):
-    """Internal event class."""
-    tag = "VEVENT"
-
-
-class Todo(Item):
-    """Internal todo class."""
-    # This is not a TODO!
-    # pylint: disable=W0511
-    tag = "VTODO"
-    # pylint: enable=W0511
-
-
-class Journal(Item):
-    """Internal journal class."""
-    tag = "VJOURNAL"
-
-
 class Timezone(Item):
     """Internal timezone class."""
     tag = "VTIMEZONE"
 
 
-class Calendar(object):
-    """Internal calendar class.
+class Component(Item):
+    """Internal main component of a collection."""
+
+
+class Event(Component):
+    """Internal event class."""
+    tag = "VEVENT"
+    mimetype = "text/calendar"
+
+
+class Todo(Component):
+    """Internal todo class."""
+    tag = "VTODO"  # pylint: disable=W0511
+    mimetype = "text/calendar"
+
+
+class Journal(Component):
+    """Internal journal class."""
+    tag = "VJOURNAL"
+    mimetype = "text/calendar"
+
+
+class Card(Component):
+    """Internal card class."""
+    tag = "VCARD"
+    mimetype = "text/vcard"
+
+
+class Collection(object):
+    """Internal collection item.
 
     This class must be overridden and replaced by a storage backend.
 
     """
-    tag = "VCALENDAR"
-
     def __init__(self, path, principal=False):
-        """Initialize the calendar.
+        """Initialize the collection.
 
-        ``path`` must be the normalized relative path of the calendar, using
+        ``path`` must be the normalized relative path of the collection, using
         the slash as the folder delimiter, with no leading nor trailing slash.
 
         """
@@ -163,7 +182,7 @@ class Calendar(object):
         split_path = path.split("/")
         self.path = path if path != '.' else ''
         if principal and split_path and self.is_collection(self.path):
-            # Already existing principal calendar
+            # Already existing principal collection
             self.owner = split_path[0]
         elif len(split_path) > 1:
             # URL with at least one folder
@@ -174,7 +193,7 @@ class Calendar(object):
 
     @classmethod
     def from_path(cls, path, depth="infinite", include_container=True):
-        """Return a list of calendars and items under the given ``path``.
+        """Return a list of collections and items under the given ``path``.
 
         If ``depth`` is "0", only the actual object under ``path`` is
         returned. Otherwise, also sub-items are appended to the result. If
@@ -208,58 +227,54 @@ class Calendar(object):
             if depth == "0":
                 result.append(cls(path))
             else:
-                calendar = cls(path, principal)
+                collection = cls(path, principal)
                 if include_container:
-                    result.append(calendar)
-                result.extend(calendar.components)
+                    result.append(collection)
+                result.extend(collection.components)
         return result
 
     def save(self, text):
-        """Save the text into the calendar."""
-        raise NotImplemented
+        """Save the text into the collection."""
+        raise NotImplementedError
 
     def delete(self):
-        """Delete the calendar."""
-        raise NotImplemented
+        """Delete the collection."""
+        raise NotImplementedError
 
     @property
     def text(self):
-        """Calendar as plain text."""
-        raise NotImplemented
+        """Collection as plain text."""
+        raise NotImplementedError
 
     @classmethod
     def children(cls, path):
         """Yield the children of the collection at local ``path``."""
-        raise NotImplemented
+        raise NotImplementedError
 
     @classmethod
     def is_collection(cls, path):
         """Return ``True`` if relative ``path`` is a collection."""
-        raise NotImplemented
+        raise NotImplementedError
 
     @classmethod
     def is_item(cls, path):
         """Return ``True`` if relative ``path`` is a collection item."""
-        raise NotImplemented
+        raise NotImplementedError
 
     @property
     def last_modified(self):
-        """Get the last time the calendar has been modified.
+        """Get the last time the collection has been modified.
 
         The date is formatted according to rfc1123-5.2.14.
 
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @property
     @contextmanager
     def props(self):
-        """Get the calendar properties."""
-        raise NotImplemented
-
-    def is_vcalendar(self, path):
-        """Return ``True`` if there is a VCALENDAR under relative ``path``."""
-        return self.text.startswith('BEGIN:VCALENDAR')
+        """Get the collection properties."""
+        raise NotImplementedError
 
     @staticmethod
     def _parse(text, item_types, name=None):
@@ -303,13 +318,13 @@ class Calendar(object):
         return list(items.values())
 
     def get_item(self, name):
-        """Get calendar item called ``name``."""
+        """Get collection item called ``name``."""
         for item in self.items:
             if item.name == name:
                 return item
 
     def append(self, name, text):
-        """Append items from ``text`` to calendar.
+        """Append items from ``text`` to collection.
 
         If ``name`` is given, give this name to new items in ``text``.
 
@@ -317,14 +332,14 @@ class Calendar(object):
         items = self.items
 
         for new_item in self._parse(
-            text, (Timezone, Event, Todo, Journal), name):
+            text, (Timezone, Event, Todo, Journal, Card), name):
             if new_item.name not in (item.name for item in items):
                 items.append(new_item)
 
         self.write(items=items)
 
     def remove(self, name):
-        """Remove object named ``name`` from calendar."""
+        """Remove object named ``name`` from collection."""
         components = [
             component for component in self.components
             if component.name != name]
@@ -333,56 +348,82 @@ class Calendar(object):
         self.write(items=items)
 
     def replace(self, name, text):
-        """Replace content by ``text`` in objet named ``name`` in calendar."""
+        """Replace content by ``text`` in collection objet called ``name``."""
         self.remove(name)
         self.append(name, text)
 
     def write(self, headers=None, items=None):
-        """Write calendar with given parameters."""
+        """Write collection with given parameters."""
         headers = headers or self.headers or (
             Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
-            Header("VERSION:2.0"))
+            Header("VERSION:%s" % self.version))
         items = items if items is not None else self.items
 
         text = serialize(headers, items)
         self.save(text)
 
     @property
+    def tag(self):
+        """Type of the collection."""
+        with self.props as props:
+            if "tag" not in props:
+                try:
+                    props["tag"] = open(self.path).readlines()[0][6:].rstrip()
+                except IOError:
+                    props["tag"] = "VCALENDAR"
+            return props["tag"]
+
+    @property
+    def mimetype(self):
+        """Mimetype of the collection."""
+        if self.tag == "VADDRESSBOOK":
+            return "text/vcard"
+        elif self.tag == "VCALENDAR":
+            return "text/calendar"
+
+    @property
+    def resource_type(self):
+        """Resource type of the collection."""
+        if self.tag == "VADDRESSBOOK":
+            return "addressbook"
+        elif self.tag == "VCALENDAR":
+            return "calendar"
+
+    @property
     def etag(self):
-        """Etag from calendar."""
+        """Etag from collection."""
         return '"%s"' % hash(self.text)
 
     @property
     def name(self):
-        """Calendar name."""
+        """Collection name."""
         with self.props as props:
             return props.get('D:displayname',
                 self.path.split(os.path.sep)[-1])
 
     @property
     def headers(self):
-        """Find headers items in calendar."""
+        """Find headers items in collection."""
         header_lines = []
 
         lines = unfold(self.text)
-        for line in lines:
-            if line.startswith("PRODID:"):
-                header_lines.append(Header(line))
-        for line in lines:
-            if line.startswith("VERSION:"):
-                header_lines.append(Header(line))
+        for header in ("PRODID", "VERSION"):
+            for line in lines:
+                if line.startswith("%s:" % header):
+                    header_lines.append(Header(line))
+                    break
 
         return header_lines
 
     @property
     def items(self):
-        """Get list of all items in calendar."""
-        return self._parse(self.text, (Event, Todo, Journal, Timezone))
+        """Get list of all items in collection."""
+        return self._parse(self.text, (Event, Todo, Journal, Card, Timezone))
 
     @property
     def components(self):
-        """Get list of all components in calendar."""
-        return self._parse(self.text, (Event, Todo, Journal))
+        """Get list of all components in collection."""
+        return self._parse(self.text, (Event, Todo, Journal, Card))
 
     @property
     def events(self):
@@ -405,8 +446,13 @@ class Calendar(object):
         return self._parse(self.text, (Timezone,))
 
     @property
+    def cards(self):
+        """Get list of ``Card`` items in address book."""
+        return self._parse(self.text, (Card,))
+
+    @property
     def owner_url(self):
-        """Get the calendar URL according to its owner."""
+        """Get the collection URL according to its owner."""
         if self.owner:
             return "/%s/" % self.owner
         else:
@@ -414,5 +460,10 @@ class Calendar(object):
 
     @property
     def url(self):
-        """Get the standard calendar URL."""
+        """Get the standard collection URL."""
         return "/%s/" % self.path
+
+    @property
+    def version(self):
+        """Get the version of the collection type."""
+        return "3.0" if self.tag == "VADDRESSBOOK" else "2.0"
