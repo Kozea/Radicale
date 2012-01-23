@@ -46,7 +46,7 @@ except ImportError:
     from urlparse import urlparse
 # pylint: enable=F0401,E0611
 
-from radicale import acl, config, ical, log, xmlutils
+from radicale import acl, config, ical, log, storage, xmlutils
 
 
 VERSION = "git"
@@ -112,6 +112,7 @@ class Application(object):
         """Initialize application."""
         super(Application, self).__init__()
         self.acl = acl.load()
+        storage.load()
         self.encoding = config.get("encoding", "request")
         if config.getboolean('logging', 'full_environment'):
             self.headers_log = lambda environ: environ
@@ -268,7 +269,7 @@ class Application(object):
         """Manage DELETE request."""
         calendar = calendars[0]
 
-        if calendar.local_path == environ["PATH_INFO"].strip("/"):
+        if calendar.path == environ["PATH_INFO"].strip("/"):
             # Path matching the calendar, the item to delete is the calendar
             item = calendar
         else:

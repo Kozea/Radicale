@@ -25,26 +25,10 @@ Define the main classes of a calendar as seen from the server.
 
 """
 
-import codecs
-from contextlib import contextmanager
-import json
 import os
 import posixpath
-import time
 import uuid
-
-from radicale import config
-
-
-FOLDER = os.path.expanduser(config.get("storage", "folder"))
-
-
-# This function overrides the builtin ``open`` function for this module
-# pylint: disable=W0622
-def open(path, mode="r"):
-    """Open file at ``path`` with ``mode``, automagically managing encoding."""
-    return codecs.open(path, mode, config.get("encoding", "stock"))
-# pylint: enable=W0622
+from contextlib import contextmanager
 
 
 def serialize(headers=(), items=()):
@@ -161,7 +145,11 @@ class Timezone(Item):
 
 
 class Calendar(object):
-    """Internal calendar class."""
+    """Internal calendar class.
+
+    This class must be overridden and replaced by a storage backend.
+
+    """
     tag = "VCALENDAR"
 
     def __init__(self, path, principal=False):
@@ -173,9 +161,8 @@ class Calendar(object):
         """
         self.encoding = "utf-8"
         split_path = path.split("/")
-        self.path = os.path.join(FOLDER, path.replace("/", os.sep))
-        self.props_path = self.path + '.props'
-        if principal and split_path and os.path.isdir(self.path):
+        self.path = path if path != '.' else ''
+        if principal and split_path and self.is_collection(self.path):
             # Already existing principal calendar
             self.owner = split_path[0]
         elif len(split_path) > 1:
@@ -183,7 +170,6 @@ class Calendar(object):
             self.owner = split_path[0]
         else:
             self.owner = None
-        self.local_path = path if path != '.' else ''
         self.is_principal = principal
 
     @classmethod
@@ -195,7 +181,7 @@ class Calendar(object):
         ``include_container`` is ``True`` (the default), the containing object
         is included in the result.
 
-        The ``path`` is relative to the storage folder.
+        The ``path`` is relative.
 
         """
         # First do normpath and then strip, to prevent access to FOLDER/../
@@ -203,28 +189,21 @@ class Calendar(object):
         attributes = sane_path.split("/")
         if not attributes:
             return None
-        if not (os.path.isfile(os.path.join(FOLDER, *attributes)) or
-                path.endswith("/")):
+        if not (cls.is_item("/".join(attributes)) or path.endswith("/")):
             attributes.pop()
 
         result = []
-
         path = "/".join(attributes)
-        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
+
         principal = len(attributes) <= 1
-        if os.path.isdir(abs_path):
+        if cls.is_collection(path):
             if depth == "0":
                 result.append(cls(path, principal))
             else:
                 if include_container:
                     result.append(cls(path, principal))
-                try:
-                    for filename in next(os.walk(abs_path))[2]:
-                        if cls.is_vcalendar(os.path.join(abs_path, filename)):
-                            result.append(cls(os.path.join(path, filename)))
-                except StopIteration:
-                    # Directory does not exist yet
-                    pass
+                    for child in cls.children(path):
+                        result.append(child)
         else:
             if depth == "0":
                 result.append(cls(path))
@@ -235,11 +214,52 @@ class Calendar(object):
                 result.extend(calendar.components)
         return result
 
-    @staticmethod
-    def is_vcalendar(path):
-        """Return ``True`` if there is a VCALENDAR file under ``path``."""
-        with open(path) as stream:
-            return 'BEGIN:VCALENDAR' == stream.read(15)
+    def save(self, text):
+        """Save the text into the calendar."""
+        raise NotImplemented
+
+    def delete(self):
+        """Delete the calendar."""
+        raise NotImplemented
+
+    @property
+    def text(self):
+        """Calendar as plain text."""
+        raise NotImplemented
+
+    @classmethod
+    def children(cls, path):
+        """Yield the children of the collection at local ``path``."""
+        raise NotImplemented
+
+    @classmethod
+    def is_collection(cls, path):
+        """Return ``True`` if relative ``path`` is a collection."""
+        raise NotImplemented
+
+    @classmethod
+    def is_item(cls, path):
+        """Return ``True`` if relative ``path`` is a collection item."""
+        raise NotImplemented
+
+    @property
+    def last_modified(self):
+        """Get the last time the calendar has been modified.
+
+        The date is formatted according to rfc1123-5.2.14.
+
+        """
+        raise NotImplemented
+
+    @property
+    @contextmanager
+    def props(self):
+        """Get the calendar properties."""
+        raise NotImplemented
+
+    def is_vcalendar(self, path):
+        """Return ``True`` if there is a VCALENDAR under relative ``path``."""
+        return self.text.startswith('BEGIN:VCALENDAR')
 
     @staticmethod
     def _parse(text, item_types, name=None):
@@ -303,11 +323,6 @@ class Calendar(object):
 
         self.write(items=items)
 
-    def delete(self):
-        """Delete the calendar."""
-        os.remove(self.path)
-        os.remove(self.props_path)
-
     def remove(self, name):
         """Remove object named ``name`` from calendar."""
         components = [
@@ -329,16 +344,8 @@ class Calendar(object):
             Header("VERSION:2.0"))
         items = items if items is not None else self.items
 
-        self._create_dirs(self.path)
-
         text = serialize(headers, items)
-        return open(self.path, "w").write(text)
-
-    @staticmethod
-    def _create_dirs(path):
-        """Create folder if absent."""
-        if not os.path.exists(os.path.dirname(path)):
-            os.makedirs(os.path.dirname(path))
+        self.save(text)
 
     @property
     def etag(self):
@@ -351,14 +358,6 @@ class Calendar(object):
         with self.props as props:
             return props.get('D:displayname',
                 self.path.split(os.path.sep)[-1])
-
-    @property
-    def text(self):
-        """Calendar as plain text."""
-        try:
-            return open(self.path).read()
-        except IOError:
-            return ""
 
     @property
     def headers(self):
@@ -406,35 +405,6 @@ class Calendar(object):
         return self._parse(self.text, (Timezone,))
 
     @property
-    def last_modified(self):
-        """Get the last time the calendar has been modified.
-
-        The date is formatted according to rfc1123-5.2.14.
-
-        """
-        # Create calendar if needed
-        if not os.path.exists(self.path):
-            self.write()
-
-        modification_time = time.gmtime(os.path.getmtime(self.path))
-        return time.strftime("%a, %d %b %Y %H:%M:%S +0000", modification_time)
-
-    @property
-    @contextmanager
-    def props(self):
-        """Get the calendar properties."""
-        # On enter
-        properties = {}
-        if os.path.exists(self.props_path):
-            with open(self.props_path) as prop_file:
-                properties.update(json.load(prop_file))
-        yield properties
-        # On exit
-        self._create_dirs(self.props_path)
-        with open(self.props_path, 'w') as prop_file:
-            json.dump(properties, prop_file)
-
-    @property
     def owner_url(self):
         """Get the calendar URL according to its owner."""
         if self.owner:
@@ -445,4 +415,4 @@ class Calendar(object):
     @property
     def url(self):
         """Get the standard calendar URL."""
-        return "/%s/" % self.local_path
+        return "/%s/" % self.path

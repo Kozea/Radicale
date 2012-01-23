@@ -120,7 +120,7 @@ def _response(code):
 
 def name_from_path(path, calendar):
     """Return Radicale item name from ``path``."""
-    calendar_parts = calendar.local_path.strip("/").split("/")
+    calendar_parts = calendar.path.split("/")
     path_parts = path.strip("/").split("/")
     return path_parts[-1] if (len(path_parts) - len(calendar_parts)) else None
 
@@ -153,7 +153,7 @@ def delete(path, calendar):
 
     """
     # Reading request
-    if calendar.local_path == path.strip("/"):
+    if calendar.path == path.strip("/"):
         # Delete the whole calendar
         calendar.delete()
     else:
