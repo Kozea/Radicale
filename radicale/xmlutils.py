@@ -374,11 +374,9 @@ def proppatch(path, xml_request, collection):
 
     with collection.props as collection_props:
         for short_name, value in props_to_set.items():
-            if short_name == 'C:calendar-timezone':
-                collection.replace('', value)
-                collection.write()
-            else:
-                collection_props[short_name] = value
+            if short_name.split(":")[-1] == "calendar-timezone":
+                collection.replace(None, value)
+            collection_props[short_name] = value
             _add_propstat_to(response, short_name, 200)
         for short_name in props_to_remove:
             try:
