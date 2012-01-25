@@ -58,7 +58,7 @@ setup(
     packages=["radicale", "radicale.acl", "radicale.storage"],
     provides=["radicale"],
     scripts=["bin/radicale"],
-    keywords=["calendar", "CalDAV"],
+    keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",

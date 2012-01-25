@@ -111,7 +111,7 @@ def run():
     atexit.register(cleanup)
     radicale.log.LOGGER.info("Starting Radicale")
 
-    # Create calendar servers
+    # Create collection servers
     servers = []
     server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
     shutdown_program = threading.Event()

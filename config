@@ -30,7 +30,7 @@ key = /etc/apache2/ssl/server.key
 [encoding]
 # Encoding for responding requests
 request = utf-8
-# Encoding for storing local calendars
+# Encoding for storing local collections
 stock = utf-8
 
 
@@ -39,9 +39,9 @@ stock = utf-8
 # Value: None | htpasswd | LDAP | PAM | courier
 type = None
 
-# Usernames used for public calendars, separated by a comma
+# Usernames used for public collections, separated by a comma
 public_users = public
-# Usernames used for private calendars, separated by a comma
+# Usernames used for private collections, separated by a comma
 private_users = private
 
 # Htpasswd filename
@@ -75,11 +75,11 @@ courier_socket =
 # Storage backend
 type = filesystem
 
-# Folder for storing local calendars, created if not present
-filesystem_folder = ~/.config/radicale/calendars
+# Folder for storing local collections, created if not present
+filesystem_folder = ~/.config/radicale/collections
 
-# Git repository for storing local calendars, created if not present
-filesystem_folder = ~/.config/radicale/calendars
+# Git repository for storing local collections, created if not present
+filesystem_folder = ~/.config/radicale/collections
 
 
 [logging]
