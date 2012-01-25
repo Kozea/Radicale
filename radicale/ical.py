@@ -362,6 +362,15 @@ class Collection(object):
         text = serialize(headers, items)
         self.save(text)
 
+    def set_mimetype(self, mimetype):
+        """Set the mimetype of the collection."""
+        with self.props as props:
+            if "tag" not in props:
+                if mimetype == "text/vcard":
+                    props["tag"] = "VADDRESSBOOK"
+                else:
+                    props["tag"] = "VCALENDAR"
+
     @property
     def tag(self):
         """Type of the collection."""
