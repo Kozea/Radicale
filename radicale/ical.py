@@ -359,7 +359,7 @@ class Collection(object):
             Header("VERSION:%s" % self.version))
         items = items if items is not None else self.items
 
-        text = serialize(headers, items)
+        text = serialize(self.tag, headers, items)
         self.save(text)
 
     def set_mimetype(self, mimetype):
