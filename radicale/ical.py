@@ -31,18 +31,15 @@ import uuid
 from contextlib import contextmanager
 
 
-def serialize(tag, headers=(), items=(), whole=False):
+def serialize(tag, headers=(), items=()):
     """Return a text corresponding to given collection ``tag``.
 
     The text may have the given ``headers`` and ``items`` added around the
     items if needed (ie. for calendars).
 
-    If ``whole`` is ``True``, the collection tags and headers are added, even
-    for address books.
-
     """
-    if tag == "VADDRESSBOOK" and not whole:
-        lines = [items[0].text]
+    if tag == "VADDRESSBOOK":
+        lines = [item.text for item in items]
     else:
         lines = ["BEGIN:%s" % tag]
         for part in (headers, items):
