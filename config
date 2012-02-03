@@ -78,9 +78,6 @@ type = filesystem
 # Folder for storing local collections, created if not present
 filesystem_folder = ~/.config/radicale/collections
 
-# Git repository for storing local collections, created if not present
-filesystem_folder = ~/.config/radicale/collections
-
 
 [logging]
 # Logging configuration file
