@@ -277,7 +277,9 @@ class Application(object):
             item = collection.get_item(
                 xmlutils.name_from_path(environ["PATH_INFO"], collection))
 
-        if item and environ.get("HTTP_IF_MATCH", item.etag) == item.etag:
+        # Evolution bug workaround
+        etag = environ.get("HTTP_IF_MATCH", item.etag).replace("\\", "")
+        if item and etag == item.etag:
             # No ETag precondition or precondition verified, delete item
             answer = xmlutils.delete(environ["PATH_INFO"], collection)
             status = client.NO_CONTENT
@@ -410,8 +412,11 @@ class Application(object):
         headers = {}
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
         item = collection.get_item(item_name)
-        if (not item and not environ.get("HTTP_IF_MATCH")) or (
-            item and environ.get("HTTP_IF_MATCH", item.etag) == item.etag):
+
+        # Evolution bug workaround
+        etag = environ.get("HTTP_IF_MATCH", "").replace("\\", "")
+        if (not item and not etag) or (
+            item and ((etag or item.etag) == item.etag)):
             # PUT allowed in 3 cases
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item
