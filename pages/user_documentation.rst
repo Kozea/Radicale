@@ -265,20 +265,22 @@ configuration file, with the main parameters:
   # SSL private key
   key = /etc/apache2/ssl/server.key
 
+
   [encoding]
   # Encoding for responding requests
   request = utf-8
-  # Encoding for storing local calendars
+  # Encoding for storing local collections
   stock = utf-8
+
 
   [acl]
   # Access method
   # Value: None | htpasswd | LDAP | PAM | courier
   type = None
 
-  # Usernames used for public calendars, separated by a comma
+  # Usernames used for public collections, separated by a comma
   public_users = public
-  # Usernames used for private calendars, separated by a comma
+  # Usernames used for private collections, separated by a comma
   private_users = private
 
   # Htpasswd filename
@@ -298,6 +300,8 @@ configuration file, with the main parameters:
   ldap_binddn =
   # LDAP password for initial login, used with ldap_binddn
   ldap_password =
+  # LDAP scope of the search
+  ldap_scope = OneLevel
 
   # PAM group user should be member of
   pam_group_membership =
@@ -305,9 +309,14 @@ configuration file, with the main parameters:
   # Path to the Courier Authdaemon socket
   courier_socket =
 
+
   [storage]
-  # Folder for storing local calendars, created if not present
-  folder = ~/.config/radicale/calendars
+  # Storage backend
+  type = filesystem
+
+  # Folder for storing local collections, created if not present
+  filesystem_folder = ~/.config/radicale/collections
+
 
   [logging]
   # Logging configuration file
