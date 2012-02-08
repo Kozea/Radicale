@@ -30,5 +30,6 @@ from radicale import config
 def load():
     """Load list of available storage managers."""
     storage_type = config.get("storage", "type")
-    module = __import__("radicale.storage", fromlist=[storage_type])
+    module = __import__(
+        "storage.%s" % storage_type, globals=globals(), level=2)
     return getattr(module, storage_type)

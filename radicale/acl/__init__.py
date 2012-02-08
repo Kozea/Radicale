@@ -53,5 +53,5 @@ def load():
     else:
         PUBLIC_USERS.extend(_config_users("public_users"))
         PRIVATE_USERS.extend(_config_users("private_users"))
-        module = __import__("radicale.acl", fromlist=[acl_type])
+        module = __import__("acl.%s" % acl_type, globals=globals(), level=2)
         return getattr(module, acl_type)
