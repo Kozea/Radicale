@@ -92,7 +92,7 @@ class Collection(ical.Collection):
     @classmethod
     def is_item(cls, path):
         abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
-        return os.path.isfile(abs_path)
+        return os.path.isfile(abs_path) and not abs_path.endswith(".props")
 
     @property
     def last_modified(self):
