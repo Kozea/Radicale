@@ -80,7 +80,7 @@ class Collection(ical.Collection):
         abs_path = os.path.join(FOLDER, rel_path)
         for filename in next(os.walk(abs_path))[2]:
             rel_filename = os.path.join(rel_path, filename)
-            if cls.is_collection(rel_filename):
+            if cls.is_collection(rel_filename) or cls.is_item(rel_filename):
                 yield cls(rel_filename)
 
     @classmethod
