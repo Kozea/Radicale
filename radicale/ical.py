@@ -218,8 +218,8 @@ class Collection(object):
             else:
                 if include_container:
                     result.append(cls(path, principal))
-                    for child in cls.children(path):
-                        result.append(child)
+                for child in cls.children(path):
+                    result.append(child)
         else:
             if depth == "0":
                 result.append(cls(path))
