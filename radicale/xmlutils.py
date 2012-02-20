@@ -279,7 +279,7 @@ def _propfind_response(path, item, props, user):
                 if item.is_principal:
                     tag = ET.Element(_tag("D", "principal"))
                     element.append(tag)
-                else:
+                if item.is_item(item.path):
                     tag = ET.Element(_tag("C", item.resource_type))
                     element.append(tag)
                 tag = ET.Element(_tag("D", "collection"))
