@@ -178,7 +178,7 @@ class Collection(object):
         self.encoding = "utf-8"
         split_path = path.split("/")
         self.path = path if path != '.' else ''
-        if principal and split_path and self.is_collection(self.path):
+        if principal and split_path and self.is_node(self.path):
             # Already existing principal collection
             self.owner = split_path[0]
         elif len(split_path) > 1:
@@ -189,13 +189,16 @@ class Collection(object):
         self.is_principal = principal
 
     @classmethod
-    def from_path(cls, path, depth="infinite", include_container=True):
+    def from_path(cls, path, depth="1", include_container=True):
         """Return a list of collections and items under the given ``path``.
 
         If ``depth`` is "0", only the actual object under ``path`` is
-        returned. Otherwise, also sub-items are appended to the result. If
-        ``include_container`` is ``True`` (the default), the containing object
-        is included in the result.
+        returned.
+
+        If ``depth`` is anything but "0", it is considered as "1" and direct
+        children are included in the result. If ``include_container`` is
+        ``True`` (the default), the containing object is included in the
+        result.
 
         The ``path`` is relative.
 
@@ -205,14 +208,14 @@ class Collection(object):
         attributes = sane_path.split("/")
         if not attributes:
             return None
-        if not (cls.is_item("/".join(attributes)) or path.endswith("/")):
+        if not (cls.is_leaf("/".join(attributes)) or path.endswith("/")):
             attributes.pop()
 
         result = []
         path = "/".join(attributes)
 
         principal = len(attributes) <= 1
-        if cls.is_collection(path):
+        if cls.is_node(path):
             if depth == "0":
                 result.append(cls(path, principal))
             else:
@@ -249,13 +252,21 @@ class Collection(object):
         raise NotImplementedError
 
     @classmethod
-    def is_collection(cls, path):
-        """Return ``True`` if relative ``path`` is a collection."""
+    def is_node(cls, path):
+        """Return ``True`` if relative ``path`` is a node.
+
+        A node is a WebDAV collection whose members are other collections.
+
+        """
         raise NotImplementedError
 
     @classmethod
-    def is_item(cls, path):
-        """Return ``True`` if relative ``path`` is a collection item."""
+    def is_leaf(cls, path):
+        """Return ``True`` if relative ``path`` is a leaf.
+
+        A leaf is a WebDAV collection whose members are not collections.
+
+        """
         raise NotImplementedError
 
     @property

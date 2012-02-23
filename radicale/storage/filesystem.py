@@ -81,16 +81,16 @@ class Collection(ical.Collection):
         _, directories, files = next(os.walk(abs_path))
         for filename in directories + files:
             rel_filename = posixpath.join(path, filename)
-            if cls.is_collection(rel_filename) or cls.is_item(rel_filename):
+            if cls.is_node(rel_filename) or cls.is_leaf(rel_filename):
                 yield cls(rel_filename)
 
     @classmethod
-    def is_collection(cls, path):
+    def is_node(cls, path):
         abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
         return os.path.isdir(abs_path)
 
     @classmethod
-    def is_item(cls, path):
+    def is_leaf(cls, path):
         abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
         return os.path.isfile(abs_path) and not abs_path.endswith(".props")
 
