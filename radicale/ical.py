@@ -392,7 +392,10 @@ class Collection(object):
                 try:
                     props["tag"] = open(self.path).readlines()[0][6:].rstrip()
                 except IOError:
-                    props["tag"] = "VCALENDAR"
+                    if self.path.endswith(".vcf"):
+                        props["tag"] = "VADDRESSBOOK"
+                    else:
+                        props["tag"] = "VCALENDAR"
             return props["tag"]
 
     @property

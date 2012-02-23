@@ -305,6 +305,7 @@ class Application(object):
 
         collection = collections[0]
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
+
         if item_name:
             # Get collection item
             item = collection.get_item(item_name)
