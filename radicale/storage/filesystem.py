@@ -96,10 +96,6 @@ class Collection(ical.Collection):
 
     @property
     def last_modified(self):
-        # Create collection if needed
-        if not os.path.exists(self._path):
-            self.write()
-
         modification_time = time.gmtime(os.path.getmtime(self._path))
         return time.strftime("%a, %d %b %Y %H:%M:%S +0000", modification_time)
 

@@ -290,7 +290,13 @@ class Application(object):
         return status, {}, answer
 
     def get(self, environ, collections, content, user):
-        """Manage GET request."""
+        """Manage GET request.
+
+        In Radicale, GET requests create collections when the URL is not
+        available. This is useful for clients with no MKCOL or MKCALENDAR
+        support.
+
+        """
         # Display a "Radicale works!" message if the root URL is requested
         if environ["PATH_INFO"] == "/":
             headers = {"Content-type": "text/html"}
@@ -311,6 +317,10 @@ class Application(object):
             else:
                 return client.GONE, {}, None
         else:
+            # Create the collection if it does not exist
+            if not collection.exists:
+                collection.write()
+
             # Get whole collection
             answer_text = collection.text
             etag = collection.etag

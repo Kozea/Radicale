@@ -284,6 +284,11 @@ class Collection(object):
         """Get the collection properties."""
         raise NotImplementedError
 
+    @property
+    def exists(self):
+        """``True`` if the collection exists on the storage, else ``False``."""
+        return self.is_node(self.path) or self.is_leaf(self.path)
+
     @staticmethod
     def _parse(text, item_types, name=None):
         """Find items with type in ``item_types`` in ``text``.
