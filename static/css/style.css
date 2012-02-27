@@ -103,18 +103,21 @@ header {
   top:2em;
 }
 
+h1 {
+  box-shadow: 0 0 10px #D6D6D6;
+  position: relative;
+  top: -50px;
+  transform: rotate(-35deg);
+  z-index:2;
+}
+
 h1 a {
   background: url(img/radicale.png)white center center no-repeat;
-  box-shadow:0px 0px 10px #D6D6D6;
   color: transparent;
   display: block;
   height: 250px;
-  position: relative;
-  top: -50px;
-  transform:rotate(-35deg);
-  width: 165px;
-  z-index:2;
   transition: all 0.7s;
+  width: 165px;
 }
 
 h1 a:hover, h1 a:focus {
