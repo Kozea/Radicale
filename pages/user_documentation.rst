@@ -460,20 +460,48 @@ to your environment):
    You should use the root of the (sub)domain (``WSGIScriptAlias /``), else
    some CalDAV features may not work.
 
-.. important::
-   If you want to use authentication with Apache, you *really* should use one
-   of the Apache authentication modules, instead of the ones from Radicale:
-   they're just better.
+If you want to use authentication with Apache, you *really* should use one of
+the Apache authentication modules, instead of the ones from Radicale: they're
+just better.
 
-   Deactivate any ACL module in Radicale and use your favourite Apache
-   authentication backend. You can then restrict the access: allow the
-   ``alice`` user to access ``/alice/*`` URLs, and everything should work as
-   expected.
+Deactivate any ACL module in Radicale and use your favourite Apache
+authentication backend. You can then restrict the access: allow the ``alice``
+user to access ``/alice/*`` URLs, and everything should work as expected.
 
-   If you're still convinced that access control is better with Radicale, you
-   have to add ``WSGIPassAuthorization On`` in your Apache configuration files,
-   as explained in `the mod_wsgi documentation
-   <http://code.google.com/p/modwsgi/wiki/ConfigurationGuidelines#User_Authentication>`_.
+Here is one example of Apache configuration file:
+
+.. code-block:: apache
+
+  <VirtualHost *:80>
+      ServerName radicale.local
+
+      WSGIDaemonProcess radicale user=radicale group=radicale threads=1
+      WSGIScriptAlias / /usr/share/radicale/radicale.wsgi
+
+      <Directory /usr/share/radicale/>
+          WSGIProcessGroup radicale
+          WSGIApplicationGroup %{GLOBAL}
+
+          AuthType Basic
+          AuthName "Radicale Authentication"
+          AuthBasicProvider file
+          AuthUserFile /usr/share/radicale/radicale.passwd
+          Require valid-user
+
+          AllowOverride None
+          Order allow,deny
+          allow from all
+
+          RewriteEngine On
+          RewriteCond %{REMOTE_USER}%{PATH_INFO} !^([^/]+/)\1
+          RewriteRule .* - [Forbidden]
+      </Directory>
+  </VirtualHost>
+
+If you're still convinced that access control is better with Radicale, you have
+to add ``WSGIPassAuthorization On`` in your Apache configuration files, as
+explained in `the mod_wsgi documentation
+<http://code.google.com/p/modwsgi/wiki/ConfigurationGuidelines#User_Authentication>`_.
 
 .. note::
    Read-only calendars can also be served by a simple Apache HTTP server, as
