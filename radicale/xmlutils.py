@@ -106,11 +106,11 @@ def _tag_from_clark(name):
 
     """
     match = CLARK_TAG_REGEX.match(name)
-    if match and match.group('namespace') in NAMESPACES_REV:
+    if match and match.group("namespace") in NAMESPACES_REV:
         args = {
-            'ns': NAMESPACES_REV[match.group('namespace')],
-            'tag': match.group('tag')}
-        return '%(ns)s:%(tag)s' % args
+            "ns": NAMESPACES_REV[match.group("namespace")],
+            "tag": match.group("tag")}
+        return "%(ns)s:%(tag)s" % args
     return name
 
 
@@ -257,7 +257,7 @@ def _propfind_response(path, item, props, user):
             # pylint: enable=W0511
         elif tag == _tag("D", "current-user-principal") and user:
             tag = ET.Element(_tag("D", "href"))
-            tag.text = '/%s/' % user
+            tag.text = "/%s/" % user
             element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
@@ -339,10 +339,10 @@ def _add_propstat_to(element, tag, status_number):
     prop = ET.Element(_tag("D", "prop"))
     propstat.append(prop)
 
-    if '{' in tag:
+    if "{" in tag:
         clark_tag = tag
     else:
-        clark_tag = _tag(*tag.split(':', 1))
+        clark_tag = _tag(*tag.split(":", 1))
     prop_tag = ET.Element(clark_tag)
     prop.append(prop_tag)
 
@@ -359,8 +359,8 @@ def proppatch(path, xml_request, collection):
     """
     # Reading request
     root = ET.fromstring(xml_request.encode("utf8"))
-    props_to_set = props_from_request(root, actions=('set',))
-    props_to_remove = props_from_request(root, actions=('remove',))
+    props_to_set = props_from_request(root, actions=("set",))
+    props_to_remove = props_from_request(root, actions=("remove",))
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))

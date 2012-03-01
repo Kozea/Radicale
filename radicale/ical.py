@@ -177,7 +177,7 @@ class Collection(object):
         """
         self.encoding = "utf-8"
         split_path = path.split("/")
-        self.path = path if path != '.' else ''
+        self.path = path if path != "." else ""
         if principal and split_path and self.is_node(self.path):
             # Already existing principal collection
             self.owner = split_path[0]
@@ -428,8 +428,7 @@ class Collection(object):
     def name(self):
         """Collection name."""
         with self.props as props:
-            return props.get('D:displayname',
-                self.path.split(os.path.sep)[-1])
+            return props.get("D:displayname", self.path.split(os.path.sep)[-1])
 
     @property
     def headers(self):

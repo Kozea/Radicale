@@ -114,7 +114,7 @@ class Application(object):
         self.acl = acl.load()
         storage.load()
         self.encoding = config.get("encoding", "request")
-        if config.getboolean('logging', 'full_environment'):
+        if config.getboolean("logging", "full_environment"):
             self.headers_log = lambda environ: environ
 
     # This method is overriden in __init__ if full_environment is set
@@ -342,10 +342,10 @@ class Application(object):
         """Manage MKCALENDAR request."""
         collection = collections[0]
         props = xmlutils.props_from_request(content)
-        timezone = props.get('C:calendar-timezone')
+        timezone = props.get("C:calendar-timezone")
         if timezone:
-            collection.replace('', timezone)
-            del props['C:calendar-timezone']
+            collection.replace("", timezone)
+            del props["C:calendar-timezone"]
         with collection.props as collection_props:
             for key, value in props.items():
                 collection_props[key] = value
@@ -443,7 +443,7 @@ class Application(object):
     def report(self, environ, collections, content, user):
         """Manage REPORT request."""
         collection = collections[0]
-        headers = {'Content-Type': 'text/xml'}
+        headers = {"Content-Type": "text/xml"}
         answer = xmlutils.report(environ["PATH_INFO"], content, collection)
         return client.MULTI_STATUS, headers, answer
 

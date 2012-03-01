@@ -83,8 +83,8 @@ for section, values in INITIAL_CONFIG.items():
 
 _CONFIG_PARSER.read("/etc/radicale/config")
 _CONFIG_PARSER.read(os.path.expanduser("~/.config/radicale/config"))
-if 'RADICALE_CONFIG' in os.environ:
-    _CONFIG_PARSER.read(os.environ['RADICALE_CONFIG'])
+if "RADICALE_CONFIG" in os.environ:
+    _CONFIG_PARSER.read(os.environ["RADICALE_CONFIG"])
 
 # Wrap config module into ConfigParser instance
 sys.modules[__name__] = _CONFIG_PARSER

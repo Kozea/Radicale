@@ -110,7 +110,7 @@ class Collection(ical.Collection):
         yield properties
         # On exit
         self._create_dirs()
-        with open(self._props_path, 'w') as prop_file:
+        with open(self._props_path, "w") as prop_file:
             json.dump(properties, prop_file)
 
 

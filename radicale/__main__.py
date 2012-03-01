@@ -95,7 +95,7 @@ def run():
         if pid:
             try:
                 if options.pid:
-                    open(options.pid, 'w').write(str(pid))
+                    open(options.pid, "w").write(str(pid))
             finally:
                 sys.exit()
         sys.stdout = sys.stderr = open(os.devnull, "w")
@@ -116,9 +116,9 @@ def run():
     server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
     shutdown_program = threading.Event()
 
-    for host in options.hosts.split(','):
-        address, port = host.strip().rsplit(':', 1)
-        address, port = address.strip('[] '), int(port)
+    for host in options.hosts.split(","):
+        address, port = host.strip().rsplit(":", 1)
+        address, port = address.strip("[] "), int(port)
         servers.append(
             make_server(address, port, radicale.Application(),
                         server_class, radicale.RequestHandler))
@@ -174,5 +174,5 @@ def run():
 # pylint: enable=R0912,R0914
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()
