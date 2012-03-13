@@ -105,6 +105,14 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     def log_message(self, *args, **kwargs):
         """Disable inner logging management."""
 
+    def address_string(self):
+        """Client address, formatted for logging."""
+        if config.getboolean("server", "dns_lookup"):
+            return \
+                wsgiref.simple_server.WSGIRequestHandler.address_string(self)
+        else:
+            return self.client_address[0]
+
 
 class Application(object):
     """WSGI application managing collections."""

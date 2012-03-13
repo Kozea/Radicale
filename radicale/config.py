@@ -44,7 +44,8 @@ INITIAL_CONFIG = {
         "pid": "",
         "ssl": "False",
         "certificate": "/etc/apache2/ssl/server.crt",
-        "key": "/etc/apache2/ssl/server.key"},
+        "key": "/etc/apache2/ssl/server.key",
+        "dns_lookup": "True"},
     "encoding": {
         "request": "utf-8",
         "stock": "utf-8"},

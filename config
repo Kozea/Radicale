@@ -25,6 +25,8 @@ ssl = False
 certificate = /etc/apache2/ssl/server.crt
 # SSL private key
 key = /etc/apache2/ssl/server.key
+# Reverse DNS to resolve client address in logs
+dns_lookup = True
 
 
 [encoding]
