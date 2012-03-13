@@ -61,12 +61,12 @@ def has_right(owner, user, password):
         "LDAP bind for %s in base %s" % (distinguished_name, BASE))
 
     if FILTER:
-        filterStr = "(&(%s)%s)" % (distinguished_name,FILTER)
+        filter_string = "(&(%s)%s)" % (distinguished_name, FILTER)
     else:
-        filterStr = distinguished_name
-    log.LOGGER.debug("Used LDAP filter: %s" % filterStr)
+        filter_string = distinguished_name
+    log.LOGGER.debug("Used LDAP filter: %s" % filter_string)
 
-    users = CONNEXION.search_s(BASE, SCOPE, filterStr)
+    users = CONNEXION.search_s(BASE, SCOPE, filter_string)
     if users:
         log.LOGGER.debug("User %s found" % user)
         try:

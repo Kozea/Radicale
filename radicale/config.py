@@ -58,6 +58,7 @@ INITIAL_CONFIG = {
         "ldap_url": "ldap://localhost:389/",
         "ldap_base": "ou=users,dc=example,dc=com",
         "ldap_attribute": "uid",
+        "ldap_filter": "",
         "ldap_binddn": "",
         "ldap_password": "",
         "ldap_scope": "OneLevel",
