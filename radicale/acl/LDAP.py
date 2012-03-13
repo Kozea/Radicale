@@ -31,6 +31,7 @@ from radicale import acl, config, log
 
 BASE = config.get("acl", "ldap_base")
 ATTRIBUTE = config.get("acl", "ldap_attribute")
+FILTER = config.get("acl", "ldap_filter")
 CONNEXION = ldap.initialize(config.get("acl", "ldap_url"))
 BINDDN = config.get("acl", "ldap_binddn")
 PASSWORD = config.get("acl", "ldap_password")
@@ -59,7 +60,13 @@ def has_right(owner, user, password):
     log.LOGGER.debug(
         "LDAP bind for %s in base %s" % (distinguished_name, BASE))
 
-    users = CONNEXION.search_s(BASE, SCOPE, distinguished_name)
+    if FILTER:
+        filterStr = "(&(%s)%s)" % (distinguished_name,FILTER)
+    else:
+        filterStr = distinguished_name
+    log.LOGGER.debug("Used LDAP filter: %s" % filterStr)
+
+    users = CONNEXION.search_s(BASE, SCOPE, filterStr)
     if users:
         log.LOGGER.debug("User %s found" % user)
         try:

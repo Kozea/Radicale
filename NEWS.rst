@@ -11,6 +11,7 @@
 * Courier and PAM authentication methods
 * Git and SQL storages
 * CardDAV support
+* LDAP: custom filters supported
 
 
 0.6.4 - Tulips
