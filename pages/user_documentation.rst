@@ -166,10 +166,30 @@ select ``Calendars and Addressbooks``. You should find all the calendars that
 are available to your user on the Radicale server. You can then configure each
 of them (display colour, notifications, etc.).
 
-iPhone
-~~~~~~
+iPhone & iPad
+~~~~~~~~~~~~~
 
-*To be written*
+For iOS devices, the setup is fairly straightforward but there are a few settings
+that are critical for proper operation.
+
+1. From the Home screen, open ``Settings``
+2. Select ``Mail, Contacts, Calendars``
+3. Select ``Add Account`` > ``Other`` > ``Add CalDAV Account``
+4. Enter the server URL here, including ``https``, the port, and the user/calendar
+   path, ex: ``https://myserver.domain.com:3000/bob/birthdays/``
+5. Enter your username and password as defined in your server config
+6. Enter a good description of the calendar in the ``Description`` field.
+   Otherwise it will put the whole servername in the field.
+7. Now go back to the ``Mail, Contacts, Calendars`` screen and scroll down to the
+   ``Calendars`` section. You must change the ``Sync`` option to sync ``All events``
+   otherwise new events won't show up on your iOS devices!
+
+.. note::
+   Everything should be working now so test creating events and make sure they stay created. 
+   If you create events on your iOS device and they disappear after the fetch period,
+   you probably forgot to change the sync setting in step 7. Likewise, if you create events
+   on another device and they don't appear on your iPad of iPhone, then make sure your sync
+   settings are correct
 
 iCal
 ~~~~
