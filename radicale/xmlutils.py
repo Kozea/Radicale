@@ -262,6 +262,10 @@ def _propfind_response(path, item, props, user):
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
             privilege.append(ET.Element(_tag("D", "all")))
+            privilege.append(ET.Element(_tag("D", "read")))
+            privilege.append(ET.Element(_tag("D", "write")))
+            privilege.append(ET.Element(_tag("D", "write-properties")))
+            privilege.append(ET.Element(_tag("D", "write-content")))
             element.append(privilege)
         elif tag == _tag("D", "supported-report-set"):
             for report_name in (
