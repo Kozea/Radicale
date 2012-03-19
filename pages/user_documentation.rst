@@ -174,7 +174,7 @@ that are critical for proper operation.
 
 1. From the Home screen, open ``Settings``
 2. Select ``Mail, Contacts, Calendars``
-3. Select ``Add Account`` > ``Other`` > ``Add CalDAV Account``
+3. Select ``Add Account`` →  ``Other`` →  ``Add CalDAV Account``
 4. Enter the server URL here, including ``https``, the port, and the user/calendar
    path, ex: ``https://myserver.domain.com:3000/bob/birthdays/``
 5. Enter your username and password as defined in your server config
