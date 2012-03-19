@@ -35,12 +35,12 @@ a:hover, a:focus {
   color: #376e04;
 }
 
-table:not(.footnote) {
+table {
   border-collapse: collapse;
   margin: auto;
 }
 
-table:not(.footnote) td {
+table td {
   border: 1px #cbb solid;
   padding: 0.5em;
 }
@@ -98,7 +98,7 @@ h5, h5 a {
   text-transform: uppercase;
 }
 
-header {
+body > header {
   position: absolute;
   top:2em;
 }
@@ -182,28 +182,21 @@ body > section {
 }
 
 .contents {
-  background: rgba(164, 0, 0, 0.8) ;
+  background: rgba(46, 52, 54, 0.05);
   border-radius: 5px;
-  font-family: Courier,monospace;
+  box-shadow: 5px 5px 5px rgba(46, 52, 54, 0.2);
+  color: black;
   margin: 0 auto;
-  padding: 15px 100px;
-  width:50%;
+  padding: 0.5em 2em;
+  width: 60%;
 }
 
-.contents p {   
-  background: none;
-  color: #80d800;
-  font-size: 2em;
-  margin: 10px;
-  text-transform: uppercase;
-}
-
-.contents a { 
-  color: white;
+.contents a {
+  color: grey;
 }
 
 .contents a:hover {
-  color: #97ff00;
+  color: black;
 }
 
 .contents ul {
@@ -245,26 +238,41 @@ article {
   border: 1px dotted #4e9a06;
 }
 
-.admonition-title {
+aside > header {
+  opacity: 0.8;
+  font-size: 1.15em;
   font-variant: small-caps;
-  text-decoration: underline;
+  font-weight: bold;
+  margin: 1em 0;
 }
 
-.footnote {
+article footer {
   font-size: 0.8em;
   opacity: 0.7;
   padding-left: 20px;
+}
+
+article footer div {
+  padding: 0.2em;
+}
+
+article footer div a:first-child {
+  margin-right: 0.5em;
+}
+
+article footer div * {
+  display: inline;
 }
 
 .docinfo {
   display: none;
 }
 
-.abstract .topic-title {
+.abstract header {
   display: none;
 }
 
-.abstract{
+.abstract {
   opacity:0.8;
   font-style: italic;
   margin-top:-1em;
@@ -272,8 +280,9 @@ article {
 
 #rss {
   background-color: #a40000;
-  float: right;
-  margin-right:12.5%;
+  position: fixed;
+  right: 20px;
+  top: 20px;
   transition: background-color 0.3s linear;
 }
 
@@ -290,7 +299,7 @@ pre {
   padding: 15px;
 }
 
-footer {
+body > footer {
   border-bottom: 2px dotted #4e9a06;
   bottom:0;
   height:2em;
@@ -300,20 +309,20 @@ footer {
   text-align: center;
 }
 
-footer ul {
+body > footer ul {
   margin: 0 auto;
 }
 
-footer li {
+body > footer li {
   display: inline;
   padding: 0 0.75em;
 }
 
-footer li a {
+body > footer li a {
   color: #a40000;
   font-variant: small-caps;
 }
 
-footer li a:hover { 
+body > footer li a:hover {
   color: #3f0000;
 }
