@@ -6,6 +6,7 @@
 ===
 
 * [IN PROGRESS] Other CalDAV clients supports
+* SQL and Git storage backends
 * Tests
 
 
