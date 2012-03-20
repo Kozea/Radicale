@@ -197,8 +197,8 @@ class Application(object):
         function = getattr(self, environ["REQUEST_METHOD"].lower())
 
         # Check rights
-        if not items or not self.acl:
-            # No collection or no acl, don't check rights
+        if not items or not self.acl or function == self.options:
+            # No collection, or no acl, or OPTIONS request: don't check rights
             status, headers, answer = function(environ, items, content, None)
         else:
             # Ask authentication backend to check rights
