@@ -285,17 +285,16 @@ class Application(object):
             item = collection.get_item(
                 xmlutils.name_from_path(environ["PATH_INFO"], collection))
 
-        # Evolution bug workaround
-        etag = environ.get("HTTP_IF_MATCH", item.etag).replace("\\", "")
-        if item and etag == item.etag:
-            # No ETag precondition or precondition verified, delete item
-            answer = xmlutils.delete(environ["PATH_INFO"], collection)
-            status = client.NO_CONTENT
-        else:
-            # No item or ETag precondition not verified, do not delete item
-            answer = None
-            status = client.PRECONDITION_FAILED
-        return status, {}, answer
+        if item:
+            # Evolution bug workaround
+            etag = environ.get("HTTP_IF_MATCH", item.etag).replace("\\", "")
+            if etag == item.etag:
+                # No ETag precondition or precondition verified, delete item
+                answer = xmlutils.delete(environ["PATH_INFO"], collection)
+                return client.NO_CONTENT, {}, answer
+
+        # No item or ETag precondition not verified, do not delete item
+        return client.PRECONDITION_FAILED, {}, None
 
     def get(self, environ, collections, content, user):
         """Manage GET request.
