@@ -45,36 +45,41 @@ Radicale Project are described by RFCs:
   (WebDAV) :RFC:`4918`
 - Transport Layer Security (TLS) :RFC:`5246`
 - iCalendar format (iCal) :RFC:`5545`
+- vCard Format Specification :RFC:`6350`
+- vCard Extensions to Web Distributed Authoring and Versioning (CardDAV)
+  :RFC:`6352`
 
 .. note::
-   CalDAV implementation **requires** iCal, ACL, WebDAV, HTTP and TLS. The
-   Radicale Server **does not and will not implement correctly** these
-   standards, as explained in the `Development Choices`_ part.
+   CalDAV and CardDAV implementations **require** iCal, vCard, ACL, WebDAV,
+   HTTP and TLS. The Radicale Server **does not and will not implement
+   correctly** these standards, as explained in the `Development Choices`_
+   part.
 
 Development Choices
 -------------------
 
 Important global development choices have been decided before writing
-code. They are very useful to understand why the Radicale Project is
-different from other CalDAV servers, and why features are included or
-not in the code.
+code. They are very useful to understand why the Radicale Project is different
+from other CalDAV and CardDAV servers, and why features are included or not in
+the code.
 
-Oriented to Calendar User Agents
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Oriented to Calendar and Contact User Agents
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Calendar servers work with calendar clients, using a defined protocol. CalDAV
-is a good protocol, covering lots of features and use cases, but it is quite
-hard to implement fully.
+Calendar and contact servers work with calendar and contact clients, using a
+defined protocol. CalDAV and CardDAV are good protocols, covering lots of
+features and use cases, but it is quite hard to implement fully.
 
-Some calendar servers have been created to follow the CalDAV RFC as much as
-possible: Davical [#]_, Cosmo [#]_ and Darwin Calendar Server [#]_, for
-example, are much more respectful of CalDAV and can be used with a large number
-of clients. They are very good choices if you want to develop and test new
-CalDAV clients, or if you have a possibly heterogeneous list of user agents.
+Some calendar servers have been created to follow the CalDAV and CardDAV RFCs
+as much as possible: Davical [#]_, Cosmo [#]_ and Darwin Calendar Server [#]_,
+for example, are much more respectful of CalDAV and CardDAV and can be used
+with a large number of clients. They are very good choices if you want to
+develop and test new CalDAV clients, or if you have a possibly heterogeneous
+list of user agents.
 
-The Radicale Server does not and **will not** support the CalDAV standard. It
-supports the CalDAV implementation of different clients (Lightning, Evolution,
-Android, iPhone and iCal, more are coming [#]_).
+The Radicale Server does not and **will not** support the CalDAV and CardDAV
+standards. It supports the CalDAV and CardDAV implementations of different
+clients (Lightning, Evolution, Android, iPhone and iCal, more are coming [#]_).
 
 .. [#] `Davical <http://www.davical.org/>`_, a standards-compliant calendar
    server.
@@ -98,7 +103,7 @@ simple to use.
 The installation is very easy, particularly with Linux: no dependencies, no
 superuser rights needed, no configuration required. Launching the main script
 out-of-the-box, as a normal user, is often the only step to have a simple remote
-calendar access.
+calendar and contact access.
 
 Contrary to other servers that are often complicated, require high privileges
 or need a strong configuration, the Radicale Server can (sometimes, if not
@@ -135,13 +140,17 @@ calendar through network:
 +-----------+---------------------+--------------------------+
 |   Part    |        Layer        |    Protocol or Format    |
 +===========+=====================+==========================+
-| Server    | Calendar Storage    | iCal                     |
+| Server    | Calendar/Contact    | iCal/vCard               |
+|           | Storage             |                          |
 |           +---------------------+--------------------------+
-|           | Calendar Server     | CalDAV Server            |
+|           | Calendar/Contact    | CalDAV/CardDAV Server    |
+|           | Server              |                          |
 +-----------+---------------------+--------------------------+
-| Transfert | Network             | CalDAV (HTTP + TLS)      |
+| Transfert | Network             | CalDAV/CardDAV           |
+|           |                     | (HTTP + TLS)             |
 +-----------+---------------------+--------------------------+
-| Client    | Calendar Client     | CalDAV Client            |
+| Client    | Calendar/Contact    | CalDAV/CardDAV Client    |
+|           | Client              |                          |
 |           +---------------------+--------------------------+
 |           | GUI                 | Terminal, GTK, etc.      |
 +-----------+---------------------+--------------------------+
@@ -151,7 +160,7 @@ The Radicale Project is **only the server part** of this architecture.
 Code Architecture
 -----------------
 
-The package offers 7 modules.
+The package offers 8 modules.
 
 ``__main__``
   The main module provides a simple function called ``run``. Its main work is
@@ -171,11 +180,10 @@ The package offers 7 modules.
   executable with some command line options.
 
 ``ical``
-  In this module are written the classes to represent calendars and calendar
-  items in Radicale. The simple iCalendar readers and writers are included in
-  this file, to read and write requests and internally stored calendars. The
-  readers and writers are small and stupid: they do not fully understand the
-  iCalendar format and do not know at all what a date is.
+  In this module are written the classes to represent collections and items in
+  Radicale. The simple iCalendar and vCard readers and writers are included in
+  this file. The readers and writers are small and stupid: they do not fully
+  understand the iCalendar format and do not know at all what a date is.
 
 ``xmlutils``
   The functions defined in this module are mainly called by the CalDAV server
@@ -194,3 +202,8 @@ The package offers 7 modules.
   launched, an Access Control List is chosen in the set, according to the
   configuration. The HTTP requests are then filtered to restrict the access
   using a list of login/password-based access controls.
+
+``storage``
+  This folder is a set of storage modules able to read and write
+  collections. The only one is now ``filesystem``, storing each collection into
+  one flat plain-text file.

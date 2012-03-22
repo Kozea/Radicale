@@ -14,22 +14,23 @@
 Main Goals
 ==========
 
-The Radicale Project is a complete calendar storing and manipulating
-solution. It can store multiple calendars.
+The Radicale Project is a complete calendar and contact storing and
+manipulating solution. It can store multiple calendars and multiple address
+books.
 
-Calendar manipulation is available from both local and distant
+Calendar and contact manipulation is available from both local and distant
 accesses, possibly limited through authentication policies.
 
 
 What Radicale Is
 ================
 
-Calendar Server
----------------
+Calendar and Contact Server
+---------------------------
 
-The Radicale Project is mainly a calendar server, giving local and
-distant accessess for reading, creating, modifying and deleting
-multiple calendars through a simplified CalDAV protocol.
+The Radicale Project is mainly a calendar and contact server, giving local and
+distant accessess for reading, creating, modifying and deleting multiple
+calendars through simplified CalDAV and CardDAV protocols.
 
 Data can be encrypted by SSL, and their access can be restricted thanks to
 different authentication methods.
@@ -38,38 +39,25 @@ different authentication methods.
 What Radicale Is not and will not Be
 ====================================
 
-Calendar User Agent
--------------------
+Calendar or Contact User Agent
+------------------------------
 
 Radicale is a server, not a client. No interfaces will be created to work with
 the server, as it is a really (really really) much more difficult task [#]_.
 
 .. [#] I repeat: `we are lazy <http://www.radicale.org/technical_choices#lazy>`_.
 
-Original Calendar Store Implementation
---------------------------------------
+Original Calendar or Contact Access Protocol
+--------------------------------------------
 
-Radicale stores iCal files, and nothing else. No easy way to store anything
-else, as our iCal library does not know anything of the iCal norm: it just
-receives iCal strings from the client and stores it after a really minimal
-parsing.
+CalDAV and CardDAV are not perfect protocols. We think that its main problem is
+their complexity [#]_, that is why we decided not to implement the whole
+standard but just enough to understand some of its client-side implementations
+[#]_.
 
-Radicale has no idea of most of the iCal semantics. No joke! Dates, timezones,
-titles, contents, status, repetitions are never understood, they are just
-stored and replied as they are sent by the client. This is why storing anything
-but iCal files (databases, Evolution Data Server, etc.) is impossible with
-Radicale.
-
-Original Calendar Access Protocol
----------------------------------
-
-CalDAV is not a perfect protocol. We think that its main problem is its
-complexity [#]_, that is why we decided not to implement the whole standard but
-just enough to understand some of its client-side implementations [#]_.
-
-CalDAV is not a perfect protocol, but it is the best open standard available
-and is quite widely used by both clients and servers [#]_. We decided to use it,
-and we will not use another one.
+CalDAV and CardDAV are not perfect protocols, but they are the best open
+standards available and are quite widely used by both clients and servers
+[#]_. We decided to use it, and we will not use another one.
 
 .. [#] Try to read :RFC:`4791`. Then try to understand it. Then try to
    implement it. Then try to read it again.

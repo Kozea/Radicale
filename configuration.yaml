@@ -1,5 +1,5 @@
 name: Radicale
-description: CalDAV Server
+description: CalDAV and CardDAV Server
 license: GPLv3
 public: true
 url: http://www.radicale.org/

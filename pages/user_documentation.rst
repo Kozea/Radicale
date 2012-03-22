@@ -7,7 +7,7 @@
 :Date: 2010-02-11
 
 :Abstract: This document is a short description for installing and using the
- Radicale Calendar Server.
+ Radicale calendar and contact Server.
 
 .. contents::
 
@@ -50,8 +50,8 @@ of:
 - `Apple iCal <http://www.apple.com/macosx/apps/>`_
 
 More clients will be supported in the future. However, it may work with any
-calendar client which implements CalDAV specifications too (luck is highly
-recommanded).
+calendar or contact client which implements CalDAV or CardDAV specifications
+too (luck is highly recommanded).
 
 
 Simple Usage
@@ -88,15 +88,20 @@ and tasks to your calendar. All events and tasks are stored in the server, they
 can be accessed and modified from multiple clients by multiple users at the
 same time.
 
+Lightning and Thunderbird cannot access CardDAV servers yet.
+
 Evolution
 ~~~~~~~~~
+
+Calendars
++++++++++
 
 First of all, show the calendar page in Evolution by clicking on the calendar
 icon at the bottom of the side pane. Then add a new calendar by choosing in the
 menu ``File → New → Calendar``.
 
 A new window opens. The calendar ``type`` is ``CalDAV``, and the location is
-something like ``caldav://localhost:5232/user/calendar/``, where you can
+something like ``caldav://localhost:5232/user/calendar.ics/``, where you can
 replace ``user`` and ``calendar`` by some strings of your choice. Calendars are
 automatically created if needed.
 
@@ -104,6 +109,11 @@ You can fill other attributes like the color and the name, these are only used
 for Evolution and are not uploaded.
 
 Click on ``OK``, and your calendar should be ready for use.
+
+Contacts
+++++++++
+
+*To be written*
 
 KOrganizer
 ~~~~~~~~~~
@@ -135,6 +145,11 @@ from server to phone only`` if you want to use two-way-sync.
     
 Tap on ``Finish`` and you're done. You're now able to use the new calendars 
 in the same way you were using Google calendars before.
+
+CalDAV-Sync
+~~~~~~~~~~~
+
+*To be written*
 
 aCal
 ~~~~
@@ -169,6 +184,9 @@ of them (display colour, notifications, etc.).
 iPhone & iPad
 ~~~~~~~~~~~~~
 
+Calendars
++++++++++
+
 For iOS devices, the setup is fairly straightforward but there are a few settings
 that are critical for proper operation.
 
@@ -191,12 +209,20 @@ that are critical for proper operation.
    on another device and they don't appear on your iPad of iPhone, then make sure your sync
    settings are correct
 
+Contacts
+++++++++
+
+*To be written*
+
 iCal
 ~~~~
 
 .. note::
    This description assumes you do not have any authentication or encryption
    configured. The procedure will change accordingly if you do.
+
+Calendars
++++++++++
 
 In iCal 4.0 or iCal 5.0:
 
@@ -230,6 +256,11 @@ now set-up. You can close the ``Preferences`` window.
    window is confusing as you can't focus an empty account and iCal will just
    add a calendar to another account.
 
+Contacts
+++++++++
+
+*To be written*
+
 
 Complex Configuration
 =====================
@@ -241,8 +272,8 @@ Complex Configuration
 Installing the Server
 ---------------------
 
-You can install Radicale CalDAV server with the following command, with
-superuser rights::
+You can install Radicale thanks to the following command, with superuser
+rights::
 
   python setup.py install
 
@@ -284,6 +315,8 @@ configuration file, with the main parameters:
   certificate = /etc/apache2/ssl/server.crt
   # SSL private key
   key = /etc/apache2/ssl/server.key
+  # Reverse DNS to resolve client address in logs
+  dns_lookup = True
 
 
   [encoding]
@@ -315,6 +348,11 @@ configuration file, with the main parameters:
   ldap_base = ou=users,dc=example,dc=com
   # LDAP login attribute
   ldap_attribute = uid
+  # LDAP filter string
+  # placed as X in a query of the form (&(...)X)
+  # example: (objectCategory=…)(objectClass=…)(memberOf=…)
+  # leave empty if no additional filter is needed
+  ldap_filter = 
   # LDAP dn for initial login, used if LDAP server does not allow anonymous searches
   # Leave empty if searches are anonymous
   ldap_binddn =
@@ -338,16 +376,16 @@ configuration file, with the main parameters:
   filesystem_folder = ~/.config/radicale/collections
 
 
-  [logging]
-  # Logging configuration file
-  # If no config is given, simple information is printed on the standard output
-  # For more information about the syntax of the configuration file, see:
-  # http://docs.python.org/library/logging.config.html
-  config = /etc/radicale/logging
-  # Set the default logging level to debug
-  debug = False
-  # Store all environment variables (including those set in the shell)
-  full_environment = False
+[logging]
+# Logging configuration file
+# If no config is given, simple information is printed on the standard output
+# For more information about the syntax of the configuration file, see:
+# http://docs.python.org/library/logging.config.html
+config = /etc/radicale/logging
+# Set the default logging level to debug
+debug = False
+# Store all environment variables (including those set in the shell)
+full_environment = False
 
 This configuration file is read each time the server is launched. If some
 values are not given, the default ones are used. If no configuration file is
@@ -524,26 +562,29 @@ explained in `the mod_wsgi documentation
 <http://code.google.com/p/modwsgi/wiki/ConfigurationGuidelines#User_Authentication>`_.
 
 .. note::
-   Read-only calendars can also be served by a simple Apache HTTP server, as
-   Radicale stores full-text icalendar files.
+   Read-only calendars or address books can also be served by a simple Apache
+   HTTP server, as Radicale stores full-text icalendar and vcard files with the
+   default configuration.
 
 
 Authentication and URLs
 -----------------------
 
-If no authentication method is set, calendars are available at ``/calendar``
-and ``/folder/calendar`` URLs. Else, calendars are public, private or personal,
-depending on their URLs.
+If no authentication method is set, calendars are available at
+``/calendar.ics/`` and ``/folder/calendar.ics/`` URLs. Else, calendars are
+public, private or personal, depending on their URLs.
 
-Public Calendars
-~~~~~~~~~~~~~~~~
+This section is written for calendars, but it is the same for address books.
 
-Public users are available for everybody, authenticated or not.
+Public Collections
+~~~~~~~~~~~~~~~~~~
 
-Calendars at ``/public_user/calendar`` URLs are public. Public users are
+Public collections are available for everybody, authenticated or not.
+
+Calendars at ``/public_user/calendar.ics/`` URLs are public. Public users are
 defined in the ``acl → public_users`` configuration variable. If ``None`` is in
-the list of public users, public calendars are also available at ``/calendar``
-URLs.
+the list of public users, public calendars are also available at
+``/calendar.ics/`` URLs.
 
 .. important::
 
@@ -552,10 +593,10 @@ URLs.
    empty string in the ``acl → public_users`` configuration variable.
 
 
-Private Calendars
-~~~~~~~~~~~~~~~~~
+Private Collections
+~~~~~~~~~~~~~~~~~~~
 
-Private calendars are available for all the authenticated users.
+Private collections are available for all the authenticated users.
 
 Calendars at ``/private_user/calendar`` URLs are private. Private users are
 defined in the ``acl → private_users`` configuration variable. If ``None`` is
@@ -563,10 +604,10 @@ in the list of private users, private calendars are also available at
 ``/calendar`` URLs.
 
 
-Personal Calendars
-~~~~~~~~~~~~~~~~~~
+Personal Collections
+~~~~~~~~~~~~~~~~~~~~
 
-Personal calendars are only available for the calendar owner.
+Personal collections are only available for the calendar owner.
 
 Calendars at ``/owner/calendar`` URLs are personal. They are only available for
 the authenticated user called ``owner``.
