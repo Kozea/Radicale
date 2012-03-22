@@ -1,0 +1,18 @@
+Radicale 0.7
+============
+
+Radicale 0.7 is out, at least!
+
+
+0.7 - Eternal Sunshine
+----------------------
+
+* Repeating events
+* Collection deletion
+* Courier and PAM authentication methods
+* CardDAV support
+* Custom LDAP filters supported
+
+**A lot** of people have reported bugs, proposed new features, added useful
+code and tested many clients. Thank you Lynn, Ron, Bill, Patrick, Hidde,
+Gerhard, Martin, Brendan, Vladimir, and everybody I've forgotten.
