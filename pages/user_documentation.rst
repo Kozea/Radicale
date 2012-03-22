@@ -147,8 +147,8 @@ from server to phone only`` if you want to use two-way-sync.
 Tap on ``Finish`` and you're done. You're now able to use the new calendars 
 in the same way you were using Google calendars before.
 
-CalDAV-Sync
-~~~~~~~~~~~
+CardDAV-Sync
+~~~~~~~~~~~~
 
 *To be written*
 
