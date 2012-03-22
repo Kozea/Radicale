@@ -10,6 +10,7 @@
  Radicale calendar and contact Server.
 
 .. contents::
+   :depth: 3
 
 Installation
 ============
