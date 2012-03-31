@@ -245,24 +245,6 @@ aside > header {
   margin: 1em 0;
 }
 
-article footer {
-  font-size: 0.8em;
-  opacity: 0.7;
-  padding-left: 20px;
-}
-
-article footer div {
-  padding: 0.2em;
-}
-
-article footer div a:first-child {
-  margin-right: 0.5em;
-}
-
-article footer div * {
-  display: inline;
-}
-
 .docinfo {
   display: none;
 }
