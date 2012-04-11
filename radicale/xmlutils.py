@@ -286,6 +286,10 @@ def _propfind_response(path, item, props, user):
                 if item.is_leaf(item.path):
                     tag = ET.Element(_tag("C", item.resource_type))
                     element.append(tag)
+                if not item.exists and item.resource_type:
+                    # Collection not stored yet, but guessed resource type
+                    tag = ET.Element(_tag("C", item.resource_type))
+                    element.append(tag)
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
             elif tag == _tag("D", "owner") and item.owner_url:
