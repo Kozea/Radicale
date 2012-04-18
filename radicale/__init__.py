@@ -291,7 +291,7 @@ class Application(object):
             if etag == item.etag:
                 # No ETag precondition or precondition verified, delete item
                 answer = xmlutils.delete(environ["PATH_INFO"], collection)
-                return client.NO_CONTENT, {}, answer
+                return client.OK, {}, answer
 
         # No item or ETag precondition not verified, do not delete item
         return client.PRECONDITION_FAILED, {}, None
