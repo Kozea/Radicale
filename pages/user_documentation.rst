@@ -611,7 +611,8 @@ Personal Collections
 Personal collections are only available for the calendar owner.
 
 Calendars at ``/owner/calendar`` URLs are personal. They are only available for
-the authenticated user called ``owner``.
+the authenticated user called ``owner`` (of course, you can replace ``owner`` by
+any user name authorized by your authentication mechanism).
 
 
 Python Versions and OS Support
