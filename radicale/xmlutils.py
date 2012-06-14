@@ -430,8 +430,15 @@ def report(path, xml_request, collection):
                 in root.findall(_tag("D", "href")))
         else:
             hreferences = (path,)
+        # TODO: handle other filters
+        # TODO: handle the nested comp-filters correctly
+        # Read rfc4791-9.7.1 for info
+        tag_filters = set(
+            element.get("name") for element
+            in root.findall(".//%s" % _tag("C", "comp-filter")))
     else:
         hreferences = ()
+        tag_filters = None
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -454,6 +461,9 @@ def report(path, xml_request, collection):
             items = collection.components
 
         for item in items:
+            if tag_filters and item.tag not in tag_filters:
+                continue
+
             response = ET.Element(_tag("D", "response"))
             multistatus.append(response)
 
