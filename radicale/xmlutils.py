@@ -299,6 +299,8 @@ def _propfind_response(path, item, props, user):
             elif tag == _tag("C", "calendar-timezone"):
                 element.text = ical.serialize(
                     item.tag, item.headers, item.timezones)
+            elif tag == _tag("D", "displayname"):
+                element.text = item.name
             else:
                 human_tag = _tag_from_clark(tag)
                 if human_tag in collection_props:
