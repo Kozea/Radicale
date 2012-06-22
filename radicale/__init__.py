@@ -440,7 +440,7 @@ class Application(object):
             # Case 2: Item and ETag precondition verified: Modify item
             # Case 3: Item and no Etag precondition: Force modifying item
             xmlutils.put(environ["PATH_INFO"], content, collection)
-            status = client.CREATED
+            status = client.NO_CONTENT if item else client.CREATED
             # Try to return the etag in the header
             # If the added item does't have the same name as the one given by
             # the client, then there's no obvious way to generate an etag, we
