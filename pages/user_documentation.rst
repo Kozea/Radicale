@@ -377,16 +377,16 @@ configuration file, with the main parameters:
   filesystem_folder = ~/.config/radicale/collections
 
 
-[logging]
-# Logging configuration file
-# If no config is given, simple information is printed on the standard output
-# For more information about the syntax of the configuration file, see:
-# http://docs.python.org/library/logging.config.html
-config = /etc/radicale/logging
-# Set the default logging level to debug
-debug = False
-# Store all environment variables (including those set in the shell)
-full_environment = False
+  [logging]
+  # Logging configuration file
+  # If no config is given, simple information is printed on the standard output
+  # For more information about the syntax of the configuration file, see:
+  # http://docs.python.org/library/logging.config.html
+  config = /etc/radicale/logging
+  # Set the default logging level to debug
+  debug = False
+  # Store all environment variables (including those set in the shell)
+  full_environment = False
 
 This configuration file is read each time the server is launched. If some
 values are not given, the default ones are used. If no configuration file is
