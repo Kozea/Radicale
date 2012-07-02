@@ -210,6 +210,10 @@ that are critical for proper operation.
    on another device and they don't appear on your iPad of iPhone, then make sure your sync
    settings are correct
 
+.. warning::
+   In iOS 5.x, please check twice that the ``Sync all entries`` option is
+   activated, otherwise some events may not be shown in your calendar.
+
 Contacts
 ++++++++
 
@@ -242,7 +246,7 @@ Click ``Create``. The wizard will now tell you, that no encryption is in place
 radicale to use SSL. Click ``Continue``.
 
 .. warning::
-   In iCal 5.0, please check twice that the ``Sync all entries`` option is
+   In iCal 5.x, please check twice that the ``Sync all entries`` option is
    activated, otherwise some events may not be shown in your calendar.
 
 The wizard will close, leaving you in the ``Account`` tab again. The account is
