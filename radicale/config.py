@@ -55,6 +55,8 @@ INITIAL_CONFIG = {
         "private_users": "private",
         "htpasswd_filename": "/etc/radicale/users",
         "htpasswd_encryption": "crypt",
+        "imap_auth_host_name": "localhost",
+        "imap_auth_host_port": "143",
         "ldap_url": "ldap://localhost:389/",
         "ldap_base": "ou=users,dc=example,dc=com",
         "ldap_attribute": "uid",
