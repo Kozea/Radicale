@@ -2,9 +2,9 @@
  User Documentation
 ====================
 
-:Author: Guillaume Ayoub
+:Author: Guillaume Ayoub, Daniel Aleksandersen
 
-:Date: 2010-02-11
+:Date: 2012-07-05
 
 :Abstract: This document is a short description for installing and using the
  Radicale calendar and contact Server.
@@ -333,13 +333,17 @@ configuration file, with the main parameters:
 
   [acl]
   # Access method
-  # Value: None | htpasswd | LDAP | PAM | courier
+  # Value: None | courier | IMAP | htpasswd | LDAP | PAM
   type = None
 
   # Usernames used for public collections, separated by a comma
   public_users = public
   # Usernames used for private collections, separated by a comma
   private_users = private
+
+  # STARTTLS capable or local IMAP server domain name
+  imap_auth_host_name = localhost
+  imap_auth_host_port = 143
 
   # Htpasswd filename
   htpasswd_filename = /etc/radicale/users
@@ -628,6 +632,8 @@ TLS Support
 Python 2.6 suffered `a bug <http://bugs.python.org/issue5103>`_ causing huge
 timeout problems with TLS. The bug is fixed since Python 2.6.6.
 
+IAMP authentication over TLS requies Python 3.2.
+
 Python 2.7 and Python 3.x do not suffer this bug.
 
 Crypt Support
@@ -636,6 +642,15 @@ Crypt Support
 With the htpasswd access, many encryption methods are available, and crypt is the
 default one in Radicale. Unfortunately, the ``crypt`` module is unavailable on
 Windows, you have to pick another method on this OS.
+
+IMAP Authentication
+-------------------
+
+The IMAP authentication module relies on the imaplib module, available with 2.x
+versions of Python. However, TLS is only available in Python 3.2. Older versions
+of Python or a non-modern server who does not support STARTTLS can only
+authenticate against ``localhost`` as passwords are transmitted in PLAIN. Legacy
+SSL mode on port 993 is not supported.
 
 LDAP Authentication
 -------------------
