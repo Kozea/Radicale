@@ -341,7 +341,7 @@ configuration file, with the main parameters:
   # Usernames used for private collections, separated by a comma
   private_users = private
 
-  # STARTTLS capable or local IMAP
+  # STARTTLS capable or local IMAP server domain name
   imap_auth_host_name = localhost
   imap_auth_host_port = 143
 
