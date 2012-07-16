@@ -632,7 +632,7 @@ TLS Support
 Python 2.6 suffered `a bug <http://bugs.python.org/issue5103>`_ causing huge
 timeout problems with TLS. The bug is fixed since Python 2.6.6.
 
-IAMP authentication over TLS requies Python 3.2.
+IMAP authentication over TLS requires Python 3.2.
 
 Python 2.7 and Python 3.x do not suffer this bug.
 
