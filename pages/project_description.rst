@@ -29,10 +29,10 @@ Calendar and Contact Server
 ---------------------------
 
 The Radicale Project is mainly a calendar and contact server, giving local and
-distant accessess for reading, creating, modifying and deleting multiple
+distant access for reading, creating, modifying and deleting multiple
 calendars through simplified CalDAV and CardDAV protocols.
 
-Data can be encrypted by SSL, and their access can be restricted thanks to
+Data can be encrypted by SSL, and their access can be restricted using 
 different authentication methods.
 
 
@@ -50,14 +50,14 @@ the server, as it is a really (really really) much more difficult task [#]_.
 Original Calendar or Contact Access Protocol
 --------------------------------------------
 
-CalDAV and CardDAV are not perfect protocols. We think that its main problem is
+CalDAV and CardDAV are not perfect protocols. We think that their main problem is
 their complexity [#]_, that is why we decided not to implement the whole
 standard but just enough to understand some of its client-side implementations
 [#]_.
 
-CalDAV and CardDAV are not perfect protocols, but they are the best open
-standards available and are quite widely used by both clients and servers
-[#]_. We decided to use it, and we will not use another one.
+CalDAV and CardDAV are the best open standards available and they are quite widely 
+used by both clients and servers[#]_. We decided to use it, and we will not use 
+another one.
 
 .. [#] Try to read :RFC:`4791`. Then try to understand it. Then try to
    implement it. Then try to read it again.
