@@ -32,7 +32,7 @@ Main Features
 - Shares contacts through CardDAV, WebDAV and HTTP
 - Supports events, todos, journal entries and business cards
 - Works out-of-the-box, no installation nor configuration required
-- Warns users on concurrent edition
+- Warns users on concurrent editing
 - Limits access by authentication
 - Secures connections
 

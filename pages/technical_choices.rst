@@ -146,7 +146,7 @@ calendar through network:
 |           | Calendar/Contact    | CalDAV/CardDAV Server    |
 |           | Server              |                          |
 +-----------+---------------------+--------------------------+
-| Transfert | Network             | CalDAV/CardDAV           |
+| Transfer  | Network             | CalDAV/CardDAV           |
 |           |                     | (HTTP + TLS)             |
 +-----------+---------------------+--------------------------+
 | Client    | Calendar/Contact    | CalDAV/CardDAV Client    |
