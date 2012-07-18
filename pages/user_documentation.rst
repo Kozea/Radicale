@@ -18,7 +18,7 @@ Installation
 Dependencies
 ------------
 
-Radicale is written in pure Python and does not depend on any librabry. It is
+Radicale is written in pure Python and does not depend on any library. It is
 known to work on Python 2.6, 2.7, 3.1, 3.2 and PyPy > 1.7. The dependencies are
 optional, as they are only needed for various authentication methods [#]_.
 
@@ -39,7 +39,7 @@ folder of your choice.
 CalDAV Clients
 --------------
 
-At this time Radicale has been tested and works fine with the latests version
+At this time Radicale has been tested and works fine with the latest version
 of:
 
 - `Mozilla Lightning <http://www.mozilla.org/projects/calendar/lightning/>`_
@@ -52,7 +52,7 @@ of:
 
 More clients will be supported in the future. However, it may work with any
 calendar or contact client which implements CalDAV or CardDAV specifications
-too (luck is highly recommanded).
+too (luck is highly recommended).
 
 
 Simple Usage
@@ -308,7 +308,7 @@ configuration file, with the main parameters:
   # CalDAV server hostnames separated by a comma
   # IPv4 syntax: address:port
   # IPv6 syntax: [address]:port
-  # IPv6 adresses are configured to only allow IPv6 connections
+  # IPv6 addresses are configured to only allow IPv6 connections
   hosts = 0.0.0.0:5232
   # Daemon flag
   daemon = False
