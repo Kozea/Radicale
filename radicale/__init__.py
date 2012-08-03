@@ -172,7 +172,7 @@ class Application(object):
     def __call__(self, environ, start_response):
         """Manage a request."""
         log.LOGGER.info("%s request at %s received" % (
-                environ["REQUEST_METHOD"], environ["PATH_INFO"]))
+            environ["REQUEST_METHOD"], environ["PATH_INFO"]))
         headers = pprint.pformat(self.headers_log(environ))
         log.LOGGER.debug("Request headers:\n%s" % headers)
 
@@ -439,7 +439,7 @@ class Application(object):
         # Evolution bug workaround
         etag = environ.get("HTTP_IF_MATCH", "").replace("\\", "")
         if (not item and not etag) or (
-            item and ((etag or item.etag) == item.etag)):
+                item and ((etag or item.etag) == item.etag)):
             # PUT allowed in 3 cases
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item

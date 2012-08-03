@@ -68,10 +68,10 @@ INITIAL_CONFIG = {
         "courier_socket": ""},
     "storage": {
         "type": "filesystem",
-        "filesystem_folder":
-            os.path.expanduser("~/.config/radicale/collections"),
-        "git_folder":
-            os.path.expanduser("~/.config/radicale/collections")},
+        "filesystem_folder": os.path.expanduser(
+            "~/.config/radicale/collections"),
+        "git_folder": os.path.expanduser(
+            "~/.config/radicale/collections")},
     "logging": {
         "config": "/etc/radicale/logging",
         "debug": "False",

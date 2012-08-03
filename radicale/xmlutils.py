@@ -239,11 +239,10 @@ def _propfind_response(path, item, props, user):
             tag = ET.Element(_tag("D", "href"))
             tag.text = path
             element.append(tag)
-        elif tag in (
-            _tag("D", "principal-collection-set"),
-            _tag("C", "calendar-user-address-set"),
-            _tag("CR", "addressbook-home-set"),
-            _tag("C", "calendar-home-set")):
+        elif tag in (_tag("D", "principal-collection-set"),
+                     _tag("C", "calendar-user-address-set"),
+                     _tag("CR", "addressbook-home-set"),
+                     _tag("C", "calendar-home-set")):
             tag = ET.Element(_tag("D", "href"))
             tag.text = path
             element.append(tag)
@@ -269,8 +268,8 @@ def _propfind_response(path, item, props, user):
             element.append(privilege)
         elif tag == _tag("D", "supported-report-set"):
             for report_name in (
-                "principal-property-search", "sync-collection"
-                "expand-property", "principal-search-property-set"):
+                    "principal-property-search", "sync-collection"
+                    "expand-property", "principal-search-property-set"):
                 supported = ET.Element(_tag("D", "supported-report"))
                 report_tag = ET.Element(_tag("D", "report"))
                 report_tag.text = report_name
@@ -425,9 +424,8 @@ def report(path, xml_request, collection):
     props = [prop.tag for prop in prop_element]
 
     if collection:
-        if root.tag in (
-            _tag("C", "calendar-multiget"),
-            _tag("CR", "addressbook-multiget")):
+        if root.tag in (_tag("C", "calendar-multiget"),
+                        _tag("CR", "addressbook-multiget")):
             # Read rfc4791-7.9 for info
             hreferences = set(
                 href_element.text for href_element
@@ -485,8 +483,8 @@ def report(path, xml_request, collection):
                 element = ET.Element(tag)
                 if tag == _tag("D", "getetag"):
                     element.text = item.etag
-                elif tag in (
-                    _tag("C", "calendar-data"), _tag("CR", "address-data")):
+                elif tag in (_tag("C", "calendar-data"),
+                             _tag("CR", "address-data")):
                     if isinstance(item, ical.Component):
                         element.text = ical.serialize(
                             collection_tag, collection_headers,
