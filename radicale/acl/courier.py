@@ -29,14 +29,11 @@ from radicale import acl, config, log
 COURIER_SOCKET = config.get("acl", "courier_socket")
 
 
-def has_right(owner, user, password):
+def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
-    if not user or (owner not in acl.PRIVATE_USERS and user != owner):
-        # No user given, or owner is not private and is not user, forbidden
-        return False
 
     line = "%s\nlogin\n%s\n%s" % (sys.argv[0], user, password)
-    line = "AUTH %i\n%s" % (len(line), line)
+    line = "%i\n%s" % (len(line), line)
     try:
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.connect(COURIER_SOCKET)
@@ -51,13 +48,7 @@ def has_right(owner, user, password):
 
     log.LOGGER.debug("Got Courier socket response: %r" % data)
 
-    # Address, HOME, GID, and either UID or USERNAME are mandatory in resposne
-    # see http://www.courier-mta.org/authlib/README_authlib.html#authpipeproto
-    for line in data.split():
-        if 'GID' in line:
-            return True
+    if repr(data) == "FAIL":
+        return False
 
-    # default is reject
-    # this alleviates the problem of a possibly empty reply from courier authlib
-    # see http://www.courier-mta.org/authlib/README_authlib.html#authpipeproto
-    return False
+    return True

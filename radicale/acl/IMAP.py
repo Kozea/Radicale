@@ -38,11 +38,8 @@ IMAP_SERVER = config.get("acl", "imap_auth_host_name")
 IMAP_SERVER_PORT = config.get("acl", "imap_auth_host_port")
 
 
-def has_right(owner, user, password):
+def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
-    if not user or (owner not in acl.PRIVATE_USERS and user != owner):
-        # No user given, or owner is not private and is not user, forbidden
-        return False
 
     log.LOGGER.debug(
         "[IMAP ACL] Connecting to %s:%s." % (IMAP_SERVER, IMAP_SERVER_PORT,))

@@ -33,11 +33,8 @@ from radicale import acl, config, log
 GROUP_MEMBERSHIP = config.get("acl", "pam_group_membership")
 
 
-def has_right(owner, user, password):
+def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
-    if not user or (owner not in acl.PRIVATE_USERS and user != owner):
-        # No user given, or owner is not private and is not user, forbidden
-        return False
 
     # Check whether the user exists in the PAM system
     try:
@@ -50,7 +47,7 @@ def has_right(owner, user, password):
 
     # Check whether the group exists
     try:
-        members = grp.getgrnam(GROUP_MEMBERSHIP).gr_mem
+        members = grp.getgrnam(GROUP_MEMBERSHIP)
     except KeyError:
         log.LOGGER.debug(
             "The PAM membership required group (%s) doesn't exist" %

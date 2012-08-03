@@ -58,11 +58,11 @@ def _sha1(hash_value, password):
     return sha1.digest() == base64.b64decode(hash_value)
 
 
-def has_right(owner, user, password):
+def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
     for line in open(FILENAME).readlines():
         if line.strip():
             login, hash_value = line.strip().split(":")
-            if login == user and (owner in acl.PRIVATE_USERS or owner == user):
+            if login == user:
                 return globals()["_%s" % ENCRYPTION](hash_value, password)
     return False
