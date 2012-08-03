@@ -211,18 +211,23 @@ class Application(object):
             else:
                 user = password = None
 
-            last_allowed = None
-            collections = []
-            for collection in items:
-                if not isinstance(collection, ical.Collection):
-                    if last_allowed:
-                        collections.append(collection)
+            last_collection_allowed = None
+            allowed_items = []
+            for item in items:
+                if not isinstance(item, ical.Collection):
+                    # item is not a colleciton, it's the child of the last
+                    # collection we've met in the loop. Only add this item if
+                    # this last collection was allowed.
+                    if last_collection_allowed:
+                        allowed_items.append(item)
                     continue
 
+                # item is a collection
+                collection = item
                 if collection.owner in acl.PUBLIC_USERS:
                     log.LOGGER.info("Public collection")
-                    collections.append(collection)
-                    last_allowed = True
+                    allowed_items.append(collection)
+                    last_collection_allowed = True
                 else:
                     log.LOGGER.info(
                         "Checking rights for collection owned by %s" % (
@@ -230,18 +235,18 @@ class Application(object):
                     if self.acl.has_right(collection.owner, user, password):
                         log.LOGGER.info(
                             "%s allowed" % (user or "Anonymous user"))
-                        collections.append(collection)
-                        last_allowed = True
+                        allowed_items.append(collection)
+                        last_collection_allowed = True
                     else:
                         log.LOGGER.info(
                             "%s refused" % (user or "Anonymous user"))
-                        last_allowed = False
+                        last_collection_allowed = False
 
-            if collections:
-                # Collections found
+            if allowed_items:
+                # Collections and items found
                 status, headers, answer = function(
-                    environ, collections, content, user)
-            elif user and last_allowed is None:
+                    environ, allowed_items, content, user)
+            elif user and last_collection_allowed is None:
                 # Good user and no collections found, redirect user to home
                 location = "/%s/" % str(quote(user))
                 log.LOGGER.info("redirecting to %s" % location)
