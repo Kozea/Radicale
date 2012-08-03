@@ -3,6 +3,18 @@
 ======
 
 
+0.7.1 - Waterfalls
+==================
+
+* Many address books fixes
+* New IMAP ACL (by Daniel Aleksandersen)
+* PAM ACL fixed (by Daniel Aleksandersen)
+* Courier ACL fixed (by Benjamin Frank)
+* Always set display name to collections (by Oskari Timperi)
+* Various DELETE responses fixed
+
+
+
 0.7 - Eternal Sunshine
 ======================
 
