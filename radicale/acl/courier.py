@@ -58,6 +58,6 @@ def has_right(owner, user, password):
             return True
 
     # default is reject
-    # this alleviates the problem of a possibly empty reply from courier authlib
+    # this alleviates the problem of a possibly empty reply from authlib
     # see http://www.courier-mta.org/authlib/README_authlib.html#authpipeproto
     return False
