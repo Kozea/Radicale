@@ -91,6 +91,8 @@ def run():
 
     # Fork if Radicale is launched as daemon
     if options.daemon:
+        if options.pid and os.path.exists(options.pid):
+            raise OSError("PID file exists: %s" % options.pid)
         pid = os.fork()
         if pid:
             try:

@@ -172,7 +172,7 @@ class Application(object):
     def __call__(self, environ, start_response):
         """Manage a request."""
         log.LOGGER.info("%s request at %s received" % (
-                environ["REQUEST_METHOD"], environ["PATH_INFO"]))
+            environ["REQUEST_METHOD"], environ["PATH_INFO"]))
         headers = pprint.pformat(self.headers_log(environ))
         log.LOGGER.debug("Request headers:\n%s" % headers)
 
@@ -216,20 +216,29 @@ class Application(object):
 
             if access.is_authenticated(user, password):
 
-                collections = []
-                for collection in items:
-                    log.LOGGER.debug("Testing %s" % (collection.name))
-                    if not isinstance(collection, ical.Collection):
-                        log.LOGGER.info("not a collection: " + collection.name)
+                last_collection_allowed = None
+                allowed_items = []
+                for item in items:
+                    log.LOGGER.debug("Testing %s" % (item.name))
+                    if not isinstance(item, ical.Collection):
+                        # item is not a colleciton, it's the child of the last
+                        # collection we've met in the loop. Only add this item if
+                        # this last collection was allowed.                        log.LOGGER.info("not a collection: " + collection.name)
                         #  collections.append(collection)
-                    elif access.may_read(user, collection) or access.may_write(user, collection):
-                        log.LOGGER.info("Has access to " + collection.name)
-                        collections.append(collection)
+                        if last_collection_allowed:
+                            allowed_items.append(item)
+                    else:
+                        if access.may_read(user, item) or access.may_write(user, item):
+                            log.LOGGER.info(user + "has access to " + item.name)
+                            last_collection_allowed = True
+                            allowed_items.append(item)
+                        else:
+                            last_collection_allowed = False
 
-                if collections:
+                if allowed_items:
                     # Collections found
                     status, headers, answer = function(
-                        environ, collections, content, user)
+                        environ, allowed_items, content, user)
                 else:
                     # Good user and no collections found, redirect user to home
                     location = "/%s/" % str(quote(user))
@@ -241,7 +250,7 @@ class Application(object):
                     else:
                         # Send answer anyway since else we're getting into a redirect loop
                         status, headers, answer = function(
-                            environ, collections, content, user)
+                            environ, allowed_items, content, user)
                             
             else:
                 
@@ -499,7 +508,7 @@ class Application(object):
         # Evolution bug workaround
         etag = environ.get("HTTP_IF_MATCH", "").replace("\\", "")
         if (not item and not etag) or (
-            item and ((etag or item.etag) == item.etag)):
+                item and ((etag or item.etag) == item.etag)):
             # PUT allowed in 3 cases
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item

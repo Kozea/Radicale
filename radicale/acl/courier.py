@@ -33,7 +33,7 @@ def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
 
     line = "%s\nlogin\n%s\n%s" % (sys.argv[0], user, password)
-    line = "%i\n%s" % (len(line), line)
+    line = "AUTH %i\n%s" % (len(line), line)
     try:
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.connect(COURIER_SOCKET)
@@ -48,7 +48,13 @@ def is_authenticated(user, password):
 
     log.LOGGER.debug("Got Courier socket response: %r" % data)
 
-    if repr(data) == "FAIL":
-        return False
+    # Address, HOME, GID, and either UID or USERNAME are mandatory in resposne
+    # see http://www.courier-mta.org/authlib/README_authlib.html#authpipeproto
+    for line in data.split():
+        if 'GID' in line:
+            return True
 
-    return True
+    # default is reject
+    # this alleviates the problem of a possibly empty reply from authlib
+    # see http://www.courier-mta.org/authlib/README_authlib.html#authpipeproto
+    return False
