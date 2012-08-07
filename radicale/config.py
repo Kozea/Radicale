@@ -53,10 +53,8 @@ INITIAL_CONFIG = {
         "type": "None",
         "public_users": "public",
         "private_users": "private",
-        "htpasswd_filename": "/etc/radicale/users",
-        "htpasswd_encryption": "crypt",
-        "imap_auth_host_name": "localhost",
-        "imap_auth_host_port": "143",
+        "httpasswd_filename": "/etc/radicale/users",
+        "httpasswd_encryption": "crypt",
         "ldap_url": "ldap://localhost:389/",
         "ldap_base": "ou=users,dc=example,dc=com",
         "ldap_attribute": "uid",
@@ -68,10 +66,10 @@ INITIAL_CONFIG = {
         "courier_socket": ""},
     "storage": {
         "type": "filesystem",
-        "filesystem_folder": os.path.expanduser(
-            "~/.config/radicale/collections"),
-        "git_folder": os.path.expanduser(
-            "~/.config/radicale/collections")},
+        "filesystem_folder":
+            os.path.expanduser("~/.config/radicale/collections"),
+        "git_folder":
+            os.path.expanduser("~/.config/radicale/collections")},
     "logging": {
         "config": "/etc/radicale/logging",
         "debug": "False",

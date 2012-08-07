@@ -19,11 +19,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Users management.
-
-ACL is basically the wrong name here since this package deals with authenticating users.
-
-The authorization part is done in the package "authorization".
+Users and rights management.
 
 This module loads a list of users with access rights, according to the acl
 configuration.
@@ -32,7 +28,13 @@ configuration.
 
 from radicale import config, log
 
-CONFIG_PREFIX = "acl"
+
+AUTHORIZATION_PREFIX = "authorization"
+
+PUBLIC_USERS = []
+PRIVATE_USERS = []
+
+
 
 def _config_users(name):
     """Get an iterable of strings from the configuraton string [acl] ``name``.
@@ -41,17 +43,34 @@ def _config_users(name):
     stripped at the beginning and at the end of the values.
 
     """
-    for user in config.get(CONFIG_PREFIX, name).split(","):
+    for user in config.get(AUTHORIZATION_PREFIX, name).split(","):
         user = user.strip()
         yield None if user == "None" else user
 
 
 def load():
     """Load list of available ACL managers."""
-    acl_type = config.get(CONFIG_PREFIX, "type")
-    log.LOGGER.debug("acl_type = "  + acl_type)
-    if acl_type == "None":
+    
+    PUBLIC_USERS.extend(_config_users("public_users"))
+    PRIVATE_USERS.extend(_config_users("private_users"))
+    
+    authorization_type = config.get(AUTHORIZATION_PREFIX, "type")
+    log.LOGGER.debug("auth type = " + authorization_type)
+    if authorization_type == "None":
         return None
     else:
-        module = __import__("acl.%s" % acl_type, globals=globals(), level=2)
-        return getattr(module, acl_type)
+        module = __import__("authorization.%s" % authorization_type, globals=globals(), level=2)
+        return getattr(module, authorization_type)
+
+
+def may_read(user, collection):
+    if (collection.owner not in PRIVATE_USERS and user != collection.owner):
+        # owner is not private and is not user, forbidden
+        return False
+
+    return read_authorized(user, collection)
+    
+def may_write(user, collection):
+    return write_authorized(user, collection)
+    
+    
