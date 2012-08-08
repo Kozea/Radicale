@@ -214,22 +214,28 @@ class Application(object):
             last_collection_allowed = None
             allowed_items = []
             for item in items:
-                log.LOGGER.debug("Testing %s" % (item.name))
-                if not isinstance(item, ical.Collection):
+                if isinstance(item, ical.Collection):
+                    if access.read_authorized(user, item) or \
+                            access.write_authorized(user, item):
+                        log.LOGGER.info("%s has access to collection %s" % (
+                            user, item.name or "/"))
+                        last_collection_allowed = True
+                        allowed_items.append(item)
+                    else:
+                        log.LOGGER.info("%s has NO access to collection %s" % (
+                            user, item.name or "/"))
+                        last_collection_allowed = False
+                else:
                     # item is not a colleciton, it's the child of the last
                     # collection we've met in the loop. Only add this item
                     # if this last collection was allowed.
                     if last_collection_allowed:
-                        allowed_items.append(item)
-                else:
-                    if access.read_authorized(user, item) or \
-                            access.write_authorized(user, item):
-                        log.LOGGER.info("%s has access to %s" % (
-                            user, item.name))
-                        last_collection_allowed = True
+                        log.LOGGER.info("%s has access to item %s" % (
+                            user, item.name or "/"))
                         allowed_items.append(item)
                     else:
-                        last_collection_allowed = False
+                        log.LOGGER.info("%s has NO access to item %s" % (
+                            user, item.name or "/"))
 
             if allowed_items:
                 # Collections found
@@ -319,7 +325,7 @@ class Application(object):
         # Display a "Radicale works!" message if the root URL is requested
         if environ["PATH_INFO"] == "/":
             headers = {"Content-type": "text/html"}
-            answer = "<!DOCTYPE html>\n<title>Radicale</title>Radicale works!"
+            answer = b"<!DOCTYPE html>\n<title>Radicale</title>Radicale works!"
             return client.OK, headers, answer
 
         collection = collections[0]
@@ -341,8 +347,9 @@ class Application(object):
                 return client.GONE, {}, None
         else:
             # Create the collection if it does not exist
-            if not collection.exists and access.write_authorized(user, collection):
-                log.LOGGER.debug("creating collection " + collection.name)
+            if not collection.exists and \
+                    access.write_authorized(user, collection):
+                log.LOGGER.debug("Creating collection %s" % collection.name)
                 collection.write()
 
             if access.read_authorized(user, collection):
