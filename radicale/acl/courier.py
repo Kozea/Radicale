@@ -29,11 +29,8 @@ from radicale import acl, config, log
 COURIER_SOCKET = config.get("acl", "courier_socket")
 
 
-def has_right(owner, user, password):
+def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
-    if not user or (owner not in acl.PRIVATE_USERS and user != owner):
-        # No user given, or owner is not private and is not user, forbidden
-        return False
 
     line = "%s\nlogin\n%s\n%s" % (sys.argv[0], user, password)
     line = "AUTH %i\n%s" % (len(line), line)
