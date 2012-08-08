@@ -66,6 +66,8 @@ INITIAL_CONFIG = {
         "ldap_scope": "OneLevel",
         "pam_group_membership": "",
         "courier_socket": ""},
+    "rights": {
+        "type": "None"},
     "storage": {
         "type": "filesystem",
         "filesystem_folder": os.path.expanduser(
