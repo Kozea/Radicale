@@ -19,49 +19,43 @@
 """
 Radicale access module.
 
-Manages access to collections.
+Manage access to collections.
 
 """
 
-import os
-import sys
+from radicale import auth, rights, log
 
-from radicale import acl, authorization, log
-
+AUTH = None
+RIGHTS = None
 
 
 def load():
-    log.LOGGER.debug("access.load()")
-    global aacl ; aacl = acl.load()
-    global aauthorization ; aauthorization = authorization.load()
-
+    """Load authentication and rights modules."""
+    global AUTH, RIGHTS
+    AUTH = auth.load()
+    RIGHTS = rights.load()
 
 
 def is_authenticated(user, password):
-    if (not user): 
-        # No user given
-        return False
-
-    return aacl.is_authenticated(user, password)
-     
+    """Check if the user is authenticated."""
+    return AUTH.is_authenticated(user, password) if user else False
 
 
-
-def may_read(user, collection):
-    """Check if the user is allowed to read the collection"""
-    
-    user_authorized = aauthorization.read_authorized(user, collection)
-
-    log.LOGGER.debug("read %s %s -- %i" % (user, collection.owner, user_authorized))
+def read_authorized(user, collection):
+    """Check if the user is allowed to read the collection."""
+    if RIGHTS is None:
+        return True
+    user_authorized = RIGHTS.read_authorized(user, collection)
+    log.LOGGER.debug(
+        "Read %s %s -- %i" % (user, collection.owner, user_authorized))
     return user_authorized
 
 
-
-
-def may_write(user, collection):
-    """Check if the user is allowed to write the collection"""
-    
-    user_authorized = aauthorization.write_authorized(user, collection)
-    
-    log.LOGGER.debug("write %s %s -- %i" % (user, collection.owner, user_authorized))
+def write_authorized(user, collection):
+    """Check if the user is allowed to write the collection."""
+    if RIGHTS is None:
+        return True
+    user_authorized = RIGHTS.write_authorized(user, collection)
+    log.LOGGER.debug(
+        "Write %s %s -- %i" % (user, collection.owner, user_authorized))
     return user_authorized

@@ -200,7 +200,7 @@ def propfind(path, xml_request, collections, user=None):
     multistatus = ET.Element(_tag("D", "multistatus"))
 
     for collection in collections:
-        if access.may_read(user, collection):
+        if access.read_authorized(user, collection):
             response = _propfind_response(path, collection, props, user)
             multistatus.append(response)
 

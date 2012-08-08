@@ -17,16 +17,17 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Courier-Authdaemon ACL.
+Courier-Authdaemon authentication.
 
 """
 
 import sys
 import socket
-from radicale import acl, config, log
+
+from radicale import config, log
 
 
-COURIER_SOCKET = config.get("acl", "courier_socket")
+COURIER_SOCKET = config.get("auth", "courier_socket")
 
 
 def is_authenticated(user, password):

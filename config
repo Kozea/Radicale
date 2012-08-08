@@ -36,8 +36,8 @@ request = utf-8
 stock = utf-8
 
 
-[acl]
-# Access method
+[auth]
+# Authentication method
 # Value: None | htpasswd | LDAP | PAM | courier
 type = None
 
@@ -76,6 +76,12 @@ pam_group_membership =
 
 # Path to the Courier Authdaemon socket
 courier_socket =
+
+
+[rights]
+# Rights management method
+# Value: None | owner_only
+type = None
 
 
 [storage]

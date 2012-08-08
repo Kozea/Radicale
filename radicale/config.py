@@ -49,7 +49,7 @@ INITIAL_CONFIG = {
     "encoding": {
         "request": "utf-8",
         "stock": "utf-8"},
-    "acl": {
+    "auth": {
         "type": "None",
         "public_users": "public",
         "private_users": "private",

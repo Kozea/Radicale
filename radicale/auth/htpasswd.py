@@ -19,7 +19,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Htpasswd ACL.
+Htpasswd authentication.
 
 Load the list of login/password couples according a the configuration file
 created by Apache ``htpasswd`` command. Plain-text, crypt and sha1 are
@@ -30,11 +30,11 @@ supported, but md5 is not (see ``htpasswd`` man page to understand why).
 import base64
 import hashlib
 
-from radicale import acl, config
+from radicale import config
 
 
-FILENAME = config.get("acl", "htpasswd_filename")
-ENCRYPTION = config.get("acl", "htpasswd_encryption")
+FILENAME = config.get("auth", "htpasswd_filename")
+ENCRYPTION = config.get("auth", "htpasswd_encryption")
 
 
 def _plain(hash_value, password):

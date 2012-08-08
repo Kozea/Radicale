@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2011-2012 Guillaume Ayoub
+# Copyright © 2012 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,31 +17,18 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Radicale authorization module.
+Owner-only based rights.
 
-Manages who is authorized to access a collection.
-
-The policy here is that all authenticated users
-have read and write access to all collections.
+Only owners have read and write access to their own collections.
 
 """
 
-import os
-import sys
-
-from radicale import authorization, config, log
-
-
-
 
 def read_authorized(user, collection):
-    """Check if the user is allowed to read the collection"""
-    log.LOGGER.debug("read_authorized '" + user + "' in '" + collection.name + "'");
-    return True
+    """Check if the user is allowed to read the collection."""
+    return user == collection.owner
 
 
 def write_authorized(user, collection):
-    """Check if the user is allowed to write the collection"""
-    log.LOGGER.debug("write_authorized '" + user + "' in '" + collection.name + "'");
-    return True
-    
+    """Check if the user is allowed to write the collection."""
+    return user == collection.owner

@@ -18,7 +18,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-LDAP ACL.
+LDAP authentication.
 
 Authentication based on the ``python-ldap`` module
 (http://www.python-ldap.org/).
@@ -26,16 +26,16 @@ Authentication based on the ``python-ldap`` module
 """
 
 import ldap
-from radicale import acl, config, log
+from radicale import config, log
 
 
-BASE = config.get("acl", "ldap_base")
-ATTRIBUTE = config.get("acl", "ldap_attribute")
-FILTER = config.get("acl", "ldap_filter")
-CONNEXION = ldap.initialize(config.get("acl", "ldap_url"))
-BINDDN = config.get("acl", "ldap_binddn")
-PASSWORD = config.get("acl", "ldap_password")
-SCOPE = getattr(ldap, "SCOPE_%s" % config.get("acl", "ldap_scope").upper())
+BASE = config.get("auth", "ldap_base")
+ATTRIBUTE = config.get("auth", "ldap_attribute")
+FILTER = config.get("auth", "ldap_filter")
+CONNEXION = ldap.initialize(config.get("auth", "ldap_url"))
+BINDDN = config.get("auth", "ldap_binddn")
+PASSWORD = config.get("auth", "ldap_password")
+SCOPE = getattr(ldap, "SCOPE_%s" % config.get("auth", "ldap_scope").upper())
 
 
 def is_authenticated(user, password):
@@ -46,7 +46,7 @@ def is_authenticated(user, password):
         CONNEXION.whoami_s()
     except:
         log.LOGGER.debug("Reconnecting the LDAP server")
-        CONNEXION = ldap.initialize(config.get("acl", "ldap_url"))
+        CONNEXION = ldap.initialize(config.get("auth", "ldap_url"))
 
     if BINDDN and PASSWORD:
         log.LOGGER.debug("Initial LDAP bind as %s" % BINDDN)

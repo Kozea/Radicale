@@ -17,7 +17,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-PAM ACL.
+PAM authentication.
 
 Authentication based on the ``pam-python`` module.
 
@@ -27,10 +27,10 @@ import grp
 import pam
 import pwd
 
-from radicale import acl, config, log
+from radicale import config, log
 
 
-GROUP_MEMBERSHIP = config.get("acl", "pam_group_membership")
+GROUP_MEMBERSHIP = config.get("auth", "pam_group_membership")
 
 
 def is_authenticated(user, password):

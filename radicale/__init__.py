@@ -200,7 +200,7 @@ class Application(object):
 
         # Check rights
         if not items or not access or function == self.options:
-            # No collection, or no acl, or OPTIONS request: don't check rights
+            # No collection, or no auth, or OPTIONS request: don't check rights
             status, headers, answer = function(environ, items, content, None)
         else:
             # Ask authentication backend to check rights
@@ -213,23 +213,22 @@ class Application(object):
             else:
                 user = password = None
 
-
             if access.is_authenticated(user, password):
-
                 last_collection_allowed = None
                 allowed_items = []
                 for item in items:
                     log.LOGGER.debug("Testing %s" % (item.name))
                     if not isinstance(item, ical.Collection):
                         # item is not a colleciton, it's the child of the last
-                        # collection we've met in the loop. Only add this item if
-                        # this last collection was allowed.                        log.LOGGER.info("not a collection: " + collection.name)
-                        #  collections.append(collection)
+                        # collection we've met in the loop. Only add this item
+                        # if this last collection was allowed.
                         if last_collection_allowed:
                             allowed_items.append(item)
                     else:
-                        if access.may_read(user, item) or access.may_write(user, item):
-                            log.LOGGER.info(user + "has access to " + item.name)
+                        if access.read_authorized(user, item) or \
+                                access.write_authorized(user, item):
+                            log.LOGGER.info("%s has access to %s" % (
+                                user, item.name))
                             last_collection_allowed = True
                             allowed_items.append(item)
                         else:
@@ -242,18 +241,17 @@ class Application(object):
                 else:
                     # Good user and no collections found, redirect user to home
                     location = "/%s/" % str(quote(user))
-                    if path != location: 
+                    if path == location:
+                        # Send answer anyway since else we're getting into a
+                        # redirect loop
+                        status, headers, answer = function(
+                            environ, allowed_items, content, user)
+                    else:
                         log.LOGGER.info("redirecting to %s" % location)
                         status = client.FOUND
                         headers = {"Location": location}
                         answer = "Redirecting to %s" % location
-                    else:
-                        # Send answer anyway since else we're getting into a redirect loop
-                        status, headers, answer = function(
-                            environ, allowed_items, content, user)
-                            
             else:
-                
                 # Unknown or unauthorized user
                 log.LOGGER.info(
                     "%s refused" % (user or "Anonymous user"))
@@ -262,9 +260,6 @@ class Application(object):
                     "WWW-Authenticate":
                     "Basic realm=\"Radicale Server - Password Required\""}
                 answer = None
-                    
-                
-                
 
         # Set content length
         if answer:
@@ -279,17 +274,13 @@ class Application(object):
 
         # Return response content
         return [answer] if answer else []
-    
-    
-    
+
     def response_not_allowed(self):
+        """Return a standard "not allowed" response."""
         headers = {
             "WWW-Authenticate":
             "Basic realm=\"Radicale Server - Password Required\""}
         return client.FORBIDDEN, headers, None
-
-
-
 
     # All these functions must have the same parameters, some are useless
     # pylint: disable=W0612,W0613,R0201
@@ -311,19 +302,14 @@ class Application(object):
             etag = environ.get("HTTP_IF_MATCH", item.etag).replace("\\", "")
             if etag == item.etag:
                 # No ETag precondition or precondition verified, delete item
-                if access.may_write(user, collection):
+                if access.write_authorized(user, collection):
                     answer = xmlutils.delete(environ["PATH_INFO"], collection)
                     return client.OK, {}, answer
                 else:
                     return self.response_not_allowed()
-                    
 
         # No item or ETag precondition not verified, do not delete item
         return client.PRECONDITION_FAILED, {}, None
-
-
-
-
 
     def get(self, environ, collections, content, user):
         """Manage GET request.
@@ -346,23 +332,23 @@ class Application(object):
             # Get collection item
             item = collection.get_item(item_name)
             if item:
-                if access.may_read(user, collection):
+                if access.read_authorized(user, collection):
                     items = collection.timezones
                     items.append(item)
                     answer_text = ical.serialize(
                         collection.tag, collection.headers, items)
                     etag = item.etag
                 else:
-                    return self.response_not_allowed()                    
+                    return self.response_not_allowed()
             else:
                 return client.GONE, {}, None
         else:
             # Create the collection if it does not exist
-            if not collection.exists and access.may_write(user, collection):
+            if not collection.exists and access.write_authorized(user, collection):
                 log.LOGGER.debug("creating collection " + collection.name)
                 collection.write()
 
-            if access.may_read(user, collection):
+            if access.read_authorized(user, collection):
                 # Get whole collection
                 answer_text = collection.text
                 etag = collection.etag
@@ -376,17 +362,10 @@ class Application(object):
         answer = answer_text.encode(self.encoding)
         return client.OK, headers, answer
 
-
-
-
     def head(self, environ, collections, content, user):
         """Manage HEAD request."""
         status, headers, answer = self.get(environ, collections, content, user)
         return status, headers, None
-
-
-
-
 
     def mkcalendar(self, environ, collections, content, user):
         """Manage MKCALENDAR request."""
@@ -399,14 +378,11 @@ class Application(object):
         with collection.props as collection_props:
             for key, value in props.items():
                 collection_props[key] = value
-        if access.may_write(user, collection):
+        if access.write_authorized(user, collection):
             collection.write()
         else:
             return self.response_not_allowed()
         return client.CREATED, {}, None
-
-
-
 
     def mkcol(self, environ, collections, content, user):
         """Manage MKCOL request."""
@@ -415,14 +391,11 @@ class Application(object):
         with collection.props as collection_props:
             for key, value in props.items():
                 collection_props[key] = value
-        if access.may_write(user, collection):
+        if access.write_authorized(user, collection):
             collection.write()
         else:
             return self.response_not_allowed()
         return client.CREATED, {}, None
-
-
-
 
     def move(self, environ, collections, content, user):
         """Manage MOVE request."""
@@ -439,7 +412,8 @@ class Application(object):
                     to_path, to_name = to_url.rstrip("/").rsplit("/", 1)
                     to_collection = ical.Collection.from_path(
                         to_path, depth="0")[0]
-                    if access.may_write(user, to_collection) and access.may_write(user.from_collection):
+                    if access.write_authorized(user, to_collection) and \
+                            access.write_authorized(user.from_collection):
                         to_collection.append(to_name, item.text)
                         from_collection.remove(from_name)
                         return client.CREATED, {}, None
@@ -455,21 +429,13 @@ class Application(object):
             # Moving collections, not supported
             return client.FORBIDDEN, {}, None
 
-
-
-
-
     def options(self, environ, collections, content, user):
         """Manage OPTIONS request."""
         headers = {
-            "Allow": "DELETE, HEAD, GET, MKCALENDAR, MKCOL, MOVE, " \
-                "OPTIONS, PROPFIND, PROPPATCH, PUT, REPORT",
+            "Allow": ("DELETE, HEAD, GET, MKCALENDAR, MKCOL, MOVE, "
+                      "OPTIONS, PROPFIND, PROPPATCH, PUT, REPORT"),
             "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol"}
         return client.OK, headers, None
-
-
-
-
 
     def propfind(self, environ, collections, content, user):
         """Manage PROPFIND request."""
@@ -480,10 +446,6 @@ class Application(object):
             environ["PATH_INFO"], content, collections, user)
         return client.MULTI_STATUS, headers, answer
 
-
-
-
-
     def proppatch(self, environ, collections, content, user):
         """Manage PROPPATCH request."""
         collection = collections[0]
@@ -492,10 +454,6 @@ class Application(object):
             "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
             "Content-Type": "text/xml"}
         return client.MULTI_STATUS, headers, answer
-
-
-
-
 
     def put(self, environ, collections, content, user):
         """Manage PUT request."""
@@ -513,13 +471,13 @@ class Application(object):
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item
             # Case 3: Item and no Etag precondition: Force modifying item
-            if access.may_write(user, collection):
+            if access.write_authorized(user, collection):
                 xmlutils.put(environ["PATH_INFO"], content, collection)
                 status = client.CREATED
-                # Try to return the etag in the header
-                # If the added item does't have the same name as the one given by
-                # the client, then there's no obvious way to generate an etag, we
-                # can safely ignore it.
+                # Try to return the etag in the header.
+                # If the added item does't have the same name as the one given
+                # by the client, then there's no obvious way to generate an
+                # etag, we can safely ignore it.
                 new_item = collection.get_item(item_name)
                 if new_item:
                     headers["ETag"] = new_item.etag
@@ -530,16 +488,11 @@ class Application(object):
             status = client.PRECONDITION_FAILED
         return status, headers, None
 
-
-
-
-
-
     def report(self, environ, collections, content, user):
         """Manage REPORT request."""
         collection = collections[0]
         headers = {"Content-Type": "text/xml"}
-        if access.may_read(user, collection):
+        if access.read_authorized(user, collection):
             answer = xmlutils.report(environ["PATH_INFO"], content, collection)
             return client.MULTI_STATUS, headers, answer
         else:

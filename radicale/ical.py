@@ -345,7 +345,7 @@ class Collection(object):
         items = self.items
 
         for new_item in self._parse(
-            text, (Timezone, Event, Todo, Journal, Card), name):
+                text, (Timezone, Event, Todo, Journal, Card), name):
             if new_item.name not in (item.name for item in items):
                 items.append(new_item)
 
