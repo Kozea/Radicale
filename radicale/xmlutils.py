@@ -240,11 +240,10 @@ def _propfind_response(path, item, props, user):
             tag = ET.Element(_tag("D", "href"))
             tag.text = path
             element.append(tag)
-        elif tag in (
-            _tag("D", "principal-collection-set"),
-            _tag("C", "calendar-user-address-set"),
-            _tag("CR", "addressbook-home-set"),
-            _tag("C", "calendar-home-set")):
+        elif tag in (_tag("D", "principal-collection-set"),
+                     _tag("C", "calendar-user-address-set"),
+                     _tag("CR", "addressbook-home-set"),
+                     _tag("C", "calendar-home-set")):
             tag = ET.Element(_tag("D", "href"))
             tag.text = path
             element.append(tag)
@@ -284,12 +283,14 @@ def _propfind_response(path, item, props, user):
                 if item.is_principal:
                     tag = ET.Element(_tag("D", "principal"))
                     element.append(tag)
-                if item.is_leaf(item.path):
-                    tag = ET.Element(_tag("C", item.resource_type))
-                    element.append(tag)
-                if not item.exists and item.resource_type:
-                    # Collection not stored yet, but guessed resource type
-                    tag = ET.Element(_tag("C", item.resource_type))
+                if item.is_leaf(item.path) or (
+                        not item.exists and item.resource_type):
+                    # 2nd case happens when the collection is not stored yet,
+                    # but the resource type is guessed
+                    if item.resource_type == "addressbook":
+                        tag = ET.Element(_tag("CR", item.resource_type))
+                    else:
+                        tag = ET.Element(_tag("C", item.resource_type))
                     element.append(tag)
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
@@ -300,6 +301,8 @@ def _propfind_response(path, item, props, user):
             elif tag == _tag("C", "calendar-timezone"):
                 element.text = ical.serialize(
                     item.tag, item.headers, item.timezones)
+            elif tag == _tag("D", "displayname"):
+                element.text = item.name
             else:
                 human_tag = _tag_from_clark(tag)
                 if human_tag in collection_props:
@@ -430,8 +433,15 @@ def report(path, xml_request, collection):
                 in root.findall(_tag("D", "href")))
         else:
             hreferences = (path,)
+        # TODO: handle other filters
+        # TODO: handle the nested comp-filters correctly
+        # Read rfc4791-9.7.1 for info
+        tag_filters = set(
+            element.get("name") for element
+            in root.findall(".//%s" % _tag("C", "comp-filter")))
     else:
         hreferences = ()
+        tag_filters = None
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -454,6 +464,9 @@ def report(path, xml_request, collection):
             items = collection.components
 
         for item in items:
+            if tag_filters and item.tag not in tag_filters:
+                continue
+
             response = ET.Element(_tag("D", "response"))
             multistatus.append(response)
 

@@ -51,7 +51,7 @@ def is_authenticated(user, password):
     # Address, HOME, GID, and either UID or USERNAME are mandatory in resposne
     # see http://www.courier-mta.org/authlib/README_authlib.html#authpipeproto
     for line in data.split():
-        if 'GID' in line:
+        if "GID" in line:
             return True
 
     # default is reject

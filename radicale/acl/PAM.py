@@ -47,7 +47,7 @@ def is_authenticated(user, password):
 
     # Check whether the group exists
     try:
-        members = grp.getgrnam(GROUP_MEMBERSHIP)
+        members = grp.getgrnam(GROUP_MEMBERSHIP).gr_mem
     except KeyError:
         log.LOGGER.debug(
             "The PAM membership required group (%s) doesn't exist" %
