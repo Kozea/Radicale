@@ -38,6 +38,8 @@ def load():
 
 def is_authenticated(user, password):
     """Check if the user is authenticated."""
+    if AUTH is None:
+        return True
     return AUTH.is_authenticated(user, password) if user else False
 
 

@@ -46,7 +46,7 @@ except ImportError:
     from urlparse import urlparse
 # pylint: enable=F0401,E0611
 
-from radicale import config, ical, log, storage, xmlutils, access
+from radicale import access, config, ical, log, storage, xmlutils
 
 
 VERSION = "git"
@@ -199,10 +199,7 @@ class Application(object):
         function = getattr(self, environ["REQUEST_METHOD"].lower())
 
         # Check rights
-        if not items or not access or function == self.options:
-            # No collection, or no auth, or OPTIONS request: don't check rights
-            status, headers, answer = function(environ, items, content, None)
-        else:
+        if items and function != self.options:
             # Ask authentication backend to check rights
             authorization = environ.get("HTTP_AUTHORIZATION", None)
 
@@ -213,53 +210,53 @@ class Application(object):
             else:
                 user = password = None
 
-            if access.is_authenticated(user, password):
-                last_collection_allowed = None
-                allowed_items = []
-                for item in items:
-                    log.LOGGER.debug("Testing %s" % (item.name))
-                    if not isinstance(item, ical.Collection):
-                        # item is not a colleciton, it's the child of the last
-                        # collection we've met in the loop. Only add this item
-                        # if this last collection was allowed.
-                        if last_collection_allowed:
-                            allowed_items.append(item)
+        if access.is_authenticated(user, password):
+            last_collection_allowed = None
+            allowed_items = []
+            for item in items:
+                log.LOGGER.debug("Testing %s" % (item.name))
+                if not isinstance(item, ical.Collection):
+                    # item is not a colleciton, it's the child of the last
+                    # collection we've met in the loop. Only add this item
+                    # if this last collection was allowed.
+                    if last_collection_allowed:
+                        allowed_items.append(item)
+                else:
+                    if access.read_authorized(user, item) or \
+                            access.write_authorized(user, item):
+                        log.LOGGER.info("%s has access to %s" % (
+                            user, item.name))
+                        last_collection_allowed = True
+                        allowed_items.append(item)
                     else:
-                        if access.read_authorized(user, item) or \
-                                access.write_authorized(user, item):
-                            log.LOGGER.info("%s has access to %s" % (
-                                user, item.name))
-                            last_collection_allowed = True
-                            allowed_items.append(item)
-                        else:
-                            last_collection_allowed = False
+                        last_collection_allowed = False
 
-                if allowed_items:
-                    # Collections found
+            if allowed_items:
+                # Collections found
+                status, headers, answer = function(
+                    environ, allowed_items, content, user)
+            else:
+                # Good user and no collections found, redirect user to home
+                location = "/%s/" % str(quote(user))
+                if path == location:
+                    # Send answer anyway since else we're getting into a
+                    # redirect loop
                     status, headers, answer = function(
                         environ, allowed_items, content, user)
                 else:
-                    # Good user and no collections found, redirect user to home
-                    location = "/%s/" % str(quote(user))
-                    if path == location:
-                        # Send answer anyway since else we're getting into a
-                        # redirect loop
-                        status, headers, answer = function(
-                            environ, allowed_items, content, user)
-                    else:
-                        log.LOGGER.info("redirecting to %s" % location)
-                        status = client.FOUND
-                        headers = {"Location": location}
-                        answer = "Redirecting to %s" % location
-            else:
-                # Unknown or unauthorized user
-                log.LOGGER.info(
-                    "%s refused" % (user or "Anonymous user"))
-                status = client.UNAUTHORIZED
-                headers = {
-                    "WWW-Authenticate":
-                    "Basic realm=\"Radicale Server - Password Required\""}
-                answer = None
+                    log.LOGGER.info("redirecting to %s" % location)
+                    status = client.FOUND
+                    headers = {"Location": location}
+                    answer = "Redirecting to %s" % location
+        else:
+            # Unknown or unauthorized user
+            log.LOGGER.info(
+                "%s refused" % (user or "Anonymous user"))
+            status = client.UNAUTHORIZED
+            headers = {
+                "WWW-Authenticate":
+                "Basic realm=\"Radicale Server - Password Required\""}
+            answer = None
 
         # Set content length
         if answer:
