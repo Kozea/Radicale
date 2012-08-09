@@ -356,14 +356,15 @@ class Application(object):
                 # Get whole collection
                 answer_text = collection.text
                 etag = collection.etag
-                headers = {
-                    "Content-Type": collection.mimetype,
-                    "Last-Modified": collection.last_modified,
-                    "ETag": etag}
-                answer = answer_text.encode(self.encoding)
-                return client.OK, headers, answer
             else:
                 return NOT_ALLOWED
+
+        headers = {
+            "Content-Type": collection.mimetype,
+            "Last-Modified": collection.last_modified,
+            "ETag": etag}
+        answer = answer_text.encode(self.encoding)
+        return client.OK, headers, answer
 
     def head(self, environ, collections, content, user):
         """Manage HEAD request."""
