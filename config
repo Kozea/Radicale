@@ -80,7 +80,7 @@ courier_socket =
 
 [rights]
 # Rights management method
-# Value: None | owner_only
+# Value: None | owner_only | owner_write
 type = None
 
 
