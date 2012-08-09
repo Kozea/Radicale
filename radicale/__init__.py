@@ -198,19 +198,18 @@ class Application(object):
         # Get function corresponding to method
         function = getattr(self, environ["REQUEST_METHOD"].lower())
 
-        # Check rights
-        if items and function != self.options:
-            # Ask authentication backend to check rights
-            authorization = environ.get("HTTP_AUTHORIZATION", None)
+        # Ask authentication backend to check rights
+        authorization = environ.get("HTTP_AUTHORIZATION", None)
 
-            if authorization:
-                auth = authorization.lstrip("Basic").strip().encode("ascii")
-                user, password = self.decode(
-                    base64.b64decode(auth), environ).split(":")
-            else:
-                user = password = None
+        if authorization:
+            auth = authorization.lstrip("Basic").strip().encode("ascii")
+            user, password = self.decode(
+                base64.b64decode(auth), environ).split(":")
+        else:
+            user = password = None
 
-        if access.is_authenticated(user, password):
+        if not items or function == self.options or \
+                access.is_authenticated(user, password):
             last_collection_allowed = None
             allowed_items = []
             for item in items:
@@ -226,7 +225,7 @@ class Application(object):
                             user, item.name or "/"))
                         last_collection_allowed = False
                 else:
-                    # item is not a colleciton, it's the child of the last
+                    # item is not a collection, it's the child of the last
                     # collection we've met in the loop. Only add this item
                     # if this last collection was allowed.
                     if last_collection_allowed:
