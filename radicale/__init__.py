@@ -236,7 +236,7 @@ class Application(object):
                         log.LOGGER.info("%s has NO access to item %s" % (
                             user, item.name or "/"))
 
-            if allowed_items:
+            if allowed_items or function == self.options:
                 # Collections found
                 status, headers, answer = function(
                     environ, allowed_items, content, user)
