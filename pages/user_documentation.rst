@@ -293,8 +293,8 @@ Main Configuration File
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. note::
-   This section is following the latest git master changes. Please look at the
-   default configuration file included in your package if you have an older
+   This section is following the latest stable version changes. Please look at
+   the default configuration file included in your package if you have an older
    version of Radicale.
 
 The server configuration can be modified in ``/etc/radicale/config`` or in
