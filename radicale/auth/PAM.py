@@ -27,7 +27,7 @@ import grp
 import pam
 import pwd
 
-from radicale import config, log
+from .. import config, log
 
 
 GROUP_MEMBERSHIP = config.get("auth", "pam_group_membership")

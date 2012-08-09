@@ -28,7 +28,7 @@ import json
 import time
 from contextlib import contextmanager
 
-from radicale import config, ical
+from .. import config, ical
 
 
 FOLDER = os.path.expanduser(config.get("storage", "filesystem_folder"))

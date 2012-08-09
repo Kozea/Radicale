@@ -30,7 +30,7 @@ supported, but md5 is not (see ``htpasswd`` man page to understand why).
 import base64
 import hashlib
 
-from radicale import config
+from .. import config
 
 
 FILENAME = config.get("auth", "htpasswd_filename")

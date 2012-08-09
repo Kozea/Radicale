@@ -35,7 +35,7 @@ except ImportError:
 import re
 import xml.etree.ElementTree as ET
 
-from radicale import client, config, ical, rights
+from . import client, config, ical, rights
 
 
 NAMESPACES = {

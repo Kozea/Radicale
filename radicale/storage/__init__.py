@@ -24,7 +24,7 @@ configuration.
 
 """
 
-from radicale import config, ical
+from .. import config, ical
 
 
 def load():

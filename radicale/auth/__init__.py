@@ -25,7 +25,7 @@ Authentication management.
 
 import sys
 
-from radicale import config, log
+from .. import config, log
 
 
 def load():

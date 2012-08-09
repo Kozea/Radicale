@@ -29,7 +29,7 @@ import sys
 import logging
 import logging.config
 
-from radicale import config
+from . import config
 
 
 LOGGER = logging.getLogger()

@@ -46,7 +46,7 @@ except ImportError:
     from urlparse import urlparse
 # pylint: enable=F0401,E0611
 
-from radicale import auth, config, ical, log, rights, storage, xmlutils
+from . import auth, config, ical, log, rights, storage, xmlutils
 
 
 VERSION = "git"

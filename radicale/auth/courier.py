@@ -24,7 +24,7 @@ Courier-Authdaemon authentication.
 import sys
 import socket
 
-from radicale import config, log
+from .. import config, log
 
 
 COURIER_SOCKET = config.get("auth", "courier_socket")

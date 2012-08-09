@@ -32,7 +32,8 @@ import signal
 import threading
 from wsgiref.simple_server import make_server
 
-import radicale
+from . import (
+    Application, config, HTTPServer, HTTPSServer, log, RequestHandler, VERSION)
 
 
 # This is a script, many branches and variables
@@ -41,40 +42,40 @@ import radicale
 def run():
     """Run Radicale as a standalone server."""
     # Get command-line options
-    parser = optparse.OptionParser(version=radicale.VERSION)
+    parser = optparse.OptionParser(version=VERSION)
     parser.add_option(
         "-d", "--daemon", action="store_true",
-        default=radicale.config.getboolean("server", "daemon"),
+        default=config.getboolean("server", "daemon"),
         help="launch as daemon")
     parser.add_option(
         "-p", "--pid",
-        default=radicale.config.get("server", "pid"),
+        default=config.get("server", "pid"),
         help="set PID filename for daemon mode")
     parser.add_option(
         "-f", "--foreground", action="store_false", dest="daemon",
         help="launch in foreground (opposite of --daemon)")
     parser.add_option(
         "-H", "--hosts",
-        default=radicale.config.get("server", "hosts"),
+        default=config.get("server", "hosts"),
         help="set server hostnames and ports")
     parser.add_option(
         "-s", "--ssl", action="store_true",
-        default=radicale.config.getboolean("server", "ssl"),
+        default=config.getboolean("server", "ssl"),
         help="use SSL connection")
     parser.add_option(
         "-S", "--no-ssl", action="store_false", dest="ssl",
         help="do not use SSL connection (opposite of --ssl)")
     parser.add_option(
         "-k", "--key",
-        default=radicale.config.get("server", "key"),
+        default=config.get("server", "key"),
         help="set private key file")
     parser.add_option(
         "-c", "--certificate",
-        default=radicale.config.get("server", "certificate"),
+        default=config.get("server", "certificate"),
         help="set certificate file")
     parser.add_option(
         "-D", "--debug", action="store_true",
-        default=radicale.config.getboolean("logging", "debug"),
+        default=config.getboolean("logging", "debug"),
         help="print debug information")
     options = parser.parse_args()[0]
 
@@ -84,10 +85,10 @@ def run():
         if key:
             section = "logging" if key == "debug" else "server"
             value = getattr(options, key)
-            radicale.config.set(section, key, str(value))
+            config.set(section, key, str(value))
 
     # Start logging
-    radicale.log.start()
+    log.start()
 
     # Fork if Radicale is launched as daemon
     if options.daemon:
@@ -105,25 +106,25 @@ def run():
     # Register exit function
     def cleanup():
         """Remove the PID files."""
-        radicale.log.LOGGER.debug("Cleaning up")
+        log.LOGGER.debug("Cleaning up")
         # Remove PID file
         if options.pid and options.daemon:
             os.unlink(options.pid)
 
     atexit.register(cleanup)
-    radicale.log.LOGGER.info("Starting Radicale")
+    log.LOGGER.info("Starting Radicale")
 
     # Create collection servers
     servers = []
-    server_class = radicale.HTTPSServer if options.ssl else radicale.HTTPServer
+    server_class = HTTPSServer if options.ssl else HTTPServer
     shutdown_program = threading.Event()
 
     for host in options.hosts.split(","):
         address, port = host.strip().rsplit(":", 1)
         address, port = address.strip("[] "), int(port)
         servers.append(
-            make_server(address, port, radicale.Application(),
-                        server_class, radicale.RequestHandler))
+            make_server(address, port, Application(),
+                        server_class, RequestHandler))
 
     # SIGTERM and SIGINT (aka KeyboardInterrupt) should just mark this for
     # shutdown
@@ -141,14 +142,14 @@ def run():
     # when a server exists but another server is added to the list at the same
     # time
     for server in servers:
-        radicale.log.LOGGER.debug(
+        log.LOGGER.debug(
             "Listening to %s port %s" % (
                 server.server_name, server.server_port))
         if options.ssl:
-            radicale.log.LOGGER.debug("Using SSL")
+            log.LOGGER.debug("Using SSL")
         threading.Thread(target=serve_forever, args=(server,)).start()
 
-    radicale.log.LOGGER.debug("Radicale server ready")
+    log.LOGGER.debug("Radicale server ready")
 
     # Main loop: wait until all servers are exited
     try:
@@ -165,10 +166,10 @@ def run():
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
-        radicale.log.LOGGER.info("Stopping Radicale")
+        log.LOGGER.info("Stopping Radicale")
 
         for server in servers:
-            radicale.log.LOGGER.debug(
+            log.LOGGER.debug(
                 "Closing server listening to %s port %s" % (
                     server.server_name, server.server_port))
             server.shutdown()

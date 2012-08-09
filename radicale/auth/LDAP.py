@@ -26,7 +26,8 @@ Authentication based on the ``python-ldap`` module
 """
 
 import ldap
-from radicale import config, log
+
+from .. import config, log
 
 
 BASE = config.get("auth", "ldap_base")

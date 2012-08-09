@@ -32,7 +32,7 @@ Python 3.2 or newer is required for TLS.
 
 import imaplib
 
-from radicale import config, log
+from .. import config, log
 
 IMAP_SERVER = config.get("auth", "imap_auth_host_name")
 IMAP_SERVER_PORT = config.get("auth", "imap_auth_host_port")
