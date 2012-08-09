@@ -46,10 +46,16 @@ except ImportError:
     from urlparse import urlparse
 # pylint: enable=F0401,E0611
 
-from radicale import access, config, ical, log, storage, xmlutils
+from radicale import auth, config, ical, log, rights, storage, xmlutils
 
 
 VERSION = "git"
+
+# Standard "not allowed" response
+NOT_ALLOWED = (
+    client.FORBIDDEN,
+    {"WWW-Authenticate": "Basic realm=\"Radicale - Password Required\""},
+    None)
 
 
 class HTTPServer(wsgiref.simple_server.WSGIServer, object):
@@ -119,7 +125,8 @@ class Application(object):
     def __init__(self):
         """Initialize application."""
         super(Application, self).__init__()
-        access.load()
+        auth.load()
+        rights.load()
         storage.load()
         self.encoding = config.get("encoding", "request")
         if config.getboolean("logging", "full_environment"):
@@ -202,20 +209,21 @@ class Application(object):
         authorization = environ.get("HTTP_AUTHORIZATION", None)
 
         if authorization:
-            auth = authorization.lstrip("Basic").strip().encode("ascii")
+            authorization = \
+                authorization.lstrip("Basic").strip().encode("ascii")
             user, password = self.decode(
-                base64.b64decode(auth), environ).split(":")
+                base64.b64decode(authorization), environ).split(":")
         else:
             user = password = None
 
         if not items or function == self.options or \
-                access.is_authenticated(user, password):
+                auth.is_authenticated(user, password):
             last_collection_allowed = None
             allowed_items = []
             for item in items:
                 if isinstance(item, ical.Collection):
-                    if access.read_authorized(user, item) or \
-                            access.write_authorized(user, item):
+                    if rights.read_authorized(user, item) or \
+                            rights.write_authorized(user, item):
                         log.LOGGER.info("%s has access to collection %s" % (
                             user, item.name or "/"))
                         last_collection_allowed = True
@@ -277,13 +285,6 @@ class Application(object):
         # Return response content
         return [answer] if answer else []
 
-    def response_not_allowed(self):
-        """Return a standard "not allowed" response."""
-        headers = {
-            "WWW-Authenticate":
-            "Basic realm=\"Radicale Server - Password Required\""}
-        return client.FORBIDDEN, headers, None
-
     # All these functions must have the same parameters, some are useless
     # pylint: disable=W0612,W0613,R0201
 
@@ -304,11 +305,11 @@ class Application(object):
             etag = environ.get("HTTP_IF_MATCH", item.etag).replace("\\", "")
             if etag == item.etag:
                 # No ETag precondition or precondition verified, delete item
-                if access.write_authorized(user, collection):
+                if rights.write_authorized(user, collection):
                     answer = xmlutils.delete(environ["PATH_INFO"], collection)
                     return client.OK, {}, answer
                 else:
-                    return self.response_not_allowed()
+                    return NOT_ALLOWED
 
         # No item or ETag precondition not verified, do not delete item
         return client.PRECONDITION_FAILED, {}, None
@@ -334,36 +335,35 @@ class Application(object):
             # Get collection item
             item = collection.get_item(item_name)
             if item:
-                if access.read_authorized(user, collection):
+                if rights.read_authorized(user, collection):
                     items = collection.timezones
                     items.append(item)
                     answer_text = ical.serialize(
                         collection.tag, collection.headers, items)
                     etag = item.etag
                 else:
-                    return self.response_not_allowed()
+                    return NOT_ALLOWED
             else:
                 return client.GONE, {}, None
         else:
             # Create the collection if it does not exist
             if not collection.exists and \
-                    access.write_authorized(user, collection):
+                    rights.write_authorized(user, collection):
                 log.LOGGER.debug("Creating collection %s" % collection.name)
                 collection.write()
 
-            if access.read_authorized(user, collection):
+            if rights.read_authorized(user, collection):
                 # Get whole collection
                 answer_text = collection.text
                 etag = collection.etag
+                headers = {
+                    "Content-Type": collection.mimetype,
+                    "Last-Modified": collection.last_modified,
+                    "ETag": etag}
+                answer = answer_text.encode(self.encoding)
+                return client.OK, headers, answer
             else:
-                return self.response_not_allowed()
-
-        headers = {
-            "Content-Type": collection.mimetype,
-            "Last-Modified": collection.last_modified,
-            "ETag": etag}
-        answer = answer_text.encode(self.encoding)
-        return client.OK, headers, answer
+                return NOT_ALLOWED
 
     def head(self, environ, collections, content, user):
         """Manage HEAD request."""
@@ -373,32 +373,32 @@ class Application(object):
     def mkcalendar(self, environ, collections, content, user):
         """Manage MKCALENDAR request."""
         collection = collections[0]
-        props = xmlutils.props_from_request(content)
-        timezone = props.get("C:calendar-timezone")
-        if timezone:
-            collection.replace("", timezone)
-            del props["C:calendar-timezone"]
-        with collection.props as collection_props:
-            for key, value in props.items():
-                collection_props[key] = value
-        if access.write_authorized(user, collection):
-            collection.write()
+        if rights.write_authorized(user, collection):
+            props = xmlutils.props_from_request(content)
+            timezone = props.get("C:calendar-timezone")
+            if timezone:
+                collection.replace("", timezone)
+                del props["C:calendar-timezone"]
+            with collection.props as collection_props:
+                for key, value in props.items():
+                    collection_props[key] = value
+                collection.write()
+            return client.CREATED, {}, None
         else:
-            return self.response_not_allowed()
-        return client.CREATED, {}, None
+            return NOT_ALLOWED
 
     def mkcol(self, environ, collections, content, user):
         """Manage MKCOL request."""
         collection = collections[0]
-        props = xmlutils.props_from_request(content)
-        with collection.props as collection_props:
-            for key, value in props.items():
-                collection_props[key] = value
-        if access.write_authorized(user, collection):
+        if rights.write_authorized(user, collection):
+            props = xmlutils.props_from_request(content)
+            with collection.props as collection_props:
+                for key, value in props.items():
+                    collection_props[key] = value
             collection.write()
+            return client.CREATED, {}, None
         else:
-            return self.response_not_allowed()
-        return client.CREATED, {}, None
+            return NOT_ALLOWED
 
     def move(self, environ, collections, content, user):
         """Manage MOVE request."""
@@ -415,13 +415,13 @@ class Application(object):
                     to_path, to_name = to_url.rstrip("/").rsplit("/", 1)
                     to_collection = ical.Collection.from_path(
                         to_path, depth="0")[0]
-                    if access.write_authorized(user, to_collection) and \
-                            access.write_authorized(user.from_collection):
+                    if rights.write_authorized(user, to_collection) and \
+                            rights.write_authorized(user.from_collection):
                         to_collection.append(to_name, item.text)
                         from_collection.remove(from_name)
                         return client.CREATED, {}, None
                     else:
-                        return self.response_not_allowed()
+                        return NOT_ALLOWED
                 else:
                     # Remote destination server, not supported
                     return client.BAD_GATEWAY, {}, None
@@ -442,6 +442,7 @@ class Application(object):
 
     def propfind(self, environ, collections, content, user):
         """Manage PROPFIND request."""
+        # Rights is handled by collection in xmlutils.propfind
         headers = {
             "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
             "Content-Type": "text/xml"}
@@ -452,11 +453,15 @@ class Application(object):
     def proppatch(self, environ, collections, content, user):
         """Manage PROPPATCH request."""
         collection = collections[0]
-        answer = xmlutils.proppatch(environ["PATH_INFO"], content, collection)
-        headers = {
-            "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
-            "Content-Type": "text/xml"}
-        return client.MULTI_STATUS, headers, answer
+        if rights.write_authorized(user, collection):
+            answer = xmlutils.proppatch(
+                environ["PATH_INFO"], content, collection)
+            headers = {
+                "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
+                "Content-Type": "text/xml"}
+            return client.MULTI_STATUS, headers, answer
+        else:
+            return NOT_ALLOWED
 
     def put(self, environ, collections, content, user):
         """Manage PUT request."""
@@ -474,7 +479,7 @@ class Application(object):
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item
             # Case 3: Item and no Etag precondition: Force modifying item
-            if access.write_authorized(user, collection):
+            if rights.write_authorized(user, collection):
                 xmlutils.put(environ["PATH_INFO"], content, collection)
                 status = client.CREATED
                 # Try to return the etag in the header.
@@ -485,7 +490,7 @@ class Application(object):
                 if new_item:
                     headers["ETag"] = new_item.etag
             else:
-                return self.response_not_allowed()
+                return NOT_ALLOWED
         else:
             # PUT rejected in all other cases
             status = client.PRECONDITION_FAILED
@@ -495,10 +500,10 @@ class Application(object):
         """Manage REPORT request."""
         collection = collections[0]
         headers = {"Content-Type": "text/xml"}
-        if access.read_authorized(user, collection):
+        if rights.read_authorized(user, collection):
             answer = xmlutils.report(environ["PATH_INFO"], content, collection)
             return client.MULTI_STATUS, headers, answer
         else:
-            return self.response_not_allowed()
+            return NOT_ALLOWED
 
     # pylint: enable=W0612,W0613,R0201

@@ -24,12 +24,14 @@ configuration.
 
 """
 
-from radicale import config
+from radicale import config, ical
 
 
 def load():
     """Load list of available storage managers."""
     storage_type = config.get("storage", "type")
-    module = __import__(
+    root_module = __import__(
         "storage.%s" % storage_type, globals=globals(), level=2)
-    return getattr(module, storage_type)
+    module = getattr(root_module, storage_type)
+    ical.Collection = module.Collection
+    return module

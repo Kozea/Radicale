@@ -23,6 +23,8 @@ Authentication management.
 
 """
 
+import sys
+
 from radicale import config, log
 
 
@@ -33,6 +35,18 @@ def load():
     if auth_type == "None":
         return None
     else:
-        module = __import__(
+        root_module = __import__(
             "auth.%s" % auth_type, globals=globals(), level=2)
-        return getattr(module, auth_type)
+        module = getattr(root_module, auth_type)
+        # Override auth.is_authenticated
+        sys.modules[__name__].is_authenticated = module.is_authenticated
+        return module
+
+
+def is_authenticated(user, password):
+    """Check if the user is authenticated.
+
+    This method is overriden if an auth module is loaded.
+
+    """
+    return True  # Default is always True: no authentication

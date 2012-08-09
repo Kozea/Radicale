@@ -23,6 +23,8 @@ Rights management.
 
 """
 
+import sys
+
 from radicale import config, log
 
 
@@ -33,6 +35,28 @@ def load():
     if rights_type == "None":
         return None
     else:
-        module = __import__(
+        root_module = __import__(
             "rights.%s" % rights_type, globals=globals(), level=2)
-        return getattr(module, rights_type)
+        module = getattr(root_module, rights_type)
+        # Override rights.[read|write]_authorized
+        sys.modules[__name__].read_authorized = module.read_authorized
+        sys.modules[__name__].write_authorized = module.write_authorized
+        return module
+
+
+def read_authorized(user, collection):
+    """Check if the user is allowed to read the collection.
+
+    This method is overriden if an auth module is loaded.
+
+    """
+    return True
+
+
+def write_authorized(user, collection):
+    """Check if the user is allowed to write the collection.
+
+    This method is overriden if an auth module is loaded.
+
+    """
+    return True

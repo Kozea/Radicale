@@ -112,6 +112,3 @@ class Collection(ical.Collection):
         self._create_dirs()
         with open(self._props_path, "w") as prop_file:
             json.dump(properties, prop_file)
-
-
-ical.Collection = Collection
