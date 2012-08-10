@@ -50,3 +50,4 @@ Radicale supports the latest versions of:
   for `Google Android <http://www.android.com/>`_
 - `Apple iPhone <http://www.apple.com/iphone/>`_
 - `Apple iCal <http://www.apple.com/macosx/apps/>`_
+- `syncEvolution <https://syncevolution.org/>`_

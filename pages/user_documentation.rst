@@ -266,6 +266,12 @@ Contacts
 
 *To be written*
 
+syncEvolution
+-------------
+
+You can find more information about syncEvolution and Radicale on the
+`syncEvolution wiki page <https://syncevolution.org/wiki/synchronizing-radicale>`.
+
 
 Complex Configuration
 =====================
