@@ -225,12 +225,12 @@ class Application(object):
                     if rights.read_authorized(user, item) or \
                             rights.write_authorized(user, item):
                         log.LOGGER.info("%s has access to collection %s" % (
-                            user, item.name or "/"))
+                            user, item.url or "/"))
                         last_collection_allowed = True
                         allowed_items.append(item)
                     else:
                         log.LOGGER.info("%s has NO access to collection %s" % (
-                            user, item.name or "/"))
+                            user, item.url or "/"))
                         last_collection_allowed = False
                 else:
                     # item is not a collection, it's the child of the last
