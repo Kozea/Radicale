@@ -51,9 +51,18 @@ from . import auth, config, ical, log, rights, storage, xmlutils
 
 VERSION = "git"
 
-# Standard "not allowed" response
+# Standard "not allowed" response that is returned when an authenticated
+# user tries to access information they don't have rights to.
 NOT_ALLOWED = (
     client.FORBIDDEN,
+    {},
+    None)
+
+# Standard "authenticate" response that is returned when a
+# user tries to access non-public information w/o submitting
+# proper authentication credentials
+WRONG_CREDENTIALS = (
+    client.UNAUTHORIZED,
     {"WWW-Authenticate": "Basic realm=\"Radicale - Password Required\""},
     None)
 
@@ -284,11 +293,7 @@ class Application(object):
             # Unknown or unauthorized user
             log.LOGGER.info(
                 "%s refused" % (user or "Anonymous user"))
-            status = client.UNAUTHORIZED
-            headers = {
-                "WWW-Authenticate":
-                "Basic realm=\"Radicale Server - Password Required\""}
-            answer = None
+            status, headers, answer = WRONG_CREDENTIALS
 
         # Set content length
         if answer:
@@ -310,7 +315,7 @@ class Application(object):
     def delete(self, environ, read_collections, write_collections, content, user):
         """Manage DELETE request."""
         if not len(write_collections):
-            return NOT_ALLOWED
+            return client.PRECONDITION_FAILED, {}, None
         
         collection = write_collections[0]
 
