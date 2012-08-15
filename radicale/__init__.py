@@ -176,6 +176,34 @@ class Application(object):
         trailing_slash = "" if uri == "/" else trailing_slash
         return uri + trailing_slash
 
+
+    def collect_allowed_items(self, items, user):
+        """ Collect those items from the request that the user 
+            is actually allowed to access """
+            
+        last_collection_allowed = None
+        allowed_items = []
+        for item in items:
+            if isinstance(item, ical.Collection):
+                if rights.read_authorized(user, item) or rights.write_authorized(user, item):
+                    log.LOGGER.info("%s has access to collection %s" % (user, item.url or "/"))
+                    last_collection_allowed = True
+                    allowed_items.append(item)
+                else:
+                    log.LOGGER.info("%s has NO access to collection %s" % (user, item.url or "/"))
+                    last_collection_allowed = False
+                # item is not a collection, it's the child of the last
+                # collection we've met in the loop. Only add this item
+                # if this last collection was allowed.
+            elif last_collection_allowed:
+                log.LOGGER.info("%s has access to item %s" % (user, item.name or "/"))
+                allowed_items.append(item)
+            else:
+                log.LOGGER.info("%s has NO access to item %s" % (user, item.name or "/"))
+        
+        return allowed_items
+
+
     def __call__(self, environ, start_response):
         """Manage a request."""
         log.LOGGER.info("%s request at %s received" % (
@@ -218,31 +246,8 @@ class Application(object):
 
         if not items or function == self.options or \
                 auth.is_authenticated(user, password):
-            last_collection_allowed = None
-            allowed_items = []
-            for item in items:
-                if isinstance(item, ical.Collection):
-                    if rights.read_authorized(user, item) or \
-                            rights.write_authorized(user, item):
-                        log.LOGGER.info("%s has access to collection %s" % (
-                            user, item.url or "/"))
-                        last_collection_allowed = True
-                        allowed_items.append(item)
-                    else:
-                        log.LOGGER.info("%s has NO access to collection %s" % (
-                            user, item.url or "/"))
-                        last_collection_allowed = False
-                else:
-                    # item is not a collection, it's the child of the last
-                    # collection we've met in the loop. Only add this item
-                    # if this last collection was allowed.
-                    if last_collection_allowed:
-                        log.LOGGER.info("%s has access to item %s" % (
-                            user, item.name or "/"))
-                        allowed_items.append(item)
-                    else:
-                        log.LOGGER.info("%s has NO access to item %s" % (
-                            user, item.name or "/"))
+
+            allowed_items = self.collect_allowed_items(items, user)
 
             if allowed_items or function == self.options:
                 # Collections found
