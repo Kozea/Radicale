@@ -197,29 +197,29 @@ class Application(object):
         for item in items:
             if isinstance(item, ical.Collection):
                 if rights.read_authorized(user, item):
-                    log.LOGGER.info("%s has read access to collection %s" % (user, item.url or "/"))
+                    log.LOGGER.debug("%s has read access to collection %s" % (user, item.url or "/"))
                     read_last_collection_allowed = True
                     read_allowed_items.append(item)
                 else:
-                    log.LOGGER.info("%s has NO read access to collection %s" % (user, item.url or "/"))
+                    log.LOGGER.debug("%s has NO read access to collection %s" % (user, item.url or "/"))
                     read_last_collection_allowed = False
 
                 if rights.write_authorized(user, item):
-                    log.LOGGER.info("%s has write access to collection %s" % (user, item.url or "/"))
+                    log.LOGGER.debug("%s has write access to collection %s" % (user, item.url or "/"))
                     write_last_collection_allowed = True
                     write_allowed_items.append(item)
                 else:
-                    log.LOGGER.info("%s has NO write access to collection %s" % (user, item.url or "/"))
+                    log.LOGGER.debug("%s has NO write access to collection %s" % (user, item.url or "/"))
                     write_last_collection_allowed = False
                 # item is not a collection, it's the child of the last
                 # collection we've met in the loop. Only add this item
                 # if this last collection was allowed.
             else:
                 if read_last_collection_allowed:
-                    log.LOGGER.info("%s has read access to item %s" % (user, item.name or "/"))
+                    log.LOGGER.debug("%s has read access to item %s" % (user, item.name or "/"))
                     read_allowed_items.append(item)
                 if write_last_collection_allowed:
-                    log.LOGGER.info("%s has write access to item %s" % (user, item.name or "/"))
+                    log.LOGGER.debug("%s has write access to item %s" % (user, item.name or "/"))
                     write_allowed_items.append(item)
                     
             if (not write_last_collection_allowed) and (not read_last_collection_allowed):
