@@ -15,7 +15,7 @@ html {
 body {
   background: url(img/green.jpg) repeat-x left 2em; /* fallback */
   background: url(img/radicale_back.png) no-repeat 100% 100% fixed,
-              url(img/r.jpg) no-repeat 100%,
+              url(img/r.jpg) no-repeat 100% 50% fixed,
               url(img/green.jpg) repeat-x left 2em;
   color: #444;
   margin: -2em 0 0 0;
