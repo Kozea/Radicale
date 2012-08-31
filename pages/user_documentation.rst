@@ -676,4 +676,4 @@ Daemon Mode
 -----------
 
 The daemon mode relies on forks, and thus only works on Unix-like OSes
-(incuding Linux, OS X, *BSD).
+(incuding Linux, OS X, BSD).
