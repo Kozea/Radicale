@@ -671,3 +671,9 @@ PAM Authentication
 The PAM authentication module relies on `the pam module
 <http://atlee.ca/software/pam/>`_, and thus only works with 2.x versions of
 Python.
+
+Daemon Mode
+-----------
+
+The daemon mode relies on forks, and thus only works on Unix-like OSes
+(incuding Linux, OS X, *BSD).
