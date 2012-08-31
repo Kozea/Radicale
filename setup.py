@@ -36,9 +36,23 @@ For further information, please visit the `Radicale Website
 
 """
 
-from distutils.core import setup
-
+from distutils.core import setup, Command
+import unittest
 import radicale
+import sys
+
+
+class RunTests(Command):
+    user_options = []
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        tests = unittest.defaultTestLoader.discover("test/python")
+        result = unittest.TextTestRunner(stream=sys.stdout, verbosity=99)._makeResult()
+        tests.run(result)
+
 
 
 # When the version is updated, ``radicale.VERSION`` must be modified.
@@ -59,6 +73,7 @@ setup(
         "radicale", "radicale.auth", "radicale.rights", "radicale.storage"],
     provides=["radicale"],
     scripts=["bin/radicale"],
+    cmdclass={'test': RunTests},
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
     classifiers=[
         "Development Status :: 4 - Beta",

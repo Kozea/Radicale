@@ -67,7 +67,8 @@ INITIAL_CONFIG = {
         "pam_group_membership": "",
         "courier_socket": ""},
     "rights": {
-        "type": "None"},
+        "type": "None",
+        "file" : "None"},
     "storage": {
         "type": "filesystem",
         "filesystem_folder": os.path.expanduser(

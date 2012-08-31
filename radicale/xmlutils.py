@@ -35,7 +35,7 @@ except ImportError:
 import re
 import xml.etree.ElementTree as ET
 
-from . import client, config, ical, rights
+from . import client, config, ical
 
 
 NAMESPACES = {
@@ -188,6 +188,10 @@ def propfind(path, xml_request, collections, user=None):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
+    
+    The collections parameter is a list of collections that are
+    to be included in the output. Rights checking has to be done
+    by the caller.
 
     """
     # Reading request
@@ -200,9 +204,8 @@ def propfind(path, xml_request, collections, user=None):
     multistatus = ET.Element(_tag("D", "multistatus"))
 
     for collection in collections:
-        if rights.read_authorized(user, collection):
-            response = _propfind_response(path, collection, props, user)
-            multistatus.append(response)
+        response = _propfind_response(path, collection, props, user)
+        multistatus.append(response)
 
     return _pretty_xml(multistatus)
 

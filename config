@@ -80,8 +80,11 @@ courier_socket =
 
 [rights]
 # Rights management method
-# Value: None | owner_only | owner_write
+# Value: None | owner_only | owner_write | from_file
 type = None
+
+# File for rights management from_file
+file = ~/.config/radicale/rights
 
 
 [storage]

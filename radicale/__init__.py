@@ -51,9 +51,18 @@ from . import auth, config, ical, log, rights, storage, xmlutils
 
 VERSION = "git"
 
-# Standard "not allowed" response
+# Standard "not allowed" response that is returned when an authenticated
+# user tries to access information they don't have rights to.
 NOT_ALLOWED = (
     client.FORBIDDEN,
+    {},
+    None)
+
+# Standard "authenticate" response that is returned when a
+# user tries to access non-public information w/o submitting
+# proper authentication credentials
+WRONG_CREDENTIALS = (
+    client.UNAUTHORIZED,
     {"WWW-Authenticate": "Basic realm=\"Radicale - Password Required\""},
     None)
 
@@ -176,6 +185,58 @@ class Application(object):
         trailing_slash = "" if uri == "/" else trailing_slash
         return uri + trailing_slash
 
+
+    def collect_allowed_items(self, items, user):
+        """ Collect those items from the request that the user 
+            is actually allowed to access """
+            
+        read_last_collection_allowed = None
+        write_last_collection_allowed = None
+        read_allowed_items = []
+        write_allowed_items = []
+        for item in items:
+            if isinstance(item, ical.Collection):
+                if rights.read_authorized(user, item):
+                    log.LOGGER.debug("%s has read access to collection %s" % (user, item.url or "/"))
+                    read_last_collection_allowed = True
+                    read_allowed_items.append(item)
+                else:
+                    log.LOGGER.debug("%s has NO read access to collection %s" % (user, item.url or "/"))
+                    read_last_collection_allowed = False
+
+                if rights.write_authorized(user, item):
+                    log.LOGGER.debug("%s has write access to collection %s" % (user, item.url or "/"))
+                    write_last_collection_allowed = True
+                    write_allowed_items.append(item)
+                else:
+                    log.LOGGER.debug("%s has NO write access to collection %s" % (user, item.url or "/"))
+                    write_last_collection_allowed = False
+                # item is not a collection, it's the child of the last
+                # collection we've met in the loop. Only add this item
+                # if this last collection was allowed.
+            else:
+                if read_last_collection_allowed:
+                    log.LOGGER.debug("%s has read access to item %s" % (user, item.name or "/"))
+                    read_allowed_items.append(item)
+                if write_last_collection_allowed:
+                    log.LOGGER.debug("%s has write access to item %s" % (user, item.name or "/"))
+                    write_allowed_items.append(item)
+                    
+            if (not write_last_collection_allowed) and (not read_last_collection_allowed):
+                log.LOGGER.info("%s has NO access to item %s" % (user, item.name or "/"))
+        
+        return read_allowed_items, write_allowed_items
+
+
+    def _union(self, list1, list2):
+        out = []
+        out.extend(list1)
+        for thing in list2:
+            if not thing in list1:
+                list1.append(thing)
+        return out
+    
+
     def __call__(self, environ, start_response):
         """Manage a request."""
         log.LOGGER.info("%s request at %s received" % (
@@ -218,58 +279,21 @@ class Application(object):
 
         if not items or function == self.options or \
                 auth.is_authenticated(user, password):
-            last_collection_allowed = None
-            allowed_items = []
-            for item in items:
-                if isinstance(item, ical.Collection):
-                    if rights.read_authorized(user, item) or \
-                            rights.write_authorized(user, item):
-                        log.LOGGER.info("%s has access to collection %s" % (
-                            user, item.name or "/"))
-                        last_collection_allowed = True
-                        allowed_items.append(item)
-                    else:
-                        log.LOGGER.info("%s has NO access to collection %s" % (
-                            user, item.name or "/"))
-                        last_collection_allowed = False
-                else:
-                    # item is not a collection, it's the child of the last
-                    # collection we've met in the loop. Only add this item
-                    # if this last collection was allowed.
-                    if last_collection_allowed:
-                        log.LOGGER.info("%s has access to item %s" % (
-                            user, item.name or "/"))
-                        allowed_items.append(item)
-                    else:
-                        log.LOGGER.info("%s has NO access to item %s" % (
-                            user, item.name or "/"))
 
-            if allowed_items or function == self.options:
+            read_allowed_items, write_allowed_items = self.collect_allowed_items(items, user)
+
+            if read_allowed_items or write_allowed_items or function == self.options:
                 # Collections found
                 status, headers, answer = function(
-                    environ, allowed_items, content, user)
+                    environ, read_allowed_items, write_allowed_items, content, user)
             else:
-                # Good user and no collections found, redirect user to home
-                location = "/%s/" % str(quote(user))
-                if path == location:
-                    # Send answer anyway since else we're getting into a
-                    # redirect loop
-                    status, headers, answer = function(
-                        environ, allowed_items, content, user)
-                else:
-                    log.LOGGER.info("redirecting to %s" % location)
-                    status = client.FOUND
-                    headers = {"Location": location}
-                    answer = "Redirecting to %s" % location
+                # Good user but has no rights to any of the given collections 
+                status, headers, answer = NOT_ALLOWED
         else:
             # Unknown or unauthorized user
             log.LOGGER.info(
                 "%s refused" % (user or "Anonymous user"))
-            status = client.UNAUTHORIZED
-            headers = {
-                "WWW-Authenticate":
-                "Basic realm=\"Radicale Server - Password Required\""}
-            answer = None
+            status, headers, answer = WRONG_CREDENTIALS
 
         # Set content length
         if answer:
@@ -288,9 +312,12 @@ class Application(object):
     # All these functions must have the same parameters, some are useless
     # pylint: disable=W0612,W0613,R0201
 
-    def delete(self, environ, collections, content, user):
+    def delete(self, environ, read_collections, write_collections, content, user):
         """Manage DELETE request."""
-        collection = collections[0]
+        if not len(write_collections):
+            return client.PRECONDITION_FAILED, {}, None
+        
+        collection = write_collections[0]
 
         if collection.path == environ["PATH_INFO"].strip("/"):
             # Path matching the collection, the collection must be deleted
@@ -305,16 +332,13 @@ class Application(object):
             etag = environ.get("HTTP_IF_MATCH", item.etag).replace("\\", "")
             if etag == item.etag:
                 # No ETag precondition or precondition verified, delete item
-                if rights.write_authorized(user, collection):
-                    answer = xmlutils.delete(environ["PATH_INFO"], collection)
-                    return client.OK, {}, answer
-                else:
-                    return NOT_ALLOWED
+                answer = xmlutils.delete(environ["PATH_INFO"], collection)
+                return client.OK, {}, answer
 
         # No item or ETag precondition not verified, do not delete item
         return client.PRECONDITION_FAILED, {}, None
 
-    def get(self, environ, collections, content, user):
+    def get(self, environ, read_collections, write_collections, content, user):
         """Manage GET request.
 
         In Radicale, GET requests create collections when the URL is not
@@ -328,36 +352,37 @@ class Application(object):
             answer = b"<!DOCTYPE html>\n<title>Radicale</title>Radicale works!"
             return client.OK, headers, answer
 
-        collection = collections[0]
+        if not len(read_collections):
+            return NOT_ALLOWED
+        
+        collection = read_collections[0]
+        
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
 
         if item_name:
             # Get collection item
             item = collection.get_item(item_name)
             if item:
-                if rights.read_authorized(user, collection):
-                    items = collection.timezones
-                    items.append(item)
-                    answer_text = ical.serialize(
-                        collection.tag, collection.headers, items)
-                    etag = item.etag
-                else:
-                    return NOT_ALLOWED
+                items = collection.timezones
+                items.append(item)
+                answer_text = ical.serialize(
+                    collection.tag, collection.headers, items)
+                etag = item.etag
             else:
                 return client.GONE, {}, None
         else:
             # Create the collection if it does not exist
-            if not collection.exists and \
-                    rights.write_authorized(user, collection):
-                log.LOGGER.debug("Creating collection %s" % collection.name)
-                collection.write()
+            if not collection.exists:
+                if collection in write_collections:
+                    log.LOGGER.debug("Creating collection %s" % collection.name)
+                    collection.write()
+                else:
+                    log.LOGGER.debug("Collection %s not available and could not be created due to missing write rights" % collection.name)
+                    return NOT_ALLOWED
 
-            if rights.read_authorized(user, collection):
-                # Get whole collection
-                answer_text = collection.text
-                etag = collection.etag
-            else:
-                return NOT_ALLOWED
+            # Get whole collection
+            answer_text = collection.text
+            etag = collection.etag
 
         headers = {
             "Content-Type": collection.mimetype,
@@ -366,44 +391,50 @@ class Application(object):
         answer = answer_text.encode(self.encoding)
         return client.OK, headers, answer
 
-    def head(self, environ, collections, content, user):
+    def head(self, environ, read_collections, write_collections, content, user):
         """Manage HEAD request."""
-        status, headers, answer = self.get(environ, collections, content, user)
+        status, headers, answer = self.get(environ, read_collections, write_collections, content, user)
         return status, headers, None
 
-    def mkcalendar(self, environ, collections, content, user):
+    def mkcalendar(self, environ, read_collections, write_collections, content, user):
         """Manage MKCALENDAR request."""
-        collection = collections[0]
-        if rights.write_authorized(user, collection):
-            props = xmlutils.props_from_request(content)
-            timezone = props.get("C:calendar-timezone")
-            if timezone:
-                collection.replace("", timezone)
-                del props["C:calendar-timezone"]
-            with collection.props as collection_props:
-                for key, value in props.items():
-                    collection_props[key] = value
-                collection.write()
-            return client.CREATED, {}, None
-        else:
+        if not len(write_collections):
             return NOT_ALLOWED
-
-    def mkcol(self, environ, collections, content, user):
-        """Manage MKCOL request."""
-        collection = collections[0]
-        if rights.write_authorized(user, collection):
-            props = xmlutils.props_from_request(content)
-            with collection.props as collection_props:
-                for key, value in props.items():
-                    collection_props[key] = value
+        
+        collection = write_collections[0]
+        
+        props = xmlutils.props_from_request(content)
+        timezone = props.get("C:calendar-timezone")
+        if timezone:
+            collection.replace("", timezone)
+            del props["C:calendar-timezone"]
+        with collection.props as collection_props:
+            for key, value in props.items():
+                collection_props[key] = value
             collection.write()
-            return client.CREATED, {}, None
-        else:
-            return NOT_ALLOWED
+        return client.CREATED, {}, None
 
-    def move(self, environ, collections, content, user):
+    def mkcol(self, environ, read_collections, write_collections, content, user):
+        """Manage MKCOL request."""
+        if not len(write_collections):
+            return NOT_ALLOWED
+        
+        collection = write_collections[0]
+        
+        props = xmlutils.props_from_request(content)
+        with collection.props as collection_props:
+            for key, value in props.items():
+                collection_props[key] = value
+        collection.write()
+        return client.CREATED, {}, None
+
+    def move(self, environ, read_collections, write_collections, content, user):
         """Manage MOVE request."""
-        from_collection = collections[0]
+        if not len(write_collections):
+            return NOT_ALLOWED
+        
+        from_collection = write_collections[0]
+        
         from_name = xmlutils.name_from_path(
             environ["PATH_INFO"], from_collection)
         if from_name:
@@ -416,8 +447,7 @@ class Application(object):
                     to_path, to_name = to_url.rstrip("/").rsplit("/", 1)
                     to_collection = ical.Collection.from_path(
                         to_path, depth="0")[0]
-                    if rights.write_authorized(user, to_collection) and \
-                            rights.write_authorized(user.from_collection):
+                    if to_collection in write_collections:
                         to_collection.append(to_name, item.text)
                         from_collection.remove(from_name)
                         return client.CREATED, {}, None
@@ -433,7 +463,7 @@ class Application(object):
             # Moving collections, not supported
             return client.FORBIDDEN, {}, None
 
-    def options(self, environ, collections, content, user):
+    def options(self, environ, read_collections, write_collections, content, user):
         """Manage OPTIONS request."""
         headers = {
             "Allow": ("DELETE, HEAD, GET, MKCALENDAR, MKCOL, MOVE, "
@@ -441,32 +471,38 @@ class Application(object):
             "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol"}
         return client.OK, headers, None
 
-    def propfind(self, environ, collections, content, user):
+    def propfind(self, environ, read_collections, write_collections, content, user):
         """Manage PROPFIND request."""
         # Rights is handled by collection in xmlutils.propfind
         headers = {
             "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
             "Content-Type": "text/xml"}
+        collections = self._union(read_collections, write_collections)
         answer = xmlutils.propfind(
             environ["PATH_INFO"], content, collections, user)
         return client.MULTI_STATUS, headers, answer
 
-    def proppatch(self, environ, collections, content, user):
+    def proppatch(self, environ, read_collections, write_collections, content, user):
         """Manage PROPPATCH request."""
-        collection = collections[0]
-        if rights.write_authorized(user, collection):
-            answer = xmlutils.proppatch(
-                environ["PATH_INFO"], content, collection)
-            headers = {
-                "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
-                "Content-Type": "text/xml"}
-            return client.MULTI_STATUS, headers, answer
-        else:
+        if not len(write_collections):
             return NOT_ALLOWED
+        
+        collection = write_collections[0]
+        
+        answer = xmlutils.proppatch(
+            environ["PATH_INFO"], content, collection)
+        headers = {
+            "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
+            "Content-Type": "text/xml"}
+        return client.MULTI_STATUS, headers, answer
 
-    def put(self, environ, collections, content, user):
+    def put(self, environ, read_collections, write_collections, content, user):
         """Manage PUT request."""
-        collection = collections[0]
+        if not len(write_collections):
+            return NOT_ALLOWED
+        
+        collection = write_collections[0]
+        
         collection.set_mimetype(environ.get("CONTENT_TYPE"))
         headers = {}
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
@@ -481,31 +517,30 @@ class Application(object):
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item
             # Case 3: Item and no Etag precondition: Force modifying item
-            if rights.write_authorized(user, collection):
-                xmlutils.put(environ["PATH_INFO"], content, collection)
-                status = client.CREATED
-                # Try to return the etag in the header.
-                # If the added item does't have the same name as the one given
-                # by the client, then there's no obvious way to generate an
-                # etag, we can safely ignore it.
-                new_item = collection.get_item(item_name)
-                if new_item:
-                    headers["ETag"] = new_item.etag
-            else:
-                return NOT_ALLOWED
+            xmlutils.put(environ["PATH_INFO"], content, collection)
+            status = client.CREATED
+            # Try to return the etag in the header.
+            # If the added item does't have the same name as the one given
+            # by the client, then there's no obvious way to generate an
+            # etag, we can safely ignore it.
+            new_item = collection.get_item(item_name)
+            if new_item:
+                headers["ETag"] = new_item.etag
         else:
             # PUT rejected in all other cases
             status = client.PRECONDITION_FAILED
         return status, headers, None
 
-    def report(self, environ, collections, content, user):
+    def report(self, environ, read_collections, write_collections, content, user):
         """Manage REPORT request."""
-        collection = collections[0]
-        headers = {"Content-Type": "text/xml"}
-        if rights.read_authorized(user, collection):
-            answer = xmlutils.report(environ["PATH_INFO"], content, collection)
-            return client.MULTI_STATUS, headers, answer
-        else:
+        if not len(read_collections):
             return NOT_ALLOWED
+        
+        collection = read_collections[0]
+        
+        headers = {"Content-Type": "text/xml"}
+       
+        answer = xmlutils.report(environ["PATH_INFO"], content, collection)
+        return client.MULTI_STATUS, headers, answer
 
     # pylint: enable=W0612,W0613,R0201
