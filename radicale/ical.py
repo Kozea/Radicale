@@ -208,7 +208,7 @@ class Collection(object):
         attributes = sane_path.split("/")
         if not attributes:
             return None
-        if not (cls.is_leaf("/".join(attributes)) or path.endswith("/")):
+        if not (cls.is_leaf("/".join(attributes)) or len(attributes) == 2):
             attributes.pop()
 
         result = []
