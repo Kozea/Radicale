@@ -32,7 +32,24 @@ from .. import config, ical
 
 
 FOLDER = os.path.expanduser(config.get("storage", "filesystem_folder"))
+LOCKING = config.getboolean("storage", "locking")
+if LOCKING:
+    try:
+        import lockfile as lock
+    except ImportError:
+        raise ImportError('locking requires the lockfile package to be installed')
+else:
+    class lock:
+        class FileLock:
+            def __init__(self,f):
+                pass
 
+            def __enter__(self):
+                pass
+
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                pass
+  
 
 # This function overrides the builtin ``open`` function for this module
 # pylint: disable=W0622
@@ -61,17 +78,20 @@ class Collection(ical.Collection):
             os.makedirs(os.path.dirname(self._path))
 
     def save(self, text):
-        self._create_dirs()
-        open(self._path, "w").write(text)
+        with lock.FileLock(self._path):
+            self._create_dirs()
+            open(self._path, "w").write(text)
 
     def delete(self):
-        os.remove(self._path)
-        os.remove(self._props_path)
+        with lock.FileLock(self._path):
+            os.remove(self._path)
+            os.remove(self._props_path)
 
     @property
     def text(self):
         try:
-            return open(self._path).read()
+            with lock.FileLock(self._path):
+                return open(self._path).read()
         except IOError:
             return ""
 

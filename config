@@ -88,6 +88,10 @@ type = None
 # Storage backend
 type = filesystem
 
+# Enable locking. Requires the lockfile package installed
+# http://packages.python.org/lockfile/
+locking = False
+
 # Folder for storing local collections, created if not present
 filesystem_folder = ~/.config/radicale/collections
 
