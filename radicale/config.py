@@ -73,7 +73,8 @@ INITIAL_CONFIG = {
         "filesystem_folder": os.path.expanduser(
             "~/.config/radicale/collections"),
         "git_folder": os.path.expanduser(
-            "~/.config/radicale/collections")},
+            "~/.config/radicale/collections"),
+        "locking": "False"},
     "logging": {
         "config": "/etc/radicale/logging",
         "debug": "False",
