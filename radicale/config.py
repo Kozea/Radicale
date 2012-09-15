@@ -68,7 +68,7 @@ INITIAL_CONFIG = {
         "courier_socket": ""},
     "rights": {
         "type": "None",
-        "file" : "None"},
+        "file": ""},
     "storage": {
         "type": "filesystem",
         "filesystem_folder": os.path.expanduser(

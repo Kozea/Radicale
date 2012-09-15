@@ -21,156 +21,60 @@ File-based rights.
 
 The owner is implied to have all rights on their collections.
 
-Rights are read from a file whose name is specified in the config 
-(section "right", key "file").
-
-The file's format is per line:
-
-collectionpath ":" principal " " rights {", " principal " " rights}*
-
-collectionpath is the path part of the collection's url
-
-principal is a user name (no whitespace allowed)
-rights is a string w/o whitespace that contains "r" for reading rights, 
-"w" for writing rights and a combination of these for all rights.
-
-Empty lines are ignored. Lines starting with "#" (hash sign) are comments.
+Rights are read from a file whose name is specified in the config (section
+"right", key "file").
 
 Example:
 
 # This means user1 may read, user2 may write, user3 has full access
-/user0/calendar : user1 r, user2 w, user3 rw
+[/user0/calendar]
+user1: r
+user2: w
+user3: rw
+
 # user0 can read /user1/cal
-/user1/cal : user0 r 
+[/user1/cal]
+user0: r
 
-If a collection /a/b is shared and other users than the owner are 
-supposed to find the collection in a propfind request, an additional
-line for /a has to be in the defintions. E.g.:
+# If a collection /a/b is shared and other users than the owner are supposed to
+# find the collection in a propfind request, an additional line for /a has to
+# be in the defintions. E.g.:
 
-/user0/cal: user
+[/user0]
+user1: r
 
 """
 
 from radicale import config, log
 from radicale.rights import owner_only
+# Manage Python2/3 different modules
+# pylint: disable=F0401
+try:
+    from configparser import RawConfigParser as ConfigParser
+except ImportError:
+    from ConfigParser import RawConfigParser as ConfigParser
+# pylint: enable=F0401
 
 
-READ_AUTHORIZED = None
-WRITE_AUTHORIZED = None
-
-
-class ParsingError(BaseException):
-    """Raised if the file cannot be parsed"""
+FILENAME = config.get("rights", "file")
+if FILENAME:
+    log.LOGGER.debug("Reading rights from file %s" % FILENAME)
+    RIGHTS = ConfigParser()
+    RIGHTS.read(FILENAME)
+else:
+    log.LOGGER.error("No file name configured for rights type 'from_file'")
+    RIGHTS = None
 
 
 def read_authorized(user, collection):
     """Check if the user is allowed to read the collection."""
-    if owner_only.read_authorized(user, collection):
-        return True
-    
-    curl = _normalize_trail_slash(collection.url)
-
-    return _dict_knows(READ_AUTHORIZED, curl, user)
-
+    return (
+        owner_only.read_authorized(user, collection) or
+        "r" in RIGHTS.get(collection.url.rstrip("/") or "/", user))
 
 
 def write_authorized(user, collection):
     """Check if the user is allowed to write the collection."""
-    if owner_only.read_authorized(user, collection):
-        return True
-
-    curl = _normalize_trail_slash(collection.url)
-
-    return _dict_knows(WRITE_AUTHORIZED, curl, user)
-
-
-
-def _dict_knows(adict, url, user):
-    return adict.has_key(url) and adict.get(url).count(user) != 0
-
-
-
-def _load():
-    read = {}
-    write = {}
-    file_name = config.get("rights", "file")
-    if file_name == "None":
-        log.LOGGER.error("No file name configured for rights type 'from_file'")
-        return
-    
-    log.LOGGER.debug("Reading rights from file %s" % file_name)
-
-    lines = open(file_name, "r").readlines()
-    
-    for line in lines:
-        _process(line, read, write)
-
-    global READ_AUTHORIZED, WRITE_AUTHORIZED
-    READ_AUTHORIZED = read
-    WRITE_AUTHORIZED = write
-
-
-
-def _process(line, read, write):
-    line = line.strip()   
-    if line == "":
-        """Empty line"""
-        return
-    
-    if line.startswith("#"):
-        """Comment"""
-        return
-        
-    collection, sep, rights_part = line.partition(":")
-    
-    rights_part = rights_part.strip()
-
-    if rights_part == "":
-        return
-
-    collection = collection.strip()
-    
-    if collection == "":
-        raise ParsingError
-    
-    collection = _normalize_trail_slash(collection)
-    
-    rights = rights_part.split(",")
-    for right in rights:
-        user, sep, right_defs = right.strip().partition(" ")
-        
-        if user == "" or right_defs == "":
-            raise ParsingError
-        
-        user = user.strip()
-        right_defs = right_defs.strip()
-        
-        for right_def in list(right_defs):
-            
-            if right_def == 'r':
-                _append(read, collection, user)
-            elif right_def == 'w':
-                _append(write, collection, user)
-            else:
-                raise ParsingError
-
-
-        
-def _append(rdict, key, value):
-    if rdict.has_key(key):
-        rlist = rdict[key]
-        rlist.append(value)
-    else:
-        rlist = [value]
-        rdict[key] = rlist
-        
-        
-
-def _normalize_trail_slash(s):
-    """Removes a maybe existing trailing slash"""
-    if s != "/" and s.endswith("/"):
-        s, sep, empty = s.rpartition("/")
-    return s
-
-
-_load()
+    return (
+        owner_only.write_authorized(user, collection) or
+        "w" in RIGHTS.get(collection.url.rstrip("/") or "/", user))

@@ -188,7 +188,7 @@ def propfind(path, xml_request, collections, user=None):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
-    
+
     The collections parameter is a list of collections that are
     to be included in the output. Rights checking has to be done
     by the caller.
