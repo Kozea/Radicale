@@ -1,6 +1,9 @@
-*.pyc
-build/
 *~
+*.pyc
+build
+dist
+.coverage
 .project
 .pydevproject
-.settings/
+.settings
+MANIFEST
