@@ -6,4 +6,5 @@ dist
 .project
 .pydevproject
 .settings
+.tox
 MANIFEST
