@@ -227,6 +227,7 @@ def _propfind_response(path, item, props, user):
 
     href = ET.Element(_tag("D", "href"))
     uri = item.url if is_collection else "%s/%s" % (path, item.name)
+    uri = "%s/%s" % (config.get("server", "base_prefix"), uri)
     href.text = uri.replace("//", "/")
     response.append(href)
 
