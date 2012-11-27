@@ -119,7 +119,7 @@ Contacts
 KOrganizer
 ~~~~~~~~~~
 
-(tested with 4.8.3, you need one running on Akonadi for Cal/CarDav support. )
+*Tested with 4.8.3, you need one running on Akonadi for Cal/CarDav support.*
 
 The procedure below can also be done trough the sidebar "Calendar Manager".
 But to ensure it works for everyone this examples uses the menu-bar.
@@ -142,9 +142,9 @@ But to ensure it works for everyone this examples uses the menu-bar.
 16. Close the Configuration Window (Click ``OK``).
 17. Restart Korganizer for the calendar to appear in the "Calendar Manager" sidebar :(. (At least with version 4.8.3.)
 
-Tip:
-After you created a calender in a collection you can also use http://myserve:5232/Username/ as an URL
-This will then list all available calendars.
+.. note::
+    After you created a calender in a collection you can also use http://myserve:5232/Username/ as an URL
+    This will then list all available calendars.
 
 
 CalDAV-Sync
