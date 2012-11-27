@@ -119,7 +119,33 @@ Contacts
 KOrganizer
 ~~~~~~~~~~
 
-*To be written*
+(tested with 4.8.3, you need one running on Akonadi for Cal/CarDav support. )
+
+The procedure below can also be done trough the sidebar "Calendar Manager".
+But to ensure it works for everyone this examples uses the menu-bar.
+
+1. Click ``Settings -> Configure KOrganizer``.
+2. Click on ``General -> Calendars``.
+3. Click on ``Add``.
+4. Choice ``DAV groupware resource`` (and click ``OK``).
+5. Enter your username/passord (and click on ``Next``).
+6. Select ``Configure the resource manually`` (and click on ``Finish``).
+7. Fill in a Display name.
+8. Fill in your Username and Password.
+9. Click ``Add``.
+10. Choice ``CalDav``. (CardDav might also work, didn't test.)
+11. For remote URL enter http://myserver:5232/Username/Calandar
+12. Click ``Fetch``.
+13. Select desired calendar.
+14. Hit ``OK``.
+15. Hit ``OK`` again.
+16. Close the Configuration Window (Click ``OK``).
+17. Restart Korganizer for the calendar to appear in the "Calendar Manager" sidebar :(. (At least with version 4.8.3.)
+
+Tip:
+After you created a calender in a collection you can also use http://myserve:5232/Username/ as an URL
+This will then list all available calendars.
+
 
 CalDAV-Sync
 ~~~~~~~~~~~
