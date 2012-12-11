@@ -50,9 +50,9 @@ from radicale.rights import owner_only
 # Manage Python2/3 different modules
 # pylint: disable=F0401
 try:
-    from configparser import RawConfigParser as ConfigParser
+    from configparser import RawConfigParser as ConfigParser, NoSectionError, NoOptionError
 except ImportError:
-    from ConfigParser import RawConfigParser as ConfigParser
+    from ConfigParser import RawConfigParser as ConfigParser, NoSectionError, NoOptionError
 # pylint: enable=F0401
 
 
@@ -68,13 +68,20 @@ else:
 
 def read_authorized(user, collection):
     """Check if the user is allowed to read the collection."""
-    return (
-        owner_only.read_authorized(user, collection) or
-        "r" in RIGHTS.get(collection.url.rstrip("/") or "/", user))
-
+    if owner_only.read_authorized(user, collection):
+        return True
+    else:
+        try:
+            return "r" in RIGHTS.get(collection.url.rstrip("/") or "/", user)
+        except (NoSectionError, NoOptionError):
+            return False
 
 def write_authorized(user, collection):
     """Check if the user is allowed to write the collection."""
-    return (
-        owner_only.write_authorized(user, collection) or
-        "w" in RIGHTS.get(collection.url.rstrip("/") or "/", user))
+    if owner_only.read_authorized(user, collection):
+        return True
+    else:
+        try:
+            return "w" in RIGHTS.get(collection.url.rstrip("/") or "/", user)
+        except (NoSectionError, NoOptionError):
+            return False
