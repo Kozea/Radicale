@@ -78,15 +78,15 @@ def run():
         default=config.getboolean("logging", "debug"),
         help="print debug information")
     parser.add_option(
-        "-C", "--config",default='',
-        help='use a specific configuration file')
+        "-C", "--config",
+        help="use a specific configuration file")
 
     options = parser.parse_args()[0]
-    
+
     # Read in the configuration specified by the command line (if specified)
-    if options.config != '':
+    if options.config:
         config.read(options.config)
-    
+
     # Update Radicale configuration according to options
     for option in parser.option_list:
         key = option.dest
@@ -94,7 +94,7 @@ def run():
             section = "logging" if key == "debug" else "server"
             value = getattr(options, key)
             config.set(section, key, str(value))
-    
+
     # Start logging
     log.start()
 
