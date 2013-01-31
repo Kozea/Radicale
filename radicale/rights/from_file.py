@@ -68,7 +68,9 @@ else:
 
 def read_authorized(user, collection):
     """Check if the user is allowed to read the collection."""
-    if owner_only.read_authorized(user, collection):
+    if user == None:
+        return False
+    elif owner_only.read_authorized(user, collection):
         return True
     else:
         try:
@@ -78,7 +80,9 @@ def read_authorized(user, collection):
 
 def write_authorized(user, collection):
     """Check if the user is allowed to write the collection."""
-    if owner_only.read_authorized(user, collection):
+    if user == None:
+        return False
+    elif owner_only.read_authorized(user, collection):
         return True
     else:
         try:
