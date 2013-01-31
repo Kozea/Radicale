@@ -275,7 +275,7 @@ class Application(object):
             authorization = \
                 authorization.lstrip("Basic").strip().encode("ascii")
             user, password = self.decode(
-                base64.b64decode(authorization), environ).split(":")
+                base64.b64decode(authorization), environ).split(":", 1)
         else:
             user = password = None
 
