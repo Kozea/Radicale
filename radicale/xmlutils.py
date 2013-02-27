@@ -197,16 +197,14 @@ def propfind(path, xml_request, collections, user=None):
     # Reading request
     if xml_request:
         root = ET.fromstring(xml_request.encode("utf8"))
-
-        prop_element = root.find(_tag("D", "prop"))
-        props = [prop.tag for prop in prop_element]
+        props = [prop.tag for prop in root.find(_tag("D", "prop"))]
     else:
-        props = [ _tag("D", "getcontenttype"),
-            _tag("D", "resourcetype"),
-            _tag("D", "displayname"),
-            _tag("D", "owner"),
-            _tag("D", "getetag"),
-            _tag("CS", "getctag") ]
+        props = [_tag("D", "getcontenttype"),
+                 _tag("D", "resourcetype"),
+                 _tag("D", "displayname"),
+                 _tag("D", "owner"),
+                 _tag("D", "getetag"),
+                 _tag("CS", "getctag")]
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
