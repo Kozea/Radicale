@@ -38,7 +38,7 @@ stock = utf-8
 
 [auth]
 # Authentication method
-# Value: None | htpasswd | LDAP | PAM | courier
+# Value: None | htpasswd | LDAP | IMAP | PAM | courier
 type = None
 
 # Usernames used for public collections, separated by a comma
@@ -51,6 +51,12 @@ htpasswd_filename = /etc/radicale/users
 # Htpasswd encryption method
 # Value: plain | sha1 | crypt
 htpasswd_encryption = crypt
+
+#IMAP Configuration
+imap_auth_host_name = localhost
+imap_auth_host_port = 143
+imap_auth_use_ssl = False
+
 
 # LDAP server URL, with protocol and port
 ldap_url = ldap://localhost:389/
