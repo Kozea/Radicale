@@ -226,8 +226,10 @@ def _propfind_response(path, item, props, user):
     response = ET.Element(_tag("D", "response"))
 
     href = ET.Element(_tag("D", "href"))
-    uri = item.url if is_collection else "%s/%s" % (path, item.name)
-    uri = "%s/%s" % (config.get("server", "base_prefix"), uri)
+    if is_collection:
+        uri = "%s%s" % (config.get("server", "base_prefix"), item.url)
+    else:
+        uri = "%s/%s" % (path, item.name)
     href.text = uri.replace("//", "/")
     response.append(href)
 
@@ -267,7 +269,7 @@ def _propfind_response(path, item, props, user):
             # pylint: enable=W0511
         elif tag == _tag("D", "current-user-principal") and user:
             tag = ET.Element(_tag("D", "href"))
-            tag.text = "/%s/" % user
+            tag.text = "%s/%s/" % (config.get("server", "base_prefix"), user)
             element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
@@ -461,9 +463,12 @@ def report(path, xml_request, collection):
     collection_headers = collection.headers
     collection_timezones = collection.timezones
 
+    base_prefix = config.get("server", "base_prefix")
+
     for hreference in hreferences:
+        unprefixed_hreference = hreference[len(base_prefix):]
         # Check if the reference is an item or a collection
-        name = name_from_path(hreference, collection)
+        name = name_from_path(unprefixed_hreference, collection)
         if name:
             # Reference is an item
             path = "/".join(hreference.split("/")[:-1]) + "/"

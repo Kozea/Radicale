@@ -27,7 +27,7 @@ certificate = /etc/apache2/ssl/server.crt
 key = /etc/apache2/ssl/server.key
 # Reverse DNS to resolve client address in logs
 dns_lookup = True
-# base URL if / is not the CalDAV root
+# base URL if / is not the CalDAV root. If set, must start with /
 base_prefix =
 
 [encoding]
