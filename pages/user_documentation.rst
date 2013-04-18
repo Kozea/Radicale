@@ -250,7 +250,8 @@ iCal
 
 .. note::
    This description assumes you do not have any authentication or encryption
-   configured. The procedure will change accordingly if you do.
+   configured. If you want to use iCal with authentication or encryption, you
+   just have to fill in the corresponding fields in your calendar's configuration.
 
 Calendars
 +++++++++
