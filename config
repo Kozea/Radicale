@@ -89,10 +89,17 @@ file = ~/.config/radicale/rights
 
 [storage]
 # Storage backend
+# Value: filesystem | database
 type = filesystem
 
 # Folder for storing local collections, created if not present
 filesystem_folder = ~/.config/radicale/collections
+
+# Database URL for SQLAlchemy
+# dialect+driver://user:password@host/dbname[?key=value..]
+# For example: sqlite:///var/db/radicale.db, postgresql://user:password@localhost/radicale
+# See http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#sqlalchemy.create_engine
+database_url =
 
 
 [logging]
