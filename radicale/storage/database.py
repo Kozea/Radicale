@@ -43,7 +43,8 @@ class DBCollection(Base):
     path = Column(String, primary_key=True)
     parent_path = Column(String, ForeignKey("collection.path"))
 
-    parent = relationship("DBCollection", backref="children", remote_side=[path])
+    parent = relationship(
+        "DBCollection", backref="children", remote_side=[path])
 
 
 class DBItem(Base):
@@ -61,7 +62,8 @@ class DBHeader(Base):
 
     key = Column(String, primary_key=True)
     value = Column(String)
-    collection_path = Column(String, ForeignKey("collection.path"), primary_key=True)
+    collection_path = Column(
+        String, ForeignKey("collection.path"), primary_key=True)
 
     collection = relationship("DBCollection", backref="headers")
 
@@ -83,7 +85,8 @@ class DBProperty(Base):
 
     key = Column(String, primary_key=True)
     value = Column(String)
-    collection_path = Column(String, ForeignKey("collection.path"), primary_key=True)
+    collection_path = Column(
+        String, ForeignKey("collection.path"), primary_key=True)
 
     collection = relationship(
         "DBCollection", backref="properties", cascade="delete")
@@ -97,7 +100,6 @@ class Collection(ical.Collection):
 
     def __del__(self):
         self.session.commit()
-        #super(Collection, self).__del__()
 
     def _query(self, item_types):
         item_objects = []
