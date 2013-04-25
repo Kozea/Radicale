@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2012 Guillaume Ayoub
+# Copyright © 2012-2013 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,9 +50,11 @@ from radicale.rights import owner_only
 # Manage Python2/3 different modules
 # pylint: disable=F0401
 try:
-    from configparser import RawConfigParser as ConfigParser, NoSectionError, NoOptionError
+    from configparser import (
+        RawConfigParser as ConfigParser, NoSectionError, NoOptionError)
 except ImportError:
-    from ConfigParser import RawConfigParser as ConfigParser, NoSectionError, NoOptionError
+    from ConfigParser import (
+        RawConfigParser as ConfigParser, NoSectionError, NoOptionError)
 # pylint: enable=F0401
 
 
@@ -77,6 +79,7 @@ def read_authorized(user, collection):
             return "r" in RIGHTS.get(collection.url.rstrip("/") or "/", user)
         except (NoSectionError, NoOptionError):
             return False
+
 
 def write_authorized(user, collection):
     """Check if the user is allowed to write the collection."""
