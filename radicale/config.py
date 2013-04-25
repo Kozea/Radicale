@@ -51,6 +51,9 @@ INITIAL_CONFIG = {
         "stock": "utf-8"},
     "auth": {
         "type": "None",
+        "auth_url": "",
+        "user_param": "username",
+        "password_param": "password",
         "public_users": "public",
         "private_users": "private",
         "htpasswd_filename": "/etc/radicale/users",
