@@ -57,6 +57,7 @@ INITIAL_CONFIG = {
         "htpasswd_encryption": "crypt",
         "imap_auth_host_name": "localhost",
         "imap_auth_host_port": "143",
+        "imap_auth_use_ssl": "False",
         "ldap_url": "ldap://localhost:389/",
         "ldap_base": "ou=users,dc=example,dc=com",
         "ldap_attribute": "uid",
