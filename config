@@ -82,6 +82,13 @@ pam_group_membership =
 # Path to the Courier Authdaemon socket
 courier_socket =
 
+# HTTP authentication request URL endpoint
+auth_url =
+# POST param to use for username
+user_param = username
+# POST param to use for password
+password_param = password
+
 
 [rights]
 # Rights management method
