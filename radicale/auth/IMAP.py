@@ -34,20 +34,26 @@ import imaplib
 
 from .. import config, log
 
-IMAP_SERVER = config.get("auth", "imap_auth_host_name")
-IMAP_SERVER_PORT = config.get("auth", "imap_auth_host_port")
+IMAP_SERVER = config.get("auth", "imap_hostname")
+IMAP_SERVER_PORT = config.get("auth", "imap_port")
+IMAP_USE_SSL = config.get("auth", "imap_ssl")
 
 
 def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
 
     log.LOGGER.debug(
-        "[IMAP AUTH] Connecting to %s:%s." % (IMAP_SERVER, IMAP_SERVER_PORT,))
-    connection = imaplib.IMAP4(host=IMAP_SERVER, port=IMAP_SERVER_PORT)
+        "Connecting to IMAP server %s:%s." % (IMAP_SERVER, IMAP_SERVER_PORT,))
+
+    connection_is_secure = False
+    if IMAP_USE_SSL:
+        connection = imaplib.IMAP4_SSL(host=IMAP_SERVER, port=IMAP_SERVER_PORT)
+        connection_is_secure = True
+    else:
+        connection = imaplib.IMAP4(host=IMAP_SERVER, port=IMAP_SERVER_PORT)
 
     server_is_local = (IMAP_SERVER == "localhost")
 
-    connection_is_secure = False
     try:
         connection.starttls()
         log.LOGGER.debug("IMAP server connection changed to TLS.")

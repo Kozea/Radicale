@@ -38,7 +38,7 @@ stock = utf-8
 
 [auth]
 # Authentication method
-# Value: None | htpasswd | LDAP | PAM | courier
+# Value: None | htpasswd | IMAP | LDAP | PAM | courier
 type = None
 
 # Usernames used for public collections, separated by a comma
@@ -70,6 +70,11 @@ ldap_binddn =
 ldap_password =
 # LDAP scope of the search
 ldap_scope = OneLevel
+
+# IMAP Configuration
+imap_hostname = localhost
+imap_port = 143
+imap_ssl = False
 
 # PAM group user should be member of
 pam_group_membership =
