@@ -20,19 +20,24 @@
 """
 HTTP authentication.
 
-Make a request to an authentication server with the username/password.
+Authentication based on the ``requests`` module.
+
+Post a request to an authentication server with the username/password.
 Anything other than a 200/201 response is considered auth failure.
 
 """
 
 import requests
+
 from .. import config, log
 
-AUTH_URL = config.get("auth", "auth_url")
-USER_PARAM = config.get("auth", "user_param")
-PASSWORD_PARAM = config.get("auth", "password_param")
+AUTH_URL = config.get("auth", "http_url")
+USER_PARAM = config.get("auth", "http_user_parameter")
+PASSWORD_PARAM = config.get("auth", "http_password_parameter")
+
 
 def is_authenticated(user, password):
-  payload = {USER_PARAM: user, PASSWORD_PARAM: password}
-  r = requests.post(AUTH_URL, data=payload)
-  return r.status_code in [200, 201]
+    """Check if ``user``/``password`` couple is valid."""
+    log.LOGGER.debug("HTTP-based auth on %s." % AUTH_URL)
+    payload = {USER_PARAM: user, PASSWORD_PARAM: password}
+    return requests.post(AUTH_URL, data=payload).status_code in (200, 201)

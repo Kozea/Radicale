@@ -51,9 +51,6 @@ INITIAL_CONFIG = {
         "stock": "utf-8"},
     "auth": {
         "type": "None",
-        "auth_url": "",
-        "user_param": "username",
-        "password_param": "password",
         "public_users": "public",
         "private_users": "private",
         "htpasswd_filename": "/etc/radicale/users",
@@ -69,7 +66,10 @@ INITIAL_CONFIG = {
         "ldap_password": "",
         "ldap_scope": "OneLevel",
         "pam_group_membership": "",
-        "courier_socket": ""},
+        "courier_socket": "",
+        "http_url": "",
+        "http_user_parameter": "",
+        "http_password_parameter": ""},
     "rights": {
         "type": "None",
         "file": ""},

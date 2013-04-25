@@ -38,7 +38,7 @@ stock = utf-8
 
 [auth]
 # Authentication method
-# Value: None | htpasswd | IMAP | LDAP | PAM | courier
+# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http
 type = None
 
 # Usernames used for public collections, separated by a comma
@@ -83,11 +83,11 @@ pam_group_membership =
 courier_socket =
 
 # HTTP authentication request URL endpoint
-auth_url =
-# POST param to use for username
-user_param = username
-# POST param to use for password
-password_param = password
+http_url =
+# POST parameter to use for username
+http_user_parameter =
+# POST parameter to use for password
+http_password_parameter =
 
 
 [rights]
