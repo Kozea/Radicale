@@ -118,7 +118,8 @@ class Collection(ical.Collection):
     def _modification_time(self):
         return (
             self.session.query(func.max(DBLine.timestamp))
-            .join(DBItem).filter_by(collection_path=self.path).first())[0]
+            .join(DBItem).filter_by(collection_path=self.path).first()[0]
+            or datetime.now())
 
     @property
     def _db_collection(self):
