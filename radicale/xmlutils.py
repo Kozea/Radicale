@@ -119,9 +119,9 @@ def _response(code):
     return "HTTP/1.1 %i %s" % (code, client.responses[code])
 
 
-def _href_with_proxy_base_prefix(href):
-    href = "%s%s" % (config.get("server", "proxy_base_prefix"), href)
-    return href.replace("//", "/")
+def _href(href):
+    """Return prefixed href."""
+    return "%s%s" % (config.get("server", "base_prefix"), href.lstrip("/"))
 
 
 def name_from_path(path, collection):
@@ -179,7 +179,7 @@ def delete(path, collection):
     multistatus.append(response)
 
     href = ET.Element(_tag("D", "href"))
-    href.text = _href_with_proxy_base_prefix(path)
+    href.text = _href(path)
     response.append(href)
 
     status = ET.Element(_tag("D", "status"))
@@ -231,11 +231,8 @@ def _propfind_response(path, item, props, user):
     response = ET.Element(_tag("D", "response"))
 
     href = ET.Element(_tag("D", "href"))
-    if is_collection:
-        uri = "%s%s" % (config.get("server", "base_prefix"), item.url)
-    else:
-        uri = "%s/%s" % (path, item.name)
-    href.text = _href_with_proxy_base_prefix(uri)
+    uri = item.url if is_collection else "%s/%s" % (path, item.name)
+    href.text = _href(uri.replace("//", "/"))
     response.append(href)
 
     propstat404 = ET.Element(_tag("D", "propstat"))
@@ -255,14 +252,14 @@ def _propfind_response(path, item, props, user):
             element.text = item.etag
         elif tag == _tag("D", "principal-URL"):
             tag = ET.Element(_tag("D", "href"))
-            tag.text = _href_with_proxy_base_prefix(path)
+            tag.text = _href(path)
             element.append(tag)
         elif tag in (_tag("D", "principal-collection-set"),
                      _tag("C", "calendar-user-address-set"),
                      _tag("CR", "addressbook-home-set"),
                      _tag("C", "calendar-home-set")):
             tag = ET.Element(_tag("D", "href"))
-            tag.text = _href_with_proxy_base_prefix(path)
+            tag.text = _href(path)
             element.append(tag)
         elif tag == _tag("C", "supported-calendar-component-set"):
             # This is not a Todo
@@ -274,8 +271,7 @@ def _propfind_response(path, item, props, user):
             # pylint: enable=W0511
         elif tag == _tag("D", "current-user-principal") and user:
             tag = ET.Element(_tag("D", "href"))
-            prefixed_path = "%s/%s/" % (config.get("server", "base_prefix"), user)
-            tag.text = _href_with_proxy_base_prefix(prefixed_path)
+            tag.text = _href("/%s/" % user)
             element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
@@ -399,7 +395,7 @@ def proppatch(path, xml_request, collection):
     multistatus.append(response)
 
     href = ET.Element(_tag("D", "href"))
-    href.text = _href_with_proxy_base_prefix(path)
+    href.text = _href(path)
     response.append(href)
 
     with collection.props as collection_props:
@@ -442,23 +438,15 @@ def report(path, xml_request, collection):
     prop_element = root.find(_tag("D", "prop"))
     props = [prop.tag for prop in prop_element]
 
-    proxy_prefix = config.get("server", "proxy_base_prefix")
-    base_prefix = config.get("server", "base_prefix")
-
     if collection:
         if root.tag in (_tag("C", "calendar-multiget"),
                         _tag("CR", "addressbook-multiget")):
             # Read rfc4791-7.9 for info
-            hreferences = set()
-            for href_element in root.findall(_tag("D", "href")):
-                # skip elements that don't have the correct base prefixes
-                if not href_element.text.startswith(proxy_prefix):
-                    continue
-                unprefixed = href_element.text[len(proxy_prefix):]
-                if not unprefixed.startswith(base_prefix):
-                    continue
-                # we keep the base prefix here, to be aligned with other paths
-                hreferences.add(unprefixed)
+            base_prefix = config.get("server", "base_prefix")
+            hreferences = set(
+                href_element.text[len(base_prefix):] for href_element
+                in root.findall(_tag("D", "href"))
+                if href_element.text.startswith(base_prefix))
         else:
             hreferences = (path,)
         # TODO: handle other filters
@@ -480,9 +468,8 @@ def report(path, xml_request, collection):
     collection_timezones = collection.timezones
 
     for hreference in hreferences:
-        unprefixed_hreference = hreference[len(base_prefix):]
         # Check if the reference is an item or a collection
-        name = name_from_path(unprefixed_hreference, collection)
+        name = name_from_path(hreference, collection)
         if name:
             # Reference is an item
             path = "/".join(hreference.split("/")[:-1]) + "/"
@@ -500,7 +487,7 @@ def report(path, xml_request, collection):
             multistatus.append(response)
 
             href = ET.Element(_tag("D", "href"))
-            href.text = _href_with_proxy_base_prefix("%s/%s" % (path.rstrip("/"), item.name))
+            href.text = _href("%s/%s" % (path.rstrip("/"), item.name))
             response.append(href)
 
             propstat = ET.Element(_tag("D", "propstat"))

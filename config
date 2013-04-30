@@ -27,10 +27,8 @@ certificate = /etc/apache2/ssl/server.crt
 key = /etc/apache2/ssl/server.key
 # Reverse DNS to resolve client address in logs
 dns_lookup = True
-# base URL if / is not the CalDAV root. If set, must start with /
-base_prefix =
-# base URL if Radicale is running with / as CalDAV root, but in a subdir behind a proxy (like nginx). If set, must start with /
-proxy_base_prefix =
+# Root URL of Radicale (starting and ending with a slash)
+base_prefix = /
 
 
 [encoding]

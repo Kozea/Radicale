@@ -146,6 +146,9 @@ def run():
         finally:
             shutdown_program.set()
 
+    log.LOGGER.debug(
+        "Base URL prefix: %s" % config.get("server", "base_prefix"))
+
     # Start the servers in a different loop to avoid possible race-conditions,
     # when a server exists but another server is added to the list at the same
     # time

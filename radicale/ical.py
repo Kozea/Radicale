@@ -203,6 +203,10 @@ class Collection(object):
         The ``path`` is relative.
 
         """
+        # path == None means wrong URL
+        if path is None:
+            return []
+
         # First do normpath and then strip, to prevent access to FOLDER/../
         sane_path = posixpath.normpath(path.replace(os.sep, "/")).strip("/")
         attributes = sane_path.split("/")
@@ -490,7 +494,7 @@ class Collection(object):
     @property
     def url(self):
         """Get the standard collection URL."""
-        return "/%s/" % self.path
+        return "%s/" % self.path
 
     @property
     def version(self):
