@@ -58,18 +58,19 @@ def is_authenticated(user, password):
 
     server_is_local = (IMAP_SERVER == "localhost")
 
-    try:
-        connection.starttls()
-        log.LOGGER.debug("IMAP server connection changed to TLS.")
-        connection_is_secure = True
-    except AttributeError:
-        if not server_is_local:
-            log.LOGGER.error(
-                "Python 3.2 or newer is required for IMAP + TLS.")
-    except (imaplib.IMAP4.error, imaplib.IMAP4.abort) as exception:
-        log.LOGGER.warning(
-            "IMAP server at %s failed to accept TLS connection "
-            "because of: %s" % (IMAP_SERVER, exception))
+    if not connection_is_secure:
+        try:
+            connection.starttls()
+            log.LOGGER.debug("IMAP server connection changed to TLS.")
+            connection_is_secure = True
+        except AttributeError:
+            if not server_is_local:
+                log.LOGGER.error(
+                    "Python 3.2 or newer is required for IMAP + TLS.")
+        except (imaplib.IMAP4.error, imaplib.IMAP4.abort) as exception:
+            log.LOGGER.warning(
+                "IMAP server at %s failed to accept TLS connection "
+                "because of: %s" % (IMAP_SERVER, exception))
 
     if server_is_local and not connection_is_secure:
         log.LOGGER.warning(
