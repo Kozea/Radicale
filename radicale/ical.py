@@ -210,8 +210,8 @@ class Collection(object):
         # First do normpath and then strip, to prevent access to FOLDER/../
         sane_path = posixpath.normpath(path.replace(os.sep, "/")).strip("/")
         attributes = sane_path.split("/")
-        if not attributes:
-            return None
+        if not sane_path or not attributes:
+            return []
         if not (cls.is_leaf("/".join(attributes)) or path.endswith("/")):
             attributes.pop()
 
