@@ -293,8 +293,8 @@ class Application(object):
                 self.collect_allowed_items(items, user)
 
             if read_allowed_items or write_allowed_items or \
-                    function == self.options:
-                # Collections found, or OPTIONS request (always allowed)
+                    function == self.options or not items:
+                # Collections found, or OPTIONS request, or no items at all
                 status, headers, answer = function(
                     environ, read_allowed_items, write_allowed_items, content,
                     user)
