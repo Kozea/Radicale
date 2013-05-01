@@ -37,8 +37,8 @@ import imaplib
 from .. import config, log
 
 IMAP_SERVER = config.get("auth", "imap_hostname")
-IMAP_SERVER_PORT = config.get("auth", "imap_port")
-IMAP_USE_SSL = config.get("auth", "imap_ssl")
+IMAP_SERVER_PORT = config.getint("auth", "imap_port")
+IMAP_USE_SSL = config.getboolean("auth", "imap_ssl")
 
 
 def is_authenticated(user, password):
