@@ -43,6 +43,8 @@ IMAP_USE_SSL = config.get("auth", "imap_ssl")
 
 def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
+    if not user or not password:
+        return False
 
     log.LOGGER.debug(
         "Connecting to IMAP server %s:%s." % (IMAP_SERVER, IMAP_SERVER_PORT,))

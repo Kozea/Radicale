@@ -32,6 +32,8 @@ COURIER_SOCKET = config.get("auth", "courier_socket")
 
 def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
+    if not user or not password:
+        return False
 
     line = "%s\nlogin\n%s\n%s" % (sys.argv[0], user, password)
     line = "AUTH %i\n%s" % (len(line), line)
