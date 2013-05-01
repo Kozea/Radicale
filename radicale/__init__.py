@@ -270,8 +270,7 @@ class Application(object):
         path = environ["PATH_INFO"]
 
         # Find collection(s)
-        items = ical.Collection.from_path(
-            path, environ.get("HTTP_DEPTH", "0"))
+        items = ical.Collection.from_path(path, environ.get("HTTP_DEPTH", "0"))
 
         # Get function corresponding to method
         function = getattr(self, environ["REQUEST_METHOD"].lower())
@@ -295,7 +294,7 @@ class Application(object):
 
             if read_allowed_items or write_allowed_items or \
                     function == self.options:
-                # Collections found
+                # Collections found, or OPTIONS request (always allowed)
                 status, headers, answer = function(
                     environ, read_allowed_items, write_allowed_items, content,
                     user)
