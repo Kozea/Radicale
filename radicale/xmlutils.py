@@ -155,6 +155,11 @@ def props_from_request(root, actions=("set", "remove")):
                         result["resourcetype"] = \
                             "V%s" % resource_type.tag.upper()
                         break
+            elif prop.tag == "supported-calendar-component-set":
+                result[_tag_from_clark(prop.tag)] = ",".join(
+                    supported_comp.attrib["name"]
+                    for supported_comp in prop
+                    if supported_comp.tag == "comp")
 
     return result
 
@@ -264,7 +269,12 @@ def _propfind_response(path, item, props, user):
         elif tag == _tag("C", "supported-calendar-component-set"):
             # This is not a Todo
             # pylint: disable=W0511
-            for component in ("VTODO", "VEVENT", "VJOURNAL"):
+            human_tag = _tag_from_clark(tag)
+            if human_tag in collection_props:
+                components = collection_props[human_tag].split(",")
+            else:
+                components = ("VTODO", "VEVENT", "VJOURNAL")
+            for component in components:
                 comp = ET.Element(_tag("C", "comp"))
                 comp.set("name", component)
                 element.append(comp)
