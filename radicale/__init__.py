@@ -313,6 +313,10 @@ class Application(object):
                 "Response content:\n%s" % self.decode(answer, environ))
             headers["Content-Length"] = str(len(answer))
 
+        if config.has_section("headers"):
+            for key in config.options("headers"):
+                headers[key] = config.get("headers", key)
+
         # Start response
         status = "%i %s" % (status, client.responses.get(status, "Unknown"))
         log.LOGGER.debug("Answer status: %s" % status)

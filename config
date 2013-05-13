@@ -126,3 +126,8 @@ config = /etc/radicale/logging
 debug = False
 # Store all environment variables (including those set in the shell)
 full_environment = False
+
+
+# Additional HTTP headers
+#[headers]
+#Access-Control-Allow-Origin = *
