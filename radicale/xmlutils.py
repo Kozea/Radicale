@@ -148,18 +148,21 @@ def props_from_request(root, actions=("set", "remove")):
     prop_element = action_element.find(_tag("D", "prop"))
     if prop_element is not None:
         for prop in prop_element:
-            result[_tag_from_clark(prop.tag)] = prop.text
-            if prop.tag == "resourcetype":
+            if prop.tag == _tag("D", "resourcetype"):
                 for resource_type in prop:
-                    if resource_type.tag in ("calendar", "addressbook"):
-                        result["resourcetype"] = \
-                            "V%s" % resource_type.tag.upper()
+                    if resource_type.tag == _tag("C", "calendar"):
+                        result["tag"] = "VCALENDAR"
                         break
-            elif prop.tag == "supported-calendar-component-set":
+                    elif resource_type.tag == _tag("CR", "addressbook"):
+                        result["tag"] = "VADDRESSBOOK"
+                        break
+            elif prop.tag == _tag("C", "supported-calendar-component-set"):
                 result[_tag_from_clark(prop.tag)] = ",".join(
                     supported_comp.attrib["name"]
                     for supported_comp in prop
-                    if supported_comp.tag == "comp")
+                    if supported_comp.tag == _tag("C", "comp"))
+            else:
+                result[_tag_from_clark(prop.tag)] = prop.text
 
     return result
 
