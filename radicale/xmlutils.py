@@ -513,6 +513,9 @@ def report(path, xml_request, collection):
                 element = ET.Element(tag)
                 if tag == _tag("D", "getetag"):
                     element.text = item.etag
+                elif tag == _tag("D", "getcontenttype"):
+                    element.text = "%s; component=%s" % (
+                        item.mimetype, item.tag.lower())
                 elif tag in (_tag("C", "calendar-data"),
                              _tag("CR", "address-data")):
                     if isinstance(item, ical.Component):
