@@ -27,20 +27,20 @@ Rights are read from a file whose name is specified in the config (section
 Example:
 
 # This means user1 may read, user2 may write, user3 has full access
-[/user0/calendar]
+[user0/calendar]
 user1: r
 user2: w
 user3: rw
 
-# user0 can read /user1/cal
-[/user1/cal]
+# user0 can read user1/cal
+[user1/cal]
 user0: r
 
-# If a collection /a/b is shared and other users than the owner are supposed to
-# find the collection in a propfind request, an additional line for /a has to
+# If a collection a/b is shared and other users than the owner are supposed to
+# find the collection in a propfind request, an additional line for a has to
 # be in the defintions. E.g.:
 
-[/user0]
+[user0]
 user1: r
 
 """
