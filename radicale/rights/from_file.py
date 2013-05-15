@@ -64,7 +64,9 @@ FILENAME = os.path.expanduser(config.get("rights", "file"))
 if FILENAME:
     log.LOGGER.debug("Reading rights from file %s" % FILENAME)
     RIGHTS = ConfigParser()
-    RIGHTS.read(FILENAME)
+    if not RIGHTS.read(FILENAME):
+        log.LOGGER.error(
+            "File '%s' not found for rights management" % FILENAME)
 else:
     log.LOGGER.error("No file name configured for rights type 'from_file'")
     RIGHTS = None
