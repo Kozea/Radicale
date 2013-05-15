@@ -45,6 +45,8 @@ user1: r
 
 """
 
+import os.path
+
 from radicale import config, log
 from radicale.rights import owner_only
 # Manage Python2/3 different modules
@@ -58,7 +60,7 @@ except ImportError:
 # pylint: enable=F0401
 
 
-FILENAME = config.get("rights", "file")
+FILENAME = os.path.expanduser(config.get("rights", "file"))
 if FILENAME:
     log.LOGGER.debug("Reading rights from file %s" % FILENAME)
     RIGHTS = ConfigParser()
