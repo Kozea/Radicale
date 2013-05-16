@@ -19,7 +19,7 @@ Report Bugs
 ===========
 
 Found a bug? Want a new feature? Report a new issue on the :buglink:`Radicale
-bug-tracker` (registration needed).
+bug-tracker`.
 
 
 Hack

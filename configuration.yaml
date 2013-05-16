@@ -25,9 +25,8 @@ vcs (git):
 code browser (github):
   project name: Kozea/Radicale
 
-bug tracker (redmine):
-  base url: http://redmine.kozea.fr/
-  project name: radicale
+bug tracker (github):
+  project name: Kozea/Radicale
 
 mailing list (librelist):
   project name: radicale
