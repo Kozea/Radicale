@@ -60,16 +60,19 @@ except ImportError:
 # pylint: enable=F0401
 
 
-FILENAME = os.path.expanduser(config.get("rights", "file"))
-if FILENAME:
+FILENAME = (
+    os.path.expanduser(config.get("rights", "file")) or
+    log.LOGGER.error("No file name configured for rights type 'from_file'"))
+
+
+def _read_rights():
+    """Update the rights according to the configuration file."""
     log.LOGGER.debug("Reading rights from file %s" % FILENAME)
-    RIGHTS = ConfigParser()
-    if not RIGHTS.read(FILENAME):
+    rights = ConfigParser()
+    if not rights.read(FILENAME):
         log.LOGGER.error(
             "File '%s' not found for rights management" % FILENAME)
-else:
-    log.LOGGER.error("No file name configured for rights type 'from_file'")
-    RIGHTS = None
+    return rights
 
 
 def read_authorized(user, collection):
@@ -80,7 +83,8 @@ def read_authorized(user, collection):
         return True
     else:
         try:
-            return "r" in RIGHTS.get(collection.url.rstrip("/") or "/", user)
+            return "r" in _read_rights().get(
+                collection.url.rstrip("/") or "/", user)
         except (NoSectionError, NoOptionError):
             return False
 
@@ -93,6 +97,7 @@ def write_authorized(user, collection):
         return True
     else:
         try:
-            return "w" in RIGHTS.get(collection.url.rstrip("/") or "/", user)
+            return "w" in _read_rights().get(
+                collection.url.rstrip("/") or "/", user)
         except (NoSectionError, NoOptionError):
             return False
