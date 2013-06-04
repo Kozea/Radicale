@@ -45,37 +45,30 @@ def run():
     parser = optparse.OptionParser(version=VERSION)
     parser.add_option(
         "-d", "--daemon", action="store_true",
-        default=config.getboolean("server", "daemon"),
         help="launch as daemon")
     parser.add_option(
         "-p", "--pid",
-        default=config.get("server", "pid"),
         help="set PID filename for daemon mode")
     parser.add_option(
         "-f", "--foreground", action="store_false", dest="daemon",
         help="launch in foreground (opposite of --daemon)")
     parser.add_option(
         "-H", "--hosts",
-        default=config.get("server", "hosts"),
         help="set server hostnames and ports")
     parser.add_option(
         "-s", "--ssl", action="store_true",
-        default=config.getboolean("server", "ssl"),
         help="use SSL connection")
     parser.add_option(
         "-S", "--no-ssl", action="store_false", dest="ssl",
         help="do not use SSL connection (opposite of --ssl)")
     parser.add_option(
         "-k", "--key",
-        default=config.get("server", "key"),
         help="set private key file")
     parser.add_option(
         "-c", "--certificate",
-        default=config.get("server", "certificate"),
         help="set certificate file")
     parser.add_option(
         "-D", "--debug", action="store_true",
-        default=config.getboolean("logging", "debug"),
         help="print debug information")
     parser.add_option(
         "-C", "--config",
@@ -93,7 +86,8 @@ def run():
         if key:
             section = "logging" if key == "debug" else "server"
             value = getattr(options, key)
-            config.set(section, key, str(value))
+            if value is not None:
+                config.set(section, key, str(value))
 
     # Start logging
     log.start()
@@ -104,14 +98,14 @@ def run():
             "Configuration file '%s' not found" % options.config)
 
     # Fork if Radicale is launched as daemon
-    if options.daemon:
-        if options.pid and os.path.exists(options.pid):
-            raise OSError("PID file exists: %s" % options.pid)
+    if config.getboolean("server", "daemon"):
+        if os.path.exists(config.get("server", "pid")):
+            raise OSError("PID file exists: %s" % config.get("server", "pid"))
         pid = os.fork()
         if pid:
             try:
-                if options.pid:
-                    open(options.pid, "w").write(str(pid))
+                if config.get("server", "pid"):
+                    open(config.get("server", "pid"), "w").write(str(pid))
             finally:
                 sys.exit()
         sys.stdout = sys.stderr = open(os.devnull, "w")
@@ -121,18 +115,20 @@ def run():
         """Remove the PID files."""
         log.LOGGER.debug("Cleaning up")
         # Remove PID file
-        if options.pid and options.daemon:
-            os.unlink(options.pid)
+        if (config.get("server", "pid") and
+                config.getboolean("server", "daemon")):
+            os.unlink(config.get("server", "pid"))
 
     atexit.register(cleanup)
     log.LOGGER.info("Starting Radicale")
 
     # Create collection servers
     servers = []
-    server_class = HTTPSServer if options.ssl else HTTPServer
+    server_class = (
+        HTTPSServer if config.getboolean("server", "ssl") else HTTPServer)
     shutdown_program = threading.Event()
 
-    for host in options.hosts.split(","):
+    for host in config.get("server", "hosts").split(","):
         address, port = host.strip().rsplit(":", 1)
         address, port = address.strip("[] "), int(port)
         servers.append(
@@ -161,7 +157,7 @@ def run():
         log.LOGGER.debug(
             "Listening to %s port %s" % (
                 server.server_name, server.server_port))
-        if options.ssl:
+        if config.getboolean("server", "ssl"):
             log.LOGGER.debug("Using SSL")
         threading.Thread(target=serve_forever, args=(server,)).start()
 
