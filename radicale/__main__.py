@@ -85,7 +85,9 @@ def run():
 
     # Read in the configuration specified by the command line (if specified)
     if options.config:
-        config.read(options.config)
+        if not config.read(options.config):
+            log.LOGGER.warning(
+                "Configuration file '%s' not found" % options.config)
 
     # Update Radicale configuration according to options
     for option in parser.option_list:
