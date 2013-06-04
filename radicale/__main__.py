@@ -84,10 +84,8 @@ def run():
     options = parser.parse_args()[0]
 
     # Read in the configuration specified by the command line (if specified)
-    if options.config:
-        if not config.read(options.config):
-            log.LOGGER.warning(
-                "Configuration file '%s' not found" % options.config)
+    configuration_found = (
+        config.read(options.config) if options.config else True)
 
     # Update Radicale configuration according to options
     for option in parser.option_list:
@@ -99,6 +97,11 @@ def run():
 
     # Start logging
     log.start()
+
+    # Log a warning if the configuration file of the command line is not found
+    if not configuration_found:
+        log.LOGGER.warning(
+            "Configuration file '%s' not found" % options.config)
 
     # Fork if Radicale is launched as daemon
     if options.daemon:
