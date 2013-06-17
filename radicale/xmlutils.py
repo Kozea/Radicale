@@ -273,7 +273,8 @@ def _propfind_response(path, item, props, user):
             # This is not a Todo
             # pylint: disable=W0511
             human_tag = _tag_from_clark(tag)
-            if human_tag in collection_props:
+            if is_collection and human_tag in collection_props:
+                # TODO: what do we have to do if it's not a collection?
                 components = collection_props[human_tag].split(",")
             else:
                 components = ("VTODO", "VEVENT", "VJOURNAL")
