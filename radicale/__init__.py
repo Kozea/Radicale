@@ -59,7 +59,7 @@ NOT_ALLOWED = (client.FORBIDDEN, {}, None)
 # non-public information w/o submitting proper authentication credentials
 WRONG_CREDENTIALS = (
     client.UNAUTHORIZED,
-    {"WWW-Authenticate": "Basic realm=\"Radicale - Password Required\""},
+    {"WWW-Authenticate": "Basic realm=\"%s\"" % config.get("server", "realm")},
     None)
 
 

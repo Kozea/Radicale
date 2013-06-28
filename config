@@ -29,6 +29,8 @@ key = /etc/apache2/ssl/server.key
 dns_lookup = True
 # Root URL of Radicale (starting and ending with a slash)
 base_prefix = /
+# Message displayed in the client when a password is needed
+realm = Radicale - Password Required lol
 
 
 [encoding]

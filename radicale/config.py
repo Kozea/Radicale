@@ -46,7 +46,8 @@ INITIAL_CONFIG = {
         "certificate": "/etc/apache2/ssl/server.crt",
         "key": "/etc/apache2/ssl/server.key",
         "dns_lookup": "True",
-        "base_prefix": "/"},
+        "base_prefix": "/",
+        "realm": "Radicale - Password Required"},
     "encoding": {
         "request": "utf-8",
         "stock": "utf-8"},
