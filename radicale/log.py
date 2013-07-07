@@ -33,14 +33,14 @@ from . import config
 
 
 LOGGER = logging.getLogger()
-FILENAME = os.path.expanduser(config.get("logging", "config"))
-
 
 def start():
+    filename = os.path.expanduser(config.get("logging", "config"))
+
     """Start the logging according to the configuration."""
-    if os.path.exists(FILENAME):
+    if os.path.exists(filename):
         # Configuration taken from file
-        logging.config.fileConfig(FILENAME)
+        logging.config.fileConfig(filename)
     else:
         # Default configuration, standard output
         handler = logging.StreamHandler(sys.stdout)
