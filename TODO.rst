@@ -6,7 +6,7 @@
 ===
 
 * [IN PROGRESS] Other CalDAV clients supports
-* SQL and Git storage backends
+* Git storage backend
 * Tests
 
 
@@ -16,4 +16,3 @@
 * iCal filters and rights
 * CalDAV rights
 * CalDAV filters
-* Read-only access for foreign users

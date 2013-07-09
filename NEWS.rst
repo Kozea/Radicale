@@ -3,6 +3,19 @@
 ======
 
 
+0.8 - Rainbow
+=============
+
+* New authentication and rights management modules (by Matthias Jordan)
+* Experimental database storage
+* Command-line option for custom configuration file (by Mark Adams)
+* Root URL not at the root of a domain (by Clint Adams, Fabrice Bellet, Vincent Untz)
+* Improved support for iCal, CalDAVSync and CardDAVSync
+* Empty PROPFIND requests handled (by Christoph Polcin)
+* Colon allowed in passwords
+* Configurable realm message
+
+
 0.7.1 - Waterfalls
 ==================
 
@@ -12,7 +25,6 @@
 * Courier ACL fixed (by Benjamin Frank)
 * Always set display name to collections (by Oskari Timperi)
 * Various DELETE responses fixed
-
 
 
 0.7 - Eternal Sunshine
