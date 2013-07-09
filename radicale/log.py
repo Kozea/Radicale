@@ -33,21 +33,25 @@ from . import config
 
 
 LOGGER = logging.getLogger()
-FILENAME = os.path.expanduser(config.get("logging", "config"))
-
 
 def start():
+    filename = os.path.expanduser(config.get("logging", "config"))
+    debug = config.getboolean("logging", "debug")
+
     """Start the logging according to the configuration."""
-    if os.path.exists(FILENAME):
+    if os.path.exists(filename):
         # Configuration taken from file
-        logging.config.fileConfig(FILENAME)
+        logging.config.fileConfig(filename)
+        if debug:
+            LOGGER.setLevel(logging.DEBUG)
+            for handler in LOGGER.handlers:
+                handler.setLevel(logging.DEBUG)
     else:
         # Default configuration, standard output
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(logging.Formatter("%(message)s"))
         LOGGER.addHandler(handler)
-
-    if config.getboolean("logging", "debug"):
-        LOGGER.setLevel(logging.DEBUG)
-        for handler in LOGGER.handlers:
-            handler.setLevel(logging.DEBUG)
+        if debug:
+            LOGGER.setLevel(logging.DEBUG)
+            LOGGER.debug("Logging configuration file '%s' not found, using stdout."
+                         % filename)
