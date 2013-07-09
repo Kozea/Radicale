@@ -10,7 +10,7 @@
 * Experimental database storage
 * Command-line option for custom configuration file (by Mark Adams)
 * Root URL not at the root of a domain (by Clint Adams, Fabrice Bellet, Vincent Untz)
-* Improved support for iCal, CalDAVSync and CardDAVSync
+* Improved support for iCal, CalDAVSync, CardDAVSync, CalDavZAP and CardDavMATE
 * Empty PROPFIND requests handled (by Christoph Polcin)
 * Colon allowed in passwords
 * Configurable realm message
