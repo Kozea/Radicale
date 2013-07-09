@@ -19,7 +19,7 @@
 """
 File-based rights.
 
-The owner is implied to have all rights on their collections.
+The owners are implied to have all rights on their collections.
 
 Rights are read from a file whose name is specified in the config (section
 "right", key "file").
