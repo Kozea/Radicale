@@ -75,7 +75,7 @@ Radicale has been packaged for:
 - `OpenBSD <http://openports.se/productivity/radicale>`_ by Sergey Bronnikov,
   Stuart Henderson and Ian Darwin
 - `openSUSE
-  <http://software.opensuse.org/package/Radicale?search_term=radicale>`
+  <http://software.opensuse.org/package/Radicale?search_term=radicale>`_
 - `PyPM <http://code.activestate.com/pypm/radicale/>`_
 - `Slackware <http://schoepfer.info/slackware.xhtml#packages-network>`_ by
   Johannes Schöpfer
