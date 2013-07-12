@@ -73,13 +73,12 @@ Radicale has been packaged for:
 - `Debian <http://packages.debian.org/radicale>`_ by Jonas Smedegaard
 - `Gentoo (Sunrise Overlay) <http://bugs.gentoo.org/show_bug.cgi?id=322811>`_
   by René Neumann
-- `Mandriva <http://sophie.zarb.org/search/results?search=radicale>`_ by Jani
+- `Mandriva/Mageia <http://sophie.zarb.org/search/results?search=radicale>`_ by Jani
   Välimaa
 - `OpenBSD <http://openports.se/productivity/radicale>`_ by Sergey Bronnikov,
   Stuart Henderson and Ian Darwin
 - `openSUSE
-  <https://build.opensuse.org/package/show?package=radicale&project=home%3Acbosdonnat>`_
-  by Cédric Bosdonnat
+  <http://software.opensuse.org/package/Radicale?search_term=radicale>`_
 - `PyPM <http://code.activestate.com/pypm/radicale/>`_
 - `Slackware <http://schoepfer.info/slackware.xhtml#packages-network>`_ by
   Johannes Schöpfer
