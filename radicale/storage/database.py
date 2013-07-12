@@ -32,12 +32,16 @@ from sqlalchemy.ext.declarative import declarative_base
 from .. import config, ical
 
 
+# These are classes, not constants
+# pylint: disable=C0103
 Base = declarative_base()
 Session = sessionmaker()
 Session.configure(bind=create_engine(config.get("storage", "database_url")))
+# pylint: enable=C0103
 
 
 class DBCollection(Base):
+    """Table of collections."""
     __tablename__ = "collection"
 
     path = Column(String, primary_key=True)
@@ -48,6 +52,7 @@ class DBCollection(Base):
 
 
 class DBItem(Base):
+    """Table of collection's items."""
     __tablename__ = "item"
 
     name = Column(String, primary_key=True)
@@ -58,6 +63,7 @@ class DBItem(Base):
 
 
 class DBHeader(Base):
+    """Table of item's headers."""
     __tablename__ = "header"
 
     key = Column(String, primary_key=True)
@@ -69,6 +75,7 @@ class DBHeader(Base):
 
 
 class DBLine(Base):
+    """Table of item's lines."""
     __tablename__ = "line"
 
     key = Column(String, primary_key=True)
@@ -81,6 +88,7 @@ class DBLine(Base):
 
 
 class DBProperty(Base):
+    """Table of collection's properties."""
     __tablename__ = "property"
 
     key = Column(String, primary_key=True)
@@ -102,6 +110,7 @@ class Collection(ical.Collection):
         self.session.commit()
 
     def _query(self, item_types):
+        """Get collection's items matching ``item_types``."""
         item_objects = []
         for item_type in item_types:
             items = (
@@ -116,6 +125,7 @@ class Collection(ical.Collection):
 
     @property
     def _modification_time(self):
+        """Collection's last modification time."""
         return (
             self.session.query(func.max(DBLine.timestamp))
             .join(DBItem).filter_by(collection_path=self.path).first()[0]
@@ -123,6 +133,7 @@ class Collection(ical.Collection):
 
     @property
     def _db_collection(self):
+        """Collection's object mapped to the table line."""
         return self.session.query(DBCollection).get(self.path)
 
     def write(self, headers=None, items=None):
@@ -272,3 +283,10 @@ class Collection(ical.Collection):
     @property
     def cards(self):
         return self._query((ical.Card,))
+
+    def save(self):
+        """Save the text into the collection.
+
+        This method is not used for databases.
+
+        """

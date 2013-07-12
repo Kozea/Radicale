@@ -36,10 +36,10 @@ LOGGER = logging.getLogger()
 
 
 def start():
+    """Start the logging according to the configuration."""
     filename = os.path.expanduser(config.get("logging", "config"))
     debug = config.getboolean("logging", "debug")
 
-    """Start the logging according to the configuration."""
     if os.path.exists(filename):
         # Configuration taken from file
         logging.config.fileConfig(filename)

@@ -39,10 +39,10 @@ import wsgiref.simple_server
 # pylint: disable=F0401,E0611
 try:
     from http import client
-    from urllib.parse import quote, unquote, urlparse
+    from urllib.parse import unquote, urlparse
 except ImportError:
     import httplib as client
-    from urllib import quote, unquote
+    from urllib import unquote
     from urlparse import urlparse
 # pylint: enable=F0401,E0611
 
