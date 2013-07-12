@@ -34,6 +34,7 @@ from . import config
 
 LOGGER = logging.getLogger()
 
+
 def start():
     filename = os.path.expanduser(config.get("logging", "config"))
     debug = config.getboolean("logging", "debug")
@@ -53,5 +54,6 @@ def start():
         LOGGER.addHandler(handler)
         if debug:
             LOGGER.setLevel(logging.DEBUG)
-            LOGGER.debug("Logging configuration file '%s' not found, using stdout."
-                         % filename)
+            LOGGER.debug(
+                "Logging configuration file '%s' not found, using stdout." %
+                filename)
