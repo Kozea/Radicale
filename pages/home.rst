@@ -50,6 +50,8 @@ Radicale supports the latest versions of:
   and `CardDAV-Sync
   <https://play.google.com/store/apps/details?id=org.dmfs.carddav.Sync>`_
   for `Google Android <http://www.android.com/>`_
+- `CalDavZAP <http://www.inf-it.com/open-source/clients/caldavzap/>`_
+- `CardDavMATE <http://www.inf-it.com/open-source/clients/carddavmate/>`_
 - `Apple iPhone <http://www.apple.com/iphone/>`_
 - `Apple iCal <http://www.apple.com/macosx/apps/>`_
 - `syncEvolution <https://syncevolution.org/>`_
