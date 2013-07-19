@@ -74,7 +74,9 @@ INITIAL_CONFIG = {
         "http_password_parameter": ""},
     "rights": {
         "type": "None",
-        "file": ""},
+        "file": "",
+        "regex_file": "",
+        "regex_secondary": "owner_only"},
     "storage": {
         "type": "filesystem",
         "filesystem_folder": os.path.expanduser(
