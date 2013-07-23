@@ -96,11 +96,17 @@ http_password_parameter =
 
 [rights]
 # Rights management method
-# Value: None | owner_only | owner_write | from_file
+# Value: None | owner_only | owner_write | from_file | regex
 type = None
 
 # File for rights management from_file
 file = ~/.config/radicale/rights
+
+
+# File for rights management regex
+regex_file =~/.config/radicale/regex
+# use this as alternative method
+regex_secondary = owner_only
 
 
 [storage]
