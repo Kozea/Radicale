@@ -85,7 +85,7 @@ Radicale's one and your calendar won't be remotely accessible.
 Next window asks you to provide information about remote calendar
 access. Protocol used by Radicale is ``CalDAV``. A standard location for a
 basic use of a Radicale calendar is ``http://localhost:5232/user/calendar/``,
-where you can replace ``user`` and ``calendar`` by some strings of your
+where you can replace ``user`` and ``calendar.ics`` by some strings of your
 choice. Calendars are automatically created if needed.
 
 You can now customize your calendar by giving it a nickname and a color. This
@@ -96,7 +96,9 @@ and tasks to your calendar. All events and tasks are stored in the server, they
 can be accessed and modified from multiple clients by multiple users at the
 same time.
 
-Lightning and Thunderbird cannot access CardDAV servers yet.
+Lightning and Thunderbird cannot access CardDAV servers yet. Also, as of version 
+17.0.5 the SOGo Connector addon is not fully functionally and will create extra
+address book entries with every sync.
 
 Evolution
 ~~~~~~~~~
@@ -126,6 +128,8 @@ Contacts
 KOrganizer
 ~~~~~~~~~~
 
+Calendars
++++++++++
 *Tested with 4.8.3, you need one running on Akonadi for Cal/CarDav support.*
 
 The procedure below can also be done trough the sidebar "Calendar Manager".
@@ -134,14 +138,14 @@ But to ensure it works for everyone this examples uses the menu-bar.
 1. Click ``Settings -> Configure KOrganizer``.
 2. Click on ``General -> Calendars``.
 3. Click on ``Add``.
-4. Choice ``DAV groupware resource`` (and click ``OK``).
+4. Choose ``DAV groupware resource`` (and click ``OK``).
 5. Enter your username/passord (and click on ``Next``).
 6. Select ``Configure the resource manually`` (and click on ``Finish``).
 7. Fill in a Display name.
 8. Fill in your Username and Password.
 9. Click ``Add``.
-10. Choice ``CalDav``. (CardDav might also work, didn't test.)
-11. For remote URL enter http://myserver:5232/Username/Calandar
+10. Choose ``CalDav``.
+11. For remote URL enter http://myserver:5232/Username/Calendar.ics
 12. Click ``Fetch``.
 13. Select desired calendar.
 14. Hit ``OK``.
@@ -152,22 +156,37 @@ But to ensure it works for everyone this examples uses the menu-bar.
 .. note::
     After you created a calender in a collection you can also use http://myserve:5232/Username/ as an URL
     This will then list all available calendars.
+    
+Contacts
+++++++++
+
+You can add a address book analogously to the above instructions, just choose 
+CardDav and http://myserver:5232/Username/AddressBook.vcf in step 10 and 11. 
+Also, if you already have a calendar set up you can add an address book to its
+"DAV groupware resource" under Configure-Kontact -> Calendar -> General -> 
+Calendars -> Modify. This way you don't have to enter username and password
+twice.
 
 
 CalDAV-Sync
 ~~~~~~~~~~~
 
 CalDAV-Sync is implemented as sync adapter to integrate seamlessly with 
-any calendar app and widget. Therefor you have to access it via 
+any calendar app and widget. Therefore you have to access it via 
 ``Accounts & Sync`` settings after installing it from the Market.
 
 So, to add new calendars to your phone open ``Accounts & Sync`` settings 
 and tap on ``Add account``, selecting CalDAV as type. In the next view, 
 you have to switch to Manual Mode. Enter the full CalDAV URL of your Radicale 
 account (e.g. http://example.com:5232/Username/) and corresponding login data.
+If you want to create a new calendar you have to specify its full URL e.g.
+http://example.com:5232/Username/Calendar.ics/ . 
 
 Tap on ``Next`` and the app checks for all available calendars 
-on your account, listing them in the next view. You can now select calendars 
+on your account, listing them in the next view. (Note: CalDAV-Sync will not 
+only check under the url you entered but also under 
+http://example.com:5232/UsernameYouEnteredForLogin/. This might cause strange 
+errors.) You can now select calendars 
 you want to sync and set a local nickname and color for each. Hitting ``Next`` 
 again brings up the last page. Enter your email address and uncheck ``Sync 
 from server to phone only`` if you want to use two-way-sync.
@@ -183,7 +202,8 @@ in the same way you were using Google calendars before.
 CardDAV-Sync
 ~~~~~~~~~~~~
 
-*To be written*
+Set up works like CalDAV-Sync, just use .vcf instead of .ics if you enter the
+url, e.g. http://example.com:5232/Username/AddressBook.vcf/
 
 aCal
 ~~~~
