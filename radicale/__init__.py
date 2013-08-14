@@ -131,7 +131,6 @@ class Application(object):
         """Initialize application."""
         super(Application, self).__init__()
         auth.load()
-        rights.load()
         storage.load()
         self.encoding = config.get("encoding", "request")
         if config.getboolean("logging", "full_environment"):
@@ -190,7 +189,7 @@ class Application(object):
 
         for item in items:
             if isinstance(item, ical.Collection):
-                if rights.read_authorized(user, item):
+                if rights.authorized(user, item, "r"):
                     log.LOGGER.debug(
                         "%s has read access to collection %s" %
                         (user or "Anonymous", item.url or "/"))
@@ -202,7 +201,7 @@ class Application(object):
                         (user or "Anonymous", item.url or "/"))
                     read_last_collection_allowed = False
 
-                if rights.write_authorized(user, item):
+                if rights.authorized(user, item, "w"):
                     log.LOGGER.debug(
                         "%s has write access to collection %s" %
                         (user or "Anonymous", item.url or "/"))

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2013 Guillaume Ayoub
+# Copyright © 2008 Nicolas Kandel
+# Copyright © 2008 Pascal Halter
+# Copyright © 2008-2013 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,60 +19,14 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Regex-based rights.
-
-Regexes are read from a file whose name is specified in the config (section
-"right", key "file").
-
-Authentication login is matched against the "user" key, and collection's path
-is matched against the "collection" key. You can use Python's ConfigParser
-interpolation values %(login)s and %(path)s. You can also get groups from the
-user regex in the collection with {0}, {1}, etc.
-
-Section names are only used for naming the rule.
-
-Leading or ending slashes are trimmed from collection's path.
-
-Examples:
-
-# This means all users starting with "admin" may read any collection
-[admin]
-user: ^admin.*\|.+?$
-collection: .*
-permission: r
-
-# This means all users may read and write any collection starting with public.
-# We do so by just not testing against the user string.
-[public]
-user: .*
-collection: ^public(/.+)?$
-permission: rw
-
-# A little more complex: give read access to users from a domain for all
-# collections of all the users (ie. user@domain.tld can read domain/*).
-[domain-wide-access]
-user: ^.+@(.+)\..+$
-collection: ^{0}/.+$
-permission: r
-
-# Allow authenticated user to read all collections
-[allow-everyone-read]
-user: .*
-collection: .*
-permission: r
-
-# Give write access to owners
-[owner-write]
-user: .*
-collection: ^%(login)s/.+$
-permission: w
+Rights management.
 
 """
 
-import os.path
 import re
+import os.path
 
-from radicale import config, log
+from . import config, log
 
 # Manage Python2/3 different modules
 # pylint: disable=F0401
@@ -84,16 +40,27 @@ except ImportError:
 FILENAME = (
     os.path.expanduser(config.get("rights", "file")) or
     log.LOGGER.error("No file name configured for rights type 'regex'"))
+DEFINED_RIGHTS = {
+    "none": "[rw]\nuser:.*\ncollection:.*\npermission:rw",
+    "owner_write": "[r]\nuser:.*\ncollection:.*\npermission:r\n"
+                   "[w]\nuser:.*\ncollection:^%(login)s/.+$\npermission:w",
+    "owner_only": "[rw]\nuser:.\ncollection: ^%(login)s/.+$\npermission:rw"}
 
 
 def _read_from_sections(user, collection, permission):
     """Get regex sections."""
-    log.LOGGER.debug("Reading regex from file %s" % FILENAME)
     regex = ConfigParser({"login": user, "path": collection})
-    if not regex.read(FILENAME):
-        log.LOGGER.error(
-            "File '%s' not found for rights management type 'regex'" %
-            FILENAME)
+    rights_type = config.get("rights", "type").lower()
+    if rights_type in DEFINED_RIGHTS:
+        log.LOGGER.debug("Rights type '%s'" % rights_type)
+        regex.read_string(DEFINED_RIGHTS[rights_type])
+    elif rights_type == "from_file":
+        log.LOGGER.debug("Reading rights from file %s" % FILENAME)
+        if not regex.read(FILENAME):
+            log.LOGGER.error("File '%s' not found for rights" % FILENAME)
+            return False
+    else:
+        log.LOGGER.error("Unknown rights type '%s'" % rights_type)
         return False
 
     for section in regex.sections():
@@ -110,17 +77,10 @@ def _read_from_sections(user, collection, permission):
                 if permission in regex.get(section, "permission"):
                     return True
         log.LOGGER.debug("Section '%s' does not match" % section)
-
     return False
 
 
-def read_authorized(user, collection):
-    """Check if the user is allowed to read the collection."""
+def authorized(user, collection, right):
+    """Check if the user is allowed to read or write the collection."""
     return user and _read_from_sections(
-        user, collection.url.rstrip("/") or "/", "r")
-
-
-def write_authorized(user, collection):
-    """Check if the user is allowed to write the collection."""
-    return user and _read_from_sections(
-        user, collection.url.rstrip("/") or "/", "w")
+        user, collection.url.rstrip("/") or "/", right)

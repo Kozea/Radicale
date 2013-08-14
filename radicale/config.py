@@ -74,7 +74,7 @@ INITIAL_CONFIG = {
         "http_password_parameter": ""},
     "rights": {
         "type": "None",
-        "file": ""},
+        "file": "~/.config/radicale/rights"},
     "storage": {
         "type": "filesystem",
         "filesystem_folder": os.path.expanduser(
