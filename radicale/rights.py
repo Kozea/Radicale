@@ -37,9 +37,7 @@ except ImportError:
 # pylint: enable=F0401
 
 
-FILENAME = (
-    os.path.expanduser(config.get("rights", "file")) or
-    log.LOGGER.error("No file name configured for rights type 'regex'"))
+FILENAME = os.path.expanduser(config.get("rights", "file"))
 DEFINED_RIGHTS = {
     "none": "[rw]\nuser:.*\ncollection:.*\npermission:rw",
     "owner_write": "[r]\nuser:.*\ncollection:.*\npermission:r\n"
