@@ -54,8 +54,7 @@ setup(
                   "Radicale-%s.tar.gz" % radicale.VERSION),
     license="GNU GPL v3",
     platforms="Any",
-    packages=[
-        "radicale", "radicale.auth", "radicale.rights", "radicale.storage"],
+    packages=["radicale", "radicale.auth", "radicale.storage"],
     provides=["radicale"],
     scripts=["bin/radicale"],
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
