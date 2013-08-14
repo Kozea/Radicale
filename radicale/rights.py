@@ -38,8 +38,8 @@ except ImportError:
 
 
 FILENAME = os.path.expanduser(config.get("rights", "file"))
+TYPE = config.get("rights", "type").lower()
 DEFINED_RIGHTS = {
-    "none": "[rw]\nuser:.*\ncollection:.*\npermission:rw",
     "owner_write": "[r]\nuser:.*\ncollection:.*\npermission:r\n"
                    "[w]\nuser:.*\ncollection:^%(login)s/.+$\npermission:w",
     "owner_only": "[rw]\nuser:.\ncollection: ^%(login)s/.+$\npermission:rw"}
@@ -48,17 +48,16 @@ DEFINED_RIGHTS = {
 def _read_from_sections(user, collection, permission):
     """Get regex sections."""
     regex = ConfigParser({"login": user, "path": collection})
-    rights_type = config.get("rights", "type").lower()
-    if rights_type in DEFINED_RIGHTS:
-        log.LOGGER.debug("Rights type '%s'" % rights_type)
-        regex.read_string(DEFINED_RIGHTS[rights_type])
-    elif rights_type == "from_file":
+    if TYPE in DEFINED_RIGHTS:
+        log.LOGGER.debug("Rights type '%s'" % TYPE)
+        regex.read_string(DEFINED_RIGHTS[TYPE])
+    elif TYPE == "from_file":
         log.LOGGER.debug("Reading rights from file %s" % FILENAME)
         if not regex.read(FILENAME):
             log.LOGGER.error("File '%s' not found for rights" % FILENAME)
             return False
     else:
-        log.LOGGER.error("Unknown rights type '%s'" % rights_type)
+        log.LOGGER.error("Unknown rights type '%s'" % TYPE)
         return False
 
     for section in regex.sections():
@@ -80,5 +79,5 @@ def _read_from_sections(user, collection, permission):
 
 def authorized(user, collection, right):
     """Check if the user is allowed to read or write the collection."""
-    return user and _read_from_sections(
-        user, collection.url.rstrip("/") or "/", right)
+    return TYPE == "none" or (user and _read_from_sections(
+        user, collection.url.rstrip("/") or "/", right))

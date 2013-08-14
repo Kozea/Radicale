@@ -302,8 +302,7 @@ class Application(object):
                 status, headers, answer = NOT_ALLOWED
         else:
             # Unknown or unauthorized user
-            log.LOGGER.info(
-                "%s refused" % (user or "Anonymous user"))
+            log.LOGGER.info("%s refused" % (user or "Anonymous user"))
             status, headers, answer = WRONG_CREDENTIALS
 
         # Set content length
