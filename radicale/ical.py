@@ -435,6 +435,14 @@ class Collection(object):
             return props.get("D:displayname", self.path.split(os.path.sep)[-1])
 
     @property
+    def color(self):
+        """Collection color."""
+        with self.props as props:
+            if "A:calendar-color" not in props:
+                props["A:calendar-color"] = "#5ba209"
+            return props["A:calendar-color"]
+
+    @property
     def headers(self):
         """Find headers items in collection."""
         header_lines = []
