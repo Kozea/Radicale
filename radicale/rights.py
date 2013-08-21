@@ -24,6 +24,7 @@ Rights management.
 """
 
 import re
+import io
 import os.path
 
 from . import config, log
@@ -50,7 +51,7 @@ def _read_from_sections(user, collection, permission):
     regex = ConfigParser({"login": user, "path": collection})
     if TYPE in DEFINED_RIGHTS:
         log.LOGGER.debug("Rights type '%s'" % TYPE)
-        regex.read_string(DEFINED_RIGHTS[TYPE])
+        regex.readfp(io.BytesIO(DEFINED_RIGHTS[TYPE]))
     elif TYPE == "from_file":
         log.LOGGER.debug("Reading rights from file %s" % FILENAME)
         if not regex.read(FILENAME):
