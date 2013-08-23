@@ -399,7 +399,7 @@ class Collection(object):
                 try:
                     tag = open(self.path).readlines()[0][6:].rstrip()
                 except IOError:
-                    if self.path.endswith(".vcf") or "carddav" in self.path:
+                    if self.path.endswith((".vcf", "/carddav")):
                         props["tag"] = "VADDRESSBOOK"
                     else:
                         props["tag"] = "VCALENDAR"
