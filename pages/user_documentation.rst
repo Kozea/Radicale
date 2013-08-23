@@ -331,9 +331,31 @@ now set-up. You can close the ``Preferences`` window.
 Contacts
 ++++++++
 
-**Contacts do not work yet with Radicale and Apple's clients.** If you are
-interested in this feature, please check this `bug report
-<https://github.com/Kozea/Radicale/issues/32>`_.
+In Contacts 7 on OS X 10.8.4 (previously known as AddressBook):
+
+1. Open the ``Preferences`` dialog and select the ``Accounts`` tab.
+2. Click the ``+`` button at the lower left to open the account creation wizard
+3. As ``Account type`` select ``CardDAV``.
+4. Add any ``User name`` you like.
+5. The ``Password`` field can be left empty (we did not configure
+   authentication).
+6. As ``Server address`` use ``domain:port``, for example ``localhost:5232``
+   (this would be the case if you start an unconfigured radicale on your local
+   machine).
+7. Click ``Create``. Contacts my complain about an `Unsecured Connection` if you
+   don't have SSL enabled. Click ``Create`` again.
+8. You might want to change the ``Description`` of the newly added account to
+   something more readable. (optional)
+9. Switch to the ``General`` tab in the preferences and select the radicale server
+   as ``Default Account`` at the bottom of the screen. It probably shows up as the
+   ```domain:port`` combination or the name you choose if you changed the 
+   description. Newly added contacts are added to the default account and by default
+   this will be locally on `On My Mac`.
+
+.. important::
+   This feature has recently been added and does only work with the latest version
+   (since commit 2cd90c6a4a). Version 0.8 works for reading CardDAV contacts but can
+   not add new contacts.
 
 syncEvolution
 ~~~~~~~~~~~~~
