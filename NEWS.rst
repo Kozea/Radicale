@@ -3,6 +3,13 @@
 ======
 
 
+0.8.1 - *Not released yet*
+==========================
+
+* Clean rights manager based on regular expressions (by Sweil)
+* Support of contacts for Apple's clients
+
+
 0.8 - Rainbow
 =============
 
