@@ -212,7 +212,10 @@ class Collection(object):
         attributes = sane_path.split("/")
         if not attributes:
             return []
-        if not (cls.is_leaf("/".join(attributes)) or path.endswith("/")):
+
+        # Try to guess if the path leads to a collection or an item
+        if not (cls.is_leaf("/".join(attributes)) or
+                path.endswith(("/", ".ics", ".vcf", "/caldav", "/carddav"))):
             attributes.pop()
 
         result = []
