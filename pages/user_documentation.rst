@@ -257,7 +257,7 @@ that are critical for proper operation.
 
 1. From the Home screen, open ``Settings``
 2. Select ``Mail, Contacts, Calendars``
-3. Select ``Add Account`` →  ``Other`` →  ``Add CalDAV Account``
+3. Select ``Add Account...`` →  ``Other`` →  ``Add CalDAV Account``
 4. Enter the server URL here, including ``https``, the port, and the user/calendar
    path, ex: https://myserver.domain.com:3000/bob/birthdays/
 5. Enter your username and password as defined in your server config
@@ -281,9 +281,30 @@ that are critical for proper operation.
 Contacts
 ++++++++
 
-**Contacts do not work yet with Radicale and Apple's clients.** If you are
-interested in this feature, please check this `bug report
-<https://github.com/Kozea/Radicale/issues/32>`_.
+Contacts
+++++++++
+
+In Contacts on iOS 6:
+
+1.  From the Home screen, open ``Settings``
+2.  Select ``Mail, Contacts, Calendars``
+3.  Select ``Add Account...`` →  ``Other`` →  ``Add CardDAV Account``
+4.  As ``Server`` use the radicale server URL with port, for example ``localhost:5232``
+5.  Add any ``User name`` you like (if you didn't configure authentication)
+6.  Add any ``Password`` you like (again, if you didn't configure authentication)
+7.  Change the ``Description`` to something more readable (optional)
+8.  Tap ``Next``
+9.  An alert showing `Cannot Connect Using SSL` will pop up as we haven't configured
+    SSL yet, ``Continue`` for now
+10. Back on the ``Mail, Contacts, Calendars`` screen you scroll to the ``Contacts`` section,
+    select the radicale server as ``Default Account`` when you want to save new contacts to
+    the radicale server
+11. Exit to the Home screen and open ``Contacts``, tap ``Groups``, you should see the
+    radicale server
+
+.. note::
+   You'll need version 0.8.1 or up for this to work. Earlier versions will forget your new
+   settings after a reboot.
 
 OS X
 ~~~~
@@ -352,8 +373,8 @@ In Contacts 7 (previously known as AddressBook):
    added contacts are added to the default account and by default this will be the
    local `On My Mac` account.
 
-.. important::
-   You'll need version 0.8.1 or up for this to work. Earlier version can read CardDAV
+.. note::
+   You'll need version 0.8.1 or up for this to work. Earlier versions can read CardDAV
    contacts but can't add new contacts.
 
 syncEvolution
