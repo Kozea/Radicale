@@ -289,7 +289,7 @@ In Contacts on iOS 6:
 1.  From the Home screen, open ``Settings``
 2.  Select ``Mail, Contacts, Calendars``
 3.  Select ``Add Account...`` →  ``Other`` →  ``Add CardDAV Account``
-4.  As ``Server`` use the radicale server URL with port, for example ``localhost:5232``
+4.  As ``Server`` use the Radicale server URL with port, for example ``localhost:5232``
 5.  Add any ``User name`` you like (if you didn't configure authentication)
 6.  Add any ``Password`` you like (again, if you didn't configure authentication)
 7.  Change the ``Description`` to something more readable (optional)
@@ -297,10 +297,10 @@ In Contacts on iOS 6:
 9.  An alert showing `Cannot Connect Using SSL` will pop up as we haven't configured
     SSL yet, ``Continue`` for now
 10. Back on the ``Mail, Contacts, Calendars`` screen you scroll to the ``Contacts`` section,
-    select the radicale server as ``Default Account`` when you want to save new contacts to
-    the radicale server
+    select the Radicale server as ``Default Account`` when you want to save new contacts to
+    the Radicale server
 11. Exit to the Home screen and open ``Contacts``, tap ``Groups``, you should see the
-    radicale server
+    Radicale server
 
 .. note::
    You'll need version 0.8.1 or up for this to work. Earlier versions will forget your new
@@ -326,12 +326,12 @@ In iCal 4.0 or iCal 5.0:
 5. The ``Password`` field can be left empty (we did not configure
    authentication)
 6. As ``Server address`` use ``domain:port``, for example ``localhost:5232``
-   (this would be the case if you start an unconfigured radicale on your local
+   (this would be the case if you start an unconfigured Radicale on your local
    machine)
 
 Click ``Create``. The wizard will now tell you, that no encryption is in place
 (``Unsecured Connection``). This is expected and will change if you configure
-radicale to use SSL. Click ``Continue``.
+Radicale to use SSL. Click ``Continue``.
 
 .. warning::
    In iCal 5.x, please check twice that the ``Sync all entries`` option is
@@ -361,13 +361,13 @@ In Contacts 7 (previously known as AddressBook):
 5. The ``Password`` field can be left empty (if we didn't configure
    authentication).
 6. As ``Server address`` use ``domain:port``, for example ``localhost:5232``
-   (this would be the case if you start an unconfigured radicale server on your local
+   (this would be the case if you start an unconfigured Radicale server on your local
    machine).
 7. Click ``Create``. Contacts will complain about an `Unsecured Connection` if you
    don't have SSL enabled. Click ``Create`` again.
 8. You might want to change the ``Description`` of the newly added account to
    something more readable. (optional)
-9. Switch to the ``General`` tab in the preferences and select the radicale server
+9. Switch to the ``General`` tab in the preferences and select the Radicale server
    as ``Default Account`` at the bottom of the screen. It probably shows up as
    ```domain:port`` or the name you choose if you changed the description. Newly
    added contacts are added to the default account and by default this will be the
