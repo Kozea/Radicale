@@ -267,7 +267,7 @@ aside > header {
   transition: background-color 0.3s linear;
 }
 
-#rss:hover, #rss:focus {
+#rss:hover, #rss:focus, #editable:hover, #editable:focus {
   background-color: #E70;
   box-shadow: 0 0 5px #D60;
 }
