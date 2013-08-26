@@ -9,6 +9,8 @@
 :Abstract: This document is a description for installing and using the Radicale
  calendar and contact Server.
 
+.. editable::
+
 .. contents::
    :depth: 3
 

@@ -259,7 +259,7 @@ aside > header {
   margin-top:-1em;
 }
 
-#rss {
+#rss, #editable {
   background-color: #a40000;
   position: fixed;
   right: 20px;
