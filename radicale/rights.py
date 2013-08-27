@@ -55,7 +55,7 @@ TYPE = config.get("rights", "type").lower()
 DEFINED_RIGHTS = {
     "owner_write": "[r]\nuser:.*\ncollection:.*\npermission:r\n"
                    "[w]\nuser:.*\ncollection:^%(login)s/.+$\npermission:w",
-    "owner_only": "[rw]\nuser:.\ncollection: ^%(login)s/.+$\npermission:rw"}
+    "owner_only": "[rw]\nuser:.*\ncollection:^%(login)s/.+$\npermission:rw"}
 
 
 def _read_from_sections(user, collection, permission):
