@@ -32,6 +32,15 @@ try:
 except ImportError:
     # Python 2.6 has no OrderedDict, use a dict instead
     OrderedDict = dict  # pylint: disable=C0103
+
+# Manage Python2/3 different modules
+# pylint: disable=F0401,E0611
+try:
+    from urllib.parse import unquote
+except ImportError:
+    from urllib import unquote
+# pylint: enable=F0401,E0611
+
 import re
 import xml.etree.ElementTree as ET
 
@@ -458,9 +467,9 @@ def report(path, xml_request, collection):
             # Read rfc4791-7.9 for info
             base_prefix = config.get("server", "base_prefix")
             hreferences = set(
-                href_element.text[len(base_prefix):] for href_element
+                unquote(href_element.text)[len(base_prefix):] for href_element
                 in root.findall(_tag("D", "href"))
-                if href_element.text.startswith(base_prefix))
+                if unquote(href_element.text).startswith(base_prefix))
         else:
             hreferences = (path,)
         # TODO: handle other filters
