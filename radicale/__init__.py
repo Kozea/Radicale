@@ -273,10 +273,15 @@ class Application(object):
         # Ask authentication backend to check rights
         authorization = environ.get("HTTP_AUTHORIZATION", None)
 
+        # Get the apache authentified user
+        remote_user = environ.get("REMOTE_USER", None)
+
         if authorization:
             authorization = authorization.lstrip("Basic").strip()
             user, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
+        elif remote_user:
+            user, password = remote_user, None
         else:
             user = password = None
 
