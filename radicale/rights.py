@@ -21,6 +21,18 @@
 """
 Rights management.
 
+Rights are based on a regex-based file whose name is specified in the config
+(section "right", key "file").
+
+Authentication login is matched against the "user" key, and collection's path
+is matched against the "collection" key. You can use Python's ConfigParser
+interpolation values %(login)s and %(path)s. You can also get groups from the
+user regex in the collection with {0}, {1}, etc.
+
+Section names are only used for naming the rule.
+
+Leading or ending slashes are trimmed from collection's path.
+
 """
 
 import re
