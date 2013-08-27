@@ -27,7 +27,8 @@ Define the main classes of a collection as seen from the server.
 
 import os
 import posixpath
-import uuid
+from uuid import uuid4
+from random import randint
 from contextlib import contextmanager
 
 
@@ -102,7 +103,7 @@ class Item(object):
                 self.text = self.text.replace(
                     "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
         else:
-            self._name = str(uuid.uuid4())
+            self._name = str(uuid4())
             self.text = self.text.replace(
                 "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
 
@@ -442,7 +443,7 @@ class Collection(object):
         """Collection color."""
         with self.props as props:
             if "A:calendar-color" not in props:
-                props["A:calendar-color"] = "#5ba209"
+                props["A:calendar-color"] = "#%x" % randint(0, 255 ** 3 - 1)
             return props["A:calendar-color"]
 
     @property
