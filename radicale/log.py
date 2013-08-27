@@ -55,5 +55,5 @@ def start():
         if debug:
             LOGGER.setLevel(logging.DEBUG)
             LOGGER.debug(
-                "Logging configuration file '%s' not found, using stdout.",
+                "Logging configuration file '%s' not found, using stdout." %
                 filename)
