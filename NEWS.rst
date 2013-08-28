@@ -8,6 +8,8 @@
 
 * Clean rights manager based on regular expressions (by Sweil)
 * Support of contacts for Apple's clients
+* Support colors (by Jochen Sprickerhof)
+* Decode URLs in XML (by Jean-Marc Martins)
 
 
 0.8 - Rainbow
