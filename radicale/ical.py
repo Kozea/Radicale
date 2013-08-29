@@ -107,6 +107,12 @@ class Item(object):
             self.text = self.text.replace(
                 "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
 
+    def __hash__(self):
+        return hash(self.text)
+
+    def __eq__(self, item):
+        return isinstance(item, Item) and self.text == item.text
+
     @property
     def etag(self):
         """Item etag.
@@ -114,7 +120,7 @@ class Item(object):
         Etag is mainly used to know if an item has changed.
 
         """
-        return '"%s"' % hash(self.text)
+        return '"%s"' % hash(self)
 
     @property
     def name(self):
@@ -487,7 +493,7 @@ class Collection(object):
 
     @property
     def timezones(self):
-        """Get list of ``Timezome`` items in calendar."""
+        """Get list of ``Timezone`` items in calendar."""
         return self._parse(self.text, (Timezone,))
 
     @property
@@ -498,10 +504,7 @@ class Collection(object):
     @property
     def owner_url(self):
         """Get the collection URL according to its owner."""
-        if self.owner:
-            return "/%s/" % self.owner
-        else:
-            return None
+        return "/%s/" % self.owner if self.owner else None
 
     @property
     def url(self):
