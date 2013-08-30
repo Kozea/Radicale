@@ -712,7 +712,7 @@ You can set read an write rights for collections according to the authenticated
 user and the owner of the collection.
 
 The *owner of a collection* is determined by the URL of the collection. For
-example, http://my.server.com:5232/anna/calendar.ics/ is owned by the user
+example, ``http://my.server.com:5232/anna/calendar.ics/`` is owned by the user
 called ``anna``.
 
 The *authenticated user* is the login used for authentication.
