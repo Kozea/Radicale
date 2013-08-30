@@ -6,6 +6,8 @@
 0.8.1 - *Not released yet*
 ==========================
 
+* 1-file-per-event storage (by Jean-Marc Martins)
+* Git support for filesystem storages (by Jean-Marc Martins)
 * Clean rights manager based on regular expressions (by Sweil)
 * Support of contacts for Apple's clients
 * Support colors (by Jochen Sprickerhof)
