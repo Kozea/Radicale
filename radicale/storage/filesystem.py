@@ -35,11 +35,9 @@ FOLDER = os.path.expanduser(config.get("storage", "filesystem_folder"))
 
 try:
     from dulwich.repo import Repo
-except ImportError:
-    GIT_FOLDER = None
-else:
-    GIT_FOLDER = (os.path.join(FOLDER, ".git")
-                  if os.path.isdir(os.path.join(FOLDER, ".git")) else None)
+    GIT_REPOSITORY = Repo(os.path.join(FOLDER, ".git"))
+except:
+    GIT_REPOSITORY = None
 
 
 # This function overrides the builtin ``open`` function for this module
@@ -52,11 +50,10 @@ def open(path, mode="r"):
     with codecs.open(abs_path, mode, config.get("encoding", "stock")) as fd:
         yield fd
     # On exit
-    if GIT_FOLDER and mode == "w":
-        repo = Repo(FOLDER)
+    if GIT_REPOSITORY and mode == "w":
         path = os.path.relpath(abs_path, FOLDER)
-        repo.stage([path])
-        repo.do_commit("Commit by Radicale")
+        GIT_REPOSITORY.stage([path])
+        GIT_REPOSITORY.do_commit("Commit by Radicale")
 # pylint: enable=W0622
 
 
