@@ -27,19 +27,36 @@ import posixpath
 import json
 import time
 from contextlib import contextmanager
-
 from .. import config, ical
 
 
 FOLDER = os.path.expanduser(config.get("storage", "filesystem_folder"))
 
 
+try:
+    from dulwich.repo import Repo
+except ImportError:
+    GIT_FOLDER = None
+else:
+    GIT_FOLDER = (os.path.join(FOLDER, ".git")
+                  if os.path.isdir(os.path.join(FOLDER, ".git")) else None)
+
+
 # This function overrides the builtin ``open`` function for this module
 # pylint: disable=W0622
+@contextmanager
 def open(path, mode="r"):
     """Open a file at ``path`` with encoding set in the configuration."""
+    # On enter
     abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
-    return codecs.open(abs_path, mode, config.get("encoding", "stock"))
+    with codecs.open(abs_path, mode, config.get("encoding", "stock")) as fd:
+        yield fd
+    # On exit
+    if GIT_FOLDER and mode == "w":
+        repo = Repo(FOLDER)
+        path = os.path.relpath(abs_path, FOLDER)
+        repo.stage([path])
+        repo.do_commit("Commit by Radicale")
 # pylint: enable=W0622
 
 
@@ -62,7 +79,8 @@ class Collection(ical.Collection):
 
     def save(self, text):
         self._create_dirs()
-        open(self._path, "w").write(text)
+        with open(self._path, "w") as fd:
+            fd.write(text)
 
     def delete(self):
         os.remove(self._path)
@@ -71,7 +89,8 @@ class Collection(ical.Collection):
     @property
     def text(self):
         try:
-            return open(self._path).read()
+            with open(self._path) as fd:
+                return fd.read()
         except IOError:
             return ""
 
@@ -107,8 +126,10 @@ class Collection(ical.Collection):
         if os.path.exists(self._props_path):
             with open(self._props_path) as prop_file:
                 properties.update(json.load(prop_file))
+        old_properties = properties.copy()
         yield properties
         # On exit
         self._create_dirs()
-        with open(self._props_path, "w") as prop_file:
-            json.dump(properties, prop_file)
+        if old_properties != properties:
+            with open(self._props_path, "w") as prop_file:
+                json.dump(properties, prop_file)

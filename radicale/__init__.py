@@ -546,7 +546,7 @@ class Application(object):
             xmlutils.put(environ["PATH_INFO"], content, collection)
             status = client.CREATED
             # Try to return the etag in the header.
-            # If the added item does't have the same name as the one given
+            # If the added item doesn't have the same name as the one given
             # by the client, then there's no obvious way to generate an
             # etag, we can safely ignore it.
             new_item = collection.get_item(item_name)
