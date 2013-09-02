@@ -737,6 +737,15 @@ Radicale will automatically commit any changes on your collections. It
 will use your git config to find parameters such as the committer and that's all.
 
 
+Issues
+~~~~~~
+
+A dulwich project ported on Python 3 exists but it seems that it doesn't follow the
+current api (committer is mandatory and not retrieved from the git config by
+default). Until this problem isn't fixed, the Git support for Radicale on
+Python 3 will not be ensured.
+
+
 Rights Management
 -----------------
 
