@@ -717,8 +717,13 @@ called ``anna``.
 
 The *authenticated user* is the login used for authentication.
 
-3 different configurations are available, you can choose the one you want in
+4 different configurations are available, you can choose the one you want in
 your configuration file.
+
+None
+~~~~
+
+Everybody have read and write access to all collections.
 
 Owner Only
 ~~~~~~~~~~
@@ -729,7 +734,7 @@ users, authenticated or anonymous, have no access to these collections.
 Owner Write
 ~~~~~~~~~~~
 
-Authenticated users have read access to all calendars, but only owners have
+Authenticated users have read access to all collections, but only owners have
 write access to their own collections. Anonymous users have no access to
 collections.
 
