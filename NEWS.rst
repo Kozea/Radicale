@@ -3,8 +3,8 @@
 ======
 
 
-0.8.1 - *Not released yet*
-==========================
+0.9 - *Not released yet*
+========================
 
 * 1-file-per-event storage (by Jean-Marc Martins)
 * Git support for filesystem storages (by Jean-Marc Martins)
