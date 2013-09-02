@@ -4,10 +4,12 @@
 
 :Author: Guillaume Ayoub, Daniel Aleksandersen
 
-:Date: 2012-07-05
+:Date: 2013-07-09
 
-:Abstract: This document is a short description for installing and using the
- Radicale calendar and contact Server.
+:Abstract: This document is a description for installing and using the Radicale
+ calendar and contact Server.
+
+.. editable::
 
 .. contents::
    :depth: 3
@@ -19,8 +21,9 @@ Dependencies
 ------------
 
 Radicale is written in pure Python and does not depend on any library. It is
-known to work on Python 2.6, 2.7, 3.1, 3.2 and PyPy > 1.7. The dependencies are
-optional, as they are only needed for various authentication methods [#]_.
+known to work on Python 2.6, 2.7, 3.1, 3.2, 3.3 and PyPy > 1.9. The
+dependencies are optional, as they are only needed for various authentication
+methods [#]_.
 
 Linux and MacOS users certainly have Python already installed. For Windows
 users, please install Python [#]_ thanks to the adequate installer.
@@ -36,8 +39,8 @@ Radicale can be freely downloaded on the `project website, download section
 <http://www.radicale.org/download>`_. Just get the file and unzip it in a
 folder of your choice.
 
-CalDAV Clients
---------------
+CalDAV and CardDAV Clients
+--------------------------
 
 At this time Radicale has been tested and works fine with the latest version
 of:
@@ -45,10 +48,16 @@ of:
 - `Mozilla Lightning <http://www.mozilla.org/projects/calendar/lightning/>`_
 - `GNOME Evolution <http://projects.gnome.org/evolution/>`_
 - `KDE KOrganizer <http://userbase.kde.org/KOrganizer/>`_
-- `aCal <http://wiki.acal.me/wiki/Main_Page>`_ for `Google Android
-  <http://www.android.com/>`_
+- `aCal <http://wiki.acal.me/wiki/Main_Page>`_, `CalDAV-Sync
+  <https://play.google.com/store/apps/details?id=org.dmfs.caldav.lib>`_
+  and `CardDAV-Sync
+  <https://play.google.com/store/apps/details?id=org.dmfs.carddav.Sync>`_
+  for `Google Android <http://www.android.com/>`_
+- `CalDavZAP <http://www.inf-it.com/open-source/clients/caldavzap/>`_
+- `CardDavMATE <http://www.inf-it.com/open-source/clients/carddavmate/>`_
 - `Apple iPhone <http://www.apple.com/iphone/>`_
 - `Apple iCal <http://www.apple.com/macosx/apps/>`_
+- `syncEvolution <https://syncevolution.org/>`_
 
 More clients will be supported in the future. However, it may work with any
 calendar or contact client which implements CalDAV or CardDAV specifications
@@ -77,9 +86,10 @@ Radicale's one and your calendar won't be remotely accessible.
 
 Next window asks you to provide information about remote calendar
 access. Protocol used by Radicale is ``CalDAV``. A standard location for a
-basic use of a Radicale calendar is ``http://localhost:5232/user/calendar/``,
-where you can replace ``user`` and ``calendar`` by some strings of your
-choice. Calendars are automatically created if needed.
+basic use of a Radicale calendar is
+``http://localhost:5232/user/calendar.ics/``, where you can replace ``user``
+and ``calendar.ics`` by some strings of your choice. Calendars are
+automatically created if needed.
 
 You can now customize your calendar by giving it a nickname and a color. This
 is only used by Lightning to identify calendars among others.
@@ -89,7 +99,9 @@ and tasks to your calendar. All events and tasks are stored in the server, they
 can be accessed and modified from multiple clients by multiple users at the
 same time.
 
-Lightning and Thunderbird cannot access CardDAV servers yet.
+Lightning and Thunderbird cannot access CardDAV servers yet. Also, as of version 
+17.0.5 the SOGo Connector addon is not fully functionally and will create extra
+address book entries with every sync.
 
 Evolution
 ~~~~~~~~~
@@ -119,22 +131,24 @@ Contacts
 KOrganizer
 ~~~~~~~~~~
 
+Calendars
++++++++++
 *Tested with 4.8.3, you need one running on Akonadi for Cal/CarDav support.*
 
 The procedure below can also be done trough the sidebar "Calendar Manager".
 But to ensure it works for everyone this examples uses the menu-bar.
 
-1. Click ``Settings -> Configure KOrganizer``.
-2. Click on ``General -> Calendars``.
+1. Click ``Settings → Configure KOrganizer``.
+2. Click on ``General → Calendars``.
 3. Click on ``Add``.
-4. Choice ``DAV groupware resource`` (and click ``OK``).
+4. Choose ``DAV groupware resource`` (and click ``OK``).
 5. Enter your username/passord (and click on ``Next``).
 6. Select ``Configure the resource manually`` (and click on ``Finish``).
 7. Fill in a Display name.
 8. Fill in your Username and Password.
 9. Click ``Add``.
-10. Choice ``CalDav``. (CardDav might also work, didn't test.)
-11. For remote URL enter http://myserver:5232/Username/Calandar
+10. Choose ``CalDav``.
+11. For remote URL enter http://myserver:5232/Username/Calendar.ics
 12. Click ``Fetch``.
 13. Select desired calendar.
 14. Hit ``OK``.
@@ -143,24 +157,39 @@ But to ensure it works for everyone this examples uses the menu-bar.
 17. Restart Korganizer for the calendar to appear in the "Calendar Manager" sidebar :(. (At least with version 4.8.3.)
 
 .. note::
-    After you created a calender in a collection you can also use http://myserve:5232/Username/ as an URL
+    After you created a calender in a collection you can also use http://myserver:5232/Username/ as an URL
     This will then list all available calendars.
+    
+Contacts
+++++++++
+
+You can add a address book analogously to the above instructions, just choose
+CardDav and http://myserver:5232/Username/AddressBook.vcf in step 10 and 11.
+Also, if you already have a calendar set up you can add an address book to its
+"DAV groupware resource" under Configure-Kontact → Calendar → General →
+Calendars → Modify. This way you don't have to enter username and password
+twice.
 
 
 CalDAV-Sync
 ~~~~~~~~~~~
 
 CalDAV-Sync is implemented as sync adapter to integrate seamlessly with 
-any calendar app and widget. Therefor you have to access it via 
+any calendar app and widget. Therefore you have to access it via 
 ``Accounts & Sync`` settings after installing it from the Market.
 
 So, to add new calendars to your phone open ``Accounts & Sync`` settings 
 and tap on ``Add account``, selecting CalDAV as type. In the next view, 
 you have to switch to Manual Mode. Enter the full CalDAV URL of your Radicale 
 account (e.g. http://example.com:5232/Username/) and corresponding login data.
+If you want to create a new calendar you have to specify its full URL e.g.
+http://example.com:5232/Username/Calendar.ics/ . 
 
 Tap on ``Next`` and the app checks for all available calendars 
-on your account, listing them in the next view. You can now select calendars 
+on your account, listing them in the next view. (Note: CalDAV-Sync will not 
+only check under the url you entered but also under 
+http://example.com:5232/UsernameYouEnteredForLogin/. This might cause strange 
+errors.) You can now select calendars 
 you want to sync and set a local nickname and color for each. Hitting ``Next`` 
 again brings up the last page. Enter your email address and uncheck ``Sync 
 from server to phone only`` if you want to use two-way-sync.
@@ -176,7 +205,8 @@ in the same way you were using Google calendars before.
 CardDAV-Sync
 ~~~~~~~~~~~~
 
-*To be written*
+Set up works like CalDAV-Sync, just use .vcf instead of .ics if you enter the
+url, e.g. http://example.com:5232/Username/AddressBook.vcf/
 
 aCal
 ~~~~
@@ -208,6 +238,16 @@ select ``Calendars and Addressbooks``. You should find all the calendars that
 are available to your user on the Radicale server. You can then configure each
 of them (display colour, notifications, etc.).
 
+CalDavZAP
+~~~~~~~~~
+
+*To be written.*
+
+CardDavMATE
+~~~~~~~~~~~
+
+*To be written.*
+
 iPhone & iPad
 ~~~~~~~~~~~~~
 
@@ -221,7 +261,7 @@ that are critical for proper operation.
 2. Select ``Mail, Contacts, Calendars``
 3. Select ``Add Account`` →  ``Other`` →  ``Add CalDAV Account``
 4. Enter the server URL here, including ``https``, the port, and the user/calendar
-   path, ex: ``https://myserver.domain.com:3000/bob/birthdays/``
+   path, ex: https://myserver.domain.com:3000/bob/birthdays/
 5. Enter your username and password as defined in your server config
 6. Enter a good description of the calendar in the ``Description`` field.
    Otherwise it will put the whole servername in the field.
@@ -243,7 +283,9 @@ that are critical for proper operation.
 Contacts
 ++++++++
 
-*To be written*
+**Contacts do not work yet with Radicale and Apple's clients.** If you are
+interested in this feature, please check this `bug report
+<https://github.com/Kozea/Radicale/issues/32>`_.
 
 iCal
 ~~~~
@@ -291,7 +333,9 @@ now set-up. You can close the ``Preferences`` window.
 Contacts
 ++++++++
 
-*To be written*
+**Contacts do not work yet with Radicale and Apple's clients.** If you are
+interested in this feature, please check this `bug report
+<https://github.com/Kozea/Radicale/issues/32>`_.
 
 syncEvolution
 ~~~~~~~~~~~~~
@@ -331,9 +375,10 @@ Main Configuration File
    version of Radicale.
 
 The server configuration can be modified in ``/etc/radicale/config`` or in
-``~/.config/radicale/config``. You can also set the ``RADICALE_CONFIG``
-environment variable to a path of your choice. Here is the default
-configuration file, with the main parameters:
+``~/.config/radicale/config``. You can use the ``--config`` parameter in the
+command line to choose a specific path. You can also set the
+``RADICALE_CONFIG`` environment variable to a path of your choice. Here is the
+default configuration file, with the main parameters:
 
 .. code-block:: ini
 
@@ -341,7 +386,7 @@ configuration file, with the main parameters:
   # CalDAV server hostnames separated by a comma
   # IPv4 syntax: address:port
   # IPv6 syntax: [address]:port
-  # IPv6 addresses are configured to only allow IPv6 connections
+  # IPv6 adresses are configured to only allow IPv6 connections
   hosts = 0.0.0.0:5232
   # Daemon flag
   daemon = False
@@ -355,6 +400,10 @@ configuration file, with the main parameters:
   key = /etc/apache2/ssl/server.key
   # Reverse DNS to resolve client address in logs
   dns_lookup = True
+  # Root URL of Radicale (starting and ending with a slash)
+  base_prefix = /
+  # Message displayed in the client when a password is needed
+  realm = Radicale - Password Required lol
 
 
   [encoding]
@@ -364,20 +413,15 @@ configuration file, with the main parameters:
   stock = utf-8
 
 
-  [acl]
-  # Access method
-  # Value: None | courier | IMAP | htpasswd | LDAP | PAM
+  [auth]
+  # Authentication method
+  # Value: None | htpasswd | IMAP | LDAP | PAM | courier | http
   type = None
 
   # Usernames used for public collections, separated by a comma
   public_users = public
   # Usernames used for private collections, separated by a comma
   private_users = private
-
-  # STARTTLS capable or local IMAP server domain name
-  imap_auth_host_name = localhost
-  imap_auth_host_port = 143
-
   # Htpasswd filename
   htpasswd_filename = /etc/radicale/users
   # Htpasswd encryption method
@@ -392,7 +436,7 @@ configuration file, with the main parameters:
   ldap_attribute = uid
   # LDAP filter string
   # placed as X in a query of the form (&(...)X)
-  # example: (objectCategory=…)(objectClass=…)(memberOf=…)
+  # example: (objectCategory=Person)(objectClass=User)(memberOf=cn=calenderusers,ou=users,dc=example,dc=org)
   # leave empty if no additional filter is needed
   ldap_filter = 
   # LDAP dn for initial login, used if LDAP server does not allow anonymous searches
@@ -403,19 +447,47 @@ configuration file, with the main parameters:
   # LDAP scope of the search
   ldap_scope = OneLevel
 
+  # IMAP Configuration
+  imap_hostname = localhost
+  imap_port = 143
+  imap_ssl = False
+
   # PAM group user should be member of
   pam_group_membership =
 
   # Path to the Courier Authdaemon socket
   courier_socket =
 
+  # HTTP authentication request URL endpoint
+  http_url =
+  # POST parameter to use for username
+  http_user_parameter =
+  # POST parameter to use for password
+  http_password_parameter =
+
+
+  [rights]
+  # Rights management method
+  # Value: None | owner_only | owner_write | from_file
+  type = None
+
+  # File for rights management from_file
+  file = ~/.config/radicale/rights
+
 
   [storage]
   # Storage backend
+  # Value: filesystem | database
   type = filesystem
 
   # Folder for storing local collections, created if not present
   filesystem_folder = ~/.config/radicale/collections
+
+  # Database URL for SQLAlchemy
+  # dialect+driver://user:password@host/dbname[?key=value..]
+  # For example: sqlite:///var/db/radicale.db, postgresql://user:password@localhost/radicale
+  # See http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#sqlalchemy.create_engine
+  database_url =
 
 
   [logging]
@@ -428,6 +500,11 @@ configuration file, with the main parameters:
   debug = False
   # Store all environment variables (including those set in the shell)
   full_environment = False
+
+
+  # Additional HTTP headers
+  #[headers]
+  #Access-Control-Allow-Origin = *
 
 This configuration file is read each time the server is launched. If some
 values are not given, the default ones are used. If no configuration file is
@@ -564,7 +641,7 @@ If you want to use authentication with Apache, you *really* should use one of
 the Apache authentication modules, instead of the ones from Radicale: they're
 just better.
 
-Deactivate any ACL module in Radicale and use your favourite Apache
+Deactivate any rights and  module in Radicale and use your favourite Apache
 authentication backend. You can then restrict the access: allow the ``alice``
 user to access ``/alice/*`` URLs, and everything should work as expected.
 
@@ -609,51 +686,115 @@ explained in `the mod_wsgi documentation
    default configuration.
 
 
-Authentication and URLs
------------------------
+Authentication
+--------------
 
-If no authentication method is set, calendars are available at
-``/calendar.ics/`` and ``/folder/calendar.ics/`` URLs. Else, calendars are
-public, private or personal, depending on their URLs.
+Authentication is possible through:
 
-This section is written for calendars, but it is the same for address books.
+- Courier-Authdaemon socket
+- htpasswd file, including list of plain user/password couples
+- HTTP, checking status code of a POST request
+- IMAP
+- LDAP
+- PAM
 
-Public Collections
+Check the ``[auth]`` section of your configuration file to know the different
+options offered by these authentication modules.
+
+Some authentication methods need additional modules, see `Python Versions and
+OS Support`_ for further information.
+
+
+Git Support
+-----------
+
+.. note::
+   If the project doesn't comply with the requirements to use Git, Radicale will still work.
+   Your collections will run fine but without the versionning system.
+
+Git is now automatically supported on Radicale. It depends on `dulwich <https://github.com/jelmer/dulwich>`_.
+
+
+Configure Radicale
 ~~~~~~~~~~~~~~~~~~
 
-Public collections are available for everybody, authenticated or not.
+Radicale automatically detects the *.git* folder in the path you configured for
+the filesystem_folder variable in the ``[storage]`` section of your configuration file.
+Make sure a repository is created at this location or create one (using *git init
+.* for instance) else it won't work.
 
-Calendars at ``/public_user/calendar.ics/`` URLs are public. Public users are
-defined in the ``acl → public_users`` configuration variable. If ``None`` is in
-the list of public users, public calendars are also available at
-``/calendar.ics/`` URLs.
+To summarize : 
 
-.. important::
+- Configure your Git installation
+- Get Radicale and dulwich
+- Create the repository where your collections are stored
+- Run Radicale and it should work
 
-   Public calendars allow anybody to create calendars, leading to possible
-   security problems. If you do not want to allow public calendars, just use an
-   empty string in the ``acl → public_users`` configuration variable.
+How it works
+~~~~~~~~~~~~
 
-
-Private Collections
-~~~~~~~~~~~~~~~~~~~
-
-Private collections are available for all the authenticated users.
-
-Calendars at ``/private_user/calendar`` URLs are private. Private users are
-defined in the ``acl → private_users`` configuration variable. If ``None`` is
-in the list of private users, private calendars are also available at
-``/calendar`` URLs.
+Radicale will automatically commit any changes on your collections. It
+will use your git config to find parameters such as the committer and that's all.
 
 
-Personal Collections
-~~~~~~~~~~~~~~~~~~~~
+Rights Management
+-----------------
 
-Personal collections are only available for the calendar owner.
+You can set read an write rights for collections according to the authenticated
+user and the owner of the collection.
 
-Calendars at ``/owner/calendar`` URLs are personal. They are only available for
-the authenticated user called ``owner`` (of course, you can replace ``owner`` by
-any user name authorized by your authentication mechanism).
+The *owner of a collection* is determined by the URL of the collection. For
+example, ``http://my.server.com:5232/anna/calendar.ics/`` is owned by the user
+called ``anna``.
+
+The *authenticated user* is the login used for authentication.
+
+3 different configurations are available, you can choose the one you want in
+your configuration file.
+
+Owner Only
+~~~~~~~~~~
+
+Only owners have read and write access to their own collections. The other
+users, authenticated or anonymous, have no access to these collections.
+
+Owner Write
+~~~~~~~~~~~
+
+Authenticated users have read access to all calendars, but only owners have
+write access to their own collections. Anonymous users have no access to
+collections.
+
+From File
+~~~~~~~~~
+
+File-based rights. Rights are read from a file whose name is specified in the config (section
+``[right]``, key ``file``).
+
+Example:
+
+.. code-block:: ini
+
+  # This means user1 may read, user2 may write, user3 has full access.
+  [user0/calendar]
+  user1: r
+  user2: w
+  user3: rw
+
+  # user0 can read user1/cal.
+  [user1/cal]
+  user0: r
+
+  # If a collection a/b is shared and other users than the owner are supposed to
+  # find the collection in a propfind request, an additional line for a has to
+  # be in the defintions.
+  [user0]
+  user1: r
+
+The owners are implied to have all rights on their collections.
+
+The configuration file is read for each request, you can change it without
+restarting the server.
 
 
 Python Versions and OS Support
@@ -698,6 +839,12 @@ PAM Authentication
 The PAM authentication module relies on `the pam module
 <http://atlee.ca/software/pam/>`_, and thus only works with 2.x versions of
 Python.
+
+HTTP Authentication
+-------------------
+
+The HTTP authentication module relies on `the requests module
+<http://docs.python-requests.org/en/latest/>`_.
 
 Daemon Mode
 -----------
