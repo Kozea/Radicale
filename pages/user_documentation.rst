@@ -705,6 +705,38 @@ Some authentication methods need additional modules, see `Python Versions and
 OS Support`_ for further information.
 
 
+Git Support
+-----------
+
+.. note::
+   If the project doesn't comply with the requirements to use Git, Radicale will still work.
+   Your collections will run fine but without the versionning system.
+
+Git is now automatically supported on Radicale. It depends on `dulwich <https://github.com/jelmer/dulwich>`_.
+
+
+Configure Radicale
+~~~~~~~~~~~~~~~~~~
+
+Radicale automatically detects the *.git* folder in the path you configured for
+the filesystem_folder variable in the ``[storage]`` section of your configuration file.
+Make sure a repository is created at this location or create one (using *git init
+.* for instance) else it won't work.
+
+To summarize : 
+
+- Configure your Git installation
+- Get Radicale and dulwich
+- Create the repository where your collections are stored
+- Run Radicale and it should work
+
+How it works
+~~~~~~~~~~~~
+
+Radicale will automatically commit any changes on your collections. It
+will use your git config to find parameters such as the committer and that's all.
+
+
 Rights Management
 -----------------
 
