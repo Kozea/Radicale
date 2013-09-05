@@ -81,23 +81,10 @@ class BaseRequests(object):
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert u"VEVENT" not in answer
 
-
-def test_generator():
-    """Generates tests for all the system classes"""
-    cl_list = [FileSystem, MultiFileSystem, DataBaseSystem,
-               GitFileSystem, GitMultiFileSystem]
-    for cl in cl_list:
-        classname = "Test%s" % cl.__name__
-        generated_class = type(classname, (BaseRequests,), {})
-        yield generated_class()
-
 # Generates Classes with different configs
 cl_list = [FileSystem, MultiFileSystem, DataBaseSystem,
            GitFileSystem, GitMultiFileSystem]
 for cl in cl_list:
     classname = "Test%s" % cl.__name__
-
-    class DummyClass(BaseRequests, cl):
-        """Test for %s""" % cl.__name__
-    DummyClass.__name__ = classname
-    setattr(sys.modules[__name__], classname, DummyClass)
+    setattr(sys.modules[__name__],
+            classname, type(classname, (BaseRequests, cl), {}))
