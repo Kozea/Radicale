@@ -35,7 +35,7 @@ FOLDER = os.path.expanduser(config.get("storage", "filesystem_folder"))
 
 try:
     from dulwich.repo import Repo
-    GIT_REPOSITORY = Repo(os.path.join(FOLDER, ".git"))
+    GIT_REPOSITORY = Repo(FOLDER)
 except:
     GIT_REPOSITORY = None
 
@@ -52,7 +52,7 @@ def open(path, mode="r"):
     # On exit
     if GIT_REPOSITORY and mode == "w":
         path = os.path.relpath(abs_path, FOLDER)
-        GIT_REPOSITORY.stage([path])
+        GIT_REPOSITORY.stage([path.encode("utf-8")])
         GIT_REPOSITORY.do_commit("Commit by Radicale")
 # pylint: enable=W0622
 
