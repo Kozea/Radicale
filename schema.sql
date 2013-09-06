@@ -1,7 +1,5 @@
 -- This is the database schema for PostgreSQL.
 
-begin;
-
 create table collection (
        path varchar primary key not null,
        parent_path varchar references collection (path));
@@ -22,12 +20,10 @@ create table line (
        value varchar not null,
        item_name varchar references item (name) not null,
        timestamp timestamp not null,
-       primary key (key, item_name));
+       primary key (key, value, item_name, timestamp));
 
 create table property (
        key varchar not null,
        value varchar not null,
        collection_path varchar references collection (path) not null,
        primary key (key, collection_path));
-
-commit;
