@@ -21,6 +21,8 @@ Tests for Radicale.
 
 """
 
+import base64
+import hashlib
 import os
 import shutil
 import sys
@@ -32,6 +34,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import radicale
 from radicale import config
+from radicale.auth import htpasswd
 from radicale.storage import filesystem, database
 from .helpers import get_file_content
 from sqlalchemy.orm import sessionmaker
@@ -114,3 +117,22 @@ class GitFileSystem(FileSystem):
 
 class GitMultiFileSystem(GitFileSystem, MultiFileSystem):
     """Base class for multifilesystem tests using Git"""
+
+
+class HtpasswdAuthSystem(BaseTest):
+    """Base class to test Radicale with Htpasswd authentication"""
+    def setup(self):
+        self.colpath = tempfile.mkdtemp()
+        htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
+        with open(htpasswd_file_path, "w") as fd:
+            fd.write('tmp:{SHA}' + base64.b64encode(
+                hashlib.sha1("bépo").digest()))
+        config.set("auth", "type", "htpasswd")
+        self.userpass = base64.b64encode("tmp:bépo")
+        self.application = radicale.Application()
+        htpasswd.FILENAME = htpasswd_file_path
+        htpasswd.ENCRYPTION = "sha1"
+
+    def teardown(self):
+        config.set("auth", "type", "None")
+        radicale.auth.is_authenticated = lambda *_: True
