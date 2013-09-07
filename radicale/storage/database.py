@@ -78,10 +78,10 @@ class DBLine(Base):
     """Table of item's lines."""
     __tablename__ = "line"
 
-    key = Column(String, primary_key=True)
+    key = Column(String)
     value = Column(String)
-    item_name = Column(String, ForeignKey("item.name"), primary_key=True)
-    timestamp = Column(DateTime, default=datetime.now)
+    item_name = Column(String, ForeignKey("item.name"))
+    timestamp = Column(DateTime, default=datetime.now, primary_key=True)
 
     item = relationship(
         "DBItem", backref="lines", order_by=timestamp)

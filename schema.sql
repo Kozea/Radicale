@@ -19,8 +19,7 @@ create table line (
        key varchar not null,
        value varchar not null,
        item_name varchar references item (name) not null,
-       timestamp timestamp not null,
-       primary key (key, value, item_name, timestamp));
+       timestamp timestamp not null);
 
 create table property (
        key varchar not null,
