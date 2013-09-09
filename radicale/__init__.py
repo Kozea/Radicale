@@ -268,9 +268,6 @@ class Application(object):
 
         path = environ["PATH_INFO"]
 
-        # Find collection(s)
-        items = ical.Collection.from_path(path, environ.get("HTTP_DEPTH", "0"))
-
         # Get function corresponding to method
         function = getattr(self, environ["REQUEST_METHOD"].lower())
 
@@ -282,11 +279,19 @@ class Application(object):
                 authorization.lstrip("Basic").strip().encode("ascii")
             user, password = self.decode(
                 base64.b64decode(authorization), environ).split(":", 1)
+            encryption_key = base64.b64encode(password + user)
         else:
             user = password = None
+            encryption_key = "UNAUTHENTICATED"
 
-        if not items or function == self.options or \
+        items = []
+
+        if function == self.options or \
                 auth.is_authenticated(user, password):
+            # Find collection(s)
+            items = ical.Collection.from_path(path,
+                environ.get("HTTP_DEPTH", "0"),
+                encryption_key=encryption_key)
 
             read_allowed_items, write_allowed_items = \
                 self.collect_allowed_items(items, user)
@@ -304,6 +309,11 @@ class Application(object):
             # Unknown or unauthorized user
             log.LOGGER.info("%s refused" % (user or "Anonymous user"))
             status, headers, answer = WRONG_CREDENTIALS
+
+        # Clean up encryption key
+        for i in items:
+            if isinstance(i, ical.Collection):
+                i.erase_encryption_key()
 
         # Set content length
         if answer:

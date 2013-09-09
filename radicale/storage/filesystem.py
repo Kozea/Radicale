@@ -47,7 +47,10 @@ def open(path, mode="r"):
     """Open a file at ``path`` with encoding set in the configuration."""
     # On enter
     abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
-    with codecs.open(abs_path, mode, config.get("encoding", "stock")) as fd:
+    encoding = config.get("encoding", "stock")
+    if "crypto" in config.get("storage", "type"):
+        encoding = None
+    with codecs.open(abs_path, mode, encoding) as fd:
         yield fd
     # On exit
     if GIT_REPOSITORY and mode == "w":
@@ -57,8 +60,8 @@ def open(path, mode="r"):
 # pylint: enable=W0622
 
 
-class Collection(ical.Collection):
-    """Collection stored in a flat ical file."""
+class BaseCollection(ical.Collection):
+
     @property
     def _path(self):
         """Absolute path of the file at local ``path``."""
@@ -77,7 +80,7 @@ class Collection(ical.Collection):
     def save(self, text):
         self._create_dirs()
         with open(self._path, "w") as fd:
-            fd.write(text)
+            self._write_file(fd, text)
 
     def delete(self):
         os.remove(self._path)
@@ -87,7 +90,7 @@ class Collection(ical.Collection):
     def text(self):
         try:
             with open(self._path) as fd:
-                return fd.read()
+                return self._read_file(fd)
         except IOError:
             return ""
 
@@ -122,11 +125,24 @@ class Collection(ical.Collection):
         properties = {}
         if os.path.exists(self._props_path):
             with open(self._props_path) as prop_file:
-                properties.update(json.load(prop_file))
+                properties.update(json.loads(self._read_file(prop_file)))
         old_properties = properties.copy()
         yield properties
         # On exit
         self._create_dirs()
         if old_properties != properties:
             with open(self._props_path, "w") as prop_file:
-                json.dump(properties, prop_file)
+                self._write_file(prop_file, json.dumps(properties))
+
+
+class SaveMixin(object):
+
+    def _read_file(self, fd):
+        return fd.read()
+
+    def _write_file(self, fd, content):
+        return fd.write(content)
+
+
+class Collection(BaseCollection, SaveMixin):
+    """Collection stored in a flat ical file."""
