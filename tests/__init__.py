@@ -34,9 +34,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import radicale
 
-RADICALE_CONFIG = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                               "config")
-os.environ["RADICALE_CONFIG"] = RADICALE_CONFIG
+os.environ["RADICALE_CONFIG"] = os.path.join(os.path.dirname(
+    os.path.dirname(__file__)), "config")
 
 from radicale import config
 from radicale.auth import htpasswd
@@ -50,12 +49,6 @@ class BaseTest(object):
     """Base class for tests."""
     def request(self, method, path, data=None, **args):
         """Send a request."""
-        # Create a ConfigParser and configure it
-        # This uses the default config file at the root of the
-        # Radicale Project
-        config.read(os.environ.get("RADICALE_CONFIG"))
-        self._CONFIG_PARSER = config
-
         self.application._status = None
         self.application._headers = None
         self.application._answer = None
@@ -79,10 +72,6 @@ class BaseTest(object):
         """Put the response values into the current application."""
         self.application._status = status
         self.application._headers = headers
-
-    @property
-    def config_instance(self):
-        return self._CONFIG_PARSER
 
 
 class FileSystem(BaseTest):

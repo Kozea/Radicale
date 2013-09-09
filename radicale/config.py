@@ -99,5 +99,4 @@ if "RADICALE_CONFIG" in os.environ:
     _CONFIG_PARSER.read(os.environ["RADICALE_CONFIG"])
 
 # Wrap config module into ConfigParser instance
-_CONFIG_PARSER.INITIAL_CONFIG = INITIAL_CONFIG
 sys.modules[__name__] = _CONFIG_PARSER
