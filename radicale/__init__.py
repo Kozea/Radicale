@@ -55,13 +55,6 @@ VERSION = "git"
 # tries to access information they don't have rights to
 NOT_ALLOWED = (client.FORBIDDEN, {}, None)
 
-# Standard "authenticate" response that is returned when a user tries to access
-# non-public information w/o submitting proper authentication credentials
-WRONG_CREDENTIALS = (
-    client.UNAUTHORIZED,
-    {"WWW-Authenticate": "Basic realm=\"%s\"" % config.get("server", "realm")},
-    None)
-
 
 class HTTPServer(wsgiref.simple_server.WSGIServer, object):
     """HTTP server."""
@@ -303,7 +296,11 @@ class Application(object):
         else:
             # Unknown or unauthorized user
             log.LOGGER.info("%s refused" % (user or "Anonymous user"))
-            status, headers, answer = WRONG_CREDENTIALS
+            status = client.UNAUTHORIZED
+            headers = {
+                "WWW-Authenticate":
+                "Basic realm=\"%s\"" % config.get("server", "realm")}
+            answer = None
 
         # Set content length
         if answer:
