@@ -26,6 +26,8 @@ Define the main classes of a collection as seen from the server.
 """
 
 import os
+import sys
+import ctypes
 import posixpath
 from uuid import uuid4
 from random import randint
@@ -175,7 +177,7 @@ class Collection(object):
     This class must be overridden and replaced by a storage backend.
 
     """
-    def __init__(self, path, principal=False):
+    def __init__(self, path, principal=False, encryption_key=None):
         """Initialize the collection.
 
         ``path`` must be the normalized relative path of the collection, using
@@ -183,6 +185,7 @@ class Collection(object):
 
         """
         self.encoding = "utf-8"
+        self.encryption_key = encryption_key
         split_path = path.split("/")
         self.path = path if path != "." else ""
         if principal and split_path and self.is_node(self.path):
@@ -196,7 +199,8 @@ class Collection(object):
         self.is_principal = principal
 
     @classmethod
-    def from_path(cls, path, depth="1", include_container=True):
+    def from_path(cls, path, depth="1", include_container=True,
+            encryption_key=None):
         """Return a list of collections and items under the given ``path``.
 
         If ``depth`` is "0", only the actual object under ``path`` is
@@ -231,17 +235,17 @@ class Collection(object):
         principal = len(attributes) <= 1
         if cls.is_node(path):
             if depth == "0":
-                result.append(cls(path, principal))
+                result.append(cls(path, principal, encryption_key))
             else:
                 if include_container:
-                    result.append(cls(path, principal))
+                    result.append(cls(path, principal, encryption_key))
                 for child in cls.children(path):
                     result.append(child)
         else:
             if depth == "0":
-                result.append(cls(path))
+                result.append(cls(path, encryption_key=encryption_key))
             else:
-                collection = cls(path, principal)
+                collection = cls(path, principal, encryption_key)
                 if include_container:
                     result.append(collection)
                 result.extend(collection.components)
@@ -397,6 +401,21 @@ class Collection(object):
                     props["tag"] = "VADDRESSBOOK"
                 else:
                     props["tag"] = "VCALENDAR"
+
+    def erase_encryption_key(self):
+        """Securely erase the encryption key from memory.
+
+        Only completely secure on CPython.
+
+        """
+        try:
+            bufsize = len(self.encryption_key) + 1
+            offset = sys.getsizeof(self.encryption_key) - bufsize
+            location = id(self.encryption_key) + offset
+            ctypes.memset(location, 0, bufsize)
+        except:
+            pass
+        del self.encryption_key
 
     @property
     def tag(self):

@@ -102,9 +102,9 @@ class DBProperty(Base):
 
 class Collection(ical.Collection):
     """Collection stored in a database."""
-    def __init__(self, path, principal=False):
+    def __init__(self, path, principal=False, encryption_key=None):
         self.session = Session()
-        super(Collection, self).__init__(path, principal)
+        super(Collection, self).__init__(path, principal, encryption_key)
 
     def __del__(self):
         self.session.commit()

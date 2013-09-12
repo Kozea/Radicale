@@ -100,7 +100,7 @@ file = ~/.config/radicale/rights
 
 [storage]
 # Storage backend
-# Value: filesystem | multifilesystem | database
+# Value: filesystem | multifilesystem | cryptofilesystem | cryptomultifilesystem | database
 type = filesystem
 
 # Folder for storing local collections, created if not present

@@ -30,8 +30,8 @@ from . import filesystem
 from .. import ical
 
 
-class Collection(filesystem.Collection):
-    """Collection stored in several files per calendar."""
+class BaseCollection(filesystem.BaseCollection):
+
     def _create_dirs(self):
         if not os.path.exists(self._path):
             os.makedirs(self._path)
@@ -52,12 +52,12 @@ class Collection(filesystem.Collection):
             text = ical.serialize(self.tag, headers, [component] + timezones)
             path = os.path.join(self._path, component.name)
             with filesystem.open(path, "w") as fd:
-                fd.write(text)
+                self._write_file(fd, text)
 
     def delete(self):
         shutil.rmtree(self._path)
 
-    def remove(self, name):
+    def remove(self, name=""):
         if os.path.exists(os.path.join(self._path, name)):
             os.remove(os.path.join(self._path, name))
 
@@ -69,8 +69,11 @@ class Collection(filesystem.Collection):
         try:
             for filename in os.listdir(self._path):
                 with filesystem.open(os.path.join(self._path, filename)) as fd:
-                    items.update(self._parse(fd.read(), components))
+                    text = self._read_file(fd)
+                    items.update(self._parse(text, components))
         except IOError:
+            return ""
+        except OSError:
             return ""
         else:
             return ical.serialize(
@@ -92,3 +95,7 @@ class Collection(filesystem.Collection):
             os.path.getmtime(os.path.join(self._path, filename))
             for filename in os.listdir(self._path)] or [0])
         return time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime(last))
+
+
+class Collection(BaseCollection, filesystem.SaveMixin):
+    """Collection stored in several files per calendar."""
