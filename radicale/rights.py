@@ -93,5 +93,7 @@ def _read_from_sections(user, collection, permission):
 def authorized(user, collection, right):
     """Check if the user is allowed to read or write the collection."""
     rights_type = config.get("rights", "type").lower()
-    return rights_type == "none" or (user and _read_from_sections(
-        user, collection.url.rstrip("/") or "/", right))
+    return rights_type == "none" or (
+        (True if not user else user) and _read_from_sections(
+            user if user else "", collection.url.rstrip("/") or "/", right)
+    )

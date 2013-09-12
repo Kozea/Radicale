@@ -279,7 +279,7 @@ class Application(object):
             user = password = None
 
         if not items or function == self.options or \
-                auth.is_authenticated(user, password):
+                auth.is_authenticated(user, password) if user else True:
 
             read_allowed_items, write_allowed_items = \
                 self.collect_allowed_items(items, user)
@@ -290,6 +290,14 @@ class Application(object):
                 status, headers, answer = function(
                     environ, read_allowed_items, write_allowed_items, content,
                     user)
+            elif not user:
+                # Unknown or unauthorized user
+                log.LOGGER.info("%s refused" % (user or "Anonymous user"))
+                status = client.UNAUTHORIZED
+                headers = {
+                    "WWW-Authenticate":
+                    "Basic realm=\"%s\"" % config.get("server", "realm")}
+                answer = None
             else:
                 # Good user but has no rights to any of the given collections
                 status, headers, answer = NOT_ALLOWED
