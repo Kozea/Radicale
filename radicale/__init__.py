@@ -278,30 +278,21 @@ class Application(object):
         else:
             user = password = None
 
-        if not items or function == self.options or \
-                auth.is_authenticated(user, password) if user else True:
+        read_allowed_items, write_allowed_items = \
+            self.collect_allowed_items(items, user)
 
-            read_allowed_items, write_allowed_items = \
-                self.collect_allowed_items(items, user)
-
-            if read_allowed_items or write_allowed_items or \
-                    function == self.options or not items:
-                # Collections found, or OPTIONS request, or no items at all
-                status, headers, answer = function(
-                    environ, read_allowed_items, write_allowed_items, content,
-                    user)
-            elif not user:
-                # Unknown or unauthorized user
-                log.LOGGER.info("%s refused" % (user or "Anonymous user"))
-                status = client.UNAUTHORIZED
-                headers = {
-                    "WWW-Authenticate":
-                    "Basic realm=\"%s\"" % config.get("server", "realm")}
-                answer = None
-            else:
-                # Good user but has no rights to any of the given collections
-                status, headers, answer = NOT_ALLOWED
+        if ((read_allowed_items or write_allowed_items)
+            and auth.is_authenticated(user, password)) or \
+                function == self.options or not items:
+            # Collections found, or OPTIONS request, or no items at all
+            status, headers, answer = function(
+                environ, read_allowed_items, write_allowed_items, content,
+                user)
         else:
+            status, headers, answer = NOT_ALLOWED
+
+        if (status, headers, answer) == NOT_ALLOWED and \
+                not auth.is_authenticated(user, password):
             # Unknown or unauthorized user
             log.LOGGER.info("%s refused" % (user or "Anonymous user"))
             status = client.UNAUTHORIZED
