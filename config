@@ -94,6 +94,11 @@ http_user_parameter =
 http_password_parameter =
 
 
+[git]
+# Git default options
+committer = Firstname Lastname <email@mail.com>
+
+
 [rights]
 # Rights management method
 # Value: None | owner_only | owner_write | from_file
