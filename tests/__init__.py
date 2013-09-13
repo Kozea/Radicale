@@ -33,6 +33,10 @@ from io import BytesIO
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import radicale
+
+os.environ["RADICALE_CONFIG"] = os.path.join(os.path.dirname(
+    os.path.dirname(__file__)), "config")
+
 from radicale import config
 from radicale.auth import htpasswd
 from radicale.storage import filesystem, database

@@ -30,7 +30,7 @@ dns_lookup = True
 # Root URL of Radicale (starting and ending with a slash)
 base_prefix = /
 # Message displayed in the client when a password is needed
-realm = Radicale - Password Required lol
+realm = Radicale - Password Required
 
 
 [encoding]
@@ -44,11 +44,6 @@ stock = utf-8
 # Authentication method
 # Value: None | htpasswd | IMAP | LDAP | PAM | courier | http
 type = None
-
-# Usernames used for public collections, separated by a comma
-public_users = public
-# Usernames used for private collections, separated by a comma
-private_users = private
 
 # Htpasswd filename
 htpasswd_filename = /etc/radicale/users

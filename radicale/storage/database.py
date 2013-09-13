@@ -78,10 +78,10 @@ class DBLine(Base):
     """Table of item's lines."""
     __tablename__ = "line"
 
-    key = Column(String, primary_key=True)
+    key = Column(String)
     value = Column(String)
-    item_name = Column(String, ForeignKey("item.name"), primary_key=True)
-    timestamp = Column(DateTime, default=datetime.now)
+    item_name = Column(String, ForeignKey("item.name"))
+    timestamp = Column(DateTime, default=datetime.now, primary_key=True)
 
     item = relationship(
         "DBItem", backref="lines", order_by=timestamp)
@@ -116,7 +116,7 @@ class Collection(ical.Collection):
             items = (
                 self.session.query(DBItem)
                 .filter_by(collection_path=self.path, tag=item_type.tag)
-                .order_by("name").all())
+                .order_by(DBItem.name).all())
             for item in items:
                 text = "\n".join(
                     "%s:%s" % (line.key, line.value) for line in item.lines)
@@ -189,7 +189,7 @@ class Collection(ical.Collection):
         headers = (
             self.session.query(DBHeader)
             .filter_by(collection_path=self.path)
-            .order_by("key").all())
+            .order_by(DBHeader.key).all())
         return [
             ical.Header("%s:%s" % (header.key, header.value))
             for header in headers]
