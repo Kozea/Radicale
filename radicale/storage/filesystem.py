@@ -36,7 +36,7 @@ FILESYSTEM_ENCODING = sys.getfilesystemencoding()
 
 try:
     from dulwich.repo import Repo
-    GIT_REPOSITORY = Repo(FOLDER).encode(FILESYSTEM_ENCODING)
+    GIT_REPOSITORY = Repo(FOLDER)
 except:
     GIT_REPOSITORY = None
 
@@ -53,7 +53,7 @@ def open(path, mode="r"):
     # On exit
     if GIT_REPOSITORY and mode == "w":
         path = os.path.relpath(abs_path, FOLDER)
-        GIT_REPOSITORY.stage([path.encode(FILESYSTEM_ENCODING)])
+        GIT_REPOSITORY.stage([path])
         committer = config.get("git", "committer")
         GIT_REPOSITORY.do_commit("Commit by Radicale", committer=committer)
 # pylint: enable=W0622

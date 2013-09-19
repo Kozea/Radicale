@@ -272,9 +272,9 @@ class Application(object):
 
         if authorization:
             authorization = \
-                authorization.lstrip("Basic").strip().encode("ascii")
-            user, password = self.decode(
-                base64.b64decode(authorization), environ).split(":", 1)
+                authorization.decode("ascii").lstrip("Basic").strip()
+            user, password = self.decode(base64.b64decode(
+                authorization.encode("ascii")), environ).split(":", 1)
         else:
             user = password = None
 

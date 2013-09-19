@@ -25,6 +25,7 @@ Multi files per calendar filesystem storage backend.
 import os
 import shutil
 import time
+import sys
 
 from . import filesystem
 from .. import ical
@@ -50,7 +51,10 @@ class Collection(filesystem.Collection):
         components = [i for i in items if isinstance(i, ical.Component)]
         for component in components:
             text = ical.serialize(self.tag, headers, [component] + timezones)
-            path = os.path.join(self._path, component.name)
+            name = (
+                component.name if sys.version_info[0] >= 3 else
+                component.name.encode(filesystem.FILESYSTEM_ENCODING))
+            path = os.path.join(self._path, name)
             with filesystem.open(path, "w") as fd:
                 fd.write(text)
 

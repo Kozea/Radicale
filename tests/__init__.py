@@ -58,6 +58,8 @@ class BaseTest(object):
         args["REQUEST_METHOD"] = method.upper()
         args["PATH_INFO"] = path
         if data:
+            if sys.version_info[0] >= 3:
+                data = data.encode("utf-8")
             args["wsgi.input"] = BytesIO(data)
             args["CONTENT_LENGTH"] = str(len(data))
         self.application._answer = self.application(args, self.start_response)
@@ -128,11 +130,11 @@ class HtpasswdAuthSystem(BaseTest):
     def setup(self):
         self.colpath = tempfile.mkdtemp()
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
-        with open(htpasswd_file_path, "w") as fd:
-            fd.write('tmp:{SHA}' + base64.b64encode(
-                hashlib.sha1("bépo").digest()))
+        with open(htpasswd_file_path, "wb") as fd:
+            fd.write(b"tmp:{SHA}" + base64.b64encode(
+                hashlib.sha1(b"bepo").digest()))
         config.set("auth", "type", "htpasswd")
-        self.userpass = base64.b64encode("tmp:bépo")
+        self.userpass = base64.b64encode(b"tmp:bepo")
         self.application = radicale.Application()
         htpasswd.FILENAME = htpasswd_file_path
         htpasswd.ENCRYPTION = "sha1"
