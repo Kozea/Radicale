@@ -272,28 +272,27 @@ class Application(object):
 
         if authorization:
             authorization = \
-                authorization.lstrip("Basic").strip().encode("ascii")
-            user, password = self.decode(
-                base64.b64decode(authorization), environ).split(":", 1)
+                authorization.decode("ascii").lstrip("Basic").strip()
+            user, password = self.decode(base64.b64decode(
+                authorization.encode("ascii")), environ).split(":", 1)
         else:
             user = password = None
 
-        if not items or function == self.options or \
-                auth.is_authenticated(user, password):
+        read_allowed_items, write_allowed_items = \
+            self.collect_allowed_items(items, user)
 
-            read_allowed_items, write_allowed_items = \
-                self.collect_allowed_items(items, user)
-
-            if read_allowed_items or write_allowed_items or \
-                    function == self.options or not items:
-                # Collections found, or OPTIONS request, or no items at all
-                status, headers, answer = function(
-                    environ, read_allowed_items, write_allowed_items, content,
-                    user)
-            else:
-                # Good user but has no rights to any of the given collections
-                status, headers, answer = NOT_ALLOWED
+        if ((read_allowed_items or write_allowed_items)
+            and auth.is_authenticated(user, password)) or \
+                function == self.options or not items:
+            # Collections found, or OPTIONS request, or no items at all
+            status, headers, answer = function(
+                environ, read_allowed_items, write_allowed_items, content,
+                user)
         else:
+            status, headers, answer = NOT_ALLOWED
+
+        if (status, headers, answer) == NOT_ALLOWED and \
+                not auth.is_authenticated(user, password):
             # Unknown or unauthorized user
             log.LOGGER.info("%s refused" % (user or "Anonymous user"))
             status = client.UNAUTHORIZED

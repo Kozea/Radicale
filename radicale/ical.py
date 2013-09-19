@@ -103,7 +103,8 @@ class Item(object):
                 self.text = self.text.replace(
                     "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
         else:
-            self._name = str(uuid4())
+            # workaround to get unicode on both python2 and 3
+            self._name = uuid4().hex.encode("ascii").decode("ascii")
             self.text = self.text.replace(
                 "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
 

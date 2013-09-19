@@ -91,7 +91,10 @@ def _read_from_sections(user, collection, permission):
 
 
 def authorized(user, collection, right):
-    """Check if the user is allowed to read or write the collection."""
+    """Check if the user is allowed to read or write the collection.
+
+       If the user is empty it checks for anonymous rights
+    """
     rights_type = config.get("rights", "type").lower()
-    return rights_type == "none" or (user and _read_from_sections(
-        user, collection.url.rstrip("/") or "/", right))
+    return rights_type == "none" or (_read_from_sections(
+        user or "", collection.url.rstrip("/") or "/", right))
