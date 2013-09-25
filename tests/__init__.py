@@ -39,7 +39,6 @@ os.environ["RADICALE_CONFIG"] = os.path.join(os.path.dirname(
 
 from radicale import config
 from radicale.auth import htpasswd
-from radicale.storage import filesystem, database
 from .helpers import get_file_content
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -84,6 +83,7 @@ class FileSystem(BaseTest):
         """Setup function for each test."""
         self.colpath = tempfile.mkdtemp()
         config.set("storage", "type", self.storage_type)
+        from radicale.storage import filesystem
         filesystem.FOLDER = self.colpath
         filesystem.GIT_REPOSITORY = None
         self.application = radicale.Application()
@@ -103,6 +103,7 @@ class DataBaseSystem(BaseTest):
     def setup(self):
         config.set("storage", "type", "database")
         config.set("storage", "database_url", "sqlite://")
+        from radicale.storage import database
         database.Session = sessionmaker()
         database.Session.configure(bind=create_engine("sqlite://"))
         session = database.Session()
@@ -118,6 +119,7 @@ class GitFileSystem(FileSystem):
     def setup(self):
         super(GitFileSystem, self).setup()
         Repo.init(self.colpath)
+        from radicale.storage import filesystem
         filesystem.GIT_REPOSITORY = Repo(self.colpath)
 
 
