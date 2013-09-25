@@ -54,7 +54,7 @@ class BaseRequests(object):
         status, headers, answer = self.request("GET", path)
         assert status == 200
         assert "VEVENT" in answer
-        assert "Nouvel évènement" in answer
+        assert b"Nouvel \xc3\xa9v\xc3\xa8nement".decode("utf-8") in answer
         assert "UID:02805f81-4cc2-4d68-8d39-72768ffa02d9" in answer
         # VTODO test
         todo = get_file_content("putvtodo.ics")
@@ -64,7 +64,7 @@ class BaseRequests(object):
         assert "ETag" in headers.keys()
         status, headers, answer = self.request("GET", path)
         assert "VTODO" in answer
-        assert "Nouvelle tâche" in answer
+        assert b"Nouvelle t\xc3\xa2che".decode("utf-8") in answer
         assert "UID:40f8cf9b-0e62-4624-89a2-24c5e68850f5" in answer
 
     def test_delete(self):
