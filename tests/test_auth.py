@@ -37,7 +37,7 @@ class TestBaseAuthRequests(HtpasswdAuthSystem):
 
     @with_setup(HtpasswdAuthSystem.setup, HtpasswdAuthSystem.teardown)
     def test_root(self):
-        """Tests a GET request at "/"."""
+        """Tests a GET request at "/"."""
         status, headers, answer = self.request(
             "GET", "/", HTTP_AUTHORIZATION=self.userpass)
         assert status == 200
