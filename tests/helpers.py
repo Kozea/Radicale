@@ -35,4 +35,4 @@ def get_file_content(file_name):
         with open(os.path.join(EXAMPLES_FOLDER, file_name)) as fd:
             return fd.read()
     except IOError:
-        print(u"Couldn't open the file %s" % file_name)
+        print("Couldn't open the file %s" % file_name)

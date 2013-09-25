@@ -71,8 +71,7 @@ INITIAL_CONFIG = {
         "http_user_parameter": "",
         "http_password_parameter": ""},
     "git": {
-        "committer": "Firstname Lastname <Radicale@Radicale.org>",
-    },
+        "committer": "Radicale <radicale@example.com>"},
     "rights": {
         "type": "None",
         "file": "~/.config/radicale/rights"},
