@@ -77,7 +77,7 @@ class BaseRequests(object):
         # Then we send a DELETE request
         status, headers, answer = self.request("DELETE", path)
         assert status == 200
-        assert "<href>%s</href>" % path in answer
+        assert "href>%s</" % path in answer
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert "VEVENT" not in answer
 
