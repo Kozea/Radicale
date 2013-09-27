@@ -50,6 +50,7 @@ def is_authenticated(user, password):
 
     # Check whether the group exists
     try:
+        # Obtain supplementary groups
         members = grp.getgrnam(GROUP_MEMBERSHIP).gr_mem
     except KeyError:
         log.LOGGER.debug(
@@ -57,18 +58,26 @@ def is_authenticated(user, password):
             GROUP_MEMBERSHIP)
         return False
 
-    # Check whether the user belongs to the required group
-    for member in members:
-        if member == user:
-            log.LOGGER.debug(
-                "The PAM user belongs to the required group (%s)" %
-                GROUP_MEMBERSHIP)
-            # Check the password
-            if pam.authenticate(user, password):
-                return True
-            else:
-                log.LOGGER.debug("Wrong PAM password")
-            break
+    # Check whether the user exists
+    try:
+        # Get user primary group
+        primary_group = grp.getgrgid(pwd.getpwnam(user).pw_gid).gr_name
+    except KeyError:
+        log.LOGGER.debug(
+            "The PAM user (%s) doesn't exist" %
+            user)
+        return False
+
+    # Check whether the user belongs to the required group (primary or supplementary)
+    if primary_group == GROUP_MEMBERSHIP or user in members:
+        log.LOGGER.debug(
+            "The PAM user belongs to the required group (%s)" %
+            GROUP_MEMBERSHIP)
+        # Check the password
+        if pam.authenticate(user, password):
+            return True
+        else:
+            log.LOGGER.debug("Wrong PAM password")
     else:
         log.LOGGER.debug(
             "The PAM user doesn't belong to the required group (%s)" %
