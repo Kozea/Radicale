@@ -36,6 +36,9 @@ GROUP_MEMBERSHIP = config.get("auth", "pam_group_membership")
 def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
 
+    if user is None or password is None:
+      return False
+
     # Check whether the user exists in the PAM system
     try:
         pwd.getpwnam(user).pw_uid
