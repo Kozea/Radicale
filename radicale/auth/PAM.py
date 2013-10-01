@@ -35,9 +35,8 @@ GROUP_MEMBERSHIP = config.get("auth", "pam_group_membership")
 
 def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
-
     if user is None or password is None:
-      return False
+        return False
 
     # Check whether the user exists in the PAM system
     try:
@@ -63,12 +62,11 @@ def is_authenticated(user, password):
         # Get user primary group
         primary_group = grp.getgrgid(pwd.getpwnam(user).pw_gid).gr_name
     except KeyError:
-        log.LOGGER.debug(
-            "The PAM user (%s) doesn't exist" %
-            user)
+        log.LOGGER.debug("The PAM user (%s) doesn't exist" % user)
         return False
 
-    # Check whether the user belongs to the required group (primary or supplementary)
+    # Check whether the user belongs to the required group
+    # (primary or supplementary)
     if primary_group == GROUP_MEMBERSHIP or user in members:
         log.LOGGER.debug(
             "The PAM user belongs to the required group (%s)" %
