@@ -704,6 +704,11 @@ options offered by these authentication modules.
 Some authentication methods need additional modules, see `Python Versions and
 OS Support`_ for further information.
 
+Please note that these modules have not been verified by security experts. If
+you need a really secure way to handle authentication, you should put Radicale
+behind a real HTTP server and use its authentication and rights management
+methods.
+
 
 Rights Management
 -----------------
