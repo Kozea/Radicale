@@ -271,8 +271,7 @@ class Application(object):
         authorization = environ.get("HTTP_AUTHORIZATION", None)
 
         if authorization:
-            authorization = \
-                authorization.decode("ascii").lstrip("Basic").strip()
+            authorization = authorization.lstrip("Basic").strip()
             user, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
         else:

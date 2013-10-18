@@ -136,7 +136,7 @@ class HtpasswdAuthSystem(BaseTest):
             fd.write(b"tmp:{SHA}" + base64.b64encode(
                 hashlib.sha1(b"bepo").digest()))
         config.set("auth", "type", "htpasswd")
-        self.userpass = base64.b64encode(b"tmp:bepo")
+        self.userpass = "dG1wOmJlcG8="
         self.application = radicale.Application()
         htpasswd.FILENAME = htpasswd_file_path
         htpasswd.ENCRYPTION = "sha1"
