@@ -89,7 +89,8 @@ access. Protocol used by Radicale is ``CalDAV``. A standard location for a
 basic use of a Radicale calendar is
 ``http://localhost:5232/user/calendar.ics/``, where you can replace ``user``
 and ``calendar.ics`` by some strings of your choice. Calendars are
-automatically created if needed.
+automatically created if needed. Please note that **the trailing slash is
+important**.
 
 You can now customize your calendar by giving it a nickname and a color. This
 is only used by Lightning to identify calendars among others.
@@ -116,7 +117,8 @@ menu ``File → New → Calendar``.
 A new window opens. The calendar ``type`` is ``CalDAV``, and the location is
 something like ``caldav://localhost:5232/user/calendar.ics/``, where you can
 replace ``user`` and ``calendar`` by some strings of your choice. Calendars are
-automatically created if needed.
+automatically created if needed. Please note that **the trailing slash is
+important**.
 
 You can fill other attributes like the color and the name, these are only used
 for Evolution and are not uploaded.
@@ -148,25 +150,27 @@ But to ensure it works for everyone this examples uses the menu-bar.
 8. Fill in your Username and Password.
 9. Click ``Add``.
 10. Choose ``CalDav``.
-11. For remote URL enter http://myserver:5232/Username/Calendar.ics
+11. For remote URL enter ``http://myserver:5232/Username/Calendar.ics/``
 12. Click ``Fetch``.
 13. Select desired calendar.
 14. Hit ``OK``.
 15. Hit ``OK`` again.
 16. Close the Configuration Window (Click ``OK``).
-17. Restart Korganizer for the calendar to appear in the "Calendar Manager" sidebar :(. (At least with version 4.8.3.)
+17. Restart Korganizer for the calendar to appear in the "Calendar Manager"
+    sidebar (at least with version 4.8.3.)
 
 .. note::
-    After you created a calender in a collection you can also use http://myserver:5232/Username/ as an URL
-    This will then list all available calendars.
+    After you created a calender in a collection you can also use
+    ``http://myserver:5232/Username/`` as an URL This will then list all
+    available calendars.
     
 Contacts
 ++++++++
 
 You can add a address book analogously to the above instructions, just choose
-CardDav and http://myserver:5232/Username/AddressBook.vcf in step 10 and 11.
-Also, if you already have a calendar set up you can add an address book to its
-"DAV groupware resource" under Configure-Kontact → Calendar → General →
+CardDav and ``http://myserver:5232/Username/AddressBook.vcf/`` in step 10 and
+11. Also, if you already have a calendar set up you can add an address book to
+its "DAV groupware resource" under Configure-Kontact → Calendar → General →
 Calendars → Modify. This way you don't have to enter username and password
 twice.
 
@@ -178,21 +182,23 @@ CalDAV-Sync is implemented as sync adapter to integrate seamlessly with
 any calendar app and widget. Therefore you have to access it via 
 ``Accounts & Sync`` settings after installing it from the Market.
 
-So, to add new calendars to your phone open ``Accounts & Sync`` settings 
-and tap on ``Add account``, selecting CalDAV as type. In the next view, 
-you have to switch to Manual Mode. Enter the full CalDAV URL of your Radicale 
-account (e.g. http://example.com:5232/Username/) and corresponding login data.
-If you want to create a new calendar you have to specify its full URL e.g.
-http://example.com:5232/Username/Calendar.ics/ . 
+So, to add new calendars to your phone open ``Accounts & Sync`` settings and
+tap on ``Add account``, selecting CalDAV as type. In the next view, you have to
+switch to Manual Mode. Enter the full CalDAV URL of your Radicale account
+(e.g. ``http://example.com:5232/Username/``) and corresponding login data. If
+you want to create a new calendar you have to specify its full URL e.g.
+``http://example.com:5232/Username/Calendar.ics/``. Please note that **the
+trailing slash is important**.
 
-Tap on ``Next`` and the app checks for all available calendars 
-on your account, listing them in the next view. (Note: CalDAV-Sync will not 
-only check under the url you entered but also under 
-http://example.com:5232/UsernameYouEnteredForLogin/. This might cause strange 
-errors.) You can now select calendars 
-you want to sync and set a local nickname and color for each. Hitting ``Next`` 
-again brings up the last page. Enter your email address and uncheck ``Sync 
-from server to phone only`` if you want to use two-way-sync.
+Tap on ``Next`` and the app checks for all available calendars on
+your account, listing them in the next view. (Note: CalDAV-Sync
+will not only check under the url you entered but also under
+``http://example.com:5232/UsernameYouEnteredForLogin/``. This
+might cause strange errors.) You can now select calendars you
+want to sync and set a local nickname and color for each. Hitting
+``Next`` again brings up the last page. Enter your email address
+and uncheck ``Sync from server to phone only`` if you want to use
+two-way-sync.
 
 .. note::
     CalDAV-Sync officially is in alpha state and two-way-sync is marked as 
@@ -206,7 +212,7 @@ CardDAV-Sync
 ~~~~~~~~~~~~
 
 Set up works like CalDAV-Sync, just use .vcf instead of .ics if you enter the
-url, e.g. http://example.com:5232/Username/AddressBook.vcf/
+URL, e.g. ``http://example.com:5232/Username/AddressBook.vcf/``.
 
 aCal
 ~~~~
@@ -261,7 +267,8 @@ that are critical for proper operation.
 2. Select ``Mail, Contacts, Calendars``
 3. Select ``Add Account`` →  ``Other`` →  ``Add CalDAV Account``
 4. Enter the server URL here, including ``https``, the port, and the user/calendar
-   path, ex: https://myserver.domain.com:3000/bob/birthdays/
+   path, ex: ``https://myserver.domain.com:3000/bob/birthdays.ics/`` (please note
+   that **the trailing slash is important**)
 5. Enter your username and password as defined in your server config
 6. Enter a good description of the calendar in the ``Description`` field.
    Otherwise it will put the whole servername in the field.
@@ -270,11 +277,11 @@ that are critical for proper operation.
    otherwise new events won't show up on your iOS devices!
 
 .. note::
-   Everything should be working now so test creating events and make sure they stay created. 
-   If you create events on your iOS device and they disappear after the fetch period,
-   you probably forgot to change the sync setting in step 7. Likewise, if you create events
-   on another device and they don't appear on your iPad of iPhone, then make sure your sync
-   settings are correct
+   Everything should be working now so test creating events and make sure they
+   stay created.  If you create events on your iOS device and they disappear
+   after the fetch period, you probably forgot to change the sync setting in
+   step 7. Likewise, if you create events on another device and they don't
+   appear on your iPad of iPhone, then make sure your sync settings are correct
 
 .. warning::
    In iOS 5.x, please check twice that the ``Sync all entries`` option is
@@ -341,7 +348,8 @@ syncEvolution
 ~~~~~~~~~~~~~
 
 You can find more information about syncEvolution and Radicale on the
-`syncEvolution wiki page <https://syncevolution.org/wiki/synchronizing-radicale>`_.
+`syncEvolution wiki page
+<https://syncevolution.org/wiki/synchronizing-radicale>`_.
 
 
 Complex Configuration
@@ -746,8 +754,8 @@ collections.
 From File
 ~~~~~~~~~
 
-File-based rights. Rights are read from a file whose name is specified in the config (section
-``[right]``, key ``file``).
+File-based rights. Rights are read from a file whose name is specified in the
+config (section ``[right]``, key ``file``).
 
 Example:
 
@@ -828,4 +836,4 @@ Daemon Mode
 -----------
 
 The daemon mode relies on forks, and thus only works on Unix-like OSes
-(incuding Linux, OS X, BSD).
+(incuding Linux, OS X, BSD).
