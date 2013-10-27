@@ -36,7 +36,6 @@ Leading or ending slashes are trimmed from collection's path.
 """
 
 import re
-import io
 import os.path
 
 from . import config, log
@@ -47,6 +46,11 @@ try:
     from configparser import ConfigParser
 except ImportError:
     from ConfigParser import ConfigParser
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 # pylint: enable=F0401
 
 
@@ -63,7 +67,7 @@ def _read_from_sections(user, collection, permission):
     regex = ConfigParser({"login": user, "path": collection})
     if rights_type in DEFINED_RIGHTS:
         log.LOGGER.debug("Rights type '%s'" % rights_type)
-        regex.readfp(io.BytesIO(DEFINED_RIGHTS[rights_type]))
+        regex.readfp(StringIO(DEFINED_RIGHTS[rights_type]))
     elif rights_type == "from_file":
         log.LOGGER.debug("Reading rights from file %s" % filename)
         if not regex.read(filename):
