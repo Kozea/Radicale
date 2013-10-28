@@ -27,6 +27,7 @@ Define the main classes of a collection as seen from the server.
 
 import os
 import posixpath
+import hashlib
 from uuid import uuid4
 from random import randint
 from contextlib import contextmanager
@@ -109,7 +110,9 @@ class Item(object):
                 "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
 
     def __hash__(self):
-        return hash(self.text)
+        m = hashlib.md5()
+        m.update(self.text.encode('utf-8'))
+        return m.hexdigest()
 
     def __eq__(self, item):
         return isinstance(item, Item) and self.text == item.text
@@ -437,7 +440,9 @@ class Collection(object):
     @property
     def etag(self):
         """Etag from collection."""
-        return '"%s"' % hash(self.text)
+        m = hashlib.md5()
+        m.update(self.text.encode('utf-8'))
+        return '"%s"' % m.hexdigest()
 
     @property
     def name(self):
