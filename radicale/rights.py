@@ -44,13 +44,10 @@ from . import config, log
 # pylint: disable=F0401
 try:
     from configparser import ConfigParser
+    from io import StringIO
 except ImportError:
     from ConfigParser import ConfigParser
-
-try:
     from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 # pylint: enable=F0401
 
 
