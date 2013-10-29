@@ -13,6 +13,7 @@
 * Support colors (by Jochen Sprickerhof)
 * Decode URLs in XML (by Jean-Marc Martins)
 * Fix PAM authentication (by Stepan Henek)
+* Use consistent hashes for etags (by 9m66p93w)
 
 
 0.8 - Rainbow
