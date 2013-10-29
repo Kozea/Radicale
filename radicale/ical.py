@@ -110,9 +110,9 @@ class Item(object):
                 "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
 
     def __hash__(self):
-        m = hashlib.md5()
-        m.update(self.text.encode('utf-8'))
-        return m.hexdigest()
+        md5 = hashlib.md5()
+        md5.update(self.text.encode("utf-8"))
+        return md5.hexdigest()
 
     def __eq__(self, item):
         return isinstance(item, Item) and self.text == item.text
@@ -440,9 +440,9 @@ class Collection(object):
     @property
     def etag(self):
         """Etag from collection."""
-        m = hashlib.md5()
-        m.update(self.text.encode('utf-8'))
-        return '"%s"' % m.hexdigest()
+        md5 = hashlib.md5()
+        md5.update(self.text.encode("utf-8"))
+        return '"%s"' % md5.hexdigest()
 
     @property
     def name(self):
