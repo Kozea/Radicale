@@ -107,7 +107,6 @@ class DataBaseSystem(BaseTest):
         database.Session = sessionmaker()
         database.Session.configure(bind=create_engine("sqlite://"))
         session = database.Session()
-        # session.execute(get_file_content("schema.sql"))
         for st in get_file_content("schema.sql").split(";"):
             session.execute(st)
         session.commit()
