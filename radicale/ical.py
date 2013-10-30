@@ -110,9 +110,7 @@ class Item(object):
                 "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
 
     def __hash__(self):
-        m = hashlib.md5()
-        m.update(self.text.encode('utf-8'))
-        return m.hexdigest()
+        return hash(self.text)
 
     def __eq__(self, item):
         return isinstance(item, Item) and self.text == item.text
@@ -124,7 +122,9 @@ class Item(object):
         Etag is mainly used to know if an item has changed.
 
         """
-        return '"%s"' % hash(self)
+        m = hashlib.md5()
+        m.update(self.text.encode('utf-8'))
+        return '"%s"' % m.hexdigest()
 
     @property
     def name(self):
