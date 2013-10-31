@@ -45,10 +45,7 @@ class DBCollection(Base):
     __tablename__ = "collection"
 
     path = Column(String, primary_key=True)
-    parent_path = Column(String, ForeignKey("collection.path"))
-
-    parent = relationship(
-        "DBCollection", backref="children", remote_side=[path])
+    parent_path = Column(String)
 
 
 class DBItem(Base):
@@ -152,6 +149,7 @@ class Collection(ical.Collection):
         else:
             db_collection = DBCollection()
             db_collection.path = self.path
+            db_collection.parent_path = "/".join(self.path.split("/")[:-1])
             self.session.add(db_collection)
 
         for header in headers:
@@ -197,10 +195,9 @@ class Collection(ical.Collection):
     @classmethod
     def children(cls, path):
         session = Session()
-        if path:
-            children = session.query(DBCollection).get(path).children
-        else:
-            children = session.query(DBCollection).filter_by(parent=None).all()
+        children = (
+            session.query(DBCollection)
+            .filter_by(parent_path=path or "").all())
         collections = [cls(child.path) for child in children]
         session.close()
         return collections
@@ -212,7 +209,7 @@ class Collection(ical.Collection):
         session = Session()
         result = (
             session.query(DBCollection)
-            .filter_by(parent_path=path).count() > 0)
+            .filter_by(parent_path=path or "").count() > 0)
         session.close()
         return result
 
@@ -223,7 +220,7 @@ class Collection(ical.Collection):
         session = Session()
         result = (
             session.query(DBItem)
-            .filter_by(collection_path=path).count() > 0)
+            .filter_by(collection_path=path or "").count() > 0)
         session.close()
         return result
 
