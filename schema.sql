@@ -2,7 +2,7 @@
 
 create table collection (
        path varchar primary key not null,
-       parent_path varchar;
+       parent_path varchar not null);
 
 create table item (
        name varchar primary key not null,
