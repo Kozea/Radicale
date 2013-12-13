@@ -28,7 +28,7 @@ key = /etc/apache2/ssl/server.key
 # SSL Protocol used. See python's ssl module for available values
 protocol = PROTOCOL_SSLv23
 # Ciphers available. See python's ssl module for available ciphers
-ciphers = None
+ciphers =
 # Reverse DNS to resolve client address in logs
 dns_lookup = True
 # Root URL of Radicale (starting and ending with a slash)

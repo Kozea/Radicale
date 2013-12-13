@@ -100,7 +100,7 @@ class HTTPSServer(HTTPServer):
             keyfile=config.get("server", "key"),
             ssl_version=getattr(ssl, config.get("server", "protocol"),
                                 ssl.PROTOCOL_SSLv23),
-            ciphers=config.get("server", "ciphers"))
+            ciphers=config.get("server", "ciphers") or None)
 
         self.server_bind()
         self.server_activate()
