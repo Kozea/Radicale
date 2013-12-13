@@ -98,7 +98,9 @@ class HTTPSServer(HTTPServer):
             server_side=True,
             certfile=config.get("server", "certificate"),
             keyfile=config.get("server", "key"),
-            ssl_version=ssl.PROTOCOL_SSLv23)
+            ssl_version=getattr(ssl, config.get("server", "protocol"),
+                                ssl.PROTOCOL_SSLv23),
+            ciphers=config.get("server", "ciphers"))
 
         self.server_bind()
         self.server_activate()
@@ -271,8 +273,7 @@ class Application(object):
         authorization = environ.get("HTTP_AUTHORIZATION", None)
 
         if authorization:
-            authorization = \
-                authorization.decode("ascii").lstrip("Basic").strip()
+            authorization = authorization.lstrip("Basic").strip()
             user, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
         else:

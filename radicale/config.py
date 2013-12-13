@@ -45,6 +45,8 @@ INITIAL_CONFIG = {
         "ssl": "False",
         "certificate": "/etc/apache2/ssl/server.crt",
         "key": "/etc/apache2/ssl/server.key",
+        "protocol": "PROTOCOL_SSLv23",
+        "ciphers": None,
         "dns_lookup": "True",
         "base_prefix": "/",
         "realm": "Radicale - Password Required"},
