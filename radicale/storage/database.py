@@ -24,7 +24,7 @@ SQLAlchemy storage backend.
 import time
 from datetime import datetime
 from contextlib import contextmanager
-from sqlalchemy import create_engine, Column, String, DateTime, ForeignKey
+from sqlalchemy import create_engine, Column, Unicode, Integer, ForeignKey
 from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -44,17 +44,20 @@ class DBCollection(Base):
     """Table of collections."""
     __tablename__ = "collection"
 
-    path = Column(String, primary_key=True)
-    parent_path = Column(String)
+    path = Column(Unicode, primary_key=True)
+    parent_path = Column(Unicode, ForeignKey("collection.path"))
+
+    parent = relationship(
+        "DBCollection", backref="children", remote_side=[path])
 
 
 class DBItem(Base):
     """Table of collection's items."""
     __tablename__ = "item"
 
-    name = Column(String, primary_key=True)
-    tag = Column(String)
-    collection_path = Column(String, ForeignKey("collection.path"))
+    name = Column(Unicode, primary_key=True)
+    tag = Column(Unicode)
+    collection_path = Column(Unicode, ForeignKey("collection.path"))
 
     collection = relationship("DBCollection", backref="items")
 
@@ -63,10 +66,10 @@ class DBHeader(Base):
     """Table of item's headers."""
     __tablename__ = "header"
 
-    key = Column(String, primary_key=True)
-    value = Column(String)
+    name = Column(Unicode, primary_key=True)
+    value = Column(Unicode)
     collection_path = Column(
-        String, ForeignKey("collection.path"), primary_key=True)
+        Unicode, ForeignKey("collection.path"), primary_key=True)
 
     collection = relationship("DBCollection", backref="headers")
 
@@ -75,23 +78,23 @@ class DBLine(Base):
     """Table of item's lines."""
     __tablename__ = "line"
 
-    key = Column(String)
-    value = Column(String)
-    item_name = Column(String, ForeignKey("item.name"))
-    timestamp = Column(DateTime, default=datetime.now, primary_key=True)
+    name = Column(Unicode)
+    value = Column(Unicode)
+    item_name = Column(Unicode, ForeignKey("item.name"))
+    timestamp = Column(
+        Integer, default=lambda: time.time() * 10 ** 6, primary_key=True)
 
-    item = relationship(
-        "DBItem", backref="lines", order_by=timestamp)
+    item = relationship("DBItem", backref="lines", order_by=timestamp)
 
 
 class DBProperty(Base):
     """Table of collection's properties."""
     __tablename__ = "property"
 
-    key = Column(String, primary_key=True)
-    value = Column(String)
+    name = Column(Unicode, primary_key=True)
+    value = Column(Unicode)
     collection_path = Column(
-        String, ForeignKey("collection.path"), primary_key=True)
+        Unicode, ForeignKey("collection.path"), primary_key=True)
 
     collection = relationship(
         "DBCollection", backref="properties", cascade="delete")
@@ -116,17 +119,20 @@ class Collection(ical.Collection):
                 .order_by(DBItem.name).all())
             for item in items:
                 text = "\n".join(
-                    "%s:%s" % (line.key, line.value) for line in item.lines)
+                    "%s:%s" % (line.name, line.value) for line in item.lines)
                 item_objects.append(item_type(text, item.name))
         return item_objects
 
     @property
     def _modification_time(self):
         """Collection's last modification time."""
-        return (
+        timestamp = (
             self.session.query(func.max(DBLine.timestamp))
-            .join(DBItem).filter_by(collection_path=self.path).first()[0]
-            or datetime.now())
+            .join(DBItem).filter_by(collection_path=self.path).first()[0])
+        if timestamp:
+            return datetime.fromtimestamp(float(timestamp) / 10 ** 6)
+        else:
+            return datetime.now()
 
     @property
     def _db_collection(self):
@@ -154,7 +160,7 @@ class Collection(ical.Collection):
 
         for header in headers:
             db_header = DBHeader()
-            db_header.key, db_header.value = header.text.split(":", 1)
+            db_header.name, db_header.value = header.text.split(":", 1)
             db_header.collection_path = self.path
             self.session.add(db_header)
 
@@ -167,7 +173,7 @@ class Collection(ical.Collection):
 
             for line in ical.unfold(item.text):
                 db_line = DBLine()
-                db_line.key, db_line.value = line.split(":", 1)
+                db_line.name, db_line.value = line.split(":", 1)
                 db_line.item_name = item.name
                 self.session.add(db_line)
 
@@ -187,9 +193,9 @@ class Collection(ical.Collection):
         headers = (
             self.session.query(DBHeader)
             .filter_by(collection_path=self.path)
-            .order_by(DBHeader.key).all())
+            .order_by(DBHeader.name).all())
         return [
-            ical.Header("%s:%s" % (header.key, header.value))
+            ical.Header("%s:%s" % (header.name, header.value))
             for header in headers]
 
     @classmethod
@@ -238,16 +244,16 @@ class Collection(ical.Collection):
             self.session.query(DBProperty)
             .filter_by(collection_path=self.path).all())
         for prop in db_properties:
-            properties[prop.key] = prop.value
+            properties[prop.name] = prop.value
         old_properties = properties.copy()
         yield properties
         # On exit
         if self._db_collection and old_properties != properties:
             for prop in db_properties:
                 self.session.delete(prop)
-            for key, value in properties.items():
+            for name, value in properties.items():
                 prop = DBProperty()
-                prop.key = key
+                prop.name = name
                 prop.value = value
                 prop.collection_path = self.path
                 self.session.add(prop)
