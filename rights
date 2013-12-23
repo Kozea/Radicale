@@ -7,7 +7,7 @@
 
 # This means all users starting with "admin" may read any collection
 [admin]
-user: ^admin.*\|.+?$
+user: ^admin.*$
 collection: .*
 permission: r
 
