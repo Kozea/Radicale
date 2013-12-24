@@ -100,6 +100,9 @@ committer = Firstname Lastname <Radicale@Radicale.org>
 
 
 [rights]
+# Rights backend
+backend = "regex"
+
 # Rights management method
 # Value: None | owner_only | owner_write | from_file
 type = None

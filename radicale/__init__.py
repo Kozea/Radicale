@@ -127,6 +127,7 @@ class Application(object):
         super(Application, self).__init__()
         auth.load()
         storage.load()
+        rights.load()
         self.encoding = config.get("encoding", "request")
         if config.getboolean("logging", "full_environment"):
             self.headers_log = lambda environ: environ
