@@ -96,6 +96,10 @@ def authorized(user, collection, right):
 
        If the user is empty it checks for anonymous rights
     """
+    collection_url = collection.url.rstrip("/") or "/"
+    if collection_url in (".well-known/carddav", ".well-known/caldav"):
+        return right == "r"
     rights_type = config.get("rights", "type").lower()
-    return rights_type == "none" or (_read_from_sections(
-        user or "", collection.url.rstrip("/") or "/", right))
+    return (
+        rights_type == "none" or
+        _read_from_sections(user or "", collection_url, right))
