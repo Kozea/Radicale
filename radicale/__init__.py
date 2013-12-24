@@ -283,7 +283,7 @@ class Application(object):
             self.collect_allowed_items(items, user)
 
         if ((read_allowed_items or write_allowed_items)
-            and auth.is_authenticated(user, password)) or \
+            and (not user or auth.is_authenticated(user, password))) or \
                 function == self.options or not items:
             # Collections found, or OPTIONS request, or no items at all
             status, headers, answer = function(
@@ -292,8 +292,9 @@ class Application(object):
         else:
             status, headers, answer = NOT_ALLOWED
 
-        if (status, headers, answer) == NOT_ALLOWED and \
-                not auth.is_authenticated(user, password):
+        if ((status, headers, answer) == NOT_ALLOWED and
+                not auth.is_authenticated(user, password) and
+                config.get("auth", "type") != "None"):
             # Unknown or unauthorized user
             log.LOGGER.info("%s refused" % (user or "Anonymous user"))
             status = client.UNAUTHORIZED
