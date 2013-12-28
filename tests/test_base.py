@@ -25,6 +25,7 @@ from . import (FileSystem, MultiFileSystem, DataBaseSystem,
                GitFileSystem, GitMultiFileSystem)
 from .helpers import get_file_content
 import sys
+from tests import CustomStorageSystem
 
 
 class BaseRequests(object):
@@ -83,7 +84,7 @@ class BaseRequests(object):
 
 # Generate classes with different configs
 cl_list = [FileSystem, MultiFileSystem, DataBaseSystem,
-           GitFileSystem, GitMultiFileSystem]
+           GitFileSystem, GitMultiFileSystem, CustomStorageSystem]
 for cl in cl_list:
     classname = "Test%s" % cl.__name__
     setattr(sys.modules[__name__],

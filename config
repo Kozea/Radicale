@@ -104,6 +104,7 @@ committer = Firstname Lastname <Radicale@Radicale.org>
 
 [rights]
 # Rights backend
+# Value: regex
 backend = "regex"
 
 # Rights management method
@@ -116,8 +117,11 @@ file = ~/.config/radicale/rights
 
 [storage]
 # Storage backend
-# Value: filesystem | multifilesystem | database
+# Value: filesystem | multifilesystem | database | custom
 type = filesystem
+
+# Custom storage handler
+custom_handler =
 
 # Folder for storing local collections, created if not present
 filesystem_folder = ~/.config/radicale/collections

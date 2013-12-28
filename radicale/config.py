@@ -81,6 +81,7 @@ INITIAL_CONFIG = {
         "file": "~/.config/radicale/rights"},
     "storage": {
         "type": "filesystem",
+        "custom_handler": "",
         "filesystem_folder": os.path.expanduser(
             "~/.config/radicale/collections"),
         "database_url": ""},

@@ -123,6 +123,25 @@ class GitMultiFileSystem(GitFileSystem, MultiFileSystem):
     """Base class for multifilesystem tests using Git"""
 
 
+class CustomStorageSystem(BaseTest):
+    """Base class for custom backend tests."""
+    storage_type = "custom"
+
+    def setup(self):
+        """Setup function for each test."""
+        self.colpath = tempfile.mkdtemp()
+        config.set("storage", "type", self.storage_type)
+        config.set("storage", "custom_handler", "tests.custom.storage")
+        from tests.custom import storage
+        storage.FOLDER = self.colpath
+        storage.GIT_REPOSITORY = None
+        self.application = radicale.Application()
+
+    def teardown(self):
+        """Teardown function for each test."""
+        shutil.rmtree(self.colpath)
+
+
 class AuthSystem(BaseTest):
     """Base class to test Radicale with Htpasswd authentication"""
     def setup(self):
