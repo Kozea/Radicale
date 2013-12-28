@@ -21,11 +21,15 @@ Radicale tests with simple requests.
 
 """
 
-from . import (FileSystem, MultiFileSystem, DataBaseSystem,
-               GitFileSystem, GitMultiFileSystem)
 from .helpers import get_file_content
-import sys
-from tests import CustomStorageSystem
+import radicale
+import shutil
+import tempfile
+from dulwich.repo import Repo
+from radicale import config
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from tests import BaseTest
 
 
 class BaseRequests(object):
@@ -82,10 +86,72 @@ class BaseRequests(object):
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert "VEVENT" not in answer
 
-# Generate classes with different configs
-cl_list = [FileSystem, MultiFileSystem, DataBaseSystem,
-           GitFileSystem, GitMultiFileSystem, CustomStorageSystem]
-for cl in cl_list:
-    classname = "Test%s" % cl.__name__
-    setattr(sys.modules[__name__],
-            classname, type(classname, (BaseRequests, cl), {}))
+
+class TestFileSystem(BaseRequests, BaseTest):
+    """Base class for filesystem tests."""
+    storage_type = "filesystem"
+
+    def setup(self):
+        """Setup function for each test."""
+        self.colpath = tempfile.mkdtemp()
+        config.set("storage", "type", self.storage_type)
+        from radicale.storage import filesystem
+        filesystem.FOLDER = self.colpath
+        filesystem.GIT_REPOSITORY = None
+        self.application = radicale.Application()
+
+    def teardown(self):
+        """Teardown function for each test."""
+        shutil.rmtree(self.colpath)
+
+
+class TestMultiFileSystem(TestFileSystem):
+    """Base class for multifilesystem tests."""
+    storage_type = "multifilesystem"
+
+
+class TestDataBaseSystem(BaseRequests, BaseTest):
+    """Base class for database tests"""
+    def setup(self):
+        config.set("storage", "type", "database")
+        config.set("storage", "database_url", "sqlite://")
+        from radicale.storage import database
+        database.Session = sessionmaker()
+        database.Session.configure(bind=create_engine("sqlite://"))
+        session = database.Session()
+        for st in get_file_content("schema.sql").split(";"):
+            session.execute(st)
+        session.commit()
+        self.application = radicale.Application()
+
+
+class TestGitFileSystem(TestFileSystem):
+    """Base class for filesystem tests using Git"""
+    def setup(self):
+        super(TestGitFileSystem, self).setup()
+        Repo.init(self.colpath)
+        from radicale.storage import filesystem
+        filesystem.GIT_REPOSITORY = Repo(self.colpath)
+
+
+class TestGitMultiFileSystem(TestGitFileSystem, TestMultiFileSystem):
+    """Base class for multifilesystem tests using Git"""
+
+
+class TestCustomStorageSystem(BaseRequests, BaseTest):
+    """Base class for custom backend tests."""
+    storage_type = "custom"
+
+    def setup(self):
+        """Setup function for each test."""
+        self.colpath = tempfile.mkdtemp()
+        config.set("storage", "type", self.storage_type)
+        config.set("storage", "custom_handler", "tests.custom.storage")
+        from tests.custom import storage
+        storage.FOLDER = self.colpath
+        storage.GIT_REPOSITORY = None
+        self.application = radicale.Application()
+
+    def teardown(self):
+        """Teardown function for each test."""
+        shutil.rmtree(self.colpath)

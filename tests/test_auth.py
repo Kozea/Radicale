@@ -27,17 +27,24 @@ import hashlib
 import os
 import radicale
 import tempfile
-from tests import AuthSystem
 from radicale import config
 from radicale.auth import htpasswd
+from tests import BaseTest
 
 
-class TestBaseAuthRequests(AuthSystem):
+class TestBaseAuthRequests(BaseTest):
     """
     Tests basic requests with auth.
 
     We should setup auth for each type before create Application object
     """
+
+    def setup(self):
+        self.userpass = "dG1wOmJlcG8="
+
+    def teardown(self):
+        config.set("auth", "type", "None")
+        radicale.auth.is_authenticated = lambda *_: True
 
     def test_root(self):
         self.colpath = tempfile.mkdtemp()
