@@ -22,22 +22,45 @@ Radicale tests with simple requests and authentication.
 
 """
 
-from nose import with_setup
-from . import HtpasswdAuthSystem
+import base64
+import hashlib
+import os
+import radicale
+import tempfile
+from tests import AuthSystem
+from radicale import config
+from radicale.auth import htpasswd
 
 
-class TestBaseAuthRequests(HtpasswdAuthSystem):
+class TestBaseAuthRequests(AuthSystem):
     """
     Tests basic requests with auth.
 
-    ..note Only htpasswd works at the moment since
-    it requires to spawn processes running servers for
-    others auth methods (ldap).
+    We should setup auth for each type before create Application object
     """
 
-    @with_setup(HtpasswdAuthSystem.setup, HtpasswdAuthSystem.teardown)
     def test_root(self):
-        """Tests a GET request at "/"."""
+        self.colpath = tempfile.mkdtemp()
+        htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
+        with open(htpasswd_file_path, "wb") as fd:
+            fd.write(b"tmp:{SHA}" + base64.b64encode(
+                hashlib.sha1(b"bepo").digest()))
+        config.set("auth", "type", "htpasswd")
+
+        htpasswd.FILENAME = htpasswd_file_path
+        htpasswd.ENCRYPTION = "sha1"
+
+        self.application = radicale.Application()
+
+        status, headers, answer = self.request(
+            "GET", "/", HTTP_AUTHORIZATION=self.userpass)
+        assert status == 200
+        assert "Radicale works!" in answer
+
+    def test_custom(self):
+        config.set("auth", "type", "custom")
+        config.set("auth", "custom_handler", "tests.custom.auth")
+        self.application = radicale.Application()
         status, headers, answer = self.request(
             "GET", "/", HTTP_AUTHORIZATION=self.userpass)
         assert status == 200

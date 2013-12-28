@@ -55,6 +55,7 @@ INITIAL_CONFIG = {
         "stock": "utf-8"},
     "auth": {
         "type": "None",
+        "custom_handler": "",
         "htpasswd_filename": "/etc/radicale/users",
         "htpasswd_encryption": "crypt",
         "imap_hostname": "localhost",

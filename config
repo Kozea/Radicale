@@ -47,8 +47,11 @@ stock = utf-8
 
 [auth]
 # Authentication method
-# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http
+# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | custom
 type = None
+
+# custom auth handler
+custom_handler =
 
 # Htpasswd filename
 htpasswd_filename = /etc/radicale/users
