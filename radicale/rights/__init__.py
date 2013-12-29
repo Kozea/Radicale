@@ -31,9 +31,14 @@ from .. import config
 def load():
     """Load list of available storage managers."""
     storage_type = config.get("rights", "backend")
-    root_module = __import__(
-        "rights.%s" % storage_type, globals=globals(), level=2)
-    module = getattr(root_module, storage_type)
+    if storage_type == 'custom':
+        rights_module = config.get("rights", "custom_handler")
+        __import__(rights_module)
+        module = sys.modules[rights_module]
+    else:
+        root_module = __import__(
+            "rights.%s" % storage_type, globals=globals(), level=2)
+        module = getattr(root_module, storage_type)
     sys.modules[__name__].authorized = module.authorized
     return module
 

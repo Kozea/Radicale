@@ -78,6 +78,7 @@ INITIAL_CONFIG = {
     "rights": {
         "backend": "regex",
         "type": "None",
+        "custom_handler": "",
         "file": "~/.config/radicale/rights"},
     "storage": {
         "type": "filesystem",
