@@ -6,6 +6,7 @@
 0.9 - *Not released yet*
 ========================
 
+* Custom handlers for auth, storage and rights (by Sergey Fursov)
 * 1-file-per-event storage (by Jean-Marc Martins)
 * Git support for filesystem storages (by Jean-Marc Martins)
 * DB storage working with PostgreSQL, MariaDB and SQLite (by Jean-Marc Martins)
