@@ -17,26 +17,14 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Storage backends.
+Custom storage backend.
 
-This module loads the storage backend, according to the storage
-configuration.
+Copy of filesystem storage backend for testing
 
 """
-import sys
-from .. import config, ical
+
+from radicale.storage import filesystem
 
 
-def load():
-    """Load list of available storage managers."""
-    storage_type = config.get("storage", "type")
-    if storage_type == "custom":
-        storage_module = config.get("storage", "custom_handler")
-        __import__(storage_module)
-        module = sys.modules[storage_module]
-    else:
-        root_module = __import__(
-            "storage.%s" % storage_type, globals=globals(), level=2)
-        module = getattr(root_module, storage_type)
-    ical.Collection = module.Collection
-    return module
+class Collection(filesystem.Collection):
+    """Collection stored in a flat ical file."""

@@ -38,7 +38,7 @@ Leading or ending slashes are trimmed from collection's path.
 import re
 import os.path
 
-from . import config, log
+from .. import config, log
 
 # Manage Python2/3 different modules
 # pylint: disable=F0401

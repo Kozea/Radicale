@@ -55,6 +55,7 @@ INITIAL_CONFIG = {
         "stock": "utf-8"},
     "auth": {
         "type": "None",
+        "custom_handler": "",
         "htpasswd_filename": "/etc/radicale/users",
         "htpasswd_encryption": "crypt",
         "imap_hostname": "localhost",
@@ -75,10 +76,13 @@ INITIAL_CONFIG = {
     "git": {
         "committer": "Radicale <radicale@example.com>"},
     "rights": {
+        "backend": "regex",
         "type": "None",
+        "custom_handler": "",
         "file": "~/.config/radicale/rights"},
     "storage": {
         "type": "filesystem",
+        "custom_handler": "",
         "filesystem_folder": os.path.expanduser(
             "~/.config/radicale/collections"),
         "database_url": ""},

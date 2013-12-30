@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2012-2013 Guillaume Ayoub
+# Copyright © 2008 Nicolas Kandel
+# Copyright © 2008 Pascal Halter
+# Copyright © 2008-2013 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,26 +19,12 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Storage backends.
+Custom authentication.
 
-This module loads the storage backend, according to the storage
-configuration.
+Just check username for testing
 
 """
-import sys
-from .. import config, ical
 
 
-def load():
-    """Load list of available storage managers."""
-    storage_type = config.get("storage", "type")
-    if storage_type == "custom":
-        storage_module = config.get("storage", "custom_handler")
-        __import__(storage_module)
-        module = sys.modules[storage_module]
-    else:
-        root_module = __import__(
-            "storage.%s" % storage_type, globals=globals(), level=2)
-        module = getattr(root_module, storage_type)
-    ical.Collection = module.Collection
-    return module
+def is_authenticated(user, password):
+    return user == 'tmp'

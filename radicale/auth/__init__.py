@@ -34,13 +34,17 @@ def load():
     log.LOGGER.debug("Authentication type is %s" % auth_type)
     if auth_type == "None":
         return None
+    elif auth_type == 'custom':
+        auth_module = config.get("auth", "custom_handler")
+        __import__(auth_module)
+        module = sys.modules[auth_module]
     else:
         root_module = __import__(
             "auth.%s" % auth_type, globals=globals(), level=2)
         module = getattr(root_module, auth_type)
-        # Override auth.is_authenticated
-        sys.modules[__name__].is_authenticated = module.is_authenticated
-        return module
+    # Override auth.is_authenticated
+    sys.modules[__name__].is_authenticated = module.is_authenticated
+    return module
 
 
 def is_authenticated(user, password):

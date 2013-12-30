@@ -47,8 +47,11 @@ stock = utf-8
 
 [auth]
 # Authentication method
-# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http
+# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | custom
 type = None
+
+# custom auth handler
+custom_handler =
 
 # Htpasswd filename
 htpasswd_filename = /etc/radicale/users
@@ -100,9 +103,16 @@ committer = Firstname Lastname <Radicale@Radicale.org>
 
 
 [rights]
+# Rights backend
+# Value: regex | custom
+backend = regex
+
 # Rights management method
 # Value: None | owner_only | owner_write | from_file
 type = None
+
+# Rights custom handler
+custom_handler =
 
 # File for rights management from_file
 file = ~/.config/radicale/rights
@@ -110,8 +120,11 @@ file = ~/.config/radicale/rights
 
 [storage]
 # Storage backend
-# Value: filesystem | multifilesystem | database
+# Value: filesystem | multifilesystem | database | custom
 type = filesystem
+
+# Custom storage handler
+custom_handler =
 
 # Folder for storing local collections, created if not present
 filesystem_folder = ~/.config/radicale/collections

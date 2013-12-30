@@ -17,26 +17,34 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Storage backends.
+Rights backends.
 
-This module loads the storage backend, according to the storage
+This module loads the rights backend, according to the rights
 configuration.
 
 """
 import sys
-from .. import config, ical
+
+from .. import config
 
 
 def load():
     """Load list of available storage managers."""
-    storage_type = config.get("storage", "type")
-    if storage_type == "custom":
-        storage_module = config.get("storage", "custom_handler")
-        __import__(storage_module)
-        module = sys.modules[storage_module]
+    storage_type = config.get("rights", "backend")
+    if storage_type == 'custom':
+        rights_module = config.get("rights", "custom_handler")
+        __import__(rights_module)
+        module = sys.modules[rights_module]
     else:
         root_module = __import__(
-            "storage.%s" % storage_type, globals=globals(), level=2)
+            "rights.%s" % storage_type, globals=globals(), level=2)
         module = getattr(root_module, storage_type)
-    ical.Collection = module.Collection
+    sys.modules[__name__].authorized = module.authorized
     return module
+
+
+def authorized(user, collection, right):
+    """ Check when user has rights on collection
+    This method is overriden when appropriate rights backend loaded.
+    """
+    raise NotImplementedError()
