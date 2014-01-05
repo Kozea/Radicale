@@ -288,9 +288,15 @@ def _propfind_response(path, item, props, user):
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href("/")
             element.append(tag)
-        elif tag in (_tag("C", "calendar-user-address-set"),
-                     _tag("CR", "addressbook-home-set"),
-                     _tag("C", "calendar-home-set")):
+        elif tag in (_tag("C", "calendar-home-set"),
+                     _tag("CR", "addressbook-home-set")):
+            if user and path == "/%s/" % user:
+                tag = ET.Element(_tag("D", "href"))
+                tag.text = _href(path)
+                element.append(tag)
+            else:
+                is404 = True
+        elif tag == _tag("C", "calendar-user-address-set"):
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href(path)
             element.append(tag)
