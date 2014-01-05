@@ -284,8 +284,11 @@ def _propfind_response(path, item, props, user):
                 is404 = True
                 tag = ET.Element(_tag("D", "unauthenticated"))
             element.append(tag)
-        elif tag in (_tag("D", "principal-collection-set"),
-                     _tag("C", "calendar-user-address-set"),
+        elif tag == _tag("D", "principal-collection-set"):
+            tag = ET.Element(_tag("D", "href"))
+            tag.text = _href("/")
+            element.append(tag)
+        elif tag in (_tag("C", "calendar-user-address-set"),
                      _tag("CR", "addressbook-home-set"),
                      _tag("C", "calendar-home-set")):
             tag = ET.Element(_tag("D", "href"))
