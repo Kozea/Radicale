@@ -227,6 +227,7 @@ def propfind(path, xml_request, collections, user=None):
                  _tag("D", "displayname"),
                  _tag("D", "owner"),
                  _tag("D", "getetag"),
+                 _tag("D", "current-user-principal"),
                  _tag("A", "calendar-color"),
                  _tag("CS", "getctag")]
 
@@ -269,9 +270,14 @@ def _propfind_response(path, item, props, user):
         is404 = False
         if tag == _tag("D", "getetag"):
             element.text = item.etag
-        elif tag == _tag("D", "principal-URL"):
-            tag = ET.Element(_tag("D", "href"))
-            tag.text = _href(path)
+        elif tag in (_tag("D", "principal-URL"),
+                     _tag("D", "current-user-principal")):
+            if user:
+                tag = ET.Element(_tag("D", "href"))
+                tag.text = _href("%s/" % user)
+            else:
+                is404 = True
+                tag = ET.Element(_tag("D", "unauthenticated"))
             element.append(tag)
         elif tag in (_tag("D", "principal-collection-set"),
                      _tag("C", "calendar-user-address-set"),
@@ -294,13 +300,6 @@ def _propfind_response(path, item, props, user):
                 comp.set("name", component)
                 element.append(comp)
             # pylint: enable=W0511
-        elif tag == _tag("D", "current-user-principal") and user:
-            tag = ET.Element(_tag("D", "href"))
-            if item.resource_type == "addressbook":
-                tag.text = _href("/%s/addressbook.vcf/" % user)
-            else:
-                tag.text = _href("/%s/calendar.ics/" % user)
-            element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
             privilege.append(ET.Element(_tag("D", "all")))
