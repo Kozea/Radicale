@@ -283,10 +283,14 @@ class Application(object):
         read_allowed_items, write_allowed_items = \
             self.collect_allowed_items(items, user)
 
+        is_authenticated = auth.is_authenticated(user, password)
+
         if ((read_allowed_items or write_allowed_items)
-            and (not user or auth.is_authenticated(user, password))) or \
+            and (not user or is_authenticated)) or \
+                (is_authenticated and function == self.propfind) or \
                 function == self.options or not items:
-            # Collections found, or OPTIONS request, or no items at all
+            # Collections found, or authenticated PROPFIND request,
+            # or OPTIONS request, or no items at all
             status, headers, answer = function(
                 environ, read_allowed_items, write_allowed_items, content,
                 user)
@@ -294,7 +298,7 @@ class Application(object):
             status, headers, answer = NOT_ALLOWED
 
         if ((status, headers, answer) == NOT_ALLOWED and
-                not auth.is_authenticated(user, password) and
+                not is_authenticated and
                 config.get("auth", "type") != "None"):
             # Unknown or unauthorized user
             log.LOGGER.info("%s refused" % (user or "Anonymous user"))
