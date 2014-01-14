@@ -278,7 +278,11 @@ class Application(object):
             user, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
         else:
-            user = password = None
+            password = None
+            try:
+                user = environ["REMOTE_USER"]
+            except KeyError:
+                user = None
 
         read_allowed_items, write_allowed_items = \
             self.collect_allowed_items(items, user)
