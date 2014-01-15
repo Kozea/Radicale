@@ -47,7 +47,7 @@ stock = utf-8
 
 [auth]
 # Authentication method
-# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | custom | apache
+# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | custom | remote_user
 type = None
 
 # custom auth handler

@@ -18,7 +18,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Trusting apache auth mechanism.
+Trusting the HTTP server auth mechanism.
 """
 
 from .. import log
@@ -26,5 +26,5 @@ from .. import log
 
 def is_authenticated(user, password):
     """Check if ``user`` is defined and assuming it's valid."""
-    log.LOGGER.debug('Got user %r from apache.' % user)
+    log.LOGGER.debug('Got user %r from HTTP server.' % user)
     return user is not None
