@@ -264,9 +264,6 @@ class Application(object):
 
         path = environ["PATH_INFO"]
 
-        # Find collection(s)
-        items = ical.Collection.from_path(path, environ.get("HTTP_DEPTH", "0"))
-
         # Get function corresponding to method
         function = getattr(self, environ["REQUEST_METHOD"].lower())
 
@@ -280,11 +277,16 @@ class Application(object):
         else:
             user = password = None
 
-        read_allowed_items, write_allowed_items = \
-            self.collect_allowed_items(items, user)
-
         is_authenticated = auth.is_authenticated(user, password)
         is_valid_user = is_authenticated or not user
+
+        if is_valid_user:
+            items = ical.Collection.from_path(path,
+                                              environ.get("HTTP_DEPTH", "0"))
+            read_allowed_items, write_allowed_items = \
+                self.collect_allowed_items(items, user)
+        else:
+            read_allowed_items, write_allowed_items = None, None
 
         if is_valid_user and (
                 (read_allowed_items or write_allowed_items) or
