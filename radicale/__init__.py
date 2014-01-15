@@ -284,13 +284,12 @@ class Application(object):
             self.collect_allowed_items(items, user)
 
         is_authenticated = auth.is_authenticated(user, password)
+        is_valid_user = is_authenticated or not user
 
-        if ((read_allowed_items or write_allowed_items)
-            and (not user or is_authenticated)) or \
-                (is_authenticated and function == self.propfind) or \
-                function == self.options or not items:
-            # Collections found, or authenticated PROPFIND request,
-            # or OPTIONS request, or no items at all
+        if is_valid_user and (
+                (read_allowed_items or write_allowed_items) or
+                (is_authenticated and function == self.propfind) or
+                function == self.options):
             status, headers, answer = function(
                 environ, read_allowed_items, write_allowed_items, content,
                 user)
