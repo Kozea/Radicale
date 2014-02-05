@@ -275,11 +275,8 @@ class Application(object):
             user, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
         else:
+            user = environ.get("REMOTE_USER")
             password = None
-            try:
-                user = environ["REMOTE_USER"]
-            except KeyError:
-                user = None
 
         is_authenticated = auth.is_authenticated(user, password)
         is_valid_user = is_authenticated or not user
