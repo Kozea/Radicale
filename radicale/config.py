@@ -76,7 +76,6 @@ INITIAL_CONFIG = {
     "git": {
         "committer": "Radicale <radicale@example.com>"},
     "rights": {
-        "backend": "regex",
         "type": "None",
         "custom_handler": "",
         "file": "~/.config/radicale/rights"},
