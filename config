@@ -3,7 +3,7 @@
 
 # Config file for Radicale - A simple calendar server
 #
-# Place it into /etc/radicale/config (global) 
+# Place it into /etc/radicale/config (global)
 # or ~/.config/radicale/config (user)
 #
 # The current values are the default ones
@@ -47,7 +47,7 @@ stock = utf-8
 
 [auth]
 # Authentication method
-# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | custom
+# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | custom | remote_user
 type = None
 
 # custom auth handler
@@ -69,7 +69,7 @@ ldap_attribute = uid
 # placed as X in a query of the form (&(...)X)
 # example: (objectCategory=Person)(objectClass=User)(memberOf=cn=calenderusers,ou=users,dc=example,dc=org)
 # leave empty if no additional filter is needed
-ldap_filter = 
+ldap_filter =
 # LDAP dn for initial login, used if LDAP server does not allow anonymous searches
 # Leave empty if searches are anonymous
 ldap_binddn =

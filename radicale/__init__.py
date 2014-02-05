@@ -234,6 +234,18 @@ class Application(object):
 
         return read_allowed_items, write_allowed_items
 
+    def get_creds_from_env(self, env):
+        """Extract a user and a password from the request environ."""
+        # Ask authentication backend to check rights
+        if 'HTTP_AUTHORIZATION' in env:
+            authorization = env['HTTP_AUTHORIZATION'].lstrip("Basic").strip()
+            return self.decode(base64.b64decode(
+                authorization.encode("ascii")), env).split(":", 1)
+        # Get the webserver authentified user
+        elif 'REMOTE_USER' in env:
+            return env['REMOTE_USER'], None
+        return None, None
+
     def __call__(self, environ, start_response):
         """Manage a request."""
         log.LOGGER.info("%s request at %s received" % (
@@ -267,15 +279,7 @@ class Application(object):
         # Get function corresponding to method
         function = getattr(self, environ["REQUEST_METHOD"].lower())
 
-        # Ask authentication backend to check rights
-        authorization = environ.get("HTTP_AUTHORIZATION", None)
-
-        if authorization:
-            authorization = authorization.lstrip("Basic").strip()
-            user, password = self.decode(base64.b64decode(
-                authorization.encode("ascii")), environ).split(":", 1)
-        else:
-            user = password = None
+        user, password = self.get_creds_from_env(environ)
 
         is_authenticated = auth.is_authenticated(user, password)
         is_valid_user = is_authenticated or not user
