@@ -49,7 +49,7 @@ except ImportError:
 from . import auth, config, ical, log, rights, storage, xmlutils
 
 
-VERSION = "git"
+VERSION = "0.9b1"
 
 # Standard "not allowed" response that is returned when an authenticated user
 # tries to access information they don't have rights to
