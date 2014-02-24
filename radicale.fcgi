@@ -24,7 +24,10 @@ Launch a Radicale FastCGI server according to configuration.
 
 """
 
-from flup.server.fcgi import WSGIServer
+try:
+    from flup.server.fcgi import WSGIServer
+except ImportError:
+    from flipflop import WSGIServer
 import radicale
 
 
