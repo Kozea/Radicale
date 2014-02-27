@@ -409,16 +409,20 @@ class Collection(object):
             if "tag" not in props:
                 try:
                     tag = open(self.path).readlines()[0][6:].rstrip()
+                    if tag in ("VADDRESSBOOK", "VCARD"):
+                        props["tag"] = "VADDRESSBOOK"
+                    else:
+                        props["tag"] = "VCALENDAR"
                 except IOError:
                     if self.path.endswith((".vcf", "/carddav")):
                         props["tag"] = "VADDRESSBOOK"
                     else:
                         props["tag"] = "VCALENDAR"
+            else:
+                if props["tag"] in ("VADDRESSBOOK", "VCARD"):
+                    props["tag"] = "VADDRESSBOOK"
                 else:
-                    if tag in ("VADDRESSBOOK", "VCARD"):
-                        props["tag"] = "VADDRESSBOOK"
-                    else:
-                        props["tag"] = "VCALENDAR"
+                    props["tag"] = "VCALENDAR"
             return props["tag"]
 
     @property
