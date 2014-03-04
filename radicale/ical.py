@@ -35,7 +35,7 @@ from contextlib import contextmanager
 
 def rreplace(s, old, new, count = 1):
     """ Replace the rightmost count number of occurances of "old" in s with "new" """
-    li = s.rsplit(old, count(
+    li = s.rsplit(old, count)
     return new.join(li)
 
 def serialize(tag, headers=(), items=()):
