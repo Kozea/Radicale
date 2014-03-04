@@ -33,6 +33,11 @@ from random import randint
 from contextlib import contextmanager
 
 
+def rreplace(s, old, new, count = 1):
+    """ Replace the rightmost count number of occurances of "old" in s with "new" """
+    li = s.rsplit(old, count(
+    return new.join(li)
+
 def serialize(tag, headers=(), items=()):
     """Return a text corresponding to given collection ``tag``.
 
@@ -101,13 +106,15 @@ class Item(object):
                         self.text = self.text.replace(
                             line, "X-RADICALE-NAME:%s" % self._name)
             else:
-                self.text = self.text.replace(
-                    "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
+                #self.text = self.text.replace(
+                #    "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
+                self.text = rreplace(self.text, "\nEND:", 
+                        "\nX-RADICALE-NAME:%s\nEND:" % self._name)
         else:
             # workaround to get unicode on both python2 and 3
             self._name = uuid4().hex.encode("ascii").decode("ascii")
-            self.text = self.text.replace(
-                "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
+            self.text = rreplace(self.text, "\nEND:", 
+                            "\nX-RADICALE-NAME:%s\nEND:" % self._name)
 
     def __hash__(self):
         return hash(self.text)
