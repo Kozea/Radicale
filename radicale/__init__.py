@@ -282,8 +282,8 @@ class Application(object):
         is_valid_user = is_authenticated or not user
 
         if is_valid_user:
-            items = ical.Collection.from_path(path,
-                                              environ.get("HTTP_DEPTH", "0"))
+            items = ical.Collection.from_path(
+                path, environ.get("HTTP_DEPTH", "0"))
             read_allowed_items, write_allowed_items = \
                 self.collect_allowed_items(items, user)
         else:
@@ -568,11 +568,10 @@ class Application(object):
         if not len(read_collections):
             return NOT_ALLOWED
 
-        collection = read_collections[0]
-
         headers = {"Content-Type": "text/xml"}
 
-        answer = xmlutils.report(environ["PATH_INFO"], content, collection)
+        answer = xmlutils.report(
+            environ["PATH_INFO"], content, read_collections)
         return client.MULTI_STATUS, headers, answer
 
     # pylint: enable=W0612,W0613,R0201
