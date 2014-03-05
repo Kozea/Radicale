@@ -479,7 +479,7 @@ def put(path, ical_request, collection):
         collection.append(name, ical_request)
 
 
-def report(path, xml_request, items):
+def report(path, xml_request, collection):
     """Read and answer REPORT requests.
 
     Read rfc3253-3.6 for info.
@@ -491,7 +491,7 @@ def report(path, xml_request, items):
     prop_element = root.find(_tag("D", "prop"))
     props = [prop.tag for prop in prop_element]
 
-    if items:
+    if collection:
         if root.tag in (_tag("C", "calendar-multiget"),
                         _tag("CR", "addressbook-multiget")):
             # Read rfc4791-7.9 for info
@@ -515,13 +515,23 @@ def report(path, xml_request, items):
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
-    if items:
-        collection = items[0]
-        collection_tag = collection.tag
-        collection_headers = collection.headers
-        collection_timezones = collection.timezones
+    collection_tag = collection.tag
+    collection_items = collection.items
+    collection_headers = collection.headers
+    collection_timezones = collection.timezones
 
     for hreference in hreferences:
+        # Check if the reference is an item or a collection
+        name = name_from_path(hreference, collection)
+        if name:
+            # Reference is an item
+            path = "/".join(hreference.split("/")[:-1]) + "/"
+            items = (item for item in collection_items if item.name == name)
+        else:
+            # Reference is a collection
+            path = hreference
+            items = collection.components
+
         for item in items:
             if tag_filters and item.tag not in tag_filters:
                 continue
@@ -530,11 +540,7 @@ def report(path, xml_request, items):
             multistatus.append(response)
 
             href = ET.Element(_tag("D", "href"))
-            if isinstance(item, ical.Component):
-                href.text = _href("%s/%s" % (
-                    collection.path.rstrip("/"), item.name))
-            else:
-                href.text = _href(item.path)
+            href.text = _href("%s/%s" % (path.rstrip("/"), item.name))
             response.append(href)
 
             propstat = ET.Element(_tag("D", "propstat"))
@@ -548,11 +554,8 @@ def report(path, xml_request, items):
                 if tag == _tag("D", "getetag"):
                     element.text = item.etag
                 elif tag == _tag("D", "getcontenttype"):
-                    if isinstance(item, ical.Component):
-                        element.text = "%s; component=%s" % (
-                            item.mimetype, item.tag.lower())
-                    else:
-                        element.text = item.mimetype
+                    element.text = "%s; component=%s" % (
+                        item.mimetype, item.tag.lower())
                 elif tag in (_tag("C", "calendar-data"),
                              _tag("CR", "address-data")):
                     if isinstance(item, ical.Component):

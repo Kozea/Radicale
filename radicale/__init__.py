@@ -568,10 +568,11 @@ class Application(object):
         if not len(read_collections):
             return NOT_ALLOWED
 
+        collection = read_collections[0]
+
         headers = {"Content-Type": "text/xml"}
 
-        answer = xmlutils.report(
-            environ["PATH_INFO"], content, read_collections)
+        answer = xmlutils.report(environ["PATH_INFO"], content, collection)
         return client.MULTI_STATUS, headers, answer
 
     # pylint: enable=W0612,W0613,R0201
