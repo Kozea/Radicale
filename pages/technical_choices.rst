@@ -121,6 +121,12 @@ violations do not exist. That is why most of the errors in client requests have
 undetermined consequences for the lazy server that can reply good answers, bad
 answers, or even no answer.
 
+As already mentioned, the Radicale server doesn't fully support the CalDAV and
+CardDAV RFCs. For example, nested filters in queries currently don't work in
+all cases. Examples of not working queries can be found in issues
+`#120 <https://github.com/Kozea/Radicale/issues/120>`_ and
+`#121 <https://github.com/Kozea/Radicale/issues/121>`_.
+
 .. [#] Who says "Ruby is even less verbose!" should read the
    :PEP:`20`.
 
