@@ -29,9 +29,8 @@ supported, but md5 is not (see ``htpasswd`` man page to understand why).
 
 import base64
 import hashlib
-import bcrypt
 
-from .. import config
+from .. import config, log
 
 
 FILENAME = config.get("auth", "htpasswd_filename")
@@ -40,9 +39,14 @@ ENCRYPTION = config.get("auth", "htpasswd_encryption")
 
 def _bcrypt(hash_value, password):
     """Check if ``hash_value`` and ``password`` match using bcrypt method."""
-    hash_value = hash_value.encode("ascii")
-    password = password.encode(config.get("encoding", "stock"))
-    return bcrypt.checkpw(password, hash_value)
+    try:
+        import bcrypt
+    except ImportError:
+        log.LOGGER.warning('unable to import bcrypt module')
+    else:
+        hash_value = hash_value.encode("ascii")
+        password = password.encode(config.get("encoding", "stock"))
+        return bcrypt.checkpw(password, hash_value)
 
 
 def _plain(hash_value, password):
@@ -53,8 +57,12 @@ def _plain(hash_value, password):
 def _crypt(hash_value, password):
     """Check if ``hash_value`` and ``password`` match using crypt method."""
     # The ``crypt`` module is only present on Unix, import if needed
-    import crypt
-    return crypt.crypt(password, hash_value) == hash_value
+    try:
+        import crypt
+    except ImportError:
+        log.LOGGER.warning('unable to import crypt module')
+    else:
+        return crypt.crypt(password, hash_value) == hash_value
 
 
 def _sha1(hash_value, password):
