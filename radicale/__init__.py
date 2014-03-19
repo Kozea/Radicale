@@ -29,6 +29,7 @@ should have been included in this package.
 """
 
 import os
+import sys
 import pprint
 import base64
 import posixpath
@@ -93,14 +94,18 @@ class HTTPSServer(HTTPServer):
                     "Error while reading SSL %s %r: %s" % (
                         name, filename, exception))
 
-        self.socket = ssl.wrap_socket(
-            self.socket,
+        ssl_kwargs = dict(
             server_side=True,
             certfile=config.get("server", "certificate"),
             keyfile=config.get("server", "key"),
             ssl_version=getattr(ssl, config.get("server", "protocol"),
-                                ssl.PROTOCOL_SSLv23),
-            ciphers=config.get("server", "ciphers") or None)
+                                ssl.PROTOCOL_SSLv23)
+        )
+        # add ciphers argument only if supported (Python 2.7+)
+        if sys.version_info >= (2, 7):
+            ssl_kwargs["ciphers"] = config.get("server", "ciphers") or None
+
+        self.socket = ssl.wrap_socket(self.socket, **ssl_kwargs)
 
         self.server_bind()
         self.server_activate()
