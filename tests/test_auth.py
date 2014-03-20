@@ -27,6 +27,7 @@ import hashlib
 import os
 import radicale
 import tempfile
+import shutil
 from radicale import config
 from radicale.auth import htpasswd
 from tests import BaseTest
@@ -53,6 +54,7 @@ class TestBaseAuthRequests(BaseTest):
             fd.write(b"tmp:{SHA}" + base64.b64encode(
                 hashlib.sha1(b"bepo").digest()))
         config.set("auth", "type", "htpasswd")
+        config.set("storage", "filesystem_folder", self.colpath)
 
         htpasswd.FILENAME = htpasswd_file_path
         htpasswd.ENCRYPTION = "sha1"
@@ -63,6 +65,8 @@ class TestBaseAuthRequests(BaseTest):
             "GET", "/", HTTP_AUTHORIZATION=self.userpass)
         assert status == 200
         assert "Radicale works!" in answer
+        
+        shutil.rmtree(self.colpath)        
 
     def test_custom(self):
         config.set("auth", "type", "custom")
