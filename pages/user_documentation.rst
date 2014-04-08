@@ -737,7 +737,7 @@ your configuration file.
 None
 ~~~~
 
-Everybody have read and write access to all collections.
+Everybody (including anonymous users) has read and write access to all collections.
 
 Owner Only
 ~~~~~~~~~~
