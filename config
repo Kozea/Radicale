@@ -104,7 +104,7 @@ committer = Radicale <radicale@example.com>
 
 [rights]
 # Rights backend
-# Value: None | owner_only | owner_write | from_file | custom
+# Value: None | authenticated | owner_only | owner_write | from_file | custom
 type = None
 
 # Custom rights handler
