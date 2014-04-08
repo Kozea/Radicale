@@ -87,7 +87,8 @@ def _read_from_sections(user, collection, permission):
                 log.LOGGER.debug("Section '%s' matches" % section)
                 if permission in regex.get(section, "permission"):
                     return True
-        log.LOGGER.debug("Section '%s' does not match" % section)
+            else:
+                log.LOGGER.debug("Section '%s' does not match" % section)
     return False
 
 
