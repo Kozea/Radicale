@@ -508,6 +508,7 @@ def report(path, xml_request, collection):
         tag_filters = set(
             element.get("name") for element
             in root.findall(".//%s" % _tag("C", "comp-filter")))
+        tag_filters.discard('VCALENDAR')
     else:
         hreferences = ()
         tag_filters = None
