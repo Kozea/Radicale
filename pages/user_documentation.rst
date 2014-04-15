@@ -737,7 +737,7 @@ your configuration file.
 None
 ~~~~
 
-Everybody have read and write access to all collections.
+Everybody (including anonymous users) has read and write access to all collections.
 
 Owner Only
 ~~~~~~~~~~
@@ -826,6 +826,11 @@ PAM Authentication
 The PAM authentication module relies on `the pam module
 <http://atlee.ca/software/pam/>`_, and thus only works with 2.x versions of
 Python.
+
+Bear in mind that on Linux systems, if you're authenticating against PAM
+files (i.e. ``/etc/shadow``), the user running Radicale must have the right
+permissions. For instance, you might want to add the ``radicale`` user
+to the ``shadow`` group.
 
 HTTP Authentication
 -------------------
