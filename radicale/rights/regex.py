@@ -57,11 +57,11 @@ DEFINED_RIGHTS = {
     "owner_only": "[rw]\nuser:.*\ncollection:^%(login)s/.+$\npermission:rw"}
 
 
-def _read_from_sections(user, collection, permission):
+def _read_from_sections(user, collection_url, permission):
     """Get regex sections."""
     filename = os.path.expanduser(config.get("rights", "file"))
     rights_type = config.get("rights", "type").lower()
-    regex = ConfigParser({"login": user, "path": collection})
+    regex = ConfigParser({"login": user, "path": collection_url})
     if rights_type in DEFINED_RIGHTS:
         log.LOGGER.debug("Rights type '%s'" % rights_type)
         regex.readfp(StringIO(DEFINED_RIGHTS[rights_type]))
@@ -79,27 +79,28 @@ def _read_from_sections(user, collection, permission):
         re_collection = regex.get(section, "collection")
         log.LOGGER.debug(
             "Test if '%s:%s' matches against '%s:%s' from section '%s'" % (
-                user, collection, re_user, re_collection, section))
+                user, collection_url, re_user, re_collection, section))
         user_match = re.match(re_user, user)
         if user_match:
             re_collection = re_collection.format(*user_match.groups())
-            if re.match(re_collection, collection):
+            if re.match(re_collection, collection_url):
                 log.LOGGER.debug("Section '%s' matches" % section)
                 if permission in regex.get(section, "permission"):
                     return True
-        log.LOGGER.debug("Section '%s' does not match" % section)
+            else:
+                log.LOGGER.debug("Section '%s' does not match" % section)
     return False
 
 
-def authorized(user, collection, right):
+def authorized(user, collection, permission):
     """Check if the user is allowed to read or write the collection.
 
        If the user is empty it checks for anonymous rights
     """
     collection_url = collection.url.rstrip("/") or "/"
     if collection_url in (".well-known/carddav", ".well-known/caldav"):
-        return right == "r"
+        return permission == "r"
     rights_type = config.get("rights", "type").lower()
     return (
         rights_type == "none" or
-        _read_from_sections(user or "", collection_url, right))
+        _read_from_sections(user or "", collection_url, permission))
