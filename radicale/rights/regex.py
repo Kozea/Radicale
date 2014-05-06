@@ -56,9 +56,9 @@ except ImportError:
 
 DEFINED_RIGHTS = {
     "authenticated": "[rw]\nuser:.+\ncollection:.*\npermission:rw",
-    "owner_write": "[r]\nuser:.*\ncollection:.*\npermission:r\n"
-                   "[w]\nuser:.*\ncollection:^%(login)s/.+$\npermission:w",
-    "owner_only": "[rw]\nuser:.*\ncollection:^%(login)s/.+$\npermission:rw",
+    "owner_write": "[r]\nuser:.+\ncollection:.*\npermission:r\n"
+                   "[w]\nuser:.+\ncollection:^%(login)s/.+$\npermission:w",
+    "owner_only": "[rw]\nuser:.+\ncollection:^%(login)s/.+$\npermission:rw",
 }
 
 
