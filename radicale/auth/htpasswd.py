@@ -29,11 +29,12 @@ supported, but md5 is not (see ``htpasswd`` man page to understand why).
 
 import base64
 import hashlib
+import os
 
 from .. import config
 
 
-FILENAME = config.get("auth", "htpasswd_filename")
+FILENAME = os.path.expanduser(config.get("auth", "htpasswd_filename"))
 ENCRYPTION = config.get("auth", "htpasswd_encryption")
 
 
