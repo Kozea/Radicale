@@ -57,6 +57,7 @@ setup(
     packages=["radicale", "radicale.auth", "radicale.storage", "radicale.rights"],
     provides=["radicale"],
     scripts=["bin/radicale"],
+    install_requires=["icalendar"],
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
     classifiers=[
         "Development Status :: 4 - Beta",
