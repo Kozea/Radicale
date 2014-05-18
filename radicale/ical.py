@@ -32,6 +32,8 @@ from uuid import uuid4
 from random import randint
 from contextlib import contextmanager
 
+import icalendar.cal
+
 
 def serialize(tag, headers=(), items=()):
     """Return a text corresponding to given collection ``tag``.
@@ -114,6 +116,14 @@ class Item(object):
 
     def __eq__(self, item):
         return isinstance(item, Item) and self.text == item.text
+
+    @property
+    def children(self):
+        vcal = icalendar.cal.Component.from_ical(self.text)
+        for subcomponent in vcal.subcomponents:
+            item = Item(subcomponent.to_ical())
+            item.tag = subcomponent.name
+            yield item
 
     @property
     def etag(self):

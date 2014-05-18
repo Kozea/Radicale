@@ -491,6 +491,9 @@ def report(path, xml_request, collection):
     prop_element = root.find(_tag("D", "prop"))
     props = [prop.tag for prop in prop_element]
 
+    hreferences = ()
+    tag_filters = None
+
     if collection:
         if root.tag in (_tag("C", "calendar-multiget"),
                         _tag("CR", "addressbook-multiget")):
@@ -503,15 +506,10 @@ def report(path, xml_request, collection):
         else:
             hreferences = (path,)
         # TODO: handle other filters
-        # TODO: handle the nested comp-filters correctly
         # Read rfc4791-9.7.1 for info
-        tag_filters = set(
-            element.get("name") for element
-            in root.findall(".//%s" % _tag("C", "comp-filter")))
-        tag_filters.discard('VCALENDAR')
-    else:
-        hreferences = ()
-        tag_filters = None
+        filters_xml = root.find(_tag('C', 'filter'))
+        if filters_xml is not None:
+            tag_filters = _tag_filters_from_xml(filters_xml)
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -534,7 +532,7 @@ def report(path, xml_request, collection):
             items = collection.components
 
         for item in items:
-            if tag_filters and item.tag not in tag_filters:
+            if not _matches_tag_filters(item, tag_filters):
                 continue
 
             response = ET.Element(_tag("D", "response"))
@@ -570,3 +568,29 @@ def report(path, xml_request, collection):
             propstat.append(status)
 
     return _pretty_xml(multistatus)
+
+
+def _tag_filters_from_xml(root):
+    filters = root.findall(_tag('C', 'comp-filter'))
+    rv = []
+    for comp_filter in filters:
+        key = comp_filter.get('name') or None
+        if key == 'VCALENDAR':
+            return _tag_filters_from_xml(comp_filter)
+        rv.append((key, _tag_filters_from_xml(comp_filter)))
+
+    return rv
+
+
+def _matches_tag_filters(item, tag_filters):
+    if not tag_filters:
+        return True
+
+    for key, subfilters in tag_filters:
+        if item.tag == key or key is None:
+            children = list(item.children)
+            if not children and not subfilters:
+                return True
+            for child in children:
+                if _matches_tag_filters(child, subfilters):
+                    return True
