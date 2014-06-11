@@ -174,6 +174,37 @@ its "DAV groupware resource" under Configure-Kontact → Calendar → General �
 Calendars → Modify. This way you don't have to enter username and password
 twice.
 
+CalendarSync
+~~~~~~~~~~~
+
+CalendarSync can be combined with any Andriod calendar app and can even
+store the calendars in existing Androic calendars which are synced by other
+sync adapters. Of course it can also create its own calendars.
+
+So, to sync using CalendarSync you will have to:
+
+Start the App -> Press the Menu button -> Select Create WebiCal ->
+Choose to start with a guided configuration.
+
+Then enter your URL, Username and Password.
+As URL please use: 
+http(s)://server:port/username/
+
+If you can use https depends on your setup. Please replace "username"
+with the name of your Useraccount.
+
+Press test connection button -> if everything signaled as OK then -> 
+press search calendars button -> Select the calendars which you want 
+to sync -> and press the configure calendar button at the top of 
+the display. Your calendar are now configured :)
+
+You can then start the first sync by going back to the 
+main screen of the app an pressing the Process Webicals button. Of 
+course you can also configure the app at its preferences to sync 
+automatically.
+
+The app also supports additoanl sync protocols like WebDAV,
+FTP, HTTP or plain ics calendar files.
 
 CalDAV-Sync
 ~~~~~~~~~~~
