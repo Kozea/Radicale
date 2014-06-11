@@ -174,6 +174,37 @@ its "DAV groupware resource" under Configure-Kontact → Calendar → General �
 Calendars → Modify. This way you don't have to enter username and password
 twice.
 
+ContactSync
+~~~~~~~~~~~
+
+ContactSync is designed to sync contacts from and to various sources like
+the Radical CardDAV Server. It can also overtake contacts and push them to the server, 
+also if they are only available on the device (local only contacts). 
+
+So to sync your contacts from the Radical server to your Android device:
+Start App -> Press Menu button -> Select Create WebContact -> 
+Select guided configuration mode.
+
+Fill in:
+Url:http(s)://server:port/username/
+Username:Your username
+Password:The password for your user
+
+At the url you will have to replace server:port and username so that it
+matches your specific setup. It also depends on your configuration if you
+can use https or if you have to use http. 
+
+Press test connection button -> if everything signaled as OK then -> 
+press search address book button -> Select the address books which you want 
+to sync -> and press the configure address book button at the top of the 
+display. 
+
+You can then start the first sync by going back to the main screen of the app 
+and pressing the Handle WebContacts button. Of course you can also configure 
+the app at its preferences to sync automatically. 
+
+ContactSync can also deal with WebDAV, HTTP and FTP Servers along with plain
+.vcf files.
 
 CalDAV-Sync
 ~~~~~~~~~~~
