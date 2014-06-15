@@ -183,16 +183,16 @@ sync adapters. Of course it can also create its own calendars.
 
 So, to sync using CalendarSync you will have to:
 
-- start the App,
-- press the Menu button,
-- select Create WebiCal,
+- start the app,
+- press the ``Menu`` button,
+- select ``Create WebiCal``,
 - choose to start with a guided configuration.
 
 Then enter your URL, Username and Password.
 As URL please use ``http(s)://server:port/username/``.
 
-If you can use https depends on your setup. Please replace "username"
-with the name of your Useraccount.
+If you can use HTTPS depends on your setup. Please replace ``username``
+with the name of your user account.
 
 Press test connection button. If everything signaled as OK then
 press search calendars button, select the calendars which you want 
@@ -203,6 +203,37 @@ You can then start the first sync by going back to the
 main screen of the app an pressing the ``Process Webicals`` button. Of 
 course you can also configure the app at its preferences to sync 
 automatically.
+
+ContactSync
+~~~~~~~~~~~
+
+ContactSync is designed to sync contacts from and to various sources. It can
+also overtake contacts and push them to the server, also if they are only
+available on the device (local only contacts).
+
+So to sync your contacts from the Radical server to your Android device:
+
+- start the app
+- press the ``Menu`` button,
+- select ``Create WebContact``,
+- select guided configuration mode.
+
+As URL please use ``http(s)://server:port/username/``.
+
+At the URL you will have to replace ``server:port`` and ``username`` so that it
+matches your specific setup. It also depends on your configuration if you can
+use HTTPS or if you have to use HTTP.
+
+Press test connection button, if everything signaled as OK then press search
+address book button. Select the address books which you want to sync and press
+the configure address book button at the top of the display.
+
+You can then start the first sync by going back to the main screen of the app
+and pressing the ``Handle WebContacts`` button. Of course you can also
+configure the app at its preferences to sync automatically.
+
+ContactSync can also deal with WebDAV, HTTP and FTP Servers along with plain
+``.vcf`` files.
 
 CalDAV-Sync
 ~~~~~~~~~~~
