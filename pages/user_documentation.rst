@@ -183,28 +183,26 @@ sync adapters. Of course it can also create its own calendars.
 
 So, to sync using CalendarSync you will have to:
 
-Start the App -> Press the Menu button -> Select Create WebiCal ->
-Choose to start with a guided configuration.
+- start the App,
+- press the Menu button,
+- select Create WebiCal,
+- choose to start with a guided configuration.
 
 Then enter your URL, Username and Password.
-As URL please use: 
-http(s)://server:port/username/
+As URL please use ``http(s)://server:port/username/``.
 
 If you can use https depends on your setup. Please replace "username"
 with the name of your Useraccount.
 
-Press test connection button -> if everything signaled as OK then -> 
-press search calendars button -> Select the calendars which you want 
-to sync -> and press the configure calendar button at the top of 
-the display. Your calendar are now configured :)
+Press test connection button. If everything signaled as OK then
+press search calendars button, select the calendars which you want 
+to sync, and press the configure calendar button at the top of 
+the display. Your calendars are now configured.
 
 You can then start the first sync by going back to the 
-main screen of the app an pressing the Process Webicals button. Of 
+main screen of the app an pressing the ``Process Webicals`` button. Of 
 course you can also configure the app at its preferences to sync 
 automatically.
-
-The app also supports additoanl sync protocols like WebDAV,
-FTP, HTTP or plain ics calendar files.
 
 CalDAV-Sync
 ~~~~~~~~~~~
