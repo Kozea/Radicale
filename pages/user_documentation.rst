@@ -175,10 +175,10 @@ Calendars → Modify. This way you don't have to enter username and password
 twice.
 
 CalendarSync
-~~~~~~~~~~~
+~~~~~~~~~~~~
 
-CalendarSync can be combined with any Andriod calendar app and can even
-store the calendars in existing Androic calendars which are synced by other
+CalendarSync can be combined with any Android calendar app and can even
+store the calendars in existing Android calendars which are synced by other
 sync adapters. Of course it can also create its own calendars.
 
 So, to sync using CalendarSync you will have to:
