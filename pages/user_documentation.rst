@@ -722,7 +722,7 @@ methods.
 Rights Management
 -----------------
 
-You can set read an write rights for collections according to the authenticated
+You can set read and write rights for collections according to the authenticated
 user and the owner of the collection.
 
 The *owner of a collection* is determined by the URL of the collection. For
