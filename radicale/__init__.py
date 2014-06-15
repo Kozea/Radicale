@@ -90,7 +90,7 @@ class HTTPSServer(HTTPServer):
             try:
                 open(filename, "r").close()
             except IOError as exception:
-                log.LOGGER.warn(
+                log.LOGGER.warning(
                     "Error while reading SSL %s %r: %s" % (
                         name, filename, exception))
 
