@@ -232,9 +232,6 @@ You can then start the first sync by going back to the main screen of the app
 and pressing the ``Handle WebContacts`` button. Of course you can also
 configure the app at its preferences to sync automatically.
 
-ContactSync can also deal with WebDAV, HTTP and FTP Servers along with plain
-``.vcf`` files.
-
 CalDAV-Sync
 ~~~~~~~~~~~
 
