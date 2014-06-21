@@ -340,7 +340,7 @@ class Application(object):
                user):
         """Manage DELETE request."""
         if not len(write_collections):
-            return client.PRECONDITION_FAILED, {}, None
+            return return NOT_ALLOWED
 
         collection = write_collections[0]
 
