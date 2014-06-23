@@ -48,7 +48,10 @@ of:
 - `Mozilla Lightning <http://www.mozilla.org/projects/calendar/lightning/>`_
 - `GNOME Evolution <http://projects.gnome.org/evolution/>`_
 - `KDE KOrganizer <http://userbase.kde.org/KOrganizer/>`_
-- `aCal <http://wiki.acal.me/wiki/Main_Page>`_, `CalDAV-Sync
+- `aCal <http://wiki.acal.me/wiki/Main_Page>`_,
+  `ContactSync <https://play.google.com/store/apps/details?id=com.vcard.android.free>`_, 
+  `CalendarSync <https://play.google.com/store/apps/details?id=com.icalparse.free>`_, 
+  `CalDAV-Sync
   <https://play.google.com/store/apps/details?id=org.dmfs.caldav.lib>`_
   and `CardDAV-Sync
   <https://play.google.com/store/apps/details?id=org.dmfs.carddav.Sync>`_
