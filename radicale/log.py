@@ -2,6 +2,7 @@
 #
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2011-2013 Guillaume Ayoub
+# Copyright © 2014 Okami <okami@fuzetsu.info>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +33,7 @@ import logging.config
 from . import config
 
 
-LOGGER = logging.getLogger()
+LOGGER = logging.getLogger('radicale')
 
 
 def start():
