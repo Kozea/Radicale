@@ -28,8 +28,16 @@ import time
 import sys
 
 from . import filesystem
-from .. import ical
+from .. import ical  # @UnresolvedImport
 
+import datetime
+import traceback
+import logging
+mylogger = logging.getLogger('mylogger')
+mylogger.setLevel(logging.DEBUG)
+
+def get_traceback():
+    return '\n'.join( [ '\t'.join([str(element) for element in elements]) for elements in traceback.extract_stack()[:-2] if 'Radicale' in elements[0]] )
 
 class Collection(filesystem.Collection):
     """Collection stored in several files per calendar."""
@@ -49,6 +57,7 @@ class Collection(filesystem.Collection):
         items = items if items is not None else self.items
         timezones = list(set(i for i in items if isinstance(i, ical.Timezone)))
         components = [i for i in items if isinstance(i, ical.Component)]
+        mylogger.info('ww')
         for component in components:
             text = ical.serialize(self.tag, headers, [component] + timezones)
             name = (
@@ -56,14 +65,73 @@ class Collection(filesystem.Collection):
                 component.name.encode(filesystem.FILESYSTEM_ENCODING))
             path = os.path.join(self._path, name)
             with filesystem.open(path, "w") as fd:
+                mylogger.info('write: ' + name)
                 fd.write(text)
+        mylogger.info('ww')
+        mylogger.info( get_traceback() )
+        self.mark_modified()
 
     def delete(self):
         shutil.rmtree(self._path)
 
     def remove(self, name):
         if os.path.exists(os.path.join(self._path, name)):
+            mylogger.info('remove (SCALE): ' + name)
             os.remove(os.path.join(self._path, name))
+        self.mark_modified()
+
+#SCALE
+    def replace(self, name, text):
+        """
+        Eric: touch only the file we should touch
+        note: this is called by replace
+        """        
+        item = ical.Item( text=text, name=name )
+        text = '\n'.join( ical.unfold(item.text) )
+        with filesystem.open(os.path.join(self._path, name), "w") as fd:
+            mylogger.info( 'replace (SCALE): ' + name )
+            fd.write(text)
+        self.mark_modified()
+
+#SCALE
+#previously replacing was done by removing then appending, was there a reason for that?
+    def append(self, name, text):
+        self.replace(name, text)
+
+# #noscale
+#     def get_item(self, item_name):
+#         mylogger.info('get_item (noscale): ' + item_name)
+#         res = super(Collection, self).get_item(item_name)
+#         mylogger.info('get_item (noscale), [res]='+str([res]))
+#         return res
+
+#SCALE
+    def get_item(self, item_name):
+        mylogger.info('get_item (SCALE): ' + item_name)
+        filename_absolute = os.path.join(self._path, item_name)
+        if os.path.isfile(filename_absolute):
+            with filesystem.open(filename_absolute, "r") as fd:
+                text = fd.read()
+                item = ical.Item( text=text, name=item_name )
+        else: # file does not exist
+            item = None
+        mylogger.info('get_item, (SCALE) [res]='+str([item]))
+        return item
+
+#SCALE
+    def mark_modified(self):
+        os.utime( self._path, None ) # this will not work on windows: directories cannot be given a time
+        mylogger.info('mark_modified, (SCALE) etag='+self.etag)
+
+#SCALE
+    @property
+    def etag(self):
+        '''
+        use last modified date as etag 
+        (instead of hashing content of all items)
+        '''
+        st_mtime = os.stat(self._path).st_mtime # time of most recent content modification,
+        return '"%s"' % st_mtime
 
     @property
     def text(self):
@@ -71,9 +139,15 @@ class Collection(filesystem.Collection):
             ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card)
         items = set()
         try:
+            mylogger.info('rr')
             for filename in os.listdir(self._path):
+                if filename=='.DS_Store':
+                    continue
+                mylogger.info('read: '+filename)
                 with filesystem.open(os.path.join(self._path, filename)) as fd:
                     items.update(self._parse(fd.read(), components))
+            mylogger.info('rr')
+            mylogger.info( get_traceback() )
         except IOError:
             return ""
         else:

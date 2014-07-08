@@ -471,7 +471,7 @@ def proppatch(path, xml_request, collection):
 def put(path, ical_request, collection):
     """Read PUT requests."""
     name = name_from_path(path, collection)
-    if name in (item.name for item in collection.items):
+    if collection.get_item( name ) is not None: #SCALE: this should be formally the same
         # PUT is modifying an existing item
         collection.replace(name, ical_request)
     else:

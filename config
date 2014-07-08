@@ -48,13 +48,13 @@ stock = utf-8
 [auth]
 # Authentication method
 # Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | remote_user | custom
-type = None
+type = htpasswd
 
 # Custom authentication handler
 custom_handler =
 
 # Htpasswd filename
-htpasswd_filename = /etc/radicale/users
+htpasswd_filename = ~/Radicale/users
 # Htpasswd encryption method
 # Value: plain | sha1 | crypt
 htpasswd_encryption = crypt
@@ -105,7 +105,7 @@ committer = Radicale <radicale@example.com>
 [rights]
 # Rights backend
 # Value: None | authenticated | owner_only | owner_write | from_file | custom
-type = None
+type = owner_only
 
 # Custom rights handler
 custom_handler =
@@ -117,13 +117,13 @@ file = ~/.config/radicale/rights
 [storage]
 # Storage backend
 # Value: filesystem | multifilesystem | database | custom
-type = filesystem
+type = multifilesystem
 
 # Custom storage handler
 custom_handler =
 
 # Folder for storing local collections, created if not present
-filesystem_folder = ~/.config/radicale/collections
+filesystem_folder = ~/Radicale/collections
 
 # Database URL for SQLAlchemy
 # dialect+driver://user:password@host/dbname[?key=value..]
