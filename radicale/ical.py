@@ -40,6 +40,7 @@ def serialize(tag, headers=(), items=()):
     items if needed (ie. for calendars).
 
     """
+    items = sorted(items, key=lambda x: x.name)
     if tag == "VADDRESSBOOK":
         lines = [item.text for item in items]
     else:
