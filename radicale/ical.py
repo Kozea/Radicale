@@ -32,6 +32,7 @@ import re
 from uuid import uuid4
 from random import randint
 from contextlib import contextmanager
+import log
 
 
 def serialize(tag, headers=(), items=()):
@@ -248,7 +249,7 @@ class Collection(object):
                 result.extend(collection.components)
         return result
 
-    def save(self, text):
+    def save(self, text, message=None):
         """Save the text into the collection."""
         raise NotImplementedError
 
@@ -345,7 +346,7 @@ class Collection(object):
 
         return items
 
-    def append(self, name, text):
+    def append(self, name, text, do_write=True):
         """Append items from ``text`` to collection.
 
         If ``name`` is given, give this name to new items in ``text``.
@@ -356,23 +357,28 @@ class Collection(object):
         for new_item in new_items.values():
             if new_item.name not in self.items:
                 self.items[new_item] = new_item
-        self.write()
+        if do_write:
+            self.write(message="Add %s" % name)
 
-    def remove(self, name):
+    def remove(self, name, do_write=True):
         """Remove object named ``name`` from collection."""
         if name in self.items:
             del self.items[name]
-        self.write()
+        if do_write:
+            self.write(message="Remove %s" % name)
 
     def replace(self, name, text):
-        """Replace content by ``text`` in collection objet called ``name``."""
-        self.remove(name)
-        self.append(name, text)
+        """Replace content by ``text`` in collection object called ``name``."""
+        self.remove(name, do_write=False)
+        self.append(name, text, do_write=False)
 
-    def write(self):
+        self.write(message="Modify %s" % name)
+
+    def write(self, message=None):
         """Write collection with given parameters."""
         text = serialize(self.tag, self.headers, self.items.values())
-        self.save(text)
+        log.LOGGER.info(message)
+        self.save(text, message=message)
 
     def set_mimetype(self, mimetype):
         """Set the mimetype of the collection."""
