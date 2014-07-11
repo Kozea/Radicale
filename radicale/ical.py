@@ -17,6 +17,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 
 """
 Radicale collection classes.
@@ -186,6 +187,8 @@ class Collection(object):
         the slash as the folder delimiter, with no leading nor trailing slash.
 
         """
+        logging.critical('init collection, path='+str(path))
+        
         self.encoding = "utf-8"
         split_path = path.split("/")
         self.path = path if path != "." else ""
@@ -198,6 +201,47 @@ class Collection(object):
         else:
             self.owner = None
         self.is_principal = principal
+
+    @classmethod
+    def from_path_iterator(cls, path, depth, include_container):
+        '''
+        low-level iterator for from_path
+        '''
+        # path == None means wrong URL
+        if path is None:
+            raise StopIteration
+
+        # First do normpath and then strip, to prevent access to FOLDER/../
+        sane_path = posixpath.normpath(path.replace(os.sep, "/")).strip("/")
+        attributes = sane_path.split("/")
+        if not attributes:
+            raise StopIteration
+
+        # Try to guess if the path leads to a collection or an item
+        if (cls.is_leaf("/".join(attributes[:-1])) or not
+                path.endswith(("/", "/caldav", "/carddav"))):
+            attributes.pop()
+
+        path = "/".join(attributes)
+
+        principal = len(attributes) <= 1
+        if cls.is_node(path):
+            if depth == "0":
+                yield cls(path, principal)
+            else:
+                if include_container:
+                    yield cls(path, principal)
+                for child in cls.children(path):
+                    yield child
+        else:
+            if depth == "0":
+                yield cls(path)
+            else:
+                collection = cls(path, principal)
+                if include_container:
+                    yield collection
+                for component in collection.components:
+                    yield component
 
     @classmethod
     def from_path(cls, path, depth="1", include_container=True):
@@ -214,42 +258,7 @@ class Collection(object):
         The ``path`` is relative.
 
         """
-        # path == None means wrong URL
-        if path is None:
-            return []
-
-        # First do normpath and then strip, to prevent access to FOLDER/../
-        sane_path = posixpath.normpath(path.replace(os.sep, "/")).strip("/")
-        attributes = sane_path.split("/")
-        if not attributes:
-            return []
-
-        # Try to guess if the path leads to a collection or an item
-        if (cls.is_leaf("/".join(attributes[:-1])) or not
-                path.endswith(("/", "/caldav", "/carddav"))):
-            attributes.pop()
-
-        result = []
-        path = "/".join(attributes)
-
-        principal = len(attributes) <= 1
-        if cls.is_node(path):
-            if depth == "0":
-                result.append(cls(path, principal))
-            else:
-                if include_container:
-                    result.append(cls(path, principal))
-                for child in cls.children(path):
-                    result.append(child)
-        else:
-            if depth == "0":
-                result.append(cls(path))
-            else:
-                collection = cls(path, principal)
-                if include_container:
-                    result.append(collection)
-                result.extend(collection.components)
-        return result
+        return list( cls.from_path_iterator(path, depth, include_container) )
 
     def save(self, text):
         """Save the text into the collection."""

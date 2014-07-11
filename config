@@ -47,8 +47,8 @@ stock = utf-8
 
 [auth]
 # Authentication method
-# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | remote_user | custom
-type = htpasswd
+# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | remote_user | custom | always
+type = always
 
 # Custom authentication handler
 custom_handler =
@@ -104,8 +104,8 @@ committer = Radicale <radicale@example.com>
 
 [rights]
 # Rights backend
-# Value: None | authenticated | owner_only | owner_write | from_file | custom
-type = owner_only
+# Value: None | authenticated | owner_only | owner_write | from_file | custom | always
+type = always
 
 # Custom rights handler
 custom_handler =
@@ -145,5 +145,7 @@ full_environment = False
 
 
 # Additional HTTP headers
-#[headers]
-#Access-Control-Allow-Origin = *
+[headers]
+Access-Control-Allow-Origin = *
+Access-Control-Allow-Methods = DELETE, GET, HEAD, MKCALENDAR, MKCOL, MOVE, OPTIONS, PROPFIND, PROPPATCH, PUT, REPORT
+Access-Control-Allow-Headers: authorization,content-type,depth,x-client

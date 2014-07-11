@@ -30,7 +30,9 @@ import sys
 from . import filesystem
 from .. import ical  # @UnresolvedImport
 
-import datetime
+from contextlib import contextmanager
+import hashlib
+import json
 import traceback
 import logging
 mylogger = logging.getLogger('mylogger')
@@ -52,46 +54,50 @@ class Collection(filesystem.Collection):
             ical.Header("VERSION:%s" % self.version))
 
     def write(self, headers=None, items=None):
-        self._create_dirs()
-        headers = headers or self.headers
-        items = items if items is not None else self.items
-        timezones = list(set(i for i in items if isinstance(i, ical.Timezone)))
-        components = [i for i in items if isinstance(i, ical.Component)]
-        mylogger.info('ww')
-        for component in components:
-            text = ical.serialize(self.tag, headers, [component] + timezones)
-            name = (
-                component.name if sys.version_info[0] >= 3 else
-                component.name.encode(filesystem.FILESYSTEM_ENCODING))
-            path = os.path.join(self._path, name)
-            with filesystem.open(path, "w") as fd:
-                mylogger.info('write: ' + name)
-                fd.write(text)
-        mylogger.info('ww')
-        mylogger.info( get_traceback() )
-        self.mark_modified()
+        with self.etags as etags:
+            self._create_dirs()
+            headers = headers or self.headers
+            items = items if items is not None else self.items
+            timezones = list(set(i for i in items if isinstance(i, ical.Timezone)))
+            components = [i for i in items if isinstance(i, ical.Component)]
+            mylogger.info('ww')
+            for component in components:
+                etags[component.name] = component.etag
+                text = ical.serialize(self.tag, headers, [component] + timezones)
+                name = (
+                    component.name if sys.version_info[0] >= 3 else
+                    component.name.encode(filesystem.FILESYSTEM_ENCODING))
+                path = os.path.join(self._path, name)
+                with filesystem.open(path, "w") as fd:
+                    mylogger.info('write: ' + name)
+                    fd.write(text)
+            mylogger.info('ww')
+            mylogger.info( get_traceback() )
+        
 
     def delete(self):
         shutil.rmtree(self._path)
 
     def remove(self, name):
-        if os.path.exists(os.path.join(self._path, name)):
-            mylogger.info('remove (SCALE): ' + name)
-            os.remove(os.path.join(self._path, name))
-        self.mark_modified()
+        with self.etags as etags:
+            if os.path.exists(os.path.join(self._path, name)):
+                mylogger.info('remove (SCALE): ' + str([name]))
+                os.remove(os.path.join(self._path, name))
+                del etags[name]
 
 #SCALE
     def replace(self, name, text):
         """
         Eric: touch only the file we should touch
         note: this is called by replace
-        """        
-        item = ical.Item( text=text, name=name )
-        text = '\n'.join( ical.unfold(item.text) )
-        with filesystem.open(os.path.join(self._path, name), "w") as fd:
-            mylogger.info( 'replace (SCALE): ' + name )
-            fd.write(text)
-        self.mark_modified()
+        """
+        with self.etags as etags:  
+            item = ical.Item( text=text, name=name )
+            etags[item.name] = item.etag
+            text = '\n'.join( ical.unfold(item.text) )
+            with filesystem.open(os.path.join(self._path, name), "w") as fd:
+                mylogger.info( 'replace (SCALE): ' + name )
+                fd.write(text)
 
 #SCALE
 #previously replacing was done by removing then appending, was there a reason for that?
@@ -119,20 +125,39 @@ class Collection(filesystem.Collection):
         return item
 
 #SCALE
-    def mark_modified(self):
-        os.utime( self._path, None ) # this will not work on windows: directories cannot be given a time
-        mylogger.info('mark_modified, (SCALE) etag='+self.etag)
-
-#SCALE
     @property
     def etag(self):
-        '''
-        use last modified date as etag 
-        (instead of hashing content of all items)
-        '''
-        st_mtime = os.stat(self._path).st_mtime # time of most recent content modification,
-        return '"%s"' % st_mtime
+        with self.etags as etags:
+            md5 = hashlib.md5()
+            md5.update( json.dumps(etags) )
+            return '"%s"' % md5.hexdigest()
 
+    @property
+    def _etags_path(self):
+        """Absolute path of the file storing the collection properties."""
+        return self._path + ".etags"
+
+    @property
+    @contextmanager
+    def etags(self):
+        """
+        keep a separate cache file with etags of all items that are direct children of the collection
+        this will be useful when responding to PROPFIND requests that often only request etags
+        (without this we would have ot read all the items each time)
+        """
+        # On enter
+        etags = {}
+        if os.path.exists(self._etags_path):
+            with open(self._etags_path) as etag_file:
+                etags.update(json.load(etag_file))
+        old_etags = etags.copy()
+        yield etags
+        # On exit
+        self._create_dirs()
+        if old_etags != etags:
+            with open(self._etags_path, "w") as etag_file:
+                json.dump(etags, etag_file)
+    
     @property
     def text(self):
         components = (

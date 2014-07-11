@@ -48,13 +48,13 @@ INITIAL_CONFIG = {
         "protocol": "PROTOCOL_SSLv23",
         "ciphers": "",
         "dns_lookup": "True",
-        "base_prefix": "/",
+        "base_prefix": "/sync/",
         "realm": "Radicale - Password Required"},
     "encoding": {
         "request": "utf-8",
         "stock": "utf-8"},
     "auth": {
-        "type": "None",
+        "type": "always",
         "custom_handler": "",
         "htpasswd_filename": "/etc/radicale/users",
         "htpasswd_encryption": "crypt",
@@ -76,14 +76,13 @@ INITIAL_CONFIG = {
     "git": {
         "committer": "Radicale <radicale@example.com>"},
     "rights": {
-        "type": "None",
+        "type": "always",
         "custom_handler": "",
         "file": "~/.config/radicale/rights"},
     "storage": {
-        "type": "filesystem",
+        "type": "multifilesystem",
         "custom_handler": "",
-        "filesystem_folder": os.path.expanduser(
-            "~/.config/radicale/collections"),
+        "filesystem_folder": os.path.join( os.path.dirname(__file__), "collections"), #os.path.expanduser("~/.config/radicale/collections"),
         "database_url": ""},
     "logging": {
         "config": "/etc/radicale/logging",
