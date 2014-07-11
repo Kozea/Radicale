@@ -17,6 +17,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 
 """
 Radicale configuration module.
@@ -78,7 +79,7 @@ INITIAL_CONFIG = {
     "rights": {
         "type": "always",
         "custom_handler": "",
-        "file": "~/.config/radicale/rights"},
+        "file": "NOT USED ~/.config/radicale/rights"},
     "storage": {
         "type": "multifilesystem",
         "custom_handler": "",
@@ -97,10 +98,13 @@ for section, values in INITIAL_CONFIG.items():
     for key, value in values.items():
         _CONFIG_PARSER.set(section, key, value)
 
-_CONFIG_PARSER.read("/etc/radicale/config")
-_CONFIG_PARSER.read(os.path.expanduser("~/.config/radicale/config"))
-if "RADICALE_CONFIG" in os.environ:
-    _CONFIG_PARSER.read(os.environ["RADICALE_CONFIG"])
+try:
+    _CONFIG_PARSER.read("/etc/radicale/config")
+    _CONFIG_PARSER.read(os.path.expanduser("~/.config/radicale/config"))
+    if "RADICALE_CONFIG" in os.environ:
+        _CONFIG_PARSER.read(os.environ["RADICALE_CONFIG"])
+except:
+    logging.critical('error accessing config files (GAE?)')
 
 # Wrap config module into ConfigParser instance
 sys.modules[__name__] = _CONFIG_PARSER

@@ -35,7 +35,10 @@ import pprint
 import base64
 import posixpath
 import socket
-import ssl
+try:
+    import ssl
+except:
+    logging.critical('Error importing ssl (GAE?)')
 import wsgiref.simple_server
 # Manage Python2/3 different modules
 # pylint: disable=F0401,E0611
