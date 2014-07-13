@@ -34,7 +34,13 @@ import os.path
 from google.appengine.ext import ndb  # @UnresolvedImport
 
 # project
-from .. import ical
+from .. import ical # @UnresolvedImport
+
+tag_class = {'VEVENT':ical.Event,
+             'VCARD':ical.Card,
+             'VTODO':ical.Todo,
+             'VJOURNAL':ical.Journal,
+             'VTIMEZONE':ical.Timezone}
 
 class ItemContainerAppengine(ndb.Model):
     '''
@@ -50,11 +56,12 @@ class ItemContainerAppengine(ndb.Model):
     1. this will ensure no name collision (eg: two items with same name but in different collections)
     2. when a transaction is involved, all entities (eg the item and its collection) must be in the same entity group 
     '''
-   
+  
     def get_item(self):
         #FIXME: is it ok to always encode in utf-8 ?
         item_name = self.key.string_id()
-        return ical.Item(self.item_text.decode('utf-8'), item_name)
+        ItemSubClass = tag_class[ self.tag ] #FIXME: should we default to ical.Item?
+        return ItemSubClass(self.item_text.decode('utf-8'), item_name)
     
     def set_item(self, item):
         '''
@@ -68,7 +75,8 @@ class ItemContainerAppengine(ndb.Model):
     # the actual item (private, use accessors above) 
     item_text = ndb.BlobProperty() # size limit 1Mb (or 32Mb? not very clear from docs)
     
-    def get_tag( self ):
+    @property
+    def tag( self ):
         #FIXME: do we really need to unfold the entire text? would not a simple regex do just as well?
         lines = ical.unfold(self.item_text)
         for line in lines:
@@ -115,7 +123,7 @@ class CollectionContainerAppengine(ndb.Model):
         elif tag=='VTIMEZONE':
             return self.timezones
         else:
-            raise NotImplementedError
+            raise NotImplementedError #FIXME: can this happen?
     
     # collection properties, ex: {"tag": "VADDRESSBOOK"}
     props = ndb.JsonProperty( default={} )
@@ -182,8 +190,10 @@ class Collection(ical.Collection):
             return container.get_item()
     
     @property
-    def headers(self): # from multifilesystem, this does not seem to be as in 
+    def headers(self): 
+        # from multifilesystem, this does not seem to be as in 
         # filesystem where all items where parsed?
+        #FIXME: can somebody validate this?
         return (
             ical.Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
             ical.Header("VERSION:%s" % self.version))
@@ -192,9 +202,21 @@ class Collection(ical.Collection):
     def delete(self): 
         '''
         delete the collection
+        the collection must not have subcollections
+        however it can have items ; in that case those will be come inaccessible and should be removed AFTER the collection
+        has been removed using delete_items()
+        (if we would delete the items before deleting the collection there would be a risk that somebody create new items 
+        in between)
         '''
         container = self._get_container()
         assert( container ) # make sure it actually exists
+        
+        # IMPORTANT
+        #
+        #FIXME: utilmately (once the code has stabilized) we should try to be the less rirgorous we can
+        # and just do nothing when requested something that does no harm (like deleting something that does not exist anyway)
+        #
+        #
         
         if container.subcollections:
             raise Exception('Error deleting Collection path=%s. Collection has subcollections (it is a node), please remove subcollections first.'%(self.path, ))
@@ -210,20 +232,32 @@ class Collection(ical.Collection):
         # delete the collection
         container.key.delete() 
         
-        #TODO: in the context of AppEngine, this should be performed in some background task (https://developers.google.com/appengine/docs/python/taskqueue/)
-        for item_container_key in ItemContainerAppengine.query(ancestor=container.key).iter(keys_only=True):
-            item_container_key.delete()
+    def delete_items(self):
+        '''
+        in the context of AppEngine, this should be performed in some background task 
+        (https://developers.google.com/appengine/docs/python/taskqueue/)
+        
+        the collection should have been already deleted using delete() (see discussion there)
+        '''
+        key_pairs = self._get_key_pairs()
+        if key_pairs: 
+            container_key = ndb.Key( pairs=key_pairs )
+         
+            for item_container_key in ItemContainerAppengine.query(ancestor=container_key).iter(keys_only=True):
+                item_container_key.delete()
 
     @ndb.transactional
-    def remove(self, name): # remove an existing item       
-        
+    def remove(self, name): 
+        '''
+        remove an existing item       
+        '''
         item_container_key = self._get_item_container_key(name)
         item_container = item_container_key.get()
         if item_container: # if it actually exists...
             item_container_key.delete()
 
             collection_container = self._get_container()
-            del collection_container.tag_bin( item_container.get_tag() )[name]
+            del collection_container.tag_bin( item_container.tag )[name]
             collection_container.put()
 
     @ndb.transactional
@@ -237,7 +271,7 @@ class Collection(ical.Collection):
         item_container.put()
         
         collection_container = self._get_container()
-        collection_container.tag_bin( item_container.get_tag() )[name] = item.etag
+        collection_container.tag_bin( item_container.tag )[name] = item.etag
         collection_container.put()
 
     @ndb.transactional
@@ -250,7 +284,7 @@ class Collection(ical.Collection):
         item_container.put()
         
         collection_container = self._get_container()
-        collection_container.tag_bin( item_container.get_tag() )[name] = item.etag
+        collection_container.tag_bin( item_container.tag )[name] = item.etag
         collection_container.put()
 
     @classmethod
@@ -334,7 +368,8 @@ class Collection(ical.Collection):
     #
     #
     # we really hate to define the methods below because they act on the global collection and will not scale
-    #
+    # on very large collections there might also is a risk we go over the 60s limit for appengine requests?
+    # (probably not though...)
     #
 
     @property
@@ -344,7 +379,7 @@ class Collection(ical.Collection):
         container = self._get_container()
         if not container: return []
         else: return [ self.get_item(name) for name in (container.events.keys() + container.todos.keys() + container.journals.keys() + container.cards.keys() + container.timezones.keys())]
-
+ 
     @property
     def components(self):
         """Get list of all components in collection."""
@@ -352,7 +387,7 @@ class Collection(ical.Collection):
         container = self._get_container()
         if not container: return []
         else: return [ self.get_item(name) for name in (container.events.keys() + container.todos.keys() + container.journals.keys() + container.cards.keys())]
-
+ 
     @property
     def events(self):
         """Get list of ``Event`` items in calendar."""
@@ -360,7 +395,7 @@ class Collection(ical.Collection):
         container = self._get_container()
         if not container: return []
         else: return [ self.get_item(name) for name in container.events.keys() ]
-
+ 
     @property
     def todos(self):
         """Get list of ``Todo`` items in calendar."""
@@ -368,7 +403,7 @@ class Collection(ical.Collection):
         container = self._get_container()
         if not container: return []
         else: return [ self.get_item(name) for name in container.todos.keys() ]
-
+ 
     @property
     def journals(self):
         """Get list of ``Journal`` items in calendar."""
@@ -376,7 +411,7 @@ class Collection(ical.Collection):
         container = self._get_container()
         if not container: return []
         else: return [ self.get_item(name) for name in container.journals.keys() ]
-
+ 
     @property
     def timezones(self):
         """Get list of ``Timezone`` items in calendar."""
@@ -384,7 +419,7 @@ class Collection(ical.Collection):
         container = self._get_container()
         if not container: return []
         else: return [ self.get_item(name) for name in container.timezones.keys() ]
-
+ 
     @property
     def cards(self):
         """Get list of ``Card`` items in address book."""
@@ -392,17 +427,24 @@ class Collection(ical.Collection):
         if not container: return []
         else: return [ self.get_item(name) for name in container.cards.keys() ]
 
-    def save(self, text): 
-        # noscale
-        # mutlifilesystem seems to define only the lower level: write
-        raise NotImplementedError
-    
     def write(self, headers=None, items=None):
         # nocscale
         raise NotImplementedError
 
     @property
     def text(self):
+        # nocscale
         raise NotImplementedError
+
+#         container = self._get_container()
+#         if not container:
+#             return ""
+#         
+#         out = []
+#         
+#         for item_container_key in ItemContainerAppengine.query(ancestor=container.key).iter(keys_only=True):   
+#             out.append( item_container_key.get().get_item().text )
+#                 
+#         return '\n'.join( out )
 
 
