@@ -558,7 +558,7 @@ class Application(object):
         depth = environ.get("HTTP_DEPTH", "0")
         
         props = xmlutils.get_props(content)
-        if props==['{DAV:}getetag'] and hasattr(ical.Collection, 'etags'): 
+        if props==['{DAV:}getetag'] and hasattr(ical.Collection, 'items_name_etag'): 
             # optimization, if we are only interested in etags and the collection caches them, 
             # then use this
         
@@ -572,8 +572,7 @@ class Application(object):
             
             
             for collection in self.allowed_items_iterator(path, depth, user, "read_or_write", ignore_items=True):
-                with collection.etags as etags:
-                    collections += [collection] + [ ItemNameEtag(name, etag) for name, etag in etags.items() ]
+                collections += [collection] + [ ItemNameEtag(name, etag) for name, etag in collection.items_name_etag.items() ]
         
         else: # normal case (non-optimized for cached etags)
             

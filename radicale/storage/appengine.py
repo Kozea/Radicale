@@ -26,9 +26,9 @@ https://developers.google.com/appengine/docs/python/ndb/
 
 # python
 import logging
-import os
 import hashlib
 from contextlib import contextmanager
+import os.path
 
 # GAE
 from google.appengine.ext import ndb  # @UnresolvedImport
@@ -36,94 +36,150 @@ from google.appengine.ext import ndb  # @UnresolvedImport
 # project
 from .. import ical
 
-
 class ItemContainerAppengine(ndb.Model):
     '''
-    Container for Item and some metadata
+    Container for Item
     
-    The key name (self.key.string_id()) MUST be: path_of_collection/name_of_item
+    This class is private to this module
     
-    name_of_item shall not contain a slash
+    The key name (self.key.string_id()) MUST be the name the item
+    (this way we do not have to maintain the name as a separate property and we can get items from
+    their names efficiently)
+    
+    The entity MUST be a child (in the sense of the AppEngine datastore) of its CollectionContainerAppengine, because:
+    1. this will ensure no name collision (eg: two items with same name but in different collections)
+    2. when a transaction is involved, all entities (eg the item and its collection) must be in the same entity group 
     '''
-    
-    # some optional application-specific metadata
-    metadata = ndb.JsonProperty()
    
-    def get(self):
-        unused_collection_path, item_name = self.key.string_id().rsplit('/', 1)
+    def get_item(self):
+        #FIXME: is it ok to always encode in utf-8 ?
+        item_name = self.key.string_id()
         return ical.Item(self.item_text.decode('utf-8'), item_name)
     
-    def set(self, item):
-        if not self.item_text == item.text:
-            unused_collection_path, item_name = self.key.string_id().rsplit('/', 1)
-            if not (item_name == item._name):
-                raise Exception('inconsistent key and name')
-            self.item_text = item.text.encode('utf-8')
-            self.put()  # write modified entity to datastore
+    def set_item(self, item):
+        '''
+        important: self.put() must be called explicitly after this 
+        '''
+        item_name = self.key.string_id()
+        if not (item_name == item._name):
+            raise Exception('The entity key is not the name')
+        self.item_text = item.text.encode('utf-8')
 
     # the actual item (private, use accessors above) 
-    item_text = ndb.BlobProperty()
+    item_text = ndb.BlobProperty() # size limit 1Mb (or 32Mb? not very clear from docs)
+    
+    def get_tag( self ):
+        #FIXME: do we really need to unfold the entire text? would not a simple regex do just as well?
+        lines = ical.unfold(self.item_text)
+        for line in lines:
+            if line.startswith("BEGIN:"):
+                tag = line.replace("BEGIN:", "").strip()
+                return tag
 
 class CollectionContainerAppengine(ndb.Model):
     '''
-    Container for the stored portion of a Collection.
+    Container for a Collection.
     
-    This class is private to this module. 
-    It is used by appengine.Collection which derives from ical.Collection
+    This class is private to this module. Use the Collection below only.
     
-    The key name (self.key.string_id()) MUST be: path_of_collection (without leading or trailing slash)
+    The key name (self.key.string_id()) MUST be the name of the collection
+    
+    The hierarchy of collections MUST be mirrored in the AppEngine datastore
+    (this is needed for transactions)
+    
+    Because we want to avoid queries as much as possible, all subcollections and items are explicitly tracked into lists.
+    
+    When using this class, we MUST make sure that any modification occur in a transaction 
+    or we will end up with inconsistent representations in case of concurrent writes
     '''
 
     # children (that are collections themselves)
-    children = ndb.KeyProperty(repeated=True) # kind=CollectionContainerAppengine (circular)
+    subcollections = ndb.KeyProperty(repeated=True) # kind=CollectionContainerAppengine (circular)
     
-    # properties
-    # (None for nodes)
-    props = ndb.JsonProperty()
+    # { name:etag } for all items in this collection, split by tag
+    events = ndb.JsonProperty( default={} )
+    cards = ndb.JsonProperty( default={} )
+    todos = ndb.JsonProperty( default={} )
+    journals = ndb.JsonProperty( default={} )
+    timezones = ndb.JsonProperty( default={} )
 
-    # {name:etags} for all items in this collection
-    # (None for nodes)
-    etags = ndb.JsonProperty()
+    def tag_bin(self, tag):
+        if tag=='VEVENT':
+            return self.events
+        elif tag=='VCARD':
+            return self.cards
+        elif tag=='VTODO':
+            return self.todos
+        elif tag=='VJOURNAL':
+            return self.journals
+        elif tag=='VTIMEZONE':
+            return self.timezones
+        else:
+            raise NotImplementedError
     
-    # is that really used?
-    last_modified = ndb.DateTimeProperty(auto_now=True)  # Set property to current date/time when entity is created and whenever it is updated.
+    # collection properties, ex: {"tag": "VADDRESSBOOK"}
+    props = ndb.JsonProperty( default={} )
     
+    #TODO: is that really used?
+    last_modified = ndb.DateTimeProperty(auto_now=True)  # auto_now: set property to current date/time when entity is created and whenever it is updated.
 
 class Collection(ical.Collection):
     """
-    Collection stored in datastore object
+    Collection stored in datastore object. 
+    
+    This is the only class you want to use from this module.
     """
     
-    def create(self, props={}): # this is used to explicitly create the collection (think: "mkdir")
-        assert( self._key )
+    @ndb.transactional
+    def create(self, props={}): 
+        '''
+        create the collection, 
+        if there are parents they must be created explicitly before 
+        (think: "mkdir")
+        '''
+        assert( self.path ) # make sure the path is not None
         
-        CollectionContainerAppengine(key=self._key, props=props).put()
+        key_pairs = self._get_key_pairs()
         
-    @property
-    def _key(self):
+        # create the collection
+        container_key = ndb.Key( pairs=key_pairs )
+        container = CollectionContainerAppengine(key=container_key, props=props)
+        container.put() # note: since we are in a transaction, this will be rolled back if the parent does not exist
+        
+        container_key_parent = container_key.parent()
+        if container_key_parent: # if need be, register the new child with its parent
+            container_parent = container_key_parent.get()
+            if not container_parent:
+                raise Exception('Error creating Collection path=%s. Parent does not exist. Please create it first.'%(self.path))
+            container_parent.subcollections.append( container_key )
+            container_parent.put()
+        
+    def _get_key_pairs(self):
         if self.path:
-            return ndb.Key('CollectionContainerAppengine', self.path)
+            assert( self.path==self.path.strip('/') ) # no leading or trailing /
+            return [ ('CollectionContainerAppengine', name) for name in self.path.split('/') ]
         else:
-            return None
+            return []
 
-    @property
-    def _entity(self):
-        if self._key: 
-            return self._key.get()
+    # let's not make the container a property:
+    # we need to be very explicit about when when we actually
+    # get stuff from the datastore in the context of transactions
+    def _get_container(self):
+        key_pairs = self._get_key_pairs()
+        if key_pairs: 
+            return ndb.Key( pairs=key_pairs ).get()
         else:
             return None
 
     def _get_item_container_key(self, name):
-        assert( self._key )
-        return ndb.Key('ItemContainerAppengine', os.path.join(self._key.string_id(), name))
+        return ndb.Key( pairs=(self._get_key_pairs() + [ ('ItemContainerAppengine', name) ]) )
     
     def get_item(self, name): # get an item
         container = self._get_item_container_key(name).get()
         if not container:
-            item = None
+            return None
         else:
-            item = container.get()
-        return item
+            return container.get_item()
     
     @property
     def headers(self): # from multifilesystem, this does not seem to be as in 
@@ -132,115 +188,209 @@ class Collection(ical.Collection):
             ical.Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
             ical.Header("VERSION:%s" % self.version))
 
-    def delete(self): # delete the collection
-        assert( self._key )
+    @ndb.transactional
+    def delete(self): 
+        '''
+        delete the collection
+        '''
+        container = self._get_container()
+        assert( container ) # make sure it actually exists
         
-        with self.etags as etags:
-            etags_copy = etags
-        self._key.delete() # delete the collection
-        
-        # then, remove all the items (normally nobody should be able to add new ones at this point)
-        for name in etags_copy:
-            self.remove(name) 
-        
+        if container.subcollections:
+            raise Exception('Error deleting Collection path=%s. Collection has subcollections (it is a node), please remove subcollections first.'%(self.path, ))
 
-    def remove(self, name): # remove an existing item
-        with self.etags as etags:
-            key = self._get_item_container_key(name)
-            if key.get(): # if it exists...
-                del etags[key.string_id()]
-                key.delete()
+        if container.key.parent(): # this collection has a parent
+            container_parent = container.key.parent().get()
+            if not container_parent:
+                raise Exception('Error deleting Collection path=%s. Parent does not exist. Something went wrong.'%(self.path))
 
+            container_parent.subcollections.remove( container.key )
+            container_parent.put() # save the modified parent
+
+        # delete the collection
+        container.key.delete() 
+        
+        #TODO: in the context of AppEngine, this should be performed in some background task (https://developers.google.com/appengine/docs/python/taskqueue/)
+        for item_container_key in ItemContainerAppengine.query(ancestor=container.key).iter(keys_only=True):
+            item_container_key.delete()
+
+    @ndb.transactional
+    def remove(self, name): # remove an existing item       
+        
+        item_container_key = self._get_item_container_key(name)
+        item_container = item_container_key.get()
+        if item_container: # if it actually exists...
+            item_container_key.delete()
+
+            collection_container = self._get_container()
+            del collection_container.tag_bin( item_container.get_tag() )[name]
+            collection_container.put()
+
+    @ndb.transactional
     def replace(self, name, text):
-        with self.etags as etags:  
-            item = ical.Item(text=text, name=name)
-            # get existing item container and set item 
-            container = self._get_item_container_key(item.name).get()
-            container.set(item)
-            etags[item.name] = item.etag
+        item = ical.Item(text=text, name=name)
 
+        item_container_key = self._get_item_container_key(item.name)
+        item_container = item_container_key.get()
+        assert( item_container )
+        item_container.set_item(item) 
+        item_container.put()
+        
+        collection_container = self._get_container()
+        collection_container.tag_bin( item_container.get_tag() )[name] = item.etag
+        collection_container.put()
+
+    @ndb.transactional
     def append(self, name, text):
-        with self.etags as etags:  
-            item = ical.Item(text=text, name=name)
-            # create new item container and set item
-            container = ItemContainerAppengine(key=self._get_item_container_key(item.name))
-            container.set(item)
-            etags[item.name] = item.etag    
+        item = ical.Item(text=text, name=name)
+
+        item_container_key = self._get_item_container_key(item.name)
+        item_container = ItemContainerAppengine(key=item_container_key)
+        item_container.set_item(item) # this performs the put() to datastore
+        item_container.put()
+        
+        collection_container = self._get_container()
+        collection_container.tag_bin( item_container.get_tag() )[name] = item.etag
+        collection_container.put()
 
     @classmethod
     def children(cls, path):
-        collection_container = cls(path)._entity
-        if not collection_container:
+        collection_container = cls(path)._get_container()
+        if not collection_container: # collection does not exist
             raise StopIteration
         else:
-            for child_key in collection_container.children:
-                yield cls(child_key.string_id())
+            for subcollection_key in collection_container.subcollections:
+                path = os.path.join( path, subcollection_key.string_id() )
+                yield cls(path)
 
     @property
     def exists(self):
-        return self._entity is not None
+        return self._get_container() is not None
 
     @classmethod
     def is_node(cls, path):
-        entity = cls(path)._entity
-        return entity and entity.children
+        container = cls(path)._get_container()
+        return container and container.subcollections
 
     @classmethod
     def is_leaf(cls, path):
-        entity = cls(path)._entity
-        return entity and (not entity.children)
+        container = cls(path)._get_container()
+        return container and (not container.subcollections)
 
     @property
     def last_modified(self):
-        return self._entity.last_modified.strftime("%a, %d %b %Y %H:%M:%S +0000")
+        return self._get_container().last_modified.strftime("%a, %d %b %Y %H:%M:%S +0000")
 
+    # we cannot make this a transaction
+    # this means that in case of concurrent access there is a risk
+    # that we put() a modified version of props that is stale
+    #FIXME: how bad is that?
+    #
     @property
     @contextmanager
     def props(self):
-        if not self._entity:
+        container = self._get_container()
+        if not container:
             yield {}
         else:
             # On enter
-            properties = self._entity.props
+            properties = container.props
             if not properties: properties = {}
             old_properties = properties.copy()
             yield properties
             
             # On exit
             if old_properties != properties:
-                self._entity.props = properties
-                self._entity.put()
+                container.props = properties
+                container.put()
 
     @property
-    @contextmanager
-    def etags(self): # name->etag map for every item in the collection
-        if not self._entity:
-            yield {}
+    def items_name_etag(self): 
+        '''
+        { item_name:etag } for every item in the collection
+        '''
+        container = self._get_container()
+        if not container:
+            return {}
         else:
-            # On enter
-            etags = self._entity.etags
-            if not etags: etags = {}
-            old_etags = etags.copy()
-            yield etags
-             
-            # On exit
-            if old_etags != etags:
-                self._entity.etags = etags
-                self._entity.put()
+            return dict( container.events.items()
+                         + container.cards.items()
+                         + container.todos.items()
+                         + container.journals.items()
+                         + container.timezones.items() )
 
     @property
-    def etag(self): # this is etag for the entire collection
-        with self.etags as etags:
-            md5 = hashlib.md5()
-            md5.update( ''.join(etags.values()) )
-            return '"%s"' % md5.hexdigest()
+    def etag(self):
+        '''
+        this is etag for the entire collection
+        (obtained by hashing all items' etags)
+        '''
 
-    
+        md5 = hashlib.md5()
+        md5.update( ''.join(self.items_name_etag.values()) )
+        return '"%s"' % md5.hexdigest()
+
+
     #
     #
     # we really hate to define the methods below because they act on the global collection and will not scale
     #
     #
+
+    @property
+    def items(self):
+        """Get list of all items in collection."""
+        logging.critical('#### NOSCALE: Collection.items()')
+        container = self._get_container()
+        if not container: return []
+        else: return [ self.get_item(name) for name in (container.events.keys() + container.todos.keys() + container.journals.keys() + container.cards.keys() + container.timezones.keys())]
+
+    @property
+    def components(self):
+        """Get list of all components in collection."""
+        logging.critical('#### NOSCALE: Collection.components()')
+        container = self._get_container()
+        if not container: return []
+        else: return [ self.get_item(name) for name in (container.events.keys() + container.todos.keys() + container.journals.keys() + container.cards.keys())]
+
+    @property
+    def events(self):
+        """Get list of ``Event`` items in calendar."""
+        logging.critical('#### NOSCALE: Collection.events()')
+        container = self._get_container()
+        if not container: return []
+        else: return [ self.get_item(name) for name in container.events.keys() ]
+
+    @property
+    def todos(self):
+        """Get list of ``Todo`` items in calendar."""
+        logging.critical('#### NOSCALE: Collection.todos()')
+        container = self._get_container()
+        if not container: return []
+        else: return [ self.get_item(name) for name in container.todos.keys() ]
+
+    @property
+    def journals(self):
+        """Get list of ``Journal`` items in calendar."""
+        logging.critical('#### NOSCALE: Collection.journals()')
+        container = self._get_container()
+        if not container: return []
+        else: return [ self.get_item(name) for name in container.journals.keys() ]
+
+    @property
+    def timezones(self):
+        """Get list of ``Timezone`` items in calendar."""
+        logging.critical('#### NOSCALE: Collection.timezones()')
+        container = self._get_container()
+        if not container: return []
+        else: return [ self.get_item(name) for name in container.timezones.keys() ]
+
+    @property
+    def cards(self):
+        """Get list of ``Card`` items in address book."""
+        container = self._get_container()
+        if not container: return []
+        else: return [ self.get_item(name) for name in container.cards.keys() ]
 
     def save(self, text): 
         # noscale
@@ -253,15 +403,6 @@ class Collection(ical.Collection):
 
     @property
     def text(self):
-        logging.critical('#### NOSCALE: Collection.text()')
-        
-        assert( self._entity )
-        
-        out = []
-        
-        with self.etags as etags:
-            for name in etags:
-                out.append( self.get_item(name).text )
-                
-        return '\n'.join( out )
+        raise NotImplementedError
+
 
