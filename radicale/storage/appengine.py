@@ -28,7 +28,7 @@ https://developers.google.com/appengine/docs/python/ndb/
 import logging
 import hashlib
 from contextlib import contextmanager
-import os.path
+import os.path #FIXME: is os.path.join() the right function to use for collection paths?
 
 # GAE
 from google.appengine.ext import ndb  # @UnresolvedImport
@@ -41,6 +41,16 @@ tag_class = {'VEVENT':ical.Event,
              'VTODO':ical.Todo,
              'VJOURNAL':ical.Journal,
              'VTIMEZONE':ical.Timezone}
+
+def text_tag( text ):
+    #FIXME: do we really need to unfold the entire text? would not a simple regex do just as well?
+    lines = ical.unfold(text)
+    for line in lines:
+        if line.startswith("BEGIN:"):
+            tag = line.replace("BEGIN:", "").strip()
+            return tag
+
+ITEM_NAME_NONE = 'Radicale.ItemContainerAppengine.EMPTY_NAME'
 
 class ItemContainerAppengine(ndb.Model):
     '''
@@ -60,7 +70,9 @@ class ItemContainerAppengine(ndb.Model):
     def get_item(self):
         #FIXME: is it ok to always encode in utf-8 ?
         item_name = self.key.string_id()
-        ItemSubClass = tag_class[ self.tag ] #FIXME: should we default to ical.Item?
+        if item_name==ITEM_NAME_NONE:
+            item_name = None
+        ItemSubClass = tag_class[ self.item_tag ] #FIXME: should we default to ical.Item?
         return ItemSubClass(self.item_text.decode('utf-8'), item_name)
     
     def set_item(self, item):
@@ -68,6 +80,8 @@ class ItemContainerAppengine(ndb.Model):
         important: self.put() must be called explicitly after this 
         '''
         item_name = self.key.string_id()
+        if item_name==ITEM_NAME_NONE:
+            item_name = None
         if not (item_name == item._name):
             raise Exception('The entity key is not the name')
         self.item_text = item.text.encode('utf-8')
@@ -75,15 +89,11 @@ class ItemContainerAppengine(ndb.Model):
     # the actual item (private, use accessors above) 
     item_text = ndb.BlobProperty() # size limit 1Mb (or 32Mb? not very clear from docs)
     
-    @property
-    def tag( self ):
-        #FIXME: do we really need to unfold the entire text? would not a simple regex do just as well?
-        lines = ical.unfold(self.item_text)
-        for line in lines:
-            if line.startswith("BEGIN:"):
-                tag = line.replace("BEGIN:", "").strip()
-                return tag
-
+    # the tag as a property, computed from the text, needed for queries like:
+    # ItemContainerAppengine.query( ancestor=some_collection.key, ItemContainerAppengine.item_tag=="VCARD" )
+    # (note that ancestor here need not be the direct parent, it can be the grand-parent etc.) 
+    item_tag = ndb.ComputedProperty(lambda self: text_tag(self.item_text))
+    
 class CollectionContainerAppengine(ndb.Model):
     '''
     Container for a Collection.
@@ -123,6 +133,7 @@ class CollectionContainerAppengine(ndb.Model):
         elif tag=='VTIMEZONE':
             return self.timezones
         else:
+            logging.critical('tag_bin: unknown tag='+str(tag))
             raise NotImplementedError #FIXME: can this happen?
     
     # collection properties, ex: {"tag": "VADDRESSBOOK"}
@@ -180,6 +191,9 @@ class Collection(ical.Collection):
             return None
 
     def _get_item_container_key(self, name):
+        if not name:
+            name = ITEM_NAME_NONE
+            
         return ndb.Key( pairs=(self._get_key_pairs() + [ ('ItemContainerAppengine', name) ]) )
     
     def get_item(self, name): # get an item
@@ -257,7 +271,7 @@ class Collection(ical.Collection):
             item_container_key.delete()
 
             collection_container = self._get_container()
-            del collection_container.tag_bin( item_container.tag )[name]
+            del collection_container.tag_bin( item_container.item_tag )[name]
             collection_container.put()
 
     @ndb.transactional
@@ -266,12 +280,15 @@ class Collection(ical.Collection):
 
         item_container_key = self._get_item_container_key(item.name)
         item_container = item_container_key.get()
-        assert( item_container )
+        if not item_container:
+            assert( not name )
+            self.append( name, text )
+            
         item_container.set_item(item) 
         item_container.put()
         
         collection_container = self._get_container()
-        collection_container.tag_bin( item_container.tag )[name] = item.etag
+        collection_container.tag_bin( item_container.item_tag )[name] = item.etag
         collection_container.put()
 
     @ndb.transactional
@@ -284,7 +301,7 @@ class Collection(ical.Collection):
         item_container.put()
         
         collection_container = self._get_container()
-        collection_container.tag_bin( item_container.tag )[name] = item.etag
+        collection_container.tag_bin( item_container.item_tag )[name] = item.etag
         collection_container.put()
 
     @classmethod
@@ -294,8 +311,8 @@ class Collection(ical.Collection):
             raise StopIteration
         else:
             for subcollection_key in collection_container.subcollections:
-                path = os.path.join( path, subcollection_key.string_id() )
-                yield cls(path)
+                path_child = os.path.join( path, subcollection_key.string_id() )
+                yield cls(path_child)
 
     @property
     def exists(self):

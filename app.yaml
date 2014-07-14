@@ -1,0 +1,23 @@
+application: radicale-appengine
+version: 1
+runtime: python27
+threadsafe: true
+api_version: 1
+
+libraries:
+- name: webapp2
+  version: latest
+- name: lxml
+  version: latest
+  
+handlers:
+- url: /sync.* # must match base_prefix in config
+  script: app.WSGI_Radicale
+  secure: always
+      
+- url: /.*
+  secure: always
+  script: app.WSGI
+
+
+
