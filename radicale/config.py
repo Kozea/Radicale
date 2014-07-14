@@ -82,7 +82,8 @@ INITIAL_CONFIG = {
         "file": "NOT USED ~/.config/radicale/rights"},
     "storage": {
 #        "type": "appengine", 
-        "type": "multifilesystem", 
+#        "type": "multifilesystem", 
+        "type": "filesystem", 
         "custom_handler": "",
         "filesystem_folder": os.path.join( os.path.dirname(__file__), "collections"), #os.path.expanduser("~/.config/radicale/collections"),
         "database_url": ""},
