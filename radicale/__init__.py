@@ -38,7 +38,7 @@ import socket
 try:
     import ssl
 except:
-    logging.critical('Error importing ssl (expected if Google AppEngine)')
+    logging.critical('Error importing ssl (ok if Google AppEngine)')
 import wsgiref.simple_server
 # Manage Python2/3 different modules
 # pylint: disable=F0401,E0611

@@ -10,6 +10,11 @@ logging.basicConfig(level=logging.DEBUG)
 import webapp2
 
 class MainHandler(webapp2.RequestHandler):
+    
+    def propfind(self, path):
+        # allow propfind requests so we don't have to specify a server path when setting up WebDAV clients
+        logging.critical('Redirecting from propfind path='+str(path))
+        return self.redirect('/sync')
 
     def get(self, path):
         self.response.headers['Content-Type'] = 'text/plain'
@@ -20,6 +25,7 @@ class MainHandler(webapp2.RequestHandler):
             import radicale.storage.appengine
             
             if path=='collections/create':
+                #return self.response.write("(disabled)")
                 
                 radicale.storage.appengine.Collection('test').create()
                 radicale.storage.appengine.Collection('test/contacts.vcf').create()
@@ -28,6 +34,7 @@ class MainHandler(webapp2.RequestHandler):
                 return self.response.write("collections have been created ")
 
             if path=='collections/delete':
+                #return self.response.write("(disabled)")
             
                 radicale.storage.appengine.Collection('test/contacts.vcf').delete()
                 radicale.storage.appengine.Collection('test/contacts.vcf').delete_items()
@@ -56,8 +63,13 @@ class MainHandler(webapp2.RequestHandler):
                 
                 return self.response.write('\n'.join(out))
 
-        return self.response.write("You have requested:\n\n%s\n\nImagine some content there... The CardDAV/CalDAv endpoint is: /sync"%path)
+        return self.response.write("You have requested:\n\n%s\n\nWe could serve any page we like here... Go to /collections/list for an image of the datastore."%path)
 
+# monkey patching webapp2 to handle exotic methods (to allow for redirects to the correct handler)
+for extra_method in ['PROPFIND']:
+    if not extra_method in webapp2.WSGIApplication.allowed_methods:
+        webapp2.WSGIApplication.allowed_methods = set( tuple(webapp2.WSGIApplication.allowed_methods) + (extra_method,) )
+    
 WSGI = webapp2.WSGIApplication([webapp2.Route(r'<path:.*>', handler=MainHandler)],
                                debug=True)
 

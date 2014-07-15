@@ -1,4 +1,4 @@
-application: radicale-appengine
+application: radicale-gae
 version: 1
 runtime: python27
 threadsafe: true
