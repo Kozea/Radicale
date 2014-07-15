@@ -42,15 +42,31 @@ tag_class = {'VEVENT':ical.Event,
              'VJOURNAL':ical.Journal,
              'VTIMEZONE':ical.Timezone}
 
-def text_tag( text ):
-    #FIXME: do we really need to unfold the entire text? would not a simple regex do just as well?
-    lines = ical.unfold(text)
+def tag_text_iterator( text_raw ):
+    '''
+    extract the tag and the text of the object
+    
+    (EVENT objects are enclosed in a VCALENDAR block, this will keep only the VEVENT)
+    '''
+    
+    #FIXME: do we need to decode text_raw?
+    
+    lines = ical.unfold( text_raw )
+    text = []
+    tag = None
     for line in lines:
-        if line.startswith("BEGIN:"):
+        if line.startswith("BEGIN:") and not tag:
             tag = line.replace("BEGIN:", "").strip()
-            return tag
-
-ITEM_NAME_NONE = 'Radicale.ItemContainerAppengine.EMPTY_NAME'
+            if not tag in tag_class: tag = None
+        if tag:
+            text.append( line )
+            if line.startswith("END:") and line.replace("END:", "").strip()==tag:
+                yield tag, '\n'.join(text)
+                
+                # start afresh
+                text = []
+                tag = None
+                
 
 class ItemContainerAppengine(ndb.Model):
     '''
@@ -58,9 +74,12 @@ class ItemContainerAppengine(ndb.Model):
     
     This class is private to this module
     
-    The key name (self.key.string_id()) MUST be the name the item
+    If the item has a name then: (self.key.string_id()) MUST be the name the item
     (this way we do not have to maintain the name as a separate property and we can get items from
     their names efficiently)
+    
+    #FIXME: can this happen?
+    # If the item does not have a name (typically: timezones) then it should have an integer id such that self.key.string_id()==None
     
     The entity MUST be a child (in the sense of the AppEngine datastore) of its CollectionContainerAppengine, because:
     1. this will ensure no name collision (eg: two items with same name but in different collections)
@@ -70,29 +89,29 @@ class ItemContainerAppengine(ndb.Model):
     def get_item(self):
         #FIXME: is it ok to always encode in utf-8 ?
         item_name = self.key.string_id()
-        if item_name==ITEM_NAME_NONE:
-            item_name = None
         ItemSubClass = tag_class[ self.item_tag ] #FIXME: should we default to ical.Item?
         return ItemSubClass(self.item_text.decode('utf-8'), item_name)
     
-    def set_item(self, item):
+    def set_item(self, item, tag):
         '''
         important: self.put() must be called explicitly after this 
         '''
         item_name = self.key.string_id()
-        if item_name==ITEM_NAME_NONE:
-            item_name = None
         if not (item_name == item._name):
-            raise Exception('The entity key is not the name')
+            raise Exception('The entity key=%s is not the name=%s'%(str(item_name), str(item.name)))
+        if not (tag in tag_class):
+            raise Exception('Unknown tag:'+str(tag))
+        
         self.item_text = item.text.encode('utf-8')
+        self.item_tag = tag
 
     # the actual item (private, use accessors above) 
     item_text = ndb.BlobProperty() # size limit 1Mb (or 32Mb? not very clear from docs)
     
-    # the tag as a property, computed from the text, needed for queries like:
+    # needed for queries like:
     # ItemContainerAppengine.query( ancestor=some_collection.key, ItemContainerAppengine.item_tag=="VCARD" )
     # (note that ancestor here need not be the direct parent, it can be the grand-parent etc.) 
-    item_tag = ndb.ComputedProperty(lambda self: text_tag(self.item_text))
+    item_tag = ndb.StringProperty()
     
 class CollectionContainerAppengine(ndb.Model):
     '''
@@ -115,6 +134,8 @@ class CollectionContainerAppengine(ndb.Model):
     subcollections = ndb.KeyProperty(repeated=True) # kind=CollectionContainerAppengine (circular)
     
     # { name:etag } for all items in this collection, split by tag
+    # #FIXME: remove the case with empty names?
+    # #for items that don't have a name, the key will (None, key.urlsafe())
     events = ndb.JsonProperty( default={} )
     cards = ndb.JsonProperty( default={} )
     todos = ndb.JsonProperty( default={} )
@@ -191,10 +212,15 @@ class Collection(ical.Collection):
             return None
 
     def _get_item_container_key(self, name):
-        if not name:
-            name = ITEM_NAME_NONE
-            
+        assert( name )
         return ndb.Key( pairs=(self._get_key_pairs() + [ ('ItemContainerAppengine', name) ]) )
+        
+#         #FIXME: if items can have no name:
+#         try:
+#             return ndb.Key( pairs=(self._get_key_pairs() + [ ('ItemContainerAppengine', name) ]) )
+#         except:
+#             unused_none, urlsafe = name # for those items that do not have a name, we use (None, key.urlsafe()) in the collection container bins
+#             return ndb.Key( urlsafe=urlsafe )
     
     def get_item(self, name): # get an item
         container = self._get_item_container_key(name).get()
@@ -274,34 +300,54 @@ class Collection(ical.Collection):
             del collection_container.tag_bin( item_container.item_tag )[name]
             collection_container.put()
 
-    @ndb.transactional
-    def replace(self, name, text):
-        item = ical.Item(text=text, name=name)
+    # we will make no distinction between append and replace
+    # everythign needs to happen in the same transaction
+    # and both cases might happen at the same time anyway 
+    # (ex: new timezone for existing event)
+    def append(self, name, text_raw):
+        self.replace(name, text_raw)
 
-        item_container_key = self._get_item_container_key(item.name)
-        item_container = item_container_key.get()
-        if not item_container:
-            assert( not name )
-            self.append( name, text )
+    @ndb.transactional
+    def replace(self, name, text_raw):
+        
+        collection_container = self._get_container()
+
+        for tag, text in tag_text_iterator( text_raw ):
             
-        item_container.set_item(item) 
-        item_container.put()
+            if tag=="VTIMEZONE":
+                # timezones get their name from TZID in the request, not from the path specified in the url
+                # see ical._parse() and ical.Item.__init__()
+                item = ical.Item(text=text, name=None)
+            else:
+                item = ical.Item(text=text, name=name)
+            
+            if item.name:
+                item_container_key = self._get_item_container_key(item.name)
+                item_container = item_container_key.get()
+                if not item_container: # the item does not exist, we are appending, we must create it
+                    item_container = ItemContainerAppengine(key=item_container_key)
+                item_container.set_item(item, tag) 
+                item_container.put()
+                
+            else:
+                raise Exception('This key has no name!\n' +text_raw)
+                
+#             else: # if there is no name then we must be appending
+#                 
+#                 # FIXME: actually, even timezones have a name so does that ever happen?
+#                 
+#                 # item does not have a name, let the datastore give it an numeric id
+#                 # (then by default when we request key.string_id() we will get None)
+#                 # and use (None, item_container.key.urlsafe()) as an internal key
+#                 # in the collection container bins
+#                 
+#                 item_container = ItemContainerAppengine(parent=collection_container.key)
+#                 item_container.set_item(item, tag) 
+#                 item_container.put()        
+#                 name = ( None, item_container.key.urlsafe() )
+    
+            collection_container.tag_bin(tag)[item.name] = item.etag
         
-        collection_container = self._get_container()
-        collection_container.tag_bin( item_container.item_tag )[name] = item.etag
-        collection_container.put()
-
-    @ndb.transactional
-    def append(self, name, text):
-        item = ical.Item(text=text, name=name)
-
-        item_container_key = self._get_item_container_key(item.name)
-        item_container = ItemContainerAppengine(key=item_container_key)
-        item_container.set_item(item) # this performs the put() to datastore
-        item_container.put()
-        
-        collection_container = self._get_container()
-        collection_container.tag_bin( item_container.item_tag )[name] = item.etag
         collection_container.put()
 
     @classmethod

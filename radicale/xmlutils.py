@@ -44,7 +44,7 @@ except ImportError:
 import re
 import xml.etree.ElementTree as ET
 
-from . import client, config, ical
+from . import client, config, ical # @UnresolvedImport
 
 
 NAMESPACES = {

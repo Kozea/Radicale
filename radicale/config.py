@@ -81,9 +81,9 @@ INITIAL_CONFIG = {
         "custom_handler": "",
         "file": "NOT USED ~/.config/radicale/rights"},
     "storage": {
-#        "type": "appengine", 
+        "type": "appengine", 
 #        "type": "multifilesystem", 
-        "type": "filesystem", 
+#        "type": "filesystem", 
         "custom_handler": "",
         "filesystem_folder": os.path.join( os.path.dirname(__file__), "collections"), #os.path.expanduser("~/.config/radicale/collections"),
         "database_url": ""},
@@ -106,7 +106,7 @@ try:
     if "RADICALE_CONFIG" in os.environ:
         _CONFIG_PARSER.read(os.environ["RADICALE_CONFIG"])
 except:
-    logging.critical('error accessing config files (GAE?)')
+    logging.critical('error accessing config files (expected if Google AppEngine)')
 
 # Wrap config module into ConfigParser instance
 sys.modules[__name__] = _CONFIG_PARSER

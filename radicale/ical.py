@@ -17,8 +17,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
-import logging
-
 """
 Radicale collection classes.
 
@@ -187,8 +185,6 @@ class Collection(object):
         the slash as the folder delimiter, with no leading nor trailing slash.
 
         """
-        logging.critical('init collection, path='+str(path))
-        
         self.encoding = "utf-8"
         split_path = path.split("/")
         self.path = path if path != "." else ""

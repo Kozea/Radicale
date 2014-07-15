@@ -25,35 +25,36 @@ class MainHandler(webapp2.RequestHandler):
                 radicale.storage.appengine.Collection('test/contacts.vcf').create()
                 radicale.storage.appengine.Collection('test/events.ics').create()
 
-#                 radicale.storage.appengine.Collection('test').create( props={"tag": "(node)"} )
-#                 radicale.storage.appengine.Collection('test/contacts.vcf').create( props={"tag": "VADDRESSBOOK"} )
-#                 radicale.storage.appengine.Collection('test/events.ics').create( props={"tag": "VCALENDAR"} )
-                
                 return self.response.write("collections have been created ")
 
             if path=='collections/delete':
             
-                raise NotImplementedError
+                radicale.storage.appengine.Collection('test/contacts.vcf').delete()
+                radicale.storage.appengine.Collection('test/contacts.vcf').delete_items()
+                radicale.storage.appengine.Collection('test/events.ics').delete()
+                radicale.storage.appengine.Collection('test/events.ics').delete_items()
+                radicale.storage.appengine.Collection('test').delete()
+                
+                return self.response.write("collections have been deleted ")
 
-            if path=='collections/see':
-                
-                out = []
-                
-                for collection_container in radicale.storage.appengine.CollectionContainerAppengine.query():
-                    
-                    out.append( 'collection: key=%s:\nprops=%s' % ('/'.join([id for kind, id in collection_container.key.pairs()]), collection_container.props) )
-                
-                return self.response.write("all items:\n\n"+'\n\n'.join(out))
-                
             if path=='collections/list':
                 
                 out = []
                 
-                for item_container in radicale.storage.appengine.ItemContainerAppengine.query():
-                    
-                    out.append( 'item: key=%s (tag=%s):\n%s' % ('/'.join([id for kind, id in item_container.key.pairs()]), item_container.item_tag, item_container.item_text) )
+                for collection_container in radicale.storage.appengine.CollectionContainerAppengine.query():                    
+                    out.append( '* COLLECTION: key=%s:\nprops=%s' % (', '.join([str(pair) for pair in collection_container.key.pairs()]), collection_container.props) )
+                    out.append( 'events='+str(collection_container.events.keys()) )
+                    out.append( 'cards='+str(collection_container.cards.keys()) )
+                    out.append( 'todos='+str(collection_container.todos.keys()) )
+                    out.append( 'journals='+str(collection_container.journals.keys()) )
+                    out.append( 'timezones='+str(collection_container.timezones.keys()) )
+                    out.append( '\n\n' )
+ 
+                for item_container in radicale.storage.appengine.ItemContainerAppengine.query():                    
+                    out.append( '* item: key=%s\ntag=%s\ntext:\n%s' % (', '.join([str(pair) for pair in item_container.key.pairs()]), item_container.item_tag, item_container.item_text) )
+                    out.append( '\n\n' )
                 
-                return self.response.write("all items:\n\n"+'\n\n'.join(out))
+                return self.response.write('\n'.join(out))
 
         return self.response.write("You have requested:\n\n%s\n\nImagine some content there... The CardDAV/CalDAv endpoint is: /sync"%path)
 

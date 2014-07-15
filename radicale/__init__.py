@@ -38,7 +38,7 @@ import socket
 try:
     import ssl
 except:
-    logging.critical('Error importing ssl (GAE?)')
+    logging.critical('Error importing ssl (expected if Google AppEngine)')
 import wsgiref.simple_server
 # Manage Python2/3 different modules
 # pylint: disable=F0401,E0611
@@ -371,12 +371,11 @@ class Application(object):
 
     def delete(self, environ, path, content, user):
         """Manage DELETE request."""
-
         try:
             depth = environ.get("HTTP_DEPTH", "0")
             collection = self.allowed_items_iterator(path, depth, user, "write").next()
         except StopIteration: 
-            return client.PRECONDITION_FAILED, {}, None
+            return NOT_ALLOWED
 
         if collection.path == environ["PATH_INFO"].strip("/"):
             # Path matching the collection, the collection must be deleted
@@ -425,11 +424,7 @@ class Application(object):
             item = collection.get_item(item_name)
             if item:
 
-                #FIXME: removing support for timezones because it requires a #noscale read
-                #
-                #
-                #items = collection.timezones
-                items = []
+                items = collection.timezones
                 
                 items.append(item)
                 answer_text = ical.serialize(
