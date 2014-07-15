@@ -59,6 +59,7 @@ DEFINED_RIGHTS = {
     "owner_write": "[r]\nuser:.+\ncollection:.*\npermission:r\n"
                    "[w]\nuser:.+\ncollection:^%(login)s/.+$\npermission:w",
     "owner_only": "[rw]\nuser:.+\ncollection:^%(login)s/.+$\npermission:rw",
+    "always": "[rw]\nuser:.+\ncollection:.*\npermission:rw",
 }
 
 

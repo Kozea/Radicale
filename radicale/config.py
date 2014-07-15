@@ -17,6 +17,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 
 """
 Radicale configuration module.
@@ -48,13 +49,13 @@ INITIAL_CONFIG = {
         "protocol": "PROTOCOL_SSLv23",
         "ciphers": "",
         "dns_lookup": "True",
-        "base_prefix": "/",
+        "base_prefix": "/sync/",
         "realm": "Radicale - Password Required"},
     "encoding": {
         "request": "utf-8",
         "stock": "utf-8"},
     "auth": {
-        "type": "None",
+        "type": "always",
         "custom_handler": "",
         "htpasswd_filename": "/etc/radicale/users",
         "htpasswd_encryption": "crypt",
@@ -76,18 +77,19 @@ INITIAL_CONFIG = {
     "git": {
         "committer": "Radicale <radicale@example.com>"},
     "rights": {
-        "type": "None",
+        "type": "always",
         "custom_handler": "",
-        "file": "~/.config/radicale/rights"},
+        "file": "NOT USED ~/.config/radicale/rights"},
     "storage": {
-        "type": "filesystem",
+        "type": "appengine", 
+#        "type": "multifilesystem", 
+#        "type": "filesystem", 
         "custom_handler": "",
-        "filesystem_folder": os.path.expanduser(
-            "~/.config/radicale/collections"),
+        "filesystem_folder": os.path.join( os.path.dirname(__file__), "collections"), #os.path.expanduser("~/.config/radicale/collections"),
         "database_url": ""},
     "logging": {
         "config": "/etc/radicale/logging",
-        "debug": "False",
+        "debug": "True",
         "full_environment": "False"}}
 
 # Create a ConfigParser and configure it
@@ -98,10 +100,13 @@ for section, values in INITIAL_CONFIG.items():
     for key, value in values.items():
         _CONFIG_PARSER.set(section, key, value)
 
-_CONFIG_PARSER.read("/etc/radicale/config")
-_CONFIG_PARSER.read(os.path.expanduser("~/.config/radicale/config"))
-if "RADICALE_CONFIG" in os.environ:
-    _CONFIG_PARSER.read(os.environ["RADICALE_CONFIG"])
+try:
+    _CONFIG_PARSER.read("/etc/radicale/config")
+    _CONFIG_PARSER.read(os.path.expanduser("~/.config/radicale/config"))
+    if "RADICALE_CONFIG" in os.environ:
+        _CONFIG_PARSER.read(os.environ["RADICALE_CONFIG"])
+except:
+    logging.critical('Error accessing config files (ok if Google AppEngine)')
 
 # Wrap config module into ConfigParser instance
 sys.modules[__name__] = _CONFIG_PARSER

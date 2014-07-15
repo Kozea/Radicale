@@ -44,7 +44,7 @@ except ImportError:
 import re
 import xml.etree.ElementTree as ET
 
-from . import client, config, ical
+from . import client, config, ical # @UnresolvedImport
 
 
 NAMESPACES = {
@@ -131,6 +131,7 @@ def _response(code):
 
 def _href(href):
     """Return prefixed href."""
+    if not href: href='' # None causes an error
     return "%s%s" % (config.get("server", "base_prefix"), href.lstrip("/"))
 
 
@@ -206,18 +207,8 @@ def delete(path, collection):
 
     return _pretty_xml(multistatus)
 
-
-def propfind(path, xml_request, collections, user=None):
-    """Read and answer PROPFIND requests.
-
-    Read rfc4918-9.1 for info.
-
-    The collections parameter is a list of collections that are
-    to be included in the output. Rights checking has to be done
-    by the caller.
-
-    """
-    # Reading request
+def get_props(xml_request):
+    
     if xml_request:
         root = ET.fromstring(xml_request.encode("utf8"))
         props = [prop.tag for prop in root.find(_tag("D", "prop"))]
@@ -230,6 +221,19 @@ def propfind(path, xml_request, collections, user=None):
                  _tag("D", "current-user-principal"),
                  _tag("A", "calendar-color"),
                  _tag("CS", "getctag")]
+        
+    return props
+
+def propfind(path, props, collections, user=None):
+    """Read and answer PROPFIND requests.
+
+    Read rfc4918-9.1 for info.
+
+    The collections parameter is a list of collections that are
+    to be included in the output. Rights checking has to be done
+    by the caller.
+
+    """
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -471,7 +475,7 @@ def proppatch(path, xml_request, collection):
 def put(path, ical_request, collection):
     """Read PUT requests."""
     name = name_from_path(path, collection)
-    if name in (item.name for item in collection.items):
+    if collection.get_item( name ) is not None: #SCALE: this should be formally the same
         # PUT is modifying an existing item
         collection.replace(name, ical_request)
     else:
