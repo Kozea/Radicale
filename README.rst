@@ -14,7 +14,7 @@ Tested very quickly abut creating / updating and deleting items appear to work f
 
 Feel free to try this test server:
 
-c
+.. code-block::
 
 	server = https://radicale-gae.appspot.com
 	username = test
@@ -45,7 +45,7 @@ Local development server: localhost:8080
 
 credentials:
 
-.. code-block:: bash
+.. code-block::
 
 	username = test
 	password = <anything>
@@ -60,7 +60,7 @@ MacOS 10.9.4, Contacts 8.0 (1371)
 
 then:
 
-.. code-block:: bash
+.. code-block::
 
 	CardDAV (default)
 	user name = test
@@ -77,7 +77,7 @@ MacOS 10.9.4, Calendar 7.0 (1841.1)
 
 then, if no SSL (in the case of the Local Development Server):
 
-.. code-block:: bash
+.. code-block::
 
 	account type = Advanced
 	user name = test
@@ -90,7 +90,7 @@ then, if no SSL (in the case of the Local Development Server):
 
 or if SSL (in production):
 
-.. code-block:: bash
+.. code-block::
 
 	account type = Manual
 	user name = test
@@ -111,7 +111,7 @@ iOS 7.1.2, Contacts
 
 then:
 
-.. code-block:: bash
+.. code-block::
 
 	server = <server>
 	user name = test
@@ -130,7 +130,7 @@ iOS 7.1.2, Calendar
 
 then:
 
-.. code-block:: bash
+.. code-block::
 
 	server = <server>
 	user name = test
@@ -143,7 +143,7 @@ Server setup
 
 The first time you run the server, create empty collections by directing you browser to:
 
-.. code-block:: bash
+.. code-block::
 
 	/collections/create
 
@@ -159,7 +159,7 @@ Install the Google AppEngine SDK for python (https://developers.google.com/appen
 
 Then:
 
-.. code-block:: bash
+.. code-block::
 
 	path = <is the root of the project, where the app.yaml is>
 	admin port = 8000 <or whatever you like>
@@ -172,7 +172,7 @@ You can then run the project using:
 
 Your server is running at:
 
-.. code-block:: bash
+.. code-block::
 
 	http://localhost:8080
 
@@ -191,7 +191,7 @@ Go to: https://appengine.google.com/
 
 Then,
 
-.. code-block:: bash
+.. code-block::
 
 	Application identifier = radicale-gae <choose something else that's available, make sure it matches your application name in app.yaml>
 	Application Title = Radicale AppEngine <does not matter>
@@ -206,7 +206,7 @@ then use GoogleAppEnginelauncher (instructions above) to deploy:
  
 Your server is running at:
 
-.. code-block:: bash
+.. code-block::
 
 	https://radicale-gae.appspot.com
 
