@@ -15,6 +15,7 @@ Tested very quickly abut creating / updating and deleting items appear to work f
 Feel free to try this test server:
 
 .. code-block:: bash
+
 	https://radicale-gae.appspot.com
 	username = test
 	password = <anything>
