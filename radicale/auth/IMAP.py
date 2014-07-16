@@ -50,11 +50,17 @@ def is_authenticated(user, password):
         "Connecting to IMAP server %s:%s." % (IMAP_SERVER, IMAP_SERVER_PORT,))
 
     connection_is_secure = False
-    if IMAP_USE_SSL:
-        connection = imaplib.IMAP4_SSL(host=IMAP_SERVER, port=IMAP_SERVER_PORT)
-        connection_is_secure = True
-    else:
-        connection = imaplib.IMAP4(host=IMAP_SERVER, port=IMAP_SERVER_PORT)
+    try:
+        if IMAP_USE_SSL:
+            connection = imaplib.IMAP4_SSL(host=IMAP_SERVER,
+                                           port=IMAP_SERVER_PORT)
+            connection_is_secure = True
+        else:
+            connection = imaplib.IMAP4(host=IMAP_SERVER, port=IMAP_SERVER_PORT)
+    except Exception as e:
+        log.LOGGER.error(
+            "Unable to connect to IMAP server error: %s" % e)
+        return False
 
     server_is_local = (IMAP_SERVER == "localhost")
 

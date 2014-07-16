@@ -284,9 +284,16 @@ class Application(object):
             password = None
 
         is_authenticated = auth.is_authenticated(user, password)
+
+        auth_ok = True if config.get("auth", "type") else False
+        if config.get("auth", "type") != "None" and not user:
+            log.LOGGER.error("Auth is (%s) but no user given" % (
+                config.get("auth", "type")))
+            auth_ok = False
+
         is_valid_user = is_authenticated or not user
 
-        if is_valid_user:
+        if is_valid_user and auth_ok:
             items = ical.Collection.from_path(
                 path, environ.get("HTTP_DEPTH", "0"))
             read_allowed_items, write_allowed_items = \
