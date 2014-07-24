@@ -103,11 +103,10 @@ def run():
             raise OSError("PID file exists: %s" % config.get("server", "pid"))
         pid = os.fork()
         if pid:
-            try:
-                if config.get("server", "pid"):
-                    open(config.get("server", "pid"), "w").write(str(pid))
-            finally:
-                sys.exit()
+            sys.exit()
+        else:
+            if config.get("server", "pid"):
+                open(config.get("server", "pid"), "w").write(str(pid))
         sys.stdout = sys.stderr = open(os.devnull, "w")
 
     # Register exit function
