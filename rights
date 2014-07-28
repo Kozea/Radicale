@@ -37,9 +37,10 @@ user: .+
 collection: ^%(login)s/.*$
 permission: w
 
-# Give access to all user in group admins to collections starting by admins/.
+# Give access to all user in groups admins and wheel to collections starting by
+# admins/.
 [admins]
 user: .+
-group: admins
+group: admins, wheel
 collection: ^admins/.+$
 permission: rw
