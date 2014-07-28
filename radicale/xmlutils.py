@@ -53,7 +53,6 @@ NAMESPACES = {
     "CR": "urn:ietf:params:xml:ns:carddav",
     "D": "DAV:",
     "CS": "http://calendarserver.org/ns/",
-    "ICAL": "http://apple.com/ns/ical/",
     "ME": "http://me.com/_namespace/"}
 
 

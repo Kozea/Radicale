@@ -116,7 +116,7 @@ file = ~/.config/radicale/rights
 
 [storage]
 # Storage backend
-# Value: filesystem | multifilesystem | database | custom
+# Value: filesystem | multifilesystem | database | lmdbstore | custom
 type = filesystem
 
 # Custom storage handler
@@ -131,6 +131,8 @@ filesystem_folder = ~/.config/radicale/collections
 # See http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#sqlalchemy.create_engine
 database_url =
 
+# Folder for the lmdbstore. 
+db_path = /var/lib/radicale
 
 [logging]
 # Logging configuration file
