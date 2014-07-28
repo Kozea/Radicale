@@ -106,6 +106,17 @@ def authorized(user, collection, permission):
     if collection_url in (".well-known/carddav", ".well-known/caldav"):
         return permission == "r"
     rights_type = config.get("rights", "type").lower()
+
+    if user is None:
+        # This is an anonymous user
+        if rights_type != "none":
+            # Only the none ACL setting allows for anonymous read and write
+            log.LOGGER.debug(
+                "The current right management setting isn't 'none', "
+                "therefore anonymous users can't access collections."
+            )
+            return False
+
     return (
         rights_type == "none" or
         _read_from_sections(user or "", collection_url, permission))
