@@ -104,9 +104,8 @@ def run():
         pid = os.fork()
         if pid:
             sys.exit()
-        else:
-            if config.get("server", "pid"):
-                open(config.get("server", "pid"), "w").write(str(pid))
+        elif config.get("server", "pid"):
+            open(config.get("server", "pid"), "w").write(str(pid))
         sys.stdout = sys.stderr = open(os.devnull, "w")
 
     # Register exit function
