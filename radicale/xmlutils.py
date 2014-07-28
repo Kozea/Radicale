@@ -227,19 +227,14 @@ def propfind(path, xml_request, collections, user=None):
                  _tag("D", "displayname"),
                  _tag("D", "owner"),
                  _tag("D", "getetag"),
-                 _tag("D", "current-user-principal"),
                  _tag("A", "calendar-color"),
                  _tag("CS", "getctag")]
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
-    if collections:
-        for collection in collections:
-            response = _propfind_response(path, collection, props, user)
-            multistatus.append(response)
-    else:
-        response = _propfind_response(path, None, props, user)
+    for collection in collections:
+        response = _propfind_response(path, collection, props, user)
         multistatus.append(response)
 
     return _pretty_xml(multistatus)
@@ -255,11 +250,8 @@ def _propfind_response(path, item, props, user):
     response = ET.Element(_tag("D", "response"))
 
     href = ET.Element(_tag("D", "href"))
-    if item:
-        uri = item.url if is_collection else "%s/%s" % (path, item.name)
-        href.text = _href(uri.replace("//", "/"))
-    else:
-        href.text = _href(path)
+    uri = item.url if is_collection else "%s/%s" % (path, item.name)
+    href.text = _href(uri.replace("//", "/"))
     response.append(href)
 
     propstat404 = ET.Element(_tag("D", "propstat"))
@@ -275,28 +267,16 @@ def _propfind_response(path, item, props, user):
     for tag in props:
         element = ET.Element(tag)
         is404 = False
-        if tag in (_tag("D", "principal-URL"),
-                   _tag("D", "current-user-principal")):
-            if user:
-                tag = ET.Element(_tag("D", "href"))
-                tag.text = _href("%s/" % user)
-            else:
-                is404 = True
-                tag = ET.Element(_tag("D", "unauthenticated"))
-            element.append(tag)
-        elif tag == _tag("D", "principal-collection-set"):
+        if tag == _tag("D", "getetag"):
+            element.text = item.etag
+        elif tag == _tag("D", "principal-URL"):
             tag = ET.Element(_tag("D", "href"))
-            tag.text = _href("/")
+            tag.text = _href(path)
             element.append(tag)
-        elif tag in (_tag("C", "calendar-home-set"),
-                     _tag("CR", "addressbook-home-set")):
-            if user and path == "/%s/" % user:
-                tag = ET.Element(_tag("D", "href"))
-                tag.text = _href(path)
-                element.append(tag)
-            else:
-                is404 = True
-        elif tag == _tag("C", "calendar-user-address-set"):
+        elif tag in (_tag("D", "principal-collection-set"),
+                     _tag("C", "calendar-user-address-set"),
+                     _tag("CR", "addressbook-home-set"),
+                     _tag("C", "calendar-home-set")):
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href(path)
             element.append(tag)
@@ -314,6 +294,13 @@ def _propfind_response(path, item, props, user):
                 comp.set("name", component)
                 element.append(comp)
             # pylint: enable=W0511
+        elif tag == _tag("D", "current-user-principal") and user:
+            tag = ET.Element(_tag("D", "href"))
+            if item.resource_type == "addressbook":
+                tag.text = _href("/%s/addressbook.vcf/" % user)
+            else:
+                tag.text = _href("/%s/calendar.ics/" % user)
+            element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
             privilege.append(ET.Element(_tag("D", "all")))
@@ -331,55 +318,45 @@ def _propfind_response(path, item, props, user):
                 report_tag.text = report_name
                 supported.append(report_tag)
                 element.append(supported)
-        # item related properties
-        elif item:
-            if tag == _tag("D", "getetag"):
-                element.text = item.etag
-            elif is_collection:
-                if tag == _tag("D", "getcontenttype"):
-                    element.text = item.mimetype
-                elif tag == _tag("D", "resourcetype"):
-                    if item.is_principal:
-                        tag = ET.Element(_tag("D", "principal"))
-                        element.append(tag)
-                    if item.is_leaf(item.path) or (
-                            not item.exists and item.resource_type):
-                        # 2nd case happens when the collection is not stored yet,
-                        # but the resource type is guessed
-                        if item.resource_type == "addressbook":
-                            tag = ET.Element(_tag("CR", item.resource_type))
-                        else:
-                            tag = ET.Element(_tag("C", item.resource_type))
-                        element.append(tag)
-                    tag = ET.Element(_tag("D", "collection"))
-                    element.append(tag)
-                elif tag == _tag("D", "owner") and item.owner_url:
-                    element.text = item.owner_url
-                elif tag == _tag("CS", "getctag"):
-                    element.text = item.etag
-                elif tag == _tag("C", "calendar-timezone"):
-                    element.text = ical.serialize(
-                        item.tag, item.headers, item.timezones)
-                elif tag == _tag("D", "displayname"):
-                    element.text = item.name
-                elif tag == _tag("A", "calendar-color"):
-                    element.text = item.color
-                else:
-                    human_tag = _tag_from_clark(tag)
-                    if human_tag in collection_props:
-                        element.text = collection_props[human_tag]
-                    else:
-                        is404 = True
-            # Not for collections
-            elif tag == _tag("D", "getcontenttype"):
-                element.text = "%s; component=%s" % (
-                    item.mimetype, item.tag.lower())
+        elif is_collection:
+            if tag == _tag("D", "getcontenttype"):
+                element.text = item.mimetype
             elif tag == _tag("D", "resourcetype"):
-                # resourcetype must be returned empty for non-collection elements
-                pass
+                if item.is_principal:
+                    tag = ET.Element(_tag("D", "principal"))
+                    element.append(tag)
+                if item.is_leaf(item.path) or (
+                        not item.exists and item.resource_type):
+                    # 2nd case happens when the collection is not stored yet,
+                    # but the resource type is guessed
+                    if item.resource_type == "addressbook":
+                        tag = ET.Element(_tag("CR", item.resource_type))
+                    else:
+                        tag = ET.Element(_tag("C", item.resource_type))
+                    element.append(tag)
+                tag = ET.Element(_tag("D", "collection"))
+                element.append(tag)
+            elif tag == _tag("D", "owner") and item.owner_url:
+                element.text = item.owner_url
+            elif tag == _tag("CS", "getctag"):
+                element.text = item.etag
+            elif tag == _tag("C", "calendar-timezone"):
+                element.text = ical.serialize(
+                    item.tag, item.headers, item.timezones)
+            elif tag == _tag("D", "displayname"):
+                element.text = item.name
+            elif tag == _tag("A", "calendar-color"):
+                element.text = item.color
             else:
-                is404 = True
-        # Not for items
+                human_tag = _tag_from_clark(tag)
+                if human_tag in collection_props:
+                    element.text = collection_props[human_tag]
+                else:
+                    is404 = True
+        # Not for collections
+        elif tag == _tag("D", "getcontenttype"):
+            element.text = "%s; component=%s" % (
+                item.mimetype, item.tag.lower())
         elif tag == _tag("D", "resourcetype"):
             # resourcetype must be returned empty for non-collection elements
             pass

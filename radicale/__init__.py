@@ -305,7 +305,7 @@ class Application(object):
             status, headers, answer = NOT_ALLOWED
 
         if ((status, headers, answer) == NOT_ALLOWED and
-                not is_authenticated and
+                not auth.is_authenticated(user, password) and
                 config.get("auth", "type") != "None"):
             # Unknown or unauthorized user
             log.LOGGER.info("%s refused" % (user or "Anonymous user"))
