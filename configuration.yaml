@@ -3,6 +3,7 @@ description: CalDAV and CardDAV Server
 license: GPLv3
 public: true
 url: http://www.radicale.org/
+pystil: https://kozea.pystil.org/pystil.js
 
 menu:
   - News:
@@ -14,6 +15,12 @@ menu:
   - Download:
       link: /download/
 
+footer:
+  - A Kozea Project:
+      link: http://community.kozea.fr/
+  - Optimized for Standards:
+      link: http://validator.w3.org/check?uri=referer
+
 project (git):
   url: git://github.com/Kozea/Radicale.git
   path: radicale
@@ -24,6 +31,7 @@ vcs (git):
 
 code browser (github):
   project name: Kozea/Radicale
+  ribbon: Fork me on GitHub
 
 bug tracker (github):
   project name: Kozea/Radicale
@@ -34,9 +42,3 @@ mailing list (librelist):
 continuous integration (jenkins):
   base url: http://jenkins.kozea.org/
   project name: Radicale
-
-# room (jabber):
-#   address: radicale@room.jabber.kozea.fr
-
-# package repository (pypi):
-#   project name: radicale

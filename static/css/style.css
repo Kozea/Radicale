@@ -1,10 +1,9 @@
 @font-face {
-  font-family: "menu";
+  font-family: "caviardreams";
   src: url(CaviarDreams_Bold.ttf);
 }
 
 html {
-  background: url(img/back.jpg) #f4f2f2; /* fallback */
   background: url(img/top.jpg) repeat-x 0 82px,
               url(img/back.jpg) #f4f2f2;
   font-family: sans-serif;
@@ -13,7 +12,6 @@ html {
 }
 
 body {
-  background: url(img/green.jpg) repeat-x left 2em; /* fallback */
   background: url(img/radicale_back.png) no-repeat 100% 100% fixed,
               url(img/r.jpg) no-repeat 100% 50% fixed,
               url(img/green.jpg) repeat-x left 2em;
@@ -57,7 +55,7 @@ code {
 h2 {
   background: url(img/icon.png) no-repeat top left;
   color: #a40000;
-  font-family: "menu";
+  font-family: "caviardreams";
   margin-bottom:35px;
   padding: 8px 0 0 35px ;
   text-transform: uppercase;
@@ -65,7 +63,7 @@ h2 {
 
 h3 {
   color: #a40000;
-  font-family: "menu";
+  font-family: "caviardreams";
   font-size: 1.4em;
   margin: 0.5em 0;
 }
@@ -73,7 +71,7 @@ h3 {
 h3 a {
   background: url(img/fleche.png) no-repeat 0 35%;
   color: #a40000;
-  font-family: "menu";
+  font-family: "caviardreams";
   padding-left:20px;
 }
 
@@ -93,7 +91,7 @@ section h4 a:hover {
 }
 
 h5, h5 a {
-  font-family: "menu";
+  font-family: "caviardreams";
   font-size: 1em;
   text-transform: uppercase;
 }
@@ -136,7 +134,7 @@ nav {
 
 nav ul {
   display: table-row;
-  font-family: "menu";
+  font-family: "caviardreams";
   font-size: 1.3em;
   text-align: center;
   padding:0;
@@ -261,9 +259,9 @@ aside > header {
 
 #rss, #editable {
   background-color: #a40000;
+  bottom: 20px;
   position: fixed;
   right: 20px;
-  top: 20px;
   transition: background-color 0.3s linear;
 }
 
