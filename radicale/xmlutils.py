@@ -36,9 +36,10 @@ except ImportError:
 # Manage Python2/3 different modules
 # pylint: disable=F0401,E0611
 try:
-    from urllib.parse import unquote
+    from urllib.parse import unquote, urlparse
 except ImportError:
     from urllib import unquote
+    from urlparse import urlparse
 # pylint: enable=F0401,E0611
 
 import re
@@ -473,10 +474,11 @@ def report(path, xml_request, collection):
                         _tag("CR", "addressbook-multiget")):
             # Read rfc4791-7.9 for info
             base_prefix = config.get("server", "base_prefix")
-            hreferences = set(
-                unquote(href_element.text)[len(base_prefix):] for href_element
-                in root.findall(_tag("D", "href"))
-                if unquote(href_element.text).startswith(base_prefix))
+            hreferences = set()
+            for href_element in root.findall(_tag("D", "href")):
+                href_path = unquote(urlparse(href_element.text).path)
+                if href_path.startswith(base_prefix):
+                    hreferences.add(href_path[len(base_prefix):])
         else:
             hreferences = (path,)
         # TODO: handle other filters
