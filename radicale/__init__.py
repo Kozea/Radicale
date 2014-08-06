@@ -252,6 +252,9 @@ class Application(object):
             environ["PATH_INFO"] = self.sanitize_uri(
                 "/%s" % environ["PATH_INFO"][len(base_prefix):])
             log.LOGGER.debug("Sanitized path: %s", environ["PATH_INFO"])
+        elif config.get("server", "can_skip_base_prefix"):
+            log.LOGGER.debug(
+                "Skipped already sanitized path: %s", environ["PATH_INFO"])
         else:
             # Request path not starting with base_prefix, not allowed
             log.LOGGER.debug(

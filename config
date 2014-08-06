@@ -34,6 +34,8 @@ ciphers =
 dns_lookup = True
 # Root URL of Radicale (starting and ending with a slash)
 base_prefix = /
+# Possibility to allow URLs cleaned by a HTTP server, without the base_prefix
+can_skip_base_prefix = False
 # Message displayed in the client when a password is needed
 realm = Radicale - Password Required
 
