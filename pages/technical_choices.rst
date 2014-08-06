@@ -207,5 +207,7 @@ The package offers 8 modules.
 
 ``storage``
   This folder is a set of storage modules able to read and write
-  collections. The only one is now ``filesystem``, storing each collection into
-  one flat plain-text file.
+  collections. Currently there are three storage modules: ``filesystem``, storing
+  each collection into one flat plain-text file, ``multifilesystem``, storing each
+  entries into separates plain-text files, and ``database``, storing entries in a 
+  database. ``filesystem`` is stable and battle-tested, others are experimentals.
