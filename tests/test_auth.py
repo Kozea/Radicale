@@ -72,3 +72,25 @@ class TestBaseAuthRequests(BaseTest):
             "GET", "/", HTTP_AUTHORIZATION=self.userpass)
         assert status == 200
         assert "Radicale works!" in answer
+
+    def test_imap(self):
+        config.set("auth", "type", "IMAP")
+
+        self.application = radicale.Application()
+
+        status, headers, answer = self.request(
+            "GET", "/", HTTP_AUTHORIZATION=self.userpass)
+        assert status == 401
+        assert answer is None
+
+    def XXtest_ldap(self):
+        # TODO use https://github.com/broiledmeat/python3-ldap or
+        # reimplement it with https://pypi.python.org/pypi/python3-ldap
+        config.set("auth", "type", "LDAP")
+
+        self.application = radicale.Application()
+
+        status, headers, answer = self.request(
+            "GET", "/")
+        assert status == 401
+        assert answer is None

@@ -42,6 +42,9 @@ SCOPE = getattr(ldap, "SCOPE_%s" % config.get("auth", "ldap_scope").upper())
 def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
     global CONNEXION
+    if not user:
+        log.LOGGER.error("User not set")
+        return False
 
     try:
         CONNEXION.whoami_s()
