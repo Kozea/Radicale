@@ -28,6 +28,7 @@ Define the main classes of a collection as seen from the server.
 import os
 import posixpath
 import hashlib
+import re
 from uuid import uuid4
 from random import randint
 from contextlib import contextmanager
@@ -58,14 +59,7 @@ def unfold(text):
     Read rfc5545-3.1 for info.
 
     """
-    lines = []
-    for line in text.splitlines():
-        if lines and (line.startswith(" ") or line.startswith("\t")):
-            lines[-1] += line[1:]
-        else:
-            lines.append(line)
-    return lines
-
+    return re.sub('\r\n( |\t)', '', text).splitlines()
 
 class Item(object):
     """Internal iCal item."""
