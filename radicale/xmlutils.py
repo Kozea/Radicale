@@ -297,10 +297,7 @@ def _propfind_response(path, item, props, user):
             # pylint: enable=W0511
         elif tag == _tag("D", "current-user-principal") and user:
             tag = ET.Element(_tag("D", "href"))
-            if item.resource_type == "addressbook":
-                tag.text = _href("/%s/addressbook.vcf/" % user)
-            else:
-                tag.text = _href("/%s/calendar.ics/" % user)
+            tag.text = _href("/%s/" % user)
             element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
