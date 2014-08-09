@@ -77,6 +77,11 @@ CLARK_TAG_REGEX = re.compile(r"""
     (?P<tag>.*)              # short tag name
     """, re.VERBOSE)
 
+HUMAN_REGEX = re.compile(r"""
+    (?P<namespaceabbrev>[^:{}]*)    # namespace abbreviation
+    :                               # :
+    (?P<tag>.*)                     # short tag name
+    """, re.VERBOSE)
 
 def _pretty_xml(element, level=0):
     """Indent an ElementTree ``element`` and its children."""
@@ -123,6 +128,13 @@ def _tag_from_clark(name):
         return "%(ns)s:%(tag)s" % args
     return name
 
+
+def _tag_from_human(name):
+    """Get an XML Clark notation tag from human-readable variant ``name``."""
+    match = HUMAN_REGEX.match(name)
+    if match and match.group("namespaceabbrev") in NAMESPACES:
+        return _tag(match.group("namespaceabbrev"), match.group("tag"))
+    return name
 
 def _response(code):
     """Return full W3C names from HTTP status codes."""
@@ -218,29 +230,41 @@ def propfind(path, xml_request, collections, user=None):
 
     """
     # Reading request
-    if xml_request:
-        root = ET.fromstring(xml_request.encode("utf8"))
-        props = [prop.tag for prop in root.find(_tag("D", "prop"))]
-    else:
+    root = ET.fromstring(xml_request.encode("utf8")) if xml_request else None
+
+    # > A client may choose not to submit a request body.  An empty PROPFIND
+    # > request body MUST be treated as if it were an 'allprop' request.
+    top_tag = root[0] if root is not None else ET.Element(_tag("D", "allprop"))
+
+    props = ()
+    if   top_tag.tag == _tag("D", "allprop"):
         props = [_tag("D", "getcontenttype"),
                  _tag("D", "resourcetype"),
                  _tag("D", "displayname"),
                  _tag("D", "owner"),
                  _tag("D", "getetag"),
                  _tag("ICAL", "calendar-color"),
-                 _tag("CS", "getctag")]
+                 _tag("CS", "getctag"),
+                 _tag("C", "supported-calendar-component-set"),
+                 _tag("D", "supported-report-set"),
+            ]
+    elif top_tag.tag == _tag("D", "prop"):
+        props = [prop.tag for prop in top_tag]
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
     for collection in collections:
-        response = _propfind_response(path, collection, props, user)
+        if top_tag.tag == _tag("D", "propname"):
+            response = _propfind_response(path, collection, (), user, propnames=True)
+        else:
+            response = _propfind_response(path, collection, props, user)
         multistatus.append(response)
 
     return _pretty_xml(multistatus)
 
 
-def _propfind_response(path, item, props, user):
+def _propfind_response(path, item, props, user, propnames=False):
     """Build and return a PROPFIND response."""
     is_collection = isinstance(item, ical.Collection)
     if is_collection:
@@ -263,6 +287,33 @@ def _propfind_response(path, item, props, user):
 
     prop404 = ET.Element(_tag("D", "prop"))
     propstat404.append(prop404)
+
+    if propnames:
+        # Should list all properties that can be retrieved by the code below
+        prop200.append(ET.Element(_tag("D",  "getetag"                         )))
+        prop200.append(ET.Element(_tag("D",  "principal-URL"                   )))
+        prop200.append(ET.Element(_tag("D",  "principal-collection-set"        )))
+        prop200.append(ET.Element(_tag("C",  "calendar-user-address-set"       )))
+        prop200.append(ET.Element(_tag("CR", "addressbook-home-set"            )))
+        prop200.append(ET.Element(_tag("C",  "calendar-home-set"               )))
+        prop200.append(ET.Element(_tag("C",  "supported-calendar-component-set")))
+        prop200.append(ET.Element(_tag("D",  "current-user-privilege-set"      )))
+        prop200.append(ET.Element(_tag("D",  "supported-report-set"            )))
+        prop200.append(ET.Element(_tag("D",  "getcontenttype"                  )))
+        prop200.append(ET.Element(_tag("D",  "resourcetype"                    )))
+
+        if is_collection:
+            prop200.append(ET.Element(_tag("CS",   "getctag"                         )))
+            prop200.append(ET.Element(_tag("C",    "calendar-timezone"               )))
+            prop200.append(ET.Element(_tag("D",    "displayname"                     )))
+            prop200.append(ET.Element(_tag("ICAL", "calendar-color"                  )))
+            if item.owner_url:
+                prop200.append(ET.Element(_tag("D",  "owner")))
+
+            for tag in collection_props:
+                clark_tag = _tag_from_human(tag)
+                if prop200.find(clark_tag) is None:
+                    prop200.append(ET.Element(clark_tag))
 
     for tag in props:
         element = ET.Element(tag)
