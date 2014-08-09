@@ -481,6 +481,9 @@ class Application(object):
 
         collection = write_collections[0]
 
+        if content is None:
+            return client.PRECONDITION_FAILED, {}, None
+
         props = xmlutils.props_from_request(content)
         with collection.props as collection_props:
             for key, value in props.items():
