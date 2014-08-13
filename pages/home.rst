@@ -40,18 +40,5 @@ Main Features
 Supported Clients
 =================
 
-Radicale supports the latest versions of:
-
-- `Mozilla Lightning <http://www.mozilla.org/projects/calendar/lightning/>`_
-- `GNOME Evolution <http://projects.gnome.org/evolution/>`_
-- `KDE KOrganizer <http://userbase.kde.org/KOrganizer/>`_
-- `aCal <http://wiki.acal.me/wiki/Main_Page>`_, `CalDAV-Sync
-  <https://play.google.com/store/apps/details?id=org.dmfs.caldav.lib>`_
-  and `CardDAV-Sync
-  <https://play.google.com/store/apps/details?id=org.dmfs.carddav.Sync>`_
-  for `Google Android <http://www.android.com/>`_
-- `CalDavZAP <http://www.inf-it.com/open-source/clients/caldavzap/>`_
-- `CardDavMATE <http://www.inf-it.com/open-source/clients/carddavmate/>`_
-- `Apple iPhone <http://www.apple.com/iphone/>`_
-- `Apple iCal <http://www.apple.com/macosx/apps/>`_
-- `syncEvolution <https://syncevolution.org/>`_
+Radicale supports the latest versions of `many CalDAV and CardDAV clients
+</user_documentation/#idcaldav-and-carddav-clients>`.

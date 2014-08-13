@@ -57,8 +57,8 @@ of:
 - `CalDavZAP <http://www.inf-it.com/open-source/clients/caldavzap/>`_
 - `CardDavMATE <http://www.inf-it.com/open-source/clients/carddavmate/>`_
 - `Apple iPhone <http://www.apple.com/iphone/>`_
-- `Apple iCal <http://www.apple.com/macosx/apps/>`_
-- `Apple Contacts <http://www.apple.com/macosx/apps/>`_
+- `Apple Calendar <http://www.apple.com/macosx/apps/#calendar>`_
+- `Apple Contacts <http://www.apple.com/macosx/apps/#contacts>`_
 - `syncEvolution <https://syncevolution.org/>`_
 
 More clients will be supported in the future. However, it may work with any
