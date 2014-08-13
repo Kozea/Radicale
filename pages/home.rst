@@ -41,4 +41,4 @@ Supported Clients
 =================
 
 Radicale supports the latest versions of `many CalDAV and CardDAV clients
-</user_documentation/#idcaldav-and-carddav-clients>`.
+</user_documentation/#idcaldav-and-carddav-clients>`_.
