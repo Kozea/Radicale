@@ -514,12 +514,18 @@ default configuration file, with the main parameters:
   certificate = /etc/apache2/ssl/server.crt
   # SSL private key
   key = /etc/apache2/ssl/server.key
+  # SSL Protocol used. See python's ssl module for available values
+  protocol = PROTOCOL_SSLv23
+  # Ciphers available. See python's ssl module for available ciphers
+  ciphers =
   # Reverse DNS to resolve client address in logs
   dns_lookup = True
   # Root URL of Radicale (starting and ending with a slash)
   base_prefix = /
+  # Possibility to allow URLs cleaned by a HTTP server, without the base_prefix
+  can_skip_base_prefix = False
   # Message displayed in the client when a password is needed
-  realm = Radicale - Password Required lol
+  realm = Radicale - Password Required
 
 
   [encoding]
@@ -531,13 +537,12 @@ default configuration file, with the main parameters:
 
   [auth]
   # Authentication method
-  # Value: None | htpasswd | IMAP | LDAP | PAM | courier | http
+  # Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | remote_user | custom
   type = None
 
-  # Usernames used for public collections, separated by a comma
-  public_users = public
-  # Usernames used for private collections, separated by a comma
-  private_users = private
+  # Custom authentication handler
+  custom_handler =
+
   # Htpasswd filename
   htpasswd_filename = /etc/radicale/users
   # Htpasswd encryption method
@@ -554,7 +559,7 @@ default configuration file, with the main parameters:
   # placed as X in a query of the form (&(...)X)
   # example: (objectCategory=Person)(objectClass=User)(memberOf=cn=calenderusers,ou=users,dc=example,dc=org)
   # leave empty if no additional filter is needed
-  ldap_filter = 
+  ldap_filter =
   # LDAP dn for initial login, used if LDAP server does not allow anonymous searches
   # Leave empty if searches are anonymous
   ldap_binddn =
@@ -582,10 +587,18 @@ default configuration file, with the main parameters:
   http_password_parameter =
 
 
+  [git]
+  # Git default options
+  committer = Radicale <radicale@example.com>
+
+
   [rights]
-  # Rights management method
-  # Value: None | owner_only | owner_write | from_file
+  # Rights backend
+  # Value: None | authenticated | owner_only | owner_write | from_file | custom
   type = None
+
+  # Custom rights handler
+  custom_handler =
 
   # File for rights management from_file
   file = ~/.config/radicale/rights
@@ -593,8 +606,11 @@ default configuration file, with the main parameters:
 
   [storage]
   # Storage backend
-  # Value: filesystem | database
+  # Value: filesystem | multifilesystem | database | custom
   type = filesystem
+
+  # Custom storage handler
+  custom_handler =
 
   # Folder for storing local collections, created if not present
   filesystem_folder = ~/.config/radicale/collections
