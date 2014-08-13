@@ -363,7 +363,7 @@ In Contacts on iOS 6:
 
 1.  From the Home screen, open ``Settings``
 2.  Select ``Mail, Contacts, Calendars``
-3.  Select ``Add Account...`` →  ``Other`` →  ``Add CardDAV Account``
+3.  Select ``Add Account…`` →  ``Other`` →  ``Add CardDAV Account``
 4.  As ``Server`` use the Radicale server URL with port, for example ``localhost:5232``
 5.  Add any ``User name`` you like (if you didn't configure authentication)
 6.  Add any ``Password`` you like (again, if you didn't configure authentication)
