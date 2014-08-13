@@ -829,6 +829,7 @@ Authentication is possible through:
 - IMAP
 - LDAP
 - PAM
+- Remote user given by HTTP server
 
 Check the ``[auth]`` section of your configuration file to know the different
 options offered by these authentication modules.
@@ -836,51 +837,13 @@ options offered by these authentication modules.
 Some authentication methods need additional modules, see `Python Versions and
 OS Support`_ for further information.
 
+You can also write and use a custom module handle authentication if you use a
+different technology.
+
 Please note that these modules have not been verified by security experts. If
 you need a really secure way to handle authentication, you should put Radicale
 behind a real HTTP server and use its authentication and rights management
 methods.
-
-
-Git Support
------------
-
-.. note::
-   If the project doesn't comply with the requirements to use Git, Radicale will still work.
-   Your collections will run fine but without the versionning system.
-
-Git is now automatically supported on Radicale. It depends on `dulwich <https://github.com/jelmer/dulwich>`_.
-
-
-Configure Radicale
-~~~~~~~~~~~~~~~~~~
-
-Radicale automatically detects the *.git* folder in the path you configured for
-the filesystem_folder variable in the ``[storage]`` section of your configuration file.
-Make sure a repository is created at this location or create one (using *git init
-.* for instance) else it won't work.
-
-To summarize : 
-
-- Configure your Git installation
-- Get Radicale and dulwich
-- Create the repository where your collections are stored
-- Run Radicale and it should work
-
-How it works
-~~~~~~~~~~~~
-
-Radicale will automatically commit any changes on your collections. It
-will use your git config to find parameters such as the committer and that's all.
-
-
-Issues
-~~~~~~
-
-A dulwich project ported on Python 3 exists but it seems that it doesn't follow the
-current api (committer is mandatory and not retrieved from the git config by
-default). Until this problem isn't fixed, the Git support for Radicale on
-Python 3 will not be ensured.
 
 
 Rights Management
@@ -895,8 +858,9 @@ called ``anna``.
 
 The *authenticated user* is the login used for authentication.
 
-4 different configurations are available, you can choose the one you want in
-your configuration file.
+5 different configurations are available, you can choose the one you want in
+your configuration file. You can also write and use a custom module handle
+rights management if you need a specific pattern.
 
 None
 ~~~~
@@ -912,16 +876,15 @@ users have no access to these collections.
 Owner Only
 ~~~~~~~~~~
 
-Only owners have read and write access to their own collections (path is
-`/username/*`). The other users, authenticated or anonymous, have no access to
-these collections.
+Only owners have read and write access to their own collections. The other
+users, authenticated or anonymous, have no access to these collections.
 
 Owner Write
 ~~~~~~~~~~~
 
 Authenticated users have read access to all collections, but only owners have
-write access to their own collections (path is `/username/*`). Anonymous users
-have no access to collections.
+write access to their own collections. Anonymous users have no access to
+collections.
 
 From File
 ~~~~~~~~~
@@ -976,6 +939,47 @@ Example:
   user: .+
   collection: ^%(login)s/.+$
   permission: w
+
+
+Git Support
+-----------
+
+.. note::
+   If the project doesn't comply with the requirements to use Git, Radicale will still work.
+   Your collections will run fine but without the versionning system.
+
+Git is now automatically supported on Radicale. It depends on `dulwich <https://github.com/jelmer/dulwich>`_.
+
+
+Configure Radicale
+~~~~~~~~~~~~~~~~~~
+
+Radicale automatically detects the *.git* folder in the path you configured for
+the filesystem_folder variable in the ``[storage]`` section of your configuration file.
+Make sure a repository is created at this location or create one (using *git init
+.* for instance) else it won't work.
+
+To summarize : 
+
+- Configure your Git installation
+- Get Radicale and dulwich
+- Create the repository where your collections are stored
+- Run Radicale and it should work
+
+How it works
+~~~~~~~~~~~~
+
+Radicale will automatically commit any changes on your collections. It
+will use your git config to find parameters such as the committer and that's all.
+
+
+Issues
+~~~~~~
+
+A dulwich project ported on Python 3 exists but it seems that it doesn't follow the
+current api (committer is mandatory and not retrieved from the git config by
+default). Until this problem isn't fixed, the Git support for Radicale on
+Python 3 will not be ensured.
 
 
 Python Versions and OS Support
