@@ -903,49 +903,79 @@ None
 
 Everybody (including anonymous users) has read and write access to all collections.
 
+Authenticated
+~~~~~~~~~~~~~
+
+An authenticated users has read and write access to all collections, anonymous
+users have no access to these collections.
+
 Owner Only
 ~~~~~~~~~~
 
-Only owners have read and write access to their own collections. The other
-users, authenticated or anonymous, have no access to these collections.
+Only owners have read and write access to their own collections (path is
+`/username/*`). The other users, authenticated or anonymous, have no access to
+these collections.
 
 Owner Write
 ~~~~~~~~~~~
 
 Authenticated users have read access to all collections, but only owners have
-write access to their own collections. Anonymous users have no access to
-collections.
+write access to their own collections (path is `/username/*`). Anonymous users
+have no access to collections.
 
 From File
 ~~~~~~~~~
 
-File-based rights. Rights are read from a file whose name is specified in the
-config (section ``[right]``, key ``file``).
+Rights are based on a regex-based file whose name is specified in the config
+(section "right", key "file").
+
+Authentication login is matched against the "user" key, and collection's path
+is matched against the "collection" key. You can use Python's ConfigParser
+interpolation values %(login)s and %(path)s. You can also get groups from the
+user regex in the collection with {0}, {1}, etc.
+
+For example, for the "user" key, ".+" means "authenticated user" and ".*"
+means "anybody" (including anonymous users).
+
+Section names are only used for naming the rule.
+
+Leading or ending slashes are trimmed from collection's path.
 
 Example:
 
 .. code-block:: ini
 
-  # This means user1 may read, user2 may write, user3 has full access.
-  [user0/calendar]
-  user1: r
-  user2: w
-  user3: rw
+  # This means all users starting with "admin" may read any collection
+  [admin]
+  user: ^admin.*$
+  collection: .*
+  permission: r
 
-  # user0 can read user1/cal.
-  [user1/cal]
-  user0: r
+  # This means all users may read and write any collection starting with public.
+  # We do so by just not testing against the user string.
+  [public]
+  user: .*
+  collection: ^public(/.+)?$
+  permission: rw
 
-  # If a collection a/b is shared and other users than the owner are supposed to
-  # find the collection in a propfind request, an additional line for a has to
-  # be in the defintions.
-  [user0]
-  user1: r
+  # A little more complex: give read access to users from a domain for all
+  # collections of all the users (ie. user@domain.tld can read domain/\*).
+  [domain-wide-access]
+  user: ^.+@(.+)\..+$
+  collection: ^{0}/.+$
+  permission: r
 
-The owners are implied to have all rights on their collections.
+  # Allow authenticated user to read all collections
+  [allow-everyone-read]
+  user: .+
+  collection: .*
+  permission: r
 
-The configuration file is read for each request, you can change it without
-restarting the server.
+  # Give write access to owners
+  [owner-write]
+  user: .+
+  collection: ^%(login)s/.+$
+  permission: w
 
 
 Python Versions and OS Support
