@@ -26,6 +26,9 @@ Source Packages
 
 You can download the Radicale package for each release:
 
+- `Radicale-0.9.tar.gz
+  <http://pypi.python.org/packages/source/R/Radicale/Radicale-0.9.tar.gz>`_
+  (42 KiB)
 - `Radicale-0.8.tar.gz
   <http://pypi.python.org/packages/source/R/Radicale/Radicale-0.8.tar.gz>`_
   (38 KiB)
