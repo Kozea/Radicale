@@ -326,7 +326,7 @@ that are critical for proper operation.
 
 1. From the Home screen, open ``Settings``
 2. Select ``Mail, Contacts, Calendars``
-3. Select ``Add Account`` →  ``Other`` →  ``Add CalDAV Account``
+3. Select ``Add Account…`` →  ``Other`` →  ``Add CalDAV Account``
 4. Enter the server URL here, including ``https``, the port, and the user/calendar
    path, ex: ``https://myserver.domain.com:3000/bob/birthdays.ics/`` (please note
    that **the trailing slash is important**)
@@ -351,11 +351,29 @@ that are critical for proper operation.
 Contacts
 ++++++++
 
-**Contacts do not work yet with Radicale and Apple's clients.** If you are
-interested in this feature, please check this `bug report
-<https://github.com/Kozea/Radicale/issues/32>`_.
+In Contacts on iOS 6:
 
-iCal
+1.  From the Home screen, open ``Settings``
+2.  Select ``Mail, Contacts, Calendars``
+3.  Select ``Add Account...`` →  ``Other`` →  ``Add CardDAV Account``
+4.  As ``Server`` use the Radicale server URL with port, for example ``localhost:5232``
+5.  Add any ``User name`` you like (if you didn't configure authentication)
+6.  Add any ``Password`` you like (again, if you didn't configure authentication)
+7.  Change the ``Description`` to something more readable (optional)
+8.  Tap ``Next``
+9.  An alert showing `Cannot Connect Using SSL` will pop up as we haven't configured
+    SSL yet, ``Continue`` for now
+10. Back on the ``Mail, Contacts, Calendars`` screen you scroll to the ``Contacts`` section,
+    select the Radicale server as ``Default Account`` when you want to save new contacts to
+    the Radicale server
+11. Exit to the Home screen and open ``Contacts``, tap ``Groups``, you should see the
+    Radicale server
+
+.. note::
+   You'll need version 0.8.1 or up for this to work. Earlier versions will forget your new
+   settings after a reboot.
+
+OS X
 ~~~~
 
 .. note::
@@ -375,12 +393,12 @@ In iCal 4.0 or iCal 5.0:
 5. The ``Password`` field can be left empty (we did not configure
    authentication)
 6. As ``Server address`` use ``domain:port``, for example ``localhost:5232``
-   (this would be the case if you start an unconfigured radicale on your local
+   (this would be the case if you start an unconfigured Radicale on your local
    machine)
 
 Click ``Create``. The wizard will now tell you, that no encryption is in place
 (``Unsecured Connection``). This is expected and will change if you configure
-radicale to use SSL. Click ``Continue``.
+Radicale to use SSL. Click ``Continue``.
 
 .. warning::
    In iCal 5.x, please check twice that the ``Sync all entries`` option is
@@ -401,53 +419,30 @@ now set-up. You can close the ``Preferences`` window.
 Contacts
 ++++++++
 
-To get Apple Contacts running, you'll need to get your hands dirty:
+In Contacts 7 (previously known as AddressBook):
 
-0. If you use a self-signed ssl certificate, add the root certificate to your 
-   keychain and grant full trust. 
-1. Open ``Preferences`` dialog of ``Contacts.app`` and click the ``+`` to 
-   create a new account. 
-2. Select `Other contacts account`` and pick ``Card DAV``.
-3. Enter the your credentials and the full server address 
-   (``https://radicale.example.com:443/user1/addressbook.vcf/``). Then click 
-   ``Create``.
-   The ``Contacts.app`` will now try to connect, but fail. Close the 
-   application.
-4. Go to ``~/Library/Application Support/AddressBook/Sources/``.
-5. You should now see one or more directories named with UUIDs.
-   Open the one with the latest creation date. In there you should find a 
-   ``Configuration.plist``. Open it in a text editor of your choice.
-6. Make sure your ``Configuration.plist`` looks as follows (replace the 
-   settings with the ones that apply to your environment).
-
-.. code-block:: Configuration.plist
-  
-  [...]
-  <key>searchable</key>
-  <false/>
-  <key>serverName</key>
-  <string>radicale.example.com</string>
-  <key>serverPort</key>
-  <integer>443</integer>
-  <key>serverRootPath</key>
-  <string>/user1/addressbook.vcf/</string>
-  <key>servername</key>
-  <string>https://radicale.example.com:443/user1/addressbook.vcf/</string>
-  <key>useSSL</key>
-  <true/>
-  <key>userName</key>
-  <string>user1</string>
-  <key>username</key>
-  <string>user1</string>
-  [...]
+1. Open the ``Preferences`` dialog and select the ``Accounts`` tab.
+2. Click the ``+`` button at the lower left to open the account creation wizard.
+3. As ``Account type`` select ``CardDAV``.
+4. Add any ``User name`` you like.
+5. The ``Password`` field can be left empty (if we didn't configure
+   authentication).
+6. As ``Server address`` use ``domain:port``, for example ``localhost:5232``
+   (this would be the case if you start an unconfigured Radicale server on your local
+   machine).
+7. Click ``Create``. Contacts will complain about an `Unsecured Connection` if you
+   don't have SSL enabled. Click ``Create`` again.
+8. You might want to change the ``Description`` of the newly added account to
+   something more readable. (optional)
+9. Switch to the ``General`` tab in the preferences and select the Radicale server
+   as ``Default Account`` at the bottom of the screen. It probably shows up as
+   ```domain:port`` or the name you choose if you changed the description. Newly
+   added contacts are added to the default account and by default this will be the
+   local `On My Mac` account.
 
 .. note::
-   You'll need to change values in the following keys: ``serverPort``,
-   ``serverRootPath`` and ``servername``.
-   The port numbers in the ``serverPort`` and ``servername`` keys and the 
-   trailing slashes seem to be important.
-
-7. Open the ``Contacts`` application.
+   You'll need version 0.8.1 or up for this to work. Earlier versions can read CardDAV
+   contacts but can't add new contacts.
 
 syncEvolution
 ~~~~~~~~~~~~~
@@ -455,7 +450,6 @@ syncEvolution
 You can find more information about syncEvolution and Radicale on the
 `syncEvolution wiki page
 <https://syncevolution.org/wiki/synchronizing-radicale>`_.
-
 
 Complex Configuration
 =====================
