@@ -3,8 +3,8 @@
 ======
 
 
-0.9 - *Not released yet*
-========================
+0.9 - Rivers
+============
 
 * Custom handlers for auth, storage and rights (by Sergey Fursov)
 * 1-file-per-event storage (by Jean-Marc Martins)
