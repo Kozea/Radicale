@@ -60,6 +60,7 @@ of:
 - `CardDavMATE <http://www.inf-it.com/open-source/clients/carddavmate/>`_
 - `Apple iPhone <http://www.apple.com/iphone/>`_
 - `Apple iCal <http://www.apple.com/macosx/apps/>`_
+- `Apple Contacts <http://www.apple.com/macosx/apps/>`_
 - `syncEvolution <https://syncevolution.org/>`_
 
 More clients will be supported in the future. However, it may work with any
@@ -400,9 +401,53 @@ now set-up. You can close the ``Preferences`` window.
 Contacts
 ++++++++
 
-**Contacts do not work yet with Radicale and Apple's clients.** If you are
-interested in this feature, please check this `bug report
-<https://github.com/Kozea/Radicale/issues/32>`_.
+To get Apple Contacts running, you'll need to get your hands dirty:
+
+0. If you use a self-signed ssl certificate, add the root certificate to your 
+   keychain and grant full trust. 
+1. Open ``Preferences`` dialog of ``Contacts.app`` and click the ``+`` to 
+   create a new account. 
+2. Select `Other contacts account`` and pick ``Card DAV``.
+3. Enter the your credentials and the full server address 
+   (``https://radicale.example.com:443/user1/addressbook.vcf/``). Then click 
+   ``Create``.
+   The ``Contacts.app`` will now try to connect, but fail. Close the 
+   application.
+4. Go to ``~/Library/Application Support/AddressBook/Sources/``.
+5. You should now see one or more directories named with UUIDs.
+   Open the one with the latest creation date. In there you should find a 
+   ``Configuration.plist``. Open it in a text editor of your choice.
+6. Make sure your ``Configuration.plist`` looks as follows (replace the 
+   settings with the ones that apply to your environment).
+
+.. code-block:: Configuration.plist
+  
+  [...]
+  <key>searchable</key>
+  <false/>
+  <key>serverName</key>
+  <string>radicale.example.com</string>
+  <key>serverPort</key>
+  <integer>443</integer>
+  <key>serverRootPath</key>
+  <string>/user1/addressbook.vcf/</string>
+  <key>servername</key>
+  <string>https://radicale.example.com:443/user1/addressbook.vcf/</string>
+  <key>useSSL</key>
+  <true/>
+  <key>userName</key>
+  <string>user1</string>
+  <key>username</key>
+  <string>user1</string>
+  [...]
+
+.. note::
+   You'll need to change values in the following keys: ``serverPort``,
+   ``serverRootPath`` and ``servername``.
+   The port numbers in the ``serverPort`` and ``servername`` keys and the 
+   trailing slashes seem to be important.
+
+7. Open the ``Contacts`` application.
 
 syncEvolution
 ~~~~~~~~~~~~~
