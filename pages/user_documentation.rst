@@ -51,11 +51,9 @@ of:
 - `aCal <http://wiki.acal.me/wiki/Main_Page>`_,
   `ContactSync <https://play.google.com/store/apps/details?id=com.vcard.android.free>`_, 
   `CalendarSync <https://play.google.com/store/apps/details?id=com.icalparse.free>`_, 
-  `CalDAV-Sync
-  <https://play.google.com/store/apps/details?id=org.dmfs.caldav.lib>`_
-  and `CardDAV-Sync
-  <https://play.google.com/store/apps/details?id=org.dmfs.carddav.Sync>`_
-  for `Google Android <http://www.android.com/>`_
+  `CalDAV-Sync <https://play.google.com/store/apps/details?id=org.dmfs.caldav.lib>`_
+  `CardDAV-Sync <https://play.google.com/store/apps/details?id=org.dmfs.carddav.Sync>`_
+  and `DAVdroid <http://davdroid.bitfire.at>`_ for `Google Android <http://www.android.com/>`_
 - `CalDavZAP <http://www.inf-it.com/open-source/clients/caldavzap/>`_
 - `CardDavMATE <http://www.inf-it.com/open-source/clients/carddavmate/>`_
 - `Apple iPhone <http://www.apple.com/iphone/>`_
@@ -274,6 +272,16 @@ CardDAV-Sync
 
 Set up works like CalDAV-Sync, just use .vcf instead of .ics if you enter the
 URL, e.g. ``http://example.com:5232/Username/AddressBook.vcf/``.
+
+DAVdroid
+~~~~~~~~
+
+`DAVdroid <http://davdroid.bitfire.at>`_ is a free and open-source CalDAV/CardDAV
+client that is available in Play Store for a small fee or in FDroid for free.
+
+To make it working with Radicale, just add a new DAVdroid account and enter
+``https://example.com/radicale/user/`` as base URL (assuming that your Radicale
+runs at ``https://example.com/radicale/``; don't forget to set base_prefix correctly).
 
 aCal
 ~~~~
