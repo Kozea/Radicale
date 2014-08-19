@@ -416,8 +416,9 @@ class Application(object):
             # Get collection item
             item = collection.get_item(item_name)
             if item:
-                items = collection.timezones
-                items.append(item)
+                items = [item]
+                if collection.resource_type == "calendar":
+                    items.extend(collection.timezones)
                 answer_text = ical.serialize(
                     collection.tag, collection.headers, items)
                 etag = item.etag
