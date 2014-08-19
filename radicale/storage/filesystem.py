@@ -117,6 +117,8 @@ class Collection(ical.Collection):
         modification_time = time.gmtime(os.path.getmtime(self._path))
         return time.strftime("%a, %d %b %Y %H:%M:%S +0000", modification_time)
 
+    def get_item(self, name):
+        return self._items.get(name)
     @property
     @contextmanager
     def props(self):

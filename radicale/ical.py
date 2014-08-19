@@ -193,6 +193,7 @@ class Collection(object):
         else:
             self.owner = None
         self.is_principal = principal
+        self._items = self._parse(self.text, (Event, Todo, Journal, Card, Timezone))
 
     @classmethod
     def from_path(cls, path, depth="1", include_container=True):
@@ -341,13 +342,11 @@ class Collection(object):
                     else:
                         items[item.name] = item
 
-        return list(items.values())
+        return items
 
     def get_item(self, name):
         """Get collection item called ``name``."""
-        for item in self.items:
-            if item.name == name:
-                return item
+        raise NotImplementedError
 
     def append(self, name, text):
         """Append items from ``text`` to collection.
@@ -355,7 +354,7 @@ class Collection(object):
         If ``name`` is given, give this name to new items in ``text``.
 
         """
-        items = self.items
+        items = self.items.values()
 
         for new_item in self._parse(
                 text, (Timezone, Event, Todo, Journal, Card), name):
@@ -383,7 +382,7 @@ class Collection(object):
         headers = headers or self.headers or (
             Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
             Header("VERSION:%s" % self.version))
-        items = items if items is not None else self.items
+        items = items if items is not None else self.items.values()
 
         text = serialize(self.tag, headers, items)
         self.save(text)
@@ -466,40 +465,49 @@ class Collection(object):
 
         return header_lines
 
+    @staticmethod
+    def _filter_items(items, item_type):
+        return [item for item in items if item.tag == item_type.tag]
+
+    @staticmethod
+    def _filter_items_many(items, item_types):
+        tags = [item_type.tag for item_type in item_types]
+        return [item for item in items if item.tag in tags]
+
     @property
     def items(self):
         """Get list of all items in collection."""
-        return self._parse(self.text, (Event, Todo, Journal, Card, Timezone))
+        return self._items.values()
 
     @property
     def components(self):
         """Get list of all components in collection."""
-        return self._parse(self.text, (Event, Todo, Journal, Card))
+        return self._filter_items_many(self.items, (Event, Todo, Journal, Card))
 
     @property
     def events(self):
         """Get list of ``Event`` items in calendar."""
-        return self._parse(self.text, (Event,))
+        return self._filter_items(self.items, Event)
 
     @property
     def todos(self):
         """Get list of ``Todo`` items in calendar."""
-        return self._parse(self.text, (Todo,))
+        return self._filter_items(self.items, Todo)
 
     @property
     def journals(self):
         """Get list of ``Journal`` items in calendar."""
-        return self._parse(self.text, (Journal,))
+        return self._filter_items(self.items, Journal)
 
     @property
     def timezones(self):
         """Get list of ``Timezone`` items in calendar."""
-        return self._parse(self.text, (Timezone,))
+        return self._filter_items(self.items, Timezone)
 
     @property
     def cards(self):
         """Get list of ``Card`` items in address book."""
-        return self._parse(self.text, (Card,))
+        return self._filter_items(self.items, Card)
 
     @property
     def owner_url(self):
