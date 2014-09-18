@@ -130,8 +130,13 @@ class Collection(filesystem.Collection):
         self._write_item(name, text, True)
 
     def remove(self, name):
-        if os.path.exists(os.path.join(self._path, name)):
-            os.remove(os.path.join(self._path, name))
+        fs_name = _to_filesystem_name(name)
+        path = os.path.join(self._path, fs_name)
+
+        if not os.path.exists(path):
+            return
+
+        os.remove(path)
 
     def replace(self, name, text):
         self._write_item(name, text, False)
