@@ -33,6 +33,12 @@ from . import filesystem
 from .. import ical
 
 
+def _to_filesystem_name(name):
+    if sys.version_info[0] >= 3:
+        return name
+    else:
+        return name.encode(filesystem.FILESYSTEM_ENCODING)
+
 class Collection(filesystem.Collection):
     """Collection stored in several files per calendar."""
     def _create_dirs(self):
@@ -53,9 +59,7 @@ class Collection(filesystem.Collection):
         components = [i for i in items if isinstance(i, ical.Component)]
         for component in components:
             text = ical.serialize(self.tag, headers, [component] + timezones)
-            name = (
-                component.name if sys.version_info[0] >= 3 else
-                component.name.encode(filesystem.FILESYSTEM_ENCODING))
+            name = _to_filesystem_name(component.name)
             path = os.path.join(self._path, name)
             with filesystem.open(path, "w") as fd:
                 fd.write(text)
