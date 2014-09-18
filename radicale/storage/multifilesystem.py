@@ -45,6 +45,9 @@ class Collection(filesystem.Collection):
         if not os.path.exists(self._path):
             os.makedirs(self._path)
 
+    def _listdir(self):
+        return [ x for x in os.listdir(self._path) if x != ".git" ]
+
     def save(self, text, message=None):
         """Save the text into the collection.
 
@@ -63,7 +66,7 @@ class Collection(filesystem.Collection):
             ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card)
         items = set()
         try:
-            for filename in os.listdir(self._path):
+            for filename in self._listdir():
                 with filesystem.open(os.path.join(self._path, filename)) as fd:
                     items.update(self._parse(fd.read(), components))
         except IOError:
@@ -86,7 +89,7 @@ class Collection(filesystem.Collection):
     def last_modified(self):
         last = max([
             os.path.getmtime(os.path.join(self._path, filename))
-            for filename in (os.listdir(self._path) + [ '.' ])] or [0])
+            for filename in (self._listdir() + [ '.' ])] or [0])
         return time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime(last))
 
     @property
