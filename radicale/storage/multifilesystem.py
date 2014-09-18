@@ -109,6 +109,26 @@ class Collection(filesystem.Collection):
               with open(self._props_path, "w") as prop_file:
                   json.dump(properties, prop_file)
 
+    def get_item(self, name):
+        fs_name = _to_filesystem_name(name)
+        path = os.path.join(self._path, fs_name)
+
+        if not os.path.exists(path):
+            return ""
+
+        components = (
+            ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card)
+        items = set()
+        try:
+            with filesystem.open(path) as fd:
+                items.update(self._parse(fd.read(), components))
+        except IOError:
+            return ""
+        else:
+            for item in items:
+                if item.name == name:
+                    return item
+
     def _write_item(self, name, text, must_not_exist):
         self._create_dirs()
 
