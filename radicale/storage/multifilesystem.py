@@ -53,50 +53,9 @@ class Collection(filesystem.Collection):
 
         """
 
-    @property
-    def headers(self):
-        return (
-            ical.Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
-            ical.Header("VERSION:%s" % self.version))
-
-    def _write_item(self, name, text, must_not_exist):
-        self._create_dirs()
-
-        fs_name = _to_filesystem_name(name)
-        path = os.path.join(self._path, fs_name)
-
-        if os.path.exists(path):
-            if must_not_exist:
-                return
-
-        # Still parse to make sure we handle the items correctly
-        items = self._parse(
-                text, (ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card), name)
-        new_text = ical.serialize(self.tag, self.headers, items)
-        with filesystem.open(path, "w") as fd:
-            fd.write(new_text)
-
-    def append(self, name, text):
-        self._write_item(name, text, True)
-
-    def replace(self, name, text):
-        self._write_item(name, text, False)
-
-    def write(self, headers=None, items=None, message=None):
-        """Write collection with given parameters.
-
-        This method is not used for multifilesystem as we don't operate on one
-        unique file.
-
-        """
-
     def delete(self):
         shutil.rmtree(self._path)
         os.remove(self._props_path)
-
-    def remove(self, name):
-        if os.path.exists(os.path.join(self._path, name)):
-            os.remove(os.path.join(self._path, name))
 
     @property
     def text(self):
@@ -146,3 +105,44 @@ class Collection(filesystem.Collection):
           if old_properties != properties:
               with open(self._props_path, "w") as prop_file:
                   json.dump(properties, prop_file)
+
+    def _write_item(self, name, text, must_not_exist):
+        self._create_dirs()
+
+        fs_name = _to_filesystem_name(name)
+        path = os.path.join(self._path, fs_name)
+
+        if os.path.exists(path):
+            if must_not_exist:
+                return
+
+        # Still parse to make sure we handle the items correctly
+        items = self._parse(
+                text, (ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card), name)
+        new_text = ical.serialize(self.tag, self.headers, items)
+        with filesystem.open(path, "w") as fd:
+            fd.write(new_text)
+
+    def append(self, name, text):
+        self._write_item(name, text, True)
+
+    def remove(self, name):
+        if os.path.exists(os.path.join(self._path, name)):
+            os.remove(os.path.join(self._path, name))
+
+    def replace(self, name, text):
+        self._write_item(name, text, False)
+
+    def write(self, headers=None, items=None, message=None):
+        """Write collection with given parameters.
+
+        This method is not used for multifilesystem as we don't operate on one
+        unique file.
+
+        """
+
+    @property
+    def headers(self):
+        return (
+            ical.Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
+            ical.Header("VERSION:%s" % self.version))
