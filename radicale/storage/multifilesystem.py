@@ -45,6 +45,14 @@ class Collection(filesystem.Collection):
         if not os.path.exists(self._path):
             os.makedirs(self._path)
 
+    def save(self, text, message=None):
+        """Save the text into the collection.
+
+        This method is not used for multifilesystem as we don't operate on one
+        unique file.
+
+        """
+
     @property
     def headers(self):
         return (
