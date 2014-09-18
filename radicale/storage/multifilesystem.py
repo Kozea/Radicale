@@ -51,18 +51,36 @@ class Collection(filesystem.Collection):
             ical.Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
             ical.Header("VERSION:%s" % self.version))
 
-    def write(self, headers=None, items=None):
+    def _write_item(self, name, text, must_not_exist):
         self._create_dirs()
-        headers = headers or self.headers
-        items = items if items is not None else self.items
-        timezones = list(set(i for i in items if isinstance(i, ical.Timezone)))
-        components = [i for i in items if isinstance(i, ical.Component)]
-        for component in components:
-            text = ical.serialize(self.tag, headers, [component] + timezones)
-            name = _to_filesystem_name(component.name)
-            path = os.path.join(self._path, name)
-            with filesystem.open(path, "w") as fd:
-                fd.write(text)
+
+        fs_name = _to_filesystem_name(name)
+        path = os.path.join(self._path, fs_name)
+
+        if os.path.exists(path):
+            if must_not_exist:
+                return
+
+        # Still parse to make sure we handle the items correctly
+        items = self._parse(
+                text, (ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card), name)
+        new_text = ical.serialize(self.tag, self.headers, items)
+        with filesystem.open(path, "w") as fd:
+            fd.write(new_text)
+
+    def append(self, name, text):
+        self._write_item(name, text, True)
+
+    def replace(self, name, text):
+        self._write_item(name, text, False)
+
+    def write(self, headers=None, items=None, message=None):
+        """Write collection with given parameters.
+
+        This method is not used for multifilesystem as we don't operate on one
+        unique file.
+
+        """
 
     def delete(self):
         shutil.rmtree(self._path)
