@@ -86,7 +86,7 @@ class Collection(filesystem.Collection):
     def last_modified(self):
         last = max([
             os.path.getmtime(os.path.join(self._path, filename))
-            for filename in os.listdir(self._path)] or [0])
+            for filename in (os.listdir(self._path) + [ '.' ])] or [0])
         return time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime(last))
 
     @property
