@@ -62,6 +62,7 @@ class Collection(filesystem.Collection):
 
     def delete(self):
         shutil.rmtree(self._path)
+        os.remove(self._props_path)
 
     def remove(self, name):
         if os.path.exists(os.path.join(self._path, name)):
