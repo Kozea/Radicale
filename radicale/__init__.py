@@ -261,15 +261,6 @@ class Application(object):
                 "Path not starting with prefix: %s", environ["PATH_INFO"])
             environ["PATH_INFO"] = None
 
-        # Get content
-        content_length = int(environ.get("CONTENT_LENGTH") or 0)
-        if content_length:
-            content = self.decode(
-                environ["wsgi.input"].read(content_length), environ)
-            log.LOGGER.debug("Request content:\n%s" % content)
-        else:
-            content = None
-
         path = environ["PATH_INFO"]
 
         # Get function corresponding to method
@@ -296,6 +287,15 @@ class Application(object):
                 self.collect_allowed_items(items, user)
         else:
             read_allowed_items, write_allowed_items = None, None
+
+        # Get content
+        content_length = int(environ.get("CONTENT_LENGTH") or 0)
+        if content_length:
+            content = self.decode(
+                environ["wsgi.input"].read(content_length), environ)
+            log.LOGGER.debug("Request content:\n%s" % content)
+        else:
+            content = None
 
         if is_valid_user and (
                 (read_allowed_items or write_allowed_items) or
