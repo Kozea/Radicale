@@ -286,6 +286,25 @@ class Application(object):
             user = environ.get("REMOTE_USER")
             password = None
 
+        if path.startswith('/.well-known/'):
+            fragment = path.rstrip("/").rsplit('/', 1)[-1]
+            redirect = config.get("well-known", fragment)
+            if redirect:
+                if not user and "%(user)s" in redirect:
+                    status = client.UNAUTHORIZED
+                    headers = {
+                        "WWW-Authenticate":
+                        "Basic realm=\"%s\"" % config.get("server", "realm")}
+                    log.LOGGER.info("refused /.well-known/ redirection to anonymous user")
+                else:
+                    redirect = redirect % locals()
+                    status = client.SEE_OTHER
+                    log.LOGGER.info("/.well-known/ redirection to: %s" % redirect)
+                    headers = {"Location": redirect.encode('utf8')}
+                status = "%i %s" % (status, client.responses.get(status, "Unknown"))
+                start_response(status, headers.items())
+                return []
+
         is_authenticated = auth.is_authenticated(user, password)
         is_valid_user = is_authenticated or not user
 
