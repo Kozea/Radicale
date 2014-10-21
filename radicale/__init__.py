@@ -56,7 +56,6 @@ VERSION = "0.9"
 # Standard "not allowed" response that is returned when an authenticated user
 # tries to access information they don't have rights to
 NOT_ALLOWED = (client.FORBIDDEN, {}, None)
-WELLKNOWNRE = re.compile(r'/.well-known/(carddav|caldav)/?')
 
 
 class HTTPServer(wsgiref.simple_server.WSGIServer, object):
@@ -100,9 +99,8 @@ class HTTPSServer(HTTPServer):
             server_side=True,
             certfile=config.get("server", "certificate"),
             keyfile=config.get("server", "key"),
-            ssl_version=getattr(ssl, config.get("server", "protocol"),
-                                ssl.PROTOCOL_SSLv23)
-        )
+            ssl_version=getattr(
+                ssl, config.get("server", "protocol"), ssl.PROTOCOL_SSLv23))
         # add ciphers argument only if supported (Python 2.7+)
         if sys.version_info >= (2, 7):
             ssl_kwargs["ciphers"] = config.get("server", "ciphers") or None
@@ -279,22 +277,24 @@ class Application(object):
             user = environ.get("REMOTE_USER")
             password = None
 
-        wkfragment = WELLKNOWNRE.match(path)
-        if wkfragment:
-            if not user: del user
-            redirect = config.get("well-known", wkfragment.group(1))
+        well_known = re.compile(r"/.well-known/(carddav|caldav)/?").match(path)
+        if well_known:
+            redirect = config.get("well-known", well_known.group(1))
             try:
-                redirect = redirect % locals()
-                status = client.SEE_OTHER
-                log.LOGGER.info("/.well-known/ redirection to: %s" % redirect)
-                headers = {"Location": redirect.encode('utf8')}
+                redirect = redirect % ({"user": user} if user else {})
             except KeyError:
                 status = client.UNAUTHORIZED
                 headers = {
                     "WWW-Authenticate":
                     "Basic realm=\"%s\"" % config.get("server", "realm")}
-                log.LOGGER.info("refused /.well-known/ redirection to anonymous user")
-            status = "%i %s" % (status, client.responses.get(status, "Unknown"))
+                log.LOGGER.info(
+                    "Refused /.well-known/ redirection to anonymous user")
+            else:
+                status = client.SEE_OTHER
+                log.LOGGER.info("/.well-known/ redirection to: %s" % redirect)
+                headers = {"Location": redirect.encode("utf8")}
+            status = "%i %s" % (
+                status, client.responses.get(status, "Unknown"))
             start_response(status, headers.items())
             return []
 
