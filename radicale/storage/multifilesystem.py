@@ -23,13 +23,21 @@ Multi files per calendar filesystem storage backend.
 """
 
 import os
+import json
 import shutil
 import time
 import sys
 
+from contextlib import contextmanager
 from . import filesystem
 from .. import ical
 
+
+def _to_filesystem_name(name):
+    if sys.version_info[0] >= 3:
+        return name
+    else:
+        return name.encode(filesystem.FILESYSTEM_ENCODING)
 
 class Collection(filesystem.Collection):
     """Collection stored in several files per calendar."""
@@ -37,33 +45,20 @@ class Collection(filesystem.Collection):
         if not os.path.exists(self._path):
             os.makedirs(self._path)
 
-    @property
-    def headers(self):
-        return (
-            ical.Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
-            ical.Header("VERSION:%s" % self.version))
+    def _listdir(self):
+        return [ x for x in os.listdir(self._path) if x != ".git" ]
 
-    def write(self, headers=None, items=None):
-        self._create_dirs()
-        headers = headers or self.headers
-        items = items if items is not None else self.items
-        timezones = list(set(i for i in items if isinstance(i, ical.Timezone)))
-        components = [i for i in items if isinstance(i, ical.Component)]
-        for component in components:
-            text = ical.serialize(self.tag, headers, [component] + timezones)
-            name = (
-                component.name if sys.version_info[0] >= 3 else
-                component.name.encode(filesystem.FILESYSTEM_ENCODING))
-            path = os.path.join(self._path, name)
-            with filesystem.open(path, "w") as fd:
-                fd.write(text)
+    def save(self, text, message=None):
+        """Save the text into the collection.
+
+        This method is not used for multifilesystem as we don't operate on one
+        unique file.
+
+        """
 
     def delete(self):
         shutil.rmtree(self._path)
-
-    def remove(self, name):
-        if os.path.exists(os.path.join(self._path, name)):
-            os.remove(os.path.join(self._path, name))
+        os.remove(self._props_path)
 
     @property
     def text(self):
@@ -71,7 +66,7 @@ class Collection(filesystem.Collection):
             ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card)
         items = set()
         try:
-            for filename in os.listdir(self._path):
+            for filename in self._listdir():
                 with filesystem.open(os.path.join(self._path, filename)) as fd:
                     items.update(self._parse(fd.read(), components))
         except IOError:
@@ -94,5 +89,88 @@ class Collection(filesystem.Collection):
     def last_modified(self):
         last = max([
             os.path.getmtime(os.path.join(self._path, filename))
-            for filename in os.listdir(self._path)] or [0])
+            for filename in (self._listdir() + [ '.' ])] or [0])
         return time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime(last))
+
+    @property
+    @contextmanager
+    def props(self):
+        # On enter
+        properties = {}
+        if os.path.exists(self._props_path):
+            with open(self._props_path) as prop_file:
+                properties.update(json.load(prop_file))
+        old_properties = properties.copy()
+        yield properties
+        # On exit
+        if os.path.exists(self._props_path):
+          self._create_dirs()
+          if old_properties != properties:
+              with open(self._props_path, "w") as prop_file:
+                  json.dump(properties, prop_file)
+
+    def get_item(self, name):
+        fs_name = _to_filesystem_name(name)
+        path = os.path.join(self._path, fs_name)
+
+        if not os.path.exists(path):
+            return ""
+
+        components = (
+            ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card)
+        items = set()
+        try:
+            with filesystem.open(path) as fd:
+                items.update(self._parse(fd.read(), components))
+        except IOError:
+            return ""
+        else:
+            for item in items:
+                if item.name == name:
+                    return item
+
+    def _write_item(self, name, text, must_not_exist):
+        self._create_dirs()
+
+        fs_name = _to_filesystem_name(name)
+        path = os.path.join(self._path, fs_name)
+
+        if os.path.exists(path):
+            if must_not_exist:
+                return
+
+        # Still parse to make sure we handle the items correctly
+        items = self._parse(
+                text, (ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card), name)
+        new_text = ical.serialize(self.tag, self.headers, items)
+        with filesystem.open(path, "w") as fd:
+            fd.write(new_text)
+
+    def append(self, name, text):
+        self._write_item(name, text, True)
+
+    def remove(self, name):
+        fs_name = _to_filesystem_name(name)
+        path = os.path.join(self._path, fs_name)
+
+        if not os.path.exists(path):
+            return
+
+        os.remove(path)
+
+    def replace(self, name, text):
+        self._write_item(name, text, False)
+
+    def write(self, headers=None, items=None, message=None):
+        """Write collection with given parameters.
+
+        This method is not used for multifilesystem as we don't operate on one
+        unique file.
+
+        """
+
+    @property
+    def headers(self):
+        return (
+            ical.Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
+            ical.Header("VERSION:%s" % self.version))
