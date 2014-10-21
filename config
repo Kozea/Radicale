@@ -46,6 +46,10 @@ request = utf-8
 # Encoding for storing local collections
 stock = utf-8
 
+[well-known]
+caldav = '/%(user)s/caldav/'
+carddav = '/%(user)s/carddav/'
+
 
 [auth]
 # Authentication method

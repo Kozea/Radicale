@@ -36,6 +36,7 @@ import posixpath
 import socket
 import ssl
 import wsgiref.simple_server
+import re
 # Manage Python2/3 different modules
 # pylint: disable=F0401,E0611
 try:
@@ -55,6 +56,7 @@ VERSION = "0.9"
 # Standard "not allowed" response that is returned when an authenticated user
 # tries to access information they don't have rights to
 NOT_ALLOWED = (client.FORBIDDEN, {}, None)
+WELLKNOWNRE = re.compile(r'/.well-known/(carddav|caldav)/?')
 
 
 class HTTPServer(wsgiref.simple_server.WSGIServer, object):
@@ -276,6 +278,25 @@ class Application(object):
         else:
             user = environ.get("REMOTE_USER")
             password = None
+
+        wkfragment = WELLKNOWNRE.match(path)
+        if wkfragment:
+            if not user: del user
+            redirect = config.get("well-known", wkfragment.group(1))
+            try:
+                redirect = redirect % locals()
+                status = client.SEE_OTHER
+                log.LOGGER.info("/.well-known/ redirection to: %s" % redirect)
+                headers = {"Location": redirect.encode('utf8')}
+            except KeyError:
+                status = client.UNAUTHORIZED
+                headers = {
+                    "WWW-Authenticate":
+                    "Basic realm=\"%s\"" % config.get("server", "realm")}
+                log.LOGGER.info("refused /.well-known/ redirection to anonymous user")
+            status = "%i %s" % (status, client.responses.get(status, "Unknown"))
+            start_response(status, headers.items())
+            return []
 
         is_authenticated = auth.is_authenticated(user, password)
         is_valid_user = is_authenticated or not user
