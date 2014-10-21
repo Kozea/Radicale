@@ -62,7 +62,7 @@ custom_handler =
 # Htpasswd filename
 htpasswd_filename = /etc/radicale/users
 # Htpasswd encryption method
-# Value: plain | sha1 | crypt
+# Value: plain | sha1 | crypt | bcrypt
 htpasswd_encryption = crypt
 
 # LDAP server URL, with protocol and port
