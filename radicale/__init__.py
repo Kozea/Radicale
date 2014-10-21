@@ -58,6 +58,13 @@ VERSION = "0.9"
 NOT_ALLOWED = (client.FORBIDDEN, {}, None)
 WELLKNOWNRE = re.compile(r'/.well-known/(carddav|caldav)/?')
 
+# Send HTTP 303 to redirect to base_prefix when a .well-known path is detected
+# See http://tools.ietf.org/html/rfc6764#section-5
+REDIRECT_WELLKNOWN = (
+    client.SEE_OTHER,
+    {"Location": config.get("server", "base_prefix")},
+    None)
+
 
 class HTTPServer(wsgiref.simple_server.WSGIServer, object):
     """HTTP server."""
@@ -322,9 +329,15 @@ class Application(object):
                 (read_allowed_items or write_allowed_items) or
                 (is_authenticated and function == self.propfind) or
                 function == self.options):
-            status, headers, answer = function(
-                environ, read_allowed_items, write_allowed_items, content,
-                user)
+            if path == "/.well-known/caldav" or path == "/.well-known/carddav":
+                log.LOGGER.debug(
+                    "RFC 6764 path %s detected. Sending 303 redirect to "
+                    "base_prefix %s." % (path, base_prefix))
+                status, headers, answer = REDIRECT_WELLKNOWN
+            else:
+                status, headers, answer = function(
+                   environ, read_allowed_items, write_allowed_items, content,
+                   user)
         else:
             status, headers, answer = NOT_ALLOWED
 
