@@ -290,18 +290,19 @@ class Application(object):
 
         wkfragment = WELLKNOWNRE.match(path)
         if wkfragment:
+            if not user: del user
             redirect = config.get("well-known", wkfragment.group(1))
-            if not user and "%(user)s" in redirect:
+            try:
+                redirect = redirect % locals()
+                status = client.SEE_OTHER
+                log.LOGGER.info("/.well-known/ redirection to: %s" % redirect)
+                headers = {"Location": redirect.encode('utf8')}
+            except KeyError:
                 status = client.UNAUTHORIZED
                 headers = {
                     "WWW-Authenticate":
                     "Basic realm=\"%s\"" % config.get("server", "realm")}
                 log.LOGGER.info("refused /.well-known/ redirection to anonymous user")
-            else:
-                redirect = redirect % locals()
-                status = client.SEE_OTHER
-                log.LOGGER.info("/.well-known/ redirection to: %s" % redirect)
-                headers = {"Location": redirect.encode('utf8')}
             status = "%i %s" % (status, client.responses.get(status, "Unknown"))
             start_response(status, headers.items())
             return []
