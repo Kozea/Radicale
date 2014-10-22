@@ -28,11 +28,20 @@ import os
 import sys
 import logging
 import logging.config
+import signal
 
 from . import config
 
 
 LOGGER = logging.getLogger()
+
+
+def configure_from_file(filename, debug):
+    logging.config.fileConfig(filename)
+    if debug:
+        LOGGER.setLevel(logging.DEBUG)
+        for handler in LOGGER.handlers:
+            handler.setLevel(logging.DEBUG)
 
 
 def start():
@@ -42,11 +51,11 @@ def start():
 
     if os.path.exists(filename):
         # Configuration taken from file
-        logging.config.fileConfig(filename)
-        if debug:
-            LOGGER.setLevel(logging.DEBUG)
-            for handler in LOGGER.handlers:
-                handler.setLevel(logging.DEBUG)
+        configure_from_file(filename, debug)
+        # Reload config on SIGHUP
+        def handler(signum, frame):
+            configure_from_file(filename, debug)
+        signal.signal(signal.SIGHUP, handler)
     else:
         # Default configuration, standard output
         handler = logging.StreamHandler(sys.stdout)
