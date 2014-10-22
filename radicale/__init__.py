@@ -57,6 +57,8 @@ VERSION = "0.9"
 # tries to access information they don't have rights to
 NOT_ALLOWED = (client.FORBIDDEN, {}, None)
 
+WELL_KNOWN_RE = re.compile(r"/.well-known/(carddav|caldav)/?")
+
 
 class HTTPServer(wsgiref.simple_server.WSGIServer, object):
     """HTTP server."""
@@ -277,7 +279,7 @@ class Application(object):
             user = environ.get("REMOTE_USER")
             password = None
 
-        well_known = re.compile(r"/.well-known/(carddav|caldav)/?").match(path)
+        well_known = WELL_KNOWN_RE.match(path)
         if well_known:
             redirect = config.get("well-known", well_known.group(1))
             try:
