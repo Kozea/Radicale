@@ -294,10 +294,12 @@ class Application(object):
             else:
                 status = client.SEE_OTHER
                 log.LOGGER.info("/.well-known/ redirection to: %s" % redirect)
-                headers = {"Location": redirect.encode("utf8")}
+                if sys.version_info < (3, 0):
+                    redirect = redirect.encode(self.encoding)
+                headers = {"Location": redirect}
             status = "%i %s" % (
                 status, client.responses.get(status, "Unknown"))
-            start_response(status, headers.items())
+            start_response(status, list(headers.items()))
             return []
 
         is_authenticated = auth.is_authenticated(user, password)
