@@ -3,6 +3,15 @@
 ======
 
 
+0.10 - *Not released yet*
+=========================
+
+* Support well-known URLs (by Mathieu Dupuy)
+* Fix collection discovery (by Markus Unterwaditzer)
+* Reload logger config on SIGHUP (by Élie Bouttier)
+* Remove props files when deleting a collection (by Vincent Untz)
+
+
 0.9 - Rivers
 ============
 
