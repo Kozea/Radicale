@@ -76,7 +76,7 @@ Radicale has been packaged for:
 - `Debian <http://packages.debian.org/radicale>`_ by Jonas Smedegaard
 - `Gentoo (Sunrise Overlay) <http://bugs.gentoo.org/show_bug.cgi?id=322811>`_
   by René Neumann
-- `Fedora <https://admin.fedoraproject.org/pkgdb/acls/name/radicale>`_ by Jorti
+- `Fedora <https://admin.fedoraproject.org/pkgdb/package/radicale/>`_ by Jorti
 - `Mandriva/Mageia <http://sophie.zarb.org/search/results?search=radicale>`_ by Jani
   Välimaa
 - `OpenBSD <http://openports.se/productivity/radicale>`_ by Sergey Bronnikov,
