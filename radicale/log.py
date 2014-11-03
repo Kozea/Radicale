@@ -52,10 +52,11 @@ def start():
     if os.path.exists(filename):
         # Configuration taken from file
         configure_from_file(filename, debug)
-        # Reload config on SIGHUP
-        def handler(signum, frame):
-            configure_from_file(filename, debug)
-        signal.signal(signal.SIGHUP, handler)
+        # Reload config on SIGHUP (UNIX only)
+        if hasattr(signal, 'SIGHUP'):
+            def handler(signum, frame):
+                configure_from_file(filename, debug)
+            signal.signal(signal.SIGHUP, handler)
     else:
         # Default configuration, standard output
         handler = logging.StreamHandler(sys.stdout)
