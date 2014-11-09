@@ -83,7 +83,7 @@
 #htpasswd_filename = /etc/radicale/users
 
 # Htpasswd encryption method
-# Value: plain | sha1 | crypt
+# Value: plain | sha1 | ssha | crypt
 #htpasswd_encryption = crypt
 
 # LDAP server URL, with protocol and port
