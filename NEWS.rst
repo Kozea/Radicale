@@ -10,6 +10,7 @@
 * Fix collection discovery (by Markus Unterwaditzer)
 * Reload logger config on SIGHUP (by Élie Bouttier)
 * Remove props files when deleting a collection (by Vincent Untz)
+* Support salted SHA1 passwords (by Marc Kleine-Budde)
 
 
 0.9 - Rivers
