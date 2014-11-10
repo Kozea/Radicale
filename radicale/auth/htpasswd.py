@@ -58,6 +58,16 @@ def _sha1(hash_value, password):
     sha1.update(password)
     return sha1.digest() == base64.b64decode(hash_value)
 
+def _ssha(hash_salt_value, password):
+    """Check if ``hash_salt_value`` and ``password`` match using salted sha1 method."""
+    hash_salt_value = hash_salt_value.replace("{SSHA}", "").encode("ascii").decode('base64')
+    password = password.encode(config.get("encoding", "stock"))
+    hash_value = hash_salt_value[:20]
+    salt_value = hash_salt_value[20:]
+    sha1 = hashlib.sha1()  # pylint: disable=E1101
+    sha1.update(password)
+    sha1.update(salt_value)
+    return sha1.digest() == hash_value
 
 def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
