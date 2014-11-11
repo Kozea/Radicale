@@ -49,7 +49,6 @@ from . import client, config, ical
 
 
 NAMESPACES = {
-    "A": "http://apple.com/ns/ical/",
     "C": "urn:ietf:params:xml:ns:caldav",
     "CR": "urn:ietf:params:xml:ns:carddav",
     "D": "DAV:",
@@ -228,7 +227,7 @@ def propfind(path, xml_request, collections, user=None):
                  _tag("D", "displayname"),
                  _tag("D", "owner"),
                  _tag("D", "getetag"),
-                 _tag("A", "calendar-color"),
+                 _tag("ICAL", "calendar-color"),
                  _tag("CS", "getctag")]
 
     # Writing answer
@@ -343,7 +342,7 @@ def _propfind_response(path, item, props, user):
                     item.tag, item.headers, item.timezones)
             elif tag == _tag("D", "displayname"):
                 element.text = item.name
-            elif tag == _tag("A", "calendar-color"):
+            elif tag == _tag("ICAL", "calendar-color"):
                 element.text = item.color
             else:
                 human_tag = _tag_from_clark(tag)
