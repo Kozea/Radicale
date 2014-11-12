@@ -743,7 +743,9 @@ Radicale module in your Python path and write your ``.wsgi`` file (in
    application = radicale.Application()
 
 .. note::
-   The ``[server]`` part of the configuration is ignored.
+   The ``hosts``, ``daemon``, ``pid``, ``ssl``, ``certificate``, ``key``,
+   ``protocol`` and ``ciphers`` keys of the ``[server]`` part of the
+   configuration are ignored.
 
 Next you have to create the Apache virtual host (adapt the configuration
 to your environment):
