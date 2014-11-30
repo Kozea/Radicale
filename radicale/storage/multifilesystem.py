@@ -29,6 +29,7 @@ import sys
 
 from . import filesystem
 from .. import ical
+from .. import log
 
 
 class Collection(filesystem.Collection):
@@ -69,14 +70,23 @@ class Collection(filesystem.Collection):
             ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card)
         items = set()
         try:
-            for filename in os.listdir(self._path):
-                with filesystem.open(os.path.join(self._path, filename)) as fd:
-                    items.update(self._parse(fd.read(), components))
-        except IOError:
+            filenames = os.listdir(self._path)
+        except (OSError, IOError) as e:
+            log.LOGGER.info('Error while reading collection %r: %r'
+                            % (self._path, e))
             return ""
-        else:
-            return ical.serialize(
-                self.tag, self.headers, sorted(items, key=lambda x: x.name))
+
+        for filename in filenames:
+            path = os.path.join(self._path, filename)
+            try:
+                with filesystem.open(path) as fd:
+                    items.update(self._parse(fd.read(), components))
+            except (OSError, IOError) as e:
+                log.LOGGER.warning('Error while reading item %r: %r'
+                                   % (path, e))
+
+        return ical.serialize(
+            self.tag, self.headers, sorted(items, key=lambda x: x.name))
 
     @classmethod
     def is_node(cls, path):
