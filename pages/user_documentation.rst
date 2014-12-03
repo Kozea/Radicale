@@ -459,6 +459,34 @@ You can find more information about syncEvolution and Radicale on the
 `syncEvolution wiki page
 <https://syncevolution.org/wiki/synchronizing-radicale>`_.
 
+Nokia / Microsoft Windows Phones
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Go to "Settings" > "email+accounts"
+2. Click "add an account" > "iCloud"
+3. Enter random email address (e.g. "foo@bar" and "qwerty") > "sign in"
+4. A new account "iCloud" with the given email address appears on the list.
+   The status is "Not up to date". Click the account.
+5. An error message is given. Click "close".
+6. Enter new and "real" values to the account setting fields:
+
+   - "Account name": This name appears on the calendar etc.
+     Examples: "Home", "Word", "Sauna reservation"
+   - "Email address": Not used
+   - "Sync contacts and calendar": Select the sync interval
+   - "Content to sync": Uncheck "Contacts", check "Calendar"
+   - "Your name": Not used
+   - "Username": Username to your Radicale server
+   - "Password": Password to your Radicale server
+   - Click "advanced settings"
+   - "Calendar server (CalDAV)": Enter the full path to the calendar .ics file.
+     Don't forget the trailing slash.
+     Example: `https://my.server.fi:5232/myusername/calendarname.ics/`
+
+Don't forget to add your CA to the phone if you're using a self-signed certificate
+on your Radicale. Make the CA downloadable to Internet Explorer. The correct
+certificate format is X509 (with .cer file extension).
+
 Complex Configuration
 =====================
 
