@@ -455,9 +455,9 @@ class Collection(object):
     def color(self):
         """Collection color."""
         with self.props as props:
-            if "A:calendar-color" not in props:
-                props["A:calendar-color"] = "#%x" % randint(0, 255 ** 3 - 1)
-            return props["A:calendar-color"]
+            if "ICAL:calendar-color" not in props:
+                props["ICAL:calendar-color"] = "#%x" % randint(0, 255 ** 3 - 1)
+            return props["ICAL:calendar-color"]
 
     @property
     def headers(self):
