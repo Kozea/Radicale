@@ -71,7 +71,7 @@ Linux Distribution Packages
 
 Radicale has been packaged for:
 
-- `ArchLinux (AUR) <http://aur.archlinux.org/packages.php?ID=46522>`_ by
+- `ArchLinux (AUR) <https://aur.archlinux.org/packages/radicale/>`_ by
   Guillaume Bouchard
 - `Debian <http://packages.debian.org/radicale>`_ by Jonas Smedegaard
 - `Gentoo (Sunrise Overlay) <http://bugs.gentoo.org/show_bug.cgi?id=322811>`_
