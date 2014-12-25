@@ -23,7 +23,7 @@ This module loads the storage backend, according to the storage
 configuration.
 
 """
-import sys
+import imp
 from .. import config, ical
 
 
@@ -32,8 +32,7 @@ def load():
     storage_type = config.get("storage", "type")
     if storage_type == "custom":
         storage_module = config.get("storage", "custom_handler")
-        __import__(storage_module)
-        module = sys.modules[storage_module]
+        module = imp.load_source('storage.Custom', storage_module)
     else:
         root_module = __import__(
             "storage.%s" % storage_type, globals=globals(), level=2)
