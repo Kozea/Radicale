@@ -24,6 +24,7 @@ Authentication management.
 """
 
 import sys
+import imp
 
 from .. import config, log
 
@@ -36,8 +37,7 @@ def load():
         return None
     elif auth_type == 'custom':
         auth_module = config.get("auth", "custom_handler")
-        __import__(auth_module)
-        module = sys.modules[auth_module]
+        module = imp.load_source('radicale.auth.Custom', auth_module)
     else:
         root_module = __import__(
             "auth.%s" % auth_type, globals=globals(), level=2)
