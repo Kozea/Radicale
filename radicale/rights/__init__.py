@@ -24,6 +24,7 @@ configuration.
 
 """
 import sys
+import imp
 
 from .. import config
 
@@ -33,8 +34,7 @@ def load():
     storage_type = config.get("rights", "type")
     if storage_type == "custom":
         rights_module = config.get("rights", "custom_handler")
-        __import__(rights_module)
-        module = sys.modules[rights_module]
+        module = imp.load_source('rights.Custom', rights_module)
     else:
         root_module = __import__("rights.regex", globals=globals(), level=2)
         module = root_module.regex
