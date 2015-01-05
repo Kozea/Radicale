@@ -464,12 +464,11 @@ class Collection(object):
         """Find headers items in collection."""
         header_lines = []
 
-        lines = unfold(self.text)
-        for header in ("PRODID", "VERSION"):
-            for line in lines:
-                if line.startswith("%s:" % header):
-                    header_lines.append(Header(line))
-                    break
+        lines = unfold(self.text)[1:]
+        for line in lines:
+            if line.startswith(("BEGIN:", "END:")):
+                break
+            header_lines.append(Header(line))
 
         return header_lines
 
