@@ -448,9 +448,12 @@ def put(path, ical_request, collection):
     if name in (item.name for item in collection.items):
         # PUT is modifying an existing item
         collection.replace(name, ical_request)
-    else:
+    elif name:
         # PUT is adding a new item
         collection.append(name, ical_request)
+    else:
+        # PUT is replacing the whole collection
+        collection.save(ical_request)
 
 
 def report(path, xml_request, collection):
