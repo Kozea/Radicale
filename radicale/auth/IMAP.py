@@ -40,9 +40,12 @@ IMAP_SERVER = config.get("auth", "imap_hostname")
 IMAP_SERVER_PORT = config.getint("auth", "imap_port")
 IMAP_USE_SSL = config.getboolean("auth", "imap_ssl")
 
+IMAP_WARNED_UNENCRYPTED = False
 
 def is_authenticated(user, password):
     """Check if ``user``/``password`` couple is valid."""
+    global IMAP_WARNED_UNENCRYPTED
+
     if not user or not password:
         return False
 
@@ -72,7 +75,8 @@ def is_authenticated(user, password):
                 "IMAP server at %s failed to accept TLS connection "
                 "because of: %s" % (IMAP_SERVER, exception))
 
-    if server_is_local and not connection_is_secure:
+    if server_is_local and not connection_is_secure and not IMAP_WARNED_UNENCRYPTED:
+        IMAP_WARNED_UNENCRYPTED = True
         log.LOGGER.warning(
             "IMAP server is local. "
             "Will allow transmitting unencrypted credentials.")
