@@ -3,14 +3,15 @@
 ======
 
 
-0.10 - *Not released yet*
-=========================
+0.10 - Lovely Endless Grass
+===========================
 
 * Support well-known URLs (by Mathieu Dupuy)
 * Fix collection discovery (by Markus Unterwaditzer)
 * Reload logger config on SIGHUP (by Élie Bouttier)
 * Remove props files when deleting a collection (by Vincent Untz)
 * Support salted SHA1 passwords (by Marc Kleine-Budde)
+* Don't spam the logs about non-SSL IMAP connections to localhost (by Giel van Schijndel)
 
 
 0.9 - Rivers
