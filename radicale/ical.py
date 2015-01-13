@@ -31,6 +31,7 @@ import hashlib
 from uuid import uuid4
 from random import randint
 from contextlib import contextmanager
+import log
 
 
 def serialize(tag, headers=(), items=()):
@@ -252,7 +253,7 @@ class Collection(object):
                 result.extend(collection.components)
         return result
 
-    def save(self, text):
+    def save(self, text, message=None):
         """Save the text into the collection."""
         raise NotImplementedError
 
@@ -368,7 +369,7 @@ class Collection(object):
             if new_item.name not in (item.name for item in items):
                 items.append(new_item)
 
-        self.write(items=items)
+        self.write(items=items, message="Add %s" % name)
 
     def remove(self, name):
         """Remove object named ``name`` from collection."""
@@ -377,14 +378,22 @@ class Collection(object):
             if component.name != name]
 
         items = self.timezones + components
-        self.write(items=items)
+        self.write(items=items, message="Remove %s" % name)
 
     def replace(self, name, text):
-        """Replace content by ``text`` in collection objet called ``name``."""
-        self.remove(name)
-        self.append(name, text)
+        """Replace content by ``text`` in collection object called ``name``."""
+        components = [
+            component for component in self.components
+            if component.name != name]
 
-    def write(self, headers=None, items=None):
+        new_item = self._parse(
+                text, (Timezone, Event, Todo, Journal, Card), name)[0]
+        components.append(new_item)
+
+        items = self.timezones + components
+        self.write(items=items, message="Modify %s" % name)
+
+    def write(self, headers=None, items=None, message=None):
         """Write collection with given parameters."""
         headers = headers or self.headers or (
             Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
@@ -392,7 +401,8 @@ class Collection(object):
         items = items if items is not None else self.items
 
         text = serialize(self.tag, headers, items)
-        self.save(text)
+        log.LOGGER.info(message)
+        self.save(text, message=message)
 
     def set_mimetype(self, mimetype):
         """Set the mimetype of the collection."""
