@@ -146,6 +146,7 @@ def name_from_path(path, collection):
 def props_from_request(root, actions=("set", "remove")):
     """Return a list of properties as a dictionary."""
     result = OrderedDict()
+    print root.__class__, root
     if not hasattr(root, "tag"):
         root = ET.fromstring(root.encode("utf8"))
 

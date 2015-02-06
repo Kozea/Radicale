@@ -397,7 +397,7 @@ class Application(object):
                     collection.tag, collection.headers, items)
                 etag = item.etag
             else:
-                return client.GONE, {}, None
+                return client.NOT_FOUND, {}, None
         else:
             # Create the collection if it does not exist
             if not collection.exists:
