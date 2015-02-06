@@ -399,18 +399,7 @@ class Application(object):
             else:
                 return client.NOT_FOUND, {}, None
         else:
-            # Create the collection if it does not exist
-            if not collection.exists:
-                if collection in write_collections:
-                    log.LOGGER.debug(
-                        "Creating collection %s" % collection.name)
-                    collection.write()
-                else:
-                    log.LOGGER.debug(
-                        "Collection %s not available and could not be created "
-                        "due to missing write rights" % collection.name)
-                    return NOT_ALLOWED
-
+            return client.NOT_FOUND, {}, None
             # Get whole collection
             answer_text = collection.text
             etag = collection.etag
