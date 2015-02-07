@@ -193,7 +193,8 @@ class Collection(object):
         else:
             self.owner = None
         self.is_principal = principal
-        self._items = self._parse(self.text, (Event, Todo, Journal, Card, Timezone))
+        self._items = self._parse(
+            self.text, (Event, Todo, Journal, Card, Timezone))
 
     @classmethod
     def from_path(cls, path, depth="1", include_container=True):
@@ -345,8 +346,8 @@ class Collection(object):
         return items
 
     def get_item(self, name):
-        """Get collection item called ``name``."""
-        raise NotImplementedError
+        """Get item named ``name`` from collection."""
+        return self._items.get(name)
 
     def append(self, name, text):
         """Append items from ``text`` to collection.
@@ -354,37 +355,27 @@ class Collection(object):
         If ``name`` is given, give this name to new items in ``text``.
 
         """
-        items = self.items.values()
-
-        for new_item in self._parse(
-                text, (Timezone, Event, Todo, Journal, Card), name):
-            if new_item.name not in (item.name for item in items):
-                items.append(new_item)
-
-        self.write(items=items)
+        new_items = self._parse(
+            text, (Timezone, Event, Todo, Journal, Card), name)
+        for new_item in new_items.values():
+            if new_item.name not in self._items:
+                self._items[new_item] = new_item
+        self.write()
 
     def remove(self, name):
         """Remove object named ``name`` from collection."""
-        components = [
-            component for component in self.components
-            if component.name != name]
-
-        items = self.timezones + components
-        self.write(items=items)
+        if name in self._items:
+            del self._items[name]
+        self.write()
 
     def replace(self, name, text):
         """Replace content by ``text`` in collection objet called ``name``."""
         self.remove(name)
         self.append(name, text)
 
-    def write(self, headers=None, items=None):
+    def write(self):
         """Write collection with given parameters."""
-        headers = headers or self.headers or (
-            Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
-            Header("VERSION:%s" % self.version))
-        items = items if items is not None else self.items.values()
-
-        text = serialize(self.tag, headers, items)
+        text = serialize(self.tag, self.headers, self.items)
         self.save(text)
 
     def set_mimetype(self, mimetype):
@@ -463,51 +454,48 @@ class Collection(object):
                 break
             header_lines.append(Header(line))
 
-        return header_lines
+        return header_lines or (
+            Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
+            Header("VERSION:%s" % self.version))
 
-    @staticmethod
-    def _filter_items(items, item_type):
-        return [item for item in items if item.tag == item_type.tag]
-
-    @staticmethod
-    def _filter_items_many(items, item_types):
+    def filter_items(self, *item_types):
         tags = [item_type.tag for item_type in item_types]
-        return [item for item in items if item.tag in tags]
+        return [item for item in self.items if item.tag in tags]
 
     @property
     def items(self):
         """Get list of all items in collection."""
-        return self._items.values()
+        return list(self._items.values())
 
     @property
     def components(self):
         """Get list of all components in collection."""
-        return self._filter_items_many(self.items, (Event, Todo, Journal, Card))
+        return self.filter_items(Event, Todo, Journal, Card)
 
     @property
     def events(self):
         """Get list of ``Event`` items in calendar."""
-        return self._filter_items(self.items, Event)
+        return self.filter_items(Event)
 
     @property
     def todos(self):
         """Get list of ``Todo`` items in calendar."""
-        return self._filter_items(self.items, Todo)
+        return self.filter_items(Todo)
 
     @property
     def journals(self):
         """Get list of ``Journal`` items in calendar."""
-        return self._filter_items(self.items, Journal)
+        return self.filter_items(Journal)
 
     @property
     def timezones(self):
         """Get list of ``Timezone`` items in calendar."""
-        return self._filter_items(self.items, Timezone)
+        return self.filter_items(Timezone)
 
     @property
     def cards(self):
         """Get list of ``Card`` items in address book."""
-        return self._filter_items(self.items, Card)
+        return self.filter_items(Card)
 
     @property
     def owner_url(self):
