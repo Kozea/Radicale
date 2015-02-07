@@ -61,6 +61,7 @@ def unfold(text):
     """
     return re.sub('\r\n( |\t)', '', text).splitlines()
 
+
 class Item(object):
     """Internal iCal item."""
     def __init__(self, text, name=None):
