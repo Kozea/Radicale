@@ -3,6 +3,12 @@
 ======
 
 
+1.0 - *Not Released Yet*
+========================
+
+* Enhanced performances (by Mathieu Dupuy)
+
+
 0.10 - Lovely Endless Grass
 ===========================
 
