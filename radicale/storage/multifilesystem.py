@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2013 Guillaume Ayoub
-# Copyright © 2013 Jean-Marc Martins
+# Copyright © 2014 Jean-Marc Martins
+# Copyright © 2014-2015 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,14 +43,11 @@ class Collection(filesystem.Collection):
             ical.Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
             ical.Header("VERSION:%s" % self.version))
 
-    def write(self, headers=None, items=None):
+    def write(self):
         self._create_dirs()
-        headers = headers or self.headers
-        items = items if items is not None else self.items
-        timezones = list(set(i for i in items if isinstance(i, ical.Timezone)))
-        components = [i for i in items if isinstance(i, ical.Component)]
-        for component in components:
-            text = ical.serialize(self.tag, headers, [component] + timezones)
+        for component in self.components:
+            text = ical.serialize(
+                self.tag, self.headers, [component] + self.timezones)
             name = (
                 component.name if sys.version_info[0] >= 3 else
                 component.name.encode(filesystem.FILESYSTEM_ENCODING))

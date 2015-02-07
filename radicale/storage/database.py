@@ -139,12 +139,7 @@ class Collection(ical.Collection):
         """Collection's object mapped to the table line."""
         return self.session.query(DBCollection).get(self.path)
 
-    def write(self, headers=None, items=None):
-        headers = headers or self.headers or (
-            ical.Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
-            ical.Header("VERSION:%s" % self.version))
-        items = items if items is not None else self.items
-
+    def write(self):
         if self._db_collection:
             for item in self._db_collection.items:
                 for line in item.lines:
@@ -158,13 +153,13 @@ class Collection(ical.Collection):
             db_collection.parent_path = "/".join(self.path.split("/")[:-1])
             self.session.add(db_collection)
 
-        for header in headers:
+        for header in self.headers:
             db_header = DBHeader()
             db_header.name, db_header.value = header.text.split(":", 1)
             db_header.collection_path = self.path
             self.session.add(db_header)
 
-        for item in items:
+        for item in self.items.values():
             db_item = DBItem()
             db_item.name = item.name
             db_item.tag = item.tag
@@ -257,11 +252,6 @@ class Collection(ical.Collection):
                 prop.value = value
                 prop.collection_path = self.path
                 self.session.add(prop)
-
-    @property
-    def items(self):
-        return self._query(
-            (ical.Event, ical.Todo, ical.Journal, ical.Card, ical.Timezone))
 
     @property
     def components(self):

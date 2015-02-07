@@ -3,7 +3,7 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
-# Copyright © 2008-2013 Guillaume Ayoub
+# Copyright © 2008-2015 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -445,7 +445,7 @@ def proppatch(path, xml_request, collection):
 def put(path, ical_request, collection):
     """Read PUT requests."""
     name = name_from_path(path, collection)
-    if name in (item.name for item in collection.items):
+    if name in collection.items:
         # PUT is modifying an existing item
         collection.replace(name, ical_request)
     elif name:
@@ -495,7 +495,6 @@ def report(path, xml_request, collection):
     multistatus = ET.Element(_tag("D", "multistatus"))
 
     collection_tag = collection.tag
-    collection_items = collection.items
     collection_headers = collection.headers
     collection_timezones = collection.timezones
 
@@ -505,7 +504,7 @@ def report(path, xml_request, collection):
         if name:
             # Reference is an item
             path = "/".join(hreference.split("/")[:-1]) + "/"
-            items = (item for item in collection_items if item.name == name)
+            items = [collection.items[name]]
         else:
             # Reference is a collection
             path = hreference

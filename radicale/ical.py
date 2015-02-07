@@ -3,7 +3,7 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
-# Copyright © 2008-2013 Guillaume Ayoub
+# Copyright © 2008-2015 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -194,8 +194,7 @@ class Collection(object):
         else:
             self.owner = None
         self.is_principal = principal
-        self._items = self._parse(
-            self.text, (Event, Todo, Journal, Card, Timezone))
+        self._items = None
 
     @classmethod
     def from_path(cls, path, depth="1", include_container=True):
@@ -346,10 +345,6 @@ class Collection(object):
 
         return items
 
-    def get_item(self, name):
-        """Get item named ``name`` from collection."""
-        return self._items.get(name)
-
     def append(self, name, text):
         """Append items from ``text`` to collection.
 
@@ -359,14 +354,14 @@ class Collection(object):
         new_items = self._parse(
             text, (Timezone, Event, Todo, Journal, Card), name)
         for new_item in new_items.values():
-            if new_item.name not in self._items:
-                self._items[new_item] = new_item
+            if new_item.name not in self.items:
+                self.items[new_item] = new_item
         self.write()
 
     def remove(self, name):
         """Remove object named ``name`` from collection."""
-        if name in self._items:
-            del self._items[name]
+        if name in self.items:
+            del self.items[name]
         self.write()
 
     def replace(self, name, text):
@@ -376,7 +371,7 @@ class Collection(object):
 
     def write(self):
         """Write collection with given parameters."""
-        text = serialize(self.tag, self.headers, self.items)
+        text = serialize(self.tag, self.headers, self.items.values())
         self.save(text)
 
     def set_mimetype(self, mimetype):
@@ -459,44 +454,25 @@ class Collection(object):
             Header("PRODID:-//Radicale//NONSGML Radicale Server//EN"),
             Header("VERSION:%s" % self.version))
 
-    def filter_items(self, *item_types):
-        tags = [item_type.tag for item_type in item_types]
-        return [item for item in self.items if item.tag in tags]
-
     @property
     def items(self):
         """Get list of all items in collection."""
-        return list(self._items.values())
+        if self._items is None:
+            self._items = self._parse(
+                self.text, (Event, Todo, Journal, Card, Timezone))
+        return self._items
+
+    @property
+    def timezones(self):
+        """Get list of all timezones in collection."""
+        return [
+            item for item in self.items.values() if item.tag == Timezone.tag]
 
     @property
     def components(self):
         """Get list of all components in collection."""
-        return self.filter_items(Event, Todo, Journal, Card)
-
-    @property
-    def events(self):
-        """Get list of ``Event`` items in calendar."""
-        return self.filter_items(Event)
-
-    @property
-    def todos(self):
-        """Get list of ``Todo`` items in calendar."""
-        return self.filter_items(Todo)
-
-    @property
-    def journals(self):
-        """Get list of ``Journal`` items in calendar."""
-        return self.filter_items(Journal)
-
-    @property
-    def timezones(self):
-        """Get list of ``Timezone`` items in calendar."""
-        return self.filter_items(Timezone)
-
-    @property
-    def cards(self):
-        """Get list of ``Card`` items in address book."""
-        return self.filter_items(Card)
+        tags = [item_type.tag for item_type in (Event, Todo, Journal, Card)]
+        return [item for item in self.items.values() if item.tag in tags]
 
     @property
     def owner_url(self):

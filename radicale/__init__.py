@@ -3,7 +3,7 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
-# Copyright © 2008-2013 Guillaume Ayoub
+# Copyright © 2008-2015 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -377,8 +377,8 @@ class Application(object):
             item = collection
         else:
             # Try to get an item matching the path
-            item = collection.get_item(
-                xmlutils.name_from_path(environ["PATH_INFO"], collection))
+            name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
+            item = collection.items.get(name)
 
         if item:
             # Evolution bug workaround
@@ -414,7 +414,7 @@ class Application(object):
 
         if item_name:
             # Get collection item
-            item = collection.get_item(item_name)
+            item = collection.items[item_name]
             if item:
                 items = [item]
                 if collection.resource_type == "calendar":
@@ -500,7 +500,7 @@ class Application(object):
         from_name = xmlutils.name_from_path(
             environ["PATH_INFO"], from_collection)
         if from_name:
-            item = from_collection.get_item(from_name)
+            item = from_collection.items.get(from_name)
             if item:
                 # Move the item
                 to_url_parts = urlparse(environ["HTTP_DESTINATION"])
@@ -571,7 +571,7 @@ class Application(object):
         collection.set_mimetype(environ.get("CONTENT_TYPE"))
         headers = {}
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
-        item = collection.get_item(item_name)
+        item = collection.items.get(item_name)
 
         # Evolution bug workaround
         etag = environ.get("HTTP_IF_MATCH", "").replace("\\", "")
@@ -588,7 +588,7 @@ class Application(object):
             # If the added item doesn't have the same name as the one given
             # by the client, then there's no obvious way to generate an
             # etag, we can safely ignore it.
-            new_item = collection.get_item(item_name)
+            new_item = collection.items.get(item_name)
             if new_item:
                 headers["ETag"] = new_item.etag
         else:
