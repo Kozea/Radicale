@@ -414,7 +414,7 @@ class Application(object):
 
         if item_name:
             # Get collection item
-            item = collection.items[item_name]
+            item = collection.items.get(item_name)
             if item:
                 items = [item]
                 if collection.resource_type == "calendar":
