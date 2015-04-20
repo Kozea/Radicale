@@ -1051,9 +1051,8 @@ of Python.
 PAM Authentication
 ------------------
 
-The PAM authentication module relies on `the pam module
-<http://atlee.ca/software/pam/>`_, and thus only works with 2.x versions of
-Python.
+The PAM authentication module relies on `the python-pam module
+<https://pypi.python.org/pypi/python-pam/>`_.
 
 Bear in mind that on Linux systems, if you're authenticating against PAM
 files (i.e. ``/etc/shadow``), the user running Radicale must have the right
