@@ -634,6 +634,10 @@ default configuration file, with the main parameters:
 
   [storage]
   # Storage backend
+  # -------
+  # WARNING: ONLY "filesystem" IS DOCUMENTED AND TESTED,
+  #          OTHER BACKENDS ARE NOT READY FOR PRODUCTION.
+  # -------
   # Value: filesystem | multifilesystem | database | custom
   type = filesystem
 
