@@ -33,9 +33,13 @@ from .. import config, log
 GROUP_MEMBERSHIP = config.get("auth", "pam_group_membership")
 
 
-# Compatibility patch for old versions of python-pam.
-if not hasattr(pam, "pam"):
-    pam.pam = (lambda *vargs, **kwargs: pam.authenticate(*vargs, **kwards))
+# Compatibility for old versions of python-pam.
+if hasattr(pam, "pam"):
+    def pam_authenticate(*args, **kwargs):
+        return pam.pam().authenticate(*args, **kwargs)
+else:
+    def pam_authenticate(*args, **kwargs):
+        return pam.authenticate(*args, **kwargs)
 
 
 def is_authenticated(user, password):
@@ -77,7 +81,7 @@ def is_authenticated(user, password):
             "The PAM user belongs to the required group (%s)" %
             GROUP_MEMBERSHIP)
         # Check the password
-        if pam.pam().authenticate(user, password):
+        if pam_authenticate(user, password):
             return True
         else:
             log.LOGGER.debug("Wrong PAM password")
