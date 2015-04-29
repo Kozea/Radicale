@@ -159,7 +159,8 @@ class Application(object):
         # First append content charset given in the request
         content_type = environ.get("CONTENT_TYPE")
         if content_type and "charset=" in content_type:
-            charsets.append(content_type.split("charset=")[1].strip())
+            charsets.append(
+                content_type.split("charset=")[1].split(";")[0].strip())
         # Then append default Radicale charset
         charsets.append(self.encoding)
         # Then append various fallbacks
