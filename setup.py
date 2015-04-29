@@ -36,7 +36,7 @@ For further information, please visit the `Radicale Website
 
 """
 
-from distutils.core import setup
+from setuptools import setup
 import radicale
 
 
