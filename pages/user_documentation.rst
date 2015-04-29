@@ -117,7 +117,7 @@ icon at the bottom of the side pane. Then add a new calendar by choosing in the
 menu ``File → New → Calendar``.
 
 A new window opens. The calendar ``type`` is ``CalDAV``, and the location is
-something like ``caldav://localhost:5232/user/calendar.ics/``, where you can
+something like ``http://localhost:5232/user/calendar.ics/``, where you can
 replace ``user`` and ``calendar`` by some strings of your choice. Calendars are
 automatically created if needed. Please note that **the trailing slash is
 important**.
@@ -130,7 +130,10 @@ Click on ``OK``, and your calendar should be ready for use.
 Contacts
 ++++++++
 
-*To be written*
+Switch to the contacts page and click ``File → New → Adress book``. In the new
+window choose ``WebDAV`` as ``type`` and something like
+``http://localhost:5232/user/addressbook.vcf/`` as location. Remember to enter
+the correct username.
 
 KOrganizer
 ~~~~~~~~~~
