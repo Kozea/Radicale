@@ -383,8 +383,8 @@ class Application(object):
 
         if item:
             # Evolution bug workaround
-            etag = environ.get("HTTP_IF_MATCH", item.etag).replace("\\", "")
-            if etag == item.etag:
+            if_match = environ.get("HTTP_IF_MATCH", "*").replace("\\", "")
+            if if_match in ("*", item.etag):
                 # No ETag precondition or precondition verified, delete item
                 answer = xmlutils.delete(environ["PATH_INFO"], collection)
                 return client.OK, {}, answer
