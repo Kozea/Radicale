@@ -39,19 +39,18 @@ Leading or ending slashes are trimmed from collection's path.
 """
 
 import re
+import sys
 import os.path
 
 from .. import config, log
 
 # Manage Python2/3 different modules
-# pylint: disable=F0401
-try:
-    from configparser import ConfigParser
-    from io import StringIO
-except ImportError:
+if sys.version_info[0] == 2:
     from ConfigParser import ConfigParser
     from StringIO import StringIO
-# pylint: enable=F0401
+else:
+    from configparser import ConfigParser
+    from io import StringIO
 
 
 DEFINED_RIGHTS = {
