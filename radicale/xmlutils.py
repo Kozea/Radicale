@@ -466,7 +466,9 @@ def report(path, xml_request, collection):
     root = ET.fromstring(xml_request.encode("utf8"))
 
     prop_element = root.find(_tag("D", "prop"))
-    props = [prop.tag for prop in prop_element] if prop_element is not None else []
+    props = (
+        [prop.tag for prop in prop_element]
+        if prop_element is not None else [])
 
     if collection:
         if root.tag in (_tag("C", "calendar-multiget"),
@@ -507,8 +509,8 @@ def report(path, xml_request, collection):
             try:
                 items = [collection.items[name]]
             except KeyError:
-                multistatus.append(_item_response(hreference,
-                                                  found_item=False))
+                multistatus.append(
+                    _item_response(hreference, found_item=False))
                 continue
 
         else:
@@ -543,9 +545,9 @@ def report(path, xml_request, collection):
                 else:
                     not_found_props.append(element)
 
-            multistatus.append(_item_response(href, found_props=found_props,
-                                              not_found_props=not_found_props,
-                                              found_item=True))
+            multistatus.append(_item_response(
+                href, found_props=found_props, not_found_props=not_found_props,
+                found_item=True))
 
     return _pretty_xml(multistatus)
 
