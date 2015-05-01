@@ -466,7 +466,7 @@ def report(path, xml_request, collection):
     root = ET.fromstring(xml_request.encode("utf8"))
 
     prop_element = root.find(_tag("D", "prop"))
-    props = [prop.tag for prop in prop_element] if prop_element else []
+    props = [prop.tag for prop in prop_element] if prop_element is not None else []
 
     if collection:
         if root.tag in (_tag("C", "calendar-multiget"),
