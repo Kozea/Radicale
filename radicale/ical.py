@@ -44,7 +44,17 @@ def serialize(tag, headers=(), items=()):
     """
     items = sorted(items, key=lambda x: x.name)
     if tag == "VADDRESSBOOK":
-        lines = [item.text for item in items]
+        lines = []
+        for item in items:
+            def textcmp(x, y):
+                if x.startswith("BEGIN:") or y.startswith("END:"):
+                    return -1
+                elif x.startswith("END:") or y.startswith("BEGIN:"):
+                    return 1
+                else:
+                    return cmp(x, y)
+
+            lines.append("\n".join(sorted(item.text.splitlines(), cmp=textcmp)))
     else:
         lines = ["BEGIN:%s" % tag]
         for part in (headers, items):
