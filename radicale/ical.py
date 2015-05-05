@@ -341,7 +341,9 @@ class Collection(object):
                     item_lines = []
 
             if in_item:
-                item_lines.append(line)
+                # Thow away PRODID to minimize diff between modifications
+                if not line.startswith("PRODID:"):
+                    item_lines.append(line)
                 if line.startswith("END:%s" % item_tag):
                     in_item = False
                     item_type = item_tags[item_tag]
