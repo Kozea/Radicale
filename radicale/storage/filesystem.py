@@ -55,7 +55,7 @@ def open(path, mode="r"):
         path = os.path.relpath(abs_path, FOLDER)
         GIT_REPOSITORY.stage([path])
         committer = config.get("git", "committer")
-        GIT_REPOSITORY.do_commit("Commit by Radicale", committer=committer)
+        GIT_REPOSITORY.do_commit(path, committer=committer)
 # pylint: enable=W0622
 
 
