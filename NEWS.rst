@@ -33,7 +33,7 @@
 * Decode URLs in XML (by Jean-Marc Martins)
 * Fix PAM authentication (by Stepan Henek)
 * Use consistent etags (by 9m66p93w)
-* Use consistent sorting order (by dnnr)
+* Use consistent sorting order (by Daniel Danner)
 * Return 401 on unauthorized DELETE requests (by Eduard Braun)
 * Move pid file creation in child process (by Mathieu Dupuy)
 * Allow requests without base_prefix (by jheidemann)
