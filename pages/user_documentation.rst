@@ -54,8 +54,9 @@ of:
   `CalDAV-Sync <https://play.google.com/store/apps/details?id=org.dmfs.caldav.lib>`_
   `CardDAV-Sync <https://play.google.com/store/apps/details?id=org.dmfs.carddav.Sync>`_
   and `DAVdroid <http://davdroid.bitfire.at>`_ for `Google Android <http://www.android.com/>`_
-- `CalDavZAP <http://www.inf-it.com/open-source/clients/caldavzap/>`_
-- `CardDavMATE <http://www.inf-it.com/open-source/clients/carddavmate/>`_
+- `InfCloud <http://www.inf-it.com/open-source/clients/infcloud/>`_,
+  `CalDavZAP <http://www.inf-it.com/open-source/clients/caldavzap/>`_,
+  `CardDavMATE <http://www.inf-it.com/open-source/clients/carddavmate/>`_
 - `Apple iPhone <http://www.apple.com/iphone/>`_
 - `Apple Calendar <http://www.apple.com/macosx/apps/#calendar>`_
 - `Apple Contacts <http://www.apple.com/macosx/apps/#contacts>`_
@@ -316,15 +317,101 @@ select ``Calendars and Addressbooks``. You should find all the calendars that
 are available to your user on the Radicale server. You can then configure each
 of them (display colour, notifications, etc.).
 
-CalDavZAP
-~~~~~~~~~
+|
 
-*To be written.*
+InfCloud, CalDavZAP & CardDavMATE
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-CardDavMATE
-~~~~~~~~~~~
+| Because settings are the same for ``InfCloud``, ``CalDavZAP`` and ``CardDavMATE``
+| only *InfCloud* is used in description below.
 
-*To be written.*
+Radicale configuration
+++++++++++++++++++++++
+
+Add/Modify the following section in Radicale main configuration file:
+
+.. code-block:: ini
+
+    # Additional HTTP headers
+    [headers]
+    Access-Control-Allow-Origin = *
+    Access-Control-Allow-Methods = GET, POST, OPTIONS, PROPFIND, PROPPATCH, REPORT, PUT, MOVE, DELETE, LOCK, UNLOCK
+    Access-Control-Allow-Headers = User-Agent, Authorization, Content-type, Depth, If-match, If-None-Match, Lock-Token, Timeout, Destination, Overwrite, X-client, X-Requested-With
+    Access-Control-Expose-Headers = Etag
+
+``InfCloud`` needs read access for ``everybody`` (including anonymous users) on Radicale's root directory.
+If using Radicales rights management add the following section to rights file:
+
+.. code-block:: ini
+
+    # Allow caldavzap, carddavmate and infcloud to work
+    [infcloud]
+    user: .*
+    collection: /
+    permission: r
+
+Additional you need to change ``[owner-write]`` section to use the same syntax for collection as shown in ``[public]`` section.
+
+.. code-block:: ini
+
+    # Give write access to owners
+    [owner-write]
+    user: .+
+    # collection: ^%(login)s/.+$    # DOES NOT WORK
+    collection: ^%(login)s(/.+)?$
+    permission: rw
+
+InfCloud configuration
+++++++++++++++++++++++
+
+Inside ``InfCloud`` configuration file ``config.js`` you need to set ``globalNetworkCheckSettings`` like following example:
+
+.. code-block:: JavaScript
+
+    // href: 
+    // put in here your protocol, host and port where Radicale is listening
+    // additionalResources:
+    // put in here a comma separated list of collections you want additionally look at.
+    // Don't forget '' around each collections name
+    var globalNetworkCheckSettings={
+        href: 'https://host.example.com:5232/',
+        hrefLabel: null,
+        crossDomain: null,
+        additionalResources: ['public'],
+        forceReadOnly: null,
+        withCredentials: false,
+        showHeader: true,
+        settingsAccount: true,
+        syncInterval: 60000,
+        timeOut: 30000,
+        lockTimeOut: 10000,
+        delegation: false,
+        ignoreAlarms: false,
+        backgroundCalendars: []
+    }
+
+.. note::
+    ``InfCloud``, ``CardDavMATE`` and ``CalDavZAP`` cannot create calendars and/or address books. **They need to be created before first login.**
+    Each user needs to have minimum of one calendar and/or one adressbook even if only using shared addresses and/or calendars.
+    Client will not login, if the user collections don't exists.
+
+| You can easily create them by directly calling the URL's from your browser:
+|   ``http(s)://host.example.com:5232/user/calendar.ics/``
+|   ``http(s)://host.example.com:5232/user/addresses.vcf/``
+
+| Replace "http(s)" with the correct protocol, "host.example.com:5232" with you host:port where Radicale is running,
+| "user" with the correct login name or the shared resource name i.e. 'public',
+| "calendar.ics" and "addresses.vcf" with the collection names you want to use
+| and **do NOT forget the '/' at line end**.
+
+.. note::
+    | If using self-signed certificates you need to do the following steps before using ``InfCloud, CardDavMATE`` or ``CalDavZAP``.
+    | With your browser call one of the above URLs.
+    | Your browser warn you that you are trying to access an ``Insecure`` site.
+    | Download and accept the certificate offered by the Radicale server.
+    | After installing and accepting it you should restart your browser.
+
+|
 
 iPhone & iPad
 ~~~~~~~~~~~~~
@@ -996,7 +1083,7 @@ the filesystem_folder variable in the ``[storage]`` section of your configuratio
 Make sure a repository is created at this location or create one (using *git init
 .* for instance) else it won't work.
 
-To summarize : 
+To summarize : 
 
 - Configure your Git installation
 - Get Radicale and dulwich
@@ -1013,7 +1100,7 @@ will use your git config to find parameters such as the committer and that's all
 Issues
 ~~~~~~
 
-A dulwich project ported on Python 3 exists but it seems that it doesn't follow the
+A dulwich project ported on Python 3 exists but it seems that it doesn't follow the
 current api (committer is mandatory and not retrieved from the git config by
 default). Until this problem isn't fixed, the Git support for Radicale on
 Python 3 will not be ensured.
