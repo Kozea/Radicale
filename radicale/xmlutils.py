@@ -207,7 +207,7 @@ def delete(path, collection):
     return _pretty_xml(multistatus)
 
 
-def propfind(path, xml_request, collections, user=None):
+def propfind(path, xml_request, read_collections, write_collections, user=None):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -233,14 +233,21 @@ def propfind(path, xml_request, collections, user=None):
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
-    for collection in collections:
-        response = _propfind_response(path, collection, props, user)
+    collections = []
+    for collection in write_collections:
+        collections.append(collection)
+        response = _propfind_response(path, collection, props, user, write=True)
+        multistatus.append(response)
+    for collection in read_collections:
+        if collection in collections:
+            continue
+        response = _propfind_response(path, collection, props, user, write=False)
         multistatus.append(response)
 
     return _pretty_xml(multistatus)
 
 
-def _propfind_response(path, item, props, user):
+def _propfind_response(path, item, props, user, write=False):
     """Build and return a PROPFIND response."""
     is_collection = isinstance(item, ical.Collection)
     if is_collection:
@@ -300,11 +307,12 @@ def _propfind_response(path, item, props, user):
             element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
-            privilege.append(ET.Element(_tag("D", "all")))
+            if write:
+                privilege.append(ET.Element(_tag("D", "all")))
+                privilege.append(ET.Element(_tag("D", "write")))
+                privilege.append(ET.Element(_tag("D", "write-properties")))
+                privilege.append(ET.Element(_tag("D", "write-content")))
             privilege.append(ET.Element(_tag("D", "read")))
-            privilege.append(ET.Element(_tag("D", "write")))
-            privilege.append(ET.Element(_tag("D", "write-properties")))
-            privilege.append(ET.Element(_tag("D", "write-content")))
             element.append(privilege)
         elif tag == _tag("D", "supported-report-set"):
             for report_name in (

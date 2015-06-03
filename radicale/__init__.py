@@ -542,9 +542,8 @@ class Application(object):
         headers = {
             "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
             "Content-Type": "text/xml"}
-        collections = set(read_collections + write_collections)
         answer = xmlutils.propfind(
-            environ["PATH_INFO"], content, collections, user)
+            environ["PATH_INFO"], content, read_collections, write_collections, user)
         return client.MULTI_STATUS, headers, answer
 
     def proppatch(self, environ, read_collections, write_collections, content,
