@@ -36,6 +36,7 @@ FILESYSTEM_ENCODING = sys.getfilesystemencoding()
 
 try:
     from dulwich.repo import Repo
+    import dulwich.porcelain
     GIT_REPOSITORY = Repo(FOLDER)
 except:
     GIT_REPOSITORY = None
@@ -54,9 +55,13 @@ def open(path, mode="r", commitmessage=None):
     if GIT_REPOSITORY and mode == "w":
         path = os.path.relpath(abs_path, FOLDER)
         GIT_REPOSITORY.stage([path])
-        committer = config.get("git", "committer")
-        commitmessage = commitmessage or path
-        GIT_REPOSITORY.do_commit(commitmessage, committer=committer)
+
+        # Commit only if staged changes are non-empty
+        staged = dulwich.porcelain.status(GIT_REPOSITORY).staged
+        if any(x != [] for x in staged.values()):
+            committer = config.get("git", "committer")
+            commitmessage = commitmessage or path
+            GIT_REPOSITORY.do_commit(commitmessage, committer=committer)
 # pylint: enable=W0622
 
 
