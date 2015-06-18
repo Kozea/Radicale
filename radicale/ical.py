@@ -45,7 +45,7 @@ def serialize(tag=None, headers=(), items=()):
     collection delimiters.
 
     """
-    items = sorted(items, key=lambda x: x.name)
+    items = sorted(items, key=lambda x: (x.name, x.text))
 
     # Helper to sort item texts while preserving the position of BEGIN: and END: lines
     def sortitem(text):
