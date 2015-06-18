@@ -43,23 +43,31 @@ def serialize(tag, headers=(), items=()):
 
     """
     items = sorted(items, key=lambda x: x.name)
+
+    # Helper to sort item texts while preserving the position of BEGIN: and END: lines
+    def sortitem(text):
+        ret = []
+        buf = []
+        for line in text.splitlines():
+            if line.startswith(("BEGIN:", "END:")):
+                ret.extend(sorted(buf))
+                buf = []
+                ret.append(line)
+            else:
+                buf.append(line)
+        ret.extend(sorted(buf))
+        return "\n".join(ret)
+
     if tag == "VADDRESSBOOK":
         lines = []
         for item in items:
-            def textcmp(x, y):
-                if x.startswith("BEGIN:") or y.startswith("END:"):
-                    return -1
-                elif x.startswith("END:") or y.startswith("BEGIN:"):
-                    return 1
-                else:
-                    return cmp(x, y)
-
-            lines.append("\n".join(sorted(item.text.splitlines(), cmp=textcmp)))
+            lines.append(sortitem(item.text))
     else:
         lines = ["BEGIN:%s" % tag]
         for part in (headers, items):
             if part:
-                lines.append("\n".join(item.text for item in part))
+                for item in part:
+                    lines.append(sortitem(item.text))
         lines.append("END:%s\n" % tag)
     return "\n".join(lines)
 
