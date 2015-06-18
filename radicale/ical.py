@@ -35,11 +35,14 @@ from contextlib import contextmanager
 import log
 
 
-def serialize(tag, headers=(), items=()):
+def serialize(tag=None, headers=(), items=()):
     """Return a text corresponding to given collection ``tag``.
 
     The text may have the given ``headers`` and ``items`` added around the
     items if needed (ie. for calendars).
+
+    If no ``tag'' is given, items will be serialized without surrounding
+    collection delimiters.
 
     """
     items = sorted(items, key=lambda x: x.name)
@@ -58,7 +61,7 @@ def serialize(tag, headers=(), items=()):
         ret.extend(sorted(buf))
         return "\n".join(ret)
 
-    if tag == "VADDRESSBOOK":
+    if tag == "VADDRESSBOOK" or tag is None:
         lines = []
         for item in items:
             lines.append(sortitem(item.text))
@@ -337,6 +340,7 @@ class Collection(object):
             item_tags[item_type.tag] = item_type
 
         items = {}
+        multiitems = {}
 
         lines = unfold(text)
         in_item = False
@@ -359,10 +363,18 @@ class Collection(object):
                     item_name = None if item_tag == "VTIMEZONE" else name
                     item = item_type(item_text, item_name)
                     if item.name in items:
-                        text = "\n".join((item.text, items[item.name].text))
-                        items[item.name] = item_type(text, item.name)
+                        # Collect items with colliding UIDs for later merging
+                        if item.name not in multiitems:
+                            multiitems[item.name] = [items[item.name]]
+                        multiitems[item.name].append(item)
                     else:
                         items[item.name] = item
+
+        # Join UID collisions into single items, use serialize() to ensure correct sort order
+        for mname, mitems in multiitems.iteritems():
+            text = serialize(items=mitems)
+            jointitem = items[mname].__class__(text, mname)
+            items[mname] = jointitem
 
         return items
 
