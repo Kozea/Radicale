@@ -1,0 +1,21 @@
+language: python
+
+python:
+  - 2.6
+  - 2.7
+  - 3.2
+  - 3.3
+  - 3.4
+  - pypy
+
+install:
+  - pip install sqlalchemy
+  - pip install nose-cov
+  - pip install pam
+  - pip install requests
+
+script: nosetests
+
+after_success: coveralls
+
+sudo: false
