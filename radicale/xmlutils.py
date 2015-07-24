@@ -575,7 +575,7 @@ def _item_response(href, found_props=(), not_found_props=(), found_item=True):
             propstat = ET.Element(_tag("D", "propstat"))
             status = ET.Element(_tag("D", "status"))
             status.text = _response(404)
-            prop = ET.Element(_Tag("D", "prop"))
+            prop = ET.Element(_tag("D", "prop"))
             for p in not_found_props:
                 prop.append(p)
             propstat.append(prop)
