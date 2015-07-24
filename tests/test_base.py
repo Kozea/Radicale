@@ -36,7 +36,7 @@ class BaseRequests(object):
     """Tests with simple requests."""
 
     def test_root(self):
-        """Test a GET request at "/"."""
+        """GET request at "/"."""
         status, headers, answer = self.request("GET", "/")
         assert status == 200
         assert "Radicale works!" in answer
@@ -47,37 +47,38 @@ class BaseRequests(object):
         assert "END:VCALENDAR" in answer
         assert "PRODID:-//Radicale//NONSGML Radicale Server//EN" in answer
 
-    def test_add_event_todo(self):
-        """Tests the add of an event and todo."""
+    def test_add_event(self):
+        """Add an event."""
         self.request("GET", "/calendar.ics/")
-        #VEVENT test
-        event = get_file_content("put.ics")
-        path = "/calendar.ics/02805f81-4cc2-4d68-8d39-72768ffa02d9.ics"
+        event = get_file_content("event.ics")
+        path = "/calendar.ics/event.ics"
         status, headers, answer = self.request("PUT", path, event)
         assert status == 201
-        assert "ETag" in headers.keys()
         status, headers, answer = self.request("GET", path)
+        assert "ETag" in headers.keys()
         assert status == 200
         assert "VEVENT" in answer
-        assert b"Nouvel \xc3\xa9v\xc3\xa8nement".decode("utf-8") in answer
-        assert "UID:02805f81-4cc2-4d68-8d39-72768ffa02d9" in answer
-        # VTODO test
-        todo = get_file_content("putvtodo.ics")
-        path = "/calendar.ics/40f8cf9b-0e62-4624-89a2-24c5e68850f5.ics"
+        assert "Event" in answer
+        assert "UID:event" in answer
+
+    def test_add_todo(self):
+        """Add a todo."""
+        self.request("GET", "/calendar.ics/")
+        todo = get_file_content("todo.ics")
+        path = "/calendar.ics/todo.ics"
         status, headers, answer = self.request("PUT", path, todo)
         assert status == 201
-        assert "ETag" in headers.keys()
         status, headers, answer = self.request("GET", path)
+        assert "ETag" in headers.keys()
         assert "VTODO" in answer
-        assert b"Nouvelle t\xc3\xa2che".decode("utf-8") in answer
-        assert "UID:40f8cf9b-0e62-4624-89a2-24c5e68850f5" in answer
+        assert "Todo" in answer
+        assert "UID:todo" in answer
 
     def test_delete(self):
-        """Tests the deletion of an event"""
+        """Delete an event."""
         self.request("GET", "/calendar.ics/")
-        # Adds a VEVENT to be deleted
-        event = get_file_content("put.ics")
-        path = "/calendar.ics/02805f81-4cc2-4d68-8d39-72768ffa02d9.ics"
+        event = get_file_content("event.ics")
+        path = "/calendar.ics/event.ics"
         status, headers, answer = self.request("PUT", path, event)
         # Then we send a DELETE request
         status, headers, answer = self.request("DELETE", path)
