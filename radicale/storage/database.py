@@ -177,7 +177,7 @@ class Collection(ical.Collection):
 
     @property
     def text(self):
-        return ical.serialize(self.tag, self.headers, self.items)
+        return ical.serialize(self.tag, self.headers, self.components)
 
     @property
     def etag(self):

@@ -33,10 +33,10 @@ from tests import BaseTest
 
 
 class TestBaseAuthRequests(BaseTest):
-    """
-    Tests basic requests with auth.
+    """Tests basic requests with auth.
 
-    We should setup auth for each type before create Application object
+    We should setup auth for each type before creating the Application object.
+
     """
 
     def setup(self):
@@ -47,6 +47,7 @@ class TestBaseAuthRequests(BaseTest):
         radicale.auth.is_authenticated = lambda *_: True
 
     def test_root(self):
+        """Htpasswd authentication."""
         self.colpath = tempfile.mkdtemp()
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
         with open(htpasswd_file_path, "wb") as fd:
@@ -65,6 +66,7 @@ class TestBaseAuthRequests(BaseTest):
         assert "Radicale works!" in answer
 
     def test_custom(self):
+        """Custom authentication."""
         config.set("auth", "type", "custom")
         config.set("auth", "custom_handler", "tests.custom.auth")
         self.application = radicale.Application()
