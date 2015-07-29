@@ -49,6 +49,7 @@ following significantly more secure schemes are parsable by Radicale:
 
     - MD5-APR1   (htpasswd -m...) -- htpasswd's default method
     - BCRYPT     (htpasswd -B...) -- Requires htpasswd 2.4.x
+
 """
 
 
@@ -111,8 +112,7 @@ def _md5apr1(hash_value, password):
 _verifuncs = {
     "ssha": _ssha,
     "sha1": _sha1,
-    "plain": _plain
-}
+    "plain": _plain}
 
 
 # Conditionally attempt to import external dependencies.
@@ -149,9 +149,12 @@ if ENCRYPTION not in _verifuncs:
  
 
 def is_authenticated(user, password):
-    """Validate credentials: iterate through htpasswd credential file until
-    user matches, extract hash (encrypted password) and check hash against
-    user-given password, using the method specified in the Radicale config.
+    """Validate credentials.
+
+    Iterate through htpasswd credential file until user matches, extract hash
+    (encrypted password) and check hash against user-given password, using the
+    method specified in the Radicale config.
+
     """
     with open(FILENAME) as f:
         for line in f:
