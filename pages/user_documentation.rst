@@ -265,7 +265,7 @@ two-way-sync.
 
 .. note::
     CalDAV-Sync officially is in alpha state and two-way-sync is marked as 
-    an experimental feature. Tough it works fine for me, using two-way-sync 
+    an experimental feature. Though it works fine for me, using two-way-sync 
     is on your own risk!
     
 Tap on ``Finish`` and you're done. You're now able to use the new calendars 
