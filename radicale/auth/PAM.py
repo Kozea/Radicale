@@ -81,7 +81,7 @@ def is_authenticated(user, password):
             "The PAM user belongs to the required group (%s)" %
             GROUP_MEMBERSHIP)
         # Check the password
-        if pam_authenticate(user, password):
+        if pam_authenticate(user, password, service='radicale'):
             return True
         else:
             log.LOGGER.debug("Wrong PAM password")
