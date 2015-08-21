@@ -243,14 +243,12 @@ class Collection(ical.Collection):
         old_properties = properties.copy()
         yield properties
         # On exit
-        if self._db_collection and old_properties != properties:
+        if old_properties != properties:
             for prop in db_properties:
                 self.session.delete(prop)
             for name, value in properties.items():
-                prop = DBProperty()
-                prop.name = name
-                prop.value = value
-                prop.collection_path = self.path
+                prop = DBProperty(name=name, value=value,
+                                  collection_path=self.path)
                 self.session.add(prop)
 
     @property
