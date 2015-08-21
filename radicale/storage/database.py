@@ -247,7 +247,7 @@ class Collection(ical.Collection):
             for prop in db_properties:
                 self.session.delete(prop)
             for name, value in properties.items():
-                prop = DBProperty(name=name, value=value,
+                prop = DBProperty(name=name, value=value or '',
                                   collection_path=self.path)
                 self.session.add(prop)
 
