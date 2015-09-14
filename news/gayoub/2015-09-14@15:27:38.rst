@@ -1,0 +1,78 @@
+Radicale 1.0, what's next?
+==========================
+
+Radicale 1.0 is out!
+
+1.0 - Sunflower
+---------------
+
+* Enhanced performances (by Mathieu Dupuy)
+* Add MD5-APR1 and BCRYPT for htpasswd-based authentication (by Jan-Philip Gehrcke)
+* Use PAM service (by Stephen Paul Weber)
+* Don't discard PROPPATCH on empty collections (Markus Unterwaditzer)
+* Write the path of the collection in the git message (Matthew Monaco)
+* Tests launched on Travis
+
+As explained in a previous `mail
+<http://librelist.com/browser//radicale/2015/8/21/radicale-1-0-is-coming-what-s-next/>`_,
+this version is called 1.0 because:
+
+- there are no big changes since 0.10 but some small changes are really useful,
+- simple tests are now automatically launched on Travis, and more can be added
+  in the future (https://travis-ci.org/Kozea/Radicale).
+
+This version will be maintained with only simple bug fixes on a separate git
+branch called ``1.0.x``.
+
+Now that this milestone is reached, it's time to think about the future. When
+Radicale has been created, it was just a proof-of-concept. The main goal was to
+write a small, stupid and simple CalDAV server working with Lightning, using no
+external libraries. That's how we created a piece of code that's (quite) easy
+to understand, to use and to hack.
+
+The first lines have been added to the SVN (!) repository as I was drinking
+beers at the very end of 2008. It's now packaged for a growing number of Linux
+distributions.
+
+And that was fun going from here to there thanks to you. So… **Thank you,
+you're amazing**. I'm so glad I've spent endless hours fixing stupid bugs,
+arguing about databases and meeting invitations, reading incredibly interesting
+RFCs and debugging with the fabulous clients from Apple. I mean: that really,
+really was really, really cool :).
+
+During these years, a lot of things have changed and many users now rely on
+Radicale in production. For example, I use it to manage medical calendars, with
+thousands requests per day.  Many people are happy to install Radicale on their
+small home servers, but are also frustrated by performance and unsupported
+specifications when they're trying to use it seriously.
+
+So, now is THE FUTURE! I think that Radicale 2.0 should:
+
+- rely on a few external libraries for simple critical points (dealing with
+  HTTP and iCal for example),
+- be thread-safe,
+- be small,
+- be documented in a different way (for example by splitting the client part
+  from the server part, and by adding use cases),
+- let most of the "auth" modules outside in external modules,
+- have more and more tests,
+- have reliable and faster filesystem and database storage mechanisms,
+- get a new design :).
+
+I'd also secretly love to drop the Python 2.x support.
+
+These ideas are not all mine (except from the really, really, really important
+"design" point :p), they have been proposed by many developers and users. I've
+just tried to gather them and keep points that seem important to me.
+
+Other points have been discussed with many users and contibutors, including:
+
+- support of other clients, including Windows and BlackBerry phones,
+- server-side meeting invitations,
+- different storage system as default (or even unique?).
+
+I'm not a huge fan of these features, either because I can't do anything about
+them, or because I think that they're Really Bad Ideas®™. But I'm ready to talk
+about them, because, well, I may not be always right!
+
+Need to talk about this? You know how to `contact us </contribute/>`_!
