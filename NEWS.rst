@@ -3,10 +3,15 @@
 ======
 
 
-1.0 - *Not Released Yet*
-========================
+1.0 - Sunflower
+===============
 
 * Enhanced performances (by Mathieu Dupuy)
+* Add MD5-APR1 and BCRYPT for htpasswd-based authentication (by Jan-Philip Gehrcke)
+* Use PAM service (by Stephen Paul Weber)
+* Don't discard PROPPATCH on empty collections (Markus Unterwaditzer)
+* Write the path of the collection in the git message (Matthew Monaco)
+* Tests launched on Travis
 
 
 0.10 - Lovely Endless Grass
