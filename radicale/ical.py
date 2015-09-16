@@ -32,23 +32,45 @@ import re
 from uuid import uuid4
 from random import randint
 from contextlib import contextmanager
+import log
 
 
-def serialize(tag, headers=(), items=()):
+def serialize(tag=None, headers=(), items=()):
     """Return a text corresponding to given collection ``tag``.
 
     The text may have the given ``headers`` and ``items`` added around the
     items if needed (ie. for calendars).
 
+    If no ``tag'' is given, items will be serialized without surrounding
+    collection delimiters.
+
     """
-    items = sorted(items, key=lambda x: x.name)
-    if tag == "VADDRESSBOOK":
-        lines = [item.text for item in items]
+    items = sorted(items, key=lambda x: (x.name, x.text))
+
+    # Helper to sort item texts while preserving the position of BEGIN: and END: lines
+    def sortitem(text):
+        ret = []
+        buf = []
+        for line in text.splitlines():
+            if line.startswith(("BEGIN:", "END:")):
+                ret.extend(sorted(buf))
+                buf = []
+                ret.append(line)
+            else:
+                buf.append(line)
+        ret.extend(sorted(buf))
+        return "\n".join(ret)
+
+    if tag == "VADDRESSBOOK" or tag is None:
+        lines = []
+        for item in items:
+            lines.append(sortitem(item.text))
     else:
         lines = ["BEGIN:%s" % tag]
         for part in (headers, items):
             if part:
-                lines.append("\n".join(item.text for item in part))
+                for item in part:
+                    lines.append(sortitem(item.text))
         lines.append("END:%s\n" % tag)
     return "\n".join(lines)
 
@@ -248,7 +270,7 @@ class Collection(object):
                 result.extend(collection.components)
         return result
 
-    def save(self, text):
+    def save(self, text, message=None):
         """Save the text into the collection."""
         raise NotImplementedError
 
@@ -318,6 +340,7 @@ class Collection(object):
             item_tags[item_type.tag] = item_type
 
         items = {}
+        multiitems = {}
 
         lines = unfold(text)
         in_item = False
@@ -330,7 +353,9 @@ class Collection(object):
                     item_lines = []
 
             if in_item:
-                item_lines.append(line)
+                # Thow away PRODID to minimize diff between modifications
+                if not line.startswith("PRODID:"):
+                    item_lines.append(line)
                 if line.startswith("END:%s" % item_tag):
                     in_item = False
                     item_type = item_tags[item_tag]
@@ -338,14 +363,22 @@ class Collection(object):
                     item_name = None if item_tag == "VTIMEZONE" else name
                     item = item_type(item_text, item_name)
                     if item.name in items:
-                        text = "\n".join((item.text, items[item.name].text))
-                        items[item.name] = item_type(text, item.name)
+                        # Collect items with colliding UIDs for later merging
+                        if item.name not in multiitems:
+                            multiitems[item.name] = [items[item.name]]
+                        multiitems[item.name].append(item)
                     else:
                         items[item.name] = item
 
+        # Join UID collisions into single items, use serialize() to ensure correct sort order
+        for mname, mitems in multiitems.iteritems():
+            text = serialize(items=mitems)
+            jointitem = items[mname].__class__(text, mname)
+            items[mname] = jointitem
+
         return items
 
-    def append(self, name, text):
+    def append(self, name, text, do_write=True):
         """Append items from ``text`` to collection.
 
         If ``name`` is given, give this name to new items in ``text``.
@@ -356,23 +389,28 @@ class Collection(object):
         for new_item in new_items.values():
             if new_item.name not in self.items:
                 self.items[new_item] = new_item
-        self.write()
+        if do_write:
+            self.write(message="Add %s" % name)
 
-    def remove(self, name):
+    def remove(self, name, do_write=True):
         """Remove object named ``name`` from collection."""
         if name in self.items:
             del self.items[name]
-        self.write()
+        if do_write:
+            self.write(message="Remove %s" % name)
 
     def replace(self, name, text):
-        """Replace content by ``text`` in collection objet called ``name``."""
-        self.remove(name)
-        self.append(name, text)
+        """Replace content by ``text`` in collection object called ``name``."""
+        self.remove(name, do_write=False)
+        self.append(name, text, do_write=False)
 
-    def write(self):
+        self.write(message="Modify %s" % name)
+
+    def write(self, message=None):
         """Write collection with given parameters."""
         text = serialize(self.tag, self.headers, self.items.values())
-        self.save(text)
+        log.LOGGER.info(message)
+        self.save(text, message=message)
 
     def set_mimetype(self, mimetype):
         """Set the mimetype of the collection."""

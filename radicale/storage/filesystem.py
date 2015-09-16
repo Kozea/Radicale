@@ -36,6 +36,7 @@ FILESYSTEM_ENCODING = sys.getfilesystemencoding()
 
 try:
     from dulwich.repo import Repo
+    import dulwich.porcelain
     GIT_REPOSITORY = Repo(FOLDER)
 except:
     GIT_REPOSITORY = None
@@ -44,7 +45,7 @@ except:
 # This function overrides the builtin ``open`` function for this module
 # pylint: disable=W0622
 @contextmanager
-def open(path, mode="r"):
+def open(path, mode="r", commitmessage=None):
     """Open a file at ``path`` with encoding set in the configuration."""
     # On enter
     abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
@@ -54,8 +55,13 @@ def open(path, mode="r"):
     if GIT_REPOSITORY and mode == "w":
         path = os.path.relpath(abs_path, FOLDER)
         GIT_REPOSITORY.stage([path])
-        committer = config.get("git", "committer")
-        GIT_REPOSITORY.do_commit(path, committer=committer)
+
+        # Commit only if staged changes are non-empty
+        staged = dulwich.porcelain.status(GIT_REPOSITORY).staged
+        if any(x != [] for x in staged.values()):
+            committer = config.get("git", "committer")
+            commitmessage = commitmessage or path
+            GIT_REPOSITORY.do_commit(commitmessage, committer=committer)
 # pylint: enable=W0622
 
 
@@ -76,9 +82,9 @@ class Collection(ical.Collection):
         if not os.path.exists(os.path.dirname(self._path)):
             os.makedirs(os.path.dirname(self._path))
 
-    def save(self, text):
+    def save(self, text, message=None):
         self._create_dirs()
-        with open(self._path, "w") as fd:
+        with open(self._path, "w", commitmessage = message) as fd:
             fd.write(text)
 
     def delete(self):
