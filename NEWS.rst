@@ -3,6 +3,12 @@
 ======
 
 
+1.0.1
+=====
+
+* Update the version because of a **stupid** "feature"™ of PyPI
+
+
 1.0 - Sunflower
 ===============
 
