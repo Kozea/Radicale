@@ -55,7 +55,8 @@ def open(path, mode="r"):
         path = os.path.relpath(abs_path, FOLDER)
         GIT_REPOSITORY.stage([path])
         committer = config.get("git", "committer")
-        GIT_REPOSITORY.do_commit(path, committer=committer)
+        GIT_REPOSITORY.do_commit(
+            path.encode("utf-8"), committer=committer.encode("utf-8"))
 # pylint: enable=W0622
 
 
