@@ -73,7 +73,7 @@
 [auth]
 
 # Authentication method
-# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | remote_user | custom
+# Value: None | htpasswd | IMAP | LDAP | LDAP3 | PAM | courier | http | remote_user | custom
 #type = None
 
 # Custom authentication handler
@@ -87,7 +87,7 @@
 #htpasswd_encryption = crypt
 
 # LDAP server URL, with protocol and port
-#ldap_url = ldap://localhost:389/
+#ldap_url = ldap://localhost:389
 
 # LDAP base path
 #ldap_base = ou=users,dc=example,dc=com
@@ -109,6 +109,7 @@
 #ldap_password =
 
 # LDAP scope of the search
+# LDAP3 valid scopes are: BASE | LEVEL | SUBTREE
 #ldap_scope = OneLevel
 
 # IMAP Configuration
