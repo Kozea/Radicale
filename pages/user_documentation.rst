@@ -1162,7 +1162,7 @@ With the htpasswd access, many encryption methods are available, and crypt is th
 default one in Radicale. Unfortunately, the ``crypt`` module is unavailable on
 Windows, you have to pick another method on this OS.
 
-Additional ``md5`` and ``bcrypt`` versions are available when the ``passlib``
+Additional ``md5`` and ``bcrypt`` methods are available when the ``passlib``
 module is installed.
 
 IMAP Authentication
