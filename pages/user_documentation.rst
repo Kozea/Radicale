@@ -616,148 +616,184 @@ default configuration file, with the main parameters:
 .. code-block:: ini
 
   [server]
+
   # CalDAV server hostnames separated by a comma
   # IPv4 syntax: address:port
   # IPv6 syntax: [address]:port
   # For example: 0.0.0.0:9999, [::]:9999
   # IPv6 adresses are configured to only allow IPv6 connections
-  hosts = 0.0.0.0:5232
+  #hosts = 0.0.0.0:5232
+
   # Daemon flag
-  daemon = False
+  #daemon = False
+
   # File storing the PID in daemon mode
-  pid =
+  #pid =
+
   # SSL flag, enable HTTPS protocol
-  ssl = False
+  #ssl = False
+
   # SSL certificate path
-  certificate = /etc/apache2/ssl/server.crt
+  #certificate = /etc/apache2/ssl/server.crt
+
   # SSL private key
-  key = /etc/apache2/ssl/server.key
+  #key = /etc/apache2/ssl/server.key
+
   # SSL Protocol used. See python's ssl module for available values
-  protocol = PROTOCOL_SSLv23
+  #protocol = PROTOCOL_SSLv23
+
   # Ciphers available. See python's ssl module for available ciphers
-  ciphers =
+  #ciphers =
+
   # Reverse DNS to resolve client address in logs
-  dns_lookup = True
+  #dns_lookup = True
+
   # Root URL of Radicale (starting and ending with a slash)
-  base_prefix = /
+  #base_prefix = /
+
   # Possibility to allow URLs cleaned by a HTTP server, without the base_prefix
-  can_skip_base_prefix = False
+  #can_skip_base_prefix = False
+
   # Message displayed in the client when a password is needed
-  realm = Radicale - Password Required
+  #realm = Radicale - Password Required
 
 
   [encoding]
+
   # Encoding for responding requests
-  request = utf-8
+  #request = utf-8
+
   # Encoding for storing local collections
-  stock = utf-8
+  #stock = utf-8
+
+
+  [well-known]
+
+  # Path where /.well-known/caldav/ is redirected
+  #caldav = '/%(user)s/caldav/'
+
+  # Path where /.well-known/carddav/ is redirected
+  #carddav = '/%(user)s/carddav/'
 
 
   [auth]
+
   # Authentication method
   # Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | remote_user | custom
-  type = None
+  #type = None
 
   # Custom authentication handler
-  custom_handler =
+  #custom_handler =
 
   # Htpasswd filename
-  htpasswd_filename = /etc/radicale/users
+  #htpasswd_filename = /etc/radicale/users
+
   # Htpasswd encryption method
-  # Value: plain | sha1 | crypt
-  htpasswd_encryption = crypt
+  # Value: plain | sha1 | ssha | crypt | bcrypt | md5
+  #htpasswd_encryption = crypt
 
   # LDAP server URL, with protocol and port
-  ldap_url = ldap://localhost:389/
+  #ldap_url = ldap://localhost:389/
+
   # LDAP base path
-  ldap_base = ou=users,dc=example,dc=com
+  #ldap_base = ou=users,dc=example,dc=com
+
   # LDAP login attribute
-  ldap_attribute = uid
+  #ldap_attribute = uid
+
   # LDAP filter string
   # placed as X in a query of the form (&(...)X)
   # example: (objectCategory=Person)(objectClass=User)(memberOf=cn=calenderusers,ou=users,dc=example,dc=org)
   # leave empty if no additional filter is needed
-  ldap_filter =
+  #ldap_filter =
+
   # LDAP dn for initial login, used if LDAP server does not allow anonymous searches
   # Leave empty if searches are anonymous
-  ldap_binddn =
+  #ldap_binddn =
+
   # LDAP password for initial login, used with ldap_binddn
-  ldap_password =
+  #ldap_password =
+
   # LDAP scope of the search
-  ldap_scope = OneLevel
+  #ldap_scope = OneLevel
 
   # IMAP Configuration
-  imap_hostname = localhost
-  imap_port = 143
-  imap_ssl = False
+  #imap_hostname = localhost
+  #imap_port = 143
+  #imap_ssl = False
 
   # PAM group user should be member of
-  pam_group_membership =
+  #pam_group_membership =
 
   # Path to the Courier Authdaemon socket
-  courier_socket =
+  #courier_socket =
 
   # HTTP authentication request URL endpoint
-  http_url =
+  #http_url =
   # POST parameter to use for username
-  http_user_parameter =
+  #http_user_parameter =
   # POST parameter to use for password
-  http_password_parameter =
+  #http_password_parameter =
 
 
   [git]
+
   # Git default options
-  committer = Radicale <radicale@example.com>
+  #committer = Radicale <radicale@example.com>
 
 
   [rights]
+
   # Rights backend
   # Value: None | authenticated | owner_only | owner_write | from_file | custom
-  type = None
+  #type = None
 
   # Custom rights handler
-  custom_handler =
+  #custom_handler =
 
   # File for rights management from_file
-  file = ~/.config/radicale/rights
+  #file = ~/.config/radicale/rights
 
 
   [storage]
+
   # Storage backend
   # -------
   # WARNING: ONLY "filesystem" IS DOCUMENTED AND TESTED,
   #          OTHER BACKENDS ARE NOT READY FOR PRODUCTION.
   # -------
   # Value: filesystem | multifilesystem | database | custom
-  type = filesystem
+  #type = filesystem
 
   # Custom storage handler
-  custom_handler =
+  #custom_handler =
 
   # Folder for storing local collections, created if not present
-  filesystem_folder = ~/.config/radicale/collections
+  #filesystem_folder = ~/.config/radicale/collections
 
   # Database URL for SQLAlchemy
   # dialect+driver://user:password@host/dbname[?key=value..]
   # For example: sqlite:///var/db/radicale.db, postgresql://user:password@localhost/radicale
   # See http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#sqlalchemy.create_engine
-  database_url =
+  #database_url =
 
 
   [logging]
+
   # Logging configuration file
   # If no config is given, simple information is printed on the standard output
   # For more information about the syntax of the configuration file, see:
   # http://docs.python.org/library/logging.config.html
-  config = /etc/radicale/logging
+  #config = /etc/radicale/logging
   # Set the default logging level to debug
-  debug = False
+  #debug = False
   # Store all environment variables (including those set in the shell)
-  full_environment = False
+  #full_environment = False
 
+
+  [headers]
 
   # Additional HTTP headers
-  #[headers]
   #Access-Control-Allow-Origin = *
 
 This configuration file is read each time the server is launched. If some
@@ -1125,6 +1161,9 @@ Crypt Support
 With the htpasswd access, many encryption methods are available, and crypt is the
 default one in Radicale. Unfortunately, the ``crypt`` module is unavailable on
 Windows, you have to pick another method on this OS.
+
+Additional ``md5`` and ``bcrypt`` versions are available when the ``passlib``
+module is installed.
 
 IMAP Authentication
 -------------------
