@@ -55,8 +55,8 @@ else:
 
 DEFINED_RIGHTS = {
     "authenticated": "[rw]\nuser:.+\ncollection:.*\npermission:rw",
-    "owner_write": "[r]\nuser:.+\ncollection:.*\npermission:r\n"
-                   "[w]\nuser:.+\ncollection:^%(login)s(/.*)?$\npermission:w",
+    "owner_write": "[w]\nuser:.+\ncollection:^%(login)s(/.*)?$\npermission:rw"
+                   "[r]\nuser:.+\ncollection:.*\npermission:r\n",
     "owner_only": "[rw]\nuser:.+\ncollection:^%(login)s(/.*)?$\npermission:rw",
 }
 
@@ -89,8 +89,7 @@ def _read_from_sections(user, collection_url, permission):
             re_collection = re_collection.format(*user_match.groups())
             if re.match(re_collection, collection_url):
                 log.LOGGER.debug("Section '%s' matches" % section)
-                if permission in regex.get(section, "permission"):
-                    return True
+                return permission in regex.get(section, "permission")
             else:
                 log.LOGGER.debug("Section '%s' does not match" % section)
     return False
@@ -99,7 +98,8 @@ def _read_from_sections(user, collection_url, permission):
 def authorized(user, collection, permission):
     """Check if the user is allowed to read or write the collection.
 
-       If the user is empty it checks for anonymous rights
+    If the user is empty, check for anonymous rights.
+
     """
     collection_url = collection.url.rstrip("/") or "/"
     if collection_url in (".well-known/carddav", ".well-known/caldav"):
