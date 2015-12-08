@@ -99,5 +99,8 @@ Radicale has been packaged for:
 - `Ubuntu <http://packages.ubuntu.com/radicale>`_ by the MOTU and Jonas
   Smedegaard
 
+Radicale is also `available on Cloudron
+<https://cloudron.io/button.html?app=org.radicale.cloudronapp>`_.
+
 If you are interested in creating packages for other Linux distributions, read
 the `"Contribute" page </contribute/>`_.
