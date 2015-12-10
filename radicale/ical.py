@@ -355,7 +355,7 @@ class Collection(object):
             text, (Timezone, Event, Todo, Journal, Card), name)
         for new_item in new_items.values():
             if new_item.name not in self.items:
-                self.items[new_item] = new_item
+                self.items[new_item.name] = new_item
         self.write()
 
     def remove(self, name):
