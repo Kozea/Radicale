@@ -118,7 +118,11 @@ def run():
         os.umask(0)
         os.chdir("/")
         os.setsid()
-        sys.stdout = sys.stderr = open(os.devnull, "w")
+        with open(os.devnull, "r") as null_in:
+            os.dup2(null_in.fileno(), sys.stdin.fileno())
+        with open(os.devnull, "w") as null_out:
+            os.dup2(null_out.fileno(), sys.stdout.fileno())
+            os.dup2(null_out.fileno(), sys.stderr.fileno())
 
     # Register exit function
     def cleanup():
