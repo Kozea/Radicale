@@ -57,7 +57,7 @@ VERSION = "1.0.1"
 # tries to access information they don't have rights to
 NOT_ALLOWED = (client.FORBIDDEN, {}, None)
 
-WELL_KNOWN_RE = re.compile(r"/.well-known/(carddav|caldav)/?")
+WELL_KNOWN_RE = re.compile(r"/\.well-known/(carddav|caldav)/?$")
 
 
 class HTTPServer(wsgiref.simple_server.WSGIServer, object):
