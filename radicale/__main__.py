@@ -105,7 +105,8 @@ def run():
         if pid:
             sys.exit()
         elif config.get("server", "pid"):
-            open(config.get("server", "pid"), "w").write(str(os.getpid()))
+            with open(config.get("server", "pid"), "w") as pid_file:
+                pid_file.write(str(os.getpid()))
         sys.stdout = sys.stderr = open(os.devnull, "w")
 
     # Register exit function
