@@ -114,6 +114,10 @@ def run():
         if config.get("server", "pid"):
             with os.fdopen(pid_fd, "w") as pid_file:
                 pid_file.write(str(os.getpid()))
+        # Decouple environment
+        os.umask(0)
+        os.chdir("/")
+        os.setsid()
         sys.stdout = sys.stderr = open(os.devnull, "w")
 
     # Register exit function
