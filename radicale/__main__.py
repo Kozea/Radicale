@@ -99,13 +99,20 @@ def run():
 
     # Fork if Radicale is launched as daemon
     if config.getboolean("server", "daemon"):
-        if os.path.exists(config.get("server", "pid")):
-            raise OSError("PID file exists: %s" % config.get("server", "pid"))
+        # Check and create PID file in a race-free manner
+        if config.get("server", "pid"):
+            try:
+                pid_fd = os.open(config.get("server", "pid"),
+                                 os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            except:
+                raise OSError("PID file exists: %s" %
+                              config.get("server", "pid"))
         pid = os.fork()
         if pid:
             sys.exit()
-        elif config.get("server", "pid"):
-            with open(config.get("server", "pid"), "w") as pid_file:
+        # Write PID
+        if config.get("server", "pid"):
+            with os.fdopen(pid_fd, "w") as pid_file:
                 pid_file.write(str(os.getpid()))
         sys.stdout = sys.stderr = open(os.devnull, "w")
 
