@@ -65,7 +65,10 @@ def _read_from_sections(user, collection_url, permission):
     """Get regex sections."""
     filename = os.path.expanduser(config.get("rights", "file"))
     rights_type = config.get("rights", "type").lower()
-    regex = ConfigParser({"login": user, "path": collection_url})
+    # Prevent "regex injection"
+    user_escaped = re.escape(user)
+    collection_url_escaped = re.escape(collection_url)
+    regex = ConfigParser({"login": user_escaped, "path": collection_url_escaped})
     if rights_type in DEFINED_RIGHTS:
         log.LOGGER.debug("Rights type '%s'" % rights_type)
         regex.readfp(StringIO(DEFINED_RIGHTS[rights_type]))
