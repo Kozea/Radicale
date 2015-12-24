@@ -267,7 +267,7 @@ class Application(object):
         path = environ["PATH_INFO"]
 
         # Get function corresponding to method
-        function = getattr(self, environ["REQUEST_METHOD"].lower())
+        function = getattr(self, "do_%s" % environ["REQUEST_METHOD"].upper())
 
         # Ask authentication backend to check rights
         authorization = environ.get("HTTP_AUTHORIZATION", None)
@@ -325,8 +325,8 @@ class Application(object):
 
         if is_valid_user and (
                 (read_allowed_items or write_allowed_items) or
-                (is_authenticated and function == self.propfind) or
-                function == self.options):
+                (is_authenticated and function == self.do_PROPFIND) or
+                function == self.do_OPTIONS):
             status, headers, answer = function(
                 environ, read_allowed_items, write_allowed_items, content,
                 user)
@@ -365,8 +365,8 @@ class Application(object):
     # All these functions must have the same parameters, some are useless
     # pylint: disable=W0612,W0613,R0201
 
-    def delete(self, environ, read_collections, write_collections, content,
-               user):
+    def do_DELETE(self, environ, read_collections, write_collections, content,
+                  user):
         """Manage DELETE request."""
         if not len(write_collections):
             return NOT_ALLOWED
@@ -392,7 +392,8 @@ class Application(object):
         # No item or ETag precondition not verified, do not delete item
         return client.PRECONDITION_FAILED, {}, None
 
-    def get(self, environ, read_collections, write_collections, content, user):
+    def do_GET(self, environ, read_collections, write_collections, content,
+               user):
         """Manage GET request.
 
         In Radicale, GET requests create collections when the URL is not
@@ -449,15 +450,15 @@ class Application(object):
         answer = answer_text.encode(self.encoding)
         return client.OK, headers, answer
 
-    def head(self, environ, read_collections, write_collections, content,
-             user):
+    def do_HEAD(self, environ, read_collections, write_collections, content,
+                user):
         """Manage HEAD request."""
         status, headers, answer = self.get(
             environ, read_collections, write_collections, content, user)
         return status, headers, None
 
-    def mkcalendar(self, environ, read_collections, write_collections, content,
-                   user):
+    def do_MKCALENDAR(self, environ, read_collections, write_collections,
+                      content, user):
         """Manage MKCALENDAR request."""
         if not len(write_collections):
             return NOT_ALLOWED
@@ -475,8 +476,8 @@ class Application(object):
             collection.write()
         return client.CREATED, {}, None
 
-    def mkcol(self, environ, read_collections, write_collections, content,
-              user):
+    def do_MKCOL(self, environ, read_collections, write_collections, content,
+                 user):
         """Manage MKCOL request."""
         if not len(write_collections):
             return NOT_ALLOWED
@@ -490,8 +491,8 @@ class Application(object):
         collection.write()
         return client.CREATED, {}, None
 
-    def move(self, environ, read_collections, write_collections, content,
-             user):
+    def do_MOVE(self, environ, read_collections, write_collections, content,
+                user):
         """Manage MOVE request."""
         if not len(write_collections):
             return NOT_ALLOWED
@@ -526,8 +527,8 @@ class Application(object):
             # Moving collections, not supported
             return client.FORBIDDEN, {}, None
 
-    def options(self, environ, read_collections, write_collections, content,
-                user):
+    def do_OPTIONS(self, environ, read_collections, write_collections,
+                   content, user):
         """Manage OPTIONS request."""
         headers = {
             "Allow": ("DELETE, HEAD, GET, MKCALENDAR, MKCOL, MOVE, "
@@ -535,8 +536,8 @@ class Application(object):
             "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol"}
         return client.OK, headers, None
 
-    def propfind(self, environ, read_collections, write_collections, content,
-                 user):
+    def do_PROPFIND(self, environ, read_collections, write_collections,
+                    content, user):
         """Manage PROPFIND request."""
         # Rights is handled by collection in xmlutils.propfind
         headers = {
@@ -547,8 +548,8 @@ class Application(object):
             environ["PATH_INFO"], content, collections, user)
         return client.MULTI_STATUS, headers, answer
 
-    def proppatch(self, environ, read_collections, write_collections, content,
-                  user):
+    def do_PROPPATCH(self, environ, read_collections, write_collections,
+                     content, user):
         """Manage PROPPATCH request."""
         if not len(write_collections):
             return NOT_ALLOWED
@@ -562,7 +563,8 @@ class Application(object):
             "Content-Type": "text/xml"}
         return client.MULTI_STATUS, headers, answer
 
-    def put(self, environ, read_collections, write_collections, content, user):
+    def do_PUT(self, environ, read_collections, write_collections, content,
+               user):
         """Manage PUT request."""
         if not len(write_collections):
             return NOT_ALLOWED
@@ -597,8 +599,8 @@ class Application(object):
             status = client.PRECONDITION_FAILED
         return status, headers, None
 
-    def report(self, environ, read_collections, write_collections, content,
-               user):
+    def do_REPORT(self, environ, read_collections, write_collections, content,
+                  user):
         """Manage REPORT request."""
         if not len(read_collections):
             return NOT_ALLOWED
