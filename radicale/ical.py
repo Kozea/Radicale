@@ -26,12 +26,13 @@ Define the main classes of a collection as seen from the server.
 """
 
 import os
-import posixpath
 import hashlib
 import re
 from uuid import uuid4
 from random import randint
 from contextlib import contextmanager
+
+from . import pathutils
 
 
 def serialize(tag, headers=(), items=()):
@@ -183,8 +184,9 @@ class Collection(object):
 
         """
         self.encoding = "utf-8"
-        split_path = path.split("/")
-        self.path = path if path != "." else ""
+        # path should already be sanitized
+        self.path = pathutils.sanitize_path(path).strip("/")
+        split_path = self.path.split("/")
         if principal and split_path and self.is_node(self.path):
             # Already existing principal collection
             self.owner = split_path[0]
@@ -215,8 +217,8 @@ class Collection(object):
         if path is None:
             return []
 
-        # First do normpath and then strip, to prevent access to FOLDER/../
-        sane_path = posixpath.normpath(path.replace(os.sep, "/")).strip("/")
+        # path should already be sanitized
+        sane_path = pathutils.sanitize_path(path).strip("/")
         attributes = sane_path.split("/")
         if not attributes:
             return []
