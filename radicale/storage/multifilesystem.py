@@ -30,13 +30,14 @@ import sys
 from . import filesystem
 from .. import ical
 from .. import log
+from .. import pathutils
 
 
 class Collection(filesystem.Collection):
     """Collection stored in several files per calendar."""
     def _create_dirs(self):
-        if not os.path.exists(self._path):
-            os.makedirs(self._path)
+        if not os.path.exists(self._filesystem_path):
+            os.makedirs(self._filesystem_path)
 
     @property
     def headers(self):
@@ -52,17 +53,28 @@ class Collection(filesystem.Collection):
             name = (
                 component.name if sys.version_info[0] >= 3 else
                 component.name.encode(filesystem.FILESYSTEM_ENCODING))
-            path = os.path.join(self._path, name)
-            with filesystem.open(path, "w") as fd:
+            if not pathutils.is_safe_filesystem_path_component(name):
+                log.LOGGER.debug(
+                    "Can't tranlate name safely to filesystem, "
+                    "skipping component: %s", name)
+                continue
+            filesystem_path = os.path.join(self._filesystem_path, name)
+            with filesystem.open(filesystem_path, "w") as fd:
                 fd.write(text)
 
     def delete(self):
-        shutil.rmtree(self._path)
+        shutil.rmtree(self._filesystem_path)
         os.remove(self._props_path)
 
     def remove(self, name):
-        if os.path.exists(os.path.join(self._path, name)):
-            os.remove(os.path.join(self._path, name))
+        if not pathutils.is_safe_filesystem_path_component(name):
+            log.LOGGER.debug(
+                "Can't tranlate name safely to filesystem, "
+                "skipping component: %s", name)
+            return
+        filesystem_path = os.path.join(self._filesystem_path, name)
+        if os.path.exists(filesystem_path):
+            os.remove(filesystem_path)
 
     @property
     def text(self):
@@ -70,14 +82,14 @@ class Collection(filesystem.Collection):
             ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card)
         items = set()
         try:
-            filenames = os.listdir(self._path)
+            filenames = os.listdir(self._filesystem_path)
         except (OSError, IOError) as e:
             log.LOGGER.info('Error while reading collection %r: %r'
-                            % (self._path, e))
+                            % (self._filesystem_path, e))
             return ""
 
         for filename in filenames:
-            path = os.path.join(self._path, filename)
+            path = os.path.join(self._filesystem_path, filename)
             try:
                 with filesystem.open(path) as fd:
                     items.update(self._parse(fd.read(), components))
@@ -90,17 +102,21 @@ class Collection(filesystem.Collection):
 
     @classmethod
     def is_node(cls, path):
-        path = os.path.join(filesystem.FOLDER, path.replace("/", os.sep))
-        return os.path.isdir(path) and not os.path.exists(path + ".props")
+        filesystem_path = pathutils.path_to_filesystem(path,
+                                                       filesystem.FOLDER)
+        return (os.path.isdir(filesystem_path) and
+                not os.path.exists(filesystem_path + ".props"))
 
     @classmethod
     def is_leaf(cls, path):
-        path = os.path.join(filesystem.FOLDER, path.replace("/", os.sep))
-        return os.path.isdir(path) and os.path.exists(path + ".props")
+        filesystem_path = pathutils.path_to_filesystem(path,
+                                                       filesystem.FOLDER)
+        return (os.path.isdir(filesystem_path) and
+                os.path.exists(path + ".props"))
 
     @property
     def last_modified(self):
         last = max([
-            os.path.getmtime(os.path.join(self._path, filename))
-            for filename in os.listdir(self._path)] or [0])
+            os.path.getmtime(os.path.join(self._filesystem_path, filename))
+            for filename in os.listdir(self._filesystem_path)] or [0])
         return time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime(last))

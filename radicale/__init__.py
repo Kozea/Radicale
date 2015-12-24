@@ -32,7 +32,6 @@ import os
 import sys
 import pprint
 import base64
-import posixpath
 import socket
 import ssl
 import wsgiref.simple_server
@@ -48,7 +47,7 @@ except ImportError:
     from urlparse import urlparse
 # pylint: enable=F0401,E0611
 
-from . import auth, config, ical, log, rights, storage, xmlutils
+from . import auth, config, ical, log, pathutils, rights, storage, xmlutils
 
 
 VERSION = "1.0.1"
@@ -177,12 +176,9 @@ class Application(object):
 
     @staticmethod
     def sanitize_uri(uri):
-        """Unquote and remove /../ to prevent access to other data."""
+        """Unquote and make absolute to prevent access to other data."""
         uri = unquote(uri)
-        trailing_slash = "/" if uri.endswith("/") else ""
-        uri = posixpath.normpath(uri)
-        trailing_slash = "" if uri == "/" else trailing_slash
-        return uri + trailing_slash
+        return pathutils.sanitize_path(uri)
 
     def collect_allowed_items(self, items, user):
         """Get items from request that user is allowed to access."""
@@ -249,20 +245,24 @@ class Application(object):
         headers = pprint.pformat(self.headers_log(environ))
         log.LOGGER.debug("Request headers:\n%s" % headers)
 
+        # Strip base_prefix from request URI
         base_prefix = config.get("server", "base_prefix")
         if environ["PATH_INFO"].startswith(base_prefix):
-            # Sanitize request URI
-            environ["PATH_INFO"] = self.sanitize_uri(
-                "/%s" % environ["PATH_INFO"][len(base_prefix):])
-            log.LOGGER.debug("Sanitized path: %s", environ["PATH_INFO"])
+            environ["PATH_INFO"] = environ["PATH_INFO"][len(base_prefix):]
         elif config.get("server", "can_skip_base_prefix"):
             log.LOGGER.debug(
-                "Skipped already sanitized path: %s", environ["PATH_INFO"])
+                "Prefix already stripped from path: %s", environ["PATH_INFO"])
         else:
             # Request path not starting with base_prefix, not allowed
             log.LOGGER.debug(
                 "Path not starting with prefix: %s", environ["PATH_INFO"])
-            environ["PATH_INFO"] = None
+            status, headers, _ = NOT_ALLOWED
+            start_response(status, list(headers.items()))
+            return []
+
+        # Sanitize request URI
+        environ["PATH_INFO"] = self.sanitize_uri(environ["PATH_INFO"])
+        log.LOGGER.debug("Sanitized path: %s", environ["PATH_INFO"])
 
         path = environ["PATH_INFO"]
 
