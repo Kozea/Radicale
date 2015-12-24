@@ -265,7 +265,9 @@ class Application(object):
             # Request path not starting with base_prefix, not allowed
             log.LOGGER.debug(
                 "Path not starting with prefix: %s", environ["PATH_INFO"])
-            environ["PATH_INFO"] = None
+            status, headers, _ = NOT_ALLOWED
+            start_response(status, list(headers.items()))
+            return []
 
         # Sanitize request URI
         environ["PATH_INFO"] = self.sanitize_uri(environ["PATH_INFO"])
