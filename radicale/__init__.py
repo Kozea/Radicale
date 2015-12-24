@@ -32,7 +32,6 @@ import os
 import sys
 import pprint
 import base64
-import posixpath
 import socket
 import ssl
 import wsgiref.simple_server
@@ -48,7 +47,7 @@ except ImportError:
     from urlparse import urlparse
 # pylint: enable=F0401,E0611
 
-from . import auth, config, ical, log, rights, storage, xmlutils
+from . import auth, config, ical, log, pathutils, rights, storage, xmlutils
 
 
 VERSION = "1.0.1"
@@ -179,15 +178,7 @@ class Application(object):
     def sanitize_uri(uri):
         """Unquote and make absolute to prevent access to other data."""
         uri = unquote(uri)
-        trailing_slash = "/" if uri.endswith("/") else ""
-        uri = posixpath.normpath(uri)
-        new_uri = "/"
-        for part in uri.split("/"):
-            if not part or part in (".", ".."):
-                continue
-            new_uri = posixpath.join(new_uri, part)
-        trailing_slash = "" if new_uri.endswith("/") else trailing_slash
-        return new_uri + trailing_slash
+        return pathutils.sanitize_path(uri)
 
     def collect_allowed_items(self, items, user):
         """Get items from request that user is allowed to access."""
