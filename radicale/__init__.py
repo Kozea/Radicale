@@ -177,12 +177,17 @@ class Application(object):
 
     @staticmethod
     def sanitize_uri(uri):
-        """Unquote and remove /../ to prevent access to other data."""
+        """Unquote and make absolute to prevent access to other data."""
         uri = unquote(uri)
         trailing_slash = "/" if uri.endswith("/") else ""
         uri = posixpath.normpath(uri)
-        trailing_slash = "" if uri == "/" else trailing_slash
-        return uri + trailing_slash
+        new_uri = "/"
+        for part in uri.split("/"):
+            if not part or part in (".", ".."):
+                continue
+            new_uri = posixpath.join(new_uri, part)
+        trailing_slash = "" if new_uri.endswith("/") else trailing_slash
+        return new_uri + trailing_slash
 
     def collect_allowed_items(self, items, user):
         """Get items from request that user is allowed to access."""
