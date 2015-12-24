@@ -29,7 +29,7 @@ import time
 import sys
 from contextlib import contextmanager
 
-from .. import config, ical, pathutils
+from .. import config, ical, log, pathutils
 
 
 FOLDER = os.path.expanduser(config.get("storage", "filesystem_folder"))
@@ -100,6 +100,12 @@ class Collection(ical.Collection):
         filesystem_path = pathutils.path_to_filesystem(path, FOLDER)
         _, directories, files = next(os.walk(filesystem_path))
         for filename in directories + files:
+            # make sure that the local filename can be translated
+            # into an internal path
+            if not pathutils.is_safe_path_component(filename):
+                log.LOGGER.debug("Skipping unsupported filename: %s",
+                                 filename)
+                continue
             rel_filename = posixpath.join(path, filename)
             if cls.is_node(rel_filename) or cls.is_leaf(rel_filename):
                 yield cls(rel_filename)

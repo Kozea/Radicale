@@ -40,6 +40,18 @@ def sanitize_path(path):
     return new_path + trailing_slash
 
 
+def is_safe_path_component(path):
+    """Checks if path is a single component of a path and is safe to join"""
+    if not path:
+        return False
+    head, _ = posixpath.split(path)
+    if head:
+        return False
+    if path in (".", ".."):
+        return False
+    return True
+
+
 def is_safe_filesystem_path_component(path):
     """Checks if path is a single component of a local filesystem path
        and is safe to join"""
