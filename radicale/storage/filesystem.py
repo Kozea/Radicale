@@ -28,7 +28,8 @@ import json
 import time
 import sys
 from contextlib import contextmanager
-from .. import config, ical
+
+from .. import config, ical, pathutils
 
 
 FOLDER = os.path.expanduser(config.get("storage", "filesystem_folder"))
@@ -63,41 +64,41 @@ def open(path, mode="r"):
 class Collection(ical.Collection):
     """Collection stored in a flat ical file."""
     @property
-    def _path(self):
+    def _filesystem_path(self):
         """Absolute path of the file at local ``path``."""
-        return os.path.join(FOLDER, self.path.replace("/", os.sep))
+        return pathutils.path_to_filesystem(self.path, FOLDER)
 
     @property
     def _props_path(self):
         """Absolute path of the file storing the collection properties."""
-        return self._path + ".props"
+        return self._filesystem_path + ".props"
 
     def _create_dirs(self):
         """Create folder storing the collection if absent."""
-        if not os.path.exists(os.path.dirname(self._path)):
-            os.makedirs(os.path.dirname(self._path))
+        if not os.path.exists(os.path.dirname(self._filesystem_path)):
+            os.makedirs(os.path.dirname(self._filesystem_path))
 
     def save(self, text):
         self._create_dirs()
-        with open(self._path, "w") as fd:
+        with open(self._filesystem_path, "w") as fd:
             fd.write(text)
 
     def delete(self):
-        os.remove(self._path)
+        os.remove(self._filesystem_path)
         os.remove(self._props_path)
 
     @property
     def text(self):
         try:
-            with open(self._path) as fd:
+            with open(self._filesystem_path) as fd:
                 return fd.read()
         except IOError:
             return ""
 
     @classmethod
     def children(cls, path):
-        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
-        _, directories, files = next(os.walk(abs_path))
+        filesystem_path = pathutils.path_to_filesystem(path, FOLDER)
+        _, directories, files = next(os.walk(filesystem_path))
         for filename in directories + files:
             rel_filename = posixpath.join(path, filename)
             if cls.is_node(rel_filename) or cls.is_leaf(rel_filename):
@@ -105,17 +106,19 @@ class Collection(ical.Collection):
 
     @classmethod
     def is_node(cls, path):
-        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
-        return os.path.isdir(abs_path)
+        filesystem_path = pathutils.path_to_filesystem(path, FOLDER)
+        return os.path.isdir(filesystem_path)
 
     @classmethod
     def is_leaf(cls, path):
-        abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
-        return os.path.isfile(abs_path) and not abs_path.endswith(".props")
+        filesystem_path = pathutils.path_to_filesystem(path, FOLDER)
+        return (os.path.isfile(filesystem_path) and not
+                filesystem_path.endswith(".props"))
 
     @property
     def last_modified(self):
-        modification_time = time.gmtime(os.path.getmtime(self._path))
+        modification_time = \
+            time.gmtime(os.path.getmtime(self._filesystem_path))
         return time.strftime("%a, %d %b %Y %H:%M:%S +0000", modification_time)
 
     @property
