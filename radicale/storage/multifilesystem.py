@@ -53,6 +53,11 @@ class Collection(filesystem.Collection):
             name = (
                 component.name if sys.version_info[0] >= 3 else
                 component.name.encode(filesystem.FILESYSTEM_ENCODING))
+            if not pathutils.is_safe_filesystem_path_component(name):
+                log.LOGGER.debug(
+                    "Can't tranlate name safely to filesystem, "
+                    "skipping component: %s", name)
+                continue
             filesystem_path = os.path.join(self._filesystem_path, name)
             with filesystem.open(filesystem_path, "w") as fd:
                 fd.write(text)
@@ -62,6 +67,11 @@ class Collection(filesystem.Collection):
         os.remove(self._props_path)
 
     def remove(self, name):
+        if not pathutils.is_safe_filesystem_path_component(name):
+            log.LOGGER.debug(
+                "Can't tranlate name safely to filesystem, "
+                "skipping component: %s", name)
+            return
         filesystem_path = os.path.join(self._filesystem_path, name)
         if os.path.exists(filesystem_path):
             os.remove(filesystem_path)
