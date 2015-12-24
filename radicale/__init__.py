@@ -254,20 +254,22 @@ class Application(object):
         headers = pprint.pformat(self.headers_log(environ))
         log.LOGGER.debug("Request headers:\n%s" % headers)
 
+        # Strip base_prefix from request URI
         base_prefix = config.get("server", "base_prefix")
         if environ["PATH_INFO"].startswith(base_prefix):
-            # Sanitize request URI
-            environ["PATH_INFO"] = self.sanitize_uri(
-                "/%s" % environ["PATH_INFO"][len(base_prefix):])
-            log.LOGGER.debug("Sanitized path: %s", environ["PATH_INFO"])
+            environ["PATH_INFO"] = environ["PATH_INFO"][len(base_prefix):]
         elif config.get("server", "can_skip_base_prefix"):
             log.LOGGER.debug(
-                "Skipped already sanitized path: %s", environ["PATH_INFO"])
+                "Prefix already stripped from path: %s", environ["PATH_INFO"])
         else:
             # Request path not starting with base_prefix, not allowed
             log.LOGGER.debug(
                 "Path not starting with prefix: %s", environ["PATH_INFO"])
             environ["PATH_INFO"] = None
+
+        # Sanitize request URI
+        environ["PATH_INFO"] = self.sanitize_uri(environ["PATH_INFO"])
+        log.LOGGER.debug("Sanitized path: %s", environ["PATH_INFO"])
 
         path = environ["PATH_INFO"]
 
