@@ -44,6 +44,9 @@ def load():
         module = getattr(root_module, auth_type)
     # Override auth.is_authenticated
     sys.modules[__name__].is_authenticated = module.is_authenticated
+    # Override auth.is_in_group if available
+    if hasattr(module, 'is_in_group'):
+        sys.modules[__name__].is_in_group = module.is_in_group
     return module
 
 
@@ -54,3 +57,13 @@ def is_authenticated(user, password):
 
     """
     return True  # Default is always True: no authentication
+
+
+def is_in_group(user, group):
+    """Check if the user is in the aforementioned group.
+
+    This method is overriden if an auth module providing group support is
+    loaded.
+
+    """
+    return False # Default is always False: user in no group

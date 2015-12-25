@@ -91,3 +91,44 @@ def is_authenticated(user, password):
             GROUP_MEMBERSHIP)
 
     return False
+
+
+def is_in_group(user, group):
+    """Check if the user is in the aforementioned group."""
+
+    # Check whether the user exists in the PAM system
+    try:
+        pwd.getpwnam(user).pw_uid
+    except KeyError:
+        log.LOGGER.debug("User %s not found" % user)
+        return False
+    else:
+        log.LOGGER.debug("User %s found" % user)
+
+    # Check whether the group exists
+    try:
+        # Obtain supplementary groups
+        members = grp.getgrnam(group).gr_mem
+    except KeyError:
+        log.LOGGER.debug(
+            "Group %s doesn't exist" %group)
+        return False
+
+    # Check whether the user exists
+    try:
+        # Get user primary group
+        primary_group = grp.getgrgid(pwd.getpwnam(user).pw_gid).gr_name
+    except KeyError:
+        log.LOGGER.debug("The PAM user (%s) doesn't exist" % user)
+        return False
+
+    # Check whether the user belongs to the required group
+    # (primary or supplementary)
+    if primary_group == group or user in members:
+        log.LOGGER.debug(
+            "The PAM user belongs to the required group (%s)" %group)
+        return True
+    else:
+        log.LOGGER.debug(
+            "The PAM user doesn't belong to the required group (%s)" %group)
+        return False

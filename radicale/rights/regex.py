@@ -42,14 +42,14 @@ import re
 import sys
 import os.path
 
-from .. import config, log
+from .. import config, log, auth
 
 # Manage Python2/3 different modules
 if sys.version_info[0] == 2:
-    from ConfigParser import ConfigParser
+    from ConfigParser import ConfigParser, NoOptionError
     from StringIO import StringIO
 else:
-    from configparser import ConfigParser
+    from configparser import ConfigParser, NoOptionError
     from io import StringIO
 
 
@@ -84,6 +84,13 @@ def _read_from_sections(user, collection_url, permission):
     for section in regex.sections():
         re_user = regex.get(section, "user")
         re_collection = regex.get(section, "collection")
+        group = []
+        try:
+            group = regex.get(section, "group", [])
+        except NoOptionError:
+            pass
+        if group:
+            group = [ x.strip() for x in group.split(',') ]
         log.LOGGER.debug(
             "Test if '%s:%s' matches against '%s:%s' from section '%s'" % (
                 user, collection_url, re_user, re_collection, section))
@@ -91,9 +98,10 @@ def _read_from_sections(user, collection_url, permission):
         if user_match:
             re_collection = re_collection.format(*user_match.groups())
             if re.match(re_collection, collection_url):
-                log.LOGGER.debug("Section '%s' matches" % section)
-                if permission in regex.get(section, "permission"):
-                    return True
+                if any(map(lambda g: auth.is_in_group(user, g), group)):
+                    log.LOGGER.debug("Section '%s' matches" % section)
+                    if permission in regex.get(section, "permission"):
+                        return True
             else:
                 log.LOGGER.debug("Section '%s' does not match" % section)
     return False
