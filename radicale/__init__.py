@@ -280,6 +280,11 @@ class Application(object):
             user = environ.get("REMOTE_USER")
             password = None
 
+        if user is not None and config.getboolean("auth", "user_strip_at"):
+            m = re.match('(\w+)@', user)
+            if m is not None:
+                user = m.group(1)
+
         well_known = WELL_KNOWN_RE.match(path)
         if well_known:
             redirect = config.get("well-known", well_known.group(1))
