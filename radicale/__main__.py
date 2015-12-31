@@ -102,11 +102,12 @@ def run():
         # Check and create PID file in a race-free manner
         if config.get("server", "pid"):
             try:
-                pid_fd = os.open(config.get("server", "pid"),
-                                 os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                pid_fd = os.open(
+                    config.get("server", "pid"),
+                    os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             except:
-                raise OSError("PID file exists: %s" %
-                              config.get("server", "pid"))
+                raise OSError(
+                    "PID file exists: %s" % config.get("server", "pid"))
         pid = os.fork()
         if pid:
             sys.exit()

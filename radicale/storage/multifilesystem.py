@@ -84,8 +84,9 @@ class Collection(filesystem.Collection):
         try:
             filenames = os.listdir(self._filesystem_path)
         except (OSError, IOError) as e:
-            log.LOGGER.info('Error while reading collection %r: %r'
-                            % (self._filesystem_path, e))
+            log.LOGGER.info(
+                'Error while reading collection %r: %r' % (
+                    self._filesystem_path, e))
             return ""
 
         for filename in filenames:
@@ -94,25 +95,24 @@ class Collection(filesystem.Collection):
                 with filesystem.open(path) as fd:
                     items.update(self._parse(fd.read(), components))
             except (OSError, IOError) as e:
-                log.LOGGER.warning('Error while reading item %r: %r'
-                                   % (path, e))
+                log.LOGGER.warning(
+                    'Error while reading item %r: %r' % (path, e))
 
         return ical.serialize(
             self.tag, self.headers, sorted(items, key=lambda x: x.name))
 
     @classmethod
     def is_node(cls, path):
-        filesystem_path = pathutils.path_to_filesystem(path,
-                                                       filesystem.FOLDER)
-        return (os.path.isdir(filesystem_path) and
-                not os.path.exists(filesystem_path + ".props"))
+        filesystem_path = pathutils.path_to_filesystem(path, filesystem.FOLDER)
+        return (
+            os.path.isdir(filesystem_path) and
+            not os.path.exists(filesystem_path + ".props"))
 
     @classmethod
     def is_leaf(cls, path):
-        filesystem_path = pathutils.path_to_filesystem(path,
-                                                       filesystem.FOLDER)
-        return (os.path.isdir(filesystem_path) and
-                os.path.exists(path + ".props"))
+        filesystem_path = pathutils.path_to_filesystem(path, filesystem.FOLDER)
+        return (
+            os.path.isdir(filesystem_path) and os.path.exists(path + ".props"))
 
     @property
     def last_modified(self):

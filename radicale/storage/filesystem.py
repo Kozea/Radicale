@@ -103,8 +103,7 @@ class Collection(ical.Collection):
             # make sure that the local filename can be translated
             # into an internal path
             if not pathutils.is_safe_path_component(filename):
-                log.LOGGER.debug("Skipping unsupported filename: %s",
-                                 filename)
+                log.LOGGER.debug("Skipping unsupported filename: %s", filename)
                 continue
             rel_filename = posixpath.join(path, filename)
             if cls.is_node(rel_filename) or cls.is_leaf(rel_filename):
@@ -118,13 +117,14 @@ class Collection(ical.Collection):
     @classmethod
     def is_leaf(cls, path):
         filesystem_path = pathutils.path_to_filesystem(path, FOLDER)
-        return (os.path.isfile(filesystem_path) and not
-                filesystem_path.endswith(".props"))
+        return (
+            os.path.isfile(filesystem_path) and not
+            filesystem_path.endswith(".props"))
 
     @property
     def last_modified(self):
-        modification_time = \
-            time.gmtime(os.path.getmtime(self._filesystem_path))
+        modification_time = time.gmtime(
+            os.path.getmtime(self._filesystem_path))
         return time.strftime("%a, %d %b %Y %H:%M:%S +0000", modification_time)
 
     @property

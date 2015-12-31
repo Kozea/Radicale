@@ -23,6 +23,7 @@ This module loads the rights backend, according to the rights
 configuration.
 
 """
+
 import sys
 
 from .. import config
@@ -43,7 +44,9 @@ def load():
 
 
 def authorized(user, collection, right):
-    """ Check when user has rights on collection
-    This method is overriden when appropriate rights backend loaded.
+    """Check that an user has rights on a  collection.
+
+    This method is overriden when the appropriate rights backend is loaded.
+
     """
     raise NotImplementedError()
