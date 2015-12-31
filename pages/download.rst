@@ -26,6 +26,9 @@ Source Packages
 
 You can download the Radicale package for each release:
 
+- `Radicale-1.1.tar.gz
+  <http://pypi.python.org/packages/source/R/Radicale/Radicale-1.1.tar.gz>`_
+  (47 KiB)
 - `Radicale-1.0.1.tar.gz
   <http://pypi.python.org/packages/source/R/Radicale/Radicale-1.0.1.tar.gz>`_
   (42 KiB)
@@ -100,7 +103,8 @@ Radicale has been packaged for:
   Smedegaard
 
 Radicale is also `available on Cloudron
-<https://cloudron.io/button.html?app=org.radicale.cloudronapp>`_.
+<https://cloudron.io/button.html?app=org.radicale.cloudronapp>`_ and has a
+Dockerfile.
 
 If you are interested in creating packages for other Linux distributions, read
 the `"Contribute" page </contribute/>`_.
