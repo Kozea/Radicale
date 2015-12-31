@@ -3,8 +3,38 @@
 ======
 
 
-1.0.1
-=====
+1.1 - Law of Nature
+===================
+
+One feature in this release is **not backward compatible**:
+
+* Use the first matching section for rights (inspired from daald)
+
+Now, the first section matching the path and current user in your custom rights
+file is used. In the previous versions, the most permissive rights of all the
+matching sections were applied. This new behaviour gives a simple way to make
+specific rules at the top of the file independant from the generic ones.
+
+Many **improvements in this release are related to security**, you should
+upgrade Radicale as soon as possible:
+
+* Improve the regex used for well-known URIs (by Unrud)
+* Prevent regex injection in rights management (by Unrud)
+* Prevent crafted HTTP request from calling arbitrary functions (by Unrud)
+* Improve URI sanitation and conversion to filesystem path (by Unrud)
+* Decouple the daemon from its parent environment (by Unrud)
+
+Some bugs have been fixed and little enhancements have been added:
+
+* Assign new items to corret key (by Unrud)
+* Avoid race condition in PID file creation (by Unrud)
+* Improve the docker version (by cdpb)
+* Encode message and commiter for git commits
+* Test with Python 3.5
+
+
+1.0.1 - Sunflower Again
+=======================
 
 * Update the version because of a **stupid** "feature"™ of PyPI
 
@@ -15,8 +45,8 @@
 * Enhanced performances (by Mathieu Dupuy)
 * Add MD5-APR1 and BCRYPT for htpasswd-based authentication (by Jan-Philip Gehrcke)
 * Use PAM service (by Stephen Paul Weber)
-* Don't discard PROPPATCH on empty collections (Markus Unterwaditzer)
-* Write the path of the collection in the git message (Matthew Monaco)
+* Don't discard PROPPATCH on empty collections (by Markus Unterwaditzer)
+* Write the path of the collection in the git message (by Matthew Monaco)
 * Tests launched on Travis
 
 
