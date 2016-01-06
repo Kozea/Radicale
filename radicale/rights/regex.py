@@ -55,26 +55,26 @@ else:
 
 DEFINED_RIGHTS = {
     "authenticated": """
-        [rw]
-        user:.+
-        collection:.*
-        permission:rw
+[rw]
+user:.+
+collection:.*
+permission:rw
     """,
     "owner_write": """
-        [w]
-        user:.+
-        collection:^%(login)s(/.*)?$
-        permission:rw
-        [r]
-        user:.+
-        collection:.*
-        permission:r
+[w]
+user:.+
+collection:^%(login)s(/.*)?$
+permission:rw
+[r]
+user:.+
+collection:.*
+permission:r
     """,
     "owner_only": """
-        [rw]
-        user:.+
-        collection:^%(login)s(/.*)?$
-        permission:rw
+[rw]
+user:.+
+collection:^%(login)s(/.*)?$
+permission:rw
     """}
 
 
