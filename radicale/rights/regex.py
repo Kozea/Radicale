@@ -54,11 +54,28 @@ else:
 
 
 DEFINED_RIGHTS = {
-    "authenticated": "[rw]\nuser:.+\ncollection:.*\npermission:rw",
-    "owner_write": "[w]\nuser:.+\ncollection:^%(login)s(/.*)?$\npermission:rw"
-                   "[r]\nuser:.+\ncollection:.*\npermission:r\n",
-    "owner_only": "[rw]\nuser:.+\ncollection:^%(login)s(/.*)?$\npermission:rw",
-}
+    "authenticated": """
+        [rw]
+        user:.+
+        collection:.*
+        permission:rw
+    """,
+    "owner_write": """
+        [w]
+        user:.+
+        collection:^%(login)s(/.*)?$
+        permission:rw
+        [r]
+        user:.+
+        collection:.*
+        permission:r
+    """,
+    "owner_only": """
+        [rw]
+        user:.+
+        collection:^%(login)s(/.*)?$
+        permission:rw
+    """}
 
 
 def _read_from_sections(user, collection_url, permission):
