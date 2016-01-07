@@ -3,6 +3,12 @@
 ======
 
 
+1.1.1 - Second Law of Nature
+============================
+
+* Fix the owner_write rights rule
+
+
 1.1 - Law of Nature
 ===================
 
