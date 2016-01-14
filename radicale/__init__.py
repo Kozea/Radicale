@@ -453,7 +453,7 @@ class Application(object):
     def do_HEAD(self, environ, read_collections, write_collections, content,
                 user):
         """Manage HEAD request."""
-        status, headers, answer = self.get(
+        status, headers, answer = self.do_GET(
             environ, read_collections, write_collections, content, user)
         return status, headers, None
 
