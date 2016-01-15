@@ -80,7 +80,7 @@ class Collection(filesystem.Collection):
     def text(self):
         components = (
             ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card)
-        items = set()
+        items = {}
         try:
             filenames = os.listdir(self._filesystem_path)
         except (OSError, IOError) as e:
@@ -99,7 +99,7 @@ class Collection(filesystem.Collection):
                     'Error while reading item %r: %r' % (path, e))
 
         return ical.serialize(
-            self.tag, self.headers, sorted(items, key=lambda x: x.name))
+            self.tag, self.headers, sorted(items.values(), key=lambda x: x.name))
 
     @classmethod
     def is_node(cls, path):
