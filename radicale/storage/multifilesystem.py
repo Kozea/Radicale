@@ -72,6 +72,8 @@ class Collection(filesystem.Collection):
                 "Can't tranlate name safely to filesystem, "
                 "skipping component: %s", name)
             return
+        if name in self.items:
+            del self.items[name]
         filesystem_path = os.path.join(self._filesystem_path, name)
         if os.path.exists(filesystem_path):
             os.remove(filesystem_path)
