@@ -312,7 +312,7 @@ class Collection(object):
 
         If ``name`` is given, give this name to new items in ``text``.
 
-        Return a list of items.
+        Return a dict of items.
 
         """
         item_tags = {}
