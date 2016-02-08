@@ -1,0 +1,57 @@
+---
+layout: default
+---
+
+<header>
+  <h1>{{ site.title }}</h1>
+  <p>{{ site.description }}</p>
+</header>
+
+<main>
+  <section>
+    <h2>About {{ site.title }}</h2>
+
+    <p>
+      {{ site.title }} is a small but powerful CalDAV (calendars, todo-lists) and CardDAV
+      (contacts) server, that:
+    </p>
+
+    <ul>
+      <li>Shares calendars through CalDAV, WebDAV and HTTP.
+      <li>Shares contacts through CardDAV, WebDAV and HTTP.
+      <li>Supports events, todos, journal entries and business cards.
+      <li>Works out-of-the-box, no installation nor configuration required.
+      <li>Warns users on concurrent editing.
+      <li>Can limit access by authentication.
+      <li>Can secure connections.
+      <li>Works with many CalDAV and CardDAV clients.
+      <li>Is GPLv3-licensed free software.
+    </ul>
+  </section>
+
+  <section>
+    <h2>Installation</h2>
+    <p>
+      {{ site.title }} is really easy to install and works out-of-the-box.
+    </p>
+
+    <pre>$ pip install radicale
+$ radicale --verbose
+Listening to localhost port 5232
+Radicale server ready</pre>
+  </section>
+
+  <section>
+    <h2>What's new?</h2>
+    {% if site.github.releases %}
+      {% assign releases = site.github.releases | where:"draft",false | sort:"created_at" | reverse %}
+      {% assign latest_release = releases[0] %}
+    {% endif %}
+    <p>
+      Latest version of {{ site.title }} is {{ latest_release.tag_name }},
+      released on {{ latest_release.created_at | date: "%B %-d, %Y" }}
+      (<a href="https://github.com/Kozea/{{ site.title }}/blob/master/NEWS.rst">changelog</a>).
+    </p>
+    <aside><a href="/news/">Read latest news…</a></aside>
+  </section>
+</main>
