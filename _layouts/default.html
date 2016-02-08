@@ -3,19 +3,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width initial-scale=1">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<link href="/css/main.css" media="screen" rel="stylesheet">
-<link href="/feed.xml" type="application/rss+xml" rel="alternate" title="RSS feed" />
+<link href="{{ site.baseurl }}/css/main.css" media="screen" rel="stylesheet">
+<link href="{{ site.baseurl }}/feed.xml" type="application/rss+xml" rel="alternate" title="RSS feed" />
 
 <title>{% if page.title %}{{ page.title }} - {% endif %}{{ site.title }} - {{ site.description }}</title>
 <meta name="description" content="{{ site.description }}">
 
 <nav>
   <ul>
-    <li><a href="/">Home</a></h1>
-    <li><a href="/news/">News</a>
-    <li><a href="/documentation/">Documentation</a>
-    <li><a href="/contribute/">Contribute</a>
-    <li><a href="/download/">Download</a>
+    <li><a href="{{ site.baseurl }}/">Home</a></h1>
+    <li><a href="{{ site.baseurl }}/news/">News</a>
+    <li><a href="{{ site.baseurl }}/documentation/">Documentation</a>
+    <li><a href="{{ site.baseurl }}/contribute/">Contribute</a>
+    <li><a href="{{ site.baseurl }}/download/">Download</a>
   </ul>
 </nav>
 
