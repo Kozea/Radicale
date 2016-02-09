@@ -6,7 +6,7 @@ title: Two Features and One New Roadmap
 Two features have just reached the master branch, and the roadmap has been
 refreshed.
 
-###LDAP Authentication
+### LDAP Authentication
 
 Thanks to Corentin, the LDAP authentication is now included in Radicale. The
 support is experimental and may suffer unstable connexions and security
@@ -17,7 +17,7 @@ No SSL support is included yet, but this may be quite easy to add. By the way,
 serious authentication methods will rely on a "real" HTTP server, as soon as
 Radicale supports WSGI.
 
-###Journal Entries
+### Journal Entries
 
 Mehmet asked for the journal entries (aka. notes or memos) support, that's
 done! This also was an occasion to clean some code in the iCal parser, and to
@@ -25,7 +25,7 @@ add a much better management of multi-lines entries. People experiencing crazy
 `X-RADICALE-NAME` entries can now clean their files, Radicale won't pollute
 them again.
 
-###New Roadmap
+### New Roadmap
 
 Except from htpasswd and LDAP, most of the authentication backends (database,
 SASL, PAM, user groups) are not really easy to include in Radicale. The easiest
@@ -43,7 +43,7 @@ After that, 0.8 may add CalDAV rights and filters, while 1.0 will draw
 thousands of rainbows and pink unicorns (WebDAV sync, CardDAV, Freebusy). A lot
 of funky work is waiting for you, hackers!
 
-###Bugs
+### Bugs
 
 Many bugs have also been fixed, most of them due to the owner-less calendars
 support. Radicale 0.6 may be out in a few weeks, you should spend some time
