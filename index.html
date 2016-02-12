@@ -43,7 +43,7 @@ Radicale server ready</pre>
 
   <section>
     <h2>What's new?</h2>
-    {% assign releases = site.github.releases where:"draft",false sort:"created_at" %}
+    {% assign releases = site.github.releases | where:"draft",false | reverse %}
     <p>
       Latest version of {{ site.title }} is {{ releases[0].tag_name }},
       released on {{ releases[0].created_at | date: "%B %-d, %Y" }}
