@@ -59,4 +59,4 @@ Radicale is also
 and has a Dockerfile.
 
 If you are interested in creating packages for other Linux distributions, read
-the ["Contribute" page](/contribute/).
+the ["Contribute" page]({{ site.baseurl }}/contribute/).
