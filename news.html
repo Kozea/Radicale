@@ -5,13 +5,10 @@ permalink: /news/
 ---
 
 <main>
-  {% if site.github.releases %}
-    {% assign releases = site.github.releases | where:"draft",false | sort:"created_at" | reverse %}
-    {% assign latest_release = releases[0] %}
-  {% endif %}
+  {% assign releases = site.github.releases where:"draft",false sort:"created_at" reversed %}
   <p>
-    Latest version of {{ site.title }} is {{ latest_release.tag_name }},
-    released on {{ latest_release.created_at | date: "%B %-d, %Y" }}
+    Latest version of {{ site.title }} is {{ release[0].tag_name }},
+    released on {{ releases[0].created_at | date: "%B %-d, %Y" }}
     (<a href="https://github.com/Kozea/{{ site.title }}/blob/master/NEWS.rst">changelog</a>).
   </p>
 
