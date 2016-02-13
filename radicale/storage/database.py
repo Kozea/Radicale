@@ -36,7 +36,8 @@ from .. import config, ical
 # pylint: disable=C0103
 Base = declarative_base()
 Session = sessionmaker()
-Session.configure(bind=create_engine(config.get("storage", "database_url")))
+engine = create_engine(config.get("storage", "database_url"))
+Session.configure(bind=engine)
 # pylint: enable=C0103
 
 
@@ -98,6 +99,10 @@ class DBProperty(Base):
 
     collection = relationship(
         "DBCollection", backref="properties", cascade="delete")
+
+
+# Create the missing tables if necessary
+Base.metadata.create_all(bind=engine)
 
 
 class Collection(ical.Collection):
