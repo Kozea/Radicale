@@ -883,7 +883,7 @@ Radicale comes with a `WSGI <http://wsgi.org/>`_ support, allowing the software
 to be used behind any HTTP server supporting WSGI such as Apache.
 
 Moreover, it is possible to use `flup
-<http://trac.saddi.com/flup/wiki/FlupServers>`_ to wrap Radicale into a CGI,
+<https://pypi.python.org/pypi/flup/>`_ to wrap Radicale into a CGI,
 FastCGI, SCGI or AJP application, and therefore use it with Lighttpd, Nginx or
 even Tomcat.
 
