@@ -23,10 +23,12 @@ Multi files per calendar filesystem storage backend.
 """
 
 import os
+import json
 import shutil
 import time
 import sys
 
+from contextlib import contextmanager
 from . import filesystem
 from .. import ical
 from .. import log
@@ -122,3 +124,20 @@ class Collection(filesystem.Collection):
             os.path.getmtime(os.path.join(self._filesystem_path, filename))
             for filename in os.listdir(self._filesystem_path)] or [0])
         return time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime(last))
+
+    @property
+    @contextmanager
+    def props(self):
+        # On enter
+        properties = {}
+        if os.path.exists(self._props_path):
+            with open(self._props_path) as prop_file:
+                properties.update(json.load(prop_file))
+        old_properties = properties.copy()
+        yield properties
+        # On exit
+        if os.path.exists(self._props_path):
+          self._create_dirs()
+          if old_properties != properties:
+              with open(self._props_path, "w") as prop_file:
+                  json.dump(properties, prop_file)
