@@ -24,7 +24,9 @@ SQLAlchemy storage backend.
 import time
 from datetime import datetime
 from contextlib import contextmanager
-from sqlalchemy import create_engine, Column, Unicode, Integer, ForeignKey
+from sqlalchemy import (
+    create_engine, Column, Unicode, Integer, ForeignKey, ForeignKeyConstraint
+)
 from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -57,7 +59,9 @@ class DBItem(Base):
 
     name = Column(Unicode, primary_key=True)
     tag = Column(Unicode)
-    collection_path = Column(Unicode, ForeignKey("collection.path"))
+    collection_path = Column(
+        Unicode, ForeignKey("collection.path"), primary_key=True
+    )
 
     collection = relationship("DBCollection", backref="items")
 
@@ -77,14 +81,24 @@ class DBHeader(Base):
 class DBLine(Base):
     """Table of item's lines."""
     __tablename__ = "line"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['item_name', 'item_collection_path'],
+            ['item.name', 'item.collection_path']
+        ),
+    )
 
     name = Column(Unicode)
     value = Column(Unicode)
-    item_name = Column(Unicode, ForeignKey("item.name"))
+    item_name = Column(Unicode)
+    item_collection_path = Column(Unicode)
     timestamp = Column(
         Integer, default=lambda: time.time() * 10 ** 6, primary_key=True)
 
-    item = relationship("DBItem", backref="lines", order_by=timestamp)
+    item = relationship(
+        "DBItem", backref="lines", order_by=timestamp,
+        remote_side=[item_name, item_collection_path]
+    )
 
 
 class DBProperty(Base):
@@ -150,7 +164,20 @@ class Collection(ical.Collection):
         else:
             db_collection = DBCollection()
             db_collection.path = self.path
-            db_collection.parent_path = "/".join(self.path.split("/")[:-1])
+            current_path = ""
+            parent = None
+            for part in self.path.strip("/").split("/")[:-1]:
+                current_path += ("/%s" % part) if current_path else part
+                node = self.session.query(DBCollection).get(current_path)
+                if node is None:
+                    node = DBCollection()
+                    node.path = current_path
+                    if parent is not None:
+                        node.parent = parent
+                    self.session.add(node)
+                    parent = node
+            if parent is not None:
+                db_collection.parent = parent
             self.session.add(db_collection)
 
         for header in self.headers:
@@ -169,7 +196,7 @@ class Collection(ical.Collection):
             for line in ical.unfold(item.text):
                 db_line = DBLine()
                 db_line.name, db_line.value = line.split(":", 1)
-                db_line.item_name = item.name
+                db_line.item = db_item
                 self.session.add(db_line)
 
     def delete(self):
