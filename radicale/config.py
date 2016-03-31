@@ -69,7 +69,8 @@ INITIAL_CONFIG = {
         "courier_socket": "",
         "http_url": "",
         "http_user_parameter": "",
-        "http_password_parameter": ""},
+        "http_password_parameter": "",
+        "user_strip_at": "False"},
     "git": {
         "committer": "Radicale <radicale@example.com>"},
     "rights": {
