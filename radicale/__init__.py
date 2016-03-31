@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
-# Copyright © 2008-2015 Guillaume Ayoub
+# Copyright © 2008-2016 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,28 +27,20 @@ should have been included in this package.
 """
 
 import os
-import sys
 import pprint
 import base64
 import socket
 import ssl
 import wsgiref.simple_server
 import re
-# Manage Python2/3 different modules
-# pylint: disable=F0401,E0611
-try:
-    from http import client
-    from urllib.parse import unquote, urlparse
-except ImportError:
-    import httplib as client
-    from urllib import unquote
-    from urlparse import urlparse
-# pylint: enable=F0401,E0611
+
+from http import client
+from urllib.parse import unquote, urlparse
 
 from . import auth, config, ical, log, pathutils, rights, storage, xmlutils
 
 
-VERSION = "1.1.1"
+VERSION = "2.0.0-pre"
 
 # Standard "not allowed" response that is returned when an authenticated user
 # tries to access information they don't have rights to
@@ -69,7 +59,7 @@ class HTTPServer(wsgiref.simple_server.WSGIServer, object):
             self.address_family = socket.AF_INET6
 
         # Do not bind and activate, as we might change socket options
-        super(HTTPServer, self).__init__(address, handler, False)
+        super().__init__(address, handler, False)
 
         if ipv6:
             # Only allow IPv6 connections to the IPv6 socket
@@ -84,7 +74,7 @@ class HTTPSServer(HTTPServer):
     """HTTPS server."""
     def __init__(self, address, handler):
         """Create server by wrapping HTTP socket in an SSL socket."""
-        super(HTTPSServer, self).__init__(address, handler, False)
+        super().__init__(address, handler, False)
 
         # Test if the SSL files can be read
         for name in ("certificate", "key"):
@@ -102,9 +92,8 @@ class HTTPSServer(HTTPServer):
             keyfile=config.get("server", "key"),
             ssl_version=getattr(
                 ssl, config.get("server", "protocol"), ssl.PROTOCOL_SSLv23))
-        # add ciphers argument only if supported (Python 2.7+)
-        if sys.version_info >= (2, 7):
-            ssl_kwargs["ciphers"] = config.get("server", "ciphers") or None
+
+        ssl_kwargs["ciphers"] = config.get("server", "ciphers") or None
 
         self.socket = ssl.wrap_socket(self.socket, **ssl_kwargs)
 
@@ -120,8 +109,8 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     def address_string(self):
         """Client address, formatted for logging."""
         if config.getboolean("server", "dns_lookup"):
-            return \
-                wsgiref.simple_server.WSGIRequestHandler.address_string(self)
+            return (
+                wsgiref.simple_server.WSGIRequestHandler.address_string(self))
         else:
             return self.client_address[0]
 
@@ -130,7 +119,7 @@ class Application(object):
     """WSGI application managing collections."""
     def __init__(self):
         """Initialize application."""
-        super(Application, self).__init__()
+        super().__init__()
         auth.load()
         storage.load()
         rights.load()
@@ -295,8 +284,6 @@ class Application(object):
             else:
                 status = client.SEE_OTHER
                 log.LOGGER.info("/.well-known/ redirection to: %s" % redirect)
-                if sys.version_info < (3, 0):
-                    redirect = redirect.encode(self.encoding)
                 headers = {"Location": redirect}
             status = "%i %s" % (
                 status, client.responses.get(status, "Unknown"))

@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2012-2013 Guillaume Ayoub
+# Copyright © 2012-2016 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,8 +28,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 os.environ["RADICALE_CONFIG"] = os.path.join(os.path.dirname(
     os.path.dirname(__file__)), "config")
 
-from .helpers import get_file_content
-
 
 class BaseTest(object):
     """Base class for tests."""
@@ -46,8 +42,7 @@ class BaseTest(object):
         args["REQUEST_METHOD"] = method.upper()
         args["PATH_INFO"] = path
         if data:
-            if sys.version_info[0] >= 3:
-                data = data.encode("utf-8")
+            data = data.encode("utf-8")
             args["wsgi.input"] = BytesIO(data)
             args["CONTENT_LENGTH"] = str(len(data))
         self.application._answer = self.application(args, self.start_response)

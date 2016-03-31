@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2011-2013 Guillaume Ayoub
+# Copyright © 2011-2016 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -162,14 +160,14 @@ def run():
     # Create a socket pair to notify the select syscall of program shutdown
     # This is not available in python < 3.5 on Windows
     if hasattr(socket, "socketpair"):
-        shutdown_program_socket_in, shutdown_program_socket_out = \
-            socket.socketpair()
+        shutdown_program_socket_in, shutdown_program_socket_out = (
+            socket.socketpair())
     else:
         shutdown_program_socket_in, shutdown_program_socket_out = None, None
 
     # SIGTERM and SIGINT (aka KeyboardInterrupt) should just mark this for
     # shutdown
-    def shutdown(*_):
+    def shutdown(*args):
         if shutdown_program[0]:
             # Ignore following signals
             return
@@ -192,11 +190,11 @@ def run():
     log.LOGGER.debug("Radicale server ready")
     while not shutdown_program[0]:
         try:
-            rlist, _, xlist = select.select(sockets, [], sockets,
-                                            select_timeout)
+            rlist, _, xlist = select.select(
+                sockets, [], sockets, select_timeout)
         except (KeyboardInterrupt, select.error):
-            # SIGINT ist handled by signal handler above
-            rlist, _, xlist = [], [], []
+            # SIGINT is handled by signal handler above
+            rlist, xlist = [], []
         if xlist:
             raise RuntimeError("Unhandled socket error")
         if rlist:

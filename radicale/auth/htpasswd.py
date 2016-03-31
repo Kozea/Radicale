@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
-# Copyright © 2008-2013 Guillaume Ayoub
+# Copyright © 2008-2016 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,7 +102,7 @@ def _bcrypt(hash_value, password):
 
 
 def _md5apr1(hash_value, password):
-    return _passlib_md5apr1.verify(password, hash_value)   
+    return _passlib_md5apr1.verify(password, hash_value)
 
 
 # Prepare mapping between encryption names and verification functions.

@@ -1,8 +1,7 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
 #
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2009-2013 Guillaume Ayoub
+# Copyright © 2009-2016 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,11 +66,7 @@ setup(
         "Intended Audience :: Information Technology",
         "License :: OSI Approved :: GNU General Public License (GPL)",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.6",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.2",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",

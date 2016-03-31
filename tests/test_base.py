@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2012-2013 Guillaume Ayoub
+# Copyright © 2012-2016 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -120,7 +118,7 @@ class TestDataBaseSystem(BaseRequests, BaseTest):
     storage_type = "database"
 
     def setup(self):
-        super(TestDataBaseSystem, self).setup()
+        super().setup()
         radicale.config.set("storage", "database_url", "sqlite://")
         from radicale.storage import database
         database.Session = sessionmaker()
@@ -134,7 +132,7 @@ class TestDataBaseSystem(BaseRequests, BaseTest):
     class TestGitFileSystem(TestFileSystem):
         """Base class for filesystem tests using Git"""
         def setup(self):
-            super(TestGitFileSystem, self).setup()
+            super().setup()
             Repo.init(self.colpath)
             from radicale.storage import filesystem
             filesystem.GIT_REPOSITORY = Repo(self.colpath)
@@ -150,7 +148,7 @@ class TestCustomStorageSystem(BaseRequests, BaseTest):
 
     def setup(self):
         """Setup function for each test."""
-        super(TestCustomStorageSystem, self).setup()
+        super().setup()
         self.colpath = tempfile.mkdtemp()
         radicale.config.set(
             "storage", "custom_handler", "tests.custom.storage")

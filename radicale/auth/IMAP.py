@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2012 Daniel Aleksandersen
 # Copyright © 2013 Nikita Koshikov
-# Copyright © 2013 Guillaume Ayoub
+# Copyright © 2013-2016 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +25,6 @@ Validating users against a modern IMAP4rev1 server that awaits STARTTLS on
 port 143. Legacy SSL (often on legacy port 993) is deprecated and thus
 unsupported. STARTTLS is enforced except if host is ``localhost`` as
 passwords are sent in PLAIN.
-
-Python 3.2 or newer is required for TLS.
 
 """
 

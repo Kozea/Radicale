@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2011 Henry-Nicolas Tourneur
 #

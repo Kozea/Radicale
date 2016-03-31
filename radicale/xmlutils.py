@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
@@ -27,23 +25,10 @@ in them for XML requests (all but PUT).
 
 """
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    # Python 2.6 has no OrderedDict, use a dict instead
-    OrderedDict = dict  # pylint: disable=C0103
-
-# Manage Python2/3 different modules
-# pylint: disable=F0401,E0611
-try:
-    from urllib.parse import unquote, urlparse
-except ImportError:
-    from urllib import unquote
-    from urlparse import urlparse
-# pylint: enable=F0401,E0611
-
 import re
 import xml.etree.ElementTree as ET
+from collections import OrderedDict
+from urllib.parse import unquote, urlparse
 
 from . import client, config, ical, rights
 
@@ -62,12 +47,7 @@ NAMESPACES_REV = {}
 
 for short, url in NAMESPACES.items():
     NAMESPACES_REV[url] = short
-    if hasattr(ET, "register_namespace"):
-        # Register namespaces cleanly with Python 2.7+ and 3.2+ ...
-        ET.register_namespace("" if short == "D" else short, url)
-    else:
-        # ... and badly with Python 2.6 and 3.1
-        ET._namespace_map[url] = short  # pylint: disable=W0212
+    ET.register_namespace("" if short == "D" else short, url)
 
 
 CLARK_TAG_REGEX = re.compile(r"""

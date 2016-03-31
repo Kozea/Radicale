@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2011 Henry-Nicolas Tourneur
+# Copyright © 2016 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +23,9 @@ Authentication based on the ``pam-python`` module.
 """
 
 import grp
-import pam
 import pwd
+
+import pam
 
 from .. import config, log
 

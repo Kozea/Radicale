@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2013 Guillaume Ayoub
 #
@@ -24,6 +22,7 @@ SQLAlchemy storage backend.
 import time
 from datetime import datetime
 from contextlib import contextmanager
+
 from sqlalchemy import create_engine, Column, Unicode, Integer, ForeignKey
 from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker, relationship
@@ -104,7 +103,7 @@ class Collection(ical.Collection):
     """Collection stored in a database."""
     def __init__(self, path, principal=False):
         self.session = Session()
-        super(Collection, self).__init__(path, principal)
+        super().__init__(path, principal)
 
     def __del__(self):
         self.session.commit()

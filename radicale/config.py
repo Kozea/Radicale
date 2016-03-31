@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008-2015 Guillaume Ayoub
+# Copyright © 2008-2016 Guillaume Ayoub
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 #
@@ -27,13 +25,8 @@ Give a configparser-like interface to read and write configuration.
 
 import os
 import sys
-# Manage Python2/3 different modules
-# pylint: disable=F0401
-try:
-    from configparser import RawConfigParser as ConfigParser
-except ImportError:
-    from ConfigParser import RawConfigParser as ConfigParser
-# pylint: enable=F0401
+
+from configparser import RawConfigParser as ConfigParser
 
 
 # Default configuration

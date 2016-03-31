@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
 #
 # This library is free software: you can redistribute it and/or modify
@@ -81,7 +79,7 @@ def is_safe_filesystem_path_component(path):
 def path_to_filesystem(path, base_folder):
     """Convert path to a local filesystem path relative to base_folder.
 
-    Conversion is done in a secure manner, or raises ValueError.
+    Conversion is done in a secure manner, or raises ``ValueError``.
 
     """
     sane_path = sanitize_path(path).strip("/")

@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
-#
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2014 Jean-Marc Martins
-# Copyright © 2014-2015 Guillaume Ayoub
+# Copyright © 2014-2016 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +25,8 @@ import json
 import shutil
 import time
 import sys
-
 from contextlib import contextmanager
+
 from . import filesystem
 from .. import ical
 from .. import log
@@ -52,9 +50,7 @@ class Collection(filesystem.Collection):
         for component in self.components:
             text = ical.serialize(
                 self.tag, self.headers, [component] + self.timezones)
-            name = (
-                component.name if sys.version_info[0] >= 3 else
-                component.name.encode(filesystem.FILESYSTEM_ENCODING))
+            name = component.name
             if not pathutils.is_safe_filesystem_path_component(name):
                 log.LOGGER.debug(
                     "Can't tranlate name safely to filesystem, "
