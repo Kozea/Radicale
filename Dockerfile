@@ -1,21 +1,25 @@
 # Radicale Dockerfile
 #
-# VERSION 0.3
+# VERSION 0.3.1
 
 FROM 	alpine:latest
 
 # Base packages
 RUN	apk update && \
 	apk upgrade && \
-	apk add ca-certificates git python python-dev py-setuptools py-pip build-base libffi-dev
+	apk add python3 python3-dev build-base libffi-dev
+
+# Python installation
+# pip
+ADD	https://bootstrap.pypa.io/get-pip.py /tmp/install/
+RUN	python3 /tmp/install/* && \
+	pip install passlib bcrypt setuptools
 
 # Radicale installation
-RUN 	pip install passlib bcrypt
-RUN	mkdir -p /data/config && \
-	cd /data
+RUN	mkdir -p /data/config
 COPY 	. /data/radicale
 COPY	config /data/config
-RUN	cd /data/radicale && python2.7 setup.py install
+RUN	cd /data/radicale && python3 setup.py install
 
 # User
 RUN 	adduser -h /home/radicale -D radicale && \
