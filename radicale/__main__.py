@@ -124,6 +124,9 @@ def run():
             os.dup2(null_out.fileno(), sys.stdout.fileno())
             os.dup2(null_out.fileno(), sys.stderr.fileno())
 
+    if config.get("storage", "umask"):
+        os.umask(int(config.get("storage", "umask")));
+
     # Register exit function
     def cleanup():
         """Remove the PID files."""

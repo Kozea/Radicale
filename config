@@ -165,6 +165,9 @@
 # Folder for storing local collections, created if not present
 #filesystem_folder = ~/.config/radicale/collections
 
+# Umask for files created by Radicale
+#umask =
+
 # Database URL for SQLAlchemy
 # dialect+driver://user:password@host/dbname[?key=value..]
 # For example: sqlite:///var/db/radicale.db, postgresql://user:password@localhost/radicale
