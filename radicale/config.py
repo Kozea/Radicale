@@ -28,6 +28,13 @@ import sys
 
 from configparser import RawConfigParser as ConfigParser
 
+# Dependency checks.
+import dep_check
+if dep_check.os_path_expanduser:
+    config_path = os.path.expanduser("~/.config/radicale")
+else:
+    config_path = ".config/radicale"
+
 
 # Default configuration
 INITIAL_CONFIG = {
@@ -75,12 +82,11 @@ INITIAL_CONFIG = {
     "rights": {
         "type": "None",
         "custom_handler": "",
-        "file": "~/.config/radicale/rights"},
+        "file": config_path + os.sep + "rights"},
     "storage": {
         "type": "filesystem",
         "custom_handler": "",
-        "filesystem_folder": os.path.expanduser(
-            "~/.config/radicale/collections"),
+        "filesystem_folder": config_path + os.sep + "collections",
         "database_url": ""},
     "logging": {
         "config": "/etc/radicale/logging",
@@ -96,7 +102,7 @@ for section, values in INITIAL_CONFIG.items():
         _CONFIG_PARSER.set(section, key, value)
 
 _CONFIG_PARSER.read("/etc/radicale/config")
-_CONFIG_PARSER.read(os.path.expanduser("~/.config/radicale/config"))
+_CONFIG_PARSER.read(config_path + os.sep + "config")
 if "RADICALE_CONFIG" in os.environ:
     _CONFIG_PARSER.read(os.environ["RADICALE_CONFIG"])
 
