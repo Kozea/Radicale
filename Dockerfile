@@ -7,7 +7,7 @@ FROM 	alpine:latest
 # Base packages
 RUN	apk update && \
 	apk upgrade && \
-	apk add python3 python3-dev build-base libffi-dev
+	apk add python3 python3-dev build-base libffi-dev ca-certificates
 
 # Python installation
 # pip
