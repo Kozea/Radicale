@@ -112,7 +112,7 @@ class Collection(filesystem.Collection):
     def is_leaf(cls, path):
         filesystem_path = pathutils.path_to_filesystem(path, filesystem.FOLDER)
         return (
-            os.path.isdir(filesystem_path) and os.path.exists(path + ".props"))
+            os.path.isdir(filesystem_path) and os.path.exists(filesystem_path + ".props"))
 
     @property
     def last_modified(self):
