@@ -73,7 +73,7 @@
 [auth]
 
 # Authentication method
-# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | remote_user | custom
+# Value: None | htpasswd | IMAP | LDAP | PAM | courier | dovecot | http | remote_user | custom
 #type = None
 
 # Custom authentication handler
@@ -121,6 +121,9 @@
 
 # Path to the Courier Authdaemon socket
 #courier_socket =
+
+# Path to the Dovecot Auth socket
+dovecot_socket =
 
 # HTTP authentication request URL endpoint
 #http_url =
