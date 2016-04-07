@@ -73,11 +73,8 @@
 [auth]
 
 # Authentication method
-# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | remote_user | custom
+# Value: None | htpasswd
 #type = None
-
-# Custom authentication handler
-#custom_handler =
 
 # Htpasswd filename
 #htpasswd_filename = /etc/radicale/users
@@ -86,64 +83,12 @@
 # Value: plain | sha1 | ssha | crypt | bcrypt | md5
 #htpasswd_encryption = crypt
 
-# LDAP server URL, with protocol and port
-#ldap_url = ldap://localhost:389/
-
-# LDAP base path
-#ldap_base = ou=users,dc=example,dc=com
-
-# LDAP login attribute
-#ldap_attribute = uid
-
-# LDAP filter string
-# placed as X in a query of the form (&(...)X)
-# example: (objectCategory=Person)(objectClass=User)(memberOf=cn=calenderusers,ou=users,dc=example,dc=org)
-# leave empty if no additional filter is needed
-#ldap_filter =
-
-# LDAP dn for initial login, used if LDAP server does not allow anonymous searches
-# Leave empty if searches are anonymous
-#ldap_binddn =
-
-# LDAP password for initial login, used with ldap_binddn
-#ldap_password =
-
-# LDAP scope of the search
-#ldap_scope = OneLevel
-
-# IMAP Configuration
-#imap_hostname = localhost
-#imap_port = 143
-#imap_ssl = False
-
-# PAM group user should be member of
-#pam_group_membership =
-
-# Path to the Courier Authdaemon socket
-#courier_socket =
-
-# HTTP authentication request URL endpoint
-#http_url =
-# POST parameter to use for username
-#http_user_parameter =
-# POST parameter to use for password
-#http_password_parameter =
-
-
-[git]
-
-# Git default options
-#committer = Radicale <radicale@example.com>
-
 
 [rights]
 
 # Rights backend
-# Value: None | authenticated | owner_only | owner_write | from_file | custom
+# Value: None | authenticated | owner_only | owner_write | from_file
 #type = None
-
-# Custom rights handler
-#custom_handler =
 
 # File for rights management from_file
 #file = ~/.config/radicale/rights
@@ -152,24 +97,11 @@
 [storage]
 
 # Storage backend
-# -------
-# WARNING: ONLY "filesystem" IS DOCUMENTED AND TESTED,
-#          OTHER BACKENDS ARE NOT READY FOR PRODUCTION.
-# -------
-# Value: filesystem | multifilesystem | database | custom
+# Value: multifilesystem
 #type = filesystem
-
-# Custom storage handler
-#custom_handler =
 
 # Folder for storing local collections, created if not present
 #filesystem_folder = ~/.config/radicale/collections
-
-# Database URL for SQLAlchemy
-# dialect+driver://user:password@host/dbname[?key=value..]
-# For example: sqlite:///var/db/radicale.db, postgresql://user:password@localhost/radicale
-# See http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#sqlalchemy.create_engine
-#database_url =
 
 
 [logging]

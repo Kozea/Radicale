@@ -49,8 +49,7 @@ def is_safe_path_component(path):
     """
     if not path:
         return False
-    head, _ = posixpath.split(path)
-    if head:
+    if posixpath.split(path)[0]:
         return False
     if path in (".", ".."):
         return False

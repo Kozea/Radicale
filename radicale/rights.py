@@ -1,7 +1,5 @@
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008 Nicolas Kandel
-# Copyright © 2008 Pascal Halter
-# Copyright © 2008-2016 Guillaume Ayoub
+# Copyright © 2012-2016 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,10 +15,13 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Rights management.
+Rights backends.
 
-Rights are based on a regex-based file whose name is specified in the config
-(section "right", key "file").
+This module loads the rights backend, according to the rights
+configuration.
+
+Default rights are based on a regex-based file whose name is specified in the
+config (section "right", key "file").
 
 Authentication login is matched against the "user" key, and collection's path
 is matched against the "collection" key. You can use Python's ConfigParser
@@ -36,19 +37,26 @@ Leading or ending slashes are trimmed from collection's path.
 
 """
 
+import os.path
 import re
 import sys
-import os.path
+from configparser import ConfigParser
+from io import StringIO
 
-from .. import config, log
+from . import config, log
 
-# Manage Python2/3 different modules
-if sys.version_info[0] == 2:
-    from ConfigParser import ConfigParser
-    from StringIO import StringIO
-else:
-    from configparser import ConfigParser
-    from io import StringIO
+
+def _load():
+    """Load the rights manager chosen in configuration."""
+    rights_type = config.get("rights", "type")
+    if rights_type == "None":
+        sys.modules[__name__].authorized = (
+            lambda user, collection, permission: True)
+    elif rights_type in DEFINED_RIGHTS or rights_type == "from_file":
+        pass  # authorized is already defined
+    else:
+        __import__(rights_type)
+        sys.modules[__name__].authorized = sys.modules[rights_type].authorized
 
 
 DEFINED_RIGHTS = {

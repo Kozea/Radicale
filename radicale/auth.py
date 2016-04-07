@@ -17,7 +17,9 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Implement htpasswd authentication.
+Authentication management.
+
+Default is htpasswd authentication.
 
 Apache's htpasswd command (httpd.apache.org/docs/programs/htpasswd.html) manages
 a file for storing user credentials. It can encrypt passwords using different
@@ -50,13 +52,26 @@ following significantly more secure schemes are parsable by Radicale:
 
 """
 
-
 import base64
 import hashlib
 import os
+import sys
+
+from . import config, log
 
 
-from .. import config
+def _load():
+    """Load the authentication manager chosen in configuration."""
+    auth_type = config.get("auth", "type")
+    log.LOGGER.debug("Authentication type is %s" % auth_type)
+    if auth_type == "None":
+        sys.modules[__name__].is_authenticated = lambda user, password: True
+    elif auth_type == "htpasswd":
+        pass  # is_authenticated is already defined
+    else:
+        __import__(auth_type)
+        sys.modules[__name__].is_authenticated = (
+            sys.modules[auth_type].is_authenticated)
 
 
 FILENAME = os.path.expanduser(config.get("auth", "htpasswd_filename"))
@@ -144,7 +159,7 @@ elif ENCRYPTION == "crypt":
 if ENCRYPTION not in _verifuncs:
     raise RuntimeError(("The htpasswd encryption method '%s' is not "
         "supported." % ENCRYPTION))
- 
+
 
 def is_authenticated(user, password):
     """Validate credentials.

@@ -45,43 +45,22 @@ INITIAL_CONFIG = {
         "can_skip_base_prefix": "False",
         "realm": "Radicale - Password Required"},
     "well-known": {
-         "caldav": "/%(user)s/caldav/",
-         "carddav": "/%(user)s/carddav/"},
+         "caldav": "/caldav/",
+         "carddav": "/carddav/"},
     "encoding": {
         "request": "utf-8",
         "stock": "utf-8"},
     "auth": {
         "type": "None",
-        "custom_handler": "",
         "htpasswd_filename": "/etc/radicale/users",
-        "htpasswd_encryption": "crypt",
-        "imap_hostname": "localhost",
-        "imap_port": "143",
-        "imap_ssl": "False",
-        "ldap_url": "ldap://localhost:389/",
-        "ldap_base": "ou=users,dc=example,dc=com",
-        "ldap_attribute": "uid",
-        "ldap_filter": "",
-        "ldap_binddn": "",
-        "ldap_password": "",
-        "ldap_scope": "OneLevel",
-        "pam_group_membership": "",
-        "courier_socket": "",
-        "http_url": "",
-        "http_user_parameter": "",
-        "http_password_parameter": ""},
-    "git": {
-        "committer": "Radicale <radicale@example.com>"},
+        "htpasswd_encryption": "crypt"},
     "rights": {
         "type": "None",
-        "custom_handler": "",
         "file": "~/.config/radicale/rights"},
     "storage": {
-        "type": "filesystem",
-        "custom_handler": "",
+        "type": "multifilesystem",
         "filesystem_folder": os.path.expanduser(
-            "~/.config/radicale/collections"),
-        "database_url": ""},
+            "~/.config/radicale/collections")},
     "logging": {
         "config": "/etc/radicale/logging",
         "debug": "False",
