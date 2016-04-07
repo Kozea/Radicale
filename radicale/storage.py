@@ -123,7 +123,7 @@ class Collection(ical.Collection):
             filenames = os.listdir(self._filesystem_path)
         except (OSError, IOError) as e:
             log.LOGGER.info(
-                'Error while reading collection %r: %r' % (
+                "Error while reading collection %r: %r" % (
                     self._filesystem_path, e))
             return ""
 
@@ -134,7 +134,7 @@ class Collection(ical.Collection):
                     items.update(self._parse(fd.read(), components))
             except (OSError, IOError) as e:
                 log.LOGGER.warning(
-                    'Error while reading item %r: %r' % (path, e))
+                    "Error while reading item %r: %r" % (path, e))
 
         return ical.serialize(
             self.tag, self.headers, sorted(items.values(), key=lambda x: x.name))
@@ -164,7 +164,8 @@ class Collection(ical.Collection):
     def is_leaf(cls, path):
         filesystem_path = pathutils.path_to_filesystem(path, FOLDER)
         return (
-            os.path.isdir(filesystem_path) and os.path.exists(path + ".props"))
+            os.path.isdir(filesystem_path) and
+            os.path.exists(filesystem_path + ".props"))
 
     @property
     def last_modified(self):

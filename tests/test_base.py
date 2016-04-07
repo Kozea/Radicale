@@ -23,10 +23,6 @@ import radicale
 import shutil
 import tempfile
 
-from dulwich.repo import Repo
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from . import BaseTest
 from .helpers import get_file_content
 
@@ -44,15 +40,16 @@ class BaseRequests(object):
         assert status == 200
         assert "Radicale works!" in answer
         # Test the creation of the collection
+        self.request(
+            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert "BEGIN:VCALENDAR" in answer
-        #assert "VERSION:2.0" in answer
         assert "END:VCALENDAR" in answer
-        #assert "PRODID:-//Radicale//NONSGML Radicale Server//EN" in answer
 
     def test_add_event(self):
         """Add an event."""
-        self.request("GET", "/calendar.ics/")
+        self.request(
+            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
         event = get_file_content("event.ics")
         path = "/calendar.ics/event.ics"
         status, headers, answer = self.request("PUT", path, event)
@@ -66,7 +63,8 @@ class BaseRequests(object):
 
     def test_add_todo(self):
         """Add a todo."""
-        self.request("GET", "/calendar.ics/")
+        self.request(
+            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
         todo = get_file_content("todo.ics")
         path = "/calendar.ics/todo.ics"
         status, headers, answer = self.request("PUT", path, todo)
@@ -79,7 +77,8 @@ class BaseRequests(object):
 
     def test_delete(self):
         """Delete an event."""
-        self.request("GET", "/calendar.ics/")
+        self.request(
+            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
         event = get_file_content("event.ics")
         path = "/calendar.ics/event.ics"
         status, headers, answer = self.request("PUT", path, event)
@@ -91,55 +90,20 @@ class BaseRequests(object):
         assert "VEVENT" not in answer
 
 
-class TestFileSystem(BaseRequests, BaseTest):
+class TestMultiFileSystem(BaseRequests, BaseTest):
     """Base class for filesystem tests."""
-    storage_type = "filesystem"
+    storage_type = "multifilesystem"
 
     def setup(self):
         """Setup function for each test."""
         self.colpath = tempfile.mkdtemp()
-        from radicale.storage import filesystem
-        filesystem.FOLDER = self.colpath
-        filesystem.GIT_REPOSITORY = None
+        from radicale import storage
+        storage.FOLDER = self.colpath
         self.application = radicale.Application()
 
     def teardown(self):
         """Teardown function for each test."""
         shutil.rmtree(self.colpath)
-
-
-class TestMultiFileSystem(TestFileSystem):
-    """Base class for multifilesystem tests."""
-    storage_type = "multifilesystem"
-
-
-class TestDataBaseSystem(BaseRequests, BaseTest):
-    """Base class for database tests"""
-    storage_type = "database"
-
-    def setup(self):
-        super().setup()
-        radicale.config.set("storage", "database_url", "sqlite://")
-        from radicale.storage import database
-        database.Session = sessionmaker()
-        database.Session.configure(bind=create_engine("sqlite://"))
-        session = database.Session()
-        for st in get_file_content("schema.sql").split(";"):
-            session.execute(st)
-        session.commit()
-        self.application = radicale.Application()
-
-    class TestGitFileSystem(TestFileSystem):
-        """Base class for filesystem tests using Git"""
-        def setup(self):
-            super().setup()
-            Repo.init(self.colpath)
-            from radicale.storage import filesystem
-            filesystem.GIT_REPOSITORY = Repo(self.colpath)
-
-
-    class TestGitMultiFileSystem(TestGitFileSystem, TestMultiFileSystem):
-        """Base class for multifilesystem tests using Git"""
 
 
 class TestCustomStorageSystem(BaseRequests, BaseTest):
@@ -150,8 +114,7 @@ class TestCustomStorageSystem(BaseRequests, BaseTest):
         """Setup function for each test."""
         super().setup()
         self.colpath = tempfile.mkdtemp()
-        radicale.config.set(
-            "storage", "custom_handler", "tests.custom.storage")
+        radicale.config.set("storage", "type", "tests.custom.storage")
         from tests.custom import storage
         storage.FOLDER = self.colpath
         storage.GIT_REPOSITORY = None

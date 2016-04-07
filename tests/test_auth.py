@@ -26,8 +26,7 @@ import os
 import radicale
 import tempfile
 
-from radicale import config
-from radicale.auth import htpasswd
+from radicale import config, auth
 
 from . import BaseTest
 
@@ -55,8 +54,8 @@ class TestBaseAuthRequests(BaseTest):
                 hashlib.sha1(b"bepo").digest()))
         config.set("auth", "type", "htpasswd")
 
-        htpasswd.FILENAME = htpasswd_file_path
-        htpasswd.ENCRYPTION = "sha1"
+        auth.FILENAME = htpasswd_file_path
+        auth.ENCRYPTION = "sha1"
 
         self.application = radicale.Application()
 
@@ -67,8 +66,7 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_custom(self):
         """Custom authentication."""
-        config.set("auth", "type", "custom")
-        config.set("auth", "custom_handler", "tests.custom.auth")
+        config.set("auth", "type", "tests.custom.auth")
         self.application = radicale.Application()
         status, headers, answer = self.request(
             "GET", "/", HTTP_AUTHORIZATION=self.userpass)

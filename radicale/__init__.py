@@ -381,13 +381,7 @@ class Application(object):
 
     def do_GET(self, environ, read_collections, write_collections, content,
                user):
-        """Manage GET request.
-
-        In Radicale, GET requests create collections when the URL is not
-        available. This is useful for clients with no MKCOL or MKCALENDAR
-        support.
-
-        """
+        """Manage GET request."""
         # Display a "Radicale works!" message if the root URL is requested
         if environ["PATH_INFO"] == "/":
             headers = {"Content-type": "text/html"}
