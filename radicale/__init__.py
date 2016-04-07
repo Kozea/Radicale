@@ -120,9 +120,9 @@ class Application(object):
     def __init__(self):
         """Initialize application."""
         super().__init__()
-        auth.load()
-        storage.load()
-        rights.load()
+        auth._load()
+        storage._load()
+        rights._load()
         self.encoding = config.get("encoding", "request")
         if config.getboolean("logging", "full_environment"):
             self.headers_log = lambda environ: environ
@@ -413,19 +413,10 @@ class Application(object):
                 etag = item.etag
             else:
                 return client.NOT_FOUND, {}, None
+        elif not collection.exists:
+            log.LOGGER.debug("Collection %s unknown" % collection.name)
+            return client.NOT_FOUND
         else:
-            # Create the collection if it does not exist
-            if not collection.exists:
-                if collection in write_collections:
-                    log.LOGGER.debug(
-                        "Creating collection %s" % collection.name)
-                    collection.write()
-                else:
-                    log.LOGGER.debug(
-                        "Collection %s not available and could not be created "
-                        "due to missing write rights" % collection.name)
-                    return NOT_ALLOWED
-
             # Get whole collection
             answer_text = collection.text
             etag = collection.etag
