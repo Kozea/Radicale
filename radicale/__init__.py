@@ -369,8 +369,7 @@ class Application(object):
             item = collection.items.get(name)
 
         if item:
-            # Evolution bug workaround
-            if_match = environ.get("HTTP_IF_MATCH", "*").replace("\\", "")
+            if_match = environ.get("HTTP_IF_MATCH", "*")
             if if_match in ("*", item.etag):
                 # No ETag precondition or precondition verified, delete item
                 answer = xmlutils.delete(environ["PATH_INFO"], collection)
@@ -548,8 +547,7 @@ class Application(object):
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
         item = collection.items.get(item_name)
 
-        # Evolution bug workaround
-        etag = environ.get("HTTP_IF_MATCH", "").replace("\\", "")
+        etag = environ.get("HTTP_IF_MATCH", "")
         match = environ.get("HTTP_IF_NONE_MATCH", "") == "*"
         if (not item and not etag) or (
                 item and ((etag or item.etag) == item.etag) and not match):
