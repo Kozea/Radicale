@@ -296,8 +296,8 @@ class Application(object):
         if is_valid_user:
             items = ical.Collection.from_path(
                 path, environ.get("HTTP_DEPTH", "0"))
-            read_allowed_items, write_allowed_items = \
-                self.collect_allowed_items(items, user)
+            read_allowed_items, write_allowed_items = (
+                self.collect_allowed_items(items, user))
         else:
             read_allowed_items, write_allowed_items = None, None
 
