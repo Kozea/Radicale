@@ -9,6 +9,8 @@
 # This file gives independant examples to help users write their own
 # configuration files. Using these examples together in the same configuration
 # file is meaningless.
+#
+# The first rule matching both user and collection patterns will be returned.
 
 # This means all users starting with "admin" may read any collection
 [admin]
