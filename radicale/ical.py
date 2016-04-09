@@ -23,14 +23,13 @@ Define the main classes of a collection as seen from the server.
 
 """
 
-import os
 import hashlib
+import os
+import posixpath
 import re
-from uuid import uuid4
-from random import randint
 from contextlib import contextmanager
-
-from . import pathutils
+from random import randint
+from uuid import uuid4
 
 
 def serialize(tag, headers=(), items=()):
@@ -50,6 +49,32 @@ def serialize(tag, headers=(), items=()):
                 lines.append("\n".join(item.text for item in part))
         lines.append("END:%s\n" % tag)
     return "\n".join(lines)
+
+
+def sanitize_path(path):
+    """Make path absolute with leading slash to prevent access to other data.
+
+    Preserve a potential trailing slash.
+
+    """
+    trailing_slash = "/" if path.endswith("/") else ""
+    path = posixpath.normpath(path)
+    new_path = "/"
+    for part in path.split("/"):
+        if not part or part in (".", ".."):
+            continue
+        new_path = posixpath.join(new_path, part)
+    trailing_slash = "" if new_path.endswith("/") else trailing_slash
+    return new_path + trailing_slash
+
+
+def clean_name(name):
+    """Clean an item name by removing slashes and leading/ending brackets."""
+    # Remove leading and ending brackets that may have been put by Outlook
+    name = name.strip("{}")
+    # Remove slashes, mostly unwanted when saving on filesystems
+    name = name.replace("/", "_")
+    return name
 
 
 def unfold(text):
@@ -80,16 +105,15 @@ class Item(object):
                 if line.startswith("X-RADICALE-NAME:"):
                     self._name = line.replace("X-RADICALE-NAME:", "").strip()
                     break
-                elif line.startswith("TZID:"):
-                    self._name = line.replace("TZID:", "").strip()
-                    break
                 elif line.startswith("UID:"):
                     self._name = line.replace("UID:", "").strip()
                     # Do not break, a ``X-RADICALE-NAME`` can appear next
+                elif line.startswith("TZID:"):
+                    self._name = line.replace("TZID:", "").strip()
+                    # Do not break, a ``X-RADICALE-NAME`` can appear next
 
         if self._name:
-            # Remove brackets that may have been put by Outlook
-            self._name = self._name.strip("{}")
+            self._name = clean_name(self._name)
             if "\nX-RADICALE-NAME:" in text:
                 for line in unfold(self.text):
                     if line.startswith("X-RADICALE-NAME:"):
@@ -97,12 +121,11 @@ class Item(object):
                             line, "X-RADICALE-NAME:%s" % self._name)
             else:
                 self.text = self.text.replace(
-                    "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
+                    "\nEND:V", "\nX-RADICALE-NAME:%s\nEND:V" % self._name)
         else:
-            # workaround to get unicode on both python2 and 3
-            self._name = uuid4().hex.encode("ascii").decode("ascii")
+            self._name = uuid4().hex
             self.text = self.text.replace(
-                "\nEND:", "\nX-RADICALE-NAME:%s\nEND:" % self._name)
+                "\nEND:V", "\nX-RADICALE-NAME:%s\nEND:V" % self._name)
 
     def __hash__(self):
         return hash(self.text)
@@ -183,7 +206,7 @@ class Collection(object):
         """
         self.encoding = "utf-8"
         # path should already be sanitized
-        self.path = pathutils.sanitize_path(path).strip("/")
+        self.path = sanitize_path(path).strip("/")
         split_path = self.path.split("/")
         if principal and split_path and self.is_node(self.path):
             # Already existing principal collection
@@ -216,7 +239,7 @@ class Collection(object):
             return []
 
         # path should already be sanitized
-        sane_path = pathutils.sanitize_path(path).strip("/")
+        sane_path = sanitize_path(path).strip("/")
         attributes = sane_path.split("/")
         if not attributes:
             return []

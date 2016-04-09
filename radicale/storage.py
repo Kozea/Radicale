@@ -34,7 +34,7 @@ import sys
 import time
 from contextlib import contextmanager
 
-from . import config, ical, log, pathutils
+from . import config, ical, log
 
 
 def _load():
@@ -52,6 +52,59 @@ FOLDER = os.path.expanduser(config.get("storage", "filesystem_folder"))
 FILESYSTEM_ENCODING = sys.getfilesystemencoding()
 
 
+def is_safe_path_component(path):
+    """Check if path is a single component of a POSIX path.
+
+    Check that the path is safe to join too.
+
+    """
+    if not path:
+        return False
+    if posixpath.split(path)[0]:
+        return False
+    if path in (".", ".."):
+        return False
+    return True
+
+
+def is_safe_filesystem_path_component(path):
+    """Check if path is a single component of a filesystem path.
+
+    Check that the path is safe to join too.
+
+    """
+    if not path:
+        return False
+    drive, _ = os.path.splitdrive(path)
+    if drive:
+        return False
+    head, _ = os.path.split(path)
+    if head:
+        return False
+    if path in (os.curdir, os.pardir):
+        return False
+    return True
+
+
+def path_to_filesystem(path):
+    """Convert path to a local filesystem path relative to base_folder.
+
+    Conversion is done in a secure manner, or raises ``ValueError``.
+
+    """
+    sane_path = ical.sanitize_path(path).strip("/")
+    safe_path = FOLDER
+    if not sane_path:
+        return safe_path
+    for part in sane_path.split("/"):
+        if not is_safe_filesystem_path_component(part):
+            log.LOGGER.debug(
+                "Can't translate path safely to filesystem: %s", path)
+            raise ValueError("Unsafe path")
+        safe_path = os.path.join(safe_path, part)
+    return safe_path
+
+
 @contextmanager
 def _open(path, mode="r"):
     """Open a file at ``path`` with encoding set in the configuration."""
@@ -65,7 +118,7 @@ class Collection(ical.Collection):
     @property
     def _filesystem_path(self):
         """Absolute path of the file at local ``path``."""
-        return pathutils.path_to_filesystem(self.path, FOLDER)
+        return path_to_filesystem(self.path)
 
     @property
     def _props_path(self):
@@ -86,7 +139,7 @@ class Collection(ical.Collection):
         item_types = (
             ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card)
         for name, component in self._parse(text, item_types).items():
-            if not pathutils.is_safe_filesystem_path_component(name):
+            if not is_safe_filesystem_path_component(name):
                 # TODO: Timezones with slashes can't be saved
                 log.LOGGER.debug(
                     "Can't tranlate name safely to filesystem, "
@@ -107,7 +160,7 @@ class Collection(ical.Collection):
         os.remove(self._props_path)
 
     def remove(self, name):
-        if not pathutils.is_safe_filesystem_path_component(name):
+        if not is_safe_filesystem_path_component(name):
             log.LOGGER.debug(
                 "Can't tranlate name safely to filesystem, "
                 "skipping component: %s", name)
@@ -145,12 +198,12 @@ class Collection(ical.Collection):
 
     @classmethod
     def children(cls, path):
-        filesystem_path = pathutils.path_to_filesystem(path, FOLDER)
+        filesystem_path = path_to_filesystem(path)
         _, directories, files = next(os.walk(filesystem_path))
         for filename in directories + files:
             # make sure that the local filename can be translated
             # into an internal path
-            if not pathutils.is_safe_path_component(filename):
+            if not is_safe_path_component(filename):
                 log.LOGGER.debug("Skipping unsupported filename: %s", filename)
                 continue
             rel_filename = posixpath.join(path, filename)
@@ -159,14 +212,14 @@ class Collection(ical.Collection):
 
     @classmethod
     def is_node(cls, path):
-        filesystem_path = pathutils.path_to_filesystem(path, FOLDER)
+        filesystem_path = path_to_filesystem(path)
         return (
             os.path.isdir(filesystem_path) and
             not os.path.exists(filesystem_path + ".props"))
 
     @classmethod
     def is_leaf(cls, path):
-        filesystem_path = pathutils.path_to_filesystem(path, FOLDER)
+        filesystem_path = path_to_filesystem(path)
         return (
             os.path.isdir(filesystem_path) and
             os.path.exists(filesystem_path + ".props"))

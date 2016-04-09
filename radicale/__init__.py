@@ -37,7 +37,7 @@ import re
 from http import client
 from urllib.parse import unquote, urlparse
 
-from . import auth, config, ical, log, pathutils, rights, storage, xmlutils
+from . import auth, config, ical, log, rights, storage, xmlutils
 
 
 VERSION = "2.0.0-pre"
@@ -167,7 +167,7 @@ class Application(object):
     def sanitize_uri(uri):
         """Unquote and make absolute to prevent access to other data."""
         uri = unquote(uri)
-        return pathutils.sanitize_path(uri)
+        return ical.sanitize_path(uri)
 
     def collect_allowed_items(self, items, user):
         """Get items from request that user is allowed to access."""
