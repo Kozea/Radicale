@@ -56,6 +56,7 @@ setup(
     packages=["radicale"],
     provides=["radicale"],
     scripts=["bin/radicale"],
+    install_requires=["vobject"],
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",

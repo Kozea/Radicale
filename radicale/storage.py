@@ -140,7 +140,6 @@ class Collection(ical.Collection):
             ical.Timezone, ical.Event, ical.Todo, ical.Journal, ical.Card)
         for name, component in self._parse(text, item_types).items():
             if not is_safe_filesystem_path_component(name):
-                # TODO: Timezones with slashes can't be saved
                 log.LOGGER.debug(
                     "Can't tranlate name safely to filesystem, "
                     "skipping component: %s", name)

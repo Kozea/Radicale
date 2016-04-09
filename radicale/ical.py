@@ -31,6 +31,8 @@ from contextlib import contextmanager
 from random import randint
 from uuid import uuid4
 
+import vobject
+
 
 def serialize(tag, headers=(), items=()):
     """Return a text corresponding to given collection ``tag``.
@@ -41,14 +43,15 @@ def serialize(tag, headers=(), items=()):
     """
     items = sorted(items, key=lambda x: x.name)
     if tag == "VADDRESSBOOK":
-        lines = [item.text for item in items]
+        lines = [item.text.strip() for item in items]
     else:
         lines = ["BEGIN:%s" % tag]
         for part in (headers, items):
             if part:
-                lines.append("\n".join(item.text for item in part))
-        lines.append("END:%s\n" % tag)
-    return "\n".join(lines)
+                lines.append("\r\n".join(item.text.strip() for item in part))
+        lines.append("END:%s" % tag)
+    lines.append("")
+    return "\r\n".join(lines)
 
 
 def sanitize_path(path):
@@ -90,8 +93,13 @@ class Item(object):
     """Internal iCal item."""
     def __init__(self, text, name=None):
         """Initialize object from ``text`` and different ``kwargs``."""
-        self.text = text
+        self.component = vobject.readOne(text)
         self._name = name
+
+        if not self.component.name:
+            # Header
+            self._name = next(self.component.lines()).name.lower()
+            return
 
         # We must synchronize the name in the text and in the object.
         # An item must have a name, determined in order by:
@@ -101,31 +109,20 @@ class Item(object):
         # - the ``UID`` iCal property (for Events, Todos, Journals)
         # - the ``TZID`` iCal property (for Timezones)
         if not self._name:
-            for line in unfold(self.text):
-                if line.startswith("X-RADICALE-NAME:"):
-                    self._name = line.replace("X-RADICALE-NAME:", "").strip()
-                    break
-                elif line.startswith("UID:"):
-                    self._name = line.replace("UID:", "").strip()
-                    # Do not break, a ``X-RADICALE-NAME`` can appear next
-                elif line.startswith("TZID:"):
-                    self._name = line.replace("TZID:", "").strip()
-                    # Do not break, a ``X-RADICALE-NAME`` can appear next
+            for line in self.component.lines():
+                if line.name in ("X-RADICALE-NAME", "UID", "TZID"):
+                    self._name = line.value
+                    if line.name == "X-RADICALE-NAME":
+                        break
 
         if self._name:
             self._name = clean_name(self._name)
-            if "\nX-RADICALE-NAME:" in text:
-                for line in unfold(self.text):
-                    if line.startswith("X-RADICALE-NAME:"):
-                        self.text = self.text.replace(
-                            line, "X-RADICALE-NAME:%s" % self._name)
-            else:
-                self.text = self.text.replace(
-                    "\nEND:V", "\nX-RADICALE-NAME:%s\nEND:V" % self._name)
         else:
             self._name = uuid4().hex
-            self.text = self.text.replace(
-                "\nEND:V", "\nX-RADICALE-NAME:%s\nEND:V" % self._name)
+
+        if not hasattr(self.component, "x_radicale_name"):
+            self.component.add("X-RADICALE-NAME")
+        self.component.x_radicale_name.value = self._name
 
     def __hash__(self):
         return hash(self.text)
@@ -152,6 +149,11 @@ class Item(object):
 
         """
         return self._name
+
+    @property
+    def text(self):
+        """Item serialized text."""
+        return self.component.serialize()
 
 
 class Header(Item):
@@ -335,35 +337,21 @@ class Collection(object):
         Return a dict of items.
 
         """
-        item_tags = {}
-        for item_type in item_types:
-            item_tags[item_type.tag] = item_type
-
+        item_tags = {item_type.tag: item_type for item_type in item_types}
         items = {}
-
-        lines = unfold(text)
-        in_item = False
-
-        for line in lines:
-            if line.startswith("BEGIN:") and not in_item:
-                item_tag = line.replace("BEGIN:", "").strip()
-                if item_tag in item_tags:
-                    in_item = True
-                    item_lines = []
-
-            if in_item:
-                item_lines.append(line)
-                if line.startswith("END:%s" % item_tag):
-                    in_item = False
-                    item_type = item_tags[item_tag]
-                    item_text = "\n".join(item_lines)
-                    item_name = None if item_tag == "VTIMEZONE" else name
-                    item = item_type(item_text, item_name)
-                    if item.name in items:
-                        text = "\n".join((item.text, items[item.name].text))
-                        items[item.name] = item_type(text, item.name)
-                    else:
-                        items[item.name] = item
+        root = next(vobject.readComponents(text))
+        components = (
+            root.components() if root.name in ("VADDRESSBOOK", "VCALENDAR")
+            else (root,))
+        for component in components:
+            item_name = None if component.name == "VTIMEZONE" else name
+            item_type = item_tags[component.name]
+            item = item_type(component.serialize(), item_name)
+            if item.name in items:
+                text = "\r\n".join((item.text, items[item.name].text))
+                items[item.name] = item_type(text, item.name)
+            else:
+                items[item.name] = item
 
         return items
 
