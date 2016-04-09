@@ -192,9 +192,8 @@ def propfind(path, xml_request, read_collections, write_collections, user=None):
 
     Read rfc4918-9.1 for info.
 
-    The collections parameter is a list of collections that are
-    to be included in the output. Rights checking has to be done
-    by the caller.
+    The collections parameter is a list of collections that are to be included
+    in the output.
 
     """
     # Reading request
@@ -231,6 +230,7 @@ def _propfind_response(path, item, props, user, write=False):
     """Build and return a PROPFIND response."""
     is_collection = isinstance(item, ical.Collection)
     if is_collection:
+        is_leaf = item.is_leaf(item.path)
         with item.props as properties:
             collection_props = properties
 
@@ -271,15 +271,17 @@ def _propfind_response(path, item, props, user, write=False):
             # This is not a Todo
             # pylint: disable=W0511
             human_tag = _tag_from_clark(tag)
-            if is_collection and human_tag in collection_props:
-                # TODO: what do we have to do if it's not a collection?
-                components = collection_props[human_tag].split(",")
+            if is_collection and is_leaf:
+                if human_tag in collection_props:
+                    components = collection_props[human_tag].split(",")
+                else:
+                    components = ("VTODO", "VEVENT", "VJOURNAL")
+                for component in components:
+                    comp = ET.Element(_tag("C", "comp"))
+                    comp.set("name", component)
+                    element.append(comp)
             else:
-                components = ("VTODO", "VEVENT", "VJOURNAL")
-            for component in components:
-                comp = ET.Element(_tag("C", "comp"))
-                comp.set("name", component)
-                element.append(comp)
+                is404 = True
             # pylint: enable=W0511
         elif tag == _tag("D", "current-user-principal") and user:
             tag = ET.Element(_tag("D", "href"))
@@ -310,7 +312,7 @@ def _propfind_response(path, item, props, user, write=False):
                 if item.is_principal:
                     tag = ET.Element(_tag("D", "principal"))
                     element.append(tag)
-                if item.is_leaf(item.path) or (
+                if is_leaf or (
                         not item.exists and item.resource_type):
                     # 2nd case happens when the collection is not stored yet,
                     # but the resource type is guessed
@@ -321,23 +323,26 @@ def _propfind_response(path, item, props, user, write=False):
                     element.append(tag)
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
-            elif tag == _tag("D", "owner") and item.owner_url:
-                element.text = item.owner_url
-            elif tag == _tag("CS", "getctag"):
-                element.text = item.etag
-            elif tag == _tag("C", "calendar-timezone"):
-                element.text = ical.serialize(
-                    item.tag, item.headers, item.timezones)
-            elif tag == _tag("D", "displayname"):
-                element.text = item.name
-            elif tag == _tag("ICAL", "calendar-color"):
-                element.text = item.color
-            else:
-                human_tag = _tag_from_clark(tag)
-                if human_tag in collection_props:
-                    element.text = collection_props[human_tag]
+            elif is_leaf:
+                if tag == _tag("D", "owner") and item.owner_url:
+                    element.text = item.owner_url
+                elif tag == _tag("CS", "getctag"):
+                    element.text = item.etag
+                elif tag == _tag("C", "calendar-timezone"):
+                    element.text = ical.serialize(
+                        item.tag, item.headers, item.timezones)
+                elif tag == _tag("D", "displayname"):
+                    element.text = item.name
+                elif tag == _tag("ICAL", "calendar-color"):
+                    element.text = item.color
                 else:
-                    is404 = True
+                    human_tag = _tag_from_clark(tag)
+                    if human_tag in collection_props:
+                        element.text = collection_props[human_tag]
+                    else:
+                        is404 = True
+            else:
+                is404 = True
         # Not for collections
         elif tag == _tag("D", "getcontenttype"):
             element.text = "%s; component=%s" % (

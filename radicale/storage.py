@@ -77,6 +77,10 @@ class Collection(ical.Collection):
         if not os.path.exists(self._filesystem_path):
             os.makedirs(self._filesystem_path)
 
+    def set_mimetype(self, mimetype):
+        self._create_dirs()
+        return super().set_mimetype(mimetype)
+
     def save(self, text):
         self._create_dirs()
         item_types = (
@@ -185,7 +189,6 @@ class Collection(ical.Collection):
         old_properties = properties.copy()
         yield properties
         # On exit
-        self._create_dirs()
         if old_properties != properties:
             with open(self._props_path, "w") as prop_file:
                 json.dump(properties, prop_file)

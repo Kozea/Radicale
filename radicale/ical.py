@@ -222,8 +222,7 @@ class Collection(object):
             return []
 
         # Try to guess if the path leads to a collection or an item
-        if (cls.is_leaf("/".join(attributes[:-1])) or not
-                path.endswith(("/", "/caldav", "/carddav"))):
+        if cls.is_leaf("/".join(attributes[:-1])):
             attributes.pop()
 
         result = []

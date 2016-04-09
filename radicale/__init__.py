@@ -355,7 +355,7 @@ class Application(object):
     def do_DELETE(self, environ, read_collections, write_collections, content,
                   user):
         """Manage DELETE request."""
-        if not len(write_collections):
+        if not write_collections:
             return NOT_ALLOWED
 
         collection = write_collections[0]
@@ -387,7 +387,7 @@ class Application(object):
             answer = b"<!DOCTYPE html>\n<title>Radicale</title>Radicale works!"
             return client.OK, headers, answer
 
-        if not len(read_collections):
+        if not read_collections:
             return NOT_ALLOWED
 
         collection = read_collections[0]
@@ -407,8 +407,8 @@ class Application(object):
             else:
                 return client.NOT_FOUND, {}, None
         elif not collection.exists:
-            log.LOGGER.debug("Collection %s unknown" % collection.name)
-            return client.NOT_FOUND
+            log.LOGGER.debug("Collection at %s unknown" % environ["PATH_INFO"])
+            return client.NOT_FOUND, {}, None
         else:
             # Get whole collection
             answer_text = collection.text
@@ -431,7 +431,7 @@ class Application(object):
     def do_MKCALENDAR(self, environ, read_collections, write_collections,
                       content, user):
         """Manage MKCALENDAR request."""
-        if not len(write_collections):
+        if not write_collections:
             return NOT_ALLOWED
 
         collection = write_collections[0]
@@ -450,7 +450,7 @@ class Application(object):
     def do_MKCOL(self, environ, read_collections, write_collections, content,
                  user):
         """Manage MKCOL request."""
-        if not len(write_collections):
+        if not write_collections:
             return NOT_ALLOWED
 
         collection = write_collections[0]
@@ -465,7 +465,7 @@ class Application(object):
     def do_MOVE(self, environ, read_collections, write_collections, content,
                 user):
         """Manage MOVE request."""
-        if not len(write_collections):
+        if not write_collections:
             return NOT_ALLOWED
 
         from_collection = write_collections[0]
@@ -510,7 +510,8 @@ class Application(object):
     def do_PROPFIND(self, environ, read_collections, write_collections,
                     content, user):
         """Manage PROPFIND request."""
-        # Rights is handled by collection in xmlutils.propfind
+        if not any(collection.exists for collection in read_collections):
+            return client.NOT_FOUND, {}, None
         headers = {
             "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
             "Content-Type": "text/xml"}
@@ -521,7 +522,7 @@ class Application(object):
     def do_PROPPATCH(self, environ, read_collections, write_collections,
                      content, user):
         """Manage PROPPATCH request."""
-        if not len(write_collections):
+        if not write_collections:
             return NOT_ALLOWED
 
         collection = write_collections[0]
@@ -536,7 +537,7 @@ class Application(object):
     def do_PUT(self, environ, read_collections, write_collections, content,
                user):
         """Manage PUT request."""
-        if not len(write_collections):
+        if not write_collections:
             return NOT_ALLOWED
 
         collection = write_collections[0]
@@ -571,7 +572,7 @@ class Application(object):
     def do_REPORT(self, environ, read_collections, write_collections, content,
                   user):
         """Manage REPORT request."""
-        if not len(read_collections):
+        if not read_collections:
             return NOT_ALLOWED
 
         collection = read_collections[0]
