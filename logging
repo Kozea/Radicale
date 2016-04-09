@@ -3,7 +3,7 @@
 
 # Logging config file for Radicale - A simple calendar server
 #
-# The default path for this file is /etc/radicale/logging
+# The default path for this kind of files is /etc/radicale/logging
 # This can be changed in the configuration file
 #
 # Other handlers are available. For more information, see:

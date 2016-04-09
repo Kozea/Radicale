@@ -3,7 +3,12 @@
 
 # Rights management file for Radicale - A simple calendar server
 #
-# Default path for this kind of files is ~/.config/radicale/rights
+# The default path for this kind of files is ~/.config/radicale/rights
+# This can be changed in the configuration file
+#
+# This file gives independant examples to help users write their own
+# configuration files. Using these examples together in the same configuration
+# file is meaningless.
 
 # This means all users starting with "admin" may read any collection
 [admin]
