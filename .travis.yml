@@ -5,6 +5,9 @@ python:
   - 3.4
   - 3.5
 
-script: nosetests
+install:
+  - pip install -e .
+
+script: py.test -s
 
 sudo: false
