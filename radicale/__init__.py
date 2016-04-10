@@ -37,7 +37,7 @@ import re
 from http import client
 from urllib.parse import unquote, urlparse
 
-from . import auth, config, ical, log, rights, storage, xmlutils
+from . import auth, config, log, rights, storage, xmlutils
 
 
 VERSION = "2.0.0-pre"
@@ -167,7 +167,7 @@ class Application(object):
     def sanitize_uri(uri):
         """Unquote and make absolute to prevent access to other data."""
         uri = unquote(uri)
-        return ical.sanitize_path(uri)
+        return storage.sanitize_path(uri)
 
     def collect_allowed_items(self, items, user):
         """Get items from request that user is allowed to access."""
@@ -177,7 +177,7 @@ class Application(object):
         write_allowed_items = []
 
         for item in items:
-            if isinstance(item, ical.Collection):
+            if isinstance(item, storage.Collection):
                 if rights.authorized(user, item, "r"):
                     log.LOGGER.debug(
                         "%s has read access to collection %s" %
@@ -294,7 +294,7 @@ class Application(object):
         is_valid_user = is_authenticated or not user
 
         if is_valid_user:
-            items = ical.Collection.from_path(
+            items = storage.Collection.from_path(
                 path, environ.get("HTTP_DEPTH", "0"))
             read_allowed_items, write_allowed_items = (
                 self.collect_allowed_items(items, user))
@@ -401,7 +401,7 @@ class Application(object):
                 items = [item]
                 if collection.resource_type == "calendar":
                     items.extend(collection.timezones)
-                answer_text = ical.serialize(
+                answer_text = storage.serialize(
                     collection.tag, collection.headers, items)
                 etag = item.etag
             else:
@@ -480,7 +480,7 @@ class Application(object):
                 if to_url_parts.netloc == environ["HTTP_HOST"]:
                     to_url = to_url_parts.path
                     to_path, to_name = to_url.rstrip("/").rsplit("/", 1)
-                    to_collection = ical.Collection.from_path(
+                    to_collection = storage.Collection.from_path(
                         to_path, depth="0")[0]
                     if to_collection in write_collections:
                         to_collection.append(to_name, item.text)

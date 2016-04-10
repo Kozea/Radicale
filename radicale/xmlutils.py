@@ -30,7 +30,7 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from urllib.parse import unquote, urlparse
 
-from . import client, config, ical
+from . import client, config, storage
 
 
 NAMESPACES = {
@@ -228,7 +228,7 @@ def propfind(path, xml_request, read_collections, write_collections, user=None):
 
 def _propfind_response(path, item, props, user, write=False):
     """Build and return a PROPFIND response."""
-    is_collection = isinstance(item, ical.Collection)
+    is_collection = isinstance(item, storage.Collection)
     if is_collection:
         is_leaf = item.is_leaf(item.path)
         with item.props as properties:
@@ -329,7 +329,7 @@ def _propfind_response(path, item, props, user, write=False):
                 elif tag == _tag("CS", "getctag"):
                     element.text = item.etag
                 elif tag == _tag("C", "calendar-timezone"):
-                    element.text = ical.serialize(
+                    element.text = storage.serialize(
                         item.tag, item.headers, item.timezones)
                 elif tag == _tag("D", "displayname"):
                     element.text = item.name
@@ -530,8 +530,8 @@ def report(path, xml_request, collection):
                     found_props.append(element)
                 elif tag in (_tag("C", "calendar-data"),
                              _tag("CR", "address-data")):
-                    if isinstance(item, ical.Component):
-                        element.text = ical.serialize(
+                    if isinstance(item, storage.Component):
+                        element.text = storage.serialize(
                             collection_tag, collection_headers,
                             collection_timezones + [item])
                     found_props.append(element)
