@@ -18,15 +18,13 @@
 """
 Storage backends.
 
-This module loads the storage backend, according to the storage
-configuration.
+This module loads the storage backend, according to the storage configuration.
 
 Default storage uses one folder per collection and one file per collection
 entry.
 
 """
 
-import hashlib
 import json
 import os
 import posixpath
@@ -34,6 +32,8 @@ import shutil
 import sys
 import time
 from contextlib import contextmanager
+from hashlib import md5
+from random import randint
 from uuid import uuid4
 
 import vobject
@@ -54,6 +54,8 @@ def _load():
 
 FOLDER = os.path.expanduser(config.get("storage", "filesystem_folder"))
 FILESYSTEM_ENCODING = sys.getfilesystemencoding()
+STORAGE_ENCODING = config.get("encoding", "stock")
+
 
 def serialize(tag, headers=(), items=()):
     """Return a text corresponding to given collection ``tag``.
@@ -92,47 +94,15 @@ def sanitize_path(path):
     return new_path + trailing_slash
 
 
-def clean_name(name):
-    """Clean an item name by removing slashes and leading/ending brackets."""
-    # Remove leading and ending brackets that may have been put by Outlook
-    name = name.strip("{}")
-    # Remove slashes, mostly unwanted when saving on filesystems
-    name = name.replace("/", "_")
-    return name
-
-
-def is_safe_path_component(path):
-    """Check if path is a single component of a POSIX path.
-
-    Check that the path is safe to join too.
-
-    """
-    if not path:
-        return False
-    if posixpath.split(path)[0]:
-        return False
-    if path in (".", ".."):
-        return False
-    return True
-
-
 def is_safe_filesystem_path_component(path):
     """Check if path is a single component of a filesystem path.
 
     Check that the path is safe to join too.
 
     """
-    if not path:
-        return False
-    drive, _ = os.path.splitdrive(path)
-    if drive:
-        return False
-    head, _ = os.path.split(path)
-    if head:
-        return False
-    if path in (os.curdir, os.pardir):
-        return False
-    return True
+    return (
+        path and not os.path.splitdrive(path)[0] and
+        not os.path.split(path)[0] and path not in (os.curdir, os.pardir))
 
 
 def path_to_filesystem(path):
@@ -152,14 +122,6 @@ def path_to_filesystem(path):
             raise ValueError("Unsafe path")
         safe_path = os.path.join(safe_path, part)
     return safe_path
-
-
-@contextmanager
-def _open(path, mode="r"):
-    """Open a file at ``path`` with encoding set in the configuration."""
-    abs_path = os.path.join(FOLDER, path.replace("/", os.sep))
-    with open(abs_path, mode, encoding=config.get("encoding", "stock")) as fd:
-        yield fd
 
 
 class Item(object):
@@ -189,7 +151,9 @@ class Item(object):
                         break
 
         if self._name:
-            self._name = clean_name(self._name)
+            # Leading and ending brackets that may have been put by Outlook.
+            # Slashes are mostly unwanted when saving collections on disk.
+            self._name = self._name.strip("{}").replace("/", "_")
         else:
             self._name = uuid4().hex
 
@@ -210,9 +174,9 @@ class Item(object):
         Etag is mainly used to know if an item has changed.
 
         """
-        md5 = hashlib.md5()
-        md5.update(self.text.encode("utf-8"))
-        return '"%s"' % md5.hexdigest()
+        etag = md5()
+        etag.update(self.text.encode("utf-8"))
+        return '"%s"' % etag.hexdigest()
 
     @property
     def name(self):
@@ -407,7 +371,7 @@ class Collection:
                     "skipping component: %s", name)
                 continue
             filename = os.path.join(self._filesystem_path, name)
-            with _open(filename, "w") as fd:
+            with open(filename, "w", encoding=STORAGE_ENCODING) as fd:
                 fd.write(component.text)
 
     @property
@@ -447,7 +411,7 @@ class Collection:
         for filename in filenames:
             path = os.path.join(self._filesystem_path, filename)
             try:
-                with _open(path) as fd:
+                with open(path, encoding=STORAGE_ENCODING) as fd:
                     items.update(self._parse(fd.read(), components))
             except (OSError, IOError) as e:
                 log.LOGGER.warning(
@@ -460,15 +424,14 @@ class Collection:
     def children(cls, path):
         filesystem_path = path_to_filesystem(path)
         _, directories, files = next(os.walk(filesystem_path))
-        for filename in directories + files:
-            # make sure that the local filename can be translated
-            # into an internal path
-            if not is_safe_path_component(filename):
-                log.LOGGER.debug("Skipping unsupported filename: %s", filename)
+        for path in directories + files:
+            # Check that the local path can be translated into an internal path
+            if not path or posixpath.split(path)[0] or path in (".", ".."):
+                log.LOGGER.debug("Skipping unsupported filename: %s", path)
                 continue
-            rel_filename = posixpath.join(path, filename)
-            if cls.is_node(rel_filename) or cls.is_leaf(rel_filename):
-                yield cls(rel_filename)
+            relative_path = posixpath.join(path, path)
+            if cls.is_node(relative_path) or cls.is_leaf(relative_path):
+                yield cls(relative_path)
 
     @classmethod
     def is_node(cls, path):
@@ -567,9 +530,9 @@ class Collection:
     @property
     def etag(self):
         """Etag from collection."""
-        md5 = hashlib.md5()
-        md5.update(self.text.encode("utf-8"))
-        return '"%s"' % md5.hexdigest()
+        etag = md5()
+        etag.update(self.text.encode("utf-8"))
+        return '"%s"' % etag.hexdigest()
 
     @property
     def name(self):
