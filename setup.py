@@ -35,22 +35,28 @@ For further information, please visit the `Radicale Website
 
 """
 
+import re
+from os import path
+
 from setuptools import setup
-import radicale
+
+init_path = path.join(path.dirname(__file__), "radicale", "__init__.py")
+with open(init_path, "r", encoding="utf-8") as fd:
+    version = re.search('VERSION = "([^"]+)"', fd.read().strip()).group(1)
 
 
 # When the version is updated, ``radicale.VERSION`` must be modified.
 # A new section in the ``NEWS`` file must be added too.
 setup(
     name="Radicale",
-    version=radicale.VERSION,
+    version=version,
     description="CalDAV and CardDAV Server",
     long_description=__doc__,
     author="Guillaume Ayoub",
     author_email="guillaume.ayoub@kozea.fr",
     url="http://www.radicale.org/",
     download_url=("http://pypi.python.org/packages/source/R/Radicale/"
-                  "Radicale-%s.tar.gz" % radicale.VERSION),
+                  "Radicale-%s.tar.gz" % version),
     license="GNU GPL v3",
     platforms="Any",
     packages=["radicale"],
