@@ -25,10 +25,13 @@ in them for XML requests (all but PUT).
 
 """
 
+import posixpath
 import re
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from urllib.parse import unquote, urlparse
+
+import vobject
 
 from . import client, config, storage
 
@@ -169,7 +172,7 @@ def delete(path, collection):
         collection.delete()
     else:
         # Remove an item from the collection
-        collection.remove(name_from_path(path, collection))
+        collection.delete(name_from_path(path, collection))
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -230,14 +233,13 @@ def _propfind_response(path, item, props, user, write=False):
     """Build and return a PROPFIND response."""
     is_collection = isinstance(item, storage.Collection)
     if is_collection:
-        is_leaf = item.is_leaf(item.path)
-        with item.props as properties:
-            collection_props = properties
+        # TODO: fix this
+        is_leaf = bool(item.list())
 
     response = ET.Element(_tag("D", "response"))
 
     href = ET.Element(_tag("D", "href"))
-    uri = item.url if is_collection else "%s/%s" % (path, item.name)
+    uri = item.path if is_collection else "%s/%s" % (path, item.href)
     href.text = _href(uri.replace("//", "/"))
     response.append(href)
 
@@ -255,7 +257,7 @@ def _propfind_response(path, item, props, user, write=False):
         element = ET.Element(tag)
         is404 = False
         if tag == _tag("D", "getetag"):
-            element.text = item.etag
+            element.text = storage.get_etag(item.serialize())
         elif tag == _tag("D", "principal-URL"):
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href(path)
@@ -272,8 +274,9 @@ def _propfind_response(path, item, props, user, write=False):
             # pylint: disable=W0511
             human_tag = _tag_from_clark(tag)
             if is_collection and is_leaf:
-                if human_tag in collection_props:
-                    components = collection_props[human_tag].split(",")
+                meta = item.get_meta(human_tag)
+                if meta:
+                    components = meta.split(",")
                 else:
                     components = ("VTODO", "VEVENT", "VJOURNAL")
                 for component in components:
@@ -307,46 +310,56 @@ def _propfind_response(path, item, props, user, write=False):
                 element.append(supported)
         elif is_collection:
             if tag == _tag("D", "getcontenttype"):
-                element.text = item.mimetype
+                element.text = storage.MIMETYPES[item.get_meta("tag")]
             elif tag == _tag("D", "resourcetype"):
                 if item.is_principal:
                     tag = ET.Element(_tag("D", "principal"))
                     element.append(tag)
-                if is_leaf or (
-                        not item.exists and item.resource_type):
+                item_tag = item.get_meta("tag")
+                if is_leaf or item_tag:
                     # 2nd case happens when the collection is not stored yet,
                     # but the resource type is guessed
-                    if item.resource_type == "addressbook":
-                        tag = ET.Element(_tag("CR", item.resource_type))
-                    else:
-                        tag = ET.Element(_tag("C", item.resource_type))
-                    element.append(tag)
+                    if item.get_meta("tag") == "VADDRESSBOOK":
+                        tag = ET.Element(_tag("CR", "addressbook"))
+                        element.append(tag)
+                    elif item.get_meta("tag") == "VCALENDAR":
+                        tag = ET.Element(_tag("C", "calendar"))
+                        element.append(tag)
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
             elif is_leaf:
-                if tag == _tag("D", "owner") and item.owner_url:
-                    element.text = item.owner_url
+                if tag == _tag("D", "owner") and item.owner:
+                    element.text = "/%s/" % item.owner
                 elif tag == _tag("CS", "getctag"):
                     element.text = item.etag
                 elif tag == _tag("C", "calendar-timezone"):
-                    element.text = storage.serialize(
-                        item.tag, item.headers, item.timezones)
+                    timezones = {}
+                    for event in item.list():
+                        if "vtimezone" in event.content:
+                            for timezone in event.vtimezone_list:
+                                timezones.add(timezone)
+                    collection = vobject.iCalendar()
+                    for timezone in timezones:
+                        collection.add(timezone)
+                    element.text = collection.serialize()
                 elif tag == _tag("D", "displayname"):
-                    element.text = item.name
+                    element.text = item.get_meta("D:displayname") or item.path
                 elif tag == _tag("ICAL", "calendar-color"):
-                    element.text = item.color
+                    element.text = item.get_meta("ICAL:calendar-color")
                 else:
                     human_tag = _tag_from_clark(tag)
-                    if human_tag in collection_props:
-                        element.text = collection_props[human_tag]
+                    meta = item.get_meta(human_tag)
+                    if meta:
+                        element.text = meta
                     else:
                         is404 = True
             else:
                 is404 = True
         # Not for collections
         elif tag == _tag("D", "getcontenttype"):
-            element.text = "%s; component=%s" % (
-                item.mimetype, item.tag.lower())
+            name = item.name.lower()
+            mimetype = "text/vcard" if name == "vcard" else "text/calendar"
+            element.text = "%s; component=%s" % (mimetype, name)
         elif tag == _tag("D", "resourcetype"):
             # resourcetype must be returned empty for non-collection elements
             pass
@@ -438,15 +451,18 @@ def proppatch(path, xml_request, collection):
 def put(path, ical_request, collection):
     """Read PUT requests."""
     name = name_from_path(path, collection)
-    if name in collection.items:
-        # PUT is modifying an existing item
-        collection.replace(name, ical_request)
-    elif name:
-        # PUT is adding a new item
-        collection.append(name, ical_request)
-    else:
-        # PUT is replacing the whole collection
-        collection.save(ical_request)
+    items = list(vobject.readComponents(ical_request))
+    if items:
+        if collection.has(name):
+            # PUT is modifying an existing item
+            return collection.update(name, items[0])
+        elif name:
+            # PUT is adding a new item
+            return collection.upload(name, items[0])
+        else:
+            # PUT is replacing the whole collection
+            collection.delete()
+            return storage.Collection.create_collection(path, items)
 
 
 def report(path, xml_request, collection):
@@ -481,7 +497,6 @@ def report(path, xml_request, collection):
         tag_filters = set(
             element.get("name") for element
             in root.findall(".//%s" % _tag("C", "comp-filter")))
-        tag_filters.discard('VCALENDAR')
     else:
         hreferences = ()
         tag_filters = None
@@ -489,18 +504,15 @@ def report(path, xml_request, collection):
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
-    collection_tag = collection.tag
-    collection_headers = collection.headers
-    collection_timezones = collection.timezones
-
     for hreference in hreferences:
         # Check if the reference is an item or a collection
         name = name_from_path(hreference, collection)
+
         if name:
             # Reference is an item
             path = "/".join(hreference.split("/")[:-1]) + "/"
             try:
-                items = [collection.items[name]]
+                items = [collection.get(name)]
             except KeyError:
                 multistatus.append(
                     _item_response(hreference, found_item=False))
@@ -509,11 +521,10 @@ def report(path, xml_request, collection):
         else:
             # Reference is a collection
             path = hreference
-            items = collection.components
+            items = [collection.get(href) for href, etag in collection.list()]
 
         for item in items:
-            href = _href("%s/%s" % (path.rstrip("/"), item.name))
-            if tag_filters and item.tag not in tag_filters:
+            if tag_filters and item.name not in tag_filters:
                 continue
 
             found_props = []
@@ -525,22 +536,22 @@ def report(path, xml_request, collection):
                     element.text = item.etag
                     found_props.append(element)
                 elif tag == _tag("D", "getcontenttype"):
-                    element.text = "%s; component=%s" % (
-                        item.mimetype, item.tag.lower())
+                    name = item.name.lower()
+                    mimetype = (
+                        "text/vcard" if name == "vcard" else "text/calendar")
+                    element.text = "%s; component=%s" % (mimetype, name)
                     found_props.append(element)
                 elif tag in (_tag("C", "calendar-data"),
                              _tag("CR", "address-data")):
-                    if isinstance(item, storage.Component):
-                        element.text = storage.serialize(
-                            collection_tag, collection_headers,
-                            collection_timezones + [item])
+                    if isinstance(item, (storage.Item, storage.Collection)):
+                        element.text = item.serialize()
                     found_props.append(element)
                 else:
                     not_found_props.append(element)
 
             multistatus.append(_item_response(
-                href, found_props=found_props, not_found_props=not_found_props,
-                found_item=True))
+                posixpath.join(hreference, item.href), found_props=found_props,
+                not_found_props=not_found_props, found_item=True))
 
     return _pretty_xml(multistatus)
 

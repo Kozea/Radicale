@@ -117,7 +117,6 @@ class TestCustomStorageSystem(BaseRequests, BaseTest):
         radicale.config.set("storage", "type", "tests.custom.storage")
         from tests.custom import storage
         storage.FOLDER = self.colpath
-        storage.GIT_REPOSITORY = None
         self.application = radicale.Application()
 
     def teardown(self):

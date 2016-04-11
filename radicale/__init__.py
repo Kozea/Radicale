@@ -33,7 +33,6 @@ import socket
 import ssl
 import wsgiref.simple_server
 import re
-
 from http import client
 from urllib.parse import unquote, urlparse
 
@@ -163,12 +162,6 @@ class Application(object):
                 pass
         raise UnicodeDecodeError
 
-    @staticmethod
-    def sanitize_uri(uri):
-        """Unquote and make absolute to prevent access to other data."""
-        uri = unquote(uri)
-        return storage.sanitize_path(uri)
-
     def collect_allowed_items(self, items, user):
         """Get items from request that user is allowed to access."""
         read_last_collection_allowed = None
@@ -181,25 +174,25 @@ class Application(object):
                 if rights.authorized(user, item, "r"):
                     log.LOGGER.debug(
                         "%s has read access to collection %s" %
-                        (user or "Anonymous", item.url or "/"))
+                        (user or "Anonymous", item.path or "/"))
                     read_last_collection_allowed = True
                     read_allowed_items.append(item)
                 else:
                     log.LOGGER.debug(
                         "%s has NO read access to collection %s" %
-                        (user or "Anonymous", item.url or "/"))
+                        (user or "Anonymous", item.path or "/"))
                     read_last_collection_allowed = False
 
                 if rights.authorized(user, item, "w"):
                     log.LOGGER.debug(
                         "%s has write access to collection %s" %
-                        (user or "Anonymous", item.url or "/"))
+                        (user or "Anonymous", item.path or "/"))
                     write_last_collection_allowed = True
                     write_allowed_items.append(item)
                 else:
                     log.LOGGER.debug(
                         "%s has NO write access to collection %s" %
-                        (user or "Anonymous", item.url or "/"))
+                        (user or "Anonymous", item.path or "/"))
                     write_last_collection_allowed = False
             else:
                 # item is not a collection, it's the child of the last
@@ -208,22 +201,22 @@ class Application(object):
                 if read_last_collection_allowed:
                     log.LOGGER.debug(
                         "%s has read access to item %s" %
-                        (user or "Anonymous", item.name))
+                        (user or "Anonymous", item.href))
                     read_allowed_items.append(item)
                 else:
                     log.LOGGER.debug(
                         "%s has NO read access to item %s" %
-                        (user or "Anonymous", item.name))
+                        (user or "Anonymous", item.href))
 
                 if write_last_collection_allowed:
                     log.LOGGER.debug(
                         "%s has write access to item %s" %
-                        (user or "Anonymous", item.name))
+                        (user or "Anonymous", item.href))
                     write_allowed_items.append(item)
                 else:
                     log.LOGGER.debug(
                         "%s has NO write access to item %s" %
-                        (user or "Anonymous", item.name))
+                        (user or "Anonymous", item.href))
 
         return read_allowed_items, write_allowed_items
 
@@ -250,7 +243,8 @@ class Application(object):
             return []
 
         # Sanitize request URI
-        environ["PATH_INFO"] = self.sanitize_uri(environ["PATH_INFO"])
+        environ["PATH_INFO"] = storage.sanitize_path(
+            unquote(environ["PATH_INFO"]))
         log.LOGGER.debug("Sanitized path: %s", environ["PATH_INFO"])
 
         path = environ["PATH_INFO"]
@@ -294,7 +288,7 @@ class Application(object):
         is_valid_user = is_authenticated or not user
 
         if is_valid_user:
-            items = storage.Collection.from_path(
+            items = storage.Collection.discover(
                 path, environ.get("HTTP_DEPTH", "0"))
             read_allowed_items, write_allowed_items = (
                 self.collect_allowed_items(items, user))
@@ -366,7 +360,7 @@ class Application(object):
         else:
             # Try to get an item matching the path
             name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
-            item = collection.items.get(name)
+            item = collection.get(name)
 
         if item:
             if_match = environ.get("HTTP_IF_MATCH", "*")
@@ -396,26 +390,22 @@ class Application(object):
 
         if item_name:
             # Get collection item
-            item = collection.items.get(item_name)
+            item = collection.get(item_name)
             if item:
-                items = [item]
-                if collection.resource_type == "calendar":
-                    items.extend(collection.timezones)
-                answer_text = storage.serialize(
-                    collection.tag, collection.headers, items)
+                answer_text = item.serialize()
                 etag = item.etag
             else:
                 return client.NOT_FOUND, {}, None
-        elif not collection.exists:
-            log.LOGGER.debug("Collection at %s unknown" % environ["PATH_INFO"])
-            return client.NOT_FOUND, {}, None
         else:
             # Get whole collection
-            answer_text = collection.text
+            answer_text = collection.serialize()
+            if not answer_text:
+                log.LOGGER.debug("Collection at %s unknown" % environ["PATH_INFO"])
+                return client.NOT_FOUND, {}, None
             etag = collection.etag
 
         headers = {
-            "Content-Type": collection.mimetype,
+            "Content-Type": storage.MIMETYPES[collection.get_meta("tag")],
             "Last-Modified": collection.last_modified,
             "ETag": etag}
         answer = answer_text.encode(self.encoding)
@@ -437,14 +427,12 @@ class Application(object):
         collection = write_collections[0]
 
         props = xmlutils.props_from_request(content)
-        timezone = props.get("C:calendar-timezone")
-        if timezone:
-            collection.replace("", timezone)
-            del props["C:calendar-timezone"]
-        with collection.props as collection_props:
-            for key, value in props.items():
-                collection_props[key] = value
-            collection.write()
+        # TODO: use this?
+        # timezone = props.get("C:calendar-timezone")
+        collection = storage.create_collection(
+            collection.path, tag="VCALENDAR")
+        for key, value in props.items():
+            collection.set_meta(key, value)
         return client.CREATED, {}, None
 
     def do_MKCOL(self, environ, read_collections, write_collections, content,
@@ -456,10 +444,9 @@ class Application(object):
         collection = write_collections[0]
 
         props = xmlutils.props_from_request(content)
-        with collection.props as collection_props:
-            for key, value in props.items():
-                collection_props[key] = value
-        collection.write()
+        collection = storage.create_collection(collection.path)
+        for key, value in props.items():
+            collection.set_meta(key, value)
         return client.CREATED, {}, None
 
     def do_MOVE(self, environ, read_collections, write_collections, content,
@@ -469,34 +456,29 @@ class Application(object):
             return NOT_ALLOWED
 
         from_collection = write_collections[0]
-
         from_name = xmlutils.name_from_path(
             environ["PATH_INFO"], from_collection)
-        if from_name:
-            item = from_collection.items.get(from_name)
-            if item:
-                # Move the item
-                to_url_parts = urlparse(environ["HTTP_DESTINATION"])
-                if to_url_parts.netloc == environ["HTTP_HOST"]:
-                    to_url = to_url_parts.path
-                    to_path, to_name = to_url.rstrip("/").rsplit("/", 1)
-                    to_collection = storage.Collection.from_path(
-                        to_path, depth="0")[0]
+        item = from_collection.get(from_name)
+        if item:
+            # Move the item
+            to_url_parts = urlparse(environ["HTTP_DESTINATION"])
+            if to_url_parts.netloc == environ["HTTP_HOST"]:
+                to_url = to_url_parts.path
+                to_path, to_name = to_url.rstrip("/").rsplit("/", 1)
+                for to_collection in storage.Collection.discover(
+                        to_path, depth="0"):
                     if to_collection in write_collections:
-                        to_collection.append(to_name, item.text)
-                        from_collection.remove(from_name)
+                        to_collection.upload(to_name, item)
+                        from_collection.delete(from_name)
                         return client.CREATED, {}, None
                     else:
                         return NOT_ALLOWED
-                else:
-                    # Remote destination server, not supported
-                    return client.BAD_GATEWAY, {}, None
             else:
-                # No item found
-                return client.GONE, {}, None
+                # Remote destination server, not supported
+                return client.BAD_GATEWAY, {}, None
         else:
-            # Moving collections, not supported
-            return client.FORBIDDEN, {}, None
+            # No item found
+            return client.GONE, {}, None
 
     def do_OPTIONS(self, environ, read_collections, write_collections,
                    content, user):
@@ -510,7 +492,7 @@ class Application(object):
     def do_PROPFIND(self, environ, read_collections, write_collections,
                     content, user):
         """Manage PROPFIND request."""
-        if not any(collection.exists for collection in read_collections):
+        if not read_collections:
             return client.NOT_FOUND, {}, None
         headers = {
             "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
@@ -542,10 +524,13 @@ class Application(object):
 
         collection = write_collections[0]
 
-        collection.set_mimetype(environ.get("CONTENT_TYPE"))
+        content_type = environ.get("CONTENT_TYPE")
+        if content_type:
+            tags = {value: key for key, value in storage.MIMETYPES.items()}
+            collection.set_meta("tag", tags[content_type.split(";")[0]])
         headers = {}
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
-        item = collection.items.get(item_name)
+        item = collection.get(item_name)
 
         etag = environ.get("HTTP_IF_MATCH", "")
         match = environ.get("HTTP_IF_NONE_MATCH", "") == "*"
@@ -561,7 +546,7 @@ class Application(object):
             # If the added item doesn't have the same name as the one given
             # by the client, then there's no obvious way to generate an
             # etag, we can safely ignore it.
-            new_item = collection.items.get(item_name)
+            new_item = collection.get(item_name)
             if new_item:
                 headers["ETag"] = new_item.etag
         else:
