@@ -349,7 +349,7 @@ class Collection:
             with open(props_path, encoding=STORAGE_ENCODING) as prop_file:
                 properties.update(json.load(prop_file))
         properties[key] = value
-        with open(props_path, "w", encoding=STORAGE_ENCODING) as prop_file:
+        with open(props_path, "w+", encoding=STORAGE_ENCODING) as prop_file:
             json.dump(properties, prop_file)
 
     @property
