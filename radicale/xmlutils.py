@@ -239,7 +239,18 @@ def _propfind_response(path, item, props, user, write=False):
     response = ET.Element(_tag("D", "response"))
 
     href = ET.Element(_tag("D", "href"))
-    uri = item.path if is_collection else "%s/%s" % (path, item.href)
+    if is_collection:
+        uri = item.path
+    else:
+        # TODO: fix this
+        if path.split("/")[-1] == item.href:
+            # Happening when depth is 0
+            uri = path
+        else:
+            # Happening when depth is 1
+            uri = "/".join((path, item.href))
+
+    # TODO: fix this
     href.text = _href(uri.replace("//", "/"))
     response.append(href)
 
@@ -549,8 +560,15 @@ def report(path, xml_request, collection):
                 else:
                     not_found_props.append(element)
 
+            # TODO: fix this
+            if hreference.split("/")[-1] == item.href:
+                # Happening when depth is 0
+                uri = "/" + hreference
+            else:
+                # Happening when depth is 1
+                uri = posixpath.join(hreference, item.href)
             multistatus.append(_item_response(
-                posixpath.join(hreference, item.href), found_props=found_props,
+                uri, found_props=found_props,
                 not_found_props=not_found_props, found_item=True))
 
     return _pretty_xml(multistatus)

@@ -127,7 +127,7 @@ def authorized(user, collection, permission):
     If the user is empty, check for anonymous rights.
 
     """
-    collection_url = collection.url.rstrip("/") or "/"
+    collection_url = collection.path.rstrip("/") or "/"
     if collection_url in (".well-known/carddav", ".well-known/caldav"):
         return permission == "r"
     rights_type = config.get("rights", "type").lower()

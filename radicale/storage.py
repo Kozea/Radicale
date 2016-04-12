@@ -180,17 +180,17 @@ class Collection:
         collection = cls(path, principal)
         yield collection
         if depth != "0":
+            # TODO: fix this
             items = list(collection.list())
             if items:
                 for item in items:
                     yield collection.get(item[0])
             else:
-                _, directories, files = next(os.walk(collection._filesystem_path))
-                for sub_path in directories + files:
+                _, directories, _ = next(os.walk(collection._filesystem_path))
+                for sub_path in directories:
                     full_path = os.path.join(collection._filesystem_path, sub_path)
                     if os.path.exists(path_to_filesystem(full_path)):
-                        collection = cls(posixpath.join(path, sub_path))
-                        yield collection
+                        yield cls(posixpath.join(path, sub_path))
 
     @classmethod
     def create_collection(cls, href, collection=None, tag=None):
@@ -364,7 +364,7 @@ class Collection:
         items = []
         for href in os.listdir(self._filesystem_path):
             path = os.path.join(self._filesystem_path, href)
-            if os.path.isfile(path):
+            if os.path.isfile(path) and not path.endswith(".props"):
                 with open(path, encoding=STORAGE_ENCODING) as fd:
                     items.append(vobject.readOne(fd.read()))
         if self.get_meta("tag") == "VCALENDAR":
@@ -377,6 +377,7 @@ class Collection:
             return collection.serialize()
         elif self.get_meta("tag") == "VADDRESSBOOK":
             return "".join([item.serialize() for item in items])
+        return ""
 
     @property
     def etag(self):
