@@ -522,12 +522,13 @@ def report(path, xml_request, collection):
         if name:
             # Reference is an item
             path = "/".join(hreference.split("/")[:-1]) + "/"
-            try:
-                items = [collection.get(name)]
-            except KeyError:
+            item = collection.get(name)
+            if item is None:
                 multistatus.append(
                     _item_response(hreference, found_item=False))
                 continue
+
+            items = [item]
 
         else:
             # Reference is a collection
