@@ -227,7 +227,12 @@ class Collection:
 
     def list(self):
         """List collection items."""
-        for href in os.listdir(self._filesystem_path):
+        try:
+            hrefs = os.listdir(self._filesystem_path)
+        except IOError:
+            return
+
+        for href in hrefs:
             path = os.path.join(self._filesystem_path, href)
             if not href.endswith(".props") and os.path.isfile(path):
                 with open(path, encoding=STORAGE_ENCODING) as fd:
