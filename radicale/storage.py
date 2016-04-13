@@ -353,7 +353,12 @@ class Collection:
         if os.path.exists(props_path):
             with open(props_path, encoding=STORAGE_ENCODING) as prop_file:
                 properties.update(json.load(prop_file))
-        properties[key] = value
+
+        if value:
+            properties[key] = value
+        else:
+            properties.pop(key, None)
+
         with open(props_path, "w+", encoding=STORAGE_ENCODING) as prop_file:
             json.dump(properties, prop_file)
 
