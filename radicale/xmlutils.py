@@ -442,19 +442,13 @@ def proppatch(path, xml_request, collection):
     href.text = _href(path)
     response.append(href)
 
-    with collection.props as collection_props:
-        for short_name, value in props_to_set.items():
-            if short_name.split(":")[-1] == "calendar-timezone":
-                collection.replace(None, value)
-            collection_props[short_name] = value
-            _add_propstat_to(response, short_name, 200)
-        for short_name in props_to_remove:
-            try:
-                del collection_props[short_name]
-            except KeyError:
-                _add_propstat_to(response, short_name, 412)
-            else:
-                _add_propstat_to(response, short_name, 200)
+    for short_name, value in props_to_set.items():
+        collection.set_meta(short_name, value)
+        _add_propstat_to(response, short_name, 200)
+
+    for short_name in props_to_remove:
+        collection.set_meta(short_name, '')
+        _add_propstat_to(response, short_name, 200)
 
     return _pretty_xml(multistatus)
 
@@ -522,12 +516,13 @@ def report(path, xml_request, collection):
         if name:
             # Reference is an item
             path = "/".join(hreference.split("/")[:-1]) + "/"
-            try:
-                items = [collection.get(name)]
-            except KeyError:
+            item = collection.get(name)
+            if item is None:
                 multistatus.append(
                     _item_response(hreference, found_item=False))
                 continue
+
+            items = [item]
 
         else:
             # Reference is a collection

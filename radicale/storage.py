@@ -227,7 +227,12 @@ class Collection:
 
     def list(self):
         """List collection items."""
-        for href in os.listdir(self._filesystem_path):
+        try:
+            hrefs = os.listdir(self._filesystem_path)
+        except IOError:
+            return
+
+        for href in hrefs:
             path = os.path.join(self._filesystem_path, href)
             if not href.endswith(".props") and os.path.isfile(path):
                 with open(path, encoding=STORAGE_ENCODING) as fd:
@@ -348,8 +353,13 @@ class Collection:
         if os.path.exists(props_path):
             with open(props_path, encoding=STORAGE_ENCODING) as prop_file:
                 properties.update(json.load(prop_file))
-        properties[key] = value
-        with open(props_path, "w", encoding=STORAGE_ENCODING) as prop_file:
+
+        if value:
+            properties[key] = value
+        else:
+            properties.pop(key, None)
+
+        with open(props_path, "w+", encoding=STORAGE_ENCODING) as prop_file:
             json.dump(properties, prop_file)
 
     @property
