@@ -128,8 +128,11 @@ def name_from_path(path, collection):
 def props_from_request(root, actions=("set", "remove")):
     """Return a list of properties as a dictionary."""
     result = OrderedDict()
-    if not hasattr(root, "tag"):
-        root = ET.fromstring(root.encode("utf8"))
+    if root:
+        if not hasattr(root, "tag"):
+            root = ET.fromstring(root.encode("utf8"))
+    else:
+        return result
 
     for action in actions:
         action_element = root.find(_tag("D", action))
