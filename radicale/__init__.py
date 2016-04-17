@@ -443,6 +443,9 @@ class Application(object):
 
         collection = write_collections[0]
 
+        if content is None:
+            return client.PRECONDITION_FAILED, {}, None
+
         props = xmlutils.props_from_request(content)
         collection = storage.Collection.create_collection(collection.path)
         for key, value in props.items():
