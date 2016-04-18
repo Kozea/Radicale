@@ -276,6 +276,8 @@ def _propfind_response(path, item, props, user, write=False):
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href(path)
             element.append(tag)
+        elif tag == _tag("D", "getlastmodified"):
+            element.text = item.last_modified
         elif tag in (_tag("D", "principal-collection-set"),
                      _tag("C", "calendar-user-address-set"),
                      _tag("CR", "addressbook-home-set"),
@@ -377,6 +379,8 @@ def _propfind_response(path, item, props, user, write=False):
         elif tag == _tag("D", "resourcetype"):
             # resourcetype must be returned empty for non-collection elements
             pass
+        elif tag == _tag("D", "getcontentlength"):
+            element.text = str(item.content_length)
         else:
             is404 = True
 

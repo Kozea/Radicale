@@ -114,13 +114,18 @@ def path_to_filesystem(root, *paths):
 
 
 class Item:
-    def __init__(self, item, href, etag):
+    def __init__(self, item, href, etag, last_modified=None):
         self.item = item
         self.href = href
         self.etag = etag
+        self.last_modified = last_modified
 
     def __getattr__(self, attr):
         return getattr(self.item, attr)
+
+    @property
+    def content_length(self):
+        return len(self.serialize().encode(config.get("encoding", "request")))
 
 
 class Collection:
@@ -170,8 +175,7 @@ class Collection:
             return
 
         # Try to guess if the path leads to a collection or an item
-        if os.path.exists(path_to_filesystem(
-                FOLDER, *attributes[:-1]) + ".props"):
+        if os.path.isfile(path_to_filesystem(FOLDER, sane_path)):
             attributes.pop()
 
         path = "/".join(attributes)
@@ -185,12 +189,11 @@ class Collection:
             if items:
                 for item in items:
                     yield collection.get(item[0])
-            else:
-                _, directories, _ = next(os.walk(collection._filesystem_path))
-                for sub_path in directories:
-                    full_path = os.path.join(collection._filesystem_path, sub_path)
-                    if os.path.exists(path_to_filesystem(full_path)):
-                        yield cls(posixpath.join(path, sub_path))
+            _, directories, _ = next(os.walk(collection._filesystem_path))
+            for sub_path in directories:
+                full_path = os.path.join(collection._filesystem_path, sub_path)
+                if os.path.exists(path_to_filesystem(full_path)):
+                    yield cls(posixpath.join(path, sub_path))
 
     @classmethod
     def create_collection(cls, href, collection=None, tag=None):
@@ -248,7 +251,11 @@ class Collection:
             if os.path.isfile(path):
                 with open(path, encoding=STORAGE_ENCODING) as fd:
                     text = fd.read()
-                return Item(vobject.readOne(text), href, get_etag(text))
+                last_modified = time.strftime(
+                    "%a, %d %b %Y %H:%M:%S GMT",
+                    time.gmtime(os.path.getmtime(path)))
+                return Item(
+                    vobject.readOne(text), href, get_etag(text), last_modified)
         else:
             log.LOGGER.debug(
                 "Can't tranlate name safely to filesystem, "
@@ -365,10 +372,10 @@ class Collection:
     @property
     def last_modified(self):
         """Get the HTTP-datetime of when the collection was modified."""
-        last = max([
+        last = max([os.path.getmtime(self._filesystem_path)] + [
             os.path.getmtime(os.path.join(self._filesystem_path, filename))
             for filename in os.listdir(self._filesystem_path)] or [0])
-        return time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime(last))
+        return time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(last))
 
     def serialize(self):
         items = []
