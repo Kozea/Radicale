@@ -430,7 +430,7 @@ class Application(object):
         # TODO: use this?
         # timezone = props.get("C:calendar-timezone")
         collection = storage.Collection.create_collection(
-            collection.path, tag="VCALENDAR")
+            environ["PATH_INFO"], tag="VCALENDAR")
         for key, value in props.items():
             collection.set_meta(key, value)
         return client.CREATED, {}, None
@@ -444,7 +444,7 @@ class Application(object):
         collection = write_collections[0]
 
         props = xmlutils.props_from_request(content)
-        collection = storage.Collection.create_collection(collection.path)
+        collection = storage.Collection.create_collection(environ["PATH_INFO"])
         for key, value in props.items():
             collection.set_meta(key, value)
         return client.CREATED, {}, None

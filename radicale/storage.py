@@ -175,8 +175,15 @@ class Collection:
             return
 
         # Try to guess if the path leads to a collection or an item
-        if os.path.isfile(path_to_filesystem(FOLDER, sane_path)):
-            attributes.pop()
+        if not os.path.isdir(path_to_filesystem(FOLDER, sane_path)):
+            # path is not a collection
+            if os.path.isfile(path_to_filesystem(FOLDER, sane_path)):
+                # path is an item
+                attributes.pop()
+            elif os.path.isdir(path_to_filesystem(FOLDER, *attributes[:-1])):
+                # path parent is a collection
+                attributes.pop()
+            # TODO: else: return?
 
         path = "/".join(attributes)
 
