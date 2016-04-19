@@ -565,7 +565,7 @@ def report(path, xml_request, collection):
             # TODO: fix this
             if hreference.split("/")[-1] == item.href:
                 # Happening when depth is 0
-                uri = "/" + hreference
+                uri = hreference
             else:
                 # Happening when depth is 1
                 uri = posixpath.join(hreference, item.href)
