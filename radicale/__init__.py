@@ -540,13 +540,8 @@ class Application(object):
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item
             # Case 3: Item and no Etag precondition: Force modifying item
-            xmlutils.put(environ["PATH_INFO"], content, collection)
+            new_item = xmlutils.put(environ["PATH_INFO"], content, collection)
             status = client.CREATED
-            # Try to return the etag in the header.
-            # If the added item doesn't have the same name as the one given
-            # by the client, then there's no obvious way to generate an
-            # etag, we can safely ignore it.
-            new_item = collection.get(item_name)
             if new_item:
                 headers["ETag"] = new_item.etag
         else:

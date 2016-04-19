@@ -114,10 +114,9 @@ def path_to_filesystem(root, *paths):
 
 
 class Item:
-    def __init__(self, item, href, etag, last_modified=None):
+    def __init__(self, item, href, last_modified=None):
         self.item = item
         self.href = href
-        self.etag = etag
         self.last_modified = last_modified
 
     def __getattr__(self, attr):
@@ -265,8 +264,7 @@ class Collection:
                 last_modified = time.strftime(
                     "%a, %d %b %Y %H:%M:%S GMT",
                     time.gmtime(os.path.getmtime(path)))
-                return Item(
-                    vobject.readOne(text), href, get_etag(text), last_modified)
+                return Item(vobject.readOne(text), href, last_modified)
         else:
             log.LOGGER.debug(
                 "Can't tranlate name safely to filesystem, "
@@ -286,22 +284,22 @@ class Collection:
         """Check if an item exists by its href."""
         return self.get(href) is not None
 
-    def upload(self, href, item):
+    def upload(self, href, vobject_item):
         """Upload a new item."""
         # TODO: use returned object in code
         if is_safe_filesystem_path_component(href):
             path = path_to_filesystem(self._filesystem_path, href)
             if not os.path.exists(path):
-                text = item.serialize()
+                item = Item(vobject_item, href)
                 with open(path, "w", encoding=STORAGE_ENCODING) as fd:
-                    fd.write(text)
-                return href, get_etag(text)
+                    fd.write(item.serialize())
+                return item
         else:
             log.LOGGER.debug(
                 "Can't tranlate name safely to filesystem, "
                 "skipping component: %s", href)
 
-    def update(self, href, item, etag=None):
+    def update(self, href, vobject_item, etag=None):
         """Update an item."""
         # TODO: use etag in code and test it here
         # TODO: use returned object in code
@@ -311,10 +309,10 @@ class Collection:
                 with open(path, encoding=STORAGE_ENCODING) as fd:
                     text = fd.read()
                 if not etag or etag == get_etag(text):
-                    new_text = item.serialize()
+                    item = Item(vobject_item, href)
                     with open(path, "w", encoding=STORAGE_ENCODING) as fd:
-                        fd.write(new_text)
-                    return get_etag(new_text)
+                        fd.write(item.serialize())
+                    return item
         else:
             log.LOGGER.debug(
                 "Can't tranlate name safely to filesystem, "
