@@ -271,7 +271,7 @@ def _propfind_response(path, item, props, user, write=False):
         element = ET.Element(tag)
         is404 = False
         if tag == _tag("D", "getetag"):
-            element.text = storage.get_etag(item.serialize())
+            element.text = item.etag
         elif tag == _tag("D", "principal-URL"):
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href(path)

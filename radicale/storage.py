@@ -127,6 +127,10 @@ class Item:
     def content_length(self):
         return len(self.serialize().encode(config.get("encoding", "request")))
 
+    @property
+    def etag(self):
+        return get_etag(self.serialize())
+
 
 class Collection:
     """Collection stored in several files per calendar."""
