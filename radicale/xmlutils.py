@@ -500,7 +500,7 @@ def report(path, xml_request, collection):
             for href_element in root.findall(_tag("D", "href")):
                 href_path = unquote(urlparse(href_element.text).path)
                 if href_path.startswith(base_prefix):
-                    hreferences.add(href_path[len(base_prefix):])
+                    hreferences.add(href_path[len(base_prefix) - 1:])
         else:
             hreferences = (path,)
         # TODO: handle other filters
