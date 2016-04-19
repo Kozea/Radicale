@@ -60,7 +60,7 @@ MIMETYPES = {"VADDRESSBOOK": "text/vcard", "VCALENDAR": "text/calendar"}
 def get_etag(text):
     """Etag from collection or item."""
     etag = md5()
-    etag.update(text.encode("utf-8"))
+    etag.update(u'\r\n'.join(text.splitlines()).encode("utf-8"))
     return '"%s"' % etag.hexdigest()
 
 
