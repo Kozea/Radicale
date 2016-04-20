@@ -507,11 +507,12 @@ def report(path, xml_request, collection):
         # TODO: handle the nested comp-filters correctly
         # Read rfc4791-9.7.1 for info
         tag_filters = set(
-            element.get("name") for element
+            element.get("name").upper() for element
             in root.findall(".//%s" % _tag("C", "comp-filter")))
+        tag_filters.discard("VCALENDAR")
     else:
         hreferences = ()
-        tag_filters = None
+        tag_filters = set()
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -537,7 +538,9 @@ def report(path, xml_request, collection):
             items = [collection.get(href) for href, etag in collection.list()]
 
         for item in items:
-            if tag_filters and item.name not in tag_filters:
+            if tag_filters and \
+               item.name not in tag_filters and \
+               not set(x.upper() for x in item.contents) & tag_filters:
                 continue
 
             found_props = []
