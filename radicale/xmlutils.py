@@ -349,9 +349,10 @@ def _propfind_response(path, item, props, user, write=False):
                 elif tag == _tag("CS", "getctag"):
                     element.text = item.etag
                 elif tag == _tag("C", "calendar-timezone"):
-                    timezones = {}
-                    for event in item.list():
-                        if "vtimezone" in event.content:
+                    timezones = set()
+                    for href, _ in item.list():
+                        event = item.get(href)
+                        if "vtimezone" in event.contents:
                             for timezone in event.vtimezone_list:
                                 timezones.add(timezone)
                     collection = vobject.iCalendar()
