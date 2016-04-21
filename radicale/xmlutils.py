@@ -538,9 +538,9 @@ def report(path, xml_request, collection):
             items = [collection.get(href) for href, etag in collection.list()]
 
         for item in items:
-            if tag_filters and \
-               item.name not in tag_filters and \
-               not set(x.upper() for x in item.contents) & tag_filters:
+            if (tag_filters and
+                    item.name not in tag_filters and
+                    not {tag.upper() for tag in item.contents} & tag_filters):
                 continue
 
             found_props = []
