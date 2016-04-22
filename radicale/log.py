@@ -28,40 +28,38 @@ import logging
 import logging.config
 import signal
 
-from . import config
 
-
-LOGGER = logging.getLogger()
-
-
-def configure_from_file(filename, debug):
+def configure_from_file(filename, debug, logger):
     logging.config.fileConfig(filename)
     if debug:
-        LOGGER.setLevel(logging.DEBUG)
-        for handler in LOGGER.handlers:
+        logger.setLevel(logging.DEBUG)
+        for handler in logger.handlers:
             handler.setLevel(logging.DEBUG)
+    return logger
 
 
-def start():
+def start(name="radicale", filename=None, debug=False):
     """Start the logging according to the configuration."""
-    filename = os.path.expanduser(config.get("logging", "config"))
-    debug = config.getboolean("logging", "debug")
-
+    logger = logging.getLogger(name)
     if os.path.exists(filename):
         # Configuration taken from file
-        configure_from_file(filename, debug)
+        configure_from_file(logger, filename, debug)
         # Reload config on SIGHUP (UNIX only)
         if hasattr(signal, 'SIGHUP'):
-            def handler(signum, frame):
-                configure_from_file(filename, debug)
+            def handler_generator(logger, filename, debug):
+                def handler(signum, frame):
+                    configure_from_file(logger, filename, debug)
+            handler = handler_generator(logger, filename, debug)
             signal.signal(signal.SIGHUP, handler)
     else:
         # Default configuration, standard output
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(logging.Formatter("%(message)s"))
-        LOGGER.addHandler(handler)
-        if debug:
-            LOGGER.setLevel(logging.DEBUG)
-            LOGGER.debug(
+        if filename:
+            logger.warning(
                 "Logging configuration file '%s' not found, using stdout." %
                 filename)
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        logger.addHandler(handler)
+    if debug:
+        logger.setLevel(logging.DEBUG)
+    return logger

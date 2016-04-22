@@ -22,11 +22,12 @@ Radicale tests with simple requests and authentication.
 
 import base64
 import hashlib
+import logging
 import os
-import radicale
+import shutil
 import tempfile
 
-from radicale import config, auth
+from radicale import Application, config
 
 from . import BaseTest
 
@@ -37,38 +38,40 @@ class TestBaseAuthRequests(BaseTest):
     We should setup auth for each type before creating the Application object.
 
     """
-
     def setup(self):
-        self.userpass = "dG1wOmJlcG8="
+        self.colpath = tempfile.mkdtemp()
 
     def teardown(self):
-        config.set("auth", "type", "None")
-        radicale.auth.is_authenticated = lambda *_: True
+        shutil.rmtree(self.colpath)
 
     def test_root(self):
         """Htpasswd authentication."""
-        self.colpath = tempfile.mkdtemp()
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
         with open(htpasswd_file_path, "wb") as fd:
             fd.write(b"tmp:{SHA}" + base64.b64encode(
                 hashlib.sha1(b"bepo").digest()))
-        config.set("auth", "type", "htpasswd")
 
-        auth.FILENAME = htpasswd_file_path
-        auth.ENCRYPTION = "sha1"
+        configuration = config.load()
+        configuration.set("auth", "type", "htpasswd")
+        configuration.set("auth", "htpasswd_filename", htpasswd_file_path)
+        configuration.set("auth", "htpasswd_encryption", "sha1")
 
-        self.application = radicale.Application()
+        self.application = Application(
+            configuration, logging.getLogger("radicale_test"))
 
         status, headers, answer = self.request(
-            "GET", "/", HTTP_AUTHORIZATION=self.userpass)
+            "GET", "/", HTTP_AUTHORIZATION="dG1wOmJlcG8=")
         assert status == 200
         assert "Radicale works!" in answer
 
     def test_custom(self):
         """Custom authentication."""
-        config.set("auth", "type", "tests.custom.auth")
-        self.application = radicale.Application()
+        configuration = config.load()
+        configuration.set("auth", "type", "tests.custom.auth")
+        self.application = Application(
+            configuration, logging.getLogger("radicale_test"))
+
         status, headers, answer = self.request(
-            "GET", "/", HTTP_AUTHORIZATION=self.userpass)
+            "GET", "/", HTTP_AUTHORIZATION="dG1wOmJlcG8=")
         assert status == 200
         assert "Radicale works!" in answer

@@ -28,8 +28,8 @@ by using the system's CRYPT routine. The CRYPT and SHA1 encryption methods
 implemented by htpasswd are considered as insecure. MD5-APR1 provides medium
 security as of 2015. Only BCRYPT can be considered secure by current standards.
 
-MD5-APR1-encrypted credentials can be written by all versions of htpasswd (its
-the default, in fact), whereas BCRYPT requires htpasswd 2.4.x or newer.
+MD5-APR1-encrypted credentials can be written by all versions of htpasswd (it
+is the default, in fact), whereas BCRYPT requires htpasswd 2.4.x or newer.
 
 The `is_authenticated(user, password)` function provided by this module
 verifies the user-given credentials by parsing the htpasswd credential file
@@ -55,127 +55,135 @@ following significantly more secure schemes are parsable by Radicale:
 import base64
 import hashlib
 import os
-import sys
-
-from . import config, log
+from importlib import import_module
 
 
-def _load():
+def load(configuration, logger):
     """Load the authentication manager chosen in configuration."""
-    auth_type = config.get("auth", "type")
-    log.LOGGER.debug("Authentication type is %s" % auth_type)
+    auth_type = configuration.get("auth", "type")
+    logger.debug("Authentication type is %s" % auth_type)
     if auth_type == "None":
-        sys.modules[__name__].is_authenticated = lambda user, password: True
+        return lambda user, password: True
     elif auth_type == "htpasswd":
-        pass  # is_authenticated is already defined
+        return Auth(configuration, logger).is_authenticated
     else:
-        __import__(auth_type)
-        sys.modules[__name__].is_authenticated = (
-            sys.modules[auth_type].is_authenticated)
+        module = import_module(auth_type)
+        return module.Auth(configuration, logger).is_authenticated
 
 
-FILENAME = os.path.expanduser(config.get("auth", "htpasswd_filename"))
-ENCRYPTION = config.get("auth", "htpasswd_encryption")
+class BaseAuth:
+    def __init__(self, configuration, logger):
+        self.configuration = configuration
+        self.logger = logger
+
+    def is_authenticated(self, user, password):
+        """Validate credentials.
+
+        Iterate through htpasswd credential file until user matches, extract hash
+        (encrypted password) and check hash against user-given password, using the
+        method specified in the Radicale config.
+
+        """
+        raise NotImplementedError
 
 
-def _plain(hash_value, password):
-    """Check if ``hash_value`` and ``password`` match, using plain method."""
-    return hash_value == password
+class Auth(BaseAuth):
+    def __init__(self, configuration, logger):
+        super().__init__(configuration, logger)
+        self.filename = os.path.expanduser(
+            configuration.get("auth", "htpasswd_filename"))
+        self.encryption = configuration.get("auth", "htpasswd_encryption")
+
+        if self.encryption == "ssha":
+            self.verify = self._ssha
+        elif self.encryption == "sha1":
+            self.verify = self._sha1
+        elif self.encryption == "plain":
+            self.verify = self._plain
+        elif self.encryption == "md5":
+            try:
+                from passlib.hash import apr_md5_crypt as _passlib_md5apr1
+            except ImportError:
+                raise RuntimeError(
+                    "The htpasswd encryption method 'md5' requires "
+                    "the passlib module.")
+            self.verify = self._md5apr1
+        elif self.encryption == "bcrypt":
+            try:
+                from passlib.hash import bcrypt as _passlib_bcrypt
+            except ImportError:
+                raise RuntimeError(
+                    "The htpasswd encryption method 'bcrypt' requires "
+                    "the passlib module with bcrypt support.")
+            # A call to `encrypt` raises passlib.exc.MissingBackendError with a
+            # good error message if bcrypt backend is not available. Trigger
+            # this here.
+            _passlib_bcrypt.encrypt("test-bcrypt-backend")
+            self.verify = self._bcrypt
+        elif self.encryption == "crypt":
+            try:
+                import crypt
+            except ImportError:
+                raise RuntimeError(
+                    "The htpasswd encryption method 'crypt' requires "
+                    "the crypt() system support.")
+            self.verify = self._crypt
+        else:
+            raise RuntimeError(
+                "The htpasswd encryption method '%s' is not "
+                "supported." % self.encryption)
+
+    def _plain(self, hash_value, password):
+        """Check if ``hash_value`` and ``password`` match, using plain method."""
+        return hash_value == password
 
 
-def _crypt(hash_value, password):
-    """Check if ``hash_value`` and ``password`` match, using crypt method."""
-    return crypt.crypt(password, hash_value) == hash_value
+    def _crypt(self, hash_value, password):
+        """Check if ``hash_value`` and ``password`` match, using crypt method."""
+        return crypt.crypt(password, hash_value) == hash_value
 
 
-def _sha1(hash_value, password):
-    """Check if ``hash_value`` and ``password`` match, using sha1 method."""
-    hash_value = hash_value.replace("{SHA}", "").encode("ascii")
-    password = password.encode(config.get("encoding", "stock"))
-    sha1 = hashlib.sha1()  # pylint: disable=E1101
-    sha1.update(password)
-    return sha1.digest() == base64.b64decode(hash_value)
+    def _sha1(self, hash_value, password):
+        """Check if ``hash_value`` and ``password`` match, using sha1 method."""
+        hash_value = hash_value.replace("{SHA}", "").encode("ascii")
+        password = password.encode(self.configuration.get("encoding", "stock"))
+        sha1 = hashlib.sha1()  # pylint: disable=E1101
+        sha1.update(password)
+        return sha1.digest() == base64.b64decode(hash_value)
 
 
-def _ssha(hash_salt_value, password):
-    """Check if ``hash_salt_value`` and ``password`` match, using salted sha1
-    method. This method is not directly supported by htpasswd, but it can be
-    written with e.g. openssl, and nginx can parse it."""
-    hash_salt_value = hash_salt_value.replace(
-        "{SSHA}", "").encode("ascii").decode('base64')
-    password = password.encode(config.get("encoding", "stock"))
-    hash_value = hash_salt_value[:20]
-    salt_value = hash_salt_value[20:]
-    sha1 = hashlib.sha1()  # pylint: disable=E1101
-    sha1.update(password)
-    sha1.update(salt_value)
-    return sha1.digest() == hash_value
+    def _ssha(self, hash_salt_value, password):
+        """Check if ``hash_salt_value`` and ``password`` match, using salted sha1
+        method. This method is not directly supported by htpasswd, but it can be
+        written with e.g. openssl, and nginx can parse it."""
+        hash_salt_value = hash_salt_value.replace(
+            "{SSHA}", "").encode("ascii").decode('base64')
+        password = password.encode(self.configuration.get("encoding", "stock"))
+        hash_value = hash_salt_value[:20]
+        salt_value = hash_salt_value[20:]
+        sha1 = hashlib.sha1()  # pylint: disable=E1101
+        sha1.update(password)
+        sha1.update(salt_value)
+        return sha1.digest() == hash_value
 
 
-def _bcrypt(hash_value, password):
-    return _passlib_bcrypt.verify(password, hash_value)
+    def _bcrypt(self, hash_value, password):
+        return _passlib_bcrypt.verify(password, hash_value)
 
 
-def _md5apr1(hash_value, password):
-    return _passlib_md5apr1.verify(password, hash_value)
+    def _md5apr1(self, hash_value, password):
+        return _passlib_md5apr1.verify(password, hash_value)
 
-
-# Prepare mapping between encryption names and verification functions.
-# Pre-fill with methods that do not have external dependencies.
-_verifuncs = {
-    "ssha": _ssha,
-    "sha1": _sha1,
-    "plain": _plain}
-
-
-# Conditionally attempt to import external dependencies.
-if ENCRYPTION == "md5":
-    try:
-        from passlib.hash import apr_md5_crypt as _passlib_md5apr1
-    except ImportError:
-        raise RuntimeError(("The htpasswd_encryption method 'md5' requires "
-            "availability of the passlib module."))
-    _verifuncs["md5"] = _md5apr1
-elif ENCRYPTION == "bcrypt":
-    try:
-        from passlib.hash import bcrypt as _passlib_bcrypt
-    except ImportError:
-        raise RuntimeError(("The htpasswd_encryption method 'bcrypt' requires "
-            "availability of the passlib module with bcrypt support."))
-    # A call to `encrypt` raises passlib.exc.MissingBackendError with a good
-    # error message if bcrypt backend is not available. Trigger this here.
-    _passlib_bcrypt.encrypt("test-bcrypt-backend")
-    _verifuncs["bcrypt"] = _bcrypt
-elif ENCRYPTION == "crypt":
-    try:
-        import crypt
-    except ImportError:
-        raise RuntimeError(("The htpasswd_encryption method 'crypt' requires "
-            "crypt() system support."))
-    _verifuncs["crypt"] = _crypt
-
-
-# Validate initial configuration.
-if ENCRYPTION not in _verifuncs:
-    raise RuntimeError(("The htpasswd encryption method '%s' is not "
-        "supported." % ENCRYPTION))
-
-
-def is_authenticated(user, password):
-    """Validate credentials.
-
-    Iterate through htpasswd credential file until user matches, extract hash
-    (encrypted password) and check hash against user-given password, using the
-    method specified in the Radicale config.
-
-    """
-    with open(FILENAME) as f:
-        for line in f:
-            strippedline = line.strip()
-            if strippedline:
-                login, hash_value = strippedline.split(":")
-                if login == user:
-                    # Allow encryption method to be overridden at runtime.
-                    return _verifuncs[ENCRYPTION](hash_value, password)
-    return False
+    def is_authenticated(self, user, password):
+        # The content of the file is not cached because reading is generally a
+        # very cheap operation, and it's useful to get live updates of the
+        # htpasswd file.
+        with open(self.filename) as fd:
+            for line in fd:
+                line = line.strip()
+                if line:
+                    login, hash_value = line.split(":")
+                    if login == user:
+                        return self.verify(hash_value, password)
+        return False
 

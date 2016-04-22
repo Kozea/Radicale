@@ -36,7 +36,9 @@ import re
 from http import client
 from urllib.parse import unquote, urlparse
 
-from . import auth, config, log, rights, storage, xmlutils
+import vobject
+
+from . import auth, rights, storage, xmlutils
 
 
 VERSION = "2.0.0-pre"
@@ -71,30 +73,20 @@ class HTTPServer(wsgiref.simple_server.WSGIServer, object):
 
 class HTTPSServer(HTTPServer):
     """HTTPS server."""
+
+    # These class attributes must be set before creating instance
+    certificate = None
+    key = None
+    protocol = None
+    cyphers = None
+
     def __init__(self, address, handler):
         """Create server by wrapping HTTP socket in an SSL socket."""
-        super().__init__(address, handler, False)
+        super().__init__(address, handler, bind_and_activate=False)
 
-        # Test if the SSL files can be read
-        for name in ("certificate", "key"):
-            filename = config.get("server", name)
-            try:
-                open(filename, "r").close()
-            except IOError as exception:
-                log.LOGGER.warning(
-                    "Error while reading SSL %s %r: %s" % (
-                        name, filename, exception))
-
-        ssl_kwargs = dict(
-            server_side=True,
-            certfile=config.get("server", "certificate"),
-            keyfile=config.get("server", "key"),
-            ssl_version=getattr(
-                ssl, config.get("server", "protocol"), ssl.PROTOCOL_SSLv23))
-
-        ssl_kwargs["ciphers"] = config.get("server", "ciphers") or None
-
-        self.socket = ssl.wrap_socket(self.socket, **ssl_kwargs)
+        self.socket = ssl.wrap_socket(
+            self.socket, self.key, self.certificate, server_side=True,
+            ssl_version=self.protocol, cyphers=self.cyphers)
 
         self.server_bind()
         self.server_activate()
@@ -105,25 +97,19 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     def log_message(self, *args, **kwargs):
         """Disable inner logging management."""
 
-    def address_string(self):
-        """Client address, formatted for logging."""
-        if config.getboolean("server", "dns_lookup"):
-            return (
-                wsgiref.simple_server.WSGIRequestHandler.address_string(self))
-        else:
-            return self.client_address[0]
 
-
-class Application(object):
+class Application:
     """WSGI application managing collections."""
-    def __init__(self):
+    def __init__(self, configuration, logger):
         """Initialize application."""
         super().__init__()
-        auth._load()
-        storage._load()
-        rights._load()
-        self.encoding = config.get("encoding", "request")
-        if config.getboolean("logging", "full_environment"):
+        self.configuration = configuration
+        self.logger = logger
+        self.is_authenticated = auth.load(configuration, logger)
+        self.Collection = storage.load(configuration, logger)
+        self.authorized = rights.load(configuration, logger)
+        self.encoding = configuration.get("encoding", "request")
+        if configuration.getboolean("logging", "full_environment"):
             self.headers_log = lambda environ: environ
 
     # This method is overriden in __init__ if full_environment is set
@@ -170,27 +156,27 @@ class Application(object):
         write_allowed_items = []
 
         for item in items:
-            if isinstance(item, storage.Collection):
-                if rights.authorized(user, item, "r"):
-                    log.LOGGER.debug(
+            if isinstance(item, self.Collection):
+                if self.authorized(user, item, "r"):
+                    self.logger.debug(
                         "%s has read access to collection %s" %
                         (user or "Anonymous", item.path or "/"))
                     read_last_collection_allowed = True
                     read_allowed_items.append(item)
                 else:
-                    log.LOGGER.debug(
+                    self.logger.debug(
                         "%s has NO read access to collection %s" %
                         (user or "Anonymous", item.path or "/"))
                     read_last_collection_allowed = False
 
-                if rights.authorized(user, item, "w"):
-                    log.LOGGER.debug(
+                if self.authorized(user, item, "w"):
+                    self.logger.debug(
                         "%s has write access to collection %s" %
                         (user or "Anonymous", item.path or "/"))
                     write_last_collection_allowed = True
                     write_allowed_items.append(item)
                 else:
-                    log.LOGGER.debug(
+                    self.logger.debug(
                         "%s has NO write access to collection %s" %
                         (user or "Anonymous", item.path or "/"))
                     write_last_collection_allowed = False
@@ -199,22 +185,22 @@ class Application(object):
                 # collection we've met in the loop. Only add this item
                 # if this last collection was allowed.
                 if read_last_collection_allowed:
-                    log.LOGGER.debug(
+                    self.logger.debug(
                         "%s has read access to item %s" %
                         (user or "Anonymous", item.href))
                     read_allowed_items.append(item)
                 else:
-                    log.LOGGER.debug(
+                    self.logger.debug(
                         "%s has NO read access to item %s" %
                         (user or "Anonymous", item.href))
 
                 if write_last_collection_allowed:
-                    log.LOGGER.debug(
+                    self.logger.debug(
                         "%s has write access to item %s" %
                         (user or "Anonymous", item.href))
                     write_allowed_items.append(item)
                 else:
-                    log.LOGGER.debug(
+                    self.logger.debug(
                         "%s has NO write access to item %s" %
                         (user or "Anonymous", item.href))
 
@@ -222,21 +208,21 @@ class Application(object):
 
     def __call__(self, environ, start_response):
         """Manage a request."""
-        log.LOGGER.info("%s request at %s received" % (
+        self.logger.info("%s request at %s received" % (
             environ["REQUEST_METHOD"], environ["PATH_INFO"]))
         headers = pprint.pformat(self.headers_log(environ))
-        log.LOGGER.debug("Request headers:\n%s" % headers)
+        self.logger.debug("Request headers:\n%s" % headers)
 
         # Strip base_prefix from request URI
-        base_prefix = config.get("server", "base_prefix")
+        base_prefix = self.configuration.get("server", "base_prefix")
         if environ["PATH_INFO"].startswith(base_prefix):
             environ["PATH_INFO"] = environ["PATH_INFO"][len(base_prefix):]
-        elif config.get("server", "can_skip_base_prefix"):
-            log.LOGGER.debug(
+        elif self.configuration.get("server", "can_skip_base_prefix"):
+            self.logger.debug(
                 "Prefix already stripped from path: %s", environ["PATH_INFO"])
         else:
             # Request path not starting with base_prefix, not allowed
-            log.LOGGER.debug(
+            self.logger.debug(
                 "Path not starting with prefix: %s", environ["PATH_INFO"])
             status, headers, _ = NOT_ALLOWED
             start_response(status, list(headers.items()))
@@ -245,7 +231,7 @@ class Application(object):
         # Sanitize request URI
         environ["PATH_INFO"] = storage.sanitize_path(
             unquote(environ["PATH_INFO"]))
-        log.LOGGER.debug("Sanitized path: %s", environ["PATH_INFO"])
+        self.logger.debug("Sanitized path: %s", environ["PATH_INFO"])
 
         path = environ["PATH_INFO"]
 
@@ -265,30 +251,32 @@ class Application(object):
 
         well_known = WELL_KNOWN_RE.match(path)
         if well_known:
-            redirect = config.get("well-known", well_known.group(1))
+            redirect = self.configuration.get(
+                "well-known", well_known.group(1))
             try:
                 redirect = redirect % ({"user": user} if user else {})
             except KeyError:
                 status = client.UNAUTHORIZED
+                realm = self.configuration.get("server", "realm")
                 headers = {
                     "WWW-Authenticate":
-                    "Basic realm=\"%s\"" % config.get("server", "realm")}
-                log.LOGGER.info(
+                    "Basic realm=\"%s\"" % realm}
+                self.logger.info(
                     "Refused /.well-known/ redirection to anonymous user")
             else:
                 status = client.SEE_OTHER
-                log.LOGGER.info("/.well-known/ redirection to: %s" % redirect)
+                self.logger.info("/.well-known/ redirection to: %s" % redirect)
                 headers = {"Location": redirect}
             status = "%i %s" % (
                 status, client.responses.get(status, "Unknown"))
             start_response(status, list(headers.items()))
             return []
 
-        is_authenticated = auth.is_authenticated(user, password)
+        is_authenticated = self.is_authenticated(user, password)
         is_valid_user = is_authenticated or not user
 
         if is_valid_user:
-            items = storage.Collection.discover(
+            items = self.Collection.discover(
                 path, environ.get("HTTP_DEPTH", "0"))
             read_allowed_items, write_allowed_items = (
                 self.collect_allowed_items(items, user))
@@ -300,7 +288,7 @@ class Application(object):
         if content_length:
             content = self.decode(
                 environ["wsgi.input"].read(content_length), environ)
-            log.LOGGER.debug("Request content:\n%s" % content)
+            self.logger.debug("Request content:\n%s" % content)
         else:
             content = None
 
@@ -314,30 +302,29 @@ class Application(object):
         else:
             status, headers, answer = NOT_ALLOWED
 
-        if ((status, headers, answer) == NOT_ALLOWED and
-                not auth.is_authenticated(user, password) and
-                config.get("auth", "type") != "None"):
+        if (status, headers, answer) == NOT_ALLOWED and not is_authenticated:
             # Unknown or unauthorized user
-            log.LOGGER.info("%s refused" % (user or "Anonymous user"))
+            self.logger.info("%s refused" % (user or "Anonymous user"))
             status = client.UNAUTHORIZED
+            realm = self.configuration.get("server", "realm")
             headers = {
                 "WWW-Authenticate":
-                "Basic realm=\"%s\"" % config.get("server", "realm")}
+                "Basic realm=\"%s\"" % realm}
             answer = None
 
         # Set content length
         if answer:
-            log.LOGGER.debug(
-                "Response content:\n%s" % self.decode(answer, environ))
+            self.logger.debug("Response content:\n%s" % answer, environ)
+            answer = answer.encode(self.encoding)
             headers["Content-Length"] = str(len(answer))
 
-        if config.has_section("headers"):
-            for key in config.options("headers"):
-                headers[key] = config.get("headers", key)
+        if self.configuration.has_section("headers"):
+            for key in self.configuration.options("headers"):
+                headers[key] = self.configuration.get("headers", key)
 
         # Start response
         status = "%i %s" % (status, client.responses.get(status, "Unknown"))
-        log.LOGGER.debug("Answer status: %s" % status)
+        self.logger.debug("Answer status: %s" % status)
         start_response(status, list(headers.items()))
 
         # Return response content
@@ -378,7 +365,7 @@ class Application(object):
         # Display a "Radicale works!" message if the root URL is requested
         if environ["PATH_INFO"] == "/":
             headers = {"Content-type": "text/html"}
-            answer = b"<!DOCTYPE html>\n<title>Radicale</title>Radicale works!"
+            answer = "<!DOCTYPE html>\n<title>Radicale</title>Radicale works!"
             return client.OK, headers, answer
 
         if not read_collections:
@@ -400,7 +387,7 @@ class Application(object):
             # Get whole collection
             answer_text = collection.serialize()
             if not answer_text:
-                log.LOGGER.debug("Collection at %s unknown" % environ["PATH_INFO"])
+                self.logger.debug("Collection at %s unknown" % environ["PATH_INFO"])
                 return client.NOT_FOUND, {}, None
             etag = collection.etag
 
@@ -408,7 +395,7 @@ class Application(object):
             "Content-Type": storage.MIMETYPES[collection.get_meta("tag")],
             "Last-Modified": collection.last_modified,
             "ETag": etag}
-        answer = answer_text.encode(self.encoding)
+        answer = answer_text
         return client.OK, headers, answer
 
     def do_HEAD(self, environ, read_collections, write_collections, content,
@@ -429,7 +416,7 @@ class Application(object):
         props = xmlutils.props_from_request(content)
         # TODO: use this?
         # timezone = props.get("C:calendar-timezone")
-        collection = storage.Collection.create_collection(
+        collection = self.Collection.create_collection(
             environ["PATH_INFO"], tag="VCALENDAR")
         for key, value in props.items():
             collection.set_meta(key, value)
@@ -444,7 +431,7 @@ class Application(object):
         collection = write_collections[0]
 
         props = xmlutils.props_from_request(content)
-        collection = storage.Collection.create_collection(environ["PATH_INFO"])
+        collection = self.Collection.create_collection(environ["PATH_INFO"])
         for key, value in props.items():
             collection.set_meta(key, value)
         return client.CREATED, {}, None
@@ -465,7 +452,7 @@ class Application(object):
             if to_url_parts.netloc == environ["HTTP_HOST"]:
                 to_url = to_url_parts.path
                 to_path, to_name = to_url.rstrip("/").rsplit("/", 1)
-                for to_collection in storage.Collection.discover(
+                for to_collection in self.Collection.discover(
                         to_path, depth="0"):
                     if to_collection in write_collections:
                         to_collection.upload(to_name, item)
@@ -509,8 +496,7 @@ class Application(object):
 
         collection = write_collections[0]
 
-        answer = xmlutils.proppatch(
-            environ["PATH_INFO"], content, collection)
+        answer = xmlutils.proppatch(environ["PATH_INFO"], content, collection)
         headers = {
             "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
             "Content-Type": "text/xml"}
@@ -540,10 +526,22 @@ class Application(object):
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item
             # Case 3: Item and no Etag precondition: Force modifying item
-            new_item = xmlutils.put(environ["PATH_INFO"], content, collection)
+            items = list(vobject.readComponents(content))
+            if items:
+                if item:
+                    # PUT is modifying an existing item
+                    new_item = collection.update(item_name, items[0])
+                elif item_name:
+                    # PUT is adding a new item
+                    new_item = collection.upload(item_name, items[0])
+                else:
+                    # PUT is replacing the whole collection
+                    collection.delete()
+                    new_item = self.Collection.create_collection(
+                        environ["PATH_INFO"], items)
+                if new_item:
+                    headers["ETag"] = new_item.etag
             status = client.CREATED
-            if new_item:
-                headers["ETag"] = new_item.etag
         else:
             # PUT rejected in all other cases
             status = client.PRECONDITION_FAILED

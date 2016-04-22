@@ -23,6 +23,9 @@ Just check username for testing
 
 """
 
+from radicale import auth
 
-def is_authenticated(user, password):
-    return user == 'tmp'
+
+class Auth(auth.BaseAuth):
+    def is_authenticated(self, user, password):
+        return user == 'tmp'

@@ -19,20 +19,24 @@ Radicale tests with simple requests.
 
 """
 
-import radicale
+import logging
 import shutil
 import tempfile
+
+from radicale import Application, config
 
 from . import BaseTest
 from .helpers import get_file_content
 
 
-class BaseRequests(object):
+class BaseRequests:
     """Tests with simple requests."""
     storage_type = None
 
     def setup(self):
-        radicale.config.set("storage", "type", self.storage_type)
+        self.configuration = config.load()
+        self.configuration.set("storage", "type", self.storage_type)
+        self.logger = logging.getLogger("radicale_test")
 
     def test_root(self):
         """GET request at "/"."""
@@ -95,30 +99,25 @@ class TestMultiFileSystem(BaseRequests, BaseTest):
     storage_type = "multifilesystem"
 
     def setup(self):
-        """Setup function for each test."""
+        super().setup()
         self.colpath = tempfile.mkdtemp()
-        from radicale import storage
-        storage.FOLDER = self.colpath
-        self.application = radicale.Application()
+        self.configuration.set("storage", "filesystem_folder", self.colpath)
+        self.application = Application(self.configuration, self.logger)
 
     def teardown(self):
-        """Teardown function for each test."""
         shutil.rmtree(self.colpath)
 
 
 class TestCustomStorageSystem(BaseRequests, BaseTest):
     """Base class for custom backend tests."""
-    storage_type = "custom"
+    storage_type = "tests.custom.storage"
 
     def setup(self):
-        """Setup function for each test."""
         super().setup()
         self.colpath = tempfile.mkdtemp()
-        radicale.config.set("storage", "type", "tests.custom.storage")
-        from tests.custom import storage
-        storage.FOLDER = self.colpath
-        self.application = radicale.Application()
+        self.configuration.set("storage", "filesystem_folder", self.colpath)
+        self.configuration.set("storage", "test_folder", self.colpath)
+        self.application = Application(self.configuration, self.logger)
 
     def teardown(self):
-        """Teardown function for each test."""
         shutil.rmtree(self.colpath)

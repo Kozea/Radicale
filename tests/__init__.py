@@ -25,11 +25,8 @@ from io import BytesIO
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-os.environ["RADICALE_CONFIG"] = os.path.join(os.path.dirname(
-    os.path.dirname(__file__)), "config")
 
-
-class BaseTest(object):
+class BaseTest:
     """Base class for tests."""
     def request(self, method, path, data=None, **args):
         """Send a request."""

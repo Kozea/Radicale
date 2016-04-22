@@ -21,8 +21,10 @@ Radicale WSGI file (mod_wsgi and uWSGI compliant).
 
 """
 
+import os
 import radicale
 
 
-radicale.log.start()
-application = radicale.Application()
+configuration = radicale.config.load([os.environ.get("RADICALE_CONFIG")])
+logger = radicale.log.start()
+application = radicale.Application(configuration, logger)

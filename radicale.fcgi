@@ -23,14 +23,12 @@ Launch a Radicale FastCGI server according to configuration.
 
 """
 
-try:
-    from flup.server.fcgi import WSGIServer
-except ImportError:
-    from flipflop import WSGIServer
+import os
 import radicale
+from flipflop import WSGIServer
 
 
-radicale.log.start()
-radicale.log.LOGGER.info("Starting Radicale FastCGI server")
-WSGIServer(radicale.Application()).run()
-radicale.log.LOGGER.info("Stopping Radicale FastCGI server")
+configuration = radicale.config.load([os.environ.get("RADICALE_CONFIG")])
+logger = radicale.log.start()
+WSGIServer(radicale.Application(configuration, logger)).run()
+

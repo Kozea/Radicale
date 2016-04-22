@@ -33,7 +33,7 @@ from urllib.parse import unquote, urlparse
 
 import vobject
 
-from . import client, config, storage
+from . import client, storage
 
 
 NAMESPACES = {
@@ -80,9 +80,7 @@ def _pretty_xml(element, level=0):
         if level and (not element.tail or not element.tail.strip()):
             element.tail = i
     if not level:
-        output_encoding = config.get("encoding", "request")
-        return ('<?xml version="1.0"?>\n' + ET.tostring(
-            element, "utf-8").decode("utf-8")).encode(output_encoding)
+        return '<?xml version="1.0"?>\n%s' % ET.tostring(element, "unicode")
 
 
 def _tag(short_name, local):
@@ -112,9 +110,11 @@ def _response(code):
     return "HTTP/1.1 %i %s" % (code, client.responses[code])
 
 
-def _href(href):
+def _href(collection, href):
     """Return prefixed href."""
-    return "%s%s" % (config.get("server", "base_prefix"), href.lstrip("/"))
+    return "%s%s" % (
+        collection.configuration.get("server", "base_prefix"),
+        href.lstrip("/"))
 
 
 def name_from_path(path, collection):
@@ -183,7 +183,7 @@ def delete(path, collection):
     multistatus.append(response)
 
     href = ET.Element(_tag("D", "href"))
-    href.text = _href(path)
+    href.text = _href(collection, path)
     response.append(href)
 
     status = ET.Element(_tag("D", "status"))
@@ -234,10 +234,13 @@ def propfind(path, xml_request, read_collections, write_collections, user=None):
 
 def _propfind_response(path, item, props, user, write=False):
     """Build and return a PROPFIND response."""
-    is_collection = isinstance(item, storage.Collection)
+    # TODO: fix this
+    is_collection = hasattr(item, "list")
     if is_collection:
-        # TODO: fix this
         is_leaf = bool(item.list())
+        collection = item
+    else:
+        collection = item.collection
 
     response = ET.Element(_tag("D", "response"))
 
@@ -254,7 +257,7 @@ def _propfind_response(path, item, props, user, write=False):
             uri = "/".join((path, item.href))
 
     # TODO: fix this
-    href.text = _href(uri.replace("//", "/"))
+    href.text = _href(collection, uri.replace("//", "/"))
     response.append(href)
 
     propstat404 = ET.Element(_tag("D", "propstat"))
@@ -274,7 +277,7 @@ def _propfind_response(path, item, props, user, write=False):
             element.text = item.etag
         elif tag == _tag("D", "principal-URL"):
             tag = ET.Element(_tag("D", "href"))
-            tag.text = _href(path)
+            tag.text = _href(collection, path)
             element.append(tag)
         elif tag == _tag("D", "getlastmodified"):
             element.text = item.last_modified
@@ -283,7 +286,7 @@ def _propfind_response(path, item, props, user, write=False):
                      _tag("CR", "addressbook-home-set"),
                      _tag("C", "calendar-home-set")):
             tag = ET.Element(_tag("D", "href"))
-            tag.text = _href(path)
+            tag.text = _href(collection, path)
             element.append(tag)
         elif tag == _tag("C", "supported-calendar-component-set"):
             # This is not a Todo
@@ -304,7 +307,7 @@ def _propfind_response(path, item, props, user, write=False):
             # pylint: enable=W0511
         elif tag == _tag("D", "current-user-principal") and user:
             tag = ET.Element(_tag("D", "href"))
-            tag.text = _href("/%s/" % user)
+            tag.text = _href(collection, "/%s/" % user)
             element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
@@ -381,7 +384,8 @@ def _propfind_response(path, item, props, user, write=False):
             # resourcetype must be returned empty for non-collection elements
             pass
         elif tag == _tag("D", "getcontentlength"):
-            element.text = str(item.content_length)
+            encoding = collection.configuration.get("encoding", "request")
+            element.text = str(len(item.serialize().encode(encoding)))
         else:
             is404 = True
 
@@ -447,7 +451,7 @@ def proppatch(path, xml_request, collection):
     multistatus.append(response)
 
     href = ET.Element(_tag("D", "href"))
-    href.text = _href(path)
+    href.text = _href(collection, path)
     response.append(href)
 
     for short_name, value in props_to_set.items():
@@ -459,23 +463,6 @@ def proppatch(path, xml_request, collection):
         _add_propstat_to(response, short_name, 200)
 
     return _pretty_xml(multistatus)
-
-
-def put(path, ical_request, collection):
-    """Read PUT requests."""
-    name = name_from_path(path, collection)
-    items = list(vobject.readComponents(ical_request))
-    if items:
-        if collection.has(name):
-            # PUT is modifying an existing item
-            return collection.update(name, items[0])
-        elif name:
-            # PUT is adding a new item
-            return collection.upload(name, items[0])
-        else:
-            # PUT is replacing the whole collection
-            collection.delete()
-            return storage.Collection.create_collection(path, items)
 
 
 def report(path, xml_request, collection):
@@ -496,7 +483,7 @@ def report(path, xml_request, collection):
         if root.tag in (_tag("C", "calendar-multiget"),
                         _tag("CR", "addressbook-multiget")):
             # Read rfc4791-7.9 for info
-            base_prefix = config.get("server", "base_prefix")
+            base_prefix = collection.configuration.get("server", "base_prefix")
             hreferences = set()
             for href_element in root.findall(_tag("D", "href")):
                 href_path = unquote(urlparse(href_element.text).path)
@@ -560,8 +547,7 @@ def report(path, xml_request, collection):
                     found_props.append(element)
                 elif tag in (_tag("C", "calendar-data"),
                              _tag("CR", "address-data")):
-                    if isinstance(item, (storage.Item, storage.Collection)):
-                        element.text = item.serialize()
+                    element.text = item.serialize()
                     found_props.append(element)
                 else:
                     not_found_props.append(element)

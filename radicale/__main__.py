@@ -29,6 +29,7 @@ import optparse
 import select
 import signal
 import socket
+import ssl
 from wsgiref.simple_server import make_server
 
 from . import (
@@ -75,9 +76,17 @@ def run():
 
     options = parser.parse_args()[0]
 
-    # Read in the configuration specified by the command line (if specified)
-    configuration_found = (
-        config.read(options.config) if options.config else True)
+    if options.config:
+        configuration = config.load()
+        configuration_found = configuration.read(options.config)
+    else:
+        configuration_paths = [
+            "/etc/radicale/config",
+            os.path.expanduser("~/.config/radicale/config")]
+        if "RADICALE_CONFIG" in os.environ:
+            configuration_paths.append(os.environ["RADICALE_CONFIG"])
+        configuration = config.load(configuration_paths)
+        configuration_found = True
 
     # Update Radicale configuration according to options
     for option in parser.option_list:
@@ -86,32 +95,33 @@ def run():
             section = "logging" if key == "debug" else "server"
             value = getattr(options, key)
             if value is not None:
-                config.set(section, key, str(value))
+                configuration.set(section, key, str(value))
 
     # Start logging
-    log.start()
+    filename = os.path.expanduser(configuration.get("logging", "config"))
+    debug = configuration.getboolean("logging", "debug")
+    logger = log.start("radicale", filename, debug)
 
     # Log a warning if the configuration file of the command line is not found
     if not configuration_found:
-        log.LOGGER.warning(
-            "Configuration file '%s' not found" % options.config)
+        logger.warning("Configuration file '%s' not found" % options.config)
 
     # Fork if Radicale is launched as daemon
-    if config.getboolean("server", "daemon"):
+    if configuration.getboolean("server", "daemon"):
         # Check and create PID file in a race-free manner
-        if config.get("server", "pid"):
+        if configuration.get("server", "pid"):
             try:
                 pid_fd = os.open(
-                    config.get("server", "pid"),
+                    configuration.get("server", "pid"),
                     os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             except:
                 raise OSError(
-                    "PID file exists: %s" % config.get("server", "pid"))
+                    "PID file exists: %s" % configuration.get("server", "pid"))
         pid = os.fork()
         if pid:
             sys.exit()
         # Write PID
-        if config.get("server", "pid"):
+        if configuration.get("server", "pid"):
             with os.fdopen(pid_fd, "w") as pid_file:
                 pid_file.write(str(os.getpid()))
         # Decouple environment
@@ -127,35 +137,55 @@ def run():
     # Register exit function
     def cleanup():
         """Remove the PID files."""
-        log.LOGGER.debug("Cleaning up")
+        logger.debug("Cleaning up")
         # Remove PID file
-        if (config.get("server", "pid") and
-                config.getboolean("server", "daemon")):
-            os.unlink(config.get("server", "pid"))
+        if (configuration.get("server", "pid") and
+                configuration.getboolean("server", "daemon")):
+            os.unlink(configuration.get("server", "pid"))
 
     atexit.register(cleanup)
-    log.LOGGER.info("Starting Radicale")
+    logger.info("Starting Radicale")
 
-    log.LOGGER.debug(
-        "Base URL prefix: %s" % config.get("server", "base_prefix"))
+    logger.debug(
+        "Base URL prefix: %s" % configuration.get("server", "base_prefix"))
 
     # Create collection servers
     servers = {}
-    server_class = (
-        HTTPSServer if config.getboolean("server", "ssl") else HTTPServer)
+    if configuration.getboolean("server", "ssl"):
+        server_class = HTTPSServer
+        server_class.certificate = configuration.get("server", "certificate")
+        server_class.key = configuration.get("server", "key")
+        server_class.cyphers = configuration.get("server", "cyphers")
+        server_class.certificate = getattr(
+            ssl, configuration.get("server", "protocol"), ssl.PROTOCOL_SSLv23)
+        # Test if the SSL files can be read
+        for name in ("certificate", "key"):
+            filename = getattr(server_class, name)
+            try:
+                open(filename, "r").close()
+            except IOError as exception:
+                logger.warning(
+                    "Error while reading SSL %s %r: %s" % (
+                        name, filename, exception))
+    else:
+        server_class = HTTPServer
+
+    if not configuration.getboolean("server", "dns_lookup"):
+        RequestHandler.address_string = lambda self: self.client_address[0]
+
     shutdown_program = [False]
 
-    for host in config.get("server", "hosts").split(","):
+    for host in configuration.get("server", "hosts").split(","):
         address, port = host.strip().rsplit(":", 1)
         address, port = address.strip("[] "), int(port)
-        server = make_server(address, port, Application(),
-                             server_class, RequestHandler)
+        application = Application(configuration, logger)
+        server = make_server(
+            address, port, application, server_class, RequestHandler)
         servers[server.socket] = server
-        log.LOGGER.debug(
-            "Listening to %s port %s" % (
-                server.server_name, server.server_port))
-        if config.getboolean("server", "ssl"):
-            log.LOGGER.debug("Using SSL")
+        logger.debug("Listening to %s port %s" % (
+            server.server_name, server.server_port))
+        if configuration.getboolean("server", "ssl"):
+            logger.debug("Using SSL")
 
     # Create a socket pair to notify the select syscall of program shutdown
     # This is not available in python < 3.5 on Windows
@@ -171,7 +201,7 @@ def run():
         if shutdown_program[0]:
             # Ignore following signals
             return
-        log.LOGGER.info("Stopping Radicale")
+        logger.info("Stopping Radicale")
         shutdown_program[0] = True
         if shutdown_program_socket_in:
             shutdown_program_socket_in.sendall(b"goodbye")
@@ -187,7 +217,7 @@ def run():
     else:
         # Fallback to busy waiting
         select_timeout = 1.0
-    log.LOGGER.debug("Radicale server ready")
+    logger.debug("Radicale server ready")
     while not shutdown_program[0]:
         try:
             rlist, _, xlist = select.select(

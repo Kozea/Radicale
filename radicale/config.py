@@ -24,7 +24,6 @@ Give a configparser-like interface to read and write configuration.
 """
 
 import os
-import sys
 
 from configparser import RawConfigParser as ConfigParser
 
@@ -66,18 +65,14 @@ INITIAL_CONFIG = {
         "debug": "False",
         "full_environment": "False"}}
 
-# Create a ConfigParser and configure it
-_CONFIG_PARSER = ConfigParser()
 
-for section, values in INITIAL_CONFIG.items():
-    _CONFIG_PARSER.add_section(section)
-    for key, value in values.items():
-        _CONFIG_PARSER.set(section, key, value)
-
-_CONFIG_PARSER.read("/etc/radicale/config")
-_CONFIG_PARSER.read(os.path.expanduser("~/.config/radicale/config"))
-if "RADICALE_CONFIG" in os.environ:
-    _CONFIG_PARSER.read(os.environ["RADICALE_CONFIG"])
-
-# Wrap config module into ConfigParser instance
-sys.modules[__name__] = _CONFIG_PARSER
+def load(paths=()):
+    config = ConfigParser()
+    for section, values in INITIAL_CONFIG.items():
+        config.add_section(section)
+        for key, value in values.items():
+            config.set(section, key, value)
+    for path in paths:
+        if path:
+            config.read(path)
+    return config
