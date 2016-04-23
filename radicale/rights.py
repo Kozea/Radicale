@@ -97,11 +97,12 @@ class BaseRights:
 
 class Rights(BaseRights):
     def __init__(self, configuration, logger):
-        super().__init__()
+        super().__init__(configuration, logger)
         self.filename = os.path.expanduser(configuration.get("rights", "file"))
         self.rights_type = configuration.get("rights", "type").lower()
 
     def authorized(self, user, collection, permission):
+        user = user or ''
         collection_url = collection.path.rstrip("/") or "/"
         if collection_url in (".well-known/carddav", ".well-known/caldav"):
             return permission == "r"
