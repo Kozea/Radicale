@@ -45,6 +45,7 @@ def load(configuration, logger):
         collection_class = Collection
     else:
         collection_class = import_module(storage_type).Collection
+
     class CollectionCopy(collection_class):
         """Collection copy, avoids overriding the original class attributes."""
     CollectionCopy.configuration = configuration
