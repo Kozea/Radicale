@@ -117,6 +117,108 @@ def _href(collection, href):
         href.lstrip("/"))
 
 
+def _comp_match(item, filter_, scope="collection"):
+    """Check whether the ``item`` matches the comp ``filter_``.
+
+    If ``scope`` is ``"collection"``, the filter is applied on the
+    item's collection. Otherwise, it's applied on the item.
+
+    See rfc4791-9.7.1.
+
+    """
+    filter_length = len(filter_)
+    if scope == "collection":
+        tag = item.collection.get_meta("tag")
+    else:
+        for component in item.components():
+            if component.name in ("VTODO", "VEVENT", "VJOURNAL"):
+                tag = component.name
+    if filter_length == 0:
+        # Point #1 of rfc4791-9.7.1
+        return filter_.get("name") == tag
+    else:
+        if filter_length == 1:
+            if filter_[0].tag == _tag("C", "is-not-defined"):
+                # Point #2 of rfc4791-9.7.1
+                return filter_.get("name") != tag
+        if filter_[0].tag == _tag("C", "time-range"):
+            # Point #3 of rfc4791-9.7.1
+            if not _time_range_match(item, filter_[0]):
+                return False
+            filter_.remove(filter_[0])
+        # Point #4 of rfc4791-9.7.1
+        return all(
+            _prop_match(item, child) if child.tag == _tag("C", "prop-filter")
+            else _comp_match(item, child, scope="component")
+            for child in filter_)
+
+
+def _prop_match(item, filter_):
+    """Check whether the ``item`` matches the prop ``filter_``.
+
+    See rfc4791-9.7.2 and rfc6352-10.5.1.
+
+    """
+    filter_length = len(filter_)
+    if item.collection.get_meta("tag") == "VCALENDAR":
+        for component in item.components():
+            if component.name in ("VTODO", "VEVENT", "VJOURNAL"):
+                vobject_item = component
+    else:
+        vobject_item = item.item
+    if filter_length == 0:
+        # Point #1 of rfc4791-9.7.2
+        return filter_.get("name").lower() in vobject_item.contents
+    else:
+        if filter_length == 1:
+            if filter_[0].tag == _tag("C", "is-not-defined"):
+                # Point #2 of rfc4791-9.7.2
+                return filter_.get("name").lower() not in vobject_item.contents
+        if filter_[0].tag == _tag("C", "time-range"):
+            # Point #3 of rfc4791-9.7.2
+            if not _time_range_match(item, filter_[0]):
+                return False
+            filter_.remove(filter_[0])
+        elif filter_[0].tag == _tag("C", "text-match"):
+            # Point #4 of rfc4791-9.7.2
+            if not _text_match(item, filter_[0]):
+                return False
+            filter_.remove(filter_[0])
+        return all(
+            _param_filter_match(item, param_filter)
+            for param_filter in filter_)
+
+
+def _time_range_match(item, _filter):
+    """Check whether the ``item`` matches the time-range ``filter_``.
+
+    See rfc4791-9.9.
+
+    """
+    # TODO: implement this
+    return True
+
+
+def _text_match(item, _filter):
+    """Check whether the ``item`` matches the text-match ``filter_``.
+
+    See rfc4791-9.7.3.
+
+    """
+    # TODO: implement this
+    return True
+
+
+def _param_filter_match(item, _filter):
+    """Check whether the ``item`` matches the param-filter ``filter_``.
+
+    See rfc4791-9.7.3.
+
+    """
+    # TODO: implement this
+    return True
+
+
 def name_from_path(path, collection):
     """Return Radicale item name from ``path``."""
     collection_parts = collection.path.strip("/").split("/")
@@ -491,16 +593,11 @@ def report(path, xml_request, collection):
                     hreferences.add(href_path[len(base_prefix) - 1:])
         else:
             hreferences = (path,)
-        # TODO: handle other filters
-        # TODO: handle the nested comp-filters correctly
-        # Read rfc4791-9.7.1 for info
-        tag_filters = set(
-            element.get("name").upper() for element
-            in root.findall(".//%s" % _tag("C", "comp-filter")))
-        tag_filters.discard("VCALENDAR")
+        filters = (
+            root.findall(".//%s" % _tag("C", "filter")) +
+            root.findall(".//%s" % _tag("CR", "filter")))
     else:
-        hreferences = ()
-        tag_filters = set()
+        hreferences = filters = ()
 
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
@@ -526,10 +623,12 @@ def report(path, xml_request, collection):
             items = [collection.get(href) for href, etag in collection.list()]
 
         for item in items:
-            if (tag_filters and
-                    item.name not in tag_filters and
-                    not {tag.upper() for tag in item.contents} & tag_filters):
-                continue
+            if filters:
+                match = (
+                    _comp_match if collection.get_meta("tag") == "VCALENDAR"
+                    else _prop_match)
+                if not all(match(item, filter_[0]) for filter_ in filters):
+                    continue
 
             found_props = []
             not_found_props = []

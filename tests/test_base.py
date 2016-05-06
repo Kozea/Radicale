@@ -93,6 +93,129 @@ class BaseRequests:
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert "VEVENT" not in answer
 
+    def _test_filter(self, filters):
+        filters_text = "".join(
+            "<C:filter>%s</C:filter>" % filter_ for filter_ in filters)
+        self.request(
+            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        event = get_file_content("event.ics")
+        self.request("PUT", "/calendar.ics/event.ics", event)
+        status, headers, answer = self.request(
+            "REPORT", "/calendar.ics",
+            """<?xml version="1.0" encoding="utf-8" ?>
+               <C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+                 <D:prop xmlns:D="DAV:">
+                   <D:getetag/>
+                 </D:prop>
+                 %s
+               </C:calendar-query>""" % filters_text)
+        return answer
+
+    def test_calendar_tag_filter(self):
+        """Report request with tag-based filter on calendar."""
+        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR"></C:comp-filter>"""])
+
+    def test_item_tag_filter(self):
+        """Report request with tag-based filter on an item."""
+        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT"></C:comp-filter>
+            </C:comp-filter>"""])
+        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VTODO"></C:comp-filter>
+            </C:comp-filter>"""])
+
+    def test_item_not_tag_filter(self):
+        """Report request with tag-based is-not filter on an item."""
+        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:is-not-defined />
+              </C:comp-filter>
+            </C:comp-filter>"""])
+        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VTODO">
+                <C:is-not-defined />
+              </C:comp-filter>
+            </C:comp-filter>"""])
+
+    def test_item_prop_filter(self):
+        """Report request with prop-based filter on an item."""
+        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="SUMMARY"></C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="UNKNOWN"></C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+
+    def test_item_not_prop_filter(self):
+        """Report request with prop-based is-not filter on an item."""
+        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="SUMMARY">
+                  <C:is-not-defined />
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="UNKNOWN">
+                  <C:is-not-defined />
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+
+    def test_mutiple_filters(self):
+        """Report request with multiple filters on an item."""
+        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="SUMMARY">
+                  <C:is-not-defined />
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>""", """
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="UNKNOWN">
+                  <C:is-not-defined />
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="SUMMARY"></C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>""", """
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="UNKNOWN">
+                  <C:is-not-defined />
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="SUMMARY"></C:prop-filter>
+                <C:prop-filter name="UNKNOWN">
+                  <C:is-not-defined />
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+
 
 class TestMultiFileSystem(BaseRequests, BaseTest):
     """Base class for filesystem tests."""
