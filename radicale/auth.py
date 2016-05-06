@@ -52,6 +52,7 @@ following significantly more secure schemes are parsable by Radicale:
 
 """
 
+import functools
 import base64
 import hashlib
 import os
@@ -102,15 +103,15 @@ class Auth(BaseAuth):
             self.verify = self._plain
         elif self.encryption == "md5":
             try:
-                from passlib.hash import apr_md5_crypt as _passlib_md5apr1
+                from passlib.hash import apr_md5_crypt
             except ImportError:
                 raise RuntimeError(
                     "The htpasswd encryption method 'md5' requires "
                     "the passlib module.")
-            self.verify = self._md5apr1
+            self.verify = functools.partial(self._md5apr1, apr_md5_crypt)
         elif self.encryption == "bcrypt":
             try:
-                from passlib.hash import bcrypt as _passlib_bcrypt
+                from passlib.hash import bcrypt
             except ImportError:
                 raise RuntimeError(
                     "The htpasswd encryption method 'bcrypt' requires "
@@ -118,8 +119,8 @@ class Auth(BaseAuth):
             # A call to `encrypt` raises passlib.exc.MissingBackendError with a
             # good error message if bcrypt backend is not available. Trigger
             # this here.
-            _passlib_bcrypt.encrypt("test-bcrypt-backend")
-            self.verify = self._bcrypt
+            bcrypt.encrypt("test-bcrypt-backend")
+            self.verify = functools.partial(self._bcrypt, bcrypt)
         elif self.encryption == "crypt":
             try:
                 import crypt
@@ -127,7 +128,7 @@ class Auth(BaseAuth):
                 raise RuntimeError(
                     "The htpasswd encryption method 'crypt' requires "
                     "the crypt() system support.")
-            self.verify = self._crypt
+            self.verify = functools.partial(self._crypt, crypt)
         else:
             raise RuntimeError(
                 "The htpasswd encryption method '%s' is not "
@@ -137,11 +138,9 @@ class Auth(BaseAuth):
         """Check if ``hash_value`` and ``password`` match, using plain method."""
         return hash_value == password
 
-
-    def _crypt(self, hash_value, password):
+    def _crypt(self, crypt, hash_value, password):
         """Check if ``hash_value`` and ``password`` match, using crypt method."""
         return crypt.crypt(password, hash_value) == hash_value
-
 
     def _sha1(self, hash_value, password):
         """Check if ``hash_value`` and ``password`` match, using sha1 method."""
@@ -150,7 +149,6 @@ class Auth(BaseAuth):
         sha1 = hashlib.sha1()  # pylint: disable=E1101
         sha1.update(password)
         return sha1.digest() == base64.b64decode(hash_value)
-
 
     def _ssha(self, hash_salt_value, password):
         """Check if ``hash_salt_value`` and ``password`` match, using salted sha1
@@ -166,13 +164,11 @@ class Auth(BaseAuth):
         sha1.update(salt_value)
         return sha1.digest() == hash_value
 
+    def _bcrypt(self, bcrypt, hash_value, password):
+        return bcrypt.verify(password, hash_value)
 
-    def _bcrypt(self, hash_value, password):
-        return _passlib_bcrypt.verify(password, hash_value)
-
-
-    def _md5apr1(self, hash_value, password):
-        return _passlib_md5apr1.verify(password, hash_value)
+    def _md5apr1(self, md5_apr1, hash_value, password):
+        return md5_apr1.verify(password, hash_value)
 
     def is_authenticated(self, user, password):
         # The content of the file is not cached because reading is generally a
@@ -186,4 +182,3 @@ class Auth(BaseAuth):
                     if login == user:
                         return self.verify(hash_value, password)
         return False
-
