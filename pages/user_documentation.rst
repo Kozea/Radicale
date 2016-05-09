@@ -1068,37 +1068,46 @@ Example:
 
 .. code-block:: ini
 
-  # This means all users starting with "admin" may read any collection
-  [admin]
-  user: ^admin.*$
-  collection: .*
-  permission: r
-
-  # This means all users may read and write any collection starting with public.
-  # We do so by just not testing against the user string.
-  [public]
-  user: .*
-  collection: ^public(/.+)?$
-  permission: rw
-
-  # A little more complex: give read access to users from a domain for all
-  # collections of all the users (ie. user@domain.tld can read domain/\*).
-  [domain-wide-access]
-  user: ^.+@(.+)\..+$
-  collection: ^{0}/.+$
-  permission: r
-
-  # Allow authenticated user to read all collections
-  [allow-everyone-read]
-  user: .+
-  collection: .*
-  permission: r
-
-  # Give write access to owners
-  [owner-write]
-  user: .+
-  collection: ^%(login)s/.+$
-  permission: w
+   # The default path for this kind of files is ~/.config/radicale/rights
+   # This can be changed in the configuration file
+   #
+   # This file gives independant examples to help users write their own
+   # configuration files. Using these examples together in the same configuration
+   # file is meaningless.
+   #
+   # The first rule matching both user and collection patterns will be returned.
+   
+   # This means all users starting with "admin" may read any collection
+   [admin]
+   user: ^admin.*$
+   collection: .*
+   permission: r
+   
+   # This means all users may read and write any collection starting with public.
+   # We do so by just not testing against the user string.
+   [public]
+   user: .*
+   collection: ^public(/.+)?$
+   permission: rw
+   
+   # A little more complex: give read access to users from a domain for all
+   # collections of all the users (ie. user@domain.tld can read domain/*).
+   [domain-wide-access]
+   user: ^.+@(.+)\..+$
+   collection: ^{0}/.+$
+   permission: r
+   
+   # Allow authenticated user to read all collections
+   [allow-everyone-read]
+   user: .+
+   collection: .*
+   permission: r
+   
+   # Give write access to owners
+   [owner-write]
+   user: .+
+   collection: ^%(login)s/.*$
+   permission: w
 
 
 Git Support
