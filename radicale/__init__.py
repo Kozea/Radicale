@@ -258,9 +258,7 @@ class Application:
             except KeyError:
                 status = client.UNAUTHORIZED
                 realm = self.configuration.get("server", "realm")
-                headers = {
-                    "WWW-Authenticate":
-                    "Basic realm=\"%s\"" % realm}
+                headers = {"WWW-Authenticate": "Basic realm=\"%s\"" % realm}
                 self.logger.info(
                     "Refused /.well-known/ redirection to anonymous user")
             else:
@@ -379,23 +377,22 @@ class Application:
             # Get collection item
             item = collection.get(item_name)
             if item:
-                answer_text = item.serialize()
+                answer = item.serialize()
                 etag = item.etag
             else:
                 return client.NOT_FOUND, {}, None
         else:
             # Get whole collection
-            answer_text = collection.serialize()
-            if not answer_text:
-                self.logger.debug("Collection at %s unknown" % environ["PATH_INFO"])
-                return client.NOT_FOUND, {}, None
+            answer = collection.serialize()
             etag = collection.etag
 
-        headers = {
-            "Content-Type": storage.MIMETYPES[collection.get_meta("tag")],
-            "Last-Modified": collection.last_modified,
-            "ETag": etag}
-        answer = answer_text
+        if answer:
+            headers = {
+                "Content-Type": storage.MIMETYPES[collection.get_meta("tag")],
+                "Last-Modified": collection.last_modified,
+                "ETag": etag}
+        else:
+            headers = {}
         return client.OK, headers, answer
 
     def do_HEAD(self, environ, read_collections, write_collections, content,
