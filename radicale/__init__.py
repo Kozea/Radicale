@@ -50,7 +50,7 @@ NOT_ALLOWED = (client.FORBIDDEN, {}, None)
 WELL_KNOWN_RE = re.compile(r"/\.well-known/(carddav|caldav)/?$")
 
 
-class HTTPServer(wsgiref.simple_server.WSGIServer, object):
+class HTTPServer(wsgiref.simple_server.WSGIServer):
     """HTTP server."""
     def __init__(self, address, handler, bind_and_activate=True):
         """Create server."""
