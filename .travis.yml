@@ -8,6 +8,8 @@ python:
 install:
   - pip install -e .
 
-script: py.test -s
+script:
+  - py.test -s
+  - flake8 radicale
 
 sudo: false
