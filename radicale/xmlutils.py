@@ -133,6 +133,9 @@ def _comp_match(item, filter_, scope="collection"):
         for component in item.components():
             if component.name in ("VTODO", "VEVENT", "VJOURNAL"):
                 tag = component.name
+                break
+        else:
+            return False
     if filter_length == 0:
         # Point #1 of rfc4791-9.7.1
         return filter_.get("name") == tag
