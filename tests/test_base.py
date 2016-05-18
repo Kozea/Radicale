@@ -216,6 +216,41 @@ class BaseRequests:
               </C:comp-filter>
             </C:comp-filter>"""])
 
+    def test_text_match_filter(self):
+        """Report request with tag-based filter on calendar."""
+        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="SUMMARY">
+                  <C:text-match>event</C:text-match>
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="UNKNOWN">
+                  <C:text-match>event</C:text-match>
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="SUMMARY">
+                  <C:text-match>unknown</C:text-match>
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="SUMMARY">
+                  <C:text-match negate-condition="yes">event</C:text-match>
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+
 
 class TestMultiFileSystem(BaseRequests, BaseTest):
     """Base class for filesystem tests."""

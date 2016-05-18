@@ -143,7 +143,7 @@ def _comp_match(item, filter_, scope="collection"):
                 return filter_.get("name") != tag
         if filter_[0].tag == _tag("C", "time-range"):
             # Point #3 of rfc4791-9.7.1
-            if not _time_range_match(item, filter_[0]):
+            if not _time_range_match(item, filter_):
                 return False
             filter_.remove(filter_[0])
         # Point #4 of rfc4791-9.7.1
@@ -181,7 +181,18 @@ def _prop_match(item, filter_):
             filter_.remove(filter_[0])
         elif filter_[0].tag == _tag("C", "text-match"):
             # Point #4 of rfc4791-9.7.2
-            if not _text_match(item, filter_[0]):
+            # TODO: collations are not supported, but the default ones needed for DAV
+            # servers are actually pretty useless. Texts are lowered to be
+            # case-insensitive, almost as the "i;ascii-casemap" value.
+            match = next(filter_[0].itertext()).lower()
+            value = vobject_item.getChildValue(filter_.get("name").lower())
+            if value is None:
+                return False
+            value = value.lower()
+            if filter_[0].get("negate-condition") == "yes":
+                if match in value:
+                    return False
+            elif match not in value:
                 return False
             filter_.remove(filter_[0])
         return all(
@@ -189,7 +200,7 @@ def _prop_match(item, filter_):
             for param_filter in filter_)
 
 
-def _time_range_match(item, _filter):
+def _time_range_match(item, filter_):
     """Check whether the ``item`` matches the time-range ``filter_``.
 
     See rfc4791-9.9.
@@ -199,17 +210,15 @@ def _time_range_match(item, _filter):
     return True
 
 
-def _text_match(item, _filter):
+def _text_match(vobject_item, filter_):
     """Check whether the ``item`` matches the text-match ``filter_``.
 
     See rfc4791-9.7.3.
 
     """
-    # TODO: implement this
-    return True
 
 
-def _param_filter_match(item, _filter):
+def _param_filter_match(item, filter_):
     """Check whether the ``item`` matches the param-filter ``filter_``.
 
     See rfc4791-9.7.3.
