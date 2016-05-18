@@ -5,10 +5,18 @@ python:
   - 3.4
   - 3.5
 
+env:
+  - TOXENV=style
+  - TOXENV=test
+  - TOXENV=vdirsyncer
+
 install:
   - pip install tox
 
 script:
-  - tox -e py
+  - tox -e py-$TOXENV
+
+allowed_failures:
+  - env: TOXENV=vdirsyncer
 
 sudo: false
