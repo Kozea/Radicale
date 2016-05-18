@@ -6,11 +6,9 @@ python:
   - 3.5
 
 install:
-  - pip install -e .
-  - pip install flake8
+  - pip install tox
 
 script:
-  - py.test -s
-  - flake8 radicale
+  - tox -e py
 
 sudo: false
