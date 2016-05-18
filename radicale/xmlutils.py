@@ -210,14 +210,6 @@ def _time_range_match(item, filter_):
     return True
 
 
-def _text_match(vobject_item, filter_):
-    """Check whether the ``item`` matches the text-match ``filter_``.
-
-    See rfc4791-9.7.3.
-
-    """
-
-
 def _param_filter_match(item, filter_):
     """Check whether the ``item`` matches the param-filter ``filter_``.
 
