@@ -21,12 +21,13 @@ Authentication management.
 
 Default is htpasswd authentication.
 
-Apache's htpasswd command (httpd.apache.org/docs/programs/htpasswd.html) manages
-a file for storing user credentials. It can encrypt passwords using different
-methods, e.g. BCRYPT, MD5-APR1 (a version of MD5 modified for Apache), SHA1, or
-by using the system's CRYPT routine. The CRYPT and SHA1 encryption methods
-implemented by htpasswd are considered as insecure. MD5-APR1 provides medium
-security as of 2015. Only BCRYPT can be considered secure by current standards.
+Apache's htpasswd command (httpd.apache.org/docs/programs/htpasswd.html)
+manages a file for storing user credentials. It can encrypt passwords using
+different methods, e.g. BCRYPT, MD5-APR1 (a version of MD5 modified for
+Apache), SHA1, or by using the system's CRYPT routine. The CRYPT and SHA1
+encryption methods implemented by htpasswd are considered as insecure. MD5-APR1
+provides medium security as of 2015. Only BCRYPT can be considered secure by
+current standards.
 
 MD5-APR1-encrypted credentials can be written by all versions of htpasswd (it
 is the default, in fact), whereas BCRYPT requires htpasswd 2.4.x or newer.
@@ -80,9 +81,9 @@ class BaseAuth:
     def is_authenticated(self, user, password):
         """Validate credentials.
 
-        Iterate through htpasswd credential file until user matches, extract hash
-        (encrypted password) and check hash against user-given password, using the
-        method specified in the Radicale config.
+        Iterate through htpasswd credential file until user matches, extract
+        hash (encrypted password) and check hash against user-given password,
+        using the method specified in the Radicale config.
 
         """
         raise NotImplementedError
@@ -135,30 +136,33 @@ class Auth(BaseAuth):
                 "supported." % self.encryption)
 
     def _plain(self, hash_value, password):
-        """Check if ``hash_value`` and ``password`` match, using plain method."""
+        """Check if ``hash_value`` and ``password`` match, plain method."""
         return hash_value == password
 
     def _crypt(self, crypt, hash_value, password):
-        """Check if ``hash_value`` and ``password`` match, using crypt method."""
+        """Check if ``hash_value`` and ``password`` match, crypt method."""
         return crypt.crypt(password, hash_value) == hash_value
 
     def _sha1(self, hash_value, password):
-        """Check if ``hash_value`` and ``password`` match, using sha1 method."""
+        """Check if ``hash_value`` and ``password`` match, sha1 method."""
         hash_value = hash_value.replace("{SHA}", "").encode("ascii")
         password = password.encode(self.configuration.get("encoding", "stock"))
         sha1 = hashlib.sha1()  # pylint: disable=E1101
         sha1.update(password)
         return sha1.digest() == base64.b64decode(hash_value)
 
-    def _ssha(self, hash_salt_value, password):
-        """Check if ``hash_salt_value`` and ``password`` match, using salted sha1
-        method. This method is not directly supported by htpasswd, but it can be
-        written with e.g. openssl, and nginx can parse it."""
-        hash_salt_value = hash_salt_value.replace(
+    def _ssha(self, hash_value, password):
+        """Check if ``hash_value`` and ``password`` match, salted sha1 method.
+
+        This method is not directly supported by htpasswd, but it can be
+        written with e.g. openssl, and nginx can parse it.
+
+        """
+        hash_value = hash_value.replace(
             "{SSHA}", "").encode("ascii").decode('base64')
         password = password.encode(self.configuration.get("encoding", "stock"))
-        hash_value = hash_salt_value[:20]
-        salt_value = hash_salt_value[20:]
+        hash_value = hash_value[:20]
+        salt_value = hash_value[20:]
         sha1 = hashlib.sha1()  # pylint: disable=E1101
         sha1.update(password)
         sha1.update(salt_value)

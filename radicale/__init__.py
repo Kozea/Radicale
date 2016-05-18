@@ -482,7 +482,8 @@ class Application:
             "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
             "Content-Type": "text/xml"}
         answer = xmlutils.propfind(
-            environ["PATH_INFO"], content, read_collections, write_collections, user)
+            environ["PATH_INFO"], content, read_collections, write_collections,
+            user)
         return client.MULTI_STATUS, headers, answer
 
     def do_PROPPATCH(self, environ, read_collections, write_collections,

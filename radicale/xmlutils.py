@@ -181,9 +181,9 @@ def _prop_match(item, filter_):
             filter_.remove(filter_[0])
         elif filter_[0].tag == _tag("C", "text-match"):
             # Point #4 of rfc4791-9.7.2
-            # TODO: collations are not supported, but the default ones needed for DAV
-            # servers are actually pretty useless. Texts are lowered to be
-            # case-insensitive, almost as the "i;ascii-casemap" value.
+            # TODO: collations are not supported, but the default ones needed
+            # for DAV servers are actually pretty useless. Texts are lowered to
+            # be case-insensitive, almost as the "i;ascii-casemap" value.
             match = next(filter_[0].itertext()).lower()
             value = vobject_item.getChildValue(filter_.get("name").lower())
             if value is None:
@@ -296,7 +296,8 @@ def delete(path, collection):
     return _pretty_xml(multistatus)
 
 
-def propfind(path, xml_request, read_collections, write_collections, user=None):
+def propfind(path, xml_request, read_collections, write_collections,
+             user=None):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -324,12 +325,14 @@ def propfind(path, xml_request, read_collections, write_collections, user=None):
     collections = []
     for collection in write_collections:
         collections.append(collection)
-        response = _propfind_response(path, collection, props, user, write=True)
+        response = _propfind_response(
+            path, collection, props, user, write=True)
         multistatus.append(response)
     for collection in read_collections:
         if collection in collections:
             continue
-        response = _propfind_response(path, collection, props, user, write=False)
+        response = _propfind_response(
+            path, collection, props, user, write=False)
         multistatus.append(response)
 
     return _pretty_xml(multistatus)
