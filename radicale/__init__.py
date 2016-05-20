@@ -273,32 +273,45 @@ class Application:
         is_authenticated = self.is_authenticated(user, password)
         is_valid_user = is_authenticated or not user
 
-        if is_valid_user:
-            items = self.Collection.discover(
-                path, environ.get("HTTP_DEPTH", "0"))
-            read_allowed_items, write_allowed_items = (
-                self.collect_allowed_items(items, user))
-        else:
-            read_allowed_items, write_allowed_items = None, None
+        lock = None
+        try:
+            if is_valid_user:
+                if function in (self.do_GET, self.do_HEAD,
+                                self.do_OPTIONS, self.do_PROPFIND,
+                                self.do_REPORT):
+                    lock_mode = "r"
+                else:
+                    lock_mode = "w"
+                lock = self.Collection.acquire_lock(lock_mode)
 
-        # Get content
-        content_length = int(environ.get("CONTENT_LENGTH") or 0)
-        if content_length:
-            content = self.decode(
-                environ["wsgi.input"].read(content_length), environ)
-            self.logger.debug("Request content:\n%s" % content)
-        else:
-            content = None
+                items = self.Collection.discover(
+                    path, environ.get("HTTP_DEPTH", "0"))
+                read_allowed_items, write_allowed_items = (
+                    self.collect_allowed_items(items, user))
+            else:
+                read_allowed_items, write_allowed_items = None, None
 
-        if is_valid_user and (
-                (read_allowed_items or write_allowed_items) or
-                (is_authenticated and function == self.do_PROPFIND) or
-                function == self.do_OPTIONS):
-            status, headers, answer = function(
-                environ, read_allowed_items, write_allowed_items, content,
-                user)
-        else:
-            status, headers, answer = NOT_ALLOWED
+            # Get content
+            content_length = int(environ.get("CONTENT_LENGTH") or 0)
+            if content_length:
+                content = self.decode(
+                    environ["wsgi.input"].read(content_length), environ)
+                self.logger.debug("Request content:\n%s" % content)
+            else:
+                content = None
+
+            if is_valid_user and (
+                    (read_allowed_items or write_allowed_items) or
+                    (is_authenticated and function == self.do_PROPFIND) or
+                    function == self.do_OPTIONS):
+                status, headers, answer = function(
+                    environ, read_allowed_items, write_allowed_items, content,
+                    user)
+            else:
+                status, headers, answer = NOT_ALLOWED
+        finally:
+            if lock:
+                lock.release()
 
         if (status, headers, answer) == NOT_ALLOWED and not is_authenticated:
             # Unknown or unauthorized user
