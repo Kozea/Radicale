@@ -30,6 +30,7 @@ import os
 import pprint
 import base64
 import socket
+import socketserver
 import ssl
 import wsgiref.simple_server
 import re
@@ -90,6 +91,14 @@ class HTTPSServer(HTTPServer):
 
         self.server_bind()
         self.server_activate()
+
+
+class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
+    pass
+
+
+class ThreadedHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
+    pass
 
 
 class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
