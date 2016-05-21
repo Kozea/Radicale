@@ -33,6 +33,7 @@ import socket
 import ssl
 import wsgiref.simple_server
 import re
+import zlib
 from http import client
 from urllib.parse import unquote, urlparse
 
@@ -314,6 +315,13 @@ class Application:
         if answer:
             self.logger.debug("Response content:\n%s" % answer, environ)
             answer = answer.encode(self.encoding)
+            accept_encoding = [
+                encoding.strip() for encoding in
+                environ.get("HTTP_ACCEPT_ENCODING", "").split(",")
+                if encoding.strip()]
+            if "deflate" in accept_encoding:
+                answer = zlib.compress(answer)
+                headers["Content-Encoding"] = "deflate"
             headers["Content-Length"] = str(len(answer))
 
         if self.configuration.has_section("headers"):
