@@ -173,7 +173,7 @@ def run():
     if not configuration.getboolean("server", "dns_lookup"):
         RequestHandler.address_string = lambda self: self.client_address[0]
 
-    shutdown_program = [False]
+    shutdown_program = False
 
     for host in configuration.get("server", "hosts").split(","):
         address, port = host.strip().rsplit(":", 1)
@@ -198,11 +198,12 @@ def run():
     # SIGTERM and SIGINT (aka KeyboardInterrupt) should just mark this for
     # shutdown
     def shutdown(*args):
-        if shutdown_program[0]:
+        nonlocal shutdown_program
+        if shutdown_program:
             # Ignore following signals
             return
         logger.info("Stopping Radicale")
-        shutdown_program[0] = True
+        shutdown_program = True
         if shutdown_program_socket_in:
             shutdown_program_socket_in.sendall(b"goodbye")
     signal.signal(signal.SIGTERM, shutdown)
@@ -218,7 +219,7 @@ def run():
         # Fallback to busy waiting
         select_timeout = 1.0
     logger.debug("Radicale server ready")
-    while not shutdown_program[0]:
+    while not shutdown_program:
         try:
             rlist, _, xlist = select.select(
                 sockets, [], sockets, select_timeout)
