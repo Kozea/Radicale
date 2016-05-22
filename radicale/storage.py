@@ -92,6 +92,7 @@ def load(configuration, logger):
 
 
 MIMETYPES = {"VADDRESSBOOK": "text/vcard", "VCALENDAR": "text/calendar"}
+MAX_FILE_LOCK_DURATION = 0.25
 
 
 def get_etag(text):
@@ -528,6 +529,7 @@ class Collection(BaseCollection):
     _waiters = []
     _lock_file = None
     _lock_file_locked = False
+    _lock_file_time = 0
     _readers = 0
     _writer = False
 
@@ -535,6 +537,11 @@ class Collection(BaseCollection):
     @contextmanager
     def acquire_lock(cls, mode):
         def condition():
+            # Prevent starvation of writers in other processes
+            if cls._lock_file_locked:
+                time_delta = time.time() - cls._lock_file_time
+                if time_delta < 0 or time_delta > MAX_FILE_LOCK_DURATION:
+                    return False
             if mode == "r":
                 return not cls._writer
             else:
@@ -588,6 +595,7 @@ class Collection(BaseCollection):
                     except OSError:
                         cls.logger.debug("Locking not supported")
                 cls._lock_file_locked = True
+                cls._lock_file_time = time.time()
         yield
         with cls._lock:
             if mode == "r":
