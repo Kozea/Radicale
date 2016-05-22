@@ -277,13 +277,12 @@ class BaseCollection:
         raise NotImplementedError
 
     @classmethod
+    @contextmanager
     def acquire_lock(cls, mode):
-        """Lock the whole storage.
+        """Set a context manager to lock the whole storage.
 
         ``mode`` must either be "r" for shared access or "w" for exclusive
         access.
-
-        Returns an object which has a method ``release``.
 
         """
         raise NotImplementedError
@@ -521,6 +520,7 @@ class Collection(BaseCollection):
     _lock = threading.Lock()
 
     @classmethod
+    @contextmanager
     def acquire_lock(cls, mode):
         class Lock:
             def __init__(self, release_method):
@@ -574,4 +574,5 @@ class Collection(BaseCollection):
             # TODO: use readers–writer lock
             cls._lock.acquire()
             lock = Lock(cls._lock.release)
-        return lock
+        yield
+        lock.release()
