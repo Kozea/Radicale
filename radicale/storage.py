@@ -65,6 +65,13 @@ if os.name == "nt":
                              ctypes.wintypes.DWORD,
                              ctypes.POINTER(Overlapped)]
     lock_file_ex.restype = ctypes.wintypes.BOOL
+    unlock_file_ex = ctypes.windll.kernel32.UnlockFileEx
+    unlock_file_ex.argtypes = [ctypes.wintypes.HANDLE,
+                               ctypes.wintypes.DWORD,
+                               ctypes.wintypes.DWORD,
+                               ctypes.wintypes.DWORD,
+                               ctypes.POINTER(Overlapped)]
+    unlock_file_ex.restype = ctypes.wintypes.BOOL
 elif os.name == "posix":
     import fcntl
 
@@ -519,6 +526,7 @@ class Collection(BaseCollection):
 
     _lock = threading.Condition()
     _lock_file = None
+    _lock_file_locked = False
     _readers = 0
     _writer = False
 
@@ -556,6 +564,7 @@ class Collection(BaseCollection):
                     os.chmod(lock_path, stat.S_IWUSR | stat.S_IRUSR)
                 except OSError:
                     cls.logger.debug("Failed to set permissions on lock file")
+            if not cls._lock_file_locked:
                 if os.name == "nt":
                     handle = msvcrt.get_osfhandle(cls._lock_file.fileno())
                     flags = LOCKFILE_EXCLUSIVE_LOCK if mode == "w" else 0
@@ -568,6 +577,7 @@ class Collection(BaseCollection):
                         fcntl.lockf(cls._lock_file.fileno(), _cmd)
                     except OSError:
                         cls.logger.debug("Locking not supported")
+                cls._lock_file_locked = True
         yield
         with cls._lock:
             if mode == "r":
@@ -575,6 +585,15 @@ class Collection(BaseCollection):
             else:
                 cls._writer = False
             if cls._readers == 0:
-                cls._lock_file.close()
-                cls._lock_file = None
+                if os.name == "nt":
+                    handle = msvcrt.get_osfhandle(cls._lock_file.fileno())
+                    overlapped = Overlapped()
+                    if not unlock_file_ex(handle, 0, 1, 0, overlapped):
+                        cls.logger.debug("Unlocking not supported")
+                elif os.name == "posix":
+                    try:
+                        fcntl.lockf(cls._lock_file.fileno(), fcntl.LOCK_UN)
+                    except OSError:
+                        cls.logger.debug("Unlocking not supported")
+                cls._lock_file_locked = False
             cls._lock.notify()
