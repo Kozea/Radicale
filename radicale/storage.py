@@ -518,6 +518,7 @@ class Collection(BaseCollection):
         return ""
 
     _lock = threading.Condition()
+    _lock_file = None
     _readers = 0
     _writer = False
 
@@ -542,40 +543,38 @@ class Collection(BaseCollection):
                 cls._lock.notify()
             else:
                 cls._writer = True
-        folder = os.path.expanduser(
-            cls.configuration.get("storage", "filesystem_folder"))
-        if not os.path.exists(folder):
-            os.makedirs(folder, exist_ok=True)
-        lock_path = os.path.join(folder, "Radicale.lock")
-        lock_file = open(lock_path, "w+")
-        # set access rights to a necessary minimum to prevent locking by
-        # arbitrary users
-        try:
-            os.chmod(lock_path, stat.S_IWUSR | stat.S_IRUSR)
-        except OSError:
-            cls.logger.debug("Failed to set permissions on lock file")
-        if os.name == "nt":
-            handle = msvcrt.get_osfhandle(lock_file.fileno())
-            flags = LOCKFILE_EXCLUSIVE_LOCK if mode == "w" else 0
-            overlapped = Overlapped()
-            if not lock_file_ex(handle, flags, 0, 1, 0, overlapped):
-                cls.logger.debug("Locking not supported")
-        elif os.name == "posix":
-            operation = fcntl.LOCK_EX if mode == "w" else fcntl.LOCK_SH
-            # According to documentation flock() is emulated with fcntl() on
-            # some platforms. fcntl() locks are not associated with an open
-            # file descriptor. The same file can be locked multiple times
-            # within the same process and if any fd of the file is closed,
-            # all locks are released.
-            # flock() does not work on NFS shares.
-            try:
-                fcntl.flock(lock_file.fileno(), operation)
-            except OSError:
-                cls.logger.debug("Locking not supported")
+            if not cls._lock_file:
+                folder = os.path.expanduser(
+                    cls.configuration.get("storage", "filesystem_folder"))
+                if not os.path.exists(folder):
+                    os.makedirs(folder, exist_ok=True)
+                lock_path = os.path.join(folder, "Radicale.lock")
+                cls._lock_file = open(lock_path, "w+")
+                # set access rights to a necessary minimum to prevent locking
+                # by arbitrary users
+                try:
+                    os.chmod(lock_path, stat.S_IWUSR | stat.S_IRUSR)
+                except OSError:
+                    cls.logger.debug("Failed to set permissions on lock file")
+                if os.name == "nt":
+                    handle = msvcrt.get_osfhandle(cls._lock_file.fileno())
+                    flags = LOCKFILE_EXCLUSIVE_LOCK if mode == "w" else 0
+                    overlapped = Overlapped()
+                    if not lock_file_ex(handle, flags, 0, 1, 0, overlapped):
+                        cls.logger.debug("Locking not supported")
+                elif os.name == "posix":
+                    _cmd = fcntl.LOCK_EX if mode == "w" else fcntl.LOCK_SH
+                    try:
+                        fcntl.lockf(cls._lock_file.fileno(), _cmd)
+                    except OSError:
+                        cls.logger.debug("Locking not supported")
         yield
         with cls._lock:
             if mode == "r":
                 cls._readers -= 1
             else:
                 cls._writer = False
+            if cls._readers == 0:
+                cls._lock_file.close()
+                cls._lock_file = None
             cls._lock.notify()
