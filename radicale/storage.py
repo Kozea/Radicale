@@ -517,20 +517,31 @@ class Collection(BaseCollection):
             return "".join([item.serialize() for item in items])
         return ""
 
-    _lock = threading.Lock()
+    _lock = threading.Condition()
+    _readers = 0
+    _writer = False
 
     @classmethod
     @contextmanager
     def acquire_lock(cls, mode):
-        class Lock:
-            def __init__(self, release_method):
-                self._release_method = release_method
-
-            def release(self):
-                self._release_method()
+        def condition():
+            if mode == "r":
+                return not cls._writer
+            else:
+                return not cls._writer and cls._readers == 0
 
         if mode not in ("r", "w"):
             raise ValueError("Invalid lock mode: %s" % mode)
+        # Use a primitive lock which only works within one process as a
+        # precondition for inter-process file-based locking
+        with cls._lock:
+            cls._lock.wait_for(condition)
+            if mode == "r":
+                cls._readers += 1
+                # notify additional potential readers
+                cls._lock.notify()
+            else:
+                cls._writer = True
         folder = os.path.expanduser(
             cls.configuration.get("storage", "filesystem_folder"))
         if not os.path.exists(folder):
@@ -543,13 +554,12 @@ class Collection(BaseCollection):
             os.chmod(lock_path, stat.S_IWUSR | stat.S_IRUSR)
         except OSError:
             cls.logger.debug("Failed to set permissions on lock file")
-        locked = False
         if os.name == "nt":
             handle = msvcrt.get_osfhandle(lock_file.fileno())
             flags = LOCKFILE_EXCLUSIVE_LOCK if mode == "w" else 0
             overlapped = Overlapped()
-            if lock_file_ex(handle, flags, 0, 1, 0, overlapped):
-                locked = True
+            if not lock_file_ex(handle, flags, 0, 1, 0, overlapped):
+                cls.logger.debug("Locking not supported")
         elif os.name == "posix":
             operation = fcntl.LOCK_EX if mode == "w" else fcntl.LOCK_SH
             # According to documentation flock() is emulated with fcntl() on
@@ -561,18 +571,11 @@ class Collection(BaseCollection):
             try:
                 fcntl.flock(lock_file.fileno(), operation)
             except OSError:
-                pass
-            else:
-                locked = True
-        if locked:
-            lock = Lock(lock_file.close)
-        else:
-            cls.logger.debug("Locking not supported")
-            lock_file.close()
-            # Fallback to primitive lock which only works within one process
-            # and doesn't distinguish between shared and exclusive access.
-            # TODO: use readers–writer lock
-            cls._lock.acquire()
-            lock = Lock(cls._lock.release)
+                cls.logger.debug("Locking not supported")
         yield
-        lock.release()
+        with cls._lock:
+            if mode == "r":
+                cls._readers -= 1
+            else:
+                cls._writer = False
+            cls._lock.notify()
