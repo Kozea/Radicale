@@ -94,7 +94,9 @@ def is_safe_filesystem_path_component(path):
 def path_to_filesystem(root, *paths):
     """Convert path to a local filesystem path relative to base_folder.
 
-    Conversion is done in a secure manner, or raises ``ValueError``.
+    `root` must be a secure filesystem path, it will be prepend to the path.
+
+    Conversion of `paths` is done in a secure manner, or raises ``ValueError``.
 
     """
     paths = [sanitize_path(path).strip("/") for path in paths]
