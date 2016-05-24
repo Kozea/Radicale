@@ -97,7 +97,6 @@ def path_to_filesystem(root, *paths):
     Conversion is done in a secure manner, or raises ``ValueError``.
 
     """
-    root = sanitize_path(root)
     paths = [sanitize_path(path).strip("/") for path in paths]
     safe_path = root
     for path in paths:
@@ -303,7 +302,7 @@ class Collection(BaseCollection):
             _, directories, _ = next(os.walk(collection._filesystem_path))
             for sub_path in directories:
                 full_path = os.path.join(collection._filesystem_path, sub_path)
-                if os.path.exists(path_to_filesystem(full_path)):
+                if os.path.exists(full_path):
                     yield cls(posixpath.join(path, sub_path))
 
     @classmethod
