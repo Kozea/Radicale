@@ -33,7 +33,8 @@ import ssl
 from wsgiref.simple_server import make_server
 
 from . import (
-    Application, config, HTTPServer, HTTPSServer, log, RequestHandler, VERSION)
+    Application, config, ThreadedHTTPServer, ThreadedHTTPSServer, log,
+    RequestHandler, VERSION)
 
 
 # This is a script, many branches and variables
@@ -152,7 +153,7 @@ def run():
     # Create collection servers
     servers = {}
     if configuration.getboolean("server", "ssl"):
-        server_class = HTTPSServer
+        server_class = ThreadedHTTPSServer
         server_class.certificate = configuration.get("server", "certificate")
         server_class.key = configuration.get("server", "key")
         server_class.cyphers = configuration.get("server", "cyphers")
@@ -168,7 +169,7 @@ def run():
                     "Error while reading SSL %s %r: %s" % (
                         name, filename, exception))
     else:
-        server_class = HTTPServer
+        server_class = ThreadedHTTPServer
 
     if not configuration.getboolean("server", "dns_lookup"):
         RequestHandler.address_string = lambda self: self.client_address[0]

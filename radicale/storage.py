@@ -29,6 +29,8 @@ import json
 import os
 import posixpath
 import shutil
+import stat
+import threading
 import time
 from contextlib import contextmanager
 from hashlib import md5
@@ -36,6 +38,42 @@ from importlib import import_module
 from uuid import uuid4
 
 import vobject
+
+if os.name == "nt":
+    import ctypes
+    import ctypes.wintypes
+    import msvcrt
+
+    LOCKFILE_EXCLUSIVE_LOCK = 2
+    if ctypes.sizeof(ctypes.c_void_p) == 4:
+        ULONG_PTR = ctypes.c_uint32
+    else:
+        ULONG_PTR = ctypes.c_uint64
+
+    class Overlapped(ctypes.Structure):
+        _fields_ = [("internal", ULONG_PTR),
+                    ("internal_high", ULONG_PTR),
+                    ("offset", ctypes.wintypes.DWORD),
+                    ("offset_high", ctypes.wintypes.DWORD),
+                    ("h_event", ctypes.wintypes.HANDLE)]
+
+    lock_file_ex = ctypes.windll.kernel32.LockFileEx
+    lock_file_ex.argtypes = [ctypes.wintypes.HANDLE,
+                             ctypes.wintypes.DWORD,
+                             ctypes.wintypes.DWORD,
+                             ctypes.wintypes.DWORD,
+                             ctypes.wintypes.DWORD,
+                             ctypes.POINTER(Overlapped)]
+    lock_file_ex.restype = ctypes.wintypes.BOOL
+    unlock_file_ex = ctypes.windll.kernel32.UnlockFileEx
+    unlock_file_ex.argtypes = [ctypes.wintypes.HANDLE,
+                               ctypes.wintypes.DWORD,
+                               ctypes.wintypes.DWORD,
+                               ctypes.wintypes.DWORD,
+                               ctypes.POINTER(Overlapped)]
+    unlock_file_ex.restype = ctypes.wintypes.BOOL
+elif os.name == "posix":
+    import fcntl
 
 
 def load(configuration, logger):
@@ -54,6 +92,7 @@ def load(configuration, logger):
 
 
 MIMETYPES = {"VADDRESSBOOK": "text/vcard", "VCALENDAR": "text/calendar"}
+MAX_FILE_LOCK_DURATION = 0.25
 
 
 def get_etag(text):
@@ -244,6 +283,17 @@ class BaseCollection:
 
     def serialize(self):
         """Get the unicode string representing the whole collection."""
+        raise NotImplementedError
+
+    @classmethod
+    @contextmanager
+    def acquire_lock(cls, mode):
+        """Set a context manager to lock the whole storage.
+
+        ``mode`` must either be "r" for shared access or "w" for exclusive
+        access.
+
+        """
         raise NotImplementedError
 
 
@@ -475,3 +525,95 @@ class Collection(BaseCollection):
         elif self.get_meta("tag") == "VADDRESSBOOK":
             return "".join([item.serialize() for item in items])
         return ""
+
+    _lock = threading.Lock()
+    _waiters = []
+    _lock_file = None
+    _lock_file_locked = False
+    _lock_file_time = 0
+    _readers = 0
+    _writer = False
+
+    @classmethod
+    @contextmanager
+    def acquire_lock(cls, mode):
+        def condition():
+            # Prevent starvation of writers in other processes
+            if cls._lock_file_locked:
+                time_delta = time.time() - cls._lock_file_time
+                if time_delta < 0 or time_delta > MAX_FILE_LOCK_DURATION:
+                    return False
+            if mode == "r":
+                return not cls._writer
+            else:
+                return not cls._writer and cls._readers == 0
+
+        if mode not in ("r", "w"):
+            raise ValueError("Invalid lock mode: %s" % mode)
+        # Use a primitive lock which only works within one process as a
+        # precondition for inter-process file-based locking
+        with cls._lock:
+            if cls._waiters or not condition():
+                # use FIFO for access requests
+                waiter = threading.Condition(lock=cls._lock)
+                cls._waiters.append(waiter)
+                while True:
+                    waiter.wait()
+                    if condition():
+                        break
+                cls._waiters.pop(0)
+            if mode == "r":
+                cls._readers += 1
+                # notify additional potential readers
+                if cls._waiters:
+                    cls._waiters[0].notify()
+            else:
+                cls._writer = True
+            if not cls._lock_file:
+                folder = os.path.expanduser(
+                    cls.configuration.get("storage", "filesystem_folder"))
+                if not os.path.exists(folder):
+                    os.makedirs(folder, exist_ok=True)
+                lock_path = os.path.join(folder, "Radicale.lock")
+                cls._lock_file = open(lock_path, "w+")
+                # set access rights to a necessary minimum to prevent locking
+                # by arbitrary users
+                try:
+                    os.chmod(lock_path, stat.S_IWUSR | stat.S_IRUSR)
+                except OSError:
+                    cls.logger.debug("Failed to set permissions on lock file")
+            if not cls._lock_file_locked:
+                if os.name == "nt":
+                    handle = msvcrt.get_osfhandle(cls._lock_file.fileno())
+                    flags = LOCKFILE_EXCLUSIVE_LOCK if mode == "w" else 0
+                    overlapped = Overlapped()
+                    if not lock_file_ex(handle, flags, 0, 1, 0, overlapped):
+                        cls.logger.debug("Locking not supported")
+                elif os.name == "posix":
+                    _cmd = fcntl.LOCK_EX if mode == "w" else fcntl.LOCK_SH
+                    try:
+                        fcntl.lockf(cls._lock_file.fileno(), _cmd)
+                    except OSError:
+                        cls.logger.debug("Locking not supported")
+                cls._lock_file_locked = True
+                cls._lock_file_time = time.time()
+        yield
+        with cls._lock:
+            if mode == "r":
+                cls._readers -= 1
+            else:
+                cls._writer = False
+            if cls._readers == 0:
+                if os.name == "nt":
+                    handle = msvcrt.get_osfhandle(cls._lock_file.fileno())
+                    overlapped = Overlapped()
+                    if not unlock_file_ex(handle, 0, 1, 0, overlapped):
+                        cls.logger.debug("Unlocking not supported")
+                elif os.name == "posix":
+                    try:
+                        fcntl.lockf(cls._lock_file.fileno(), fcntl.LOCK_UN)
+                    except OSError:
+                        cls.logger.debug("Unlocking not supported")
+                cls._lock_file_locked = False
+            if cls._waiters:
+                cls._waiters[0].notify()
