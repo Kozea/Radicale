@@ -438,7 +438,11 @@ def _propfind_response(path, item, props, user, write=False):
                 element.append(supported)
         elif is_collection:
             if tag == _tag("D", "getcontenttype"):
-                element.text = storage.MIMETYPES[item.get_meta("tag")]
+                item_tag = item.get_meta("tag")
+                if item_tag:
+                    element.text = storage.MIMETYPES[item_tag]
+                else:
+                    is404 = True
             elif tag == _tag("D", "resourcetype"):
                 if item.is_principal:
                     tag = ET.Element(_tag("D", "principal"))

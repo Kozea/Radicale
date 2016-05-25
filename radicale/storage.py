@@ -262,12 +262,6 @@ class BaseCollection:
         """
         raise NotImplementedError
 
-    @contextmanager
-    def at_once(self):
-        """Set a context manager buffering the reads and writes."""
-        # TODO: use in code
-        yield
-
     def get_meta(self, key):
         """Get metadata value for collection."""
         raise NotImplementedError
@@ -473,11 +467,6 @@ class Collection(BaseCollection):
             self.logger.debug(
                 "Can't tranlate name safely to filesystem, "
                 "skipping component: %s", href)
-
-    @contextmanager
-    def at_once(self):
-        # TODO: use a file locker
-        yield
 
     def get_meta(self, key):
         props_path = self._filesystem_path + ".props"
