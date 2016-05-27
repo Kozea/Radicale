@@ -251,8 +251,8 @@ class Application:
         # Ask authentication backend to check rights
         authorization = environ.get("HTTP_AUTHORIZATION", None)
 
-        if authorization:
-            authorization = authorization.lstrip("Basic").strip()
+        if authorization and authorization.startswith("Basic"):
+            authorization = authorization[len("Basic"):].strip()
             user, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
         else:
