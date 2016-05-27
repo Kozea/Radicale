@@ -955,11 +955,9 @@ Here is one example of Apache configuration file:
           AuthName "Radicale Authentication"
           AuthBasicProvider file
           AuthUserFile /usr/share/radicale/radicale.passwd
-          Require valid-user
 
           AllowOverride None
-          Order allow,deny
-          allow from all
+          Require valid-user
 
           RewriteEngine On
           RewriteCond %{REMOTE_USER}%{PATH_INFO} !^([^/]+/)\1
