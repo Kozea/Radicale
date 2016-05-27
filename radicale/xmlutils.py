@@ -173,10 +173,11 @@ def _prop_match(item, filter_):
         # Point #1 of rfc4791-9.7.2
         return filter_.get("name").lower() in vobject_item.contents
     else:
+        name = filter_.get("name").lower()
         if filter_length == 1:
             if filter_[0].tag == _tag("C", "is-not-defined"):
                 # Point #2 of rfc4791-9.7.2
-                return filter_.get("name").lower() not in vobject_item.contents
+                return name not in vobject_item.contents
         if filter_[0].tag == _tag("C", "time-range"):
             # Point #3 of rfc4791-9.7.2
             if not _time_range_match(item, filter_[0]):
@@ -184,22 +185,11 @@ def _prop_match(item, filter_):
             filter_.remove(filter_[0])
         elif filter_[0].tag == _tag("C", "text-match"):
             # Point #4 of rfc4791-9.7.2
-            # TODO: collations are not supported, but the default ones needed
-            # for DAV servers are actually pretty useless. Texts are lowered to
-            # be case-insensitive, almost as the "i;ascii-casemap" value.
-            match = next(filter_[0].itertext()).lower()
-            value = vobject_item.getChildValue(filter_.get("name").lower())
-            if value is None:
-                return False
-            value = value.lower()
-            if filter_[0].get("negate-condition") == "yes":
-                if match in value:
-                    return False
-            elif match not in value:
+            if not _text_match(vobject_item, filter_[0], name):
                 return False
             filter_.remove(filter_[0])
         return all(
-            _param_filter_match(item, param_filter)
+            _param_filter_match(vobject_item, param_filter, name)
             for param_filter in filter_)
 
 
@@ -213,14 +203,46 @@ def _time_range_match(item, filter_):
     return True
 
 
-def _param_filter_match(item, filter_):
+def _text_match(vobject_item, filter_, child_name, attrib_name=None):
+    """Check whether the ``item`` matches the text-match ``filter_``.
+
+    See rfc4791-9.7.5.
+
+    """
+    # TODO: collations are not supported, but the default ones needed
+    # for DAV servers are actually pretty useless. Texts are lowered to
+    # be case-insensitive, almost as the "i;ascii-casemap" value.
+    match = next(filter_.itertext()).lower()
+    children = getattr(vobject_item, "%s_list" % child_name, [])
+    if attrib_name:
+        condition = any(
+            match in attrib.lower() for child in children
+            for attrib in child.params.get(attrib_name, []))
+    else:
+        condition = any(match in child.value.lower() for child in children)
+    if filter_.get("negate-condition") == "yes":
+        return not condition
+    else:
+        return condition
+
+
+def _param_filter_match(vobject_item, filter_, parent_name):
     """Check whether the ``item`` matches the param-filter ``filter_``.
 
     See rfc4791-9.7.3.
 
     """
-    # TODO: implement this
-    return True
+    name = filter_.get("name")
+    children = getattr(vobject_item, "%s_list" % parent_name, [])
+    condition = any(name in child.params for child in children)
+    if len(filter_):
+        if filter_[0].tag == _tag("C", "text-match"):
+            return condition and _text_match(
+                vobject_item, filter_[0], parent_name, name)
+        elif filter_[0].tag == _tag("C", "is-not-defined"):
+            return not condition
+    else:
+        return condition
 
 
 def name_from_path(path, collection):

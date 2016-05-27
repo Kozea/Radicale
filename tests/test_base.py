@@ -217,7 +217,7 @@ class BaseRequests:
             </C:comp-filter>"""])
 
     def test_text_match_filter(self):
-        """Report request with tag-based filter on calendar."""
+        """Report request with text-match filter on calendar."""
         assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
@@ -247,6 +247,51 @@ class BaseRequests:
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="SUMMARY">
                   <C:text-match negate-condition="yes">event</C:text-match>
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+
+    def test_param_filter(self):
+        """Report request with param-filter on calendar."""
+        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="ATTENDEE">
+                  <C:param-filter name="PARTSTAT">
+                    <C:text-match collation="i;ascii-casemap"
+                    >ACCEPTED</C:text-match>
+                  </C:param-filter>
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="ATTENDEE">
+                  <C:param-filter name="PARTSTAT">
+                    <C:text-match collation="i;ascii-casemap"
+                    >UNKNOWN</C:text-match>
+                  </C:param-filter>
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="ATTENDEE">
+                  <C:param-filter name="PARTSTAT">
+                    <C:is-not-defined />
+                  </C:param-filter>
+                </C:prop-filter>
+              </C:comp-filter>
+            </C:comp-filter>"""])
+        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="ATTENDEE">
+                  <C:param-filter name="UNKNOWN">
+                    <C:is-not-defined />
+                  </C:param-filter>
                 </C:prop-filter>
               </C:comp-filter>
             </C:comp-filter>"""])
