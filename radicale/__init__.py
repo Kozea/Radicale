@@ -533,7 +533,9 @@ class Application:
         content_type = environ.get("CONTENT_TYPE")
         if content_type:
             tags = {value: key for key, value in storage.MIMETYPES.items()}
-            collection.set_meta("tag", tags[content_type.split(";")[0]])
+            tag = tags.get(content_type.split(";")[0])
+            if tag:
+                collection.set_meta("tag", tag)
         headers = {}
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
         item = collection.get(item_name)
