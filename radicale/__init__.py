@@ -546,7 +546,7 @@ class Application:
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item
             # Case 3: Item and no Etag precondition: Force modifying item
-            items = list(vobject.readComponents(content))
+            items = list(vobject.readComponents(content or ""))
             if items:
                 if item:
                     # PUT is modifying an existing item
