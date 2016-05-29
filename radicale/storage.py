@@ -364,12 +364,23 @@ class Collection(BaseCollection):
             self.set_meta("tag", "VCALENDAR")
             if collection:
                 collection, = collection
+                items = []
                 for content in ("vevent", "vtodo", "vjournal"):
-                    if content in collection.contents:
-                        for item in getattr(collection, "%s_list" % content):
-                            new_collection = vobject.iCalendar()
-                            new_collection.add(item)
-                            self.upload(uuid4().hex, new_collection)
+                    items.extend(getattr(collection, "%s_list" % content, []))
+                processed_uids = []
+                for i, item in enumerate(items):
+                    uid = getattr(item, "uid", None)
+                    if uid in processed_uids:
+                        continue
+                    new_collection = vobject.iCalendar()
+                    new_collection.add(item)
+                    if uid:
+                        processed_uids.append(uid)
+                        # search for items with same UID
+                        for oitem in items[i+1:]:
+                            if getattr(oitem, "uid", None) == uid:
+                                new_collection.add(oitem)
+                    self.upload(uuid4().hex, new_collection)
         elif tag == "VCARD":
             self.set_meta("tag", "VADDRESSBOOK")
             if collection:
