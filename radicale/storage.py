@@ -380,12 +380,25 @@ class Collection(BaseCollection):
                         for oitem in items[i+1:]:
                             if getattr(oitem, "uid", None) == uid:
                                 new_collection.add(oitem)
-                    self.upload(uuid4().hex, new_collection)
+                    if uid and is_safe_filesystem_path_component(uid.value):
+                        href = uid.value
+                    else:
+                        href = uuid4().hex
+                    if not href.lower().endswith(".ics"):
+                        href += ".ics"
+                    self.upload(href, new_collection)
         elif tag == "VCARD":
             self.set_meta("tag", "VADDRESSBOOK")
             if collection:
                 for card in collection:
-                    self.upload(uuid4().hex, card)
+                    uid = getattr(card, "uid", None)
+                    if uid and is_safe_filesystem_path_component(uid.value):
+                        href = uid.value
+                    else:
+                        href = uuid4().hex
+                    if not href.lower().endswith(".vcf"):
+                        href += ".vcf"
+                    self.upload(href, card)
         return self
 
     def list(self):
