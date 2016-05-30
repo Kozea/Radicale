@@ -578,23 +578,26 @@ class Collection(BaseCollection):
                     except OSError:
                         cls.logger.debug("Locking not supported")
                 cls._lock_file_locked = True
-        yield
-        with cls._lock:
-            if mode == "r":
-                cls._readers -= 1
-            else:
-                cls._writer = False
-            if cls._readers == 0:
-                if os.name == "nt":
-                    handle = msvcrt.get_osfhandle(cls._lock_file.fileno())
-                    overlapped = Overlapped()
-                    if not unlock_file_ex(handle, 0, 1, 0, overlapped):
-                        cls.logger.debug("Unlocking not supported")
-                elif os.name == "posix":
-                    try:
-                        fcntl.lockf(cls._lock_file.fileno(), fcntl.LOCK_UN)
-                    except OSError:
-                        cls.logger.debug("Unlocking not supported")
-                cls._lock_file_locked = False
-            if cls._waiters:
-                cls._waiters[0].notify()
+        try:
+            yield
+        finally:
+            with cls._lock:
+                if mode == "r":
+                    cls._readers -= 1
+                else:
+                    cls._writer = False
+                if cls._readers == 0:
+                    if os.name == "nt":
+                        handle = msvcrt.get_osfhandle(cls._lock_file.fileno())
+                        overlapped = Overlapped()
+                        if not unlock_file_ex(handle, 0, 1, 0, overlapped):
+                            cls.logger.debug("Unlocking not supported")
+                    elif os.name == "posix":
+                        try:
+                            fcntl.lockf(cls._lock_file.fileno(),
+                                        fcntl.LOCK_UN)
+                        except OSError:
+                            cls.logger.debug("Unlocking not supported")
+                    cls._lock_file_locked = False
+                if cls._waiters:
+                    cls._waiters[0].notify()

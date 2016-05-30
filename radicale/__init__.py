@@ -533,7 +533,9 @@ class Application:
         content_type = environ.get("CONTENT_TYPE")
         if content_type:
             tags = {value: key for key, value in storage.MIMETYPES.items()}
-            collection.set_meta("tag", tags[content_type.split(";")[0]])
+            tag = tags.get(content_type.split(";")[0])
+            if tag:
+                collection.set_meta("tag", tag)
         headers = {}
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
         item = collection.get(item_name)
@@ -546,21 +548,26 @@ class Application:
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item
             # Case 3: Item and no Etag precondition: Force modifying item
-            items = list(vobject.readComponents(content))
-            if items:
-                if item:
-                    # PUT is modifying an existing item
+            items = list(vobject.readComponents(content or ""))
+            if item:
+                # PUT is modifying an existing item
+                if items:
                     new_item = collection.update(item_name, items[0])
-                elif item_name:
-                    # PUT is adding a new item
+                else:
+                    new_item = None
+            elif item_name:
+                # PUT is adding a new item
+                if items:
                     new_item = collection.upload(item_name, items[0])
                 else:
-                    # PUT is replacing the whole collection
-                    collection.delete()
-                    new_item = self.Collection.create_collection(
-                        environ["PATH_INFO"], items)
-                if new_item:
-                    headers["ETag"] = new_item.etag
+                    new_item = None
+            else:
+                # PUT is replacing the whole collection
+                collection.delete()
+                new_item = self.Collection.create_collection(
+                    environ["PATH_INFO"], items)
+            if new_item:
+                headers["ETag"] = new_item.etag
             status = client.CREATED
         else:
             # PUT rejected in all other cases
