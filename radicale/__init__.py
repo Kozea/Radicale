@@ -548,21 +548,26 @@ class Application:
             # Case 1: No item and no ETag precondition: Add new item
             # Case 2: Item and ETag precondition verified: Modify item
             # Case 3: Item and no Etag precondition: Force modifying item
-            items = list(vobject.readComponents(content))
-            if items:
-                if item:
-                    # PUT is modifying an existing item
+            items = list(vobject.readComponents(content or ""))
+            if item:
+                # PUT is modifying an existing item
+                if items:
                     new_item = collection.update(item_name, items[0])
-                elif item_name:
-                    # PUT is adding a new item
+                else:
+                    new_item = None
+            elif item_name:
+                # PUT is adding a new item
+                if items:
                     new_item = collection.upload(item_name, items[0])
                 else:
-                    # PUT is replacing the whole collection
-                    collection.delete()
-                    new_item = self.Collection.create_collection(
-                        environ["PATH_INFO"], items)
-                if new_item:
-                    headers["ETag"] = new_item.etag
+                    new_item = None
+            else:
+                # PUT is replacing the whole collection
+                collection.delete()
+                new_item = self.Collection.create_collection(
+                    environ["PATH_INFO"], items)
+            if new_item:
+                headers["ETag"] = new_item.etag
             status = client.CREATED
         else:
             # PUT rejected in all other cases
