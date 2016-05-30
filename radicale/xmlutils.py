@@ -29,6 +29,7 @@ import posixpath
 import re
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
+from datetime import datetime, timedelta, timezone
 from urllib.parse import unquote, urlparse
 
 import vobject
@@ -146,9 +147,9 @@ def _comp_match(item, filter_, scope="collection"):
                 return filter_.get("name") != tag
         if filter_[0].tag == _tag("C", "time-range"):
             # Point #3 of rfc4791-9.7.1
-            if not _time_range_match(item, filter_):
+            if not _time_range_match(item.item, filter_[0], tag):
                 return False
-            filter_.remove(filter_[0])
+            filter_ = filter_[1:]
         # Point #4 of rfc4791-9.7.1
         return all(
             _prop_match(item, child) if child.tag == _tag("C", "prop-filter")
@@ -180,26 +181,81 @@ def _prop_match(item, filter_):
                 return name not in vobject_item.contents
         if filter_[0].tag == _tag("C", "time-range"):
             # Point #3 of rfc4791-9.7.2
-            if not _time_range_match(item, filter_[0]):
+            if not _time_range_match(vobject_item, filter_[0], name):
                 return False
-            filter_.remove(filter_[0])
+            filter_ = filter_[1:]
         elif filter_[0].tag == _tag("C", "text-match"):
             # Point #4 of rfc4791-9.7.2
             if not _text_match(vobject_item, filter_[0], name):
                 return False
-            filter_.remove(filter_[0])
+            filter_ = filter_[1:]
         return all(
             _param_filter_match(vobject_item, param_filter, name)
             for param_filter in filter_)
 
 
-def _time_range_match(item, filter_):
+def _time_range_match(vobject_item, filter_, child_name):
     """Check whether the ``item`` matches the time-range ``filter_``.
 
     See rfc4791-9.9.
 
     """
-    # TODO: implement this
+    start = filter_.get("start")
+    end = filter_.get("end")
+    if not start and not end:
+        return False
+    if start:
+        start = datetime.strptime(start, "%Y%m%dT%H%M%SZ")
+    else:
+        start = datetime.datetime.min
+    if end:
+        end = datetime.strptime(end, "%Y%m%dT%H%M%SZ")
+    else:
+        end = datetime.datetime.max
+    start = start.replace(tzinfo=timezone.utc)
+    end = end.replace(tzinfo=timezone.utc)
+    child = getattr(vobject_item, child_name.lower())
+
+    # Comments give the lines in the tables of the specification
+    if child_name == "VEVENT":
+        # TODO: check if there's a timezone
+        dtstart = child.dtstart.value
+        if not isinstance(dtstart, datetime):
+            dtstart_is_datetime = False
+            # TODO: changing dates to datetimes may be wrong because of tz
+            dtstart = datetime.combine(dtstart, datetime.min.time()).replace(
+                tzinfo=timezone.utc)
+        else:
+            dtstart_is_datetime = True
+        dtend = getattr(child, "dtend", None)
+        duration = getattr(child, "duration", None)
+        if dtend is not None:
+            # Line 1
+            dtend = dtend.value
+            if not isinstance(dtend, datetime):
+                dtend = datetime.combine(dtend, datetime.min.time()).replace(
+                    tzinfo=timezone.utc)
+            return start < dtend and end > dtstart
+        elif duration is not None:
+            duration = duration.value
+            if duration.seconds > 0:
+                # Line 2
+                return start < dtstart + duration and end > dtstart
+            else:
+                # Line 3
+                return start <= dtstart and end > dtstart
+        elif dtstart_is_datetime:
+            # Line 4
+            return start <= dtstart and end > dtstart
+        else:
+            # Line 5
+            return start < dtstart + timedelta(days=1) and end > dtstart
+    elif child_name == "VTODO":
+        # TODO: implement this
+        pass
+    elif child_name == "VJOURNAL":
+        # TODO: implement this
+        pass
     return True
 
 
@@ -491,11 +547,11 @@ def _propfind_response(path, item, props, user, write=False):
                     for href, _ in item.list():
                         event = item.get(href)
                         if "vtimezone" in event.contents:
-                            for timezone in event.vtimezone_list:
-                                timezones.add(timezone)
+                            for timezone_ in event.vtimezone_list:
+                                timezones.add(timezone_)
                     collection = vobject.iCalendar()
-                    for timezone in timezones:
-                        collection.add(timezone)
+                    for timezone_ in timezones:
+                        collection.add(timezone_)
                     element.text = collection.serialize()
                 elif tag == _tag("D", "displayname"):
                     element.text = item.get_meta("D:displayname") or item.path

@@ -54,8 +54,8 @@ class BaseRequests:
         """Add an event."""
         self.request(
             "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
-        event = get_file_content("event.ics")
-        path = "/calendar.ics/event.ics"
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
         status, headers, answer = self.request("PUT", path, event)
         assert status == 201
         status, headers, answer = self.request("GET", path)
@@ -83,8 +83,8 @@ class BaseRequests:
         """Delete an event."""
         self.request(
             "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
-        event = get_file_content("event.ics")
-        path = "/calendar.ics/event.ics"
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
         status, headers, answer = self.request("PUT", path, event)
         # Then we send a DELETE request
         status, headers, answer = self.request("DELETE", path)
@@ -93,13 +93,14 @@ class BaseRequests:
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert "VEVENT" not in answer
 
-    def _test_filter(self, filters):
+    def _test_filter(self, filters, events=1):
         filters_text = "".join(
             "<C:filter>%s</C:filter>" % filter_ for filter_ in filters)
         self.request(
             "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
-        event = get_file_content("event.ics")
-        self.request("PUT", "/calendar.ics/event.ics", event)
+        for i in range(events):
+            event = get_file_content("event%i.ics" % (i + 1))
+            self.request("PUT", "/calendar.ics/event%i.ics" % (i + 1), event)
         status, headers, answer = self.request(
             "REPORT", "/calendar.ics",
             """<?xml version="1.0" encoding="utf-8" ?>
@@ -113,29 +114,29 @@ class BaseRequests:
 
     def test_calendar_tag_filter(self):
         """Report request with tag-based filter on calendar."""
-        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" in self._test_filter(["""
             <C:comp-filter name="VCALENDAR"></C:comp-filter>"""])
 
     def test_item_tag_filter(self):
         """Report request with tag-based filter on an item."""
-        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT"></C:comp-filter>
             </C:comp-filter>"""])
-        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" not in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VTODO"></C:comp-filter>
             </C:comp-filter>"""])
 
     def test_item_not_tag_filter(self):
         """Report request with tag-based is-not filter on an item."""
-        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" not in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:is-not-defined />
               </C:comp-filter>
             </C:comp-filter>"""])
-        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VTODO">
                 <C:is-not-defined />
@@ -144,13 +145,13 @@ class BaseRequests:
 
     def test_item_prop_filter(self):
         """Report request with prop-based filter on an item."""
-        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="SUMMARY"></C:prop-filter>
               </C:comp-filter>
             </C:comp-filter>"""])
-        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" not in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="UNKNOWN"></C:prop-filter>
@@ -159,7 +160,7 @@ class BaseRequests:
 
     def test_item_not_prop_filter(self):
         """Report request with prop-based is-not filter on an item."""
-        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" not in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="SUMMARY">
@@ -167,7 +168,7 @@ class BaseRequests:
                 </C:prop-filter>
               </C:comp-filter>
             </C:comp-filter>"""])
-        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="UNKNOWN">
@@ -178,7 +179,7 @@ class BaseRequests:
 
     def test_mutiple_filters(self):
         """Report request with multiple filters on an item."""
-        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" not in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="SUMMARY">
@@ -193,7 +194,7 @@ class BaseRequests:
                 </C:prop-filter>
               </C:comp-filter>
             </C:comp-filter>"""])
-        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="SUMMARY"></C:prop-filter>
@@ -206,7 +207,7 @@ class BaseRequests:
                 </C:prop-filter>
               </C:comp-filter>
             </C:comp-filter>"""])
-        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="SUMMARY"></C:prop-filter>
@@ -218,7 +219,7 @@ class BaseRequests:
 
     def test_text_match_filter(self):
         """Report request with text-match filter on calendar."""
-        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="SUMMARY">
@@ -226,7 +227,7 @@ class BaseRequests:
                 </C:prop-filter>
               </C:comp-filter>
             </C:comp-filter>"""])
-        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" not in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="UNKNOWN">
@@ -234,7 +235,7 @@ class BaseRequests:
                 </C:prop-filter>
               </C:comp-filter>
             </C:comp-filter>"""])
-        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" not in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="SUMMARY">
@@ -242,7 +243,7 @@ class BaseRequests:
                 </C:prop-filter>
               </C:comp-filter>
             </C:comp-filter>"""])
-        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" not in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="SUMMARY">
@@ -253,7 +254,7 @@ class BaseRequests:
 
     def test_param_filter(self):
         """Report request with param-filter on calendar."""
-        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="ATTENDEE">
@@ -264,7 +265,7 @@ class BaseRequests:
                 </C:prop-filter>
               </C:comp-filter>
             </C:comp-filter>"""])
-        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" not in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="ATTENDEE">
@@ -275,7 +276,7 @@ class BaseRequests:
                 </C:prop-filter>
               </C:comp-filter>
             </C:comp-filter>"""])
-        assert "href>/calendar.ics/event.ics</" not in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" not in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="ATTENDEE">
@@ -285,7 +286,7 @@ class BaseRequests:
                 </C:prop-filter>
               </C:comp-filter>
             </C:comp-filter>"""])
-        assert "href>/calendar.ics/event.ics</" in self._test_filter(["""
+        assert "href>/calendar.ics/event1.ics</" in self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="ATTENDEE">
@@ -295,6 +296,80 @@ class BaseRequests:
                 </C:prop-filter>
               </C:comp-filter>
             </C:comp-filter>"""])
+
+    def test_time_range_filter(self):
+        """Report request with time-range filter on calendar."""
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:time-range start="20130801T000000Z" end="20131001T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], events=5)
+        assert "href>/calendar.ics/event1.ics</" in answer
+        assert "href>/calendar.ics/event2.ics</" in answer
+        assert "href>/calendar.ics/event3.ics</" in answer
+        assert "href>/calendar.ics/event4.ics</" in answer
+        assert "href>/calendar.ics/event5.ics</" in answer
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:prop-filter name="ATTENDEE">
+                  <C:param-filter name="PARTSTAT">
+                    <C:is-not-defined />
+                  </C:param-filter>
+                </C:prop-filter>
+                <C:time-range start="20130801T000000Z" end="20131001T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], events=5)
+        assert "href>/calendar.ics/event1.ics</" not in answer
+        assert "href>/calendar.ics/event2.ics</" not in answer
+        assert "href>/calendar.ics/event3.ics</" not in answer
+        assert "href>/calendar.ics/event4.ics</" not in answer
+        assert "href>/calendar.ics/event5.ics</" not in answer
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:time-range start="20130902T000000Z" end="20131001T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], events=5)
+        assert "href>/calendar.ics/event1.ics</" not in answer
+        assert "href>/calendar.ics/event2.ics</" in answer
+        assert "href>/calendar.ics/event3.ics</" in answer
+        assert "href>/calendar.ics/event4.ics</" in answer
+        assert "href>/calendar.ics/event5.ics</" in answer
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:time-range start="20130903T000000Z" end="20131001T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], events=5)
+        assert "href>/calendar.ics/event1.ics</" not in answer
+        assert "href>/calendar.ics/event2.ics</" not in answer
+        assert "href>/calendar.ics/event3.ics</" in answer
+        assert "href>/calendar.ics/event4.ics</" in answer
+        assert "href>/calendar.ics/event5.ics</" in answer
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:time-range start="20130903T000000Z" end="20130904T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], events=5)
+        assert "href>/calendar.ics/event1.ics</" not in answer
+        assert "href>/calendar.ics/event2.ics</" not in answer
+        assert "href>/calendar.ics/event3.ics</" in answer
+        assert "href>/calendar.ics/event4.ics</" not in answer
+        assert "href>/calendar.ics/event5.ics</" not in answer
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:time-range start="20130805T000000Z" end="20130810T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], events=5)
+        assert "href>/calendar.ics/event1.ics</" not in answer
+        assert "href>/calendar.ics/event2.ics</" not in answer
+        assert "href>/calendar.ics/event3.ics</" not in answer
+        assert "href>/calendar.ics/event4.ics</" not in answer
+        assert "href>/calendar.ics/event5.ics</" not in answer
 
 
 class TestMultiFileSystem(BaseRequests, BaseTest):
