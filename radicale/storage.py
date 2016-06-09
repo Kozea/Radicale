@@ -126,7 +126,8 @@ def is_safe_filesystem_path_component(path):
     """
     return (
         path and not os.path.splitdrive(path)[0] and
-        not os.path.split(path)[0] and path not in (os.curdir, os.pardir))
+        not os.path.split(path)[0] and path not in (os.curdir, os.pardir) and
+        not path.startswith(".") and not path.endswith("~"))
 
 
 def path_to_filesystem(root, *paths):
@@ -346,6 +347,10 @@ class Collection(BaseCollection):
                     yield collection.get(item[0])
             _, directories, _ = next(os.walk(collection._filesystem_path))
             for sub_path in directories:
+                if not is_safe_filesystem_path_component(sub_path):
+                    cls.logger.debug(
+                        "Skipping collection: %s", sub_path)
+                    continue
                 full_path = os.path.join(collection._filesystem_path, sub_path)
                 if os.path.exists(full_path):
                     yield cls(posixpath.join(path, sub_path))
@@ -395,6 +400,10 @@ class Collection(BaseCollection):
             return
 
         for href in hrefs:
+            if not is_safe_filesystem_path_component(href):
+                self.logger.debug(
+                    "Skipping component: %s", href)
+                continue
             path = os.path.join(self._filesystem_path, href)
             if not href.endswith(".props") and os.path.isfile(path):
                 with open(path, encoding=self.storage_encoding) as fd:
