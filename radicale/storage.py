@@ -576,7 +576,7 @@ class Collection(BaseCollection):
                     cls.configuration.get("storage", "filesystem_folder"))
                 if not os.path.exists(folder):
                     os.makedirs(folder, exist_ok=True)
-                lock_path = os.path.join(folder, "Radicale.lock")
+                lock_path = os.path.join(folder, ".Radicale.lock")
                 cls._lock_file = open(lock_path, "w+")
                 # set access rights to a necessary minimum to prevent locking
                 # by arbitrary users
