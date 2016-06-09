@@ -549,10 +549,10 @@ def _propfind_response(path, item, props, user, write=False):
                         if "vtimezone" in event.contents:
                             for timezone_ in event.vtimezone_list:
                                 timezones.add(timezone_)
-                    collection = vobject.iCalendar()
+                    timezone_collection = vobject.iCalendar()
                     for timezone_ in timezones:
-                        collection.add(timezone_)
-                    element.text = collection.serialize()
+                        timezone_collection.add(timezone_)
+                    element.text = timezone_collection.serialize()
                 elif tag == _tag("D", "displayname"):
                     element.text = item.get_meta("D:displayname") or item.path
                 elif tag == _tag("ICAL", "calendar-color"):
