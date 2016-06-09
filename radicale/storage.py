@@ -147,7 +147,8 @@ def path_to_filesystem(root, *paths):
             continue
         for part in path.split("/"):
             if not is_safe_filesystem_path_component(part):
-                raise ValueError("Unsafe path")
+                raise ValueError(
+                    "Can't tranlate name safely to filesystem: %s" % part)
             safe_path = os.path.join(safe_path, part)
     return safe_path
 
