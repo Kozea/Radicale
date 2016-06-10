@@ -218,6 +218,15 @@ class Application:
 
     def __call__(self, environ, start_response):
         """Manage a request."""
+        def response(status, headers={}, answer=None):
+            # Start response
+            status = "%i %s" % (status,
+                                client.responses.get(status, "Unknown"))
+            self.logger.debug("Answer status: %s" % status)
+            start_response(status, list(headers.items()))
+            # Return response content
+            return [answer] if answer else []
+
         self.logger.info("%s request at %s received" % (
             environ["REQUEST_METHOD"], environ["PATH_INFO"]))
         headers = pprint.pformat(self.headers_log(environ))
@@ -234,9 +243,7 @@ class Application:
             # Request path not starting with base_prefix, not allowed
             self.logger.debug(
                 "Path not starting with prefix: %s", environ["PATH_INFO"])
-            status, headers, _ = NOT_ALLOWED
-            start_response(status, list(headers.items()))
-            return []
+            return response(*NOT_ALLOWED)
 
         # Sanitize request URI
         environ["PATH_INFO"] = storage.sanitize_path(
@@ -275,10 +282,7 @@ class Application:
                 status = client.SEE_OTHER
                 self.logger.info("/.well-known/ redirection to: %s" % redirect)
                 headers = {"Location": redirect}
-            status = "%i %s" % (
-                status, client.responses.get(status, "Unknown"))
-            start_response(status, list(headers.items()))
-            return []
+            return response(status, headers)
 
         is_authenticated = self.is_authenticated(user, password)
         is_valid_user = is_authenticated or not user
@@ -342,13 +346,7 @@ class Application:
             for key in self.configuration.options("headers"):
                 headers[key] = self.configuration.get("headers", key)
 
-        # Start response
-        status = "%i %s" % (status, client.responses.get(status, "Unknown"))
-        self.logger.debug("Answer status: %s" % status)
-        start_response(status, list(headers.items()))
-
-        # Return response content
-        return [answer] if answer else []
+        return response(status, headers, answer)
 
     # All these functions must have the same parameters, some are useless
     # pylint: disable=W0612,W0613,R0201
