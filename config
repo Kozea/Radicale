@@ -24,6 +24,9 @@
 # File storing the PID in daemon mode
 #pid =
 
+# Max size of request body (bytes)
+#max_content_length = 10000000
+
 # Socket timeout (seconds)
 #timeout = 10
 

@@ -301,6 +301,12 @@ class Application:
         # Get content
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
         if content_length:
+            max_content_length = self.configuration.getint(
+                "server", "max_content_length")
+            if max_content_length and content_length > max_content_length:
+                self.logger.debug(
+                    "Request body too large: %d", content_length)
+                return response(client.REQUEST_ENTITY_TOO_LARGE)
             try:
                 content = self.decode(
                     environ["wsgi.input"].read(content_length), environ)

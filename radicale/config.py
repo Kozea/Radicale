@@ -34,6 +34,7 @@ INITIAL_CONFIG = {
         "hosts": "0.0.0.0:5232",
         "daemon": "False",
         "pid": "",
+        "max_content_length": "10000000",
         "timeout": "10",
         "ssl": "False",
         "certificate": "/etc/apache2/ssl/server.crt",
