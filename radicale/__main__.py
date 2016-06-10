@@ -171,6 +171,8 @@ def run():
     else:
         server_class = ThreadedHTTPServer
     server_class.client_timeout = configuration.getint("server", "timeout")
+    server_class.max_connections = configuration.getint("server",
+                                                        "max_connections")
 
     if not configuration.getboolean("server", "dns_lookup"):
         RequestHandler.address_string = lambda self: self.client_address[0]

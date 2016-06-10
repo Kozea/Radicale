@@ -29,9 +29,11 @@ should have been included in this package.
 import os
 import pprint
 import base64
+import contextlib
 import socket
 import socketserver
 import ssl
+import threading
 import wsgiref.simple_server
 import re
 import zlib
@@ -57,6 +59,7 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
 
     # These class attributes must be set before creating instance
     client_timeout = None
+    max_connections = None
 
     def __init__(self, address, handler, bind_and_activate=True):
         """Create server."""
@@ -75,6 +78,13 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
         if bind_and_activate:
             self.server_bind()
             self.server_activate()
+
+        if self.max_connections:
+            self.connections_guard = threading.BoundedSemaphore(
+                self.max_connections)
+        else:
+            # use dummy context manager
+            self.connections_guard = contextlib.suppress()
 
     def get_request(self):
         # Set timeout for client
@@ -106,11 +116,15 @@ class HTTPSServer(HTTPServer):
 
 
 class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
-    pass
+    def process_request_thread(self, request, client_address):
+        with self.connections_guard:
+            return super().process_request_thread(request, client_address)
 
 
 class ThreadedHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
-    pass
+    def process_request_thread(self, request, client_address):
+        with self.connections_guard:
+            return super().process_request_thread(request, client_address)
 
 
 class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
