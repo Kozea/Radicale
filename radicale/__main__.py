@@ -170,6 +170,7 @@ def run():
                         name, filename, exception))
     else:
         server_class = ThreadedHTTPServer
+    server_class.client_timeout = configuration.getint("server", "timeout")
 
     if not configuration.getboolean("server", "dns_lookup"):
         RequestHandler.address_string = lambda self: self.client_address[0]

@@ -54,6 +54,10 @@ WELL_KNOWN_RE = re.compile(r"/\.well-known/(carddav|caldav)/?$")
 
 class HTTPServer(wsgiref.simple_server.WSGIServer):
     """HTTP server."""
+
+    # These class attributes must be set before creating instance
+    client_timeout = None
+
     def __init__(self, address, handler, bind_and_activate=True):
         """Create server."""
         ipv6 = ":" in address[0]
@@ -71,6 +75,13 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
         if bind_and_activate:
             self.server_bind()
             self.server_activate()
+
+    def get_request(self):
+        # Set timeout for client
+        _socket, address = super().get_request()
+        if self.client_timeout:
+            _socket.settimeout(self.client_timeout)
+        return _socket, address
 
 
 class HTTPSServer(HTTPServer):
@@ -290,8 +301,11 @@ class Application:
         # Get content
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
         if content_length:
-            content = self.decode(
-                environ["wsgi.input"].read(content_length), environ)
+            try:
+                content = self.decode(
+                    environ["wsgi.input"].read(content_length), environ)
+            except socket.timeout:
+                return response(client.REQUEST_TIMEOUT)
             self.logger.debug("Request content:\n%s" % content)
         else:
             content = None
