@@ -63,7 +63,8 @@ INITIAL_CONFIG = {
     "logging": {
         "config": "/etc/radicale/logging",
         "debug": "False",
-        "full_environment": "False"}}
+        "full_environment": "False",
+        "mask_passwords": "True"}}
 
 
 def load(paths=()):

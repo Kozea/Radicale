@@ -116,6 +116,9 @@
 # Store all environment variables (including those set in the shell)
 #full_environment = False
 
+# Don't include passwords in logs
+#mask_passwords = True
+
 
 [headers]
 
