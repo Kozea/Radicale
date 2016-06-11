@@ -112,6 +112,10 @@
 # Folder for storing local collections, created if not present
 #filesystem_folder = ~/.config/radicale/collections
 
+# Command that is run after changes to storage
+#hook =
+# Example: git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
+
 
 [logging]
 
