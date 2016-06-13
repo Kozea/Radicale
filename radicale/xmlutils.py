@@ -207,11 +207,11 @@ def _time_range_match(vobject_item, filter_, child_name):
     if start:
         start = datetime.strptime(start, "%Y%m%dT%H%M%SZ")
     else:
-        start = datetime.datetime.min
+        start = datetime.min
     if end:
         end = datetime.strptime(end, "%Y%m%dT%H%M%SZ")
     else:
-        end = datetime.datetime.max
+        end = datetime.max
     start = start.replace(tzinfo=timezone.utc)
     end = end.replace(tzinfo=timezone.utc)
     child = getattr(vobject_item, child_name.lower())
