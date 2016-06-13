@@ -119,20 +119,20 @@ class Application:
         self.Collection = storage.load(configuration, logger)
         self.authorized = rights.load(configuration, logger)
         self.encoding = configuration.get("encoding", "request")
-        if configuration.getboolean("logging", "full_environment"):
-            self.headers_log = lambda environ: environ
 
-    # This method is overriden in __init__ if full_environment is set
-    # pylint: disable=E0202
-    @staticmethod
-    def headers_log(environ):
-        """Remove environment variables from the headers for logging."""
+    def headers_log(self, environ):
+        """Sanitize headers for logging."""
         request_environ = dict(environ)
-        for shell_variable in os.environ:
-            if shell_variable in request_environ:
-                del request_environ[shell_variable]
+        # Remove environment variables
+        if not self.configuration.getboolean("logging", "full_environment"):
+            for shell_variable in os.environ:
+                request_environ.pop(shell_variable, None)
+        # Mask credentials
+        if (self.configuration.getboolean("logging", "mask_passwords") and
+                request_environ.get("HTTP_AUTHORIZATION",
+                                    "").startswith("Basic")):
+            request_environ["HTTP_AUTHORIZATION"] = "Basic **masked**"
         return request_environ
-    # pylint: enable=E0202
 
     def decode(self, text, environ):
         """Try to magically decode ``text`` according to given ``environ``."""
