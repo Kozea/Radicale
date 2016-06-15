@@ -304,8 +304,9 @@ def _time_range_match(vobject_item, filter_, child_name):
             completed = completed.value
             return start <= completed and end >= completed
         elif created is not None:
+            # Line 7
             created = created.value
-            return end < created
+            return end > created
         else:
             return True
 
