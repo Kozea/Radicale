@@ -250,12 +250,34 @@ def _time_range_match(vobject_item, filter_, child_name):
         else:
             # Line 5
             return start < dtstart + timedelta(days=1) and end > dtstart
-    elif child_name == "VTODO":
+    elif child_name == "VTODO": 
         # TODO: implement this
         pass
     elif child_name == "VJOURNAL":
-        # TODO: implement this
-        pass
+        dtstart = getattr(child, "dstart", None)
+        
+        if dtstart is not None:
+            dtstart = dtstart.value
+            if not isinstance(dtstart, datetime):
+                dtstart_is_datetime = False
+                # TODO: changing dates to datetimes may be wrong because of tz
+                dtstart = datetime.combine(dtstart, datetime.min.time()).replace(
+                    tzinfo=timezone.utc)
+            else:
+                dtstart_is_datetime = True
+
+            
+            if dtstart_is_datetime:
+            # Line 1
+                return start <= dtstart and end > dtstart
+            else:
+            # Line 2
+                return start < dtstart + timedelta(days=1) and end > dtstart
+   
+        else:
+            # Line 3
+            return False
+        
     return True
 
 
