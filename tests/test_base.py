@@ -93,14 +93,14 @@ class BaseRequests:
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert "VEVENT" not in answer
 
-    def _test_filter(self, filters, events=1):
+    def _test_filter(self, filters, type="event", events=1):
         filters_text = "".join(
             "<C:filter>%s</C:filter>" % filter_ for filter_ in filters)
         self.request(
             "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
         for i in range(events):
-            event = get_file_content("event%i.ics" % (i + 1))
-            self.request("PUT", "/calendar.ics/event%i.ics" % (i + 1), event)
+            event = get_file_content("{}{}.ics".format(type, i+1))
+            self.request("PUT", "/calendar.ics/{}{}.ics".format(type, i+1) , event)
         status, headers, answer = self.request(
             "REPORT", "/calendar.ics",
             """<?xml version="1.0" encoding="utf-8" ?>
@@ -304,7 +304,7 @@ class BaseRequests:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20130801T000000Z" end="20131001T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], events=5)
+            </C:comp-filter>"""],"event", events=5)
         assert "href>/calendar.ics/event1.ics</" in answer
         assert "href>/calendar.ics/event2.ics</" in answer
         assert "href>/calendar.ics/event3.ics</" in answer
