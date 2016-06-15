@@ -373,14 +373,78 @@ class BaseRequests:
 
         answer = self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VTODO">
+                <C:time-range start="20130801T000000Z" end="20131001T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""],"todo", events=8)
+        assert "href>/calendar.ics/todo1.ics</" in answer
+        assert "href>/calendar.ics/todo2.ics</" in answer
+        assert "href>/calendar.ics/todo3.ics</" in answer
+        assert "href>/calendar.ics/todo4.ics</" in answer
+        assert "href>/calendar.ics/todo5.ics</" in answer
+        assert "href>/calendar.ics/todo6.ics</" in answer
+        assert "href>/calendar.ics/todo7.ics</" in answer
+        assert "href>/calendar.ics/todo8.ics</" in answer
+        
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VTODO">
+                <C:time-range start="20130801T180000Z" end="20130801T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""],"todo", events=8)
+        assert "href>/calendar.ics/todo1.ics</" not in answer
+        assert "href>/calendar.ics/todo2.ics</" not in answer
+        assert "href>/calendar.ics/todo3.ics</" not in answer
+        assert "href>/calendar.ics/todo4.ics</" not in answer
+        assert "href>/calendar.ics/todo5.ics</" not in answer
+        assert "href>/calendar.ics/todo6.ics</" not in answer
+        assert "href>/calendar.ics/todo7.ics</" not in answer
+        assert "href>/calendar.ics/todo8.ics</" in answer
+        
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VJOURNAL">
                 <C:time-range start="19991229T000000Z" end="20000202T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "journal", events=1)
-        assert "href>/calendar.ics/journal1.ics</" in answer
-        # assert "href>/calendar.ics/journal2.ics</" not in answer
-        
+            </C:comp-filter>"""], "journal", events=3)
+        assert "href>/calendar.ics/journal1.ics</" not in answer
+        assert "href>/calendar.ics/journal2.ics</" in answer
+        assert "href>/calendar.ics/journal3.ics</" in answer
 
+        
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VJOURNAL">
+                <C:time-range start="19981229T000000Z" end="19991012T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], "journal", events=3)
+        assert "href>/calendar.ics/journal1.ics</" not in answer
+        assert "href>/calendar.ics/journal2.ics</" not in answer
+        assert "href>/calendar.ics/journal3.ics</" not in answer
+
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VJOURNAL">
+                <C:time-range start="20131229T000000Z" end="21520202T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], "journal", events=3)
+        assert "href>/calendar.ics/journal1.ics</" not in answer
+        assert "href>/calendar.ics/journal2.ics</" not in answer
+        assert "href>/calendar.ics/journal3.ics</" not in answer
+
+        
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VJOURNAL">
+                <C:time-range start="20000101T000000Z" end="20000202T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], "journal", events=3)
+        assert "href>/calendar.ics/journal1.ics</" not in answer
+        assert "href>/calendar.ics/journal2.ics</" in answer
+        assert "href>/calendar.ics/journal3.ics</" in answer
+        
+        
+        
 class TestMultiFileSystem(BaseRequests, BaseTest):
     """Base class for filesystem tests."""
     storage_type = "multifilesystem"

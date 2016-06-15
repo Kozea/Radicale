@@ -304,13 +304,14 @@ def _time_range_match(vobject_item, filter_, child_name):
             completed = completed.value
             return start <= completed and end >= completed
         elif created is not None:
+            # Line 7
             created = created.value
-            return end < created
+            return end > created
         else:
             return True
 
     elif child_name == "VJOURNAL":
-        dtstart = getattr(child, "dstart", None)
+        dtstart = getattr(child, "dtstart", None)
         if dtstart is not None:
             dtstart = dtstart.value
             if not isinstance(dtstart, datetime):
