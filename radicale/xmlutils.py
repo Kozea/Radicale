@@ -311,7 +311,6 @@ def _time_range_match(vobject_item, filter_, child_name):
 
     elif child_name == "VJOURNAL":
         dtstart = getattr(child, "dstart", None)
-
         if dtstart is not None:
             dtstart = dtstart.value
             if not isinstance(dtstart, datetime):
@@ -321,7 +320,6 @@ def _time_range_match(vobject_item, filter_, child_name):
                            .replace(tzinfo=timezone.utc))
             else:
                 dtstart_is_datetime = True
-
             if dtstart_is_datetime:
                 # Line 1
                 return start <= dtstart and end > dtstart
