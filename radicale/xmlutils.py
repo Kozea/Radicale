@@ -311,7 +311,7 @@ def _time_range_match(vobject_item, filter_, child_name):
             return True
 
     elif child_name == "VJOURNAL":
-        dtstart = getattr(child, "dstart", None)
+        dtstart = getattr(child, "dtstart", None)
 
         if dtstart is not None:
             dtstart = dtstart.value
