@@ -407,7 +407,7 @@ class BaseRequests:
               <C:comp-filter name="VTODO">
                 <C:time-range start="20130903T160000Z" end="20130901T183000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""],"todo", events=1)
+            </C:comp-filter>"""],"todo", events=8)
         assert "href>/calendar.ics/todo2.ics</" not in answer
         
         answer = self._test_filter(["""
@@ -415,7 +415,7 @@ class BaseRequests:
               <C:comp-filter name="VTODO">
                 <C:time-range start="20130903T160000Z" end="20130901T173000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""],"todo", events=1)
+            </C:comp-filter>"""],"todo", events=8)
         assert "href>/calendar.ics/todo2.ics</" not in answer
         
         answer = self._test_filter(["""
@@ -423,16 +423,27 @@ class BaseRequests:
               <C:comp-filter name="VTODO">
                 <C:time-range start="20130903T160000Z" end="20130903T173000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""],"todo", events=1)
+            </C:comp-filter>"""],"todo", events=8)
         assert "href>/calendar.ics/todo3.ics</" not in answer
         
         answer = self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VTODO">
-                <C:time-range start="20130903T180000Z" end="20130903T173000Z"/>
+                <C:time-range start="20130903T160000Z" end="20130803T203000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""],"todo", events=1)
-        assert "href>/calendar.ics/todo3.ics</" not in answer
+            </C:comp-filter>"""],"todo", events=8)
+        assert "href>/calendar.ics/todo7.ics</" in answer
+        
+        
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VJOURNAL">
+                <C:time-range start="19991229T000000Z" end="20000202T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], "journal", events=3)
+        assert "href>/calendar.ics/journal1.ics</" not in answer
+        assert "href>/calendar.ics/journal2.ics</" in answer
+        assert "href>/calendar.ics/journal3.ics</" in answer
         
         
         answer = self._test_filter(["""
