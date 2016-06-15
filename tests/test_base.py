@@ -376,7 +376,7 @@ class BaseRequests:
               <C:comp-filter name="VTODO">
                 <C:time-range start="20130801T000000Z" end="20131001T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""],"todo", events=8)
+            </C:comp-filter>"""],"todo", events=7)
         assert "href>/calendar.ics/todo1.ics</" in answer
         assert "href>/calendar.ics/todo2.ics</" in answer
         assert "href>/calendar.ics/todo3.ics</" in answer
@@ -391,14 +391,14 @@ class BaseRequests:
               <C:comp-filter name="VTODO">
                 <C:time-range start="20130901T160000Z" end="20130901T183000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""],"todo", events=4)
+            </C:comp-filter>"""],"todo", events=7)
         assert "href>/calendar.ics/todo1.ics</" not in answer
         assert "href>/calendar.ics/todo2.ics</" in answer
         assert "href>/calendar.ics/todo3.ics</" in answer
         assert "href>/calendar.ics/todo4.ics</" not in answer
         assert "href>/calendar.ics/todo5.ics</" not in answer
         assert "href>/calendar.ics/todo6.ics</" not in answer
-        assert "href>/calendar.ics/todo7.ics</" not in answer
+        assert "href>/calendar.ics/todo7.ics</" in answer
 
         
         answer = self._test_filter(["""
