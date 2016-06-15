@@ -384,7 +384,7 @@ class BaseRequests:
         assert "href>/calendar.ics/todo5.ics</" in answer
         assert "href>/calendar.ics/todo6.ics</" in answer
         assert "href>/calendar.ics/todo7.ics</" in answer
-        assert "href>/calendar.ics/todo8.ics</" in answer
+
         
         answer = self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
@@ -396,10 +396,10 @@ class BaseRequests:
         assert "href>/calendar.ics/todo2.ics</" in answer
         assert "href>/calendar.ics/todo3.ics</" in answer
         assert "href>/calendar.ics/todo4.ics</" not in answer
-        #~ assert "href>/calendar.ics/todo5.ics</" not in answer
-        #~ assert "href>/calendar.ics/todo6.ics</" not in answer
-        #~ assert "href>/calendar.ics/todo7.ics</" not in answer
-        #~ assert "href>/calendar.ics/todo8.ics</" in answer
+        assert "href>/calendar.ics/todo5.ics</" not in answer
+        assert "href>/calendar.ics/todo6.ics</" not in answer
+        assert "href>/calendar.ics/todo7.ics</" not in answer
+
         
         answer = self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
