@@ -250,87 +250,88 @@ def _time_range_match(vobject_item, filter_, child_name):
         else:
             # Line 5
             return start < dtstart + timedelta(days=1) and end > dtstart
-    elif child_name == "VTODO": 
+    elif child_name == "VTODO":
         # TODO: implement this
         dtstart = getattr(child, "dtstart", None)
         duration = getattr(child, "duration", None)
         due = getattr(child, "due", None)
         completed = getattr(child, "completed", None)
         created = getattr(child, "created", None)
-        
+
         if dtstart is not None and duration is not None:
-            #Line 1
+            # Line 1
             dtstart = dtstart.value
             if not isinstance(dtstart, datetime):
-                dtstart = datetime.combine(dtstart, datetime.min.time()).replace(
-                    tzinfo=timezone.utc)
+                dtstart = (datetime.combine(dtstart, datetime.min.time())
+                           .replace(tzinfo=timezone.utc))
             duration = duration.value
-            return start <= dtstart + duration and ( end > dtstart or end >= dtstart + duration)
+            return (start <= dtstart + duration and
+                    (end > dtstart or end >= dtstart + duration))
         elif dtstart is not None and due is not None:
-            #Line 2
+            # Line 2
             dtstart = dtstart.value
             if not isinstance(dtstart, datetime):
-                dtstart = datetime.combine(dtstart, datetime.min.time()).replace(
-                    tzinfo=timezone.utc)
+                dtstart = (datetime.combine(dtstart, datetime.min.time())
+                           .replace(tzinfo=timezone.utc))
             due = due.value
             if not isinstance(due, datetime):
                 due = datetime.combine(due, datetime.min.time()).replace(
                     tzinfo=timezone.utc)
-            return (start < due or start <= dtstart) and ( end > dtstart or end >= due) 
-        elif dtstart is not None
-            #Line 3
+            return ((start < due or start <= dtstart) and
+                    (end > dtstart or end >= due))
+        elif dtstart is not None:
+            # Line 3
             dtstart = dtstart.value
             if not isinstance(dtstart, datetime):
-                dtstart = datetime.combine(dtstart, datetime.min.time()).replace(
-                    tzinfo=timezone.utc)
+                dtstart = (datetime.combine(dtstart, datetime.min.time())
+                           .replace(tzinfo=timezone.utc))
             return start <= dtstart and end > dtstart
         elif due is not None:
-            #Line 4
+            # Line 4
             due = due.value
             if not isinstance(due, datetime):
                 due = datetime.combine(due, datetime.min.time()).replace(
                     tzinfo=timezone.utc)
-            return  start < due and end >= due
+            return start < due and end >= due
         elif completed is not None and created is not None:
-            #Line 5
+            # Line 5
             completed = completed.value
             created = created.value
-            return (start <= created or start <= completed) and (end >= created or end >= completed)
+            return ((start <= created or start <= completed) and
+                    (end >= created or end >= completed))
         elif completed is not None:
-            #Line 6
+            # Line 6
             completed = completed.value
             return start <= completed and end >= completed
         elif created is not None:
             created = created.value
             return end < created
-        else
+        else:
             return True
-        
+
     elif child_name == "VJOURNAL":
         dtstart = getattr(child, "dstart", None)
-        
+
         if dtstart is not None:
             dtstart = dtstart.value
             if not isinstance(dtstart, datetime):
                 dtstart_is_datetime = False
                 # TODO: changing dates to datetimes may be wrong because of tz
-                dtstart = datetime.combine(dtstart, datetime.min.time()).replace(
-                    tzinfo=timezone.utc)
+                dtstart = (datetime.combine(dtstart, datetime.min.time())
+                           .replace(tzinfo=timezone.utc))
             else:
                 dtstart_is_datetime = True
 
-            
             if dtstart_is_datetime:
-            # Line 1
+                # Line 1
                 return start <= dtstart and end > dtstart
             else:
-            # Line 2
+                # Line 2
                 return start < dtstart + timedelta(days=1) and end > dtstart
-   
         else:
             # Line 3
             return False
-        
+
     return True
 
 
