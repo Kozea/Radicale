@@ -4,6 +4,8 @@
 
 FROM alpine:latest
 
+MAINTAINER Radicale project "radicale@librelist.com"
+
 # Base packages
 RUN apk update \
       && apk upgrade \
