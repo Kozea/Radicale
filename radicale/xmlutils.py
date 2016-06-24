@@ -220,6 +220,9 @@ def _time_range_match(vobject_item, filter_, child_name):
     if child_name == "VEVENT":
         # TODO: check if there's a timezone
         dtstart = child.dtstart.value
+        if isinstance(dtstart, datetime) and not dtstart.tzinfo:
+            dtstart = dtstart.replace(tzinfo=timezone.utc)
+                
         if not isinstance(dtstart, datetime):
             dtstart_is_datetime = False
             # TODO: changing dates to datetimes may be wrong because of tz
@@ -235,6 +238,9 @@ def _time_range_match(vobject_item, filter_, child_name):
             if not isinstance(dtend, datetime):
                 dtend = datetime.combine(dtend, datetime.min.time()).replace(
                     tzinfo=timezone.utc)
+            if isinstance(dtend, datetime) and not dtend.tzinfo:
+                dtend = dtend.replace(tzinfo=timezone.utc)
+   
             return start < dtend and end > dtstart
         elif duration is not None:
             duration = duration.value
