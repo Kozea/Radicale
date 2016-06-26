@@ -13,9 +13,8 @@ RUN apk --update --update-cache upgrade \
           libffi-dev \
           ca-certificates \
       && python3 -m ensurepip \
-      && pip3 install --upgrade pip
-
-RUN pip3 install passlib bcrypt
+      && pip3 install --upgrade pip \
+      && pip3 install passlib bcrypt
 
 RUN wget ${TARBALL} \
     && tar xzf ${VERSION}.tar.gz \
