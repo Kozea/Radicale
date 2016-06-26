@@ -17,21 +17,10 @@ RUN apk --update --update-cache upgrade \
 
 RUN pip3 install passlib bcrypt
 
-RUN mkdir -p /data/config
 RUN wget ${TARBALL} \
     && tar xzf ${VERSION}.tar.gz \
     && cd Radicale-${VERSION} && python3 setup.py install
 
-COPY config /data/config
+COPY config /srv/radicale.conf
 
-# User
-RUN adduser -h /home/radicale -D radicale \
-      && mkdir -p /home/radicale/.config \
-      && ln -s /data/config /home/radicale/.config/radicale \
-      && chown -R radicale:radicale /data/config \
-      && chown -R radicale:radicale /home/radicale
-
-USER radicale
-WORKDIR /home/radicale
-
-CMD ["radicale", "-D", "-C", "/data/config/config"]
+CMD ["radicale", "-D", "-C", "/srv/radicale.conf"]
