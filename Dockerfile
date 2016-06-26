@@ -7,8 +7,7 @@ FROM alpine:latest
 MAINTAINER Radicale project "radicale@librelist.com"
 
 # Base packages
-RUN apk update \
-      && apk upgrade \
+RUN apk --update --update-cache upgrade \
       && apk add \
           python3 \
           python3-dev \
