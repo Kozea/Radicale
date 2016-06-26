@@ -1,12 +1,7 @@
-# Radicale Dockerfile
-#
-# VERSION 0.3.1
-
 FROM alpine:latest
 
 MAINTAINER Radicale project "radicale@librelist.com"
 
-# Base packages
 RUN apk --update --update-cache upgrade \
       && apk add \
           python3 \
@@ -17,11 +12,8 @@ RUN apk --update --update-cache upgrade \
       && python3 -m ensurepip \
       && pip3 install --upgrade pip
 
-# Python installation
-# pip
 RUN pip3 install passlib bcrypt setuptools
 
-# Radicale installation
 RUN mkdir -p /data/config
 
 COPY . /data/radicale
