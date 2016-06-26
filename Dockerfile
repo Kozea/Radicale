@@ -24,4 +24,4 @@ RUN wget ${TARBALL} \
 
 EXPOSE 5232
 
-CMD ["radicale", "-f", "-D", "-C", "/etc/radicale/config"]
+CMD ["radicale", "-f", "-C", "/etc/radicale/config"]
