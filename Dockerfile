@@ -18,8 +18,8 @@ RUN apk --update --update-cache upgrade \
 
 RUN wget ${TARBALL} \
     && tar xzf ${VERSION}.tar.gz \
-    && cd Radicale-${VERSION} && python3 setup.py install
+    && cd Radicale-${VERSION} && python3 setup.py install \
+    && mkdir -p /etc/radicale \
+    && cp config /etc/radicale/config
 
-COPY config /srv/radicale.conf
-
-CMD ["radicale", "-D", "-C", "/srv/radicale.conf"]
+CMD ["radicale", "-D", "-C", "/etc/radicale/config"]
