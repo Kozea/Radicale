@@ -2,6 +2,9 @@ FROM alpine:latest
 
 MAINTAINER Radicale project "radicale@librelist.com"
 
+ENV VERSION 1.1.1
+ENV TARBALL https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz
+
 RUN apk --update --update-cache upgrade \
       && apk add \
           python3 \
@@ -12,14 +15,14 @@ RUN apk --update --update-cache upgrade \
       && python3 -m ensurepip \
       && pip3 install --upgrade pip
 
-RUN pip3 install passlib bcrypt setuptools
+RUN pip3 install passlib bcrypt
 
 RUN mkdir -p /data/config
+RUN wget ${TARBALL} \
+    && tar xzf ${VERSION}.tar.gz \
+    && cd Radicale-${VERSION} && python3 setup.py install
 
-COPY . /data/radicale
 COPY config /data/config
-
-RUN cd /data/radicale && python3 setup.py install
 
 # User
 RUN adduser -h /home/radicale -D radicale \
