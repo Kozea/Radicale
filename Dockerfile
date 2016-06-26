@@ -13,13 +13,13 @@ RUN apk --update --update-cache upgrade \
           python3-dev \
           build-base \
           libffi-dev \
-          ca-certificates
+          ca-certificates \
+      && python3 -m ensurepip \
+      && pip3 install --upgrade pip
 
 # Python installation
 # pip
-ADD https://bootstrap.pypa.io/get-pip.py /tmp/install/
-RUN python3 /tmp/install/* && \
-      pip install passlib bcrypt setuptools
+RUN pip3 install passlib bcrypt setuptools
 
 # Radicale installation
 RUN mkdir -p /data/config
