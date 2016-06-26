@@ -22,4 +22,6 @@ RUN wget ${TARBALL} \
     && mkdir -p /etc/radicale \
     && cp config /etc/radicale/config
 
+EXPOSE 5232
+
 CMD ["radicale", "-f", "-D", "-C", "/etc/radicale/config"]
