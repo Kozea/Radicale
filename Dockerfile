@@ -22,4 +22,4 @@ RUN wget ${TARBALL} \
     && mkdir -p /etc/radicale \
     && cp config /etc/radicale/config
 
-CMD ["radicale", "-D", "-C", "/etc/radicale/config"]
+CMD ["radicale", "-f", "-D", "-C", "/etc/radicale/config"]
