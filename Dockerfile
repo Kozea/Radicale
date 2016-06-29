@@ -12,6 +12,7 @@ RUN apk --update --update-cache upgrade \
           build-base \
           libffi-dev \
           ca-certificates \
+          openssl \
       && python3 -m ensurepip \
       && pip3 install --upgrade pip \
       && pip3 install passlib bcrypt
