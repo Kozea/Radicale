@@ -118,6 +118,20 @@ def _href(collection, href):
         href.lstrip("/"))
 
 
+def _date_to_datetime(date_):
+    """Transform a date to a UTC datetime.
+
+    If date_ is a datetime without timezone, return as UTC datetime. If date_
+    is already a datetime with timezone, return as is.
+
+    """
+    if not isinstance(date_, datetime):
+        date_ =  datetime.combine(date_, datetime.min.time())
+    if not date_.tzinfo:
+        date_ = date_.replace(tzinfo=timezone.utc)
+    return date_
+
+
 def _comp_match(item, filter_, scope="collection"):
     """Check whether the ``item`` matches the comp ``filter_``.
 
@@ -220,126 +234,156 @@ def _time_range_match(vobject_item, filter_, child_name):
     if child_name == "VEVENT":
         # TODO: check if there's a timezone
         dtstart = child.dtstart.value
-        if isinstance(dtstart, datetime) and not dtstart.tzinfo:
-            dtstart = dtstart.replace(tzinfo=timezone.utc)
 
-        if not isinstance(dtstart, datetime):
-            dtstart_is_datetime = False
-            # TODO: changing dates to datetimes may be wrong because of tz
-            dtstart = datetime.combine(dtstart, datetime.min.time()).replace(
-                tzinfo=timezone.utc)
+        if child.rruleset:
+            dtstarts = child.getrruleset(addRDate=True)
         else:
-            dtstart_is_datetime = True
+            dtstarts = (dtstart,)
+
         dtend = getattr(child, "dtend", None)
-        duration = getattr(child, "duration", None)
         if dtend is not None:
-            # Line 1
             dtend = dtend.value
-            if not isinstance(dtend, datetime):
-                dtend = datetime.combine(dtend, datetime.min.time()).replace(
-                    tzinfo=timezone.utc)
-            if isinstance(dtend, datetime) and not dtend.tzinfo:
-                dtend = dtend.replace(tzinfo=timezone.utc)
+            original_duration = (dtend - dtstart).total_seconds()
+            dtend = _date_to_datetime(dtend)
 
-            return start < dtend and end > dtstart
-        elif duration is not None:
-            duration = duration.value
-            if duration.seconds > 0:
-                # Line 2
-                return start < dtstart + duration and end > dtstart
-            else:
-                # Line 3
-                return start <= dtstart and end > dtstart
-        elif dtstart_is_datetime:
-            # Line 4
-            return start <= dtstart and end > dtstart
-        else:
-            # Line 5
-            return start < dtstart + timedelta(days=1) and end > dtstart
+        duration = getattr(child, "duration", None)
+        if duration is not None:
+            original_duration = duration = duration.value
+
+        for dtstart in dtstarts:
+            dtstart_is_datetime = isinstance(dtstart, datetime)
+            dtstart = _date_to_datetime(dtstart)
+
+            if dtstart > end:
+                break
+
+            if dtend is not None:
+                # Line 1
+                dtend = dtstart + timedelta(seconds=original_duration)
+                if start < dtend and end > dtstart:
+                    return True
+            elif duration is not None:
+                if original_duration is None:
+                    original_duration = duration.seconds
+                if duration.seconds > 0:
+                    # Line 2
+                    if start < dtstart + duration and end > dtstart:
+                        return True
+                elif start <= dtstart and end > dtstart:
+                     # Line 3
+                    return True
+            elif dtstart_is_datetime:
+                # Line 4
+                if start <= dtstart and end > dtstart:
+                    return True
+            elif start < dtstart + timedelta(days=1) and end > dtstart:
+                # Line 5
+                return True
+
     elif child_name == "VTODO":
-        # TODO: implement this
         dtstart = getattr(child, "dtstart", None)
         duration = getattr(child, "duration", None)
         due = getattr(child, "due", None)
         completed = getattr(child, "completed", None)
         created = getattr(child, "created", None)
 
-        if dtstart is not None and duration is not None:
-            # Line 1
-            dtstart = dtstart.value
-            if not isinstance(dtstart, datetime):
-                dtstart = (datetime.combine(dtstart, datetime.min.time())
-                           .replace(tzinfo=timezone.utc))
+        if dtstart is not None:
+            dtstart = _date_to_datetime(dtstart.value)
+        if duration is not None:
             duration = duration.value
-            return (start <= dtstart + duration and
-                    (end > dtstart or end >= dtstart + duration))
-        elif dtstart is not None and due is not None:
-            # Line 2
-            dtstart = dtstart.value
-            if not isinstance(dtstart, datetime):
-                dtstart = (datetime.combine(dtstart, datetime.min.time())
-                           .replace(tzinfo=timezone.utc))
-            due = due.value
-            if not isinstance(due, datetime):
-                due = datetime.combine(due, datetime.min.time()).replace(
-                    tzinfo=timezone.utc)
-            return ((start < due or start <= dtstart) and
-                    (end > dtstart or end >= due))
-        elif dtstart is not None:
-            # Line 3
-            dtstart = dtstart.value
-            if not isinstance(dtstart, datetime):
-                dtstart = (datetime.combine(dtstart, datetime.min.time())
-                           .replace(tzinfo=timezone.utc))
-            return start <= dtstart and end > dtstart
-        elif due is not None:
-            # Line 4
-            due = due.value
-            if not isinstance(due, datetime):
-                due = datetime.combine(due, datetime.min.time()).replace(
-                    tzinfo=timezone.utc)
-            return start < due and end >= due
-        elif completed is not None and created is not None:
-            # Line 5
-            completed = completed.value
-            created = created.value
-            return ((start <= created or start <= completed) and
-                    (end >= created or end >= completed))
-        elif completed is not None:
-            # Line 6
-            completed = completed.value
-            return start <= completed and end >= completed
+        if due is not None:
+            due = _date_to_datetime(due.value)
+            if dtstart is not None:
+                original_duration = (due - dtstart).total_seconds()
+        if completed is not None:
+            completed = _date_to_datetime(completed.value)
+            if created is not None:
+                created = _date_to_datetime(created.value)
+                original_duration = (completed - created).total_seconds()
         elif created is not None:
-            # Line 7
-            created = created.value
-            return end > created
+            created = _date_to_datetime(created.value)
+
+        if child.rruleset:
+            reference_dates = child.getrruleset(addRDate=True)
         else:
-            return True
+            if dtstart is not None:
+                reference_dates = (dtstart,)
+            elif due is not None:
+                reference_dates = (due,)
+            elif completed is not None:
+                reference_dates = (completed,)
+            elif created is not None:
+                reference_dates = (created,)
+            else:
+                # Line 8
+                return True
+
+        for reference_date in reference_dates:
+            reference_date = _date_to_datetime(reference_date)
+            if reference_date > end:
+                break
+
+            if dtstart is not None and duration is not None:
+                # Line 1
+                if start <= reference_date + duration and (
+                        end > reference_date or
+                        end >= reference_date + duration):
+                    return True
+            elif dtstart is not None and due is not None:
+                # Line 2
+                due = reference_date + timedelta(seconds=original_duration)
+                if (start < due or start <= reference_date) and (
+                        end > reference_date or end >= due):
+                    return True
+            elif dtstart is not None:
+                if start <= reference_date and end > reference_date:
+                    return True
+            elif due is not None:
+                # Line 4
+                if start < reference_date and end >= reference_date:
+                    return True
+            elif completed is not None and created is not None:
+                # Line 5
+                completed = reference_date + timedelta(
+                    seconds=original_duration)
+                if (start <= reference_date or start <= completed) and (
+                        end >= reference_date or end >= completed):
+                    return True
+            elif completed is not None:
+                # Line 6
+                if start <= reference_date and end >= reference_date:
+                    return True
+            elif created is not None:
+                # Line 7
+                if end > reference_date:
+                    return True
 
     elif child_name == "VJOURNAL":
         dtstart = getattr(child, "dtstart", None)
 
         if dtstart is not None:
             dtstart = dtstart.value
-            if not isinstance(dtstart, datetime):
-                dtstart_is_datetime = False
-                # TODO: changing dates to datetimes may be wrong because of tz
-                dtstart = (datetime.combine(dtstart, datetime.min.time())
-                           .replace(tzinfo=timezone.utc))
+            if child.rruleset:
+                dtstarts = child.getrruleset(addRDate=True)
             else:
-                dtstart_is_datetime = True
+                dtstarts = (dtstart,)
 
-            if dtstart_is_datetime:
-                # Line 1
-                return start <= dtstart and end > dtstart
-            else:
-                # Line 2
-                return start < dtstart + timedelta(days=1) and end > dtstart
-        else:
-            # Line 3
-            return False
+            for dtstart in dtstarts:
+                dtstart_is_datetime = isinstance(dtstart, datetime)
+                dtstart = _date_to_datetime(dtstart)
 
-    return True
+                if dtstart > end:
+                    break
+
+                if dtstart_is_datetime:
+                    # Line 1
+                    if start <= dtstart and end > dtstart:
+                        return True
+                elif start < dtstart + timedelta(days=1) and end > dtstart:
+                    # Line 2
+                    return True
+
+    return False
 
 
 def _text_match(vobject_item, filter_, child_name, attrib_name=None):
