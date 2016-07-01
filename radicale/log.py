@@ -41,7 +41,7 @@ def configure_from_file(filename, debug, logger):
 def start(name="radicale", filename=None, debug=False):
     """Start the logging according to the configuration."""
     logger = logging.getLogger(name)
-    if os.path.exists(filename):
+    if filename and os.path.exists(filename):
         # Configuration taken from file
         configure_from_file(logger, filename, debug)
         # Reload config on SIGHUP (UNIX only)

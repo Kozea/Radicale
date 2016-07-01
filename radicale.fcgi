@@ -24,11 +24,11 @@ Launch a Radicale FastCGI server according to configuration.
 """
 
 import os
-import radicale
 from flipflop import WSGIServer
+from radicale import Application, config, log
 
 
-configuration = radicale.config.load([os.environ.get("RADICALE_CONFIG")])
-logger = radicale.log.start()
-WSGIServer(radicale.Application(configuration, logger)).run()
+configuration = config.load([os.environ.get("RADICALE_CONFIG")])
+logger = log.start()
+WSGIServer(Application(configuration, logger)).run()
 
