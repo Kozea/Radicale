@@ -126,7 +126,7 @@ def _date_to_datetime(date_):
 
     """
     if not isinstance(date_, datetime):
-        date_ =  datetime.combine(date_, datetime.min.time())
+        date_ = datetime.combine(date_, datetime.min.time())
     if not date_.tzinfo:
         date_ = date_.replace(tzinfo=timezone.utc)
     return date_
@@ -270,7 +270,7 @@ def _time_range_match(vobject_item, filter_, child_name):
                     if start < dtstart + duration and end > dtstart:
                         return True
                 elif start <= dtstart and end > dtstart:
-                     # Line 3
+                    # Line 3
                     return True
             elif dtstart_is_datetime:
                 # Line 4
