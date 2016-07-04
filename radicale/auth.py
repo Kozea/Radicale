@@ -53,8 +53,8 @@ following significantly more secure schemes are parsable by Radicale:
 
 """
 
-import functools
 import base64
+import functools
 import hashlib
 import os
 from importlib import import_module

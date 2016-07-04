@@ -23,18 +23,17 @@ from a python programme with ``radicale.__main__.run()``.
 """
 
 import atexit
-import os
-import sys
 import optparse
+import os
 import select
 import signal
 import socket
 import ssl
+import sys
 from wsgiref.simple_server import make_server
 
-from . import (
-    Application, config, ThreadedHTTPServer, ThreadedHTTPSServer, log,
-    RequestHandler, VERSION)
+from . import (VERSION, Application, RequestHandler, ThreadedHTTPServer,
+               ThreadedHTTPSServer, config, log)
 
 
 # This is a script, many branches and variables

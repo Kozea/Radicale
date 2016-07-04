@@ -36,7 +36,6 @@ import vobject
 
 from . import client, storage
 
-
 NAMESPACES = {
     "C": "urn:ietf:params:xml:ns:caldav",
     "CR": "urn:ietf:params:xml:ns:carddav",

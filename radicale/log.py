@@ -22,11 +22,11 @@ http://docs.python.org/library/logging.config.html
 
 """
 
-import os
-import sys
 import logging
 import logging.config
+import os
 import signal
+import sys
 
 
 def configure_from_file(filename, debug, logger):

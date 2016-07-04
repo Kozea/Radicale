@@ -40,8 +40,8 @@ Leading or ending slashes are trimmed from collection's path.
 import os.path
 import re
 from configparser import ConfigParser
-from io import StringIO
 from importlib import import_module
+from io import StringIO
 
 
 def load(configuration, logger):

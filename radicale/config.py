@@ -24,9 +24,7 @@ Give a configparser-like interface to read and write configuration.
 """
 
 import os
-
 from configparser import RawConfigParser as ConfigParser
-
 
 # Default configuration
 INITIAL_CONFIG = {
