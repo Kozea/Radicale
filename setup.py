@@ -63,6 +63,14 @@ setup(
     provides=["radicale"],
     scripts=["bin/radicale"],
     install_requires=["vobject"],
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest-cov', 'pytest-flake8', 'pytest-isort', 'pytest'],
+    extras_require={
+        'test': [
+            'pytest-runner', 'pytest-cov', 'pytest-flake8', 'pytest-isort',
+            'pytest'
+        ]
+    },
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",

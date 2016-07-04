@@ -8,3 +8,5 @@ dist
 .settings
 .tox
 MANIFEST
+.cache
+.eggs
