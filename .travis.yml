@@ -6,9 +6,9 @@ python:
   - 3.5
 
 install:
-  - pip install tox
+  - pip install -e .[test]
 
 script:
-  - tox -e py
+  - python setup.py test
 
 sudo: false
