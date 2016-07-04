@@ -333,9 +333,12 @@ class Application:
                 encoding.strip() for encoding in
                 environ.get("HTTP_ACCEPT_ENCODING", "").split(",")
                 if encoding.strip()]
-            if "deflate" in accept_encoding:
-                answer = zlib.compress(answer)
-                headers["Content-Encoding"] = "deflate"
+
+            if "gzip" in accept_encoding:
+                zcomp = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
+                answer = zcomp.compress(answer) + zcomp.flush()
+                headers["Content-Encoding"] = "gzip"
+
             headers["Content-Length"] = str(len(answer))
 
         if self.configuration.has_section("headers"):
