@@ -65,12 +65,16 @@ INITIAL_CONFIG = {
         "mask_passwords": "True"}}
 
 
-def load(paths=()):
+def load(paths=(), extra_config=None):
     config = ConfigParser()
     for section, values in INITIAL_CONFIG.items():
         config.add_section(section)
         for key, value in values.items():
             config.set(section, key, value)
+    if extra_config:
+        for section, values in extra_config.items():
+            for key, value in values.items():
+                config.set(section, key, value)
     for path in paths:
         if path:
             config.read(path)
