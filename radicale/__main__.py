@@ -107,6 +107,11 @@ def run():
     if not configuration_found:
         logger.warning("Configuration file '%s' not found" % options.config)
 
+    serve(configuration, logger)
+
+
+def serve(configuration, logger):
+    """Serve radicale from configuration"""
     # Fork if Radicale is launched as daemon
     if configuration.getboolean("server", "daemon"):
         # Check and create PID file in a race-free manner
