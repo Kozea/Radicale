@@ -429,8 +429,10 @@ def _param_filter_match(vobject_item, filter_, parent_name):
 
 def name_from_path(path, collection):
     """Return Radicale item name from ``path``."""
-    collection_parts = collection.path.strip("/").split("/")
-    path_parts = path.strip("/").split("/")
+    collection_path = collection.path.strip("/")
+    collection_parts = collection_path.split("/") if collection_path else []
+    path = path.strip("/")
+    path_parts = path.split("/") if path else []
     if (len(path_parts) - len(collection_parts)):
         return path_parts[-1]
 
