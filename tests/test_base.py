@@ -44,6 +44,7 @@ class BaseRequests:
         assert status == 200
         assert "Radicale works!" in answer
         # Test the creation of the collection
+        self.request("MKCOL", "/calendar.ics/")
         self.request(
             "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
         status, headers, answer = self.request("GET", "/calendar.ics/")
@@ -52,6 +53,7 @@ class BaseRequests:
 
     def test_add_event(self):
         """Add an event."""
+        self.request("MKCOL", "/calendar.ics/")
         self.request(
             "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
         event = get_file_content("event1.ics")
@@ -67,6 +69,7 @@ class BaseRequests:
 
     def test_add_todo(self):
         """Add a todo."""
+        self.request("MKCOL", "/calendar.ics/")
         self.request(
             "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
         todo = get_file_content("todo1.ics")
@@ -81,6 +84,7 @@ class BaseRequests:
 
     def test_delete(self):
         """Delete an event."""
+        self.request("MKCOL", "/calendar.ics/")
         self.request(
             "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
         event = get_file_content("event1.ics")
@@ -96,6 +100,7 @@ class BaseRequests:
     def _test_filter(self, filters, kind="event", items=1):
         filters_text = "".join(
             "<C:filter>%s</C:filter>" % filter_ for filter_ in filters)
+        self.request("MKCOL", "/calendar.ics/")
         self.request(
             "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
         for i in range(items):
