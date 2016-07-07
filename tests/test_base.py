@@ -97,6 +97,20 @@ class BaseRequests:
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert "VEVENT" not in answer
 
+    def test_multiple_events_with_same_uid(self):
+        """Add two events with the same UID."""
+        self.request("MKCOL", "/calendar.ics/")
+        self.request("PUT", "/calendar.ics/", get_file_content("event2.ics"))
+        status, headers, answer = self.request(
+            "REPORT", "/calendar.ics/",
+            """<?xml version="1.0" encoding="utf-8" ?>
+               <C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+                 <D:prop xmlns:D="DAV:"><D:getetag/></D:prop>
+               </C:calendar-query>""")
+        assert answer.count("<getetag>") == 1
+        status, headers, answer = self.request("GET", "/calendar.ics/")
+        assert answer.count("BEGIN:VEVENT") == 2
+
     def _test_filter(self, filters, kind="event", items=1):
         filters_text = "".join(
             "<C:filter>%s</C:filter>" % filter_ for filter_ in filters)

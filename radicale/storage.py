@@ -529,7 +529,8 @@ class Collection(BaseCollection):
             for item in items:
                 for content in ("vevent", "vtodo", "vjournal"):
                     if content in item.contents:
-                        collection.add(getattr(item, content))
+                        for item_part in getattr(item, "%s_list" % content):
+                            collection.add(item_part)
                         break
             return collection.serialize()
         elif self.get_meta("tag") == "VADDRESSBOOK":
