@@ -381,8 +381,8 @@ class Collection(BaseCollection):
                     sorted(items, key=get_uid), get_uid)
 
                 for uid, items in items_by_uid:
+                    new_collection = vobject.iCalendar()
                     for item in items:
-                        new_collection = vobject.iCalendar()
                         new_collection.add(item)
                     file_name = hex(getrandbits(32))[2:]
                     self.upload(file_name, new_collection)
