@@ -88,8 +88,7 @@ def _ssha(hash_salt_value, password):
     """Check if ``hash_salt_value`` and ``password`` match, using salted sha1
     method. This method is not directly supported by htpasswd, but it can be
     written with e.g. openssl, and nginx can parse it."""
-    hash_salt_value = hash_salt_value.replace(
-        "{SSHA}", "").encode("ascii").decode('base64')
+    hash_salt_value = base64.b64decode(hash_salt_value.replace("{SSHA}", ""))
     password = password.encode(config.get("encoding", "stock"))
     hash_value = hash_salt_value[:20]
     salt_value = hash_salt_value[20:]
