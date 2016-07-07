@@ -103,7 +103,7 @@ def _bcrypt(hash_value, password):
 
 
 def _md5apr1(hash_value, password):
-    return _passlib_md5apr1.verify(password, hash_value)   
+    return _passlib_md5apr1.verify(password, hash_value)
 
 
 # Prepare mapping between encryption names and verification functions.
