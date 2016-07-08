@@ -837,7 +837,7 @@ def report(path, xml_request, collection):
         else:
             # Reference is a collection
             path = hreference
-            items = [collection.get(href) for href, etag in collection.list()]
+            items = collection.pre_filtered_list(filters)
 
         for item in items:
             if filters:

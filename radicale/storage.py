@@ -231,6 +231,15 @@ class BaseCollection:
         for href in set(hrefs):
             yield self.get(href)
 
+    def pre_filtered_list(self, filters):
+        """List collection items with optional pre filtering.
+
+        This could largely improve performance of reports depending on
+        the filters and this implementation.
+        This returns all event by default
+        """
+        return [self.get(href) for href, _ in self.list()]
+
     def has(self, href):
         """Check if an item exists by its href.
 
