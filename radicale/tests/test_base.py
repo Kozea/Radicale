@@ -82,6 +82,42 @@ class BaseRequests:
         assert "Todo" in answer
         assert "UID:todo" in answer
 
+    def test_update(self):
+        """Delete an event."""
+        self.request("MKCOL", "/calendar.ics/")
+        self.request(
+            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        status, headers, answer = self.request("PUT", path, event)
+        assert status == 201
+        status, headers, answer = self.request("GET", path)
+        assert "ETag" in headers.keys()
+        assert status == 200
+        assert "VEVENT" in answer
+        assert "Event" in answer
+        assert "UID:event" in answer
+        assert "DTSTART;TZID=Europe/Paris:20130901T180000" in answer
+        assert "DTEND;TZID=Europe/Paris:20130901T190000" in answer
+
+        # Then we send another PUT request
+        event = get_file_content("event1-prime.ics")
+        status, headers, answer = self.request("PUT", path, event)
+        assert status == 201
+        status, headers, answer = self.request("GET", "/calendar.ics/")
+        assert answer.count("BEGIN:VEVENT") == 1
+
+        status, headers, answer = self.request("GET", path)
+        assert "ETag" in headers.keys()
+        assert status == 200
+        assert "VEVENT" in answer
+        assert "Event" in answer
+        assert "UID:event" in answer
+        assert "DTSTART;TZID=Europe/Paris:20130901T180000" not in answer
+        assert "DTEND;TZID=Europe/Paris:20130901T190000" not in answer
+        assert "DTSTART;TZID=Europe/Paris:20140901T180000" in answer
+        assert "DTEND;TZID=Europe/Paris:20140901T210000" in answer
+
     def test_delete(self):
         """Delete an event."""
         self.request("MKCOL", "/calendar.ics/")
