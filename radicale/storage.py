@@ -35,7 +35,8 @@ import time
 from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
-from uuid import uuid4
+from itertools import groupby
+from random import getrandbits
 
 import vobject
 
@@ -231,6 +232,15 @@ class BaseCollection:
         for href in set(hrefs):
             yield self.get(href)
 
+    def pre_filtered_list(self, filters):
+        """List collection items with optional pre filtering.
+
+        This could largely improve performance of reports depending on
+        the filters and this implementation.
+        This returns all event by default
+        """
+        return [self.get(href) for href, _ in self.list()]
+
     def has(self, href):
         """Check if an item exists by its href.
 
@@ -372,25 +382,26 @@ class Collection(BaseCollection):
                 items = []
                 for content in ("vevent", "vtodo", "vjournal"):
                     items.extend(getattr(collection, "%s_list" % content, []))
-                processed_uids = []
-                for i, item in enumerate(items):
-                    uid = getattr(item, "uid", None)
-                    if uid in processed_uids:
-                        continue
+
+                def get_uid(item):
+                    return hasattr(item, 'uid') and item.uid.value
+
+                items_by_uid = groupby(
+                    sorted(items, key=get_uid), get_uid)
+
+                for uid, items in items_by_uid:
                     new_collection = vobject.iCalendar()
-                    new_collection.add(item)
-                    if uid:
-                        processed_uids.append(uid)
-                        # search for items with same UID
-                        for oitem in items[i+1:]:
-                            if getattr(oitem, "uid", None) == uid:
-                                new_collection.add(oitem)
-                    self.upload(uuid4().hex, new_collection)
+                    for item in items:
+                        new_collection.add(item)
+                    file_name = hex(getrandbits(32))[2:]
+                    self.upload(file_name, new_collection)
+
         elif tag == "VCARD":
             self.set_meta("tag", "VADDRESSBOOK")
             if collection:
                 for card in collection:
-                    self.upload(uuid4().hex, card)
+                    file_name = hex(getrandbits(32))[2:]
+                    self.upload(file_name, card)
         return self
 
     def list(self):
