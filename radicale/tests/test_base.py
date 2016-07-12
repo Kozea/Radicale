@@ -83,7 +83,7 @@ class BaseRequests:
         assert "UID:todo" in answer
 
     def test_update(self):
-        """Delete an event."""
+        """Update an event."""
         self.request("MKCOL", "/calendar.ics/")
         self.request(
             "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
