@@ -62,7 +62,7 @@ setup(
     packages=["radicale"],
     provides=["radicale"],
     scripts=["bin/radicale"],
-    install_requires=["vobject"],
+    install_requires=["vobject", "atomicwrites"],
     setup_requires=["pytest-runner"],
     tests_require=["pytest-cov", "pytest-flake8", "pytest-isort", "pytest"],
     extras_require={

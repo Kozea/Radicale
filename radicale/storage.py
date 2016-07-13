@@ -38,6 +38,7 @@ from importlib import import_module
 from itertools import groupby
 from random import getrandbits
 
+from atomicwrites import AtomicWriter
 import vobject
 
 if os.name == "nt":
@@ -149,6 +150,15 @@ def path_to_filesystem(root, *paths):
                 raise ValueError("Unsafe path")
             safe_path = os.path.join(safe_path, part)
     return safe_path
+
+
+class _EncodedAtomicWriter(AtomicWriter):
+    def __init__(self, path, encoding, mode="w", overwrite=True):
+        self._encoding = encoding
+        return super().__init__(path, mode, overwrite=True)
+
+    def get_fileobject(self, **kwargs):
+        return super().get_fileobject(encoding=self._encoding, **kwargs)
 
 
 class Item:
@@ -319,6 +329,12 @@ class Collection(BaseCollection):
             self.owner = None
         self.is_principal = principal
 
+    @contextmanager
+    def _atomic_write(self, path, mode="w"):
+        with _EncodedAtomicWriter(
+                path, self.storage_encoding, mode).open() as fd:
+            yield fd
+
     @classmethod
     def discover(cls, path, depth="1"):
         # path == None means wrong URL
@@ -447,7 +463,7 @@ class Collection(BaseCollection):
             path = path_to_filesystem(self._filesystem_path, href)
             if not os.path.exists(path):
                 item = Item(self, vobject_item, href)
-                with open(path, "w", encoding=self.storage_encoding) as fd:
+                with self._atomic_write(path) as fd:
                     fd.write(item.serialize())
                 return item
         else:
@@ -465,7 +481,7 @@ class Collection(BaseCollection):
                     text = fd.read()
                 if not etag or etag == get_etag(text):
                     item = Item(self, vobject_item, href)
-                    with open(path, "w", encoding=self.storage_encoding) as fd:
+                    with self._atomic_write(path) as fd:
                         fd.write(item.serialize())
                     return item
         else:
@@ -516,7 +532,7 @@ class Collection(BaseCollection):
         else:
             properties.pop(key, None)
 
-        with open(props_path, "w+", encoding=self.storage_encoding) as prop:
+        with self._atomic_write(props_path, "w+") as prop:
             json.dump(properties, prop)
 
     @property
