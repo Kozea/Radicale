@@ -409,7 +409,10 @@ class Application:
         else:
             # Get whole collection
             answer = collection.serialize()
-            etag = collection.etag
+            if answer is None:
+                return client.NOT_FOUND, {}, None
+            else:
+                etag = collection.etag
 
         if answer:
             headers = {

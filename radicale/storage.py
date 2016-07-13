@@ -543,6 +543,8 @@ class Collection(BaseCollection):
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(last))
 
     def serialize(self):
+        if not os.path.exists(self._filesystem_path):
+            return None
         items = []
         for href in os.listdir(self._filesystem_path):
             path = os.path.join(self._filesystem_path, href)
