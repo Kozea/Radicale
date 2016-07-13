@@ -626,8 +626,7 @@ class Collection(BaseCollection):
                             cls.logger.debug("Unlocking not supported")
                     elif os.name == "posix":
                         try:
-                            fcntl.lockf(cls._lock_file.fileno(),
-                                        fcntl.LOCK_UN)
+                            fcntl.lockf(cls._lock_file.fileno(), fcntl.LOCK_UN)
                         except OSError:
                             cls.logger.debug("Unlocking not supported")
                     cls._lock_file_locked = False
