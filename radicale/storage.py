@@ -158,7 +158,8 @@ class _EncodedAtomicWriter(AtomicWriter):
         return super().__init__(path, mode, overwrite=True)
 
     def get_fileobject(self, **kwargs):
-        return super().get_fileobject(encoding=self._encoding, **kwargs)
+        return super().get_fileobject(encoding=self._encoding,
+                                      prefix=".Radicale.tmp-", **kwargs)
 
 
 class Item:
