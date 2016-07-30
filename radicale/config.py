@@ -60,7 +60,8 @@ INITIAL_CONFIG = {
     "storage": {
         "type": "multifilesystem",
         "filesystem_folder": os.path.expanduser(
-            "~/.config/radicale/collections")},
+            "~/.config/radicale/collections"),
+        "hook": ""},
     "logging": {
         "config": "/etc/radicale/logging",
         "debug": "False",

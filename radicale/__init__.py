@@ -30,10 +30,12 @@ import os
 import pprint
 import base64
 import contextlib
+import shlex
 import socket
 import socketserver
 import ssl
 import threading
+import subprocess
 import wsgiref.simple_server
 import re
 import zlib
@@ -348,6 +350,15 @@ class Application:
                     status, headers, answer = function(
                         environ, read_allowed_items, write_allowed_items,
                         content, user)
+                    hook = self.configuration.get("storage", "hook")
+                    if lock_mode == "w" and hook:
+                        self.logger.debug("Running hook")
+                        folder = os.path.expanduser(
+                            self.configuration.get("storage",
+                                                   "filesystem_folder"))
+                        subprocess.check_call(
+                            hook % {"user": shlex.quote(user or "Anonymous")},
+                            shell=True, cwd=folder)
                 else:
                     status, headers, answer = NOT_ALLOWED
         else:
