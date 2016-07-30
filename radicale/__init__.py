@@ -47,7 +47,7 @@ import vobject
 from . import auth, rights, storage, xmlutils
 
 
-VERSION = "2.0.0-pre"
+VERSION = "2.0.0rc0"
 
 # Standard "not allowed" response that is returned when an authenticated user
 # tries to access information they don't have rights to
