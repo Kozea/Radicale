@@ -73,10 +73,10 @@
 [well-known]
 
 # Path where /.well-known/caldav/ is redirected
-#caldav = '/%(user)s/caldav/'
+#caldav = /
 
 # Path where /.well-known/carddav/ is redirected
-#carddav = '/%(user)s/carddav/'
+#carddav = /
 
 
 [auth]
