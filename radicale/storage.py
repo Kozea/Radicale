@@ -147,7 +147,8 @@ def path_to_filesystem(root, *paths):
             continue
         for part in path.split("/"):
             if not is_safe_filesystem_path_component(part):
-                raise ValueError("Unsafe path")
+                raise ValueError(
+                    "Can't tranlate name safely to filesystem: %s" % part)
             safe_path = os.path.join(safe_path, part)
     return safe_path
 
@@ -439,56 +440,56 @@ class Collection(BaseCollection):
 
     def get(self, href):
         if not href:
-            return
+            return None
         href = href.strip("{}").replace("/", "_")
-        if is_safe_filesystem_path_component(href):
-            path = os.path.join(self._filesystem_path, href)
-            if os.path.isfile(path):
-                with open(path, encoding=self.storage_encoding) as fd:
-                    text = fd.read()
-                last_modified = time.strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT",
-                    time.gmtime(os.path.getmtime(path)))
-                return Item(self, vobject.readOne(text), href, last_modified)
-        else:
+        if not is_safe_filesystem_path_component(href):
             self.logger.debug(
-                "Can't tranlate name safely to filesystem, "
-                "skipping component: %s", href)
+                "Can't tranlate name safely to filesystem: %s", href)
+            return None
+        path = path_to_filesystem(self._filesystem_path, href)
+        if not os.path.isfile(path):
+            return None
+        with open(path, encoding=self.storage_encoding) as fd:
+            text = fd.read()
+        last_modified = time.strftime(
+            "%a, %d %b %Y %H:%M:%S GMT",
+            time.gmtime(os.path.getmtime(path)))
+        return Item(self, vobject.readOne(text), href, last_modified)
 
     def has(self, href):
         return self.get(href) is not None
 
     def upload(self, href, vobject_item):
         # TODO: use returned object in code
-        if is_safe_filesystem_path_component(href):
-            path = path_to_filesystem(self._filesystem_path, href)
-            if not os.path.exists(path):
-                item = Item(self, vobject_item, href)
-                with self._atomic_write(path) as fd:
-                    fd.write(item.serialize())
-                return item
-        else:
-            self.logger.debug(
-                "Can't tranlate name safely to filesystem, "
-                "skipping component: %s", href)
+        if not is_safe_filesystem_path_component(href):
+            raise ValueError(
+                "Can't tranlate name safely to filesystem: %s" % href)
+        path = path_to_filesystem(self._filesystem_path, href)
+        if os.path.exists(path):
+            raise ValueError("Component already exists: %s" % href)
+        item = Item(self, vobject_item, href)
+        with self._atomic_write(path) as fd:
+            fd.write(item.serialize())
+        return item
 
     def update(self, href, vobject_item, etag=None):
         # TODO: use etag in code and test it here
         # TODO: use returned object in code
-        if is_safe_filesystem_path_component(href):
-            path = path_to_filesystem(self._filesystem_path, href)
-            if os.path.exists(path):
-                with open(path, encoding=self.storage_encoding) as fd:
-                    text = fd.read()
-                if not etag or etag == get_etag(text):
-                    item = Item(self, vobject_item, href)
-                    with self._atomic_write(path) as fd:
-                        fd.write(item.serialize())
-                    return item
-        else:
-            self.logger.debug(
-                "Can't tranlate name safely to filesystem, "
-                "skipping component: %s", href)
+        if not is_safe_filesystem_path_component(href):
+            raise ValueError(
+                "Can't tranlate name safely to filesystem: %s" % href)
+        path = path_to_filesystem(self._filesystem_path, href)
+        if not os.path.isfile(path):
+            raise ValueError("Component doesn't exist: %s" % href)
+        with open(path, encoding=self.storage_encoding) as fd:
+            text = fd.read()
+        if etag and etag != get_etag(text):
+            raise ValueError(
+                "ETag doesn't match: %s != %s" % (etag, get_etag(text)))
+        item = Item(self, vobject_item, href)
+        with self._atomic_write(path) as fd:
+            fd.write(item.serialize())
+        return item
 
     def delete(self, href=None, etag=None):
         # TODO: use etag in code and test it here
@@ -500,20 +501,20 @@ class Collection(BaseCollection):
             props_path = self._filesystem_path + ".props"
             if os.path.isfile(props_path):
                 os.remove(props_path)
-            return
-        elif is_safe_filesystem_path_component(href):
-            # Delete an item
-            path = path_to_filesystem(self._filesystem_path, href)
-            if os.path.isfile(path):
-                with open(path, encoding=self.storage_encoding) as fd:
-                    text = fd.read()
-                if not etag or etag == get_etag(text):
-                    os.remove(path)
-                    return
         else:
-            self.logger.debug(
-                "Can't tranlate name safely to filesystem, "
-                "skipping component: %s", href)
+            # Delete an item
+            if not is_safe_filesystem_path_component(href):
+                raise ValueError(
+                    "Can't tranlate name safely to filesystem: %s" % href)
+            path = path_to_filesystem(self._filesystem_path, href)
+            if not os.path.isfile(path):
+                raise ValueError("Component doesn't exist: %s" % href)
+            with open(path, encoding=self.storage_encoding) as fd:
+                text = fd.read()
+            if etag and etag != get_etag(text):
+                raise ValueError(
+                    "ETag doesn't match: %s != %s" % (etag, get_etag(text)))
+            os.remove(path)
 
     def get_meta(self, key):
         props_path = self._filesystem_path + ".props"
