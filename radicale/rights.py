@@ -66,7 +66,7 @@ permission:rw
     "owner_write": """
 [w]
 user:.+
-collection:^%(login)s(/.*)?$
+collection:%(login)s(/.*)?
 permission:rw
 [r]
 user:.+
@@ -76,7 +76,7 @@ permission:r
     "owner_only": """
 [rw]
 user:.+
-collection:^%(login)s(/.*)?$
+collection:%(login)s(/.*)?
 permission:rw
     """}
 
@@ -127,10 +127,10 @@ class Rights(BaseRights):
             self.logger.debug(
                 "Test if '%s:%s' matches against '%s:%s' from section '%s'" % (
                     user, collection_url, re_user, re_collection, section))
-            user_match = re.match(re_user, user)
+            user_match = re.fullmatch(re_user, user)
             if user_match:
                 re_collection = re_collection.format(*user_match.groups())
-                if re.match(re_collection, collection_url):
+                if re.fullmatch(re_collection, collection_url):
                     self.logger.debug("Section '%s' matches" % section)
                     return permission in regex.get(section, "permission")
                 else:
