@@ -302,6 +302,23 @@ class Application:
             is_authenticated = self.is_authenticated(user, password)
         is_valid_user = is_authenticated or not user
 
+        # Create principal collection
+        if user and is_authenticated:
+            principal_path = "/%s/" % user
+            if self.authorized(user, self.Collection(principal_path, True),
+                               "w"):
+                with self.Collection.acquire_lock("r"):
+                    principal = next(self.Collection.discover(principal_path),
+                                     None)
+                if not principal or principal.path != principal_path.strip("/"):
+                    with self.Collection.acquire_lock("w"):
+                        # the collection might exist by now
+                        principal = next(self.Collection.discover(
+                            principal_path), None)
+                        if (not principal or
+                                principal.path != principal_path.strip("/")):
+                            self.Collection.create_collection(principal_path)
+
         # Get content
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
         if content_length:
