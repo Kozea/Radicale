@@ -103,6 +103,15 @@ def get_etag(text):
     return '"%s"' % etag.hexdigest()
 
 
+def is_safe_path_component(path):
+    """Check if path is a single component of a path.
+
+    Check that the path is safe to join too.
+
+    """
+    return path and "/" not in path and path not in (".", "..")
+
+
 def sanitize_path(path):
     """Make path absolute with leading slash to prevent access to other data.
 
