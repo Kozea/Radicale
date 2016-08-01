@@ -14,7 +14,7 @@
 
 # This means all users starting with "admin" may read any collection
 [admin]
-user: ^admin.*$
+user: admin.*
 collection: .*
 permission: r
 
@@ -22,14 +22,14 @@ permission: r
 # We do so by just not testing against the user string.
 [public]
 user: .*
-collection: ^public(/.+)?$
+collection: public(/.+)?
 permission: rw
 
 # A little more complex: give read access to users from a domain for all
 # collections of all the users (ie. user@domain.tld can read domain/*).
 [domain-wide-access]
-user: ^.+@(.+)\..+$
-collection: ^{0}/.+$
+user: .+@(.+)\..+
+collection: {0}/.+
 permission: r
 
 # Allow authenticated user to read all collections
@@ -41,5 +41,5 @@ permission: r
 # Give write access to owners
 [owner-write]
 user: .+
-collection: ^%(login)s/.*$
+collection: %(login)s/.*
 permission: w
