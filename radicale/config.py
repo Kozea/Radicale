@@ -44,9 +44,6 @@ INITIAL_CONFIG = {
         "base_prefix": "/",
         "can_skip_base_prefix": "False",
         "realm": "Radicale - Password Required"},
-    "well-known": {
-         "caldav": "/",
-         "carddav": "/"},
     "encoding": {
         "request": "utf-8",
         "stock": "utf-8"},
