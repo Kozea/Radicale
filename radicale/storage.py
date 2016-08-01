@@ -580,7 +580,21 @@ class Collection(BaseCollection):
         if href is None:
             # Delete the collection
             if os.path.isdir(self._filesystem_path):
-                shutil.rmtree(self._filesystem_path)
+                try:
+                    os.rmdir(self._filesystem_path)
+                except OSError:
+                    while True:
+                        tmp_filesystem_path = os.path.join(
+                            os.path.dirname(self._filesystem_path),
+                            ".Radicale.tmp-" + hex(getrandbits(32))[2:])
+                        if not os.path.exists(tmp_filesystem_path):
+                            break
+                    os.rename(self._filesystem_path, tmp_filesystem_path)
+                    sync_directory(os.path.dirname(self._filesystem_path))
+                    # Deferred because it might take a long time
+                    shutil.rmtree(tmp_filesystem_path)
+                else:
+                    sync_directory(os.path.dirname(self._filesystem_path))
         else:
             # Delete an item
             if not is_safe_filesystem_path_component(href):
@@ -593,6 +607,7 @@ class Collection(BaseCollection):
             if etag and etag != get_etag(text):
                 raise EtagMismatchError(etag, get_etag(text))
             os.remove(path)
+            sync_directory(os.path.dirname(path))
 
     def get_meta(self, key):
         if os.path.exists(self._props_path):
