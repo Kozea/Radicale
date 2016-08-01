@@ -321,9 +321,9 @@ class Application:
             content = None
 
         if is_valid_user:
-            if function in (self.do_GET, self.do_HEAD,
-                            self.do_OPTIONS, self.do_PROPFIND,
-                            self.do_REPORT):
+            if function in (
+                    self.do_GET, self.do_HEAD, self.do_OPTIONS,
+                    self.do_PROPFIND, self.do_REPORT):
                 lock_mode = "r"
             else:
                 lock_mode = "w"

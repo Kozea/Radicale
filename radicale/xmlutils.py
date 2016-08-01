@@ -505,8 +505,7 @@ def delete(path, collection):
     return _pretty_xml(multistatus)
 
 
-def propfind(path, xml_request, read_collections, write_collections,
-             user=None):
+def propfind(path, xml_request, read_collections, write_collections, user):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -552,7 +551,7 @@ def _propfind_response(path, item, props, user, write=False):
     # TODO: fix this
     is_collection = hasattr(item, "list")
     if is_collection:
-        is_leaf = bool(item.list())
+        is_leaf = bool(item.get_meta("tag"))
         collection = item
     else:
         collection = item.collection
@@ -671,16 +670,7 @@ def _propfind_response(path, item, props, user, write=False):
                 elif tag == _tag("CS", "getctag"):
                     element.text = item.etag
                 elif tag == _tag("C", "calendar-timezone"):
-                    timezones = set()
-                    for href, _ in item.list():
-                        event = item.get(href)
-                        if "vtimezone" in event.contents:
-                            for timezone_ in event.vtimezone_list:
-                                timezones.add(timezone_)
-                    timezone_collection = vobject.iCalendar()
-                    for timezone_ in timezones:
-                        timezone_collection.add(timezone_)
-                    element.text = timezone_collection.serialize()
+                    element.text = item.get_meta("C:calendar-timezone")
                 elif tag == _tag("D", "displayname"):
                     element.text = item.get_meta("D:displayname") or item.path
                 elif tag == _tag("ICAL", "calendar-color"):

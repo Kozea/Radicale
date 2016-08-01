@@ -385,8 +385,7 @@ class Collection(BaseCollection):
             _, directories, _ = next(os.walk(collection._filesystem_path))
             for sub_path in directories:
                 if not is_safe_filesystem_path_component(sub_path):
-                    cls.logger.debug(
-                        "Skipping collection: %s", sub_path)
+                    cls.logger.debug("Skipping collection: %s", sub_path)
                     continue
                 full_path = os.path.join(collection._filesystem_path, sub_path)
                 if os.path.exists(full_path):
@@ -441,8 +440,7 @@ class Collection(BaseCollection):
 
         for href in hrefs:
             if not is_safe_filesystem_path_component(href):
-                self.logger.debug(
-                    "Skipping component: %s", href)
+                self.logger.debug("Skipping component: %s", href)
                 continue
             path = os.path.join(self._filesystem_path, href)
             if not href.endswith(".props") and os.path.isfile(path):
@@ -560,6 +558,9 @@ class Collection(BaseCollection):
             return None
         items = []
         for href in os.listdir(self._filesystem_path):
+            if not is_safe_filesystem_path_component(href):
+                self.logger.debug("Skipping component: %s", href)
+                continue
             path = os.path.join(self._filesystem_path, href)
             if os.path.isfile(path) and not path.endswith(".props"):
                 with open(path, encoding=self.storage_encoding) as fd:
