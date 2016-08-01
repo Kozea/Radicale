@@ -778,7 +778,7 @@ def proppatch(path, xml_request, collection):
         _add_propstat_to(response, short_name, 200)
 
     for short_name in props_to_remove:
-        collection.set_meta(short_name, '')
+        collection.set_meta(short_name, "")
         _add_propstat_to(response, short_name, 200)
 
     return _pretty_xml(multistatus)

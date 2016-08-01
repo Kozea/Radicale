@@ -104,7 +104,7 @@ class Rights(BaseRights):
         self.rights_type = configuration.get("rights", "type").lower()
 
     def authorized(self, user, collection, permission):
-        user = user or ''
+        user = user or ""
         if user and not storage.is_safe_path_component(user):
             # Prevent usernames like "user/calendar.ics"
             raise ValueError("Unsafe username")

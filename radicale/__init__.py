@@ -37,7 +37,6 @@ import ssl
 import threading
 import subprocess
 import wsgiref.simple_server
-import re
 import zlib
 from http import client
 from urllib.parse import unquote, urlparse

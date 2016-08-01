@@ -159,7 +159,7 @@ class Auth(BaseAuth):
 
         """
         hash_value = hash_value.replace(
-            "{SSHA}", "").encode("ascii").decode('base64')
+            "{SSHA}", "").encode("ascii").decode("base64")
         password = password.encode(self.configuration.get("encoding", "stock"))
         hash_value = hash_value[:20]
         salt_value = hash_value[20:]

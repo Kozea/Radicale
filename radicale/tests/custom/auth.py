@@ -28,4 +28,4 @@ from radicale import auth
 
 class Auth(auth.BaseAuth):
     def is_authenticated(self, user, password):
-        return user == 'tmp'
+        return user == "tmp"

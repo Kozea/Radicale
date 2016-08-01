@@ -402,6 +402,7 @@ class Collection(BaseCollection):
         if not tag and collection:
             tag = collection[0].name
         self = cls(href)
+
         if tag == "VCALENDAR":
             self.set_meta("tag", "VCALENDAR")
             if collection:
@@ -411,7 +412,7 @@ class Collection(BaseCollection):
                     items.extend(getattr(collection, "%s_list" % content, []))
 
                 def get_uid(item):
-                    return hasattr(item, 'uid') and item.uid.value
+                    return hasattr(item, "uid") and item.uid.value
 
                 items_by_uid = groupby(
                     sorted(items, key=get_uid), get_uid)
@@ -429,6 +430,7 @@ class Collection(BaseCollection):
                 for card in collection:
                     file_name = hex(getrandbits(32))[2:]
                     self.upload(file_name, card)
+
         return self
 
     def list(self):
