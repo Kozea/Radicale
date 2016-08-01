@@ -311,7 +311,12 @@ class Application:
                 headers = {"Location": redirect}
             return response(status, headers)
 
-        is_authenticated = self.is_authenticated(user, password)
+        if user and not storage.is_safe_path_component(user):
+            # Prevent usernames like "user/calendar.ics"
+            self.logger.info("Refused unsafe username: %s", user)
+            is_authenticated = False
+        else:
+            is_authenticated = self.is_authenticated(user, password)
         is_valid_user = is_authenticated or not user
 
         # Get content
