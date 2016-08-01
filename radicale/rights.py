@@ -80,6 +80,10 @@ permission:r
 user:.+
 collection:%(login)s(/.*)?
 permission:rw
+[r]
+user:.+
+collection:
+permission:r
     """}
 
 
@@ -108,7 +112,7 @@ class Rights(BaseRights):
         if user and not storage.is_safe_path_component(user):
             # Prevent usernames like "user/calendar.ics"
             raise ValueError("Unsafe username")
-        collection_url = collection.path.rstrip("/") or "/"
+        collection_url = collection.path.rstrip("/")
         if collection_url in (".well-known/carddav", ".well-known/caldav"):
             return permission == "r"
         # Prevent "regex injection"
