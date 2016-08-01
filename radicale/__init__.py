@@ -53,8 +53,6 @@ VERSION = "2.0.0rc0"
 # tries to access information they don't have rights to
 NOT_ALLOWED = (client.FORBIDDEN, {}, None)
 
-WELL_KNOWN_RE = re.compile(r"/\.well-known/(carddav|caldav)/?$")
-
 
 class HTTPServer(wsgiref.simple_server.WSGIServer):
     """HTTP server."""
@@ -293,23 +291,9 @@ class Application:
             user = environ.get("REMOTE_USER")
             password = None
 
-        well_known = WELL_KNOWN_RE.match(path)
-        if well_known:
-            redirect = self.configuration.get(
-                "well-known", well_known.group(1))
-            try:
-                redirect = redirect % ({"user": user} if user else {})
-            except KeyError:
-                status = client.UNAUTHORIZED
-                realm = self.configuration.get("server", "realm")
-                headers = {"WWW-Authenticate": "Basic realm=\"%s\"" % realm}
-                self.logger.info(
-                    "Refused /.well-known/ redirection to anonymous user")
-            else:
-                status = client.SEE_OTHER
-                self.logger.info("/.well-known/ redirection to: %s" % redirect)
-                headers = {"Location": redirect}
-            return response(status, headers)
+        # If /.well-known is not available, clients query /
+        if path == "/.well-known" or path.startswith("/.well-known/"):
+            return response(client.NOT_FOUND, {})
 
         if user and not storage.is_safe_path_component(user):
             # Prevent usernames like "user/calendar.ics"

@@ -70,15 +70,6 @@
 #stock = utf-8
 
 
-[well-known]
-
-# Path where /.well-known/caldav/ is redirected
-#caldav = /
-
-# Path where /.well-known/carddav/ is redirected
-#carddav = /
-
-
 [auth]
 
 # Authentication method
