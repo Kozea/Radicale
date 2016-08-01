@@ -590,14 +590,11 @@ def _propfind_response(path, item, props, user, write=False):
         is404 = False
         if tag == _tag("D", "getetag"):
             element.text = item.etag
-        elif tag == _tag("D", "principal-URL"):
-            tag = ET.Element(_tag("D", "href"))
-            tag.text = _href(collection, path)
-            element.append(tag)
         elif tag == _tag("D", "getlastmodified"):
             element.text = item.last_modified
         elif tag in (_tag("D", "principal-collection-set"),
                      _tag("C", "calendar-user-address-set"),
+                     _tag("D", "principal-URL"),
                      _tag("CR", "addressbook-home-set"),
                      _tag("C", "calendar-home-set")):
             tag = ET.Element(_tag("D", "href"))
