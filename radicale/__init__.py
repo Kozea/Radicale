@@ -26,16 +26,16 @@ should have been included in this package.
 
 """
 
-import os
-import pprint
 import base64
 import contextlib
+import os
+import pprint
 import shlex
 import socket
 import socketserver
 import ssl
-import threading
 import subprocess
+import threading
 import wsgiref.simple_server
 import zlib
 from http import client
@@ -244,8 +244,8 @@ class Application:
         """Manage a request."""
         def response(status, headers={}, answer=None):
             # Start response
-            status = "%i %s" % (status,
-                                client.responses.get(status, "Unknown"))
+            status = "%i %s" % (
+                status, client.responses.get(status, "Unknown"))
             self.logger.debug("Answer status: %s" % status)
             start_response(status, list(headers.items()))
             # Return response content
@@ -354,8 +354,8 @@ class Application:
                     if lock_mode == "w" and hook:
                         self.logger.debug("Running hook")
                         folder = os.path.expanduser(
-                            self.configuration.get("storage",
-                                                   "filesystem_folder"))
+                            self.configuration.get(
+                                "storage", "filesystem_folder"))
                         subprocess.check_call(
                             hook % {"user": shlex.quote(user or "Anonymous")},
                             shell=True, cwd=folder)
