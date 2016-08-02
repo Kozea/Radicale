@@ -347,7 +347,7 @@ class Collection(BaseCollection):
                 path, self.storage_encoding, mode).open() as fd:
             yield fd
 
-    def find_available_file_name(self):
+    def _find_available_file_name(self):
         # Prevent infinite loop
         for _ in range(10000):
             file_name = hex(getrandbits(32))[2:]
@@ -430,13 +430,13 @@ class Collection(BaseCollection):
                     for item in items:
                         new_collection.add(item)
                     self.upload(
-                        self.find_available_file_name(), new_collection)
+                        self._find_available_file_name(), new_collection)
 
         elif tag == "VCARD":
             self.set_meta("tag", "VADDRESSBOOK")
             if collection:
                 for card in collection:
-                    self.upload(self.find_available_file_name(), card)
+                    self.upload(self._find_available_file_name(), card)
 
         return self
 
