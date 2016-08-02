@@ -305,19 +305,14 @@ class Application:
         # Create principal collection
         if user and is_authenticated:
             principal_path = "/%s/" % user
-            if self.authorized(user, self.Collection(principal_path, True),
-                               "w"):
+            collection = self.Collection(principal_path, True)
+            if self.authorized(user, collection, "w"):
                 with self.Collection.acquire_lock("r"):
-                    principal = next(self.Collection.discover(principal_path),
-                                     None)
-                if not principal or principal.path != principal_path.strip("/"):
+                    principal = next(
+                        self.Collection.discover(principal_path), None)
+                if not principal or principal.path != user:
                     with self.Collection.acquire_lock("w"):
-                        # the collection might exist by now
-                        principal = next(self.Collection.discover(
-                            principal_path), None)
-                        if (not principal or
-                                principal.path != principal_path.strip("/")):
-                            self.Collection.create_collection(principal_path)
+                        self.Collection.create_collection(principal_path)
 
         # Get content
         content_length = int(environ.get("CONTENT_LENGTH") or 0)

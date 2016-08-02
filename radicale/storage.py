@@ -407,11 +407,14 @@ class Collection(BaseCollection):
         folder = os.path.expanduser(
             cls.configuration.get("storage", "filesystem_folder"))
         path = path_to_filesystem(folder, href)
-        if not os.path.exists(path):
+
+        self = cls(href)
+        if os.path.exists(path):
+            return self
+        else:
             os.makedirs(path)
         if not tag and collection:
             tag = collection[0].name
-        self = cls(href)
 
         if tag == "VCALENDAR":
             self.set_meta("tag", "VCALENDAR")
