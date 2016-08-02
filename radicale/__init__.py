@@ -364,7 +364,8 @@ class Application:
         else:
             status, headers, answer = NOT_ALLOWED
 
-        if (status, headers, answer) == NOT_ALLOWED and not is_authenticated:
+        if (status, headers, answer) == NOT_ALLOWED and not (
+                user and is_authenticated):
             # Unknown or unauthorized user
             self.logger.info("%s refused" % (user or "Anonymous user"))
             status = client.UNAUTHORIZED
@@ -545,7 +546,7 @@ class Application:
                     content, user):
         """Manage PROPFIND request."""
         if not read_collections:
-            return client.NOT_FOUND, {}, None
+            return (client.NOT_FOUND, {}, None) if user else NOT_ALLOWED
         headers = {
             "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
             "Content-Type": "text/xml"}
