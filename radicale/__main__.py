@@ -37,9 +37,6 @@ from . import (
   ThreadedHTTPSServer, config, log)
 
 
-# This is a script, many branches and variables
-# pylint: disable=R0912,R0914
-
 def run():
     """Run Radicale as a standalone server."""
     # Get command-line options
@@ -241,8 +238,6 @@ def serve(configuration, logger):
             server = servers.get(rlist[0])
             if server:
                 server.handle_request()
-
-# pylint: enable=R0912,R0914
 
 
 if __name__ == "__main__":

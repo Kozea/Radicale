@@ -147,7 +147,7 @@ class Auth(BaseAuth):
         """Check if ``hash_value`` and ``password`` match, sha1 method."""
         hash_value = hash_value.replace("{SHA}", "").encode("ascii")
         password = password.encode(self.configuration.get("encoding", "stock"))
-        sha1 = hashlib.sha1()  # pylint: disable=E1101
+        sha1 = hashlib.sha1()
         sha1.update(password)
         return sha1.digest() == base64.b64decode(hash_value)
 
@@ -163,7 +163,7 @@ class Auth(BaseAuth):
         password = password.encode(self.configuration.get("encoding", "stock"))
         hash_value = hash_value[:20]
         salt_value = hash_value[20:]
-        sha1 = hashlib.sha1()  # pylint: disable=E1101
+        sha1 = hashlib.sha1()
         sha1.update(password)
         sha1.update(salt_value)
         return sha1.digest() == hash_value

@@ -71,11 +71,8 @@ def _pretty_xml(element, level=0):
             element.tail = i
         for sub_element in element:
             _pretty_xml(sub_element, level + 1)
-        # ``sub_element`` is always defined as len(element) > 0
-        # pylint: disable=W0631
         if not sub_element.tail or not sub_element.tail.strip():
             sub_element.tail = i
-        # pylint: enable=W0631
     else:
         if level and (not element.tail or not element.tail.strip()):
             element.tail = i
@@ -604,8 +601,6 @@ def _propfind_response(path, item, props, user, write=False):
             tag.text = _href(collection, path)
             element.append(tag)
         elif tag == _tag("C", "supported-calendar-component-set"):
-            # This is not a Todo
-            # pylint: disable=W0511
             human_tag = _tag_from_clark(tag)
             if is_collection and is_leaf:
                 meta = item.get_meta(human_tag)
@@ -619,7 +614,6 @@ def _propfind_response(path, item, props, user, write=False):
                     element.append(comp)
             else:
                 is404 = True
-            # pylint: enable=W0511
         elif tag == _tag("D", "current-user-principal") and user:
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href(collection, "/%s/" % user)

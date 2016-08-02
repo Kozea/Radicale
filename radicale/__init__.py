@@ -396,9 +396,6 @@ class Application:
 
         return response(status, headers, answer)
 
-    # All these functions must have the same parameters, some are useless
-    # pylint: disable=W0612,W0613,R0201
-
     def do_DELETE(self, environ, read_collections, write_collections, content,
                   user):
         """Manage DELETE request."""
@@ -635,5 +632,3 @@ class Application:
 
         answer = xmlutils.report(environ["PATH_INFO"], content, collection)
         return client.MULTI_STATUS, headers, answer
-
-    # pylint: enable=W0612,W0613,R0201
