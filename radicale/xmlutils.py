@@ -592,11 +592,7 @@ def _propfind_response(path, item, props, user, write=False):
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href(collection, "/")
             element.append(tag)
-        elif (tag in (_tag("C", "calendar-user-address-set"),
-                      _tag("D", "principal-URL"),
-                      _tag("CR", "addressbook-home-set"),
-                      _tag("C", "calendar-home-set")) and
-                collection.is_principal):
+        elif tag == _tag("D", "principal-URL") and collection.is_principal:
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href(collection, path)
             element.append(tag)
@@ -614,7 +610,10 @@ def _propfind_response(path, item, props, user, write=False):
                     element.append(comp)
             else:
                 is404 = True
-        elif tag == _tag("D", "current-user-principal"):
+        elif tag in (_tag("D", "current-user-principal"),
+                     _tag("C", "calendar-user-address-set"),
+                     _tag("CR", "addressbook-home-set"),
+                     _tag("C", "calendar-home-set")):
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href(collection, ("/%s/" % user) if user else "/")
             element.append(tag)
