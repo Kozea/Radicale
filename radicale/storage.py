@@ -334,7 +334,7 @@ class Collection(BaseCollection):
         self.storage_encoding = self.configuration.get("encoding", "stock")
         self._filesystem_path = path_to_filesystem(folder, self.path)
         self._props_path = os.path.join(
-            self._filesystem_path, ".collection.props")
+            self._filesystem_path, ".Radicale.props")
         split_path = self.path.split("/")
         if len(split_path) > 1:
             # URL with at least one folder
