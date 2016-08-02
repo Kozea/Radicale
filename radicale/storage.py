@@ -364,25 +364,27 @@ class Collection(BaseCollection):
         # path should already be sanitized
         sane_path = sanitize_path(path).strip("/")
         attributes = sane_path.split("/")
-        if not attributes:
-            return
+        if not attributes[0]:
+            attributes.pop()
 
         # Try to guess if the path leads to a collection or an item
         folder = os.path.expanduser(
             cls.configuration.get("storage", "filesystem_folder"))
         if not os.path.isdir(path_to_filesystem(folder, sane_path)):
             # path is not a collection
-            if os.path.isfile(path_to_filesystem(folder, sane_path)):
+            if attributes and os.path.isfile(path_to_filesystem(folder,
+                                                                sane_path)):
                 # path is an item
                 attributes.pop()
-            elif os.path.isdir(path_to_filesystem(folder, *attributes[:-1])):
+            elif attributes and os.path.isdir(path_to_filesystem(
+                    folder, *attributes[:-1])):
                 # path parent is a collection
                 attributes.pop()
             # TODO: else: return?
 
         path = "/".join(attributes)
 
-        principal = len(attributes) <= 1
+        principal = len(attributes) == 1
         collection = cls(path, principal)
         yield collection
         if depth != "0":
