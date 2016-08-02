@@ -333,6 +333,8 @@ class Collection(BaseCollection):
         self.path = sanitize_path(path).strip("/")
         self.storage_encoding = self.configuration.get("encoding", "stock")
         self._filesystem_path = path_to_filesystem(folder, self.path)
+        self._props_path = path_to_filesystem(self._filesystem_path,
+                                              "collection.props")
         split_path = self.path.split("/")
         if len(split_path) > 1:
             # URL with at least one folder
@@ -520,9 +522,6 @@ class Collection(BaseCollection):
             # Delete the collection
             if os.path.isdir(self._filesystem_path):
                 shutil.rmtree(self._filesystem_path)
-            props_path = self._filesystem_path + ".props"
-            if os.path.isfile(props_path):
-                os.remove(props_path)
         else:
             # Delete an item
             if not is_safe_filesystem_path_component(href):
@@ -539,16 +538,14 @@ class Collection(BaseCollection):
             os.remove(path)
 
     def get_meta(self, key):
-        props_path = self._filesystem_path + ".props"
-        if os.path.exists(props_path):
-            with open(props_path, encoding=self.storage_encoding) as prop:
+        if os.path.exists(self._props_path):
+            with open(self._props_path, encoding=self.storage_encoding) as prop:
                 return json.load(prop).get(key)
 
     def set_meta(self, key, value):
-        props_path = self._filesystem_path + ".props"
         properties = {}
-        if os.path.exists(props_path):
-            with open(props_path, encoding=self.storage_encoding) as prop:
+        if os.path.exists(self._props_path):
+            with open(self._props_path, encoding=self.storage_encoding) as prop:
                 properties.update(json.load(prop))
 
         if value:
@@ -556,7 +553,7 @@ class Collection(BaseCollection):
         else:
             properties.pop(key, None)
 
-        with self._atomic_write(props_path, "w+") as prop:
+        with self._atomic_write(self._props_path, "w+") as prop:
             json.dump(properties, prop)
 
     @property
