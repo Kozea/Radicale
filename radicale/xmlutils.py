@@ -614,9 +614,9 @@ def _propfind_response(path, item, props, user, write=False):
                     element.append(comp)
             else:
                 is404 = True
-        elif tag == _tag("D", "current-user-principal") and user:
+        elif tag == _tag("D", "current-user-principal"):
             tag = ET.Element(_tag("D", "href"))
-            tag.text = _href(collection, "/%s/" % user)
+            tag.text = _href(collection, ("/%s/" % user) if user else "/")
             element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
