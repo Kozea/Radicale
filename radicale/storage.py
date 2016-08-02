@@ -333,7 +333,7 @@ class Collection(BaseCollection):
         self.path = sanitize_path(path).strip("/")
         self.storage_encoding = self.configuration.get("encoding", "stock")
         self._filesystem_path = path_to_filesystem(folder, self.path)
-        self._props_path = path_to_filesystem(
+        self._props_path = os.path.join(
             self._filesystem_path, ".collection.props")
         split_path = self.path.split("/")
         if len(split_path) > 1:
