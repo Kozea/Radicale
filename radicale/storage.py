@@ -25,6 +25,7 @@ entry.
 
 """
 
+import errno
 import json
 import os
 import posixpath
@@ -393,6 +394,14 @@ class Collection(BaseCollection):
 
     @classmethod
     def create_collection(cls, href, collection=None, tag=None):
+        def find_available_file_name(exists_fn):
+            # Prevent infinite loop
+            for _ in range(10000):
+                file_name = hex(getrandbits(32))[2:]
+                if not exists_fn(file_name):
+                    return file_name
+            raise FileExistsError(errno.EEXIST, "No usable file name found")
+
         folder = os.path.expanduser(
             cls.configuration.get("storage", "filesystem_folder"))
         path = path_to_filesystem(folder, href)
@@ -420,15 +429,14 @@ class Collection(BaseCollection):
                     new_collection = vobject.iCalendar()
                     for item in items:
                         new_collection.add(item)
-                    file_name = hex(getrandbits(32))[2:]
-                    self.upload(file_name, new_collection)
+                    self.upload(find_available_file_name(self.has),
+                                new_collection)
 
         elif tag == "VCARD":
             self.set_meta("tag", "VADDRESSBOOK")
             if collection:
                 for card in collection:
-                    file_name = hex(getrandbits(32))[2:]
-                    self.upload(file_name, card)
+                    self.upload(find_available_file_name(self.has), card)
 
         return self
 
