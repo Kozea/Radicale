@@ -327,8 +327,7 @@ class Collection(BaseCollection):
     """Collection stored in several files per calendar."""
 
     def __init__(self, path, principal=False):
-        folder = os.path.expanduser(
-            self.configuration.get("storage", "filesystem_folder"))
+        folder = self._get_collection_root_folder()
         # path should already be sanitized
         self.path = sanitize_path(path).strip("/")
         self.storage_encoding = self.configuration.get("encoding", "stock")
@@ -342,6 +341,13 @@ class Collection(BaseCollection):
         else:
             self.owner = None
         self.is_principal = principal
+
+    @classmethod
+    def _get_collection_root_folder(cls):
+        filesystem_folder = os.path.expanduser(
+            cls.configuration.get("storage", "filesystem_folder"))
+        folder = os.path.join(filesystem_folder, "collection-root")
+        return folder
 
     @contextmanager
     def _atomic_write(self, path, mode="w"):
@@ -370,8 +376,11 @@ class Collection(BaseCollection):
             attributes.pop()
 
         # Try to guess if the path leads to a collection or an item
-        folder = os.path.expanduser(
-            cls.configuration.get("storage", "filesystem_folder"))
+        folder = cls._get_collection_root_folder()
+        # HACK: Detection of principal collections fails if folder doesn't
+        #       exist. This can be removed, when this method stop returning
+        #       collections that don't exist.
+        os.makedirs(folder, exist_ok=True)
         if not os.path.isdir(path_to_filesystem(folder, sane_path)):
             # path is not a collection
             if attributes and os.path.isfile(path_to_filesystem(folder,
@@ -406,8 +415,7 @@ class Collection(BaseCollection):
 
     @classmethod
     def create_collection(cls, href, collection=None, tag=None):
-        folder = os.path.expanduser(
-            cls.configuration.get("storage", "filesystem_folder"))
+        folder = cls._get_collection_root_folder()
         path = path_to_filesystem(folder, href)
 
         self = cls(href)
