@@ -29,5 +29,3 @@ class Collection(storage.Collection):
     """Collection stored in a folder."""
     def __init__(self, path, principal=False):
         super().__init__(path, principal)
-        self._filesystem_path = storage.path_to_filesystem(
-            self.configuration.get("storage", "test_folder"), self.path)
