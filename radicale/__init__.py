@@ -480,11 +480,11 @@ class Application:
         collection = write_collections[0]
 
         props = xmlutils.props_from_request(content)
+        props["tag"] = "VCALENDAR"
         # TODO: use this?
         # timezone = props.get("C:calendar-timezone")
         collection = self.Collection.create_collection(
-            environ["PATH_INFO"], tag="VCALENDAR")
-        collection.set_meta(props)
+            environ["PATH_INFO"], props=props)
         return client.CREATED, {}, None
 
     def do_MKCOL(self, environ, read_collections, write_collections, content,
@@ -496,8 +496,8 @@ class Application:
         collection = write_collections[0]
 
         props = xmlutils.props_from_request(content)
-        collection = self.Collection.create_collection(environ["PATH_INFO"])
-        collection.set_meta(props)
+        collection = self.Collection.create_collection(
+            environ["PATH_INFO"], props=props)
         return client.CREATED, {}, None
 
     def do_MOVE(self, environ, read_collections, write_collections, content,
