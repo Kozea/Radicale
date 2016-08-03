@@ -484,8 +484,7 @@ class Application:
         # timezone = props.get("C:calendar-timezone")
         collection = self.Collection.create_collection(
             environ["PATH_INFO"], tag="VCALENDAR")
-        for key, value in props.items():
-            collection.set_meta(key, value)
+        collection.set_meta(props)
         return client.CREATED, {}, None
 
     def do_MKCOL(self, environ, read_collections, write_collections, content,
@@ -498,8 +497,7 @@ class Application:
 
         props = xmlutils.props_from_request(content)
         collection = self.Collection.create_collection(environ["PATH_INFO"])
-        for key, value in props.items():
-            collection.set_meta(key, value)
+        collection.set_meta(props)
         return client.CREATED, {}, None
 
     def do_MOVE(self, environ, read_collections, write_collections, content,
@@ -582,7 +580,7 @@ class Application:
             tags = {value: key for key, value in storage.MIMETYPES.items()}
             tag = tags.get(content_type.split(";")[0])
             if tag:
-                collection.set_meta("tag", tag)
+                collection.set_meta({"tag": tag})
         headers = {}
         item_name = xmlutils.name_from_path(environ["PATH_INFO"], collection)
         item = collection.get(item_name)

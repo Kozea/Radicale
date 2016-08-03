@@ -757,12 +757,14 @@ def proppatch(path, xml_request, collection):
     href.text = _href(collection, path)
     response.append(href)
 
-    for short_name, value in props_to_set.items():
-        collection.set_meta(short_name, value)
-        _add_propstat_to(response, short_name, 200)
-
+    # Merge props_to_set and props_to_remove
     for short_name in props_to_remove:
-        collection.set_meta(short_name, "")
+        props_to_set[short_name] = ""
+
+    # Set/Delete props in one atomic operation
+    collection.set_meta(props_to_set)
+
+    for short_name in props_to_set:
         _add_propstat_to(response, short_name, 200)
 
     return _pretty_xml(multistatus)

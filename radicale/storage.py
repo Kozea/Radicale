@@ -298,8 +298,8 @@ class BaseCollection:
         """Get metadata value for collection."""
         raise NotImplementedError
 
-    def set_meta(self, key, value):
-        """Set metadata value for collection."""
+    def set_meta(self, props):
+        """Set metadata values for collection."""
         raise NotImplementedError
 
     @property
@@ -419,7 +419,7 @@ class Collection(BaseCollection):
             tag = collection[0].name
 
         if tag == "VCALENDAR":
-            self.set_meta("tag", "VCALENDAR")
+            self.set_meta({"tag": "VCALENDAR"})
             if collection:
                 collection, = collection
                 items = []
@@ -440,7 +440,7 @@ class Collection(BaseCollection):
                         self._find_available_file_name(), new_collection)
 
         elif tag == "VCARD":
-            self.set_meta("tag", "VADDRESSBOOK")
+            self.set_meta({"tag": "VADDRESSBOOK"})
             if collection:
                 for card in collection:
                     self.upload(self._find_available_file_name(), card)
@@ -542,19 +542,16 @@ class Collection(BaseCollection):
             with open(self._props_path, encoding=self.storage_encoding) as prop:
                 return json.load(prop).get(key)
 
-    def set_meta(self, key, value):
-        properties = {}
+    def set_meta(self, props):
         if os.path.exists(self._props_path):
             with open(self._props_path, encoding=self.storage_encoding) as prop:
-                properties.update(json.load(prop))
-
-        if value:
-            properties[key] = value
-        else:
-            properties.pop(key, None)
-
+                old_props = json.load(prop)
+                old_props.update(props)
+                props = old_props
+        # filter empty entries
+        props = {k:v for k,v in props.items() if v}
         with self._atomic_write(self._props_path, "w+") as prop:
-            json.dump(properties, prop)
+            json.dump(props, prop)
 
     @property
     def last_modified(self):
