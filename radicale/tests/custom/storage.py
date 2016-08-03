@@ -27,5 +27,5 @@ from radicale import storage
 # TODO: make something more in this collection (and test it)
 class Collection(storage.Collection):
     """Collection stored in a folder."""
-    def __init__(self, path, principal=False):
-        super().__init__(path, principal)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
