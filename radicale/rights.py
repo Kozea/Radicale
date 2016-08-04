@@ -107,19 +107,17 @@ class Rights(BaseRights):
         self.filename = os.path.expanduser(configuration.get("rights", "file"))
         self.rights_type = configuration.get("rights", "type").lower()
 
-    def authorized(self, user, collection, permission):
+    def authorized(self, user, path, permission):
         user = user or ""
         if user and not storage.is_safe_path_component(user):
             # Prevent usernames like "user/calendar.ics"
             raise ValueError("Unsafe username")
-        collection_url = collection.path.rstrip("/")
-        if collection_url in (".well-known/carddav", ".well-known/caldav"):
-            return permission == "r"
+        sane_path = storage.sanitize_path(path).strip("/")
         # Prevent "regex injection"
         user_escaped = re.escape(user)
-        collection_url_escaped = re.escape(collection_url)
+        sane_path_escaped = re.escape(sane_path)
         regex = ConfigParser(
-            {"login": user_escaped, "path": collection_url_escaped})
+            {"login": user_escaped, "path": sane_path_escaped})
         if self.rights_type in DEFINED_RIGHTS:
             self.logger.debug("Rights type '%s'" % self.rights_type)
             regex.readfp(StringIO(DEFINED_RIGHTS[self.rights_type]))
@@ -135,11 +133,11 @@ class Rights(BaseRights):
             re_collection = regex.get(section, "collection")
             self.logger.debug(
                 "Test if '%s:%s' matches against '%s:%s' from section '%s'" % (
-                    user, collection_url, re_user, re_collection, section))
+                    user, sane_path, re_user, re_collection, section))
             user_match = re.fullmatch(re_user, user)
             if user_match:
                 re_collection = re_collection.format(*user_match.groups())
-                if re.fullmatch(re_collection, collection_url):
+                if re.fullmatch(re_collection, sane_path):
                     self.logger.debug("Section '%s' matches" % section)
                     return permission in regex.get(section, "permission")
                 else:

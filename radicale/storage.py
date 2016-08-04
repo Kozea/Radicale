@@ -229,9 +229,7 @@ class BaseCollection:
         returned.
 
         If ``depth`` is anything but "0", it is considered as "1" and direct
-        children are included in the result. If ``include_container`` is
-        ``True`` (the default), the containing object is included in the
-        result.
+        children are included in the result.
 
         The ``path`` is relative.
 
@@ -398,41 +396,37 @@ class Collection(BaseCollection):
 
         # Try to guess if the path leads to a collection or an item
         folder = cls._get_collection_root_folder()
-        # HACK: Detection of principal collections fails if folder doesn't
-        #       exist. This can be removed, when this method stop returning
-        #       collections that don't exist.
-        os.makedirs(folder, exist_ok=True)
-        if not os.path.isdir(path_to_filesystem(folder, sane_path)):
-            # path is not a collection
-            if attributes and os.path.isfile(path_to_filesystem(folder,
-                                                                sane_path)):
-                # path is an item
-                attributes.pop()
-            elif attributes and os.path.isdir(path_to_filesystem(
-                    folder, *attributes[:-1])):
-                # path parent is a collection
-                attributes.pop()
-            # TODO: else: return?
+        try:
+            filesystem_path = path_to_filesystem(folder, sane_path)
+        except ValueError:
+            # Path is unsafe
+            return
+        href = None
+        if not os.path.isdir(filesystem_path):
+            if attributes and os.path.isfile(filesystem_path):
+                href = attributes.pop()
+            else:
+                return
 
         path = "/".join(attributes)
-
         principal = len(attributes) == 1
         collection = cls(path, principal)
+        if href:
+            yield collection.get(href)
+            return
         yield collection
-        if depth != "0":
-            # TODO: fix this
-            items = list(collection.list())
-            if items:
-                for item in items:
-                    yield collection.get(item[0])
-            _, directories, _ = next(os.walk(collection._filesystem_path))
-            for sub_path in directories:
-                if not is_safe_filesystem_path_component(sub_path):
-                    cls.logger.debug("Skipping collection: %s", sub_path)
-                    continue
-                full_path = os.path.join(collection._filesystem_path, sub_path)
-                if os.path.exists(full_path):
-                    yield cls(posixpath.join(path, sub_path))
+        if depth == "0":
+            return
+        for item in collection.list():
+            yield collection.get(item[0])
+        for href in os.listdir(filesystem_path):
+            if not is_safe_filesystem_path_component(href):
+                cls.logger.debug("Skipping collection: %s", href)
+                continue
+            child_filesystem_path = path_to_filesystem(filesystem_path, href)
+            if os.path.isdir(child_filesystem_path):
+                child_principal = len(attributes) == 0
+                yield cls(child_filesystem_path, child_principal)
 
     @classmethod
     def create_collection(cls, href, collection=None, props=None):
