@@ -133,6 +133,36 @@ class BaseRequests:
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert "VEVENT" not in answer
 
+    def test_mkcalendar(self):
+        """Make a calendar."""
+        self.request("MKCALENDAR", "/calendar.ics/")
+        status, headers, answer = self.request("GET", "/calendar.ics/")
+        assert status == 200
+
+    def test_move(self):
+        """Move a item."""
+        self.request("MKCALENDAR", "/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path1 = "/calendar.ics/event1.ics"
+        path2 = "/calendar.ics/event2.ics"
+        status, headers, answer = self.request("PUT", path1, event)
+        status, headers, answer = self.request(
+            "MOVE", path1, HTTP_DESTINATION=path2, HTTP_HOST="")
+        assert status == 201
+        status, headers, answer = self.request("GET", path1)
+        assert status == 404
+        status, headers, answer = self.request("GET", path2)
+        assert status == 200
+
+    def test_head(self):
+        status, headers, answer = self.request("HEAD", "/")
+        assert status == 200
+
+    def test_options(self):
+        status, headers, answer = self.request("OPTIONS", "/")
+        assert status == 200
+        assert "DAV" in headers
+
     def test_multiple_events_with_same_uid(self):
         """Add two events with the same UID."""
         self.request("MKCOL", "/calendar.ics/")

@@ -472,20 +472,13 @@ def props_from_request(root, actions=("set", "remove")):
     return result
 
 
-def delete(path, collection):
+def delete(path, collection, href=None):
     """Read and answer DELETE requests.
 
     Read rfc4918-9.6 for info.
 
     """
-    # Reading request
-    if collection.path == path.strip("/"):
-        # Delete the whole collection
-        collection.delete()
-    else:
-        # Remove an item from the collection
-        collection.delete(name_from_path(path, collection))
-
+    collection.delete(href)
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
     response = ET.Element(_tag("D", "response"))
