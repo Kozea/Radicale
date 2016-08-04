@@ -654,7 +654,6 @@ class TestCustomStorageSystem(BaseRequests, BaseTest):
         super().setup()
         self.colpath = tempfile.mkdtemp()
         self.configuration.set("storage", "filesystem_folder", self.colpath)
-        self.configuration.set("storage", "test_folder", self.colpath)
         self.application = Application(self.configuration, self.logger)
 
     def teardown(self):

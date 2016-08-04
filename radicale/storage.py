@@ -38,6 +38,7 @@ from hashlib import md5
 from importlib import import_module
 from itertools import groupby
 from random import getrandbits
+from tempfile import TemporaryDirectory
 
 from atomicwrites import AtomicWriter
 import vobject
@@ -163,6 +164,23 @@ def path_to_filesystem(root, *paths):
     return safe_path
 
 
+def sync_directory(path):
+    """Sync directory to disk
+
+    This only works on POSIX and does nothing on other systems.
+
+    """
+    if os.name == "posix":
+        fd = os.open(path, 0)
+        try:
+            if hasattr(fcntl, "F_FULLFSYNC"):
+                fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
+            else:
+                os.fsync(fd)
+        finally:
+            os.close(fd)
+
+
 class _EncodedAtomicWriter(AtomicWriter):
     def __init__(self, path, encoding, mode="w", overwrite=True):
         self._encoding = encoding
@@ -225,13 +243,15 @@ class BaseCollection:
         return get_etag(self.serialize())
 
     @classmethod
-    def create_collection(cls, href, collection=None, tag=None):
+    def create_collection(cls, href, collection=None, props=None):
         """Create a collection.
 
         ``collection`` is a list of vobject components.
 
-        ``tag`` is the type of collection (VCALENDAR or VADDRESSBOOK). If
-        ``tag`` is not given, it is guessed from the collection.
+        ``props`` are metadata values for the collection.
+
+        ``props["tag"]`` is the type of collection (VCALENDAR or VADDRESSBOOK). If
+        the key ``tag`` is missing, it is guessed from the collection.
 
         """
         raise NotImplementedError
@@ -298,8 +318,8 @@ class BaseCollection:
         """Get metadata value for collection."""
         raise NotImplementedError
 
-    def set_meta(self, key, value):
-        """Set metadata value for collection."""
+    def set_meta(self, props):
+        """Set metadata values for collection."""
         raise NotImplementedError
 
     @property
@@ -326,9 +346,9 @@ class BaseCollection:
 class Collection(BaseCollection):
     """Collection stored in several files per calendar."""
 
-    def __init__(self, path, principal=False):
-        folder = os.path.expanduser(
-            self.configuration.get("storage", "filesystem_folder"))
+    def __init__(self, path, principal=False, folder=None):
+        if not folder:
+            folder = self._get_collection_root_folder()
         # path should already be sanitized
         self.path = sanitize_path(path).strip("/")
         self.storage_encoding = self.configuration.get("encoding", "stock")
@@ -342,6 +362,13 @@ class Collection(BaseCollection):
         else:
             self.owner = None
         self.is_principal = principal
+
+    @classmethod
+    def _get_collection_root_folder(cls):
+        filesystem_folder = os.path.expanduser(
+            cls.configuration.get("storage", "filesystem_folder"))
+        folder = os.path.join(filesystem_folder, "collection-root")
+        return folder
 
     @contextmanager
     def _atomic_write(self, path, mode="w"):
@@ -370,8 +397,11 @@ class Collection(BaseCollection):
             attributes.pop()
 
         # Try to guess if the path leads to a collection or an item
-        folder = os.path.expanduser(
-            cls.configuration.get("storage", "filesystem_folder"))
+        folder = cls._get_collection_root_folder()
+        # HACK: Detection of principal collections fails if folder doesn't
+        #       exist. This can be removed, when this method stop returning
+        #       collections that don't exist.
+        os.makedirs(folder, exist_ok=True)
         if not os.path.isdir(path_to_filesystem(folder, sane_path)):
             # path is not a collection
             if attributes and os.path.isfile(path_to_filesystem(folder,
@@ -405,47 +435,62 @@ class Collection(BaseCollection):
                     yield cls(posixpath.join(path, sub_path))
 
     @classmethod
-    def create_collection(cls, href, collection=None, tag=None):
-        folder = os.path.expanduser(
-            cls.configuration.get("storage", "filesystem_folder"))
-        path = path_to_filesystem(folder, href)
+    def create_collection(cls, href, collection=None, props=None):
+        folder = cls._get_collection_root_folder()
 
-        self = cls(href)
-        if os.path.exists(path):
-            return self
-        else:
-            os.makedirs(path)
-        if not tag and collection:
-            tag = collection[0].name
+        # path should already be sanitized
+        sane_path = sanitize_path(href).strip("/")
+        attributes = sane_path.split("/")
+        if not attributes[0]:
+            attributes.pop()
+        principal = len(attributes) == 1
+        filesystem_path = path_to_filesystem(folder, sane_path)
 
-        if tag == "VCALENDAR":
-            self.set_meta("tag", "VCALENDAR")
-            if collection:
-                collection, = collection
-                items = []
-                for content in ("vevent", "vtodo", "vjournal"):
-                    items.extend(getattr(collection, "%s_list" % content, []))
+        if not props:
+            props = {}
+        if not props.get("tag") and collection:
+            props["tag"] = collection[0].name
+        if not props:
+            os.makedirs(filesystem_path, exist_ok=True)
+            return cls(sane_path, principal=principal)
 
-                def get_uid(item):
-                    return hasattr(item, "uid") and item.uid.value
+        parent_dir = os.path.dirname(filesystem_path)
+        os.makedirs(parent_dir, exist_ok=True)
+        with TemporaryDirectory(prefix=".Radicale.tmp-",
+                                dir=parent_dir) as tmp_dir:
+            # The temporary directory itself can't be renamed
+            tmp_filesystem_path = os.path.join(tmp_dir, "collection")
+            os.makedirs(tmp_filesystem_path)
+            # path is unsafe
+            self = cls("/", principal=principal, folder=tmp_filesystem_path)
+            self.set_meta(props)
+            if props.get("tag") == "VCALENDAR":
+                if collection:
+                    collection, = collection
+                    items = []
+                    for content in ("vevent", "vtodo", "vjournal"):
+                        items.extend(getattr(collection, "%s_list" % content,
+                                             []))
 
-                items_by_uid = groupby(
-                    sorted(items, key=get_uid), get_uid)
+                    def get_uid(item):
+                        return hasattr(item, "uid") and item.uid.value
 
-                for uid, items in items_by_uid:
-                    new_collection = vobject.iCalendar()
-                    for item in items:
-                        new_collection.add(item)
-                    self.upload(
-                        self._find_available_file_name(), new_collection)
+                    items_by_uid = groupby(
+                        sorted(items, key=get_uid), get_uid)
 
-        elif tag == "VCARD":
-            self.set_meta("tag", "VADDRESSBOOK")
-            if collection:
-                for card in collection:
-                    self.upload(self._find_available_file_name(), card)
-
-        return self
+                    for uid, items in items_by_uid:
+                        new_collection = vobject.iCalendar()
+                        for item in items:
+                            new_collection.add(item)
+                        self.upload(
+                            self._find_available_file_name(), new_collection)
+            elif props.get("tag") == "VCARD":
+                if collection:
+                    for card in collection:
+                        self.upload(self._find_available_file_name(), card)
+            os.rename(tmp_filesystem_path, filesystem_path)
+            sync_directory(parent_dir)
+        return cls(sane_path, principal=principal)
 
     def list(self):
         try:
@@ -542,19 +587,16 @@ class Collection(BaseCollection):
             with open(self._props_path, encoding=self.storage_encoding) as prop:
                 return json.load(prop).get(key)
 
-    def set_meta(self, key, value):
-        properties = {}
+    def set_meta(self, props):
         if os.path.exists(self._props_path):
             with open(self._props_path, encoding=self.storage_encoding) as prop:
-                properties.update(json.load(prop))
-
-        if value:
-            properties[key] = value
-        else:
-            properties.pop(key, None)
-
+                old_props = json.load(prop)
+                old_props.update(props)
+                props = old_props
+        # filter empty entries
+        props = {k:v for k,v in props.items() if v}
         with self._atomic_write(self._props_path, "w+") as prop:
-            json.dump(properties, prop)
+            json.dump(props, prop)
 
     @property
     def last_modified(self):
