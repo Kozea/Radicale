@@ -648,7 +648,7 @@ class Collection(BaseCollection):
                 elif os.name == "posix":
                     _cmd = fcntl.LOCK_EX if mode == "w" else fcntl.LOCK_SH
                     try:
-                        fcntl.lockf(cls._lock_file.fileno(), _cmd)
+                        fcntl.flock(cls._lock_file.fileno(), _cmd)
                     except OSError:
                         cls.logger.debug("Locking not supported")
                 cls._lock_file_locked = True
@@ -668,7 +668,7 @@ class Collection(BaseCollection):
                             cls.logger.debug("Unlocking not supported")
                     elif os.name == "posix":
                         try:
-                            fcntl.lockf(cls._lock_file.fileno(), fcntl.LOCK_UN)
+                            fcntl.flock(cls._lock_file.fileno(), fcntl.LOCK_UN)
                         except OSError:
                             cls.logger.debug("Unlocking not supported")
                     cls._lock_file_locked = False
