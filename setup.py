@@ -36,6 +36,7 @@ For further information, please visit the `Radicale Website
 """
 
 import re
+import sys
 from os import path
 
 from setuptools import setup
@@ -70,7 +71,7 @@ setup(
     tests_require=[
         "pytest-runner", "pytest-cov", "pytest-flake8", "pytest-isort"],
     extras_require={"test": [
-        "pytest-runner", "pytest-cov", "pytest-flake8", "pytest-isort"]}
+        "pytest-runner", "pytest-cov", "pytest-flake8", "pytest-isort"]},
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
