@@ -407,6 +407,19 @@ class Collection(BaseCollection):
         raise FileExistsError(errno.EEXIST, "No usable file name found")
 
     @classmethod
+    def _makedirs_synced(cls, filesystem_path, exist_ok=False):
+        if os.path.isdir(filesystem_path) and exist_ok:
+            return
+        parent_filesystem_path = os.path.dirname(filesystem_path)
+        # Prevent infinite loop
+        if filesystem_path != parent_filesystem_path:
+            # Create parent dirs recursively
+            cls._makedirs_synced(parent_filesystem_path, exist_ok=True)
+        # Possible race!
+        os.makedirs(filesystem_path, exist_ok=exist_ok)
+        sync_directory(parent_filesystem_path)
+
+    @classmethod
     def discover(cls, path, depth="0"):
         if path is None:
             # Wrong URL
@@ -476,11 +489,11 @@ class Collection(BaseCollection):
         if not props.get("tag") and collection:
             props["tag"] = collection[0].name
         if not props:
-            os.makedirs(filesystem_path, exist_ok=True)
+            cls._makedirs_synced(filesystem_path, exist_ok=True)
             return cls(sane_path, principal=principal)
 
         parent_dir = os.path.dirname(filesystem_path)
-        os.makedirs(parent_dir, exist_ok=True)
+        cls._makedirs_synced(parent_dir, exist_ok=True)
 
         # Create a temporary directory with an unsafe name
         with TemporaryDirectory(
@@ -679,8 +692,7 @@ class Collection(BaseCollection):
             if not cls._lock_file:
                 folder = os.path.expanduser(
                     cls.configuration.get("storage", "filesystem_folder"))
-                if not os.path.exists(folder):
-                    os.makedirs(folder, exist_ok=True)
+                cls._makedirs_synced(folder, exist_ok=True)
                 lock_path = os.path.join(folder, ".Radicale.lock")
                 cls._lock_file = open(lock_path, "w+")
                 # Set access rights to a necessary minimum to prevent locking
