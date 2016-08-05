@@ -459,9 +459,7 @@ class Application:
             if item:
                 return client.CONFLICT, {}, None
             props = xmlutils.props_from_request(content)
-            collection = self.Collection.create_collection(path, props=props)
-            for key, value in props.items():
-                collection.set_meta(key, value)
+            self.Collection.create_collection(path, props=props)
             return client.CREATED, {}, None
 
     def do_MOVE(self, environ, path, content, user):
