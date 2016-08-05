@@ -372,14 +372,14 @@ class Application:
         """Lock the collection with ``permission`` and execute hook."""
         with self.Collection.acquire_lock(lock_mode) as value:
             yield value
-        hook = self.configuration.get("storage", "hook")
-        if lock_mode == "w" and hook:
-            self.logger.debug("Running hook")
-            folder = os.path.expanduser(self.configuration.get(
-                "storage", "filesystem_folder"))
-            subprocess.check_call(
-                hook % {"user": shlex.quote(user or "Anonymous")},
-                shell=True, cwd=folder)
+            hook = self.configuration.get("storage", "hook")
+            if lock_mode == "w" and hook:
+                self.logger.debug("Running hook")
+                folder = os.path.expanduser(self.configuration.get(
+                    "storage", "filesystem_folder"))
+                subprocess.check_call(
+                    hook % {"user": shlex.quote(user or "Anonymous")},
+                    shell=True, cwd=folder)
 
     def do_DELETE(self, environ, path, content, user):
         """Manage DELETE request."""
