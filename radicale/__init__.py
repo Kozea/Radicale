@@ -306,7 +306,7 @@ class Application:
                     environ["wsgi.input"].read(content_length), environ)
             except socket.timeout:
                 return response(client.REQUEST_TIMEOUT)
-            self.logger.debug("Request content:\n%s" % content)
+            self.logger.debug("Request content:\n%s" % content.strip())
         else:
             content = None
 
