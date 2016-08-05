@@ -45,6 +45,9 @@ with open(init_path, "r", encoding="utf-8") as fd:
     version = re.search('VERSION = "([^"]+)"', fd.read().strip()).group(1)
 
 
+needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
+pytest_runner = ['pytest-runner'] if needs_pytest else []
+
 # When the version is updated, ``radicale.VERSION`` must be modified.
 # A new section in the ``NEWS`` file must be added too.
 setup(
@@ -63,12 +66,11 @@ setup(
     provides=["radicale"],
     scripts=["bin/radicale"],
     install_requires=["vobject", "atomicwrites"],
-    setup_requires=["pytest-runner"],
-    tests_require=["pytest-cov", "pytest-flake8", "pytest-isort", "pytest"],
-    extras_require={
-        "test": [
-            "pytest-runner", "pytest-cov", "pytest-flake8", "pytest-isort",
-            "pytest"]},
+    setup_requires=pytest_runner,
+    tests_require=[
+        "pytest-runner", "pytest-cov", "pytest-flake8", "pytest-isort"],
+    extras_require={"test": [
+        "pytest-runner", "pytest-cov", "pytest-flake8", "pytest-isort"]}
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
