@@ -43,6 +43,7 @@ from tempfile import TemporaryDirectory
 from atomicwrites import AtomicWriter
 import vobject
 
+
 if os.name == "nt":
     import ctypes
     import ctypes.wintypes
@@ -55,26 +56,29 @@ if os.name == "nt":
         ULONG_PTR = ctypes.c_uint64
 
     class Overlapped(ctypes.Structure):
-        _fields_ = [("internal", ULONG_PTR),
-                    ("internal_high", ULONG_PTR),
-                    ("offset", ctypes.wintypes.DWORD),
-                    ("offset_high", ctypes.wintypes.DWORD),
-                    ("h_event", ctypes.wintypes.HANDLE)]
+        _fields_ = [
+            ("internal", ULONG_PTR),
+            ("internal_high", ULONG_PTR),
+            ("offset", ctypes.wintypes.DWORD),
+            ("offset_high", ctypes.wintypes.DWORD),
+            ("h_event", ctypes.wintypes.HANDLE)]
 
     lock_file_ex = ctypes.windll.kernel32.LockFileEx
-    lock_file_ex.argtypes = [ctypes.wintypes.HANDLE,
-                             ctypes.wintypes.DWORD,
-                             ctypes.wintypes.DWORD,
-                             ctypes.wintypes.DWORD,
-                             ctypes.wintypes.DWORD,
-                             ctypes.POINTER(Overlapped)]
+    lock_file_ex.argtypes = [
+        ctypes.wintypes.HANDLE,
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.DWORD,
+        ctypes.POINTER(Overlapped)]
     lock_file_ex.restype = ctypes.wintypes.BOOL
     unlock_file_ex = ctypes.windll.kernel32.UnlockFileEx
-    unlock_file_ex.argtypes = [ctypes.wintypes.HANDLE,
-                               ctypes.wintypes.DWORD,
-                               ctypes.wintypes.DWORD,
-                               ctypes.wintypes.DWORD,
-                               ctypes.POINTER(Overlapped)]
+    unlock_file_ex.argtypes = [
+        ctypes.wintypes.HANDLE,
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.DWORD,
+        ctypes.POINTER(Overlapped)]
     unlock_file_ex.restype = ctypes.wintypes.BOOL
 elif os.name == "posix":
     import fcntl
@@ -95,9 +99,6 @@ def load(configuration, logger):
     return CollectionCopy
 
 
-MIMETYPES = {"VADDRESSBOOK": "text/vcard", "VCALENDAR": "text/calendar"}
-
-
 def get_etag(text):
     """Etag from collection or item."""
     etag = md5()
@@ -105,13 +106,9 @@ def get_etag(text):
     return '"%s"' % etag.hexdigest()
 
 
-def is_safe_path_component(path):
-    """Check if path is a single component of a path.
-
-    Check that the path is safe to join too.
-
-    """
-    return path and "/" not in path and path not in (".", "..")
+def get_uid(item):
+    """UID value of an item if defined."""
+    return hasattr(item, "uid") and item.uid.value
 
 
 def sanitize_path(path):
@@ -129,6 +126,15 @@ def sanitize_path(path):
         new_path = posixpath.join(new_path, part)
     trailing_slash = "" if new_path.endswith("/") else trailing_slash
     return new_path + trailing_slash
+
+
+def is_safe_path_component(path):
+    """Check if path is a single component of a path.
+
+    Check that the path is safe to join too.
+
+    """
+    return path and "/" not in path and path not in (".", "..")
 
 
 def is_safe_filesystem_path_component(path):
@@ -158,14 +164,13 @@ def path_to_filesystem(root, *paths):
             continue
         for part in path.split("/"):
             if not is_safe_filesystem_path_component(part):
-                raise ValueError(
-                    "Can't tranlate name safely to filesystem: %s" % part)
+                raise UnsafePathError(part)
             safe_path = os.path.join(safe_path, part)
     return safe_path
 
 
 def sync_directory(path):
-    """Sync directory to disk
+    """Sync directory to disk.
 
     This only works on POSIX and does nothing on other systems.
 
@@ -181,14 +186,38 @@ def sync_directory(path):
             os.close(fd)
 
 
+class UnsafePathError(ValueError):
+    def __init__(self, path):
+        message = "Can't translate name safely to filesystem: %s" % path
+        super().__init__(message)
+
+
+class ComponentExistsError(ValueError):
+    def __init__(self, path):
+        message = "Component already exists: %s" % path
+        super().__init__(message)
+
+
+class ComponentNotFoundError(ValueError):
+    def __init__(self, path):
+        message = "Component doesn't exist: %s" % path
+        super().__init__(message)
+
+
+class EtagMismatchError(ValueError):
+    def __init__(self, etag1, etag2):
+        message = "ETags don't match: %s != %s" % (etag1, etag2)
+        super().__init__(message)
+
+
 class _EncodedAtomicWriter(AtomicWriter):
     def __init__(self, path, encoding, mode="w", overwrite=True):
         self._encoding = encoding
         return super().__init__(path, mode, overwrite=True)
 
     def get_fileobject(self, **kwargs):
-        return super().get_fileobject(encoding=self._encoding,
-                                      prefix=".Radicale.tmp-", **kwargs)
+        return super().get_fileobject(
+            encoding=self._encoding, prefix=".Radicale.tmp-", **kwargs)
 
 
 class Item:
@@ -222,7 +251,7 @@ class BaseCollection:
         raise NotImplementedError
 
     @classmethod
-    def discover(cls, path, depth="1"):
+    def discover(cls, path, depth="0"):
         """Discover a list of collections under the given ``path``.
 
         If ``depth`` is "0", only the actual object under ``path`` is
@@ -248,8 +277,9 @@ class BaseCollection:
 
         ``props`` are metadata values for the collection.
 
-        ``props["tag"]`` is the type of collection (VCALENDAR or VADDRESSBOOK). If
-        the key ``tag`` is missing, it is guessed from the collection.
+        ``props["tag"]`` is the type of collection (VCALENDAR or
+        VADDRESSBOOK). If the key ``tag`` is missing, it is guessed from the
+        collection.
 
         """
         raise NotImplementedError
@@ -347,31 +377,25 @@ class Collection(BaseCollection):
     def __init__(self, path, principal=False, folder=None):
         if not folder:
             folder = self._get_collection_root_folder()
-        # path should already be sanitized
+        # Path should already be sanitized
         self.path = sanitize_path(path).strip("/")
-        self.storage_encoding = self.configuration.get("encoding", "stock")
+        self.encoding = self.configuration.get("encoding", "stock")
         self._filesystem_path = path_to_filesystem(folder, self.path)
         self._props_path = os.path.join(
             self._filesystem_path, ".Radicale.props")
         split_path = self.path.split("/")
-        if len(split_path) > 1:
-            # URL with at least one folder
-            self.owner = split_path[0]
-        else:
-            self.owner = None
+        self.owner = split_path[0] if len(split_path) > 1 else None
         self.is_principal = principal
 
     @classmethod
     def _get_collection_root_folder(cls):
         filesystem_folder = os.path.expanduser(
             cls.configuration.get("storage", "filesystem_folder"))
-        folder = os.path.join(filesystem_folder, "collection-root")
-        return folder
+        return os.path.join(filesystem_folder, "collection-root")
 
     @contextmanager
     def _atomic_write(self, path, mode="w"):
-        with _EncodedAtomicWriter(
-                path, self.storage_encoding, mode).open() as fd:
+        with _EncodedAtomicWriter(path, self.encoding, mode).open() as fd:
             yield fd
 
     def _find_available_file_name(self):
@@ -383,12 +407,12 @@ class Collection(BaseCollection):
         raise FileExistsError(errno.EEXIST, "No usable file name found")
 
     @classmethod
-    def discover(cls, path, depth="1"):
-        # path == None means wrong URL
+    def discover(cls, path, depth="0"):
         if path is None:
+            # Wrong URL
             return
 
-        # path should already be sanitized
+        # Path should already be sanitized
         sane_path = sanitize_path(path).strip("/")
         attributes = sane_path.split("/")
         if not attributes[0]:
@@ -401,24 +425,31 @@ class Collection(BaseCollection):
         except ValueError:
             # Path is unsafe
             return
-        href = None
+
         if not os.path.isdir(filesystem_path):
             if attributes and os.path.isfile(filesystem_path):
                 href = attributes.pop()
             else:
                 return
+        else:
+            href = None
 
         path = "/".join(attributes)
         principal = len(attributes) == 1
         collection = cls(path, principal)
+
         if href:
             yield collection.get(href)
             return
+
         yield collection
+
         if depth == "0":
             return
+
         for item in collection.list():
             yield collection.get(item[0])
+
         for href in os.listdir(filesystem_path):
             if not is_safe_filesystem_path_component(href):
                 cls.logger.debug("Skipping collection: %s", href)
@@ -432,7 +463,7 @@ class Collection(BaseCollection):
     def create_collection(cls, href, collection=None, props=None):
         folder = cls._get_collection_root_folder()
 
-        # path should already be sanitized
+        # Path should already be sanitized
         sane_path = sanitize_path(href).strip("/")
         attributes = sane_path.split("/")
         if not attributes[0]:
@@ -450,40 +481,37 @@ class Collection(BaseCollection):
 
         parent_dir = os.path.dirname(filesystem_path)
         os.makedirs(parent_dir, exist_ok=True)
-        with TemporaryDirectory(prefix=".Radicale.tmp-",
-                                dir=parent_dir) as tmp_dir:
+
+        # Create a temporary directory with an unsafe name
+        with TemporaryDirectory(
+                prefix=".Radicale.tmp-", dir=parent_dir) as tmp_dir:
             # The temporary directory itself can't be renamed
             tmp_filesystem_path = os.path.join(tmp_dir, "collection")
             os.makedirs(tmp_filesystem_path)
-            # path is unsafe
             self = cls("/", principal=principal, folder=tmp_filesystem_path)
             self.set_meta(props)
-            if props.get("tag") == "VCALENDAR":
-                if collection:
+
+            if collection:
+                if props.get("tag") == "VCALENDAR":
                     collection, = collection
                     items = []
                     for content in ("vevent", "vtodo", "vjournal"):
-                        items.extend(getattr(collection, "%s_list" % content,
-                                             []))
-
-                    def get_uid(item):
-                        return hasattr(item, "uid") and item.uid.value
-
-                    items_by_uid = groupby(
-                        sorted(items, key=get_uid), get_uid)
-
+                        items.extend(
+                            getattr(collection, "%s_list" % content, []))
+                    items_by_uid = groupby(sorted(items, key=get_uid), get_uid)
                     for uid, items in items_by_uid:
                         new_collection = vobject.iCalendar()
                         for item in items:
                             new_collection.add(item)
                         self.upload(
                             self._find_available_file_name(), new_collection)
-            elif props.get("tag") == "VCARD":
-                if collection:
+                elif props.get("tag") == "VCARD":
                     for card in collection:
                         self.upload(self._find_available_file_name(), card)
+
             os.rename(tmp_filesystem_path, filesystem_path)
             sync_directory(parent_dir)
+
         return cls(sane_path, principal=principal)
 
     def list(self):
@@ -498,7 +526,7 @@ class Collection(BaseCollection):
                 continue
             path = os.path.join(self._filesystem_path, href)
             if os.path.isfile(path):
-                with open(path, encoding=self.storage_encoding) as fd:
+                with open(path, encoding=self.encoding) as fd:
                     yield href, get_etag(fd.read())
 
     def get(self, href):
@@ -507,12 +535,12 @@ class Collection(BaseCollection):
         href = href.strip("{}").replace("/", "_")
         if not is_safe_filesystem_path_component(href):
             self.logger.debug(
-                "Can't tranlate name safely to filesystem: %s", href)
+                "Can't translate name safely to filesystem: %s", href)
             return None
         path = path_to_filesystem(self._filesystem_path, href)
         if not os.path.isfile(path):
             return None
-        with open(path, encoding=self.storage_encoding) as fd:
+        with open(path, encoding=self.encoding) as fd:
             text = fd.read()
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
@@ -525,11 +553,10 @@ class Collection(BaseCollection):
     def upload(self, href, vobject_item):
         # TODO: use returned object in code
         if not is_safe_filesystem_path_component(href):
-            raise ValueError(
-                "Can't tranlate name safely to filesystem: %s" % href)
+            raise UnsafePathError(href)
         path = path_to_filesystem(self._filesystem_path, href)
         if os.path.exists(path):
-            raise ValueError("Component already exists: %s" % href)
+            raise ComponentExistsError(href)
         item = Item(self, vobject_item, href)
         with self._atomic_write(path) as fd:
             fd.write(item.serialize())
@@ -539,16 +566,14 @@ class Collection(BaseCollection):
         # TODO: use etag in code and test it here
         # TODO: use returned object in code
         if not is_safe_filesystem_path_component(href):
-            raise ValueError(
-                "Can't tranlate name safely to filesystem: %s" % href)
+            raise UnsafePathError(href)
         path = path_to_filesystem(self._filesystem_path, href)
         if not os.path.isfile(path):
-            raise ValueError("Component doesn't exist: %s" % href)
-        with open(path, encoding=self.storage_encoding) as fd:
+            raise ComponentNotFoundError(href)
+        with open(path, encoding=self.encoding) as fd:
             text = fd.read()
         if etag and etag != get_etag(text):
-            raise ValueError(
-                "ETag doesn't match: %s != %s" % (etag, get_etag(text)))
+            raise EtagMismatchError(etag, get_etag(text))
         item = Item(self, vobject_item, href)
         with self._atomic_write(path) as fd:
             fd.write(item.serialize())
@@ -564,31 +589,28 @@ class Collection(BaseCollection):
         else:
             # Delete an item
             if not is_safe_filesystem_path_component(href):
-                raise ValueError(
-                    "Can't tranlate name safely to filesystem: %s" % href)
+                raise UnsafePathError(href)
             path = path_to_filesystem(self._filesystem_path, href)
             if not os.path.isfile(path):
-                raise ValueError("Component doesn't exist: %s" % href)
-            with open(path, encoding=self.storage_encoding) as fd:
+                raise ComponentNotFoundError(href)
+            with open(path, encoding=self.encoding) as fd:
                 text = fd.read()
             if etag and etag != get_etag(text):
-                raise ValueError(
-                    "ETag doesn't match: %s != %s" % (etag, get_etag(text)))
+                raise EtagMismatchError(etag, get_etag(text))
             os.remove(path)
 
     def get_meta(self, key):
         if os.path.exists(self._props_path):
-            with open(self._props_path, encoding=self.storage_encoding) as prop:
+            with open(self._props_path, encoding=self.encoding) as prop:
                 return json.load(prop).get(key)
 
     def set_meta(self, props):
         if os.path.exists(self._props_path):
-            with open(self._props_path, encoding=self.storage_encoding) as prop:
+            with open(self._props_path, encoding=self.encoding) as prop:
                 old_props = json.load(prop)
                 old_props.update(props)
                 props = old_props
-        # filter empty entries
-        props = {k:v for k,v in props.items() if v}
+        props = {key: value for key, value in props.items() if value}
         with self._atomic_write(self._props_path, "w+") as prop:
             json.dump(props, prop)
 
@@ -609,7 +631,7 @@ class Collection(BaseCollection):
                 continue
             path = os.path.join(self._filesystem_path, href)
             if os.path.isfile(path):
-                with open(path, encoding=self.storage_encoding) as fd:
+                with open(path, encoding=self.encoding) as fd:
                     items.append(vobject.readOne(fd.read()))
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
@@ -640,13 +662,11 @@ class Collection(BaseCollection):
             else:
                 return not cls._writer and cls._readers == 0
 
-        if mode not in ("r", "w"):
-            raise ValueError("Invalid lock mode: %s" % mode)
         # Use a primitive lock which only works within one process as a
         # precondition for inter-process file-based locking
         with cls._lock:
             if cls._waiters or not condition():
-                # use FIFO for access requests
+                # Use FIFO for access requests
                 waiter = threading.Condition(lock=cls._lock)
                 cls._waiters.append(waiter)
                 while True:
@@ -656,7 +676,7 @@ class Collection(BaseCollection):
                 cls._waiters.pop(0)
             if mode == "r":
                 cls._readers += 1
-                # notify additional potential readers
+                # Notify additional potential readers
                 if cls._waiters:
                     cls._waiters[0].notify()
             else:
@@ -668,7 +688,7 @@ class Collection(BaseCollection):
                     os.makedirs(folder, exist_ok=True)
                 lock_path = os.path.join(folder, ".Radicale.lock")
                 cls._lock_file = open(lock_path, "w+")
-                # set access rights to a necessary minimum to prevent locking
+                # Set access rights to a necessary minimum to prevent locking
                 # by arbitrary users
                 try:
                     os.chmod(lock_path, stat.S_IWUSR | stat.S_IRUSR)

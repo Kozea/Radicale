@@ -50,9 +50,8 @@ from . import auth, rights, storage, xmlutils
 
 VERSION = "2.0.0rc0"
 
-# Standard "not allowed" response that is returned when an authenticated user
-# tries to access information they don't have rights to
 NOT_ALLOWED = (client.FORBIDDEN, {}, None)
+DAV_HEADERS = "1, 2, 3, calendar-access, addressbook, extended-mkcol"
 
 
 class HTTPServer(wsgiref.simple_server.WSGIServer):
@@ -136,6 +135,7 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
 
 class Application:
     """WSGI application managing collections."""
+
     def __init__(self, configuration, logger):
         """Initialize application."""
         super().__init__()
@@ -149,15 +149,20 @@ class Application:
     def headers_log(self, environ):
         """Sanitize headers for logging."""
         request_environ = dict(environ)
+
         # Remove environment variables
         if not self.configuration.getboolean("logging", "full_environment"):
             for shell_variable in os.environ:
                 request_environ.pop(shell_variable, None)
-        # Mask credentials
-        if (self.configuration.getboolean("logging", "mask_passwords") and
-                request_environ.get("HTTP_AUTHORIZATION",
-                                    "").startswith("Basic")):
+
+        # Mask passwords
+        mask_passwords = self.configuration.getboolean(
+            "logging", "mask_passwords")
+        authorization = request_environ.get(
+            "HTTP_AUTHORIZATION", "").startswith("Basic")
+        if mask_passwords and authorization:
             request_environ["HTTP_AUTHORIZATION"] = "Basic **masked**"
+
         return request_environ
 
     def decode(self, text, environ):
@@ -215,6 +220,7 @@ class Application:
 
     def __call__(self, environ, start_response):
         """Manage a request."""
+
         def response(status, headers={}, answer=None):
             # Start response
             status = "%i %s" % (
@@ -224,6 +230,7 @@ class Application:
             # Return response content
             return [answer] if answer else []
 
+        self.logger.debug("\n")  # Add empty lines between requests in debug
         self.logger.info("%s request at %s received" % (
             environ["REQUEST_METHOD"], environ["PATH_INFO"]))
         headers = pprint.pformat(self.headers_log(environ))
@@ -246,7 +253,6 @@ class Application:
         environ["PATH_INFO"] = storage.sanitize_path(
             unquote(environ["PATH_INFO"]))
         self.logger.debug("Sanitized path: %s", environ["PATH_INFO"])
-
         path = environ["PATH_INFO"]
 
         # Get function corresponding to method
@@ -254,7 +260,6 @@ class Application:
 
         # Ask authentication backend to check rights
         authorization = environ.get("HTTP_AUTHORIZATION", None)
-
         if authorization and authorization.startswith("Basic"):
             authorization = authorization[len("Basic"):].strip()
             user, password = self.decode(base64.b64decode(
@@ -263,7 +268,7 @@ class Application:
             user = environ.get("REMOTE_USER")
             password = None
 
-        # If /.well-known is not available, clients query /
+        # If "/.well-known" is not available, clients query "/"
         if path == "/.well-known" or path.startswith("/.well-known/"):
             return response(client.NOT_FOUND, {})
 
@@ -281,7 +286,8 @@ class Application:
             if self.authorized(user, principal_path, "w"):
                 with self.Collection.acquire_lock("r"):
                     principal = next(
-                        self.Collection.discover(principal_path), None)
+                        self.Collection.discover(principal_path, depth="1"),
+                        None)
                 if not principal:
                     with self.Collection.acquire_lock("w"):
                         self.Collection.create_collection(principal_path)
@@ -336,6 +342,7 @@ class Application:
 
             headers["Content-Length"] = str(len(answer))
 
+        # Add extra headers set in configuration
         if self.configuration.has_section("headers"):
             for key in self.configuration.options("headers"):
                 headers[key] = self.configuration.get("headers", key)
@@ -343,12 +350,11 @@ class Application:
         return response(status, headers, answer)
 
     def _access(self, user, path, permission, item=None):
-        """Checks if ``user`` can access ``path`` or the parent collection
-           with ``permission``.
+        """Check if ``user`` can access ``path`` or the parent collection.
 
-           ``permission`` must either be "r" or "w".
+        ``permission`` must either be "r" or "w".
 
-           If ``item`` is given, only access to that class of item is checked.
+        If ``item`` is given, only access to that class of item is checked.
 
         """
         path = storage.sanitize_path(path)
@@ -380,7 +386,7 @@ class Application:
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
         with self._lock_collection("w", user):
-            item = next(self.Collection.discover(path, depth="0"), None)
+            item = next(self.Collection.discover(path), None)
             if not self._access(user, path, "w", item):
                 return NOT_ALLOWED
             if not item:
@@ -405,7 +411,7 @@ class Application:
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
         with self._lock_collection("r", user):
-            item = next(self.Collection.discover(path, depth="0"), None)
+            item = next(self.Collection.discover(path), None)
             if not self._access(user, path, "r", item):
                 return NOT_ALLOWED
             if not item:
@@ -414,8 +420,8 @@ class Application:
                 collection = item
             else:
                 collection = item.collection
-            content_type = storage.MIMETYPES.get(collection.get_meta("tag"),
-                                                 "text/plain")
+            content_type = xmlutils.MIMETYPES.get(
+                collection.get_meta("tag"), "text/plain")
             headers = {
                 "Content-Type": content_type,
                 "Last-Modified": collection.last_modified,
@@ -434,7 +440,7 @@ class Application:
             return NOT_ALLOWED
 
         with self._lock_collection("w", user):
-            item = next(self.Collection.discover(path, depth="0"), None)
+            item = next(self.Collection.discover(path), None)
             if item:
                 return client.CONFLICT, {}, None
             props = xmlutils.props_from_request(content)
@@ -449,7 +455,7 @@ class Application:
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
         with self._lock_collection("w", user):
-            item = next(self.Collection.discover(path, depth="0"), None)
+            item = next(self.Collection.discover(path), None)
             if item:
                 return client.CONFLICT, {}, None
             props = xmlutils.props_from_request(content)
@@ -464,27 +470,33 @@ class Application:
         if to_url.netloc != environ["HTTP_HOST"]:
             # Remote destination server, not supported
             return client.BAD_GATEWAY, {}, None
-        to_path = storage.sanitize_path(to_url.path)
-        if (not self._access(user, path, "w") or
-                not self._access(user, to_path, "w")):
+        if not self._access(user, path, "w"):
             return NOT_ALLOWED
+        to_path = storage.sanitize_path(to_url.path)
+        if not self._access(user, to_path, "w"):
+            return NOT_ALLOWED
+        if to_path.strip("/").startswith(path.strip("/")):
+            return client.CONFLICT, {}, None
+
         with self._lock_collection("w", user):
-            item = next(self.Collection.discover(path, depth="0"), None)
-            if (not self._access(user, path, "w", item) or
-                    not self._access(user, to_path, "w", item)):
+            item = next(self.Collection.discover(path), None)
+            if not self._access(user, path, "w", item):
+                return NOT_ALLOWED
+            if not self._access(user, to_path, "w", item):
                 return NOT_ALLOWED
             if not item:
                 return client.GONE, {}, None
-            to_item = next(self.Collection.discover(to_path, depth="0"), None)
+            if isinstance(item, self.Collection):
+                return client.CONFLICT, {}, None
+
+            to_item = next(self.Collection.discover(to_path), None)
             to_parent_path = storage.sanitize_path(
                 "/%s/" % posixpath.dirname(to_path.strip("/")))
-            to_href = posixpath.basename(to_path.strip("/"))
-            to_collection = next(self.Collection.discover(
-                to_parent_path, depth="0"), None)
-            print(path, isinstance(item, self.Collection))
-            if (isinstance(item, self.Collection) or not to_collection or
-                    to_item or to_path.strip("/").startswith(path.strip("/"))):
+            to_collection = next(
+                self.Collection.discover(to_parent_path), None)
+            if not to_collection or to_item:
                 return client.CONFLICT, {}, None
+            to_href = posixpath.basename(to_path.strip("/"))
             to_collection.upload(to_href, item.item)
             item.collection.delete(item.href)
             return client.CREATED, {}, None
@@ -492,22 +504,20 @@ class Application:
     def do_OPTIONS(self, environ, path, content, user):
         """Manage OPTIONS request."""
         headers = {
-            "Allow": ("DELETE, HEAD, GET, MKCALENDAR, MKCOL, MOVE, "
-                      "OPTIONS, PROPFIND, PROPPATCH, PUT, REPORT"),
-            "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol"}
+            "Allow": ", ".join(
+                name[3:] for name in dir(self) if name.startswith("do_")),
+            "DAV": DAV_HEADERS}
         return client.OK, headers, None
 
     def do_PROPFIND(self, environ, path, content, user):
         """Manage PROPFIND request."""
         with self._lock_collection("r", user):
-            items = self.Collection.discover(path,
-                                             environ.get("HTTP_DEPTH", "0"))
+            items = self.Collection.discover(
+                path, environ.get("HTTP_DEPTH", "0"))
             read_items, write_items = self.collect_allowed_items(items, user)
             if not read_items and not write_items:
                 return (client.NOT_FOUND, {}, None) if user else NOT_ALLOWED
-            headers = {
-                "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
-                "Content-Type": "text/xml"}
+            headers = {"DAV": DAV_HEADERS, "Content-Type": "text/xml"}
             answer = xmlutils.propfind(
                 path, content, read_items, write_items, user)
             return client.MULTI_STATUS, headers, answer
@@ -517,13 +527,11 @@ class Application:
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
         with self._lock_collection("w", user):
-            item = next(self.Collection.discover(path, depth="0"), None)
+            item = next(self.Collection.discover(path), None)
             if not isinstance(item, self.Collection):
                 return client.CONFLICT, {}, None
+            headers = {"DAV": DAV_HEADERS, "Content-Type": "text/xml"}
             answer = xmlutils.proppatch(path, content, item)
-            headers = {
-                "DAV": "1, 2, 3, calendar-access, addressbook, extended-mkcol",
-                "Content-Type": "text/xml"}
             return client.MULTI_STATUS, headers, answer
 
     def do_PUT(self, environ, path, content, user):
@@ -534,33 +542,39 @@ class Application:
         with self._lock_collection("w", user):
             parent_path = storage.sanitize_path(
                 "/%s/" % posixpath.dirname(path.strip("/")))
-            item = next(self.Collection.discover(path, depth="0"), None)
-            parent_item = next(self.Collection.discover(
-                parent_path, depth="0"), None)
+            item = next(self.Collection.discover(path), None)
+            parent_item = next(self.Collection.discover(parent_path), None)
+
             write_whole_collection = (
                 isinstance(item, self.Collection) or
-                not parent_item or
-                not next(parent_item.list(), None) and
-                parent_item.get_meta("tag") not in (
-                    "VADDRESSBOOK", "VCALENDAR"))
-            if (write_whole_collection and
-                    not self.authorized(user, path, "w") or
-                    not write_whole_collection and
-                    not self.authorized(user, parent_path, "w")):
+                not parent_item or (
+                    not next(parent_item.list(), None) and
+                    parent_item.get_meta("tag") not in (
+                        "VADDRESSBOOK", "VCALENDAR")))
+            if write_whole_collection:
+                if not self.authorized(user, path, "w"):
+                    return NOT_ALLOWED
+            elif not self.authorized(user, parent_path, "w"):
                 return NOT_ALLOWED
-            etag = environ.get("HTTP_IF_MATCH", "")
-            match = environ.get("HTTP_IF_NONE_MATCH", "") == "*"
 
-            if ((not item and etag) or (item and etag and item.etag != etag) or
-                    (item and match)):
+            etag = environ.get("HTTP_IF_MATCH", "")
+            if not item and etag:
+                # Etag asked but no item found: item has been removed
+                return client.PRECONDITION_FAILED, {}, None
+            if item and etag and item.etag != etag:
+                # Etag asked but item not matching: item has changed
+                return client.PRECONDITION_FAILED, {}, None
+
+            match = environ.get("HTTP_IF_NONE_MATCH", "") == "*"
+            if item and match:
+                # Creation asked but item found: item can't be replaced
                 return client.PRECONDITION_FAILED, {}, None
 
             items = list(vobject.readComponents(content or ""))
-            content_type = environ.get("CONTENT_TYPE")
-            tag = None
-            if content_type:
-                tags = {value: key for key, value in storage.MIMETYPES.items()}
-                tag = tags.get(content_type.split(";")[0])
+            content_type = environ.get("CONTENT_TYPE", "").split(";")[0]
+            tags = {value: key for key, value in xmlutils.MIMETYPES.items()}
+            tag = tags.get(content_type)
+
             if write_whole_collection:
                 if item:
                     # Delete old collection
@@ -582,7 +596,7 @@ class Application:
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
         with self._lock_collection("r", user):
-            item = next(self.Collection.discover(path, depth="0"), None)
+            item = next(self.Collection.discover(path), None)
             if not self._access(user, path, "w", item):
                 return NOT_ALLOWED
             if not item:

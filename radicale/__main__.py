@@ -167,14 +167,13 @@ def serve(configuration, logger):
             try:
                 open(filename, "r").close()
             except IOError as exception:
-                logger.warning(
-                    "Error while reading SSL %s %r: %s" % (
-                        name, filename, exception))
+                logger.warning("Error while reading SSL %s %r: %s" % (
+                    name, filename, exception))
     else:
         server_class = ThreadedHTTPServer
     server_class.client_timeout = configuration.getint("server", "timeout")
-    server_class.max_connections = configuration.getint("server",
-                                                        "max_connections")
+    server_class.max_connections = configuration.getint(
+        "server", "max_connections")
 
     if not configuration.getboolean("server", "dns_lookup"):
         RequestHandler.address_string = lambda self: self.client_address[0]

@@ -30,11 +30,13 @@ import re
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
+from http import client
 from urllib.parse import unquote, urlparse
 
-import vobject
 
-from . import client, storage
+MIMETYPES = {
+    "VADDRESSBOOK": "text/vcard",
+    "VCALENDAR": "text/calendar"}
 
 NAMESPACES = {
     "C": "urn:ietf:params:xml:ns:caldav",
@@ -44,21 +46,12 @@ NAMESPACES = {
     "ICAL": "http://apple.com/ns/ical/",
     "ME": "http://me.com/_namespace/"}
 
-
 NAMESPACES_REV = {}
-
-
 for short, url in NAMESPACES.items():
     NAMESPACES_REV[url] = short
     ET.register_namespace("" if short == "D" else short, url)
 
-
-CLARK_TAG_REGEX = re.compile(r"""
-    {                        # {
-    (?P<namespace>[^}]*)     # namespace URL
-    }                        # }
-    (?P<tag>.*)              # short tag name
-    """, re.VERBOSE)
+CLARK_TAG_REGEX = re.compile(r" {(?P<namespace>[^}]*)}(?P<tag>.*)", re.VERBOSE)
 
 
 def _pretty_xml(element, level=0):
@@ -430,7 +423,7 @@ def name_from_path(path, collection):
     collection_parts = collection_path.split("/") if collection_path else []
     path = path.strip("/")
     path_parts = path.split("/") if path else []
-    if (len(path_parts) - len(collection_parts)):
+    if len(path_parts) - len(collection_parts):
         return path_parts[-1]
 
 
@@ -479,7 +472,7 @@ def delete(path, collection, href=None):
 
     """
     collection.delete(href)
-    # Writing answer
+
     multistatus = ET.Element(_tag("D", "multistatus"))
     response = ET.Element(_tag("D", "response"))
     multistatus.append(response)
@@ -504,22 +497,20 @@ def propfind(path, xml_request, read_collections, write_collections, user):
     in the output.
 
     """
-    # Reading request
     if xml_request:
         root = ET.fromstring(xml_request.encode("utf8"))
         props = [prop.tag for prop in root.find(_tag("D", "prop"))]
     else:
-        props = [_tag("D", "getcontenttype"),
-                 _tag("D", "resourcetype"),
-                 _tag("D", "displayname"),
-                 _tag("D", "owner"),
-                 _tag("D", "getetag"),
-                 _tag("ICAL", "calendar-color"),
-                 _tag("CS", "getctag")]
+        props = [
+            _tag("D", "getcontenttype"),
+            _tag("D", "resourcetype"),
+            _tag("D", "displayname"),
+            _tag("D", "owner"),
+            _tag("D", "getetag"),
+            _tag("ICAL", "calendar-color"),
+            _tag("CS", "getctag")]
 
-    # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
-
     collections = []
     for collection in write_collections:
         collections.append(collection)
@@ -603,10 +594,11 @@ def _propfind_response(path, item, props, user, write=False):
                     element.append(comp)
             else:
                 is404 = True
-        elif tag in (_tag("D", "current-user-principal"),
-                     _tag("C", "calendar-user-address-set"),
-                     _tag("CR", "addressbook-home-set"),
-                     _tag("C", "calendar-home-set")):
+        elif tag in (
+                _tag("D", "current-user-principal"),
+                _tag("C", "calendar-user-address-set"),
+                _tag("CR", "addressbook-home-set"),
+                _tag("C", "calendar-home-set")):
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href(collection, ("/%s/" % user) if user else "/")
             element.append(tag)
@@ -632,7 +624,7 @@ def _propfind_response(path, item, props, user, write=False):
             if tag == _tag("D", "getcontenttype"):
                 item_tag = item.get_meta("tag")
                 if item_tag:
-                    element.text = storage.MIMETYPES[item_tag]
+                    element.text = MIMETYPES[item_tag]
                 else:
                     is404 = True
             elif tag == _tag("D", "resourcetype"):
@@ -717,10 +709,7 @@ def _add_propstat_to(element, tag, status_number):
     prop = ET.Element(_tag("D", "prop"))
     propstat.append(prop)
 
-    if "{" in tag:
-        clark_tag = tag
-    else:
-        clark_tag = _tag(*tag.split(":", 1))
+    clark_tag = tag if "{" in tag else _tag(*tag.split(":", 1))
     prop_tag = ET.Element(clark_tag)
     prop.append(prop_tag)
 
@@ -735,14 +724,11 @@ def proppatch(path, xml_request, collection):
     Read rfc4918-9.2 for info.
 
     """
-    # Reading request
     root = ET.fromstring(xml_request.encode("utf8"))
     props_to_set = props_from_request(root, actions=("set",))
     props_to_remove = props_from_request(root, actions=("remove",))
 
-    # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
-
     response = ET.Element(_tag("D", "response"))
     multistatus.append(response)
 
@@ -750,11 +736,8 @@ def proppatch(path, xml_request, collection):
     href.text = _href(collection, path)
     response.append(href)
 
-    # Merge props_to_set and props_to_remove
     for short_name in props_to_remove:
         props_to_set[short_name] = ""
-
-    # Set/Delete props in one atomic operation
     collection.set_meta(props_to_set)
 
     for short_name in props_to_set:
@@ -769,17 +752,16 @@ def report(path, xml_request, collection):
     Read rfc3253-3.6 for info.
 
     """
-    # Reading request
     root = ET.fromstring(xml_request.encode("utf8"))
-
     prop_element = root.find(_tag("D", "prop"))
     props = (
         [prop.tag for prop in prop_element]
         if prop_element is not None else [])
 
     if collection:
-        if root.tag in (_tag("C", "calendar-multiget"),
-                        _tag("CR", "addressbook-multiget")):
+        if root.tag in (
+                _tag("C", "calendar-multiget"),
+                _tag("CR", "addressbook-multiget")):
             # Read rfc4791-7.9 for info
             base_prefix = collection.configuration.get("server", "base_prefix")
             hreferences = set()
@@ -795,24 +777,19 @@ def report(path, xml_request, collection):
     else:
         hreferences = filters = ()
 
-    # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
     for hreference in hreferences:
-        # Check if the reference is an item or a collection
         name = name_from_path(hreference, collection)
-
         if name:
             # Reference is an item
             path = "/".join(hreference.split("/")[:-1]) + "/"
             item = collection.get(name)
             if item is None:
-                multistatus.append(
-                    _item_response(hreference, found_item=False))
+                response = _item_response(hreference, found_item=False)
+                multistatus.append(response)
                 continue
-
             items = [item]
-
         else:
             # Reference is a collection
             path = hreference
@@ -840,8 +817,9 @@ def report(path, xml_request, collection):
                         "text/vcard" if name == "vcard" else "text/calendar")
                     element.text = "%s; component=%s" % (mimetype, name)
                     found_props.append(element)
-                elif tag in (_tag("C", "calendar-data"),
-                             _tag("CR", "address-data")):
+                elif tag in (
+                        _tag("C", "calendar-data"),
+                        _tag("CR", "address-data")):
                     element.text = item.serialize()
                     found_props.append(element)
                 else:
@@ -869,27 +847,17 @@ def _item_response(href, found_props=(), not_found_props=(), found_item=True):
     response.append(href_tag)
 
     if found_item:
-        if found_props:
-            propstat = ET.Element(_tag("D", "propstat"))
-            status = ET.Element(_tag("D", "status"))
-            status.text = _response(200)
-            prop = ET.Element(_tag("D", "prop"))
-            for p in found_props:
-                prop.append(p)
-            propstat.append(prop)
-            propstat.append(status)
-            response.append(propstat)
-
-        if not_found_props:
-            propstat = ET.Element(_tag("D", "propstat"))
-            status = ET.Element(_tag("D", "status"))
-            status.text = _response(404)
-            prop = ET.Element(_tag("D", "prop"))
-            for p in not_found_props:
-                prop.append(p)
-            propstat.append(prop)
-            propstat.append(status)
-            response.append(propstat)
+        for code, props in ((200, found_props), (404, not_found_props)):
+            if props:
+                propstat = ET.Element(_tag("D", "propstat"))
+                status = ET.Element(_tag("D", "status"))
+                status.text = _response(code)
+                prop_tag = ET.Element(_tag("D", "prop"))
+                for prop in props:
+                    prop_tag.append(prop)
+                propstat.append(prop_tag)
+                propstat.append(status)
+                response.append(propstat)
     else:
         status = ET.Element(_tag("D", "status"))
         status.text = _response(404)

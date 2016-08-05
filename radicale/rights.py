@@ -111,7 +111,7 @@ class Rights(BaseRights):
         user = user or ""
         if user and not storage.is_safe_path_component(user):
             # Prevent usernames like "user/calendar.ics"
-            raise ValueError("Unsafe username")
+            raise ValueError("Refused unsafe username: %s", user)
         sane_path = storage.sanitize_path(path).strip("/")
         # Prevent "regex injection"
         user_escaped = re.escape(user)
