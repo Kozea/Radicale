@@ -433,7 +433,6 @@ class Collection(BaseCollection):
         if not attributes[0]:
             attributes.pop()
 
-        # Try to guess if the path leads to a collection or an item
         folder = cls._get_collection_root_folder()
         # Create the root collection
         cls._makedirs_synced(folder, exist_ok=True)
@@ -443,6 +442,7 @@ class Collection(BaseCollection):
             # Path is unsafe
             return
 
+        # Check if the path exists and if it leads to a collection or an item
         if not os.path.isdir(filesystem_path):
             if attributes and os.path.isfile(filesystem_path):
                 href = attributes.pop()
