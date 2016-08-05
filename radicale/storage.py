@@ -262,6 +262,8 @@ class BaseCollection:
 
         The ``path`` is relative.
 
+        The root collection "/" must always exist.
+
         """
         raise NotImplementedError
 
@@ -433,6 +435,8 @@ class Collection(BaseCollection):
 
         # Try to guess if the path leads to a collection or an item
         folder = cls._get_collection_root_folder()
+        # Create the root collection
+        cls._makedirs_synced(folder, exist_ok=True)
         try:
             filesystem_path = path_to_filesystem(folder, sane_path)
         except ValueError:
