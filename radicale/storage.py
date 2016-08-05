@@ -551,7 +551,6 @@ class Collection(BaseCollection):
         return self.get(href) is not None
 
     def upload(self, href, vobject_item):
-        # TODO: use returned object in code
         if not is_safe_filesystem_path_component(href):
             raise UnsafePathError(href)
         path = path_to_filesystem(self._filesystem_path, href)
@@ -563,8 +562,6 @@ class Collection(BaseCollection):
         return item
 
     def update(self, href, vobject_item, etag=None):
-        # TODO: use etag in code and test it here
-        # TODO: use returned object in code
         if not is_safe_filesystem_path_component(href):
             raise UnsafePathError(href)
         path = path_to_filesystem(self._filesystem_path, href)
@@ -580,8 +577,6 @@ class Collection(BaseCollection):
         return item
 
     def delete(self, href=None, etag=None):
-        # TODO: use etag in code and test it here
-        # TODO: use returned object in code
         if href is None:
             # Delete the collection
             if os.path.isdir(self._filesystem_path):
