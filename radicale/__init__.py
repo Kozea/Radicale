@@ -579,7 +579,8 @@ class Application:
                 if item:
                     # Delete old collection
                     item.delete()
-                new_item = self.Collection.create_collection(path, items, tag)
+                new_item = self.Collection.create_collection(
+                    path, items, {"tag": tag})
             else:
                 if tag:
                     parent_item.set_meta({"tag": tag})
