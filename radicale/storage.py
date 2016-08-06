@@ -534,6 +534,15 @@ class Collection(BaseCollection):
 
         return cls(sane_path, principal=principal)
 
+    @classmethod
+    def move(cls, item, to_collection, to_href):
+        os.rename(
+            path_to_filesystem(item.collection._filesystem_path, item.href),
+            path_to_filesystem(to_collection._filesystem_path, to_href))
+        sync_directory(to_collection._filesystem_path)
+        if item.collection._filesystem_path != to_collection._filesystem_path:
+            sync_directory(item.collection._filesystem_path)
+
     def list(self):
         try:
             hrefs = os.listdir(self._filesystem_path)
