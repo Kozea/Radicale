@@ -473,8 +473,6 @@ class Application:
         to_path = storage.sanitize_path(to_url.path)
         if not self._access(user, to_path, "w"):
             return NOT_ALLOWED
-        if to_path.strip("/").startswith(path.strip("/")):
-            return client.CONFLICT, {}, None
 
         with self._lock_collection("w", user):
             item = next(self.Collection.discover(path), None)
