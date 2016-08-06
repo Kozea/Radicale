@@ -496,12 +496,7 @@ class Application:
             if not to_collection:
                 return client.CONFLICT, {}, None
             to_href = posixpath.basename(to_path.strip("/"))
-            if path.strip("/") != to_path.strip("/"):
-                if to_item:
-                    to_collection.update(to_href, item.item)
-                else:
-                    to_collection.upload(to_href, item.item)
-                item.collection.delete(item.href)
+            self.Collection.move(item, to_collection, to_href)
             return client.CREATED, {}, None
 
     def do_OPTIONS(self, environ, path, content, user):

@@ -265,6 +265,26 @@ class BaseCollection:
         """
         raise NotImplementedError
 
+    @classmethod
+    def move(cls, item, to_collection, to_href):
+        """Move an object.
+
+        ``item`` is the item to move.
+
+        ``to_collection`` is the target collection.
+
+        ``to_href`` is the target name in ``to_collection``. An item with the
+        same name might already exist.
+
+        """
+        if item.collection.path == to_collection.path and item.href == to_href:
+            return
+        if to_collection.has(to_href):
+            to_collection.update(to_href, item.item)
+        else:
+            to_collection.upload(to_href, item.item)
+        item.collection.delete(item.href)
+
     @property
     def etag(self):
         return get_etag(self.serialize())
