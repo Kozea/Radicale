@@ -163,6 +163,31 @@ class BaseRequests:
         assert status == 200
         assert "DAV" in headers
 
+    def test_delete_collection(self):
+        """Delete a collection."""
+        self.request("MKCOL", "/calendar.ics/")
+        event = get_file_content("event1.ics")
+        self.request("PUT", "/calendar.ics/event1.ics", event)
+        status, headers, answer = self.request("DELETE", "/calendar.ics/")
+        assert status == 200
+        assert "href>/calendar.ics/</" in answer
+        status, headers, answer = self.request("GET", "/calendar.ics/")
+        assert status == 404
+
+    def test_delete_root_collection(self):
+        """Delete the root collection."""
+        self.request("MKCOL", "/calendar.ics/")
+        event = get_file_content("event1.ics")
+        self.request("PUT", "/event1.ics", event)
+        self.request("PUT", "/calendar.ics/event1.ics", event)
+        status, headers, answer = self.request("DELETE", "/")
+        assert status == 200
+        assert "href>/</" in answer
+        status, headers, answer = self.request("GET", "/calendar.ics/")
+        assert status == 404
+        status, headers, answer = self.request("GET", "/event1.ics")
+        assert status == 404
+
     def test_multiple_events_with_same_uid(self):
         """Add two events with the same UID."""
         self.request("MKCOL", "/calendar.ics/")
