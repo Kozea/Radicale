@@ -29,7 +29,6 @@ import errno
 import json
 import os
 import posixpath
-import shutil
 import stat
 import threading
 import time
