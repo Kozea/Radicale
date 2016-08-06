@@ -486,15 +486,22 @@ class Application:
                 return client.CONFLICT, {}, None
 
             to_item = next(self.Collection.discover(to_path), None)
+            if (isinstance(to_item, self.Collection) or
+                    to_item and environ.get("HTTP_OVERWRITE", "F") != "T"):
+                return client.CONFLICT, {}, None
             to_parent_path = storage.sanitize_path(
                 "/%s/" % posixpath.dirname(to_path.strip("/")))
             to_collection = next(
                 self.Collection.discover(to_parent_path), None)
-            if not to_collection or to_item:
+            if not to_collection:
                 return client.CONFLICT, {}, None
             to_href = posixpath.basename(to_path.strip("/"))
-            to_collection.upload(to_href, item.item)
-            item.collection.delete(item.href)
+            if path.strip("/") != to_path.strip("/"):
+                if to_item:
+                    to_collection.update(to_href, item.item)
+                else:
+                    to_collection.upload(to_href, item.item)
+                item.collection.delete(item.href)
             return client.CREATED, {}, None
 
     def do_OPTIONS(self, environ, path, content, user):
