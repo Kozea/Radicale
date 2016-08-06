@@ -473,8 +473,6 @@ class Application:
         to_path = storage.sanitize_path(to_url.path)
         if not self._access(user, to_path, "w"):
             return NOT_ALLOWED
-        if to_path.strip("/").startswith(path.strip("/")):
-            return client.CONFLICT, {}, None
 
         with self._lock_collection("w", user):
             item = next(self.Collection.discover(path), None)
@@ -488,15 +486,17 @@ class Application:
                 return client.CONFLICT, {}, None
 
             to_item = next(self.Collection.discover(to_path), None)
+            if (isinstance(to_item, self.Collection) or
+                    to_item and environ.get("HTTP_OVERWRITE", "F") != "T"):
+                return client.CONFLICT, {}, None
             to_parent_path = storage.sanitize_path(
                 "/%s/" % posixpath.dirname(to_path.strip("/")))
             to_collection = next(
                 self.Collection.discover(to_parent_path), None)
-            if not to_collection or to_item:
+            if not to_collection:
                 return client.CONFLICT, {}, None
             to_href = posixpath.basename(to_path.strip("/"))
-            to_collection.upload(to_href, item.item)
-            item.collection.delete(item.href)
+            self.Collection.move(item, to_collection, to_href)
             return client.CREATED, {}, None
 
     def do_OPTIONS(self, environ, path, content, user):

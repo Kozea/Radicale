@@ -265,6 +265,26 @@ class BaseCollection:
         """
         raise NotImplementedError
 
+    @classmethod
+    def move(cls, item, to_collection, to_href):
+        """Move an object.
+
+        ``item`` is the item to move.
+
+        ``to_collection`` is the target collection.
+
+        ``to_href`` is the target name in ``to_collection``. An item with the
+        same name might already exist.
+
+        """
+        if item.collection.path == to_collection.path and item.href == to_href:
+            return
+        if to_collection.has(to_href):
+            to_collection.update(to_href, item.item)
+        else:
+            to_collection.upload(to_href, item.item)
+        item.collection.delete(item.href)
+
     @property
     def etag(self):
         return get_etag(self.serialize())
@@ -513,6 +533,15 @@ class Collection(BaseCollection):
             sync_directory(parent_dir)
 
         return cls(sane_path, principal=principal)
+
+    @classmethod
+    def move(cls, item, to_collection, to_href):
+        os.rename(
+            path_to_filesystem(item.collection._filesystem_path, item.href),
+            path_to_filesystem(to_collection._filesystem_path, to_href))
+        sync_directory(to_collection._filesystem_path)
+        if item.collection._filesystem_path != to_collection._filesystem_path:
+            sync_directory(item.collection._filesystem_path)
 
     def list(self):
         try:
