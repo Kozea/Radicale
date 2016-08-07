@@ -20,6 +20,7 @@ Radicale tests with simple requests.
 """
 
 import logging
+import posixpath
 import shutil
 import tempfile
 
@@ -187,6 +188,21 @@ class BaseRequests:
         assert status == 404
         status, headers, answer = self.request("GET", "/event1.ics")
         assert status == 404
+
+    def test_propfind(self):
+        calendar_path = "/calendar.ics/"
+        self.request("MKCALENDAR", calendar_path)
+        event = get_file_content("event1.ics")
+        event_path = posixpath.join(calendar_path, "event.ics")
+        self.request("PUT", event_path, event)
+        status, headers, answer = self.request("PROPFIND", "/", HTTP_DEPTH="1")
+        assert status == 207
+        assert "href>/</" in answer
+        assert "href>%s</" % calendar_path in answer
+        status, headers, answer = self.request("PROPFIND", calendar_path, HTTP_DEPTH="1")
+        assert status == 207
+        assert "href>%s</" % calendar_path in answer
+        assert "href>%s</" % event_path in answer
 
     def test_multiple_events_with_same_uid(self):
         """Add two events with the same UID."""
