@@ -284,12 +284,12 @@ class Application:
         if user and is_authenticated:
             principal_path = "/%s/" % user
             if self.authorized(user, principal_path, "w"):
-                with self.Collection.acquire_lock("r"):
+                with self._lock_collection("r", user):
                     principal = next(
                         self.Collection.discover(principal_path, depth="1"),
                         None)
                 if not principal:
-                    with self.Collection.acquire_lock("w"):
+                    with self._lock_collection("w", user):
                         self.Collection.create_collection(principal_path)
 
         # Get content
