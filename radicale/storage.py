@@ -497,8 +497,9 @@ class Collection(BaseCollection):
                 continue
             child_filesystem_path = path_to_filesystem(filesystem_path, href)
             if os.path.isdir(child_filesystem_path):
+                child_path = posixpath.join(path, href)
                 child_principal = len(attributes) == 0
-                yield cls(child_filesystem_path, child_principal)
+                yield cls(child_path, child_principal)
 
     @classmethod
     def create_collection(cls, href, collection=None, props=None):
