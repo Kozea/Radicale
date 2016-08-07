@@ -541,7 +541,8 @@ def _propfind_response(path, item, props, user, write=False):
 
     href = ET.Element(_tag("D", "href"))
     if is_collection:
-        uri = item.path
+        # Some clients expect collections to end with /
+        uri = item.path + "/"
     else:
         # TODO: fix this
         if path.split("/")[-1] == item.href:
