@@ -392,8 +392,9 @@ class Collection(BaseCollection):
 
     @contextmanager
     def _atomic_write(self, path, mode="w"):
+        directory = os.path.dirname(path)
         tmp = NamedTemporaryFile(
-            mode=mode, dir=os.path.dirname(path), encoding=self.encoding,
+            mode=mode, dir=directory, encoding=self.encoding,
             delete=False, prefix=".Radicale.tmp-")
         try:
             yield tmp
@@ -408,7 +409,7 @@ class Collection(BaseCollection):
             tmp.close()
             os.remove(tmp.name)
             raise
-        self._sync_directory(dir)
+        self._sync_directory(directory)
 
     def _find_available_file_name(self):
         # Prevent infinite loop
