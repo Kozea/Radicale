@@ -119,6 +119,21 @@ class BaseRequests:
         assert "DTSTART;TZID=Europe/Paris:20140901T180000" in answer
         assert "DTEND;TZID=Europe/Paris:20140901T210000" in answer
 
+    def test_put_whole_collection(self):
+        """Create and overwrite a whole collection."""
+        event = get_file_content("event1.ics")
+        status, headers, answer = self.request("PUT", "/calendar.ics/", event)
+        assert status == 201
+        status, headers, answer = self.request(
+            "PUT", "/calendar.ics/event1.ics", event)
+        assert status == 201
+        # Overwrite
+        status, headers, answer = self.request("PUT", "/calendar.ics/", event)
+        assert status == 201
+        status, headers, answer = self.request(
+            "GET", "/calendar.ics/event1.ics")
+        assert status == 404
+
     def test_delete(self):
         """Delete an event."""
         self.request("MKCOL", "/calendar.ics/")
