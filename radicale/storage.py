@@ -37,9 +37,8 @@ from hashlib import md5
 from importlib import import_module
 from itertools import groupby
 from random import getrandbits
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, NamedTemporaryFile
 
-from atomicwrites import AtomicWriter
 import vobject
 
 
@@ -190,16 +189,6 @@ class EtagMismatchError(ValueError):
     def __init__(self, etag1, etag2):
         message = "ETags don't match: %s != %s" % (etag1, etag2)
         super().__init__(message)
-
-
-class _EncodedAtomicWriter(AtomicWriter):
-    def __init__(self, path, encoding, mode="w", overwrite=True):
-        self._encoding = encoding
-        return super().__init__(path, mode, overwrite=True)
-
-    def get_fileobject(self, **kwargs):
-        return super().get_fileobject(
-            encoding=self._encoding, prefix=".Radicale.tmp-", **kwargs)
 
 
 class Item:
@@ -399,8 +388,22 @@ class Collection(BaseCollection):
 
     @contextmanager
     def _atomic_write(self, path, mode="w"):
-        with _EncodedAtomicWriter(path, self.encoding, mode).open() as fd:
-            yield fd
+        dir = os.path.dirname(path)
+        tmp = NamedTemporaryFile(mode=mode, dir=dir, encoding=self.encoding,
+                                 delete=False, prefix=".Radicale.tmp-")
+        try:
+            yield tmp
+            if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
+                fcntl.fcntl(tmp.fileno(), fcntl.F_FULLFSYNC)
+            else:
+                os.fsync(tmp.fileno())
+            tmp.close()
+            os.rename(tmp.name, path)
+        except:
+            tmp.close()
+            os.remove(tmp.name)
+            raise
+        self._sync_directory(dir)
 
     def _find_available_file_name(self):
         # Prevent infinite loop
