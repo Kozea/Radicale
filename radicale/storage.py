@@ -398,9 +398,8 @@ class BaseCollection:
 class Collection(BaseCollection):
     """Collection stored in several files per calendar."""
 
-    def __init__(self, path, principal=False, folder=None):
-        if not folder:
-            folder = self._get_collection_root_folder()
+    def __init__(self, path, principal=False):
+        folder = self._get_collection_root_folder()
         # Path should already be sanitized
         self.path = sanitize_path(path).strip("/")
         self.encoding = self.configuration.get("encoding", "stock")
@@ -568,7 +567,12 @@ class Collection(BaseCollection):
             # The temporary directory itself can't be renamed
             tmp_filesystem_path = os.path.join(tmp_dir, "collection")
             os.makedirs(tmp_filesystem_path)
-            self = cls("/", principal=principal, folder=tmp_filesystem_path)
+            class ClsTmpCollectionRootFolder(cls):
+                @staticmethod
+                def _get_collection_root_folder():
+                    return tmp_filesystem_path
+
+            self = ClsTmpCollectionRootFolder("/", principal=principal)
             self.set_meta(props)
 
             if collection:
