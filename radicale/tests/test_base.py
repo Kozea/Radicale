@@ -726,6 +726,8 @@ class TestMultiFileSystem(BaseRequests, BaseTest):
         super().setup()
         self.colpath = tempfile.mkdtemp()
         self.configuration.set("storage", "filesystem_folder", self.colpath)
+        # Disable syncing to disk for better performance
+        self.configuration.set("storage", "fsync", "False")
         self.application = Application(self.configuration, self.logger)
 
     def teardown(self):
@@ -740,6 +742,8 @@ class TestCustomStorageSystem(BaseRequests, BaseTest):
         super().setup()
         self.colpath = tempfile.mkdtemp()
         self.configuration.set("storage", "filesystem_folder", self.colpath)
+        # Disable syncing to disk for better performance
+        self.configuration.set("storage", "fsync", "False")
         self.application = Application(self.configuration, self.logger)
 
     def teardown(self):

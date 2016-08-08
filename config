@@ -103,6 +103,11 @@
 # Folder for storing local collections, created if not present
 #filesystem_folder = ~/.config/radicale/collections
 
+# Sync all changes to disk during requests. (This can impair performance.)
+# Disabling it increases the risk of data loss, when the system crashes or
+# power fails!
+#fsync = True
+
 # Command that is run after changes to storage
 #hook =
 # Example: git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
