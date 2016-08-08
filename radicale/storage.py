@@ -294,6 +294,10 @@ class BaseCollection:
     def create_collection(cls, href, collection=None, props=None):
         """Create a collection.
 
+        If the collection already exists and neither ``collection`` nor
+        ``props`` are set, this method shouldn't do anything. Otherwise the
+        existing collection must be replaced.
+
         ``collection`` is a list of vobject components.
 
         ``props`` are metadata values for the collection.
@@ -551,6 +555,11 @@ class Collection(BaseCollection):
                     for card in collection:
                         self.upload(self._find_available_file_name(), card)
 
+            # This operation is not atomic on the filesystem level but it's
+            # very unlikely that one rename operations succeeds while the
+            # other fails or that only one gets written to disk.
+            if os.path.exists(filesystem_path):
+                os.rename(filesystem_path, os.path.join(tmp_dir, "delete"))
             os.rename(tmp_filesystem_path, filesystem_path)
             sync_directory(parent_dir)
 
