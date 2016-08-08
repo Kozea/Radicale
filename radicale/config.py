@@ -61,6 +61,9 @@ INITIAL_CONFIG = {
         "fsync": "True",
         "hook": "",
         "close_lock_file": "False"},
+    "skel": {
+        "addressbooks": "addressbook.vcf",
+        "calendars": "calendar.ics"},
     "logging": {
         "config": "/etc/radicale/logging",
         "debug": "False",

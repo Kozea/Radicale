@@ -290,7 +290,7 @@ class Application:
                         self.Collection.discover(principal_path), None)
                 if not principal:
                     with self._lock_collection("w", user):
-                        self.Collection.create_collection(principal_path)
+                        self.Collection.create_user(user)
 
         # Verify content length
         content_length = int(environ.get("CONTENT_LENGTH") or 0)

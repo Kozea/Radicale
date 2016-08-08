@@ -113,6 +113,13 @@
 # Example: git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
 
 
+[skel]
+
+# Collections that are created for new users separated by a comma
+#addressbooks = addressbook.vcf
+#calendars = calendar.ics
+
+
 [logging]
 
 # Logging configuration file

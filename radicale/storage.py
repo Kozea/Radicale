@@ -36,7 +36,7 @@ from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
 from itertools import groupby
-from random import getrandbits
+from random import getrandbits, randint
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 
 import vobject
@@ -257,6 +257,33 @@ class BaseCollection:
         else:
             to_collection.upload(to_href, item.item)
         item.collection.delete(item.href)
+
+    @classmethod
+    def create_user(cls, user):
+        """Create principal collection and predefined addressbooks and
+           calendars for ``user``."""
+        principal_path = "/%s/" % user
+        if not user or next(cls.discover(principal_path), None):
+            return
+        cls.create_collection(principal_path)
+        colls = ([(n, "VCALENDAR") for n in
+                  cls.configuration.get("skel", "calendars").split(",")] +
+                 [(n, "VADDRESSBOOK") for n in
+                  cls.configuration.get("skel", "addressbooks").split(",")])
+        for href, tag in colls:
+            href = href.strip()
+            if not href:
+                continue
+            if not is_safe_path_component(href):
+                raise UnsafePathError(href)
+            props = {"tag": tag}
+            color = "#%06X" % randint(0, 2**24-1)
+            if tag == "VCALENDAR":
+                props["ICAL:calendar-color"] = color
+            elif tag == "VADDRESSBOOK":
+                props["{http://inf-it.com/ns/ab/}addressbook-color"] = color
+            cls.create_collection(posixpath.join(principal_path, href),
+                                  props=props)
 
     @property
     def etag(self):
