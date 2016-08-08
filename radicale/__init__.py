@@ -509,6 +509,8 @@ class Application:
 
     def do_PROPFIND(self, environ, path, content, user):
         """Manage PROPFIND request."""
+        if not self._access(user, path, "r"):
+            return NOT_ALLOWED
         with self._lock_collection("r", user):
             items = self.Collection.discover(
                 path, environ.get("HTTP_DEPTH", "0"))
