@@ -393,10 +393,11 @@ class Collection(BaseCollection):
                                  delete=False, prefix=".Radicale.tmp-")
         try:
             yield tmp
-            if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
-                fcntl.fcntl(tmp.fileno(), fcntl.F_FULLFSYNC)
-            else:
-                os.fsync(tmp.fileno())
+            if self.configuration.getboolean("storage", "fsync"):
+                if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
+                    fcntl.fcntl(tmp.fileno(), fcntl.F_FULLFSYNC)
+                else:
+                    os.fsync(tmp.fileno())
             tmp.close()
             os.rename(tmp.name, path)
         except:
@@ -413,13 +414,15 @@ class Collection(BaseCollection):
                 return file_name
         raise FileExistsError(errno.EEXIST, "No usable file name found")
 
-    @staticmethod
-    def _sync_directory(path):
+    @classmethod
+    def _sync_directory(cls, path):
         """Sync directory to disk.
 
         This only works on POSIX and does nothing on other systems.
 
         """
+        if not cls.configuration.getboolean("storage", "fsync"):
+            return
         if os.name == "posix":
             fd = os.open(path, 0)
             try:
