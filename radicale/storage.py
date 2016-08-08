@@ -168,23 +168,6 @@ def path_to_filesystem(root, *paths):
     return safe_path
 
 
-def sync_directory(path):
-    """Sync directory to disk.
-
-    This only works on POSIX and does nothing on other systems.
-
-    """
-    if os.name == "posix":
-        fd = os.open(path, 0)
-        try:
-            if hasattr(fcntl, "F_FULLFSYNC"):
-                fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
-            else:
-                os.fsync(fd)
-        finally:
-            os.close(fd)
-
-
 class UnsafePathError(ValueError):
     def __init__(self, path):
         message = "Can't translate name safely to filesystem: %s" % path
@@ -427,6 +410,23 @@ class Collection(BaseCollection):
                 return file_name
         raise FileExistsError(errno.EEXIST, "No usable file name found")
 
+    @staticmethod
+    def _sync_directory(path):
+        """Sync directory to disk.
+
+        This only works on POSIX and does nothing on other systems.
+
+        """
+        if os.name == "posix":
+            fd = os.open(path, 0)
+            try:
+                if hasattr(fcntl, "F_FULLFSYNC"):
+                    fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
+                else:
+                    os.fsync(fd)
+            finally:
+                os.close(fd)
+
     @classmethod
     def _makedirs_synced(cls, filesystem_path):
         """Recursively create a directory and its parents in a sync'ed way.
@@ -443,7 +443,7 @@ class Collection(BaseCollection):
             cls._makedirs_synced(parent_filesystem_path)
         # Possible race!
         os.makedirs(filesystem_path, exist_ok=True)
-        sync_directory(parent_filesystem_path)
+        cls._sync_directory(parent_filesystem_path)
 
     @classmethod
     def discover(cls, path, depth="0"):
@@ -552,7 +552,7 @@ class Collection(BaseCollection):
                         self.upload(self._find_available_file_name(), card)
 
             os.rename(tmp_filesystem_path, filesystem_path)
-            sync_directory(parent_dir)
+            cls._sync_directory(parent_dir)
 
         return cls(sane_path, principal=principal)
 
@@ -561,9 +561,9 @@ class Collection(BaseCollection):
         os.rename(
             path_to_filesystem(item.collection._filesystem_path, item.href),
             path_to_filesystem(to_collection._filesystem_path, to_href))
-        sync_directory(to_collection._filesystem_path)
+        cls._sync_directory(to_collection._filesystem_path)
         if item.collection._filesystem_path != to_collection._filesystem_path:
-            sync_directory(item.collection._filesystem_path)
+            cls._sync_directory(item.collection._filesystem_path)
 
     def list(self):
         try:
@@ -639,9 +639,9 @@ class Collection(BaseCollection):
                                             dir=parent_dir) as tmp_dir:
                         os.rename(self._filesystem_path, os.path.join(
                             tmp_dir, os.path.basename(self._filesystem_path)))
-                        sync_directory(parent_dir)
+                        self._sync_directory(parent_dir)
                 else:
-                    sync_directory(parent_dir)
+                    self._sync_directory(parent_dir)
         else:
             # Delete an item
             if not is_safe_filesystem_path_component(href):
@@ -654,7 +654,7 @@ class Collection(BaseCollection):
             if etag and etag != get_etag(text):
                 raise EtagMismatchError(etag, get_etag(text))
             os.remove(path)
-            sync_directory(os.path.dirname(path))
+            self._sync_directory(os.path.dirname(path))
 
     def get_meta(self, key):
         if os.path.exists(self._props_path):
