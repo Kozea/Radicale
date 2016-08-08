@@ -539,6 +539,26 @@ class Collection(BaseCollection):
                 yield cls(child_path, child_principal)
 
     @classmethod
+    def create_user(cls, user):
+        # Create principal collection in temporary directory and rename,
+        # when all predefined collections are created.
+        principal_path = "/%s/" % user
+        if not user or next(cls.discover(principal_path), None):
+            return
+        folder = cls._get_collection_root_folder()
+        with TemporaryDirectory(
+                prefix=".Radicale.tmp-", dir=folder) as tmp_dir:
+            class ClsTmpCollectionRootFolder(cls):
+                @staticmethod
+                def _get_collection_root_folder():
+                    return tmp_dir
+
+            super(Collection, ClsTmpCollectionRootFolder).create_user(user)
+            os.rename(path_to_filesystem(tmp_dir, user),
+                      path_to_filesystem(folder, user))
+            sync_directory(folder)
+
+    @classmethod
     def create_collection(cls, href, collection=None, props=None):
         folder = cls._get_collection_root_folder()
 
