@@ -556,7 +556,7 @@ class Collection(BaseCollection):
             super(Collection, ClsTmpCollectionRootFolder).create_user(user)
             os.rename(path_to_filesystem(tmp_dir, user),
                       path_to_filesystem(folder, user))
-            sync_directory(folder)
+            cls._sync_directory(folder)
 
     @classmethod
     def create_collection(cls, href, collection=None, props=None):
