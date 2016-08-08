@@ -292,7 +292,7 @@ class Application:
                     with self._lock_collection("w", user):
                         self.Collection.create_collection(principal_path)
 
-        # Get content
+        # Verify content length
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
         if content_length:
             max_content_length = self.configuration.getint(
@@ -301,17 +301,12 @@ class Application:
                 self.logger.debug(
                     "Request body too large: %d", content_length)
                 return response(client.REQUEST_ENTITY_TOO_LARGE)
-            try:
-                content = self.decode(
-                    environ["wsgi.input"].read(content_length), environ)
-            except socket.timeout:
-                return response(client.REQUEST_TIMEOUT)
-            self.logger.debug("Request content:\n%s" % content.strip())
-        else:
-            content = None
 
         if is_valid_user:
-            status, headers, answer = function(environ, path, content, user)
+            try:
+                status, headers, answer = function(environ, path, user)
+            except socket.timeout:
+                return response(client.REQUEST_TIMEOUT)
         else:
             status, headers, answer = NOT_ALLOWED
 
@@ -381,7 +376,17 @@ class Application:
                     hook % {"user": shlex.quote(user or "Anonymous")},
                     shell=True, cwd=folder)
 
-    def do_DELETE(self, environ, path, content, user):
+    def _read_content(self, environ):
+        content_length = int(environ.get("CONTENT_LENGTH") or 0)
+        if content_length > 0:
+            content = self.decode(
+                environ["wsgi.input"].read(content_length), environ)
+            self.logger.debug("Request content:\n%s" % content.strip())
+        else:
+            content = None
+        return content
+
+    def do_DELETE(self, environ, path, user):
         """Manage DELETE request."""
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
@@ -401,7 +406,7 @@ class Application:
                 answer = xmlutils.delete(path, item.collection, item.href)
             return client.OK, {}, answer
 
-    def do_GET(self, environ, path, content, user):
+    def do_GET(self, environ, path, user):
         """Manage GET request."""
         # Display a "Radicale works!" message if the root URL is requested
         if not path.strip("/"):
@@ -429,16 +434,16 @@ class Application:
             answer = item.serialize()
             return client.OK, headers, answer
 
-    def do_HEAD(self, environ, path, content, user):
+    def do_HEAD(self, environ, path, user):
         """Manage HEAD request."""
-        status, headers, answer = self.do_GET(environ, path, content, user)
+        status, headers, answer = self.do_GET(environ, path, user)
         return status, headers, None
 
-    def do_MKCALENDAR(self, environ, path, content, user):
+    def do_MKCALENDAR(self, environ, path, user):
         """Manage MKCALENDAR request."""
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
-
+        content = self._read_content(environ)
         with self._lock_collection("w", user):
             item = next(self.Collection.discover(path), None)
             if item:
@@ -450,10 +455,11 @@ class Application:
             self.Collection.create_collection(path, props=props)
             return client.CREATED, {}, None
 
-    def do_MKCOL(self, environ, path, content, user):
+    def do_MKCOL(self, environ, path, user):
         """Manage MKCOL request."""
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
+        content = self._read_content(environ)
         with self._lock_collection("w", user):
             item = next(self.Collection.discover(path), None)
             if item:
@@ -462,7 +468,7 @@ class Application:
             self.Collection.create_collection(path, props=props)
             return client.CREATED, {}, None
 
-    def do_MOVE(self, environ, path, content, user):
+    def do_MOVE(self, environ, path, user):
         """Manage MOVE request."""
         to_url = urlparse(environ["HTTP_DESTINATION"])
         if to_url.netloc != environ["HTTP_HOST"]:
@@ -499,7 +505,7 @@ class Application:
             self.Collection.move(item, to_collection, to_href)
             return client.CREATED, {}, None
 
-    def do_OPTIONS(self, environ, path, content, user):
+    def do_OPTIONS(self, environ, path, user):
         """Manage OPTIONS request."""
         headers = {
             "Allow": ", ".join(
@@ -507,10 +513,11 @@ class Application:
             "DAV": DAV_HEADERS}
         return client.OK, headers, None
 
-    def do_PROPFIND(self, environ, path, content, user):
+    def do_PROPFIND(self, environ, path, user):
         """Manage PROPFIND request."""
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
+        content = self._read_content(environ)
         with self._lock_collection("r", user):
             items = self.Collection.discover(
                 path, environ.get("HTTP_DEPTH", "0"))
@@ -522,10 +529,11 @@ class Application:
                 path, content, read_items, write_items, user)
             return client.MULTI_STATUS, headers, answer
 
-    def do_PROPPATCH(self, environ, path, content, user):
+    def do_PROPPATCH(self, environ, path, user):
         """Manage PROPPATCH request."""
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
+        content = self._read_content(environ)
         with self._lock_collection("w", user):
             item = next(self.Collection.discover(path), None)
             if not isinstance(item, self.Collection):
@@ -534,11 +542,11 @@ class Application:
             answer = xmlutils.proppatch(path, content, item)
             return client.MULTI_STATUS, headers, answer
 
-    def do_PUT(self, environ, path, content, user):
+    def do_PUT(self, environ, path, user):
         """Manage PUT request."""
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
-
+        content = self._read_content(environ)
         with self._lock_collection("w", user):
             parent_path = storage.sanitize_path(
                 "/%s/" % posixpath.dirname(path.strip("/")))
@@ -592,10 +600,11 @@ class Application:
             headers = {"ETag": new_item.etag}
             return client.CREATED, headers, None
 
-    def do_REPORT(self, environ, path, content, user):
+    def do_REPORT(self, environ, path, user):
         """Manage REPORT request."""
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
+        content = self._read_content(environ)
         with self._lock_collection("r", user):
             item = next(self.Collection.discover(path), None)
             if not self._access(user, path, "w", item):
