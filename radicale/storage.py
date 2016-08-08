@@ -392,9 +392,9 @@ class Collection(BaseCollection):
 
     @contextmanager
     def _atomic_write(self, path, mode="w"):
-        dir = os.path.dirname(path)
-        tmp = NamedTemporaryFile(mode=mode, dir=dir, encoding=self.encoding,
-                                 delete=False, prefix=".Radicale.tmp-")
+        tmp = NamedTemporaryFile(
+            mode=mode, dir=os.path.dirname(path), encoding=self.encoding,
+            delete=False, prefix=".Radicale.tmp-")
         try:
             yield tmp
             if self.configuration.getboolean("storage", "fsync"):
@@ -650,10 +650,10 @@ class Collection(BaseCollection):
                 try:
                     os.rmdir(self._filesystem_path)
                 except OSError:
-                    with TemporaryDirectory(prefix=".Radicale.tmp-",
-                                            dir=parent_dir) as tmp_dir:
+                    with TemporaryDirectory(
+                            prefix=".Radicale.tmp-", dir=parent_dir) as tmp:
                         os.rename(self._filesystem_path, os.path.join(
-                            tmp_dir, os.path.basename(self._filesystem_path)))
+                            tmp, os.path.basename(self._filesystem_path)))
                         self._sync_directory(parent_dir)
                 else:
                     self._sync_directory(parent_dir)
