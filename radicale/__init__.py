@@ -574,9 +574,6 @@ class Application:
             tag = tags.get(content_type)
 
             if write_whole_collection:
-                if item:
-                    # Delete old collection
-                    item.delete()
                 new_item = self.Collection.create_collection(
                     path, items, {"tag": tag})
             else:
