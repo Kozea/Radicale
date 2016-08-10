@@ -4,18 +4,37 @@ title: Documentation
 permalink: /documentation/
 ---
 
-## User documentation
+This documentation page is written for version 2.0.x. If you want to update
+Radicale from 1.x.x to 2.0.x, please follow our migration guide.
 
-The [user documentation]({{ site.baseurl }}/user_documentation) describes how
-to install and configure the server.
+## Install
 
-## Project description
+You're new to Radicale and you want to know how to use it? Welcome aboard!
 
-The [project description]({{ site.baseurl }}/project_description) defines the
-main goals of the Radicale Project, what it covers and what it does not.
+- [What is Radicale?]()
+- [A really simple 5-minute tutorial.]()
+- [A simple but solid installation for a personal use.]()
+- [A production-ready installation.]()
 
-## Technical choices
+## Configure
 
-The [technical choices]({{ site.baseurl }}/technical_choices) describes the
-global technical choices of the Radicale Project and the global architectures
-of its different parts.
+Now that you have Radicale running, let's see what we can configure to make it
+fit our needs.
+
+- [What can I configure?]()
+- [Where are stored my configuration, my calendars and my address books?]()
+- [Authentication & Rights.]()
+- [Storage.]()
+- [Logging.]()
+
+## Hack
+
+Using is fun, but hacking is soooooooo coooooool. Radicale is a really small
+and simple piece of code, it may be the perfect project to start hacking!
+
+- [How does Radicale work?]()
+- [What do plugins do?]()
+- [How do I write my own plugin?]()
+- [Radicale debugging.]()
+- [Collection versioning.]()
+- [Adding or fixing documentation.]()
