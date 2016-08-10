@@ -200,22 +200,22 @@ class Application:
                 path = item.collection.path
             if self.authorized(user, path, "r"):
                 self.logger.debug(
-                    "%s has read access to collection %s" %
-                    (user or "Anonymous", path or "/"))
+                    "%s has read access to collection %s",
+                    user or "Anonymous", path or "/")
                 read_allowed_items.append(item)
             else:
                 self.logger.debug(
-                    "%s has NO read access to collection %s" %
-                    (user or "Anonymous", path or "/"))
+                    "%s has NO read access to collection %s",
+                    user or "Anonymous", path or "/")
             if self.authorized(user, path, "w"):
                 self.logger.debug(
-                    "%s has write access to collection %s" %
-                    (user or "Anonymous", path or "/"))
+                    "%s has write access to collection %s",
+                    user or "Anonymous", path or "/")
                 write_allowed_items.append(item)
             else:
                 self.logger.debug(
-                    "%s has NO write access to collection %s" %
-                    (user or "Anonymous", path or "/"))
+                    "%s has NO write access to collection %s",
+                    user or "Anonymous", path or "/")
         return read_allowed_items, write_allowed_items
 
     def __call__(self, environ, start_response):
@@ -225,16 +225,16 @@ class Application:
             # Start response
             status = "%i %s" % (
                 status, client.responses.get(status, "Unknown"))
-            self.logger.debug("Answer status: %s" % status)
+            self.logger.debug("Answer status: %s", status)
             start_response(status, list(headers.items()))
             # Return response content
             return [answer] if answer else []
 
         self.logger.debug("\n")  # Add empty lines between requests in debug
-        self.logger.info("%s request at %s received" % (
-            environ["REQUEST_METHOD"], environ["PATH_INFO"]))
+        self.logger.info("%s request at %s received",
+                         environ["REQUEST_METHOD"], environ["PATH_INFO"])
         headers = pprint.pformat(self.headers_log(environ))
-        self.logger.debug("Request headers:\n%s" % headers)
+        self.logger.debug("Request headers:\n%s", headers)
 
         # Strip base_prefix from request URI
         base_prefix = self.configuration.get("server", "base_prefix")
@@ -323,7 +323,7 @@ class Application:
 
         # Set content length
         if answer:
-            self.logger.debug("Response content:\n%s" % answer)
+            self.logger.debug("Response content:\n%s", answer)
             answer = answer.encode(self.encoding)
             accept_encoding = [
                 encoding.strip() for encoding in
@@ -381,7 +381,7 @@ class Application:
         if content_length > 0:
             content = self.decode(
                 environ["wsgi.input"].read(content_length), environ)
-            self.logger.debug("Request content:\n%s" % content.strip())
+            self.logger.debug("Request content:\n%s", content.strip())
         else:
             content = None
         return content

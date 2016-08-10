@@ -150,7 +150,7 @@ def serve(configuration, logger):
     logger.info("Starting Radicale")
 
     logger.debug(
-        "Base URL prefix: %s" % configuration.get("server", "base_prefix"))
+        "Base URL prefix: %s", configuration.get("server", "base_prefix"))
 
     # Create collection servers
     servers = {}
@@ -187,8 +187,8 @@ def serve(configuration, logger):
         server = make_server(
             address, port, application, server_class, RequestHandler)
         servers[server.socket] = server
-        logger.debug("Listening to %s port %s" % (
-            server.server_name, server.server_port))
+        logger.debug("Listening to %s port %s",
+                     server.server_name, server.server_port)
         if configuration.getboolean("server", "ssl"):
             logger.debug("Using SSL")
 
