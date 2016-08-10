@@ -791,6 +791,15 @@ class BaseRequestsMixIn:
         status, headers, answer = self.request("GET", "/created_by_hook/")
         assert status == 200
 
+    def test_hook_fail(self):
+        """Verify that a request fails if the hook fails."""
+        self.configuration.set("storage", "hook", "exit 1")
+        try:
+            status, headers, answer = self.request("MKCOL", "/calendar.ics/")
+            assert status != 201
+        except Exception:
+            pass
+
 
 class BaseFileSystemTest(BaseTest):
     """Base class for filesystem backend tests."""
