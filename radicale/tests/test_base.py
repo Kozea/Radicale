@@ -728,6 +728,12 @@ class BaseRequestsMixIn:
         assert "href>/calendar.ics/journal1.ics</" not in answer
         assert "href>/calendar.ics/journal2.ics</" not in answer
 
+    def test_principal_collection_creation(self):
+        """Verify existence of the principal collection."""
+        status, headers, answer = self.request(
+            "GET", "/user/", REMOTE_USER="user")
+        assert status == 200
+
 
 class BaseFileSystemTest(BaseTest):
     """Base class for filesystem backend tests."""
