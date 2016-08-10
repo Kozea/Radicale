@@ -404,7 +404,7 @@ class Collection(BaseCollection):
                 else:
                     os.fsync(tmp.fileno())
             tmp.close()
-            os.rename(tmp.name, path)
+            os.replace(tmp.name, path)
         except:
             tmp.close()
             os.remove(tmp.name)
@@ -574,7 +574,7 @@ class Collection(BaseCollection):
 
     @classmethod
     def move(cls, item, to_collection, to_href):
-        os.rename(
+        os.replace(
             path_to_filesystem(item.collection._filesystem_path, item.href),
             path_to_filesystem(to_collection._filesystem_path, to_href))
         cls._sync_directory(to_collection._filesystem_path)
