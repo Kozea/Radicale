@@ -20,6 +20,7 @@ Radicale tests with simple requests.
 """
 
 import logging
+import os
 import posixpath
 import shutil
 import tempfile
@@ -749,6 +750,26 @@ class BaseRequestsMixIn:
         self.configuration.set("storage", "fsync", "True")
         status, headers, answer = self.request("MKCALENDAR", "/calendar.ics/")
         assert status == 201
+
+    def test_hook(self):
+        """Run hook."""
+        self.configuration.set(
+            "storage", "hook", "mkdir %s" % os.path.join("collection-root",
+                                                         "created_by_hook"))
+        status, headers, answer = self.request("MKCOL", "/calendar.ics/")
+        assert status == 201
+        status, headers, answer = self.request("GET", "/created_by_hook/")
+        assert status == 200
+
+    def test_hook_read_access(self):
+        """Verify that hook is not run for read accesses."""
+        self.configuration.set(
+            "storage", "hook", "mkdir %s" % os.path.join("collection-root",
+                                                         "created_by_hook"))
+        status, headers, answer = self.request("GET", "/")
+        assert status == 200
+        status, headers, answer = self.request("GET", "/created_by_hook/")
+        assert status == 404
 
 
 class BaseFileSystemTest(BaseTest):
