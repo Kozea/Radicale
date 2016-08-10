@@ -213,6 +213,23 @@ class BaseRequestsMixIn:
         assert "href>%s</" % calendar_path in answer
         assert "href>%s</" % event_path in answer
 
+    def test_proppatch(self):
+        """Write a property and read it back."""
+        self.request("MKCALENDAR", "/calendar.ics/")
+        proppatch = get_file_content("proppatch1.xml")
+        status, headers, answer = self.request(
+            "PROPPATCH", "/calendar.ics/", proppatch)
+        assert status == 207
+        assert "calendar-color" in answer
+        assert "200 OK</status" in answer
+        # Read property back
+        propfind = get_file_content("propfind1.xml")
+        status, headers, answer = self.request(
+            "PROPFIND", "/calendar.ics/", propfind)
+        assert status == 207
+        assert ":calendar-color>#BADA55</" in answer
+        assert "200 OK</status" in answer
+
     def test_multiple_events_with_same_uid(self):
         """Add two events with the same UID."""
         self.request("MKCOL", "/calendar.ics/")
