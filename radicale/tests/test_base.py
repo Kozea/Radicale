@@ -781,6 +781,16 @@ class BaseRequestsMixIn:
         status, headers, answer = self.request("MKCOL", "/calendar.ics/")
         assert status == 201
 
+    def test_hook_principal_collection_creation(self):
+        """Verify that the hooks runs when a new user is created."""
+        self.configuration.set(
+            "storage", "hook", "mkdir %s" % os.path.join("collection-root",
+                                                         "created_by_hook"))
+        status, headers, answer = self.request("GET", "/", REMOTE_USER="user")
+        assert status == 200
+        status, headers, answer = self.request("GET", "/created_by_hook/")
+        assert status == 200
+
 
 class BaseFileSystemTest(BaseTest):
     """Base class for filesystem backend tests."""
