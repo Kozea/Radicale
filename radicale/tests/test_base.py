@@ -30,14 +30,8 @@ from . import BaseTest
 from .helpers import get_file_content
 
 
-class BaseRequests:
+class BaseRequestsMixIn:
     """Tests with simple requests."""
-    storage_type = None
-
-    def setup(self):
-        self.configuration = config.load()
-        self.configuration.set("storage", "type", self.storage_type)
-        self.logger = logging.getLogger("radicale_test")
 
     def test_root(self):
         """GET request at "/"."""
@@ -718,33 +712,29 @@ class BaseRequests:
         assert "href>/calendar.ics/journal2.ics</" not in answer
 
 
-class TestMultiFileSystem(BaseRequests, BaseTest):
-    """Base class for filesystem tests."""
+class BaseFileSystemTest(BaseTest):
+    """Base class for filesystem backend tests."""
+    storage_type = None
+
+    def setup(self):
+        self.configuration = config.load()
+        self.configuration.set("storage", "type", self.storage_type)
+        self.logger = logging.getLogger("radicale_test")
+        self.colpath = tempfile.mkdtemp()
+        self.configuration.set("storage", "filesystem_folder", self.colpath)
+        # Disable syncing to disk for better performance
+        self.configuration.set("storage", "fsync", "False")
+        self.application = Application(self.configuration, self.logger)
+
+    def teardown(self):
+        shutil.rmtree(self.colpath)
+
+
+class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
+    """Test BaseRequests on multifilesystem."""
     storage_type = "multifilesystem"
 
-    def setup(self):
-        super().setup()
-        self.colpath = tempfile.mkdtemp()
-        self.configuration.set("storage", "filesystem_folder", self.colpath)
-        # Disable syncing to disk for better performance
-        self.configuration.set("storage", "fsync", "False")
-        self.application = Application(self.configuration, self.logger)
 
-    def teardown(self):
-        shutil.rmtree(self.colpath)
-
-
-class TestCustomStorageSystem(BaseRequests, BaseTest):
-    """Base class for custom backend tests."""
+class TestCustomStorageSystem(BaseFileSystemTest, BaseRequestsMixIn):
+    """Test BaseRequests on custom backend."""
     storage_type = "tests.custom.storage"
-
-    def setup(self):
-        super().setup()
-        self.colpath = tempfile.mkdtemp()
-        self.configuration.set("storage", "filesystem_folder", self.colpath)
-        # Disable syncing to disk for better performance
-        self.configuration.set("storage", "fsync", "False")
-        self.application = Application(self.configuration, self.logger)
-
-    def teardown(self):
-        shutil.rmtree(self.colpath)
