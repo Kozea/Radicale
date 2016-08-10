@@ -323,7 +323,7 @@ class Application:
 
         # Set content length
         if answer:
-            self.logger.debug("Response content:\n%s" % answer, environ)
+            self.logger.debug("Response content:\n%s" % answer)
             answer = answer.encode(self.encoding)
             accept_encoding = [
                 encoding.strip() for encoding in
