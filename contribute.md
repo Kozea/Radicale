@@ -4,12 +4,6 @@ title: Contribute
 permalink: /contribute/
 ---
 
-## Send Us a Mail
-
-Want to write kind words? You can send a mail on
-[our Librelist mailing-list](mailto:radicale@librelist.com) and even
-take a look at [the archives](http://librelist.com/browser/radicale/).
-
 ## Chat with Us on IRC
 
 Want to say something? Join our IRC room: `##kozea` on Freenode.
