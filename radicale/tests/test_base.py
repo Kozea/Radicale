@@ -744,6 +744,12 @@ class BaseRequestsMixIn:
         status, headers, answer = self.request("PROPFIND", "/")
         assert status == 207
 
+    def test_fsync(self):
+        """Create a directory and file with syncing enabled."""
+        self.configuration.set("storage", "fsync", "True")
+        status, headers, answer = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
+
 
 class BaseFileSystemTest(BaseTest):
     """Base class for filesystem backend tests."""
