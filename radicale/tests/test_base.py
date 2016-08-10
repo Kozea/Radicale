@@ -25,6 +25,7 @@ import posixpath
 import shutil
 import tempfile
 
+import pytest
 from radicale import Application, config
 
 from . import BaseTest
@@ -770,6 +771,15 @@ class BaseRequestsMixIn:
         assert status == 200
         status, headers, answer = self.request("GET", "/created_by_hook/")
         assert status == 404
+
+    @pytest.mark.skipif(os.system("type flock") != 0,
+                        reason="flock command not found")
+    def test_hook_storage_locked(self):
+        """Verify that the storage is locked when the hook runs."""
+        self.configuration.set(
+            "storage", "hook", "flock -n .Radicale.lock || exit 0; exit 1")
+        status, headers, answer = self.request("MKCOL", "/calendar.ics/")
+        assert status == 201
 
 
 class BaseFileSystemTest(BaseTest):
