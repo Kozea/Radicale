@@ -735,6 +735,10 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
     storage_type = "multifilesystem"
 
 
-class TestCustomStorageSystem(BaseFileSystemTest, BaseRequestsMixIn):
-    """Test BaseRequests on custom backend."""
+class TestCustomStorageSystem(BaseFileSystemTest):
+    """Test custom backend loading."""
     storage_type = "tests.custom.storage"
+
+    def test_root(self):
+        """A simple test to verify that the custom backend works."""
+        BaseRequestsMixIn.test_root(self)
