@@ -734,6 +734,16 @@ class BaseRequestsMixIn:
             "GET", "/user/", REMOTE_USER="user")
         assert status == 200
 
+    def test_existence_of_root_collections(self):
+        """Verify that the root collection always exists."""
+        # Use PROPFIND because GET returns message
+        status, headers, answer = self.request("PROPFIND", "/")
+        assert status == 207
+        # it should still exist after deletion
+        self.request("DELETE", "/")
+        status, headers, answer = self.request("PROPFIND", "/")
+        assert status == 207
+
 
 class BaseFileSystemTest(BaseTest):
     """Base class for filesystem backend tests."""
