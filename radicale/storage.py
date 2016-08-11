@@ -306,7 +306,7 @@ class BaseCollection:
         the filters and this implementation.
         This returns all event by default
         """
-        return [self.get(href) for href, _ in self.list()]
+        return [self.get(href) for href in self.list()]
 
     def has(self, href):
         """Check if an item exists by its href.
@@ -321,17 +321,17 @@ class BaseCollection:
         """Upload a new item."""
         raise NotImplementedError
 
-    def update(self, href, vobject_item, etag=None):
+    def update(self, href, vobject_item):
         """Update an item.
 
         Functionally similar to ``delete`` plus ``upload``, but might bring
         performance benefits on some storages when used cleverly.
 
         """
-        self.delete(href, etag)
+        self.delete(href)
         self.upload(href, vobject_item)
 
-    def delete(self, href=None, etag=None):
+    def delete(self, href=None):
         """Delete an item.
 
         When ``href`` is ``None``, delete the collection.
@@ -500,7 +500,7 @@ class Collection(BaseCollection):
             return
 
         for item in collection.list():
-            yield collection.get(item[0])
+            yield collection.get(item)
 
         for href in os.listdir(filesystem_path):
             if not is_safe_filesystem_path_component(href):
@@ -593,8 +593,7 @@ class Collection(BaseCollection):
                 continue
             path = os.path.join(self._filesystem_path, href)
             if os.path.isfile(path):
-                with open(path, encoding=self.encoding) as fd:
-                    yield href, get_etag(fd.read())
+                yield href
 
     def get(self, href):
         if not href:
@@ -628,22 +627,18 @@ class Collection(BaseCollection):
             fd.write(item.serialize())
         return item
 
-    def update(self, href, vobject_item, etag=None):
+    def update(self, href, vobject_item):
         if not is_safe_filesystem_path_component(href):
             raise UnsafePathError(href)
         path = path_to_filesystem(self._filesystem_path, href)
         if not os.path.isfile(path):
             raise ComponentNotFoundError(href)
-        with open(path, encoding=self.encoding) as fd:
-            text = fd.read()
-        if etag and etag != get_etag(text):
-            raise EtagMismatchError(etag, get_etag(text))
         item = Item(self, vobject_item, href)
         with self._atomic_write(path) as fd:
             fd.write(item.serialize())
         return item
 
-    def delete(self, href=None, etag=None):
+    def delete(self, href=None):
         if href is None:
             # Delete the collection
             if os.path.isdir(self._filesystem_path):
@@ -665,10 +660,6 @@ class Collection(BaseCollection):
             path = path_to_filesystem(self._filesystem_path, href)
             if not os.path.isfile(path):
                 raise ComponentNotFoundError(href)
-            with open(path, encoding=self.encoding) as fd:
-                text = fd.read()
-            if etag and etag != get_etag(text):
-                raise EtagMismatchError(etag, get_etag(text))
             os.remove(path)
             self._sync_directory(os.path.dirname(path))
 
