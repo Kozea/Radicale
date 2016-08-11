@@ -813,6 +813,8 @@ class BaseFileSystemTest(BaseTest):
         self.configuration.set("storage", "filesystem_folder", self.colpath)
         # Disable syncing to disk for better performance
         self.configuration.set("storage", "fsync", "False")
+        # Required on Windows, doesn't matter on Unix
+        self.configuration.set("storage", "close_lock_file", "True")
         self.application = Application(self.configuration, self.logger)
 
     def teardown(self):
