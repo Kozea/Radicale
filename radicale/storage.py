@@ -802,3 +802,7 @@ class Collection(BaseCollection):
                     cls._lock_file_locked = False
                 if cls._waiters:
                     cls._waiters[0].notify()
+                if (cls.configuration.getboolean("storage", "close_lock_file")
+                        and cls._readers == 0 and not cls._waiters):
+                    cls._lock_file.close()
+                    cls._lock_file = None

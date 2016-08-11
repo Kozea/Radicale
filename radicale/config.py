@@ -59,7 +59,8 @@ INITIAL_CONFIG = {
         "filesystem_folder": os.path.expanduser(
             "~/.config/radicale/collections"),
         "fsync": "True",
-        "hook": ""},
+        "hook": "",
+        "close_lock_file": "False"},
     "logging": {
         "config": "/etc/radicale/logging",
         "debug": "False",
