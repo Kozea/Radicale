@@ -391,11 +391,11 @@ class Collection(BaseCollection):
         return os.path.join(filesystem_folder, "collection-root")
 
     @contextmanager
-    def _atomic_write(self, path, mode="w"):
+    def _atomic_write(self, path, mode="w", newline=None):
         directory = os.path.dirname(path)
         tmp = NamedTemporaryFile(
             mode=mode, dir=directory, encoding=self.encoding,
-            delete=False, prefix=".Radicale.tmp-")
+            delete=False, prefix=".Radicale.tmp-", newline=newline)
         try:
             yield tmp
             if self.configuration.getboolean("storage", "fsync"):
@@ -607,7 +607,7 @@ class Collection(BaseCollection):
         path = path_to_filesystem(self._filesystem_path, href)
         if not os.path.isfile(path):
             return None
-        with open(path, encoding=self.encoding) as fd:
+        with open(path, encoding=self.encoding, newline="") as fd:
             text = fd.read()
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
@@ -624,7 +624,7 @@ class Collection(BaseCollection):
         if os.path.exists(path):
             raise ComponentExistsError(href)
         item = Item(self, vobject_item, href)
-        with self._atomic_write(path) as fd:
+        with self._atomic_write(path, newline="") as fd:
             fd.write(item.serialize())
         return item
 
@@ -639,7 +639,7 @@ class Collection(BaseCollection):
         if etag and etag != get_etag(text):
             raise EtagMismatchError(etag, get_etag(text))
         item = Item(self, vobject_item, href)
-        with self._atomic_write(path) as fd:
+        with self._atomic_write(path, newline="") as fd:
             fd.write(item.serialize())
         return item
 
@@ -704,7 +704,7 @@ class Collection(BaseCollection):
                 continue
             path = os.path.join(self._filesystem_path, href)
             if os.path.isfile(path):
-                with open(path, encoding=self.encoding) as fd:
+                with open(path, encoding=self.encoding, newline="") as fd:
                     items.append(vobject.readOne(fd.read()))
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
