@@ -17,4 +17,4 @@ Found a bug? Want a new feature? Report a new issue on the
 
 Interested in hacking? Feel free to clone the
 [git repository on Github](https://github.com/Kozea/Radicale) if you want to
-add new features, fix bugs or update documentation.
+add new features, fix bugs or update the documentation.

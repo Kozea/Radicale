@@ -37,14 +37,15 @@ Radicale has been packaged for:
 - [ArchLinux (AUR)](https://aur.archlinux.org/packages/radicale/) by
   Guillaume Bouchard
 - [Debian](http://packages.debian.org/radicale) by Jonas Smedegaard
-- [Gentoo (Sunrise Overlay)](http://bugs.gentoo.org/show_bug.cgi?id=322811)
-  by René Neumann
+- [Gentoo](https://packages.gentoo.org/packages/www-apps/radicale)
+  by René Neumann, Maxim Koltsov and Manuel Rüger
 - [Fedora](https://admin.fedoraproject.org/pkgdb/package/radicale/) by Jorti
-- [Mandriva/Mageia](http://sophie.zarb.org/search/results?search=radicale) by Jani
-  Välimaa
+- [Mageia](http://madb.mageia.org/package/show/application/0/name/radicale) by
+  Jani Välimaa
 - [OpenBSD](http://openports.se/productivity/radicale) by Sergey Bronnikov,
   Stuart Henderson and Ian Darwin
 - [openSUSE](http://software.opensuse.org/package/Radicale?search_term=radicale)
+  by Ákos Szőts and Rueckert
 - [PyPM](http://code.activestate.com/pypm/radicale/)
 - [Slackware](http://schoepfer.info/slackware.xhtml#packages-network) by
   Johannes Schöpfer

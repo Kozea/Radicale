@@ -21,7 +21,7 @@ layout: default
       <li>Shares contacts through CardDAV, WebDAV and HTTP.
       <li>Supports events, todos, journal entries and business cards.
       <li>Works out-of-the-box, no installation nor configuration required.
-      <li>Warns users on concurrent editing.
+      <li>Can warn users on concurrent editing.
       <li>Can limit access by authentication.
       <li>Can secure connections.
       <li>Works with many CalDAV and CardDAV clients.
@@ -52,7 +52,7 @@ Radicale server ready</pre>
   </section>
 
   <section>
-    <h2>What's new?</h2>
+    <h2>What's New?</h2>
     {% assign releases = site.github.releases | where:"draft",false | reverse %}
     <p>
       Latest version of {{ site.title }} is {{ releases[0].tag_name }},
