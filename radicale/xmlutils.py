@@ -644,26 +644,28 @@ def _propfind_response(path, item, props, user, write=False):
                         element.append(tag)
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
-            elif is_leaf:
-                if tag == _tag("D", "owner") and item.owner:
+            elif tag == _tag("D", "owner"):
+                if is_leaf and item.owner:
                     element.text = "/%s/" % item.owner
-                elif tag == _tag("CS", "getctag"):
-                    element.text = item.etag
-                elif tag == _tag("C", "calendar-timezone"):
-                    element.text = item.get_meta("C:calendar-timezone")
-                elif tag == _tag("D", "displayname"):
-                    element.text = item.get_meta("D:displayname") or item.path
-                elif tag == _tag("ICAL", "calendar-color"):
-                    element.text = item.get_meta("ICAL:calendar-color")
                 else:
-                    human_tag = _tag_from_clark(tag)
-                    meta = item.get_meta(human_tag)
-                    if meta:
-                        element.text = meta
-                    else:
-                        is404 = True
+                    is404 = True
+            elif tag == _tag("D", "displayname"):
+                if is_leaf:
+                    element.text = item.get_meta("D:displayname") or item.path
+                else:
+                    is404 = True
+            elif tag == _tag("CS", "getctag"):
+                if is_leaf:
+                    element.text = item.etag
+                else:
+                    is404 = True
             else:
-                is404 = True
+                human_tag = _tag_from_clark(tag)
+                meta = item.get_meta(human_tag)
+                if meta:
+                    element.text = meta
+                else:
+                    is404 = True
         # Not for collections
         elif tag == _tag("D", "getcontenttype"):
             name = item.name.lower()
