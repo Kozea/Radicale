@@ -28,6 +28,7 @@ should have been included in this package.
 
 import base64
 import contextlib
+import itertools
 import os
 import posixpath
 import pprint
@@ -521,9 +522,15 @@ class Application:
         with self._lock_collection("r", user):
             items = self.Collection.discover(
                 path, environ.get("HTTP_DEPTH", "0"))
+            # take root item for rights checking
+            item = next(items, None)
+            if not self._access(user, path, "r", item):
+                return NOT_ALLOWED
+            if not item:
+                return client.NOT_FOUND, {}, None
+            # put item back
+            items = itertools.chain([item], items)
             read_items, write_items = self.collect_allowed_items(items, user)
-            if not read_items and not write_items:
-                return (client.NOT_FOUND, {}, None) if user else NOT_ALLOWED
             headers = {"DAV": DAV_HEADERS, "Content-Type": "text/xml"}
             answer = xmlutils.propfind(
                 path, content, read_items, write_items, user)
