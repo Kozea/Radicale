@@ -119,27 +119,27 @@ class Rights(BaseRights):
         regex = ConfigParser(
             {"login": user_escaped, "path": sane_path_escaped})
         if self.rights_type in DEFINED_RIGHTS:
-            self.logger.debug("Rights type '%s'" % self.rights_type)
+            self.logger.debug("Rights type '%s'", self.rights_type)
             regex.readfp(StringIO(DEFINED_RIGHTS[self.rights_type]))
         else:
-            self.logger.debug("Reading rights from file '%s'" % self.filename)
+            self.logger.debug("Reading rights from file '%s'", self.filename)
             if not regex.read(self.filename):
                 self.logger.error(
-                    "File '%s' not found for rights" % self.filename)
+                    "File '%s' not found for rights", self.filename)
                 return False
 
         for section in regex.sections():
             re_user = regex.get(section, "user")
             re_collection = regex.get(section, "collection")
             self.logger.debug(
-                "Test if '%s:%s' matches against '%s:%s' from section '%s'" % (
-                    user, sane_path, re_user, re_collection, section))
+                "Test if '%s:%s' matches against '%s:%s' from section '%s'",
+                user, sane_path, re_user, re_collection, section)
             user_match = re.fullmatch(re_user, user)
             if user_match:
                 re_collection = re_collection.format(*user_match.groups())
                 if re.fullmatch(re_collection, sane_path):
-                    self.logger.debug("Section '%s' matches" % section)
+                    self.logger.debug("Section '%s' matches", section)
                     return permission in regex.get(section, "permission")
                 else:
-                    self.logger.debug("Section '%s' does not match" % section)
+                    self.logger.debug("Section '%s' does not match", section)
         return False
