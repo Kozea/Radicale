@@ -20,24 +20,20 @@ Radicale tests with simple requests.
 """
 
 import logging
+import os
 import posixpath
 import shutil
 import tempfile
 
+import pytest
 from radicale import Application, config
 
 from . import BaseTest
 from .helpers import get_file_content
 
 
-class BaseRequests:
+class BaseRequestsMixIn:
     """Tests with simple requests."""
-    storage_type = None
-
-    def setup(self):
-        self.configuration = config.load()
-        self.configuration.set("storage", "type", self.storage_type)
-        self.logger = logging.getLogger("radicale_test")
 
     def test_root(self):
         """GET request at "/"."""
@@ -218,6 +214,23 @@ class BaseRequests:
         assert status == 207
         assert "href>%s</" % calendar_path in answer
         assert "href>%s</" % event_path in answer
+
+    def test_proppatch(self):
+        """Write a property and read it back."""
+        self.request("MKCALENDAR", "/calendar.ics/")
+        proppatch = get_file_content("proppatch1.xml")
+        status, headers, answer = self.request(
+            "PROPPATCH", "/calendar.ics/", proppatch)
+        assert status == 207
+        assert "calendar-color" in answer
+        assert "200 OK</status" in answer
+        # Read property back
+        propfind = get_file_content("propfind1.xml")
+        status, headers, answer = self.request(
+            "PROPFIND", "/calendar.ics/", propfind)
+        assert status == 207
+        assert ":calendar-color>#BADA55</" in answer
+        assert "200 OK</status" in answer
 
     def test_multiple_events_with_same_uid(self):
         """Add two events with the same UID."""
@@ -717,34 +730,104 @@ class BaseRequests:
         assert "href>/calendar.ics/journal1.ics</" not in answer
         assert "href>/calendar.ics/journal2.ics</" not in answer
 
+    def test_principal_collection_creation(self):
+        """Verify existence of the principal collection."""
+        status, headers, answer = self.request(
+            "GET", "/user/", REMOTE_USER="user")
+        assert status == 200
 
-class TestMultiFileSystem(BaseRequests, BaseTest):
-    """Base class for filesystem tests."""
+    def test_existence_of_root_collections(self):
+        """Verify that the root collection always exists."""
+        # Use PROPFIND because GET returns message
+        status, headers, answer = self.request("PROPFIND", "/")
+        assert status == 207
+        # it should still exist after deletion
+        self.request("DELETE", "/")
+        status, headers, answer = self.request("PROPFIND", "/")
+        assert status == 207
+
+    def test_fsync(self):
+        """Create a directory and file with syncing enabled."""
+        self.configuration.set("storage", "fsync", "True")
+        status, headers, answer = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
+
+    def test_hook(self):
+        """Run hook."""
+        self.configuration.set(
+            "storage", "hook", "mkdir %s" % os.path.join("collection-root",
+                                                         "created_by_hook"))
+        status, headers, answer = self.request("MKCOL", "/calendar.ics/")
+        assert status == 201
+        status, headers, answer = self.request("GET", "/created_by_hook/")
+        assert status == 200
+
+    def test_hook_read_access(self):
+        """Verify that hook is not run for read accesses."""
+        self.configuration.set(
+            "storage", "hook", "mkdir %s" % os.path.join("collection-root",
+                                                         "created_by_hook"))
+        status, headers, answer = self.request("GET", "/")
+        assert status == 200
+        status, headers, answer = self.request("GET", "/created_by_hook/")
+        assert status == 404
+
+    @pytest.mark.skipif(os.system("type flock") != 0,
+                        reason="flock command not found")
+    def test_hook_storage_locked(self):
+        """Verify that the storage is locked when the hook runs."""
+        self.configuration.set(
+            "storage", "hook", "flock -n .Radicale.lock || exit 0; exit 1")
+        status, headers, answer = self.request("MKCOL", "/calendar.ics/")
+        assert status == 201
+
+    def test_hook_principal_collection_creation(self):
+        """Verify that the hooks runs when a new user is created."""
+        self.configuration.set(
+            "storage", "hook", "mkdir %s" % os.path.join("collection-root",
+                                                         "created_by_hook"))
+        status, headers, answer = self.request("GET", "/", REMOTE_USER="user")
+        assert status == 200
+        status, headers, answer = self.request("GET", "/created_by_hook/")
+        assert status == 200
+
+    def test_hook_fail(self):
+        """Verify that a request fails if the hook fails."""
+        self.configuration.set("storage", "hook", "exit 1")
+        try:
+            status, headers, answer = self.request("MKCOL", "/calendar.ics/")
+            assert status != 201
+        except Exception:
+            pass
+
+
+class BaseFileSystemTest(BaseTest):
+    """Base class for filesystem backend tests."""
+    storage_type = None
+
+    def setup(self):
+        self.configuration = config.load()
+        self.configuration.set("storage", "type", self.storage_type)
+        self.logger = logging.getLogger("radicale_test")
+        self.colpath = tempfile.mkdtemp()
+        self.configuration.set("storage", "filesystem_folder", self.colpath)
+        # Disable syncing to disk for better performance
+        self.configuration.set("storage", "fsync", "False")
+        self.application = Application(self.configuration, self.logger)
+
+    def teardown(self):
+        shutil.rmtree(self.colpath)
+
+
+class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
+    """Test BaseRequests on multifilesystem."""
     storage_type = "multifilesystem"
 
-    def setup(self):
-        super().setup()
-        self.colpath = tempfile.mkdtemp()
-        self.configuration.set("storage", "filesystem_folder", self.colpath)
-        # Disable syncing to disk for better performance
-        self.configuration.set("storage", "fsync", "False")
-        self.application = Application(self.configuration, self.logger)
 
-    def teardown(self):
-        shutil.rmtree(self.colpath)
-
-
-class TestCustomStorageSystem(BaseRequests, BaseTest):
-    """Base class for custom backend tests."""
+class TestCustomStorageSystem(BaseFileSystemTest):
+    """Test custom backend loading."""
     storage_type = "tests.custom.storage"
 
-    def setup(self):
-        super().setup()
-        self.colpath = tempfile.mkdtemp()
-        self.configuration.set("storage", "filesystem_folder", self.colpath)
-        # Disable syncing to disk for better performance
-        self.configuration.set("storage", "fsync", "False")
-        self.application = Application(self.configuration, self.logger)
-
-    def teardown(self):
-        shutil.rmtree(self.colpath)
+    def test_root(self):
+        """A simple test to verify that the custom backend works."""
+        BaseRequestsMixIn.test_root(self)
