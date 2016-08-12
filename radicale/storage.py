@@ -321,7 +321,7 @@ class BaseCollection:
         """Upload a new item."""
         raise NotImplementedError
 
-    def upload_all(self, collections):
+    def upload_all(self, vobject_items):
         """Upload a new set of items.
 
         This takes a mapping of href and vobject items and
@@ -331,7 +331,7 @@ class BaseCollection:
         """
         return [
             self.upload(href, vobject_item)
-            for href, vobject_item in collections.items()
+            for href, vobject_item in vobject_items.items()
         ]
 
     def update(self, href, vobject_item):
