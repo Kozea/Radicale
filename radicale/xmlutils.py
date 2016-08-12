@@ -524,7 +524,7 @@ def propfind(path, xml_request, read_collections, write_collections, user):
             path, collection, props, user, write=False)
         multistatus.append(response)
 
-    return _pretty_xml(multistatus)
+    return client.MULTI_STATUS, _pretty_xml(multistatus)
 
 
 def _propfind_response(path, item, props, user, write=False):
