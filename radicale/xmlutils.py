@@ -581,7 +581,7 @@ def _propfind_response(path, item, props, user, write=False):
                       _tag("D", "principal-URL"),
                       _tag("CR", "addressbook-home-set"),
                       _tag("C", "calendar-home-set")) and
-                collection.is_principal):
+                collection.is_principal and is_collection):
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href(collection, path)
             element.append(tag)
