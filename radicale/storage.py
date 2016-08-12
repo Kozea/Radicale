@@ -321,6 +321,19 @@ class BaseCollection:
         """Upload a new item."""
         raise NotImplementedError
 
+    def upload_all(self, vobject_items):
+        """Upload a new set of items.
+
+        This takes a mapping of href and vobject items and
+        returns a list of uploaded items.
+        Might bring optimizations on some storages.
+
+        """
+        return [
+            self.upload(href, vobject_item)
+            for href, vobject_item in vobject_items.items()
+        ]
+
     def update(self, href, vobject_item):
         """Update an item.
 
@@ -552,12 +565,23 @@ class Collection(BaseCollection):
                         items.extend(
                             getattr(collection, "%s_list" % content, []))
                     items_by_uid = groupby(sorted(items, key=get_uid), get_uid)
+                    collections = {}
                     for uid, items in items_by_uid:
                         new_collection = vobject.iCalendar()
                         for item in items:
                             new_collection.add(item)
-                        self.upload(
-                            self._find_available_file_name(), new_collection)
+
+                        # Prevent infinite loop
+                        for _ in range(10000):
+                            href = self._find_available_file_name()
+                            if href not in collections:
+                                break
+                        else:
+                            raise FileExistsError(
+                                errno.EEXIST, "No usable file name found")
+                        collections[href] = new_collection
+
+                    self.upload_all(collections)
                 elif props.get("tag") == "VCARD":
                     for card in collection:
                         self.upload(self._find_available_file_name(), card)
