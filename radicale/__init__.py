@@ -532,9 +532,12 @@ class Application:
             items = itertools.chain([item], items)
             read_items, write_items = self.collect_allowed_items(items, user)
             headers = {"DAV": DAV_HEADERS, "Content-Type": "text/xml"}
-            answer = xmlutils.propfind(
+            status, answer = xmlutils.propfind(
                 path, content, read_items, write_items, user)
-            return client.MULTI_STATUS, headers, answer
+            if status == client.FORBIDDEN:
+                return NOT_ALLOWED
+            else:
+                return status, headers, answer
 
     def do_PROPPATCH(self, environ, path, user):
         """Manage PROPPATCH request."""

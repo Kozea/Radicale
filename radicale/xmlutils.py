@@ -510,6 +510,12 @@ def propfind(path, xml_request, read_collections, write_collections, user):
             _tag("ICAL", "calendar-color"),
             _tag("CS", "getctag")]
 
+    if _tag("D", "current-user-principal") in props and not user:
+        # Ask for authentication
+        # Returning the DAV:unauthenticated pseudo-principal as specified in
+        # RFC 5397 doesn't seem to work with DAVdroid.
+        return client.FORBIDDEN, None
+
     multistatus = ET.Element(_tag("D", "multistatus"))
     collections = []
     for collection in write_collections:
@@ -524,7 +530,7 @@ def propfind(path, xml_request, read_collections, write_collections, user):
             path, collection, props, user, write=False)
         multistatus.append(response)
 
-    return _pretty_xml(multistatus)
+    return client.MULTI_STATUS, _pretty_xml(multistatus)
 
 
 def _propfind_response(path, item, props, user, write=False):
