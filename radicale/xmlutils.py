@@ -791,7 +791,6 @@ def report(path, xml_request, collection):
         name = name_from_path(hreference, collection)
         if name:
             # Reference is an item
-            path = "/".join(hreference.split("/")[:-1]) + "/"
             item = collection.get(name)
             if item is None:
                 response = _item_response(hreference, found_item=False)
@@ -800,7 +799,6 @@ def report(path, xml_request, collection):
             items = [item]
         else:
             # Reference is a collection
-            path = hreference
             items = collection.pre_filtered_list(filters)
 
         for item in items:
