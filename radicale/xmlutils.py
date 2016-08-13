@@ -33,6 +33,8 @@ from datetime import datetime, timedelta, timezone
 from http import client
 from urllib.parse import unquote, urlparse
 
+from . import storage
+
 
 MIMETYPES = {
     "VADDRESSBOOK": "text/vcard",
@@ -534,8 +536,7 @@ def propfind(path, xml_request, read_collections, write_collections, user):
 
 def _propfind_response(path, item, props, user, write=False):
     """Build and return a PROPFIND response."""
-    # TODO: fix this
-    is_collection = hasattr(item, "list")
+    is_collection = isinstance(item, storage.BaseCollection)
     if is_collection:
         is_leaf = bool(item.get_meta("tag"))
         collection = item
@@ -547,18 +548,11 @@ def _propfind_response(path, item, props, user, write=False):
     href = ET.Element(_tag("D", "href"))
     if is_collection:
         # Some clients expect collections to end with /
-        uri = item.path + "/"
+        uri = "/%s/" % item.path if item.path else "/"
     else:
-        # TODO: fix this
-        if path.split("/")[-1] == item.href:
-            # Happening when depth is 0
-            uri = path
-        else:
-            # Happening when depth is 1
-            uri = "/".join((path, item.href))
+        uri = "/" + posixpath.join(collection.path, item.href)
 
-    # TODO: fix this
-    href.text = _href(collection, uri.replace("//", "/"))
+    href.text = _href(collection, uri)
     response.append(href)
 
     propstat404 = ET.Element(_tag("D", "propstat"))
@@ -831,13 +825,7 @@ def report(path, xml_request, collection):
                 else:
                     not_found_props.append(element)
 
-            # TODO: fix this
-            if hreference.split("/")[-1] == item.href:
-                # Happening when depth is 0
-                uri = hreference
-            else:
-                # Happening when depth is 1
-                uri = posixpath.join(hreference, item.href)
+            uri = "/" + posixpath.join(collection.path, item.href)
             multistatus.append(_item_response(
                 uri, found_props=found_props,
                 not_found_props=not_found_props, found_item=True))
