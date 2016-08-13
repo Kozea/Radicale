@@ -419,12 +419,11 @@ def _param_filter_match(vobject_item, filter_, parent_name):
 
 def name_from_path(path, collection):
     """Return Radicale item name from ``path``."""
-    collection_path = collection.path.strip("/")
-    collection_parts = collection_path.split("/") if collection_path else []
-    path = path.strip("/")
-    path_parts = path.split("/") if path else []
-    if len(path_parts) - len(collection_parts):
-        return path_parts[-1]
+    path = path.strip("/") + "/"
+    start = collection.path + "/"
+    if not path.startswith(start):
+        raise ValueError("'%s' doesn't start with '%s'" % (path, start))
+    return path[len(start):]
 
 
 def props_from_request(root, actions=("set", "remove")):
