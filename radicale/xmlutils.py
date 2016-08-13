@@ -538,7 +538,7 @@ def _propfind_response(path, item, props, user, write=False):
     """Build and return a PROPFIND response."""
     is_collection = isinstance(item, storage.BaseCollection)
     if is_collection:
-        is_leaf = bool(item.get_meta("tag"))
+        is_leaf = item.get_meta("tag") in ("VADDRESSBOOK", "VCALENDAR")
         collection = item
     else:
         collection = item.collection
@@ -786,7 +786,7 @@ def report(path, xml_request, collection):
         if name:
             # Reference is an item
             item = collection.get(name)
-            if item is None:
+            if not item:
                 response = _item_response(hreference, found_item=False)
                 multistatus.append(response)
                 continue
