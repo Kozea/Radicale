@@ -33,6 +33,8 @@ from datetime import datetime, timedelta, timezone
 from http import client
 from urllib.parse import unquote, urlparse
 
+from . import storage
+
 
 MIMETYPES = {
     "VADDRESSBOOK": "text/vcard",
@@ -419,12 +421,11 @@ def _param_filter_match(vobject_item, filter_, parent_name):
 
 def name_from_path(path, collection):
     """Return Radicale item name from ``path``."""
-    collection_path = collection.path.strip("/")
-    collection_parts = collection_path.split("/") if collection_path else []
-    path = path.strip("/")
-    path_parts = path.split("/") if path else []
-    if len(path_parts) - len(collection_parts):
-        return path_parts[-1]
+    path = path.strip("/") + "/"
+    start = collection.path + "/"
+    if not path.startswith(start):
+        raise ValueError("'%s' doesn't start with '%s'" % (path, start))
+    return path[len(start):]
 
 
 def props_from_request(root, actions=("set", "remove")):
@@ -535,10 +536,9 @@ def propfind(path, xml_request, read_collections, write_collections, user):
 
 def _propfind_response(path, item, props, user, write=False):
     """Build and return a PROPFIND response."""
-    # TODO: fix this
-    is_collection = hasattr(item, "list")
+    is_collection = isinstance(item, storage.BaseCollection)
     if is_collection:
-        is_leaf = bool(item.get_meta("tag"))
+        is_leaf = item.get_meta("tag") in ("VADDRESSBOOK", "VCALENDAR")
         collection = item
     else:
         collection = item.collection
@@ -548,18 +548,11 @@ def _propfind_response(path, item, props, user, write=False):
     href = ET.Element(_tag("D", "href"))
     if is_collection:
         # Some clients expect collections to end with /
-        uri = item.path + "/"
+        uri = "/%s/" % item.path if item.path else "/"
     else:
-        # TODO: fix this
-        if path.split("/")[-1] == item.href:
-            # Happening when depth is 0
-            uri = path
-        else:
-            # Happening when depth is 1
-            uri = "/".join((path, item.href))
+        uri = "/" + posixpath.join(collection.path, item.href)
 
-    # TODO: fix this
-    href.text = _href(collection, uri.replace("//", "/"))
+    href.text = _href(collection, uri)
     response.append(href)
 
     propstat404 = ET.Element(_tag("D", "propstat"))
@@ -792,16 +785,14 @@ def report(path, xml_request, collection):
         name = name_from_path(hreference, collection)
         if name:
             # Reference is an item
-            path = "/".join(hreference.split("/")[:-1]) + "/"
             item = collection.get(name)
-            if item is None:
+            if not item:
                 response = _item_response(hreference, found_item=False)
                 multistatus.append(response)
                 continue
             items = [item]
         else:
             # Reference is a collection
-            path = hreference
             items = collection.pre_filtered_list(filters)
 
         for item in items:
@@ -835,13 +826,7 @@ def report(path, xml_request, collection):
                 else:
                     not_found_props.append(element)
 
-            # TODO: fix this
-            if hreference.split("/")[-1] == item.href:
-                # Happening when depth is 0
-                uri = hreference
-            else:
-                # Happening when depth is 1
-                uri = posixpath.join(hreference, item.href)
+            uri = "/" + posixpath.join(collection.path, item.href)
             multistatus.append(_item_response(
                 uri, found_props=found_props,
                 not_found_props=not_found_props, found_item=True))
