@@ -267,6 +267,9 @@ class BaseRequestsMixIn:
                </C:calendar-query>""" % filters_text)
         return answer
 
+    def test_calendar_empty_filter(self):
+        self._test_filter([""])
+
     def test_calendar_tag_filter(self):
         """Report request with tag-based filter on calendar."""
         assert "href>/calendar.ics/event1.ics</" in self._test_filter(["""
