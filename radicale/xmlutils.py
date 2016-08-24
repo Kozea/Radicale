@@ -809,7 +809,8 @@ def report(path, xml_request, collection):
                 match = (
                     _comp_match if collection.get_meta("tag") == "VCALENDAR"
                     else _prop_match)
-                if not all(match(item, filter_[0]) for filter_ in filters):
+                if not all(match(item, filter_[0]) for filter_ in filters
+                           if filter_):
                     continue
 
             found_props = []
