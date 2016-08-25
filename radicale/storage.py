@@ -411,11 +411,12 @@ class Collection(BaseCollection):
             raise
         self._sync_directory(directory)
 
-    def _find_available_file_name(self):
+    @staticmethod
+    def _find_available_file_name(exists_fn):
         # Prevent infinite loop
         for _ in range(10000):
             file_name = hex(getrandbits(32))[2:]
-            if not self.has(file_name):
+            if not exists_fn(file_name):
                 return file_name
         raise FileExistsError(errno.EEXIST, "No usable file name found")
 
@@ -557,21 +558,12 @@ class Collection(BaseCollection):
                         new_collection = vobject.iCalendar()
                         for item in items:
                             new_collection.add(item)
-
-                        # Prevent infinite loop
-                        for _ in range(10000):
-                            href = self._find_available_file_name()
-                            if href not in vobject_items:
-                                break
-                        else:
-                            raise FileExistsError(
-                                errno.EEXIST, "No usable file name found")
+                        href = self._find_available_file_name(vobject_items.get)
                         vobject_items[href] = new_collection
-
                     self.upload_all(vobject_items)
                 elif props.get("tag") == "VCARD":
                     for card in collection:
-                        self.upload(self._find_available_file_name(), card)
+                        self.upload(self._find_available_file_name(self.has), card)
 
             # This operation is not atomic on the filesystem level but it's
             # very unlikely that one rename operations succeeds while the
