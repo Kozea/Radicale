@@ -562,8 +562,11 @@ class Collection(BaseCollection):
                         vobject_items[href] = new_collection
                     self.upload_all(vobject_items)
                 elif props.get("tag") == "VCARD":
+                    vobject_items = {}
                     for card in collection:
-                        self.upload(self._find_available_file_name(self.has), card)
+                        href = self._find_available_file_name(vobject_items.get)
+                        vobject_items[href] = card
+                    self.upload_all(vobject_items)
 
             # This operation is not atomic on the filesystem level but it's
             # very unlikely that one rename operations succeeds while the
