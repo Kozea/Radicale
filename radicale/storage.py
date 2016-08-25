@@ -582,14 +582,25 @@ class Collection(BaseCollection):
         """Upload a new set of items.
 
         This takes a mapping of href and vobject items and
-        returns a list of uploaded items.
-        Might bring optimizations on some storages.
+        uploads them nonatomic and without existence checks.
 
         """
-        return [
-            self.upload(href, vobject_item)
-            for href, vobject_item in vobject_items.items()
-        ]
+        fs = []
+        for href, item in vobject_items.items():
+            path = path_to_filesystem(self._filesystem_path, href)
+            fs.append(open(path, "w", encoding=self.encoding, newline=""))
+            fs[-1].write(item.serialize())
+        fsync_fn = lambda fd: None
+        if self.configuration.getboolean("storage", "fsync"):
+            if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
+                fsync_fn = lambda fd: fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
+            else:
+                fsync_fn = os.fsync
+        # sync everything at once because it's slightly faster.
+        for f in fs:
+            fsync_fn(f.fileno())
+            f.close()
+        self._sync_directory(self._filesystem_path)
 
     @classmethod
     def move(cls, item, to_collection, to_href):
