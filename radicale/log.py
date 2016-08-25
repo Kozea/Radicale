@@ -30,7 +30,7 @@ import sys
 
 
 def configure_from_file(logger, filename, debug):
-    logging.config.fileConfig(filename)
+    logging.config.fileConfig(filename, disable_existing_loggers=False)
     if debug:
         logger.setLevel(logging.DEBUG)
         for handler in logger.handlers:
