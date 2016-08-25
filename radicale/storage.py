@@ -318,7 +318,7 @@ class BaseCollection:
         return self.get(href) is not None
 
     def upload(self, href, vobject_item):
-        """Upload a new item."""
+        """Upload a new or replace an existing item."""
         raise NotImplementedError
 
     def upload_all(self, vobject_items):
@@ -333,16 +333,6 @@ class BaseCollection:
             self.upload(href, vobject_item)
             for href, vobject_item in vobject_items.items()
         ]
-
-    def update(self, href, vobject_item):
-        """Update an item.
-
-        Functionally similar to ``delete`` plus ``upload``, but might bring
-        performance benefits on some storages when used cleverly.
-
-        """
-        self.delete(href)
-        self.upload(href, vobject_item)
 
     def delete(self, href=None):
         """Delete an item.
@@ -644,19 +634,6 @@ class Collection(BaseCollection):
         if not is_safe_filesystem_path_component(href):
             raise UnsafePathError(href)
         path = path_to_filesystem(self._filesystem_path, href)
-        if os.path.exists(path):
-            raise ComponentExistsError(href)
-        item = Item(self, vobject_item, href)
-        with self._atomic_write(path, newline="") as fd:
-            fd.write(item.serialize())
-        return item
-
-    def update(self, href, vobject_item):
-        if not is_safe_filesystem_path_component(href):
-            raise UnsafePathError(href)
-        path = path_to_filesystem(self._filesystem_path, href)
-        if not os.path.isfile(path):
-            raise ComponentNotFoundError(href)
         item = Item(self, vobject_item, href)
         with self._atomic_write(path, newline="") as fd:
             fd.write(item.serialize())

@@ -600,10 +600,7 @@ class Application:
                 if tag:
                     parent_item.set_meta({"tag": tag})
                 href = posixpath.basename(path.strip("/"))
-                if item:
-                    new_item = parent_item.update(href, items[0])
-                else:
-                    new_item = parent_item.upload(href, items[0])
+                new_item = parent_item.upload(href, items[0])
             headers = {"ETag": new_item.etag}
             return client.CREATED, headers, None
 
