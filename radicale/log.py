@@ -55,9 +55,9 @@ def start(name="radicale", filename=None, debug=False):
         # Default configuration, standard output
         if filename:
             logger.warning(
-                "Logging configuration file '%s' not found, using stdout." %
+                "Logging configuration file '%s' not found, using stderr." %
                 filename)
-        handler = logging.StreamHandler(sys.stdout)
+        handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(logging.Formatter("%(message)s"))
         logger.addHandler(handler)
     if debug:

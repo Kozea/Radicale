@@ -39,7 +39,7 @@ handlers = console,file
 # Console handler
 class = StreamHandler
 level = INFO
-args = (sys.stdout,)
+args = (sys.stderr,)
 formatter = simple
 
 [handler_file]
