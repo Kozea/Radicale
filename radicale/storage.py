@@ -552,7 +552,7 @@ class Collection(BaseCollection):
                         items.extend(
                             getattr(collection, "%s_list" % content, []))
                     items_by_uid = groupby(sorted(items, key=get_uid), get_uid)
-                    collections = {}
+                    vobject_items = {}
                     for uid, items in items_by_uid:
                         new_collection = vobject.iCalendar()
                         for item in items:
@@ -561,14 +561,14 @@ class Collection(BaseCollection):
                         # Prevent infinite loop
                         for _ in range(10000):
                             href = self._find_available_file_name()
-                            if href not in collections:
+                            if href not in vobject_items:
                                 break
                         else:
                             raise FileExistsError(
                                 errno.EEXIST, "No usable file name found")
-                        collections[href] = new_collection
+                        vobject_items[href] = new_collection
 
-                    self.upload_all(collections)
+                    self.upload_all(vobject_items)
                 elif props.get("tag") == "VCARD":
                     for card in collection:
                         self.upload(self._find_available_file_name(), card)
