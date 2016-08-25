@@ -46,10 +46,8 @@ def start(name="radicale", filename=None, debug=False):
         configure_from_file(logger, filename, debug)
         # Reload config on SIGHUP (UNIX only)
         if hasattr(signal, "SIGHUP"):
-            def handler_generator(logger, filename, debug):
-                def handler(signum, frame):
-                    configure_from_file(logger, filename, debug)
-            handler = handler_generator(logger, filename, debug)
+            def handler(signum, frame):
+                configure_from_file(logger, filename, debug)
             signal.signal(signal.SIGHUP, handler)
     else:
         # Default configuration, standard output
