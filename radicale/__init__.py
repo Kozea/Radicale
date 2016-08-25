@@ -38,6 +38,7 @@ import socketserver
 import ssl
 import subprocess
 import threading
+import urllib
 import wsgiref.simple_server
 import zlib
 from contextlib import contextmanager
@@ -132,6 +133,12 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     """HTTP requests handler."""
     def log_message(self, *args, **kwargs):
         """Disable inner logging management."""
+
+    def get_environ(self):
+        env = super().get_environ()
+        # Parent class only tries latin1 encoding
+        env["PATH_INFO"] = urllib.parse.unquote(self.path.split("?", 1)[0])
+        return env
 
 
 class Application:
