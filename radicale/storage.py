@@ -29,7 +29,9 @@ import errno
 import json
 import os
 import posixpath
+import shlex
 import stat
+import subprocess
 import threading
 import time
 from contextlib import contextmanager
@@ -371,11 +373,13 @@ class BaseCollection:
 
     @classmethod
     @contextmanager
-    def acquire_lock(cls, mode):
+    def acquire_lock(cls, mode, user=None):
         """Set a context manager to lock the whole storage.
 
         ``mode`` must either be "r" for shared access or "w" for exclusive
         access.
+
+        ``user`` is the name of the logged in user or empty.
 
         """
         raise NotImplementedError
@@ -743,13 +747,15 @@ class Collection(BaseCollection):
 
     @classmethod
     @contextmanager
-    def acquire_lock(cls, mode):
+    def acquire_lock(cls, mode, user=None):
         def condition():
             if mode == "r":
                 return not cls._writer
             else:
                 return not cls._writer and cls._readers == 0
 
+        folder = os.path.expanduser(cls.configuration.get(
+            "storage", "filesystem_folder"))
         # Use a primitive lock which only works within one process as a
         # precondition for inter-process file-based locking
         with cls._lock:
@@ -770,8 +776,6 @@ class Collection(BaseCollection):
             else:
                 cls._writer = True
             if not cls._lock_file:
-                folder = os.path.expanduser(
-                    cls.configuration.get("storage", "filesystem_folder"))
                 cls._makedirs_synced(folder)
                 lock_path = os.path.join(folder, ".Radicale.lock")
                 cls._lock_file = open(lock_path, "w+")
@@ -797,6 +801,13 @@ class Collection(BaseCollection):
                 cls._lock_file_locked = True
         try:
             yield
+            # execute hook
+            hook = cls.configuration.get("storage", "hook")
+            if mode == "w" and hook:
+                cls.logger.debug("Running hook")
+                subprocess.check_call(
+                    hook % {"user": shlex.quote(user or "Anonymous")},
+                    shell=True, cwd=folder)
         finally:
             with cls._lock:
                 if mode == "r":
