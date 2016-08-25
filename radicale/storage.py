@@ -560,13 +560,13 @@ class Collection(BaseCollection):
                             new_collection.add(item)
                         href = self._find_available_file_name(vobject_items.get)
                         vobject_items[href] = new_collection
-                    self.upload_all(vobject_items)
+                    self.upload_all_nonatomic(vobject_items)
                 elif props.get("tag") == "VCARD":
                     vobject_items = {}
                     for card in collection:
                         href = self._find_available_file_name(vobject_items.get)
                         vobject_items[href] = card
-                    self.upload_all(vobject_items)
+                    self.upload_all_nonatomic(vobject_items)
 
             # This operation is not atomic on the filesystem level but it's
             # very unlikely that one rename operations succeeds while the
@@ -578,7 +578,7 @@ class Collection(BaseCollection):
 
         return cls(sane_path, principal=principal)
 
-    def upload_all(self, vobject_items):
+    def upload_all_nonatomic(self, vobject_items):
         """Upload a new set of items.
 
         This takes a mapping of href and vobject items and
