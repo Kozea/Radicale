@@ -321,19 +321,6 @@ class BaseCollection:
         """Upload a new item."""
         raise NotImplementedError
 
-    def upload_all(self, vobject_items):
-        """Upload a new set of items.
-
-        This takes a mapping of href and vobject items and
-        returns a list of uploaded items.
-        Might bring optimizations on some storages.
-
-        """
-        return [
-            self.upload(href, vobject_item)
-            for href, vobject_item in vobject_items.items()
-        ]
-
     def update(self, href, vobject_item):
         """Update an item.
 
@@ -595,6 +582,19 @@ class Collection(BaseCollection):
             cls._sync_directory(parent_dir)
 
         return cls(sane_path, principal=principal)
+
+    def upload_all(self, vobject_items):
+        """Upload a new set of items.
+
+        This takes a mapping of href and vobject items and
+        returns a list of uploaded items.
+        Might bring optimizations on some storages.
+
+        """
+        return [
+            self.upload(href, vobject_item)
+            for href, vobject_item in vobject_items.items()
+        ]
 
     @classmethod
     def move(cls, item, to_collection, to_href):
