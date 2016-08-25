@@ -29,7 +29,7 @@ import signal
 import sys
 
 
-def configure_from_file(filename, debug, logger):
+def configure_from_file(logger, filename, debug):
     logging.config.fileConfig(filename)
     if debug:
         logger.setLevel(logging.DEBUG)
