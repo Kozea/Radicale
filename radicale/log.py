@@ -29,8 +29,8 @@ import signal
 import sys
 
 
-def configure_from_file(filename, debug, logger):
-    logging.config.fileConfig(filename)
+def configure_from_file(logger, filename, debug):
+    logging.config.fileConfig(filename, disable_existing_loggers=False)
     if debug:
         logger.setLevel(logging.DEBUG)
         for handler in logger.handlers:
@@ -46,18 +46,16 @@ def start(name="radicale", filename=None, debug=False):
         configure_from_file(logger, filename, debug)
         # Reload config on SIGHUP (UNIX only)
         if hasattr(signal, "SIGHUP"):
-            def handler_generator(logger, filename, debug):
-                def handler(signum, frame):
-                    configure_from_file(logger, filename, debug)
-            handler = handler_generator(logger, filename, debug)
+            def handler(signum, frame):
+                configure_from_file(logger, filename, debug)
             signal.signal(signal.SIGHUP, handler)
     else:
         # Default configuration, standard output
         if filename:
             logger.warning(
-                "Logging configuration file '%s' not found, using stdout." %
+                "Logging configuration file '%s' not found, using stderr." %
                 filename)
-        handler = logging.StreamHandler(sys.stdout)
+        handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(logging.Formatter("%(message)s"))
         logger.addHandler(handler)
     if debug:

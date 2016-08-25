@@ -104,7 +104,11 @@ def run():
     if not configuration_found:
         logger.warning("Configuration file '%s' not found" % options.config)
 
-    serve(configuration, logger)
+    try:
+        serve(configuration, logger)
+    except Exception:
+        logger.exception("An exception occurred during server startup:")
+        exit(1)
 
 
 def serve(configuration, logger):
@@ -175,6 +179,7 @@ def serve(configuration, logger):
     server_class.max_connections = configuration.getint(
         "server", "max_connections")
 
+    RequestHandler.logger = logger
     if not configuration.getboolean("server", "dns_lookup"):
         RequestHandler.address_string = lambda self: self.client_address[0]
 

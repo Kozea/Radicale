@@ -28,6 +28,7 @@ should have been included in this package.
 
 import base64
 import contextlib
+import io
 import itertools
 import os
 import posixpath
@@ -131,6 +132,18 @@ class ThreadedHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
 
 class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     """HTTP requests handler."""
+
+    # These class attributes must be set before creating instance
+    logger = None
+
+    def __init__(self, *args, **kwargs):
+        # Store exception for logging
+        self.error_stream = io.StringIO()
+        super().__init__(*args, **kwargs)
+
+    def get_stderr(self):
+        return self.error_stream
+
     def log_message(self, *args, **kwargs):
         """Disable inner logging management."""
 
@@ -139,6 +152,14 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
         # Parent class only tries latin1 encoding
         env["PATH_INFO"] = urllib.parse.unquote(self.path.split("?", 1)[0])
         return env
+
+    def handle(self):
+        super().handle()
+        # Log exception
+        error = self.error_stream.getvalue().strip("\n")
+        if error:
+            self.logger.error(
+                "An exception occurred during request:\n%s" % error)
 
 
 class Application:
