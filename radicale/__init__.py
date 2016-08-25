@@ -315,11 +315,10 @@ class Application:
             if self.authorized(user, principal_path, "w"):
                 with self._lock_collection("r", user):
                     principal = next(
-                        self.Collection.discover(principal_path, depth="1"),
-                        None)
+                        self.Collection.discover(principal_path), None)
                 if not principal:
                     with self._lock_collection("w", user):
-                        self.Collection.create_collection(principal_path)
+                        self.Collection.create_user(user)
 
         # Verify content length
         content_length = int(environ.get("CONTENT_LENGTH") or 0)

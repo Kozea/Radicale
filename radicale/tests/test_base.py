@@ -739,6 +739,13 @@ class BaseRequestsMixIn:
             "GET", "/user/", REMOTE_USER="user")
         assert status == 200
 
+    def test_creation_of_predefined_collections(self):
+        self.request("GET", "/", REMOTE_USER="user")
+        status, headers, answer = self.request("GET", "/user/calendar.ics/")
+        assert status == 200
+        status, headers, answer = self.request("GET", "/user/addressbook.vcf/")
+        assert status == 200
+
     def test_existence_of_root_collections(self):
         """Verify that the root collection always exists."""
         # Use PROPFIND because GET returns message

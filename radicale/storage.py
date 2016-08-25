@@ -36,7 +36,7 @@ from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
 from itertools import groupby
-from random import getrandbits
+from random import getrandbits, randint
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 
 import vobject
@@ -258,6 +258,33 @@ class BaseCollection:
             to_collection.upload(to_href, item.item)
         item.collection.delete(item.href)
 
+    @classmethod
+    def create_user(cls, user):
+        """Create principal collection and predefined addressbooks and
+           calendars for ``user``."""
+        principal_path = "/%s/" % user
+        if not user or next(cls.discover(principal_path), None):
+            return
+        cls.create_collection(principal_path)
+        colls = ([(n, "VCALENDAR") for n in
+                  cls.configuration.get("skel", "calendars").split(",")] +
+                 [(n, "VADDRESSBOOK") for n in
+                  cls.configuration.get("skel", "addressbooks").split(",")])
+        for href, tag in colls:
+            href = href.strip()
+            if not href:
+                continue
+            if not is_safe_path_component(href):
+                raise UnsafePathError(href)
+            props = {"tag": tag}
+            color = "#%06X" % randint(0, 2**24-1)
+            if tag == "VCALENDAR":
+                props["ICAL:calendar-color"] = color
+            elif tag == "VADDRESSBOOK":
+                props["{http://inf-it.com/ns/ab/}addressbook-color"] = color
+            cls.create_collection(posixpath.join(principal_path, href),
+                                  props=props)
+
     @property
     def etag(self):
         return get_etag(self.serialize())
@@ -384,9 +411,8 @@ class BaseCollection:
 class Collection(BaseCollection):
     """Collection stored in several files per calendar."""
 
-    def __init__(self, path, principal=False, folder=None):
-        if not folder:
-            folder = self._get_collection_root_folder()
+    def __init__(self, path, principal=False):
+        folder = self._get_collection_root_folder()
         # Path should already be sanitized
         self.path = sanitize_path(path).strip("/")
         self.encoding = self.configuration.get("encoding", "stock")
@@ -526,6 +552,26 @@ class Collection(BaseCollection):
                 yield cls(child_path, child_principal)
 
     @classmethod
+    def create_user(cls, user):
+        # Create principal collection in temporary directory and rename,
+        # when all predefined collections are created.
+        principal_path = "/%s/" % user
+        if not user or next(cls.discover(principal_path), None):
+            return
+        folder = cls._get_collection_root_folder()
+        with TemporaryDirectory(
+                prefix=".Radicale.tmp-", dir=folder) as tmp_dir:
+            class ClsTmpCollectionRootFolder(cls):
+                @staticmethod
+                def _get_collection_root_folder():
+                    return tmp_dir
+
+            super(Collection, ClsTmpCollectionRootFolder).create_user(user)
+            os.rename(path_to_filesystem(tmp_dir, user),
+                      path_to_filesystem(folder, user))
+            cls._sync_directory(folder)
+
+    @classmethod
     def create_collection(cls, href, collection=None, props=None):
         folder = cls._get_collection_root_folder()
 
@@ -554,7 +600,12 @@ class Collection(BaseCollection):
             # The temporary directory itself can't be renamed
             tmp_filesystem_path = os.path.join(tmp_dir, "collection")
             os.makedirs(tmp_filesystem_path)
-            self = cls("/", principal=principal, folder=tmp_filesystem_path)
+            class ClsTmpCollectionRootFolder(cls):
+                @staticmethod
+                def _get_collection_root_folder():
+                    return tmp_filesystem_path
+
+            self = ClsTmpCollectionRootFolder("/", principal=principal)
             self.set_meta(props)
 
             if collection:
