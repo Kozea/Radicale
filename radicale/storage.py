@@ -323,19 +323,6 @@ class BaseCollection:
         """Upload a new item."""
         raise NotImplementedError
 
-    def upload_all(self, vobject_items):
-        """Upload a new set of items.
-
-        This takes a mapping of href and vobject items and
-        returns a list of uploaded items.
-        Might bring optimizations on some storages.
-
-        """
-        return [
-            self.upload(href, vobject_item)
-            for href, vobject_item in vobject_items.items()
-        ]
-
     def update(self, href, vobject_item):
         """Update an item.
 
@@ -428,11 +415,12 @@ class Collection(BaseCollection):
             raise
         self._sync_directory(directory)
 
-    def _find_available_file_name(self):
+    @staticmethod
+    def _find_available_file_name(exists_fn):
         # Prevent infinite loop
         for _ in range(10000):
             file_name = hex(getrandbits(32))[2:]
-            if not self.has(file_name):
+            if not exists_fn(file_name):
                 return file_name
         raise FileExistsError(errno.EEXIST, "No usable file name found")
 
@@ -569,26 +557,20 @@ class Collection(BaseCollection):
                         items.extend(
                             getattr(collection, "%s_list" % content, []))
                     items_by_uid = groupby(sorted(items, key=get_uid), get_uid)
-                    collections = {}
+                    vobject_items = {}
                     for uid, items in items_by_uid:
                         new_collection = vobject.iCalendar()
                         for item in items:
                             new_collection.add(item)
-
-                        # Prevent infinite loop
-                        for _ in range(10000):
-                            href = self._find_available_file_name()
-                            if href not in collections:
-                                break
-                        else:
-                            raise FileExistsError(
-                                errno.EEXIST, "No usable file name found")
-                        collections[href] = new_collection
-
-                    self.upload_all(collections)
+                        href = self._find_available_file_name(vobject_items.get)
+                        vobject_items[href] = new_collection
+                    self.upload_all_nonatomic(vobject_items)
                 elif props.get("tag") == "VCARD":
+                    vobject_items = {}
                     for card in collection:
-                        self.upload(self._find_available_file_name(), card)
+                        href = self._find_available_file_name(vobject_items.get)
+                        vobject_items[href] = card
+                    self.upload_all_nonatomic(vobject_items)
 
             # This operation is not atomic on the filesystem level but it's
             # very unlikely that one rename operations succeeds while the
@@ -599,6 +581,30 @@ class Collection(BaseCollection):
             cls._sync_directory(parent_dir)
 
         return cls(sane_path, principal=principal)
+
+    def upload_all_nonatomic(self, vobject_items):
+        """Upload a new set of items.
+
+        This takes a mapping of href and vobject items and
+        uploads them nonatomic and without existence checks.
+
+        """
+        fs = []
+        for href, item in vobject_items.items():
+            path = path_to_filesystem(self._filesystem_path, href)
+            fs.append(open(path, "w", encoding=self.encoding, newline=""))
+            fs[-1].write(item.serialize())
+        fsync_fn = lambda fd: None
+        if self.configuration.getboolean("storage", "fsync"):
+            if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
+                fsync_fn = lambda fd: fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
+            else:
+                fsync_fn = os.fsync
+        # sync everything at once because it's slightly faster.
+        for f in fs:
+            fsync_fn(f.fileno())
+            f.close()
+        self._sync_directory(self._filesystem_path)
 
     @classmethod
     def move(cls, item, to_collection, to_href):
