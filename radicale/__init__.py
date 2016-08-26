@@ -33,11 +33,9 @@ import itertools
 import os
 import posixpath
 import pprint
-import shlex
 import socket
 import socketserver
 import ssl
-import subprocess
 import threading
 import urllib
 import wsgiref.simple_server
@@ -313,12 +311,12 @@ class Application:
         if user and is_authenticated:
             principal_path = "/%s/" % user
             if self.authorized(user, principal_path, "w"):
-                with self._lock_collection("r", user):
+                with self.Collection.acquire_lock("r", user):
                     principal = next(
                         self.Collection.discover(principal_path, depth="1"),
                         None)
                 if not principal:
-                    with self._lock_collection("w", user):
+                    with self.Collection.acquire_lock("w", user):
                         self.Collection.create_collection(principal_path)
 
         # Verify content length
@@ -391,20 +389,6 @@ class Application:
             allowed |= self.authorized(user, parent_path, permission)
         return allowed
 
-    @contextmanager
-    def _lock_collection(self, lock_mode, user):
-        """Lock the collection with ``permission`` and execute hook."""
-        with self.Collection.acquire_lock(lock_mode) as value:
-            yield value
-            hook = self.configuration.get("storage", "hook")
-            if lock_mode == "w" and hook:
-                self.logger.debug("Running hook")
-                folder = os.path.expanduser(self.configuration.get(
-                    "storage", "filesystem_folder"))
-                subprocess.check_call(
-                    hook % {"user": shlex.quote(user or "Anonymous")},
-                    shell=True, cwd=folder)
-
     def _read_content(self, environ):
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
         if content_length > 0:
@@ -419,7 +403,7 @@ class Application:
         """Manage DELETE request."""
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
-        with self._lock_collection("w", user):
+        with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if not self._access(user, path, "w", item):
                 return NOT_ALLOWED
@@ -444,7 +428,7 @@ class Application:
             return client.OK, headers, answer
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
-        with self._lock_collection("r", user):
+        with self.Collection.acquire_lock("r", user):
             item = next(self.Collection.discover(path), None)
             if not self._access(user, path, "r", item):
                 return NOT_ALLOWED
@@ -473,7 +457,7 @@ class Application:
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
         content = self._read_content(environ)
-        with self._lock_collection("w", user):
+        with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if item:
                 return client.CONFLICT, {}, None
@@ -489,7 +473,7 @@ class Application:
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
         content = self._read_content(environ)
-        with self._lock_collection("w", user):
+        with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if item:
                 return client.CONFLICT, {}, None
@@ -509,7 +493,7 @@ class Application:
         if not self._access(user, to_path, "w"):
             return NOT_ALLOWED
 
-        with self._lock_collection("w", user):
+        with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if not self._access(user, path, "w", item):
                 return NOT_ALLOWED
@@ -547,7 +531,7 @@ class Application:
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
         content = self._read_content(environ)
-        with self._lock_collection("r", user):
+        with self.Collection.acquire_lock("r", user):
             items = self.Collection.discover(
                 path, environ.get("HTTP_DEPTH", "0"))
             # take root item for rights checking
@@ -572,7 +556,7 @@ class Application:
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
         content = self._read_content(environ)
-        with self._lock_collection("w", user):
+        with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if not isinstance(item, self.Collection):
                 return client.CONFLICT, {}, None
@@ -585,7 +569,7 @@ class Application:
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
         content = self._read_content(environ)
-        with self._lock_collection("w", user):
+        with self.Collection.acquire_lock("w", user):
             parent_path = storage.sanitize_path(
                 "/%s/" % posixpath.dirname(path.strip("/")))
             item = next(self.Collection.discover(path), None)
@@ -640,7 +624,7 @@ class Application:
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
         content = self._read_content(environ)
-        with self._lock_collection("r", user):
+        with self.Collection.acquire_lock("r", user):
             item = next(self.Collection.discover(path), None)
             if not self._access(user, path, "w", item):
                 return NOT_ALLOWED
