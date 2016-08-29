@@ -162,7 +162,7 @@ def serve(configuration, logger):
         server_class = ThreadedHTTPSServer
         server_class.certificate = configuration.get("server", "certificate")
         server_class.key = configuration.get("server", "key")
-        server_class.cyphers = configuration.get("server", "cyphers")
+        server_class.ciphers = configuration.get("server", "ciphers")
         server_class.certificate = getattr(
             ssl, configuration.get("server", "protocol"), ssl.PROTOCOL_SSLv23)
         # Test if the SSL files can be read

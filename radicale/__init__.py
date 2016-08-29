@@ -102,7 +102,7 @@ class HTTPSServer(HTTPServer):
     certificate = None
     key = None
     protocol = None
-    cyphers = None
+    ciphers = None
 
     def __init__(self, address, handler):
         """Create server by wrapping HTTP socket in an SSL socket."""
@@ -110,7 +110,7 @@ class HTTPSServer(HTTPServer):
 
         self.socket = ssl.wrap_socket(
             self.socket, self.key, self.certificate, server_side=True,
-            ssl_version=self.protocol, cyphers=self.cyphers)
+            ssl_version=self.protocol, ciphers=self.ciphers)
 
         self.server_bind()
         self.server_activate()
