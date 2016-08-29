@@ -163,7 +163,7 @@ def serve(configuration, logger):
         server_class.certificate = configuration.get("server", "certificate")
         server_class.key = configuration.get("server", "key")
         server_class.ciphers = configuration.get("server", "ciphers")
-        server_class.certificate = getattr(
+        server_class.protocol = getattr(
             ssl, configuration.get("server", "protocol"), ssl.PROTOCOL_SSLv23)
         # Test if the SSL files can be read
         for name in ("certificate", "key"):
