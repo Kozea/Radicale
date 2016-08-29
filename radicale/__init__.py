@@ -40,7 +40,6 @@ import threading
 import urllib
 import wsgiref.simple_server
 import zlib
-from contextlib import contextmanager
 from http import client
 from urllib.parse import unquote, urlparse
 
