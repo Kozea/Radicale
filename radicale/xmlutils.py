@@ -425,7 +425,7 @@ def name_from_path(path, collection):
     start = collection.path + "/"
     if not path.startswith(start):
         raise ValueError("'%s' doesn't start with '%s'" % (path, start))
-    return path[len(start):]
+    return path[len(start):].rstrip("/")
 
 
 def props_from_request(root, actions=("set", "remove")):
