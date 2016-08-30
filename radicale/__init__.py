@@ -256,7 +256,6 @@ class Application:
             # Return response content
             return [answer] if answer else []
 
-        self.logger.debug("\n")  # Add empty lines between requests in debug
         self.logger.info("%s request at %s received",
                          environ["REQUEST_METHOD"], environ["PATH_INFO"])
         headers = pprint.pformat(self.headers_log(environ))
