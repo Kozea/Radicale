@@ -67,6 +67,8 @@ REQUEST_ENTITY_TOO_LARGE = (client.REQUEST_ENTITY_TOO_LARGE,
                             "Request body too large.")
 REMOTE_DESTINATION = (client.BAD_GATEWAY, {"Content-type": "text/plain"},
                       "Remote destination not supported.")
+DIRECTORY_LISTING = (client.FORBIDDEN, {"Content-type": "text/plain"},
+                     "Directory listings are not supported.")
 
 DAV_HEADERS = "1, 2, 3, calendar-access, addressbook, extended-mkcol"
 
@@ -451,6 +453,8 @@ class Application:
                 return NOT_FOUND
             if isinstance(item, self.Collection):
                 collection = item
+                if collection.get_meta("tag") not in ("VADDRESSBOOK", "VCALENDAR"):
+                    return DIRECTORY_LISTING
             else:
                 collection = item.collection
             content_type = xmlutils.MIMETYPES.get(
