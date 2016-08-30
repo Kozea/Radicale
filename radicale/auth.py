@@ -65,12 +65,12 @@ def load(configuration, logger):
     auth_type = configuration.get("auth", "type")
     logger.debug("Authentication type is %s", auth_type)
     if auth_type == "None":
-        return lambda user, password: True
+        class_ = NoneAuth
     elif auth_type == "htpasswd":
-        return Auth(configuration, logger).is_authenticated
+        class_ = Auth
     else:
-        module = import_module(auth_type)
-        return module.Auth(configuration, logger).is_authenticated
+        class_ = import_module(auth_type).Auth
+    return class_(configuration, logger)
 
 
 class BaseAuth:
@@ -87,6 +87,15 @@ class BaseAuth:
 
         """
         raise NotImplementedError
+
+    def map_login_to_user(self, login):
+        """Map login to internal username."""
+        return login
+
+
+class NoneAuth(BaseAuth):
+    def is_authenticated(self, user, password):
+        return True
 
 
 class Auth(BaseAuth):
