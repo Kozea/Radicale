@@ -336,9 +336,10 @@ class Application:
             login, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
             user = self.Auth.map_login_to_user(login)
+            is_authenticated = self.Auth.is_authenticated(user, password)
         else:
             user = self.Auth.map_login_to_user(environ.get("REMOTE_USER", ""))
-            password = None
+            is_authenticated = bool(user)
 
         # If "/.well-known" is not available, clients query "/"
         if path == "/.well-known" or path.startswith("/.well-known/"):
@@ -348,8 +349,6 @@ class Application:
             # Prevent usernames like "user/calendar.ics"
             self.logger.info("Refused unsafe username: %s", user)
             is_authenticated = False
-        else:
-            is_authenticated = self.Auth.is_authenticated(user, password)
         is_valid_user = is_authenticated or not user
 
         # Create principal collection
