@@ -54,8 +54,6 @@ NOT_ALLOWED = (client.FORBIDDEN, {"Content-type": "text/plain"},
                "Access to the requested resource forbidden.")
 NOT_FOUND = (client.NOT_FOUND, {"Content-type": "text/plain"},
              "The requested resource could not be found.")
-GONE = (client.GONE, {"Content-type": "text/plain"},
-        "The requested resource is no longer available.")
 WEBDAV_PRECONDITION_FAILED = (client.CONFLICT, {"Content-type": "text/plain"},
                               "WebDAV precondition failed.")
 PRECONDITION_FAILED = (client.PRECONDITION_FAILED,
@@ -425,7 +423,7 @@ class Application:
             if not self._access(user, path, "w", item):
                 return NOT_ALLOWED
             if not item:
-                return GONE
+                return NOT_FOUND
             if_match = environ.get("HTTP_IF_MATCH", "*")
             if if_match not in ("*", item.etag):
                 # ETag precondition not verified, do not delete item
@@ -519,7 +517,7 @@ class Application:
             if not self._access(user, to_path, "w", item):
                 return NOT_ALLOWED
             if not item:
-                return GONE
+                return NOT_FOUND
             if isinstance(item, self.Collection):
                 return WEBDAV_PRECONDITION_FAILED
 
