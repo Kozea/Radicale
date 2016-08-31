@@ -167,7 +167,7 @@ class Application:
         super().__init__()
         self.configuration = configuration
         self.logger = logger
-        self.is_authenticated = auth.load(configuration, logger)
+        self.Auth = auth.load(configuration, logger)
         self.Collection = storage.load(configuration, logger)
         self.authorized = rights.load(configuration, logger)
         self.encoding = configuration.get("encoding", "request")
@@ -287,10 +287,11 @@ class Application:
         authorization = environ.get("HTTP_AUTHORIZATION", None)
         if authorization and authorization.startswith("Basic"):
             authorization = authorization[len("Basic"):].strip()
-            user, password = self.decode(base64.b64decode(
+            login, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
+            user = self.Auth.map_login_to_user(login)
         else:
-            user = environ.get("REMOTE_USER")
+            user = self.Auth.map_login_to_user(environ.get("REMOTE_USER", ""))
             password = None
 
         # If "/.well-known" is not available, clients query "/"
@@ -302,7 +303,7 @@ class Application:
             self.logger.info("Refused unsafe username: %s", user)
             is_authenticated = False
         else:
-            is_authenticated = self.is_authenticated(user, password)
+            is_authenticated = self.Auth.is_authenticated(user, password)
         is_valid_user = is_authenticated or not user
 
         # Create principal collection
