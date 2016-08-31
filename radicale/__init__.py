@@ -422,9 +422,7 @@ class Application:
         """Manage GET request."""
         # Display a "Radicale works!" message if the root URL is requested
         if not path.strip("/"):
-            headers = {"Content-type": "text/html"}
-            answer = "<!DOCTYPE html>\n<title>Radicale</title>Radicale works!"
-            return client.OK, headers, answer
+            return client.OK, {"Content-type": "text/plain"}, "Radicale works!"
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
         with self.Collection.acquire_lock("r", user):
