@@ -736,8 +736,8 @@ class BaseRequestsMixIn:
     def test_principal_collection_creation(self):
         """Verify existence of the principal collection."""
         status, headers, answer = self.request(
-            "GET", "/user/", REMOTE_USER="user")
-        assert status == 200
+            "PROPFIND", "/user/", REMOTE_USER="user")
+        assert status == 207
 
     def test_existence_of_root_collections(self):
         """Verify that the root collection always exists."""
@@ -762,8 +762,8 @@ class BaseRequestsMixIn:
                                                          "created_by_hook"))
         status, headers, answer = self.request("MKCOL", "/calendar.ics/")
         assert status == 201
-        status, headers, answer = self.request("GET", "/created_by_hook/")
-        assert status == 200
+        status, headers, answer = self.request("PROPFIND", "/created_by_hook/")
+        assert status == 207
 
     def test_hook_read_access(self):
         """Verify that hook is not run for read accesses."""
@@ -791,8 +791,8 @@ class BaseRequestsMixIn:
                                                          "created_by_hook"))
         status, headers, answer = self.request("GET", "/", REMOTE_USER="user")
         assert status == 200
-        status, headers, answer = self.request("GET", "/created_by_hook/")
-        assert status == 200
+        status, headers, answer = self.request("PROPFIND", "/created_by_hook/")
+        assert status == 207
 
     def test_hook_fail(self):
         """Verify that a request fails if the hook fails."""
