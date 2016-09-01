@@ -25,7 +25,7 @@ an address book through network:
   </thead>
   <tbody>
     <tr>
-      <td rowspan=2>Server</td>
+      <td rowspan="2">Server</td>
       <td>Calendar/Contact Storage</td>
       <td>iCal/vCard</td>
     </tr>
@@ -39,7 +39,7 @@ an address book through network:
       <td>CalDAV/CardDAV (HTTP + TLS)</td>
     </tr>
     <tr>
-      <td rowspan=2>Client</td>
+      <td rowspan="2">Client</td>
       <td>Calendar/Contact Client</td>
       <td>CalDAV/CardDAV Client</td>
     </tr>
