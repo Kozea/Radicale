@@ -19,6 +19,7 @@ Radicale tests with simple requests.
 
 """
 
+import base64
 import logging
 import os
 import posixpath
@@ -732,6 +733,38 @@ class BaseRequestsMixIn:
             </C:comp-filter>"""], "journal", items=2)
         assert "href>/calendar.ics/journal1.ics</" not in answer
         assert "href>/calendar.ics/journal2.ics</" not in answer
+
+    def test_report_item(self):
+        """Test report request on an item"""
+        calendar_path = "/calendar.ics/"
+        self.request("MKCALENDAR", calendar_path)
+        event = get_file_content("event1.ics")
+        event_path = posixpath.join(calendar_path, "event.ics")
+        self.request("PUT", event_path, event)
+        status, headers, answer = self.request(
+            "REPORT", event_path,
+            """<?xml version="1.0" encoding="utf-8" ?>
+               <C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+                 <D:prop xmlns:D="DAV:">
+                   <D:getetag />
+                 </D:prop>
+               </C:calendar-query>""")
+        assert status == 207
+        assert "href>%s<" % event_path in answer
+
+    def test_authorization(self):
+        authorization = "Basic " + base64.b64encode(b"user:").decode()
+        status, headers, answer = self.request(
+            "PROPFIND", "/",
+            """<?xml version="1.0" encoding="utf-8"?>
+               <propfind xmlns="DAV:">
+                 <prop>
+                   <current-user-principal />
+                 </prop>
+               </propfind>""",
+            HTTP_AUTHORIZATION=authorization)
+        assert status == 207
+        assert "href>/user/<" in answer
 
     def test_principal_collection_creation(self):
         """Verify existence of the principal collection."""
