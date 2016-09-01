@@ -859,3 +859,27 @@ def _item_response(href, found_props=(), not_found_props=(), found_item=True):
         response.append(status)
 
     return response
+
+def decode(text, environ, encoding):
+    """Try to magically decode ``text`` according to given ``environ``."""
+    # List of charsets to try
+    charsets = []
+
+    # First append content charset given in the request
+    content_type = environ.get("CONTENT_TYPE")
+    if content_type and "charset=" in content_type:
+        charsets.append(
+            content_type.split("charset=")[1].split(";")[0].strip())
+    # Then append default Radicale charset
+    charsets.append(encoding)
+    # Then append various fallbacks
+    charsets.append("utf-8")
+    charsets.append("iso8859-1")
+
+    # Try to decode
+    for charset in charsets:
+        try:
+            return text.decode(charset)
+        except UnicodeDecodeError():
+            pass
+    raise UnicodeDecodeError()

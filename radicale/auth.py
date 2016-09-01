@@ -58,6 +58,7 @@ import functools
 import hashlib
 import os
 from importlib import import_module
+from .xmlutils import decode
 
 
 def load(configuration, logger):
@@ -86,7 +87,20 @@ class BaseAuth:
         using the method specified in the Radicale config.
 
         """
-        raise NotImplementedError
+        raise NotImplementedError()
+
+    def extract_creds_from_env(self, environ):
+        """Extract credentials from environ.
+
+        Should return a tuple of login and password.
+        """
+        authorization = environ.get("HTTP_AUTHORIZATION", None)
+        if authorization and authorization.startswith("Basic"):
+            encoding = self.configuration.get("encoding", "request")
+            authorization = authorization[len("Basic"):].strip()
+            return decode(base64.b64decode(authorization.encode("ascii")),
+                          environ, encoding).split(":", 1)
+        return None, None
 
     def map_login_to_user(self, login):
         """Map login to internal username."""

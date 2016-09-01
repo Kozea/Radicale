@@ -767,9 +767,10 @@ class BaseRequestsMixIn:
         assert "href>/user/<" in answer
 
     def test_principal_collection_creation(self):
+        authorization = "Basic " + base64.b64encode(b"user:").decode()
         """Verify existence of the principal collection."""
         status, headers, answer = self.request(
-            "PROPFIND", "/user/", REMOTE_USER="user")
+            "PROPFIND", "/user/", HTTP_AUTHORIZATION=authorization)
         assert status == 207
 
     def test_existence_of_root_collections(self):
@@ -819,10 +820,12 @@ class BaseRequestsMixIn:
 
     def test_hook_principal_collection_creation(self):
         """Verify that the hooks runs when a new user is created."""
+        authorization = "Basic " + base64.b64encode(b"user:").decode()
         self.configuration.set(
             "storage", "hook", "mkdir %s" % os.path.join("collection-root",
                                                          "created_by_hook"))
-        status, headers, answer = self.request("GET", "/", REMOTE_USER="user")
+        status, headers, answer = self.request("GET", "/",
+                                               HTTP_AUTHORIZATION=authorization)
         assert status == 200
         status, headers, answer = self.request("PROPFIND", "/created_by_hook/")
         assert status == 207

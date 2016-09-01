@@ -208,30 +208,6 @@ class Application:
 
         return request_environ
 
-    def decode(self, text, environ):
-        """Try to magically decode ``text`` according to given ``environ``."""
-        # List of charsets to try
-        charsets = []
-
-        # First append content charset given in the request
-        content_type = environ.get("CONTENT_TYPE")
-        if content_type and "charset=" in content_type:
-            charsets.append(
-                content_type.split("charset=")[1].split(";")[0].strip())
-        # Then append default Radicale charset
-        charsets.append(self.encoding)
-        # Then append various fallbacks
-        charsets.append("utf-8")
-        charsets.append("iso8859-1")
-
-        # Try to decode
-        for charset in charsets:
-            try:
-                return text.decode(charset)
-            except UnicodeDecodeError:
-                pass
-        raise UnicodeDecodeError
-
     def collect_allowed_items(self, items, user):
         """Get items from request that user is allowed to access."""
         read_allowed_items = []
@@ -301,15 +277,8 @@ class Application:
         function = getattr(self, "do_%s" % environ["REQUEST_METHOD"].upper())
 
         # Ask authentication backend to check rights
-        authorization = environ.get("HTTP_AUTHORIZATION", None)
-        if authorization and authorization.startswith("Basic"):
-            authorization = authorization[len("Basic"):].strip()
-            login, password = self.decode(base64.b64decode(
-                authorization.encode("ascii")), environ).split(":", 1)
-            user = self.Auth.map_login_to_user(login)
-        else:
-            user = self.Auth.map_login_to_user(environ.get("REMOTE_USER", ""))
-            password = None
+        login, password = self.Auth.extract_creds_from_env(environ)
+        user = self.Auth.map_login_to_user(login)
 
         # If "/.well-known" is not available, clients query "/"
         if path == "/.well-known" or path.startswith("/.well-known/"):
@@ -407,8 +376,9 @@ class Application:
     def _read_content(self, environ):
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
         if content_length > 0:
-            content = self.decode(
-                environ["wsgi.input"].read(content_length), environ)
+            content = xmlutils.decode(
+                    environ["wsgi.input"].read(content_length),
+                    environ, self.encoding)
             self.logger.debug("Request content:\n%s", content.strip())
         else:
             content = None
