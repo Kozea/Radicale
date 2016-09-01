@@ -19,6 +19,7 @@ Radicale tests with simple requests.
 
 """
 
+import base64
 import logging
 import os
 import posixpath
@@ -732,6 +733,20 @@ class BaseRequestsMixIn:
             </C:comp-filter>"""], "journal", items=2)
         assert "href>/calendar.ics/journal1.ics</" not in answer
         assert "href>/calendar.ics/journal2.ics</" not in answer
+
+    def test_authorization(self):
+        authorization = "Basic " + base64.b64encode(b"user:").decode()
+        status, headers, answer = self.request(
+            "PROPFIND", "/",
+            """<?xml version="1.0" encoding="utf-8"?>
+               <propfind xmlns="DAV:">
+                 <prop>
+                   <current-user-principal />
+                 </prop>
+               </propfind>""",
+            HTTP_AUTHORIZATION=authorization)
+        assert status == 207
+        assert "href>/user/<" in answer
 
     def test_principal_collection_creation(self):
         """Verify existence of the principal collection."""
