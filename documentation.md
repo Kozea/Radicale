@@ -26,7 +26,6 @@ Now that you have Radicale running, let's see what we can configure to make it
 fit our needs.
 
 - [What can I configure?]({{ site.baseurl }}/configuration/)
-- [Where is stored all this stuff?]({{ site.baseurl }}/files/)
 - [Authentication & Rights.]({{ site.baseurl }}/rights/)
 - [Storage.]({{ site.baseurl }}/storage/)
 - [Logging.]({{ site.baseurl }}/logging/)
