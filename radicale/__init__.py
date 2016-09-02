@@ -265,6 +265,27 @@ class Application:
         """Manage a request."""
 
         def response(status, headers={}, answer=None):
+            # Set content length
+            if answer:
+                self.logger.debug("Response content:\n%s", answer)
+                answer = answer.encode(self.encoding)
+                accept_encoding = [
+                    encoding.strip() for encoding in
+                    environ.get("HTTP_ACCEPT_ENCODING", "").split(",")
+                    if encoding.strip()]
+
+                if "gzip" in accept_encoding:
+                    zcomp = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
+                    answer = zcomp.compress(answer) + zcomp.flush()
+                    headers["Content-Encoding"] = "gzip"
+
+                headers["Content-Length"] = str(len(answer))
+
+            # Add extra headers set in configuration
+            if self.configuration.has_section("headers"):
+                for key in self.configuration.options("headers"):
+                    headers[key] = self.configuration.get("headers", key)
+
             # Start response
             status = "%i %s" % (
                 status, client.responses.get(status, "Unknown"))
@@ -362,27 +383,6 @@ class Application:
             headers.update ({
                 "WWW-Authenticate":
                 "Basic realm=\"%s\"" % realm})
-
-        # Set content length
-        if answer:
-            self.logger.debug("Response content:\n%s", answer)
-            answer = answer.encode(self.encoding)
-            accept_encoding = [
-                encoding.strip() for encoding in
-                environ.get("HTTP_ACCEPT_ENCODING", "").split(",")
-                if encoding.strip()]
-
-            if "gzip" in accept_encoding:
-                zcomp = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
-                answer = zcomp.compress(answer) + zcomp.flush()
-                headers["Content-Encoding"] = "gzip"
-
-            headers["Content-Length"] = str(len(answer))
-
-        # Add extra headers set in configuration
-        if self.configuration.has_section("headers"):
-            for key in self.configuration.options("headers"):
-                headers[key] = self.configuration.get("headers", key)
 
         return response(status, headers, answer)
 
