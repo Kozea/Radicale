@@ -265,6 +265,7 @@ class Application:
         """Manage a request."""
 
         def response(status, headers={}, answer=None):
+            headers = headers.copy()
             # Set content length
             if answer:
                 self.logger.debug("Response content:\n%s", answer)
@@ -380,6 +381,7 @@ class Application:
             self.logger.info("%s refused" % (user or "Anonymous user"))
             status = client.UNAUTHORIZED
             realm = self.configuration.get("server", "realm")
+            headers = headers.copy()
             headers.update ({
                 "WWW-Authenticate":
                 "Basic realm=\"%s\"" % realm})
