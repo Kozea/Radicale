@@ -388,7 +388,7 @@ class Application:
             self.logger.info("%s refused" % (user or "Anonymous user"))
             status = client.UNAUTHORIZED
             realm = self.configuration.get("server", "realm")
-            headers = headers.copy()
+            headers = dict(headers)
             headers.update ({
                 "WWW-Authenticate":
                 "Basic realm=\"%s\"" % realm})

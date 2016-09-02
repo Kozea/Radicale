@@ -134,10 +134,12 @@ class Rights(BaseRights):
             self.logger.debug(
                 "Test if '%s:%s' matches against '%s:%s' from section '%s'",
                 user, sane_path, re_user, re_collection, section)
-            user_match = re.fullmatch(re_user, user)
+            # Emulate fullmatch
+            user_match = re.match(r"(?:%s)\Z" % re_user, user)
             if user_match:
                 re_collection = re_collection.format(*user_match.groups())
-                if re.fullmatch(re_collection, sane_path):
+                # Emulate fullmatch
+                if re.match(r"(?:%s)\Z" % re_collection, sane_path):
                     self.logger.debug("Section '%s' matches", section)
                     return permission in regex.get(section, "permission")
                 else:
