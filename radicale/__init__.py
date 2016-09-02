@@ -271,7 +271,7 @@ class Application:
     def __call__(self, environ, start_response):
         """Manage a request."""
 
-        def response(status, headers=(()), answer=None):
+        def response(status, headers=(), answer=None):
             headers = dict(headers)
             # Set content length
             if answer:
