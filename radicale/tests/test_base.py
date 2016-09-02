@@ -836,6 +836,17 @@ class BaseRequestsMixIn:
         except Exception:
             pass
 
+    def test_custom_headers(self):
+        if not self.configuration.has_section("headers"):
+            self.configuration.add_section("headers")
+        self.configuration.set("headers", "test", "123")
+        # Test if header is set on success
+        status, headers, answer = self.request("GET", "/")
+        assert headers.get("test") == "123"
+        # Test if header is set on failure
+        status, headers, answer = self.request("GET", "/.well-known/does not exist")
+        assert headers.get("test") == "123"
+
 
 class BaseFileSystemTest(BaseTest):
     """Base class for filesystem backend tests."""
