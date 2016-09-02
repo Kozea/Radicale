@@ -776,6 +776,7 @@ class BaseRequestsMixIn:
 
     def test_principal_collection_creation(self):
         """Verify existence of the principal collection."""
+        self.configuration.set("auth", "remote_user", "True")
         status, headers, answer = self.request(
             "PROPFIND", "/user/", REMOTE_USER="user")
         assert status == 207
@@ -830,6 +831,7 @@ class BaseRequestsMixIn:
         self.configuration.set(
             "storage", "hook", "mkdir %s" % os.path.join("collection-root",
                                                          "created_by_hook"))
+        self.configuration.set("auth", "remote_user", "True")
         status, headers, answer = self.request("GET", "/", REMOTE_USER="user")
         assert status == 200
         status, headers, answer = self.request("PROPFIND", "/created_by_hook/")

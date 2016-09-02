@@ -50,7 +50,8 @@ INITIAL_CONFIG = {
     "auth": {
         "type": "None",
         "htpasswd_filename": "/etc/radicale/users",
-        "htpasswd_encryption": "crypt"},
+        "htpasswd_encryption": "crypt",
+        "remote_user": "False"},
     "rights": {
         "type": "None",
         "file": "~/.config/radicale/rights"},

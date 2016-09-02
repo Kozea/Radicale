@@ -83,6 +83,10 @@
 # Value: plain | sha1 | ssha | crypt | bcrypt | md5
 #htpasswd_encryption = crypt
 
+# Get users from the REMOTE_USER environment variable instead of
+  using HTTP authentication
+#remote_user = False
+
 
 [rights]
 
