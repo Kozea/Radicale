@@ -94,13 +94,7 @@ class BaseAuth:
 
         Should return a tuple of login and password.
         """
-        authorization = environ.get("HTTP_AUTHORIZATION", None)
-        if authorization and authorization.startswith("Basic"):
-            encoding = self.configuration.get("encoding", "request")
-            authorization = authorization[len("Basic"):].strip()
-            return decode(base64.b64decode(authorization.encode("ascii")),
-                          environ, encoding).split(":", 1)
-        return None, None
+        raise NotImplementedError()
 
     def map_login_to_user(self, login):
         """Map login to internal username."""
@@ -108,6 +102,15 @@ class BaseAuth:
 
 
 class NoneAuth(BaseAuth):
+    def extract_creds_from_env(self, environ):
+        authorization = environ.get("HTTP_AUTHORIZATION", None)
+        if authorization and authorization.startswith("Basic"):
+            encoding = self.configuration.get("encoding", "request")
+            authorization = authorization[len("Basic"):].strip()
+            return decode(base64.b64decode(authorization.encode("ascii")),
+                          environ, encoding).split(":", 1)[0], None
+        return None, None
+
     def is_authenticated(self, user, password):
         return True
 
@@ -196,6 +199,19 @@ class Auth(BaseAuth):
 
     def _md5apr1(self, md5_apr1, hash_value, password):
         return md5_apr1.verify(password, hash_value)
+
+    def extract_creds_from_env(self, environ):
+        """Extract credentials from environ.
+
+        Should return a tuple of login and password.
+        """
+        authorization = environ.get("HTTP_AUTHORIZATION", None)
+        if authorization and authorization.startswith("Basic"):
+            encoding = self.configuration.get("encoding", "request")
+            authorization = authorization[len("Basic"):].strip()
+            return decode(base64.b64decode(authorization.encode("ascii")),
+                          environ, encoding).split(":", 1)
+        return None, None
 
     def is_authenticated(self, user, password):
         # The content of the file is not cached because reading is generally a

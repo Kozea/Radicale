@@ -825,7 +825,7 @@ class BaseRequestsMixIn:
             "storage", "hook", "mkdir %s" % os.path.join("collection-root",
                                                          "created_by_hook"))
         status, headers, answer = self.request("GET", "/",
-                                               HTTP_AUTHORIZATION=authorization)
+                HTTP_AUTHORIZATION=authorization)
         assert status == 200
         status, headers, answer = self.request("PROPFIND", "/created_by_hook/")
         assert status == 207

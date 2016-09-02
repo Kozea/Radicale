@@ -26,7 +26,6 @@ should have been included in this package.
 
 """
 
-import base64
 import contextlib
 import io
 import itertools
