@@ -71,7 +71,6 @@ class TestBaseAuthRequests(BaseTest):
         self.application = Application(
             configuration, logging.getLogger("radicale_test"))
 
-        status, headers, answer = self.request(
-            "GET", "/", HTTP_AUTHORIZATION="dG1wOmJlcG8=")
+        status, headers, answer = self.request("GET", "/")
         assert status == 200
         assert "Radicale works!" in answer

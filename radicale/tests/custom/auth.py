@@ -27,5 +27,8 @@ from radicale import auth
 
 
 class Auth(auth.BaseAuth):
+    def extract_creds_from_env(self, environ):
+        return "tmp_user", "tmp_password"
+
     def is_authenticated(self, user, password):
-        return user == "tmp"
+        return user == "tmp_user" and password == "tmp_password"
