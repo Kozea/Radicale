@@ -50,23 +50,30 @@ from . import auth, rights, storage, xmlutils
 
 VERSION = "2.0.0rc0"
 
-NOT_ALLOWED = (client.FORBIDDEN, {"Content-type": "text/plain"},
-               "Access to the requested resource forbidden.")
-NOT_FOUND = (client.NOT_FOUND, {"Content-type": "text/plain"},
-             "The requested resource could not be found.")
-WEBDAV_PRECONDITION_FAILED = (client.CONFLICT, {"Content-type": "text/plain"},
-                              "WebDAV precondition failed.")
-PRECONDITION_FAILED = (client.PRECONDITION_FAILED,
-                       {"Content-type": "text/plain"}, "Precondition failed.")
-REQUEST_TIMEOUT = (client.REQUEST_TIMEOUT, {"Content-type": "text/plain"},
-                   "Connection timed out.")
-REQUEST_ENTITY_TOO_LARGE = (client.REQUEST_ENTITY_TOO_LARGE,
-                            {"Content-type": "text/plain"},
-                            "Request body too large.")
-REMOTE_DESTINATION = (client.BAD_GATEWAY, {"Content-type": "text/plain"},
-                      "Remote destination not supported.")
-DIRECTORY_LISTING = (client.FORBIDDEN, {"Content-type": "text/plain"},
-                     "Directory listings are not supported.")
+NOT_ALLOWED = (
+    client.FORBIDDEN, (("Content-type", "text/plain"),),
+    "Access to the requested resource forbidden.")
+NOT_FOUND = (
+    client.NOT_FOUND, (("Content-type", "text/plain"),),
+    "The requested resource could not be found.")
+WEBDAV_PRECONDITION_FAILED = (
+    client.CONFLICT, (("Content-type", "text/plain"),),
+    "WebDAV precondition failed.")
+PRECONDITION_FAILED = (
+    client.PRECONDITION_FAILED,
+    (("Content-type", "text/plain"),), "Precondition failed.")
+REQUEST_TIMEOUT = (
+    client.REQUEST_TIMEOUT, (("Content-type", "text/plain"),),
+    "Connection timed out.")
+REQUEST_ENTITY_TOO_LARGE = (
+    client.REQUEST_ENTITY_TOO_LARGE, (("Content-type", "text/plain"),),
+    "Request body too large.")
+REMOTE_DESTINATION = (
+    client.BAD_GATEWAY, (("Content-type", "text/plain"),),
+    "Remote destination not supported.")
+DIRECTORY_LISTING = (
+    client.FORBIDDEN, (("Content-type", "text/plain"),),
+    "Directory listings are not supported.")
 
 DAV_HEADERS = "1, 2, 3, calendar-access, addressbook, extended-mkcol"
 
@@ -264,8 +271,8 @@ class Application:
     def __call__(self, environ, start_response):
         """Manage a request."""
 
-        def response(status, headers={}, answer=None):
-            headers = headers.copy()
+        def response(status, headers=(()), answer=None):
+            headers = dict(headers)
             # Set content length
             if answer:
                 self.logger.debug("Response content:\n%s", answer)
