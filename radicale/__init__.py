@@ -331,14 +331,14 @@ class Application:
 
         # Ask authentication backend to check rights
         authorization = environ.get("HTTP_AUTHORIZATION", None)
-        if authorization and authorization.startswith("Basic"):
+        login = password = ""
+        if self.configuration.getboolean("auth", "remote_user"):
+            login = environ.get("REMOTE_USER", "")
+        elif authorization and authorization.startswith("Basic"):
             authorization = authorization[len("Basic"):].strip()
             login, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
-            user = self.Auth.map_login_to_user(login)
-        else:
-            user = self.Auth.map_login_to_user(environ.get("REMOTE_USER", ""))
-            password = None
+        user = self.Auth.map_login_to_user(login)
 
         # If "/.well-known" is not available, clients query "/"
         if path == "/.well-known" or path.startswith("/.well-known/"):
@@ -386,12 +386,14 @@ class Application:
                 user and is_authenticated):
             # Unknown or unauthorized user
             self.logger.info("%s refused" % (user or "Anonymous user"))
-            status = client.UNAUTHORIZED
-            realm = self.configuration.get("server", "realm")
-            headers = dict(headers)
-            headers.update ({
-                "WWW-Authenticate":
-                "Basic realm=\"%s\"" % realm})
+            # Only send authentication request if it's handled by radicale
+            if not self.configuration.getboolean("auth", "remote_user"):
+                status = client.UNAUTHORIZED
+                realm = self.configuration.get("server", "realm")
+                headers = dict(headers)
+                headers.update ({
+                    "WWW-Authenticate":
+                    "Basic realm=\"%s\"" % realm})
 
         return response(status, headers, answer)
 
