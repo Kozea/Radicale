@@ -53,7 +53,7 @@ formatter = full
 
 [formatter_simple]
 # Simple output format
-format = %(message)s
+format = [%(thread)x] %(levelname)s: %(message)s
 
 [formatter_full]
 # Full output format
