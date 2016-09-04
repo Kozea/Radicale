@@ -142,7 +142,8 @@ def is_safe_path_component(path):
 
 
 def is_safe_filesystem_path_component(path):
-    """Check if path is a single component of a filesystem path.
+    """Check if path is a single component of a local and posix filesystem
+       path.
 
     Check that the path is safe to join too.
 
@@ -150,7 +151,8 @@ def is_safe_filesystem_path_component(path):
     return (
         path and not os.path.splitdrive(path)[0] and
         not os.path.split(path)[0] and path not in (os.curdir, os.pardir) and
-        not path.startswith(".") and not path.endswith("~"))
+        not path.startswith(".") and not path.endswith("~") and
+        is_safe_path_component(path))
 
 
 def path_to_filesystem(root, *paths):
@@ -628,7 +630,7 @@ class Collection(BaseCollection):
     def get(self, href):
         if not href:
             return None
-        href = href.strip("{}").replace("/", "_")
+        href = href.strip("{}")
         if not is_safe_filesystem_path_component(href):
             self.logger.debug(
                 "Can't translate name safely to filesystem: %s", href)
