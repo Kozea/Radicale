@@ -686,9 +686,12 @@ class Collection(BaseCollection):
 
     @property
     def last_modified(self):
-        last = max([os.path.getmtime(self._filesystem_path)] + [
-            os.path.getmtime(os.path.join(self._filesystem_path, filename))
-            for filename in os.listdir(self._filesystem_path)] or [0])
+        relevant_files = [self._filesystem_path] + [
+            path_to_filesystem(self._filesystem_path, href)
+            for href in self.list()]
+        if os.path.exists(self._props_path):
+            relevant_files.append(self._props_path)
+        last = max(map(os.path.getmtime, relevant_files))
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(last))
 
     def serialize(self):
