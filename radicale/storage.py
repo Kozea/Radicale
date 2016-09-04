@@ -626,8 +626,8 @@ class Collection(BaseCollection):
         path = path_to_filesystem(self._filesystem_path, href)
         if not os.path.isfile(path):
             return None
-        with open(path, encoding=self.encoding, newline="") as fd:
-            text = fd.read()
+        with open(path, encoding=self.encoding, newline="") as f:
+            text = f.read()
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
@@ -671,18 +671,18 @@ class Collection(BaseCollection):
 
     def get_meta(self, key):
         if os.path.exists(self._props_path):
-            with open(self._props_path, encoding=self.encoding) as prop:
-                return json.load(prop).get(key)
+            with open(self._props_path, encoding=self.encoding) as f:
+                return json.load(f).get(key)
 
     def set_meta(self, props):
         if os.path.exists(self._props_path):
-            with open(self._props_path, encoding=self.encoding) as prop:
-                old_props = json.load(prop)
+            with open(self._props_path, encoding=self.encoding) as f:
+                old_props = json.load(f)
                 old_props.update(props)
                 props = old_props
         props = {key: value for key, value in props.items() if value}
-        with self._atomic_write(self._props_path, "w+") as prop:
-            json.dump(props, prop)
+        with self._atomic_write(self._props_path, "w+") as f:
+            json.dump(props, f)
 
     @property
     def last_modified(self):
