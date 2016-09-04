@@ -125,7 +125,7 @@ def sanitize_path(path):
     path = posixpath.normpath(path)
     new_path = "/"
     for part in path.split("/"):
-        if not part or part in (".", ".."):
+        if not is_safe_path_component(part):
             continue
         new_path = posixpath.join(new_path, part)
     trailing_slash = "" if new_path.endswith("/") else trailing_slash
