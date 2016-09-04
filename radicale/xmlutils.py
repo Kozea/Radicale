@@ -31,7 +31,7 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 from http import client
-from urllib.parse import unquote, urlparse
+from urllib.parse import quote, unquote, urlparse
 
 from . import storage
 
@@ -104,7 +104,7 @@ def _response(code):
 
 def _href(base_prefix, href):
     """Return prefixed href."""
-    return "%s%s" % (base_prefix, href)
+    return quote("%s%s" % (base_prefix, href))
 
 
 def _date_to_datetime(date_):
