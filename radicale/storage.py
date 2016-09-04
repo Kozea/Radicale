@@ -631,7 +631,12 @@ class Collection(BaseCollection):
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
-        return Item(self, vobject.readOne(text), href, last_modified)
+        try:
+            item = vobject.readOne(text)
+        except Exception:
+            self.logger.error("Failed to parse component: %s", href)
+            raise
+        return Item(self, item, href, last_modified)
 
     def upload(self, href, vobject_item):
         if not is_safe_filesystem_path_component(href):
