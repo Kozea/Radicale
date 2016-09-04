@@ -313,8 +313,7 @@ class Application:
         self.logger.debug("Sanitized script name: %s", environ["SCRIPT_NAME"])
         base_prefix = environ["SCRIPT_NAME"]
         # Sanitize request URI
-        environ["PATH_INFO"] = storage.sanitize_path(
-            unquote(environ["PATH_INFO"]))
+        environ["PATH_INFO"] = storage.sanitize_path(environ["PATH_INFO"])
         self.logger.debug("Sanitized path: %s", environ["PATH_INFO"])
         path = environ["PATH_INFO"]
 
