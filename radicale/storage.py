@@ -618,7 +618,6 @@ class Collection(BaseCollection):
     def get(self, href):
         if not href:
             return None
-        href = href.strip("{}")
         if not is_safe_filesystem_path_component(href):
             self.logger.debug(
                 "Can't translate name safely to filesystem: %s", href)
