@@ -394,11 +394,7 @@ class Collection(BaseCollection):
             delete=False, prefix=".Radicale.tmp-", newline=newline)
         try:
             yield tmp
-            if self.configuration.getboolean("storage", "fsync"):
-                if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
-                    fcntl.fcntl(tmp.fileno(), fcntl.F_FULLFSYNC)
-                else:
-                    os.fsync(tmp.fileno())
+            self._fsync(tmp.fileno())
             tmp.close()
             os.replace(tmp.name, path)
         except:
@@ -417,6 +413,14 @@ class Collection(BaseCollection):
         raise FileExistsError(errno.EEXIST, "No usable file name found")
 
     @classmethod
+    def _fsync(cls, fd):
+        if cls.configuration.getboolean("storage", "fsync"):
+            if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
+                fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
+            else:
+                os.fsync(fd)
+
+    @classmethod
     def _sync_directory(cls, path):
         """Sync directory to disk.
 
@@ -428,10 +432,7 @@ class Collection(BaseCollection):
         if os.name == "posix":
             fd = os.open(path, 0)
             try:
-                if hasattr(fcntl, "F_FULLFSYNC"):
-                    fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
-                else:
-                    os.fsync(fd)
+                cls._fsync(fd)
             finally:
                 os.close(fd)
 
@@ -586,15 +587,9 @@ class Collection(BaseCollection):
             path = path_to_filesystem(self._filesystem_path, href)
             fs.append(open(path, "w", encoding=self.encoding, newline=""))
             fs[-1].write(item.serialize())
-        fsync_fn = lambda fd: None
-        if self.configuration.getboolean("storage", "fsync"):
-            if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
-                fsync_fn = lambda fd: fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
-            else:
-                fsync_fn = os.fsync
         # sync everything at once because it's slightly faster.
         for f in fs:
-            fsync_fn(f.fileno())
+            self._fsync(f.fileno())
             f.close()
         self._sync_directory(self._filesystem_path)
 
