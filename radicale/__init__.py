@@ -171,7 +171,7 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     def get_environ(self):
         env = super().get_environ()
         # Parent class only tries latin1 encoding
-        env["PATH_INFO"] = urllib.parse.unquote(self.path.split("?", 1)[0])
+        env["PATH_INFO"] = unquote(self.path.split("?", 1)[0])
         return env
 
     def handle(self):
