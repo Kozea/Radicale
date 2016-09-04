@@ -774,6 +774,9 @@ def report(base_prefix, path, xml_request, collection):
                     unquote(urlparse(href_element.text).path))
                 if (href_path + "/").startswith(base_prefix + "/"):
                     hreferences.add(href_path[len(base_prefix):])
+                else:
+                    collection.logger.info(
+                        "Skipping invalid path: %s", href_path)
         else:
             hreferences = (path,)
         filters = (
@@ -785,7 +788,14 @@ def report(base_prefix, path, xml_request, collection):
     multistatus = ET.Element(_tag("D", "multistatus"))
 
     for hreference in hreferences:
-        name = name_from_path(hreference, collection)
+        try:
+            name = name_from_path(hreference, collection)
+        except ValueError:
+            collection.logger.info("Skipping invalid path: %s", hreference)
+            response = _item_response(base_prefix, hreference,
+                                      found_item=False)
+            multistatus.append(response)
+            continue
         if name:
             # Reference is an item
             item = collection.get(name)
