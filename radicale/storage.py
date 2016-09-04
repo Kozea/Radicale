@@ -607,12 +607,7 @@ class Collection(BaseCollection):
             cls._sync_directory(item.collection._filesystem_path)
 
     def list(self):
-        try:
-            hrefs = os.listdir(self._filesystem_path)
-        except IOError:
-            return
-
-        for href in hrefs:
+        for href in os.listdir(self._filesystem_path):
             if not is_safe_filesystem_path_component(href):
                 self.logger.debug("Skipping component: %s", href)
                 continue
@@ -653,18 +648,17 @@ class Collection(BaseCollection):
     def delete(self, href=None):
         if href is None:
             # Delete the collection
-            if os.path.isdir(self._filesystem_path):
-                parent_dir = os.path.dirname(self._filesystem_path)
-                try:
-                    os.rmdir(self._filesystem_path)
-                except OSError:
-                    with TemporaryDirectory(
-                            prefix=".Radicale.tmp-", dir=parent_dir) as tmp:
-                        os.rename(self._filesystem_path, os.path.join(
-                            tmp, os.path.basename(self._filesystem_path)))
-                        self._sync_directory(parent_dir)
-                else:
+            parent_dir = os.path.dirname(self._filesystem_path)
+            try:
+                os.rmdir(self._filesystem_path)
+            except OSError:
+                with TemporaryDirectory(
+                        prefix=".Radicale.tmp-", dir=parent_dir) as tmp:
+                    os.rename(self._filesystem_path, os.path.join(
+                        tmp, os.path.basename(self._filesystem_path)))
                     self._sync_directory(parent_dir)
+            else:
+                self._sync_directory(parent_dir)
         else:
             # Delete an item
             if not is_safe_filesystem_path_component(href):
