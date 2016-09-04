@@ -766,7 +766,8 @@ def report(base_prefix, path, xml_request, collection):
             # Read rfc4791-7.9 for info
             hreferences = set()
             for href_element in root.findall(_tag("D", "href")):
-                href_path = unquote(urlparse(href_element.text).path)
+                href_path = storage.sanitize_path(
+                    unquote(urlparse(href_element.text).path))
                 if (href_path + "/").startswith(base_prefix + "/"):
                     hreferences.add(href_path[len(base_prefix):])
         else:
