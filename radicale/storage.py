@@ -100,7 +100,11 @@ def load(configuration, logger):
 
 
 def get_etag(text):
-    """Etag from collection or item."""
+    """Etag from collection or item.
+
+    Encoded as quoted-string (see RFC 2616).
+
+    """
     etag = md5()
     etag.update(text.encode("utf-8"))
     return '"%s"' % etag.hexdigest()
@@ -205,6 +209,7 @@ class Item:
 
     @property
     def etag(self):
+        """Encoded as quoted-string (see RFC 2616)."""
         return get_etag(self.serialize())
 
 
@@ -262,6 +267,7 @@ class BaseCollection:
 
     @property
     def etag(self):
+        """Encoded as quoted-string (see RFC 2616)."""
         return get_etag(self.serialize())
 
     @classmethod
