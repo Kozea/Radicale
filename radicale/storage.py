@@ -584,6 +584,8 @@ class Collection(BaseCollection):
         """
         fs = []
         for href, item in vobject_items.items():
+            if not is_safe_filesystem_path_component(href):
+                raise UnsafePathError(href)
             path = path_to_filesystem(self._filesystem_path, href)
             fs.append(open(path, "w", encoding=self.encoding, newline=""))
             fs[-1].write(item.serialize())
@@ -595,6 +597,8 @@ class Collection(BaseCollection):
 
     @classmethod
     def move(cls, item, to_collection, to_href):
+        if not is_safe_filesystem_path_component(to_href):
+            raise UnsafePathError(to_href)
         os.replace(
             path_to_filesystem(item.collection._filesystem_path, item.href),
             path_to_filesystem(to_collection._filesystem_path, to_href))
