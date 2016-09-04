@@ -423,7 +423,11 @@ def name_from_path(path, collection):
     start = collection.path + "/"
     if not path.startswith(start):
         raise ValueError("'%s' doesn't start with '%s'" % (path, start))
-    return path[len(start):].rstrip("/")
+    name = path[len(start):][:-1]
+    if name and not storage.is_safe_path_component(name):
+        raise ValueError("'%s' is not a component in collection '%s'" %
+                         (path, collection.path))
+    return name
 
 
 def props_from_request(root, actions=("set", "remove")):
