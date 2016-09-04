@@ -698,17 +698,9 @@ class Collection(BaseCollection):
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(last))
 
     def serialize(self):
-        if not os.path.exists(self._filesystem_path):
-            return None
         items = []
-        for href in os.listdir(self._filesystem_path):
-            if not is_safe_filesystem_path_component(href):
-                self.logger.debug("Skipping component: %s", href)
-                continue
-            path = os.path.join(self._filesystem_path, href)
-            if os.path.isfile(path):
-                with open(path, encoding=self.encoding, newline="") as fd:
-                    items.append(vobject.readOne(fd.read()))
+        for href in self.list():
+            items.append(self.get(href).item)
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
             for item in items:
