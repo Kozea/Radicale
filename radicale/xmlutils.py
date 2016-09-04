@@ -853,7 +853,7 @@ def _item_response(base_prefix, href, found_props=(), not_found_props=(),
     response = ET.Element(_tag("D", "response"))
 
     href_tag = ET.Element(_tag("D", "href"))
-    href_tag.text = href
+    href_tag.text = _href(base_prefix, href)
     response.append(href_tag)
 
     if found_item:
