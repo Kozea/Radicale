@@ -633,9 +633,6 @@ class Collection(BaseCollection):
             time.gmtime(os.path.getmtime(path)))
         return Item(self, vobject.readOne(text), href, last_modified)
 
-    def has(self, href):
-        return self.get(href) is not None
-
     def upload(self, href, vobject_item):
         if not is_safe_filesystem_path_component(href):
             raise UnsafePathError(href)
