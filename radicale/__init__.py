@@ -307,6 +307,11 @@ class Application:
         headers = pprint.pformat(self.headers_log(environ))
         self.logger.debug("Request headers:\n%s", headers)
 
+        # Let reverse proxies overwrite SCRIPT_NAME
+        if "HTTP_X_SCRIPT_NAME" in environ:
+            environ["SCRIPT_NAME"] = environ["HTTP_X_SCRIPT_NAME"]
+            self.logger.debug("Script name overwritten by client: %s",
+                              environ["SCRIPT_NAME"])
         # Sanitize base prefix
         environ["SCRIPT_NAME"] = storage.sanitize_path(
             environ.get("SCRIPT_NAME", "")).rstrip("/")
