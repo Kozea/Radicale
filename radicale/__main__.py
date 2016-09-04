@@ -153,9 +153,6 @@ def serve(configuration, logger):
     atexit.register(cleanup)
     logger.info("Starting Radicale")
 
-    logger.debug(
-        "Base URL prefix: %s", configuration.get("server", "base_prefix"))
-
     # Create collection servers
     servers = {}
     if configuration.getboolean("server", "ssl"):

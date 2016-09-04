@@ -307,19 +307,11 @@ class Application:
         headers = pprint.pformat(self.headers_log(environ))
         self.logger.debug("Request headers:\n%s", headers)
 
-        # Strip base_prefix from request URI
-        base_prefix = self.configuration.get("server", "base_prefix")
-        if environ["PATH_INFO"].startswith(base_prefix):
-            environ["PATH_INFO"] = environ["PATH_INFO"][len(base_prefix):]
-        elif self.configuration.get("server", "can_skip_base_prefix"):
-            self.logger.debug(
-                "Prefix already stripped from path: %s", environ["PATH_INFO"])
-        else:
-            # Request path not starting with base_prefix, not allowed
-            self.logger.debug(
-                "Path not starting with prefix: %s", environ["PATH_INFO"])
-            return response(*NOT_ALLOWED)
-
+        # Sanitize base prefix
+        environ["SCRIPT_NAME"] = storage.sanitize_path(
+            environ.get("SCRIPT_NAME", "")).rstrip("/")
+        self.logger.debug("Sanitized script name: %s", environ["SCRIPT_NAME"])
+        base_prefix = environ["SCRIPT_NAME"]
         # Sanitize request URI
         environ["PATH_INFO"] = storage.sanitize_path(
             unquote(environ["PATH_INFO"]))
@@ -376,7 +368,8 @@ class Application:
 
         if is_valid_user:
             try:
-                status, headers, answer = function(environ, path, user)
+                status, headers, answer = function(
+                    environ, base_prefix, path, user)
             except socket.timeout:
                 return response(*REQUEST_TIMEOUT)
         else:
@@ -423,7 +416,7 @@ class Application:
             content = None
         return content
 
-    def do_DELETE(self, environ, path, user):
+    def do_DELETE(self, environ, base_prefix, path, user):
         """Manage DELETE request."""
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
@@ -438,12 +431,13 @@ class Application:
                 # ETag precondition not verified, do not delete item
                 return PRECONDITION_FAILED
             if isinstance(item, self.Collection):
-                answer = xmlutils.delete(path, item)
+                answer = xmlutils.delete(base_prefix, path, item)
             else:
-                answer = xmlutils.delete(path, item.collection, item.href)
+                answer = xmlutils.delete(
+                    base_prefix, path, item.collection, item.href)
             return client.OK, {}, answer
 
-    def do_GET(self, environ, path, user):
+    def do_GET(self, environ, base_prefix, path, user):
         """Manage GET request."""
         # Display a "Radicale works!" message if the root URL is requested
         if not path.strip("/"):
@@ -471,12 +465,13 @@ class Application:
             answer = item.serialize()
             return client.OK, headers, answer
 
-    def do_HEAD(self, environ, path, user):
+    def do_HEAD(self, environ, base_prefix, path, user):
         """Manage HEAD request."""
-        status, headers, answer = self.do_GET(environ, path, user)
+        status, headers, answer = self.do_GET(
+            environ, base_prefix, path, user)
         return status, headers, None
 
-    def do_MKCALENDAR(self, environ, path, user):
+    def do_MKCALENDAR(self, environ, base_prefix, path, user):
         """Manage MKCALENDAR request."""
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
@@ -492,7 +487,7 @@ class Application:
             self.Collection.create_collection(path, props=props)
             return client.CREATED, {}, None
 
-    def do_MKCOL(self, environ, path, user):
+    def do_MKCOL(self, environ, base_prefix, path, user):
         """Manage MKCOL request."""
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
@@ -505,7 +500,7 @@ class Application:
             self.Collection.create_collection(path, props=props)
             return client.CREATED, {}, None
 
-    def do_MOVE(self, environ, path, user):
+    def do_MOVE(self, environ, base_prefix, path, user):
         """Manage MOVE request."""
         to_url = urlparse(environ["HTTP_DESTINATION"])
         if to_url.netloc != environ["HTTP_HOST"]:
@@ -542,7 +537,7 @@ class Application:
             self.Collection.move(item, to_collection, to_href)
             return client.CREATED, {}, None
 
-    def do_OPTIONS(self, environ, path, user):
+    def do_OPTIONS(self, environ, base_prefix, path, user):
         """Manage OPTIONS request."""
         headers = {
             "Allow": ", ".join(
@@ -550,7 +545,7 @@ class Application:
             "DAV": DAV_HEADERS}
         return client.OK, headers, None
 
-    def do_PROPFIND(self, environ, path, user):
+    def do_PROPFIND(self, environ, base_prefix, path, user):
         """Manage PROPFIND request."""
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
@@ -569,13 +564,13 @@ class Application:
             read_items, write_items = self.collect_allowed_items(items, user)
             headers = {"DAV": DAV_HEADERS, "Content-Type": "text/xml"}
             status, answer = xmlutils.propfind(
-                path, content, read_items, write_items, user)
+                base_prefix, path, content, read_items, write_items, user)
             if status == client.FORBIDDEN:
                 return NOT_ALLOWED
             else:
                 return status, headers, answer
 
-    def do_PROPPATCH(self, environ, path, user):
+    def do_PROPPATCH(self, environ, base_prefix, path, user):
         """Manage PROPPATCH request."""
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
@@ -585,10 +580,10 @@ class Application:
             if not isinstance(item, self.Collection):
                 return WEBDAV_PRECONDITION_FAILED
             headers = {"DAV": DAV_HEADERS, "Content-Type": "text/xml"}
-            answer = xmlutils.proppatch(path, content, item)
+            answer = xmlutils.proppatch(base_prefix, path, content, item)
             return client.MULTI_STATUS, headers, answer
 
-    def do_PUT(self, environ, path, user):
+    def do_PUT(self, environ, base_prefix, path, user):
         """Manage PUT request."""
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
@@ -640,7 +635,7 @@ class Application:
             headers = {"ETag": new_item.etag}
             return client.CREATED, headers, None
 
-    def do_REPORT(self, environ, path, user):
+    def do_REPORT(self, environ, base_prefix, path, user):
         """Manage REPORT request."""
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
@@ -656,5 +651,5 @@ class Application:
             else:
                 collection = item.collection
             headers = {"Content-Type": "text/xml"}
-            answer = xmlutils.report(path, content, collection)
+            answer = xmlutils.report(base_prefix, path, content, collection)
             return client.MULTI_STATUS, headers, answer

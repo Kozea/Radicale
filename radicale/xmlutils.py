@@ -102,11 +102,9 @@ def _response(code):
     return "HTTP/1.1 %i %s" % (code, client.responses[code])
 
 
-def _href(collection, href):
+def _href(base_prefix, href):
     """Return prefixed href."""
-    return "%s%s" % (
-        collection.configuration.get("server", "base_prefix"),
-        href.lstrip("/"))
+    return "%s%s" % (base_prefix, href)
 
 
 def _date_to_datetime(date_):
@@ -466,7 +464,7 @@ def props_from_request(root, actions=("set", "remove")):
     return result
 
 
-def delete(path, collection, href=None):
+def delete(base_prefix, path, collection, href=None):
     """Read and answer DELETE requests.
 
     Read rfc4918-9.6 for info.
@@ -479,7 +477,7 @@ def delete(path, collection, href=None):
     multistatus.append(response)
 
     href = ET.Element(_tag("D", "href"))
-    href.text = _href(collection, path)
+    href.text = _href(base_prefix, path)
     response.append(href)
 
     status = ET.Element(_tag("D", "status"))
@@ -489,7 +487,8 @@ def delete(path, collection, href=None):
     return _pretty_xml(multistatus)
 
 
-def propfind(path, xml_request, read_collections, write_collections, user):
+def propfind(base_prefix, path, xml_request, read_collections,
+             write_collections, user):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -522,19 +521,19 @@ def propfind(path, xml_request, read_collections, write_collections, user):
     for collection in write_collections:
         collections.append(collection)
         response = _propfind_response(
-            path, collection, props, user, write=True)
+            base_prefix, path, collection, props, user, write=True)
         multistatus.append(response)
     for collection in read_collections:
         if collection in collections:
             continue
         response = _propfind_response(
-            path, collection, props, user, write=False)
+            base_prefix, path, collection, props, user, write=False)
         multistatus.append(response)
 
     return client.MULTI_STATUS, _pretty_xml(multistatus)
 
 
-def _propfind_response(path, item, props, user, write=False):
+def _propfind_response(base_prefix, path, item, props, user, write=False):
     """Build and return a PROPFIND response."""
     is_collection = isinstance(item, storage.BaseCollection)
     if is_collection:
@@ -552,7 +551,7 @@ def _propfind_response(path, item, props, user, write=False):
     else:
         uri = "/" + posixpath.join(collection.path, item.href)
 
-    href.text = _href(collection, uri)
+    href.text = _href(base_prefix, uri)
     response.append(href)
 
     propstat404 = ET.Element(_tag("D", "propstat"))
@@ -574,7 +573,7 @@ def _propfind_response(path, item, props, user, write=False):
             element.text = item.last_modified
         elif tag == _tag("D", "principal-collection-set"):
             tag = ET.Element(_tag("D", "href"))
-            tag.text = _href(collection, "/")
+            tag.text = _href(base_prefix, "/")
             element.append(tag)
         elif (tag in (_tag("C", "calendar-user-address-set"),
                       _tag("D", "principal-URL"),
@@ -582,7 +581,7 @@ def _propfind_response(path, item, props, user, write=False):
                       _tag("C", "calendar-home-set")) and
                 collection.is_principal and is_collection):
             tag = ET.Element(_tag("D", "href"))
-            tag.text = _href(collection, path)
+            tag.text = _href(base_prefix, path)
             element.append(tag)
         elif tag == _tag("C", "supported-calendar-component-set"):
             human_tag = _tag_from_clark(tag)
@@ -600,7 +599,7 @@ def _propfind_response(path, item, props, user, write=False):
                 is404 = True
         elif tag == _tag("D", "current-user-principal"):
             tag = ET.Element(_tag("D", "href"))
-            tag.text = _href(collection, ("/%s/" % user) if user else "/")
+            tag.text = _href(base_prefix, ("/%s/" % user) if user else "/")
             element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
             privilege = ET.Element(_tag("D", "privilege"))
@@ -720,7 +719,7 @@ def _add_propstat_to(element, tag, status_number):
     propstat.append(status)
 
 
-def proppatch(path, xml_request, collection):
+def proppatch(base_prefix, path, xml_request, collection):
     """Read and answer PROPPATCH requests.
 
     Read rfc4918-9.2 for info.
@@ -735,7 +734,7 @@ def proppatch(path, xml_request, collection):
     multistatus.append(response)
 
     href = ET.Element(_tag("D", "href"))
-    href.text = _href(collection, path)
+    href.text = _href(base_prefix, path)
     response.append(href)
 
     for short_name in props_to_remove:
@@ -748,7 +747,7 @@ def proppatch(path, xml_request, collection):
     return _pretty_xml(multistatus)
 
 
-def report(path, xml_request, collection):
+def report(base_prefix, path, xml_request, collection):
     """Read and answer REPORT requests.
 
     Read rfc3253-3.6 for info.
@@ -765,12 +764,11 @@ def report(path, xml_request, collection):
                 _tag("C", "calendar-multiget"),
                 _tag("CR", "addressbook-multiget")):
             # Read rfc4791-7.9 for info
-            base_prefix = collection.configuration.get("server", "base_prefix")
             hreferences = set()
             for href_element in root.findall(_tag("D", "href")):
                 href_path = unquote(urlparse(href_element.text).path)
-                if href_path.startswith(base_prefix):
-                    hreferences.add(href_path[len(base_prefix) - 1:])
+                if (href_path + "/").startswith(base_prefix + "/"):
+                    hreferences.add(href_path[len(base_prefix):])
         else:
             hreferences = (path,)
         filters = (
@@ -787,7 +785,8 @@ def report(path, xml_request, collection):
             # Reference is an item
             item = collection.get(name)
             if not item:
-                response = _item_response(hreference, found_item=False)
+                response = _item_response(base_prefix, hreference,
+                                          found_item=False)
                 multistatus.append(response)
                 continue
             items = [item]
@@ -828,13 +827,14 @@ def report(path, xml_request, collection):
 
             uri = "/" + posixpath.join(collection.path, item.href)
             multistatus.append(_item_response(
-                uri, found_props=found_props,
+                base_prefix, uri, found_props=found_props,
                 not_found_props=not_found_props, found_item=True))
 
     return _pretty_xml(multistatus)
 
 
-def _item_response(href, found_props=(), not_found_props=(), found_item=True):
+def _item_response(base_prefix, href, found_props=(), not_found_props=(),
+                   found_item=True):
     response = ET.Element(_tag("D", "response"))
 
     href_tag = ET.Element(_tag("D", "href"))
