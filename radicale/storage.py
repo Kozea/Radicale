@@ -193,12 +193,6 @@ class ComponentNotFoundError(ValueError):
         super().__init__(message)
 
 
-class EtagMismatchError(ValueError):
-    def __init__(self, etag1, etag2):
-        message = "ETags don't match: %s != %s" % (etag1, etag2)
-        super().__init__(message)
-
-
 class Item:
     def __init__(self, collection, item, href, last_modified=None):
         self.collection = collection
