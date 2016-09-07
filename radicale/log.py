@@ -56,7 +56,8 @@ def start(name="radicale", filename=None, debug=False):
                 "Logging configuration file '%s' not found, using stderr." %
                 filename)
         handler = logging.StreamHandler(sys.stderr)
-        handler.setFormatter(logging.Formatter("%(message)s"))
+        handler.setFormatter(
+            logging.Formatter("[%(thread)x] %(levelname)s: %(message)s"))
         logger.addHandler(handler)
     if debug:
         logger.setLevel(logging.DEBUG)

@@ -53,8 +53,8 @@ formatter = full
 
 [formatter_simple]
 # Simple output format
-format = %(message)s
+format = [%(thread)x] %(levelname)s: %(message)s
 
 [formatter_full]
 # Full output format
-format = %(asctime)s - %(thread)d - %(levelname)s: %(message)s
+format = %(asctime)s - [%(thread)x] %(levelname)s: %(message)s
