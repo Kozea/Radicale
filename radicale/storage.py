@@ -254,10 +254,7 @@ class BaseCollection:
         """
         if item.collection.path == to_collection.path and item.href == to_href:
             return
-        if to_collection.has(to_href):
-            to_collection.update(to_href, item.item)
-        else:
-            to_collection.upload(to_href, item.item)
+        to_collection.upload(to_href, item.item)
         item.collection.delete(item.href)
 
     @property
