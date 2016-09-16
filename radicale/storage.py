@@ -705,6 +705,7 @@ class Collection(BaseCollection):
                 continue
             path = os.path.join(self._filesystem_path, href)
             if os.path.isfile(path):
+                self.logger.debug("Read object: %s", path)
                 with open(path, encoding=self.encoding, newline="") as fd:
                     items.append(vobject.readOne(fd.read()))
         if self.get_meta("tag") == "VCALENDAR":
