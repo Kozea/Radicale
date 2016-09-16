@@ -499,7 +499,8 @@ class Collection(BaseCollection):
 
         for href in os.listdir(filesystem_path):
             if not is_safe_filesystem_path_component(href):
-                cls.logger.debug("Skipping collection: %s", href)
+                if not href.startswith(".Radicale"):
+                    cls.logger.debug("Skipping collection: %s", href)
                 continue
             child_filesystem_path = path_to_filesystem(filesystem_path, href)
             if os.path.isdir(child_filesystem_path):
@@ -613,7 +614,8 @@ class Collection(BaseCollection):
 
         for href in hrefs:
             if not is_safe_filesystem_path_component(href):
-                self.logger.debug("Skipping component: %s", href)
+                if not href.startswith(".Radicale"):
+                    self.logger.debug("Skipping component: %s", href)
                 continue
             path = os.path.join(self._filesystem_path, href)
             if os.path.isfile(path):
