@@ -338,7 +338,7 @@ class Application:
             user = self.Auth.map_login_to_user(login)
         else:
             user = self.Auth.map_login_to_user(environ.get("REMOTE_USER", ""))
-            password = None
+            password = ""
 
         # If "/.well-known" is not available, clients query "/"
         if path == "/.well-known" or path.startswith("/.well-known/"):
@@ -388,7 +388,7 @@ class Application:
             self.logger.info("%s refused" % (user or "Anonymous user"))
             status = client.UNAUTHORIZED
             realm = self.configuration.get("server", "realm")
-            headers = headers.copy()
+            headers = dict(headers)
             headers.update ({
                 "WWW-Authenticate":
                 "Basic realm=\"%s\"" % realm})

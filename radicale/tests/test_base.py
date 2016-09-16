@@ -766,6 +766,14 @@ class BaseRequestsMixIn:
         assert status == 207
         assert "href>/user/<" in answer
 
+    def test_authentication(self):
+        """Test if server sends authentication request."""
+        self.configuration.set("rights", "type", "owner_only")
+        self.application = Application(self.configuration, self.logger)
+        status, headers, answer = self.request("MKCOL", "/user/")
+        assert status in (401, 403)
+        assert headers.get("WWW-Authenticate")
+
     def test_principal_collection_creation(self):
         """Verify existence of the principal collection."""
         status, headers, answer = self.request(
@@ -835,6 +843,17 @@ class BaseRequestsMixIn:
             assert status != 201
         except Exception:
             pass
+
+    def test_custom_headers(self):
+        if not self.configuration.has_section("headers"):
+            self.configuration.add_section("headers")
+        self.configuration.set("headers", "test", "123")
+        # Test if header is set on success
+        status, headers, answer = self.request("GET", "/")
+        assert headers.get("test") == "123"
+        # Test if header is set on failure
+        status, headers, answer = self.request("GET", "/.well-known/does not exist")
+        assert headers.get("test") == "123"
 
 
 class BaseFileSystemTest(BaseTest):
