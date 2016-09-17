@@ -719,15 +719,13 @@ class Collection(BaseCollection):
             return collection.serialize()
         elif self.get_meta("tag") == "VADDRESSBOOK":
             items_ok = []
-            result = ""
             for item in items:
                 try:
                     item.serialize()
                     items_ok.append(item)
                 except:
                     self.logger.exception("VCARD broken (skip): %s", item)
-            result = "".join([item.serialize() for item in items_ok])
-            return result
+            return "".join([item.serialize() for item in items_ok])
         return ""
 
     _lock = threading.Lock()
