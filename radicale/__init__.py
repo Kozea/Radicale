@@ -40,6 +40,7 @@ import threading
 import urllib
 import wsgiref.simple_server
 import zlib
+import datetime
 from http import client
 from urllib.parse import unquote, urlparse
 
@@ -295,15 +296,28 @@ class Application:
                     headers[key] = self.configuration.get("headers", key)
 
             # Start response
+            time_end = datetime.datetime.now()
             status = "%i %s" % (
                 status, client.responses.get(status, "Unknown"))
-            self.logger.debug("Answer status: %s", status)
+            self.logger.info("%s answer status for %s in %s sec: %s", environ["REQUEST_METHOD"], environ["PATH_INFO"], (time_end - time_begin).total_seconds(), status)
             start_response(status, list(headers.items()))
             # Return response content
             return [answer] if answer else []
 
-        self.logger.info("%s request at %s received",
-                         environ["REQUEST_METHOD"], environ["PATH_INFO"])
+        remote_host = "unkown"
+        if "REMOTE_HOST" in environ:
+            if environ["REMOTE_HOST"]:
+                remote_host = environ["REMOTE_HOST"]
+        if "HTTP_X_FORWARDED_FOR" in environ:
+            if environ["HTTP_X_FORWARDED_FOR"]:
+                remote_host = environ["HTTP_X_FORWARDED_FOR"]
+        remote_useragent = "[-no-user-agent-provided-]"
+        if "HTTP_USER_AGENT" in environ:
+            if environ["HTTP_USER_AGENT"]:
+                remote_useragent = environ["HTTP_USER_AGENT"]
+        time_begin = datetime.datetime.now()
+        self.logger.info("%s request for %s received from %s using \"%s\"",
+                         environ["REQUEST_METHOD"], environ["PATH_INFO"], remote_host, remote_useragent)
         headers = pprint.pformat(self.headers_log(environ))
         self.logger.debug("Request headers:\n%s", headers)
 
