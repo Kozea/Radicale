@@ -638,7 +638,7 @@ class Collection(BaseCollection):
         try:
             item = Item(self, vobject.readOne(text), href, last_modified)
         except:
-            self.logger.error("Object broken (skip 'get'): %s", path)
+            self.logger.exception("Object broken (skip 'get'): %s", path)
             return None;
         return item;
 
@@ -717,7 +717,7 @@ class Collection(BaseCollection):
                     try:
                         items.append(vobject.readOne(fd.read()))
                     except:
-                        self.logger.error("Object broken (skip 'list'): %s", path)
+                        self.logger.exception("Object broken (skip 'list'): %s", path)
         time_end = datetime.datetime.now()
         self.logger.info("Collection read %d items in %s sec from %s", len(items),(time_end - time_begin).total_seconds(), self._filesystem_path)
         if self.get_meta("tag") == "VCALENDAR":
