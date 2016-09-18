@@ -715,9 +715,21 @@ class Collection(BaseCollection):
                 self.logger.debug("Read object: %s", path)
                 with open(path, encoding=self.encoding, newline="") as fd:
                     try:
-                        items.append(vobject.readOne(fd.read()))
+                        # check whether vobject liks the item
+                        item = vobject.readOne(fd.read())
                     except:
                         self.logger.exception("Object broken (skip 'list'): %s", path)
+                        continue
+
+                    if self.get_meta("tag") == "VADDRESSBOOK":
+                        try:
+                            # check whether vobject liks the VCARD item
+                            item.serialize()
+                        except:
+                            self.logger.exception("Object broken (skip 'read'): %s", path)
+                            self.logger.error("Broken VCARD content: %s", item)
+                            continue
+                    items.append(item)
         time_end = datetime.datetime.now()
         self.logger.info("Collection read %d items in %s sec from %s", len(items),(time_end - time_begin).total_seconds(), self._filesystem_path)
         if self.get_meta("tag") == "VCALENDAR":
