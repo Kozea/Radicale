@@ -316,8 +316,9 @@ class Application:
             if environ["HTTP_USER_AGENT"]:
                 remote_useragent = environ["HTTP_USER_AGENT"]
         depthinfo = ""
-        if environ["HTTP_DEPTH"]:
-            depthinfo = " with depth " + environ["HTTP_DEPTH"]
+        if "HTTP_DEPTH" in environ:
+            if environ["HTTP_DEPTH"]:
+                depthinfo = " with depth " + environ["HTTP_DEPTH"]
         time_begin = datetime.datetime.now()
         self.logger.info("%s request for %s received from %s using \"%s\"",
                          environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo, remote_host, remote_useragent)
