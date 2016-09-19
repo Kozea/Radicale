@@ -617,7 +617,8 @@ def _propfind_response(path, item, props, user, write=False):
                     "expand-property", "principal-search-property-set"):
                 supported = ET.Element(_tag("D", "supported-report"))
                 report_tag = ET.Element(_tag("D", "report"))
-                report_tag.text = report_name
+                supported_report_tag = ET.Element(_tag("D", report_name))
+                report_tag.append(supported_report_tag)
                 supported.append(report_tag)
                 element.append(supported)
         elif is_collection:
