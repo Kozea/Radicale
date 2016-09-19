@@ -304,7 +304,7 @@ class Application:
             # Return response content
             return [answer] if answer else []
 
-        remote_host = "unkown"
+        remote_host = "UNKNOWN"
         if "REMOTE_HOST" in environ:
             if environ["REMOTE_HOST"]:
                 remote_host = environ["REMOTE_HOST"]
@@ -315,9 +315,12 @@ class Application:
         if "HTTP_USER_AGENT" in environ:
             if environ["HTTP_USER_AGENT"]:
                 remote_useragent = environ["HTTP_USER_AGENT"]
+        depthinfo = ""
+        if environ["HTTP_DEPTH"]:
+            depthinfo = " with depth " + environ["HTTP_DEPTH"]
         time_begin = datetime.datetime.now()
         self.logger.info("%s request for %s received from %s using \"%s\"",
-                         environ["REQUEST_METHOD"], environ["PATH_INFO"], remote_host, remote_useragent)
+                         environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo, remote_host, remote_useragent)
         headers = pprint.pformat(self.headers_log(environ))
         self.logger.debug("Request headers:\n%s", headers)
 
