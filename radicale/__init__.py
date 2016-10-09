@@ -301,7 +301,7 @@ class Application:
             time_end = datetime.datetime.now()
             status = "%i %s" % (
                 status, client.responses.get(status, "Unknown"))
-            self.logger.info("%s answer status for %s in %s sec: %s", environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo, (time_end - time_begin).total_seconds(), status)
+            self.logger.info("%s response status for %s in %s sec: %s", environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo, (time_end - time_begin).total_seconds(), status)
             start_response(status, list(headers.items()))
             # Return response content
             return [answer] if answer else []
