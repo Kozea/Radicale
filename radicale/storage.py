@@ -648,6 +648,7 @@ class Collection(BaseCollection):
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
         try:
+            self.logger.debug("Read object: %s", path)
             item = vobject.readOne(text)
         except Exception:
             self.logger.error("Failed to parse component: %s", href)
