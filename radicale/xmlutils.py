@@ -28,7 +28,6 @@ in them for XML requests (all but PUT).
 import posixpath
 import re
 import xml.etree.ElementTree as ET
-from pprint import pprint
 from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 from http import client
@@ -572,12 +571,7 @@ def _propfind_response(path, item, props, user, write=False):
         element = ET.Element(tag)
         is404 = False
         if tag == _tag("D", "getetag"):
-            try:
-                element.text = item.etag
-            except:
-                print("Object broken (skip)")
-                pprint(vars(item))
-                return None
+            element.text = item.etag
         elif tag == _tag("D", "getlastmodified"):
             element.text = item.last_modified
         elif tag == _tag("D", "principal-collection-set"):
