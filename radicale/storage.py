@@ -631,6 +631,7 @@ class Collection(BaseCollection):
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
         try:
+            self.logger.debug("Read object: %s", path)
             item = vobject.readOne(text)
         except Exception:
             self.logger.exception("Object broken (skip 'get'): %s", path)
@@ -697,38 +698,9 @@ class Collection(BaseCollection):
 
     def serialize(self):
         items = []
-<<<<<<< HEAD
         time_begin = datetime.datetime.now()
-        for href in os.listdir(self._filesystem_path):
-            if not is_safe_filesystem_path_component(href):
-                self.logger.debug("Skipping component: %s", href)
-                continue
-            path = os.path.join(self._filesystem_path, href)
-            if os.path.isfile(path):
-                self.logger.debug("Read object: %s", path)
-                with open(path, encoding=self.encoding, newline="") as fd:
-                    try:
-                        # check whether vobject liks the item
-                        item = vobject.readOne(fd.read())
-                    except:
-                        self.logger.exception("Object broken (skip 'list'): %s", path)
-                        continue
-
-                    if self.get_meta("tag") == "VADDRESSBOOK":
-                        try:
-                            # check whether vobject liks the VCARD item
-                            item.serialize()
-                        except:
-                            self.logger.exception("Object broken (skip 'read'): %s", path)
-                            self.logger.error("Broken VCARD content: %s", item)
-                            continue
-                    items.append(item)
-        time_end = datetime.datetime.now()
-        self.logger.info("Collection read %d items in %s sec from %s", len(items),(time_end - time_begin).total_seconds(), self._filesystem_path)
-=======
         for href in self.list():
             items.append(self.get(href).item)
->>>>>>> 03fbb1e68ebb2dcc953826ed4542326e20fdf758
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
             for item in items:
