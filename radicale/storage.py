@@ -101,7 +101,11 @@ def load(configuration, logger):
 
 
 def get_etag(text):
-    """Etag from collection or item."""
+    """Etag from collection or item.
+
+    Encoded as quoted-string (see RFC 2616).
+
+    """
     etag = md5()
     etag.update(text.encode("utf-8"))
     return '"%s"' % etag.hexdigest()
@@ -122,7 +126,7 @@ def sanitize_path(path):
     path = posixpath.normpath(path)
     new_path = "/"
     for part in path.split("/"):
-        if not part or part in (".", ".."):
+        if not is_safe_path_component(part):
             continue
         new_path = posixpath.join(new_path, part)
     trailing_slash = "" if new_path.endswith("/") else trailing_slash
@@ -139,7 +143,8 @@ def is_safe_path_component(path):
 
 
 def is_safe_filesystem_path_component(path):
-    """Check if path is a single component of a filesystem path.
+    """Check if path is a single component of a local and posix filesystem
+       path.
 
     Check that the path is safe to join too.
 
@@ -147,7 +152,8 @@ def is_safe_filesystem_path_component(path):
     return (
         path and not os.path.splitdrive(path)[0] and
         not os.path.split(path)[0] and path not in (os.curdir, os.pardir) and
-        not path.startswith(".") and not path.endswith("~"))
+        not path.startswith(".") and not path.endswith("~") and
+        is_safe_path_component(path))
 
 
 def path_to_filesystem(root, *paths):
@@ -188,12 +194,6 @@ class ComponentNotFoundError(ValueError):
         super().__init__(message)
 
 
-class EtagMismatchError(ValueError):
-    def __init__(self, etag1, etag2):
-        message = "ETags don't match: %s != %s" % (etag1, etag2)
-        super().__init__(message)
-
-
 class Item:
     def __init__(self, collection, item, href, last_modified=None):
         self.collection = collection
@@ -206,6 +206,7 @@ class Item:
 
     @property
     def etag(self):
+        """Encoded as quoted-string (see RFC 2616)."""
         return get_etag(self.serialize())
 
 
@@ -260,6 +261,7 @@ class BaseCollection:
 
     @property
     def etag(self):
+        """Encoded as quoted-string (see RFC 2616)."""
         return get_etag(self.serialize())
 
     @classmethod
@@ -390,11 +392,7 @@ class Collection(BaseCollection):
             delete=False, prefix=".Radicale.tmp-", newline=newline)
         try:
             yield tmp
-            if self.configuration.getboolean("storage", "fsync"):
-                if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
-                    fcntl.fcntl(tmp.fileno(), fcntl.F_FULLFSYNC)
-                else:
-                    os.fsync(tmp.fileno())
+            self._fsync(tmp.fileno())
             tmp.close()
             os.replace(tmp.name, path)
         except:
@@ -413,6 +411,14 @@ class Collection(BaseCollection):
         raise FileExistsError(errno.EEXIST, "No usable file name found")
 
     @classmethod
+    def _fsync(cls, fd):
+        if cls.configuration.getboolean("storage", "fsync"):
+            if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
+                fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
+            else:
+                os.fsync(fd)
+
+    @classmethod
     def _sync_directory(cls, path):
         """Sync directory to disk.
 
@@ -424,10 +430,7 @@ class Collection(BaseCollection):
         if os.name == "posix":
             fd = os.open(path, 0)
             try:
-                if hasattr(fcntl, "F_FULLFSYNC"):
-                    fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
-                else:
-                    os.fsync(fd)
+                cls._fsync(fd)
             finally:
                 os.close(fd)
 
@@ -580,23 +583,21 @@ class Collection(BaseCollection):
         """
         fs = []
         for href, item in vobject_items.items():
+            if not is_safe_filesystem_path_component(href):
+                raise UnsafePathError(href)
             path = path_to_filesystem(self._filesystem_path, href)
             fs.append(open(path, "w", encoding=self.encoding, newline=""))
             fs[-1].write(item.serialize())
-        fsync_fn = lambda fd: None
-        if self.configuration.getboolean("storage", "fsync"):
-            if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
-                fsync_fn = lambda fd: fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
-            else:
-                fsync_fn = os.fsync
         # sync everything at once because it's slightly faster.
         for f in fs:
-            fsync_fn(f.fileno())
+            self._fsync(f.fileno())
             f.close()
         self._sync_directory(self._filesystem_path)
 
     @classmethod
     def move(cls, item, to_collection, to_href):
+        if not is_safe_filesystem_path_component(to_href):
+            raise UnsafePathError(to_href)
         os.replace(
             path_to_filesystem(item.collection._filesystem_path, item.href),
             path_to_filesystem(to_collection._filesystem_path, to_href))
@@ -605,12 +606,7 @@ class Collection(BaseCollection):
             cls._sync_directory(item.collection._filesystem_path)
 
     def list(self):
-        try:
-            hrefs = os.listdir(self._filesystem_path)
-        except IOError:
-            return
-
-        for href in hrefs:
+        for href in os.listdir(self._filesystem_path):
             if not is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
                     self.logger.debug("Skipping component: %s", href)
@@ -622,7 +618,6 @@ class Collection(BaseCollection):
     def get(self, href):
         if not href:
             return None
-        href = href.strip("{}").replace("/", "_")
         if not is_safe_filesystem_path_component(href):
             self.logger.debug(
                 "Can't translate name safely to filesystem: %s", href)
@@ -630,20 +625,17 @@ class Collection(BaseCollection):
         path = path_to_filesystem(self._filesystem_path, href)
         if not os.path.isfile(path):
             return None
-        with open(path, encoding=self.encoding, newline="") as fd:
-            text = fd.read()
+        with open(path, encoding=self.encoding, newline="") as f:
+            text = f.read()
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
         try:
-            item = Item(self, vobject.readOne(text), href, last_modified)
-        except:
+            item = vobject.readOne(text)
+        except Exception:
             self.logger.exception("Object broken (skip 'get'): %s", path)
             return None;
-        return item;
-
-    def has(self, href):
-        return self.get(href) is not None
+        return Item(self, item, href, last_modified)
 
     def upload(self, href, vobject_item):
         if not is_safe_filesystem_path_component(href):
@@ -657,18 +649,17 @@ class Collection(BaseCollection):
     def delete(self, href=None):
         if href is None:
             # Delete the collection
-            if os.path.isdir(self._filesystem_path):
-                parent_dir = os.path.dirname(self._filesystem_path)
-                try:
-                    os.rmdir(self._filesystem_path)
-                except OSError:
-                    with TemporaryDirectory(
-                            prefix=".Radicale.tmp-", dir=parent_dir) as tmp:
-                        os.rename(self._filesystem_path, os.path.join(
-                            tmp, os.path.basename(self._filesystem_path)))
-                        self._sync_directory(parent_dir)
-                else:
+            parent_dir = os.path.dirname(self._filesystem_path)
+            try:
+                os.rmdir(self._filesystem_path)
+            except OSError:
+                with TemporaryDirectory(
+                        prefix=".Radicale.tmp-", dir=parent_dir) as tmp:
+                    os.rename(self._filesystem_path, os.path.join(
+                        tmp, os.path.basename(self._filesystem_path)))
                     self._sync_directory(parent_dir)
+            else:
+                self._sync_directory(parent_dir)
         else:
             # Delete an item
             if not is_safe_filesystem_path_component(href):
@@ -681,30 +672,32 @@ class Collection(BaseCollection):
 
     def get_meta(self, key):
         if os.path.exists(self._props_path):
-            with open(self._props_path, encoding=self.encoding) as prop:
-                return json.load(prop).get(key)
+            with open(self._props_path, encoding=self.encoding) as f:
+                return json.load(f).get(key)
 
     def set_meta(self, props):
         if os.path.exists(self._props_path):
-            with open(self._props_path, encoding=self.encoding) as prop:
-                old_props = json.load(prop)
+            with open(self._props_path, encoding=self.encoding) as f:
+                old_props = json.load(f)
                 old_props.update(props)
                 props = old_props
         props = {key: value for key, value in props.items() if value}
-        with self._atomic_write(self._props_path, "w+") as prop:
-            json.dump(props, prop)
+        with self._atomic_write(self._props_path, "w+") as f:
+            json.dump(props, f)
 
     @property
     def last_modified(self):
-        last = max([os.path.getmtime(self._filesystem_path)] + [
-            os.path.getmtime(os.path.join(self._filesystem_path, filename))
-            for filename in os.listdir(self._filesystem_path)] or [0])
+        relevant_files = [self._filesystem_path] + [
+            path_to_filesystem(self._filesystem_path, href)
+            for href in self.list()]
+        if os.path.exists(self._props_path):
+            relevant_files.append(self._props_path)
+        last = max(map(os.path.getmtime, relevant_files))
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(last))
 
     def serialize(self):
-        if not os.path.exists(self._filesystem_path):
-            return None
         items = []
+<<<<<<< HEAD
         time_begin = datetime.datetime.now()
         for href in os.listdir(self._filesystem_path):
             if not is_safe_filesystem_path_component(href):
@@ -732,6 +725,10 @@ class Collection(BaseCollection):
                     items.append(item)
         time_end = datetime.datetime.now()
         self.logger.info("Collection read %d items in %s sec from %s", len(items),(time_end - time_begin).total_seconds(), self._filesystem_path)
+=======
+        for href in self.list():
+            items.append(self.get(href).item)
+>>>>>>> 03fbb1e68ebb2dcc953826ed4542326e20fdf758
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
             for item in items:
