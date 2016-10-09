@@ -34,6 +34,7 @@ import stat
 import subprocess
 import threading
 import time
+import datetime
 from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
@@ -634,7 +635,12 @@ class Collection(BaseCollection):
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
-        return Item(self, vobject.readOne(text), href, last_modified)
+        try:
+            item = Item(self, vobject.readOne(text), href, last_modified)
+        except:
+            self.logger.exception("Object broken (skip 'get'): %s", path)
+            return None;
+        return item;
 
     def has(self, href):
         return self.get(href) is not None
@@ -699,6 +705,7 @@ class Collection(BaseCollection):
         if not os.path.exists(self._filesystem_path):
             return None
         items = []
+        time_begin = datetime.datetime.now()
         for href in os.listdir(self._filesystem_path):
             if not is_safe_filesystem_path_component(href):
                 self.logger.debug("Skipping component: %s", href)
@@ -707,7 +714,12 @@ class Collection(BaseCollection):
             if os.path.isfile(path):
                 self.logger.debug("Read object: %s", path)
                 with open(path, encoding=self.encoding, newline="") as fd:
-                    items.append(vobject.readOne(fd.read()))
+                    try:
+                        items.append(vobject.readOne(fd.read()))
+                    except:
+                        self.logger.exception("Object broken (skip 'list'): %s", path)
+        time_end = datetime.datetime.now()
+        self.logger.info("Collection read %d items in %s sec from %s", len(items),(time_end - time_begin).total_seconds(), self._filesystem_path)
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
             for item in items:
