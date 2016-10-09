@@ -298,11 +298,20 @@ class Application:
                     headers[key] = self.configuration.get("headers", key)
 
             # Start response
-            time_end = datetime.datetime.now()
             status = "%i %s" % (
                 status, client.responses.get(status, "Unknown"))
-            self.logger.info("%s response status for %s in %s sec: %s", environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo, (time_end - time_begin).total_seconds(), status)
             start_response(status, list(headers.items()))
+            time_end = datetime.datetime.now()
+            sizeinfo = ""
+            if answer:
+                sizeinfo = sizeinfo + str(len(answer)) + " bytes"
+            if "Content-Encoding" in headers:
+                if len(sizeinfo) > 0:
+                    sizeinfo = sizeinfo + " "
+                sizeinfo = sizeinfo + headers["Content-Encoding"]
+            if len(sizeinfo) > 0:
+                sizeinfo = " (" + sizeinfo + ")"
+            self.logger.info("%s response status for %s in %s sec: %s", environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo + sizeinfo, (time_end - time_begin).total_seconds(), status)
             # Return response content
             return [answer] if answer else []
 
