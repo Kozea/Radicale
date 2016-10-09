@@ -650,9 +650,16 @@ class Collection(BaseCollection):
         try:
             self.logger.debug("Read object: %s", path)
             item = vobject.readOne(text)
-        except Exception:
-            self.logger.error("Failed to parse component: %s", href)
-            raise
+        except Exception as e:
+            self.logger.error("Object broken (skip 'get'): %s (%s)", path, e)
+            return None;
+        if self.get_meta("tag") == "VADDRESSBOOK":
+            # check whether vobject likes the VCARD item
+            try:
+                item.serialize()
+            except Exception as e:
+                self.logger.error("VCARD object broken (skip 'get'): %s (%s)", path, e)
+                return None;
         return Item(self, item, href, last_modified)
 
     def upload(self, href, vobject_item):
@@ -718,7 +725,8 @@ class Collection(BaseCollection):
         items = []
         time_begin = datetime.datetime.now()
         for href in self.list():
-            items.append(self.get(href).item)
+            if hasattr(self.get(href),'item'):
+                items.append(self.get(href).item)
         time_end = datetime.datetime.now()
         self.logger.info(
             "Collection read %d items in %s sec from %s", len(items),
