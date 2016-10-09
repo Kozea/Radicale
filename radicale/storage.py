@@ -633,9 +633,16 @@ class Collection(BaseCollection):
         try:
             self.logger.debug("Read object: %s", path)
             item = vobject.readOne(text)
-        except Exception:
-            self.logger.exception("Object broken (skip 'get'): %s", path)
+        except Exception as e:
+            self.logger.error("Object broken (skip 'get'): %s (%s)", path, e)
             return None;
+        if self.get_meta("tag") == "VADDRESSBOOK":
+            # check whether vobject likes the VCARD item
+            try:
+                item.serialize()
+            except Exception as e:
+                self.logger.error("VCARD object broken (skip 'get'): %s (%s)", path, e)
+                return None;
         return Item(self, item, href, last_modified)
 
     def upload(self, href, vobject_item):
@@ -700,7 +707,8 @@ class Collection(BaseCollection):
         items = []
         time_begin = datetime.datetime.now()
         for href in self.list():
-            items.append(self.get(href).item)
+            if hasattr(self.get(href),'item'):
+                items.append(self.get(href).item)
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
             for item in items:
