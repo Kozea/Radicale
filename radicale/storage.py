@@ -709,6 +709,8 @@ class Collection(BaseCollection):
         for href in self.list():
             if hasattr(self.get(href),'item'):
                 items.append(self.get(href).item)
+        time_end = datetime.datetime.now()
+        self.logger.info("Collection read %d items in %s sec from %s", len(items),(time_end - time_begin).total_seconds(), self._filesystem_path)
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
             for item in items:
