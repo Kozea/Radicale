@@ -36,6 +36,7 @@ import subprocess
 import threading
 import time
 import datetime
+import copy
 from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
@@ -223,6 +224,59 @@ class Item:
         return get_etag(self.serialize())
 
 
+## Item caching
+# cache counter
+class Item_cache_counter:
+    def __init__(self, lookup, hit, miss, dirty):
+        self.lookup = 0
+        self.hit    = 0
+        self.miss   = 0
+        self.dirty  = 0
+
+    def string(self):
+        if (self.lookup > 0):
+            message = "lookup=%d hit=%d (%3.2f%%) miss=%d (%3.2f%%) dirty=%d (%3.2f%%)" % (
+                self.lookup,
+                self.hit,
+                self.hit * 100 / self.lookup,
+                self.miss,
+                self.miss * 100 / self.lookup,
+                self.dirty,
+                self.dirty * 100 / self.lookup
+            )
+        else:
+            message = "no cache lookups so far"
+        return(message)
+
+    def string_delta(self, stamp):
+        delta_lookup = self.lookup - stamp.lookup
+        if (delta_lookup > 0):
+            message = "lookup=%d hit=%d (%3.2f%%) miss=%d (%3.2f%%) dirty=%d (%3.2f%%)" % (
+                delta_lookup,
+                self.hit - stamp.hit,
+                (self.hit - stamp.hit) * 100 / delta_lookup,
+                self.miss - stamp.miss,
+                (self.miss - stamp.miss) * 100 / delta_lookup,
+                self.dirty - stamp.dirty,
+                (self.dirty - stamp.dirty) * 100 / delta_lookup
+           )
+        else:
+            message = "no cache lookups so far"
+        return(message)
+
+# cache entry
+class Item_cache_entry:
+    def __init__(self, Item, last_modified_time, last_used_time):
+        self.Item = Item
+        self.last_modified_time = last_modified_time
+        self.last_used_time = last_used_time
+
+# cache initialization
+Item_cache_data = {}
+Item_cache_counter = Item_cache_counter(0, 0, 0, 0)
+Item_cache_active = 0
+
+
 class BaseCollection:
 
     # Overriden on copy by the "load" function
@@ -379,6 +433,7 @@ class Collection(BaseCollection):
     """Collection stored in several files per calendar."""
 
     def __init__(self, path, principal=False, folder=None):
+        global Item_cache_active
         if not folder:
             folder = self._get_collection_root_folder()
         # Path should already be sanitized
@@ -390,6 +445,10 @@ class Collection(BaseCollection):
         split_path = self.path.split("/")
         self.owner = split_path[0] if len(split_path) > 1 else None
         self.is_principal = principal
+        if self.configuration.getboolean("storage", "cache"):
+            if Item_cache_active == 0:
+                self.logger.info("Item cache enabled")
+            Item_cache_active = 1
 
     @classmethod
     def _get_collection_root_folder(cls):
@@ -623,6 +682,11 @@ class Collection(BaseCollection):
             cls._sync_directory(item.collection._filesystem_path)
 
     def list(self):
+        global Item_cache_data
+        global Item_cache_counter
+        global Item_cache_active
+        if Item_cache_active == 1:
+            Item_cache_counter_stamp = copy.deepcopy(Item_cache_counter)
         for href in os.listdir(self._filesystem_path):
             if not is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
@@ -631,8 +695,14 @@ class Collection(BaseCollection):
             path = os.path.join(self._filesystem_path, href)
             if os.path.isfile(path):
                 yield href
+        if Item_cache_active == 1:
+           self.logger.info("Cache current statistics: %s", Item_cache_counter.string_delta(Item_cache_counter_stamp))
+           self.logger.info("Cache global  statistics: %s", Item_cache_counter.string())
 
     def get(self, href):
+        global Item_cache_data
+        global Item_cache_counter
+        global Item_cache_active
         if not href:
             return None
         if not is_safe_filesystem_path_component(href):
@@ -642,25 +712,51 @@ class Collection(BaseCollection):
         path = path_to_filesystem(self._filesystem_path, href)
         if not os.path.isfile(path):
             return None
-        with open(path, encoding=self.encoding, newline="") as f:
-            text = f.read()
+        last_modified_time = os.path.getmtime(path)
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
-            time.gmtime(os.path.getmtime(path)))
-        try:
-            self.logger.debug("Read object ('get'): %s", path)
-            item = vobject.readOne(text)
-        except Exception as e:
-            self.logger.error("Object broken (skip 'get'): %s (%s)", path, e)
-            return None;
-        if self.get_meta("tag") == "VADDRESSBOOK":
-            # check whether vobject likes the VCARD item
+            time.gmtime(last_modified_time))
+
+        Item_cache_hit = 0
+        if Item_cache_active == 1:
+            # Item cache lookup
+            Item_cache_counter.lookup += 1
+            if path in Item_cache_data:
+                if Item_cache_data[path].last_modified_time == last_modified_time:
+                    Item_cache_counter.hit += 1
+                    Item_cache_hit = 1
+                else:
+                    Item_cache_counter.dirty += 1
+            else:
+                Item_cache_counter.miss += 1
+
+        if Item_cache_hit == 0 or Item_cache_active == 0:
+            with open(path, encoding=self.encoding, newline="") as f:
+                text = f.read()
             try:
-                item.serialize()
+                self.logger.debug("Read object ('get'): %s", path)
+                item = vobject.readOne(text)
             except Exception as e:
-                self.logger.error("VCARD object broken (skip 'get'): %s (%s)", path, e)
+                self.logger.error("Object broken (skip 'get'): %s (%s)", path, e)
                 return None;
-        return Item(self, item, href, last_modified)
+            if self.get_meta("tag") == "VADDRESSBOOK":
+                # check whether vobject likes the VCARD item
+                try:
+                    item.serialize()
+                except Exception as e:
+                    self.logger.error("VCARD object broken (skip 'get'): %s (%s)", path, e)
+                    return None;
+            Item_entry = Item(self, item, href, last_modified)
+
+            if Item_cache_active == 1:
+                # cache handling
+                self.logger.debug("Store item in cache: %s", path)
+                Item_cache_data[path] = Item_cache_entry(Item_entry, last_modified_time, datetime.datetime.now())
+
+            return Item_entry
+        else:
+            self.logger.debug("Retrieve from cache: %s", path)
+            return Item_cache_data[path].Item
 
     def upload(self, href, vobject_item):
         if not is_safe_filesystem_path_component(href):
@@ -672,6 +768,8 @@ class Collection(BaseCollection):
         return item
 
     def delete(self, href=None):
+        global Item_cache_data
+        global Item_cache_active
         if href is None:
             # Delete the collection
             parent_dir = os.path.dirname(self._filesystem_path)
@@ -694,6 +792,11 @@ class Collection(BaseCollection):
                 raise ComponentNotFoundError(href)
             os.remove(path)
             self._sync_directory(os.path.dirname(path))
+            if Item_cache_active == 1:
+               # remove from cache, if existing
+               if path in Item_cache_data:
+                   self.logger.debug("Delete from cache: %s", path)
+                   del Item_cache_data[path]
 
     def get_meta(self, key=None):
         if os.path.exists(self._props_path):
