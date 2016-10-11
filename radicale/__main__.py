@@ -36,38 +36,64 @@ from . import (
   VERSION, Application, RequestHandler, ThreadedHTTPServer,
   ThreadedHTTPSServer, config, log)
 
+opt_dict = {
+    '--server_daemon': {
+        'help': 'launch as daemon',
+        'aliases': ['-d', '--daemon']},
+    '--server_pid': {
+        'help': 'set PID filename for daemon mode',
+        'aliases': ['-p', '--pid']},
+    '--server_hosts': {
+        'help': 'set server hostnames and ports',
+        'aliases': ['-H', '--hosts'],
+    },
+    '--server_ssl': {
+        'help': 'use SSL connection',
+        'aliases': ['-s', '--ssl'],
+    },
+    '--server_key': {
+        'help': 'set private key file',
+        'aliases': ['-k', '--key']
+    },
+    '--server_certificate': {
+        'help': 'set certificate file',
+        'aliases': ['-c', '--certificate']
+    },
+    '--logging_debug': {
+        'help': 'print debug informations',
+        'aliases': ['-D', '--debug']
+    }
+}
+
 
 def run():
     """Run Radicale as a standalone server."""
     # Get command-line options
     parser = optparse.OptionParser(version=VERSION)
-    parser.add_option(
-        "-d", "--daemon", action="store_true",
-        help="launch as daemon")
-    parser.add_option(
-        "-p", "--pid",
-        help="set PID filename for daemon mode")
-    parser.add_option(
-        "-f", "--foreground", action="store_false", dest="daemon",
-        help="launch in foreground (opposite of --daemon)")
-    parser.add_option(
-        "-H", "--hosts",
-        help="set server hostnames and ports")
-    parser.add_option(
-        "-s", "--ssl", action="store_true",
-        help="use SSL connection")
-    parser.add_option(
-        "-S", "--no-ssl", action="store_false", dest="ssl",
-        help="do not use SSL connection (opposite of --ssl)")
-    parser.add_option(
-        "-k", "--key",
-        help="set private key file")
-    parser.add_option(
-        "-c", "--certificate",
-        help="set certificate file")
-    parser.add_option(
-        "-D", "--debug", action="store_true",
-        help="print debug information")
+    for section, values in config.INITIAL_CONFIG.items():
+        group = optparse.OptionGroup(parser, section)
+        for option, default_value in values.items():
+            long_name = '--{0}_{1}'.format(section, option)
+            kwargs = {}
+            args = [long_name]
+            if default_value.lower() in ('true', 'false'):
+                kwargs['action'] = 'store_true'
+            if long_name in opt_dict:
+                args.extend(opt_dict[long_name].get('aliases'))
+                opt_dict[long_name].pop('aliases')
+                kwargs.update(opt_dict[long_name])
+            group.add_option(*args, **kwargs)
+        if section == 'server':
+            group.add_option(
+                "-f", "--foreground", action="store_false",
+                dest="server_daemon",
+                help="launch in foreground (opposite of --daemon)")
+            group.add_option(
+                "-S", "--no-ssl", action="store_false", dest="server_ssl",
+                help="do not use SSL connection (opposite of --ssl)")
+
+        parser.add_option_group(group)
+
     parser.add_option(
         "-C", "--config",
         help="use a specific configuration file")
@@ -90,10 +116,20 @@ def run():
     for option in parser.option_list:
         key = option.dest
         if key:
-            section = "logging" if key == "debug" else "server"
+            section = option.dest.split('_')[0]
             value = getattr(options, key)
             if value is not None:
                 configuration.set(section, key, str(value))
+
+    for group in parser.option_groups:
+        section = group.title
+        for option in group.option_list:
+            key = option.dest
+            config_key = key.split('_', 1)[1]
+            if key:
+                value = getattr(options, key)
+                if value is not None:
+                    configuration.set(section, config_key, str(value))
 
     # Start logging
     filename = os.path.expanduser(configuration.get("logging", "config"))

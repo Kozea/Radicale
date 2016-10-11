@@ -24,48 +24,49 @@ Give a configparser-like interface to read and write configuration.
 """
 
 import os
+from collections import OrderedDict
 from configparser import RawConfigParser as ConfigParser
 
 # Default configuration
-INITIAL_CONFIG = {
-    "server": {
-        "hosts": "0.0.0.0:5232",
-        "daemon": "False",
-        "pid": "",
-        "max_connections": "20",
-        "max_content_length": "10000000",
-        "timeout": "10",
-        "ssl": "False",
-        "certificate": "/etc/apache2/ssl/server.crt",
-        "key": "/etc/apache2/ssl/server.key",
-        "protocol": "PROTOCOL_SSLv23",
-        "ciphers": "",
-        "dns_lookup": "True",
-        "base_prefix": "/",
-        "can_skip_base_prefix": "False",
-        "realm": "Radicale - Password Required"},
-    "encoding": {
-        "request": "utf-8",
-        "stock": "utf-8"},
-    "auth": {
-        "type": "None",
-        "htpasswd_filename": "/etc/radicale/users",
-        "htpasswd_encryption": "crypt"},
-    "rights": {
-        "type": "None",
-        "file": "~/.config/radicale/rights"},
-    "storage": {
-        "type": "multifilesystem",
-        "filesystem_folder": os.path.expanduser(
-            "~/.config/radicale/collections"),
-        "fsync": "True",
-        "hook": "",
-        "close_lock_file": "False"},
-    "logging": {
-        "config": "/etc/radicale/logging",
-        "debug": "False",
-        "full_environment": "False",
-        "mask_passwords": "True"}}
+INITIAL_CONFIG = OrderedDict([
+    ("server", OrderedDict([
+        ("hosts", "0.0.0.0:5232"),
+        ("daemon", "False"),
+        ("pid", ""),
+        ("max_connections", "20"),
+        ("max_content_length", "10000000"),
+        ("timeout", "10"),
+        ("ssl", "False"),
+        ("certificate", "/etc/apache2/ssl/server.crt"),
+        ("key", "/etc/apache2/ssl/server.key"),
+        ("protocol", "PROTOCOL_SSLv23"),
+        ("ciphers", ""),
+        ("dns_lookup", "True"),
+        ("base_prefix", "/"),
+        ("can_skip_base_prefix", "False"),
+        ("realm", "Radicale - Password Required")])),
+    ("encoding", OrderedDict([
+        ("request", "utf-8"),
+        ("stock", "utf-8")])),
+    ("auth", OrderedDict([
+        ("type", "None"),
+        ("htpasswd_filename", "/etc/radicale/users"),
+        ("htpasswd_encryption", "crypt")])),
+    ("rights", OrderedDict([
+        ("type", "None"),
+        ("file", "~/.config/radicale/rights")])),
+    ("storage", OrderedDict([
+        ("type", "multifilesystem"),
+        ("filesystem_folder", os.path.expanduser(
+            "~/.config/radicale/collections")),
+        ("fsync", "True"),
+        ("hook", ""),
+        ("close_lock_file", "False")])),
+    ("logging", OrderedDict([
+        ("config", "/etc/radicale/logging"),
+        ("debug", "False"),
+        ("full_environment", "False"),
+        ("mask_passwords", "True")]))])
 
 
 def load(paths=(), extra_config=None):
