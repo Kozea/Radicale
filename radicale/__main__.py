@@ -112,15 +112,6 @@ def run():
         configuration = config.load(configuration_paths)
         configuration_found = True
 
-    # Update Radicale configuration according to options
-    for option in parser.option_list:
-        key = option.dest
-        if key:
-            section = option.dest.split('_')[0]
-            value = getattr(options, key)
-            if value is not None:
-                configuration.set(section, key, str(value))
-
     for group in parser.option_groups:
         section = group.title
         for option in group.option_list:
