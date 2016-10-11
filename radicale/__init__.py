@@ -314,7 +314,7 @@ class Application:
             time_end = datetime.datetime.now()
             sizeinfo = ""
             if answer:
-                sizeinfo = sizeinfo + str(len(answer)) + " bytes"
+                sizeinfo = sizeinfo + str(len(str(answer))) + " bytes"
             if "Content-Encoding" in headers:
                 if len(sizeinfo) > 0:
                     sizeinfo = sizeinfo + " "
