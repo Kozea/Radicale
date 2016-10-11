@@ -112,6 +112,7 @@ def run():
         configuration = config.load(configuration_paths)
         configuration_found = True
 
+    # Update Radicale configuration according to options
     for group in parser.option_groups:
         section = group.title
         for option in group.option_list:
