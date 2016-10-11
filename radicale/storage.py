@@ -631,7 +631,7 @@ class Collection(BaseCollection):
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
         try:
-            self.logger.debug("Read object: %s", path)
+            self.logger.debug("Read object ('get'): %s", path)
             item = vobject.readOne(text)
         except Exception as e:
             self.logger.error("Object broken (skip 'get'): %s (%s)", path, e)

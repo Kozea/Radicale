@@ -304,14 +304,14 @@ class Application:
             time_end = datetime.datetime.now()
             sizeinfo = ""
             if answer:
-                sizeinfo = sizeinfo + str(len(answer)) + " bytes"
+                sizeinfo = sizeinfo + str(len(str(answer))) + " bytes"
             if "Content-Encoding" in headers:
                 if len(sizeinfo) > 0:
                     sizeinfo = sizeinfo + " "
                 sizeinfo = sizeinfo + headers["Content-Encoding"]
             if len(sizeinfo) > 0:
                 sizeinfo = " (" + sizeinfo + ")"
-            self.logger.info("%s response status for %s in %s sec: %s", environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo + sizeinfo, (time_end - time_begin).total_seconds(), status)
+            self.logger.info("%s response for %s in %s sec status: %s", environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo + sizeinfo, (time_end - time_begin).total_seconds(), status)
             # Return response content
             return [answer] if answer else []
 
@@ -331,7 +331,7 @@ class Application:
             if environ["HTTP_DEPTH"]:
                 depthinfo = " with depth " + environ["HTTP_DEPTH"]
         time_begin = datetime.datetime.now()
-        self.logger.info("%s request for %s received from %s using \"%s\"",
+        self.logger.info("%s request  for %s received from %s using \"%s\"",
                          environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo, remote_host, remote_useragent)
         headers = pprint.pformat(self.headers_log(environ))
         self.logger.debug("Request headers:\n%s", headers)
