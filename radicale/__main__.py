@@ -37,29 +37,29 @@ from . import (
   ThreadedHTTPSServer, config, log)
 
 opt_dict = {
-    '--server_daemon': {
+    '--server-daemon': {
         'help': 'launch as daemon',
         'aliases': ['-d', '--daemon']},
-    '--server_pid': {
+    '--server-pid': {
         'help': 'set PID filename for daemon mode',
         'aliases': ['-p', '--pid']},
-    '--server_hosts': {
+    '--server-hosts': {
         'help': 'set server hostnames and ports',
         'aliases': ['-H', '--hosts'],
     },
-    '--server_ssl': {
+    '--server-ssl': {
         'help': 'use SSL connection',
         'aliases': ['-s', '--ssl'],
     },
-    '--server_key': {
+    '--server-key': {
         'help': 'set private key file',
         'aliases': ['-k', '--key']
     },
-    '--server_certificate': {
+    '--server-certificate': {
         'help': 'set certificate file',
         'aliases': ['-c', '--certificate']
     },
-    '--logging_debug': {
+    '--logging-debug': {
         'help': 'print debug informations',
         'aliases': ['-D', '--debug']
     }
@@ -73,7 +73,7 @@ def run():
     for section, values in config.INITIAL_CONFIG.items():
         group = optparse.OptionGroup(parser, section)
         for option, default_value in values.items():
-            long_name = '--{0}_{1}'.format(section, option)
+            long_name = '--{0}-{1}'.format(section, option)
             kwargs = {}
             args = [long_name]
             if default_value.lower() in ('true', 'false'):
@@ -117,6 +117,7 @@ def run():
         section = group.title
         for option in group.option_list:
             key = option.dest
+            print(key)
             config_key = key.split('_', 1)[1]
             if key:
                 value = getattr(options, key)
