@@ -389,7 +389,7 @@ class Collection(BaseCollection):
             delete=False, prefix=".Radicale.tmp-", newline=newline)
         try:
             yield tmp
-            if self.configuration.getboolean("storage", "fsync"):
+            if self.configuration.getboolean("storage", "filesystem_fsync"):
                 if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
                     fcntl.fcntl(tmp.fileno(), fcntl.F_FULLFSYNC)
                 else:
@@ -418,7 +418,7 @@ class Collection(BaseCollection):
         This only works on POSIX and does nothing on other systems.
 
         """
-        if not cls.configuration.getboolean("storage", "fsync"):
+        if not cls.configuration.getboolean("storage", "filesystem_fsync"):
             return
         if os.name == "posix":
             fd = os.open(path, 0)
@@ -550,13 +550,15 @@ class Collection(BaseCollection):
                         new_collection = vobject.iCalendar()
                         for item in items:
                             new_collection.add(item)
-                        href = self._find_available_file_name(vobject_items.get)
+                        href = self._find_available_file_name(
+                            vobject_items.get)
                         vobject_items[href] = new_collection
                     self.upload_all_nonatomic(vobject_items)
                 elif props.get("tag") == "VCARD":
                     vobject_items = {}
                     for card in collection:
-                        href = self._find_available_file_name(vobject_items.get)
+                        href = self._find_available_file_name(
+                            vobject_items.get)
                         vobject_items[href] = card
                     self.upload_all_nonatomic(vobject_items)
 
@@ -583,7 +585,7 @@ class Collection(BaseCollection):
             fs.append(open(path, "w", encoding=self.encoding, newline=""))
             fs[-1].write(item.serialize())
         fsync_fn = lambda fd: None
-        if self.configuration.getboolean("storage", "fsync"):
+        if self.configuration.getboolean("storage", "filesystem_fsync"):
             if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
                 fsync_fn = lambda fd: fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
             else:
@@ -811,7 +813,8 @@ class Collection(BaseCollection):
                     cls._lock_file_locked = False
                 if cls._waiters:
                     cls._waiters[0].notify()
-                if (cls.configuration.getboolean("storage", "close_lock_file")
+                if (cls.configuration.getboolean(
+                        "storage", "filesystem_close_lock_file")
                         and cls._readers == 0 and not cls._waiters):
                     cls._lock_file.close()
                     cls._lock_file = None

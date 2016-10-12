@@ -389,7 +389,7 @@ class Application:
             status = client.UNAUTHORIZED
             realm = self.configuration.get("server", "realm")
             headers = dict(headers)
-            headers.update ({
+            headers.update({
                 "WWW-Authenticate":
                 "Basic realm=\"%s\"" % realm})
 

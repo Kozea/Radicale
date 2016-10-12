@@ -22,8 +22,8 @@ from a python programme with ``radicale.__main__.run()``.
 
 """
 
+import argparse
 import atexit
-import optparse
 import os
 import select
 import signal
@@ -36,74 +36,47 @@ from . import (
   VERSION, Application, RequestHandler, ThreadedHTTPServer,
   ThreadedHTTPSServer, config, log)
 
-opt_dict = {
-    '--server-daemon': {
-        'help': 'launch as daemon',
-        'aliases': ['-d', '--daemon']},
-    '--server-pid': {
-        'help': 'set PID filename for daemon mode',
-        'aliases': ['-p', '--pid']},
-    '--server-hosts': {
-        'help': 'set server hostnames and ports',
-        'aliases': ['-H', '--hosts'],
-    },
-    '--server-ssl': {
-        'help': 'use SSL connection',
-        'aliases': ['-s', '--ssl'],
-    },
-    '--server-key': {
-        'help': 'set private key file',
-        'aliases': ['-k', '--key']
-    },
-    '--server-certificate': {
-        'help': 'set certificate file',
-        'aliases': ['-c', '--certificate']
-    },
-    '--logging-debug': {
-        'help': 'print debug informations',
-        'aliases': ['-D', '--debug']
-    }
-}
-
 
 def run():
     """Run Radicale as a standalone server."""
-    # Get command-line options
-    parser = optparse.OptionParser(version=VERSION)
+    # Get command-line arguments
+    parser = argparse.ArgumentParser(usage="radicale [OPTIONS]")
+
+    parser.add_argument("--version", action="version", version=VERSION)
+    parser.add_argument(
+        "-C", "--config", help="use a specific configuration file")
+
+    groups = {}
     for section, values in config.INITIAL_CONFIG.items():
-        group = optparse.OptionGroup(parser, section)
-        for option, default_value in values.items():
-            long_name = '--{0}-{1}'.format(
-                section, option.replace('_', '-'))
-            kwargs = {}
-            args = [long_name]
-            if default_value.lower() in ('true', 'false'):
-                kwargs['action'] = 'store_true'
-            if long_name in opt_dict:
-                args.extend(opt_dict[long_name].get('aliases'))
-                opt_dict[long_name].pop('aliases')
-                kwargs.update(opt_dict[long_name])
-            group.add_option(*args, **kwargs)
-        if section == 'server':
-            group.add_option(
-                "-f", "--foreground", action="store_false",
-                dest="server_daemon",
-                help="launch in foreground (opposite of --daemon)")
-            group.add_option(
-                "-S", "--no-ssl", action="store_false", dest="server_ssl",
-                help="do not use SSL connection (opposite of --ssl)")
+        group = parser.add_argument_group(section)
+        groups[group] = []
+        for option, data in values.items():
+            kwargs = data.copy()
+            long_name = "--{0}-{1}".format(
+                section, option.replace("_", "-"))
+            args = kwargs.pop("aliases", [])
+            args.append(long_name)
+            kwargs["dest"] = "{0}_{1}".format(section, option)
+            groups[group].append(kwargs["dest"])
 
-        parser.add_option_group(group)
+            if kwargs.pop("value") in ("True", "False"):
+                kwargs["action"] = "store_const"
+                kwargs["const"] = "True"
+                opposite_args = kwargs.pop("opposite", [])
+                opposite_args.append("--no{0}".format(long_name[1:]))
+                group.add_argument(*args, **kwargs)
 
-    parser.add_option(
-        "-C", "--config",
-        help="use a specific configuration file")
+                kwargs["const"] = "False"
+                kwargs["help"] = "do not {0} (opposite of {1})".format(
+                    kwargs["help"], long_name)
+                group.add_argument(*opposite_args, **kwargs)
+            else:
+                group.add_argument(*args, **kwargs)
 
-    options = parser.parse_args()[0]
-
-    if options.config:
+    args = parser.parse_args()
+    if args.config:
         configuration = config.load()
-        configuration_found = configuration.read(options.config)
+        configuration_found = configuration.read(args.config)
     else:
         configuration_paths = [
             "/etc/radicale/config",
@@ -113,16 +86,13 @@ def run():
         configuration = config.load(configuration_paths)
         configuration_found = True
 
-    # Update Radicale configuration according to options
-    for group in parser.option_groups:
+    # Update Radicale configuration according to arguments
+    for group, actions in groups.items():
         section = group.title
-        for option in group.option_list:
-            key = option.dest
-            config_key = key.split('_', 1)[1]
-            if key:
-                value = getattr(options, key)
-                if value is not None:
-                    configuration.set(section, config_key, str(value))
+        for action in actions:
+            value = getattr(args, action)
+            if value is not None:
+                configuration.set(section, action.split('_', 1)[1], value)
 
     # Start logging
     filename = os.path.expanduser(configuration.get("logging", "config"))
@@ -131,7 +101,7 @@ def run():
 
     # Log a warning if the configuration file of the command line is not found
     if not configuration_found:
-        logger.warning("Configuration file '%s' not found" % options.config)
+        logger.warning("Configuration file '%s' not found" % args.config)
 
     try:
         serve(configuration, logger)
