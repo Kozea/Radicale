@@ -73,7 +73,8 @@ def run():
     for section, values in config.INITIAL_CONFIG.items():
         group = optparse.OptionGroup(parser, section)
         for option, default_value in values.items():
-            long_name = '--{0}-{1}'.format(section, option)
+            long_name = '--{0}-{1}'.format(
+                section, option.replace('_', '-'))
             kwargs = {}
             args = [long_name]
             if default_value.lower() in ('true', 'false'):
@@ -117,7 +118,6 @@ def run():
         section = group.title
         for option in group.option_list:
             key = option.dest
-            print(key)
             config_key = key.split('_', 1)[1]
             if key:
                 value = getattr(options, key)
