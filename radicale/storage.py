@@ -212,6 +212,7 @@ class Item:
 
 
 ## Item caching
+# TODO: catch all potential race conditions during add/delete
 # cache counter
 class Item_cache_counter:
     def __init__(self, lookup, hit, miss, dirty):
@@ -248,7 +249,7 @@ class Item_cache_counter:
                 (self.dirty - stamp.dirty) * 100 / delta_lookup
            )
         else:
-            message = "no cache lookups so far"
+            message = "no cache lookup so far"
         return(message)
 
 # cache entry
@@ -256,7 +257,7 @@ class Item_cache_entry:
     def __init__(self, Item, last_modified_time, last_used_time):
         self.Item = Item
         self.last_modified_time = last_modified_time
-        self.last_used_time = last_used_time
+        self.last_used_time = last_used_time # TODO: implement cleanup job of old entries
 
 # cache initialization
 Item_cache_data = {}
@@ -432,9 +433,15 @@ class Collection(BaseCollection):
         split_path = self.path.split("/")
         self.owner = split_path[0] if len(split_path) > 1 else None
         self.is_principal = principal
+        self.logging_performance = 0
+        if self.configuration.getboolean("logging", "performance"):
+            self.logging_performance = 1
         if self.configuration.getboolean("storage", "cache"):
             if Item_cache_active == 0:
-                self.logger.info("Item cache enabled")
+                if self.logging_performance == 1:
+                    self.logger.info("Item cache enabled (performance log on info level)")
+                else:
+                    self.logger.info("Item cache enabled (cache performance log only on debug level)")
             Item_cache_active = 1
 
     @classmethod
@@ -679,8 +686,12 @@ class Collection(BaseCollection):
             if os.path.isfile(path):
                 yield href
         if Item_cache_active == 1:
-           self.logger.info("Cache request statistics: %s", Item_cache_counter.string_delta(Item_cache_counter_stamp))
-           self.logger.info("Cache overall statistics: %s", Item_cache_counter.string())
+           if self.logging_performance == 1:
+               self.logger.info("Cache request statistics: %s", Item_cache_counter.string_delta(Item_cache_counter_stamp))
+               self.logger.info("Cache overall statistics: %s", Item_cache_counter.string())
+           else:
+               self.logger.debug("Cache request statistics: %s", Item_cache_counter.string_delta(Item_cache_counter_stamp))
+               self.logger.debug("Cache overall statistics: %s", Item_cache_counter.string())
 
     def get(self, href):
         global Item_cache_data
@@ -813,7 +824,10 @@ class Collection(BaseCollection):
             if hasattr(self.get(href),'item'):
                 items.append(self.get(href).item)
         time_end = datetime.datetime.now()
-        self.logger.info("Collection read %d items in %s sec from %s", len(items),(time_end - time_begin).total_seconds(), self._filesystem_path)
+        if self.logging_performance == 1:
+            self.logger.info("Collection read %d items in %s sec from %s", len(items),(time_end - time_begin).total_seconds(), self._filesystem_path)
+        else:
+            self.logger.debug("Collection read %d items in %s sec from %s", len(items),(time_end - time_begin).total_seconds(), self._filesystem_path)
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
             for item in items:

@@ -131,6 +131,9 @@ cache = True
 # Don't include passwords in logs
 #mask_passwords = True
 
+# Include cache/collections performance statistics in logs on info level
+performance = True
+
 
 [headers]
 
