@@ -679,8 +679,8 @@ class Collection(BaseCollection):
             if os.path.isfile(path):
                 yield href
         if Item_cache_active == 1:
-           self.logger.info("Cache current statistics: %s", Item_cache_counter.string_delta(Item_cache_counter_stamp))
-           self.logger.info("Cache global  statistics: %s", Item_cache_counter.string())
+           self.logger.info("Cache request statistics: %s", Item_cache_counter.string_delta(Item_cache_counter_stamp))
+           self.logger.info("Cache overall statistics: %s", Item_cache_counter.string())
 
     def get(self, href):
         global Item_cache_data
