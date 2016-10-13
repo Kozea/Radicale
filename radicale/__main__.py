@@ -144,7 +144,7 @@ def serve(configuration, logger):
     # Register exit function
     def cleanup():
         """Remove the PID files."""
-        logger.debug("Cleaning up")
+        logger.info("Cleaning up")
         # Remove PID file
         if (configuration.get("server", "pid") and
                 configuration.getboolean("server", "daemon")):
