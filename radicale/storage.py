@@ -217,9 +217,9 @@ class Item:
         return get_etag(self.serialize())
 
 
-## Item caching
+### Item caching
 # TODO: catch all potential race conditions during add/delete
-# cache counter
+## cache counter
 class Item_cache_counter:
     def __init__(self, lookup, hit, miss, dirty):
         self.lookup = 0
@@ -258,17 +258,24 @@ class Item_cache_counter:
             message = "no cache lookup so far"
         return(message)
 
-# cache entry
+## cache entry
 class Item_cache_entry:
     def __init__(self, Item, last_modified_time, last_used_time):
         self.Item = Item
         self.last_modified_time = last_modified_time
         self.last_used_time = last_used_time # TODO: implement cleanup job of old entries
 
-# cache initialization
+## cache initialization
 Item_cache_data = {}
 Item_cache_counter = Item_cache_counter(0, 0, 0, 0)
 Item_cache_active = 0
+
+## cache regular statistics logging on info level
+# 0: on each request (incl. current request)
+# >0: after at least every given seconds (exc. current request)
+Item_cache_statistics_log_interval = datetime.timedelta(seconds=60)
+# init timestamp
+Item_cache_statistics_log_last_time = datetime.datetime.now()
 
 
 class BaseCollection:
@@ -428,6 +435,7 @@ class Collection(BaseCollection):
 
     def __init__(self, path, principal=False, folder=None):
         global Item_cache_active
+        global Item_cache_statistics_log_interval
         if not folder:
             folder = self._get_collection_root_folder()
         # Path should already be sanitized
@@ -442,12 +450,16 @@ class Collection(BaseCollection):
         self.logging_performance = 0
         if self.configuration.getboolean("logging", "performance"):
             self.logging_performance = 1
+        Item_cache_statistics_log_interval = datetime.timedelta(seconds=self.configuration.getint("logging", "cache_statistics_interval"))
         if self.configuration.getboolean("storage", "cache"):
             if Item_cache_active == 0:
                 if self.logging_performance == 1:
                     self.logger.info("Item cache enabled (performance log on info level)")
                 else:
-                    self.logger.info("Item cache enabled (cache performance log only on debug level)")
+                    if (Item_cache_statistics_log_interval.total_seconds() > 0):
+                        self.logger.info("Item cache enabled (regular statistics log on info level with minimum interval %d sec)", Item_cache_statistics_log_interval.total_seconds())
+                    else:
+                        self.logger.info("Item cache enabled (statistics log only on debug level)")
             Item_cache_active = 1
 
     @classmethod
@@ -681,6 +693,8 @@ class Collection(BaseCollection):
         global Item_cache_data
         global Item_cache_counter
         global Item_cache_active
+        global Item_cache_statistics_log_interval
+        global Item_cache_statistics_log_last_time
         if Item_cache_active == 1:
             Item_cache_counter_stamp = copy.deepcopy(Item_cache_counter)
         for href in os.listdir(self._filesystem_path):
@@ -692,9 +706,11 @@ class Collection(BaseCollection):
             if os.path.isfile(path):
                 yield href
         if Item_cache_active == 1:
-           if self.logging_performance == 1:
-               self.logger.info("Cache request statistics: %s", Item_cache_counter.string_delta(Item_cache_counter_stamp))
+           if (self.logging_performance == 1) or (Item_cache_statistics_log_interval == 0) or (datetime.datetime.now() - Item_cache_statistics_log_last_time > Item_cache_statistics_log_interval):
+               if (self.logging_performance == 1) or (Item_cache_statistics_log_interval == 0):
+                   self.logger.info("Cache request statistics: %s", Item_cache_counter.string_delta(Item_cache_counter_stamp))
                self.logger.info("Cache overall statistics: %s", Item_cache_counter.string())
+               Item_cache_statistics_log_last_time = datetime.datetime.now()
            else:
                self.logger.debug("Cache request statistics: %s", Item_cache_counter.string_delta(Item_cache_counter_stamp))
                self.logger.debug("Cache overall statistics: %s", Item_cache_counter.string())
