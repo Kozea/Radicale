@@ -270,7 +270,19 @@ class Item_cache_counter:
             message = "no cache lookups so far"
         return(message)
 
-# cache entry
+    def log(self, logger, stamp, logging_performance):
+        global Item_cache_statistics_log_interval
+        global Item_cache_statistics_log_last_time
+        if (logging_performance == 1) or (Item_cache_statistics_log_interval == 0) or (datetime.datetime.now() - Item_cache_statistics_log_last_time > Item_cache_statistics_log_interval):
+            if (logging_performance == 1) or (Item_cache_statistics_log_interval == 0):
+                logger.info("Cache request statistics: %s", self.string_delta(stamp))
+            logger.info("Cache overall statistics: %s", self.string())
+            Item_cache_statistics_log_last_time = datetime.datetime.now()
+        else:
+            logger.debug("Cache request statistics: %s", self.string_delta(stamp))
+            logger.debug("Cache overall statistics: %s", self.string())
+
+## cache entry
 class Item_cache_entry:
     def __init__(self, Item, last_modified_time, last_used_time):
         self.Item = Item
@@ -709,8 +721,6 @@ class Collection(BaseCollection):
         global Item_cache_data
         global Item_cache_counter
         global Item_cache_active
-        global Item_cache_statistics_log_interval
-        global Item_cache_statistics_log_last_time
         if Item_cache_active == 1:
             Item_cache_counter_stamp = copy.deepcopy(Item_cache_counter)
         for href in os.listdir(self._filesystem_path):
@@ -722,14 +732,7 @@ class Collection(BaseCollection):
             if os.path.isfile(path):
                 yield href
         if Item_cache_active == 1:
-           if (self.logging_performance == 1) or (Item_cache_statistics_log_interval == 0) or (datetime.datetime.now() - Item_cache_statistics_log_last_time > Item_cache_statistics_log_interval):
-               if (self.logging_performance == 1) or (Item_cache_statistics_log_interval == 0):
-                   self.logger.info("Cache request statistics: %s", Item_cache_counter.string_delta(Item_cache_counter_stamp))
-               self.logger.info("Cache overall statistics: %s", Item_cache_counter.string())
-               Item_cache_statistics_log_last_time = datetime.datetime.now()
-           else:
-               self.logger.debug("Cache request statistics: %s", Item_cache_counter.string_delta(Item_cache_counter_stamp))
-               self.logger.debug("Cache overall statistics: %s", Item_cache_counter.string())
+           Item_cache_counter.log(self.logger, Item_cache_counter_stamp, self.logging_performance)
 
     def get(self, href):
         global Item_cache_data
