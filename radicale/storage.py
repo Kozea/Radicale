@@ -101,6 +101,12 @@ def load(configuration, logger):
     return CollectionCopy
 
 
+def cleanup(logger):
+    """Print cache statistics."""
+    logger.info("Cleaning up 'storage'")
+    logger.info("Cache overall statistics: %s", Item_cache_counter.string())
+
+
 def get_etag(text):
     """Etag from collection or item.
 
