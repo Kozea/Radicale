@@ -34,7 +34,7 @@ from wsgiref.simple_server import make_server
 
 from . import (
   VERSION, Application, RequestHandler, ThreadedHTTPServer,
-  ThreadedHTTPSServer, config, log)
+  ThreadedHTTPSServer, config, log, storage)
 
 
 def run():
@@ -142,13 +142,14 @@ def serve(configuration, logger):
     # Register exit function
     def cleanup():
         """Remove the PID files."""
-        logger.info("Cleaning up")
+        logger.info("Cleaning up 'main'")
         # Remove PID file
         if (configuration.get("server", "pid") and
                 configuration.getboolean("server", "daemon")):
             os.unlink(configuration.get("server", "pid"))
 
     atexit.register(cleanup)
+    atexit.register(storage.cleanup, logger)
     logger.info("Starting Radicale")
 
     # Create collection servers
