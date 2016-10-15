@@ -22,7 +22,7 @@ keys = console,file
 
 [formatters]
 # Logging formatters
-keys = simple,full
+keys = simple,full,filedebug
 
 
 # Loggers
@@ -31,6 +31,8 @@ keys = simple,full
 # Root logger
 level = DEBUG
 handlers = console,file
+# Disable line above and enable following line for dedicated additional debug log
+#handlers = console,file,filedebug
 
 
 # Handlers
@@ -45,7 +47,15 @@ formatter = simple
 [handler_file]
 # File handler
 class = FileHandler
+# Enable following line in case dedicated debug log is activated
+#level = INFO
 args = ('/var/log/radicale',)
+formatter = full
+
+[handler_filedebug]
+# File handler (for dedicated debug log)
+class = FileHandler
+args = ('/var/log/radicale/radicale-debug.log',)
 formatter = full
 
 
