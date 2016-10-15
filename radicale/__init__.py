@@ -205,6 +205,7 @@ class Application:
         self.Collection = storage.load(configuration, logger)
         self.authorized = rights.load(configuration, logger)
         self.encoding = configuration.get("encoding", "request")
+        self.debug = configuration.getboolean("logging", "debug")
 
     def headers_log(self, environ):
         """Sanitize headers for logging."""
@@ -287,7 +288,8 @@ class Application:
             headers = dict(headers)
             # Set content length
             if answer:
-                self.logger.debug("Response content:\n%s", answer)
+                if self.debug:
+                    self.logger.debug("Response content:\n%s", answer)
                 answer = answer.encode(self.encoding)
                 accept_encoding = [
                     encoding.strip() for encoding in
@@ -459,7 +461,8 @@ class Application:
         if content_length > 0:
             content = self.decode(
                 environ["wsgi.input"].read(content_length), environ)
-            self.logger.debug("Request content:\n%s", content.strip())
+            if self.debug:
+                self.logger.debug("Request content:\n%s", content.strip())
         else:
             content = None
         return content
