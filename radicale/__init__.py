@@ -336,7 +336,8 @@ class Application:
         self.logger.info("%s request  for %s received from %s using \"%s\"",
                          environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo, remote_host, remote_useragent)
         headers = pprint.pformat(self.headers_log(environ))
-        self.logger.debug("Request headers:\n%s", headers)
+        if self.debug:
+            self.logger.debug("Request headers:\n%s", headers)
 
         # Strip base_prefix from request URI
         base_prefix = self.configuration.get("server", "base_prefix")
