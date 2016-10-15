@@ -45,18 +45,27 @@ args = (sys.stderr,)
 formatter = simple
 
 [handler_file]
+formatter = full
+# Enable following line in case dedicated debug log (see below) is activated
+#level = INFO
 # File handler
 class = FileHandler
-# Enable following line in case dedicated debug log is activated
-#level = INFO
 args = ('/var/log/radicale',)
-formatter = full
+# Time Rotating File Handler (class+args: disable above and enable below)
+# (filename, when, interval, backupCount, ...) [see https://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler]
+#  example: rollover at midnight every day, keep 90 files (means 90 days)
+#class = handlers.TimedRotatingFileHandler
+#args = ('/var/log/radicale/radicale.log', 'midnight', 1, 90)
 
 [handler_filedebug]
+formatter = full
 # File handler (for dedicated debug log)
 class = FileHandler
 args = ('/var/log/radicale/radicale-debug.log',)
-formatter = full
+# Time Rotating File Handler (class+args: disable above and enable below)
+#  example: rollover every hour, keep 24 files (means 1 days)
+#class = handlers.TimedRotatingFileHandler
+#args = ('/var/log/radicale/radicale-debug.log', 'H', 1, 24)
 
 
 # Formatters
