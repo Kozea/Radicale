@@ -350,7 +350,8 @@ class Application:
             environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo,
             remote_host, remote_useragent)
         headers = pprint.pformat(self.headers_log(environ))
-        self.logger.debug("Request headers:\n%s", headers)
+        if self.debug:
+            self.logger.debug("Request headers:\n%s", headers)
 
         # Let reverse proxies overwrite SCRIPT_NAME
         if "HTTP_X_SCRIPT_NAME" in environ:
