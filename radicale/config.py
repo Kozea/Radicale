@@ -67,7 +67,7 @@ INITIAL_CONFIG = {
         "debug": "False",
         "full_environment": "False",
         "performance": "False",
-        "cache_statistics_interval": "60",
+        "cache_statistics_interval": "300",
         "mask_passwords": "True"}}
 
 
