@@ -138,7 +138,7 @@ performance = True
 # Include regular cache performance statistics in logs on info level
 # 0: on each request (incl. current request)
 # >0: minimum interval in seconds (only global)
-cache_statistics_interval = 60
+cache_statistics_interval = 300
 
 
 [headers]
