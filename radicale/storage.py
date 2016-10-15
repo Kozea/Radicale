@@ -276,6 +276,8 @@ class Item_cache_counter:
         if (logging_performance == 1) or (Item_cache_statistics_log_interval == 0) or (datetime.datetime.now() - Item_cache_statistics_log_last_time > Item_cache_statistics_log_interval):
             if (logging_performance == 1) or (Item_cache_statistics_log_interval == 0):
                 logger.info("Cache request statistics: %s", self.string_delta(stamp))
+            else:
+                logger.debug("Cache request statistics: %s", self.string_delta(stamp))
             logger.info("Cache overall statistics: %s", self.string())
             Item_cache_statistics_log_last_time = datetime.datetime.now()
         else:
