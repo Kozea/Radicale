@@ -760,13 +760,12 @@ class Collection(BaseCollection):
             except Exception as e:
                 self.logger.error("Object broken (skip 'get'): %s (%s)", path, e)
                 return None;
-            if self.get_meta("tag") == "VADDRESSBOOK":
-                # check whether vobject likes the VCARD item
-                try:
-                    item.serialize()
-                except Exception as e:
-                    self.logger.error("VCARD object broken (skip 'get'): %s (%s)", path, e)
-                    return None;
+            # check whether vobject likes the VCARD item
+            try:
+                item.serialize()
+            except Exception as e:
+                self.logger.error("VCARD object broken (skip 'get'): %s (%s)", path, e)
+                return None;
             Item_entry = Item(self, item, href, last_modified)
 
             if Item_cache_active == 1:
