@@ -280,14 +280,14 @@ class Item_cache_counter:
         global Item_cache_statistics_log_last_time
         if (logging_performance) or (Item_cache_statistics_log_interval == 0) or (datetime.datetime.now() - Item_cache_statistics_log_last_time > Item_cache_statistics_log_interval):
             if (logging_performance) or (Item_cache_statistics_log_interval == 0):
-                logger.info("Cache request statistics: %s", self.string_delta(stamp))
+                logger.info("Item cache request statistics: %s", self.string_delta(stamp))
             else:
-                logger.debug("Cache request statistics: %s", self.string_delta(stamp))
-            logger.info("Cache overall statistics: %s", self.string())
+                logger.debug("Item cache request statistics: %s", self.string_delta(stamp))
+            logger.info("Item cache overall statistics: %s", self.string())
             Item_cache_statistics_log_last_time = datetime.datetime.now()
         else:
-            logger.debug("Cache request statistics: %s", self.string_delta(stamp))
-            logger.debug("Cache overall statistics: %s", self.string())
+            logger.debug("Item cache request statistics: %s", self.string_delta(stamp))
+            logger.debug("Item cache overall statistics: %s", self.string())
 
 ## cache entry
 class Item_cache_entry:
@@ -299,7 +299,7 @@ class Item_cache_entry:
 # cache initialization
 Item_cache_data = {}
 Item_cache_counter = Item_cache_counter()
-Item_cache_active = 0
+Item_cache_active = False
 
 ## cache regular statistics logging on info level
 # 0: on each request (incl. current request)
@@ -486,7 +486,7 @@ class Collection(BaseCollection):
             self.logging_exceptions = True
         Item_cache_statistics_log_interval = datetime.timedelta(seconds=self.configuration.getint("logging", "cache_statistics_interval"))
         if self.configuration.getboolean("storage", "cache"):
-            if Item_cache_active == 0:
+            if not Item_cache_active:
                 if self.logging_performance:
                     self.logger.info("Item cache enabled (performance log on info level)")
                 else:
@@ -494,7 +494,7 @@ class Collection(BaseCollection):
                         self.logger.info("Item cache enabled (regular statistics log on info level with minimum interval %d sec)", Item_cache_statistics_log_interval.total_seconds())
                     else:
                         self.logger.info("Item cache enabled (statistics log only on debug level)")
-            Item_cache_active = 1
+            Item_cache_active = True
 
     @classmethod
     def _get_collection_root_folder(cls):
@@ -731,7 +731,7 @@ class Collection(BaseCollection):
         global Item_cache_data
         global Item_cache_counter
         global Item_cache_active
-        if Item_cache_active == 1:
+        if Item_cache_active:
             Item_cache_counter_stamp = copy.deepcopy(Item_cache_counter)
         for href in os.listdir(self._filesystem_path):
             if not is_safe_filesystem_path_component(href):
@@ -741,8 +741,9 @@ class Collection(BaseCollection):
             path = os.path.join(self._filesystem_path, href)
             if os.path.isfile(path):
                 yield href
-        if Item_cache_active == 1:
+        if Item_cache_active:
            Item_cache_counter.log(self.logger, Item_cache_counter_stamp, self.logging_performance)
+           del Item_cache_counter_stamp
 
     def get(self, href):
         global Item_cache_data
@@ -763,7 +764,7 @@ class Collection(BaseCollection):
             time.gmtime(last_modified_time))
 
         Item_cache_hit = 0
-        if Item_cache_active == 1:
+        if Item_cache_active:
             # Item cache lookup
             Item_cache_counter.lookup += 1
             if path in Item_cache_data:
@@ -780,7 +781,7 @@ class Collection(BaseCollection):
             else:
                 Item_cache_counter.miss += 1
 
-        if Item_cache_hit == 0 or Item_cache_active == 0:
+        if Item_cache_hit == 0 or Item_cache_active == False:
             with open(path, encoding=self.encoding, newline="") as f:
                 text = f.read()
             try:
@@ -800,7 +801,7 @@ class Collection(BaseCollection):
                 return None;
             Item_entry = Item(self, item, href, last_modified)
 
-            if Item_cache_active == 1:
+            if Item_cache_active:
                 # cache handling
                 self.logger.debug("Store item in cache: %s", path)
                 Item_cache_data[path] = Item_cache_entry(Item_entry, last_modified_time, datetime.datetime.now())
@@ -846,7 +847,7 @@ class Collection(BaseCollection):
                 raise ComponentNotFoundError(href)
             os.remove(path)
             self._sync_directory(os.path.dirname(path))
-            if Item_cache_active == 1:
+            if Item_cache_active:
                 # remove from cache, if existing
                 if path in Item_cache_data:
                     self.logger.debug("Delete from cache (delete): %s", path)
