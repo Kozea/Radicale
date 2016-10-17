@@ -123,7 +123,7 @@ cache = True
 # For more information about the syntax of the configuration file, see:
 # http://docs.python.org/library/logging.config.html
 #config = /etc/radicale/logging
-# Set the default logging level to debug
+# Set the default logging level to debug (this enables also request/response logging)
 #debug = False
 # Store all environment variables (including those set in the shell)
 #full_environment = False
@@ -132,7 +132,10 @@ cache = True
 #mask_passwords = True
 
 # Include cache/collections performance statistics in logs on info level
-performance = True
+performance = False
+
+# Include exceptions in logs
+exceptions = False
 
 # Include regular cache performance statistics in logs on info level
 # 0: on each request (incl. current request)

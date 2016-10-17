@@ -221,25 +221,30 @@ class Item:
 # TODO: catch all potential race conditions during add/delete
 ## cache counter
 class Item_cache_counter:
-    def __init__(self, lookup, hit, miss, dirty):
+    def __init__(self):
         self.lookup = 0
         self.hit    = 0
         self.miss   = 0
         self.dirty  = 0
+        self.entries= 0
+        self.size   = 0
 
     def string(self):
-        if (self.lookup > 0):
-            message = "lookup=%d hit=%d (%3.2f%%) miss=%d (%3.2f%%) dirty=%d (%3.2f%%)" % (
+        global Item_cache_data
+        if (self.entries > 0):
+            message = "lookup=%d hit=%d (%3.2f%%) miss=%d (%3.2f%%) dirty=%d (%3.2f%%) entries=%d memoryKiB=%.3f" % (
                 self.lookup,
                 self.hit,
                 self.hit * 100 / self.lookup,
                 self.miss,
                 self.miss * 100 / self.lookup,
                 self.dirty,
-                self.dirty * 100 / self.lookup
+                self.dirty * 100 / self.lookup,
+                self.entries,
+                self.size / 1024
             )
         else:
-            message = "no cache lookups so far"
+            message = "no cache entries"
         return(message)
 
     def string_delta(self, stamp):
@@ -261,8 +266,8 @@ class Item_cache_counter:
     def log(self, logger, stamp, logging_performance):
         global Item_cache_statistics_log_interval
         global Item_cache_statistics_log_last_time
-        if (logging_performance == 1) or (Item_cache_statistics_log_interval == 0) or (datetime.datetime.now() - Item_cache_statistics_log_last_time > Item_cache_statistics_log_interval):
-            if (logging_performance == 1) or (Item_cache_statistics_log_interval == 0):
+        if (logging_performance) or (Item_cache_statistics_log_interval == 0) or (datetime.datetime.now() - Item_cache_statistics_log_last_time > Item_cache_statistics_log_interval):
+            if (logging_performance) or (Item_cache_statistics_log_interval == 0):
                 logger.info("Cache request statistics: %s", self.string_delta(stamp))
             else:
                 logger.debug("Cache request statistics: %s", self.string_delta(stamp))
@@ -281,7 +286,7 @@ class Item_cache_entry:
 
 ## cache initialization
 Item_cache_data = {}
-Item_cache_counter = Item_cache_counter(0, 0, 0, 0)
+Item_cache_counter = Item_cache_counter()
 Item_cache_active = 0
 
 ## cache regular statistics logging on info level
@@ -461,13 +466,16 @@ class Collection(BaseCollection):
         split_path = self.path.split("/")
         self.owner = split_path[0] if len(split_path) > 1 else None
         self.is_principal = principal
-        self.logging_performance = 0
+        self.logging_performance = False
+        self.logging_exceptions = False
         if self.configuration.getboolean("logging", "performance"):
-            self.logging_performance = 1
+            self.logging_performance = True
+        if self.configuration.getboolean("logging", "exceptions"):
+            self.logging_exceptions = True
         Item_cache_statistics_log_interval = datetime.timedelta(seconds=self.configuration.getint("logging", "cache_statistics_interval"))
         if self.configuration.getboolean("storage", "cache"):
             if Item_cache_active == 0:
-                if self.logging_performance == 1:
+                if self.logging_performance:
                     self.logger.info("Item cache enabled (performance log on info level)")
                 else:
                     if (Item_cache_statistics_log_interval.total_seconds() > 0):
@@ -748,6 +756,11 @@ class Collection(BaseCollection):
                     Item_cache_hit = 1
                 else:
                     Item_cache_counter.dirty += 1
+                    # remove from cache
+                    self.logger.debug("Delete from cache (dirty): %s", path)
+                    Item_cache_counter.entries -= 1
+                    Item_cache_counter.size -= len(str(Item_cache_data[path].Item.item))
+                    del Item_cache_data[path]
             else:
                 Item_cache_counter.miss += 1
 
@@ -758,13 +771,16 @@ class Collection(BaseCollection):
                 self.logger.debug("Read object ('get'): %s", path)
                 item = vobject.readOne(text)
             except Exception as e:
-                self.logger.error("Object broken (skip 'get'): %s (%s)", path, e)
+                self.logger.error("Object broken on read (skip 'get'): %s (%s)", path, e)
+                if self.logging_exceptions:
+                    self.logger.exception("Exception details:")
                 return None;
-            # check whether vobject likes the VCARD item
             try:
                 item.serialize()
             except Exception as e:
-                self.logger.error("VCARD object broken (skip 'get'): %s (%s)", path, e)
+                self.logger.error("Object broken on serialize (skip 'get'): %s (%s)", path, e)
+                if self.logging_exceptions:
+                    self.logger.exception("Exception details:")
                 return None;
             Item_entry = Item(self, item, href, last_modified)
 
@@ -772,6 +788,8 @@ class Collection(BaseCollection):
                 # cache handling
                 self.logger.debug("Store item in cache: %s", path)
                 Item_cache_data[path] = Item_cache_entry(Item_entry, last_modified_time, datetime.datetime.now())
+                Item_cache_counter.size += len(str(Item_entry.item))
+                Item_cache_counter.entries += 1
 
             return Item_entry
         else:
@@ -813,10 +831,12 @@ class Collection(BaseCollection):
             os.remove(path)
             self._sync_directory(os.path.dirname(path))
             if Item_cache_active == 1:
-               # remove from cache, if existing
-               if path in Item_cache_data:
-                   self.logger.debug("Delete from cache: %s", path)
-                   del Item_cache_data[path]
+                # remove from cache, if existing
+                if path in Item_cache_data:
+                    self.logger.debug("Delete from cache (delete): %s", path)
+                    Item_cache_counter.entries -= 1
+                    Item_cache_counter.size -= len(str(Item_cache_data[path].Item.item))
+                    del Item_cache_data[path]
 
     def get_meta(self, key):
         if os.path.exists(self._props_path):
@@ -850,7 +870,7 @@ class Collection(BaseCollection):
             if hasattr(self.get(href),'item'):
                 items.append(self.get(href).item)
         time_end = datetime.datetime.now()
-        if self.logging_performance == 1:
+        if self.logging_performance:
             self.logger.info("Collection read %d items in %s sec from %s", len(items),(time_end - time_begin).total_seconds(), self._filesystem_path)
         else:
             self.logger.debug("Collection read %d items in %s sec from %s", len(items),(time_end - time_begin).total_seconds(), self._filesystem_path)
