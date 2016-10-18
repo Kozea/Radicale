@@ -375,7 +375,6 @@ class Item:
         return get_etag(self.serialize())
 
 
-
 class BaseCollection:
 
     # Overriden on copy by the "load" function
