@@ -502,6 +502,7 @@ class Application:
                 "Last-Modified": collection.last_modified,
                 "ETag": item.etag}
             answer = item.serialize()
+            storage.log_cache_statistics(self)
             return client.OK, headers, answer
 
     def do_HEAD(self, environ, path, user):
@@ -603,6 +604,7 @@ class Application:
             headers = {"DAV": DAV_HEADERS, "Content-Type": "text/xml"}
             status, answer = xmlutils.propfind(
                 path, content, read_items, write_items, user)
+            storage.log_cache_statistics(self)
             if status == client.FORBIDDEN:
                 return NOT_ALLOWED
             else:
@@ -690,4 +692,5 @@ class Application:
                 collection = item.collection
             headers = {"Content-Type": "text/xml"}
             answer = xmlutils.report(path, content, collection)
+            storage.log_cache_statistics(self)
             return client.MULTI_STATUS, headers, answer

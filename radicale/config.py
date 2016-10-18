@@ -65,6 +65,7 @@ INITIAL_CONFIG = {
     "logging": {
         "config": "/etc/radicale/logging",
         "debug": "False",
+        "debug_filter": "0xffff",
         "full_environment": "False",
         "performance": "False",
         "exceptions": "False",
