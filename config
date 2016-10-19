@@ -125,6 +125,16 @@ cache = True
 #config = /etc/radicale/logging
 # Set the default logging level to debug (this enables also request/response logging)
 #debug = False
+
+# suppress selectable debug messages (to keep debug log cleaner)
+debug_filter = 0xffff
+# 0x0100: suppress "read object"
+# 0x0400: suppress "read props"
+# 0x1000: suppress "store object in cache"
+# 0x2000: suppress "retrieve object from cache"
+# 0x4000: suppress "store props in cache"
+# 0x8000: suppress "retrieve props from cache"
+
 # Store all environment variables (including those set in the shell)
 #full_environment = False
 
@@ -138,8 +148,8 @@ performance = False
 exceptions = False
 
 # Include regular cache performance statistics in logs on info level
-# 0: on each request (incl. current request)
-# >0: minimum interval in seconds (only global)
+# 0: on each request
+# >0: minimum interval in seconds
 cache_statistics_interval = 300
 
 
