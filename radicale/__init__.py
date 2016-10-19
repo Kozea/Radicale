@@ -319,7 +319,7 @@ class Application:
                 sizeinfo = sizeinfo + headers["Content-Encoding"]
             if len(sizeinfo) > 0:
                 sizeinfo = " (" + sizeinfo + ")"
-            self.logger.info("[%s] %s response for %s in %s sec status: %s", self.request_token, environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo + sizeinfo, (time_end - time_begin).total_seconds(), status)
+            self.logger.info("[%s] %s response for %s in %s sec status: %s", request_token, environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo + sizeinfo, (time_end - time_begin).total_seconds(), status)
             # Return response content
             return [answer] if answer else []
 
@@ -341,10 +341,12 @@ class Application:
         time_begin = datetime.datetime.now()
 
         # Create an unique request token
-        self.request_token = md5((environ["PATH_INFO"] + depthinfo + remote_host + remote_useragent +str(time_begin)).encode('utf-8')).hexdigest()[1:8]
+        request_token = md5((environ["PATH_INFO"] + depthinfo + remote_host + remote_useragent +str(time_begin)).encode('utf-8')).hexdigest()[1:8]
+        # store token for header/request/response logging
+        self.request_token = request_token
 
         self.logger.info("[%s] %s request  for %s received from %s using \"%s\"",
-            self.request_token, environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo, remote_host, remote_useragent)
+            request_token, environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo, remote_host, remote_useragent)
         if self.debug:
             headers = pprint.pformat(self.headers_log(environ))
             self.logger.debug("Request headers [%s]:\n%s", self.request_token, headers)
