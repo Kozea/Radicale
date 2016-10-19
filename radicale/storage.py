@@ -106,7 +106,7 @@ def load(configuration, logger):
         if configuration.getboolean("storage", "cache"):
             Items_cache_active = True
             Props_cache_active = True
-            Items_cache_counter.loginterval = configuration.getint("logging", "cache_statistics_interval")
+            Items_cache_counter.loginterval = seconds=configuration.getint("logging", "cache_statistics_interval")
             Props_cache_counter.loginterval = configuration.getint("logging", "cache_statistics_interval")
             if configuration.getboolean("logging", "performance"):
                 if Items_cache_active:
@@ -293,7 +293,7 @@ class Cache_counter:
         # 0: on each request (incl. current request)
         # >0: after at least every given loginterval (excl. current request)
         self.lastlog= datetime.datetime.now()
-        self.loginterval = datetime.timedelta(seconds=60) # default
+        self.loginterval = 60 # default
 
     def string_overall(self):
         if (self.entries > 0):
@@ -313,11 +313,11 @@ class Cache_counter:
         return(message)
 
     def log_overall(self, token, logger):
-        if (self.perflog) or (self.loginterval == 0) or (datetime.datetime.now() - self.lastlog > self.loginterval):
+        if (self.perflog) or (self.loginterval == 0) or (datetime.datetime.now() - self.lastlog > datetime.timedelta(seconds=self.loginterval)):
             logger.info("%s cache overall statistics: %s", token, self.string_overall())
             self.lastlog = datetime.datetime.now()
         else:
-            logger.debug("%s cache overall statistics: %s", token, self.string())
+            logger.debug("%s cache overall statistics: %s", token, self.string_overall())
 
 
 ## cache entry
