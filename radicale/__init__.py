@@ -354,7 +354,9 @@ class Application:
         time_begin = datetime.datetime.now()
 
         # Create an unique request token
-        self.request_token = md5((environ["PATH_INFO"] + depthinfo + remote_host + remote_useragent +str(time_begin)).encode('utf-8')).hexdigest()[1:8]
+        request_token = md5((environ["PATH_INFO"] + depthinfo + remote_host + remote_useragent +str(time_begin)).encode('utf-8')).hexdigest()[1:8]
+        # store token for header/request/response logging
+        self.request_token = request_token
 
         self.logger.info("[%s] %s request  for %s received from %s using \"%s\"",
             self.request_token,
