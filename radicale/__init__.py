@@ -42,6 +42,7 @@ import traceback
 import wsgiref.simple_server
 import zlib
 import datetime
+from hashlib import md5
 from http import client
 from urllib.parse import unquote, urlparse
 
@@ -206,6 +207,7 @@ class Application:
         self.authorized = rights.load(configuration, logger)
         self.encoding = configuration.get("encoding", "request")
         self.debug = configuration.getboolean("logging", "debug")
+        self.debug_filter = int(configuration.get("logging", "debug_filter"), 0)
 
     def headers_log(self, environ):
         """Sanitize headers for logging."""
@@ -262,18 +264,20 @@ class Application:
             else:
                 path = item.collection.path
             if self.authorized(user, path, "r"):
-                self.logger.debug(
-                    "%s has read access to collection %s",
-                    user or "Anonymous", path or "/")
+                if not self.debug_filter & 0x0080:
+                    self.logger.debug(
+                        "%s has read access to collection %s",
+                        user or "Anonymous", path or "/")
                 read_allowed_items.append(item)
             else:
                 self.logger.debug(
-                    "%s has NO read access to collection %s",
-                    user or "Anonymous", path or "/")
+                   "%s has NO read access to collection %s",
+                   user or "Anonymous", path or "/")
             if self.authorized(user, path, "w"):
-                self.logger.debug(
-                    "%s has write access to collection %s",
-                    user or "Anonymous", path or "/")
+                if not self.debug_filter & 0x0080:
+                    self.logger.debug(
+                        "%s has write access to collection %s",
+                        user or "Anonymous", path or "/")
                 write_allowed_items.append(item)
             else:
                 self.logger.debug(
@@ -289,7 +293,7 @@ class Application:
             # Set content length
             if answer:
                 if self.debug:
-                    self.logger.debug("Response content:\n%s", answer)
+                    self.logger.debug("Response content [%s]:\n%s", self.request_token, answer)
                 answer = answer.encode(self.encoding)
                 accept_encoding = [
                     encoding.strip() for encoding in
@@ -326,7 +330,8 @@ class Application:
             if len(sizeinfo) > 0:
                 sizeinfo = " (" + sizeinfo + ")"
             self.logger.info(
-                "%s response status for %s in %s sec: %s",
+                "[%s] %s response status for %s in %s sec: %s",
+                self.request_token,
                 environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo + sizeinfo,
                 (time_end - time_begin).total_seconds(), status)
             # Return response content
@@ -347,13 +352,17 @@ class Application:
         if environ.get("HTTP_DEPTH"):
             depthinfo = " with depth " + environ["HTTP_DEPTH"]
         time_begin = datetime.datetime.now()
-        self.logger.info(
-            "%s request for %s received from %s using \"%s\"",
+
+        # Create an unique request token
+        self.request_token = md5((environ["PATH_INFO"] + depthinfo + remote_host + remote_useragent +str(time_begin)).encode('utf-8')).hexdigest()[1:8]
+
+        self.logger.info("[%s] %s request  for %s received from %s using \"%s\"",
+            self.request_token,
             environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo,
             remote_host, remote_useragent)
-        headers = pprint.pformat(self.headers_log(environ))
         if self.debug:
-            self.logger.debug("Request headers:\n%s", headers)
+            headers = pprint.pformat(self.headers_log(environ))
+            self.logger.debug("Request headers [%s]:\n%s", self.request_token, headers)
 
         # Let reverse proxies overwrite SCRIPT_NAME
         if "HTTP_X_SCRIPT_NAME" in environ:
@@ -465,7 +474,7 @@ class Application:
             content = self.decode(
                 environ["wsgi.input"].read(content_length), environ)
             if self.debug:
-                self.logger.debug("Request content:\n%s", content.strip())
+                self.logger.debug("Request content [%s]:\n%s", self.request_token, content.strip())
         else:
             content = None
         return content
