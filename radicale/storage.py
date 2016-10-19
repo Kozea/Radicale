@@ -84,16 +84,13 @@ if os.name == "nt":
 elif os.name == "posix":
     import fcntl
 
-logging_filter = 0xffff
-
 def load(configuration, logger):
-    global logging_filter
     """Load the storage manager chosen in configuration."""
     storage_type = configuration.get("storage", "type")
     logger.info("Radicale storage manager loading: %s", storage_type)
-    logging_filter = int(configuration.get("logging", "debug_filter"), 0)
-    if (logging_filter > 0): 
-        logger.info("debug filter active with: 0x%x", logging_filter)
+    debug_filter = int(configuration.get("logging", "debug_filter"), 0)
+    if (debug_filter > 0): 
+        logger.info("debug filter active with: 0x%x", debug_filter)
 
     if storage_type == "multifilesystem":
         collection_class = Collection
@@ -124,6 +121,9 @@ def load(configuration, logger):
                     logger.info("Props cache enabled (regular statistics log on info level with minimum interval %d sec)", Props_cache_counter.loginterval)
                 else:
                     logger.info("Items cache enabled (statistics log only on debug level)")
+        else:
+            logger.info("Items cache disabled")
+            logger.info("Props cache disabled")
     else:
         collection_class = import_module(storage_type).Collection
     logger.info("Radicale storage manager successfully loaded: %s", storage_type)
@@ -288,9 +288,7 @@ Props_cache_active = False
 
 ## global functions to be called also from other modules
 def cache_log_statistics_overall(self):
-    global Items_cache_active
     global Items_cache_counter
-    global Props_cache_active
     global Props_cache_counter
     if Items_cache_active:
         Items_cache_counter.log_overall("Items", self.logger)
@@ -501,6 +499,7 @@ class Collection(BaseCollection):
         split_path = self.path.split("/")
         self.owner = split_path[0] if len(split_path) > 1 else None
         self.is_principal = principal
+        self.debug_filter = int(self.configuration.get("logging", "debug_filter"), 0)
 
     @classmethod
     def _get_collection_root_folder(cls):
@@ -743,6 +742,7 @@ class Collection(BaseCollection):
         global Items_cache_data
         global Items_cache_counter
         global Items_cache_active
+        global Items_cache_lock
         if not href:
             return None
         if not is_safe_filesystem_path_component(href):
@@ -769,9 +769,9 @@ class Collection(BaseCollection):
                     Item_cache_hit = 1
                 else:
                     Items_cache_counter.dirty += 1
-                    self.Cache_counter_Items.dirty += 1
                     # remove from cache
-                    self.logger.debug("Item delete from cache (dirty): %s", path)
+                    if not self.debug_filter & 0x0200:
+                        self.logger.debug("Item delete from cache (dirty): %s", path)
                     Items_cache_counter.entries -= 1
                     Items_cache_counter.size -= Items_cache_data[path].size
                     del Items_cache_data[path]
@@ -783,7 +783,7 @@ class Collection(BaseCollection):
                 text = f.read()
 
             try:
-                if not logging_filter & 0x0100:
+                if not self.debug_filter & 0x0100:
                     self.logger.debug("Item read ('get'): %s", path)
                 item = vobject.readOne(text)
             except Exception as e:
@@ -812,13 +812,13 @@ class Collection(BaseCollection):
 
             if Items_cache_active:
                 # store in cache
-                if not logging_filter & 0x1000:
+                if not self.debug_filter & 0x1000:
                     self.logger.debug("Item store in cache: %s", path)
                 Items_cache_data[path] = Item_cache_entry(Item_entry, len(str(Item_entry.item)) + len(path), last_modified_time)
                 Items_cache_counter.size += Items_cache_data[path].size
                 Items_cache_counter.entries += 1
         else:
-            if not logging_filter & 0x2000:
+            if not self.debug_filter & 0x2000:
                 self.logger.debug("Item retrieve from cache: %s", path)
             Item_entry = Items_cache_data[path].Item
 
@@ -837,7 +837,9 @@ class Collection(BaseCollection):
 
     def delete(self, href=None):
         global Items_cache_data
+        global Items_cache_counter
         global Items_cache_active
+        global Items_cache_lock
         if href is None:
             # Delete the collection
             parent_dir = os.path.dirname(self._filesystem_path)
@@ -858,22 +860,24 @@ class Collection(BaseCollection):
             path = path_to_filesystem(self._filesystem_path, href)
             if not os.path.isfile(path):
                 raise ComponentNotFoundError(href)
-            os.remove(path)
-            self._sync_directory(os.path.dirname(path))
             if Items_cache_active:
-                Props_cache_lock.acquire()
-                # remove from cache, if existing
+                Items_cache_lock.acquire()
                 if path in Items_cache_data:
+                    # remove from cache, if existing
                     self.logger.debug("Item delete from cache ('delete'): %s", path)
                     Items_cache_counter.entries -= 1
                     Items_cache_counter.size -= Items_cache_data[path].size
                     del Items_cache_data[path]
-                Props_cache_lock.release()
+            os.remove(path)
+            if Items_cache_active:
+                Items_cache_lock.release()
+            self._sync_directory(os.path.dirname(path))
 
     def get_meta(self, key):
-        global logging_filter
+        global Props_cache_data
         global Props_cache_active
         global Props_cache_counter
+        global Props_cache_lock
         if os.path.exists(self._props_path):
             Props_cache_hit = 0
             if Props_cache_active:
@@ -888,7 +892,8 @@ class Collection(BaseCollection):
                     else:
                         Props_cache_counter.dirty += 1
                         # remove from cache
-                        self.logger.debug("Props delete from cache (dirty): %s", self._props_path)
+                        if not self.debug_filter & 0x0800:
+                            self.logger.debug("Props delete from cache (dirty): %s", self._props_path)
                         Props_cache_counter.size -= Props_cache_data[self._props_path].size
                         Props_cache_counter.entries -= 1
                         del Props_cache_data[self._props_path]
@@ -897,13 +902,13 @@ class Collection(BaseCollection):
 
             if Props_cache_hit == 0 or Props_cache_active == False:
                 with open(self._props_path, encoding=self.encoding) as f:
-                    if not logging_filter & 0x0400:
+                    if not self.debug_filter & 0x0400:
                         self.logger.debug("Props read ('get_meta')  : %s", self._props_path)
                     props_contents = json.load(f)
 
                 if Props_cache_active:
                     # cache handling
-                    if not logging_filter & 0x4000:
+                    if not self.debug_filter & 0x4000:
                         self.logger.debug("Props store in cache     : %s", self._props_path)
                     Props_cache_data[self._props_path] = Props_cache_entry(props_contents, len(str(props_contents)) + len(self._props_path), last_modified_time)
                     Props_cache_counter.size += Props_cache_data[self._props_path].size
@@ -911,7 +916,7 @@ class Collection(BaseCollection):
 
                 meta = props_contents.get(key)
             else:
-                if not logging_filter & 0x8000:
+                if not self.debug_filter & 0x8000:
                     self.logger.debug("Props retrieve from cache: %s", self._props_path)
                 meta = Props_cache_data[self._props_path].props_contents.get(key)
 
@@ -920,16 +925,7 @@ class Collection(BaseCollection):
             return meta
 
     def set_meta(self, props):
-        global Props_cache_active
-        global Props_cache_counter
         if os.path.exists(self._props_path):
-            with Props_cache_lock:
-                if Props_cache_active:
-                    if self._props_path in Props_cache_data:
-                        self.logger.debug("Props delete from cache ('set_meta'): %s", path)
-                        Props_cache_counter.size -= Props_cache_data[self._props_path].size
-                        Props_cache_counter.entries -= 1
-                        del Props_cache_data[self._props_path]
             with open(self._props_path, encoding=self.encoding) as f:
                 self.logger.debug("Write props ('set_meta'): %s", self._props_path)
                 old_props = json.load(f)
