@@ -318,8 +318,6 @@ class Application:
                 status, client.responses.get(status, "Unknown"))
             start_response(status, list(headers.items()))
             time_end = datetime.datetime.now()
-            if self.configuration.getboolean("storage", "cache"):
-                storage.cache_log_statistics_overall(self)
             sizeinfo = ""
             if answer:
                 sizeinfo = sizeinfo + str(len(str(answer))) + " bytes"
@@ -334,6 +332,8 @@ class Application:
                 self.request_token,
                 environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo + sizeinfo,
                 (time_end - time_begin).total_seconds(), status)
+            if self.configuration.getboolean("storage", "cache"):
+                storage.cache_log_statistics_overall(self)
             # Return response content
             return [answer] if answer else []
 
