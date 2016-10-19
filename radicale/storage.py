@@ -730,11 +730,6 @@ class Collection(BaseCollection):
             cls._sync_directory(item.collection._filesystem_path)
 
     def list(self):
-        global Items_cache_data
-        global Items_cache_counter
-        global Items_cache_active
-        global Props_cache_counter
-        global Props_cache_active
         for href in os.listdir(self._filesystem_path):
             if not is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
