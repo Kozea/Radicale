@@ -36,6 +36,8 @@ import subprocess
 import threading
 import time
 import datetime
+import resource
+import gc
 from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
@@ -128,6 +130,8 @@ def load(configuration, logger):
                     logger.info("Props cache enabled (statistics log only on debug level)")
         else:
             logger.info("Props cache disabled")
+        if configuration.getboolean("logging", "performance"):
+            logger.info("General performance log on debug level enabled")
     else:
         collection_class = import_module(storage_type).Collection
     logger.info("Radicale storage manager successfully loaded: %s", storage_type)
@@ -315,12 +319,12 @@ class Cache_counter:
             message = "no cache entries"
         return(message)
 
-    def log_overall(self, token, logger):
+    def log_overall(self, token, logger, request_token):
         if (self.perflog) or (self.loginterval == 0) or (datetime.datetime.now() - self.lastlog > datetime.timedelta(seconds=self.loginterval)):
-            logger.info("%s cache overall statistics: %s", token, self.string_overall())
+            logger.info("[%s] %s cache overall statistics: %s", request_token, token, self.string_overall())
             self.lastlog = datetime.datetime.now()
         else:
-            logger.debug("%s cache overall statistics: %s", token, self.string_overall())
+            logger.debug("[%s] %s cache overall statistics: %s", request_token, token, self.string_overall())
 
 
 ## cache entry
@@ -352,9 +356,27 @@ def cache_log_statistics_overall(self):
     global Items_cache_counter
     global Props_cache_counter
     if Items_cache_active:
-        Items_cache_counter.log_overall("Items", self.logger)
+        Items_cache_counter.log_overall("Items", self.logger, self.request_token)
     if Props_cache_active:
-        Props_cache_counter.log_overall("Props", self.logger)
+        Props_cache_counter.log_overall("Props", self.logger, self.request_token)
+    if self.configuration.getboolean("logging", "performance"):
+        # log process statistics
+        rusage = resource.getrusage(resource.RUSAGE_THREAD)
+        self.logger.debug("[%s] ru_utime=%.3f ru_stime=%.3f ru_maxrss=%s ru_inblock=%s ru_oublock=%s", self.request_token,
+            rusage.ru_utime,
+            rusage.ru_stime,
+            rusage.ru_maxrss,
+            rusage.ru_inblock,
+            rusage.ru_oublock)
+        # log garbage collector statistics
+        self.logger.debug("[%s] gc_count=%s gc_threshold=%s gc.unreachable=%d gc.stats.0=%s gc.stats.1=%s gc.stats.2=%s", self.request_token,
+            gc.get_count(),
+            gc.get_threshold(),
+            len(gc.garbage),
+            str(gc.get_stats()[0]),
+            str(gc.get_stats()[1]),
+            str(gc.get_stats()[2]),
+            )
 
 ### END Items/Props caching
 
@@ -1020,12 +1042,13 @@ class Collection(BaseCollection):
         time_end = datetime.datetime.now()
         if self.configuration.getboolean("logging", "performance"):
             self.logger.info(
-                "Collection read %d items in %s sec from %s", len(items),
+                "Collection read %d items in %.3f sec from %s", len(items),
                 (time_end - time_begin).total_seconds(), self._filesystem_path)
         else:
             self.logger.debug(
-                "Collection read %d items in %s sec from %s", len(items),
+                "Collection read %d items in %.3f sec from %s", len(items),
                 (time_end - time_begin).total_seconds(), self._filesystem_path)
+        result = ""
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
             for item in items:
@@ -1034,10 +1057,20 @@ class Collection(BaseCollection):
                         for item_part in getattr(item, "%s_list" % content):
                             collection.add(item_part)
                         break
-            return collection.serialize()
+            try:
+                result = collection.serialize()
+            except:
+                self.logger.error("VCALENDAR collection serializing broken: %s (%s)", self._filesystem_path, e)
+                if self.configuration.getboolean("logging", "exceptions"):
+                    self.logger.exception("Exception details:")
         elif self.get_meta("tag") == "VADDRESSBOOK":
-            return "".join([item.serialize() for item in items])
-        return ""
+            try:
+                result = "".join([item.serialize() for item in items])
+            except:
+                self.logger.error("VADDRESSBOOK collection serializing broken: %s (%s)", self._filesystem_path, e)
+                if self.configuration.getboolean("logging", "exceptions"):
+                    self.logger.exception("Exception details:")
+        return result
 
     _lock = threading.Lock()
     _waiters = []
