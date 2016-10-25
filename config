@@ -112,8 +112,10 @@
 #hook =
 # Example: git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
 
-# Caching (of Items and Props files) in memory
-cache = True
+# Caching of Items files in memory
+cache_items = False
+# Caching of Props files in memory
+cache_props = False
 
 
 [logging]

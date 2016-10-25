@@ -99,30 +99,33 @@ def load(configuration, logger):
         global Props_cache_active
         global Items_cache_counter
         global Props_cache_counter
-        if configuration.getboolean("storage", "cache"):
+        if configuration.getboolean("storage", "cache_items"):
             Items_cache_active = True
-            Props_cache_active = True
             Items_cache_counter.loginterval = seconds=configuration.getint("logging", "cache_statistics_interval")
-            Props_cache_counter.loginterval = configuration.getint("logging", "cache_statistics_interval")
             if configuration.getboolean("logging", "performance"):
                 if Items_cache_active:
                     logger.info("Items cache enabled (performance log on info level)")
                     Items_cache_counter.perflog = True
-                if Props_cache_active:
-                    logger.info("Props cache enabled (performance log on info level)")
-                    Props_cache_counter.perflog = True
             else:
                 if (Items_cache_counter.loginterval > 0):
                     logger.info("Items cache enabled (regular statistics log on info level with minimum interval %d sec)", Items_cache_counter.loginterval)
                 else:
                     logger.info("Items cache enabled (statistics log only on debug level)")
-
+        else:
+            logger.info("Items cache disabled")
+        if configuration.getboolean("storage", "cache_props"):
+            Props_cache_active = True
+            Props_cache_counter.loginterval = configuration.getint("logging", "cache_statistics_interval")
+            if configuration.getboolean("logging", "performance"):
+                if Props_cache_active:
+                    logger.info("Props cache enabled (performance log on info level)")
+                    Props_cache_counter.perflog = True
+            else:
                 if (Props_cache_counter.loginterval > 0):
                     logger.info("Props cache enabled (regular statistics log on info level with minimum interval %d sec)", Props_cache_counter.loginterval)
                 else:
-                    logger.info("Items cache enabled (statistics log only on debug level)")
+                    logger.info("Props cache enabled (statistics log only on debug level)")
         else:
-            logger.info("Items cache disabled")
             logger.info("Props cache disabled")
     else:
         collection_class = import_module(storage_type).Collection
