@@ -292,7 +292,7 @@ class Application:
             headers = dict(headers)
             # Set content length
             if answer:
-                if self.debug:
+                if self.debug and not (self.debug_filter & 0x0004):
                     self.logger.debug("Response content [%s]:\n%s", self.request_token, answer)
                 answer = answer.encode(self.encoding)
                 accept_encoding = [
@@ -328,12 +328,11 @@ class Application:
             if len(sizeinfo) > 0:
                 sizeinfo = " (" + sizeinfo + ")"
             self.logger.info(
-                "[%s] %s response status for %s in %s sec: %s",
+                "[%s] %s response status for %s in %.3f sec status: %s",
                 self.request_token,
                 environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo + sizeinfo,
                 (time_end - time_begin).total_seconds(), status)
-            if self.configuration.getboolean("storage", "cache_items") or self.configuration.getboolean("storage", "cache_props"):
-                storage.cache_log_statistics_overall(self)
+            storage.cache_log_statistics_overall(self)
             # Return response content
             return [answer] if answer else []
 
@@ -362,7 +361,7 @@ class Application:
             self.request_token,
             environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo,
             remote_host, remote_useragent)
-        if self.debug:
+        if self.debug and not (self.debug_filter & 0x0001):
             headers = pprint.pformat(self.headers_log(environ))
             self.logger.debug("Request headers [%s]:\n%s", self.request_token, headers)
 
@@ -379,7 +378,8 @@ class Application:
         base_prefix = environ["SCRIPT_NAME"]
         # Sanitize request URI
         environ["PATH_INFO"] = storage.sanitize_path(environ["PATH_INFO"])
-        self.logger.debug("Sanitized path: %s", environ["PATH_INFO"])
+        if not (self.debug_filter & 0x0040):
+            self.logger.debug("Sanitized path: %s", environ["PATH_INFO"])
         path = environ["PATH_INFO"]
 
         # Get function corresponding to method
@@ -475,7 +475,7 @@ class Application:
         if content_length > 0:
             content = self.decode(
                 environ["wsgi.input"].read(content_length), environ)
-            if self.debug:
+            if self.debug and not (self.debug_filter & 0x0002):
                 self.logger.debug("Request content [%s]:\n%s", self.request_token, content.strip())
         else:
             content = None

@@ -130,7 +130,11 @@ cache_props = False
 
 # suppress selectable debug messages (to keep debug log cleaner)
 debug_filter = 0xffff
-# 0x0080: suppress 'rights' "Test if" + "Section"
+# 0x0001: suppress "header content"
+# 0x0002: suppress "request content"
+# 0x0004: suppress "response content"
+# 0x0040: suppress "sanitized path"
+# 0x0080: suppress "rights" "Test if" + "Section"
 # 0x0100: suppress "read object"
 # 0x0200: suppress "delete object from cache"
 # 0x0400: suppress "read props"
