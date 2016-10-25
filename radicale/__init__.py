@@ -332,7 +332,7 @@ class Application:
                 self.request_token,
                 environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo + sizeinfo,
                 (time_end - time_begin).total_seconds(), status)
-            if self.configuration.getboolean("storage", "cache"):
+            if self.configuration.getboolean("storage", "cache_items") or self.configuration.getboolean("storage", "cache_props"):
                 storage.cache_log_statistics_overall(self)
             # Return response content
             return [answer] if answer else []
