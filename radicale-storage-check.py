@@ -1,8 +1,7 @@
 #!/usr/bin/python3.4 -s
 #
 # This file is a tool for the Radicale Server - Calendar Server
-# Copyright © 2014 Jean-Marc Martins
-# Copyright © 2012-2016 Guillaume Ayoub
+# Copyright © 2016 Peter Bieringer
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
