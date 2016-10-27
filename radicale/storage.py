@@ -259,14 +259,14 @@ class Cache_counter:
             )
         else:
             message = "no cache entries"
-        return(message)
+        return message 
 
-    def log_overall(self, token, logger, request_token):
+    def log_overall(self, token, logger):
         if (self.perflog) or (self.loginterval == 0) or (datetime.datetime.now() - self.lastlog > datetime.timedelta(seconds=self.loginterval)):
-            logger.info("[%s] %s cache overall statistics: %s", request_token, token, self.string_overall())
+            logger.info("%s cache overall statistics: %s", token, self.string_overall())
             self.lastlog = datetime.datetime.now()
         else:
-            logger.debug("[%s] %s cache overall statistics: %s", request_token, token, self.string_overall())
+            logger.debug("%s cache overall statistics: %s", token, self.string_overall())
 
 
 ## cache entry
@@ -298,9 +298,9 @@ def cache_log_statistics_overall(self):
     global Items_cache_counter
     global Props_cache_counter
     if Items_cache_active:
-        Items_cache_counter.log_overall("Items", self.logger, self.request_token)
+        Items_cache_counter.log_overall("Items", self.logger)
     if Props_cache_active:
-        Props_cache_counter.log_overall("Props", self.logger, self.request_token)
+        Props_cache_counter.log_overall("Props", self.logger)
     if self.configuration.getboolean("logging", "performance"):
         # log process statistics
         rusage = resource.getrusage(resource.RUSAGE_THREAD)
@@ -811,6 +811,8 @@ class Collection(BaseCollection):
                 if not self.debug_filter & 0x0100:
                     self.logger.debug("Item read ('get'): %s", path)
                 item = vobject.readOne(text)
+                if not self.debug_filter & 0x0008:
+                    self.logger.debug("Item content ('get'): %s:\n%s", path, str(item))
             except Exception as e:
                 self.logger.error("Object broken on read (skip 'get'): %s (%s)", path, e)
                 if self.configuration.getboolean("logging", "exceptions"):

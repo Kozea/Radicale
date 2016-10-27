@@ -133,6 +133,7 @@ debug_filter = 0xffff
 # 0x0001: suppress "header content"
 # 0x0002: suppress "request content"
 # 0x0004: suppress "response content"
+# 0x0008: suppress "item content (on read)"
 # 0x0040: suppress "sanitized path"
 # 0x0080: suppress "rights" "Test if" + "Section"
 # 0x0100: suppress "read object"
