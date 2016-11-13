@@ -1,4 +1,5 @@
 # This file is part of Radicale Server - Calendar Server
+# -*- coding: utf-8 -*- 
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2015 Guillaume Ayoub

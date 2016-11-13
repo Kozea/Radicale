@@ -1,4 +1,5 @@
 # This file is part of Radicale Server - Calendar Server
+# -*- coding: utf-8 -*- 
 # Copyright © 2011-2016 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify

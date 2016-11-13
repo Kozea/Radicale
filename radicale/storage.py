@@ -1,4 +1,5 @@
 # This file is part of Radicale Server - Calendar Server
+# -*- coding: utf-8 -*- 
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2016 Guillaume Ayoub
 #
