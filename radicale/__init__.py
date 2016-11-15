@@ -699,6 +699,9 @@ class Application:
                     parent_item.set_meta({"tag": tag})
                 href = posixpath.basename(path.strip("/"))
                 new_item = parent_item.upload(href, items[0])
+                if not new_item:
+                    # upload not possible because of error
+                    return PRECONDITION_FAILED
             headers = {"ETag": new_item.etag}
             return client.CREATED, headers, None
 
