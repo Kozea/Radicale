@@ -806,6 +806,12 @@ class Collection(BaseCollection):
         if Item_cache_hit == 0 or Items_cache_active == False:
             with open(path, encoding=self.encoding, newline="") as f:
                 text = f.read()
+                if len(text) == 0:
+                    # empty file
+                    self.logger.error("Object empty (skip 'get'): %s", path)
+                    if Items_cache_active:
+                        Items_cache_lock.release()
+                    return None;
 
             try:
                 if not self.debug_filter & 0x0100:
