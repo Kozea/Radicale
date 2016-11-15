@@ -859,7 +859,15 @@ class Collection(BaseCollection):
         path = path_to_filesystem(self._filesystem_path, href)
         item = Item(self, vobject_item, href)
         with self._atomic_write(path, newline="") as fd:
-            fd.write(item.serialize())
+            try:
+                item_serialized = item.serialize()
+            except Exception as e:
+                self.logger.error("Object broken on serialize (skip 'upload'): %s (%s)", href, e)
+                self.logger.error("Item content ('upload'): %s:\n%s", href, str(vobject_item))
+                if self.configuration.getboolean("logging", "exceptions"):
+                    self.logger.exception("Exception details:")
+                return None;
+            fd.write(item_serialized)
         return item
 
     def delete(self, href=None):
