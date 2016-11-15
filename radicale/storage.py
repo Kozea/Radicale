@@ -926,15 +926,15 @@ class Collection(BaseCollection):
             raise UnsafePathError(href)
         path = path_to_filesystem(self._filesystem_path, href)
         item = Item(self, vobject_item, href)
+        try:
+            item_serialized = item.serialize()
+        except Exception as e:
+            self.logger.error("Object broken on serialize (skip 'upload'): %s (%s)", href, e)
+            self.logger.error("Item content ('upload'): %s:\n%s", href, str(vobject_item))
+            if self.configuration.getboolean("logging", "exceptions"):
+                self.logger.exception("Exception details:")
+            return None;
         with self._atomic_write(path, newline="") as fd:
-            try:
-                item_serialized = item.serialize()
-            except Exception as e:
-                self.logger.error("Object broken on serialize (skip 'upload'): %s (%s)", href, e)
-                self.logger.error("Item content ('upload'): %s:\n%s", href, str(vobject_item))
-                if self.configuration.getboolean("logging", "exceptions"):
-                    self.logger.exception("Exception details:")
-                return None;
             fd.write(item_serialized)
         return item
 
