@@ -132,7 +132,6 @@ def serve(configuration, logger):
             with os.fdopen(pid_fd, "w") as pid_file:
                 pid_file.write(str(os.getpid()))
         # Decouple environment
-        os.umask(0)
         os.chdir("/")
         os.setsid()
         with open(os.devnull, "r") as null_in:
