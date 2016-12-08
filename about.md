@@ -17,7 +17,7 @@ configure. As a consequence, it requires few software dependencies and is
 pre-configured to work out-of-the-box.
 
 Radicale is written in Python. It runs on most of the UNIX-like platforms
-(Linux, *BSD, MacOS X) and Windows. It is free and open-source software.
+(Linux, *BSD, macOS) and Windows. It is free and open-source software.
 
 ## What Radicale Will Never Be
 

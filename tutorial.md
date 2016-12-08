@@ -52,6 +52,6 @@ Then launch a command prompt, and type:
 Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser
 and enjoy the "Radicale works!" message!
 
-## OS X
+## macOS
 
 *To be written.*
