@@ -792,15 +792,15 @@ class BaseRequestsMixIn:
 
     def test_fsync(self):
         """Create a directory and file with syncing enabled."""
-        self.configuration.set("storage", "fsync", "True")
+        self.configuration.set("storage", "filesystem_fsync", "True")
         status, headers, answer = self.request("MKCALENDAR", "/calendar.ics/")
         assert status == 201
 
     def test_hook(self):
         """Run hook."""
         self.configuration.set(
-            "storage", "hook", "mkdir %s" % os.path.join("collection-root",
-                                                         "created_by_hook"))
+            "storage", "hook", "mkdir %s" % os.path.join(
+                "collection-root", "created_by_hook"))
         status, headers, answer = self.request("MKCOL", "/calendar.ics/")
         assert status == 201
         status, headers, answer = self.request("PROPFIND", "/created_by_hook/")
@@ -809,8 +809,8 @@ class BaseRequestsMixIn:
     def test_hook_read_access(self):
         """Verify that hook is not run for read accesses."""
         self.configuration.set(
-            "storage", "hook", "mkdir %s" % os.path.join("collection-root",
-                                                         "created_by_hook"))
+            "storage", "hook", "mkdir %s" % os.path.join(
+                "collection-root", "created_by_hook"))
         status, headers, answer = self.request("GET", "/")
         assert status == 200
         status, headers, answer = self.request("GET", "/created_by_hook/")
@@ -828,8 +828,8 @@ class BaseRequestsMixIn:
     def test_hook_principal_collection_creation(self):
         """Verify that the hooks runs when a new user is created."""
         self.configuration.set(
-            "storage", "hook", "mkdir %s" % os.path.join("collection-root",
-                                                         "created_by_hook"))
+            "storage", "hook", "mkdir %s" % os.path.join(
+                "collection-root", "created_by_hook"))
         status, headers, answer = self.request("GET", "/", REMOTE_USER="user")
         assert status == 200
         status, headers, answer = self.request("PROPFIND", "/created_by_hook/")
@@ -852,7 +852,8 @@ class BaseRequestsMixIn:
         status, headers, answer = self.request("GET", "/")
         assert headers.get("test") == "123"
         # Test if header is set on failure
-        status, headers, answer = self.request("GET", "/.well-known/does not exist")
+        status, headers, answer = self.request(
+            "GET", "/.well-known/does not exist")
         assert headers.get("test") == "123"
 
 
@@ -867,7 +868,7 @@ class BaseFileSystemTest(BaseTest):
         self.colpath = tempfile.mkdtemp()
         self.configuration.set("storage", "filesystem_folder", self.colpath)
         # Disable syncing to disk for better performance
-        self.configuration.set("storage", "fsync", "False")
+        self.configuration.set("storage", "filesystem_fsync", "False")
         # Required on Windows, doesn't matter on Unix
         self.configuration.set("storage", "close_lock_file", "True")
         self.application = Application(self.configuration, self.logger)

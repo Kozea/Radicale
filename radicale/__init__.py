@@ -51,28 +51,28 @@ from . import auth, rights, storage, xmlutils
 VERSION = "2.0.0rc0"
 
 NOT_ALLOWED = (
-    client.FORBIDDEN, (("Content-type", "text/plain"),),
+    client.FORBIDDEN, (("Content-Type", "text/plain"),),
     "Access to the requested resource forbidden.")
 NOT_FOUND = (
-    client.NOT_FOUND, (("Content-type", "text/plain"),),
+    client.NOT_FOUND, (("Content-Type", "text/plain"),),
     "The requested resource could not be found.")
 WEBDAV_PRECONDITION_FAILED = (
-    client.CONFLICT, (("Content-type", "text/plain"),),
+    client.CONFLICT, (("Content-Type", "text/plain"),),
     "WebDAV precondition failed.")
 PRECONDITION_FAILED = (
     client.PRECONDITION_FAILED,
-    (("Content-type", "text/plain"),), "Precondition failed.")
+    (("Content-Type", "text/plain"),), "Precondition failed.")
 REQUEST_TIMEOUT = (
-    client.REQUEST_TIMEOUT, (("Content-type", "text/plain"),),
+    client.REQUEST_TIMEOUT, (("Content-Type", "text/plain"),),
     "Connection timed out.")
 REQUEST_ENTITY_TOO_LARGE = (
-    client.REQUEST_ENTITY_TOO_LARGE, (("Content-type", "text/plain"),),
+    client.REQUEST_ENTITY_TOO_LARGE, (("Content-Type", "text/plain"),),
     "Request body too large.")
 REMOTE_DESTINATION = (
-    client.BAD_GATEWAY, (("Content-type", "text/plain"),),
+    client.BAD_GATEWAY, (("Content-Type", "text/plain"),),
     "Remote destination not supported.")
 DIRECTORY_LISTING = (
-    client.FORBIDDEN, (("Content-type", "text/plain"),),
+    client.FORBIDDEN, (("Content-Type", "text/plain"),),
     "Directory listings are not supported.")
 
 DAV_HEADERS = "1, 2, 3, calendar-access, addressbook, extended-mkcol"
@@ -288,6 +288,7 @@ class Application:
                     headers["Content-Encoding"] = "gzip"
 
                 headers["Content-Length"] = str(len(answer))
+                headers["Content-Type"] += "; charset=%s" % self.encoding
 
             # Add extra headers set in configuration
             if self.configuration.has_section("headers"):
@@ -389,7 +390,7 @@ class Application:
             status = client.UNAUTHORIZED
             realm = self.configuration.get("server", "realm")
             headers = dict(headers)
-            headers.update ({
+            headers.update({
                 "WWW-Authenticate":
                 "Basic realm=\"%s\"" % realm})
 
@@ -441,13 +442,13 @@ class Application:
                 answer = xmlutils.delete(path, item)
             else:
                 answer = xmlutils.delete(path, item.collection, item.href)
-            return client.OK, {}, answer
+            return client.OK, {"Content-Type": "text/xml"}, answer
 
     def do_GET(self, environ, path, user):
         """Manage GET request."""
         # Display a "Radicale works!" message if the root URL is requested
         if not path.strip("/"):
-            return client.OK, {"Content-type": "text/plain"}, "Radicale works!"
+            return client.OK, {"Content-Type": "text/plain"}, "Radicale works!"
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
         with self.Collection.acquire_lock("r", user):
@@ -458,7 +459,8 @@ class Application:
                 return NOT_FOUND
             if isinstance(item, self.Collection):
                 collection = item
-                if collection.get_meta("tag") not in ("VADDRESSBOOK", "VCALENDAR"):
+                if collection.get_meta("tag") not in (
+                        "VADDRESSBOOK", "VCALENDAR"):
                     return DIRECTORY_LISTING
             else:
                 collection = item.collection

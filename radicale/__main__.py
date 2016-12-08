@@ -22,8 +22,8 @@ from a python programme with ``radicale.__main__.run()``.
 
 """
 
+import argparse
 import atexit
-import optparse
 import os
 import select
 import signal
@@ -39,44 +39,44 @@ from . import (
 
 def run():
     """Run Radicale as a standalone server."""
-    # Get command-line options
-    parser = optparse.OptionParser(version=VERSION)
-    parser.add_option(
-        "-d", "--daemon", action="store_true",
-        help="launch as daemon")
-    parser.add_option(
-        "-p", "--pid",
-        help="set PID filename for daemon mode")
-    parser.add_option(
-        "-f", "--foreground", action="store_false", dest="daemon",
-        help="launch in foreground (opposite of --daemon)")
-    parser.add_option(
-        "-H", "--hosts",
-        help="set server hostnames and ports")
-    parser.add_option(
-        "-s", "--ssl", action="store_true",
-        help="use SSL connection")
-    parser.add_option(
-        "-S", "--no-ssl", action="store_false", dest="ssl",
-        help="do not use SSL connection (opposite of --ssl)")
-    parser.add_option(
-        "-k", "--key",
-        help="set private key file")
-    parser.add_option(
-        "-c", "--certificate",
-        help="set certificate file")
-    parser.add_option(
-        "-D", "--debug", action="store_true",
-        help="print debug information")
-    parser.add_option(
-        "-C", "--config",
-        help="use a specific configuration file")
+    # Get command-line arguments
+    parser = argparse.ArgumentParser(usage="radicale [OPTIONS]")
 
-    options = parser.parse_args()[0]
+    parser.add_argument("--version", action="version", version=VERSION)
+    parser.add_argument(
+        "-C", "--config", help="use a specific configuration file")
 
-    if options.config:
+    groups = {}
+    for section, values in config.INITIAL_CONFIG.items():
+        group = parser.add_argument_group(section)
+        groups[group] = []
+        for option, data in values.items():
+            kwargs = data.copy()
+            long_name = "--{0}-{1}".format(
+                section, option.replace("_", "-"))
+            args = kwargs.pop("aliases", [])
+            args.append(long_name)
+            kwargs["dest"] = "{0}_{1}".format(section, option)
+            groups[group].append(kwargs["dest"])
+
+            if kwargs.pop("value") in ("True", "False"):
+                kwargs["action"] = "store_const"
+                kwargs["const"] = "True"
+                opposite_args = kwargs.pop("opposite", [])
+                opposite_args.append("--no{0}".format(long_name[1:]))
+                group.add_argument(*args, **kwargs)
+
+                kwargs["const"] = "False"
+                kwargs["help"] = "do not {0} (opposite of {1})".format(
+                    kwargs["help"], long_name)
+                group.add_argument(*opposite_args, **kwargs)
+            else:
+                group.add_argument(*args, **kwargs)
+
+    args = parser.parse_args()
+    if args.config:
         configuration = config.load()
-        configuration_found = configuration.read(options.config)
+        configuration_found = configuration.read(args.config)
     else:
         configuration_paths = [
             "/etc/radicale/config",
@@ -86,14 +86,13 @@ def run():
         configuration = config.load(configuration_paths)
         configuration_found = True
 
-    # Update Radicale configuration according to options
-    for option in parser.option_list:
-        key = option.dest
-        if key:
-            section = "logging" if key == "debug" else "server"
-            value = getattr(options, key)
+    # Update Radicale configuration according to arguments
+    for group, actions in groups.items():
+        section = group.title
+        for action in actions:
+            value = getattr(args, action)
             if value is not None:
-                configuration.set(section, key, str(value))
+                configuration.set(section, action.split('_', 1)[1], value)
 
     # Start logging
     filename = os.path.expanduser(configuration.get("logging", "config"))
@@ -102,7 +101,7 @@ def run():
 
     # Log a warning if the configuration file of the command line is not found
     if not configuration_found:
-        logger.warning("Configuration file '%s' not found" % options.config)
+        logger.warning("Configuration file '%s' not found" % args.config)
 
     try:
         serve(configuration, logger)

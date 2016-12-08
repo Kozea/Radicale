@@ -45,7 +45,7 @@
 # SSL Protocol used. See python's ssl module for available values
 #protocol = PROTOCOL_SSLv23
 
-# Ciphers available. See python's ssl module for available ciphers
+# Available ciphers. See python's ssl module for available ciphers
 #ciphers =
 
 # Reverse DNS to resolve client address in logs
@@ -106,11 +106,16 @@
 # Sync all changes to disk during requests. (This can impair performance.)
 # Disabling it increases the risk of data loss, when the system crashes or
 # power fails!
-#fsync = True
+#filesystem_fsync = True
+
+# Close the lock file when no more clients are waiting.
+# This option is not very useful in general, but on Windows files that are
+# opened cannot be deleted.
+#filesystem_close_lock_file = False
 
 # Command that is run after changes to storage
-#hook =
 # Example: git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
+#hook =
 
 
 [logging]
@@ -120,8 +125,10 @@
 # For more information about the syntax of the configuration file, see:
 # http://docs.python.org/library/logging.config.html
 #config = /etc/radicale/logging
+
 # Set the default logging level to debug
 #debug = False
+
 # Store all environment variables (including those set in the shell)
 #full_environment = False
 

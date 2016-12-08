@@ -24,56 +24,128 @@ Give a configparser-like interface to read and write configuration.
 """
 
 import os
+from collections import OrderedDict
 from configparser import RawConfigParser as ConfigParser
 
 # Default configuration
-INITIAL_CONFIG = {
-    "server": {
-        "hosts": "0.0.0.0:5232",
-        "daemon": "False",
-        "pid": "",
-        "max_connections": "20",
-        "max_content_length": "10000000",
-        "timeout": "10",
-        "ssl": "False",
-        "certificate": "/etc/apache2/ssl/server.crt",
-        "key": "/etc/apache2/ssl/server.key",
-        "protocol": "PROTOCOL_SSLv23",
-        "ciphers": "",
-        "dns_lookup": "True",
-        "base_prefix": "/",
-        "can_skip_base_prefix": "False",
-        "realm": "Radicale - Password Required"},
-    "encoding": {
-        "request": "utf-8",
-        "stock": "utf-8"},
-    "auth": {
-        "type": "None",
-        "htpasswd_filename": "/etc/radicale/users",
-        "htpasswd_encryption": "crypt"},
-    "rights": {
-        "type": "None",
-        "file": "~/.config/radicale/rights"},
-    "storage": {
-        "type": "multifilesystem",
-        "filesystem_folder": os.path.expanduser(
-            "~/.config/radicale/collections"),
-        "fsync": "True",
-        "hook": "",
-        "close_lock_file": "False"},
-    "logging": {
-        "config": "/etc/radicale/logging",
-        "debug": "False",
-        "full_environment": "False",
-        "mask_passwords": "True"}}
+INITIAL_CONFIG = OrderedDict([
+    ("server", OrderedDict([
+        ("hosts", {
+            "value": "0.0.0.0:5232",
+            "help": "set server hostnames including ports",
+            "aliases": ["-H", "--hosts"]}),
+        ("daemon", {
+            "value": "False",
+            "help": "launch as daemon",
+            "aliases": ["-d", "--daemon"],
+            "opposite": ["-f", "--foreground"]}),
+        ("pid", {
+            "value": "",
+            "help": "set PID filename for daemon mode",
+            "aliases": ["-p", "--pid"]}),
+        ("max_connections", {
+            "value": "20",
+            "help": "maximum number of parallel connections"}),
+        ("max_content_length", {
+            "value": "10000000",
+            "help": "maximum size of request body in bytes"}),
+        ("timeout", {
+            "value": "10",
+            "help": "socket timeout"}),
+        ("ssl", {
+            "value": "False",
+            "help": "use SSL connection",
+            "aliases": ["-s", "--ssl"],
+            "opposite": ["-S", "--no-ssl"]}),
+        ("certificate", {
+            "value": "/etc/apache2/ssl/server.crt",
+            "help": "set certificate file",
+            "aliases": ["-c", "--certificate"]}),
+        ("key", {
+            "value": "/etc/apache2/ssl/server.key",
+            "help": "set private key file",
+            "aliases": ["-k", "--key"]}),
+        ("protocol", {
+            "value": "PROTOCOL_SSLv23",
+            "help": "SSL protocol used"}),
+        ("ciphers", {
+            "value": "",
+            "help": "available ciphers"}),
+        ("dns_lookup", {
+            "value": "True",
+            "help": "use reverse DNS to resolve client address in logs"}),
+        ("base_prefix", {
+            "value": "/",
+            "help": "root URL of Radicale, starting and ending with a slash"}),
+        ("can_skip_base_prefix", {
+            "value": "False",
+            "help": "allow URLs cleaned by a HTTP server"}),
+        ("realm", {
+            "value": "Radicale - Password Required",
+            "help": "message displayed when a password is needed"})])),
+    ("encoding", OrderedDict([
+        ("request", {
+            "value": "utf-8",
+            "help": "encoding for responding requests"}),
+        ("stock", {
+            "value": "utf-8",
+            "help": "encoding for storing local collections"})])),
+    ("auth", OrderedDict([
+        ("type", {
+            "value": "None",
+            "help": "authentication method"}),
+        ("htpasswd_filename", {
+            "value": "/etc/radicale/users",
+            "help": "htpasswd filename"}),
+        ("htpasswd_encryption", {
+            "value": "crypt",
+            "help": "htpasswd encryption method"})])),
+    ("rights", OrderedDict([
+        ("type", {
+            "value": "None",
+            "help": "rights backend"}),
+        ("file", {
+            "value": "~/.config/radicale/rights",
+            "help": "file for rights management from_file"})])),
+    ("storage", OrderedDict([
+        ("type", {
+            "value": "multifilesystem",
+            "help": "storage backend"}),
+        ("filesystem_folder", {
+            "value": os.path.expanduser(
+                "~/.config/radicale/collections"),
+            "help": "file for rights management from_file"}),
+        ("filesystem_fsync", {
+            "value": "True",
+            "help": "sync all changes to filesystem during requests"}),
+        ("filesystem_close_lock_file", {
+            "value": "False",
+            "help": "close the lock file when no more clients are waiting"}),
+        ("hook", {
+            "value": "",
+            "help": "command that is run after changes to storage"})])),
+    ("logging", OrderedDict([
+        ("config", {
+            "value": "/etc/radicale/logging",
+            "help": "logging configuration file"}),
+        ("debug", {
+            "value": "False",
+            "help": "print debug information",
+            "aliases": ["-D", "--debug"]}),
+        ("full_environment", {
+            "value": "False",
+            "help": "store all environment variables"}),
+        ("mask_passwords", {
+            "value": "True",
+            "help": "mask passwords in logs"})]))])
 
 
 def load(paths=(), extra_config=None):
     config = ConfigParser()
     for section, values in INITIAL_CONFIG.items():
         config.add_section(section)
-        for key, value in values.items():
-            config.set(section, key, value)
+        for key, data in values.items():
+            config.set(section, key, data["value"])
     if extra_config:
         for section, values in extra_config.items():
             for key, value in values.items():
