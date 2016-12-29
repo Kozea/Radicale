@@ -73,7 +73,7 @@
 [auth]
 
 # Authentication method
-# Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | remote_user | custom
+# Value: None | htpasswd | IMAP | LDAP | PAM | pamela | courier | http | remote_user | custom
 #type = None
 
 # Custom authentication handler
