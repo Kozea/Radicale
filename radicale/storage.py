@@ -675,10 +675,11 @@ class Collection(BaseCollection):
             os.remove(path)
             self._sync_directory(os.path.dirname(path))
 
-    def get_meta(self, key):
+    def get_meta(self, key=None):
         if os.path.exists(self._props_path):
             with open(self._props_path, encoding=self.encoding) as prop:
-                return json.load(prop).get(key)
+                meta = json.load(prop)
+                return meta.get(key) if key else meta
 
     def set_meta(self, props):
         if os.path.exists(self._props_path):
