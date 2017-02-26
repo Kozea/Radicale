@@ -872,6 +872,8 @@ def report(base_prefix, path, xml_request, collection):
             items = collection.pre_filtered_list(filters)
 
         for item in items:
+            if not item:
+                continue
             if filters:
                 match = (
                     _comp_match if collection.get_meta("tag") == "VCALENDAR"

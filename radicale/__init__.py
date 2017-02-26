@@ -244,6 +244,8 @@ class Application:
         read_allowed_items = []
         write_allowed_items = []
         for item in items:
+            if not item:
+                continue
             if isinstance(item, self.Collection):
                 path = item.path
             else:
