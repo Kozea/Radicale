@@ -299,7 +299,10 @@ class Application:
             time_end = datetime.datetime.now()
             status = "%i %s" % (
                 status, client.responses.get(status, "Unknown"))
-            self.logger.info("%s answer status for %s in %s sec: %s", environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo, (time_end - time_begin).total_seconds(), status)
+            self.logger.info(
+                "%s answer status for %s in %s sec: %s",
+                environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo,
+                (time_end - time_begin).total_seconds(), status)
             start_response(status, list(headers.items()))
             # Return response content
             return [answer] if answer else []
@@ -320,16 +323,19 @@ class Application:
             if environ["HTTP_DEPTH"]:
                 depthinfo = " with depth " + environ["HTTP_DEPTH"]
         time_begin = datetime.datetime.now()
-        self.logger.info("%s request for %s received from %s using \"%s\"",
-                         environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo, remote_host, remote_useragent)
+        self.logger.info(
+            "%s request for %s received from %s using \"%s\"",
+            environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo,
+            remote_host, remote_useragent)
         headers = pprint.pformat(self.headers_log(environ))
         self.logger.debug("Request headers:\n%s", headers)
 
         # Let reverse proxies overwrite SCRIPT_NAME
         if "HTTP_X_SCRIPT_NAME" in environ:
             environ["SCRIPT_NAME"] = environ["HTTP_X_SCRIPT_NAME"]
-            self.logger.debug("Script name overwritten by client: %s",
-                              environ["SCRIPT_NAME"])
+            self.logger.debug(
+                "Script name overwritten by client: %s",
+                environ["SCRIPT_NAME"])
         # Sanitize base prefix
         environ["SCRIPT_NAME"] = storage.sanitize_path(
             environ.get("SCRIPT_NAME", "")).rstrip("/")
