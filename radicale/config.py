@@ -74,12 +74,6 @@ INITIAL_CONFIG = OrderedDict([
         ("dns_lookup", {
             "value": "True",
             "help": "use reverse DNS to resolve client address in logs"}),
-        ("base_prefix", {
-            "value": "/",
-            "help": "root URL of Radicale, starting and ending with a slash"}),
-        ("can_skip_base_prefix", {
-            "value": "False",
-            "help": "allow URLs cleaned by a HTTP server"}),
         ("realm", {
             "value": "Radicale - Password Required",
             "help": "message displayed when a password is needed"})])),
