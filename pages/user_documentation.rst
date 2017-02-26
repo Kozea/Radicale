@@ -336,7 +336,7 @@ Add/Modify the following section in Radicale main configuration file:
     [headers]
     Access-Control-Allow-Origin = *
     Access-Control-Allow-Methods = GET, POST, OPTIONS, PROPFIND, PROPPATCH, REPORT, PUT, MOVE, DELETE, LOCK, UNLOCK
-    Access-Control-Allow-Headers = User-Agent, Authorization, Content-type, Depth, If-match, If-None-Match, Lock-Token, Timeout, Destination, Overwrite, X-client, X-Requested-With, prefer
+    Access-Control-Allow-Headers = Authorization, Content-type, Depth, Destination, If-match, If-None-Match, Lock-Token, Overwrite, Prefer, Timeout, User-Agent, X-Client, X-Requested-With
     Access-Control-Expose-Headers = Etag
 
 ``InfCloud`` needs read access for ``everybody`` (including anonymous users) on Radicale's root directory.
