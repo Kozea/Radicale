@@ -34,6 +34,7 @@ import stat
 import subprocess
 import threading
 import time
+import datetime
 from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
@@ -699,8 +700,13 @@ class Collection(BaseCollection):
 
     def serialize(self):
         items = []
+        time_begin = datetime.datetime.now()
         for href in self.list():
             items.append(self.get(href).item)
+        time_end = datetime.datetime.now()
+        self.logger.info(
+            "Collection read %d items in %s sec from %s", len(items),
+            (time_end - time_begin).total_seconds(), self._filesystem_path)
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
             for item in items:
