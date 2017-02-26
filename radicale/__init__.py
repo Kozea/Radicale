@@ -37,7 +37,6 @@ import socket
 import socketserver
 import ssl
 import threading
-import urllib
 import wsgiref.simple_server
 import zlib
 from http import client
