@@ -28,6 +28,7 @@ in them for XML requests (all but PUT).
 import posixpath
 import re
 import xml.etree.ElementTree as ET
+from pprint import pprint
 from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 from http import client
@@ -552,7 +553,8 @@ def propfind(base_prefix, path, xml_request, read_collections,
         else:
             response = _propfind_response(
                 base_prefix, path, collection, props, user, write=True)
-        multistatus.append(response)
+        if response:
+            multistatus.append(response)
     for collection in read_collections:
         if collection in collections:
             continue
@@ -563,7 +565,8 @@ def propfind(base_prefix, path, xml_request, read_collections,
         else:
             response = _propfind_response(
                 base_prefix, path, collection, props, user, write=False)
-        multistatus.append(response)
+        if response:
+            multistatus.append(response)
 
     return client.MULTI_STATUS, _pretty_xml(multistatus)
 
