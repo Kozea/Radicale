@@ -28,7 +28,6 @@ in them for XML requests (all but PUT).
 import posixpath
 import re
 import xml.etree.ElementTree as ET
-from pprint import pprint
 from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 from http import client
