@@ -53,7 +53,8 @@ for short, url in NAMESPACES.items():
     NAMESPACES_REV[url] = short
     ET.register_namespace("" if short == "D" else short, url)
 
-CLARK_TAG_REGEX = re.compile(r" {(?P<namespace>[^}]*)}(?P<tag>.*)", re.VERBOSE)
+CLARK_TAG_REGEX = re.compile(r"{(?P<namespace>[^}]*)}(?P<tag>.*)", re.VERBOSE)
+HUMAN_REGEX = re.compile(r"(?P<namespace>[^:{}]*)(?P<tag>.*)", re.VERBOSE)
 
 
 def _pretty_xml(element, level=0):
@@ -94,6 +95,14 @@ def _tag_from_clark(name):
             "ns": NAMESPACES_REV[match.group("namespace")],
             "tag": match.group("tag")}
         return "%(ns)s:%(tag)s" % args
+    return name
+
+
+def _tag_from_human(name):
+    """Get an XML Clark notation tag from human-readable variant ``name``."""
+    match = HUMAN_REGEX.match(name)
+    if match and match.group("namespace") in NAMESPACES:
+        return _tag(match.group("namespace"), match.group("tag"))
     return name
 
 
@@ -501,10 +510,15 @@ def propfind(base_prefix, path, xml_request, read_collections,
     in the output.
 
     """
-    if xml_request:
-        root = ET.fromstring(xml_request.encode("utf8"))
-        props = [prop.tag for prop in root.find(_tag("D", "prop"))]
-    else:
+    # Reading request
+    root = ET.fromstring(xml_request.encode("utf8")) if xml_request else None
+
+    # A client may choose not to submit a request body.  An empty PROPFIND
+    # request body MUST be treated as if it were an 'allprop' request.
+    top_tag = root[0] if root is not None else ET.Element(_tag("D", "allprop"))
+
+    props = ()
+    if top_tag.tag == _tag("D", "allprop"):
         props = [
             _tag("D", "getcontenttype"),
             _tag("D", "resourcetype"),
@@ -512,7 +526,12 @@ def propfind(base_prefix, path, xml_request, read_collections,
             _tag("D", "owner"),
             _tag("D", "getetag"),
             _tag("ICAL", "calendar-color"),
-            _tag("CS", "getctag")]
+            _tag("CS", "getctag"),
+            _tag("C", "supported-calendar-component-set"),
+            _tag("D", "supported-report-set"),
+        ]
+    elif top_tag.tag == _tag("D", "prop"):
+        props = [prop.tag for prop in top_tag]
 
     if _tag("D", "current-user-principal") in props and not user:
         # Ask for authentication
@@ -520,24 +539,37 @@ def propfind(base_prefix, path, xml_request, read_collections,
         # RFC 5397 doesn't seem to work with DAVdroid.
         return client.FORBIDDEN, None
 
+    # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
+
     collections = []
     for collection in write_collections:
         collections.append(collection)
-        response = _propfind_response(
-            base_prefix, path, collection, props, user, write=True)
+        if top_tag.tag == _tag("D", "propname"):
+            response = _propfind_response(
+                base_prefix, path, collection, (), user, write=True,
+                propnames=True)
+        else:
+            response = _propfind_response(
+                base_prefix, path, collection, props, user, write=True)
         multistatus.append(response)
     for collection in read_collections:
         if collection in collections:
             continue
-        response = _propfind_response(
-            base_prefix, path, collection, props, user, write=False)
+        if top_tag.tag == _tag("D", "propname"):
+            response = _propfind_response(
+                base_prefix, path, collection, (), user, write=False,
+                propnames=True)
+        else:
+            response = _propfind_response(
+                base_prefix, path, collection, props, user, write=False)
         multistatus.append(response)
 
     return client.MULTI_STATUS, _pretty_xml(multistatus)
 
 
-def _propfind_response(base_prefix, path, item, props, user, write=False):
+def _propfind_response(base_prefix, path, item, props, user, write=False,
+                       propnames=False):
     """Build and return a PROPFIND response."""
     is_collection = isinstance(item, storage.BaseCollection)
     if is_collection:
@@ -567,6 +599,35 @@ def _propfind_response(base_prefix, path, item, props, user, write=False):
 
     prop404 = ET.Element(_tag("D", "prop"))
     propstat404.append(prop404)
+
+    if propnames:
+        # Should list all properties that can be retrieved by the code below
+        prop200.append(ET.Element(_tag("D", "getetag")))
+        prop200.append(ET.Element(_tag("D", "principal-URL")))
+        prop200.append(ET.Element(_tag("D", "principal-collection-set")))
+        prop200.append(ET.Element(_tag("C", "calendar-user-address-set")))
+        prop200.append(ET.Element(_tag("CR", "addressbook-home-set")))
+        prop200.append(ET.Element(_tag("C", "calendar-home-set")))
+        prop200.append(ET.Element(
+            _tag("C", "supported-calendar-component-set")))
+        prop200.append(ET.Element(_tag("D", "current-user-privilege-set")))
+        prop200.append(ET.Element(_tag("D", "supported-report-set")))
+        prop200.append(ET.Element(_tag("D", "getcontenttype")))
+        prop200.append(ET.Element(_tag("D", "resourcetype")))
+
+        if is_collection:
+            prop200.append(ET.Element(_tag("CS", "getctag")))
+            prop200.append(ET.Element(_tag("C", "calendar-timezone")))
+            prop200.append(ET.Element(_tag("D", "displayname")))
+            prop200.append(ET.Element(_tag("ICAL", "calendar-color")))
+            prop200.append(ET.Element(_tag("D",  "owner")))
+
+            if is_leaf:
+                meta = item.get_meta()
+                for tag in meta:
+                    clark_tag = _tag_from_human(tag)
+                    if prop200.find(clark_tag) is None:
+                        prop200.append(ET.Element(clark_tag))
 
     for tag in props:
         element = ET.Element(tag)
