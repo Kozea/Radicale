@@ -768,6 +768,8 @@ class BaseRequestsMixIn:
 
     def test_authentication(self):
         """Test if server sends authentication request."""
+        self.configuration.set("auth", "type", "htpasswd")
+        self.configuration.set("auth", "htpasswd_filename", os.devnull)
         self.configuration.set("rights", "type", "owner_only")
         self.application = Application(self.configuration, self.logger)
         status, headers, answer = self.request("MKCOL", "/user/")
