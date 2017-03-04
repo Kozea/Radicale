@@ -15,8 +15,7 @@
 # IPv4 syntax: address:port
 # IPv6 syntax: [address]:port
 # For example: 0.0.0.0:9999, [::]:9999
-# IPv6 adresses are configured to only allow IPv6 connections
-#hosts = 0.0.0.0:5232
+#hosts = 127.0.0.1:5232
 
 # Daemon flag
 #daemon = False
@@ -37,13 +36,13 @@
 #ssl = False
 
 # SSL certificate path
-#certificate = /etc/apache2/ssl/server.crt
+#certificate = /etc/ssl/radicale.cert.pem
 
 # SSL private key
-#key = /etc/apache2/ssl/server.key
+#key = /etc/ssl/radicale.key.pem
 
 # SSL Protocol used. See python's ssl module for available values
-#protocol = PROTOCOL_SSLv23
+#protocol = PROTOCOL_TLSv1_2
 
 # Available ciphers. See python's ssl module for available ciphers
 #ciphers =
@@ -75,17 +74,19 @@
 
 # Htpasswd encryption method
 # Value: plain | sha1 | ssha | crypt | bcrypt | md5
-#htpasswd_encryption = crypt
+# Only bcrypt can be considered secure.
+# bcrypt and md5 require the passlib library to be installed.
+#htpasswd_encryption = bcrypt
 
 
 [rights]
 
 # Rights backend
 # Value: None | authenticated | owner_only | owner_write | from_file
-#type = None
+#type = owner_only
 
 # File for rights management from_file
-#file = ~/.config/radicale/rights
+#file = /etc/radicale/rights
 
 
 [storage]
@@ -95,7 +96,7 @@
 #type = filesystem
 
 # Folder for storing local collections, created if not present
-#filesystem_folder = ~/.config/radicale/collections
+#filesystem_folder = /etc/radicale/collections
 
 # Sync all changes to disk during requests. (This can impair performance.)
 # Disabling it increases the risk of data loss, when the system crashes or
