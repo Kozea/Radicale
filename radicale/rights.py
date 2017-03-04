@@ -48,8 +48,9 @@ from . import storage
 
 def load(configuration, logger):
     """Load the rights manager chosen in configuration."""
+    auth_type = configuration.get("auth", "type")
     rights_type = configuration.get("rights", "type")
-    if rights_type == "None":
+    if auth_type == "None" or rights_type == "None":
         return lambda user, collection, permission: True
     elif rights_type in DEFINED_RIGHTS or rights_type == "from_file":
         return Rights(configuration, logger).authorized
