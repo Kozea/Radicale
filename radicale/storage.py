@@ -481,8 +481,9 @@ class Collection(BaseCollection):
         cls._makedirs_synced(folder)
         try:
             filesystem_path = path_to_filesystem(folder, sane_path)
-        except ValueError:
+        except ValueError as e:
             # Path is unsafe
+            cls.logger.info(e)
             return
 
         # Check if the path exists and if it leads to a collection or an item
