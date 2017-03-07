@@ -313,7 +313,8 @@ class Application:
         if environ.get("REMOTE_HOST"):
             remote_host = environ["REMOTE_HOST"]
         if environ.get("HTTP_X_FORWARDED_FOR"):
-            remote_host = environ["HTTP_X_FORWARDED_FOR"]
+            remote_host = "%s (forwarded by %s)" % (
+                environ["HTTP_X_FORWARDED_FOR"], remote_host)
         remote_useragent = "UNKNOWN"
         if environ.get("HTTP_USER_AGENT"):
             remote_useragent = environ["HTTP_USER_AGENT"]
