@@ -312,6 +312,8 @@ class Application:
         remote_host = "UNKNOWN"
         if environ.get("REMOTE_HOST"):
             remote_host = environ["REMOTE_HOST"]
+        elif environ.get("REMOTE_ADDR"):
+            remote_host = environ["REMOTE_ADDR"]
         if environ.get("HTTP_X_FORWARDED_FOR"):
             remote_host = "%s (forwarded by %s)" % (
                 environ["HTTP_X_FORWARDED_FOR"], remote_host)
