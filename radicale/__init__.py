@@ -310,20 +310,16 @@ class Application:
             return [answer] if answer else []
 
         remote_host = "UNKNOWN"
-        if "REMOTE_HOST" in environ:
-            if environ["REMOTE_HOST"]:
-                remote_host = environ["REMOTE_HOST"]
-        if "HTTP_X_FORWARDED_FOR" in environ:
-            if environ["HTTP_X_FORWARDED_FOR"]:
-                remote_host = environ["HTTP_X_FORWARDED_FOR"]
+        if environ.get("REMOTE_HOST"):
+            remote_host = environ["REMOTE_HOST"]
+        if environ.get("HTTP_X_FORWARDED_FOR"):
+            remote_host = environ["HTTP_X_FORWARDED_FOR"]
         remote_useragent = "[-no-user-agent-provided-]"
-        if "HTTP_USER_AGENT" in environ:
-            if environ["HTTP_USER_AGENT"]:
-                remote_useragent = environ["HTTP_USER_AGENT"]
+        if environ.get("HTTP_USER_AGENT"):
+            remote_useragent = environ["HTTP_USER_AGENT"]
         depthinfo = ""
-        if "HTTP_DEPTH" in environ:
-            if environ["HTTP_DEPTH"]:
-                depthinfo = " with depth " + environ["HTTP_DEPTH"]
+        if environ.get("HTTP_DEPTH"):
+            depthinfo = " with depth " + environ["HTTP_DEPTH"]
         time_begin = datetime.datetime.now()
         self.logger.info(
             "%s request for %s received from %s using \"%s\"",
