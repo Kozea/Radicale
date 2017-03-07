@@ -172,13 +172,25 @@ def path_to_filesystem(root, *paths):
         for part in path.split("/"):
             if not is_safe_filesystem_path_component(part):
                 raise UnsafePathError(part)
+            safe_path_parent = safe_path
             safe_path = os.path.join(safe_path, part)
+            # Check for conflicting files (e.g. case-insensitive file systems
+            # or short names on Windows file systems)
+            if os.path.lexists(safe_path):
+                if not part in os.listdir(safe_path_parent):
+                    raise CollidingPathError(part)
     return safe_path
 
 
 class UnsafePathError(ValueError):
     def __init__(self, path):
         message = "Can't translate name safely to filesystem: %s" % path
+        super().__init__(message)
+
+
+class CollidingPathError(ValueError):
+    def __init__(self, path):
+        message = "File name collision: %s" % path
         super().__init__(message)
 
 
