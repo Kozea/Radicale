@@ -314,7 +314,7 @@ class Application:
             remote_host = environ["REMOTE_HOST"]
         if environ.get("HTTP_X_FORWARDED_FOR"):
             remote_host = environ["HTTP_X_FORWARDED_FOR"]
-        remote_useragent = "[-no-user-agent-provided-]"
+        remote_useragent = "UNKNOWN"
         if environ.get("HTTP_USER_AGENT"):
             remote_useragent = environ["HTTP_USER_AGENT"]
         depthinfo = ""
