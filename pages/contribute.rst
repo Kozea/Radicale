@@ -2,13 +2,6 @@
  Contribute
 ============
 
-Send Us a Mail
-==============
-
-Want to write kind words? You can send a mail on :mailaddress:`our Librelist
-mailing-list` and even take a look at :mailarchives:`the archives`.
-
-
 Chat with Us on IRC
 ===================
 
