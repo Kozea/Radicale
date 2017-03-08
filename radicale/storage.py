@@ -25,6 +25,7 @@ entry.
 
 """
 
+import contextlib
 import errno
 import json
 import os
@@ -583,17 +584,18 @@ class Collection(BaseCollection):
         uploads them nonatomic and without existence checks.
 
         """
-        fs = []
-        for href, item in vobject_items.items():
-            if not is_safe_filesystem_path_component(href):
-                raise UnsafePathError(href)
-            path = path_to_filesystem(self._filesystem_path, href)
-            fs.append(open(path, "w", encoding=self.encoding, newline=""))
-            fs[-1].write(item.serialize())
-        # sync everything at once because it's slightly faster.
-        for f in fs:
-            self._fsync(f.fileno())
-            f.close()
+        with contextlib.ExitStack() as stack:
+            fs = []
+            for href, item in vobject_items.items():
+                if not is_safe_filesystem_path_component(href):
+                    raise UnsafePathError(href)
+                path = path_to_filesystem(self._filesystem_path, href)
+                fs.append(stack.enter_context(
+                    open(path, "w", encoding=self.encoding, newline="")))
+                fs[-1].write(item.serialize())
+            # sync everything at once because it's slightly faster.
+            for f in fs:
+                self._fsync(f.fileno())
         self._sync_directory(self._filesystem_path)
 
     @classmethod
