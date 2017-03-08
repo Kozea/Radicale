@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2009-2016 Guillaume Ayoub
