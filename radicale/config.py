@@ -107,7 +107,7 @@ INITIAL_CONFIG = OrderedDict([
             "help": "storage backend"}),
         ("filesystem_folder", {
             "value": os.path.expanduser(
-                "/etc/radicale/collections"),
+                "/var/lib/radicale/collections"),
             "help": "file for rights management from_file"}),
         ("filesystem_fsync", {
             "value": "True",

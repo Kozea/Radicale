@@ -93,10 +93,10 @@
 
 # Storage backend
 # Value: multifilesystem
-#type = filesystem
+#type = multifilesystem
 
 # Folder for storing local collections, created if not present
-#filesystem_folder = /etc/radicale/collections
+#filesystem_folder = /var/lib/radicale/collections
 
 # Sync all changes to disk during requests. (This can impair performance.)
 # Disabling it increases the risk of data loss, when the system crashes or
