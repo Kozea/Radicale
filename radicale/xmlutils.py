@@ -680,12 +680,21 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
                 privilege.append(ET.Element(_tag(ns, privilege_name)))
                 element.append(privilege)
         elif tag == _tag("D", "supported-report-set"):
-            for report_name in (
-                    "principal-property-search", "sync-collection",
-                    "expand-property", "principal-search-property-set"):
+            reports = [("D", "expand-property"),               # not implemented
+                       ("D", "principal-search-property-set"), # not implemented
+                       ("D", "principal-property-search")]     # not implemented
+            if is_collection and is_leaf:
+                reports.append(("D", "sync-collection"))
+                if item.get_meta("tag") == "VADDRESSBOOK":
+                    reports.append(("CR", "addressbook-multiget"))
+                    reports.append(("CR", "addressbook-query"))
+                elif item.get_meta("tag") == "VCALENDAR":
+                    reports.append(("C", "calendar-multiget"))
+                    reports.append(("C", "calendar-query"))
+            for ns, report_name in reports:
                 supported = ET.Element(_tag("D", "supported-report"))
                 report_tag = ET.Element(_tag("D", "report"))
-                supported_report_tag = ET.Element(_tag("D", report_name))
+                supported_report_tag = ET.Element(_tag(ns, report_name))
                 report_tag.append(supported_report_tag)
                 supported.append(report_tag)
                 element.append(supported)
