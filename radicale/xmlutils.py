@@ -669,14 +669,16 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
             tag.text = _href(base_prefix, ("/%s/" % user) if user else "/")
             element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
-            privilege = ET.Element(_tag("D", "privilege"))
+            privileges = [("D", "read")]
             if write:
-                privilege.append(ET.Element(_tag("D", "all")))
-                privilege.append(ET.Element(_tag("D", "write")))
-                privilege.append(ET.Element(_tag("D", "write-properties")))
-                privilege.append(ET.Element(_tag("D", "write-content")))
-            privilege.append(ET.Element(_tag("D", "read")))
-            element.append(privilege)
+                privileges.append(("D", "all"))
+                privileges.append(("D", "write"))
+                privileges.append(("D", "write-properties"))
+                privileges.append(("D", "write-content"))
+            for ns, privilege_name in privileges:
+                privilege = ET.Element(_tag("D", "privilege"))
+                privilege.append(ET.Element(_tag(ns, privilege_name)))
+                element.append(privilege)
         elif tag == _tag("D", "supported-report-set"):
             for report_name in (
                     "principal-property-search", "sync-collection",
