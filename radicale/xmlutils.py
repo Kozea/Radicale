@@ -820,6 +820,16 @@ def report(base_prefix, path, xml_request, collection):
 
     """
     root = ET.fromstring(xml_request.encode("utf8"))
+    if root.tag in (
+            _tag("D", "principal-search-property-set"),
+            _tag("D", "principal-property-search"),
+            _tag("D", "expand-property")):
+        # We don't support searching for principals or indirect retrieving of
+        # properties, just return an empty result.
+        # InfCloud asks for expand-property reports (even if we don't announce
+        # support for them) and stops working if an error code is returned.
+        collection.logger.warning("Unsupported report method: %s", root.tag)
+        return _pretty_xml(ET.Element(_tag("D", "multistatus")))
     prop_element = root.find(_tag("D", "prop"))
     props = (
         [prop.tag for prop in prop_element]
