@@ -36,7 +36,9 @@ import pprint
 import socket
 import socketserver
 import ssl
+import sys
 import threading
+import traceback
 import wsgiref.simple_server
 import zlib
 import datetime
@@ -84,6 +86,7 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
     # These class attributes must be set before creating instance
     client_timeout = None
     max_connections = None
+    logger = None
 
     def __init__(self, address, handler, bind_and_activate=True):
         """Create server."""
@@ -116,6 +119,13 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
         if self.client_timeout:
             _socket.settimeout(self.client_timeout)
         return _socket, address
+
+    def handle_error(self, request, client_address):
+        if issubclass(sys.exc_info()[0], socket.timeout):
+            self.logger.error("connection timeout")
+        else:
+            self.logger.error(
+                "An exception occurred during request:\n%s", traceback.format_exc())
 
 
 class HTTPSServer(HTTPServer):

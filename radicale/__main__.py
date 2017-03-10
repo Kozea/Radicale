@@ -173,6 +173,7 @@ def serve(configuration, logger):
     server_class.client_timeout = configuration.getint("server", "timeout")
     server_class.max_connections = configuration.getint(
         "server", "max_connections")
+    server_class.logger = logger
 
     RequestHandler.logger = logger
     if not configuration.getboolean("server", "dns_lookup"):
