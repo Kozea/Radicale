@@ -691,19 +691,15 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
                 element.append(supported)
         elif is_collection:
             if tag == _tag("D", "getcontenttype"):
-                item_tag = item.get_meta("tag")
-                if item_tag:
-                    element.text = MIMETYPES[item_tag]
+                if is_leaf:
+                    element.text = MIMETYPES[item.get_meta("tag")]
                 else:
                     is404 = True
             elif tag == _tag("D", "resourcetype"):
                 if item.is_principal:
                     tag = ET.Element(_tag("D", "principal"))
                     element.append(tag)
-                item_tag = item.get_meta("tag")
-                if is_leaf or item_tag:
-                    # 2nd case happens when the collection is not stored yet,
-                    # but the resource type is guessed
+                if is_leaf:
                     if item.get_meta("tag") == "VADDRESSBOOK":
                         tag = ET.Element(_tag("CR", "addressbook"))
                         element.append(tag)
@@ -829,27 +825,24 @@ def report(base_prefix, path, xml_request, collection):
         [prop.tag for prop in prop_element]
         if prop_element is not None else [])
 
-    if collection:
-        if root.tag in (
-                _tag("C", "calendar-multiget"),
-                _tag("CR", "addressbook-multiget")):
-            # Read rfc4791-7.9 for info
-            hreferences = set()
-            for href_element in root.findall(_tag("D", "href")):
-                href_path = storage.sanitize_path(
-                    unquote(urlparse(href_element.text).path))
-                if (href_path + "/").startswith(base_prefix + "/"):
-                    hreferences.add(href_path[len(base_prefix):])
-                else:
-                    collection.logger.info(
-                        "Skipping invalid path: %s", href_path)
-        else:
-            hreferences = (path,)
-        filters = (
-            root.findall(".//%s" % _tag("C", "filter")) +
-            root.findall(".//%s" % _tag("CR", "filter")))
+    if root.tag in (
+            _tag("C", "calendar-multiget"),
+            _tag("CR", "addressbook-multiget")):
+        # Read rfc4791-7.9 for info
+        hreferences = set()
+        for href_element in root.findall(_tag("D", "href")):
+            href_path = storage.sanitize_path(
+                unquote(urlparse(href_element.text).path))
+            if (href_path + "/").startswith(base_prefix + "/"):
+                hreferences.add(href_path[len(base_prefix):])
+            else:
+                collection.logger.info(
+                    "Skipping invalid path: %s", href_path)
     else:
-        hreferences = filters = ()
+        hreferences = (path,)
+    filters = (
+        root.findall(".//%s" % _tag("C", "filter")) +
+        root.findall(".//%s" % _tag("CR", "filter")))
 
     multistatus = ET.Element(_tag("D", "multistatus"))
 
