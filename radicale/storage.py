@@ -87,7 +87,6 @@ if os.name == "nt":
 elif os.name == "posix":
     import fcntl
 
-
 def load(configuration, logger):
     """Load the storage manager chosen in configuration."""
     storage_type = configuration.get("storage", "type")
@@ -233,6 +232,102 @@ def path_to_filesystem(root, *paths):
                 if not part in os.listdir(safe_path_parent):
                     raise CollidingPathError(part)
     return safe_path
+
+
+### BEGIN Items/Props caching
+## cache counter statistics
+class Cache_counter:
+    def __init__(self):
+        self.lookup = 0
+        self.hit    = 0
+        self.miss   = 0
+        self.dirty  = 0
+        self.entries= 0
+        self.size   = 0
+        self.perflog= False
+        ## cache statistics logging on info level
+        # 0: on each request (incl. current request)
+        # >0: after at least every given loginterval (excl. current request)
+        self.lastlog= datetime.datetime.now()
+        self.loginterval = 60 # default
+
+    def string_overall(self):
+        if (self.entries > 0):
+            message = "lookup=%d hit=%d (%3.2f%%) miss=%d (%3.2f%%) dirty=%d (%3.2f%%) entries=%d memoryKiB=%.3f" % (
+                self.lookup,
+                self.hit,
+                self.hit * 100 / self.lookup,
+                self.miss,
+                self.miss * 100 / self.lookup,
+                self.dirty,
+                self.dirty * 100 / self.lookup,
+                self.entries,
+                self.size / 1024
+            )
+        else:
+            message = "no cache entries"
+        return message 
+
+    def log_overall(self, token, logger):
+        if (self.perflog) or (self.loginterval == 0) or (datetime.datetime.now() - self.lastlog > datetime.timedelta(seconds=self.loginterval)):
+            logger.info("%s cache overall statistics: %s", token, self.string_overall())
+            self.lastlog = datetime.datetime.now()
+        else:
+            logger.debug("%s cache overall statistics: %s", token, self.string_overall())
+
+
+## cache entry
+class Item_cache_entry:
+    def __init__(self, Item, size, last_modified_time):
+        self.Item = Item
+        self.size = size
+        self.last_modified_time = last_modified_time
+
+class Props_cache_entry:
+    def __init__(self, props_contents, size, last_modified_time):
+        self.props_contents = props_contents
+        self.size = size
+        self.last_modified_time = last_modified_time
+
+## cache initialization
+Items_cache_lock = threading.Lock()
+Items_cache_data = {}
+Items_cache_counter = Cache_counter()
+Items_cache_active = False
+
+Props_cache_lock = threading.Lock()
+Props_cache_data = {}
+Props_cache_counter = Cache_counter()
+Props_cache_active = False
+
+## global functions to be called also from other modules
+def cache_log_statistics_overall(self):
+    global Items_cache_counter
+    global Props_cache_counter
+    if Items_cache_active:
+        Items_cache_counter.log_overall("Items", self.logger)
+    if Props_cache_active:
+        Props_cache_counter.log_overall("Props", self.logger)
+    if self.configuration.getboolean("logging", "performance"):
+        # log process statistics
+        rusage = resource.getrusage(resource.RUSAGE_THREAD)
+        self.logger.debug("[%s] ru_utime=%.3f ru_stime=%.3f ru_maxrss=%s ru_inblock=%s ru_oublock=%s", self.request_token,
+            rusage.ru_utime,
+            rusage.ru_stime,
+            rusage.ru_maxrss,
+            rusage.ru_inblock,
+            rusage.ru_oublock)
+        # log garbage collector statistics
+        self.logger.debug("[%s] gc_count=%s gc_threshold=%s gc.unreachable=%d gc.stats.0=%s gc.stats.1=%s gc.stats.2=%s", self.request_token,
+            gc.get_count(),
+            gc.get_threshold(),
+            len(gc.garbage),
+            str(gc.get_stats()[0]),
+            str(gc.get_stats()[1]),
+            str(gc.get_stats()[2]),
+            )
+
+### END Items/Props caching
 
 
 class UnsafePathError(ValueError):

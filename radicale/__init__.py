@@ -357,6 +357,30 @@ class Application:
         # store token for header/request/response logging
         self.request_token = request_token
 
+        self.logger.info("[%s] %s request  for %s received from %s using \"%s\"",
+            request_token, environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo, remote_host, remote_useragent)
+        if self.debug and not (self.debug_filter & 0x0001):
+            headers = pprint.pformat(self.headers_log(environ))
+            self.logger.debug("Request headers [%s]:\n%s", self.request_token, headers)
+
+        # Strip base_prefix from request URI
+        base_prefix = self.configuration.get("server", "base_prefix")
+        if environ["PATH_INFO"].startswith(base_prefix):
+            environ["PATH_INFO"] = environ["PATH_INFO"][len(base_prefix):]
+        elif self.configuration.get("server", "can_skip_base_prefix"):
+            self.logger.debug(
+                "Prefix already stripped from path: %s", environ["PATH_INFO"])
+        else:
+            # Request path not starting with base_prefix, not allowed
+            self.logger.debug(
+                "Path not starting with prefix: %s", environ["PATH_INFO"])
+            return response(*NOT_ALLOWED)
+
+        # Create an unique request token
+        request_token = md5((environ["PATH_INFO"] + depthinfo + remote_host + remote_useragent +str(time_begin)).encode('utf-8')).hexdigest()[1:8]
+        # store token for header/request/response logging
+        self.request_token = request_token
+
         self.logger.info(
             "[%s] %s request  for %s received from %s using \"%s\"",
             self.request_token,
