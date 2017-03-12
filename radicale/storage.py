@@ -977,7 +977,6 @@ class Collection(BaseCollection):
             self._sync_directory(os.path.dirname(path))
 
     def get_meta(self, key=None):
-    def get_meta(self, key):
         global Props_cache_data
         global Props_cache_active
         global Props_cache_counter

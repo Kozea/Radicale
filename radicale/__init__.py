@@ -357,7 +357,8 @@ class Application:
         # store token for header/request/response logging
         self.request_token = request_token
 
-        self.logger.info("[%s] %s request  for %s received from %s using \"%s\"",
+        self.logger.info(
+            "[%s] %s request  for %s received from %s using \"%s\"",
             self.request_token,
             environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo,
             remote_host, remote_useragent)
@@ -631,7 +632,6 @@ class Application:
             headers = {"DAV": DAV_HEADERS, "Content-Type": "text/xml"}
             status, answer = xmlutils.propfind(
                 base_prefix, path, content, read_items, write_items, user)
-            storage.log_cache_statistics(self)
             if status == client.FORBIDDEN:
                 return NOT_ALLOWED
             else:
@@ -722,5 +722,4 @@ class Application:
                 collection = item.collection
             headers = {"Content-Type": "text/xml"}
             answer = xmlutils.report(base_prefix, path, content, collection)
-            storage.log_cache_statistics(self)
             return client.MULTI_STATUS, headers, answer
