@@ -87,6 +87,7 @@ if os.name == "nt":
 elif os.name == "posix":
     import fcntl
 
+
 def load(configuration, logger):
     """Load the storage manager chosen in configuration."""
     storage_type = configuration.get("storage", "type")
@@ -234,17 +235,6 @@ def path_to_filesystem(root, *paths):
     return safe_path
 
 
-def log_cache_statistics(self):
-    global Item_cache_active
-    global Item_cache_counter
-    global Props_cache_active
-    global Props_cache_counter
-    if Item_cache_active:
-        Item_cache_counter.log("Items", self.logger)
-    if Props_cache_active:
-        Props_cache_counter.log("Props", self.logger)
-
-
 class UnsafePathError(ValueError):
     def __init__(self, path):
         message = "Can't translate name safely to filesystem: %s" % path
@@ -287,6 +277,17 @@ class Item:
 
 ### BEGIN Items/Props caching
 ## cache counter statistics
+def log_cache_statistics(self):
+    global Item_cache_active
+    global Item_cache_counter
+    global Props_cache_active
+    global Props_cache_counter
+    if Item_cache_active:
+        Item_cache_counter.log("Items", self.logger)
+    if Props_cache_active:
+        Props_cache_counter.log("Props", self.logger)
+
+
 class Cache_counter:
     def __init__(self):
         self.lookup = 0
@@ -317,7 +318,7 @@ class Cache_counter:
             )
         else:
             message = "no cache entries"
-        return message 
+        return message
 
     def log_overall(self, token, logger):
         if (self.perflog) or (self.loginterval == 0) or (datetime.datetime.now() - self.lastlog > datetime.timedelta(seconds=self.loginterval)):
@@ -379,40 +380,6 @@ def cache_log_statistics_overall(self):
             )
 
 ### END Items/Props caching
-
-
-class UnsafePathError(ValueError):
-    def __init__(self, path):
-        message = "Can't translate name safely to filesystem: %s" % path
-        super().__init__(message)
-
-
-class ComponentExistsError(ValueError):
-    def __init__(self, path):
-        message = "Component already exists: %s" % path
-        super().__init__(message)
-
-
-class ComponentNotFoundError(ValueError):
-    def __init__(self, path):
-        message = "Component doesn't exist: %s" % path
-        super().__init__(message)
-
-
-class Item:
-    def __init__(self, collection, item, href, last_modified=None):
-        self.collection = collection
-        self.item = item
-        self.href = href
-        self.last_modified = last_modified
-
-    def __getattr__(self, attr):
-        return getattr(self.item, attr)
-
-    @property
-    def etag(self):
-        """Encoded as quoted-string (see RFC 2616)."""
-        return get_etag(self.serialize())
 
 
 class BaseCollection:
