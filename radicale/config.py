@@ -138,15 +138,15 @@ INITIAL_CONFIG = OrderedDict([
         ("exceptions", {
             "value" : "False",
             "help": "include exceptions in logs"}),
+        ("performance", {
+            "value": "False",
+            "help": "include performance statistics in logs on info level"}),
         ("full_environment", {
             "value": "False",
             "help": "store all environment variables"}),
         ("cache_statistics_interval", {
             "value": "300",
             "help": "log interval of item/props cache statistics on info level"}),
-        ("performance", {
-            "value": "False",
-            "help": "include cache/collections performance statistics in logs on info level"}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs"})]))])

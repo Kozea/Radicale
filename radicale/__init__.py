@@ -271,8 +271,8 @@ class Application:
                 read_allowed_items.append(item)
             else:
                 self.logger.debug(
-                   "%s has NO read access to collection %s",
-                   user or "Anonymous", path or "/")
+                    "%s has NO read access to collection %s",
+                    user or "Anonymous", path or "/")
             if self.authorized(user, path, "w"):
                 if not self.debug_filter & 0x0080:
                     self.logger.debug(

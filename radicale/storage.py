@@ -87,6 +87,7 @@ if os.name == "nt":
 elif os.name == "posix":
     import fcntl
 
+
 def load(configuration, logger):
     """Load the storage manager chosen in configuration."""
     storage_type = configuration.get("storage", "type")
