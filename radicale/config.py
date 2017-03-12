@@ -115,15 +115,15 @@ INITIAL_CONFIG = OrderedDict([
         ("filesystem_close_lock_file", {
             "value": "False",
             "help": "close the lock file when no more clients are waiting"}),
-        ("hook", {
-            "value": "",
-            "help": "command that is run after changes to storage"})])),
         ("cache_items", {
             "value": "False",
             "help": "enable item file caching in memory"}),
         ("cache_props", {
             "value": "False",
             "help": "enable props file caching in memory"}),
+        ("hook", {
+            "value": "",
+            "help": "command that is run after changes to storage"})])),
     ("logging", OrderedDict([
         ("config", {
             "value": "/etc/radicale/logging",
@@ -134,22 +134,22 @@ INITIAL_CONFIG = OrderedDict([
             "aliases": ["-D", "--debug"]}),
         ("debug_filter", {
             "value": "0xffff",
-            "help": "filter debug log (binary mask)")
-        ("exceptions": {
+            "help": "filter debug log (binary mask)"}),
+        ("exceptions", {
             "value" : "False",
-            "help": "include exceptions in logs")
+            "help": "include exceptions in logs"}),
         ("full_environment", {
             "value": "False",
             "help": "store all environment variables"}),
+        ("cache_statistics_interval", {
+            "value": "300",
+            "help": "log interval of item/props cache statistics on info level"}),
+        ("performance", {
+            "value": "False",
+            "help": "include cache/collections performance statistics in logs on info level"}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs"})]))])
-        ("cache_statistics_interval", {
-            "value": "300",
-            "help": "log interval of item/props cache statistics on info level")
-        ("performance": {
-            "value": "False",
-            "help": "include cache/collections performance statistics in logs on info level")
 
 
 def load(paths=(), extra_config=None):
