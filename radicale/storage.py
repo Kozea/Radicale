@@ -717,11 +717,18 @@ class Collection(BaseCollection):
         items = []
         time_begin = datetime.datetime.now()
         for href in self.list():
-            items.append(self.get(href).item)
+            if hasattr(self.get(href),'item'):
+                items.append(self.get(href).item)
         time_end = datetime.datetime.now()
-        self.logger.info(
-            "Collection read %d items in %s sec from %s", len(items),
-            (time_end - time_begin).total_seconds(), self._filesystem_path)
+        if self.configuration.getboolean("logging", "performance"):
+            self.logger.info(
+                "Collection read %d items in %.3f sec from %s", len(items),
+                (time_end - time_begin).total_seconds(), self._filesystem_path)
+        else:
+            self.logger.debug(
+                "Collection read %d items in %.3f sec from %s", len(items),
+                (time_end - time_begin).total_seconds(), self._filesystem_path)
+        result = ""
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
             for item in items:
@@ -730,10 +737,20 @@ class Collection(BaseCollection):
                         for item_part in getattr(item, "%s_list" % content):
                             collection.add(item_part)
                         break
-            return collection.serialize()
+            try:
+                result = collection.serialize()
+            except:
+                self.logger.error("VCALENDAR collection serializing broken: %s (%s)", self._filesystem_path, e)
+                if self.configuration.getboolean("logging", "exceptions"):
+                    self.logger.exception("Exception details:")
         elif self.get_meta("tag") == "VADDRESSBOOK":
-            return "".join([item.serialize() for item in items])
-        return ""
+            try:
+                result = "".join([item.serialize() for item in items])
+            except:
+                self.logger.error("VADDRESSBOOK collection serializing broken: %s (%s)", self._filesystem_path, e)
+                if self.configuration.getboolean("logging", "exceptions"):
+                    self.logger.exception("Exception details:")
+        return result
 
     _lock = threading.Lock()
     _waiters = []
