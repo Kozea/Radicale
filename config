@@ -124,7 +124,7 @@
 #debug = False
 
 # suppress selectable debug messages (to keep debug log cleaner)
-debug_filter = 0xffff
+debug_filter = 0x0000
 # 0x0001: suppress "header content"
 # 0x0002: suppress "request content"
 # 0x0004: suppress "response content"

@@ -127,7 +127,7 @@ INITIAL_CONFIG = OrderedDict([
             "help": "print debug information",
             "aliases": ["-D", "--debug"]}),
         ("debug_filter", {
-            "value": "0xffff",
+            "value": "0x0000",
             "help": "filter debug log (binary mask)"}),
         ("exceptions", {
             "value" : "False",
