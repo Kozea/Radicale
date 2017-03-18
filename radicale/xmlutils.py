@@ -861,8 +861,8 @@ def report(base_prefix, path, xml_request, collection):
     else:
         hreferences = (path,)
     filters = (
-        root.findall(".//%s" % _tag("C", "filter")) +
-        root.findall(".//%s" % _tag("CR", "filter")))
+        root.findall("./%s" % _tag("C", "filter")) +
+        root.findall("./%s" % _tag("CR", "filter")))
 
     multistatus = ET.Element(_tag("D", "multistatus"))
 
