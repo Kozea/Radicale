@@ -180,6 +180,7 @@ def _prop_match(item, filter_):
         for component in item.components():
             if component.name in ("VTODO", "VEVENT", "VJOURNAL"):
                 vobject_item = component
+                break
     else:
         vobject_item = item.item
     if filter_length == 0:
