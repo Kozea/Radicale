@@ -26,6 +26,7 @@ entry.
 """
 
 import contextlib
+import datetime
 import errno
 import json
 import os
@@ -35,16 +36,14 @@ import stat
 import subprocess
 import threading
 import time
-import datetime
 from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
 from itertools import groupby
 from random import getrandbits
-from tempfile import TemporaryDirectory, NamedTemporaryFile
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import vobject
-
 
 if os.name == "nt":
     import ctypes
@@ -178,7 +177,7 @@ def path_to_filesystem(root, *paths):
             # Check for conflicting files (e.g. case-insensitive file systems
             # or short names on Windows file systems)
             if os.path.lexists(safe_path):
-                if not part in os.listdir(safe_path_parent):
+                if part not in os.listdir(safe_path_parent):
                     raise CollidingPathError(part)
     return safe_path
 
@@ -826,7 +825,7 @@ class Collection(BaseCollection):
                 if cls._waiters:
                     cls._waiters[0].notify()
                 if (cls.configuration.getboolean(
-                        "storage", "filesystem_close_lock_file")
-                        and cls._readers == 0 and not cls._waiters):
+                        "storage", "filesystem_close_lock_file") and
+                        cls._readers == 0 and not cls._waiters):
                     cls._lock_file.close()
                     cls._lock_file = None

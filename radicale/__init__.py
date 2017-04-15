@@ -28,6 +28,7 @@ should have been included in this package.
 
 import base64
 import contextlib
+import datetime
 import io
 import itertools
 import os
@@ -41,14 +42,12 @@ import threading
 import traceback
 import wsgiref.simple_server
 import zlib
-import datetime
 from http import client
 from urllib.parse import unquote, urlparse
 
 import vobject
 
 from . import auth, rights, storage, xmlutils
-
 
 VERSION = "2.0.0rc0"
 
@@ -125,7 +124,8 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
             self.logger.error("connection timeout")
         else:
             self.logger.error(
-                "An exception occurred during request:\n%s", traceback.format_exc())
+                "An exception occurred during request:\n%s",
+                traceback.format_exc())
 
 
 class HTTPSServer(HTTPServer):

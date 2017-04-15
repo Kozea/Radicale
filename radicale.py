@@ -27,5 +27,4 @@ Launch the server according to configuration and command-line options.
 
 import radicale.__main__
 
-
 radicale.__main__.run()

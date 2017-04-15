@@ -35,7 +35,6 @@ from urllib.parse import quote, unquote, urlparse
 
 from . import storage
 
-
 MIMETYPES = {
     "VADDRESSBOOK": "text/vcard",
     "VCALENDAR": "text/calendar"}
@@ -623,7 +622,7 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
             prop200.append(ET.Element(_tag("C", "calendar-timezone")))
             prop200.append(ET.Element(_tag("D", "displayname")))
             prop200.append(ET.Element(_tag("ICAL", "calendar-color")))
-            prop200.append(ET.Element(_tag("D",  "owner")))
+            prop200.append(ET.Element(_tag("D", "owner")))
 
             if is_leaf:
                 meta = item.get_meta()
@@ -681,9 +680,11 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
                 privilege.append(ET.Element(_tag(ns, privilege_name)))
                 element.append(privilege)
         elif tag == _tag("D", "supported-report-set"):
-            reports = [("D", "expand-property"),               # not implemented
-                       ("D", "principal-search-property-set"), # not implemented
-                       ("D", "principal-property-search")]     # not implemented
+            # These 3 reports are not implemented
+            reports = [
+                ("D", "expand-property"),
+                ("D", "principal-search-property-set"),
+                ("D", "principal-property-search")]
             if is_collection and is_leaf:
                 reports.append(("D", "sync-collection"))
                 if item.get_meta("tag") == "VADDRESSBOOK":

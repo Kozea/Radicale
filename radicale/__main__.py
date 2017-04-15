@@ -33,8 +33,8 @@ import sys
 from wsgiref.simple_server import make_server
 
 from . import (
-  VERSION, Application, RequestHandler, ThreadedHTTPServer,
-  ThreadedHTTPSServer, config, log)
+    VERSION, Application, RequestHandler, ThreadedHTTPServer,
+    ThreadedHTTPSServer, config, log)
 
 
 def run():

@@ -211,7 +211,8 @@ class BaseRequestsMixIn:
         assert status == 207
         assert "href>/</" in answer
         assert "href>%s</" % calendar_path in answer
-        status, headers, answer = self.request("PROPFIND", calendar_path, HTTP_DEPTH="1")
+        status, headers, answer = self.request(
+            "PROPFIND", calendar_path, HTTP_DEPTH="1")
         assert status == 207
         assert "href>%s</" % calendar_path in answer
         assert "href>%s</" % event_path in answer
