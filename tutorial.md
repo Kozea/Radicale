@@ -26,7 +26,7 @@ First of all, check that you have Python 3.4 or superior installed, or install
 it thanks to your package manager. Then open a console and type:
 
     $ pip3 install radicale
-    $ python3 -m radicale --debug
+    $ python3 -m radicale --debug --storage-filesystem-folder=~/.local/radicale
     ...
     Radicale server ready
 
@@ -45,7 +45,7 @@ click on "Install now". Wait a couple of minutes, it's done!
 Then launch a command prompt, and type:
 
     C:\Users\MyName> python -m pip install radicale
-    C:\Users\MyName> python -m radicale --debug
+    C:\Users\MyName> python -m radicale --debug --storage-filesystem-folder=~/radicale
     ...
     Radicale server ready
 
