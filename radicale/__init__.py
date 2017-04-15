@@ -677,12 +677,12 @@ class Application:
 
     def do_REPORT(self, environ, base_prefix, path, user):
         """Manage REPORT request."""
-        if not self._access(user, path, "w"):
+        if not self._access(user, path, "r"):
             return NOT_ALLOWED
         content = self._read_content(environ)
         with self.Collection.acquire_lock("r", user):
             item = next(self.Collection.discover(path), None)
-            if not self._access(user, path, "w", item):
+            if not self._access(user, path, "r", item):
                 return NOT_ALLOWED
             if not item:
                 return NOT_FOUND
