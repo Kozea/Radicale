@@ -188,10 +188,10 @@ def serve(configuration, logger):
         server = make_server(
             address, port, application, server_class, RequestHandler)
         servers[server.socket] = server
-        logger.debug("Listening to %s port %s",
+        logger.info("Listening to %s port %s",
                      server.server_name, server.server_port)
         if configuration.getboolean("server", "ssl"):
-            logger.debug("Using SSL")
+            logger.info("Using SSL")
 
     # Create a socket pair to notify the select syscall of program shutdown
     # This is not available in python < 3.5 on Windows
@@ -224,7 +224,10 @@ def serve(configuration, logger):
     else:
         # Fallback to busy waiting
         select_timeout = 1.0
-    logger.debug("Radicale server ready")
+    if configuration.getboolean("logging", "debug"):
+        logger.info("Radicale server ready (with 'debug' enabled)")
+    else:
+        logger.info("Radicale server ready")
     while not shutdown_program:
         try:
             rlist, _, xlist = select.select(
