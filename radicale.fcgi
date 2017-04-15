@@ -21,14 +21,16 @@ Radicale FastCGI Example.
 
 Launch a Radicale FastCGI server according to configuration.
 
+This script relies on flup but can be easily adapted to use another
+WSGI-to-FastCGI mapper.
+
 """
 
 import os
-from flipflop import WSGIServer
+from flup.server.fcgi import WSGIServer
 from radicale import Application, config, log
 
 
 configuration = config.load([os.environ.get("RADICALE_CONFIG")])
 logger = log.start()
 WSGIServer(Application(configuration, logger)).run()
-
