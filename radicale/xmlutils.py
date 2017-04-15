@@ -180,6 +180,7 @@ def _prop_match(item, filter_):
         for component in item.components():
             if component.name in ("VTODO", "VEVENT", "VJOURNAL"):
                 vobject_item = component
+                break
     else:
         vobject_item = item.item
     if filter_length == 0:
@@ -669,39 +670,46 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
             tag.text = _href(base_prefix, ("/%s/" % user) if user else "/")
             element.append(tag)
         elif tag == _tag("D", "current-user-privilege-set"):
-            privilege = ET.Element(_tag("D", "privilege"))
+            privileges = [("D", "read")]
             if write:
-                privilege.append(ET.Element(_tag("D", "all")))
-                privilege.append(ET.Element(_tag("D", "write")))
-                privilege.append(ET.Element(_tag("D", "write-properties")))
-                privilege.append(ET.Element(_tag("D", "write-content")))
-            privilege.append(ET.Element(_tag("D", "read")))
-            element.append(privilege)
+                privileges.append(("D", "all"))
+                privileges.append(("D", "write"))
+                privileges.append(("D", "write-properties"))
+                privileges.append(("D", "write-content"))
+            for ns, privilege_name in privileges:
+                privilege = ET.Element(_tag("D", "privilege"))
+                privilege.append(ET.Element(_tag(ns, privilege_name)))
+                element.append(privilege)
         elif tag == _tag("D", "supported-report-set"):
-            for report_name in (
-                    "principal-property-search", "sync-collection",
-                    "expand-property", "principal-search-property-set"):
+            reports = [("D", "expand-property"),               # not implemented
+                       ("D", "principal-search-property-set"), # not implemented
+                       ("D", "principal-property-search")]     # not implemented
+            if is_collection and is_leaf:
+                reports.append(("D", "sync-collection"))
+                if item.get_meta("tag") == "VADDRESSBOOK":
+                    reports.append(("CR", "addressbook-multiget"))
+                    reports.append(("CR", "addressbook-query"))
+                elif item.get_meta("tag") == "VCALENDAR":
+                    reports.append(("C", "calendar-multiget"))
+                    reports.append(("C", "calendar-query"))
+            for ns, report_name in reports:
                 supported = ET.Element(_tag("D", "supported-report"))
                 report_tag = ET.Element(_tag("D", "report"))
-                supported_report_tag = ET.Element(_tag("D", report_name))
+                supported_report_tag = ET.Element(_tag(ns, report_name))
                 report_tag.append(supported_report_tag)
                 supported.append(report_tag)
                 element.append(supported)
         elif is_collection:
             if tag == _tag("D", "getcontenttype"):
-                item_tag = item.get_meta("tag")
-                if item_tag:
-                    element.text = MIMETYPES[item_tag]
+                if is_leaf:
+                    element.text = MIMETYPES[item.get_meta("tag")]
                 else:
                     is404 = True
             elif tag == _tag("D", "resourcetype"):
                 if item.is_principal:
                     tag = ET.Element(_tag("D", "principal"))
                     element.append(tag)
-                item_tag = item.get_meta("tag")
-                if is_leaf or item_tag:
-                    # 2nd case happens when the collection is not stored yet,
-                    # but the resource type is guessed
+                if is_leaf:
                     if item.get_meta("tag") == "VADDRESSBOOK":
                         tag = ET.Element(_tag("CR", "addressbook"))
                         element.append(tag)
@@ -822,32 +830,39 @@ def report(base_prefix, path, xml_request, collection):
 
     """
     root = ET.fromstring(xml_request.encode("utf8"))
+    if root.tag in (
+            _tag("D", "principal-search-property-set"),
+            _tag("D", "principal-property-search"),
+            _tag("D", "expand-property")):
+        # We don't support searching for principals or indirect retrieving of
+        # properties, just return an empty result.
+        # InfCloud asks for expand-property reports (even if we don't announce
+        # support for them) and stops working if an error code is returned.
+        collection.logger.warning("Unsupported report method: %s", root.tag)
+        return _pretty_xml(ET.Element(_tag("D", "multistatus")))
     prop_element = root.find(_tag("D", "prop"))
     props = (
         [prop.tag for prop in prop_element]
         if prop_element is not None else [])
 
-    if collection:
-        if root.tag in (
-                _tag("C", "calendar-multiget"),
-                _tag("CR", "addressbook-multiget")):
-            # Read rfc4791-7.9 for info
-            hreferences = set()
-            for href_element in root.findall(_tag("D", "href")):
-                href_path = storage.sanitize_path(
-                    unquote(urlparse(href_element.text).path))
-                if (href_path + "/").startswith(base_prefix + "/"):
-                    hreferences.add(href_path[len(base_prefix):])
-                else:
-                    collection.logger.info(
-                        "Skipping invalid path: %s", href_path)
-        else:
-            hreferences = (path,)
-        filters = (
-            root.findall(".//%s" % _tag("C", "filter")) +
-            root.findall(".//%s" % _tag("CR", "filter")))
+    if root.tag in (
+            _tag("C", "calendar-multiget"),
+            _tag("CR", "addressbook-multiget")):
+        # Read rfc4791-7.9 for info
+        hreferences = set()
+        for href_element in root.findall(_tag("D", "href")):
+            href_path = storage.sanitize_path(
+                unquote(urlparse(href_element.text).path))
+            if (href_path + "/").startswith(base_prefix + "/"):
+                hreferences.add(href_path[len(base_prefix):])
+            else:
+                collection.logger.info(
+                    "Skipping invalid path: %s", href_path)
     else:
-        hreferences = filters = ()
+        hreferences = (path,)
+    filters = (
+        root.findall("./%s" % _tag("C", "filter")) +
+        root.findall("./%s" % _tag("CR", "filter")))
 
     multistatus = ET.Element(_tag("D", "multistatus"))
 
