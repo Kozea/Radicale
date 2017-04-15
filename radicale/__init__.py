@@ -42,6 +42,7 @@ import traceback
 import wsgiref.simple_server
 import zlib
 import datetime
+from hashlib import md5
 from http import client
 from urllib.parse import unquote, urlparse
 
@@ -205,6 +206,8 @@ class Application:
         self.Collection = storage.load(configuration, logger)
         self.authorized = rights.load(configuration, logger)
         self.encoding = configuration.get("encoding", "request")
+        self.debug = configuration.getboolean("logging", "debug")
+        self.debug_filter = int(configuration.get("logging", "debug_filter"), 0)
 
     def headers_log(self, environ):
         """Sanitize headers for logging."""
@@ -261,18 +264,20 @@ class Application:
             else:
                 path = item.collection.path
             if self.authorized(user, path, "r"):
-                self.logger.debug(
-                    "%s has read access to collection %s",
-                    user or "Anonymous", path or "/")
+                if not self.debug_filter & 0x0080:
+                    self.logger.debug(
+                        "%s has read access to collection %s",
+                        user or "Anonymous", path or "/")
                 read_allowed_items.append(item)
             else:
                 self.logger.debug(
                     "%s has NO read access to collection %s",
                     user or "Anonymous", path or "/")
             if self.authorized(user, path, "w"):
-                self.logger.debug(
-                    "%s has write access to collection %s",
-                    user or "Anonymous", path or "/")
+                if not self.debug_filter & 0x0080:
+                    self.logger.debug(
+                        "%s has write access to collection %s",
+                        user or "Anonymous", path or "/")
                 write_allowed_items.append(item)
             else:
                 self.logger.debug(
@@ -287,7 +292,8 @@ class Application:
             headers = dict(headers)
             # Set content length
             if answer:
-                self.logger.debug("Response content:\n%s", answer)
+                if self.debug and not (self.debug_filter & 0x0004):
+                    self.logger.debug("Response content [%s]:\n%s", self.request_token, answer)
                 answer = answer.encode(self.encoding)
                 accept_encoding = [
                     encoding.strip() for encoding in
@@ -308,14 +314,25 @@ class Application:
                     headers[key] = self.configuration.get("headers", key)
 
             # Start response
-            time_end = datetime.datetime.now()
             status = "%i %s" % (
                 status, client.responses.get(status, "Unknown"))
-            self.logger.info(
-                "%s answer status for %s in %s sec: %s",
-                environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo,
-                (time_end - time_begin).total_seconds(), status)
             start_response(status, list(headers.items()))
+            time_end = datetime.datetime.now()
+            sizeinfo = ""
+            if answer:
+                sizeinfo = sizeinfo + str(len(str(answer))) + " bytes"
+            if "Content-Encoding" in headers:
+                if len(sizeinfo) > 0:
+                    sizeinfo = sizeinfo + " "
+                sizeinfo = sizeinfo + headers["Content-Encoding"]
+            if len(sizeinfo) > 0:
+                sizeinfo = " (" + sizeinfo + ")"
+            self.logger.info(
+                "[%s] %s response status for %s in %.3f sec status: %s",
+                self.request_token,
+                environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo + sizeinfo,
+                (time_end - time_begin).total_seconds(), status)
+            storage.cache_log_statistics_overall(self)
             # Return response content
             return [answer] if answer else []
 
@@ -334,12 +351,20 @@ class Application:
         if environ.get("HTTP_DEPTH"):
             depthinfo = " with depth " + environ["HTTP_DEPTH"]
         time_begin = datetime.datetime.now()
+
+        # Create an unique request token
+        request_token = md5((environ["PATH_INFO"] + depthinfo + remote_host + remote_useragent +str(time_begin)).encode('utf-8')).hexdigest()[1:8]
+        # store token for header/request/response logging
+        self.request_token = request_token
+
         self.logger.info(
-            "%s request for %s received from %s using \"%s\"",
+            "[%s] %s request  for %s received from %s using \"%s\"",
+            self.request_token,
             environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo,
             remote_host, remote_useragent)
-        headers = pprint.pformat(self.headers_log(environ))
-        self.logger.debug("Request headers:\n%s", headers)
+        if self.debug and not (self.debug_filter & 0x0001):
+            headers = pprint.pformat(self.headers_log(environ))
+            self.logger.debug("Request headers [%s]:\n%s", self.request_token, headers)
 
         # Let reverse proxies overwrite SCRIPT_NAME
         if "HTTP_X_SCRIPT_NAME" in environ:
@@ -354,7 +379,8 @@ class Application:
         base_prefix = environ["SCRIPT_NAME"]
         # Sanitize request URI
         environ["PATH_INFO"] = storage.sanitize_path(environ["PATH_INFO"])
-        self.logger.debug("Sanitized path: %s", environ["PATH_INFO"])
+        if not (self.debug_filter & 0x0040):
+            self.logger.debug("Sanitized path: %s", environ["PATH_INFO"])
         path = environ["PATH_INFO"]
 
         # Get function corresponding to method
@@ -450,7 +476,8 @@ class Application:
         if content_length > 0:
             content = self.decode(
                 environ["wsgi.input"].read(content_length), environ)
-            self.logger.debug("Request content:\n%s", content.strip())
+            if self.debug and not (self.debug_filter & 0x0002):
+                self.logger.debug("Request content [%s]:\n%s", self.request_token, content.strip())
         else:
             content = None
         return content
@@ -672,6 +699,9 @@ class Application:
                     parent_item.set_meta({"tag": tag})
                 href = posixpath.basename(path.strip("/"))
                 new_item = parent_item.upload(href, items[0])
+                if not new_item:
+                    # upload not possible because of error
+                    return PRECONDITION_FAILED
             headers = {"ETag": new_item.etag}
             return client.CREATED, headers, None
 

@@ -63,7 +63,7 @@ from importlib import import_module
 def load(configuration, logger):
     """Load the authentication manager chosen in configuration."""
     auth_type = configuration.get("auth", "type")
-    logger.debug("Authentication type is %s", auth_type)
+    logger.info("Authentication type is %s", auth_type)
     if auth_type == "None":
         class_ = NoneAuth
     elif auth_type == "htpasswd":

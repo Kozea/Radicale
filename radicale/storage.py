@@ -36,6 +36,8 @@ import subprocess
 import threading
 import time
 import datetime
+import resource
+import gc
 from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
@@ -89,16 +91,66 @@ elif os.name == "posix":
 def load(configuration, logger):
     """Load the storage manager chosen in configuration."""
     storage_type = configuration.get("storage", "type")
+    logger.info("Radicale storage manager loading: %s", storage_type)
+    debug_filter = int(configuration.get("logging", "debug_filter"), 0)
+    if (debug_filter > 0):
+        logger.info("debug filter active with: 0x%x", debug_filter)
+
     if storage_type == "multifilesystem":
         collection_class = Collection
+        ## initialize cache
+        global Items_cache_active
+        global Props_cache_active
+        global Items_cache_counter
+        global Props_cache_counter
+        if configuration.getboolean("storage", "cache_items"):
+            Items_cache_active = True
+            Items_cache_counter.loginterval = seconds=configuration.getint("logging", "cache_statistics_interval")
+            if configuration.getboolean("logging", "performance"):
+                if Items_cache_active:
+                    logger.info("Items cache enabled (performance log on info level)")
+                    Items_cache_counter.perflog = True
+            else:
+                if (Items_cache_counter.loginterval > 0):
+                    logger.info("Items cache enabled (regular statistics log on info level with minimum interval %d sec)", Items_cache_counter.loginterval)
+                else:
+                    logger.info("Items cache enabled (statistics log only on debug level)")
+        else:
+            logger.info("Items cache disabled")
+        if configuration.getboolean("storage", "cache_props"):
+            Props_cache_active = True
+            Props_cache_counter.loginterval = configuration.getint("logging", "cache_statistics_interval")
+            if configuration.getboolean("logging", "performance"):
+                if Props_cache_active:
+                    logger.info("Props cache enabled (performance log on info level)")
+                    Props_cache_counter.perflog = True
+            else:
+                if (Props_cache_counter.loginterval > 0):
+                    logger.info("Props cache enabled (regular statistics log on info level with minimum interval %d sec)", Props_cache_counter.loginterval)
+                else:
+                    logger.info("Props cache enabled (statistics log only on debug level)")
+        else:
+            logger.info("Props cache disabled")
+        if configuration.getboolean("logging", "performance"):
+            logger.info("General performance log on debug level enabled")
     else:
         collection_class = import_module(storage_type).Collection
+    logger.info("Radicale storage manager successfully loaded: %s", storage_type)
 
     class CollectionCopy(collection_class):
         """Collection copy, avoids overriding the original class attributes."""
     CollectionCopy.configuration = configuration
     CollectionCopy.logger = logger
     return CollectionCopy
+
+
+def cleanup(logger):
+    """Print cache statistics."""
+    logger.info("Cleaning up 'storage'")
+    if Items_cache_active:
+        logger.info("Items cache overall statistics: %s", Items_cache_counter.string_overall())
+    if Props_cache_active:
+        logger.info("Props cache overall statistics: %s", Props_cache_counter.string_overall())
 
 
 def get_etag(text):
@@ -183,6 +235,102 @@ def path_to_filesystem(root, *paths):
     return safe_path
 
 
+### BEGIN Items/Props caching
+## cache counter statistics
+class Cache_counter:
+    def __init__(self):
+        self.lookup = 0
+        self.hit    = 0
+        self.miss   = 0
+        self.dirty  = 0
+        self.entries= 0
+        self.size   = 0
+        self.perflog= False
+        ## cache statistics logging on info level
+        # 0: on each request (incl. current request)
+        # >0: after at least every given loginterval (excl. current request)
+        self.lastlog= datetime.datetime.now()
+        self.loginterval = 60 # default
+
+    def string_overall(self):
+        if (self.entries > 0):
+            message = "lookup=%d hit=%d (%3.2f%%) miss=%d (%3.2f%%) dirty=%d (%3.2f%%) entries=%d memoryKiB=%.3f" % (
+                self.lookup,
+                self.hit,
+                self.hit * 100 / self.lookup,
+                self.miss,
+                self.miss * 100 / self.lookup,
+                self.dirty,
+                self.dirty * 100 / self.lookup,
+                self.entries,
+                self.size / 1024
+            )
+        else:
+            message = "no cache entries"
+        return message 
+
+    def log_overall(self, token, logger):
+        if (self.perflog) or (self.loginterval == 0) or (datetime.datetime.now() - self.lastlog > datetime.timedelta(seconds=self.loginterval)):
+            logger.info("%s cache overall statistics: %s", token, self.string_overall())
+            self.lastlog = datetime.datetime.now()
+        else:
+            logger.debug("%s cache overall statistics: %s", token, self.string_overall())
+
+
+## cache entry
+class Item_cache_entry:
+    def __init__(self, Item, size, last_modified_time):
+        self.Item = Item
+        self.size = size
+        self.last_modified_time = last_modified_time
+
+class Props_cache_entry:
+    def __init__(self, props_contents, size, last_modified_time):
+        self.props_contents = props_contents
+        self.size = size
+        self.last_modified_time = last_modified_time
+
+## cache initialization
+Items_cache_lock = threading.Lock()
+Items_cache_data = {}
+Items_cache_counter = Cache_counter()
+Items_cache_active = False
+
+Props_cache_lock = threading.Lock()
+Props_cache_data = {}
+Props_cache_counter = Cache_counter()
+Props_cache_active = False
+
+## global functions to be called also from other modules
+def cache_log_statistics_overall(self):
+    global Items_cache_counter
+    global Props_cache_counter
+    if Items_cache_active:
+        Items_cache_counter.log_overall("Items", self.logger)
+    if Props_cache_active:
+        Props_cache_counter.log_overall("Props", self.logger)
+    if self.configuration.getboolean("logging", "performance"):
+        # log process statistics
+        rusage = resource.getrusage(resource.RUSAGE_THREAD)
+        self.logger.debug("[%s] ru_utime=%.3f ru_stime=%.3f ru_maxrss=%s ru_inblock=%s ru_oublock=%s", self.request_token,
+            rusage.ru_utime,
+            rusage.ru_stime,
+            rusage.ru_maxrss,
+            rusage.ru_inblock,
+            rusage.ru_oublock)
+        # log garbage collector statistics
+        self.logger.debug("[%s] gc_count=%s gc_threshold=%s gc.unreachable=%d gc.stats.0=%s gc.stats.1=%s gc.stats.2=%s", self.request_token,
+            gc.get_count(),
+            gc.get_threshold(),
+            len(gc.garbage),
+            str(gc.get_stats()[0]),
+            str(gc.get_stats()[1]),
+            str(gc.get_stats()[2]),
+            )
+
+### END Items/Props caching
+
+
 class UnsafePathError(ValueError):
     def __init__(self, path):
         message = "Can't translate name safely to filesystem: %s" % path
@@ -221,6 +369,113 @@ class Item:
     def etag(self):
         """Encoded as quoted-string (see RFC 2616)."""
         return get_etag(self.serialize())
+
+
+### BEGIN Items/Props caching
+## cache counter statistics
+def log_cache_statistics(self):
+    global Item_cache_active
+    global Item_cache_counter
+    global Props_cache_active
+    global Props_cache_counter
+    if Item_cache_active:
+        Item_cache_counter.log("Items", self.logger)
+    if Props_cache_active:
+        Props_cache_counter.log("Props", self.logger)
+
+
+class Cache_counter:
+    def __init__(self):
+        self.lookup = 0
+        self.hit    = 0
+        self.miss   = 0
+        self.dirty  = 0
+        self.entries= 0
+        self.size   = 0
+        self.perflog= False
+        ## cache statistics logging on info level
+        # 0: on each request (incl. current request)
+        # >0: after at least every given loginterval (excl. current request)
+        self.lastlog= datetime.datetime.now()
+        self.loginterval = 60 # default
+
+    def string_overall(self):
+        if (self.entries > 0):
+            message = "lookup=%d hit=%d (%3.2f%%) miss=%d (%3.2f%%) dirty=%d (%3.2f%%) entries=%d memoryKiB=%.3f" % (
+                self.lookup,
+                self.hit,
+                self.hit * 100 / self.lookup,
+                self.miss,
+                self.miss * 100 / self.lookup,
+                self.dirty,
+                self.dirty * 100 / self.lookup,
+                self.entries,
+                self.size / 1024
+            )
+        else:
+            message = "no cache entries"
+        return message
+
+    def log_overall(self, token, logger):
+        if (self.perflog) or (self.loginterval == 0) or (datetime.datetime.now() - self.lastlog > datetime.timedelta(seconds=self.loginterval)):
+            logger.info("%s cache overall statistics: %s", token, self.string_overall())
+            self.lastlog = datetime.datetime.now()
+        else:
+            logger.debug("%s cache overall statistics: %s", token, self.string_overall())
+
+
+## cache entry
+class Item_cache_entry:
+    def __init__(self, Item, size, last_modified_time):
+        self.Item = Item
+        self.size = size
+        self.last_modified_time = last_modified_time
+
+class Props_cache_entry:
+    def __init__(self, props_contents, size, last_modified_time):
+        self.props_contents = props_contents
+        self.size = size
+        self.last_modified_time = last_modified_time
+
+## cache initialization
+Items_cache_lock = threading.Lock()
+Items_cache_data = {}
+Items_cache_counter = Cache_counter()
+Items_cache_active = False
+
+Props_cache_lock = threading.Lock()
+Props_cache_data = {}
+Props_cache_counter = Cache_counter()
+Props_cache_active = False
+
+## global functions to be called also from other modules
+def cache_log_statistics_overall(self):
+    global Items_cache_counter
+    global Props_cache_counter
+    if Items_cache_active:
+        Items_cache_counter.log_overall("Items", self.logger)
+    if Props_cache_active:
+        Props_cache_counter.log_overall("Props", self.logger)
+    if self.configuration.getboolean("logging", "performance"):
+        # log process statistics
+        rusage = resource.getrusage(resource.RUSAGE_THREAD)
+        self.logger.debug("[%s] ru_utime=%.3f ru_stime=%.3f ru_maxrss=%s ru_inblock=%s ru_oublock=%s", self.request_token,
+            rusage.ru_utime,
+            rusage.ru_stime,
+            rusage.ru_maxrss,
+            rusage.ru_inblock,
+            rusage.ru_oublock)
+        # log garbage collector statistics
+        self.logger.debug("[%s] gc_count=%s gc_threshold=%s gc.unreachable=%d gc.stats.0=%s gc.stats.1=%s gc.stats.2=%s", self.request_token,
+            gc.get_count(),
+            gc.get_threshold(),
+            len(gc.garbage),
+            str(gc.get_stats()[0]),
+            str(gc.get_stats()[1]),
+            str(gc.get_stats()[2]),
+            )
+
+### END Items/Props caching
 
 
 class BaseCollection:
@@ -390,6 +645,7 @@ class Collection(BaseCollection):
         split_path = self.path.split("/")
         self.owner = split_path[0] if len(split_path) > 1 else None
         self.is_principal = principal
+        self.debug_filter = int(self.configuration.get("logging", "debug_filter"), 0)
 
     @classmethod
     def _get_collection_root_folder(cls):
@@ -633,6 +889,10 @@ class Collection(BaseCollection):
                 yield href
 
     def get(self, href):
+        global Items_cache_data
+        global Items_cache_counter
+        global Items_cache_active
+        global Items_cache_lock
         if not href:
             return None
         if not is_safe_filesystem_path_component(href):
@@ -642,28 +902,110 @@ class Collection(BaseCollection):
         path = path_to_filesystem(self._filesystem_path, href)
         if not os.path.isfile(path):
             return None
-        with open(path, encoding=self.encoding, newline="") as f:
-            text = f.read()
+        last_modified_time = os.path.getmtime(path)
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
-            time.gmtime(os.path.getmtime(path)))
-        try:
-            item = vobject.readOne(text)
-        except Exception:
-            self.logger.error("Failed to parse component: %s", href)
-            raise
-        return Item(self, item, href, last_modified)
+            time.gmtime(last_modified_time))
+
+        Item_cache_hit = 0
+        if Items_cache_active:
+            Items_cache_lock.acquire()
+
+            # Item cache lookup
+            Items_cache_counter.lookup += 1
+            if path in Items_cache_data:
+                if Items_cache_data[path].last_modified_time == last_modified_time:
+                    Items_cache_counter.hit += 1
+                    Item_cache_hit = 1
+                else:
+                    Items_cache_counter.dirty += 1
+                    # remove from cache
+                    if not self.debug_filter & 0x0200:
+                        self.logger.debug("Item delete from cache (dirty): %s", path)
+                    Items_cache_counter.entries -= 1
+                    Items_cache_counter.size -= Items_cache_data[path].size
+                    del Items_cache_data[path]
+            else:
+                Items_cache_counter.miss += 1
+
+        if Item_cache_hit == 0 or Items_cache_active == False:
+            with open(path, encoding=self.encoding, newline="") as f:
+                text = f.read()
+                if len(text) == 0:
+                    # empty file
+                    self.logger.error("Object empty (skip 'get'): %s", path)
+                    if Items_cache_active:
+                        Items_cache_lock.release()
+                    return None;
+
+            try:
+                if not self.debug_filter & 0x0100:
+                    self.logger.debug("Item read ('get'): %s", path)
+                item = vobject.readOne(text)
+                if not self.debug_filter & 0x0008:
+                    self.logger.debug("Item content ('get'): %s:\n%s", path, str(item))
+            except Exception as e:
+                self.logger.error("Object broken on read (skip 'get'): %s (%s)", path, e)
+                if self.configuration.getboolean("logging", "exceptions"):
+                    self.logger.exception("Exception details:")
+                if Items_cache_active:
+                    Items_cache_lock.release()
+                return None;
+
+            try:
+                # test whether object is parseable
+                item_serialized = item.serialize()
+            except Exception as e:
+                self.logger.error("Object broken on serialize (skip 'get'): %s (%s)", path, e)
+                if self.configuration.getboolean("logging", "exceptions"):
+                    self.logger.exception("Exception details:")
+                if Items_cache_active:
+                    Items_cache_lock.release()
+                return None;
+
+            # temp object not required
+            del item_serialized
+            # retrieve from cache
+            Item_entry = Item(self, item, href, last_modified)
+
+            if Items_cache_active:
+                # store in cache
+                if not self.debug_filter & 0x1000:
+                    self.logger.debug("Item store in cache: %s", path)
+                Items_cache_data[path] = Item_cache_entry(Item_entry, len(str(Item_entry.item)) + len(path), last_modified_time)
+                Items_cache_counter.size += Items_cache_data[path].size
+                Items_cache_counter.entries += 1
+        else:
+            if not self.debug_filter & 0x2000:
+                self.logger.debug("Item retrieve from cache: %s", path)
+            Item_entry = Items_cache_data[path].Item
+
+        if Items_cache_active:
+            Items_cache_lock.release()
+        return Item_entry
 
     def upload(self, href, vobject_item):
         if not is_safe_filesystem_path_component(href):
             raise UnsafePathError(href)
         path = path_to_filesystem(self._filesystem_path, href)
         item = Item(self, vobject_item, href)
+        try:
+            item_serialized = item.serialize()
+        except Exception as e:
+            self.logger.error("Object broken on serialize (skip 'upload'): %s (%s)", href, e)
+            self.logger.error("Item content ('upload'): %s:\n%s", href, str(vobject_item))
+            if self.configuration.getboolean("logging", "exceptions"):
+                self.logger.exception("Exception details:")
+            return None;
         with self._atomic_write(path, newline="") as fd:
-            fd.write(item.serialize())
+            fd.write(item_serialized)
         return item
 
     def delete(self, href=None):
+        global Items_cache_data
+        global Items_cache_counter
+        global Items_cache_active
+        global Items_cache_lock
         if href is None:
             # Delete the collection
             parent_dir = os.path.dirname(self._filesystem_path)
@@ -684,18 +1026,74 @@ class Collection(BaseCollection):
             path = path_to_filesystem(self._filesystem_path, href)
             if not os.path.isfile(path):
                 raise ComponentNotFoundError(href)
+            if Items_cache_active:
+                Items_cache_lock.acquire()
+                if path in Items_cache_data:
+                    # remove from cache, if existing
+                    self.logger.debug("Item delete from cache ('delete'): %s", path)
+                    Items_cache_counter.entries -= 1
+                    Items_cache_counter.size -= Items_cache_data[path].size
+                    del Items_cache_data[path]
             os.remove(path)
+            if Items_cache_active:
+                Items_cache_lock.release()
             self._sync_directory(os.path.dirname(path))
 
     def get_meta(self, key=None):
+        global Props_cache_data
+        global Props_cache_active
+        global Props_cache_counter
+        global Props_cache_lock
         if os.path.exists(self._props_path):
-            with open(self._props_path, encoding=self.encoding) as f:
-                meta = json.load(f)
-                return meta.get(key) if key else meta
+            Props_cache_hit = 0
+            if Props_cache_active:
+                Props_cache_lock.acquire()
+                last_modified_time = os.path.getmtime(self._props_path)
+                # Props cache lookup
+                Props_cache_counter.lookup += 1
+                if self._props_path in Props_cache_data:
+                    if Props_cache_data[self._props_path].last_modified_time == last_modified_time:
+                        Props_cache_counter.hit += 1
+                        Props_cache_hit = 1
+                    else:
+                        Props_cache_counter.dirty += 1
+                        # remove from cache
+                        if not self.debug_filter & 0x0800:
+                            self.logger.debug("Props delete from cache (dirty): %s", self._props_path)
+                        Props_cache_counter.size -= Props_cache_data[self._props_path].size
+                        Props_cache_counter.entries -= 1
+                        del Props_cache_data[self._props_path]
+                else:
+                    Props_cache_counter.miss += 1
+
+            if Props_cache_hit == 0 or Props_cache_active == False:
+                with open(self._props_path, encoding=self.encoding) as f:
+                    if not self.debug_filter & 0x0400:
+                        self.logger.debug("Props read ('get_meta')  : %s", self._props_path)
+                    props_contents = json.load(f)
+
+                if Props_cache_active:
+                    # cache handling
+                    if not self.debug_filter & 0x4000:
+                        self.logger.debug("Props store in cache     : %s", self._props_path)
+                    Props_cache_data[self._props_path] = Props_cache_entry(props_contents, len(str(props_contents)) + len(self._props_path), last_modified_time)
+                    Props_cache_counter.size += Props_cache_data[self._props_path].size
+                    Props_cache_counter.entries += 1
+
+                meta = props_contents.get(key) if key else props_contents
+            else:
+                if not self.debug_filter & 0x8000:
+                    self.logger.debug("Props retrieve from cache: %s", self._props_path)
+                meta = Props_cache_data[self._props_path].props_contents.get(key) if key else Props_cache_data[self._props_path].props_contents
+
+            if Props_cache_active:
+                Props_cache_lock.release()
+            return meta
 
     def set_meta(self, props):
         if os.path.exists(self._props_path):
             with open(self._props_path, encoding=self.encoding) as f:
+                self.logger.debug("Write props ('set_meta'): %s", self._props_path)
                 old_props = json.load(f)
                 old_props.update(props)
                 props = old_props
@@ -717,11 +1115,18 @@ class Collection(BaseCollection):
         items = []
         time_begin = datetime.datetime.now()
         for href in self.list():
-            items.append(self.get(href).item)
+            if hasattr(self.get(href),'item'):
+                items.append(self.get(href).item)
         time_end = datetime.datetime.now()
-        self.logger.info(
-            "Collection read %d items in %s sec from %s", len(items),
-            (time_end - time_begin).total_seconds(), self._filesystem_path)
+        if self.configuration.getboolean("logging", "performance"):
+            self.logger.info(
+                "Collection read %d items in %.3f sec from %s", len(items),
+                (time_end - time_begin).total_seconds(), self._filesystem_path)
+        else:
+            self.logger.debug(
+                "Collection read %d items in %.3f sec from %s", len(items),
+                (time_end - time_begin).total_seconds(), self._filesystem_path)
+        result = ""
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
             for item in items:
@@ -730,10 +1135,20 @@ class Collection(BaseCollection):
                         for item_part in getattr(item, "%s_list" % content):
                             collection.add(item_part)
                         break
-            return collection.serialize()
+            try:
+                result = collection.serialize()
+            except:
+                self.logger.error("VCALENDAR collection serializing broken: %s (%s)", self._filesystem_path, e)
+                if self.configuration.getboolean("logging", "exceptions"):
+                    self.logger.exception("Exception details:")
         elif self.get_meta("tag") == "VADDRESSBOOK":
-            return "".join([item.serialize() for item in items])
-        return ""
+            try:
+                result = "".join([item.serialize() for item in items])
+            except:
+                self.logger.error("VADDRESSBOOK collection serializing broken: %s (%s)", self._filesystem_path, e)
+                if self.configuration.getboolean("logging", "exceptions"):
+                    self.logger.exception("Exception details:")
+        return result
 
     _lock = threading.Lock()
     _waiters = []

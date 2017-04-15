@@ -92,6 +92,7 @@ class BaseRights:
     def __init__(self, configuration, logger):
         self.configuration = configuration
         self.logger = logger
+        self.debug_filter = int(configuration.get("logging", "debug_filter"), 0)
 
     def authorized(self, user, collection, permission):
         """Check if the user is allowed to read or write the collection.
@@ -123,7 +124,8 @@ class Rights(BaseRights):
             self.logger.debug("Rights type '%s'", self.rights_type)
             regex.readfp(StringIO(DEFINED_RIGHTS[self.rights_type]))
         else:
-            self.logger.debug("Reading rights from file '%s'", self.filename)
+            if not self.debug_filter & 0x0080:
+                self.logger.debug("Reading rights from file '%s'", self.filename)
             if not regex.read(self.filename):
                 self.logger.error(
                     "File '%s' not found for rights", self.filename)
@@ -132,17 +134,20 @@ class Rights(BaseRights):
         for section in regex.sections():
             re_user = regex.get(section, "user")
             re_collection = regex.get(section, "collection")
-            self.logger.debug(
-                "Test if '%s:%s' matches against '%s:%s' from section '%s'",
-                user, sane_path, re_user, re_collection, section)
+            if not self.debug_filter & 0x0080:
+                self.logger.debug(
+                    "Test if '%s:%s' matches against '%s:%s' from section '%s'",
+                    user, sane_path, re_user, re_collection, section)
             # Emulate fullmatch
             user_match = re.match(r"(?:%s)\Z" % re_user, user)
             if user_match:
                 re_collection = re_collection.format(*user_match.groups())
                 # Emulate fullmatch
                 if re.match(r"(?:%s)\Z" % re_collection, sane_path):
-                    self.logger.debug("Section '%s' matches", section)
+                    if not self.debug_filter & 0x0080:
+                        self.logger.debug("Section '%s' matches", section)
                     return permission in regex.get(section, "permission")
                 else:
-                    self.logger.debug("Section '%s' does not match", section)
+                    if not self.debug_filter & 0x0080:
+                        self.logger.debug("Section '%s' does not match", section)
         return False

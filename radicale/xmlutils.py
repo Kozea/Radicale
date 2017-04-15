@@ -679,7 +679,7 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
             element.append(privilege)
         elif tag == _tag("D", "supported-report-set"):
             for report_name in (
-                    "principal-property-search", "sync-collection",
+                    "principal-property-search",
                     "expand-property", "principal-search-property-set"):
                 supported = ET.Element(_tag("D", "supported-report"))
                 report_tag = ET.Element(_tag("D", "report"))
