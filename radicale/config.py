@@ -31,7 +31,7 @@ from configparser import RawConfigParser as ConfigParser
 INITIAL_CONFIG = OrderedDict([
     ("server", OrderedDict([
         ("hosts", {
-            "value": "0.0.0.0:5232",
+            "value": "127.0.0.1:5232",
             "help": "set server hostnames including ports",
             "aliases": ["-H", "--hosts"]}),
         ("daemon", {
@@ -58,15 +58,15 @@ INITIAL_CONFIG = OrderedDict([
             "aliases": ["-s", "--ssl"],
             "opposite": ["-S", "--no-ssl"]}),
         ("certificate", {
-            "value": "/etc/apache2/ssl/server.crt",
+            "value": "/etc/ssl/radicale.cert.pem",
             "help": "set certificate file",
             "aliases": ["-c", "--certificate"]}),
         ("key", {
-            "value": "/etc/apache2/ssl/server.key",
+            "value": "/etc/ssl/radicale.key.pem",
             "help": "set private key file",
             "aliases": ["-k", "--key"]}),
         ("protocol", {
-            "value": "PROTOCOL_SSLv23",
+            "value": "PROTOCOL_TLSv1_2",
             "help": "SSL protocol used"}),
         ("ciphers", {
             "value": "",
@@ -92,14 +92,14 @@ INITIAL_CONFIG = OrderedDict([
             "value": "/etc/radicale/users",
             "help": "htpasswd filename"}),
         ("htpasswd_encryption", {
-            "value": "crypt",
+            "value": "bcrypt",
             "help": "htpasswd encryption method"})])),
     ("rights", OrderedDict([
         ("type", {
-            "value": "None",
+            "value": "owner_only",
             "help": "rights backend"}),
         ("file", {
-            "value": "~/.config/radicale/rights",
+            "value": "/etc/radicale/rights",
             "help": "file for rights management from_file"})])),
     ("storage", OrderedDict([
         ("type", {
@@ -107,7 +107,7 @@ INITIAL_CONFIG = OrderedDict([
             "help": "storage backend"}),
         ("filesystem_folder", {
             "value": os.path.expanduser(
-                "~/.config/radicale/collections"),
+                "/var/lib/radicale/collections"),
             "help": "file for rights management from_file"}),
         ("filesystem_fsync", {
             "value": "True",
