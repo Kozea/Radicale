@@ -49,7 +49,7 @@ import vobject
 
 from . import auth, rights, storage, xmlutils
 
-VERSION = "2.0.0rc0"
+VERSION = "2.0.0rc1"
 
 NOT_ALLOWED = (
     client.FORBIDDEN, (("Content-Type", "text/plain"),),

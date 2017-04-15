@@ -3,6 +3,32 @@
 ======
 
 
+2.0.0 - Little Big Radish
+=========================
+
+This feature is not compatible with the 1.x.x versions. See
+http://kozea.github.io/Radicale/1to2/ if you want to switch from 1.x.x to
+2.0.0.
+
+* Support Python 3.3+ only, Python 2 is not supported anymore
+* Keep only one simple filesystem-based storage system
+* Remove built-in Git support
+* Remove built-in authentication modules
+* Keep the WSGI interface, use Python HTTP server by default
+* Use a real iCal parser, rely on the "vobject" external module
+* Add a solid calendar discovery
+* Respect the difference between "files" and "folders", don't rely on slashes
+* Remove the calendar creation with GET requests
+* Be stateless
+* Use a file locker
+* Add threading
+* Get atomic writes
+* Support new filters
+* Support read-only permissions
+* Allow External plugins for authentication, rights management, storage and
+  version control
+
+
 1.1.1 - Second Law of Nature
 ============================
 
