@@ -26,5 +26,7 @@ from radicale import Application, config, log
 
 
 configuration = config.load([os.environ.get("RADICALE_CONFIG")])
-logger = log.start()
+filename = os.path.expanduser(configuration.get("logging", "config"))
+debug = configuration.getboolean("logging", "debug")
+logger = log.start("radicale", filename, debug)
 application = Application(configuration, logger)
