@@ -108,7 +108,7 @@ INITIAL_CONFIG = OrderedDict([
         ("filesystem_folder", {
             "value": os.path.expanduser(
                 "/var/lib/radicale/collections"),
-            "help": "file for rights management from_file"}),
+            "help": "path where collections are stored"}),
         ("filesystem_fsync", {
             "value": "True",
             "help": "sync all changes to filesystem during requests"}),
