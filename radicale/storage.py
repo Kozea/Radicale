@@ -107,7 +107,7 @@ def get_etag(text):
 
     """
     etag = md5()
-    etag.update(text.encode("utf-8"))
+    etag.update(u'\r\n'.join(text.splitlines()).encode("utf-8"))
     return '"%s"' % etag.hexdigest()
 
 
