@@ -56,7 +56,8 @@ following significantly more secure schemes are parsable by Radicale:
 import base64
 import hashlib
 import os
-
+import random
+import time
 
 from .. import config
 
@@ -161,7 +162,10 @@ def is_authenticated(user, password):
             if strippedline:
                 login, hash_value = strippedline.split(":")
                 if login == user:
-                    # Allow encryption method to be overridden at runtime.
-                    return _verifuncs[ENCRYPTION](hash_value, password)
+                    if _verifuncs[ENCRYPTION](hash_value, password):
+                        # Allow encryption method to be overridden at runtime.
+                        return True
+    # Random timer to avoid timing oracles and simple bruteforce attacks
+    time.sleep(1 + random.random())
     return False
 
