@@ -3,6 +3,14 @@
 ======
 
 
+1.1.2 - Third Law of Nature
+===========================
+
+* **Security fix**: Add a random timer to avoid timing oracles and simple
+  bruteforce attacks when using the htpasswd authentication method.
+* Various minor fixes.
+
+
 1.1.1 - Second Law of Nature
 ============================
 
