@@ -1052,7 +1052,10 @@ class Collection(BaseCollection):
     def etag(self):
         # reuse cached value if the storage is read-only
         if self._writer or self._etag is None:
-            self._etag = super().etag
+            etag = md5()
+            for item in self.get_all():
+                etag.update((item.href + "/" + item.etag).encode("utf-8"))
+            self._etag = '"%s"' % etag.hexdigest()
         return self._etag
 
     _lock = threading.Lock()
