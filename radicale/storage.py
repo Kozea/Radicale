@@ -47,6 +47,10 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import vobject
 
+if sys.version_info >= (3, 5):
+    # HACK: Avoid import cycle for Python < 3.5
+    from . import xmlutils
+
 if os.name == "nt":
     import ctypes
     import ctypes.wintypes
@@ -89,6 +93,10 @@ elif os.name == "posix":
 
 def load(configuration, logger):
     """Load the storage manager chosen in configuration."""
+    if sys.version_info < (3, 5):
+        # HACK: Avoid import cycle for Python < 3.5
+        global xmlutils
+        from . import xmlutils
     storage_type = configuration.get("storage", "type")
     if storage_type == "multifilesystem":
         collection_class = Collection
@@ -927,7 +935,15 @@ class Collection(BaseCollection):
                 continue
             yield href
 
+    _item_cache_cleaned = False
+
     def get(self, href, verify_href=True):
+        item, metadata = self._get_with_metadata(href, verify_href=verify_href)
+        return item
+
+    def _get_with_metadata(self, href, verify_href=True):
+        # Like ``get`` but additonally returns the following metadata:
+        # tag, start, end: see ``xmlutils.find_tag_and_time_range``
         if verify_href:
             try:
                 if not is_safe_filesystem_path_component(href):
@@ -937,19 +953,58 @@ class Collection(BaseCollection):
                 self.logger.debug(
                     "Can't translate name %r safely to filesystem in %r: %s",
                     href, self.path, e, exc_info=True)
-                return None
+                return None, None
         else:
             path = os.path.join(self._filesystem_path, href)
         try:
-            with open(path, encoding=self.encoding, newline="") as f:
-                text = f.read()
+            with open(path, "rb") as f:
+                btext = f.read()
         except (FileNotFoundError, IsADirectoryError):
-            return None
+            return None, None
+        # The hash of the component in the file system. This is used to check,
+        # if the entry in the cache is still valid.
+        input_hash = md5()
+        input_hash.update(btext)
+        input_hash = input_hash.hexdigest()
+        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
+                                    "item")
+        try:
+            with open(os.path.join(cache_folder, href), "rb") as f:
+                cinput_hash, cetag, ctext, ctag, cstart, cend = pickle.load(f)
+        except FileNotFoundError:
+            cinput_hash = cetag = ctext = ctag = cstart = cend = None
+        vobject_item = None
+        if input_hash != cinput_hash:
+            vobject_item = Item(self, href,
+                                text=btext.decode(self.encoding)).item
+            ctext = vobject_item.serialize()
+            cetag = get_etag(ctext)
+            ctag, cstart, cend = xmlutils.find_tag_and_time_range(vobject_item)
+            self._makedirs_synced(cache_folder)
+            try:
+                # Race: Other processes might have created and locked the
+                # file.
+                with self._atomic_write(os.path.join(cache_folder, href),
+                                        "wb") as f:
+                    pickle.dump((input_hash, cetag, ctext,
+                                 ctag, cstart, cend), f)
+            except PermissionError:
+                pass
+            # Clean cache entries (max once per request)
+            if not self._item_cache_cleaned:
+                self._item_cache_cleaned = True
+
+                def is_invalid_href(href):
+                    return not os.path.isfile(
+                        os.path.join(self._filesystem_path, href))
+
+                self._clean_cache(cache_folder, filter(
+                    is_invalid_href, scandir(cache_folder)))
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
-        vobject_item = Item(self, href, text=text).item
-        return Item(self, href, last_modified=last_modified, item=vobject_item)
+        return Item(self, href, last_modified=last_modified, etag=cetag,
+                    text=ctext, item=vobject_item), (ctag, cstart, cend)
 
     def get_multi(self, hrefs):
         # It's faster to check for file name collissions here, because
@@ -972,6 +1027,18 @@ class Collection(BaseCollection):
         # We don't need to check for collissions, because the the file names
         # are from os.listdir.
         return map(lambda x: self.get(x, verify_href=False), self.list())
+
+    def pre_filtered_list(self, filters):
+        tag, start, end = xmlutils.simplify_prefilters(filters)
+        if not tag:
+            # no filter
+            yield from self.get_all()
+            return
+        for item, (itag, istart, iend) in map(
+                lambda x: self._get_with_metadata(x, verify_href=False),
+                self.list()):
+            if tag == itag and istart < end and iend > start:
+                yield item
 
     def upload(self, href, vobject_item):
         if not is_safe_filesystem_path_component(href):
