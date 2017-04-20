@@ -449,6 +449,7 @@ class Collection(BaseCollection):
         self.owner = split_path[0] if len(split_path) > 1 else None
         self.is_principal = principal
         self._meta = None
+        self._etag = None
 
     @classmethod
     def _get_collection_root_folder(cls):
@@ -1019,6 +1020,13 @@ class Collection(BaseCollection):
         elif self.get_meta("tag") == "VADDRESSBOOK":
             return "".join([item.serialize() for item in items])
         return ""
+
+    @property
+    def etag(self):
+        # reuse cached value if the storage is read-only
+        if self._writer or self._etag is None:
+            self._etag = super().etag
+        return self._etag
 
     _lock = threading.Lock()
     _waiters = []
