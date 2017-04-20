@@ -891,70 +891,86 @@ def report(base_prefix, path, xml_request, collection):
         root.findall("./%s" % _tag("C", "filter")) +
         root.findall("./%s" % _tag("CR", "filter")))
 
-    for hreference in hreferences:
-        try:
-            name = name_from_path(hreference, collection)
-        except ValueError as e:
-            collection.logger.warning("Skipping invalid path %r in REPORT "
-                                      "request on %r: %s", hreference, path, e)
-            response = _item_response(base_prefix, hreference,
-                                      found_item=False)
-            multistatus.append(response)
-            continue
-        if name:
-            # Reference is an item
-            item = collection.get(name)
+    def retrieve_items(collection, hreferences, multistatus):
+        """Retrieves all items that are referenced in ``hreferences`` from
+           ``collection`` and adds 404 responses for missing and invalid items
+           to ``multistatus``."""
+        collection_requested = False
+
+        def get_names():
+            """Extracts all names from references in ``hreferences`` and adds
+               404 responses for invalid references to ``multistatus``.
+               If the whole collections is referenced ``collection_requested``
+               gets set to ``True``."""
+            nonlocal collection_requested
+            for hreference in hreferences:
+                try:
+                    name = name_from_path(hreference, collection)
+                except ValueError as e:
+                    collection.logger.warning(
+                        "Skipping invalid path %r in REPORT request on %r: %s",
+                        hreference, path, e)
+                    response = _item_response(base_prefix, hreference,
+                                              found_item=False)
+                    multistatus.append(response)
+                    continue
+                if name:
+                    # Reference is an item
+                    yield name
+                else:
+                    # Reference is a collection
+                    collection_requested = True
+
+        for name, item in collection.get_multi(get_names()):
             if not item:
-                response = _item_response(base_prefix, hreference,
+                uri = "/" + posixpath.join(collection.path, name)
+                response = _item_response(base_prefix, uri,
                                           found_item=False)
                 multistatus.append(response)
-                continue
-            items = [item]
-        else:
-            # Reference is a collection
-            items = collection.pre_filtered_list(filters)
+            else:
+                yield item
+        if collection_requested:
+            yield from collection.pre_filtered_list(filters)
 
-        for item in items:
-            if not item:
-                continue
-            if filters:
-                try:
-                    match = (_comp_match
-                             if collection.get_meta("tag") == "VCALENDAR"
-                             else _prop_match)
-                    if not all(match(item, filter_[0]) for filter_ in filters
-                               if filter_):
-                        continue
-                except Exception as e:
-                    raise RuntimeError("Failed to filter item %r from %r: %s" %
-                                       (collection.path, item.href, e)) from e
+    for item in retrieve_items(collection, hreferences, multistatus):
+        if filters:
+            match = (
+                _comp_match if collection.get_meta("tag") == "VCALENDAR"
+                else _prop_match)
+            try:
+                if not all(match(item, filter_[0]) for filter_ in filters
+                           if filter_):
+                    continue
+            except Exception as e:
+                raise RuntimeError("Failed to filter item %r from %r: %s" %
+                                   (collection.path, item.href, e)) from e
 
-            found_props = []
-            not_found_props = []
+        found_props = []
+        not_found_props = []
 
-            for tag in props:
-                element = ET.Element(tag)
-                if tag == _tag("D", "getetag"):
-                    element.text = item.etag
-                    found_props.append(element)
-                elif tag == _tag("D", "getcontenttype"):
-                    name = item.name.lower()
-                    mimetype = (
-                        "text/vcard" if name == "vcard" else "text/calendar")
-                    element.text = "%s; component=%s" % (mimetype, name)
-                    found_props.append(element)
-                elif tag in (
-                        _tag("C", "calendar-data"),
-                        _tag("CR", "address-data")):
-                    element.text = item.serialize()
-                    found_props.append(element)
-                else:
-                    not_found_props.append(element)
+        for tag in props:
+            element = ET.Element(tag)
+            if tag == _tag("D", "getetag"):
+                element.text = item.etag
+                found_props.append(element)
+            elif tag == _tag("D", "getcontenttype"):
+                name = item.name.lower()
+                mimetype = (
+                    "text/vcard" if name == "vcard" else "text/calendar")
+                element.text = "%s; component=%s" % (mimetype, name)
+                found_props.append(element)
+            elif tag in (
+                    _tag("C", "calendar-data"),
+                    _tag("CR", "address-data")):
+                element.text = item.serialize()
+                found_props.append(element)
+            else:
+                not_found_props.append(element)
 
-            uri = "/" + posixpath.join(collection.path, item.href)
-            multistatus.append(_item_response(
-                base_prefix, uri, found_props=found_props,
-                not_found_props=not_found_props, found_item=True))
+        uri = "/" + posixpath.join(collection.path, item.href)
+        multistatus.append(_item_response(
+            base_prefix, uri, found_props=found_props,
+            not_found_props=not_found_props, found_item=True))
 
     return client.MULTI_STATUS, multistatus
 
