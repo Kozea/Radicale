@@ -36,6 +36,7 @@ import posixpath
 import shlex
 import stat
 import subprocess
+import sys
 import threading
 import time
 from contextlib import contextmanager
@@ -105,6 +106,27 @@ def load(configuration, logger):
     CollectionCopy.configuration = configuration
     CollectionCopy.logger = logger
     return CollectionCopy
+
+
+def scandir(path, only_dirs=False, only_files=False):
+    """Iterator for directory elements. (For compatibility with Python < 3.5)
+
+    ``only_dirs`` only return directories
+
+    ``only_files`` only return files
+
+    """
+    if sys.version_info >= (3, 5):
+        for entry in os.scandir(path):
+            if ((not only_files or entry.is_file()) and
+                    (not only_dirs or entry.is_dir())):
+                yield entry.name
+    else:
+        for name in os.listdir(path):
+            p = os.path.join(path, name)
+            if ((not only_files or os.path.isfile(p)) and
+                    (not only_dirs or os.path.isdir(p))):
+                yield name
 
 
 def get_etag(text):
@@ -183,9 +205,9 @@ def path_to_filesystem(root, *paths):
             safe_path = os.path.join(safe_path, part)
             # Check for conflicting files (e.g. case-insensitive file systems
             # or short names on Windows file systems)
-            if os.path.lexists(safe_path):
-                if part not in os.listdir(safe_path_parent):
-                    raise CollidingPathError(part)
+            if (os.path.lexists(safe_path) and
+                    part not in scandir(safe_path_parent)):
+                raise CollidingPathError(part)
     return safe_path
 
 
@@ -545,7 +567,7 @@ class Collection(BaseCollection):
         for item in collection.list():
             yield collection.get(item)
 
-        for href in os.listdir(filesystem_path):
+        for href in scandir(filesystem_path, only_dirs=True):
             if not is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
                     cls.logger.debug("Skipping collection %r in %r", href,
@@ -847,15 +869,13 @@ class Collection(BaseCollection):
         return token, changes
 
     def list(self):
-        for href in os.listdir(self._filesystem_path):
+        for href in scandir(self._filesystem_path, only_files=True):
             if not is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
                     self.logger.debug(
                         "Skipping item %r in %r", href, self.path)
                 continue
-            path = os.path.join(self._filesystem_path, href)
-            if os.path.isfile(path):
-                yield href
+            yield href
 
     def get(self, href, verify_href=True):
         if verify_href:
