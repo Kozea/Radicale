@@ -329,14 +329,17 @@ class BaseCollection:
         raise NotImplementedError
 
     def get_multi(self, hrefs):
-        """Fetch multiple items. Duplicate hrefs must be ignored.
+        """Fetch multiple items.
 
         Functionally similar to ``get``, but might bring performance benefits
-        on some storages when used cleverly.
+        on some storages when used cleverly. It's not required to return the
+        requested items in the correct order. Duplicated hrefs can be ignored.
+
+        Returns tuples with the href and the item or None if the item doesn't
+        exist.
 
         """
-        for href in set(hrefs):
-            yield self.get(href)
+        return map(lambda href: (href, self.get(href)), hrefs)
 
     def pre_filtered_list(self, filters):
         """List collection items with optional pre filtering.
