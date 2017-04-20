@@ -870,10 +870,11 @@ class Collection(BaseCollection):
                 return None
         else:
             path = os.path.join(self._filesystem_path, href)
-        if not os.path.isfile(path):
+        try:
+            with open(path, encoding=self.encoding, newline="") as f:
+                text = f.read()
+        except (FileNotFoundError, IsADirectoryError):
             return None
-        with open(path, encoding=self.encoding, newline="") as f:
-            text = f.read()
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
