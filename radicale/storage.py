@@ -870,6 +870,33 @@ class Collection(BaseCollection):
                 changes.append(href)
         return token, changes
 
+    @classmethod
+    def _clean_cache(cls, folder, names, max_age=None):
+        # Delete all ``names`` in ``folder`` that are older than ``max_age``.
+        age_limit = time.time() - max_age if max_age is not None else None
+        modified = False
+        for name in names:
+            if not is_safe_filesystem_path_component(name):
+                continue
+            if age_limit is not None:
+                try:
+                    # Race: Another process might have deleted the file.
+                    mtime = os.path.getmtime(os.path.join(folder, name))
+                except FileNotFoundError:
+                    continue
+                if mtime > age_limit:
+                    continue
+            cls.logger.debug("Found expired item in cache: %s", name)
+            # Race: Another process might have deleted or locked the
+            # file.
+            try:
+                os.remove(os.path.join(folder, name))
+            except (FileNotFoundError, PermissionError):
+                continue
+            modified = True
+        if modified:
+            cls._sync_directory(folder)
+
     def list(self):
         for href in scandir(self._filesystem_path, only_files=True):
             if not is_safe_filesystem_path_component(href):
