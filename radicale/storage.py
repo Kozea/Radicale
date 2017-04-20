@@ -235,19 +235,41 @@ class ComponentNotFoundError(ValueError):
 
 
 class Item:
-    def __init__(self, collection, item, href, last_modified=None):
+    def __init__(self, collection, href, last_modified=None,
+                 text=None, item=None, etag=None):
+        if text is None and item is None:
+            raise ValueError("text and item are not set")
         self.collection = collection
-        self.item = item
         self.href = href
         self.last_modified = last_modified
+        self._text = text
+        self._item = item
+        self._etag = etag
 
     def __getattr__(self, attr):
         return getattr(self.item, attr)
 
+    def serialize(self):
+        if self._text is None:
+            self._text = self.item.serialize()
+        return self._text
+
+    @property
+    def item(self):
+        if self._item is None:
+            try:
+                self._item = vobject.readOne(self._text)
+            except Exception as e:
+                raise RuntimeError("Failed to parse item %r in %r" %
+                                   (self.href, self.collection.path)) from e
+        return self._item
+
     @property
     def etag(self):
         """Encoded as quoted-string (see RFC 2616)."""
-        return get_etag(self.serialize())
+        if self._etag is None:
+            self._etag = get_etag(self.serialize())
+        return self._etag
 
 
 class BaseCollection:
@@ -926,12 +948,8 @@ class Collection(BaseCollection):
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
-        try:
-            item = vobject.readOne(text)
-        except Exception as e:
-            raise RuntimeError("Failed to parse item %r in %r" %
-                               (href, self.path)) from e
-        return Item(self, item, href, last_modified)
+        vobject_item = Item(self, href, text=text).item
+        return Item(self, href, last_modified=last_modified, item=vobject_item)
 
     def get_multi(self, hrefs):
         # It's faster to check for file name collissions here, because
@@ -959,7 +977,7 @@ class Collection(BaseCollection):
         if not is_safe_filesystem_path_component(href):
             raise UnsafePathError(href)
         path = path_to_filesystem(self._filesystem_path, href)
-        item = Item(self, vobject_item, href)
+        item = Item(self, href, item=vobject_item)
         with self._atomic_write(path, newline="") as fd:
             fd.write(item.serialize())
         # Track the change
