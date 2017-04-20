@@ -341,6 +341,15 @@ class BaseCollection:
         """
         return map(lambda href: (href, self.get(href)), hrefs)
 
+    def get_all(self):
+        """Fetch all items.
+
+        Functionally similar to ``get``, but might bring performance benefits
+        on some storages when used cleverly.
+
+        """
+        return map(self.get, self.list())
+
     def pre_filtered_list(self, filters):
         """List collection items with optional pre filtering.
 
@@ -348,7 +357,7 @@ class BaseCollection:
         the filters and this implementation.
         This returns all event by default
         """
-        return [self.get(href) for href in self.list()]
+        return self.get_all()
 
     def has(self, href):
         """Check if an item exists by its href.
