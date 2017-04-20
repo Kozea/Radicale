@@ -858,11 +858,14 @@ class Collection(BaseCollection):
                 yield href
 
     def get(self, href):
-        if not is_safe_filesystem_path_component(href):
+        try:
+            if not is_safe_filesystem_path_component(href):
+                raise UnsafePathError(href)
+            path = path_to_filesystem(self._filesystem_path, href)
+        except ValueError as e:
             self.logger.debug("Can't translate name %r safely to filesystem "
-                              "in %r", href, self.path)
+                              "in %r: %s", href, self.path, e, exc_info=True)
             return None
-        path = path_to_filesystem(self._filesystem_path, href)
         if not os.path.isfile(path):
             return None
         with open(path, encoding=self.encoding, newline="") as f:
