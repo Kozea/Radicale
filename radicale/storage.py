@@ -940,11 +940,10 @@ class Collection(BaseCollection):
 
     @property
     def last_modified(self):
-        relevant_files = [self._filesystem_path] + [
-            path_to_filesystem(self._filesystem_path, href)
-            for href in self.list()]
-        if os.path.exists(self._props_path):
-            relevant_files.append(self._props_path)
+        relevant_files = chain(
+            (self._filesystem_path,),
+            (self._props_path,) if os.path.exists(self._props_path) else (),
+            map(lambda x: os.path.join(self._filesystem_path, x), self.list()))
         last = max(map(os.path.getmtime, relevant_files))
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(last))
 
