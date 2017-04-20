@@ -857,15 +857,19 @@ class Collection(BaseCollection):
             if os.path.isfile(path):
                 yield href
 
-    def get(self, href):
-        try:
-            if not is_safe_filesystem_path_component(href):
-                raise UnsafePathError(href)
-            path = path_to_filesystem(self._filesystem_path, href)
-        except ValueError as e:
-            self.logger.debug("Can't translate name %r safely to filesystem "
-                              "in %r: %s", href, self.path, e, exc_info=True)
-            return None
+    def get(self, href, verify_href=True):
+        if verify_href:
+            try:
+                if not is_safe_filesystem_path_component(href):
+                    raise UnsafePathError(href)
+                path = path_to_filesystem(self._filesystem_path, href)
+            except ValueError as e:
+                self.logger.debug(
+                    "Can't translate name %r safely to filesystem in %r: %s",
+                    href, self.path, e, exc_info=True)
+                return None
+        else:
+            path = os.path.join(self._filesystem_path, href)
         if not os.path.isfile(path):
             return None
         with open(path, encoding=self.encoding, newline="") as f:
@@ -879,6 +883,28 @@ class Collection(BaseCollection):
             raise RuntimeError("Failed to parse item %r in %r" %
                                (href, self.path)) from e
         return Item(self, item, href, last_modified)
+
+    def get_multi(self, hrefs):
+        # It's faster to check for file name collissions here, because
+        # we only need to call os.listdir once.
+        files = None
+        for href in hrefs:
+            if files is None:
+                # Only list dir when hrefs is not empty
+                files = os.listdir(self._filesystem_path)
+            path = os.path.join(self._filesystem_path, href)
+            if (not is_safe_filesystem_path_component(href) or
+                    href not in files and os.path.lexists(path)):
+                self.logger.debug(
+                    "Can't translate name safely to filesystem: %s", href)
+                yield (href, None)
+            else:
+                yield (href, self.get(href, verify_href=False))
+
+    def get_all(self):
+        # We don't need to check for collissions, because the the file names
+        # are from os.listdir.
+        return map(lambda x: self.get(x, verify_href=False), self.list())
 
     def upload(self, href, vobject_item):
         if not is_safe_filesystem_path_component(href):
