@@ -448,6 +448,7 @@ class Collection(BaseCollection):
         split_path = self.path.split("/")
         self.owner = split_path[0] if len(split_path) > 1 else None
         self.is_principal = principal
+        self._meta = None
 
     @classmethod
     def _get_collection_root_folder(cls):
@@ -967,24 +968,26 @@ class Collection(BaseCollection):
             self._clean_history_cache()
 
     def get_meta(self, key=None):
-        if os.path.exists(self._props_path):
-            with open(self._props_path, encoding=self.encoding) as f:
-                try:
-                    meta = json.load(f)
-                except ValueError as e:
-                    raise RuntimeError("Failed to load properties of collect"
-                                       "ion %r: %s" % (self.path, e)) from e
-                return meta.get(key) if key else meta
+        # reuse cached value if the storage is read-only
+        if self._writer or self._meta is None:
+            try:
+                with open(self._props_path, encoding=self.encoding) as f:
+                    self._meta = json.load(f)
+            except FileNotFoundError:
+                self._meta = {}
+            except ValueError as e:
+                raise RuntimeError("Failed to load properties of collect"
+                                   "ion %r: %s" % (self.path, e)) from e
+        return self._meta.get(key) if key else self._meta
 
     def set_meta(self, props):
-        if os.path.exists(self._props_path):
-            with open(self._props_path, encoding=self.encoding) as f:
-                old_props = json.load(f)
-                old_props.update(props)
-                props = old_props
-        props = {key: value for key, value in props.items() if value}
-        with self._atomic_write(self._props_path, "w+") as f:
-            json.dump(props, f)
+        new_props = self.get_meta()
+        new_props.update(props)
+        for key in tuple(new_props.keys()):
+            if not new_props[key]:
+                del new_props[key]
+        with self._atomic_write(self._props_path, "w") as f:
+            json.dump(new_props, f)
 
     @property
     def last_modified(self):
