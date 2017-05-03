@@ -28,7 +28,7 @@ You can download the Radicale package for each release:
 
 {% assign releases = site.github.releases | where:"draft",false | reverse %}
 {% for release in releases %}
-- [Radicale-{{ release.tag_name }}.tar.gz](http://pypi.python.org/packages/source/R/Radicale/Radicale-{{ release.tag_name }}.tar.gz){% endfor %}
+- [Radicale-{{ release.tag_name }}.tar.gz](https://files.pythonhosted.org/packages/source/R/Radicale/Radicale-{{ release.tag_name }}.tar.gz){% endfor %}
 
 ## Linux Distribution Packages
 
