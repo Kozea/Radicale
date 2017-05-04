@@ -109,7 +109,7 @@
 #filesystem_close_lock_file = False
 
 # Command that is run after changes to storage
-# Example: git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
+# Example: ([ -d .git ] || git init) && git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
 #hook =
 
 
