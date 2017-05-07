@@ -289,8 +289,10 @@ class Application:
             headers = dict(headers)
             # Set content length
             if answer:
-                self.logger.debug("Response content:\n%s", answer)
-                answer = answer.encode(self.encoding)
+                if hasattr(answer, "encode"):
+                    self.logger.debug("Response content:\n%s", answer)
+                    headers["Content-Type"] += "; charset=%s" % self.encoding
+                    answer = answer.encode(self.encoding)
                 accept_encoding = [
                     encoding.strip() for encoding in
                     environ.get("HTTP_ACCEPT_ENCODING", "").split(",")
@@ -302,7 +304,6 @@ class Application:
                     headers["Content-Encoding"] = "gzip"
 
                 headers["Content-Length"] = str(len(answer))
-                headers["Content-Type"] += "; charset=%s" % self.encoding
 
             # Add extra headers set in configuration
             if self.configuration.has_section("headers"):
