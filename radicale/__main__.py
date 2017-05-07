@@ -158,7 +158,6 @@ def daemonize(configuration, logger):
 
 def serve(configuration, logger):
     """Serve radicale from configuration."""
-    daemonize(configuration, logger)
     logger.info("Starting Radicale")
 
     # Create collection servers
@@ -234,6 +233,7 @@ def serve(configuration, logger):
     else:
         # Fallback to busy waiting
         select_timeout = 1.0
+    daemonize(configuration, logger)
     logger.debug("Radicale server ready")
     while not shutdown_program:
         try:
