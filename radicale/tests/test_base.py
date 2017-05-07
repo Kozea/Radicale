@@ -20,7 +20,6 @@ Radicale tests with simple requests.
 """
 
 import base64
-import logging
 import os
 import posixpath
 import shutil
@@ -868,7 +867,6 @@ class BaseFileSystemTest(BaseTest):
     def setup(self):
         self.configuration = config.load()
         self.configuration.set("storage", "type", self.storage_type)
-        self.logger = logging.getLogger("radicale_test")
         self.colpath = tempfile.mkdtemp()
         self.configuration.set("storage", "filesystem_folder", self.colpath)
         # Disable syncing to disk for better performance
