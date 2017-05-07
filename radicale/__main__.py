@@ -123,9 +123,9 @@ def daemonize(configuration, logger):
                 pid_fd = os.open(
                     configuration.get("server", "pid"),
                     os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            except:
-                raise OSError(
-                    "PID file exists: %s" % configuration.get("server", "pid"))
+            except OSError as e:
+                raise OSError("PID file exists: %s" %
+                              configuration.get("server", "pid")) from e
         pid = os.fork()
         if pid:
             sys.exit()
