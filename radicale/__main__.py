@@ -128,11 +128,13 @@ def daemonize(configuration, logger):
                               configuration.get("server", "pid")) from e
         pid = os.fork()
         if pid:
+            # Write PID
+            if configuration.get("server", "pid"):
+                with os.fdopen(pid_fd, "w") as pid_file:
+                    pid_file.write(str(pid))
             sys.exit()
-        # Write PID
         if configuration.get("server", "pid"):
-            with os.fdopen(pid_fd, "w") as pid_file:
-                pid_file.write(str(os.getpid()))
+            os.close(pid_fd)
         # Decouple environment
         os.chdir("/")
         os.setsid()
