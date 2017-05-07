@@ -499,9 +499,10 @@ def _param_filter_match(vobject_item, filter_, parent_name):
 def simplify_prefilters(filters):
     """Creates a simplified condition from ``filters``.
 
-    Returns a tuple (``tag``, ``start``, ``end``) where ``tag`` is a string
-    or None (match all) and ``start`` and ``end`` are POSIX timestamps
-    (as int).
+    Returns a tuple (``tag``, ``start``, ``end``, ``simple``) where ``tag`` is
+    a string or None (match all) and ``start`` and ``end`` are POSIX
+    timestamps (as int). ``simple`` is a bool that indicates that ``filters``
+    and the simplified condition are identical.
 
     """
 
@@ -509,18 +510,28 @@ def simplify_prefilters(filters):
         datetime.min.replace(tzinfo=timezone.utc).timestamp())
     TIMESTAMP_MAX = math.ceil(
         datetime.max.replace(tzinfo=timezone.utc).timestamp())
-    for col_filter in chain.from_iterable(filters):
+    flat_filters = tuple(chain.from_iterable(filters))
+    simple = len(flat_filters) <= 1
+    for col_filter in flat_filters:
         if (col_filter.tag != _tag("C", "comp-filter") or
                 col_filter.get("name") != "VCALENDAR"):
+            simple = False
             continue
-        for comp_filter in col_filter.findall(
-                "./%s" % _tag("C", "comp-filter")):
+        simple &= len(col_filter) <= 1
+        for comp_filter in col_filter:
+            if comp_filter.tag != _tag("C", "comp-filter"):
+                simple = False
+                continue
             tag = comp_filter.get("name")
             if (tag not in ("VTODO", "VEVENT", "VJOURNAL") or comp_filter.find(
-                    "./%s" % _tag("C", "is-not-defined")) is not None):
+                    _tag("C", "is-not-defined")) is not None):
+                simple = False
                 continue
-            for time_filter in comp_filter.findall(
-                    "./%s" % _tag("C", "time-range")):
+            simple &= len(comp_filter) <= 1
+            for time_filter in comp_filter:
+                if time_filter.tag != _tag("C", "time-range"):
+                    simple = False
+                    continue
                 start = time_filter.get("start")
                 end = time_filter.get("end")
                 if start:
@@ -535,9 +546,9 @@ def simplify_prefilters(filters):
                             tzinfo=timezone.utc).timestamp())
                 else:
                     end = TIMESTAMP_MAX
-                return tag, start, end
-            return tag, TIMESTAMP_MIN, TIMESTAMP_MAX
-    return None, TIMESTAMP_MIN, TIMESTAMP_MAX
+                return tag, start, end, simple
+            return tag, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
+    return None, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
 
 
 def find_tag_and_time_range(vobject_item):

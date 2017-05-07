@@ -1034,16 +1034,16 @@ class Collection(BaseCollection):
         return map(lambda x: self.get(x, verify_href=False), self.list())
 
     def pre_filtered_list(self, filters):
-        tag, start, end = xmlutils.simplify_prefilters(filters)
+        tag, start, end, simple = xmlutils.simplify_prefilters(filters)
         if not tag:
             # no filter
-            yield from map(lambda item: (item, False), self.get_all())
+            yield from map(lambda item: (item, simple), self.get_all())
             return
         for item, (itag, istart, iend) in map(
                 lambda x: self._get_with_metadata(x, verify_href=False),
                 self.list()):
             if tag == itag and istart < end and iend > start:
-                yield item, False
+                yield item, simple and (start <= istart or iend <= end)
 
     def upload(self, href, vobject_item):
         if not is_safe_filesystem_path_component(href):
