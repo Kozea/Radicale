@@ -114,9 +114,8 @@ def run():
         exit(1)
 
 
-def serve(configuration, logger):
-    """Serve radicale from configuration."""
-    # Fork if Radicale is launched as daemon
+def daemonize(configuration, logger):
+    """Fork and decouple if Radicale is configured as daemon."""
     if configuration.getboolean("server", "daemon"):
         # Check and create PID file in a race-free manner
         if configuration.get("server", "pid"):
@@ -153,6 +152,11 @@ def serve(configuration, logger):
             os.unlink(configuration.get("server", "pid"))
 
     atexit.register(cleanup)
+
+
+def serve(configuration, logger):
+    """Serve radicale from configuration."""
+    daemonize(configuration, logger)
     logger.info("Starting Radicale")
 
     # Create collection servers
