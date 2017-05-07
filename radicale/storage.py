@@ -1113,15 +1113,43 @@ class Collection(BaseCollection):
     def serialize(self):
         # serialize collection
         if self.get_meta("tag") == "VCALENDAR":
-            collection = vobject.iCalendar()
+            vtimezones = ""
+            included_tzids = set()
+            vtimezone = []
+            tzid = None
+            components = ""
             for item in self.get_all():
-                for content in ("vevent", "vtodo", "vjournal"):
-                    if content in item.contents:
-                        for item_part in getattr(item,
-                                                 "%s_list" % content):
-                            collection.add(item_part)
-                        break
-            return collection.serialize()
+                depth = 0
+                for line in item.serialize().split("\r\n"):
+                    if line.startswith("BEGIN:"):
+                        depth += 1
+                    if depth == 2 and line == "BEGIN:VTIMEZONE":
+                        vtimezone.append(line)
+                    elif vtimezone:
+                        vtimezone.append(line)
+                        if depth == 2 and line.startswith("TZID:"):
+                            tzid = line[len("TZID:"):]
+                        elif depth == 2 and line.startswith("END:"):
+                            if tzid is None or tzid not in included_tzids:
+                                if vtimezones:
+                                    vtimezones += "\r\n"
+                                vtimezones += "\r\n".join(vtimezone)
+                                included_tzids.add(tzid)
+                            vtimezone.clear()
+                            tzid = None
+                    elif depth >= 2:
+                        if components:
+                            components += "\r\n"
+                        components += line
+                    if line.startswith("END:"):
+                        depth -= 1
+            return "\r\n".join(filter(bool, (
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//PYVOBJECT//NONSGML Version 1//EN",
+                vtimezones,
+                components,
+                "END:VCALENDAR")))
         elif self.get_meta("tag") == "VADDRESSBOOK":
             return "".join(map(lambda x: x.serialize(), self.get_all()))
         return ""
