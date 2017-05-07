@@ -1111,42 +1111,20 @@ class Collection(BaseCollection):
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(last))
 
     def serialize(self):
-        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
-                                    "serialization")
-        cache_name = self.etag.strip('"')
-        cache_path = os.path.join(cache_folder, cache_name)
-        try:
-            # check cache
-            with open(cache_path, encoding=self.encoding) as f:
-                text = f.read()
-        except FileNotFoundError:
-            # serialize collection
-            if self.get_meta("tag") == "VCALENDAR":
-                collection = vobject.iCalendar()
-                for item in self.get_all():
-                    for content in ("vevent", "vtodo", "vjournal"):
-                        if content in item.contents:
-                            for item_part in getattr(item,
-                                                     "%s_list" % content):
-                                collection.add(item_part)
-                            break
-                text = collection.serialize()
-            elif self.get_meta("tag") == "VADDRESSBOOK":
-                text = "".join(map(lambda x: x.serialize(), self.get_all()))
-            else:
-                text = ""
-            # store in cache
-            self._makedirs_synced(cache_folder)
-            try:
-                # Race: Other processes might have created and locked the file.
-                with self._atomic_write(cache_path, "w") as f:
-                    f.write(text)
-            except PermissionError:
-                pass
-            else:
-                self._clean_cache(cache_folder, filter(
-                    lambda name: name != cache_name, scandir(cache_folder)))
-        return text
+        # serialize collection
+        if self.get_meta("tag") == "VCALENDAR":
+            collection = vobject.iCalendar()
+            for item in self.get_all():
+                for content in ("vevent", "vtodo", "vjournal"):
+                    if content in item.contents:
+                        for item_part in getattr(item,
+                                                 "%s_list" % content):
+                            collection.add(item_part)
+                        break
+            return collection.serialize()
+        elif self.get_meta("tag") == "VADDRESSBOOK":
+            return "".join(map(lambda x: x.serialize(), self.get_all()))
+        return ""
 
     @property
     def etag(self):
