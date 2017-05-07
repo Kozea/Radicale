@@ -31,6 +31,7 @@ import contextlib
 import datetime
 import io
 import itertools
+import logging
 import os
 import posixpath
 import pprint
@@ -46,6 +47,7 @@ import wsgiref.simple_server
 import zlib
 from http import client
 from urllib.parse import unquote, urlparse
+from xml.etree import ElementTree as ET
 
 import vobject
 
@@ -463,15 +465,42 @@ class Application:
             allowed |= self.authorized(user, parent_path, permission)
         return allowed
 
-    def _read_content(self, environ):
+    def _read_raw_content(self, environ):
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
-        if content_length > 0:
-            content = self.decode(
-                environ["wsgi.input"].read(content_length), environ)
-            self.logger.debug("Request content:\n%s", content.strip())
-        else:
-            content = None
+        if not content_length:
+            return b""
+        content = environ["wsgi.input"].read(content_length)
+        if len(content) < content_length:
+            raise ValueError("Request body too short: %d" % len(content))
         return content
+
+    def _read_content(self, environ):
+        content = self.decode(self._read_raw_content(environ), environ)
+        self.logger.debug("Request content:\n%s", content)
+        return content
+
+    def _read_xml_content(self, environ):
+        content = self.decode(self._read_raw_content(environ), environ)
+        if not content:
+            return None
+        try:
+            xml_content = ET.fromstring(content)
+        except ET.ParseError:
+            self.logger.debug("Request content (Invalid XML):\n%s", content)
+            raise
+        if self.logger.isEnabledFor(logging.DEBUG):
+            self.logger.debug("Request content:\n%s",
+                              xmlutils.pretty_xml(xml_content))
+        return xml_content
+
+    def _write_xml_content(self, xml_content):
+        if self.logger.isEnabledFor(logging.DEBUG):
+            self.logger.debug("Response content:\n%s",
+                              xmlutils.pretty_xml(xml_content))
+        f = io.BytesIO()
+        ET.ElementTree(xml_content).write(f, encoding=self.encoding,
+                                          xml_declaration=True)
+        return f.getvalue()
 
     def do_DELETE(self, environ, base_prefix, path, user):
         """Manage DELETE request."""
@@ -488,11 +517,12 @@ class Application:
                 # ETag precondition not verified, do not delete item
                 return PRECONDITION_FAILED
             if isinstance(item, self.Collection):
-                answer = xmlutils.delete(base_prefix, path, item)
+                xml_answer = xmlutils.delete(base_prefix, path, item)
             else:
-                answer = xmlutils.delete(
+                xml_answer = xmlutils.delete(
                     base_prefix, path, item.collection, item.href)
-            return client.OK, {"Content-Type": "text/xml"}, answer
+            headers = {"Content-Type": "text/xml; charset=%s" % self.encoding}
+            return client.OK, headers, self._write_xml_content(xml_answer)
 
     def do_GET(self, environ, base_prefix, path, user):
         """Manage GET request."""
@@ -533,12 +563,12 @@ class Application:
         """Manage MKCALENDAR request."""
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
-        content = self._read_content(environ)
+        xml_content = self._read_xml_content(environ)
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if item:
                 return WEBDAV_PRECONDITION_FAILED
-            props = xmlutils.props_from_request(content)
+            props = xmlutils.props_from_request(xml_content)
             props["tag"] = "VCALENDAR"
             # TODO: use this?
             # timezone = props.get("C:calendar-timezone")
@@ -549,12 +579,12 @@ class Application:
         """Manage MKCOL request."""
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
-        content = self._read_content(environ)
+        xml_content = self._read_xml_content(environ)
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if item:
                 return WEBDAV_PRECONDITION_FAILED
-            props = xmlutils.props_from_request(content)
+            props = xmlutils.props_from_request(xml_content)
             self.Collection.create_collection(path, props=props)
             return client.CREATED, {}, None
 
@@ -607,7 +637,7 @@ class Application:
         """Manage PROPFIND request."""
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
-        content = self._read_content(environ)
+        xml_content = self._read_xml_content(environ)
         with self.Collection.acquire_lock("r", user):
             items = self.Collection.discover(
                 path, environ.get("HTTP_DEPTH", "0"))
@@ -620,26 +650,30 @@ class Application:
             # put item back
             items = itertools.chain([item], items)
             read_items, write_items = self.collect_allowed_items(items, user)
-            headers = {"DAV": DAV_HEADERS, "Content-Type": "text/xml"}
-            status, answer = xmlutils.propfind(
-                base_prefix, path, content, read_items, write_items, user)
+            headers = {"DAV": DAV_HEADERS,
+                       "Content-Type": "text/xml; charset=%s" % self.encoding}
+            status, xml_answer = xmlutils.propfind(
+                base_prefix, path, xml_content, read_items, write_items, user)
             if status == client.FORBIDDEN:
                 return NOT_ALLOWED
             else:
-                return status, headers, answer
+                return status, headers, self._write_xml_content(xml_answer)
 
     def do_PROPPATCH(self, environ, base_prefix, path, user):
         """Manage PROPPATCH request."""
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
-        content = self._read_content(environ)
+        xml_content = self._read_xml_content(environ)
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if not isinstance(item, self.Collection):
                 return WEBDAV_PRECONDITION_FAILED
-            headers = {"DAV": DAV_HEADERS, "Content-Type": "text/xml"}
-            answer = xmlutils.proppatch(base_prefix, path, content, item)
-            return client.MULTI_STATUS, headers, answer
+            headers = {"DAV": DAV_HEADERS,
+                       "Content-Type": "text/xml; charset=%s" % self.encoding}
+            xml_answer = xmlutils.proppatch(base_prefix, path, xml_content,
+                                            item)
+            return (client.MULTI_STATUS, headers,
+                    self._write_xml_content(xml_answer))
 
     def do_PUT(self, environ, base_prefix, path, user):
         """Manage PUT request."""
@@ -697,7 +731,7 @@ class Application:
         """Manage REPORT request."""
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
-        content = self._read_content(environ)
+        xml_content = self._read_xml_content(environ)
         with self.Collection.acquire_lock("r", user):
             item = next(self.Collection.discover(path), None)
             if not self._access(user, path, "r", item):
@@ -708,6 +742,8 @@ class Application:
                 collection = item
             else:
                 collection = item.collection
-            headers = {"Content-Type": "text/xml"}
-            answer = xmlutils.report(base_prefix, path, content, collection)
-            return client.MULTI_STATUS, headers, answer
+            headers = {"Content-Type": "text/xml; charset=%s" % self.encoding}
+            xml_answer = xmlutils.report(
+                base_prefix, path, xml_content, collection)
+            return (client.MULTI_STATUS, headers,
+                    self._write_xml_content(xml_answer))
