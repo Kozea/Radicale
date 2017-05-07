@@ -120,9 +120,9 @@ def daemonize(configuration, logger):
         # Check and create PID file in a race-free manner
         if configuration.get("server", "pid"):
             try:
+                pid_path = os.path.abspath(configuration.get("server", "pid"))
                 pid_fd = os.open(
-                    configuration.get("server", "pid"),
-                    os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                    pid_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             except OSError as e:
                 raise OSError("PID file exists: %s" %
                               configuration.get("server", "pid")) from e
@@ -149,7 +149,7 @@ def daemonize(configuration, logger):
         # Remove PID file
         if (configuration.get("server", "pid") and
                 configuration.getboolean("server", "daemon")):
-            os.unlink(configuration.get("server", "pid"))
+            os.unlink(pid_path)
 
     atexit.register(cleanup)
 
