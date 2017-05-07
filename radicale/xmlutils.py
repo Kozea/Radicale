@@ -1085,12 +1085,13 @@ def report(base_prefix, path, xml_request, collection):
                                           found_item=False)
                 multistatus.append(response)
             else:
-                yield item
+                yield item, False
         if collection_requested:
             yield from collection.pre_filtered_list(filters)
 
-    for item in retrieve_items(collection, hreferences, multistatus):
-        if filters:
+    for item, filters_matched in retrieve_items(collection, hreferences,
+                                                multistatus):
+        if filters and not filters_matched:
             match = (
                 _comp_match if collection.get_meta("tag") == "VCALENDAR"
                 else _prop_match)

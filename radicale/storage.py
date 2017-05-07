@@ -406,9 +406,14 @@ class BaseCollection:
 
         This could largely improve performance of reports depending on
         the filters and this implementation.
+
+        Returns tuples in the form ``(item, filters_matched)``.
+        ``filters_matched`` is a bool that indicates if ``filters`` are fully
+        matched.
+
         This returns all event by default
         """
-        return self.get_all()
+        return map(lambda item: (item, False), self.get_all())
 
     def has(self, href):
         """Check if an item exists by its href.
@@ -1032,13 +1037,13 @@ class Collection(BaseCollection):
         tag, start, end = xmlutils.simplify_prefilters(filters)
         if not tag:
             # no filter
-            yield from self.get_all()
+            yield from map(lambda item: (item, False), self.get_all())
             return
         for item, (itag, istart, iend) in map(
                 lambda x: self._get_with_metadata(x, verify_href=False),
                 self.list()):
             if tag == itag and istart < end and iend > start:
-                yield item
+                yield item, False
 
     def upload(self, href, vobject_item):
         if not is_safe_filesystem_path_component(href):
