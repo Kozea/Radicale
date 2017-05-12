@@ -120,7 +120,8 @@ def daemonize(configuration, logger):
         # Check and create PID file in a race-free manner
         if configuration.get("server", "pid"):
             try:
-                pid_path = os.path.abspath(configuration.get("server", "pid"))
+                pid_path = os.path.abspath(os.path.expanduser(
+                    configuration.get("server", "pid")))
                 pid_fd = os.open(
                     pid_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             except OSError as e:
