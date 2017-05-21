@@ -129,20 +129,23 @@ class Rights(BaseRights):
                     "File '%s' not found for rights", self.filename)
                 return False
 
+        self.logger.debug("Testing user %r for collection %r", user, sane_path)
         for section in regex.sections():
             re_user = regex.get(section, "user")
             re_collection = regex.get(section, "collection")
-            self.logger.debug(
-                "Test if '%s:%s' matches against '%s:%s' from section '%s'",
-                user, sane_path, re_user, re_collection, section)
             # Emulate fullmatch
             user_match = re.match(r"(?:%s)\Z" % re_user, user)
             if user_match:
                 re_collection = re_collection.format(*user_match.groups())
                 # Emulate fullmatch
                 if re.match(r"(?:%s)\Z" % re_collection, sane_path):
-                    self.logger.debug("Section '%s' matches", section)
+                    self.logger.debug("  Section %r: matches %r",
+                                      section, re_collection)
                     return permission in regex.get(section, "permission")
                 else:
-                    self.logger.debug("Section '%s' does not match", section)
+                    self.logger.debug("  Section %r: "
+                                      "Collection does not match %r",
+                                      section, re_collection)
+            else:
+                self.logger.debug("  Section %r: User does not match", section)
         return False
