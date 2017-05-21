@@ -1,5 +1,6 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2012-2017 Guillaume Ayoub
+# Copyright © 2017 Hartmut Goebel
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,7 +42,6 @@ import os.path
 import re
 from configparser import ConfigParser
 from importlib import import_module
-from io import StringIO
 
 from . import storage
 
@@ -60,32 +60,24 @@ def load(configuration, logger):
 
 
 DEFINED_RIGHTS = {
-    "authenticated": """
-[rw]
-user:.+
-collection:.*
-permission:rw
-    """,
-    "owner_write": """
-[w]
-user:.+
-collection:%(login)s(/.*)?
-permission:rw
-[r]
-user:.+
-collection:.*
-permission:r
-    """,
-    "owner_only": """
-[rw]
-user:.+
-collection:%(login)s(/.*)?
-permission:rw
-[r]
-user:.+
-collection:
-permission:r
-    """}
+    "authenticated": {
+        'rw': {'user': '.+',
+               'collection': '.*',
+               'permission': 'rw'}},
+    "owner_write": {
+        'w': {'user': '.+',
+              'collection': '%(login)s(/.*)?',
+              'permission': 'rw'},
+        'r': {'user': '.+',
+              'collection': '.*',
+              'permission': 'r'}},
+    "owner_only": {
+        'rw': {'user': '.+',
+               'collection': '%(login)s(/.*)?',
+               'permission': 'rw'},
+        'r': {'user': '.+',
+              'collection': '',
+              'permission': 'r'}}}
 
 
 class BaseRights:
@@ -121,7 +113,7 @@ class Rights(BaseRights):
             {"login": user_escaped, "path": sane_path_escaped})
         if self.rights_type in DEFINED_RIGHTS:
             self.logger.debug("Rights type '%s'", self.rights_type)
-            regex.readfp(StringIO(DEFINED_RIGHTS[self.rights_type]))
+            regex.read_dict(DEFINED_RIGHTS[self.rights_type])
         else:
             self.logger.debug("Reading rights from file '%s'", self.filename)
             if not regex.read(self.filename):
