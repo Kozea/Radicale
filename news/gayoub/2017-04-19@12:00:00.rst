@@ -1,5 +1,5 @@
-Radicale 1.1
-============
+Radicale 1.1.2
+==============
 
 Radicale 1.1.2 is out!
 
