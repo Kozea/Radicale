@@ -194,6 +194,10 @@ class Auth(BaseAuth):
                 line = line.strip()
                 if line:
                     login, hash_value = line.split(":")
-                    if login == user and self.verify(hash_value, password):
+                    # Always compare both login and password to avoid timing
+                    # attacks, see #591.
+                    login_ok = hmac.compare_digest(login, user)
+                    password_ok = self.verify(hash_value, password)
+                    if login_ok + password_ok == 2:
                         return True
         return False
