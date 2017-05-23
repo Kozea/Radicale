@@ -198,6 +198,6 @@ class Auth(BaseAuth):
                     # attacks, see #591.
                     login_ok = hmac.compare_digest(login, user)
                     password_ok = self.verify(hash_value, password)
-                    if login_ok + password_ok == 2:
+                    if login_ok & password_ok:
                         return True
         return False
