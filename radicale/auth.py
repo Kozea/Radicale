@@ -169,11 +169,11 @@ class Auth(BaseAuth):
         written with e.g. openssl, and nginx can parse it.
 
         """
-        hash_value = hash_value.replace(
-            "{SSHA}", "").encode("ascii").decode("base64")
+        hash_value = base64.b64decode(hash_value.replace(
+            "{SSHA}", "").encode("ascii"))
         password = password.encode(self.configuration.get("encoding", "stock"))
-        hash_value = hash_value[:20]
         salt_value = hash_value[20:]
+        hash_value = hash_value[:20]
         sha1 = hashlib.sha1()
         sha1.update(password)
         sha1.update(salt_value)
