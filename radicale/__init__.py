@@ -358,6 +358,9 @@ class Application:
         environ["PATH_INFO"] = storage.sanitize_path(environ["PATH_INFO"])
         self.logger.debug("Sanitized path: %s", environ["PATH_INFO"])
         path = environ["PATH_INFO"]
+        if base_prefix:
+            path = path[len(base_prefix):]
+            self.logger.debug("Using collection path: %s", path)
 
         # Get function corresponding to method
         function = getattr(self, "do_%s" % environ["REQUEST_METHOD"].upper())
