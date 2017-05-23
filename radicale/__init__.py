@@ -375,13 +375,14 @@ class Application:
         if path == "/.well-known" or path.startswith("/.well-known/"):
             return response(*NOT_FOUND)
 
-        if user and not storage.is_safe_path_component(user):
+        if not user:
+            is_authenticated = True
+        elif not storage.is_safe_path_component(user):
             # Prevent usernames like "user/calendar.ics"
             self.logger.info("Refused unsafe username: %s", user)
             is_authenticated = False
         else:
             is_authenticated = self.Auth.is_authenticated(user, password)
-        is_valid_user = is_authenticated or not user
 
         # Create principal collection
         if user and is_authenticated:
@@ -405,7 +406,7 @@ class Application:
                     "Request body too large: %d", content_length)
                 return response(*REQUEST_ENTITY_TOO_LARGE)
 
-        if is_valid_user:
+        if is_authenticated:
             try:
                 status, headers, answer = function(
                     environ, base_prefix, path, user)
