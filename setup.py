@@ -73,6 +73,7 @@ setup(
     extras_require={"test": [
         "pytest-runner", "pytest-cov", "pytest-flake8", "pytest-isort"]},
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
+    python_requires='>=3.3',
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
