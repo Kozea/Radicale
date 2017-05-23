@@ -314,7 +314,7 @@ class Application:
             status = "%i %s" % (
                 status, client.responses.get(status, "Unknown"))
             self.logger.info(
-                "%s answer status for %s in %s sec: %s",
+                "%s answer status for %s in %.3f seconds: %s",
                 environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo,
                 (time_end - time_begin).total_seconds(), status)
             start_response(status, list(headers.items()))
@@ -386,6 +386,7 @@ class Application:
         else:
             is_authenticated = self.Auth.is_authenticated(user, password)
             if not is_authenticated:
+                self.logger.info("Failed login attempt: %s", user)
                 # Random delay to avoid timing oracles and bruteforce attacks
                 delay = self.configuration.getfloat("auth", "delay")
                 if delay > 0:
@@ -421,13 +422,16 @@ class Application:
                     environ, base_prefix, path, user)
             except socket.timeout:
                 return response(*REQUEST_TIMEOUT)
+            if (status, headers, answer) == NOT_ALLOWED:
+                self.logger.info("Access denied for %s",
+                                 "'%s'" % user if user else "anonymous user")
         else:
             status, headers, answer = NOT_ALLOWED
 
         if (status, headers, answer) == NOT_ALLOWED and not (
                 user and is_authenticated):
             # Unknown or unauthorized user
-            self.logger.info("%s refused" % (user or "Anonymous user"))
+            self.logger.debug("Asking client for authentication")
             status = client.UNAUTHORIZED
             realm = self.configuration.get("server", "realm")
             headers = dict(headers)
