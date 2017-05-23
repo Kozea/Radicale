@@ -21,15 +21,15 @@ Radicale tests with simple requests and authentication.
 """
 
 import base64
-import hashlib
 import logging
 import os
 import shutil
 import tempfile
 
+import pytest
 from radicale import Application, config
 
-from . import BaseTest
+from .test_base import BaseTest
 
 
 class TestBaseAuthRequests(BaseTest):
@@ -39,38 +39,78 @@ class TestBaseAuthRequests(BaseTest):
 
     """
     def setup(self):
+        self.configuration = config.load()
+        self.logger = logging.getLogger("radicale_test")
         self.colpath = tempfile.mkdtemp()
+        self.configuration.set("storage", "filesystem_folder", self.colpath)
+        # Disable syncing to disk for better performance
+        self.configuration.set("storage", "filesystem_fsync", "False")
+        # Required on Windows, doesn't matter on Unix
+        self.configuration.set("storage", "close_lock_file", "True")
 
     def teardown(self):
         shutil.rmtree(self.colpath)
 
-    def test_root(self):
-        """Htpasswd authentication."""
+    def _test_htpasswd(self, htpasswd_encryption, htpasswd_content):
+        """Test htpasswd authentication with user "tmp" and password "bepo"."""
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
-        with open(htpasswd_file_path, "wb") as fd:
-            fd.write(b"tmp:{SHA}" + base64.b64encode(
-                hashlib.sha1(b"bepo").digest()))
+        with open(htpasswd_file_path, "w") as f:
+            f.write(htpasswd_content)
+        self.configuration.set("auth", "type", "htpasswd")
+        self.configuration.set("auth", "htpasswd_filename", htpasswd_file_path)
+        self.configuration.set("auth", "htpasswd_encryption",
+                               htpasswd_encryption)
+        self.application = Application(self.configuration, self.logger)
+        for user, password, expeced_status in (
+                ("tmp", "bepo", 207), ("tmp", "tmp", 401), ("tmp", "", 401),
+                ("unk", "unk", 401), ("unk", "", 401), ("", "", 401)):
+            status, headers, answer = self.request(
+                "PROPFIND", "/",
+                HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
+                    ("%s:%s" % (user, password)).encode()).decode())
+            assert status == expeced_status
 
-        configuration = config.load()
-        configuration.set("auth", "type", "htpasswd")
-        configuration.set("auth", "htpasswd_filename", htpasswd_file_path)
-        configuration.set("auth", "htpasswd_encryption", "sha1")
+    def test_htpasswd_plain(self):
+        self._test_htpasswd("plain", "tmp:bepo")
 
-        self.application = Application(
-            configuration, logging.getLogger("radicale_test"))
+    def test_htpasswd_sha1(self):
+        self._test_htpasswd("sha1", "tmp:{SHA}UWRS3uSJJq2itZQEUyIH8rRajCM=")
 
-        status, headers, answer = self.request(
-            "GET", "/", HTTP_AUTHORIZATION="dG1wOmJlcG8=")
-        assert status == 200
-        assert "Radicale works!" in answer
+    def test_htpasswd_ssha(self):
+        self._test_htpasswd("ssha", "tmp:{SSHA}qbD1diw9RJKi0DnW4qO8WX9SE18W")
+
+    def test_htpasswd_md5(self):
+        try:
+            import passlib  # noqa: F401
+        except ImportError:
+            pytest.skip("passlib is not installed")
+        self._test_htpasswd("md5", "tmp:$apr1$BI7VKCZh$GKW4vq2hqDINMr8uv7lDY/")
+
+    def test_htpasswd_crypt(self):
+        try:
+            import crypt  # noqa: F401
+        except ImportError:
+            pytest.skip("crypt is not installed")
+        self._test_htpasswd("crypt", "tmp:dxUqxoThMs04k")
+
+    def test_htpasswd_bcrypt(self):
+        try:
+            from passlib.hash import bcrypt
+            from passlib.exc import MissingBackendError
+        except ImportError:
+            pytest.skip("passlib is not installed")
+        try:
+            bcrypt.encrypt("test-bcrypt-backend")
+        except MissingBackendError:
+            pytest.skip("bcrypt backend for passlib is not installed")
+        self._test_htpasswd(
+            "bcrypt",
+            "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
 
     def test_custom(self):
         """Custom authentication."""
-        configuration = config.load()
-        configuration.set("auth", "type", "tests.custom.auth")
-        self.application = Application(
-            configuration, logging.getLogger("radicale_test"))
-
+        self.configuration.set("auth", "type", "tests.custom.auth")
+        self.application = Application(self.configuration, self.logger)
         status, headers, answer = self.request(
             "GET", "/", HTTP_AUTHORIZATION="dG1wOmJlcG8=")
         assert status == 200
