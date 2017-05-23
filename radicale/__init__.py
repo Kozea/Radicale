@@ -34,11 +34,13 @@ import itertools
 import os
 import posixpath
 import pprint
+import random
 import socket
 import socketserver
 import ssl
 import sys
 import threading
+import time
 import traceback
 import wsgiref.simple_server
 import zlib
@@ -312,7 +314,7 @@ class Application:
             status = "%i %s" % (
                 status, client.responses.get(status, "Unknown"))
             self.logger.info(
-                "%s answer status for %s in %s sec: %s",
+                "%s answer status for %s in %.3f seconds: %s",
                 environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo,
                 (time_end - time_begin).total_seconds(), status)
             start_response(status, list(headers.items()))
@@ -375,13 +377,22 @@ class Application:
         if path == "/.well-known" or path.startswith("/.well-known/"):
             return response(*NOT_FOUND)
 
-        if user and not storage.is_safe_path_component(user):
+        if not user:
+            is_authenticated = True
+        elif not storage.is_safe_path_component(user):
             # Prevent usernames like "user/calendar.ics"
             self.logger.info("Refused unsafe username: %s", user)
             is_authenticated = False
         else:
             is_authenticated = self.Auth.is_authenticated(user, password)
-        is_valid_user = is_authenticated or not user
+            if not is_authenticated:
+                self.logger.info("Failed login attempt: %s", user)
+                # Random delay to avoid timing oracles and bruteforce attacks
+                delay = self.configuration.getfloat("auth", "delay")
+                if delay > 0:
+                    random_delay = delay * (0.5 + random.random())
+                    self.logger.debug("Sleeping %.3f seconds", random_delay)
+                    time.sleep(random_delay)
 
         # Create principal collection
         if user and is_authenticated:
@@ -405,19 +416,22 @@ class Application:
                     "Request body too large: %d", content_length)
                 return response(*REQUEST_ENTITY_TOO_LARGE)
 
-        if is_valid_user:
+        if is_authenticated:
             try:
                 status, headers, answer = function(
                     environ, base_prefix, path, user)
             except socket.timeout:
                 return response(*REQUEST_TIMEOUT)
+            if (status, headers, answer) == NOT_ALLOWED:
+                self.logger.info("Access denied for %s",
+                                 "'%s'" % user if user else "anonymous user")
         else:
             status, headers, answer = NOT_ALLOWED
 
         if (status, headers, answer) == NOT_ALLOWED and not (
                 user and is_authenticated):
             # Unknown or unauthorized user
-            self.logger.info("%s refused" % (user or "Anonymous user"))
+            self.logger.debug("Asking client for authentication")
             status = client.UNAUTHORIZED
             realm = self.configuration.get("server", "realm")
             headers = dict(headers)

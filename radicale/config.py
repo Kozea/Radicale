@@ -93,7 +93,10 @@ INITIAL_CONFIG = OrderedDict([
             "help": "htpasswd filename"}),
         ("htpasswd_encryption", {
             "value": "bcrypt",
-            "help": "htpasswd encryption method"})])),
+            "help": "htpasswd encryption method"}),
+        ("delay", {
+            "value": "1",
+            "help": "incorrect authentication delay"})])),
     ("rights", OrderedDict([
         ("type", {
             "value": "owner_only",
