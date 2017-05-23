@@ -78,6 +78,9 @@
 # bcrypt and md5 require the passlib library to be installed.
 #htpasswd_encryption = bcrypt
 
+# Incorrect authentication delay (seconds)
+#delay = 1
+
 
 [rights]
 

@@ -34,11 +34,13 @@ import itertools
 import os
 import posixpath
 import pprint
+import random
 import socket
 import socketserver
 import ssl
 import sys
 import threading
+import time
 import traceback
 import wsgiref.simple_server
 import zlib
@@ -383,6 +385,13 @@ class Application:
             is_authenticated = False
         else:
             is_authenticated = self.Auth.is_authenticated(user, password)
+            if not is_authenticated:
+                # Random delay to avoid timing oracles and bruteforce attacks
+                delay = self.configuration.getfloat("auth", "delay")
+                if delay > 0:
+                    random_delay = delay * (0.5 + random.random())
+                    self.logger.debug("Sleeping %.3f seconds", random_delay)
+                    time.sleep(random_delay)
 
         # Create principal collection
         if user and is_authenticated:

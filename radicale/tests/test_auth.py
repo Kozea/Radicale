@@ -47,6 +47,8 @@ class TestBaseAuthRequests(BaseTest):
         self.configuration.set("storage", "filesystem_fsync", "False")
         # Required on Windows, doesn't matter on Unix
         self.configuration.set("storage", "close_lock_file", "True")
+        # Set incorrect authentication delay to a very low value
+        self.configuration.set("auth", "delay", "0.002")
 
     def teardown(self):
         shutil.rmtree(self.colpath)

@@ -58,8 +58,6 @@ import functools
 import hashlib
 import hmac
 import os
-import random
-import time
 from importlib import import_module
 
 
@@ -198,6 +196,4 @@ class Auth(BaseAuth):
                     login, hash_value = line.split(":")
                     if login == user and self.verify(hash_value, password):
                         return True
-        # Random timer to avoid timing oracles and simple bruteforce attacks
-        time.sleep(1 + random.random())
         return False
