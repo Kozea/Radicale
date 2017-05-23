@@ -56,6 +56,7 @@ following significantly more secure schemes are parsable by Radicale:
 import base64
 import functools
 import hashlib
+import hmac
 import os
 import random
 import time
@@ -148,11 +149,12 @@ class Auth(BaseAuth):
 
     def _plain(self, hash_value, password):
         """Check if ``hash_value`` and ``password`` match, plain method."""
-        return hash_value == password
+        return hmac.compare_digest(hash_value, password)
 
     def _crypt(self, crypt, hash_value, password):
         """Check if ``hash_value`` and ``password`` match, crypt method."""
-        return crypt.crypt(password, hash_value) == hash_value
+        return hmac.compare_digest(crypt.crypt(password, hash_value),
+                                   hash_value)
 
     def _sha1(self, hash_value, password):
         """Check if ``hash_value`` and ``password`` match, sha1 method."""
@@ -160,7 +162,7 @@ class Auth(BaseAuth):
         password = password.encode(self.configuration.get("encoding", "stock"))
         sha1 = hashlib.sha1()
         sha1.update(password)
-        return sha1.digest() == base64.b64decode(hash_value)
+        return hmac.compare_digest(sha1.digest(), base64.b64decode(hash_value))
 
     def _ssha(self, hash_value, password):
         """Check if ``hash_value`` and ``password`` match, salted sha1 method.
@@ -177,7 +179,7 @@ class Auth(BaseAuth):
         sha1 = hashlib.sha1()
         sha1.update(password)
         sha1.update(salt_value)
-        return sha1.digest() == hash_value
+        return hmac.compare_digest(sha1.digest(), hash_value)
 
     def _bcrypt(self, bcrypt, hash_value, password):
         return bcrypt.verify(password, hash_value)
