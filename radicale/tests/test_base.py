@@ -21,6 +21,7 @@ Radicale tests with simple requests.
 """
 
 import base64
+import io
 import logging
 import os
 import posixpath
@@ -28,6 +29,7 @@ import shutil
 import tempfile
 
 import pytest
+
 from radicale import Application, config
 
 from . import BaseTest
@@ -949,3 +951,26 @@ class TestCustomStorageSystem(BaseFileSystemTest):
     def test_root(self):
         """A simple test to verify that the custom backend works."""
         BaseRequestsMixIn.test_root(self)
+
+
+class LogCaptureMixIn:
+    def setup(self):
+        super().setup()
+        # TODO: Use pytest-catchlog add-on once we change the test-suite to
+        # use pytest fixtures
+        self.log_stream = io.StringIO()
+        ch = logging.StreamHandler(self.log_stream)
+        ch.setFormatter(logging.Formatter('%(levelname)s:%(message)s'))
+        self.logger.addHandler(ch)
+        self.logger.setLevel(logging.INFO)
+
+    def get_log_messages(self):
+        return self.log_stream.getvalue()
+
+    def test___log_capture_works(self):
+        "Simple self-test"
+        self.logger.error("Test")
+        self.logger.info("Another Test")
+        log_msgs = self.get_log_messages()
+        assert "ERROR:Test" in log_msgs
+        assert "INFO:Another Test" in log_msgs
