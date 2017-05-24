@@ -1,0 +1,10 @@
+BEGIN:VCARD
+VERSION:3.0
+PRODID:-//Inverse inc.//SOGo Connector 1.0//EN
+UID:theo-tester.vcf
+N:Tester;Theo;;;
+FN:Theo Tester
+REV:20170523T231348Z
+EMAIL;TYPE=WORK:theo.tester@radicale.org
+X-MOZILLA-HTML:FALSE
+END:VCARD

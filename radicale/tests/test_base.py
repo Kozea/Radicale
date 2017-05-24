@@ -1,5 +1,6 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2012-2017 Guillaume Ayoub
+# Copyright © 2017 Hartmut Goebel
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,6 +49,34 @@ class BaseRequestsMixIn:
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert "BEGIN:VCALENDAR" in answer
         assert "END:VCALENDAR" in answer
+
+    def _make_abook_collection(self, name="addresses.vcf"):
+        uri = "/%s/" % name
+        self.request("MKCOL", uri)
+        self.request(
+            "PUT", uri, "BEGIN:VADDRESSBOOK\r\nEND:VADDRESSBOOK")
+        # for convenience, return the colelction name
+        return name
+
+    def _put_vcard(self, filename, collection, name=None):
+        vcard = get_file_content(filename)
+        name = name or filename
+        path = "/%s/%s" % (collection, name)
+        status, headers, answer = self.request("PUT", path, vcard)
+        return path, status, headers, answer
+
+    def test_add_vcard(self):
+        """Add an event."""
+        collection = self._make_abook_collection()
+        path, status, headers, answer = self._put_vcard(
+            "vcard1.vcf", collection)
+        assert status == 201
+        status, headers, answer = self.request("GET", path)
+        assert "ETag" in headers.keys()
+        assert status == 200
+        assert "VCARD" in answer
+        assert "Theo Tester" in answer
+        assert "UID:theo-tester.vcf" in answer
 
     def test_add_event(self):
         """Add an event."""
