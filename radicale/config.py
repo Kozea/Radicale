@@ -73,10 +73,7 @@ INITIAL_CONFIG = OrderedDict([
             "help": "available ciphers"}),
         ("dns_lookup", {
             "value": "True",
-            "help": "use reverse DNS to resolve client address in logs"}),
-        ("realm", {
-            "value": "Radicale - Password Required",
-            "help": "message displayed when a password is needed"})])),
+            "help": "use reverse DNS to resolve client address in logs"})])),
     ("encoding", OrderedDict([
         ("request", {
             "value": "utf-8",
@@ -96,7 +93,10 @@ INITIAL_CONFIG = OrderedDict([
             "help": "htpasswd encryption method"}),
         ("delay", {
             "value": "1",
-            "help": "incorrect authentication delay"})])),
+            "help": "incorrect authentication delay"}),
+        ("realm", {
+            "value": "Radicale - Password Required",
+            "help": "message displayed when a password is needed"})])),
     ("rights", OrderedDict([
         ("type", {
             "value": "owner_only",
