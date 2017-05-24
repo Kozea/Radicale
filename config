@@ -122,7 +122,7 @@
 # If no config is given, simple information is printed on the standard output
 # For more information about the syntax of the configuration file, see:
 # http://docs.python.org/library/logging.config.html
-#config = /etc/radicale/logging
+#config =
 
 # Set the default logging level to debug
 #debug = False
