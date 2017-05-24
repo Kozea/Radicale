@@ -78,6 +78,14 @@ class BaseRequestsMixIn:
         assert "Theo Tester" in answer
         assert "UID:theo-tester.vcf" in answer
 
+    def test_add_broken_vcard_returns_422(self):
+        """Add an event."""
+        collection = self._make_abook_collection()
+        path, status, headers, answer = self._put_vcard(
+            "broken-vcard.vcf", collection)
+        assert status == 422
+        assert "Error processing the contained data" in answer
+
     def test_add_event(self):
         """Add an event."""
         self.request("MKCOL", "/calendar.ics/")
@@ -93,6 +101,17 @@ class BaseRequestsMixIn:
         assert "VEVENT" in answer
         assert "Event" in answer
         assert "UID:event" in answer
+
+    def test_add_broken_event_returns_422(self):
+        """Add an event."""
+        self.request("MKCOL", "/calendar.ics/")
+        self.request(
+            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        event = get_file_content("broken-vevent.ics")
+        path = "/calendar.ics/broken-vevent.ics"
+        status, headers, answer = self.request("PUT", path, event)
+        assert status == 422
+        assert "Error processing the contained data" in answer
 
     def test_add_todo(self):
         """Add a todo."""
@@ -262,6 +281,14 @@ class BaseRequestsMixIn:
         assert status == 207
         assert ":calendar-color>#BADA55</" in answer
         assert "200 OK</status" in answer
+
+    def test_invalid_xml_returns_422(self):
+        collection = self._make_abook_collection()
+        status, headers, answer = self.request(
+            "REPORT", "/%s/" % collection, """<foo></bar>""")
+        assert status == 422
+        assert "Error processing the contained data" in answer
+        assert "Invalid XML" in answer
 
     def test_multiple_events_with_same_uid(self):
         """Add two events with the same UID."""

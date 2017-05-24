@@ -2,6 +2,7 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
+# Copyright © 2017 Hartmut Goebel
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -77,6 +78,13 @@ REMOTE_DESTINATION = (
 DIRECTORY_LISTING = (
     client.FORBIDDEN, (("Content-Type", "text/plain"),),
     "Directory listings are not supported.")
+
+
+def UNPROCESSABLE_ENTITY(msg):
+    return (client.UNPROCESSABLE_ENTITY,
+            (("Content-Type", "text/plain"),),
+            "Error processing the contained data: %s" % msg)
+
 
 DAV_HEADERS = "1, 2, 3, calendar-access, addressbook, extended-mkcol"
 
@@ -425,6 +433,10 @@ class Application:
                     environ, base_prefix, path, user)
             except socket.timeout:
                 return response(*REQUEST_TIMEOUT)
+            except vobject.base.VObjectError as e:
+                return response(*UNPROCESSABLE_ENTITY(e))
+            except xmlutils.ET.ParseError as e:
+                return response(*UNPROCESSABLE_ENTITY("Invalid XML: %s" % e))
             if (status, headers, answer) == NOT_ALLOWED:
                 self.logger.info("Access denied for %s",
                                  "'%s'" % user if user else "anonymous user")
