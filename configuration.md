@@ -26,10 +26,10 @@ This behaviour can be overwritten by specifying a path with the
 
 The same example configuration via command line arguments looks like:
 ```sh
-python3 -m radicale --config /dev/null --server-hosts 0.0.0.0:5232 --auth-type htpasswd --htpasswd-filename /path/to/htpasswd --htpasswd-encryption bcrypt
+python3 -m radicale --config "" --server-hosts 0.0.0.0:5232 --auth-type htpasswd --htpasswd-filename /path/to/htpasswd --htpasswd-encryption bcrypt
 ```
 
-The ``--config /dev/null`` argument is required to stop Radicale from trying
+The ``--config ""`` argument is required to stop Radicale from trying
 to load configuration files. Run ``python3 -m radicale --help`` for more information.
 
 In the following, all configuration categories and options are described.
