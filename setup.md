@@ -44,8 +44,8 @@ Re-type new password:
 **bcrypt** is used to secure the passwords. Radicale required additional
 dependencies for this encryption method:
 ```bash
-$ python3 -m install passlib
-$ python3 -m install bcrypt
+$ python3 -m pip install --upgrade passlib
+$ python3 -m pip install --upgrade bcrypt
 ```
 
 Authentication can be enabled with the following configuration:
@@ -53,7 +53,7 @@ Authentication can be enabled with the following configuration:
 [auth]
 type = htpasswd
 htpasswd_filename = /path/to/users
-htpasswd_encryption = bcrypt  # encryption method used in the users file
+htpasswd_encryption = bcrypt  # encryption method used in the htpasswd file
 ```
 
 ## Addresses
