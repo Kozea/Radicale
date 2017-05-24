@@ -9,13 +9,12 @@ permalink: /download/
 Radicale is [available on PyPI](http://pypi.python.org/pypi/Radicale/). To
 install, just type as superuser:
 
-    pip install radicale
+    python3 -m pip install --upgrade radicale
 
 ## Git Repository
 
 If you want the development version of Radicale, take a look at the
-[git repository on GitHub]({{ site.github.repository_url }}), or clone it
-thanks to:
+[git repository on GitHub]({{ site.github.repository_url }}), or clone it:
 
     git clone git://github.com/Kozea/Radicale.git
 
