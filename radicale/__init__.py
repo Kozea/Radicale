@@ -437,6 +437,9 @@ class Application:
                 return response(*UNPROCESSABLE_ENTITY(e))
             except xmlutils.ET.ParseError as e:
                 return response(*UNPROCESSABLE_ENTITY("Invalid XML: %s" % e))
+            except:
+                self.logger.error("Error processing %(PATH_INFO)s:", environ)
+                raise
             if (status, headers, answer) == NOT_ALLOWED:
                 self.logger.info("Access denied for %s",
                                  "'%s'" % user if user else "anonymous user")

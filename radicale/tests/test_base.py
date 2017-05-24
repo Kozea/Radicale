@@ -974,3 +974,28 @@ class LogCaptureMixIn:
         log_msgs = self.get_log_messages()
         assert "ERROR:Test" in log_msgs
         assert "INFO:Another Test" in log_msgs
+
+
+class TestLogging(LogCaptureMixIn, BaseFileSystemTest):
+    """Test if things are logged as expected."""
+    # Use the multifilesystem
+    storage_type = "multifilesystem"
+
+    def test_error_in_request_logs_uri(self):
+        """Test if an error when processing a request reports the uri with
+        level ERROR."""
+
+        class Fail(Exception):
+            pass
+
+        def do_report(environ, base_prefix, path, user):
+            raise Fail("This should fail!")
+
+        self.application.do_REPORT = do_report
+        with pytest.raises(Fail):
+            status, headers, answer = self.request(
+                "REPORT", "/calendar.ics/", "")
+        log_msgs = self.get_log_messages()
+        print(log_msgs)
+        assert "INFO:REPORT request for /calendar.ics/ received" in log_msgs
+        assert "ERROR:Error processing /calendar.ics/:" in log_msgs
