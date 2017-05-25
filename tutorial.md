@@ -30,8 +30,8 @@ and enjoy the "Radicale works!" message!
 
 ## Windows
 
-This first step is to install Python. Go to
-[python.org](http://python.org) and download the latest version of Python 3.
+The first step is to install Python. Go to
+[python.org](https://python.org) and download the latest version of Python 3.
 Then run the installer.
 On the first window of the installer, check the "Add Python to PATH" box and
 click on "Install now". Wait a couple of minutes, it's done!
