@@ -179,6 +179,23 @@ After daemonization the server will not log anything. You have to configure
 If you start Radicale now, it will initialize and fork into the background.
 The main process exits, after the PID file is written.
 
-## Windows
+## Windows with "NSSM - the Non-Sucking Service Manager"
 
-*To be written.*
+First install [NSSM](https://nssm.cc/) and start ``nssm install`` in a command
+prompt. Apply the following configuration:
+
+  * Service name: ``Radicale``
+  * Application
+      * Path: ``C:\Path\To\Python\python.exe``
+      * Arguments: ``-m radicale --config C:\Path\To\Config``
+  * I/O redirection
+     * Error: ``C:\Path\To\Radicale.log``
+
+Be aware that the service runs in the local system account, you might want to change this. Managing user accounts is beyond the scope of this manual.
+
+The log file might grow very big over time, you can configure file rotation
+in **NSSM** to prevent this.
+
+The service is configured to start automatically when the computer starts.
+To start the service manually open **Services** in **Computer Management** and
+start the **Radicale** service.
