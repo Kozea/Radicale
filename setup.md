@@ -82,14 +82,15 @@ filesystem_folder = /path/to/storage
 ## Limits
 
 Radicale enforces limits on the maximum number of parallel connections,
-the maximum file size (important for contacts with big photos) and limits
-the rate of incorrect authentication attempts. The default values should be
-fine for most scenarios.
+the maximum file size (important for contacts with big photos) and the rate of
+incorrect authentication attempts. Connections are terminated after a timeout.
+The default values should be fine for most scenarios.
 
 ```ini
 [server]
 max_connections = 20
 max_content_length = 10000000  # 1 Megabyte
+timeout = 10  # seconds
 [auth]
 delay = 1  # Average delay after failed login attempts in seconds
 ```

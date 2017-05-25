@@ -62,12 +62,22 @@ Default: ``20``
 ### max_content_length
 The maximum size of the request body. (bytes)
 
-Default ``10000000``
+Default: ``10000000``
+
+### timeout
+Socket timeout. (seconds)
+
+Default: ``10``
 
 ### ssl
 Enable transport layer encryption.
 
 Default: ``False``
+
+### certificate
+Path of the SSL certifcate.
+
+Default: ``/etc/ssl/radicale.cert.pem``
 
 ### key
 Path to the private key for SSL. Only effective if ``ssl`` is enabled.

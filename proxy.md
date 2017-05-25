@@ -16,5 +16,6 @@ location /sub/folder/radicale {
 }
 ```
 
-Radicale's default configuration limits the maximum number of parallel
-connections!
+Be reminded that Radicale's default configuration enforces limits on the
+maximum number of parallel connections, the maximum file size and the rate of
+incorrect authentication attempts. Connections are terminated after a timeout.
