@@ -41,13 +41,15 @@ from . import (
 
 
 def export_storage(config, path):
-    """Export the storage for Radicale 2.0.0"""
+    """Export the storage for Radicale 2.0.0."""
     import json
     import shutil
     import tempfile
     from . import ical, pathutils, storage
     storage.load()
+
     print("INFO: Exporting storage for Radicale 2.0.0 to '%s'" % path)
+
     temp = tempfile.mkdtemp(prefix="Radicale.export.")
     try:
         os.mkdir(os.path.join(temp, "root"))
@@ -59,29 +61,33 @@ def export_storage(config, path):
                     collection.path,
                     os.path.join(temp, "root", "collection-root"))
             except ValueError:
-                print("WARNING: Skipping unsafe collection '/%s'" %
-                      collection.path)
+                print(
+                    "WARNING: Skipping unsafe collection '/%s'" %
+                    collection.path)
                 continue
             remaining_collections.extend(collection.children(collection.path))
             os.makedirs(filesystem_path)
             with collection.props as props:
                 if props:
-                    with open(os.path.join(filesystem_path, ".Radicale.props"),
-                              "w") as f:
+                    props_filename = os.path.join(
+                        filesystem_path, ".Radicale.props")
+                    with open(props_filename, "w") as f:
                         json.dump(props, f)
             for component in collection.components:
                 if not pathutils.is_safe_filesystem_path_component(
                         component.name):
-                    print(("WARNING: Skipping unsafe item '%s' from collection"
-                           " '/%s'") % (component.name, collection.path))
+                    print(
+                        "WARNING: Skipping unsafe item '%s' from collection"
+                        " '/%s'" % (component.name, collection.path))
                     continue
                 items = [component]
                 if collection.resource_type == "calendar":
                     items.extend(collection.timezones)
                 text = ical.serialize(
                     collection.tag, collection.headers, items)
-                with open(os.path.join(filesystem_path, component.name),
-                          "wb") as f:
+                component_filename = os.path.join(
+                    filesystem_path, component.name)
+                with open(component_filename, "wb") as f:
                     f.write(text.encode("utf-8"))
         try:
             os.rename(os.path.join(temp, "root"), path)
