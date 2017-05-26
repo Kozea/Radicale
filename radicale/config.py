@@ -123,7 +123,7 @@ INITIAL_CONFIG = OrderedDict([
             "help": "command that is run after changes to storage"})])),
     ("logging", OrderedDict([
         ("config", {
-            "value": "/etc/radicale/logging",
+            "value": "",
             "help": "logging configuration file"}),
         ("debug", {
             "value": "False",
