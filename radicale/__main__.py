@@ -39,6 +39,59 @@ from . import (
 # This is a script, many branches and variables
 # pylint: disable=R0912,R0914
 
+
+def export_storage(config, path):
+    """Export the storage for Radicale 2.0.0"""
+    import json
+    import shutil
+    import tempfile
+    from . import ical, pathutils, storage
+    storage.load()
+    print("INFO: Exporting storage for Radicale 2.0.0 to '%s'" % path)
+    temp = tempfile.mkdtemp(prefix="Radicale.export.")
+    try:
+        os.mkdir(os.path.join(temp, "root"))
+        remaining_collections = list(ical.Collection.from_path("/", depth="0"))
+        while remaining_collections:
+            collection = remaining_collections.pop(0)
+            try:
+                filesystem_path = pathutils.path_to_filesystem(
+                    collection.path,
+                    os.path.join(temp, "root", "collection-root"))
+            except ValueError:
+                print("WARNING: Skipping unsafe collection '/%s'" %
+                      collection.path)
+                continue
+            remaining_collections.extend(collection.children(collection.path))
+            os.makedirs(filesystem_path)
+            with collection.props as props:
+                if props:
+                    with open(os.path.join(filesystem_path, ".Radicale.props"),
+                              "w") as f:
+                        json.dump(props, f)
+            for component in collection.components:
+                if not pathutils.is_safe_filesystem_path_component(
+                        component.name):
+                    print(("WARNING: Skipping unsafe item '%s' from collection"
+                           " '/%s'") % (component.name, collection.path))
+                    continue
+                items = [component]
+                if collection.resource_type == "calendar":
+                    items.extend(collection.timezones)
+                text = ical.serialize(
+                    collection.tag, collection.headers, items)
+                with open(os.path.join(filesystem_path, component.name),
+                          "wb") as f:
+                    f.write(text.encode("utf-8"))
+        try:
+            os.rename(os.path.join(temp, "root"), path)
+        except OSError as e:
+            print("ERROR: Can't create '%s' directory: %s" % (path, e))
+            exit(1)
+    finally:
+        shutil.rmtree(temp)
+
+
 def run():
     """Run Radicale as a standalone server."""
     # Get command-line options
@@ -73,6 +126,10 @@ def run():
     parser.add_option(
         "-C", "--config",
         help="use a specific configuration file")
+    parser.add_option(
+        "--export-storage",
+        help=("export the storage for Radicale 2.0.0 to the specified "
+              "folder and exit"), metavar="FOLDER")
 
     options = parser.parse_args()[0]
 
@@ -83,11 +140,21 @@ def run():
     # Update Radicale configuration according to options
     for option in parser.option_list:
         key = option.dest
-        if key:
+        if key and key != "export_storage":
             section = "logging" if key == "debug" else "server"
             value = getattr(options, key)
             if value is not None:
                 config.set(section, key, str(value))
+
+    if options.export_storage is not None:
+        config.set("logging", "config", "")
+        config.set("logging", "debug", "True" if options.debug else "False")
+        log.start()
+        if not configuration_found:
+            print("WARNING: Configuration file '%s' not found" %
+                  options.config)
+        export_storage(config, options.export_storage)
+        exit(0)
 
     # Start logging
     log.start()
