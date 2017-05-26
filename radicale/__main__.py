@@ -74,9 +74,12 @@ def run():
                 group.add_argument(*args, **kwargs)
 
     args = parser.parse_args()
-    if args.config:
+    if args.config is not None:
         configuration = config.load()
-        configuration_found = configuration.read(args.config)
+        if args.config:
+            configuration_found = configuration.read(args.config)
+        else:
+            configuration_found = True
     else:
         configuration_paths = [
             "/etc/radicale/config",
@@ -101,7 +104,8 @@ def run():
 
     # Log a warning if the configuration file of the command line is not found
     if not configuration_found:
-        logger.warning("Configuration file '%s' not found" % args.config)
+        logger.error("Configuration file '%s' not found" % args.config)
+        exit(1)
 
     try:
         serve(configuration, logger)
