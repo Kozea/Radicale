@@ -390,7 +390,7 @@ class BaseCollection:
         exist.
 
         """
-        return map(lambda href: (href, self.get(href)), hrefs)
+        return ((href, self.get(href)) for href in hrefs)
 
     def get_all(self):
         """Fetch all items.
@@ -413,7 +413,7 @@ class BaseCollection:
 
         This returns all event by default
         """
-        return map(lambda item: (item, False), self.get_all())
+        return ((item, False) for item in self.get_all())
 
     def has(self, href):
         """Check if an item exists by its href.
@@ -998,13 +998,9 @@ class Collection(BaseCollection):
             # Clean cache entries (max once per request)
             if not self._item_cache_cleaned:
                 self._item_cache_cleaned = True
-
-                def is_invalid_href(href):
-                    return not os.path.isfile(
-                        os.path.join(self._filesystem_path, href))
-
-                self._clean_cache(cache_folder, filter(
-                    is_invalid_href, scandir(cache_folder)))
+                self._clean_cache(cache_folder, (
+                    href for href in scandir(cache_folder) if not
+                    os.path.isfile(os.path.join(self._filesystem_path, href))))
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
@@ -1031,17 +1027,17 @@ class Collection(BaseCollection):
     def get_all(self):
         # We don't need to check for collissions, because the the file names
         # are from os.listdir.
-        return map(lambda x: self.get(x, verify_href=False), self.list())
+        return (self.get(href, verify_href=False) for href in self.list())
 
     def pre_filtered_list(self, filters):
         tag, start, end, simple = xmlutils.simplify_prefilters(filters)
         if not tag:
             # no filter
-            yield from map(lambda item: (item, simple), self.get_all())
+            yield from ((item, simple) for item in self.get_all())
             return
-        for item, (itag, istart, iend) in map(
-                lambda x: self._get_with_metadata(x, verify_href=False),
-                self.list()):
+        for item, (itag, istart, iend) in (
+                self._get_with_metadata(href, verify_href=False)
+                for href in self.list()):
             if tag == itag and istart < end and iend > start:
                 yield item, simple and (start <= istart or iend <= end)
 
@@ -1111,7 +1107,7 @@ class Collection(BaseCollection):
         relevant_files = chain(
             (self._filesystem_path,),
             (self._props_path,) if os.path.exists(self._props_path) else (),
-            map(lambda x: os.path.join(self._filesystem_path, x), self.list()))
+            (os.path.join(self._filesystem_path, h) for h in self.list()))
         last = max(map(os.path.getmtime, relevant_files))
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(last))
 
@@ -1156,7 +1152,7 @@ class Collection(BaseCollection):
                 components,
                 "END:VCALENDAR")))
         elif self.get_meta("tag") == "VADDRESSBOOK":
-            return "".join(map(lambda x: x.serialize(), self.get_all()))
+            return "".join((item.serialize() for item in self.get_all()))
         return ""
 
     @property
