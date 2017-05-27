@@ -74,6 +74,10 @@
 
 # Authentication method
 # Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | remote_user | custom
+# -------
+# WARNING: THESE BACKENDS ARE NOT PROVEN TO BE SECURE.
+#          DON'T USE THEM FOR CRITICAL CONTENT.
+# -------
 #type = None
 
 # Custom authentication handler
