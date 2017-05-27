@@ -2,5 +2,5 @@
 title: Radicale
 email: contact@kozea.fr
 description: A Free and Open-Source CalDAV and CardDAV Server
-baseurl: "/Radicale"
-#url: "http://radicale.org"
+baseurl: "/"
+url: "http://radicale.org"
