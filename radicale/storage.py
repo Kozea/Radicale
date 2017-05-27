@@ -1124,24 +1124,29 @@ class Collection(BaseCollection):
                 for line in item.serialize().split("\r\n"):
                     if line.startswith("BEGIN:"):
                         depth += 1
-                    if depth == 2 and line == "BEGIN:VTIMEZONE":
-                        vtimezone.append(line)
-                    elif vtimezone:
-                        vtimezone.append(line)
-                        if depth == 2 and line.startswith("TZID:"):
-                            tzid = line[len("TZID:"):]
-                        elif depth == 2 and line.startswith("END:"):
-                            if tzid is None or tzid not in included_tzids:
-                                if vtimezones:
-                                    vtimezones += "\r\n"
-                                vtimezones += "\r\n".join(vtimezone)
-                                included_tzids.add(tzid)
-                            vtimezone.clear()
-                            tzid = None
-                    elif depth >= 2:
-                        if components:
-                            components += "\r\n"
-                        components += line
+                    if depth == 1 and line == "BEGIN:VCALENDAR":
+                        in_vcalendar = True
+                    elif in_vcalendar:
+                        if depth == 1 and line.startswith("END:"):
+                            in_vcalendar = False
+                        if depth == 2 and line == "BEGIN:VTIMEZONE":
+                            vtimezone.append(line)
+                        elif vtimezone:
+                            vtimezone.append(line)
+                            if depth == 2 and line.startswith("TZID:"):
+                                tzid = line[len("TZID:"):]
+                            elif depth == 2 and line.startswith("END:"):
+                                if tzid is None or tzid not in included_tzids:
+                                    if vtimezones:
+                                        vtimezones += "\r\n"
+                                    vtimezones += "\r\n".join(vtimezone)
+                                    included_tzids.add(tzid)
+                                vtimezone.clear()
+                                tzid = None
+                        elif depth >= 2:
+                            if components:
+                                components += "\r\n"
+                            components += line
                     if line.startswith("END:"):
                         depth -= 1
             return "\r\n".join(filter(bool, (
