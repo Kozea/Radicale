@@ -10,7 +10,8 @@ command line arguments.
 An example configuration file looks like:
 ```ini
 [server]
-hosts = 0.0.0.0:5232  # Bind all addresses
+# Bind all addresses
+hosts = 0.0.0.0:5232
 
 [auth]
 type = htpasswd

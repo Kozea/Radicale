@@ -32,12 +32,14 @@ keys = file
 keys = full
 
 [logger_root]
-level = WARNING  # Change this to DEBUG or INFO for higher verbosity.
+# Change this to DEBUG or INFO for higher verbosity.
+level = WARNING
 handlers = file
 
 [handler_file]
 class = FileHandler
-args = ('/var/log/radicale/log',)  # Specify the output file here.
+# Specify the output file here.
+args = ('/var/log/radicale/log',)
 formatter = full
 
 [formatter_full]

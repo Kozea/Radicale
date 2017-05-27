@@ -53,7 +53,8 @@ Authentication can be enabled with the following configuration:
 [auth]
 type = htpasswd
 htpasswd_filename = /path/to/users
-htpasswd_encryption = bcrypt  # encryption method used in the htpasswd file
+# encryption method used in the htpasswd file
+htpasswd_encryption = bcrypt
 ```
 
 ## Addresses
@@ -89,11 +90,14 @@ The default values should be fine for most scenarios.
 ```ini
 [server]
 max_connections = 20
-max_content_length = 10000000  # 1 Megabyte
-timeout = 10  # seconds
+# 1 Megabyte
+max_content_length = 10000000
+# 10 seconds
+timeout = 10
 
 [auth]
-delay = 1  # Average delay after failed login attempts in seconds
+# Average delay after failed login attempts in seconds
+delay = 1
 ```
 
 ## Running as a service
