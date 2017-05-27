@@ -219,7 +219,7 @@ def _prop_match(item, filter_):
 
 
 def _time_range_match(vobject_item, filter_, child_name):
-    """Check whether the the component/property ``child_name`` of
+    """Check whether the component/property ``child_name`` of
        ``vobject_item`` matches the time-range ``filter_``."""
 
     start = filter_.get("start")

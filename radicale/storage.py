@@ -245,8 +245,24 @@ class ComponentNotFoundError(ValueError):
 class Item:
     def __init__(self, collection, href, last_modified=None,
                  text=None, item=None, etag=None):
+        """Initialize an item.
+
+        ``collection`` the parent collection.
+
+        ``href`` the href of the item.
+
+        ``last_modified`` the HTTP-datetime of when the item was modified.
+
+        ``text`` the text representation of the item (optional if ``item`` is
+        set).
+
+        ``item`` the vobject item (optional if ``text`` is set).
+
+        ``etag`` the etag of the item (optional). See ``get_etag``.
+
+        """
         if text is None and item is None:
-            raise ValueError("text and item are not set")
+            raise ValueError("at least one of 'text' or 'item' must be set")
         self.collection = collection
         self.href = href
         self.last_modified = last_modified
@@ -982,6 +998,8 @@ class Collection(BaseCollection):
         if input_hash != cinput_hash:
             vobject_item = Item(self, href,
                                 text=btext.decode(self.encoding)).item
+            # Serialize the object again, to normalize the text representation.
+            # The storage may have been edited externally.
             ctext = vobject_item.serialize()
             cetag = get_etag(ctext)
             ctag, cstart, cend = xmlutils.find_tag_and_time_range(vobject_item)
@@ -996,6 +1014,8 @@ class Collection(BaseCollection):
             except PermissionError:
                 pass
             # Clean cache entries (max once per request)
+            # This happens once after new uploads, or if the data in the
+            # file system was edited externally.
             if not self._item_cache_cleaned:
                 self._item_cache_cleaned = True
                 self._clean_cache(cache_folder, (
@@ -1013,7 +1033,8 @@ class Collection(BaseCollection):
         files = None
         for href in hrefs:
             if files is None:
-                # Only list dir when hrefs is not empty
+                # List dir after hrefs returned one item, the iterator may be
+                # empty and the for-loop is never executed.
                 files = os.listdir(self._filesystem_path)
             path = os.path.join(self._filesystem_path, href)
             if (not is_safe_filesystem_path_component(href) or
@@ -1114,11 +1135,17 @@ class Collection(BaseCollection):
     def serialize(self):
         # serialize collection
         if self.get_meta("tag") == "VCALENDAR":
+            in_vcalendar = False
             vtimezones = ""
             included_tzids = set()
             vtimezone = []
             tzid = None
             components = ""
+            # Concatenate all child elements of VCALENDAR from all items
+            # together, while preventing duplicated VTIMEZONE entries.
+            # VTIMEZONEs are only distinguished by their TZID, if different
+            # timezones share the same TZID this produces errornous ouput.
+            # VObject fails at this too.
             for item in self.get_all():
                 depth = 0
                 for line in item.serialize().split("\r\n"):
