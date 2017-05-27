@@ -15,7 +15,7 @@ the user.
 This is only useful if you access calendars and address books directly via URL.
 
 An example rights file:
-```toml
+```ini
 # The user "admin" can read and write any collection.
 [admin]
 user = admin
