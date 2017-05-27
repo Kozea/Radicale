@@ -50,7 +50,7 @@ except ImportError:
 from . import auth, config, ical, log, pathutils, rights, storage, xmlutils
 
 
-VERSION = "1.1.2"
+VERSION = "1.1.3"
 
 # Standard "not allowed" response that is returned when an authenticated user
 # tries to access information they don't have rights to

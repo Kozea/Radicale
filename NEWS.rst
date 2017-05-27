@@ -3,12 +3,18 @@
 ======
 
 
+1.1.3 - Fourth Law of Nature
+============================
+
+* Add a ``--export-storage=FOLDER`` command-line argument (by Unrud, see #606)
+
+
 1.1.2 - Third Law of Nature
 ===========================
 
 * **Security fix**: Add a random timer to avoid timing oracles and simple
-  bruteforce attacks when using the htpasswd authentication method.
-* Various minor fixes.
+  bruteforce attacks when using the htpasswd authentication method
+* Various minor fixes
 
 
 1.1.1 - Second Law of Nature
