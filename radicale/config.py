@@ -1,5 +1,5 @@
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2008-2016 Guillaume Ayoub
+# Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 #

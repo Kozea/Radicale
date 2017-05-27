@@ -1,6 +1,6 @@
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2012-2013 Guillaume Ayoub
 # Copyright © 2012-2016 Jean-Marc Martins
+# Copyright © 2012-2017 Guillaume Ayoub
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
