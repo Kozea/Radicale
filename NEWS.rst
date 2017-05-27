@@ -7,7 +7,7 @@
 =========================
 
 This feature is not compatible with the 1.x.x versions. See
-http://kozea.github.io/Radicale/1to2/ if you want to switch from 1.x.x to
+http://radicale.org/1to2/ if you want to switch from 1.x.x to
 2.0.0.
 
 * Support Python 3.3+ only, Python 2 is not supported anymore
