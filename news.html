@@ -8,7 +8,7 @@ permalink: /news/
 {% assign latest_release = releases[0] %}
 <main>
   <p>
-    Latest version of {{ site.title }} is {{ latest_releases.tag_name }},
+    Latest version of {{ site.title }} is {{ latest_release.tag_name }},
     released on {{ latest_release.created_at | date: "%B %-d, %Y" }}
     (<a href="https://github.com/Kozea/{{ site.title }}/blob/master/NEWS.rst">changelog</a>).
   </p>
