@@ -11,6 +11,7 @@ An example configuration file looks like:
 ```ini
 [server]
 hosts = 0.0.0.0:5232  # Bind all addresses
+
 [auth]
 type = htpasswd
 htpasswd_filename = /path/to/users
@@ -19,35 +20,35 @@ htpasswd_encryption = bcrypt
 filesystem_folder = ~/.var/lib/radicale/collections
 ```
 
-Radicale tries to load configuration files from */etc/radicale/config*,
-*~/.config/radicale/config* and the ``RADICALE_CONFIG`` environment variable.
+Radicale tries to load configuration files from `/etc/radicale/config`,
+`~/.config/radicale/config` and the `RADICALE_CONFIG` environment variable.
 This behaviour can be overwritten by specifying a path with the
-``--config /path/to/config`` command line argument.
+`--config /path/to/config` command line argument.
 
 The same example configuration via command line arguments looks like:
-```sh
+```shell
 python3 -m radicale --config "" --server-hosts 0.0.0.0:5232 --auth-type htpasswd --htpasswd-filename /path/to/htpasswd --htpasswd-encryption bcrypt
 ```
 
-The ``--config ""`` argument is required to stop Radicale from trying
-to load configuration files. Run ``python3 -m radicale --help`` for more information.
+The `--config ""` argument is required to stop Radicale from trying
+to load configuration files. Run `python3 -m radicale --help` for more information.
 
 In the following, all configuration categories and options are described.
 
 ## server
 Most configuration options in this category are only relevant in standalone
-mode. All options beside ``max_content_length`` and ``realm`` are ignored,
+mode. All options beside `max_content_length` and `realm` are ignored,
 when Radicale runs via WSGI.
 
 ### hosts
 A comma separated list of addresses that the server will bind to.
 
-Default: ``127.0.0.1:5555``
+Default: `127.0.0.1:5555`
 
 ### daemon
 Daemonize the Radicale process. It does not reset the umask or double fork.
 
-Default: ``False``
+Default: `False`
 
 ### pid
 If daemon mode is enabled, Radicale will write its PID to this file.
@@ -55,39 +56,39 @@ If daemon mode is enabled, Radicale will write its PID to this file.
 Default:
 
 ### max_connections
-The maximum number of parallel connections. Set to ``0`` to disable the limit.
+The maximum number of parallel connections. Set to `0` to disable the limit.
 
-Default: ``20``
+Default: `20`
 
 ### max_content_length
 The maximum size of the request body. (bytes)
 
-Default: ``10000000``
+Default: `10000000`
 
 ### timeout
 Socket timeout. (seconds)
 
-Default: ``10``
+Default: `10`
 
 ### ssl
 Enable transport layer encryption.
 
-Default: ``False``
+Default: `False`
 
 ### certificate
 Path of the SSL certifcate.
 
-Default: ``/etc/ssl/radicale.cert.pem``
+Default: `/etc/ssl/radicale.cert.pem`
 
 ### key
-Path to the private key for SSL. Only effective if ``ssl`` is enabled.
+Path to the private key for SSL. Only effective if `ssl` is enabled.
 
-Default: ``/etc/ssl/radicale.key.pem``
+Default: `/etc/ssl/radicale.key.pem`
 
 ### protocol
 SSL protocol used. See python's ssl module for available values.
 
-Default: ``PROTOCOL_TLSv1_2``
+Default: `PROTOCOL_TLSv1_2`
 
 ### ciphers
 Available ciphers for SSL. See python's ssl module for available ciphers.
@@ -97,23 +98,23 @@ Default:
 ### dns_lookup
 Reverse DNS to resolve client address in logs.
 
-Default: ``True``
+Default: `True`
 
 ### realm
 Message displayed in the client when a password is needed.
 
-Default: ``Radicale - Password Required``
+Default: `Radicale - Password Required`
 
 ## encoding
 ### request
 Encoding for responding requests.
 
-Default: ``utf-8``
+Default: `utf-8`
 
 ### stock
 Encoding for storing local collections
 
-Default: ``utf-8``
+Default: `utf-8`
 
 ## auth
 ### type
@@ -128,7 +129,7 @@ Available backends:
 : Use an [Apache htpasswd file](https://httpd.apache.org/docs/current/programs/htpasswd.html) to store
   usernames and passwords.
 
-Default: ``None``
+Default: `None`
 
 ### htpasswd_filename
 Path to the htpasswd file.
@@ -169,7 +170,7 @@ Available methods:
 : This uses UNIX [crypt(3)](http://man7.org/linux/man-pages/man3/crypt.3.html).
   It's insecure!
 
-Default: ``bcrypt``
+Default: `bcrypt`
 
 ## rights
 ### type
@@ -194,10 +195,10 @@ Available backends:
 `from_file`
 : Load the rules from a file.
 
-Default: ``owner_only``
+Default: `owner_only`
 
 ### file
-File for the rights backend ``from_file``.  See the
+File for the rights backend `from_file`.  See the
 [Rights]({{ site.baseurl }}/logging/) page.
 
 ## storage
@@ -209,14 +210,14 @@ Available backends:
 `multifilesystem`
 : Stores the data in the filesystem.
 
-Default: ``multifilesystem``
+Default: `multifilesystem`
 
 ### filesystem_fsync
 Sync all changes to disk during requests. (This can impair performance.)
 Disabling it increases the risk of data loss, when the system crashes or
 power fails!
 
-Default: ``True``
+Default: `True`
 
 ### hook
 Command that is run after changes to storage. Take a look at the
@@ -228,17 +229,17 @@ Default:
 ## debug
 Set the default logging level to debug.
 
-Default: ``False``
+Default: `False`
 
 ### full_environment
 Log all environment variables (including those set in the shell).
 
-Default: ``False``
+Default: `False`
 
 ### mask_passwords
 Don't include passwords in logs.
 
-Default: ``True``
+Default: `True`
 
 ### config
 Logging configuration file. See the [Logging]({{ site.baseurl }}/logging/) page.

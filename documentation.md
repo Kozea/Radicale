@@ -9,7 +9,7 @@ Radicale from 1.x.x to 2.0.x, please follow
 our [migration guide]({{ site.baseurl }}/1to2/). You can find on GitHub the
 [documentation page for the 1.1.x versions](https://github.com/Kozea/Radicale/blob/website/pages/user_documentation.rst).
 
-## Install and set up
+## Install and Set Up
 
 You're new to Radicale and you want to know how to use it? Welcome aboard!
 

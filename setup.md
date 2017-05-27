@@ -9,9 +9,9 @@ Installation instructions can be found on the
 
 ## Configuration
 
-Radicale tries to load configuration files from */etc/radicale/config*,
-*~/.config/radicale/config* and the ``RADICALE_CONFIG`` environment variable.
-A custom path can be specified with the ``--config /path/to/config`` command
+Radicale tries to load configuration files from `/etc/radicale/config`,
+`~/.config/radicale/config` and the `RADICALE_CONFIG` environment variable.
+A custom path can be specified with the `--config /path/to/config` command
 line argument.
 
 You should create a new configuration file at the desired location.
@@ -26,12 +26,12 @@ All configuration options are described in detail on the
 In it's default configuration Radicale doesn't check user names or passwords.
 If the server is reachable over a network, you should change this.
 
-First a **users** file with all user names and passwords must be created.
+First a `users` file with all user names and passwords must be created.
 It can be stored in the same directory as the configuration file.
 
 The file can be created and managed with
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html):
-```bash
+```shell
 # Create a new htpasswd file with the user "user1"
 $ htpasswd -B -c /path/to/users user1
 New password:
@@ -43,7 +43,7 @@ Re-type new password:
 ```
 **bcrypt** is used to secure the passwords. Radicale required additional
 dependencies for this encryption method:
-```bash
+```shell
 $ python3 -m pip install --upgrade passlib
 $ python3 -m pip install --upgrade bcrypt
 ```
@@ -71,7 +71,7 @@ More addresses can be added (separated by commas).
 
 ## Storage
 
-Data is stored in the folder */var/lib/radicale/collections*. The path can
+Data is stored in the folder `/var/lib/radicale/collections`. The path can
 be changed with the foloowing configuration:
 
 ```ini
@@ -103,8 +103,8 @@ requirements.
 
 ### Linux with systemd as a user
 
-Create the file *~/.config/systemd/user/radicale.service*:
-```
+Create the file `~/.config/systemd/user/radicale.service`:
+```ini
 [Unit]
 Description=A simple CalDAV (calendar) and CardDAV (contact) server
 
@@ -119,7 +119,7 @@ You may have to add addition command line arguments to Radicale for the
 configuration file, etc.
 
 To enable and manage the service run:
-```bash
+```shell
 # Enable the service
 $ systemctl --user enable radicale
 # Start the service
@@ -136,8 +136,8 @@ Create the **radicale** user and group for the Radicale service.
 The configuration files must be readable by this user and the storage folder
 must be writable.
 
-Create the file */etc/systemd/system/radicale.service*:
-```
+Create the file `/etc/systemd/system/radicale.service`:
+```ini
 [Unit]
 Description=A simple CalDAV (calendar) and CardDAV (contact) server
 
@@ -153,7 +153,7 @@ You may have to add addition command line arguments to Radicale for the
 configuration file, etc.
 
 To enable and manage the service run:
-```bash
+```shell
 # Enable the service
 $ systemctl enable radicale
 # Start the service
@@ -170,8 +170,8 @@ $ journalctl --unit radicale.service
 
 ## Classic daemonization
 
-Set the configuration option ``daemon`` in the section ``server`` to ``True``.
-You may want to set the option ``pid`` to the path of a PID file.
+Set the configuration option `daemon` in the section `server` to `True`.
+You may want to set the option `pid` to the path of a PID file.
 
 After daemonization the server will not log anything. You have to configure
 [Logging]({{ site.baseurl }}/tutorial/).
@@ -181,15 +181,15 @@ The main process exits, after the PID file is written.
 
 ## Windows with "NSSM - the Non-Sucking Service Manager"
 
-First install [NSSM](https://nssm.cc/) and start ``nssm install`` in a command
+First install [NSSM](https://nssm.cc/) and start `nssm install` in a command
 prompt. Apply the following configuration:
 
-  * Service name: ``Radicale``
-  * Application
-      * Path: ``C:\Path\To\Python\python.exe``
-      * Arguments: ``-m radicale --config C:\Path\To\Config``
-  * I/O redirection
-     * Error: ``C:\Path\To\Radicale.log``
+* Service name: `Radicale`
+* Application
+  * Path: `C:\Path\To\Python\python.exe`
+  * Arguments: `-m radicale --config C:\Path\To\Config`
+* I/O redirection
+  * Error: `C:\Path\To\Radicale.log`
 
 Be aware that the service runs in the local system account, you might want to change this. Managing user accounts is beyond the scope of this manual.
 

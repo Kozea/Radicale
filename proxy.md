@@ -5,11 +5,11 @@ permalink: /proxy/
 ---
 
 When a everse proxy is used, the path at which Radicale is available must
-be provided via the ``X-Script-Name`` header.
+be provided via the `X-Script-Name` header.
 
 
 Example **nginx** configuration:
-```
+```nginx
 location /sub/folder/radicale {
     proxy_pass localhost:5232/; # The / is important!
     proxy_set_header X-Script-Name /radciale;
