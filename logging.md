@@ -21,7 +21,7 @@ option in the `logging` section. The file format is explained in the
 [Python Logging Module](https://docs.python.org/3/library/logging.config.html#configuration-file-format).
 
 An example configuration to write the log output to the file `/var/log/radicale/log`:
-```ini
+```toml
 [loggers]
 keys = root
 

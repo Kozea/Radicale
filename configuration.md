@@ -8,7 +8,7 @@ Radicale can be configured with a configuration file or with
 command line arguments.
 
 An example configuration file looks like:
-```ini
+```toml
 [server]
 hosts = 0.0.0.0:5232  # Bind all addresses
 
@@ -251,6 +251,6 @@ In this section additional HTTP headers that are sent to clients can be
 specified.
 
 An example to relax the same-origin policy:
-```ini
+```toml
 Access-Control-Allow-Origin = *
 ```

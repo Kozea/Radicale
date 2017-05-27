@@ -49,7 +49,7 @@ $ python3 -m pip install --upgrade bcrypt
 ```
 
 Authentication can be enabled with the following configuration:
-```ini
+```toml
 [auth]
 type = htpasswd
 htpasswd_filename = /path/to/users
@@ -62,7 +62,7 @@ The default configuration binds the server to localhost. It can't be reached
 from other computers. This can be changed with the following configuration
 options:
 
-```ini
+```toml
 [server]
 hosts = 0.0.0.0:5232
 ```
@@ -74,7 +74,7 @@ More addresses can be added (separated by commas).
 Data is stored in the folder `/var/lib/radicale/collections`. The path can
 be changed with the foloowing configuration:
 
-```ini
+```toml
 [storage]
 filesystem_folder = /path/to/storage
 ```
@@ -86,7 +86,7 @@ the maximum file size (important for contacts with big photos) and the rate of
 incorrect authentication attempts. Connections are terminated after a timeout.
 The default values should be fine for most scenarios.
 
-```ini
+```toml
 [server]
 max_connections = 20
 max_content_length = 10000000  # 1 Megabyte
@@ -105,7 +105,7 @@ requirements.
 ### Linux with systemd as a user
 
 Create the file `~/.config/systemd/user/radicale.service`:
-```ini
+```toml
 [Unit]
 Description=A simple CalDAV (calendar) and CardDAV (contact) server
 
@@ -138,7 +138,7 @@ The configuration files must be readable by this user and the storage folder
 must be writable.
 
 Create the file `/etc/systemd/system/radicale.service`:
-```ini
+```toml
 [Unit]
 Description=A simple CalDAV (calendar) and CardDAV (contact) server
 
