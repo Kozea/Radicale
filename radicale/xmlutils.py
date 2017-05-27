@@ -58,6 +58,13 @@ for short, url in NAMESPACES.items():
 CLARK_TAG_REGEX = re.compile(r"{(?P<namespace>[^}]*)}(?P<tag>.*)", re.VERBOSE)
 HUMAN_REGEX = re.compile(r"(?P<namespace>[^:{}]*)(?P<tag>.*)", re.VERBOSE)
 
+DAY = timedelta(days=1)
+SECOND = timedelta(seconds=1)
+DATETIME_MIN = datetime.min.replace(tzinfo=timezone.utc)
+DATETIME_MAX = datetime.max.replace(tzinfo=timezone.utc)
+TIMESTAMP_MIN = math.floor(DATETIME_MIN.timestamp())
+TIMESTAMP_MAX = math.ceil(DATETIME_MAX.timestamp())
+
 
 def pretty_xml(element, level=0):
     """Indent an ElementTree ``element`` and its children."""
@@ -263,11 +270,6 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
     See rfc4791-9.9.
 
     """
-
-    DAY = timedelta(days=1)
-    SECOND = timedelta(seconds=1)
-    DATETIME_MIN = datetime.min.replace(tzinfo=timezone.utc)
-    DATETIME_MAX = datetime.max.replace(tzinfo=timezone.utc)
     child = getattr(vobject_item, child_name.lower())
     # Comments give the lines in the tables of the specification
     if child_name == "VEVENT":
@@ -505,11 +507,6 @@ def simplify_prefilters(filters):
     and the simplified condition are identical.
 
     """
-
-    TIMESTAMP_MIN = math.floor(
-        datetime.min.replace(tzinfo=timezone.utc).timestamp())
-    TIMESTAMP_MAX = math.ceil(
-        datetime.max.replace(tzinfo=timezone.utc).timestamp())
     flat_filters = tuple(chain.from_iterable(filters))
     simple = len(flat_filters) <= 1
     for col_filter in flat_filters:
@@ -560,9 +557,6 @@ def find_tag_and_time_range(vobject_item):
     This is intened to be used for matching against simplified prefilters.
 
     """
-
-    DATETIME_MIN = datetime.min.replace(tzinfo=timezone.utc)
-    DATETIME_MAX = datetime.max.replace(tzinfo=timezone.utc)
     tag = ""
     if vobject_item.name == "VCALENDAR":
         for component in vobject_item.components():
