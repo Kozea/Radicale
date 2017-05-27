@@ -5,7 +5,9 @@ permalink: /documentation/
 ---
 
 This documentation page is written for version 2.0.x. If you want to update
-Radicale from 1.x.x to 2.0.x, please follow our [migration guide]({{ site.baseurl }}/1to2/).
+Radicale from 1.x.x to 2.0.x, please follow
+our [migration guide]({{ site.baseurl }}/1to2/). You can find on GitHub the
+[documentation page for the 1.1.x versions](https://github.com/Kozea/Radicale/blob/website/pages/user_documentation.rst).
 
 ## Install and set up
 
