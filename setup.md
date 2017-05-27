@@ -91,6 +91,7 @@ The default values should be fine for most scenarios.
 max_connections = 20
 max_content_length = 10000000  # 1 Megabyte
 timeout = 10  # seconds
+
 [auth]
 delay = 1  # Average delay after failed login attempts in seconds
 ```
