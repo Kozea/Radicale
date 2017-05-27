@@ -29,6 +29,12 @@ http://kozea.github.io/Radicale/1to2/ if you want to switch from 1.x.x to
   version control
 
 
+1.1.3 - Fourth Law of Nature
+============================
+
+* Add a ``--export-storage=FOLDER`` command-line argument (by Unrud, see #606)
+
+
 1.1.2 - Third Law of Nature
 ===========================
 
