@@ -28,7 +28,7 @@ setup(packages=["silly_auth_plugin"])
 In the same folder create the sub-folder `silly_auth_plugin`. The folder
 must have the same name as specified in `packages` above.
 
-Create the file `\_\_init\_\_.py` in the `silly_auth_plugin` folder with the
+Create the file `__init__.py` in the `silly_auth_plugin` folder with the
 following content:
 
 ```python
