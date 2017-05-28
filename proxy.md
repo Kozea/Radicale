@@ -12,7 +12,7 @@ Example **nginx** configuration:
 ```nginx
 location /sub/folder/radicale {
     proxy_pass localhost:5232/; # The / is important!
-    proxy_set_header X-Script-Name /radciale;
+    proxy_set_header X-Script-Name /sub/folder/radicale;
 }
 ```
 
