@@ -179,7 +179,7 @@ Set the configuration option `daemon` in the section `server` to `True`.
 You may want to set the option `pid` to the path of a PID file.
 
 After daemonization the server will not log anything. You have to configure
-[Logging]({{ site.baseurl }}/tutorial/).
+[Logging]({{ site.baseurl }}/logging/).
 
 If you start Radicale now, it will initialize and fork into the background.
 The main process exits, after the PID file is written.

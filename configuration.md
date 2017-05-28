@@ -200,7 +200,7 @@ Default: `owner_only`
 
 ### file
 File for the rights backend `from_file`.  See the
-[Rights]({{ site.baseurl }}/logging/) page.
+[Rights]({{ site.baseurl }}/rights/) page.
 
 ## storage
 ### type
