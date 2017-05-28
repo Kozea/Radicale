@@ -999,3 +999,42 @@ class TestLogging(LogCaptureMixIn, BaseFileSystemTest):
         print(log_msgs)
         assert "INFO:REPORT request for /calendar.ics/ received" in log_msgs
         assert "ERROR:Error processing /calendar.ics/:" in log_msgs
+
+    def test_error_in_filtered_items_reports_item_href(self):
+        """Test if an error when filtering reports the uri with level
+        ERROR."""
+
+        class Fail(Exception):
+            pass
+
+        def time_range_match(*args, **kw):
+            raise Fail("This should fail!")
+
+        self.request("MKCOL", "/calendar.ics/")
+        self.request(
+            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/this-is-broken.ics"
+        status, headers, answer = self.request("PUT", path, event)
+
+        # TODO: Use pytest's monkeypatch fixture
+        from radicale import xmlutils
+        orig_trm = xmlutils._time_range_match
+        try:
+            xmlutils._time_range_match = time_range_match
+            with pytest.raises(Exception):
+                status, headers, answer = self.request(
+                    "REPORT", "/calendar.ics/",
+                    '''<?xml version="1.0" encoding="UTF-8" ?>
+                    <CAL:calendar-query xmlns="DAV:"
+                    xmlns:CAL="urn:ietf:params:xml:ns:caldav">
+                    <prop><getetag /></prop>
+                    <CAL:filter>
+                    <CAL:comp-filter name="VEVENT">
+                    <CAL:time-range start="20160501T120000Z" />
+                    </CAL:comp-filter></CAL:filter></CAL:calendar-query>''')
+        finally:
+            xmlutils._time_range_match = orig_trm
+        log_msgs = self.get_log_messages()
+        assert "ERROR:Error filtering item 'this-is-broken.ics'" in log_msgs
+        assert "ERROR:Error processing /calendar.ics/:" in log_msgs
