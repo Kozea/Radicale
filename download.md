@@ -14,9 +14,10 @@ install, just type as superuser:
 ## Git Repository
 
 If you want the development version of Radicale, take a look at the
-[git repository on GitHub]({{ site.github.repository_url }}), or clone it:
+[git repository on GitHub]({{ site.github.repository_url }}), or install it
+directly with:
 
-    git clone git://github.com/Kozea/Radicale.git
+    $ python3 -m pip install --upgrade git+https://github.com/Kozea/Radicale
 
 You can also download
 [the Radicale package of the git repository](https://github.com/Kozea/Radicale/tarball/master).
