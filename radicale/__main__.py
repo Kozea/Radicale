@@ -26,7 +26,6 @@ from a python programme with ``radicale.__main__.run()``.
 
 import atexit
 import os
-import shutil
 import sys
 import optparse
 import signal
