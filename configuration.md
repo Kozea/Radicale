@@ -168,7 +168,8 @@ Available methods:
 : Passwords are stored as salted SHA1 hashes. It's insecure!
 
 `crypt`
-: This uses UNIX [crypt(3)](http://man7.org/linux/man-pages/man3/crypt.3.html).
+: This uses UNIX
+  [crypt(3)](https://manpages.debian.org/unstable/manpages-dev/crypt.3.en.html).
   It's insecure!
 
 Default: `bcrypt`
