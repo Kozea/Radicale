@@ -26,6 +26,7 @@ from a python programme with ``radicale.__main__.run()``.
 
 import atexit
 import os
+import shutil
 import sys
 import optparse
 import signal
@@ -90,7 +91,7 @@ def export_storage(config, path):
                 with open(component_filename, "wb") as f:
                     f.write(text.encode("utf-8"))
         try:
-            os.rename(os.path.join(temp, "root"), path)
+            shutil.move(os.path.join(temp, "root"), path)
         except OSError as e:
             print("ERROR: Can't create '%s' directory: %s" % (path, e))
             exit(1)
