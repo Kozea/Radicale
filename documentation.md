@@ -41,5 +41,4 @@ and simple piece of code, it may be the perfect project to start hacking!
 
 - [How does Radicale work?]({{ site.baseurl }}/architecture/)
 - [Plugins.]({{ site.baseurl }}/plugins/)
-- [Debugging.]({{ site.baseurl }}/debugging/)
 - [Adding or fixing documentation.]({{ site.baseurl }}/edit/)
