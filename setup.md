@@ -29,7 +29,9 @@ If the server is reachable over a network, you should change this.
 First a `users` file with all user names and passwords must be created.
 It can be stored in the same directory as the configuration file.
 
-The file can be created and managed with
+### The secure way
+
+The `users` file can be created and managed with
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html):
 ```shell
 # Create a new htpasswd file with the user "user1"
@@ -55,6 +57,25 @@ type = htpasswd
 htpasswd_filename = /path/to/users
 # encryption method used in the htpasswd file
 htpasswd_encryption = bcrypt
+```
+
+### The simple but insecure way
+
+Create the `users` file by hand with lines containing the user name and
+password separated by `:`. Example:
+
+```
+user1:password1
+user2:password2
+```
+
+Authentication can be enabled with the following configuration:
+```ini
+[auth]
+type = htpasswd
+htpasswd_filename = /path/to/users
+# encryption method used in the htpasswd file
+htpasswd_encryption = plain
 ```
 
 ## Addresses
