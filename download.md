@@ -6,7 +6,7 @@ permalink: /download/
 
 ## PyPI
 
-Radicale is [available on PyPI](http://pypi.python.org/pypi/Radicale/). To
+Radicale is [available on PyPI](https://pypi.python.org/pypi/Radicale/). To
 install, just type as superuser:
 
     python3 -m pip install --upgrade radicale
