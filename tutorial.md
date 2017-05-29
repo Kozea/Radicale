@@ -9,8 +9,10 @@ go right now! You won't have the best installation ever, but it will be enough
 to play a little bit with Radicale.
 
 When everything works, you can get a [client]({{ site.baseurl }}/clients/) and
-start creating calendars and address books. And if Radicale fits your needs, it
-may be time to for [some basic configuration](/setup/).
+start creating calendars and address books. The server is **not** reachable
+over the network and you can log in with any user name and password. If
+Radicale fits your needs, it may be time for
+[some basic configuration](/setup/).
 
 Follow one of the chapters below depending on your operating system.
 
