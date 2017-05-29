@@ -4,9 +4,9 @@ title: Reverse Proxy
 permalink: /proxy/
 ---
 
-When a everse proxy is used, the path at which Radicale is available must
-be provided via the `X-Script-Name` header.
-
+When a reverse proxy is used, the path at which Radicale is available must
+be provided via the `X-Script-Name` header. The proxy must remove the location
+from the URL path that is forwarded to Radicale.
 
 Example **nginx** configuration:
 ```nginx
