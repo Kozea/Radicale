@@ -59,11 +59,11 @@ Radicale's source code for more information.
 ## Rights management plugins
 This plugin type is used to check if a user has access to a path.
 The module must contain a class `Rights` that extends
-`radicale.auth.BaseAuth`. Take a look at the file `radicale/rights.py` in
+`radicale.rights.BaseRights`. Take a look at the file `radicale/rights.py` in
 Radicale's source code for more information.
 
 ## Storage plugins
 This plugin is used to store collections and items.
 The module must contain a class `Storage` that extends
-`radicale.auth.BaseStorage`. Take a look at the file `radicale/storage.py` in
-Radicale's source code for more information.
+`radicale.storage.BaseStorage`. Take a look at the file `radicale/storage.py`
+in Radicale's source code for more information.
