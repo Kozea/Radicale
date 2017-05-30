@@ -1,5 +1,6 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2012-2017 Guillaume Ayoub
+# Copyright © 2017 Hartmut Goebel
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,7 +42,6 @@ import os.path
 import re
 from configparser import ConfigParser
 from importlib import import_module
-from io import StringIO
 
 from . import storage
 
@@ -60,32 +60,24 @@ def load(configuration, logger):
 
 
 DEFINED_RIGHTS = {
-    "authenticated": """
-[rw]
-user:.+
-collection:.*
-permission:rw
-    """,
-    "owner_write": """
-[w]
-user:.+
-collection:%(login)s(/.*)?
-permission:rw
-[r]
-user:.+
-collection:.*
-permission:r
-    """,
-    "owner_only": """
-[rw]
-user:.+
-collection:%(login)s(/.*)?
-permission:rw
-[r]
-user:.+
-collection:
-permission:r
-    """}
+    "authenticated": {
+        'rw': {'user': '.+',
+               'collection': '.*',
+               'permission': 'rw'}},
+    "owner_write": {
+        'w': {'user': '.+',
+              'collection': '%(login)s(/.*)?',
+              'permission': 'rw'},
+        'r': {'user': '.+',
+              'collection': '.*',
+              'permission': 'r'}},
+    "owner_only": {
+        'rw': {'user': '.+',
+               'collection': '%(login)s(/.*)?',
+               'permission': 'rw'},
+        'r': {'user': '.+',
+              'collection': '',
+              'permission': 'r'}}}
 
 
 class BaseRights:
@@ -121,7 +113,7 @@ class Rights(BaseRights):
             {"login": user_escaped, "path": sane_path_escaped})
         if self.rights_type in DEFINED_RIGHTS:
             self.logger.debug("Rights type '%s'", self.rights_type)
-            regex.readfp(StringIO(DEFINED_RIGHTS[self.rights_type]))
+            regex.read_dict(DEFINED_RIGHTS[self.rights_type])
         else:
             self.logger.debug("Reading rights from file '%s'", self.filename)
             if not regex.read(self.filename):
@@ -129,20 +121,23 @@ class Rights(BaseRights):
                     "File '%s' not found for rights", self.filename)
                 return False
 
+        self.logger.debug("Testing user %r for collection %r", user, sane_path)
         for section in regex.sections():
             re_user = regex.get(section, "user")
             re_collection = regex.get(section, "collection")
-            self.logger.debug(
-                "Test if '%s:%s' matches against '%s:%s' from section '%s'",
-                user, sane_path, re_user, re_collection, section)
             # Emulate fullmatch
             user_match = re.match(r"(?:%s)\Z" % re_user, user)
             if user_match:
                 re_collection = re_collection.format(*user_match.groups())
                 # Emulate fullmatch
                 if re.match(r"(?:%s)\Z" % re_collection, sane_path):
-                    self.logger.debug("Section '%s' matches", section)
+                    self.logger.debug("  Section %r: matches %r",
+                                      section, re_collection)
                     return permission in regex.get(section, "permission")
                 else:
-                    self.logger.debug("Section '%s' does not match", section)
+                    self.logger.debug("  Section %r: "
+                                      "Collection does not match %r",
+                                      section, re_collection)
+            else:
+                self.logger.debug("  Section %r: User does not match", section)
         return False
