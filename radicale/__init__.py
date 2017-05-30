@@ -357,8 +357,10 @@ class Application:
             environ.get("SCRIPT_NAME", "")).rstrip("/")
         self.logger.debug("Sanitized script name: %s", environ["SCRIPT_NAME"])
         base_prefix = environ["SCRIPT_NAME"]
-        # Sanitize request URI
-        environ["PATH_INFO"] = storage.sanitize_path(environ["PATH_INFO"])
+        # Sanitize request URI (a WSGI server indicates with an empty path,
+        # that the URL targets the application root without a trailing slash)
+        if environ["PATH_INFO"]:
+            environ["PATH_INFO"] = storage.sanitize_path(environ["PATH_INFO"])
         self.logger.debug("Sanitized path: %s", environ["PATH_INFO"])
         path = environ["PATH_INFO"]
         if base_prefix and path.startswith(base_prefix):
@@ -597,6 +599,9 @@ class Application:
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
         to_path = storage.sanitize_path(to_url.path)
+        if not (to_path + "/").startswith(base_prefix + "/"):
+            return NOT_ALLOWED
+        to_path = to_path[len(base_prefix):]
         if not self._access(user, to_path, "w"):
             return NOT_ALLOWED
 
