@@ -1,5 +1,6 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2012-2017 Guillaume Ayoub
+# Copyright © 2017 Hartmut Goebel
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +21,7 @@ Radicale tests with simple requests.
 """
 
 import base64
+import io
 import logging
 import os
 import posixpath
@@ -27,6 +29,7 @@ import shutil
 import tempfile
 
 import pytest
+
 from radicale import Application, config
 
 from . import BaseTest
@@ -49,6 +52,42 @@ class BaseRequestsMixIn:
         assert "BEGIN:VCALENDAR" in answer
         assert "END:VCALENDAR" in answer
 
+    def _make_abook_collection(self, name="addresses.vcf"):
+        uri = "/%s/" % name
+        self.request("MKCOL", uri)
+        self.request(
+            "PUT", uri, "BEGIN:VADDRESSBOOK\r\nEND:VADDRESSBOOK")
+        # for convenience, return the colelction name
+        return name
+
+    def _put_vcard(self, filename, collection, name=None):
+        vcard = get_file_content(filename)
+        name = name or filename
+        path = "/%s/%s" % (collection, name)
+        status, headers, answer = self.request("PUT", path, vcard)
+        return path, status, headers, answer
+
+    def test_add_vcard(self):
+        """Add an event."""
+        collection = self._make_abook_collection()
+        path, status, headers, answer = self._put_vcard(
+            "vcard1.vcf", collection)
+        assert status == 201
+        status, headers, answer = self.request("GET", path)
+        assert "ETag" in headers.keys()
+        assert status == 200
+        assert "VCARD" in answer
+        assert "Theo Tester" in answer
+        assert "UID:theo-tester.vcf" in answer
+
+    def test_add_broken_vcard_returns_422(self):
+        """Add an event."""
+        collection = self._make_abook_collection()
+        path, status, headers, answer = self._put_vcard(
+            "broken-vcard.vcf", collection)
+        assert status == 422
+        assert "Error processing the contained data" in answer
+
     def test_add_event(self):
         """Add an event."""
         self.request("MKCOL", "/calendar.ics/")
@@ -64,6 +103,17 @@ class BaseRequestsMixIn:
         assert "VEVENT" in answer
         assert "Event" in answer
         assert "UID:event" in answer
+
+    def test_add_broken_event_returns_422(self):
+        """Add an event."""
+        self.request("MKCOL", "/calendar.ics/")
+        self.request(
+            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        event = get_file_content("broken-vevent.ics")
+        path = "/calendar.ics/broken-vevent.ics"
+        status, headers, answer = self.request("PUT", path, event)
+        assert status == 422
+        assert "Error processing the contained data" in answer
 
     def test_add_todo(self):
         """Add a todo."""
@@ -233,6 +283,14 @@ class BaseRequestsMixIn:
         assert status == 207
         assert ":calendar-color>#BADA55</" in answer
         assert "200 OK</status" in answer
+
+    def test_invalid_xml_returns_422(self):
+        collection = self._make_abook_collection()
+        status, headers, answer = self.request(
+            "REPORT", "/%s/" % collection, """<foo></bar>""")
+        assert status == 422
+        assert "Error processing the contained data" in answer
+        assert "Invalid XML" in answer
 
     def test_multiple_events_with_same_uid(self):
         """Add two events with the same UID."""
@@ -893,3 +951,90 @@ class TestCustomStorageSystem(BaseFileSystemTest):
     def test_root(self):
         """A simple test to verify that the custom backend works."""
         BaseRequestsMixIn.test_root(self)
+
+
+class LogCaptureMixIn:
+    def setup(self):
+        super().setup()
+        # TODO: Use pytest-catchlog add-on once we change the test-suite to
+        # use pytest fixtures
+        self.log_stream = io.StringIO()
+        ch = logging.StreamHandler(self.log_stream)
+        ch.setFormatter(logging.Formatter('%(levelname)s:%(message)s'))
+        self.logger.addHandler(ch)
+        self.logger.setLevel(logging.INFO)
+
+    def get_log_messages(self):
+        return self.log_stream.getvalue()
+
+    def test___log_capture_works(self):
+        "Simple self-test"
+        self.logger.error("Test")
+        self.logger.info("Another Test")
+        log_msgs = self.get_log_messages()
+        assert "ERROR:Test" in log_msgs
+        assert "INFO:Another Test" in log_msgs
+
+
+class TestLogging(LogCaptureMixIn, BaseFileSystemTest):
+    """Test if things are logged as expected."""
+    # Use the multifilesystem
+    storage_type = "multifilesystem"
+
+    def test_error_in_request_logs_uri(self):
+        """Test if an error when processing a request reports the uri with
+        level ERROR."""
+
+        class Fail(Exception):
+            pass
+
+        def do_report(environ, base_prefix, path, user):
+            raise Fail("This should fail!")
+
+        self.application.do_REPORT = do_report
+        with pytest.raises(Fail):
+            status, headers, answer = self.request(
+                "REPORT", "/calendar.ics/", "")
+        log_msgs = self.get_log_messages()
+        print(log_msgs)
+        assert "INFO:REPORT request for /calendar.ics/ received" in log_msgs
+        assert "ERROR:Error processing /calendar.ics/:" in log_msgs
+
+    def test_error_in_filtered_items_reports_item_href(self):
+        """Test if an error when filtering reports the uri with level
+        ERROR."""
+
+        class Fail(Exception):
+            pass
+
+        def time_range_match(*args, **kw):
+            raise Fail("This should fail!")
+
+        self.request("MKCOL", "/calendar.ics/")
+        self.request(
+            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/this-is-broken.ics"
+        status, headers, answer = self.request("PUT", path, event)
+
+        # TODO: Use pytest's monkeypatch fixture
+        from radicale import xmlutils
+        orig_trm = xmlutils._time_range_match
+        try:
+            xmlutils._time_range_match = time_range_match
+            with pytest.raises(Exception):
+                status, headers, answer = self.request(
+                    "REPORT", "/calendar.ics/",
+                    '''<?xml version="1.0" encoding="UTF-8" ?>
+                    <CAL:calendar-query xmlns="DAV:"
+                    xmlns:CAL="urn:ietf:params:xml:ns:caldav">
+                    <prop><getetag /></prop>
+                    <CAL:filter>
+                    <CAL:comp-filter name="VEVENT">
+                    <CAL:time-range start="20160501T120000Z" />
+                    </CAL:comp-filter></CAL:filter></CAL:calendar-query>''')
+        finally:
+            xmlutils._time_range_match = orig_trm
+        log_msgs = self.get_log_messages()
+        assert "ERROR:Error filtering item 'this-is-broken.ics'" in log_msgs
+        assert "ERROR:Error processing /calendar.ics/:" in log_msgs

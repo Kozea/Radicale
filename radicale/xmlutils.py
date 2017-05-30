@@ -893,12 +893,17 @@ def report(base_prefix, path, xml_request, collection):
             if not item:
                 continue
             if filters:
-                match = (
-                    _comp_match if collection.get_meta("tag") == "VCALENDAR"
-                    else _prop_match)
-                if not all(match(item, filter_[0]) for filter_ in filters
-                           if filter_):
-                    continue
+                try:
+                    match = (_comp_match
+                             if collection.get_meta("tag") == "VCALENDAR"
+                             else _prop_match)
+                    if not all(match(item, filter_[0]) for filter_ in filters
+                               if filter_):
+                        continue
+                except:
+                    collection.logger.error("Error filtering item %r",
+                                            item.href)
+                    raise
 
             found_props = []
             not_found_props = []
