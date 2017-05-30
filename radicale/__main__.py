@@ -114,45 +114,47 @@ def run():
         exit(1)
 
 
-def serve(configuration, logger):
-    """Serve radicale from configuration."""
-    # Fork if Radicale is launched as daemon
-    if configuration.getboolean("server", "daemon"):
-        # Check and create PID file in a race-free manner
-        if configuration.get("server", "pid"):
-            try:
-                pid_fd = os.open(
-                    configuration.get("server", "pid"),
-                    os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            except:
-                raise OSError(
-                    "PID file exists: %s" % configuration.get("server", "pid"))
-        pid = os.fork()
-        if pid:
-            sys.exit()
+def daemonize(configuration, logger):
+    """Fork and decouple if Radicale is configured as daemon."""
+    # Check and create PID file in a race-free manner
+    if configuration.get("server", "pid"):
+        try:
+            pid_path = os.path.abspath(os.path.expanduser(
+                configuration.get("server", "pid")))
+            pid_fd = os.open(
+                pid_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except OSError as e:
+            raise OSError("PID file exists: %s" %
+                          configuration.get("server", "pid")) from e
+    pid = os.fork()
+    if pid:
         # Write PID
         if configuration.get("server", "pid"):
             with os.fdopen(pid_fd, "w") as pid_file:
-                pid_file.write(str(os.getpid()))
-        # Decouple environment
-        os.chdir("/")
-        os.setsid()
-        with open(os.devnull, "r") as null_in:
-            os.dup2(null_in.fileno(), sys.stdin.fileno())
-        with open(os.devnull, "w") as null_out:
-            os.dup2(null_out.fileno(), sys.stdout.fileno())
-            os.dup2(null_out.fileno(), sys.stderr.fileno())
+                pid_file.write(str(pid))
+        sys.exit()
+    if configuration.get("server", "pid"):
+        os.close(pid_fd)
 
-    # Register exit function
-    def cleanup():
-        """Remove the PID files."""
-        logger.debug("Cleaning up")
-        # Remove PID file
-        if (configuration.get("server", "pid") and
-                configuration.getboolean("server", "daemon")):
-            os.unlink(configuration.get("server", "pid"))
+        # Register exit function
+        def cleanup():
+            """Remove the PID files."""
+            logger.debug("Cleaning up")
+            # Remove PID file
+            os.unlink(pid_path)
+        atexit.register(cleanup)
+    # Decouple environment
+    os.chdir("/")
+    os.setsid()
+    with open(os.devnull, "r") as null_in:
+        os.dup2(null_in.fileno(), sys.stdin.fileno())
+    with open(os.devnull, "w") as null_out:
+        os.dup2(null_out.fileno(), sys.stdout.fileno())
+        os.dup2(null_out.fileno(), sys.stderr.fileno())
 
-    atexit.register(cleanup)
+
+def serve(configuration, logger):
+    """Serve radicale from configuration."""
     logger.info("Starting Radicale")
 
     # Create collection servers
@@ -228,6 +230,8 @@ def serve(configuration, logger):
     else:
         # Fallback to busy waiting
         select_timeout = 1.0
+    if configuration.getboolean("server", "daemon"):
+        daemonize(configuration, logger)
     logger.debug("Radicale server ready")
     while not shutdown_program:
         try:
