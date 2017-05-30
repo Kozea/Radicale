@@ -439,7 +439,7 @@ class Application:
             # Unknown or unauthorized user
             self.logger.debug("Asking client for authentication")
             status = client.UNAUTHORIZED
-            realm = self.configuration.get("server", "realm")
+            realm = self.configuration.get("auth", "realm")
             headers = dict(headers)
             headers.update({
                 "WWW-Authenticate":
