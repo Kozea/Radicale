@@ -25,6 +25,7 @@ in them for XML requests (all but PUT).
 
 """
 
+import copy
 import posixpath
 import re
 import xml.etree.ElementTree as ET
@@ -56,8 +57,10 @@ CLARK_TAG_REGEX = re.compile(r"{(?P<namespace>[^}]*)}(?P<tag>.*)", re.VERBOSE)
 HUMAN_REGEX = re.compile(r"(?P<namespace>[^:{}]*)(?P<tag>.*)", re.VERBOSE)
 
 
-def _pretty_xml(element, level=0):
+def pretty_xml(element, level=0):
     """Indent an ElementTree ``element`` and its children."""
+    if not level:
+        element = copy.deepcopy(element)
     i = "\n" + level * "  "
     if len(element):
         if not element.text or not element.text.strip():
@@ -65,7 +68,7 @@ def _pretty_xml(element, level=0):
         if not element.tail or not element.tail.strip():
             element.tail = i
         for sub_element in element:
-            _pretty_xml(sub_element, level + 1)
+            pretty_xml(sub_element, level + 1)
         if not sub_element.tail or not sub_element.tail.strip():
             sub_element.tail = i
     else:
@@ -439,21 +442,18 @@ def name_from_path(path, collection):
     return name
 
 
-def props_from_request(root, actions=("set", "remove")):
+def props_from_request(xml_request, actions=("set", "remove")):
     """Return a list of properties as a dictionary."""
     result = OrderedDict()
-    if root:
-        if not hasattr(root, "tag"):
-            root = ET.fromstring(root.encode("utf8"))
-    else:
+    if xml_request is None:
         return result
 
     for action in actions:
-        action_element = root.find(_tag("D", action))
+        action_element = xml_request.find(_tag("D", action))
         if action_element is not None:
             break
     else:
-        action_element = root
+        action_element = xml_request
 
     prop_element = action_element.find(_tag("D", "prop"))
     if prop_element is not None:
@@ -497,7 +497,7 @@ def delete(base_prefix, path, collection, href=None):
     status.text = _response(200)
     response.append(status)
 
-    return _pretty_xml(multistatus)
+    return multistatus
 
 
 def propfind(base_prefix, path, xml_request, read_collections,
@@ -510,12 +510,10 @@ def propfind(base_prefix, path, xml_request, read_collections,
     in the output.
 
     """
-    # Reading request
-    root = ET.fromstring(xml_request.encode("utf8")) if xml_request else None
-
     # A client may choose not to submit a request body.  An empty PROPFIND
     # request body MUST be treated as if it were an 'allprop' request.
-    top_tag = root[0] if root is not None else ET.Element(_tag("D", "allprop"))
+    top_tag = (xml_request[0] if xml_request is not None else
+               ET.Element(_tag("D", "allprop")))
 
     props = ()
     if top_tag.tag == _tag("D", "allprop"):
@@ -567,7 +565,7 @@ def propfind(base_prefix, path, xml_request, read_collections,
         if response:
             multistatus.append(response)
 
-    return client.MULTI_STATUS, _pretty_xml(multistatus)
+    return client.MULTI_STATUS, multistatus
 
 
 def _propfind_response(base_prefix, path, item, props, user, write=False,
@@ -802,9 +800,8 @@ def proppatch(base_prefix, path, xml_request, collection):
     Read rfc4918-9.2 for info.
 
     """
-    root = ET.fromstring(xml_request.encode("utf8"))
-    props_to_set = props_from_request(root, actions=("set",))
-    props_to_remove = props_from_request(root, actions=("remove",))
+    props_to_set = props_from_request(xml_request, actions=("set",))
+    props_to_remove = props_from_request(xml_request, actions=("remove",))
 
     multistatus = ET.Element(_tag("D", "multistatus"))
     response = ET.Element(_tag("D", "response"))
@@ -821,7 +818,7 @@ def proppatch(base_prefix, path, xml_request, collection):
     for short_name in props_to_set:
         _add_propstat_to(response, short_name, 200)
 
-    return _pretty_xml(multistatus)
+    return multistatus
 
 
 def report(base_prefix, path, xml_request, collection):
@@ -830,7 +827,10 @@ def report(base_prefix, path, xml_request, collection):
     Read rfc3253-3.6 for info.
 
     """
-    root = ET.fromstring(xml_request.encode("utf8"))
+    multistatus = ET.Element(_tag("D", "multistatus"))
+    if xml_request is None:
+        return multistatus
+    root = xml_request
     if root.tag in (
             _tag("D", "principal-search-property-set"),
             _tag("D", "principal-property-search"),
@@ -840,7 +840,7 @@ def report(base_prefix, path, xml_request, collection):
         # InfCloud asks for expand-property reports (even if we don't announce
         # support for them) and stops working if an error code is returned.
         collection.logger.warning("Unsupported report method: %s", root.tag)
-        return _pretty_xml(ET.Element(_tag("D", "multistatus")))
+        return multistatus
     prop_element = root.find(_tag("D", "prop"))
     props = (
         [prop.tag for prop in prop_element]
@@ -864,8 +864,6 @@ def report(base_prefix, path, xml_request, collection):
     filters = (
         root.findall("./%s" % _tag("C", "filter")) +
         root.findall("./%s" % _tag("CR", "filter")))
-
-    multistatus = ET.Element(_tag("D", "multistatus"))
 
     for hreference in hreferences:
         try:
@@ -927,7 +925,7 @@ def report(base_prefix, path, xml_request, collection):
                 base_prefix, uri, found_props=found_props,
                 not_found_props=not_found_props, found_item=True))
 
-    return _pretty_xml(multistatus)
+    return multistatus
 
 
 def _item_response(base_prefix, href, found_props=(), not_found_props=(),
