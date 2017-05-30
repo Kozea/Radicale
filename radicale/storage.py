@@ -466,10 +466,6 @@ class Collection(BaseCollection):
 
     @classmethod
     def discover(cls, path, depth="0"):
-        if path is None:
-            # Wrong URL
-            return
-
         # Path should already be sanitized
         sane_path = sanitize_path(path).strip("/")
         attributes = sane_path.split("/")
