@@ -243,8 +243,8 @@ class ComponentNotFoundError(ValueError):
 
 
 class Item:
-    def __init__(self, collection, href, last_modified=None,
-                 text=None, item=None, etag=None):
+    def __init__(self, collection, item=None, href=None, last_modified=None,
+                 text=None, etag=None):
         """Initialize an item.
 
         ``collection`` the parent collection.
@@ -396,6 +396,14 @@ class BaseCollection:
         raise NotImplementedError
 
     def get_multi(self, hrefs):
+        """Fetch multiple items. Duplicate hrefs must be ignored.
+
+        DEPRECATED: use ``get_multi2`` instead
+
+        """
+        return (self.get(href) for href in set(hrefs))
+
+    def get_multi2(self, hrefs):
         """Fetch multiple items.
 
         Functionally similar to ``get``, but might bring performance benefits
@@ -417,19 +425,27 @@ class BaseCollection:
         """
         return map(self.get, self.list())
 
-    def pre_filtered_list(self, filters):
-        """List collection items with optional pre filtering.
+    def get_all_filtered(self, filters):
+        """Fetch all items with optional filtering.
 
-        This could largely improve performance of reports depending on
+        This can largely improve performance of reports depending on
         the filters and this implementation.
 
         Returns tuples in the form ``(item, filters_matched)``.
         ``filters_matched`` is a bool that indicates if ``filters`` are fully
         matched.
 
-        This returns all event by default
+        This returns all events by default
         """
         return ((item, False) for item in self.get_all())
+
+    def pre_filtered_list(self, filters):
+        """List collection items with optional pre filtering.
+
+        DEPRECATED: use ``get_all_filtered`` instead
+
+        """
+        return self.get_all()
 
     def has(self, href):
         """Check if an item exists by its href.
@@ -996,7 +1012,7 @@ class Collection(BaseCollection):
             cinput_hash = cetag = ctext = ctag = cstart = cend = None
         vobject_item = None
         if input_hash != cinput_hash:
-            vobject_item = Item(self, href,
+            vobject_item = Item(self, href=href,
                                 text=btext.decode(self.encoding)).item
             # Serialize the object again, to normalize the text representation.
             # The storage may have been edited externally.
@@ -1024,10 +1040,10 @@ class Collection(BaseCollection):
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
-        return Item(self, href, last_modified=last_modified, etag=cetag,
+        return Item(self, href=href, last_modified=last_modified, etag=cetag,
                     text=ctext, item=vobject_item), (ctag, cstart, cend)
 
-    def get_multi(self, hrefs):
+    def get_multi2(self, hrefs):
         # It's faster to check for file name collissions here, because
         # we only need to call os.listdir once.
         files = None
@@ -1050,7 +1066,7 @@ class Collection(BaseCollection):
         # are from os.listdir.
         return (self.get(href, verify_href=False) for href in self.list())
 
-    def pre_filtered_list(self, filters):
+    def get_all_filtered(self, filters):
         tag, start, end, simple = xmlutils.simplify_prefilters(filters)
         if not tag:
             # no filter
@@ -1066,7 +1082,7 @@ class Collection(BaseCollection):
         if not is_safe_filesystem_path_component(href):
             raise UnsafePathError(href)
         path = path_to_filesystem(self._filesystem_path, href)
-        item = Item(self, href, item=vobject_item)
+        item = Item(self, href=href, item=vobject_item)
         with self._atomic_write(path, newline="") as fd:
             fd.write(item.serialize())
         # Track the change

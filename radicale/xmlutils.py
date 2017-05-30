@@ -1083,7 +1083,7 @@ def report(base_prefix, path, xml_request, collection):
                     # Reference is a collection
                     collection_requested = True
 
-        for name, item in collection.get_multi(get_names()):
+        for name, item in collection.get_multi2(get_names()):
             if not item:
                 uri = "/" + posixpath.join(collection.path, name)
                 response = _item_response(base_prefix, uri,
@@ -1092,7 +1092,7 @@ def report(base_prefix, path, xml_request, collection):
             else:
                 yield item, False
         if collection_requested:
-            yield from collection.pre_filtered_list(filters)
+            yield from collection.get_all_filtered(filters)
 
     for item, filters_matched in retrieve_items(collection, hreferences,
                                                 multistatus):
