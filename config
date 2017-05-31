@@ -119,7 +119,8 @@
 [web]
 
 # Web interface backend
-#type = none
+# Value: none | internal
+#type = internal
 
 
 [logging]

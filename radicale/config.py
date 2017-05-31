@@ -149,7 +149,7 @@ INITIAL_CONFIG = OrderedDict([
             "type": str})])),
     ("web", OrderedDict([
         ("type", {
-            "value": "none",
+            "value": "internal",
             "help": "web interface backend",
             "type": str})])),
     ("logging", OrderedDict([

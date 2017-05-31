@@ -14,8 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import posixpath
+import time
 from http import client
 from importlib import import_module
+
+import pkg_resources
+
+from . import storage
 
 NOT_FOUND = (
     client.NOT_FOUND, (("Content-Type", "text/plain"),),
@@ -43,6 +50,8 @@ def load(configuration, logger):
     web_type = configuration.get("web", "type")
     if web_type in ("None", "none"):  # DEPRECATED: use "none"
         web_class = NoneWeb
+    elif web_type == "internal":
+        web_class = Web
     else:
         try:
             web_class = import_module(web_type).Web
@@ -64,3 +73,36 @@ class NoneWeb(BaseWeb):
         if path != "/.web":
             return NOT_FOUND
         return client.OK, {"Content-Type": "text/plain"}, "Radicale works!"
+
+
+class Web(BaseWeb):
+    def __init__(self, configuration, logger):
+        super().__init__(configuration, logger)
+        self.folder = pkg_resources.resource_filename(__name__, "web")
+
+    def get(self, environ, base_prefix, path, user):
+        try:
+            filesystem_path = storage.path_to_filesystem(
+                self.folder, path[len("/.web"):])
+        except ValueError:
+            return NOT_FOUND
+        if os.path.isdir(filesystem_path) and not path.endswith("/"):
+            location = posixpath.basename(path) + "/"
+            return (client.SEE_OTHER,
+                    {"Location": location, "Content-Type": "text/plain"},
+                    "Redirected to %s" % location)
+        if os.path.isdir(filesystem_path):
+            filesystem_path = os.path.join(filesystem_path, "index.html")
+        if not os.path.isfile(filesystem_path):
+            return NOT_FOUND
+        content_type = MIMETYPES.get(
+            os.path.splitext(filesystem_path)[1].lower(), FALLBACK_MIMETYPE)
+        with open(filesystem_path, "rb") as f:
+            answer = f.read()
+            last_modified = time.strftime(
+                "%a, %d %b %Y %H:%M:%S GMT",
+                time.gmtime(os.fstat(f.fileno()).st_mtime))
+        headers = {
+            "Content-Type": content_type,
+            "Last-Modified": last_modified}
+        return client.OK, headers, answer
