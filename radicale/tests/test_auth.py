@@ -109,6 +109,34 @@ class TestBaseAuthRequests(BaseTest):
             "bcrypt",
             "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
 
+    def test_remote_user(self):
+        self.configuration.set("auth", "type", "remote_user")
+        self.application = Application(self.configuration, self.logger)
+        status, _, answer = self.request(
+            "PROPFIND", "/",
+            """<?xml version="1.0" encoding="utf-8"?>
+               <propfind xmlns="DAV:">
+                 <prop>
+                   <current-user-principal />
+                 </prop>
+               </propfind>""", REMOTE_USER="test")
+        assert status == 207
+        assert ">/test/<" in answer
+
+    def test_http_x_remote_user(self):
+        self.configuration.set("auth", "type", "http_x_remote_user")
+        self.application = Application(self.configuration, self.logger)
+        status, _, answer = self.request(
+            "PROPFIND", "/",
+            """<?xml version="1.0" encoding="utf-8"?>
+               <propfind xmlns="DAV:">
+                 <prop>
+                   <current-user-principal />
+                 </prop>
+               </propfind>""", HTTP_X_REMOTE_USER="test")
+        assert status == 207
+        assert ">/test/<" in answer
+
     def test_custom(self):
         """Custom authentication."""
         self.configuration.set("auth", "type", "tests.custom.auth")

@@ -371,15 +371,19 @@ class Application:
         function = getattr(self, "do_%s" % environ["REQUEST_METHOD"].upper())
 
         # Ask authentication backend to check rights
-        authorization = environ.get("HTTP_AUTHORIZATION", None)
-        if authorization and authorization.startswith("Basic"):
+        external_login = self.Auth.get_external_login(environ)
+        authorization = environ.get("HTTP_AUTHORIZATION", "")
+        if external_login:
+            login, password = external_login
+        elif authorization.startswith("Basic"):
             authorization = authorization[len("Basic"):].strip()
             login, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
-            user = self.Auth.map_login_to_user(login)
         else:
-            user = self.Auth.map_login_to_user(environ.get("REMOTE_USER", ""))
+            # DEPRECATED: use remote_user backend instead
+            login = environ.get("REMOTE_USER", "")
             password = ""
+        user = self.Auth.map_login_to_user(login)
 
         # If "/.well-known" is not available, clients query "/"
         if path == "/.well-known" or path.startswith("/.well-known/"):
@@ -437,7 +441,7 @@ class Application:
             status, headers, answer = NOT_ALLOWED
 
         if (status, headers, answer) == NOT_ALLOWED and not (
-                user and is_authenticated):
+                user and is_authenticated) and not external_login:
             # Unknown or unauthorized user
             self.logger.debug("Asking client for authentication")
             status = client.UNAUTHORIZED

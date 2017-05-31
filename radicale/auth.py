@@ -67,6 +67,10 @@ def load(configuration, logger):
     logger.debug("Authentication type is %s", auth_type)
     if auth_type == "None":
         class_ = NoneAuth
+    elif auth_type == "remote_user":
+        class_ = RemoteUserAuth
+    elif auth_type == "http_x_remote_user":
+        class_ = HttpXRemoteUserAuth
     elif auth_type == "htpasswd":
         class_ = Auth
     else:
@@ -78,6 +82,14 @@ class BaseAuth:
     def __init__(self, configuration, logger):
         self.configuration = configuration
         self.logger = logger
+
+    def get_external_login(self, environ):
+        """Optionally provide the login and password externally.
+
+        Returns a tuple (login, password) or ().
+
+        """
+        return ()
 
     def is_authenticated(self, user, password):
         """Validate credentials.
@@ -201,3 +213,13 @@ class Auth(BaseAuth):
                     if login_ok & password_ok:
                         return True
         return False
+
+
+class RemoteUserAuth(NoneAuth):
+    def get_external_login(self, environ):
+        return environ.get("REMOTE_USER", ""), ""
+
+
+class HttpXRemoteUserAuth(NoneAuth):
+    def get_external_login(self, environ):
+        return environ.get("HTTP_X_REMOTE_USER", ""), ""
