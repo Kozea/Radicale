@@ -378,10 +378,9 @@ class Application:
         if environ["PATH_INFO"]:
             environ["PATH_INFO"] = storage.sanitize_path(environ["PATH_INFO"])
         self.logger.debug("Sanitized path: %r", environ["PATH_INFO"])
+        # SCRIPT_NAME is already removed from PATH_INFO, according to the
+        # WSGI specification.
         path = environ["PATH_INFO"]
-        if base_prefix and path.startswith(base_prefix):
-            path = path[len(base_prefix):]
-            self.logger.debug("Stripped script name from path: %s", path)
 
         # Get function corresponding to method
         function = getattr(self, "do_%s" % environ["REQUEST_METHOD"].upper())
