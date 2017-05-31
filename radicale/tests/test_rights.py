@@ -102,16 +102,16 @@ class TestBaseAuthRequests(BaseTest):
         self._test_rights("authenticated", "tmp", "/other", "w", 207)
 
     def test_none(self):
-        self._test_rights("None", "", "/", "r", 207)
-        self._test_rights("None", "", "/", "w", 207)
-        self._test_rights("None", "", "/tmp", "r", 207)
-        self._test_rights("None", "", "/tmp", "w", 207)
-        self._test_rights("None", "tmp", "/", "r", 207)
-        self._test_rights("None", "tmp", "/", "w", 207)
-        self._test_rights("None", "tmp", "/tmp", "r", 207)
-        self._test_rights("None", "tmp", "/tmp", "w", 207)
-        self._test_rights("None", "tmp", "/other", "r", 207)
-        self._test_rights("None", "tmp", "/other", "w", 207)
+        self._test_rights("none", "", "/", "r", 207)
+        self._test_rights("none", "", "/", "w", 207)
+        self._test_rights("none", "", "/tmp", "r", 207)
+        self._test_rights("none", "", "/tmp", "w", 207)
+        self._test_rights("none", "tmp", "/", "r", 207)
+        self._test_rights("none", "tmp", "/", "w", 207)
+        self._test_rights("none", "tmp", "/tmp", "r", 207)
+        self._test_rights("none", "tmp", "/tmp", "w", 207)
+        self._test_rights("none", "tmp", "/other", "r", 207)
+        self._test_rights("none", "tmp", "/other", "w", 207)
 
     def test_from_file(self):
         rights_file_path = os.path.join(self.colpath, "rights")

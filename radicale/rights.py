@@ -48,9 +48,9 @@ from . import storage
 def load(configuration, logger):
     """Load the rights manager chosen in configuration."""
     rights_type = configuration.get("rights", "type")
-    if configuration.get("auth", "type") == "None":
+    if configuration.get("auth", "type") in ("None", "none"):  # DEPRECATED
         rights_type = "None"
-    if rights_type == "None":
+    if rights_type in ("None", "none"):  # DEPRECATED: use "none"
         rights_class = NoneRights
     elif rights_type == "authenticated":
         rights_class = AuthenticatedRights

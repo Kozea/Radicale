@@ -66,8 +66,8 @@
 [auth]
 
 # Authentication method
-# Value: None | htpasswd | remote_user | http_x_remote_user
-#type = None
+# Value: none | htpasswd | remote_user | http_x_remote_user
+#type = none
 
 # Htpasswd filename
 #htpasswd_filename = /etc/radicale/users
@@ -85,7 +85,7 @@
 [rights]
 
 # Rights backend
-# Value: None | authenticated | owner_only | owner_write | from_file
+# Value: none | authenticated | owner_only | owner_write | from_file
 #type = owner_only
 
 # File for rights management from_file
