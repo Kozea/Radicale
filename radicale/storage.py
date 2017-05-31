@@ -91,7 +91,12 @@ def load(configuration, logger):
     if storage_type == "multifilesystem":
         collection_class = Collection
     else:
-        collection_class = import_module(storage_type).Collection
+        try:
+            collection_class = import_module(storage_type).Collection
+        except ImportError as e:
+            raise RuntimeError("Storage module %r not found" %
+                               storage_type) from e
+    logger.info("Storage type is %r", storage_type)
 
     class CollectionCopy(collection_class):
         """Collection copy, avoids overriding the original class attributes."""
@@ -184,25 +189,25 @@ def path_to_filesystem(root, *paths):
 
 class UnsafePathError(ValueError):
     def __init__(self, path):
-        message = "Can't translate name safely to filesystem: %s" % path
+        message = "Can't translate name safely to filesystem: %r" % path
         super().__init__(message)
 
 
 class CollidingPathError(ValueError):
     def __init__(self, path):
-        message = "File name collision: %s" % path
+        message = "File name collision: %r" % path
         super().__init__(message)
 
 
 class ComponentExistsError(ValueError):
     def __init__(self, path):
-        message = "Component already exists: %s" % path
+        message = "Component already exists: %r" % path
         super().__init__(message)
 
 
 class ComponentNotFoundError(ValueError):
     def __init__(self, path):
-        message = "Component doesn't exist: %s" % path
+        message = "Component doesn't exist: %r" % path
         super().__init__(message)
 
 
@@ -510,7 +515,8 @@ class Collection(BaseCollection):
         for href in os.listdir(filesystem_path):
             if not is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
-                    cls.logger.debug("Skipping collection: %s", href)
+                    cls.logger.debug("Skipping collection %r in %r", href,
+                                     path)
                 continue
             child_filesystem_path = path_to_filesystem(filesystem_path, href)
             if os.path.isdir(child_filesystem_path):
@@ -621,7 +627,8 @@ class Collection(BaseCollection):
         for href in os.listdir(self._filesystem_path):
             if not is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
-                    self.logger.debug("Skipping component: %s", href)
+                    self.logger.debug(
+                        "Skipping item %r in %r", href, self.path)
                 continue
             path = os.path.join(self._filesystem_path, href)
             if os.path.isfile(path):
@@ -631,8 +638,8 @@ class Collection(BaseCollection):
         if not href:
             return None
         if not is_safe_filesystem_path_component(href):
-            self.logger.debug(
-                "Can't translate name safely to filesystem: %s", href)
+            self.logger.debug("Can't translate name %r safely to filesystem "
+                              "in %r", href, self.path)
             return None
         path = path_to_filesystem(self._filesystem_path, href)
         if not os.path.isfile(path):
@@ -644,9 +651,9 @@ class Collection(BaseCollection):
             time.gmtime(os.path.getmtime(path)))
         try:
             item = vobject.readOne(text)
-        except Exception:
-            self.logger.error("Failed to parse component: %s", href)
-            raise
+        except Exception as e:
+            raise RuntimeError("Failed to parse item %r in %r" %
+                               (href, self.path)) from e
         return Item(self, item, href, last_modified)
 
     def upload(self, href, vobject_item):
@@ -685,7 +692,11 @@ class Collection(BaseCollection):
     def get_meta(self, key=None):
         if os.path.exists(self._props_path):
             with open(self._props_path, encoding=self.encoding) as f:
-                meta = json.load(f)
+                try:
+                    meta = json.load(f)
+                except ValueError as e:
+                    raise RuntimeError("Failed to load properties of collect"
+                                       "ion %r: %s" % (self.path, e)) from e
                 return meta.get(key) if key else meta
 
     def set_meta(self, props):
@@ -715,8 +726,8 @@ class Collection(BaseCollection):
             items.append(self.get(href).item)
         time_end = datetime.datetime.now()
         self.logger.info(
-            "Collection read %d items in %s sec from %s", len(items),
-            (time_end - time_begin).total_seconds(), self._filesystem_path)
+            "Read %d items in %.3f seconds from %r", len(items),
+            (time_end - time_begin).total_seconds(), self.path)
         if self.get_meta("tag") == "VCALENDAR":
             collection = vobject.iCalendar()
             for item in items:

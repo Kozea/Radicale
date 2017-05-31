@@ -38,6 +38,12 @@ def configure_from_file(logger, filename, debug):
     return logger
 
 
+class RemoveTracebackFilter(logging.Filter):
+    def filter(self, record):
+        record.exc_info = None
+        return True
+
+
 def start(name="radicale", filename=None, debug=False):
     """Start the logging according to the configuration."""
     logger = logging.getLogger(name)
@@ -53,12 +59,14 @@ def start(name="radicale", filename=None, debug=False):
         # Default configuration, standard output
         if filename:
             logger.warning(
-                "Logging configuration file '%s' not found, using stderr." %
-                filename)
+                "WARNING: Logging configuration file %r not found, using "
+                "stderr" % filename)
         handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(
             logging.Formatter("[%(thread)x] %(levelname)s: %(message)s"))
         logger.addHandler(handler)
     if debug:
         logger.setLevel(logging.DEBUG)
+    else:
+        logger.addFilter(RemoveTracebackFilter())
     return logger

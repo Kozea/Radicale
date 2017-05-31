@@ -37,9 +37,9 @@ Leading or ending slashes are trimmed from collection's path.
 
 """
 
+import configparser
 import os.path
 import re
-from configparser import ConfigParser
 from importlib import import_module
 
 from . import storage
@@ -50,7 +50,6 @@ def load(configuration, logger):
     rights_type = configuration.get("rights", "type")
     if configuration.get("auth", "type") == "None":
         rights_type = "None"
-    logger.info("Rights type is %r", rights_type)
     if rights_type == "None":
         rights_class = NoneRights
     elif rights_type == "authenticated":
@@ -62,7 +61,12 @@ def load(configuration, logger):
     elif rights_type == "from_file":
         rights_class = Rights
     else:
-        rights_class = import_module(rights_type).Rights
+        try:
+            rights_class = import_module(rights_type).Rights
+        except ImportError as e:
+            raise RuntimeError("Rights module %r not found" %
+                               rights_type) from e
+    logger.info("Rights type is %r", rights_type)
     return rights_class(configuration, logger).authorized
 
 
@@ -116,27 +120,36 @@ class Rights(BaseRights):
         # Prevent "regex injection"
         user_escaped = re.escape(user)
         sane_path_escaped = re.escape(sane_path)
-        regex = ConfigParser(
+        regex = configparser.ConfigParser(
             {"login": user_escaped, "path": sane_path_escaped})
-        if not regex.read(self.filename):
-            raise RuntimeError("Failed to read rights from file %r",
-                               self.filename)
-            return False
-
+        try:
+            if not regex.read(self.filename):
+                raise RuntimeError("No such file: %r" %
+                                   self.filename)
+        except Exception as e:
+            raise RuntimeError("Failed to load rights file %r: %s" %
+                               (self.filename, e)) from e
         for section in regex.sections():
-            re_user = regex.get(section, "user")
-            re_collection = regex.get(section, "collection")
-            self.logger.debug(
-                "Test if '%s:%s' matches against '%s:%s' from section '%s'",
-                user, sane_path, re_user, re_collection, section)
-            # Emulate fullmatch
-            user_match = re.match(r"(?:%s)\Z" % re_user, user)
-            if user_match:
-                re_collection = re_collection.format(*user_match.groups())
+            try:
+                re_user_pattern = regex.get(section, "user")
+                re_collection_pattern = regex.get(section, "collection")
                 # Emulate fullmatch
-                if re.match(r"(?:%s)\Z" % re_collection, sane_path):
-                    self.logger.debug("Section '%s' matches", section)
-                    return permission in regex.get(section, "permission")
-                else:
-                    self.logger.debug("Section '%s' does not match", section)
+                user_match = re.match(r"(?:%s)\Z" % re_user_pattern, user)
+                collection_match = user_match and re.match(
+                    r"(?:%s)\Z" % re_collection_pattern.format(
+                        *map(re.escape, user_match.groups())), sane_path)
+            except Exception as e:
+                raise RuntimeError("Error in section %r of rights file %r: "
+                                   "%s" % (section, self.filename, e)) from e
+            if user_match and collection_match:
+                self.logger.debug("Rule %r:%r matches %r:%r from section %r",
+                                  user, sane_path, re_user_pattern,
+                                  re_collection_pattern, section)
+                return permission in regex.get(section, "permission")
+            else:
+                self.logger.debug("Rule %r:%r doesn't match %r:%r from section"
+                                  " %r", user, sane_path, re_user_pattern,
+                                  re_collection_pattern, section)
+        self.logger.info(
+            "Rights: %r:%r doesn't match any section", user, sane_path)
         return False
