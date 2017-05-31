@@ -116,6 +116,12 @@
 #hook =
 
 
+[web]
+
+# Web interface backend
+#type = none
+
+
 [logging]
 
 # Logging configuration file

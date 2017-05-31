@@ -38,8 +38,8 @@ class BaseRequestsMixIn:
     def test_root(self):
         """GET request at "/"."""
         status, headers, answer = self.request("GET", "/")
-        assert status == 200
-        assert "Radicale works!" in answer
+        assert status == 303
+        assert answer == "Redirected to .web"
         # Test the creation of the collection
         self.request("MKCOL", "/calendar.ics/")
         self.request(
@@ -47,6 +47,17 @@ class BaseRequestsMixIn:
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert "BEGIN:VCALENDAR" in answer
         assert "END:VCALENDAR" in answer
+
+    def test_script_name(self):
+        """GET request at "/" with SCRIPT_NAME."""
+        status, headers, answer = self.request(
+            "GET", "/", SCRIPT_NAME="/radicale")
+        assert status == 303
+        assert answer == "Redirected to .web"
+        status, headers, answer = self.request(
+            "GET", "", SCRIPT_NAME="/radicale")
+        assert status == 303
+        assert answer == "Redirected to radicale/.web"
 
     def test_add_event(self):
         """Add an event."""
@@ -168,7 +179,7 @@ class BaseRequestsMixIn:
 
     def test_head(self):
         status, headers, answer = self.request("HEAD", "/")
-        assert status == 200
+        assert status == 303
 
     def test_options(self):
         status, headers, answer = self.request("OPTIONS", "/")
@@ -815,7 +826,7 @@ class BaseRequestsMixIn:
             "storage", "hook", "mkdir %s" % os.path.join(
                 "collection-root", "created_by_hook"))
         status, headers, answer = self.request("GET", "/")
-        assert status == 200
+        assert status == 303
         status, headers, answer = self.request("GET", "/created_by_hook/")
         assert status == 404
 
@@ -834,7 +845,7 @@ class BaseRequestsMixIn:
             "storage", "hook", "mkdir %s" % os.path.join(
                 "collection-root", "created_by_hook"))
         status, headers, answer = self.request("GET", "/", REMOTE_USER="user")
-        assert status == 200
+        assert status == 303
         status, headers, answer = self.request("PROPFIND", "/created_by_hook/")
         assert status == 207
 
