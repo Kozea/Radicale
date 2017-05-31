@@ -334,8 +334,8 @@ class Application:
                 status, client.responses.get(status, "Unknown"))
             self.logger.info(
                 "%s answer status for %r%s in %.3f seconds: %s",
-                environ["REQUEST_METHOD"], environ["PATH_INFO"], depthinfo,
-                (time_end - time_begin).total_seconds(), status)
+                environ["REQUEST_METHOD"], environ.get("PATH_INFO", ""),
+                depthinfo, (time_end - time_begin).total_seconds(), status)
             # Return response content
             return status, list(headers.items()), [answer] if answer else []
 
@@ -372,15 +372,15 @@ class Application:
             environ.get("SCRIPT_NAME", "")).rstrip("/")
         self.logger.debug("Sanitized script name: %r", environ["SCRIPT_NAME"])
         base_prefix = environ["SCRIPT_NAME"]
+        environ["PATH_INFO"] = environ.get("PATH_INFO", "")
         # Sanitize request URI (a WSGI server indicates with an empty path,
         # that the URL targets the application root without a trailing slash)
         if environ["PATH_INFO"]:
             environ["PATH_INFO"] = storage.sanitize_path(environ["PATH_INFO"])
         self.logger.debug("Sanitized path: %r", environ["PATH_INFO"])
+        # SCRIPT_NAME is already removed from PATH_INFO, according to the
+        # WSGI specification.
         path = environ["PATH_INFO"]
-        if base_prefix and path.startswith(base_prefix):
-            path = path[len(base_prefix):]
-            self.logger.debug("Stripped script name from path: %s", path)
 
         # Get function corresponding to method
         function = getattr(self, "do_%s" % environ["REQUEST_METHOD"].upper())

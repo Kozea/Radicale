@@ -64,7 +64,7 @@ from importlib import import_module
 def load(configuration, logger):
     """Load the authentication manager chosen in configuration."""
     auth_type = configuration.get("auth", "type")
-    if auth_type == "None":
+    if auth_type in ("None", "none"):  # DEPRECATED: use "none"
         class_ = NoneAuth
     elif auth_type == "remote_user":
         class_ = RemoteUserAuth

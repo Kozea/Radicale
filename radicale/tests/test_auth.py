@@ -21,7 +21,6 @@ Radicale tests with simple requests and authentication.
 """
 
 import base64
-import logging
 import os
 import shutil
 import tempfile
@@ -40,7 +39,6 @@ class TestBaseAuthRequests(BaseTest):
     """
     def setup(self):
         self.configuration = config.load()
-        self.logger = logging.getLogger("radicale_test")
         self.colpath = tempfile.mkdtemp()
         self.configuration.set("storage", "filesystem_folder", self.colpath)
         # Disable syncing to disk for better performance
@@ -63,14 +61,14 @@ class TestBaseAuthRequests(BaseTest):
         self.configuration.set("auth", "htpasswd_encryption",
                                htpasswd_encryption)
         self.application = Application(self.configuration, self.logger)
-        for user, password, expeced_status in (
+        for user, password, expected_status in (
                 ("tmp", "bepo", 207), ("tmp", "tmp", 401), ("tmp", "", 401),
                 ("unk", "unk", 401), ("unk", "", 401), ("", "", 401)):
             status, headers, answer = self.request(
                 "PROPFIND", "/",
                 HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
                     ("%s:%s" % (user, password)).encode()).decode())
-            assert status == expeced_status
+            assert status == expected_status
 
     def test_htpasswd_plain(self):
         self._test_htpasswd("plain", "tmp:bepo")
@@ -142,6 +140,6 @@ class TestBaseAuthRequests(BaseTest):
         self.configuration.set("auth", "type", "tests.custom.auth")
         self.application = Application(self.configuration, self.logger)
         status, headers, answer = self.request(
-            "GET", "/", HTTP_AUTHORIZATION="dG1wOmJlcG8=")
-        assert status == 200
-        assert "Radicale works!" in answer
+            "PROPFIND", "/tmp", HTTP_AUTHORIZATION="Basic %s" %
+            base64.b64encode(("tmp:").encode()).decode())
+        assert status == 207
