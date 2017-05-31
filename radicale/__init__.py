@@ -50,7 +50,7 @@ from xml.etree import ElementTree as ET
 
 import vobject
 
-from . import auth, rights, storage, xmlutils
+from . import auth, rights, storage, web, xmlutils
 
 VERSION = "2.0.0"
 
@@ -211,6 +211,7 @@ class Application:
         self.Auth = auth.load(configuration, logger)
         self.Collection = storage.load(configuration, logger)
         self.authorized = rights.load(configuration, logger)
+        self.web = web.load(configuration, logger)
         self.encoding = configuration.get("encoding", "request")
 
     def headers_log(self, environ):
@@ -552,9 +553,18 @@ class Application:
 
     def do_GET(self, environ, base_prefix, path, user):
         """Manage GET request."""
-        # Display a "Radicale works!" message if the root URL is requested
+        # Redirect to .web if the root URL is requested
         if not path.strip("/"):
-            return client.OK, {"Content-Type": "text/plain"}, "Radicale works!"
+            web_path = ".web"
+            if not path.endswith("/"):
+                web_path = posixpath.join(posixpath.basename(base_prefix),
+                                          web_path)
+            return (client.SEE_OTHER,
+                    {"Location": web_path, "Content-Type": "text/plain"},
+                    "Redirected to %s" % web_path)
+        # Dispatch .web URL to web module
+        if path == "/.web" or path.startswith("/.web/"):
+            return self.web.get(environ, base_prefix, path, user)
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
         with self.Collection.acquire_lock("r", user):

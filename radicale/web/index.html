@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width initial-scale=1" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <script src="fn.js"></script>
+        <title>Web interface for Radicale</title>
+        <link href="css/main.css" media="screen" rel="stylesheet" />
+        <link href="css/icon.png" type="image/png" rel="shortcut icon" />
+    </head>
+    <body>
+        <nav>
+            <ul>
+                <li id="logoutview" style="display: none;"><a href="" name="link">Logout [<span name="user"></span>]</a></li>
+            </ul>
+        </nav>
+        <section id="loginscene" style="display: none;">
+            <h1>Login</h1>
+            <form name="form">
+                <input name="user" type="text" placeholder="Username"><br>
+                <input name="password" type="password" placeholder="Password"><br>
+                <span style="color: #A40000;" name="error"></span><br>
+                <button type="submit">Next</button>
+            </form>
+        </section>
+        <section id="loadingscene" style="display: none;">
+            <h1>Loading</h1>
+            Please wait...
+        </section>
+        <section id="collectionsscene" style="display: none;">
+            <h1>Collections</h1>
+            <a href="" name="new">Create new addressbook or calendar</a>
+            <article name="collectiontemplate">
+                <h2><span name="color">█ </span><span name="title">Title</span> <small>[<span name="ADDRESSBOOK">addressbook</span><span name="CALENDAR_JOURNAL_TASKS">calendar, journal and tasks</span><span name="CALENDAR_JOURNAL">calendar and journal</span><span name="CALENDAR_TASKS">calendar and tasks</span><span name="JOURNAL_TASKS">journal and tasks</span><span name="CALENDAR">calendar</span><span name="JOURNAL">journal</span><span name="TASKS">tasks</span>]</small></h2>
+                <span name="description">Description</span>
+                <ul>
+                    <li>URL: <a name="url">url</a></li>
+                    <li><a href="" name="edit">Edit</a></li>
+                    <li><a href="" name="delete">Delete</a></li>
+                </ul>
+            </article>
+        </section>
+        <section id="editcollectionscene" style="display: none;">
+            <h1>Edit collection</h1>
+            <h2>Edit <span name="title">title</span>:</h2>
+            <form>
+                Title:<br>
+                <input name="displayname" type="text"><br>
+                Description:<br>
+                <input name="description" type="text"><br>
+                Type:<br>
+                <select name="type">
+                    <option value="ADDRESSBOOK">addressbook</option>
+                    <option value="CALENDAR_JOURNAL_TASKS">calendar, journal and tasks</option>
+                    <option value="CALENDAR_JOURNAL">calendar and journal</option>
+                    <option value="CALENDAR_TASKS">calendar and tasks</option>
+                    <option value="JOURNAL_TASKS">journal and tasks</option>
+                    <option value="CALENDAR">calendar</option>
+                    <option value="JOURNAL">journal</option>
+                    <option value="TASKS">tasks</option>
+                </select><br>
+                Color:<br>
+                <input name="color" type="color"><br>
+                <span style="color: #A40000;" name="error"></span><br>
+                <button type="submit" name="submit">Save</button>
+                <button type="button" name="cancel">Cancel</button>
+            </form>
+        </section>
+        <section id="createcollectionscene" style="display: none;">
+            <h1>Create new collection</h1>
+            <form>
+                Title:<br>
+                <input name="displayname" type="text"><br>
+                Description:<br>
+                <input name="description" type="text"><br>
+                Type:<br>
+                <select name="type">
+                    <option value="ADDRESSBOOK">addressbook</option>
+                    <option value="CALENDAR_JOURNAL_TASKS">calendar, journal and tasks</option>
+                    <option value="CALENDAR_JOURNAL">calendar and journal</option>
+                    <option value="CALENDAR_TASKS">calendar and tasks</option>
+                    <option value="JOURNAL_TASKS">journal and tasks</option>
+                    <option value="CALENDAR">calendar</option>
+                    <option value="JOURNAL">journal</option>
+                    <option value="TASKS">tasks</option>
+                </select><br>
+                Color:<br>
+                <input name="color" type="color"><br>
+                <span style="color: #A40000;" name="error"></span><br>
+                <button type="submit" name="submit">Create</button>
+                <button type="button" name="cancel">Cancel</button>
+            </form>
+        </section>
+        <section id="deletecollectionscene" style="display: none;">
+            <h1>Delete collection</h1>
+            <h2>Delete <span name="title">title</span>?</h2>
+            <span style="color: #A40000;" name="error"></span><br>
+            <form>
+                <button type="button" name="delete">Yes</button>
+                <button type="button" name="cancel">No</button>
+            </form>
+        </section>
+    </body>
+</html>

@@ -147,6 +147,11 @@ INITIAL_CONFIG = OrderedDict([
             "value": "",
             "help": "command that is run after changes to storage",
             "type": str})])),
+    ("web", OrderedDict([
+        ("type", {
+            "value": "internal",
+            "help": "web interface backend",
+            "type": str})])),
     ("logging", OrderedDict([
         ("config", {
             "value": "",

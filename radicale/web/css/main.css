@@ -1,0 +1,44 @@
+@import url(fonts.css);
+body { background: #e4e9f6; color: #424247; display: flex; flex-direction: column; font-family: Roboto, sans; font-size: 14pt; line-height: 1.4; margin: 0; min-height: 100vh; }
+
+a { color: inherit; }
+
+nav, footer { background: #a40000; color: white; padding: 0 20%; }
+nav ul, footer ul { display: flex; flex-wrap: wrap; margin: 0; padding: 0; }
+nav ul li, footer ul li { display: block; padding: 0 1em 0 0; }
+nav ul li a, footer ul li a { color: inherit; display: block; padding: 1em 0.5em 1em 0; text-decoration: inherit; transition: 0.2s; }
+nav ul li a:hover, nav ul li a:focus, footer ul li a:hover, footer ul li a:focus { color: black; outline: none; }
+
+header { background: url(logo.svg), linear-gradient(to bottom right, #050a02, black); background-position: 22% 45%; background-repeat: no-repeat; color: #efdddd; font-size: 1.5em; min-height: 250px; overflow: auto; padding: 3em 22%; text-shadow: 0.2em 0.2em 0.2em rgba(0, 0, 0, 0.5); }
+header > * { padding-left: 220px; }
+header h1 { font-size: 2.5em; font-weight: lighter; margin: 0.5em 0; }
+
+main { flex: 1; }
+
+section { padding: 0 20% 2em; }
+section:not(:last-child) { border-bottom: 1px dashed #ccc; }
+section h1 { background: linear-gradient(to bottom right, #050a02, black); color: #e5dddd; font-size: 2.5em; margin: 0 -33.33% 1em; padding: 1em 33.33%; }
+section h2, section h3, section h4 { font-weight: lighter; margin: 1.5em 0 1em; }
+
+article { border-top: 1px solid transparent; position: relative; margin: 3em 0; }
+article aside { box-sizing: border-box; color: #aaa; font-size: 0.8em; right: -30%; top: 0.5em; position: absolute; }
+article:before { border-top: 1px dashed #ccc; content: ""; display: block; left: -33.33%; position: absolute; right: -33.33%; }
+
+pre { border-radius: 3px; background: black; color: #d3d5db; margin: 0 -1em; overflow-x: auto; padding: 1em; }
+
+table { border-collapse: collapse; font-size: 0.8em; margin: auto; }
+table td { border: 1px solid #ccc; padding: 0.5em; }
+
+dl dt { margin-bottom: 0.5em; margin-top: 1em; }
+
+@media (max-width: 800px) { body { font-size: 12pt; }
+  header, section { padding-left: 2em; padding-right: 2em; }
+  nav, footer { padding-left: 0; padding-right: 0; }
+  nav ul, footer ul { justify-content: center; }
+  nav ul li, footer ul li { padding: 0 0.5em; }
+  nav ul li a, footer ul li a { padding: 1em 0; }
+  header { background-position: 50% 30px, 0 0; padding-bottom: 0; padding-top: 330px; text-align: center; }
+  header > * { margin: 0; padding-left: 0; }
+  section h1 { margin: 0 -0.8em 1.3em; padding: 0.5em 0; text-align: center; }
+  article aside { top: 0.5em; right: -1.5em; }
+  article:before { left: -2em; right: -2em; } }

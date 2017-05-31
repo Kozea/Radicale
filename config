@@ -116,6 +116,13 @@
 #hook =
 
 
+[web]
+
+# Web interface backend
+# Value: none | internal
+#type = internal
+
+
 [logging]
 
 # Logging configuration file
