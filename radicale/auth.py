@@ -64,7 +64,6 @@ from importlib import import_module
 def load(configuration, logger):
     """Load the authentication manager chosen in configuration."""
     auth_type = configuration.get("auth", "type")
-    logger.debug("Authentication type is %s", auth_type)
     if auth_type == "None":
         class_ = NoneAuth
     elif auth_type == "remote_user":
@@ -74,7 +73,12 @@ def load(configuration, logger):
     elif auth_type == "htpasswd":
         class_ = Auth
     else:
-        class_ = import_module(auth_type).Auth
+        try:
+            class_ = import_module(auth_type).Auth
+        except ImportError as e:
+            raise RuntimeError("Authentication module %r not found" %
+                               auth_type) from e
+    logger.info("Authentication type is %r", auth_type)
     return class_(configuration, logger)
 
 
@@ -127,18 +131,18 @@ class Auth(BaseAuth):
         elif self.encryption == "md5":
             try:
                 from passlib.hash import apr_md5_crypt
-            except ImportError:
+            except ImportError as e:
                 raise RuntimeError(
                     "The htpasswd encryption method 'md5' requires "
-                    "the passlib module.")
+                    "the passlib module.") from e
             self.verify = functools.partial(self._md5apr1, apr_md5_crypt)
         elif self.encryption == "bcrypt":
             try:
                 from passlib.hash import bcrypt
-            except ImportError:
+            except ImportError as e:
                 raise RuntimeError(
                     "The htpasswd encryption method 'bcrypt' requires "
-                    "the passlib module with bcrypt support.")
+                    "the passlib module with bcrypt support.") from e
             # A call to `encrypt` raises passlib.exc.MissingBackendError with a
             # good error message if bcrypt backend is not available. Trigger
             # this here.
@@ -147,14 +151,14 @@ class Auth(BaseAuth):
         elif self.encryption == "crypt":
             try:
                 import crypt
-            except ImportError:
+            except ImportError as e:
                 raise RuntimeError(
                     "The htpasswd encryption method 'crypt' requires "
-                    "the crypt() system support.")
+                    "the crypt() system support.") from e
             self.verify = functools.partial(self._crypt, crypt)
         else:
             raise RuntimeError(
-                "The htpasswd encryption method '%s' is not "
+                "The htpasswd encryption method %r is not "
                 "supported." % self.encryption)
 
     def _plain(self, hash_value, password):
@@ -201,17 +205,25 @@ class Auth(BaseAuth):
         # The content of the file is not cached because reading is generally a
         # very cheap operation, and it's useful to get live updates of the
         # htpasswd file.
-        with open(self.filename) as fd:
-            for line in fd:
-                line = line.strip()
-                if line:
-                    login, hash_value = line.split(":")
-                    # Always compare both login and password to avoid timing
-                    # attacks, see #591.
-                    login_ok = hmac.compare_digest(login, user)
-                    password_ok = self.verify(hash_value, password)
-                    if login_ok & password_ok:
-                        return True
+        try:
+            with open(self.filename) as fd:
+                for line in fd:
+                    line = line.strip()
+                    if line:
+                        try:
+                            login, hash_value = line.split(":")
+                            # Always compare both login and password to avoid
+                            # timing attacks, see #591.
+                            login_ok = hmac.compare_digest(login, user)
+                            password_ok = self.verify(hash_value, password)
+                            if login_ok & password_ok:
+                                return True
+                        except ValueError as e:
+                            raise RuntimeError("Invalid htpasswd file %r: %s" %
+                                               (self.filename, e)) from e
+        except OSError as e:
+            raise RuntimeError("Failed to load htpasswd file %r: %s" %
+                               (self.filename, e)) from e
         return False
 
 

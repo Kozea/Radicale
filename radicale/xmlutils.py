@@ -434,11 +434,11 @@ def name_from_path(path, collection):
     path = path.strip("/") + "/"
     start = collection.path + "/"
     if not path.startswith(start):
-        raise ValueError("'%s' doesn't start with '%s'" % (path, start))
+        raise ValueError("%r doesn't start with %r" % (path, start))
     name = path[len(start):][:-1]
     if name and not storage.is_safe_path_component(name):
-        raise ValueError("'%s' is not a component in collection '%s'" %
-                         (path, collection.path))
+        raise ValueError("%r is not a component in collection %r" %
+                         (name, collection.path))
     return name
 
 
@@ -839,7 +839,8 @@ def report(base_prefix, path, xml_request, collection):
         # properties, just return an empty result.
         # InfCloud asks for expand-property reports (even if we don't announce
         # support for them) and stops working if an error code is returned.
-        collection.logger.warning("Unsupported report method: %s", root.tag)
+        collection.logger.warning("Unsupported REPORT method %r on %r "
+                                  "requested", root.tag, path)
         return multistatus
     prop_element = root.find(_tag("D", "prop"))
     props = (
@@ -857,8 +858,8 @@ def report(base_prefix, path, xml_request, collection):
             if (href_path + "/").startswith(base_prefix + "/"):
                 hreferences.add(href_path[len(base_prefix):])
             else:
-                collection.logger.info(
-                    "Skipping invalid path: %s", href_path)
+                collection.logger.warning("Skipping invalid path %r in REPORT "
+                                          "request on %r", href_path, path)
     else:
         hreferences = (path,)
     filters = (
@@ -868,8 +869,9 @@ def report(base_prefix, path, xml_request, collection):
     for hreference in hreferences:
         try:
             name = name_from_path(hreference, collection)
-        except ValueError:
-            collection.logger.info("Skipping invalid path: %s", hreference)
+        except ValueError as e:
+            collection.logger.warning("Skipping invalid path %r in REPORT "
+                                      "request on %r: %s", hreference, path, e)
             response = _item_response(base_prefix, hreference,
                                       found_item=False)
             multistatus.append(response)
@@ -891,12 +893,16 @@ def report(base_prefix, path, xml_request, collection):
             if not item:
                 continue
             if filters:
-                match = (
-                    _comp_match if collection.get_meta("tag") == "VCALENDAR"
-                    else _prop_match)
-                if not all(match(item, filter_[0]) for filter_ in filters
-                           if filter_):
-                    continue
+                try:
+                    match = (_comp_match
+                             if collection.get_meta("tag") == "VCALENDAR"
+                             else _prop_match)
+                    if not all(match(item, filter_[0]) for filter_ in filters
+                               if filter_):
+                        continue
+                except Exception as e:
+                    raise RuntimeError("Failed to filter item %r from %r: %s" %
+                                       (collection.path, item.href, e)) from e
 
             found_props = []
             not_found_props = []

@@ -33,111 +33,141 @@ INITIAL_CONFIG = OrderedDict([
         ("hosts", {
             "value": "127.0.0.1:5232",
             "help": "set server hostnames including ports",
-            "aliases": ["-H", "--hosts"]}),
+            "aliases": ["-H", "--hosts"],
+            "type": str}),
         ("daemon", {
             "value": "False",
             "help": "launch as daemon",
             "aliases": ["-d", "--daemon"],
-            "opposite": ["-f", "--foreground"]}),
+            "opposite": ["-f", "--foreground"],
+            "type": bool}),
         ("pid", {
             "value": "",
             "help": "set PID filename for daemon mode",
-            "aliases": ["-p", "--pid"]}),
+            "aliases": ["-p", "--pid"],
+            "type": str}),
         ("max_connections", {
             "value": "20",
-            "help": "maximum number of parallel connections"}),
+            "help": "maximum number of parallel connections",
+            "type": int}),
         ("max_content_length", {
             "value": "10000000",
-            "help": "maximum size of request body in bytes"}),
+            "help": "maximum size of request body in bytes",
+            "type": int}),
         ("timeout", {
             "value": "10",
-            "help": "socket timeout"}),
+            "help": "socket timeout",
+            "type": int}),
         ("ssl", {
             "value": "False",
             "help": "use SSL connection",
             "aliases": ["-s", "--ssl"],
-            "opposite": ["-S", "--no-ssl"]}),
+            "opposite": ["-S", "--no-ssl"],
+            "type": bool}),
         ("certificate", {
             "value": "/etc/ssl/radicale.cert.pem",
             "help": "set certificate file",
-            "aliases": ["-c", "--certificate"]}),
+            "aliases": ["-c", "--certificate"],
+            "type": str}),
         ("key", {
             "value": "/etc/ssl/radicale.key.pem",
             "help": "set private key file",
-            "aliases": ["-k", "--key"]}),
+            "aliases": ["-k", "--key"],
+            "type": str}),
         ("protocol", {
             "value": "PROTOCOL_TLSv1_2",
-            "help": "SSL protocol used"}),
+            "help": "SSL protocol used",
+            "type": str}),
         ("ciphers", {
             "value": "",
-            "help": "available ciphers"}),
+            "help": "available ciphers",
+            "type": str}),
         ("dns_lookup", {
             "value": "True",
-            "help": "use reverse DNS to resolve client address in logs"}),
+            "help": "use reverse DNS to resolve client address in logs",
+            "type": bool}),
         ("realm", {
             "value": "Radicale - Password Required",
-            "help": "message displayed when a password is needed"})])),
+            "help": "message displayed when a password is needed",
+            "type": str})])),
     ("encoding", OrderedDict([
         ("request", {
             "value": "utf-8",
-            "help": "encoding for responding requests"}),
+            "help": "encoding for responding requests",
+            "type": str}),
         ("stock", {
             "value": "utf-8",
-            "help": "encoding for storing local collections"})])),
+            "help": "encoding for storing local collections",
+            "type": str})])),
     ("auth", OrderedDict([
         ("type", {
             "value": "None",
-            "help": "authentication method"}),
+            "help": "authentication method",
+            "type": str}),
         ("htpasswd_filename", {
             "value": "/etc/radicale/users",
-            "help": "htpasswd filename"}),
+            "help": "htpasswd filename",
+            "type": str}),
         ("htpasswd_encryption", {
             "value": "bcrypt",
-            "help": "htpasswd encryption method"}),
+            "help": "htpasswd encryption method",
+            "type": str}),
         ("delay", {
             "value": "1",
-            "help": "incorrect authentication delay"})])),
+            "help": "incorrect authentication delay",
+            "type": float})])),
     ("rights", OrderedDict([
         ("type", {
             "value": "owner_only",
-            "help": "rights backend"}),
+            "help": "rights backend",
+            "type": str}),
         ("file", {
             "value": "/etc/radicale/rights",
-            "help": "file for rights management from_file"})])),
+            "help": "file for rights management from_file",
+            "type": str})])),
     ("storage", OrderedDict([
         ("type", {
             "value": "multifilesystem",
-            "help": "storage backend"}),
+            "help": "storage backend",
+            "type": str}),
         ("filesystem_folder", {
             "value": os.path.expanduser(
                 "/var/lib/radicale/collections"),
-            "help": "path where collections are stored"}),
+            "help": "path where collections are stored",
+            "type": str}),
         ("filesystem_fsync", {
             "value": "True",
-            "help": "sync all changes to filesystem during requests"}),
+            "help": "sync all changes to filesystem during requests",
+            "type": bool}),
         ("filesystem_close_lock_file", {
             "value": "False",
-            "help": "close the lock file when no more clients are waiting"}),
+            "help": "close the lock file when no more clients are waiting",
+            "type": bool}),
         ("hook", {
             "value": "",
-            "help": "command that is run after changes to storage"})])),
+            "help": "command that is run after changes to storage",
+            "type": str})])),
     ("logging", OrderedDict([
         ("config", {
             "value": "",
-            "help": "logging configuration file"}),
+            "help": "logging configuration file",
+            "type": str}),
         ("debug", {
             "value": "False",
             "help": "print debug information",
-            "aliases": ["-D", "--debug"]}),
+            "aliases": ["-D", "--debug"],
+            "type": bool}),
         ("full_environment", {
             "value": "False",
-            "help": "store all environment variables"}),
+            "help": "store all environment variables",
+            "type": bool}),
         ("mask_passwords", {
             "value": "True",
-            "help": "mask passwords in logs"})]))])
+            "help": "mask passwords in logs",
+            "type": bool})]))])
 
 
-def load(paths=(), extra_config=None):
+def load(paths=(), extra_config=None, ignore_missing_paths=True):
     config = ConfigParser()
     for section, values in INITIAL_CONFIG.items():
         config.add_section(section)
@@ -148,6 +178,31 @@ def load(paths=(), extra_config=None):
             for key, value in values.items():
                 config.set(section, key, value)
     for path in paths:
-        if path:
-            config.read(path)
+        if path or not ignore_missing_paths:
+            try:
+                if not config.read(path) and not ignore_missing_paths:
+                    raise RuntimeError("No such file: %r" % path)
+            except Exception as e:
+                raise RuntimeError(
+                    "Failed to load config file %r: %s" % (path, e)) from e
+    # Check the configuration
+    for section in config.sections():
+        if section == "headers":
+            continue
+        if section not in INITIAL_CONFIG:
+            raise RuntimeError("Invalid section %r in config" % section)
+        for option in config[section]:
+            if option not in INITIAL_CONFIG[section]:
+                raise RuntimeError("Invalid option %r in section %r in "
+                                   "config" % (option, section))
+            type_ = INITIAL_CONFIG[section][option]["type"]
+            try:
+                if type_ == bool:
+                    config.getboolean(section, option)
+                else:
+                    type_(config.get(section, option))
+            except Exception as e:
+                raise RuntimeError(
+                    "Invalid value %r for option %r in section %r in config" %
+                    (config.get(section, option), option, section)) from e
     return config

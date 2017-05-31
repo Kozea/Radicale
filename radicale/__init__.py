@@ -42,7 +42,6 @@ import ssl
 import sys
 import threading
 import time
-import traceback
 import wsgiref.simple_server
 import zlib
 from http import client
@@ -58,6 +57,8 @@ VERSION = "2.0.0"
 NOT_ALLOWED = (
     client.FORBIDDEN, (("Content-Type", "text/plain"),),
     "Access to the requested resource forbidden.")
+BAD_REQUEST = (
+    client.BAD_REQUEST, (("Content-Type", "text/plain"),), "Bad Request")
 NOT_FOUND = (
     client.NOT_FOUND, (("Content-Type", "text/plain"),),
     "The requested resource could not be found.")
@@ -79,6 +80,9 @@ REMOTE_DESTINATION = (
 DIRECTORY_LISTING = (
     client.FORBIDDEN, (("Content-Type", "text/plain"),),
     "Directory listings are not supported.")
+INTERNAL_SERVER_ERROR = (
+    client.INTERNAL_SERVER_ERROR, (("Content-Type", "text/plain"),),
+    "A server error occurred.  Please contact the administrator.")
 
 DAV_HEADERS = "1, 2, 3, calendar-access, addressbook, extended-mkcol"
 
@@ -125,11 +129,10 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
 
     def handle_error(self, request, client_address):
         if issubclass(sys.exc_info()[0], socket.timeout):
-            self.logger.error("connection timeout")
+            self.logger.info("connection timeout")
         else:
-            self.logger.error(
-                "An exception occurred during request:\n%s",
-                traceback.format_exc())
+            self.logger.error("An exception occurred during request: %s",
+                              sys.exc_info()[1], exc_info=True)
 
 
 class HTTPSServer(HTTPServer):
@@ -194,7 +197,7 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
         error = self.error_stream.getvalue().strip("\n")
         if error:
             self.logger.error(
-                "An exception occurred during request:\n%s" % error)
+                "An unhandled exception occurred during request:\n%s" % error)
 
 
 class Application:
@@ -266,27 +269,40 @@ class Application:
                 path = item.collection.path
             if self.authorized(user, path, "r"):
                 self.logger.debug(
-                    "%s has read access to collection %s",
-                    user or "Anonymous", path or "/")
+                    "%s has read access to collection %r",
+                    "%r" % user if user else "anonymous user", path or "/")
                 read_allowed_items.append(item)
             else:
                 self.logger.debug(
-                    "%s has NO read access to collection %s",
-                    user or "Anonymous", path or "/")
+                    "%s has NO read access to collection %r",
+                    "%r" % user if user else "anonymous user", path or "/")
             if self.authorized(user, path, "w"):
                 self.logger.debug(
                     "%s has write access to collection %s",
-                    user or "Anonymous", path or "/")
+                    "%r" % user if user else "anonymous user", path or "/")
                 write_allowed_items.append(item)
             else:
                 self.logger.debug(
                     "%s has NO write access to collection %s",
-                    user or "Anonymous", path or "/")
+                    "%r" % user if user else "anonymous user", path or "/")
         return read_allowed_items, write_allowed_items
 
     def __call__(self, environ, start_response):
-        """Manage a request."""
+        try:
+            status, headers, answers = self._handle_request(environ)
+        except Exception as e:
+            self.logger.error("An exception occurred during request: %s",
+                              e, exc_info=True)
+            status, headers, answer = INTERNAL_SERVER_ERROR
+            status = "%d %s" % (
+                status, client.responses.get(status, "Unknown"))
+            headers = [("Content-Length", str(len(answer)))] + list(headers)
+            answers = [answer.encode("ascii")]
+        start_response(status, headers)
+        return answers
 
+    def _handle_request(self, environ):
+        """Manage a request."""
         def response(status, headers=(), answer=None):
             headers = dict(headers)
             # Set content length
@@ -314,34 +330,33 @@ class Application:
 
             # Start response
             time_end = datetime.datetime.now()
-            status = "%i %s" % (
+            status = "%d %s" % (
                 status, client.responses.get(status, "Unknown"))
             self.logger.info(
-                "%s answer status for %s in %.3f seconds: %s",
-                environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo,
+                "%s answer status for %r%s in %.3f seconds: %s",
+                environ["REQUEST_METHOD"], environ["PATH_INFO"], depthinfo,
                 (time_end - time_begin).total_seconds(), status)
-            start_response(status, list(headers.items()))
             # Return response content
-            return [answer] if answer else []
+            return status, list(headers.items()), [answer] if answer else []
 
-        remote_host = "UNKNOWN"
+        remote_host = "unknown"
         if environ.get("REMOTE_HOST"):
-            remote_host = environ["REMOTE_HOST"]
+            remote_host = "%r" % environ["REMOTE_HOST"]
         elif environ.get("REMOTE_ADDR"):
             remote_host = environ["REMOTE_ADDR"]
         if environ.get("HTTP_X_FORWARDED_FOR"):
-            remote_host = "%s (forwarded by %s)" % (
+            remote_host = "%r (forwarded by %s)" % (
                 environ["HTTP_X_FORWARDED_FOR"], remote_host)
-        remote_useragent = "UNKNOWN"
+        remote_useragent = ""
         if environ.get("HTTP_USER_AGENT"):
-            remote_useragent = environ["HTTP_USER_AGENT"]
+            remote_useragent = " using %r" % environ["HTTP_USER_AGENT"]
         depthinfo = ""
         if environ.get("HTTP_DEPTH"):
-            depthinfo = " with depth " + environ["HTTP_DEPTH"]
+            depthinfo = " with depth %r" % environ["HTTP_DEPTH"]
         time_begin = datetime.datetime.now()
         self.logger.info(
-            "%s request for %s received from %s using \"%s\"",
-            environ["REQUEST_METHOD"], environ["PATH_INFO"] + depthinfo,
+            "%s request for %r%s received from %s%s",
+            environ["REQUEST_METHOD"], environ["PATH_INFO"], depthinfo,
             remote_host, remote_useragent)
         headers = pprint.pformat(self.headers_log(environ))
         self.logger.debug("Request headers:\n%s", headers)
@@ -350,18 +365,18 @@ class Application:
         if "HTTP_X_SCRIPT_NAME" in environ:
             environ["SCRIPT_NAME"] = environ["HTTP_X_SCRIPT_NAME"]
             self.logger.debug(
-                "Script name overwritten by client: %s",
+                "Script name overwritten by client: %r",
                 environ["SCRIPT_NAME"])
         # Sanitize base prefix
         environ["SCRIPT_NAME"] = storage.sanitize_path(
             environ.get("SCRIPT_NAME", "")).rstrip("/")
-        self.logger.debug("Sanitized script name: %s", environ["SCRIPT_NAME"])
+        self.logger.debug("Sanitized script name: %r", environ["SCRIPT_NAME"])
         base_prefix = environ["SCRIPT_NAME"]
         # Sanitize request URI (a WSGI server indicates with an empty path,
         # that the URL targets the application root without a trailing slash)
         if environ["PATH_INFO"]:
             environ["PATH_INFO"] = storage.sanitize_path(environ["PATH_INFO"])
-        self.logger.debug("Sanitized path: %s", environ["PATH_INFO"])
+        self.logger.debug("Sanitized path: %r", environ["PATH_INFO"])
         path = environ["PATH_INFO"]
         if base_prefix and path.startswith(base_prefix):
             path = path[len(base_prefix):]
@@ -393,18 +408,20 @@ class Application:
             is_authenticated = True
         elif not storage.is_safe_path_component(user):
             # Prevent usernames like "user/calendar.ics"
-            self.logger.info("Refused unsafe username: %s", user)
+            self.logger.info("Refused unsafe username: %r", user)
             is_authenticated = False
         else:
             is_authenticated = self.Auth.is_authenticated(user, password)
             if not is_authenticated:
-                self.logger.info("Failed login attempt: %s", user)
+                self.logger.info("Failed login attempt: %r", user)
                 # Random delay to avoid timing oracles and bruteforce attacks
                 delay = self.configuration.getfloat("auth", "delay")
                 if delay > 0:
                     random_delay = delay * (0.5 + random.random())
                     self.logger.debug("Sleeping %.3f seconds", random_delay)
                     time.sleep(random_delay)
+            else:
+                self.logger.info("Successful login: %r", user)
 
         # Create principal collection
         if user and is_authenticated:
@@ -417,6 +434,9 @@ class Application:
                 if not principal:
                     with self.Collection.acquire_lock("w", user):
                         self.Collection.create_collection(principal_path)
+            else:
+                self.logger.warning("Access to principal path %r denied by "
+                                    "rights backend", principal_path)
 
         # Verify content length
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
@@ -424,7 +444,7 @@ class Application:
             max_content_length = self.configuration.getint(
                 "server", "max_content_length")
             if max_content_length and content_length > max_content_length:
-                self.logger.debug(
+                self.logger.info(
                     "Request body too large: %d", content_length)
                 return response(*REQUEST_ENTITY_TOO_LARGE)
 
@@ -436,7 +456,7 @@ class Application:
                 return response(*REQUEST_TIMEOUT)
             if (status, headers, answer) == NOT_ALLOWED:
                 self.logger.info("Access denied for %s",
-                                 "'%s'" % user if user else "anonymous user")
+                                 "%r" % user if user else "anonymous user")
         else:
             status, headers, answer = NOT_ALLOWED
 
@@ -477,7 +497,7 @@ class Application:
             return b""
         content = environ["wsgi.input"].read(content_length)
         if len(content) < content_length:
-            raise ValueError("Request body too short: %d" % len(content))
+            raise RuntimeError("Request body too short: %d" % len(content))
         return content
 
     def _read_content(self, environ):
@@ -491,9 +511,9 @@ class Application:
             return None
         try:
             xml_content = ET.fromstring(content)
-        except ET.ParseError:
+        except ET.ParseError as e:
             self.logger.debug("Request content (Invalid XML):\n%s", content)
-            raise
+            raise RuntimeError("Failed to parse XML: %s" % e) from e
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug("Request content:\n%s",
                               xmlutils.pretty_xml(xml_content))
@@ -569,7 +589,12 @@ class Application:
         """Manage MKCALENDAR request."""
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
-        xml_content = self._read_xml_content(environ)
+        try:
+            xml_content = self._read_xml_content(environ)
+        except RuntimeError as e:
+            self.logger.warning(
+                "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
+            return BAD_REQUEST
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if item:
@@ -585,7 +610,12 @@ class Application:
         """Manage MKCOL request."""
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
-        xml_content = self._read_xml_content(environ)
+        try:
+            xml_content = self._read_xml_content(environ)
+        except RuntimeError as e:
+            self.logger.warning(
+                "Bad MKCOL request on %r: %s", path, e, exc_info=True)
+            return BAD_REQUEST
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if item:
@@ -596,14 +626,18 @@ class Application:
 
     def do_MOVE(self, environ, base_prefix, path, user):
         """Manage MOVE request."""
-        to_url = urlparse(environ["HTTP_DESTINATION"])
+        raw_dest = environ.get("HTTP_DESTINATION", "")
+        to_url = urlparse(raw_dest)
         if to_url.netloc != environ["HTTP_HOST"]:
+            self.logger.info("Unsupported destination address: %r", raw_dest)
             # Remote destination server, not supported
             return REMOTE_DESTINATION
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
         to_path = storage.sanitize_path(to_url.path)
         if not (to_path + "/").startswith(base_prefix + "/"):
+            self.logger.warning("Destination %r from MOVE request on %r does"
+                                "n't start with base prefix", to_path, path)
             return NOT_ALLOWED
         to_path = to_path[len(base_prefix):]
         if not self._access(user, to_path, "w"):
@@ -646,7 +680,12 @@ class Application:
         """Manage PROPFIND request."""
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
-        xml_content = self._read_xml_content(environ)
+        try:
+            xml_content = self._read_xml_content(environ)
+        except RuntimeError as e:
+            self.logger.warning(
+                "Bad PROPFIND request on %r: %s", path, e, exc_info=True)
+            return BAD_REQUEST
         with self.Collection.acquire_lock("r", user):
             items = self.Collection.discover(
                 path, environ.get("HTTP_DEPTH", "0"))
@@ -672,7 +711,12 @@ class Application:
         """Manage PROPPATCH request."""
         if not self.authorized(user, path, "w"):
             return NOT_ALLOWED
-        xml_content = self._read_xml_content(environ)
+        try:
+            xml_content = self._read_xml_content(environ)
+        except RuntimeError as e:
+            self.logger.warning(
+                "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
+            return BAD_REQUEST
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if not isinstance(item, self.Collection):
@@ -688,7 +732,12 @@ class Application:
         """Manage PUT request."""
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
-        content = self._read_content(environ)
+        try:
+            content = self._read_content(environ)
+        except RuntimeError as e:
+            self.logger.warning(
+                "Bad PUT request on %r: %s", path, e, exc_info=True)
+            return BAD_REQUEST
         with self.Collection.acquire_lock("w", user):
             parent_path = storage.sanitize_path(
                 "/%s/" % posixpath.dirname(path.strip("/")))
@@ -720,7 +769,12 @@ class Application:
                 # Creation asked but item found: item can't be replaced
                 return PRECONDITION_FAILED
 
-            items = list(vobject.readComponents(content or ""))
+            try:
+                items = list(vobject.readComponents(content or ""))
+            except Exception as e:
+                self.logger.warning(
+                    "Bad PUT request on %r: %s", path, e, exc_info=True)
+                return BAD_REQUEST
             content_type = environ.get("CONTENT_TYPE", "").split(";")[0]
             tags = {value: key for key, value in xmlutils.MIMETYPES.items()}
             tag = tags.get(content_type)
@@ -740,7 +794,12 @@ class Application:
         """Manage REPORT request."""
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
-        xml_content = self._read_xml_content(environ)
+        try:
+            xml_content = self._read_xml_content(environ)
+        except RuntimeError as e:
+            self.logger.warning(
+                "Bad REPORT request on %r: %s", path, e, exc_info=True)
+            return BAD_REQUEST
         with self.Collection.acquire_lock("r", user):
             item = next(self.Collection.discover(path), None)
             if not self._access(user, path, "r", item):

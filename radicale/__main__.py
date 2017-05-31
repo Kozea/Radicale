@@ -58,8 +58,10 @@ def run():
             args.append(long_name)
             kwargs["dest"] = "{0}_{1}".format(section, option)
             groups[group].append(kwargs["dest"])
+            del kwargs["value"]
 
-            if kwargs.pop("value") in ("True", "False"):
+            if kwargs["type"] == bool:
+                del kwargs["type"]
                 kwargs["action"] = "store_const"
                 kwargs["const"] = "True"
                 opposite_args = kwargs.pop("opposite", [])
@@ -75,19 +77,22 @@ def run():
 
     args = parser.parse_args()
     if args.config is not None:
-        configuration = config.load()
-        if args.config:
-            configuration_found = configuration.read(args.config)
-        else:
-            configuration_found = True
+        config_paths = [args.config] if args.config else []
+        ignore_missing_paths = False
     else:
-        configuration_paths = [
-            "/etc/radicale/config",
-            os.path.expanduser("~/.config/radicale/config")]
+        config_paths = ["/etc/radicale/config",
+                        os.path.expanduser("~/.config/radicale/config")]
         if "RADICALE_CONFIG" in os.environ:
-            configuration_paths.append(os.environ["RADICALE_CONFIG"])
-        configuration = config.load(configuration_paths)
-        configuration_found = True
+            config_paths.append(os.environ["RADICALE_CONFIG"])
+        ignore_missing_paths = True
+    try:
+        configuration = config.load(config_paths,
+                                    ignore_missing_paths=ignore_missing_paths)
+    except Exception as e:
+        print("ERROR: Invalid configuration: %s" % e, file=sys.stderr)
+        if args.logging_debug:
+            raise
+        exit(1)
 
     # Update Radicale configuration according to arguments
     for group, actions in groups.items():
@@ -100,17 +105,19 @@ def run():
     # Start logging
     filename = os.path.expanduser(configuration.get("logging", "config"))
     debug = configuration.getboolean("logging", "debug")
-    logger = log.start("radicale", filename, debug)
-
-    # Log a warning if the configuration file of the command line is not found
-    if not configuration_found:
-        logger.error("Configuration file '%s' not found" % args.config)
+    try:
+        logger = log.start("radicale", filename, debug)
+    except Exception as e:
+        print("ERROR: Failed to start logger: %s" % e, file=sys.stderr)
+        if debug:
+            raise
         exit(1)
 
     try:
         serve(configuration, logger)
-    except Exception:
-        logger.exception("An exception occurred during server startup:")
+    except Exception as e:
+        logger.error("An exception occurred during server startup: %s", e,
+                     exc_info=True)
         exit(1)
 
 
@@ -124,7 +131,7 @@ def daemonize(configuration, logger):
             pid_fd = os.open(
                 pid_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         except OSError as e:
-            raise OSError("PID file exists: %s" %
+            raise OSError("PID file exists: %r" %
                           configuration.get("server", "pid")) from e
     pid = os.fork()
     if pid:
@@ -171,9 +178,9 @@ def serve(configuration, logger):
             filename = getattr(server_class, name)
             try:
                 open(filename, "r").close()
-            except IOError as exception:
-                logger.warning("Error while reading SSL %s %r: %s" % (
-                    name, filename, exception))
+            except OSError as e:
+                raise RuntimeError("Failed to read SSL %s %r: %s" %
+                                   (name, filename, e)) from e
     else:
         server_class = ThreadedHTTPServer
     server_class.client_timeout = configuration.getint("server", "timeout")
@@ -188,16 +195,23 @@ def serve(configuration, logger):
     shutdown_program = False
 
     for host in configuration.get("server", "hosts").split(","):
-        address, port = host.strip().rsplit(":", 1)
-        address, port = address.strip("[] "), int(port)
+        try:
+            address, port = host.strip().rsplit(":", 1)
+            address, port = address.strip("[] "), int(port)
+        except ValueError as e:
+            raise RuntimeError(
+                "Failed to parse address %r: %s" % (host, e)) from e
         application = Application(configuration, logger)
-        server = make_server(
-            address, port, application, server_class, RequestHandler)
+        try:
+            server = make_server(
+                address, port, application, server_class, RequestHandler)
+        except OSError as e:
+            raise RuntimeError(
+                "Failed to start server %r: %s" % (host, e)) from e
         servers[server.socket] = server
-        logger.debug("Listening to %s port %s",
-                     server.server_name, server.server_port)
-        if configuration.getboolean("server", "ssl"):
-            logger.debug("Using SSL")
+        logger.info("Listening to %r on port %d%s",
+                    server.server_name, server.server_port, " using SSL"
+                    if configuration.getboolean("server", "ssl") else "")
 
     # Create a socket pair to notify the select syscall of program shutdown
     # This is not available in python < 3.5 on Windows
@@ -232,7 +246,7 @@ def serve(configuration, logger):
         select_timeout = 1.0
     if configuration.getboolean("server", "daemon"):
         daemonize(configuration, logger)
-    logger.debug("Radicale server ready")
+    logger.info("Radicale server ready")
     while not shutdown_program:
         try:
             rlist, _, xlist = select.select(
@@ -241,7 +255,7 @@ def serve(configuration, logger):
             # SIGINT is handled by signal handler above
             rlist, xlist = [], []
         if xlist:
-            raise RuntimeError("Unhandled socket error")
+            raise RuntimeError("unhandled socket error")
         if rlist:
             server = servers.get(rlist[0])
             if server:
