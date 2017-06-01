@@ -10,9 +10,11 @@ from the URL path that is forwarded to Radicale.
 
 Example **nginx** configuration:
 ```nginx
-location /sub/folder/radicale {
-    proxy_pass localhost:5232/; # The / is important!
-    proxy_set_header X-Script-Name /sub/folder/radicale;
+location /radicale/ { # The trailing / is important!
+    proxy_pass        http://localhost:5232/; # The / is important!
+    proxy_set_header  X-Script-Name /radicale;
+    proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_pass_header Authorization;
 }
 ```
 
