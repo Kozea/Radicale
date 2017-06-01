@@ -25,7 +25,10 @@ import os
 from radicale import Application, config, log
 
 
-configuration = config.load([os.environ.get("RADICALE_CONFIG")])
+config_paths = []
+if os.environ.get("RADICALE_CONFIG"):
+    config_paths.append(os.environ["RADICALE_CONFIG"])
+configuration = config.load(config_paths, ignore_missing_paths=False)
 filename = os.path.expanduser(configuration.get("logging", "config"))
 debug = configuration.getboolean("logging", "debug")
 logger = log.start("radicale", filename, debug)
