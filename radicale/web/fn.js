@@ -17,13 +17,19 @@
  */
 
 /**
- * Server address (must not end with /)
+ * Server address
  * @const
  * @type {string}
  */
 var SERVER = (location.protocol + '//' + location.hostname +
-              (location.port ? ':' + location.port : '') +
-              location.pathname.replace(new RegExp("/+[^/]+/*(/index\.html?)?$"), ""));
+              (location.port ? ':' + location.port : ''));
+
+/**
+ * Path of the root collection on the server (must end with /)
+ * @const
+ * @type {string}
+ */
+var ROOT_PATH = location.pathname.replace(new RegExp("/+[^/]+/*(/index\.html?)?$"), "") + '/';
 
 /**
  * time between updates of collections.
@@ -121,7 +127,7 @@ function Collection(href, type, displayname, description, color) {
  */
 function get_principal(user, password, callback) {
     var request = new XMLHttpRequest();
-    request.open("PROPFIND", SERVER, true, user, password);
+    request.open("PROPFIND", SERVER + ROOT_PATH, true, user, password);
     request.onreadystatechange = function() {
         if (request.readyState !== 4) {
             return;
