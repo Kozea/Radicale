@@ -101,6 +101,10 @@
 # Folder for storing local collections, created if not present
 #filesystem_folder = /var/lib/radicale/collections
 
+# Lock the storage. Never start multiple instances of Radicale or edit the
+# storage externally while Radicale is running if disabled.
+#filesystem_locking = True
+
 # Sync all changes to disk during requests. (This can impair performance.)
 # Disabling it increases the risk of data loss, when the system crashes or
 # power fails!
