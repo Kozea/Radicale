@@ -41,6 +41,9 @@ from os import path
 
 from setuptools import setup
 
+WEB_FILES = ["web/css/icon.png", "web/css/main.css", "web/fn.js",
+             "web/index.html"]
+
 init_path = path.join(path.dirname(__file__), "radicale", "__init__.py")
 with open(init_path, "r", encoding="utf-8") as fd:
     version = re.search('VERSION = "([^"]+)"', fd.read().strip()).group(1)
@@ -64,6 +67,7 @@ setup(
     license="GNU GPL v3",
     platforms="Any",
     packages=["radicale"],
+    package_data={"radicale": WEB_FILES},
     provides=["radicale"],
     scripts=["bin/radicale"],
     install_requires=["vobject"],

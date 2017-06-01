@@ -44,7 +44,7 @@ class TestBaseAuthRequests(BaseTest):
         # Disable syncing to disk for better performance
         self.configuration.set("storage", "filesystem_fsync", "False")
         # Required on Windows, doesn't matter on Unix
-        self.configuration.set("storage", "close_lock_file", "True")
+        self.configuration.set("storage", "filesystem_close_lock_file", "True")
         # Set incorrect authentication delay to a very low value
         self.configuration.set("auth", "delay", "0.002")
 

@@ -752,16 +752,14 @@ class Collection(BaseCollection):
     @classmethod
     @contextmanager
     def acquire_lock(cls, mode, user=None):
-        if not cls.configuration.getboolean("storage", "filesystem_locking"):
-            yield
-            return
-
         def condition():
             if mode == "r":
                 return not cls._writer
             else:
                 return not cls._writer and cls._readers == 0
 
+        file_locking = cls.configuration.getboolean("storage",
+                                                    "filesystem_locking")
         folder = os.path.expanduser(cls.configuration.get(
             "storage", "filesystem_folder"))
         # Use a primitive lock which only works within one process as a
@@ -794,7 +792,7 @@ class Collection(BaseCollection):
                 except OSError as e:
                     cls.logger.info("Failed to set permissions on lock file:"
                                     " %s", e, exc_info=True)
-            if not cls._lock_file_locked:
+            if file_locking and not cls._lock_file_locked:
                 if os.name == "nt":
                     handle = msvcrt.get_osfhandle(cls._lock_file.fileno())
                     flags = LOCKFILE_EXCLUSIVE_LOCK if mode == "w" else 0
@@ -828,7 +826,7 @@ class Collection(BaseCollection):
                     cls._readers -= 1
                 else:
                     cls._writer = False
-                if cls._readers == 0:
+                if file_locking and cls._readers == 0:
                     if os.name == "nt":
                         handle = msvcrt.get_osfhandle(cls._lock_file.fileno())
                         overlapped = Overlapped()
