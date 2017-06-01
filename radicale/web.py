@@ -84,7 +84,9 @@ class Web(BaseWeb):
         try:
             filesystem_path = storage.path_to_filesystem(
                 self.folder, path[len("/.web"):])
-        except ValueError:
+        except ValueError as e:
+            self.logger.debug("Web content with unsafe path %r requested: %s",
+                              path, e, exc_info=True)
             return NOT_FOUND
         if os.path.isdir(filesystem_path) and not path.endswith("/"):
             location = posixpath.basename(path) + "/"
