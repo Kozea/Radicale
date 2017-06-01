@@ -484,7 +484,8 @@ class Collection(BaseCollection):
             filesystem_path = path_to_filesystem(folder, sane_path)
         except ValueError as e:
             # Path is unsafe
-            cls.logger.info(e)
+            cls.logger.debug("Collection with unsafe path %r requested: %s",
+                             sane_path, e, exc_info=True)
             return
 
         # Check if the path exists and if it leads to a collection or an item
