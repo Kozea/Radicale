@@ -751,6 +751,10 @@ class Collection(BaseCollection):
     @classmethod
     @contextmanager
     def acquire_lock(cls, mode, user=None):
+        if not cls.configuration.getboolean("storage", "filesystem_locking"):
+            yield
+            return
+
         def condition():
             if mode == "r":
                 return not cls._writer
@@ -786,21 +790,27 @@ class Collection(BaseCollection):
                 # by arbitrary users
                 try:
                     os.chmod(lock_path, stat.S_IWUSR | stat.S_IRUSR)
-                except OSError:
-                    cls.logger.debug("Failed to set permissions on lock file")
+                except OSError as e:
+                    cls.logger.info("Failed to set permissions on lock file:"
+                                    " %s", e, exc_info=True)
             if not cls._lock_file_locked:
                 if os.name == "nt":
                     handle = msvcrt.get_osfhandle(cls._lock_file.fileno())
                     flags = LOCKFILE_EXCLUSIVE_LOCK if mode == "w" else 0
                     overlapped = Overlapped()
                     if not lock_file_ex(handle, flags, 0, 1, 0, overlapped):
-                        cls.logger.debug("Locking not supported")
+                        raise RuntimeError("Locking the storage failed: %s" %
+                                           ctypes.FormatError())
                 elif os.name == "posix":
                     _cmd = fcntl.LOCK_EX if mode == "w" else fcntl.LOCK_SH
                     try:
                         fcntl.flock(cls._lock_file.fileno(), _cmd)
-                    except OSError:
-                        cls.logger.debug("Locking not supported")
+                    except OSError as e:
+                        raise RuntimeError("Locking the storage failed: %s" %
+                                           e) from e
+                else:
+                    raise RuntimeError("Locking the storage failed: "
+                                       "Unsupported operating system")
                 cls._lock_file_locked = True
         try:
             yield
@@ -822,12 +832,17 @@ class Collection(BaseCollection):
                         handle = msvcrt.get_osfhandle(cls._lock_file.fileno())
                         overlapped = Overlapped()
                         if not unlock_file_ex(handle, 0, 1, 0, overlapped):
-                            cls.logger.debug("Unlocking not supported")
+                            raise RuntimeError("Unlocking the storage failed: "
+                                               "%s" % ctypes.FormatError())
                     elif os.name == "posix":
                         try:
                             fcntl.flock(cls._lock_file.fileno(), fcntl.LOCK_UN)
-                        except OSError:
-                            cls.logger.debug("Unlocking not supported")
+                        except OSError as e:
+                            raise RuntimeError("Unlocking the storage failed: "
+                                               "%s" % e) from e
+                    else:
+                        raise RuntimeError("Unlocking the storage failed: "
+                                           "Unsupported operating system")
                     cls._lock_file_locked = False
                 if cls._waiters:
                     cls._waiters[0].notify()

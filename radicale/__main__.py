@@ -32,9 +32,8 @@ import ssl
 import sys
 from wsgiref.simple_server import make_server
 
-from . import (
-    VERSION, Application, RequestHandler, ThreadedHTTPServer,
-    ThreadedHTTPSServer, config, log)
+from . import (VERSION, Application, RequestHandler, ThreadedHTTPServer,
+               ThreadedHTTPSServer, config, log)
 
 
 def run():
