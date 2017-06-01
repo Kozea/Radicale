@@ -64,6 +64,6 @@ Radicale's source code for more information.
 
 ## Storage plugins
 This plugin is used to store collections and items.
-The module must contain a class `Storage` that extends
-`radicale.storage.BaseStorage`. Take a look at the file `radicale/storage.py`
+The module must contain a class `Collection` that extends
+`radicale.storage.BaseCollection`. Take a look at the file `radicale/storage.py`
 in Radicale's source code for more information.
