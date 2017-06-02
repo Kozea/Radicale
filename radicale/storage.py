@@ -857,10 +857,10 @@ class Collection(BaseCollection):
         if old_token:
             # Extract the token name from the sync token
             if not old_token.startswith("http://radicale.org/ns/sync/"):
-                raise ValueError("Malformed token: %s" % old_token)
+                raise ValueError("Malformed token: %r" % old_token)
             old_token_name = old_token[len("http://radicale.org/ns/sync/"):]
             if not check_token_name(old_token_name):
-                raise ValueError("Malformed token: %s" % old_token)
+                raise ValueError("Malformed token: %r" % old_token)
         # Get the current state and sync-token of the collection.
         state = {}
         token_name_hash = md5()
@@ -898,7 +898,7 @@ class Collection(BaseCollection):
                         os.remove(old_token_path)
                     except (FileNotFoundError, PermissionError):
                         pass
-                raise ValueError("Token not found: %s" % old_token)
+                raise ValueError("Token not found: %r" % old_token)
         # write the new token state or update the modification time of
         # existing token state
         if not os.path.exists(token_path):
