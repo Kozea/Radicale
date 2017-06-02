@@ -27,7 +27,6 @@ entry.
 
 import binascii
 import contextlib
-import datetime
 import errno
 import json
 import os
@@ -36,6 +35,7 @@ import posixpath
 import shlex
 import stat
 import subprocess
+import sys
 import threading
 import time
 from contextlib import contextmanager
@@ -46,6 +46,10 @@ from random import getrandbits
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import vobject
+
+if sys.version_info >= (3, 5):
+    # HACK: Avoid import cycle for Python < 3.5
+    from . import xmlutils
 
 if os.name == "nt":
     import ctypes
@@ -89,6 +93,10 @@ elif os.name == "posix":
 
 def load(configuration, logger):
     """Load the storage manager chosen in configuration."""
+    if sys.version_info < (3, 5):
+        # HACK: Avoid import cycle for Python < 3.5
+        global xmlutils
+        from . import xmlutils
     storage_type = configuration.get("storage", "type")
     if storage_type == "multifilesystem":
         collection_class = Collection
@@ -105,6 +113,27 @@ def load(configuration, logger):
     CollectionCopy.configuration = configuration
     CollectionCopy.logger = logger
     return CollectionCopy
+
+
+def scandir(path, only_dirs=False, only_files=False):
+    """Iterator for directory elements. (For compatibility with Python < 3.5)
+
+    ``only_dirs`` only return directories
+
+    ``only_files`` only return files
+
+    """
+    if sys.version_info >= (3, 5):
+        for entry in os.scandir(path):
+            if ((not only_files or entry.is_file()) and
+                    (not only_dirs or entry.is_dir())):
+                yield entry.name
+    else:
+        for name in os.listdir(path):
+            p = os.path.join(path, name)
+            if ((not only_files or os.path.isfile(p)) and
+                    (not only_dirs or os.path.isdir(p))):
+                yield name
 
 
 def get_etag(text):
@@ -183,9 +212,9 @@ def path_to_filesystem(root, *paths):
             safe_path = os.path.join(safe_path, part)
             # Check for conflicting files (e.g. case-insensitive file systems
             # or short names on Windows file systems)
-            if os.path.lexists(safe_path):
-                if part not in os.listdir(safe_path_parent):
-                    raise CollidingPathError(part)
+            if (os.path.lexists(safe_path) and
+                    part not in scandir(safe_path_parent)):
+                raise CollidingPathError(part)
     return safe_path
 
 
@@ -214,19 +243,57 @@ class ComponentNotFoundError(ValueError):
 
 
 class Item:
-    def __init__(self, collection, item, href, last_modified=None):
+    def __init__(self, collection, item=None, href=None, last_modified=None,
+                 text=None, etag=None):
+        """Initialize an item.
+
+        ``collection`` the parent collection.
+
+        ``href`` the href of the item.
+
+        ``last_modified`` the HTTP-datetime of when the item was modified.
+
+        ``text`` the text representation of the item (optional if ``item`` is
+        set).
+
+        ``item`` the vobject item (optional if ``text`` is set).
+
+        ``etag`` the etag of the item (optional). See ``get_etag``.
+
+        """
+        if text is None and item is None:
+            raise ValueError("at least one of 'text' or 'item' must be set")
         self.collection = collection
-        self.item = item
         self.href = href
         self.last_modified = last_modified
+        self._text = text
+        self._item = item
+        self._etag = etag
 
     def __getattr__(self, attr):
         return getattr(self.item, attr)
 
+    def serialize(self):
+        if self._text is None:
+            self._text = self.item.serialize()
+        return self._text
+
+    @property
+    def item(self):
+        if self._item is None:
+            try:
+                self._item = vobject.readOne(self._text)
+            except Exception as e:
+                raise RuntimeError("Failed to parse item %r in %r" %
+                                   (self.href, self.collection.path)) from e
+        return self._item
+
     @property
     def etag(self):
         """Encoded as quoted-string (see RFC 2616)."""
-        return get_etag(self.serialize())
+        if self._etag is None:
+            self._etag = get_etag(self.serialize())
+        return self._etag
 
 
 class BaseCollection:
@@ -331,21 +398,54 @@ class BaseCollection:
     def get_multi(self, hrefs):
         """Fetch multiple items. Duplicate hrefs must be ignored.
 
+        DEPRECATED: use ``get_multi2`` instead
+
+        """
+        return (self.get(href) for href in set(hrefs))
+
+    def get_multi2(self, hrefs):
+        """Fetch multiple items.
+
+        Functionally similar to ``get``, but might bring performance benefits
+        on some storages when used cleverly. It's not required to return the
+        requested items in the correct order. Duplicated hrefs can be ignored.
+
+        Returns tuples with the href and the item or None if the item doesn't
+        exist.
+
+        """
+        return ((href, self.get(href)) for href in hrefs)
+
+    def get_all(self):
+        """Fetch all items.
+
         Functionally similar to ``get``, but might bring performance benefits
         on some storages when used cleverly.
 
         """
-        for href in set(hrefs):
-            yield self.get(href)
+        return map(self.get, self.list())
+
+    def get_all_filtered(self, filters):
+        """Fetch all items with optional filtering.
+
+        This can largely improve performance of reports depending on
+        the filters and this implementation.
+
+        Returns tuples in the form ``(item, filters_matched)``.
+        ``filters_matched`` is a bool that indicates if ``filters`` are fully
+        matched.
+
+        This returns all events by default
+        """
+        return ((item, False) for item in self.get_all())
 
     def pre_filtered_list(self, filters):
         """List collection items with optional pre filtering.
 
-        This could largely improve performance of reports depending on
-        the filters and this implementation.
-        This returns all event by default
+        DEPRECATED: use ``get_all_filtered`` instead
+
         """
-        return [self.get(href) for href in self.list()]
+        return self.get_all()
 
     def has(self, href):
         """Check if an item exists by its href.
@@ -414,6 +514,8 @@ class Collection(BaseCollection):
         split_path = self.path.split("/")
         self.owner = split_path[0] if len(split_path) > 1 else None
         self.is_principal = principal
+        self._meta = None
+        self._etag = None
 
     @classmethod
     def _get_collection_root_folder(cls):
@@ -533,17 +635,15 @@ class Collection(BaseCollection):
         for item in collection.list():
             yield collection.get(item)
 
-        for href in os.listdir(filesystem_path):
+        for href in scandir(filesystem_path, only_dirs=True):
             if not is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
                     cls.logger.debug("Skipping collection %r in %r", href,
                                      path)
                 continue
-            child_filesystem_path = path_to_filesystem(filesystem_path, href)
-            if os.path.isdir(child_filesystem_path):
-                child_path = posixpath.join(path, href)
-                child_principal = len(attributes) == 0
-                yield cls(child_path, child_principal)
+            child_path = posixpath.join(path, href)
+            child_principal = len(attributes) == 0
+            yield cls(child_path, child_principal)
 
     @classmethod
     def create_collection(cls, href, collection=None, props=None):
@@ -724,7 +824,7 @@ class Collection(BaseCollection):
         history_folder = os.path.join(self._filesystem_path,
                                       ".Radicale.cache", "history")
         try:
-            for href in os.listdir(history_folder):
+            for href in scandir(history_folder):
                 if not is_safe_filesystem_path_component(href):
                     continue
                 if os.path.isfile(os.path.join(self._filesystem_path, href)):
@@ -766,7 +866,7 @@ class Collection(BaseCollection):
         token_name_hash = md5()
         # Find the history of all existing and deleted items
         for href, item in chain(
-                ((item.href, item) for item in self.pre_filtered_list(())),
+                ((item.href, item) for item in self.get_all()),
                 ((href, None) for href in self._get_deleted_history_hrefs())):
             history_etag = self._update_history_etag(href, item)
             state[href] = history_etag
@@ -835,43 +935,135 @@ class Collection(BaseCollection):
         return token, changes
 
     def list(self):
-        for href in os.listdir(self._filesystem_path):
+        for href in scandir(self._filesystem_path, only_files=True):
             if not is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
                     self.logger.debug(
                         "Skipping item %r in %r", href, self.path)
                 continue
-            path = os.path.join(self._filesystem_path, href)
-            if os.path.isfile(path):
-                yield href
+            yield href
 
-    def get(self, href):
-        if not href:
-            return None
-        if not is_safe_filesystem_path_component(href):
-            self.logger.debug("Can't translate name %r safely to filesystem "
-                              "in %r", href, self.path)
-            return None
-        path = path_to_filesystem(self._filesystem_path, href)
-        if not os.path.isfile(path):
-            return None
-        with open(path, encoding=self.encoding, newline="") as f:
-            text = f.read()
+    _item_cache_cleaned = False
+
+    def get(self, href, verify_href=True):
+        item, metadata = self._get_with_metadata(href, verify_href=verify_href)
+        return item
+
+    def _get_with_metadata(self, href, verify_href=True):
+        # Like ``get`` but additonally returns the following metadata:
+        # tag, start, end: see ``xmlutils.find_tag_and_time_range``
+        if verify_href:
+            try:
+                if not is_safe_filesystem_path_component(href):
+                    raise UnsafePathError(href)
+                path = path_to_filesystem(self._filesystem_path, href)
+            except ValueError as e:
+                self.logger.debug(
+                    "Can't translate name %r safely to filesystem in %r: %s",
+                    href, self.path, e, exc_info=True)
+                return None, None
+        else:
+            path = os.path.join(self._filesystem_path, href)
+        try:
+            with open(path, "rb") as f:
+                btext = f.read()
+        except (FileNotFoundError, IsADirectoryError):
+            return None, None
+        # The hash of the component in the file system. This is used to check,
+        # if the entry in the cache is still valid.
+        input_hash = md5()
+        input_hash.update(btext)
+        input_hash = input_hash.hexdigest()
+        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
+                                    "item")
+        try:
+            with open(os.path.join(cache_folder, href), "rb") as f:
+                cinput_hash, cetag, ctext, ctag, cstart, cend = pickle.load(f)
+        except (FileNotFoundError, pickle.UnpicklingError, ValueError) as e:
+            if isinstance(e, (pickle.UnpicklingError, ValueError)):
+                self.logger.warning(
+                    "Failed to load item cache entry %r in %r: %s",
+                    href, self.path, e, exc_info=True)
+            cinput_hash = cetag = ctext = ctag = cstart = cend = None
+        vobject_item = None
+        if input_hash != cinput_hash:
+            vobject_item = Item(self, href=href,
+                                text=btext.decode(self.encoding)).item
+            # Serialize the object again, to normalize the text representation.
+            # The storage may have been edited externally.
+            ctext = vobject_item.serialize()
+            cetag = get_etag(ctext)
+            try:
+                ctag, cstart, cend = xmlutils.find_tag_and_time_range(
+                    vobject_item)
+            except Exception as e:
+                raise RuntimeError("Failed to find tag and time range of item "
+                                   "%r from %r: %s" % (href, self.path,
+                                                       e)) from e
+            self._makedirs_synced(cache_folder)
+            try:
+                # Race: Other processes might have created and locked the
+                # file.
+                with self._atomic_write(os.path.join(cache_folder, href),
+                                        "wb") as f:
+                    pickle.dump((input_hash, cetag, ctext,
+                                 ctag, cstart, cend), f)
+            except PermissionError:
+                pass
+            # Clean cache entries (max once per request)
+            # This happens once after new uploads, or if the data in the
+            # file system was edited externally.
+            if not self._item_cache_cleaned:
+                self._item_cache_cleaned = True
+                self._clean_cache(cache_folder, (
+                    href for href in scandir(cache_folder) if not
+                    os.path.isfile(os.path.join(self._filesystem_path, href))))
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
-        try:
-            item = vobject.readOne(text)
-        except Exception as e:
-            raise RuntimeError("Failed to parse item %r in %r" %
-                               (href, self.path)) from e
-        return Item(self, item, href, last_modified)
+        return Item(self, href=href, last_modified=last_modified, etag=cetag,
+                    text=ctext, item=vobject_item), (ctag, cstart, cend)
+
+    def get_multi2(self, hrefs):
+        # It's faster to check for file name collissions here, because
+        # we only need to call os.listdir once.
+        files = None
+        for href in hrefs:
+            if files is None:
+                # List dir after hrefs returned one item, the iterator may be
+                # empty and the for-loop is never executed.
+                files = os.listdir(self._filesystem_path)
+            path = os.path.join(self._filesystem_path, href)
+            if (not is_safe_filesystem_path_component(href) or
+                    href not in files and os.path.lexists(path)):
+                self.logger.debug(
+                    "Can't translate name safely to filesystem: %r", href)
+                yield (href, None)
+            else:
+                yield (href, self.get(href, verify_href=False))
+
+    def get_all(self):
+        # We don't need to check for collissions, because the the file names
+        # are from os.listdir.
+        return (self.get(href, verify_href=False) for href in self.list())
+
+    def get_all_filtered(self, filters):
+        tag, start, end, simple = xmlutils.simplify_prefilters(filters)
+        if not tag:
+            # no filter
+            yield from ((item, simple) for item in self.get_all())
+            return
+        for item, (itag, istart, iend) in (
+                self._get_with_metadata(href, verify_href=False)
+                for href in self.list()):
+            if tag == itag and istart < end and iend > start:
+                yield item, simple and (start <= istart or iend <= end)
 
     def upload(self, href, vobject_item):
         if not is_safe_filesystem_path_component(href):
             raise UnsafePathError(href)
         path = path_to_filesystem(self._filesystem_path, href)
-        item = Item(self, vobject_item, href)
+        item = Item(self, href=href, item=vobject_item)
         with self._atomic_write(path, newline="") as fd:
             fd.write(item.serialize())
         # Track the change
@@ -907,56 +1099,100 @@ class Collection(BaseCollection):
             self._clean_history_cache()
 
     def get_meta(self, key=None):
-        if os.path.exists(self._props_path):
-            with open(self._props_path, encoding=self.encoding) as f:
-                try:
-                    meta = json.load(f)
-                except ValueError as e:
-                    raise RuntimeError("Failed to load properties of collect"
-                                       "ion %r: %s" % (self.path, e)) from e
-                return meta.get(key) if key else meta
+        # reuse cached value if the storage is read-only
+        if self._writer or self._meta is None:
+            try:
+                with open(self._props_path, encoding=self.encoding) as f:
+                    self._meta = json.load(f)
+            except FileNotFoundError:
+                self._meta = {}
+            except ValueError as e:
+                raise RuntimeError("Failed to load properties of collect"
+                                   "ion %r: %s" % (self.path, e)) from e
+        return self._meta.get(key) if key else self._meta
 
     def set_meta(self, props):
-        if os.path.exists(self._props_path):
-            with open(self._props_path, encoding=self.encoding) as f:
-                old_props = json.load(f)
-                old_props.update(props)
-                props = old_props
-        props = {key: value for key, value in props.items() if value}
-        with self._atomic_write(self._props_path, "w+") as f:
-            json.dump(props, f)
+        new_props = self.get_meta()
+        new_props.update(props)
+        for key in tuple(new_props.keys()):
+            if not new_props[key]:
+                del new_props[key]
+        with self._atomic_write(self._props_path, "w") as f:
+            json.dump(new_props, f)
 
     @property
     def last_modified(self):
-        relevant_files = [self._filesystem_path] + [
-            path_to_filesystem(self._filesystem_path, href)
-            for href in self.list()]
-        if os.path.exists(self._props_path):
-            relevant_files.append(self._props_path)
+        relevant_files = chain(
+            (self._filesystem_path,),
+            (self._props_path,) if os.path.exists(self._props_path) else (),
+            (os.path.join(self._filesystem_path, h) for h in self.list()))
         last = max(map(os.path.getmtime, relevant_files))
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(last))
 
     def serialize(self):
-        items = []
-        time_begin = datetime.datetime.now()
-        for href in self.list():
-            items.append(self.get(href).item)
-        time_end = datetime.datetime.now()
-        self.logger.info(
-            "Read %d items in %.3f seconds from %r", len(items),
-            (time_end - time_begin).total_seconds(), self.path)
+        # serialize collection
         if self.get_meta("tag") == "VCALENDAR":
-            collection = vobject.iCalendar()
-            for item in items:
-                for content in ("vevent", "vtodo", "vjournal"):
-                    if content in item.contents:
-                        for item_part in getattr(item, "%s_list" % content):
-                            collection.add(item_part)
-                        break
-            return collection.serialize()
+            in_vcalendar = False
+            vtimezones = ""
+            included_tzids = set()
+            vtimezone = []
+            tzid = None
+            components = ""
+            # Concatenate all child elements of VCALENDAR from all items
+            # together, while preventing duplicated VTIMEZONE entries.
+            # VTIMEZONEs are only distinguished by their TZID, if different
+            # timezones share the same TZID this produces errornous ouput.
+            # VObject fails at this too.
+            for item in self.get_all():
+                depth = 0
+                for line in item.serialize().split("\r\n"):
+                    if line.startswith("BEGIN:"):
+                        depth += 1
+                    if depth == 1 and line == "BEGIN:VCALENDAR":
+                        in_vcalendar = True
+                    elif in_vcalendar:
+                        if depth == 1 and line.startswith("END:"):
+                            in_vcalendar = False
+                        if depth == 2 and line == "BEGIN:VTIMEZONE":
+                            vtimezone.append(line)
+                        elif vtimezone:
+                            vtimezone.append(line)
+                            if depth == 2 and line.startswith("TZID:"):
+                                tzid = line[len("TZID:"):]
+                            elif depth == 2 and line.startswith("END:"):
+                                if tzid is None or tzid not in included_tzids:
+                                    if vtimezones:
+                                        vtimezones += "\r\n"
+                                    vtimezones += "\r\n".join(vtimezone)
+                                    included_tzids.add(tzid)
+                                vtimezone.clear()
+                                tzid = None
+                        elif depth >= 2:
+                            if components:
+                                components += "\r\n"
+                            components += line
+                    if line.startswith("END:"):
+                        depth -= 1
+            return "\r\n".join(filter(bool, (
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//PYVOBJECT//NONSGML Version 1//EN",
+                vtimezones,
+                components,
+                "END:VCALENDAR")))
         elif self.get_meta("tag") == "VADDRESSBOOK":
-            return "".join([item.serialize() for item in items])
+            return "".join((item.serialize() for item in self.get_all()))
         return ""
+
+    @property
+    def etag(self):
+        # reuse cached value if the storage is read-only
+        if self._writer or self._etag is None:
+            etag = md5()
+            for item in self.get_all():
+                etag.update((item.href + "/" + item.etag).encode("utf-8"))
+            self._etag = '"%s"' % etag.hexdigest()
+        return self._etag
 
     _lock = threading.Lock()
     _waiters = []

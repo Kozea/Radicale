@@ -26,12 +26,14 @@ in them for XML requests (all but PUT).
 """
 
 import copy
+import math
 import posixpath
 import re
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from http import client
+from itertools import chain
 from urllib.parse import quote, unquote, urlparse
 
 from . import storage
@@ -55,6 +57,13 @@ for short, url in NAMESPACES.items():
 
 CLARK_TAG_REGEX = re.compile(r"{(?P<namespace>[^}]*)}(?P<tag>.*)", re.VERBOSE)
 HUMAN_REGEX = re.compile(r"(?P<namespace>[^:{}]*)(?P<tag>.*)", re.VERBOSE)
+
+DAY = timedelta(days=1)
+SECOND = timedelta(seconds=1)
+DATETIME_MIN = datetime.min.replace(tzinfo=timezone.utc)
+DATETIME_MAX = datetime.max.replace(tzinfo=timezone.utc)
+TIMESTAMP_MIN = math.floor(DATETIME_MIN.timestamp())
+TIMESTAMP_MAX = math.ceil(DATETIME_MAX.timestamp())
 
 
 def pretty_xml(element, level=0):
@@ -210,11 +219,9 @@ def _prop_match(item, filter_):
 
 
 def _time_range_match(vobject_item, filter_, child_name):
-    """Check whether the ``item`` matches the time-range ``filter_``.
+    """Check whether the component/property ``child_name`` of
+       ``vobject_item`` matches the time-range ``filter_``."""
 
-    See rfc4791-9.9.
-
-    """
     start = filter_.get("start")
     end = filter_.get("end")
     if not start and not end:
@@ -229,14 +236,53 @@ def _time_range_match(vobject_item, filter_, child_name):
         end = datetime.max
     start = start.replace(tzinfo=timezone.utc)
     end = end.replace(tzinfo=timezone.utc)
-    child = getattr(vobject_item, child_name.lower())
 
+    matched = False
+
+    def range_fn(range_start, range_end):
+        nonlocal matched
+        if start < range_end and range_start < end:
+            matched = True
+            return True
+        if end < range_start:
+            return True
+        return False
+
+    def infinity_fn(start):
+        return False
+
+    _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn)
+    return matched
+
+
+def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
+    """Visit all time ranges in the component/property ``child_name`` of
+    `vobject_item`` with visitors ``range_fn`` and ``infinity_fn``.
+
+    ``range_fn`` gets called for every time_range with ``start`` and ``end``
+    datetimes as arguments. If the function returns True, the operation is
+    cancelled.
+
+    ``infinity_fn`` gets called when an infiite recurrence rule is detected
+    with ``start`` datetime as argument. If the function returns True, the
+    operation is cancelled.
+
+    See rfc4791-9.9.
+
+    """
+    child = getattr(vobject_item, child_name.lower())
     # Comments give the lines in the tables of the specification
     if child_name == "VEVENT":
         # TODO: check if there's a timezone
         dtstart = child.dtstart.value
 
         if child.rruleset:
+            if (";UNTIL=" not in child.rrule.value and
+                    ";COUNT=" not in child.rrule.value):
+                for dtstart in child.getrruleset(addRDate=True):
+                    if infinity_fn(_date_to_datetime(dtstart)):
+                        return
+                    break
             dtstarts = child.getrruleset(addRDate=True)
         else:
             dtstarts = (dtstart,)
@@ -255,31 +301,30 @@ def _time_range_match(vobject_item, filter_, child_name):
             dtstart_is_datetime = isinstance(dtstart, datetime)
             dtstart = _date_to_datetime(dtstart)
 
-            if dtstart > end:
-                break
-
             if dtend is not None:
                 # Line 1
                 dtend = dtstart + timedelta(seconds=original_duration)
-                if start < dtend and end > dtstart:
-                    return True
+                if range_fn(dtstart, dtend):
+                    return
             elif duration is not None:
                 if original_duration is None:
                     original_duration = duration.seconds
                 if duration.seconds > 0:
                     # Line 2
-                    if start < dtstart + duration and end > dtstart:
-                        return True
-                elif start <= dtstart and end > dtstart:
+                    if range_fn(dtstart, dtstart + duration):
+                        return
+                else:
                     # Line 3
-                    return True
+                    if range_fn(dtstart, dtstart + SECOND):
+                        return
             elif dtstart_is_datetime:
                 # Line 4
-                if start <= dtstart and end > dtstart:
-                    return True
-            elif start < dtstart + timedelta(days=1) and end > dtstart:
+                if range_fn(dtstart, dtstart + SECOND):
+                    return
+            else:
                 # Line 5
-                return True
+                if range_fn(dtstart, dtstart + DAY):
+                    return
 
     elif child_name == "VTODO":
         dtstart = getattr(child, "dtstart", None)
@@ -305,6 +350,12 @@ def _time_range_match(vobject_item, filter_, child_name):
             created = _date_to_datetime(created.value)
 
         if child.rruleset:
+            if (";UNTIL=" not in child.rrule.value and
+                    ";COUNT=" not in child.rrule.value):
+                for reference_date in child.getrruleset(addRDate=True):
+                    if infinity_fn(_date_to_datetime(reference_date)):
+                        return
+                    break
             reference_dates = child.getrruleset(addRDate=True)
         else:
             if dtstart is not None:
@@ -317,47 +368,56 @@ def _time_range_match(vobject_item, filter_, child_name):
                 reference_dates = (created,)
             else:
                 # Line 8
-                return True
+                if range_fn(DATETIME_MIN, DATETIME_MAX):
+                    return
+                reference_dates = ()
 
         for reference_date in reference_dates:
             reference_date = _date_to_datetime(reference_date)
-            if reference_date > end:
-                break
 
             if dtstart is not None and duration is not None:
                 # Line 1
-                if start <= reference_date + duration and (
-                        end > reference_date or
-                        end >= reference_date + duration):
-                    return True
+                if range_fn(reference_date,
+                            reference_date + duration + SECOND):
+                    return
+                if range_fn(reference_date + duration - SECOND,
+                            reference_date + duration + SECOND):
+                    return
             elif dtstart is not None and due is not None:
                 # Line 2
                 due = reference_date + timedelta(seconds=original_duration)
-                if (start < due or start <= reference_date) and (
-                        end > reference_date or end >= due):
-                    return True
+                if (range_fn(reference_date, due) or
+                        range_fn(reference_date, reference_date + SECOND) or
+                        range_fn(due - SECOND, due) or
+                        range_fn(due - SECOND, reference_date + SECOND)):
+                    return
             elif dtstart is not None:
-                if start <= reference_date and end > reference_date:
-                    return True
+                if range_fn(reference_date, reference_date + SECOND):
+                    return
             elif due is not None:
                 # Line 4
-                if start < reference_date and end >= reference_date:
-                    return True
+                if range_fn(reference_date - SECOND, reference_date):
+                    return
             elif completed is not None and created is not None:
                 # Line 5
                 completed = reference_date + timedelta(
                     seconds=original_duration)
-                if (start <= reference_date or start <= completed) and (
-                        end >= reference_date or end >= completed):
-                    return True
+                if (range_fn(reference_date - SECOND,
+                             reference_date + SECOND) or
+                        range_fn(completed - SECOND, completed + SECOND) or
+                        range_fn(reference_date - SECOND,
+                                 reference_date + SECOND) or
+                        range_fn(completed - SECOND, completed + SECOND)):
+                    return
             elif completed is not None:
                 # Line 6
-                if start <= reference_date and end >= reference_date:
-                    return True
+                if range_fn(reference_date - SECOND,
+                            reference_date + SECOND):
+                            return
             elif created is not None:
                 # Line 7
-                if end > reference_date:
-                    return True
+                if range_fn(reference_date, DATETIME_MAX):
+                    return
 
     elif child_name == "VJOURNAL":
         dtstart = getattr(child, "dtstart", None)
@@ -365,6 +425,12 @@ def _time_range_match(vobject_item, filter_, child_name):
         if dtstart is not None:
             dtstart = dtstart.value
             if child.rruleset:
+                if (";UNTIL=" not in child.rrule.value and
+                        ";COUNT=" not in child.rrule.value):
+                    for dtstart in child.getrruleset(addRDate=True):
+                        if infinity_fn(_date_to_datetime(dtstart)):
+                            return
+                        break
                 dtstarts = child.getrruleset(addRDate=True)
             else:
                 dtstarts = (dtstart,)
@@ -373,18 +439,21 @@ def _time_range_match(vobject_item, filter_, child_name):
                 dtstart_is_datetime = isinstance(dtstart, datetime)
                 dtstart = _date_to_datetime(dtstart)
 
-                if dtstart > end:
-                    break
-
                 if dtstart_is_datetime:
                     # Line 1
-                    if start <= dtstart and end > dtstart:
-                        return True
-                elif start < dtstart + timedelta(days=1) and end > dtstart:
+                    if range_fn(dtstart, dtstart + SECOND):
+                        return
+                else:
                     # Line 2
-                    return True
+                    if range_fn(dtstart, dtstart + DAY):
+                        return
 
-    return False
+    elif isinstance(child, date):
+        if range_fn(child, child + DAY):
+            return
+    elif isinstance(child, datetime):
+        if range_fn(child, child + SECOND):
+            return
 
 
 def _text_match(vobject_item, filter_, child_name, attrib_name=None):
@@ -427,6 +496,99 @@ def _param_filter_match(vobject_item, filter_, parent_name):
             return not condition
     else:
         return condition
+
+
+def simplify_prefilters(filters):
+    """Creates a simplified condition from ``filters``.
+
+    Returns a tuple (``tag``, ``start``, ``end``, ``simple``) where ``tag`` is
+    a string or None (match all) and ``start`` and ``end`` are POSIX
+    timestamps (as int). ``simple`` is a bool that indicates that ``filters``
+    and the simplified condition are identical.
+
+    """
+    flat_filters = tuple(chain.from_iterable(filters))
+    simple = len(flat_filters) <= 1
+    for col_filter in flat_filters:
+        if (col_filter.tag != _tag("C", "comp-filter") or
+                col_filter.get("name") != "VCALENDAR"):
+            simple = False
+            continue
+        simple &= len(col_filter) <= 1
+        for comp_filter in col_filter:
+            if comp_filter.tag != _tag("C", "comp-filter"):
+                simple = False
+                continue
+            tag = comp_filter.get("name")
+            if (tag not in ("VTODO", "VEVENT", "VJOURNAL") or comp_filter.find(
+                    _tag("C", "is-not-defined")) is not None):
+                simple = False
+                continue
+            simple &= len(comp_filter) <= 1
+            for time_filter in comp_filter:
+                if time_filter.tag != _tag("C", "time-range"):
+                    simple = False
+                    continue
+                start = time_filter.get("start")
+                end = time_filter.get("end")
+                if start:
+                    start = math.floor(datetime.strptime(
+                        start, "%Y%m%dT%H%M%SZ").replace(
+                            tzinfo=timezone.utc).timestamp())
+                else:
+                    start = TIMESTAMP_MIN
+                if end:
+                    end = math.ceil(datetime.strptime(
+                        end, "%Y%m%dT%H%M%SZ").replace(
+                            tzinfo=timezone.utc).timestamp())
+                else:
+                    end = TIMESTAMP_MAX
+                return tag, start, end, simple
+            return tag, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
+    return None, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
+
+
+def find_tag_and_time_range(vobject_item):
+    """Find tag and enclosing time range from ``vobject item``.
+
+    Returns a tuple (``tag``, ``start``, ``end``) where ``tag`` is a string
+    and ``start`` and ``end`` are POSIX timestamps (as int).
+
+    This is intened to be used for matching against simplified prefilters.
+
+    """
+    tag = ""
+    if vobject_item.name == "VCALENDAR":
+        for component in vobject_item.components():
+            if component.name in ("VTODO", "VEVENT", "VJOURNAL"):
+                tag = component.name
+                break
+    if not tag:
+        return (None, math.floor(DATETIME_MIN.timestamp()),
+                math.ceil(DATETIME_MAX.timestamp()))
+    start = end = None
+
+    def range_fn(range_start, range_end):
+        nonlocal start, end
+        if start is None or range_start < start:
+            start = range_start
+        if end is None or end < range_end:
+            end = range_end
+        return False
+
+    def infinity_fn(range_start):
+        nonlocal start, end
+        if start is None or range_start < start:
+            start = range_start
+        end = DATETIME_MAX
+        return True
+
+    _visit_time_ranges(vobject_item, tag, range_fn, infinity_fn)
+    if start is None:
+        start = DATETIME_MIN
+    if end is None:
+        end = DATETIME_MAX
+    return tag, math.floor(start.timestamp()), math.ceil(end.timestamp())
 
 
 def name_from_path(path, collection):
@@ -891,70 +1053,87 @@ def report(base_prefix, path, xml_request, collection):
         root.findall("./%s" % _tag("C", "filter")) +
         root.findall("./%s" % _tag("CR", "filter")))
 
-    for hreference in hreferences:
-        try:
-            name = name_from_path(hreference, collection)
-        except ValueError as e:
-            collection.logger.warning("Skipping invalid path %r in REPORT "
-                                      "request on %r: %s", hreference, path, e)
-            response = _item_response(base_prefix, hreference,
-                                      found_item=False)
-            multistatus.append(response)
-            continue
-        if name:
-            # Reference is an item
-            item = collection.get(name)
+    def retrieve_items(collection, hreferences, multistatus):
+        """Retrieves all items that are referenced in ``hreferences`` from
+           ``collection`` and adds 404 responses for missing and invalid items
+           to ``multistatus``."""
+        collection_requested = False
+
+        def get_names():
+            """Extracts all names from references in ``hreferences`` and adds
+               404 responses for invalid references to ``multistatus``.
+               If the whole collections is referenced ``collection_requested``
+               gets set to ``True``."""
+            nonlocal collection_requested
+            for hreference in hreferences:
+                try:
+                    name = name_from_path(hreference, collection)
+                except ValueError as e:
+                    collection.logger.warning(
+                        "Skipping invalid path %r in REPORT request on %r: %s",
+                        hreference, path, e)
+                    response = _item_response(base_prefix, hreference,
+                                              found_item=False)
+                    multistatus.append(response)
+                    continue
+                if name:
+                    # Reference is an item
+                    yield name
+                else:
+                    # Reference is a collection
+                    collection_requested = True
+
+        for name, item in collection.get_multi2(get_names()):
             if not item:
-                response = _item_response(base_prefix, hreference,
+                uri = "/" + posixpath.join(collection.path, name)
+                response = _item_response(base_prefix, uri,
                                           found_item=False)
                 multistatus.append(response)
-                continue
-            items = [item]
-        else:
-            # Reference is a collection
-            items = collection.pre_filtered_list(filters)
+            else:
+                yield item, False
+        if collection_requested:
+            yield from collection.get_all_filtered(filters)
 
-        for item in items:
-            if not item:
-                continue
-            if filters:
-                try:
-                    match = (_comp_match
-                             if collection.get_meta("tag") == "VCALENDAR"
-                             else _prop_match)
-                    if not all(match(item, filter_[0]) for filter_ in filters
-                               if filter_):
-                        continue
-                except Exception as e:
-                    raise RuntimeError("Failed to filter item %r from %r: %s" %
-                                       (collection.path, item.href, e)) from e
+    for item, filters_matched in retrieve_items(collection, hreferences,
+                                                multistatus):
+        if filters and not filters_matched:
+            match = (
+                _comp_match if collection.get_meta("tag") == "VCALENDAR"
+                else _prop_match)
+            try:
+                if not all(match(item, filter_[0]) for filter_ in filters
+                           if filter_):
+                    continue
+            except Exception as e:
+                raise RuntimeError("Failed to filter item %r from %r: %s" %
+                                   (item.href, collection.path, e)) from e
 
-            found_props = []
-            not_found_props = []
+        found_props = []
+        not_found_props = []
 
-            for tag in props:
-                element = ET.Element(tag)
-                if tag == _tag("D", "getetag"):
-                    element.text = item.etag
-                    found_props.append(element)
-                elif tag == _tag("D", "getcontenttype"):
-                    name = item.name.lower()
-                    mimetype = (
-                        "text/vcard" if name == "vcard" else "text/calendar")
-                    element.text = "%s; component=%s" % (mimetype, name)
-                    found_props.append(element)
-                elif tag in (
-                        _tag("C", "calendar-data"),
-                        _tag("CR", "address-data")):
-                    element.text = item.serialize()
-                    found_props.append(element)
-                else:
-                    not_found_props.append(element)
+        for tag in props:
+            element = ET.Element(tag)
+            if tag == _tag("D", "getetag"):
+                element.text = item.etag
+                found_props.append(element)
+            elif tag == _tag("D", "getcontenttype"):
+                name = item.name.lower()
+                mimetype = (
+                    "text/vcard" if name == "vcard" else "text/calendar")
+                element.text = "%s; component=%s" % (mimetype, name)
+                found_props.append(element)
+            elif tag in (
+                    _tag("C", "calendar-data"),
+                    _tag("CR", "address-data")):
+                element.text = item.serialize()
+                found_props.append(element)
+            else:
+                not_found_props.append(element)
 
-            uri = "/" + posixpath.join(collection.path, item.href)
-            multistatus.append(_item_response(
-                base_prefix, uri, found_props=found_props,
-                not_found_props=not_found_props, found_item=True))
+        uri = "/" + posixpath.join(collection.path, item.href)
+        multistatus.append(_item_response(
+            base_prefix, uri, found_props=found_props,
+            not_found_props=not_found_props, found_item=True))
 
     return client.MULTI_STATUS, multistatus
 
