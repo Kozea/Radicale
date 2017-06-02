@@ -1106,7 +1106,7 @@ def report(base_prefix, path, xml_request, collection):
                     continue
             except Exception as e:
                 raise RuntimeError("Failed to filter item %r from %r: %s" %
-                                   (collection.path, item.href, e)) from e
+                                   (item.href, collection.path, e)) from e
 
         found_props = []
         not_found_props = []

@@ -641,11 +641,9 @@ class Collection(BaseCollection):
                     cls.logger.debug("Skipping collection %r in %r", href,
                                      path)
                 continue
-            child_filesystem_path = path_to_filesystem(filesystem_path, href)
-            if os.path.isdir(child_filesystem_path):
-                child_path = posixpath.join(path, href)
-                child_principal = len(attributes) == 0
-                yield cls(child_path, child_principal)
+            child_path = posixpath.join(path, href)
+            child_principal = len(attributes) == 0
+            yield cls(child_path, child_principal)
 
     @classmethod
     def create_collection(cls, href, collection=None, props=None):
@@ -826,7 +824,7 @@ class Collection(BaseCollection):
         history_folder = os.path.join(self._filesystem_path,
                                       ".Radicale.cache", "history")
         try:
-            for href in os.listdir(history_folder):
+            for href in scandir(history_folder):
                 if not is_safe_filesystem_path_component(href):
                     continue
                 if os.path.isfile(os.path.join(self._filesystem_path, href)):
@@ -868,7 +866,7 @@ class Collection(BaseCollection):
         token_name_hash = md5()
         # Find the history of all existing and deleted items
         for href, item in chain(
-                ((item.href, item) for item in self.pre_filtered_list(())),
+                ((item.href, item) for item in self.get_all()),
                 ((href, None) for href in self._get_deleted_history_hrefs())):
             history_etag = self._update_history_etag(href, item)
             state[href] = history_etag
@@ -936,33 +934,6 @@ class Collection(BaseCollection):
                 changes.append(href)
         return token, changes
 
-    @classmethod
-    def _clean_cache(cls, folder, names, max_age=None):
-        # Delete all ``names`` in ``folder`` that are older than ``max_age``.
-        age_limit = time.time() - max_age if max_age is not None else None
-        modified = False
-        for name in names:
-            if not is_safe_filesystem_path_component(name):
-                continue
-            if age_limit is not None:
-                try:
-                    # Race: Another process might have deleted the file.
-                    mtime = os.path.getmtime(os.path.join(folder, name))
-                except FileNotFoundError:
-                    continue
-                if mtime > age_limit:
-                    continue
-            cls.logger.debug("Found expired item in cache: %s", name)
-            # Race: Another process might have deleted or locked the
-            # file.
-            try:
-                os.remove(os.path.join(folder, name))
-            except (FileNotFoundError, PermissionError):
-                continue
-            modified = True
-        if modified:
-            cls._sync_directory(folder)
-
     def list(self):
         for href in scandir(self._filesystem_path, only_files=True):
             if not is_safe_filesystem_path_component(href):
@@ -1008,7 +979,11 @@ class Collection(BaseCollection):
         try:
             with open(os.path.join(cache_folder, href), "rb") as f:
                 cinput_hash, cetag, ctext, ctag, cstart, cend = pickle.load(f)
-        except FileNotFoundError:
+        except (FileNotFoundError, pickle.UnpicklingError, ValueError) as e:
+            if isinstance(e, (pickle.UnpicklingError, ValueError)):
+                self.logger.warning(
+                    "Failed to load item cache entry %r in %r: %s",
+                    href, self.path, e, exc_info=True)
             cinput_hash = cetag = ctext = ctag = cstart = cend = None
         vobject_item = None
         if input_hash != cinput_hash:
@@ -1018,7 +993,13 @@ class Collection(BaseCollection):
             # The storage may have been edited externally.
             ctext = vobject_item.serialize()
             cetag = get_etag(ctext)
-            ctag, cstart, cend = xmlutils.find_tag_and_time_range(vobject_item)
+            try:
+                ctag, cstart, cend = xmlutils.find_tag_and_time_range(
+                    vobject_item)
+            except Exception as e:
+                raise RuntimeError("Failed to find tag and time range of item "
+                                   "%r from %r: %s" % (href, self.path,
+                                                       e)) from e
             self._makedirs_synced(cache_folder)
             try:
                 # Race: Other processes might have created and locked the
@@ -1056,7 +1037,7 @@ class Collection(BaseCollection):
             if (not is_safe_filesystem_path_component(href) or
                     href not in files and os.path.lexists(path)):
                 self.logger.debug(
-                    "Can't translate name safely to filesystem: %s", href)
+                    "Can't translate name safely to filesystem: %r", href)
                 yield (href, None)
             else:
                 yield (href, self.get(href, verify_href=False))
