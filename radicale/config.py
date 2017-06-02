@@ -23,9 +23,29 @@ Give a configparser-like interface to read and write configuration.
 
 """
 
+import math
 import os
 from collections import OrderedDict
 from configparser import RawConfigParser as ConfigParser
+
+
+def positive_int(value):
+    value = int(value)
+    if value < 0:
+        raise ValueError("value is negative: %d" % value)
+    return value
+
+
+def positive_float(value):
+    value = float(value)
+    if not math.isfinite(value):
+        raise ValueError("value is infinite")
+    if math.isnan(value):
+        raise ValueError("value is not a number")
+    if value < 0:
+        raise ValueError("value is negative: %f" % value)
+    return value
+
 
 # Default configuration
 INITIAL_CONFIG = OrderedDict([
@@ -49,15 +69,15 @@ INITIAL_CONFIG = OrderedDict([
         ("max_connections", {
             "value": "20",
             "help": "maximum number of parallel connections",
-            "type": int}),
+            "type": positive_int}),
         ("max_content_length", {
             "value": "10000000",
             "help": "maximum size of request body in bytes",
-            "type": int}),
+            "type": positive_int}),
         ("timeout", {
             "value": "10",
             "help": "socket timeout",
-            "type": int}),
+            "type": positive_int}),
         ("ssl", {
             "value": "False",
             "help": "use SSL connection",
@@ -115,7 +135,7 @@ INITIAL_CONFIG = OrderedDict([
         ("delay", {
             "value": "1",
             "help": "incorrect authentication delay",
-            "type": float})])),
+            "type": positive_float})])),
     ("rights", OrderedDict([
         ("type", {
             "value": "owner_only",
