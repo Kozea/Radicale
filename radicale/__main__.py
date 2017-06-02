@@ -169,11 +169,15 @@ def serve(configuration, logger):
         server_class = ThreadedHTTPSServer
         server_class.certificate = configuration.get("server", "certificate")
         server_class.key = configuration.get("server", "key")
+        server_class.certificate_authority = configuration.get(
+            "server", "certificate_authority")
         server_class.ciphers = configuration.get("server", "ciphers")
         server_class.protocol = getattr(
             ssl, configuration.get("server", "protocol"), ssl.PROTOCOL_SSLv23)
         # Test if the SSL files can be read
-        for name in ("certificate", "key"):
+        for name in ["certificate", "key"] + (
+                ["certificate_authority"]
+                if server_class.certificate_authority else []):
             filename = getattr(server_class, name)
             try:
                 open(filename, "r").close()

@@ -74,6 +74,11 @@ INITIAL_CONFIG = OrderedDict([
             "help": "set private key file",
             "aliases": ["-k", "--key"],
             "type": str}),
+        ("certificate_authority", {
+            "value": "",
+            "help": "set CA certificate for validating clients",
+            "aliases": ["--certificate-authority"],
+            "type": str}),
         ("protocol", {
             "value": "PROTOCOL_TLSv1_2",
             "help": "SSL protocol used",
