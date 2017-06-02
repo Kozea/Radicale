@@ -110,6 +110,9 @@
 # power fails!
 #filesystem_fsync = True
 
+# Delete sync token that are older (seconds)
+#max_sync_token_age = 2592000
+
 # Close the lock file when no more clients are waiting.
 # This option is not very useful in general, but on Windows files that are
 # opened cannot be deleted.
