@@ -423,8 +423,8 @@ class Collection(BaseCollection):
     def _atomic_write(self, path, mode="w", newline=None):
         directory = os.path.dirname(path)
         tmp = NamedTemporaryFile(
-            mode=mode, dir=directory, encoding=self.encoding,
-            delete=False, prefix=".Radicale.tmp-", newline=newline)
+            mode=mode, dir=directory, delete=False, prefix=".Radicale.tmp-",
+            newline=newline, encoding=None if "b" in mode else self.encoding)
         try:
             yield tmp
             self._fsync(tmp.fileno())
