@@ -284,8 +284,8 @@ class Item:
             try:
                 self._item = vobject.readOne(self._text)
             except Exception as e:
-                raise RuntimeError("Failed to parse item %r in %r" %
-                                   (self.href, self.collection.path)) from e
+                raise RuntimeError("Failed to parse item %r in %r: %s" %
+                                   (self.href, self.collection.path, e)) from e
         return self._item
 
     @property
