@@ -34,11 +34,11 @@ class TestBaseAuthRequests(BaseTest):
     def setup(self):
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
-        self.configuration.set("storage", "filesystem_folder", self.colpath)
+        self.configuration["storage"]["filesystem_folder"] = self.colpath
         # Disable syncing to disk for better performance
-        self.configuration.set("storage", "filesystem_fsync", "False")
+        self.configuration["storage"]["filesystem_fsync"] = "False"
         # Required on Windows, doesn't matter on Unix
-        self.configuration.set("storage", "filesystem_close_lock_file", "True")
+        self.configuration["storage"]["filesystem_close_lock_file"] = "True"
 
     def teardown(self):
         shutil.rmtree(self.colpath)
@@ -49,10 +49,10 @@ class TestBaseAuthRequests(BaseTest):
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
         with open(htpasswd_file_path, "w") as f:
             f.write("tmp:bepo\nother:bepo")
-        self.configuration.set("rights", "type", rights_type)
-        self.configuration.set("auth", "type", "htpasswd")
-        self.configuration.set("auth", "htpasswd_filename", htpasswd_file_path)
-        self.configuration.set("auth", "htpasswd_encryption", "plain")
+        self.configuration["rights"]["type"] = rights_type
+        self.configuration["auth"]["type"] = "htpasswd"
+        self.configuration["auth"]["htpasswd_filename"] = htpasswd_file_path
+        self.configuration["auth"]["htpasswd_encryption"] = "plain"
         self.application = Application(self.configuration, self.logger)
         for u in ("tmp", "other"):
             status, _, _ = self.request(
@@ -125,7 +125,7 @@ permission: rw
 user: .*
 collection: custom(/.*)?
 permission: r""")
-        self.configuration.set("rights", "file", rights_file_path)
+        self.configuration["rights"]["file"] = rights_file_path
         self._test_rights("from_file", "", "/other", "r", 401)
         self._test_rights("from_file", "tmp", "/other", "r", 403)
         self._test_rights("from_file", "", "/custom/sub", "r", 404)
