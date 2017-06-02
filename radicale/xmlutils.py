@@ -617,6 +617,7 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
 
         if is_collection:
             prop200.append(ET.Element(_tag("CS", "getctag")))
+            prop200.append(ET.Element(_tag("D", "sync-token")))
             prop200.append(ET.Element(_tag("C", "calendar-timezone")))
             prop200.append(ET.Element(_tag("D", "displayname")))
             prop200.append(ET.Element(_tag("ICAL", "calendar-color")))
@@ -732,6 +733,11 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
                     element.text = item.etag
                 else:
                     is404 = True
+            elif tag == _tag("D", "sync-token"):
+                if is_leaf:
+                    element.text, _ = item.sync()
+                else:
+                    is404 = True
             else:
                 human_tag = _tag_from_clark(tag)
                 meta = item.get_meta(human_tag)
@@ -841,7 +847,7 @@ def report(base_prefix, path, xml_request, collection):
         # support for them) and stops working if an error code is returned.
         collection.logger.warning("Unsupported REPORT method %r on %r "
                                   "requested", root.tag, path)
-        return multistatus
+        return client.MULTI_STATUS, multistatus
     prop_element = root.find(_tag("D", "prop"))
     props = (
         [prop.tag for prop in prop_element]
@@ -860,6 +866,25 @@ def report(base_prefix, path, xml_request, collection):
             else:
                 collection.logger.warning("Skipping invalid path %r in REPORT "
                                           "request on %r", href_path, path)
+    elif root.tag == _tag("D", "sync-collection"):
+        old_sync_token_element = root.find(_tag("D", "sync-token"))
+        old_sync_token = ""
+        if old_sync_token_element is not None and old_sync_token_element.text:
+            old_sync_token = old_sync_token_element.text.strip()
+        collection.logger.debug("Client provided sync token: %r",
+                                old_sync_token)
+        try:
+            sync_token, names = collection.sync(old_sync_token)
+        except ValueError as e:
+            # Invalid sync token
+            collection.logger.info("Client provided invalid sync token %r: %s",
+                                   old_sync_token, e, exc_info=True)
+            return client.PRECONDITION_FAILED, None
+        hreferences = ("/" + posixpath.join(collection.path, n) for n in names)
+        # Append current sync token to response
+        sync_token_element = ET.Element(_tag("D", "sync-token"))
+        sync_token_element.text = sync_token
+        multistatus.append(sync_token_element)
     else:
         hreferences = (path,)
     filters = (
@@ -931,7 +956,7 @@ def report(base_prefix, path, xml_request, collection):
                 base_prefix, uri, found_props=found_props,
                 not_found_props=not_found_props, found_item=True))
 
-    return multistatus
+    return client.MULTI_STATUS, multistatus
 
 
 def _item_response(base_prefix, href, found_props=(), not_found_props=(),

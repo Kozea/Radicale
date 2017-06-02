@@ -160,6 +160,10 @@ INITIAL_CONFIG = OrderedDict([
                 "/var/lib/radicale/collections"),
             "help": "path where collections are stored",
             "type": str}),
+        ("max_sync_token_age", {
+            "value": 2592000,  # 30 days
+            "help": "delete sync token that are older",
+            "type": int}),
         ("filesystem_fsync", {
             "value": "True",
             "help": "sync all changes to filesystem during requests",

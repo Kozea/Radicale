@@ -828,7 +828,8 @@ class Application:
             else:
                 collection = item.collection
             headers = {"Content-Type": "text/xml; charset=%s" % self.encoding}
-            xml_answer = xmlutils.report(
+            status, xml_answer = xmlutils.report(
                 base_prefix, path, xml_content, collection)
-            return (client.MULTI_STATUS, headers,
-                    self._write_xml_content(xml_answer))
+            if status == client.PRECONDITION_FAILED:
+                return PRECONDITION_FAILED
+            return (status, headers, self._write_xml_content(xml_answer))
