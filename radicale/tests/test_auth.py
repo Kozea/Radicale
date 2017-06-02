@@ -40,13 +40,13 @@ class TestBaseAuthRequests(BaseTest):
     def setup(self):
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
-        self.configuration.set("storage", "filesystem_folder", self.colpath)
+        self.configuration["storage"]["filesystem_folder"] = self.colpath
         # Disable syncing to disk for better performance
-        self.configuration.set("storage", "filesystem_fsync", "False")
+        self.configuration["storage"]["filesystem_fsync"] = "False"
         # Required on Windows, doesn't matter on Unix
-        self.configuration.set("storage", "filesystem_close_lock_file", "True")
+        self.configuration["storage"]["filesystem_close_lock_file"] = "True"
         # Set incorrect authentication delay to a very low value
-        self.configuration.set("auth", "delay", "0.002")
+        self.configuration["auth"]["delay"] = "0.002"
 
     def teardown(self):
         shutil.rmtree(self.colpath)
@@ -56,10 +56,9 @@ class TestBaseAuthRequests(BaseTest):
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
         with open(htpasswd_file_path, "w") as f:
             f.write(htpasswd_content)
-        self.configuration.set("auth", "type", "htpasswd")
-        self.configuration.set("auth", "htpasswd_filename", htpasswd_file_path)
-        self.configuration.set("auth", "htpasswd_encryption",
-                               htpasswd_encryption)
+        self.configuration["auth"]["type"] = "htpasswd"
+        self.configuration["auth"]["htpasswd_filename"] = htpasswd_file_path
+        self.configuration["auth"]["htpasswd_encryption"] = htpasswd_encryption
         self.application = Application(self.configuration, self.logger)
         for user, password, expected_status in (
                 ("tmp", "bepo", 207), ("tmp", "tmp", 401), ("tmp", "", 401),
@@ -108,7 +107,7 @@ class TestBaseAuthRequests(BaseTest):
             "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
 
     def test_remote_user(self):
-        self.configuration.set("auth", "type", "remote_user")
+        self.configuration["auth"]["type"] = "remote_user"
         self.application = Application(self.configuration, self.logger)
         status, _, answer = self.request(
             "PROPFIND", "/",
@@ -122,7 +121,7 @@ class TestBaseAuthRequests(BaseTest):
         assert ">/test/<" in answer
 
     def test_http_x_remote_user(self):
-        self.configuration.set("auth", "type", "http_x_remote_user")
+        self.configuration["auth"]["type"] = "http_x_remote_user"
         self.application = Application(self.configuration, self.logger)
         status, _, answer = self.request(
             "PROPFIND", "/",
@@ -137,7 +136,7 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_custom(self):
         """Custom authentication."""
-        self.configuration.set("auth", "type", "tests.custom.auth")
+        self.configuration["auth"]["type"] = "tests.custom.auth"
         self.application = Application(self.configuration, self.logger)
         status, headers, answer = self.request(
             "PROPFIND", "/tmp", HTTP_AUTHORIZATION="Basic %s" %
