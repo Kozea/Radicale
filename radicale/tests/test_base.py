@@ -24,6 +24,7 @@ import os
 import posixpath
 import shutil
 import tempfile
+import xml.etree.ElementTree as ET
 
 import pytest
 from radicale import Application, config
@@ -762,6 +763,177 @@ class BaseRequestsMixIn:
                </C:calendar-query>""")
         assert status == 207
         assert "href>%s<" % event_path in answer
+
+    def _report_sync_token(self, calendar_path, sync_token=None):
+        sync_token_xml = (
+            "<sync-token><![CDATA[%s]]></sync-token>" % sync_token
+            if sync_token else "<sync-token />")
+        status, headers, answer = self.request(
+            "REPORT", calendar_path,
+            """<?xml version="1.0" encoding="utf-8" ?>
+               <sync-collection xmlns="DAV:">
+                 <prop>
+                   <getetag />
+                 </prop>
+                 %s
+               </sync-collection>""" % sync_token_xml)
+        if sync_token and status == 412:
+            return None, None
+        assert status == 207
+        xml = ET.fromstring(answer)
+        sync_token = xml.find("{DAV:}sync-token").text.strip()
+        assert sync_token
+        return sync_token, xml
+
+    def test_report_sync_collection_no_change(self):
+        """Test sync-collection report without modifying the collection"""
+        calendar_path = "/calendar.ics/"
+        self.request("MKCALENDAR", calendar_path)
+        event = get_file_content("event1.ics")
+        event_path = posixpath.join(calendar_path, "event.ics")
+        self.request("PUT", event_path, event)
+        sync_token, xml = self._report_sync_token(calendar_path)
+        assert xml.find("{DAV:}response") is not None
+        new_sync_token, xml = self._report_sync_token(calendar_path,
+                                                      sync_token)
+        assert sync_token == new_sync_token
+        assert xml.find("{DAV:}response") is None
+
+    def test_report_sync_collection_add(self):
+        """Test sync-collection report with an added item"""
+        calendar_path = "/calendar.ics/"
+        self.request("MKCALENDAR", calendar_path)
+        sync_token, xml = self._report_sync_token(calendar_path)
+        event = get_file_content("event1.ics")
+        event_path = posixpath.join(calendar_path, "event.ics")
+        self.request("PUT", event_path, event)
+        sync_token, xml = self._report_sync_token(calendar_path, sync_token)
+        if not sync_token:
+            pytest.skip("storage backend does not support sync-token")
+        assert xml.find("{DAV:}response") is not None
+        assert xml.find("{DAV:}response/{DAV:}status") is None
+
+    def test_report_sync_collection_delete(self):
+        """Test sync-collection report with a deleted item"""
+        calendar_path = "/calendar.ics/"
+        self.request("MKCALENDAR", calendar_path)
+        event = get_file_content("event1.ics")
+        event_path = posixpath.join(calendar_path, "event.ics")
+        self.request("PUT", event_path, event)
+        sync_token, xml = self._report_sync_token(calendar_path)
+        self.request("DELETE", event_path)
+        sync_token, xml = self._report_sync_token(calendar_path, sync_token)
+        if not sync_token:
+            pytest.skip("storage backend does not support sync-token")
+        assert "404" in xml.find("{DAV:}response/{DAV:}status").text
+
+    def test_report_sync_collection_create_delete(self):
+        """Test sync-collection report with a created and deleted item"""
+        calendar_path = "/calendar.ics/"
+        self.request("MKCALENDAR", calendar_path)
+        sync_token, xml = self._report_sync_token(calendar_path)
+        event = get_file_content("event1.ics")
+        event_path = posixpath.join(calendar_path, "event.ics")
+        self.request("PUT", event_path, event)
+        self.request("DELETE", event_path)
+        sync_token, xml = self._report_sync_token(calendar_path, sync_token)
+        if not sync_token:
+            pytest.skip("storage backend does not support sync-token")
+        assert "404" in xml.find("{DAV:}response/{DAV:}status").text
+
+    def test_report_sync_collection_modify_undo(self):
+        """Test sync-collection report with a modified and changed back item"""
+        calendar_path = "/calendar.ics/"
+        self.request("MKCALENDAR", calendar_path)
+        event1 = get_file_content("event1.ics")
+        event2 = get_file_content("event2.ics")
+        event_path = posixpath.join(calendar_path, "event1.ics")
+        self.request("PUT", event_path, event1)
+        sync_token, xml = self._report_sync_token(calendar_path)
+        self.request("PUT", event_path, event2)
+        self.request("PUT", event_path, event1)
+        sync_token, xml = self._report_sync_token(calendar_path, sync_token)
+        if not sync_token:
+            pytest.skip("storage backend does not support sync-token")
+        assert xml.find("{DAV:}response") is not None
+        assert xml.find("{DAV:}response/{DAV:}status") is None
+
+    def test_report_sync_collection_move(self):
+        """Test sync-collection report a moved item"""
+        calendar_path = "/calendar.ics/"
+        self.request("MKCALENDAR", calendar_path)
+        event = get_file_content("event1.ics")
+        event1_path = posixpath.join(calendar_path, "event1.ics")
+        event2_path = posixpath.join(calendar_path, "event2.ics")
+        self.request("PUT", event1_path, event)
+        sync_token, xml = self._report_sync_token(calendar_path)
+        status, headers, answer = self.request(
+            "MOVE", event1_path, HTTP_DESTINATION=event2_path, HTTP_HOST="")
+        sync_token, xml = self._report_sync_token(calendar_path, sync_token)
+        if not sync_token:
+            pytest.skip("storage backend does not support sync-token")
+        for response in xml.findall("{DAV:}response"):
+            if response.find("{DAV:}status") is None:
+                assert response.find("{DAV:}href").text == event2_path
+            else:
+                assert "404" in response.find("{DAV:}status").text
+                assert response.find("{DAV:}href").text == event1_path
+
+    def test_report_sync_collection_move_undo(self):
+        """Test sync-collection report with a moved and moved back item"""
+        calendar_path = "/calendar.ics/"
+        self.request("MKCALENDAR", calendar_path)
+        event = get_file_content("event1.ics")
+        event1_path = posixpath.join(calendar_path, "event1.ics")
+        event2_path = posixpath.join(calendar_path, "event2.ics")
+        self.request("PUT", event1_path, event)
+        sync_token, xml = self._report_sync_token(calendar_path)
+        status, headers, answer = self.request(
+            "MOVE", event1_path, HTTP_DESTINATION=event2_path, HTTP_HOST="")
+        status, headers, answer = self.request(
+            "MOVE", event2_path, HTTP_DESTINATION=event1_path, HTTP_HOST="")
+        sync_token, xml = self._report_sync_token(calendar_path, sync_token)
+        if not sync_token:
+            pytest.skip("storage backend does not support sync-token")
+        created = deleted = 0
+        for response in xml.findall("{DAV:}response"):
+            if response.find("{DAV:}status") is None:
+                assert response.find("{DAV:}href").text == event1_path
+                created += 1
+            else:
+                assert "404" in response.find("{DAV:}status").text
+                assert response.find("{DAV:}href").text == event2_path
+                deleted += 1
+        assert created == 1 and deleted == 1
+
+    def test_report_sync_collection_invalid_sync_token(self):
+        """Test sync-collection report with an invalid sync token"""
+        calendar_path = "/calendar.ics/"
+        self.request("MKCALENDAR", calendar_path)
+        sync_token, xml = self._report_sync_token(
+            calendar_path, "http://radicale.org/ns/sync/INVALID")
+        assert not sync_token
+
+    def test_propfind_sync_token(self):
+        """Retrieve the sync-token with a propfind request"""
+        calendar_path = "/calendar.ics/"
+        self.request("MKCALENDAR", calendar_path)
+        sync_token, xml = self._report_sync_token(calendar_path)
+        event = get_file_content("event1.ics")
+        event_path = posixpath.join(calendar_path, "event.ics")
+        self.request("PUT", event_path, event)
+        new_sync_token, xml = self._report_sync_token(calendar_path,
+                                                      sync_token)
+        assert sync_token != new_sync_token
+
+    def test_propfind_same_as_sync_collection_sync_token(self):
+        """Compare sync-token property with sync-collection sync-token"""
+        calendar_path = "/calendar.ics/"
+        self.request("MKCALENDAR", calendar_path)
+        sync_token, xml = self._report_sync_token(calendar_path)
+        new_sync_token, xml = self._report_sync_token(calendar_path,
+                                                      sync_token)
+        assert sync_token == new_sync_token
 
     def test_authorization(self):
         authorization = "Basic " + base64.b64encode(b"user:").decode()
