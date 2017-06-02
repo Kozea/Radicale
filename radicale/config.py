@@ -232,6 +232,7 @@ def load(paths=(), extra_config=None, ignore_missing_paths=True):
                     type_(config.get(section, option))
             except Exception as e:
                 raise RuntimeError(
-                    "Invalid value %r for option %r in section %r in config" %
-                    (config.get(section, option), option, section)) from e
+                    "Invalid %s value for option %r in section %r in config: "
+                    "%r" % (type_.__name__, option, section,
+                            config.get(section, option))) from e
     return config
