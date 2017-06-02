@@ -24,7 +24,6 @@ http://docs.python.org/library/logging.config.html
 
 import logging
 import logging.config
-import os
 import signal
 import sys
 
@@ -47,26 +46,30 @@ class RemoveTracebackFilter(logging.Filter):
 def start(name="radicale", filename=None, debug=False):
     """Start the logging according to the configuration."""
     logger = logging.getLogger(name)
-    if filename and os.path.exists(filename):
-        # Configuration taken from file
-        configure_from_file(logger, filename, debug)
-        # Reload config on SIGHUP (UNIX only)
-        if hasattr(signal, "SIGHUP"):
-            def handler(signum, frame):
-                configure_from_file(logger, filename, debug)
-            signal.signal(signal.SIGHUP, handler)
-    else:
-        # Default configuration, standard output
-        if filename:
-            logger.warning(
-                "WARNING: Logging configuration file %r not found, using "
-                "stderr" % filename)
-        handler = logging.StreamHandler(sys.stderr)
-        handler.setFormatter(
-            logging.Formatter("[%(thread)x] %(levelname)s: %(message)s"))
-        logger.addHandler(handler)
     if debug:
         logger.setLevel(logging.DEBUG)
     else:
         logger.addFilter(RemoveTracebackFilter())
+    if filename:
+        # Configuration taken from file
+        try:
+            configure_from_file(logger, filename, debug)
+        except Exception as e:
+            raise RuntimeError("Failed to load logging configuration file %r: "
+                               "%s" % (filename, e)) from e
+        # Reload config on SIGHUP (UNIX only)
+        if hasattr(signal, "SIGHUP"):
+            def handler(signum, frame):
+                try:
+                    configure_from_file(logger, filename, debug)
+                except Exception as e:
+                    logger.error("Failed to reload logging configuration file "
+                                 "%r: %s", filename, e, exc_info=True)
+            signal.signal(signal.SIGHUP, handler)
+    else:
+        # Default configuration, standard output
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(
+            logging.Formatter("[%(thread)x] %(levelname)s: %(message)s"))
+        logger.addHandler(handler)
     return logger
