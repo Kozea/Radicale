@@ -300,6 +300,24 @@ class BaseCollection:
         """
         raise NotImplementedError
 
+    def sync(self, old_token=None):
+        """Get the current sync token and changed items for synchronization.
+
+        ``old_token`` an old sync token which is used as the base of the
+        delta update. If sync token is missing, all items are returned.
+        ValueError is raised for invalid or old tokens.
+
+        WARNING: This simple default implementation treats all sync-token as
+                 invalid. It adheres to the specification but some clients
+                 (e.g. InfCloud) don't like it. Subclasses should provide a
+                 more sophisticated implementation.
+
+        """
+        token = "http://radicale.org/ns/sync/%s" % self.etag.strip("\"")
+        if old_token:
+            raise ValueError("Sync token are not supported")
+        return token, self.list()
+
     def list(self):
         """List collection items."""
         raise NotImplementedError
