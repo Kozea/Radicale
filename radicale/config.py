@@ -121,7 +121,7 @@ INITIAL_CONFIG = OrderedDict([
             "type": str})])),
     ("auth", OrderedDict([
         ("type", {
-            "value": "None",
+            "value": "none",
             "help": "authentication method",
             "type": str}),
         ("htpasswd_filename", {
