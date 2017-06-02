@@ -796,11 +796,6 @@ class Collection(BaseCollection):
                 self.logger.warning(
                     "Failed to load history cache entry %r in %r: %s",
                     href, self.path, e, exc_info=True)
-                # Delete the damaged file
-                try:
-                    os.remove(os.path.join(history_folder, href))
-                except (FileNotFoundError, PermissionError):
-                    pass
             cache_etag = ""
             # Initialize with random data to prevent collisions with cleaned
             # expired items.
