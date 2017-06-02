@@ -143,6 +143,7 @@ class HTTPSServer(HTTPServer):
     key = None
     protocol = None
     ciphers = None
+    certificate_authority = None
 
     def __init__(self, address, handler):
         """Create server by wrapping HTTP socket in an SSL socket."""
@@ -150,6 +151,9 @@ class HTTPSServer(HTTPServer):
 
         self.socket = ssl.wrap_socket(
             self.socket, self.key, self.certificate, server_side=True,
+            cert_reqs=ssl.CERT_REQUIRED if self.certificate_authority else
+            ssl.CERT_NONE,
+            ca_certs=self.certificate_authority or None,
             ssl_version=self.protocol, ciphers=self.ciphers)
 
         self.server_bind()
@@ -187,6 +191,9 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
 
     def get_environ(self):
         env = super().get_environ()
+        if hasattr(self.connection, "getpeercert"):
+            # The certificate can be evaluated by the auth module
+            env["REMOTE_CERTIFICATE"] = self.connection.getpeercert()
         # Parent class only tries latin1 encoding
         env["PATH_INFO"] = unquote(self.path.split("?", 1)[0])
         return env

@@ -41,6 +41,10 @@
 # SSL private key
 #key = /etc/ssl/radicale.key.pem
 
+# CA certificate for validating clients. This can be used to secure
+# TCP traffic between Radicale and a reverse proxy
+#certificate_authority =
+
 # SSL Protocol used. See python's ssl module for available values
 #protocol = PROTOCOL_TLSv1_2
 
