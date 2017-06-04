@@ -667,7 +667,7 @@ function CollectionsScene(user, password, collection, onerror) {
             });
             title_form.textContent = collection.displayname || collection.href;
             description_form.textContent = collection.description;
-            var href = SERVER.replace("//", "//" + encodeURIComponent(user) + "@") + collection.href;
+            var href = SERVER + collection.href;
             url_form.href = href;
             url_form.textContent = href;
             delete_btn.onclick = function(ev) {return ondelete(collection);};
