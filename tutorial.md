@@ -24,8 +24,12 @@ installed. On most distributions it should be enough to install the package
 
 Then open a console and type:
 
-    $ python3 -m pip install --upgrade radicale
-    $ python3 -m radicale --config "" --storage-filesystem-folder=~/.var/lib/radicale/collections
+```shell
+# Run the following command as root or
+# add the --user argument to only install for the current user
+$ python3 -m pip install --upgrade radicale
+$ python3 -m radicale --config "" --storage-filesystem-folder=~/.var/lib/radicale/collections
+```
 
 Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser
 and enjoy the "Radicale works!" message!
@@ -40,8 +44,10 @@ click on "Install now". Wait a couple of minutes, it's done!
 
 Launch a command prompt and type:
 
-    C:\Users\MyName> python -m pip install --upgrade radicale
-    C:\Users\MyName> python -m radicale --config "" --storage-filesystem-folder=~/radicale
+```
+C:\Users\User> python -m pip install --upgrade radicale
+C:\Users\User> python -m radicale --config "" --storage-filesystem-folder=~/radicale
+```
 
 Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser
 and enjoy the "Radicale works!" message!
