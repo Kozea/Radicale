@@ -47,7 +47,7 @@ A comma separated list of addresses that the server will bind to.
 Default: `127.0.0.1:5555`
 
 ### daemon
-Daemonize the Radicale process. It does not reset the umask or double fork.
+Daemonize the Radicale process. It does not reset the umask.
 
 Default: `False`
 
