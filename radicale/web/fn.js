@@ -32,10 +32,11 @@ var SERVER = (location.protocol + '//' + location.hostname +
 var ROOT_PATH = location.pathname.replace(new RegExp("/+[^/]+/*(/index\.html?)?$"), "") + '/';
 
 /**
- * time between updates of collections.
+ * time between updates of collections (milliseconds)
  * @const
+  * @type {?int}
  */
-var UPDATE_INTERVAL = 10000;
+var UPDATE_INTERVAL = null;
 
 /**
  * Regex to match and normalize color
@@ -448,6 +449,7 @@ function LoginScene() {
     var logout_view = document.getElementById("logoutview");
     var logout_user_form = logout_view.querySelector("[name=user]");
     var logout_btn = logout_view.querySelector("[name=link]");
+    var first_show = true;
 
     /** @type {?number} */ var scene_index = null;
     var user = "";
@@ -489,6 +491,10 @@ function LoginScene() {
                         // show collections
                         var saved_user = user;
                         user = "";
+                        if (typeof(sessionStorage) !== "undefined") {
+                            sessionStorage.setItem("radicale_user", saved_user);
+                            sessionStorage.setItem("radicale_password", password);
+                        }
                         var collections_scene = new CollectionsScene(
                             saved_user, password, collection, function(error1) {
                                 error = error1;
@@ -521,12 +527,24 @@ function LoginScene() {
     }
 
     this.show = function() {
+        var saved_first_show = first_show;
+        first_show = false;
         this.release();
         fill_form();
         form.onsubmit = onlogin;
         html_scene.style.display = "block";
         user_form.focus();
         scene_index = scene_stack.length - 1;
+        if (typeof(sessionStorage) !== "undefined") {
+            if (saved_first_show && sessionStorage.getItem("radicale_user")) {
+                user_form.value = sessionStorage.getItem("radicale_user");
+                password_form.value = sessionStorage.getItem("radicale_password");
+                onlogin();
+            } else {
+                sessionStorage.setItem("radicale_user", "");
+                sessionStorage.setItem("radicale_password", "");
+            }
+        }
     };
     this.hide = function() {
         read_form();
@@ -580,6 +598,7 @@ function CollectionsScene(user, password, collection, onerror) {
     var saved_template_display = null;
     /** @type {?XMLHttpRequest} */ var collections_req = null;
     var timer = null;
+    var from_update = false;
     /** @type {?Array<Collection>} */ var collections = null;
     /** @type {Array<Node>} */ var nodes = [];
 
@@ -648,7 +667,7 @@ function CollectionsScene(user, password, collection, onerror) {
             });
             title_form.textContent = collection.displayname || collection.href;
             description_form.textContent = collection.description;
-            var href = SERVER.replace("//", "//" + encodeURIComponent(user) + "@") + collection.href;
+            var href = SERVER + collection.href;
             url_form.href = href;
             url_form.textContent = href;
             delete_btn.onclick = function(ev) {return ondelete(collection);};
@@ -675,7 +694,10 @@ function CollectionsScene(user, password, collection, onerror) {
             } else {
                 var old_collections = collections;
                 collections = collections1;
-                timer = window.setTimeout(update, UPDATE_INTERVAL);
+                if (UPDATE_INTERVAL !== null) {
+                    timer = window.setTimeout(update, UPDATE_INTERVAL);
+                }
+                from_update = true;
                 if (old_collections === null) {
                     pop_scene(scene_index);
                 } else {
@@ -700,7 +722,7 @@ function CollectionsScene(user, password, collection, onerror) {
         } else if (collections === null) {
             pop_scene(scene_index - 1);
         } else {
-            if (timer !== null) {
+            if (from_update) {
                 show_collections(collections);
             } else {
                 collections = null;
@@ -716,6 +738,7 @@ function CollectionsScene(user, password, collection, onerror) {
             window.clearTimeout(timer);
             timer = null;
         }
+        from_update = false;
         if (collections !== null && collections_req !== null) {
             collections_req.abort();
             collections_req = null;
