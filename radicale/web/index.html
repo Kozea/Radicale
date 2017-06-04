@@ -12,7 +12,7 @@
     <body>
         <nav>
             <ul>
-                <li id="logoutview" style="display: none;"><a href="" name="link">Logout [<span name="user"></span>]</a></li>
+                <li id="logoutview" style="display: none;"><a href="" name="link">Logout [<span name="user" style="word-wrap:break-word;"></span>]</a></li>
             </ul>
         </nav>
         <section id="loginscene" style="display: none;">
@@ -32,10 +32,10 @@
             <h1>Collections</h1>
             <a href="" name="new">Create new addressbook or calendar</a>
             <article name="collectiontemplate">
-                <h2><span name="color">█ </span><span name="title">Title</span> <small>[<span name="ADDRESSBOOK">addressbook</span><span name="CALENDAR_JOURNAL_TASKS">calendar, journal and tasks</span><span name="CALENDAR_JOURNAL">calendar and journal</span><span name="CALENDAR_TASKS">calendar and tasks</span><span name="JOURNAL_TASKS">journal and tasks</span><span name="CALENDAR">calendar</span><span name="JOURNAL">journal</span><span name="TASKS">tasks</span>]</small></h2>
-                <span name="description">Description</span>
+                <h2><span name="color">█ </span><span name="title" style="word-wrap:break-word;">Title</span> <small>[<span name="ADDRESSBOOK">addressbook</span><span name="CALENDAR_JOURNAL_TASKS">calendar, journal and tasks</span><span name="CALENDAR_JOURNAL">calendar and journal</span><span name="CALENDAR_TASKS">calendar and tasks</span><span name="JOURNAL_TASKS">journal and tasks</span><span name="CALENDAR">calendar</span><span name="JOURNAL">journal</span><span name="TASKS">tasks</span>]</small></h2>
+                <span name="description" style="word-wrap:break-word;">Description</span>
                 <ul>
-                    <li>URL: <a name="url">url</a></li>
+                    <li>URL: <a name="url" style="word-wrap:break-word;">url</a></li>
                     <li><a href="" name="edit">Edit</a></li>
                     <li><a href="" name="delete">Delete</a></li>
                 </ul>
@@ -43,7 +43,7 @@
         </section>
         <section id="editcollectionscene" style="display: none;">
             <h1>Edit collection</h1>
-            <h2>Edit <span name="title">title</span>:</h2>
+            <h2>Edit <span name="title" style="word-wrap:break-word;">title</span>:</h2>
             <form>
                 Title:<br>
                 <input name="displayname" type="text"><br>
@@ -94,7 +94,7 @@
         </section>
         <section id="deletecollectionscene" style="display: none;">
             <h1>Delete collection</h1>
-            <h2>Delete <span name="title">title</span>?</h2>
+            <h2>Delete <span name="title" style="word-wrap:break-word;">title</span>?</h2>
             <span style="color: #A40000;" name="error"></span><br>
             <form>
                 <button type="button" name="delete">Yes</button>
