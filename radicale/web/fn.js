@@ -449,6 +449,7 @@ function LoginScene() {
     var logout_view = document.getElementById("logoutview");
     var logout_user_form = logout_view.querySelector("[name=user]");
     var logout_btn = logout_view.querySelector("[name=link]");
+    var first_show = true;
 
     /** @type {?number} */ var scene_index = null;
     var user = "";
@@ -490,6 +491,10 @@ function LoginScene() {
                         // show collections
                         var saved_user = user;
                         user = "";
+                        if (typeof(sessionStorage) !== "undefined") {
+                            sessionStorage.setItem("radicale_user", saved_user);
+                            sessionStorage.setItem("radicale_password", password);
+                        }
                         var collections_scene = new CollectionsScene(
                             saved_user, password, collection, function(error1) {
                                 error = error1;
@@ -522,12 +527,24 @@ function LoginScene() {
     }
 
     this.show = function() {
+        var saved_first_show = first_show;
+        first_show = false;
         this.release();
         fill_form();
         form.onsubmit = onlogin;
         html_scene.style.display = "block";
         user_form.focus();
         scene_index = scene_stack.length - 1;
+        if (typeof(sessionStorage) !== "undefined") {
+            if (saved_first_show && sessionStorage.getItem("radicale_user")) {
+                user_form.value = sessionStorage.getItem("radicale_user");
+                password_form.value = sessionStorage.getItem("radicale_password");
+                onlogin();
+            } else {
+                sessionStorage.setItem("radicale_user", "");
+                sessionStorage.setItem("radicale_password", "");
+            }
+        }
     };
     this.hide = function() {
         read_form();
