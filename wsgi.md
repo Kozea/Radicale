@@ -4,8 +4,8 @@ title: WSGI
 permalink: /wsgi/
 ---
 
-Radicale is compatible with the WSGI specification. No special configuration
-is required.
+Radicale is compatible with the WSGI specification. Use `radicale.wsgi` from
+the source code as the WSGI file.
 
 A configuration file can be set with the `RADICALE_CONFIG` environment variable,
 otherwise the default configuration is used.
