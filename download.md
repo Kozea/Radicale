@@ -19,8 +19,8 @@ directly with:
 
     $ python3 -m pip install --upgrade git+https://github.com/Kozea/Radicale
 
-You can also download
-[the Radicale package of the git repository](https://github.com/Kozea/Radicale/tarball/master).
+You can also download the content of the repository as an
+[archive](https://github.com/Kozea/Radicale/tarball/master).
 
 ## Source Packages
 
