@@ -22,13 +22,13 @@ Many clients do not support the creation of new calendars and address books.
 You have to use another client for this or create them manually
 (unfortunately this is quite complicated). A future release of Radicale 2.x.x
 will come with a built-in web interface that lets you create and manage
-collections conveniently.
+collections conveniently. Manual creation of
+calendars and address books is described in the last chapter.
 
 In some clients you can just enter the URL of the Radicale server
 (e.g. `http://localhost:5232`) and your user name. In others, you have to
 enter the URL of the collection directly
-(e.g. `http://user@localhost:5232/user/calendar.ics`). Manual creation of
-calendars and address books is described in the last chapter.
+(e.g. `http://localhost:5232/user/calendar.ics`).
 
 ## DAVdroid
 
@@ -57,7 +57,9 @@ your user name.
 ### Lightning
 
 Add a new calendar on the network with CalDAV. You have to enter the full URL
-of the collection (e.g. `http://user@localhost:5232/user/calendar.ics`).
+of the collection (e.g. `http://localhost:5232/user/calendar.ics`).
+If you want to add calendars from different users on the same server, you can
+specify the user name in the URL (e.g. `http://user@localhost...`)
 
 ## InfCloud, CalDavZAP and CardDavMATE
 
@@ -103,7 +105,7 @@ Delete collections by deleting the corresponding folders.
 To create a new calendar run something like:
 
 ```shell
-$ curl -u user -X MKCOL 'http://user@localhost:5232/user/calendar.ics' --data \
+$ curl -u user -X MKCOL 'http://localhost:5232/user/calendar.ics' --data \
 '<?xml version="1.0" encoding="UTF-8" ?>
 <create xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:I="http://apple.com/ns/ical/">
   <set>
