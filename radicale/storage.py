@@ -148,7 +148,7 @@ def get_etag(text):
 
 def get_uid(item):
     """UID value of an item if defined."""
-    return hasattr(item, "uid") and item.uid.value
+    return (hasattr(item, "uid") or None) and item.uid.value
 
 
 def sanitize_path(path):
