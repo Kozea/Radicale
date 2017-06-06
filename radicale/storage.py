@@ -27,7 +27,6 @@ entry.
 
 import binascii
 import contextlib
-import errno
 import json
 import os
 import pickle
@@ -541,13 +540,14 @@ class Collection(BaseCollection):
         self._sync_directory(directory)
 
     @staticmethod
-    def _find_available_file_name(exists_fn):
+    def _find_available_file_name(exists_fn, suffix=""):
         # Prevent infinite loop
-        for _ in range(10000):
-            file_name = hex(getrandbits(32))[2:]
+        for _ in range(1000):
+            file_name = "%016x" % getrandbits(64) + suffix
             if not exists_fn(file_name):
                 return file_name
-        raise FileExistsError(errno.EEXIST, "No usable file name found")
+        # something is wrong with the PRNG
+        raise RuntimeError("No unique random sequence found")
 
     @classmethod
     def _fsync(cls, fd):
@@ -690,15 +690,19 @@ class Collection(BaseCollection):
                         new_collection = vobject.iCalendar()
                         for item in items:
                             new_collection.add(item)
+                        # href must comply to is_safe_filesystem_path_component
+                        # and no file name collisions must exist between hrefs
                         href = self._find_available_file_name(
-                            vobject_items.get)
+                            vobject_items.get, suffix=".ics")
                         vobject_items[href] = new_collection
                     self.upload_all_nonatomic(vobject_items)
                 elif props.get("tag") == "VCARD":
                     vobject_items = {}
                     for card in collection:
+                        # href must comply to is_safe_filesystem_path_component
+                        # and no file name collisions must exist between hrefs
                         href = self._find_available_file_name(
-                            vobject_items.get)
+                            vobject_items.get, suffix=".vcf")
                         vobject_items[href] = card
                     self.upload_all_nonatomic(vobject_items)
 
