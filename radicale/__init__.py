@@ -788,6 +788,8 @@ class Application:
 
             try:
                 items = list(vobject.readComponents(content or ""))
+                for item in items:
+                    storage.check_item(item)
             except Exception as e:
                 self.logger.warning(
                     "Bad PUT request on %r: %s", path, e, exc_info=True)
@@ -797,13 +799,23 @@ class Application:
             tag = tags.get(content_type)
 
             if write_whole_collection:
-                new_item = self.Collection.create_collection(
-                    path, items, {"tag": tag})
+                try:
+                    new_item = self.Collection.create_collection(
+                        path, items, {"tag": tag})
+                except ValueError as e:
+                    self.logger.warning(
+                        "Bad PUT request on %r: %s", path, e, exc_info=True)
+                    return BAD_REQUEST
             else:
                 if tag:
                     parent_item.set_meta({"tag": tag})
                 href = posixpath.basename(path.strip("/"))
-                new_item = parent_item.upload(href, items[0])
+                try:
+                    new_item = parent_item.upload(href, items[0])
+                except ValueError as e:
+                    self.logger.warning(
+                        "Bad PUT request on %r: %s", path, e, exc_info=True)
+                    return BAD_REQUEST
             headers = {"ETag": new_item.etag}
             return client.CREATED, headers, None
 

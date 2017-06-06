@@ -133,13 +133,13 @@ class BaseRequestsMixIn:
         status, headers, answer = self.request("PUT", "/calendar.ics/", event)
         assert status == 201
         status, headers, answer = self.request(
-            "PUT", "/calendar.ics/event1.ics", event)
+            "PUT", "/calendar.ics/test_event.ics", event)
         assert status == 201
         # Overwrite
         status, headers, answer = self.request("PUT", "/calendar.ics/", event)
         assert status == 201
         status, headers, answer = self.request(
-            "GET", "/calendar.ics/event1.ics")
+            "GET", "/calendar.ics/test_event.ics")
         assert status == 404
 
     def test_delete(self):
@@ -263,8 +263,9 @@ class BaseRequestsMixIn:
         filters_text = "".join(
             "<C:filter>%s</C:filter>" % filter_ for filter_ in filters)
         self.request("MKCOL", "/calendar.ics/")
-        self.request(
+        status, _, _ = self.request(
             "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        assert status == 201
         for i in range(items):
             filename = "{}{}.ics".format(kind, i + 1)
             event = get_file_content(filename)
