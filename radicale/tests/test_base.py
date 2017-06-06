@@ -133,13 +133,13 @@ class BaseRequestsMixIn:
         status, headers, answer = self.request("PUT", "/calendar.ics/", event)
         assert status == 201
         status, headers, answer = self.request(
-            "PUT", "/calendar.ics/event1.ics", event)
+            "PUT", "/calendar.ics/test_event.ics", event)
         assert status == 201
         # Overwrite
         status, headers, answer = self.request("PUT", "/calendar.ics/", event)
         assert status == 201
         status, headers, answer = self.request(
-            "GET", "/calendar.ics/event1.ics")
+            "GET", "/calendar.ics/test_event.ics")
         assert status == 404
 
     def test_delete(self):
