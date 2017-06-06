@@ -114,6 +114,20 @@ def load(configuration, logger):
     return CollectionCopy
 
 
+def check_item(vobject_item):
+    """Check vobject items for common errors."""
+    if vobject_item.name == "VCALENDAR":
+        for component in vobject_item.components():
+            if (component.name in ("VTODO", "VEVENT", "VJOURNAL") and
+                    not get_uid(component)):
+                raise ValueError("UID in %s is missing" % component.name)
+    elif vobject_item.name == "VCARD":
+        if not get_uid(vobject_item):
+            raise ValueError("UID in VCARD is missing")
+    else:
+        raise ValueError("Unknown item type: %r" % vobject_item.name)
+
+
 def scandir(path, only_dirs=False, only_files=False):
     """Iterator for directory elements. (For compatibility with Python < 3.5)
 
@@ -986,8 +1000,13 @@ class Collection(BaseCollection):
             cinput_hash = cetag = ctext = ctag = cstart = cend = None
         vobject_item = None
         if input_hash != cinput_hash:
-            vobject_item = Item(self, href=href,
-                                text=btext.decode(self.encoding)).item
+            try:
+                vobject_item = Item(self, href=href,
+                                    text=btext.decode(self.encoding)).item
+                check_item(vobject_item)
+            except Exception as e:
+                raise RuntimeError("Failed to parse item %r from %r: %s" %
+                                   (href, self.path, e)) from e
             # Serialize the object again, to normalize the text representation.
             # The storage may have been edited externally.
             ctext = vobject_item.serialize()

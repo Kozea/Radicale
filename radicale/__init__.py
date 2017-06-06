@@ -788,6 +788,8 @@ class Application:
 
             try:
                 items = list(vobject.readComponents(content or ""))
+                for item in items:
+                    storage.check_item(item)
             except Exception as e:
                 self.logger.warning(
                     "Bad PUT request on %r: %s", path, e, exc_info=True)
