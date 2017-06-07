@@ -220,6 +220,12 @@ Available backends:
 
 Default: `multifilesystem`
 
+### filesystem_folder
+
+Folder for storing local collections, created if not present.
+
+Default: `/var/lib/radicale/collections`
+
 ### filesystem_fsync
 Sync all changes to disk during requests. (This can impair performance.)
 Disabling it increases the risk of data loss, when the system crashes or
