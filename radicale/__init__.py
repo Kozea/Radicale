@@ -842,6 +842,4 @@ class Application:
             headers = {"Content-Type": "text/xml; charset=%s" % self.encoding}
             status, xml_answer = xmlutils.report(
                 base_prefix, path, xml_content, collection)
-            if status == client.PRECONDITION_FAILED:
-                return PRECONDITION_FAILED
             return (status, headers, self._write_xml_content(xml_answer))
