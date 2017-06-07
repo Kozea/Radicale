@@ -278,6 +278,15 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
 
     """
     child = getattr(vobject_item, child_name.lower())
+
+    # TODO: Recurrences specified with RDATE
+    # (http://www.kanzaki.com/docs/ical/rdate.html) don't seem to work
+    # correct in VObject. getrruleset(addRDate=True) returns an empty generator
+    # if they are used.
+    # TODO: Single recurrences can be overwritten by components with
+    # RECURRENCE-ID (http://www.kanzaki.com/docs/ical/recurrenceId.html). They
+    # are currently ignored but can change the start and end time.
+
     # Comments give the lines in the tables of the specification
     if child_name == "VEVENT":
         # TODO: check if there's a timezone
