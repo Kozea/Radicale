@@ -20,10 +20,10 @@ Radicale has been tested with:
 
 Many clients do not support the creation of new calendars and address books.
 You have to use another client for this or create them manually
-(unfortunately this is quite complicated). A future release of Radicale 2.x.x
-will come with a built-in web interface that lets you create and manage
-collections conveniently. Manual creation of
-calendars and address books is described in the last chapter.
+(unfortunately this is quite complicated). The development version of Radicale
+has a web interface that lets you create and manage collections conveniently.
+Manual creation of calendars and address books is described in
+the last chapter.
 
 In some clients you can just enter the URL of the Radicale server
 (e.g. `http://localhost:5232`) and your user name. In others, you have to
@@ -70,11 +70,15 @@ the Radicale server, because of the
 You have to add additional HTTP header in the `headers` section of Radicale's
 configuration. The documentation of **InfCloud** has more details on this.
 
+In the development version of Radicale you can integrate InfCloud directly with
+[RadicaleInfCloud](https://github.com/Unrud/RadicaleInfCloud).
+
 ## Manual creation of calendars and address books
 
 This is not the recommended way of creating and managing your calendars and
 address books. Use a client with support for it if possible
-(e.g. **DAVdroid**).
+(e.g. **DAVdroid**). The development version of Radicale has a web interface
+that lets you create and manage collections conveniently.
 
 ### Direct editing of the storage
 
