@@ -124,7 +124,7 @@ The method to verify usernames and passwords.
 Available backends:
 
 `None`
-: Just allows all usernames and passwords.
+: Just allows all usernames and passwords. It also disables rights checking.
 
 `htpasswd`
 : Use an [Apache htpasswd file](https://httpd.apache.org/docs/current/programs/htpasswd.html) to store
