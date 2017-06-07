@@ -127,6 +127,13 @@ def _href(base_prefix, href):
     return quote("%s%s" % (base_prefix, href))
 
 
+def _webdav_error(namespace, name):
+    """Generate XML error message."""
+    root = ET.Element(_tag("D", "error"))
+    root.append(ET.Element(_tag(namespace, name)))
+    return root
+
+
 def _date_to_datetime(date_):
     """Transform a date to a UTC datetime.
 
@@ -997,7 +1004,7 @@ def report(base_prefix, path, xml_request, collection):
     """
     multistatus = ET.Element(_tag("D", "multistatus"))
     if xml_request is None:
-        return multistatus
+        return client.MULTI_STATUS, multistatus
     root = xml_request
     if root.tag in (
             _tag("D", "principal-search-property-set"),
@@ -1039,9 +1046,10 @@ def report(base_prefix, path, xml_request, collection):
             sync_token, names = collection.sync(old_sync_token)
         except ValueError as e:
             # Invalid sync token
-            collection.logger.info("Client provided invalid sync token %r: %s",
-                                   old_sync_token, e, exc_info=True)
-            return client.PRECONDITION_FAILED, None
+            collection.logger.warning("Client provided invalid sync token %r: "
+                                      "%s", old_sync_token, e, exc_info=True)
+            return (client.PRECONDITION_FAILED,
+                    _webdav_error("D", "valid-sync-token"))
         hreferences = ("/" + posixpath.join(collection.path, n) for n in names)
         # Append current sync token to response
         sync_token_element = ET.Element(_tag("D", "sync-token"))
