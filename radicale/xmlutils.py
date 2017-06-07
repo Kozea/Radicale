@@ -284,8 +284,9 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
         dtstart = child.dtstart.value
 
         if child.rruleset:
-            if (";UNTIL=" not in child.rrule.value and
-                    ";COUNT=" not in child.rrule.value):
+            if (hasattr(child, "rrule") and
+                    ";UNTIL=" not in child.rrule.value.upper() and
+                    ";COUNT=" not in child.rrule.value.upper()):
                 for dtstart in child.getrruleset(addRDate=True):
                     if infinity_fn(_date_to_datetime(dtstart)):
                         return
@@ -357,8 +358,9 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
             created = _date_to_datetime(created.value)
 
         if child.rruleset:
-            if (";UNTIL=" not in child.rrule.value and
-                    ";COUNT=" not in child.rrule.value):
+            if (hasattr(child, "rrule") and
+                    ";UNTIL=" not in child.rrule.value.upper() and
+                    ";COUNT=" not in child.rrule.value.upper()):
                 for reference_date in child.getrruleset(addRDate=True):
                     if infinity_fn(_date_to_datetime(reference_date)):
                         return
@@ -432,8 +434,9 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
         if dtstart is not None:
             dtstart = dtstart.value
             if child.rruleset:
-                if (";UNTIL=" not in child.rrule.value and
-                        ";COUNT=" not in child.rrule.value):
+                if (hasattr(child, "rrule") and
+                        ";UNTIL=" not in child.rrule.value.upper() and
+                        ";COUNT=" not in child.rrule.value.upper()):
                     for dtstart in child.getrruleset(addRDate=True):
                         if infinity_fn(_date_to_datetime(dtstart)):
                             return
