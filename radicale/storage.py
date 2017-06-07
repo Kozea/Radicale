@@ -118,9 +118,16 @@ def check_item(vobject_item):
     """Check vobject items for common errors."""
     if vobject_item.name == "VCALENDAR":
         for component in vobject_item.components():
-            if (component.name in ("VTODO", "VEVENT", "VJOURNAL") and
-                    not get_uid(component)):
+            if component.name not in ("VTODO", "VEVENT", "VJOURNAL"):
+                continue
+            if not get_uid(component):
                 raise ValueError("UID in %s is missing" % component.name)
+            # vobject interprets recurrence rules on demand
+            try:
+                component.rruleset
+            except Exception as e:
+                raise ValueError("invalid recurrence rules in %s" %
+                                 component.name) from e
     elif vobject_item.name == "VCARD":
         if not get_uid(vobject_item):
             raise ValueError("UID in VCARD is missing")
