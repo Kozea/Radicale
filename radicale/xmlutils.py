@@ -1039,8 +1039,8 @@ def report(base_prefix, path, xml_request, collection):
             sync_token, names = collection.sync(old_sync_token)
         except ValueError as e:
             # Invalid sync token
-            collection.logger.info("Client provided invalid sync token %r: %s",
-                                   old_sync_token, e, exc_info=True)
+            collection.logger.warning("Client provided invalid sync token %r: "
+                                      "%s", old_sync_token, e, exc_info=True)
             return client.PRECONDITION_FAILED, None
         hreferences = ("/" + posixpath.join(collection.path, n) for n in names)
         # Append current sync token to response
