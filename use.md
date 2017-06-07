@@ -87,7 +87,7 @@ create the file ``.Radicale.props`` with the following content in the folder:
 {"tag": "VCALENDAR"}
 ```
 
-The calendar is now available add the URL path ``/user/calendar.ics``.
+The calendar is now available at the URL path ``/user/calendar.ics``.
 For address books the file must contain:
 
 ```json
