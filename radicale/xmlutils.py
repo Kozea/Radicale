@@ -997,7 +997,7 @@ def report(base_prefix, path, xml_request, collection):
     """
     multistatus = ET.Element(_tag("D", "multistatus"))
     if xml_request is None:
-        return multistatus
+        return client.MULTI_STATUS, multistatus
     root = xml_request
     if root.tag in (
             _tag("D", "principal-search-property-set"),
