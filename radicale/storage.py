@@ -1268,17 +1268,20 @@ class Collection(BaseCollection):
                     flags = LOCKFILE_EXCLUSIVE_LOCK if mode == "w" else 0
                     overlapped = Overlapped()
                     if not lock_file_ex(handle, flags, 0, 1, 0, overlapped):
-                        raise RuntimeError("Locking the storage failed: %s" %
-                                           ctypes.FormatError())
+                        raise RuntimeError("Locking the storage failed "
+                                           "(can be disabled in the config): "
+                                           "%s" % ctypes.FormatError())
                 elif os.name == "posix":
                     _cmd = fcntl.LOCK_EX if mode == "w" else fcntl.LOCK_SH
                     try:
                         fcntl.flock(cls._lock_file.fileno(), _cmd)
                     except OSError as e:
-                        raise RuntimeError("Locking the storage failed: %s" %
-                                           e) from e
+                        raise RuntimeError("Locking the storage failed "
+                                           "(can be disabled in the config): "
+                                           "%s" % e) from e
                 else:
-                    raise RuntimeError("Locking the storage failed: "
+                    raise RuntimeError("Locking the storage failed "
+                                       "(can be disabled in the config): "
                                        "Unsupported operating system")
                 cls._lock_file_locked = True
         try:
