@@ -178,6 +178,12 @@ Default: `bcrypt`
 ### type
 The backend that is used to check the access rights of collections.
 
+The recommended backend is `owner_only`. If access to calendars
+and address books outside of the home directory of users (that's `/USERNAME/`)
+is granted, clients won't detect these collections and will not show them to
+the user. Choosing any other method is only useful if you access calendars and
+address books directly via URL.
+
 Available backends:
 
 `None`
