@@ -541,8 +541,9 @@ class BaseCollection:
 class Collection(BaseCollection):
     """Collection stored in several files per calendar."""
 
-    def __init__(self, path, principal=False, folder=None):
-        if not folder:
+    def __init__(self, path, principal=None, folder=None):
+        # DEPRECATED: Remove useless principal attribute
+        if folder is None:
             folder = self._get_collection_root_folder()
         # Path should already be sanitized
         self.path = sanitize_path(path).strip("/")
@@ -550,8 +551,9 @@ class Collection(BaseCollection):
         self._filesystem_path = path_to_filesystem(folder, self.path)
         self._props_path = os.path.join(
             self._filesystem_path, ".Radicale.props")
-        split_path = self.path.split("/")
-        self.owner = split_path[0] if len(split_path) > 1 else None
+        self.owner = self.path.split("/", maxsplit=1)[0]
+        if principal is None:
+            principal = bool(self.path) and "/" not in self.path
         self.is_principal = principal
         self._meta_cache = None
         self._etag_cache = None
@@ -660,8 +662,7 @@ class Collection(BaseCollection):
             href = None
 
         path = "/".join(attributes)
-        principal = len(attributes) == 1
-        collection = cls(path, principal)
+        collection = cls(path)
 
         if href:
             yield collection.get(href)
@@ -682,8 +683,7 @@ class Collection(BaseCollection):
                                      path)
                 continue
             child_path = posixpath.join(path, href)
-            child_principal = len(attributes) == 0
-            yield cls(child_path, child_principal)
+            yield cls(child_path)
 
     @classmethod
     def create_collection(cls, href, collection=None, props=None):
@@ -694,7 +694,6 @@ class Collection(BaseCollection):
         attributes = sane_path.split("/")
         if not attributes[0]:
             attributes.pop()
-        principal = len(attributes) == 1
         filesystem_path = path_to_filesystem(folder, sane_path)
 
         if not props:
@@ -703,7 +702,7 @@ class Collection(BaseCollection):
             props["tag"] = collection[0].name
         if not props:
             cls._makedirs_synced(filesystem_path)
-            return cls(sane_path, principal=principal)
+            return cls(sane_path)
 
         parent_dir = os.path.dirname(filesystem_path)
         cls._makedirs_synced(parent_dir)
@@ -714,7 +713,7 @@ class Collection(BaseCollection):
             # The temporary directory itself can't be renamed
             tmp_filesystem_path = os.path.join(tmp_dir, "collection")
             os.makedirs(tmp_filesystem_path)
-            self = cls("/", principal=principal, folder=tmp_filesystem_path)
+            self = cls("/", folder=tmp_filesystem_path)
             self.set_meta(props)
 
             if collection:
@@ -754,7 +753,7 @@ class Collection(BaseCollection):
             os.rename(tmp_filesystem_path, filesystem_path)
             cls._sync_directory(parent_dir)
 
-        return cls(sane_path, principal=principal)
+        return cls(sane_path)
 
     def upload_all_nonatomic(self, vobject_items):
         """DEPRECATED: Use ``_upload_all_nonatomic``"""
