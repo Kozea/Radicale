@@ -504,7 +504,16 @@ class BaseCollection:
 
     def serialize(self):
         """Get the unicode string representing the whole collection."""
-        raise NotImplementedError
+        if self.get_meta("tag") == "VCALENDAR":
+            collection = vobject.iCalendar()
+            for item in self.get_all():
+                for content in ("vevent", "vtodo", "vjournal"):
+                    for component in getattr(item, "%s_list" % content, ()):
+                        collection.add(component)
+            return collection.serialize()
+        elif self.get_meta("tag") == "VADDRESSBOOK":
+            return "".join(item.serialize() for item in self.get_all())
+        return ""
 
     @classmethod
     @contextmanager
