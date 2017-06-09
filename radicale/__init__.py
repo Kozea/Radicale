@@ -591,7 +591,7 @@ class Application:
                 collection.get_meta("tag"), "text/plain")
             headers = {
                 "Content-Type": content_type,
-                "Last-Modified": collection.last_modified,
+                "Last-Modified": item.last_modified,
                 "ETag": item.etag}
             answer = item.serialize()
             return client.OK, headers, answer
