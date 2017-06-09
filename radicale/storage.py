@@ -322,6 +322,15 @@ class BaseCollection:
     configuration = None
     logger = None
 
+    # Properties of instance
+    """The sanitized path of the collection without leading or trailing ``/``.
+    """
+    path = ""
+    """The owner of the collection. (``path.split("/", maxsplit=1)[0]``)"""
+    owner = ""
+    """Collection is a principal. (``bool(path) and "/" not in path``)"""
+    is_principal = False
+
     @classmethod
     def discover(cls, path, depth="0"):
         """Discover a list of collections under the given ``path``.
