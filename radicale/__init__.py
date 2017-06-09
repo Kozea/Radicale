@@ -620,7 +620,12 @@ class Application:
             props["tag"] = "VCALENDAR"
             # TODO: use this?
             # timezone = props.get("C:calendar-timezone")
-            self.Collection.create_collection(path, props=props)
+            try:
+                self.Collection.create_collection(path, props=props)
+            except ValueError as e:
+                self.logger.warning(
+                    "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
+                return BAD_REQUEST
             return client.CREATED, {}, None
 
     def do_MKCOL(self, environ, base_prefix, path, user):
@@ -638,7 +643,12 @@ class Application:
             if item:
                 return WEBDAV_PRECONDITION_FAILED
             props = xmlutils.props_from_request(xml_content)
-            self.Collection.create_collection(path, props=props)
+            try:
+                self.Collection.create_collection(path, props=props)
+            except ValueError as e:
+                self.logger.warning(
+                    "Bad MKCOL request on %r: %s", path, e, exc_info=True)
+                return BAD_REQUEST
             return client.CREATED, {}, None
 
     def do_MOVE(self, environ, base_prefix, path, user):
@@ -682,7 +692,12 @@ class Application:
             if not to_collection:
                 return WEBDAV_PRECONDITION_FAILED
             to_href = posixpath.basename(to_path.strip("/"))
-            self.Collection.move(item, to_collection, to_href)
+            try:
+                self.Collection.move(item, to_collection, to_href)
+            except ValueError as e:
+                self.logger.warning(
+                    "Bad MOVE request on %r: %s", path, e, exc_info=True)
+                return BAD_REQUEST
             return client.CREATED, {}, None
 
     def do_OPTIONS(self, environ, base_prefix, path, user):
