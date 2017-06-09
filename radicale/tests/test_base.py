@@ -547,17 +547,21 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20170701T060000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], items=6)
+            </C:comp-filter>"""], items=7)
         # HACK: VObject doesn't match RECURRENCE-ID to recurrences, the
         # overwritten recurrence is still used for filtering.
         assert "href>/calendar.ics/event6.ics</" in answer
+        assert "href>/calendar.ics/event7.ics</" in answer
         answer = self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20170701T080000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], items=6)
+            </C:comp-filter>"""], items=7)
         assert "href>/calendar.ics/event6.ics</" not in answer
+        # HACK: VObject doesn't understand recurrence rules of event7.ics,
+        # it's always included.
+        # assert "href>/calendar.ics/event7.ics</" not in answer
 
     def test_time_range_filter_events_rrule(self):
         """Report request with time-range filter on events with rrules."""
