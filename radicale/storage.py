@@ -544,8 +544,8 @@ class Collection(BaseCollection):
         split_path = self.path.split("/")
         self.owner = split_path[0] if len(split_path) > 1 else None
         self.is_principal = principal
-        self._meta = None
-        self._etag = None
+        self._meta_cache = None
+        self._etag_cache = None
 
     @classmethod
     def _get_collection_root_folder(cls):
@@ -1151,16 +1151,16 @@ class Collection(BaseCollection):
 
     def get_meta(self, key=None):
         # reuse cached value if the storage is read-only
-        if self._writer or self._meta is None:
+        if self._writer or self._meta_cache is None:
             try:
                 with open(self._props_path, encoding=self.encoding) as f:
-                    self._meta = json.load(f)
+                    self._meta_cache = json.load(f)
             except FileNotFoundError:
-                self._meta = {}
+                self._meta_cache = {}
             except ValueError as e:
                 raise RuntimeError("Failed to load properties of collect"
                                    "ion %r: %s" % (self.path, e)) from e
-        return self._meta.get(key) if key else self._meta
+        return self._meta_cache.get(key) if key else self._meta_cache
 
     def set_meta(self, props):
         new_props = self.get_meta()
@@ -1238,12 +1238,12 @@ class Collection(BaseCollection):
     @property
     def etag(self):
         # reuse cached value if the storage is read-only
-        if self._writer or self._etag is None:
+        if self._writer or self._etag_cache is None:
             etag = md5()
             for item in self.get_all():
                 etag.update((item.href + "/" + item.etag).encode("utf-8"))
-            self._etag = '"%s"' % etag.hexdigest()
-        return self._etag
+            self._etag_cache = '"%s"' % etag.hexdigest()
+        return self._etag_cache
 
     _lock = threading.Lock()
     _waiters = []
