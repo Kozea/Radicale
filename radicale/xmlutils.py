@@ -289,7 +289,9 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
     # if they are used.
     # TODO: Single recurrences can be overwritten by components with
     # RECURRENCE-ID (http://www.kanzaki.com/docs/ical/recurrenceId.html). They
-    # are currently ignored but can change the start and end time.
+    # may overwrite the start and end time. Currently these components and
+    # the overwritten recurrences are both considered. The overwritten
+    # recurrence should be ignored instead.
 
     def getrruleset(child):
         try:
@@ -310,149 +312,10 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
 
     # Comments give the lines in the tables of the specification
     if child_name == "VEVENT":
-        # TODO: check if there's a timezone
-        dtstart = child.dtstart.value
+        for child in vobject_item.vevent_list:
+            # TODO: check if there's a timezone
+            dtstart = child.dtstart.value
 
-        if child.rruleset:
-            dtstarts, infinity = getrruleset(child)
-            if infinity:
-                return
-        else:
-            dtstarts = (dtstart,)
-
-        dtend = getattr(child, "dtend", None)
-        if dtend is not None:
-            dtend = dtend.value
-            original_duration = (dtend - dtstart).total_seconds()
-            dtend = _date_to_datetime(dtend)
-
-        duration = getattr(child, "duration", None)
-        if duration is not None:
-            original_duration = duration = duration.value
-
-        for dtstart in dtstarts:
-            dtstart_is_datetime = isinstance(dtstart, datetime)
-            dtstart = _date_to_datetime(dtstart)
-
-            if dtend is not None:
-                # Line 1
-                dtend = dtstart + timedelta(seconds=original_duration)
-                if range_fn(dtstart, dtend):
-                    return
-            elif duration is not None:
-                if original_duration is None:
-                    original_duration = duration.seconds
-                if duration.seconds > 0:
-                    # Line 2
-                    if range_fn(dtstart, dtstart + duration):
-                        return
-                else:
-                    # Line 3
-                    if range_fn(dtstart, dtstart + SECOND):
-                        return
-            elif dtstart_is_datetime:
-                # Line 4
-                if range_fn(dtstart, dtstart + SECOND):
-                    return
-            else:
-                # Line 5
-                if range_fn(dtstart, dtstart + DAY):
-                    return
-
-    elif child_name == "VTODO":
-        dtstart = getattr(child, "dtstart", None)
-        duration = getattr(child, "duration", None)
-        due = getattr(child, "due", None)
-        completed = getattr(child, "completed", None)
-        created = getattr(child, "created", None)
-
-        if dtstart is not None:
-            dtstart = _date_to_datetime(dtstart.value)
-        if duration is not None:
-            duration = duration.value
-        if due is not None:
-            due = _date_to_datetime(due.value)
-            if dtstart is not None:
-                original_duration = (due - dtstart).total_seconds()
-        if completed is not None:
-            completed = _date_to_datetime(completed.value)
-            if created is not None:
-                created = _date_to_datetime(created.value)
-                original_duration = (completed - created).total_seconds()
-        elif created is not None:
-            created = _date_to_datetime(created.value)
-
-        if child.rruleset:
-            reference_dates, infinity = getrruleset(child)
-            if infinity:
-                return
-        else:
-            if dtstart is not None:
-                reference_dates = (dtstart,)
-            elif due is not None:
-                reference_dates = (due,)
-            elif completed is not None:
-                reference_dates = (completed,)
-            elif created is not None:
-                reference_dates = (created,)
-            else:
-                # Line 8
-                if range_fn(DATETIME_MIN, DATETIME_MAX):
-                    return
-                reference_dates = ()
-
-        for reference_date in reference_dates:
-            reference_date = _date_to_datetime(reference_date)
-
-            if dtstart is not None and duration is not None:
-                # Line 1
-                if range_fn(reference_date,
-                            reference_date + duration + SECOND):
-                    return
-                if range_fn(reference_date + duration - SECOND,
-                            reference_date + duration + SECOND):
-                    return
-            elif dtstart is not None and due is not None:
-                # Line 2
-                due = reference_date + timedelta(seconds=original_duration)
-                if (range_fn(reference_date, due) or
-                        range_fn(reference_date, reference_date + SECOND) or
-                        range_fn(due - SECOND, due) or
-                        range_fn(due - SECOND, reference_date + SECOND)):
-                    return
-            elif dtstart is not None:
-                if range_fn(reference_date, reference_date + SECOND):
-                    return
-            elif due is not None:
-                # Line 4
-                if range_fn(reference_date - SECOND, reference_date):
-                    return
-            elif completed is not None and created is not None:
-                # Line 5
-                completed = reference_date + timedelta(
-                    seconds=original_duration)
-                if (range_fn(reference_date - SECOND,
-                             reference_date + SECOND) or
-                        range_fn(completed - SECOND, completed + SECOND) or
-                        range_fn(reference_date - SECOND,
-                                 reference_date + SECOND) or
-                        range_fn(completed - SECOND, completed + SECOND)):
-                    return
-            elif completed is not None:
-                # Line 6
-                if range_fn(reference_date - SECOND,
-                            reference_date + SECOND):
-                            return
-            elif created is not None:
-                # Line 7
-                if range_fn(reference_date, DATETIME_MAX):
-                    return
-
-    elif child_name == "VJOURNAL":
-        dtstart = getattr(child, "dtstart", None)
-
-        if dtstart is not None:
-            dtstart = dtstart.value
             if child.rruleset:
                 dtstarts, infinity = getrruleset(child)
                 if infinity:
@@ -460,18 +323,161 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
             else:
                 dtstarts = (dtstart,)
 
+            dtend = getattr(child, "dtend", None)
+            if dtend is not None:
+                dtend = dtend.value
+                original_duration = (dtend - dtstart).total_seconds()
+                dtend = _date_to_datetime(dtend)
+
+            duration = getattr(child, "duration", None)
+            if duration is not None:
+                original_duration = duration = duration.value
+
             for dtstart in dtstarts:
                 dtstart_is_datetime = isinstance(dtstart, datetime)
                 dtstart = _date_to_datetime(dtstart)
 
-                if dtstart_is_datetime:
+                if dtend is not None:
                     # Line 1
+                    dtend = dtstart + timedelta(seconds=original_duration)
+                    if range_fn(dtstart, dtend):
+                        return
+                elif duration is not None:
+                    if original_duration is None:
+                        original_duration = duration.seconds
+                    if duration.seconds > 0:
+                        # Line 2
+                        if range_fn(dtstart, dtstart + duration):
+                            return
+                    else:
+                        # Line 3
+                        if range_fn(dtstart, dtstart + SECOND):
+                            return
+                elif dtstart_is_datetime:
+                    # Line 4
                     if range_fn(dtstart, dtstart + SECOND):
                         return
                 else:
-                    # Line 2
+                    # Line 5
                     if range_fn(dtstart, dtstart + DAY):
                         return
+
+    elif child_name == "VTODO":
+        for child in vobject_item.vtodo_list:
+            dtstart = getattr(child, "dtstart", None)
+            duration = getattr(child, "duration", None)
+            due = getattr(child, "due", None)
+            completed = getattr(child, "completed", None)
+            created = getattr(child, "created", None)
+
+            if dtstart is not None:
+                dtstart = _date_to_datetime(dtstart.value)
+            if duration is not None:
+                duration = duration.value
+            if due is not None:
+                due = _date_to_datetime(due.value)
+                if dtstart is not None:
+                    original_duration = (due - dtstart).total_seconds()
+            if completed is not None:
+                completed = _date_to_datetime(completed.value)
+                if created is not None:
+                    created = _date_to_datetime(created.value)
+                    original_duration = (completed - created).total_seconds()
+            elif created is not None:
+                created = _date_to_datetime(created.value)
+
+            if child.rruleset:
+                reference_dates, infinity = getrruleset(child)
+                if infinity:
+                    return
+            else:
+                if dtstart is not None:
+                    reference_dates = (dtstart,)
+                elif due is not None:
+                    reference_dates = (due,)
+                elif completed is not None:
+                    reference_dates = (completed,)
+                elif created is not None:
+                    reference_dates = (created,)
+                else:
+                    # Line 8
+                    if range_fn(DATETIME_MIN, DATETIME_MAX):
+                        return
+                    reference_dates = ()
+
+            for reference_date in reference_dates:
+                reference_date = _date_to_datetime(reference_date)
+
+                if dtstart is not None and duration is not None:
+                    # Line 1
+                    if range_fn(reference_date,
+                                reference_date + duration + SECOND):
+                        return
+                    if range_fn(reference_date + duration - SECOND,
+                                reference_date + duration + SECOND):
+                        return
+                elif dtstart is not None and due is not None:
+                    # Line 2
+                    due = reference_date + timedelta(seconds=original_duration)
+                    if (range_fn(reference_date, due) or
+                            range_fn(reference_date,
+                                     reference_date + SECOND) or
+                            range_fn(due - SECOND, due) or
+                            range_fn(due - SECOND, reference_date + SECOND)):
+                        return
+                elif dtstart is not None:
+                    if range_fn(reference_date, reference_date + SECOND):
+                        return
+                elif due is not None:
+                    # Line 4
+                    if range_fn(reference_date - SECOND, reference_date):
+                        return
+                elif completed is not None and created is not None:
+                    # Line 5
+                    completed = reference_date + timedelta(
+                        seconds=original_duration)
+                    if (range_fn(reference_date - SECOND,
+                                 reference_date + SECOND) or
+                            range_fn(completed - SECOND, completed + SECOND) or
+                            range_fn(reference_date - SECOND,
+                                     reference_date + SECOND) or
+                            range_fn(completed - SECOND, completed + SECOND)):
+                        return
+                elif completed is not None:
+                    # Line 6
+                    if range_fn(reference_date - SECOND,
+                                reference_date + SECOND):
+                                return
+                elif created is not None:
+                    # Line 7
+                    if range_fn(reference_date, DATETIME_MAX):
+                        return
+
+    elif child_name == "VJOURNAL":
+        for child in vobject_item.vjournal_list:
+            dtstart = getattr(child, "dtstart", None)
+
+            if dtstart is not None:
+                dtstart = dtstart.value
+                if child.rruleset:
+                    dtstarts, infinity = getrruleset(child)
+                    if infinity:
+                        return
+                else:
+                    dtstarts = (dtstart,)
+
+                for dtstart in dtstarts:
+                    dtstart_is_datetime = isinstance(dtstart, datetime)
+                    dtstart = _date_to_datetime(dtstart)
+
+                    if dtstart_is_datetime:
+                        # Line 1
+                        if range_fn(dtstart, dtstart + SECOND):
+                            return
+                    else:
+                        # Line 2
+                        if range_fn(dtstart, dtstart + DAY):
+                            return
 
     elif isinstance(child, date):
         if range_fn(child, child + DAY):
