@@ -579,6 +579,15 @@ def simplify_prefilters(filters):
     return None, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
 
 
+def find_tag(vobject_item):
+    """Find tag from ``vobject_item``."""
+    if vobject_item.name == "VCALENDAR":
+        for component in vobject_item.components():
+            if component.name in ("VTODO", "VEVENT", "VJOURNAL"):
+                return component.name
+    return None
+
+
 def find_tag_and_time_range(vobject_item):
     """Find tag and enclosing time range from ``vobject item``.
 
@@ -588,15 +597,9 @@ def find_tag_and_time_range(vobject_item):
     This is intened to be used for matching against simplified prefilters.
 
     """
-    tag = ""
-    if vobject_item.name == "VCALENDAR":
-        for component in vobject_item.components():
-            if component.name in ("VTODO", "VEVENT", "VJOURNAL"):
-                tag = component.name
-                break
+    tag = find_tag(vobject_item)
     if not tag:
-        return (None, math.floor(DATETIME_MIN.timestamp()),
-                math.ceil(DATETIME_MAX.timestamp()))
+        return (None, TIMESTAMP_MIN, TIMESTAMP_MAX)
     start = end = None
 
     def range_fn(range_start, range_end):
@@ -1136,6 +1139,12 @@ def report(base_prefix, path, xml_request, collection):
                 if not all(match(item, filter_[0]) for filter_ in filters
                            if filter_):
                     continue
+            except VObjectBugException as e:
+                # HACK: Just return all items that can't be filtered because
+                # of bugs in VObject.
+                collection.logger.warning(
+                    "Failed to filter item %r from %r (Bug in VObject): %s",
+                    item.href, collection.path, e, exc_info=True)
             except Exception as e:
                 raise RuntimeError("Failed to filter item %r from %r: %s" %
                                    (item.href, collection.path, e)) from e
