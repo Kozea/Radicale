@@ -322,15 +322,6 @@ class BaseCollection:
     configuration = None
     logger = None
 
-    def __init__(self, path, principal=False):
-        """Initialize the collection.
-
-        ``path`` must be the normalized relative path of the collection, using
-        the slash as the folder delimiter, with no leading nor trailing slash.
-
-        """
-        raise NotImplementedError
-
     @classmethod
     def discover(cls, path, depth="0"):
         """Discover a list of collections under the given ``path``.
