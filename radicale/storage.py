@@ -479,12 +479,22 @@ class BaseCollection:
         """
         raise NotImplementedError
 
-    def get_meta(self, key):
-        """Get metadata value for collection."""
+    def get_meta(self, key=None):
+        """Get metadata value for collection.
+
+        Return the value of the property ``key``. If ``key`` is ``None`` return
+        a dict with all properties
+
+        """
         raise NotImplementedError
 
     def set_meta(self, props):
-        """Set metadata values for collection."""
+        """Set metadata values for collection.
+
+        ``props`` a dict with updates for properties. If a value is empty, the
+        property must be deleted.
+
+        """
         raise NotImplementedError
 
     @property
@@ -961,8 +971,9 @@ class Collection(BaseCollection):
         return item
 
     def _get_with_metadata(self, href, verify_href=True):
-        # Like ``get`` but additonally returns the following metadata:
-        # tag, start, end: see ``xmlutils.find_tag_and_time_range``
+        """Like ``get`` but additonally returns the following metadata:
+        tag, start, end: see ``xmlutils.find_tag_and_time_range``. If
+        extraction of the metadata failed, the values are all ``None``."""
         if verify_href:
             try:
                 if not is_safe_filesystem_path_component(href):
