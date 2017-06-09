@@ -66,6 +66,10 @@ TIMESTAMP_MIN = math.floor(DATETIME_MIN.timestamp())
 TIMESTAMP_MAX = math.ceil(DATETIME_MAX.timestamp())
 
 
+class VObjectBugException(Exception):
+    """Exception for workarounds related to bugs in VObject."""
+
+
 def pretty_xml(element, level=0):
     """Indent an ElementTree ``element`` and its children."""
     if not level:
@@ -287,20 +291,32 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
     # RECURRENCE-ID (http://www.kanzaki.com/docs/ical/recurrenceId.html). They
     # are currently ignored but can change the start and end time.
 
+    def getrruleset(child):
+        try:
+            first_dtstart = next(iter(child.getrruleset(addRDate=True)),
+                                 None)
+        except TypeError as e:
+            raise VObjectBugException(
+                "failed to call getrruleset: %s" % e) from e
+        if first_dtstart is None:
+            raise VObjectBugException(
+                "empty iterator from getrruleset")
+        if (hasattr(child, "rrule") and
+                ";UNTIL=" not in child.rrule.value.upper() and
+                ";COUNT=" not in child.rrule.value.upper()):
+            if infinity_fn(_date_to_datetime(first_dtstart)):
+                return (), True
+        return child.getrruleset(addRDate=True), False
+
     # Comments give the lines in the tables of the specification
     if child_name == "VEVENT":
         # TODO: check if there's a timezone
         dtstart = child.dtstart.value
 
         if child.rruleset:
-            if (hasattr(child, "rrule") and
-                    ";UNTIL=" not in child.rrule.value.upper() and
-                    ";COUNT=" not in child.rrule.value.upper()):
-                for dtstart in child.getrruleset(addRDate=True):
-                    if infinity_fn(_date_to_datetime(dtstart)):
-                        return
-                    break
-            dtstarts = child.getrruleset(addRDate=True)
+            dtstarts, infinity = getrruleset(child)
+            if infinity:
+                return
         else:
             dtstarts = (dtstart,)
 
@@ -367,14 +383,9 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
             created = _date_to_datetime(created.value)
 
         if child.rruleset:
-            if (hasattr(child, "rrule") and
-                    ";UNTIL=" not in child.rrule.value.upper() and
-                    ";COUNT=" not in child.rrule.value.upper()):
-                for reference_date in child.getrruleset(addRDate=True):
-                    if infinity_fn(_date_to_datetime(reference_date)):
-                        return
-                    break
-            reference_dates = child.getrruleset(addRDate=True)
+            reference_dates, infinity = getrruleset(child)
+            if infinity:
+                return
         else:
             if dtstart is not None:
                 reference_dates = (dtstart,)
@@ -443,14 +454,9 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
         if dtstart is not None:
             dtstart = dtstart.value
             if child.rruleset:
-                if (hasattr(child, "rrule") and
-                        ";UNTIL=" not in child.rrule.value.upper() and
-                        ";COUNT=" not in child.rrule.value.upper()):
-                    for dtstart in child.getrruleset(addRDate=True):
-                        if infinity_fn(_date_to_datetime(dtstart)):
-                            return
-                        break
-                dtstarts = child.getrruleset(addRDate=True)
+                dtstarts, infinity = getrruleset(child)
+                if infinity:
+                    return
             else:
                 dtstarts = (dtstart,)
 
