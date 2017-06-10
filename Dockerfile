@@ -1,28 +1,31 @@
 FROM alpine:latest
 
-MAINTAINER Radicale project "radicale@librelist.com"
+# Version of Radicale (e.g. 2.0.0)
+ENV VERSION master
 
-ENV VERSION 1.1.1
-ENV TARBALL https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz
-
-RUN apk --update --update-cache upgrade \
-      && apk add \
-          python3 \
-          python3-dev \
-          build-base \
-          libffi-dev \
-          ca-certificates \
-          openssl \
-      && python3 -m ensurepip \
-      && pip3 install --upgrade pip \
-      && pip3 install passlib bcrypt
-
-RUN wget ${TARBALL} \
-    && tar xzf ${VERSION}.tar.gz \
-    && cd Radicale-${VERSION} && python3 setup.py install \
-    && mkdir -p /etc/radicale \
-    && cp config /etc/radicale/config
-
+# Install dependencies
+RUN apk add --no-cache \
+      python3 \
+      python3-dev \
+      build-base \
+      libffi-dev \
+      ca-certificates \
+      openssl && \
+    python3 -m pip install passlib bcrypt && \
+    apk del \
+      python3-dev \
+      build-base \
+      libffi-dev
+# Install Radicale
+ADD https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz radicale.tar.gz
+RUN tar xzf radicale.tar.gz && \
+    python3 -m pip install ./Radicale-${VERSION} && \
+    rm -r radicale.tar.gz Radicale-${VERSION}
+# Persistent storage for data (Mount it somewhere on the host!)
+VOLUME /var/lib/radicale
+# Configuration data (Put the "config" file here!)
+VOLUME /etc/radicale
+# TCP port of Radicale (Publish it on a host interface!)
 EXPOSE 5232
-
-CMD ["radicale", "-f", "-C", "/etc/radicale/config"]
+# Run Radicale (Configure it here or provide a "config" file!)
+CMD ["radicale", "--hosts", "0.0.0.0:5232"]
