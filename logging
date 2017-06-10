@@ -3,8 +3,11 @@
 
 # Logging config file for Radicale - A simple calendar server
 #
-# The default path for this kind of files is /etc/radicale/logging
-# This can be changed in the configuration file
+# The recommended path for this file is /etc/radicale/logging
+# The path must be specified in the logging section of the configuration file
+#
+# Some examples are included in Radicale's documentation, see:
+# http://radicale.org/logging/
 #
 # Other handlers are available. For more information, see:
 # http://docs.python.org/library/logging.config.html
@@ -18,19 +21,19 @@ keys = root
 
 [handlers]
 # Logging handlers, defining logging output methods
-keys = console,file
+keys = console
 
 [formatters]
 # Logging formatters
-keys = simple,full
+keys = simple
 
 
 # Loggers
 
 [logger_root]
 # Root logger
-level = DEBUG
-handlers = console,file
+level = WARNING
+handlers = console
 
 
 # Handlers
@@ -38,15 +41,8 @@ handlers = console,file
 [handler_console]
 # Console handler
 class = StreamHandler
-level = INFO
 args = (sys.stderr,)
 formatter = simple
-
-[handler_file]
-# File handler
-class = FileHandler
-args = ('/var/log/radicale',)
-formatter = full
 
 
 # Formatters
@@ -54,7 +50,3 @@ formatter = full
 [formatter_simple]
 # Simple output format
 format = [%(thread)x] %(levelname)s: %(message)s
-
-[formatter_full]
-# Full output format
-format = %(asctime)s - [%(thread)x] %(levelname)s: %(message)s
