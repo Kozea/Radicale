@@ -46,7 +46,7 @@ Launch a command prompt and type:
 
 ```
 C:\Users\User> python -m pip install --upgrade radicale
-C:\Users\User> python -m radicale --config "" --storage-filesystem-folder=~/radicale
+C:\Users\User> python -m radicale --config "" --storage-filesystem-folder=~/radicale/collections
 ```
 
 Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser
