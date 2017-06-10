@@ -159,24 +159,42 @@ $ journalctl --user --unit radicale.service
 ### Linux with systemd system-wide
 
 Create the **radicale** user and group for the Radicale service.
-The configuration files must be readable by this user and the storage folder
-must be writable.
+(Run `useradd --system --home-dir / --shell /sbin/nologin radicale` as root.)
+The storage folder must be writable by **radicale**. (Run
+`mkdir -p /var/lib/radicale && chown -R radicale:radicale /var/lib/radicale`
+as root.)
 
 Create the file `/etc/systemd/system/radicale.service`:
 ```ini
 [Unit]
 Description=A simple CalDAV (calendar) and CardDAV (contact) server
+After=network.target
+Requires=network.target
 
 [Service]
 ExecStart=/usr/bin/env python3 -m radicale
 Restart=on-failure
 User=radicale
+# Optional security settings
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+NoNewPrivileges=true
+ReadWritePaths=/var/lib/radicale
+# Deny other users access to the calendar data
+#UMask=0027
 
 [Install]
 WantedBy=multi-user.target
 ```
-You may have to add addition command line arguments to Radicale for the
-configuration file, etc.
+Radicale will load the configuration file from `/etc/radicale/config`.
+Other users can read your calendar data. To prevent this, uncomment the
+`UMask=0027` line in your service file and protect the files that are
+already created. (Run `chmod -R o= /var/lib/radicale` as root.)
 
 To enable and manage the service run:
 ```shell
@@ -204,6 +222,9 @@ After daemonization the server will not log anything. You have to configure
 
 If you start Radicale now, it will initialize and fork into the background.
 The main process exits, after the PID file is written.
+
+You can set the **umask** with `umask 0027` before you start the daemon, to
+protect your calendar data from other users.
 
 ## Windows with "NSSM - the Non-Sucking Service Manager"
 
