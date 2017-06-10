@@ -161,7 +161,7 @@ $ journalctl --user --unit radicale.service
 Create the **radicale** user and group for the Radicale service.
 (Run `useradd --system --home-dir / --shell /sbin/nologin radicale` as root.)
 The storage folder must be writable by **radicale**. (Run
-`mkdir -p /var/lib/radicale && chown -R radicale:radicale /var/lib/radicale`
+`mkdir -p /var/lib/radicale/collections && chown -R radicale:radicale /var/lib/radicale/collections`
 as root.)
 
 Create the file `/etc/systemd/system/radicale.service`:
@@ -184,7 +184,7 @@ ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
 NoNewPrivileges=true
-ReadWritePaths=/var/lib/radicale
+ReadWritePaths=/var/lib/radicale/collections
 # Deny other users access to the calendar data
 #UMask=0027
 
