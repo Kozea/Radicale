@@ -94,7 +94,7 @@ More addresses can be added (separated by commas).
 ## Storage
 
 Data is stored in the folder `/var/lib/radicale/collections`. The path can
-be changed with the foloowing configuration:
+be changed with the following configuration:
 
 ```ini
 [storage]
