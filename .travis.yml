@@ -18,6 +18,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install python3; fi
 
 install:
+  - pip3 install --upgrade passlib bcrypt
   - pip3 install --upgrade --editable .[test]
 
 script:
