@@ -32,7 +32,6 @@ import os
 import pickle
 import posixpath
 import shlex
-import stat
 import subprocess
 import sys
 import threading
@@ -1296,13 +1295,6 @@ class Collection(BaseCollection):
                 cls._makedirs_synced(folder)
                 lock_path = os.path.join(folder, ".Radicale.lock")
                 cls._lock_file = open(lock_path, "w+")
-                # Set access rights to a necessary minimum to prevent locking
-                # by arbitrary users
-                try:
-                    os.chmod(lock_path, stat.S_IWUSR | stat.S_IRUSR)
-                except OSError as e:
-                    cls.logger.info("Failed to set permissions on lock file:"
-                                    " %s", e, exc_info=True)
             if file_locking and not cls._lock_file_locked:
                 if os.name == "nt":
                     handle = msvcrt.get_osfhandle(cls._lock_file.fileno())
