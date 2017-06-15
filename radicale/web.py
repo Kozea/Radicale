@@ -55,9 +55,9 @@ def load(configuration, logger):
     else:
         try:
             web_class = import_module(web_type).Web
-        except ImportError as e:
-            raise RuntimeError("Web module %r not found" %
-                               web_type) from e
+        except Exception as e:
+            raise RuntimeError("Failed to load web module %r: %s" %
+                               (web_type, e)) from e
     logger.info("Web type is %r", web_type)
     return web_class(configuration, logger)
 

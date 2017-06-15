@@ -101,9 +101,9 @@ def load(configuration, logger):
     else:
         try:
             collection_class = import_module(storage_type).Collection
-        except ImportError as e:
-            raise RuntimeError("Storage module %r not found" %
-                               storage_type) from e
+        except Exception as e:
+            raise RuntimeError("Failed to load storage module %r: %s" %
+                               (storage_type, e)) from e
     logger.info("Storage type is %r", storage_type)
 
     class CollectionCopy(collection_class):

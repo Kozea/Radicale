@@ -63,9 +63,9 @@ def load(configuration, logger):
     else:
         try:
             rights_class = import_module(rights_type).Rights
-        except ImportError as e:
-            raise RuntimeError("Rights module %r not found" %
-                               rights_type) from e
+        except Exception as e:
+            raise RuntimeError("Failed to load rights module %r: %s" %
+                               (rights_type, e)) from e
     logger.info("Rights type is %r", rights_type)
     return rights_class(configuration, logger).authorized
 

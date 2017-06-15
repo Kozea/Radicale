@@ -75,9 +75,9 @@ def load(configuration, logger):
     else:
         try:
             class_ = import_module(auth_type).Auth
-        except ImportError as e:
-            raise RuntimeError("Authentication module %r not found" %
-                               auth_type) from e
+        except Exception as e:
+            raise RuntimeError("Failed to load authentication module %r: %s" %
+                               (auth_type, e)) from e
     logger.info("Authentication type is %r", auth_type)
     return class_(configuration, logger)
 
