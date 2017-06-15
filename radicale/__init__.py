@@ -278,21 +278,21 @@ class Application:
             if self.authorized(user, path, "r"):
                 self.logger.debug(
                     "%s has read access to collection %r",
-                    "%r" % user if user else "anonymous user", path or "/")
+                    "%r" % user if user else "anonymous user", path)
                 read_allowed_items.append(item)
             else:
                 self.logger.debug(
                     "%s has NO read access to collection %r",
-                    "%r" % user if user else "anonymous user", path or "/")
+                    "%r" % user if user else "anonymous user", path)
             if self.authorized(user, path, "w"):
                 self.logger.debug(
                     "%s has write access to collection %s",
-                    "%r" % user if user else "anonymous user", path or "/")
+                    "%r" % user if user else "anonymous user", path)
                 write_allowed_items.append(item)
             else:
                 self.logger.debug(
                     "%s has NO write access to collection %s",
-                    "%r" % user if user else "anonymous user", path or "/")
+                    "%r" % user if user else "anonymous user", path)
         return read_allowed_items, write_allowed_items
 
     def __call__(self, environ, start_response):
