@@ -21,4 +21,4 @@ install:
   - pip3 install --upgrade -e .[test]
 
 script:
-  - python3 setup.py test
+  - python3 setup.py test --addopts "-r s"
