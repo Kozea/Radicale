@@ -3,8 +3,11 @@
 
 # Rights management file for Radicale - A simple calendar server
 #
-# The default path for this kind of files is ~/.config/radicale/rights
-# This can be changed in the configuration file
+# The default path for this file is /etc/radicale/rights
+# The path can be specified in the rights section of the configuration file
+#
+# Some examples are included in Radicale's documentation, see:
+# http://radicale.org/rights/
 #
 # This file gives independant examples to help users write their own
 # configuration files. Using these examples together in the same configuration
