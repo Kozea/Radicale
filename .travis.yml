@@ -18,7 +18,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install python3; fi
 
 install:
-  - pip3 install --upgrade -e .[test]
+  - pip3 install --upgrade --editable .[test]
 
 script:
   - python3 setup.py test --addopts "-r s"
