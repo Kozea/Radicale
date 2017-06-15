@@ -101,6 +101,10 @@ be changed with the following configuration:
 filesystem_folder = /path/to/storage
 ```
 
+**Security:** The storage folder should not be readable by unauthorized users.
+Otherwise, they can read the calendar data and lock the storage.
+You can find OS dependent instructions in the **Running as a service** section.
+
 ## Limits
 
 Radicale enforces limits on the maximum number of parallel connections,
@@ -166,6 +170,9 @@ The storage folder must be writable by **radicale**. (Run
 `mkdir -p /var/lib/radicale/collections && chown -R radicale:radicale /var/lib/radicale/collections`
 as root.)
 
+**Security:** The storage should not be readable by others.
+(Run `chmod -R o= /var/lib/radicale/collections` as root.)
+
 Create the file `/etc/systemd/system/radicale.service`:
 ```ini
 [Unit]
@@ -177,6 +184,8 @@ Requires=network.target
 ExecStart=/usr/bin/env python3 -m radicale
 Restart=on-failure
 User=radicale
+# Deny other users access to the calendar data
+UMask=0027
 # Optional security settings
 PrivateTmp=true
 ProtectSystem=strict
@@ -187,16 +196,11 @@ ProtectKernelModules=true
 ProtectControlGroups=true
 NoNewPrivileges=true
 ReadWritePaths=/var/lib/radicale/collections
-# Deny other users access to the calendar data
-#UMask=0027
 
 [Install]
 WantedBy=multi-user.target
 ```
 Radicale will load the configuration file from `/etc/radicale/config`.
-Other users can read your calendar data. To prevent this, uncomment the
-`UMask=0027` line in your service file and protect the files that are
-already created. (Run `chmod -R o= /var/lib/radicale` as root.)
 
 To enable and manage the service run:
 ```shell
@@ -225,8 +229,10 @@ After daemonization the server will not log anything. You have to configure
 If you start Radicale now, it will initialize and fork into the background.
 The main process exits, after the PID file is written.
 
-You can set the **umask** with `umask 0027` before you start the daemon, to
-protect your calendar data from other users.
+**Security:** You can set the **umask** with `umask 0027` before you start the
+daemon, to protect your calendar data and log files from other users.
+Don't forget to set permissions of files that are already created!
+
 
 ## Windows with "NSSM - the Non-Sucking Service Manager"
 
@@ -240,7 +246,10 @@ prompt. Apply the following configuration:
 * I/O redirection
   * Error: `C:\Path\To\Radicale.log`
 
-Be aware that the service runs in the local system account, you might want to change this. Managing user accounts is beyond the scope of this manual.
+**Security:** Be aware that the service runs in the local system account,
+you might want to change this. Managing user accounts is beyond the scope of
+this manual. Also make sure that the storage folder and log file is not readable
+by unauthorized users.
 
 The log file might grow very big over time, you can configure file rotation
 in **NSSM** to prevent this.

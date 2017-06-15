@@ -51,6 +51,11 @@ format = %(asctime)s - [%(thread)x] %(levelname)s: %(message)s
 You can specify multiple **logger**, **handler** and **formatter** if you want
 to have multiple simultaneous log outputs.
 
+The parent folder of the log files must exist and must be writable by Radicale.
+
+**Security:** The log files should not be readable by unauthorized users. Set
+permissions accordingly.
+
 ### Timed rotation of disk log files
 
 An example **handler** configuration to write the log output to the file `/var/log/radicale/log` and rotate it .
