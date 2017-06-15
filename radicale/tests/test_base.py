@@ -27,6 +27,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 
 import pytest
+
 from radicale import Application, config
 
 from . import BaseTest
