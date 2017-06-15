@@ -141,8 +141,10 @@ Restart=on-failure
 [Install]
 WantedBy=default.target
 ```
-You may have to add addition command line arguments to Radicale for the
-configuration file, etc.
+
+Radicale will load the configuration file from `~/.config/radicale/config`.
+You should set the configuration option `filesystem_folder` in the `storage`
+section to something like `~/.var/lib/radicale/collections`.
 
 To enable and manage the service run:
 ```shell
