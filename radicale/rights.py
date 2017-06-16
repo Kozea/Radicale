@@ -39,6 +39,7 @@ Leading or ending slashes are trimmed from collection's path.
 
 import configparser
 import os.path
+import posixpath
 import re
 from importlib import import_module
 
@@ -67,7 +68,7 @@ def load(configuration, logger):
             raise RuntimeError("Failed to load rights module %r: %s" %
                                (rights_type, e)) from e
     logger.info("Rights type is %r", rights_type)
-    return rights_class(configuration, logger).authorized
+    return rights_class(configuration, logger)
 
 
 class BaseRights:
@@ -75,13 +76,20 @@ class BaseRights:
         self.configuration = configuration
         self.logger = logger
 
-    def authorized(self, user, collection, permission):
+    def authorized(self, user, path, permission):
         """Check if the user is allowed to read or write the collection.
 
         If the user is empty, check for anonymous rights.
 
         """
         raise NotImplementedError
+
+    def authorized_item(self, user, path, permission):
+        """Check if the user is allowed to read or write the item."""
+        path = storage.sanitize_path(path)
+        parent_path = storage.sanitize_path(
+            "/%s/" % posixpath.dirname(path.strip("/")))
+        return self.authorized(user, parent_path, permission)
 
 
 class NoneRights(BaseRights):
@@ -105,7 +113,7 @@ class OwnerOnlyRights(BaseRights):
     def authorized(self, user, path, permission):
         sane_path = storage.sanitize_path(path).strip("/")
         return bool(user) and (
-            permission == "r" and not sane_path.strip("/") or
+            permission == "r" and not sane_path or
             user == sane_path.split("/", maxsplit=1)[0])
 
 
