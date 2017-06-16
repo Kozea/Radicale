@@ -218,7 +218,7 @@ class Application:
         self.Auth = auth.load(configuration, logger)
         self.Collection = storage.load(configuration, logger)
         self.Rights = rights.load(configuration, logger)
-        self.web = web.load(configuration, logger)
+        self.Web = web.load(configuration, logger)
         self.encoding = configuration.get("encoding", "request")
 
     def headers_log(self, environ):
@@ -563,7 +563,7 @@ class Application:
                     "Redirected to %s" % web_path)
         # Dispatch .web URL to web module
         if path == "/.web" or path.startswith("/.web/"):
-            return self.web.get(environ, base_prefix, path, user)
+            return self.Web.get(environ, base_prefix, path, user)
         if not self._access(user, path, "r"):
             return NOT_ALLOWED
         with self.Collection.acquire_lock("r", user):
