@@ -116,6 +116,12 @@ class OwnerOnlyRights(BaseRights):
             permission == "r" and not sane_path or
             user == sane_path.split("/", maxsplit=1)[0])
 
+    def authorized_item(self, user, path, permission):
+        sane_path = storage.sanitize_path(path).strip("/")
+        if "/" not in sane_path:
+            return False
+        return super().authorized_item(user, path, permission)
+
 
 class Rights(BaseRights):
     def __init__(self, configuration, logger):
