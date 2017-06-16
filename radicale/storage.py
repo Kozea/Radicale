@@ -660,8 +660,8 @@ class Collection(BaseCollection):
         else:
             href = None
 
-        path = "/".join(attributes)
-        collection = cls(path)
+        sane_path = "/".join(attributes)
+        collection = cls(sane_path)
 
         if href:
             yield collection.get(href)
@@ -679,9 +679,9 @@ class Collection(BaseCollection):
             if not is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
                     cls.logger.debug("Skipping collection %r in %r", href,
-                                     path)
+                                     sane_path)
                 continue
-            child_path = posixpath.join(path, href)
+            child_path = posixpath.join(sane_path, href)
             yield cls(child_path)
 
     @classmethod
