@@ -362,31 +362,28 @@ class Application:
         time_begin = datetime.datetime.now()
         self.logger.info(
             "%s request for %r%s received from %s%s",
-            environ["REQUEST_METHOD"], environ["PATH_INFO"], depthinfo,
+            environ["REQUEST_METHOD"], environ.get("PATH_INFO", ""), depthinfo,
             remote_host, remote_useragent)
         headers = pprint.pformat(self.headers_log(environ))
         self.logger.debug("Request headers:\n%s", headers)
 
         # Let reverse proxies overwrite SCRIPT_NAME
         if "HTTP_X_SCRIPT_NAME" in environ:
-            environ["SCRIPT_NAME"] = environ["HTTP_X_SCRIPT_NAME"]
-            self.logger.debug(
-                "Script name overwritten by client: %r",
-                environ["SCRIPT_NAME"])
+            # script_name must be removed from PATH_INFO by the client.
+            unsafe_base_prefix = environ["HTTP_X_SCRIPT_NAME"]
+            self.logger.debug("Script name overwritten by client: %r",
+                              unsafe_base_prefix)
+        else:
+            # SCRIPT_NAME is already removed from PATH_INFO, according to the
+            # WSGI specification.
+            unsafe_base_prefix = environ.get("SCRIPT_NAME", "")
         # Sanitize base prefix
-        environ["SCRIPT_NAME"] = storage.sanitize_path(
-            environ.get("SCRIPT_NAME", "")).rstrip("/")
-        self.logger.debug("Sanitized script name: %r", environ["SCRIPT_NAME"])
-        base_prefix = environ["SCRIPT_NAME"]
-        environ["PATH_INFO"] = environ.get("PATH_INFO", "")
+        base_prefix = storage.sanitize_path(unsafe_base_prefix).rstrip("/")
+        self.logger.debug("Sanitized script name: %r", base_prefix)
         # Sanitize request URI (a WSGI server indicates with an empty path,
         # that the URL targets the application root without a trailing slash)
-        if environ["PATH_INFO"]:
-            environ["PATH_INFO"] = storage.sanitize_path(environ["PATH_INFO"])
-        self.logger.debug("Sanitized path: %r", environ["PATH_INFO"])
-        # SCRIPT_NAME is already removed from PATH_INFO, according to the
-        # WSGI specification.
-        path = environ["PATH_INFO"]
+        path = storage.sanitize_path(environ.get("PATH_INFO", ""))
+        self.logger.debug("Sanitized path: %r", path)
 
         # Get function corresponding to method
         function = getattr(self, "do_%s" % environ["REQUEST_METHOD"].upper())
@@ -558,7 +555,7 @@ class Application:
         # Redirect to .web if the root URL is requested
         if not path.strip("/"):
             web_path = ".web"
-            if not path.endswith("/"):
+            if not environ.get("PATH_INFO"):
                 web_path = posixpath.join(posixpath.basename(base_prefix),
                                           web_path)
             return (client.SEE_OTHER,
