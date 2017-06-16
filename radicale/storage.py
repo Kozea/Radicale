@@ -690,9 +690,6 @@ class Collection(BaseCollection):
 
         # Path should already be sanitized
         sane_path = sanitize_path(href).strip("/")
-        attributes = sane_path.split("/")
-        if not attributes[0]:
-            attributes.pop()
         filesystem_path = path_to_filesystem(folder, sane_path)
 
         if not props:
