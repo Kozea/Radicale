@@ -339,7 +339,7 @@ class Application:
             status = "%d %s" % (
                 status, client.responses.get(status, "Unknown"))
             self.logger.info(
-                "%s answer status for %r%s in %.3f seconds: %s",
+                "%s response status for %r%s in %.3f seconds: %s",
                 environ["REQUEST_METHOD"], environ.get("PATH_INFO", ""),
                 depthinfo, (time_end - time_begin).total_seconds(), status)
             # Return response content
