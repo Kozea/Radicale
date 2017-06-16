@@ -458,7 +458,7 @@ class Application:
             except socket.timeout:
                 return response(*REQUEST_TIMEOUT)
             if (status, headers, answer) == NOT_ALLOWED:
-                self.logger.info("Access denied for %s",
+                self.logger.info("Access to %r denied for %s", path,
                                  "%r" % user if user else "anonymous user")
         else:
             status, headers, answer = NOT_ALLOWED
