@@ -79,7 +79,11 @@ class BaseRights:
     def authorized(self, user, path, permission):
         """Check if the user is allowed to read or write the collection.
 
-        If the user is empty, check for anonymous rights.
+        If ``user`` is empty, check for anonymous rights.
+
+        ``path`` is sanitized.
+
+        ``permission`` is "r" or "w".
 
         """
         raise NotImplementedError

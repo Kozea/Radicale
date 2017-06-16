@@ -67,6 +67,18 @@ class BaseWeb:
         self.configuration = configuration
         self.logger = logger
 
+    def get(self, environ, base_prefix, path, user):
+        """GET request.
+
+        ``base_prefix`` is sanitized and never ends with "/".
+
+        ``path`` is sanitized and always starts with "/.web"
+
+        ``user`` is empty for anonymous users.
+
+        """
+        raise NotImplementedError
+
 
 class NoneWeb(BaseWeb):
     def get(self, environ, base_prefix, path, user):

@@ -334,13 +334,13 @@ class BaseCollection:
     def discover(cls, path, depth="0"):
         """Discover a list of collections under the given ``path``.
 
+        ``path`` is sanitized.
+
         If ``depth`` is "0", only the actual object under ``path`` is
         returned.
 
         If ``depth`` is anything but "0", it is considered as "1" and direct
         children are included in the result.
-
-        The ``path`` is relative.
 
         The root collection "/" must always exist.
 
@@ -372,6 +372,8 @@ class BaseCollection:
     @classmethod
     def create_collection(cls, href, collection=None, props=None):
         """Create a collection.
+
+        ``href`` is the sanitized path.
 
         If the collection already exists and neither ``collection`` nor
         ``props`` are set, this method shouldn't do anything. Otherwise the
