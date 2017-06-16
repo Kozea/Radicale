@@ -271,7 +271,7 @@ class Application:
         for item in items:
             if not item:
                 continue
-            if isinstance(item, self.Collection):
+            if isinstance(item, storage.BaseCollection):
                 path = item.path
             else:
                 path = item.collection.path
@@ -493,9 +493,9 @@ class Application:
         parent_path = storage.sanitize_path(
             "/%s/" % posixpath.dirname(path.strip("/")))
         allowed = False
-        if not item or isinstance(item, self.Collection):
+        if not item or isinstance(item, storage.BaseCollection):
             allowed |= self.authorized(user, path, permission)
-        if not item or not isinstance(item, self.Collection):
+        if not item or not isinstance(item, storage.BaseCollection):
             allowed |= self.authorized(user, parent_path, permission)
         return allowed
 
@@ -550,7 +550,7 @@ class Application:
             if if_match not in ("*", item.etag):
                 # ETag precondition not verified, do not delete item
                 return PRECONDITION_FAILED
-            if isinstance(item, self.Collection):
+            if isinstance(item, storage.BaseCollection):
                 xml_answer = xmlutils.delete(base_prefix, path, item)
             else:
                 xml_answer = xmlutils.delete(
@@ -580,7 +580,7 @@ class Application:
                 return NOT_ALLOWED
             if not item:
                 return NOT_FOUND
-            if isinstance(item, self.Collection):
+            if isinstance(item, storage.BaseCollection):
                 collection = item
                 if collection.get_meta("tag") not in (
                         "VADDRESSBOOK", "VCALENDAR"):
@@ -678,11 +678,11 @@ class Application:
                 return NOT_ALLOWED
             if not item:
                 return NOT_FOUND
-            if isinstance(item, self.Collection):
+            if isinstance(item, storage.BaseCollection):
                 return WEBDAV_PRECONDITION_FAILED
 
             to_item = next(self.Collection.discover(to_path), None)
-            if (isinstance(to_item, self.Collection) or
+            if (isinstance(to_item, storage.BaseCollection) or
                     to_item and environ.get("HTTP_OVERWRITE", "F") != "T"):
                 return WEBDAV_PRECONDITION_FAILED
             to_parent_path = storage.sanitize_path(
@@ -751,7 +751,7 @@ class Application:
             return BAD_REQUEST
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
-            if not isinstance(item, self.Collection):
+            if not isinstance(item, storage.BaseCollection):
                 return WEBDAV_PRECONDITION_FAILED
             headers = {"DAV": DAV_HEADERS,
                        "Content-Type": "text/xml; charset=%s" % self.encoding}
@@ -777,7 +777,7 @@ class Application:
             parent_item = next(self.Collection.discover(parent_path), None)
 
             write_whole_collection = (
-                isinstance(item, self.Collection) or
+                isinstance(item, storage.BaseCollection) or
                 not parent_item or (
                     not next(parent_item.list(), None) and
                     parent_item.get_meta("tag") not in (
@@ -850,7 +850,7 @@ class Application:
                 return NOT_ALLOWED
             if not item:
                 return NOT_FOUND
-            if isinstance(item, self.Collection):
+            if isinstance(item, storage.BaseCollection):
                 collection = item
             else:
                 collection = item.collection
