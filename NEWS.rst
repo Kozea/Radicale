@@ -9,15 +9,19 @@
 This release is compatible with version 2.0.0.
 
 * Built-in web interface for creating and managing address books and calendars
+
   * can be extended with web plugins
+
 * Much faster storage backend
 * Significant reduction in memory usage
 * Improved logging
+
   * Include paths (of invalid items / requests) in log messages
   * Include configuration values causing problems in log messages
   * Log warning message for invalid requests by clients
   * Log error message for invalid files in the storage backend
   * No stack traces unless debugging is enabled
+
 * Time range filter also regards overwritten recurrences
 * Items that couldn't be filtered because of bugs in VObject are always
   returned (and a warning message is logged)
@@ -30,13 +34,16 @@ This release is compatible with version 2.0.0.
   proxy
 * Support for client-side SSL certificates
 * Rights plugins can decide if access to an item is granted explicitly
+
   * Respond with 403 instead of 404 for principal collections of non-existing
-    users when `owner_only plugin` is used (information leakage)
+    users when ``owner_only plugin`` is used (information leakage)
+
 * Authentication plugins can provide login and password from environment
-  * new `remote_user plugin`, that gets login from REMOTE_USER environment
-    variable
-  * new `http_x_remote_user` plugin, that gets login from X-Remote-User HTTP
-    header
+
+  * new ``remote_user plugin``, that gets login from ``REMOTE_USER``
+    environment variable
+  * new ``http_x_remote_user`` plugin, that gets login from ``X-Remote-User``
+    HTTP header
 
 
 2.0.0 - Little Big Radish
