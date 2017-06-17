@@ -40,10 +40,10 @@ This release is compatible with version 2.0.0.
 
 * Authentication plugins can provide login and password from environment
 
-  * new ``remote_user plugin``, that gets login from ``REMOTE_USER``
+  * new ``remote_user`` plugin, that gets login from the ``REMOTE_USER``
     environment variable
-  * new ``http_x_remote_user`` plugin, that gets login from ``X-Remote-User``
-    HTTP header
+  * new ``http_x_remote_user`` plugin, that gets login from the
+    ``X-Remote-User`` HTTP header
 
 
 2.0.0 - Little Big Radish
