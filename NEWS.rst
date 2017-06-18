@@ -30,8 +30,6 @@ This release is compatible with version 2.0.0.
   configuration option gets introduced
 * The permissions of the lock file are not changed anymore
 * Support for sync-token
-* Support for external authentication managed by the WSGI server or reverse
-  proxy
 * Support for client-side SSL certificates
 * Rights plugins can decide if access to an item is granted explicitly
 
@@ -41,9 +39,9 @@ This release is compatible with version 2.0.0.
 * Authentication plugins can provide login and password from environment
 
   * new ``remote_user`` plugin, that gets login from the ``REMOTE_USER``
-    environment variable
+    environment variable (for WSGI server)
   * new ``http_x_remote_user`` plugin, that gets login from the
-    ``X-Remote-User`` HTTP header
+    ``X-Remote-User`` HTTP header (for reverse proxies)
 
 
 2.0.0 - Little Big Radish
