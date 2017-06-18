@@ -36,7 +36,7 @@ This release is compatible with version 2.0.0.
 * Rights plugins can decide if access to an item is granted explicitly
 
   * Respond with 403 instead of 404 for principal collections of non-existing
-    users when ``owner_only plugin`` is used (information leakage)
+    users when ``owner_only`` plugin is used (information leakage)
 
 * Authentication plugins can provide login and password from environment
 
