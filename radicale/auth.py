@@ -60,6 +60,9 @@ import hmac
 import os
 from importlib import import_module
 
+INTERNAL_TYPES = ("None", "none", "remote_user", "http_x_remote_user",
+                  "htpasswd")
+
 
 def load(configuration, logger):
     """Load the authentication manager chosen in configuration."""

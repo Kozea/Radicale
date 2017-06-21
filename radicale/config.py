@@ -28,6 +28,8 @@ import os
 from collections import OrderedDict
 from configparser import RawConfigParser as ConfigParser
 
+from . import auth, rights, storage, web
+
 
 def positive_int(value):
     value = int(value)
@@ -128,7 +130,8 @@ INITIAL_CONFIG = OrderedDict([
         ("type", {
             "value": "none",
             "help": "authentication method",
-            "type": str}),
+            "type": str,
+            "internal": auth.INTERNAL_TYPES}),
         ("htpasswd_filename", {
             "value": "/etc/radicale/users",
             "help": "htpasswd filename",
@@ -145,7 +148,8 @@ INITIAL_CONFIG = OrderedDict([
         ("type", {
             "value": "owner_only",
             "help": "rights backend",
-            "type": str}),
+            "type": str,
+            "internal": rights.INTERNAL_TYPES}),
         ("file", {
             "value": "/etc/radicale/rights",
             "help": "file for rights management from_file",
@@ -154,7 +158,8 @@ INITIAL_CONFIG = OrderedDict([
         ("type", {
             "value": "multifilesystem",
             "help": "storage backend",
-            "type": str}),
+            "type": str,
+            "internal": storage.INTERNAL_TYPES}),
         ("filesystem_folder", {
             "value": os.path.expanduser(
                 "/var/lib/radicale/collections"),
@@ -184,7 +189,8 @@ INITIAL_CONFIG = OrderedDict([
         ("type", {
             "value": "internal",
             "help": "web interface backend",
-            "type": str})])),
+            "type": str,
+            "internal": web.INTERNAL_TYPES})])),
     ("logging", OrderedDict([
         ("config", {
             "value": "",
@@ -229,8 +235,14 @@ def load(paths=(), extra_config=None, ignore_missing_paths=True):
             continue
         if section not in INITIAL_CONFIG:
             raise RuntimeError("Invalid section %r in config" % section)
+        allow_extra_options = ("type" in INITIAL_CONFIG[section] and
+                               config.get(section, "type") not in
+                               INITIAL_CONFIG[section]["type"].get("internal",
+                                                                   ()))
         for option in config[section]:
             if option not in INITIAL_CONFIG[section]:
+                if allow_extra_options:
+                    continue
                 raise RuntimeError("Invalid option %r in section %r in "
                                    "config" % (option, section))
             type_ = INITIAL_CONFIG[section][option]["type"]

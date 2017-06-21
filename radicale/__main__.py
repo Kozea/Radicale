@@ -58,6 +58,8 @@ def run():
             kwargs["dest"] = "{0}_{1}".format(section, option)
             groups[group].append(kwargs["dest"])
             del kwargs["value"]
+            if "internal" in kwargs:
+                del kwargs["internal"]
 
             if kwargs["type"] == bool:
                 del kwargs["type"]

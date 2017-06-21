@@ -44,6 +44,8 @@ MIMETYPES = {
     ".xml": "text/xml"}
 FALLBACK_MIMETYPE = "application/octet-stream"
 
+INTERNAL_TYPES = ("None", "none", "internal")
+
 
 def load(configuration, logger):
     """Load the web module chosen in configuration."""

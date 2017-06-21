@@ -45,6 +45,9 @@ from importlib import import_module
 
 from . import storage
 
+INTERNAL_TYPES = ("None", "none", "authenticated", "owner_write", "owner_only",
+                  "from_file")
+
 
 def load(configuration, logger):
     """Load the rights manager chosen in configuration."""

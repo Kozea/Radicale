@@ -88,6 +88,8 @@ if os.name == "nt":
 elif os.name == "posix":
     import fcntl
 
+INTERNAL_TYPES = ("multifilesystem",)
+
 
 def load(configuration, logger):
     """Load the storage manager chosen in configuration."""
