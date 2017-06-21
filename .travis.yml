@@ -22,4 +22,4 @@ install:
   - pip3 install --upgrade --editable .[test]
 
 script:
-  - python3 setup.py test --addopts "-r s"
+  - python3 setup.py test
