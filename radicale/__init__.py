@@ -297,8 +297,16 @@ class Application:
         try:
             status, headers, answers = self._handle_request(environ)
         except Exception as e:
-            self.logger.error("An exception occurred during request: %s",
-                              e, exc_info=True)
+            try:
+                method = str(environ["REQUEST_METHOD"])
+            except Exception:
+                method = "unknown"
+            try:
+                path = str(environ.get("PATH_INFO", ""))
+            except Exception:
+                path = ""
+            self.logger.error("An exception occurred during %s request on %r: "
+                              "%s", method, path, e, exc_info=True)
             status, headers, answer = INTERNAL_SERVER_ERROR
             status = "%d %s" % (
                 status, client.responses.get(status, "Unknown"))
