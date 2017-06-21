@@ -1,27 +1,21 @@
-======
- News
-======
-
+News
+====
 
 2.1.0rc1
-========
+--------
 
 This release is compatible with version 2.0.0.
 
 * Built-in web interface for creating and managing address books and calendars
-
   * can be extended with web plugins
-
 * Much faster storage backend
 * Significant reduction in memory usage
 * Improved logging
-
   * Include paths (of invalid items / requests) in log messages
   * Include configuration values causing problems in log messages
   * Log warning message for invalid requests by clients
   * Log error message for invalid files in the storage backend
   * No stack traces unless debugging is enabled
-
 * Time range filter also regards overwritten recurrences
 * Items that couldn't be filtered because of bugs in VObject are always
   returned (and a warning message is logged)
@@ -32,12 +26,9 @@ This release is compatible with version 2.0.0.
 * Support for sync-token
 * Support for client-side SSL certificates
 * Rights plugins can decide if access to an item is granted explicitly
-
   * Respond with 403 instead of 404 for principal collections of non-existing
     users when ``owner_only`` plugin is used (information leakage)
-
 * Authentication plugins can provide login and password from environment
-
   * new ``remote_user`` plugin, that gets login from the ``REMOTE_USER``
     environment variable (for WSGI server)
   * new ``http_x_remote_user`` plugin, that gets login from the
@@ -45,7 +36,7 @@ This release is compatible with version 2.0.0.
 
 
 2.0.0 - Little Big Radish
-=========================
+-------------------------
 
 This feature is not compatible with the 1.x.x versions. See
 http://radicale.org/1to2/ if you want to switch from 1.x.x to
@@ -71,13 +62,13 @@ http://radicale.org/1to2/ if you want to switch from 1.x.x to
 
 
 1.1.3 - Fourth Law of Nature
-============================
+----------------------------
 
 * Add a ``--export-storage=FOLDER`` command-line argument (by Unrud, see #606)
 
 
 1.1.2 - Third Law of Nature
-===========================
+---------------------------
 
 * **Security fix**: Add a random timer to avoid timing oracles and simple
   bruteforce attacks when using the htpasswd authentication method.
@@ -85,13 +76,13 @@ http://radicale.org/1to2/ if you want to switch from 1.x.x to
 
 
 1.1.1 - Second Law of Nature
-============================
+----------------------------
 
 * Fix the owner_write rights rule
 
 
 1.1 - Law of Nature
-===================
+-------------------
 
 One feature in this release is **not backward compatible**:
 
@@ -121,13 +112,13 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 1.0.1 - Sunflower Again
-=======================
+-----------------------
 
 * Update the version because of a **stupid** "feature"™ of PyPI
 
 
 1.0 - Sunflower
-===============
+---------------
 
 * Enhanced performances (by Mathieu Dupuy)
 * Add MD5-APR1 and BCRYPT for htpasswd-based authentication (by Jan-Philip Gehrcke)
@@ -138,7 +129,7 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.10 - Lovely Endless Grass
-===========================
+---------------------------
 
 * Support well-known URLs (by Mathieu Dupuy)
 * Fix collection discovery (by Markus Unterwaditzer)
@@ -149,7 +140,7 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.9 - Rivers
-============
+------------
 
 * Custom handlers for auth, storage and rights (by Sergey Fursov)
 * 1-file-per-event storage (by Jean-Marc Martins)
@@ -168,7 +159,7 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.8 - Rainbow
-=============
+-------------
 
 * New authentication and rights management modules (by Matthias Jordan)
 * Experimental database storage
@@ -181,7 +172,7 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.7.1 - Waterfalls
-==================
+------------------
 
 * Many address books fixes
 * New IMAP ACL (by Daniel Aleksandersen)
@@ -192,7 +183,7 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.7 - Eternal Sunshine
-======================
+----------------------
 
 * Repeating events
 * Collection deletion
@@ -202,13 +193,13 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.6.4 - Tulips
-==============
+--------------
 
 * Fix the installation with Python 3.1
 
 
 0.6.3 - Red Roses
-=================
+-----------------
 
 * MOVE requests fixed
 * Faster REPORT answers
@@ -216,7 +207,7 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.6.2 - Seeds
-=============
+-------------
 
 * iPhone and iPad support fixed
 * Backslashes replaced by slashes in PROPFIND answers on Windows
@@ -224,7 +215,7 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.6.1 - Growing Up
-==================
+------------------
 
 * Example files included in the tarball
 * htpasswd support fixed
@@ -233,7 +224,7 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.6 - Sapling
-=============
+-------------
 
 * WSGI support
 * IPv6 support
@@ -249,7 +240,7 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.5 - Historical Artifacts
-==========================
+--------------------------
 
 * Calendar depth
 * MacOS and Windows support
@@ -258,7 +249,7 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.4 - Hot Days Back
-===================
+-------------------
 
 * Personal calendars
 * Last-Modified HTTP header
@@ -267,14 +258,14 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.3 - Dancing Flowers
-=====================
+---------------------
 
 * Evolution support
 * Version management
 
 
 0.2 - Snowflakes
-================
+----------------
 
 * Sunbird pre-1.0 support
 * SSL connection
@@ -289,7 +280,7 @@ Some bugs have been fixed and little enhancements have been added:
 
 
 0.1 - Crazy Vegetables
-======================
+----------------------
 
 * First release
 * Lightning/Sunbird 0.9 compatibility
