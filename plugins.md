@@ -22,17 +22,18 @@ in an empty folder:
 
 from distutils.core import setup
 
-setup(packages=["silly_auth_plugin"])
+setup(name="radicale_silly_auth", packages=["radicale_silly_auth"])
 ```
 
-In the same folder create the sub-folder `silly_auth_plugin`. The folder
+In the same folder create the sub-folder `radicale_silly_auth`. The folder
 must have the same name as specified in `packages` above.
 
-Create the file `__init__.py` in the `silly_auth_plugin` folder with the
+Create the file `__init__.py` in the `radicale_silly_auth` folder with the
 following content:
 
 ```python
 from radicale.auth import BaseAuth
+
 
 class Auth(BaseAuth):
     def is_authenticated(self, user, password):
@@ -48,7 +49,12 @@ python3 -m pip install --upgrade .
 ```
 
 To make use this great creation in Radicale, set the configuration option
-`type` in the `auth` section to `silly_auth_plugin`.
+`type` in the `auth` section to `radicale_silly_auth`.
+
+You can uninstall the module with:
+```shell
+python3 -m pip uninstall radicale_silly_auth
+```
 
 ## Authentication plugins
 This plugin type is used to check login credentials.
