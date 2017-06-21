@@ -305,7 +305,7 @@ class Item:
             try:
                 self._item = vobject.readOne(self._text)
             except Exception as e:
-                raise RuntimeError("Failed to parse item %r in %r: %s" %
+                raise RuntimeError("Failed to parse item %r from %r: %s" %
                                    (self.href, self.collection.path, e)) from e
         return self._item
 
@@ -1035,7 +1035,7 @@ class Collection(BaseCollection):
                                     text=btext.decode(self.encoding)).item
                 check_item(vobject_item)
             except Exception as e:
-                raise RuntimeError("Failed to parse item %r from %r: %s" %
+                raise RuntimeError("Failed to load item %r in %r: %s" %
                                    (href, self.path, e)) from e
             # Serialize the object again, to normalize the text representation.
             # The storage may have been edited externally.
