@@ -28,10 +28,11 @@ This release is compatible with version 2.0.0.
 * Rights plugins can decide if access to an item is granted explicitly
   * Respond with 403 instead of 404 for principal collections of non-existing
     users when ``owner_only`` plugin is used (information leakage)
-* Authentication plugins can provide login and password from environment
-  * new ``remote_user`` plugin, that gets login from the ``REMOTE_USER``
+* Authentication plugins can provide the login and password from the
+  environment
+  * new ``remote_user`` plugin, that gets the login from the ``REMOTE_USER``
     environment variable (for WSGI server)
-  * new ``http_x_remote_user`` plugin, that gets login from the
+  * new ``http_x_remote_user`` plugin, that gets the login from the
     ``X-Remote-User`` HTTP header (for reverse proxies)
 
 
