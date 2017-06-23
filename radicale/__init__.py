@@ -460,11 +460,8 @@ class Application:
                 return response(*REQUEST_ENTITY_TOO_LARGE)
 
         if is_authenticated:
-            try:
-                status, headers, answer = function(
-                    environ, base_prefix, path, user)
-            except socket.timeout:
-                return response(*REQUEST_TIMEOUT)
+            status, headers, answer = function(
+                environ, base_prefix, path, user)
             if (status, headers, answer) == NOT_ALLOWED:
                 self.logger.info("Access to %r denied for %s", path,
                                  "%r" % user if user else "anonymous user")
@@ -612,6 +609,9 @@ class Application:
             self.logger.warning(
                 "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
+        except socket.timeout as e:
+            self.logger.debug("client timed out", exc_info=True)
+            return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if item:
@@ -638,6 +638,9 @@ class Application:
             self.logger.warning(
                 "Bad MKCOL request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
+        except socket.timeout as e:
+            self.logger.debug("client timed out", exc_info=True)
+            return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if item:
@@ -718,6 +721,9 @@ class Application:
             self.logger.warning(
                 "Bad PROPFIND request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
+        except socket.timeout as e:
+            self.logger.debug("client timed out", exc_info=True)
+            return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("r", user):
             items = self.Collection.discover(
                 path, environ.get("HTTP_DEPTH", "0"))
@@ -749,6 +755,9 @@ class Application:
             self.logger.warning(
                 "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
+        except socket.timeout as e:
+            self.logger.debug("client timed out", exc_info=True)
+            return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if not isinstance(item, storage.BaseCollection):
@@ -770,6 +779,9 @@ class Application:
             self.logger.warning(
                 "Bad PUT request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
+        except socket.timeout as e:
+            self.logger.debug("client timed out", exc_info=True)
+            return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("w", user):
             parent_path = storage.sanitize_path(
                 "/%s/" % posixpath.dirname(path.strip("/")))
@@ -844,6 +856,9 @@ class Application:
             self.logger.warning(
                 "Bad REPORT request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
+        except socket.timeout as e:
+            self.logger.debug("client timed out", exc_info=True)
+            return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("r", user):
             item = next(self.Collection.discover(path), None)
             if not self._access(user, path, "r", item):
