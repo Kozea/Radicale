@@ -129,7 +129,7 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
 
     def handle_error(self, request, client_address):
         if issubclass(sys.exc_info()[0], socket.timeout):
-            self.logger.info("connection timeout")
+            self.logger.info("client timed out", exc_info=True)
         else:
             self.logger.error("An exception occurred during request: %s",
                               sys.exc_info()[1], exc_info=True)
