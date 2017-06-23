@@ -1,6 +1,15 @@
 News
 ====
 
+2.1.0rc3
+--------
+
+This release is compatible with version 2.0.0.
+
+* Include VObject version in item cache hash
+* Improve logging of client timeouts
+
+
 2.1.0rc2
 --------
 
