@@ -43,6 +43,7 @@ from itertools import chain, groupby
 from random import getrandbits
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
+import pkg_resources
 import vobject
 
 if sys.version_info >= (3, 5):
@@ -544,6 +545,8 @@ class BaseCollection:
 class Collection(BaseCollection):
     """Collection stored in several files per calendar."""
 
+    _item_cache_tag = None
+
     def __init__(self, path, principal=None, folder=None):
         # DEPRECATED: Remove useless principal attribute
         if folder is None:
@@ -560,6 +563,15 @@ class Collection(BaseCollection):
         self.is_principal = principal
         self._meta_cache = None
         self._etag_cache = None
+        if self._item_cache_tag is None:
+            try:
+                vobject_version = pkg_resources.require("vobject")[0].version
+                self.logger.debug("VObject version: %r", vobject_version)
+            except Exception as e:
+                self.logger.warning(
+                    "VObject version not found: %s", e, exc_info=True)
+                vobject_version = ""
+            Collection._item_cache_tag = vobject_version.encode() + b"\0"
 
     @classmethod
     def _get_collection_root_folder(cls):
@@ -1015,6 +1027,7 @@ class Collection(BaseCollection):
         # The hash of the component in the file system. This is used to check,
         # if the entry in the cache is still valid.
         input_hash = md5()
+        input_hash.update(self._item_cache_tag)
         input_hash.update(btext)
         input_hash = input_hash.hexdigest()
         cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
