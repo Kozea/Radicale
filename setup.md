@@ -43,11 +43,10 @@ $ htpasswd -B /path/to/users user2
 New password:
 Re-type new password:
 ```
-**bcrypt** is used to secure the passwords. Radicale required additional
+**bcrypt** is used to secure the passwords. Radicale requires additional
 dependencies for this encryption method:
 ```shell
-$ python3 -m pip install --upgrade passlib
-$ python3 -m pip install --upgrade bcrypt
+$ python3 -m pip install --upgrade passlib bcrypt
 ```
 
 Authentication can be enabled with the following configuration:
