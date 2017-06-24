@@ -28,7 +28,7 @@ You can download the Radicale package for each release:
 
 {% assign releases = site.github.releases | where:"draft",false | sort:"created_at" | reverse %}
 {% for release in releases %}
-- [{{ release.tag_name }}{% if release.name and release.tag_name != release.name %} - {{ release.name }}{% endif %}]({{ release.tarball_url }}){% endfor %}
+- [{{ release.tag_name }}{% if release.name != "" and release.tag_name != release.name %} - {{ release.name }}{% endif %}]({{ release.tarball_url }}){% endfor %}
 
 ## Linux Distribution Packages
 
