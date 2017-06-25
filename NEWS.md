@@ -62,6 +62,12 @@ http://radicale.org/1to2/ if you want to switch from 1.x.x to
   version control
 
 
+1.1.4 - Fifth Law of Nature
+---------------------------
+
+* Use ``shutil.move`` for ``--export-storage``
+
+
 1.1.3 - Fourth Law of Nature
 ----------------------------
 
