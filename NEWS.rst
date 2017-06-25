@@ -3,6 +3,11 @@
 ======
 
 
+1.1.4 - Fifth Law of Nature
+===========================
+
+* Use ``shutil.move`` for ``--export-storage``
+
 1.1.3 - Fourth Law of Nature
 ============================
 
