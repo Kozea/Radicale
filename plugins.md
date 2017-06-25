@@ -37,7 +37,7 @@ from radicale.auth import BaseAuth
 
 class Auth(BaseAuth):
     def is_authenticated(self, user, password):
-        self.logger.info("Login attempt by '%s' with password '%s'",
+        self.logger.info("Login attempt by %r with password %r",
                          user, password)
         return user == password
 ```
