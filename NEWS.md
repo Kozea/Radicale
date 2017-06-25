@@ -1,25 +1,8 @@
 News
 ====
 
-2.1.0rc3
---------
-
-This release is compatible with version 2.0.0.
-
-* Include VObject version in item cache hash
-* Improve logging of client timeouts
-
-
-2.1.0rc2
---------
-
-This release is compatible with version 2.0.0.
-
-* Allow extra configuration options, when external plugins are used.
-* Add request method and path to exceptions that happen during requests.
-
-2.1.0rc1
---------
+2.1.0 - Wild Radish
+-------------------
 
 This release is compatible with version 2.0.0.
 
