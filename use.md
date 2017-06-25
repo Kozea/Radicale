@@ -19,11 +19,9 @@ Radicale has been tested with:
     [CardDavMATE](https://www.inf-it.com/open-source/clients/carddavmate/)
 
 Many clients do not support the creation of new calendars and address books.
-You have to use another client for this or create them manually
-(unfortunately this is quite complicated). The development version of Radicale
-has a web interface that lets you create and manage collections conveniently.
-Manual creation of calendars and address books is described in
-the last chapter.
+You can use Radicale's web interface
+(e.g. [http://localhost:5232](http://localhost:5232)) to create and manage
+collections.
 
 In some clients you can just enter the URL of the Radicale server
 (e.g. `http://localhost:5232`) and your user name. In others, you have to
@@ -63,6 +61,10 @@ specify the user name in the URL (e.g. `http://user@localhost...`)
 
 ## InfCloud, CalDavZAP and CardDavMATE
 
+You can integrate InfCloud into Radicale's web interface with
+[RadicaleInfCloud](https://github.com/Unrud/RadicaleInfCloud). No additional
+configuration is required.
+
 Set the URL of the Radicale server in ``config.js``. If **InfCloud** is not
 hosted on the same server and port as Radicale, the browser will deny access to
 the Radicale server, because of the
@@ -70,15 +72,11 @@ the Radicale server, because of the
 You have to add additional HTTP header in the `headers` section of Radicale's
 configuration. The documentation of **InfCloud** has more details on this.
 
-In the development version of Radicale you can integrate InfCloud directly with
-[RadicaleInfCloud](https://github.com/Unrud/RadicaleInfCloud).
-
 ## Manual creation of calendars and address books
 
 This is not the recommended way of creating and managing your calendars and
-address books. Use a client with support for it if possible
-(e.g. **DAVdroid**). The development version of Radicale has a web interface
-that lets you create and manage collections conveniently.
+address books. Use Radicale's web interface or a client with support for it
+(e.g. **DAVdroid**).
 
 ### Direct editing of the storage
 

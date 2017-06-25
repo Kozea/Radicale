@@ -23,9 +23,6 @@ maximum number of parallel connections, the maximum file size and the rate of
 incorrect authentication attempts. Connections are terminated after a timeout.
 
 ## Manage user accounts with the reverse proxy
-
-(This feature is only available in the development version!)
-
 Set the configuration option `type` in the `auth` section to
 `http_x_remote_user`.
 Radicale uses the user name provided in the `X-Remote-User` HTTP header and
@@ -45,9 +42,6 @@ location /radicale/ {
 ```
 
 ## Secure connection between Radicale and the reverse proxy
-
-(This feature is only available in the development version!)
-
 SSL certificates can be used to encrypt and authenticate the connection between
 Radicale and the reverse proxy. First you have to generate a certificate for
 Radicale and a certificate for the reverse proxy. The following commands

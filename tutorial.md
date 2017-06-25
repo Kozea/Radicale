@@ -31,8 +31,8 @@ $ python3 -m pip install --upgrade radicale
 $ python3 -m radicale --config "" --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
-Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser
-and enjoy the "Radicale works!" message!
+Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser!
+You can login with any username and password.
 
 ## Windows
 
@@ -49,8 +49,8 @@ C:\Users\User> python -m pip install --upgrade radicale
 C:\Users\User> python -m radicale --config "" --storage-filesystem-folder=~/radicale/collections
 ```
 
-Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser
-and enjoy the "Radicale works!" message!
+Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser!
+You can login with any username and password.
 
 ## MacOS
 

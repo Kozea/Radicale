@@ -69,8 +69,6 @@ The module must contain a class `Rights` that extends
 Radicale's source code for more information.
 
 ## Web plugins
-(This feature is only available in the development version!)
-
 This plugin type is used to provide the web interface for Radicale.
 The module must contain a class `Web` that extends
 `radicale.web.BaseWeb`. Take a look at the file `radicale/web.py` in

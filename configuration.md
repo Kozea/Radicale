@@ -87,9 +87,6 @@ Path to the private key for SSL. Only effective if `ssl` is enabled.
 Default: `/etc/ssl/radicale.key.pem`
 
 ### certificate_authority
-
-(This feature is only available in the development version!)
-
 Path to the CA certificate for validating client certificates. This can be used
 to secure TCP traffic between Radicale and a reverse proxy. If you want to
 authenticate users with client-side certificates, you also have to write an
@@ -142,16 +139,12 @@ Available backends:
   usernames and passwords.
 
 `remote_user`
-: (This feature is only available in the development version!)
-
-  Takes the user name from the `REMOTE_USER` environment variable and disables
+: Takes the user name from the `REMOTE_USER` environment variable and disables
   HTTP authentication. This can be used to provide the user name from a WSGI
   server.
 
 `http_x_remote_user`
-: (This feature is only available in the development version!)
-
-  Takes the user name from the `X-Remote-User` HTTP header and disables HTTP
+: Takes the user name from the `X-Remote-User` HTTP header and disables HTTP
   authentication. This can be used to provide the user name from a reverse
   proxy.
 
@@ -252,9 +245,6 @@ Folder for storing local collections, created if not present.
 Default: `/var/lib/radicale/collections`
 
 ### filesystem_locking
-
-(This setting is only available in the development version!)
-
 Lock the storage. This must be disabled if locking is not supported by the
 underlying file system. Never start multiple instances of Radicale or edit the
 storage externally while Radicale is running if disabled.
@@ -262,9 +252,6 @@ storage externally while Radicale is running if disabled.
 Default: `True`
 
 ### max_sync_token_age
-
-(This feature is only available in the development version!)
-
 Delete sync-token that are older than the specified time. (seconds)
 
 Default: `2592000`
@@ -284,9 +271,6 @@ Default:
 
 ## web
 ### type
-
-(This feature is only available in the development version!)
-
 The backend that provides the web interface of Radicale.
 
 `none`
