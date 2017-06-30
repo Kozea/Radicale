@@ -824,17 +824,21 @@ class Application:
             content_type = environ.get("CONTENT_TYPE", "").split(";")[0]
             tags = {value: key for key, value in xmlutils.MIMETYPES.items()}
             tag = tags.get(content_type)
+            if items and items[0].name == "VCALENDAR":
+                tag = "VCALENDAR"
+            elif items and items[0].name == "VCARD":
+                tag = "VADDRESSBOOK"
 
             if write_whole_collection:
                 try:
                     new_item = self.Collection.create_collection(
-                        path, items, {"tag": tag})
+                        path, items, {"tag": tag} if tag else None)
                 except ValueError as e:
                     self.logger.warning(
                         "Bad PUT request on %r: %s", path, e, exc_info=True)
                     return BAD_REQUEST
             else:
-                if tag:
+                if tag and not parent_item.get_meta("tag"):
                     parent_item.set_meta({"tag": tag})
                 href = posixpath.basename(path.strip("/"))
                 try:

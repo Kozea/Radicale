@@ -709,10 +709,6 @@ class Collection(BaseCollection):
         filesystem_path = path_to_filesystem(folder, sane_path)
 
         if not props:
-            props = {}
-        if not props.get("tag") and collection:
-            props["tag"] = collection[0].name
-        if not props:
             cls._makedirs_synced(filesystem_path)
             return cls(sane_path)
 
@@ -747,7 +743,7 @@ class Collection(BaseCollection):
                             vobject_items.get, suffix=".ics")
                         vobject_items[href] = new_collection
                     self._upload_all_nonatomic(vobject_items)
-                elif props.get("tag") == "VCARD":
+                elif props.get("tag") == "VADDRESSBOOK":
                     vobject_items = {}
                     for card in collection:
                         # href must comply to is_safe_filesystem_path_component
