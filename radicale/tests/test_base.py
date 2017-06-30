@@ -160,20 +160,25 @@ class BaseRequestsMixIn:
         assert "DTSTART;TZID=Europe/Paris:20140901T180000" in answer
         assert "DTEND;TZID=Europe/Paris:20140901T210000" in answer
 
-    def test_put_whole_collection(self):
-        """Create and overwrite a whole collection."""
-        event = get_file_content("event1.ics")
-        status, headers, answer = self.request("PUT", "/calendar.ics/", event)
+    def test_put_whole_calendar(self):
+        """Create and overwrite a whole calendar."""
+        status, _, _ = self.request(
+            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        event1 = get_file_content("event1.ics")
         assert status == 201
-        status, headers, answer = self.request(
-            "PUT", "/calendar.ics/test_event.ics", event)
+        status, _, _ = self.request(
+            "PUT", "/calendar.ics/test_event.ics", event1)
         assert status == 201
         # Overwrite
-        status, headers, answer = self.request("PUT", "/calendar.ics/", event)
+        events = get_file_content("event_multiple.ics")
+        status, _, _ = self.request("PUT", "/calendar.ics/", events)
         assert status == 201
-        status, headers, answer = self.request(
-            "GET", "/calendar.ics/test_event.ics")
+        status, _, _ = self.request("GET", "/calendar.ics/test_event.ics")
         assert status == 404
+        status, _, answer = self.request("GET", "/calendar.ics/")
+        assert status == 200
+        assert "\r\nUID:event\r\n" in answer and "\r\nUID:todo\r\n" in answer
+        assert "\r\nUID:event1\r\n" not in answer
 
     def test_delete(self):
         """Delete an event."""
@@ -278,7 +283,7 @@ class BaseRequestsMixIn:
         assert ":calendar-color>#BADA55</" in answer
         assert "200 OK</status" in answer
 
-    def test_multiple_events_with_same_uid(self):
+    def test_put_whole_calendar_multiple_events_with_same_uid(self):
         """Add two events with the same UID."""
         self.request("MKCOL", "/calendar.ics/")
         self.request("PUT", "/calendar.ics/", get_file_content("event2.ics"))
