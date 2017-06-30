@@ -137,6 +137,12 @@ def check_item(vobject_item):
         raise ValueError("Unknown item type: %r" % vobject_item.name)
 
 
+def random_uuid4():
+    """Generate a pseudo-random UUID"""
+    r = "%016x" % getrandbits(128)
+    return "%s-%s-%s-%s-%s" % (r[:8], r[8:12], r[12:16], r[16:20], r[20:])
+
+
 def scandir(path, only_dirs=False, only_files=False):
     """Iterator for directory elements. (For compatibility with Python < 3.5)
 
@@ -600,7 +606,7 @@ class Collection(BaseCollection):
     def _find_available_file_name(exists_fn, suffix=""):
         # Prevent infinite loop
         for _ in range(1000):
-            file_name = "%016x" % getrandbits(64) + suffix
+            file_name = random_uuid4() + suffix
             if not exists_fn(file_name):
                 return file_name
         # something is wrong with the PRNG
