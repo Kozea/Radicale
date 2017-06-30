@@ -75,6 +75,30 @@ class BaseRequestsMixIn:
         assert "Event" in answer
         assert "UID:event" in answer
 
+    def test_add_event_without_uid(self):
+        """Add an event without UID."""
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
+        event = get_file_content("event1.ics").replace("UID:event1\n", "")
+        assert "\nUID:" not in event
+        path = "/calendar.ics/event.ics"
+        status, headers, answer = self.request("PUT", path, event)
+        assert status == 201
+        status, headers, answer = self.request("GET", path)
+        assert status == 200
+        uids = []
+        for line in answer.split("\r\n"):
+            if line.startswith("UID:"):
+                uids.append(line[len("UID:"):])
+        assert len(uids) == 1 and uids[0]
+        # Overwrite the event with an event without UID and check that the UID
+        # is still the same
+        status, _, _ = self.request("PUT", path, event)
+        assert status == 201
+        status, _, answer = self.request("GET", path)
+        assert status == 200
+        assert "\r\nUID:%s\r\n" % uids[0] in answer
+
     def test_add_todo(self):
         """Add a todo."""
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
@@ -120,6 +144,31 @@ class BaseRequestsMixIn:
         status, _, answer = self.request("GET", path)
         assert status == 200
         assert "UID:contact1" in answer
+
+    def test_add_contact_without_uid(self):
+        """Add a contact."""
+        status, _, _ = self._create_addressbook("/contacts.vcf/")
+        assert status == 201
+        contact = get_file_content("contact1.vcf").replace("UID:contact1\n",
+                                                           "")
+        assert "\nUID" not in contact
+        path = "/contacts.vcf/contact.vcf"
+        status, _, _ = self.request("PUT", path, contact)
+        assert status == 201
+        status, _, answer = self.request("GET", path)
+        assert status == 200
+        uids = []
+        for line in answer.split("\r\n"):
+            if line.startswith("UID:"):
+                uids.append(line[len("UID:"):])
+        assert len(uids) == 1 and uids[0]
+        # Overwrite the contact with an contact without UID and check that the
+        # UID is still the same
+        status, headers, answer = self.request("PUT", path, contact)
+        assert status == 201
+        status, headers, answer = self.request("GET", path)
+        assert status == 200
+        assert "\r\nUID:%s\r\n" % uids[0] in answer
 
     def test_update(self):
         """Update an event."""
@@ -176,6 +225,25 @@ class BaseRequestsMixIn:
         assert "\r\nUID:event\r\n" in answer and "\r\nUID:todo\r\n" in answer
         assert "\r\nUID:event1\r\n" not in answer
 
+    def test_put_whole_calendar_without_uids(self):
+        """Create a whole calendar without UID."""
+        event = get_file_content("event_multiple.ics")
+        event = event.replace("UID:event\n", "").replace("UID:todo\n", "")
+        assert "\nUID:" not in event
+        status, _, _ = self.request("PUT", "/calendar.ics/", event)
+        assert status == 201
+        status, _, answer = self.request("GET", "/calendar.ics")
+        assert status == 200
+        uids = []
+        for line in answer.split("\r\n"):
+            if line.startswith("UID:"):
+                uids.append(line[len("UID:"):])
+        assert len(uids) == 2
+        for i, uid1 in enumerate(uids):
+            assert uid1
+            for uid2 in uids[i + 1:]:
+                assert uid1 != uid2
+
     def test_put_whole_addressbook(self):
         """Create and overwrite a whole addressbook."""
         contacts = get_file_content("contact_multiple.vcf")
@@ -185,6 +253,26 @@ class BaseRequestsMixIn:
         assert status == 200
         assert ("\r\nUID:contact1\r\n" in answer and
                 "\r\nUID:contact2\r\n" in answer)
+
+    def test_put_whole_addressbook_without_uids(self):
+        """Create a whole addressbook without UID."""
+        contacts = get_file_content("contact_multiple.vcf")
+        contacts = contacts.replace("UID:contact1\n", "").replace(
+            "UID:contact2\n", "")
+        assert "\nUID:" not in contacts
+        status, _, _ = self.request("PUT", "/contacts.vcf/", contacts)
+        assert status == 201
+        status, _, answer = self.request("GET", "/contacts.vcf")
+        assert status == 200
+        uids = []
+        for line in answer.split("\r\n"):
+            if line.startswith("UID:"):
+                uids.append(line[len("UID:"):])
+        assert len(uids) == 2
+        for i, uid1 in enumerate(uids):
+            assert uid1
+            for uid2 in uids[i + 1:]:
+                assert uid1 != uid2
 
     def test_delete(self):
         """Delete an event."""

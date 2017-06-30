@@ -116,14 +116,44 @@ def load(configuration, logger):
     return CollectionCopy
 
 
-def check_item(vobject_item):
-    """Check vobject items for common errors."""
+def check_and_sanitize_item(vobject_item, is_collection=False, uid=None):
+    """Check vobject items for common errors and add missing UIDs.
+
+    ``multiple`` indicates that the vobject_item contains unrelated components.
+
+    If ``uid`` is not set, the UID is generated randomly.
+
+    """
     if vobject_item.name == "VCALENDAR":
+        component_name = None
+        object_uid = None
+        object_uid_set = False
         for component in vobject_item.components():
-            if component.name not in ("VTODO", "VEVENT", "VJOURNAL"):
+            # https://tools.ietf.org/html/rfc4791#section-4.1
+            if component.name == "VTIMEZONE":
                 continue
-            if not get_uid(component):
-                raise ValueError("UID in %s is missing" % component.name)
+            if component_name is None or is_collection:
+                component_name = component.name
+            elif component_name != component.name:
+                raise ValueError("Muliple component types in object: %r, %r" %
+                                 (component_name, component.name))
+            if component_name not in ("VTODO", "VEVENT", "VJOURNAL"):
+                continue
+            component_uid = get_uid(component)
+            if not object_uid_set or is_collection:
+                object_uid_set = True
+                object_uid = component_uid
+                if component_uid is None:
+                    component.add("UID").value = uid or random_uuid4()
+                elif not component_uid:
+                    component.uid.value = uid or random_uuid4()
+            elif not object_uid or not component_uid:
+                raise ValueError("Multiple %s components without UID in "
+                                 "object" % component_name)
+            elif object_uid != component_uid:
+                raise ValueError(
+                    "Muliple %s components with different UIDs in object: "
+                    "%r, %r" % (component_name, object_uid, component_uid))
             # vobject interprets recurrence rules on demand
             try:
                 component.rruleset
@@ -131,8 +161,12 @@ def check_item(vobject_item):
                 raise ValueError("invalid recurrence rules in %s" %
                                  component.name) from e
     elif vobject_item.name == "VCARD":
-        if not get_uid(vobject_item):
-            raise ValueError("UID in VCARD is missing")
+        # https://tools.ietf.org/html/rfc6352#section-5.1
+        object_uid = get_uid(vobject_item)
+        if object_uid is None:
+            vobject_item.add("UID").value = uid or random_uuid4()
+        elif not object_uid:
+            vobject_item.uid.value = uid or random_uuid4()
     else:
         raise ValueError("Unknown item type: %r" % vobject_item.name)
 
@@ -175,9 +209,24 @@ def get_etag(text):
     return '"%s"' % etag.hexdigest()
 
 
-def get_uid(item):
+def get_uid(vobject_component):
     """UID value of an item if defined."""
-    return (hasattr(item, "uid") or None) and item.uid.value
+    return ((hasattr(vobject_component, "uid") or None) and
+            vobject_component.uid.value)
+
+
+def get_uid_from_object(vobject_item):
+    """UID value of an calendar/addressbook object."""
+    if vobject_item.name == "VCALENDAR":
+        if hasattr(vobject_item, "vevent"):
+            return get_uid(vobject_item.vevent)
+        if hasattr(vobject_item, "vjournal"):
+            return get_uid(vobject_item.vjournal)
+        if hasattr(vobject_item, "vtodo"):
+            return get_uid(vobject_item.vtodo)
+    elif vobject_item.name == "VCARD":
+        return get_uid(vobject_item)
+    return None
 
 
 def sanitize_path(path):
@@ -272,7 +321,7 @@ class ComponentNotFoundError(ValueError):
 
 class Item:
     def __init__(self, collection, item=None, href=None, last_modified=None,
-                 text=None, etag=None):
+                 text=None, etag=None, uid=None):
         """Initialize an item.
 
         ``collection`` the parent collection.
@@ -288,6 +337,8 @@ class Item:
 
         ``etag`` the etag of the item (optional). See ``get_etag``.
 
+        ``uid`` the UID of the object (optional). See ``get_uid_from_object``.
+
         """
         if text is None and item is None:
             raise ValueError("at least one of 'text' or 'item' must be set")
@@ -297,6 +348,7 @@ class Item:
         self._text = text
         self._item = item
         self._etag = etag
+        self._uid = uid
 
     def __getattr__(self, attr):
         return getattr(self.item, attr)
@@ -322,6 +374,12 @@ class Item:
         if self._etag is None:
             self._etag = get_etag(self.serialize())
         return self._etag
+
+    @property
+    def uid(self):
+        if self._uid is None:
+            self._uid = get_uid_from_object(self.item)
+        return self._uid
 
 
 class BaseCollection:
@@ -1034,21 +1092,23 @@ class Collection(BaseCollection):
         input_hash = input_hash.hexdigest()
         cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
                                     "item")
+        cinput_hash = cuid = cetag = ctext = ctag = cstart = cend = None
         try:
             with open(os.path.join(cache_folder, href), "rb") as f:
-                cinput_hash, cetag, ctext, ctag, cstart, cend = pickle.load(f)
-        except (FileNotFoundError, pickle.UnpicklingError, ValueError) as e:
-            if isinstance(e, (pickle.UnpicklingError, ValueError)):
-                self.logger.warning(
-                    "Failed to load item cache entry %r in %r: %s",
-                    href, self.path, e, exc_info=True)
-            cinput_hash = cetag = ctext = ctag = cstart = cend = None
+                cinput_hash, cuid, cetag, ctext, ctag, cstart, cend = \
+                    pickle.load(f)
+        except FileNotFoundError as e:
+            pass
+        except (pickle.UnpicklingError, ValueError) as e:
+            self.logger.warning(
+                "Failed to load item cache entry %r in %r: %s",
+                href, self.path, e, exc_info=True)
         vobject_item = None
         if input_hash != cinput_hash:
             try:
                 vobject_item = Item(self, href=href,
                                     text=btext.decode(self.encoding)).item
-                check_item(vobject_item)
+                check_and_sanitize_item(vobject_item, uid=cuid)
             except Exception as e:
                 raise RuntimeError("Failed to load item %r in %r: %s" %
                                    (href, self.path, e)) from e
@@ -1056,6 +1116,7 @@ class Collection(BaseCollection):
             # The storage may have been edited externally.
             ctext = vobject_item.serialize()
             cetag = get_etag(ctext)
+            cuid = get_uid_from_object(vobject_item)
             try:
                 try:
                     ctag, cstart, cend = xmlutils.find_tag_and_time_range(
@@ -1080,7 +1141,7 @@ class Collection(BaseCollection):
                 # file.
                 with self._atomic_write(os.path.join(cache_folder, href),
                                         "wb") as f:
-                    pickle.dump((input_hash, cetag, ctext,
+                    pickle.dump((input_hash, cuid, cetag, ctext,
                                  ctag, cstart, cend), f)
             except PermissionError:
                 pass
@@ -1095,8 +1156,9 @@ class Collection(BaseCollection):
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
-        return Item(self, href=href, last_modified=last_modified, etag=cetag,
-                    text=ctext, item=vobject_item), (ctag, cstart, cend)
+        return Item(
+            self, href=href, last_modified=last_modified, etag=cetag,
+            text=ctext, item=vobject_item, uid=cuid), (ctag, cstart, cend)
 
     def get_multi2(self, hrefs):
         # It's faster to check for file name collissions here, because

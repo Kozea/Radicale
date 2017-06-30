@@ -815,8 +815,10 @@ class Application:
 
             try:
                 items = list(vobject.readComponents(content or ""))
-                for item in items:
-                    storage.check_item(item)
+                for i in items:
+                    storage.check_and_sanitize_item(
+                        i, is_collection=write_whole_collection, uid=item.uid
+                        if not write_whole_collection and item else None)
             except Exception as e:
                 self.logger.warning(
                     "Bad PUT request on %r: %s", path, e, exc_info=True)
