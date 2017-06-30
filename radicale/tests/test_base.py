@@ -43,9 +43,8 @@ class BaseRequestsMixIn:
         assert status == 303
         assert answer == "Redirected to .web"
         # Test the creation of the collection
-        self.request("MKCOL", "/calendar.ics/")
-        self.request(
-            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert "BEGIN:VCALENDAR" in answer
         assert "END:VCALENDAR" in answer
@@ -63,9 +62,8 @@ class BaseRequestsMixIn:
 
     def test_add_event(self):
         """Add an event."""
-        self.request("MKCOL", "/calendar.ics/")
-        self.request(
-            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
         event = get_file_content("event1.ics")
         path = "/calendar.ics/event1.ics"
         status, headers, answer = self.request("PUT", path, event)
@@ -79,9 +77,8 @@ class BaseRequestsMixIn:
 
     def test_add_todo(self):
         """Add a todo."""
-        self.request("MKCOL", "/calendar.ics/")
-        self.request(
-            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
         todo = get_file_content("todo1.ics")
         path = "/calendar.ics/todo1.ics"
         status, headers, answer = self.request("PUT", path, todo)
@@ -126,9 +123,8 @@ class BaseRequestsMixIn:
 
     def test_update(self):
         """Update an event."""
-        self.request("MKCOL", "/calendar.ics/")
-        self.request(
-            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
         event = get_file_content("event1.ics")
         path = "/calendar.ics/event1.ics"
         status, headers, answer = self.request("PUT", path, event)
@@ -192,9 +188,8 @@ class BaseRequestsMixIn:
 
     def test_delete(self):
         """Delete an event."""
-        self.request("MKCOL", "/calendar.ics/")
-        self.request(
-            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
         event = get_file_content("event1.ics")
         path = "/calendar.ics/event1.ics"
         status, headers, answer = self.request("PUT", path, event)
@@ -207,13 +202,15 @@ class BaseRequestsMixIn:
 
     def test_mkcalendar(self):
         """Make a calendar."""
-        self.request("MKCALENDAR", "/calendar.ics/")
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
         status, headers, answer = self.request("GET", "/calendar.ics/")
         assert status == 200
 
     def test_move(self):
         """Move a item."""
-        self.request("MKCALENDAR", "/calendar.ics/")
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
         event = get_file_content("event1.ics")
         path1 = "/calendar.ics/event1.ics"
         path2 = "/calendar.ics/event2.ics"
@@ -237,7 +234,7 @@ class BaseRequestsMixIn:
 
     def test_delete_collection(self):
         """Delete a collection."""
-        self.request("MKCOL", "/calendar.ics/")
+        self.request("MKCALENDAR", "/calendar.ics/")
         event = get_file_content("event1.ics")
         self.request("PUT", "/calendar.ics/event1.ics", event)
         status, headers, answer = self.request("DELETE", "/calendar.ics/")
@@ -248,7 +245,7 @@ class BaseRequestsMixIn:
 
     def test_delete_root_collection(self):
         """Delete the root collection."""
-        self.request("MKCOL", "/calendar.ics/")
+        self.request("MKCALENDAR", "/calendar.ics/")
         event = get_file_content("event1.ics")
         self.request("PUT", "/event1.ics", event)
         self.request("PUT", "/calendar.ics/event1.ics", event)
@@ -278,7 +275,8 @@ class BaseRequestsMixIn:
 
     def test_proppatch(self):
         """Write a property and read it back."""
-        self.request("MKCALENDAR", "/calendar.ics/")
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
         proppatch = get_file_content("proppatch1.xml")
         status, headers, answer = self.request(
             "PROPPATCH", "/calendar.ics/", proppatch)
@@ -295,7 +293,6 @@ class BaseRequestsMixIn:
 
     def test_put_whole_calendar_multiple_events_with_same_uid(self):
         """Add two events with the same UID."""
-        self.request("MKCOL", "/calendar.ics/")
         self.request("PUT", "/calendar.ics/", get_file_content("event2.ics"))
         status, headers, answer = self.request(
             "REPORT", "/calendar.ics/",
@@ -310,9 +307,9 @@ class BaseRequestsMixIn:
     def _test_filter(self, filters, kind="event", items=1):
         filters_text = "".join(
             "<C:filter>%s</C:filter>" % filter_ for filter_ in filters)
-        self.request("MKCOL", "/calendar.ics/")
-        status, _, _ = self.request(
-            "PUT", "/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        status, _, _ = self.request("DELETE", "/calendar.ics/")
+        assert status in (200, 404)
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status == 201
         for i in range(items):
             filename = "{}{}.ics".format(kind, i + 1)
@@ -1047,16 +1044,16 @@ class BaseRequestsMixIn:
     def test_fsync(self):
         """Create a directory and file with syncing enabled."""
         self.configuration["storage"]["filesystem_fsync"] = "True"
-        status, headers, answer = self.request("MKCALENDAR", "/calendar.ics/")
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status == 201
 
     def test_hook(self):
         """Run hook."""
         self.configuration["storage"]["hook"] = (
             "mkdir %s" % os.path.join("collection-root", "created_by_hook"))
-        status, headers, answer = self.request("MKCOL", "/calendar.ics/")
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status == 201
-        status, headers, answer = self.request("PROPFIND", "/created_by_hook/")
+        status, _, _ = self.request("PROPFIND", "/created_by_hook/")
         assert status == 207
 
     def test_hook_read_access(self):
@@ -1074,7 +1071,7 @@ class BaseRequestsMixIn:
         """Verify that the storage is locked when the hook runs."""
         self.configuration["storage"]["hook"] = (
             "flock -n .Radicale.lock || exit 0; exit 1")
-        status, headers, answer = self.request("MKCOL", "/calendar.ics/")
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status == 201
 
     def test_hook_principal_collection_creation(self):
@@ -1091,11 +1088,8 @@ class BaseRequestsMixIn:
     def test_hook_fail(self):
         """Verify that a request fails if the hook fails."""
         self.configuration["storage"]["hook"] = "exit 1"
-        try:
-            status, headers, answer = self.request("MKCOL", "/calendar.ics/")
-            assert status != 201
-        except Exception:
-            pass
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status != 201
 
     def test_custom_headers(self):
         if not self.configuration.has_section("headers"):
