@@ -1,6 +1,15 @@
 News
 ====
 
+2.1.1 - Wild Radish Again
+-------------------
+
+This release is compatible with version 2.0.0.
+
+* Add missing UIDs instead of failing
+* Improve error checking of calendar and addressbook objects
+* Fix upload of whole address books
+
 2.1.0 - Wild Radish
 -------------------
 
