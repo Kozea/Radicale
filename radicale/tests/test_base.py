@@ -180,6 +180,16 @@ class BaseRequestsMixIn:
         assert "\r\nUID:event\r\n" in answer and "\r\nUID:todo\r\n" in answer
         assert "\r\nUID:event1\r\n" not in answer
 
+    def test_put_whole_addressbook(self):
+        """Create and overwrite a whole addressbook."""
+        contacts = get_file_content("contact_multiple.vcf")
+        status, _, _ = self.request("PUT", "/contacts.vcf/", contacts)
+        assert status == 201
+        status, _, answer = self.request("GET", "/contacts.vcf/")
+        assert status == 200
+        assert ("\r\nUID:contact1\r\n" in answer and
+                "\r\nUID:contact2\r\n" in answer)
+
     def test_delete(self):
         """Delete an event."""
         self.request("MKCOL", "/calendar.ics/")
