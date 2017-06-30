@@ -283,10 +283,6 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
     """
     child = getattr(vobject_item, child_name.lower())
 
-    # TODO: Recurrences specified with RDATE
-    # (http://www.kanzaki.com/docs/ical/rdate.html) don't seem to work
-    # correct in VObject. getrruleset(addRDate=True) returns an empty generator
-    # if they are used.
     # TODO: Single recurrences can be overwritten by components with
     # RECURRENCE-ID (http://www.kanzaki.com/docs/ical/recurrenceId.html). They
     # may overwrite the start and end time. Currently these components and
@@ -298,9 +294,11 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
             first_dtstart = next(iter(child.getrruleset(addRDate=True)),
                                  None)
         except TypeError as e:
+            # TODO: The problem was fixed in VObject 0.9.5
             raise VObjectBugException(
                 "failed to call getrruleset: %s" % e) from e
         if first_dtstart is None:
+            # TODO: The problem was fixed in VObject 0.9.5
             raise VObjectBugException(
                 "empty iterator from getrruleset")
         if (hasattr(child, "rrule") and

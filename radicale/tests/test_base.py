@@ -560,9 +560,7 @@ class BaseRequestsMixIn:
               </C:comp-filter>
             </C:comp-filter>"""], items=7)
         assert "href>/calendar.ics/event6.ics</" not in answer
-        # HACK: VObject doesn't understand recurrence rules of event7.ics,
-        # it's always included.
-        # assert "href>/calendar.ics/event7.ics</" not in answer
+        assert "href>/calendar.ics/event7.ics</" not in answer
 
     def test_time_range_filter_events_rrule(self):
         """Report request with time-range filter on events with rrules."""
