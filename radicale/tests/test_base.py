@@ -92,6 +92,38 @@ class BaseRequestsMixIn:
         assert "Todo" in answer
         assert "UID:todo" in answer
 
+    def _create_addressbook(self, path):
+        return self.request(
+            "MKCOL", path, """\
+<?xml version="1.0" encoding="UTF-8" ?>
+<create xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
+  <set>
+    <prop>
+      <resourcetype>
+        <collection />
+        <CR:addressbook />
+      </resourcetype>
+    </prop>
+  </set>
+</create>""")
+
+    def test_add_contact(self):
+        """Add a contact."""
+        status, _, _ = self._create_addressbook("/contacts.vcf/")
+        assert status == 201
+        contact = get_file_content("contact1.vcf")
+        path = "/contacts.vcf/contact.vcf"
+        status, _, _ = self.request("PUT", path, contact)
+        assert status == 201
+        status, headers, answer = self.request("GET", path)
+        assert status == 200
+        assert "ETag" in headers.keys()
+        assert "VCARD" in answer
+        assert "UID:contact1" in answer
+        status, _, answer = self.request("GET", path)
+        assert status == 200
+        assert "UID:contact1" in answer
+
     def test_update(self):
         """Update an event."""
         self.request("MKCOL", "/calendar.ics/")
