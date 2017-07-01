@@ -104,7 +104,7 @@ class Web(BaseWeb):
             return NOT_FOUND
         if os.path.isdir(filesystem_path) and not path.endswith("/"):
             location = posixpath.basename(path) + "/"
-            return (client.SEE_OTHER,
+            return (client.FOUND,
                     {"Location": location, "Content-Type": "text/plain"},
                     "Redirected to %s" % location)
         if os.path.isdir(filesystem_path):

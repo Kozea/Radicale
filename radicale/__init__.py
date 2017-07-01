@@ -563,7 +563,7 @@ class Application:
             if not environ.get("PATH_INFO"):
                 web_path = posixpath.join(posixpath.basename(base_prefix),
                                           web_path)
-            return (client.SEE_OTHER,
+            return (client.FOUND,
                     {"Location": web_path, "Content-Type": "text/plain"},
                     "Redirected to %s" % web_path)
         # Dispatch .web URL to web module

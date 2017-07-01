@@ -40,16 +40,16 @@ class BaseRequestsMixIn:
     def test_root(self):
         """GET request at "/"."""
         status, _, answer = self.request("GET", "/")
-        assert status == 303
+        assert status == 302
         assert answer == "Redirected to .web"
 
     def test_script_name(self):
         """GET request at "/" with SCRIPT_NAME."""
         status, _, answer = self.request("GET", "/", SCRIPT_NAME="/radicale")
-        assert status == 303
+        assert status == 302
         assert answer == "Redirected to .web"
         status, _, answer = self.request("GET", "", SCRIPT_NAME="/radicale")
-        assert status == 303
+        assert status == 302
         assert answer == "Redirected to radicale/.web"
 
     def test_add_event(self):
@@ -312,7 +312,7 @@ class BaseRequestsMixIn:
 
     def test_head(self):
         status, _, _ = self.request("HEAD", "/")
-        assert status == 303
+        assert status == 302
 
     def test_options(self):
         status, headers, _ = self.request("OPTIONS", "/")
