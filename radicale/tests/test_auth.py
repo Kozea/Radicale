@@ -64,7 +64,7 @@ class TestBaseAuthRequests(BaseTest):
         for user, password, expected_status in (
                 ("tmp", "bepo", 207), ("tmp", "tmp", 401), ("tmp", "", 401),
                 ("unk", "unk", 401), ("unk", "", 401), ("", "", 401)):
-            status, headers, answer = self.request(
+            status, _, answer = self.request(
                 "PROPFIND", "/",
                 HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
                     ("%s:%s" % (user, password)).encode()).decode())
@@ -139,7 +139,7 @@ class TestBaseAuthRequests(BaseTest):
         """Custom authentication."""
         self.configuration["auth"]["type"] = "tests.custom.auth"
         self.application = Application(self.configuration, self.logger)
-        status, headers, answer = self.request(
+        status, _, answer = self.request(
             "PROPFIND", "/tmp", HTTP_AUTHORIZATION="Basic %s" %
             base64.b64encode(("tmp:").encode()).decode())
         assert status == 207
