@@ -1118,19 +1118,8 @@ class Collection(BaseCollection):
             cetag = get_etag(ctext)
             cuid = get_uid_from_object(vobject_item)
             try:
-                try:
-                    ctag, cstart, cend = xmlutils.find_tag_and_time_range(
-                        vobject_item)
-                except xmlutils.VObjectBugException as e:
-                    # HACK: Extraction of metadata failed, because of bugs in
-                    # VObject.
-                    self.logger.warning(
-                        "Failed to find tag and time range of item %r from %r "
-                        "(Bug in VObject): %s", href, self.path, e,
-                        exc_info=True)
-                    ctag = xmlutils.find_tag(vobject_item)
-                    cstart = xmlutils.TIMESTAMP_MIN
-                    cend = xmlutils.TIMESTAMP_MAX
+                ctag, cstart, cend = xmlutils.find_tag_and_time_range(
+                    vobject_item)
             except Exception as e:
                 raise RuntimeError("Failed to find tag and time range of item "
                                    "%r from %r: %s" % (href, self.path,

@@ -66,10 +66,6 @@ TIMESTAMP_MIN = math.floor(DATETIME_MIN.timestamp())
 TIMESTAMP_MAX = math.ceil(DATETIME_MAX.timestamp())
 
 
-class VObjectBugException(Exception):
-    """Exception for workarounds related to bugs in VObject."""
-
-
 def pretty_xml(element, level=0):
     """Indent an ElementTree ``element`` and its children."""
     if not level:
@@ -290,21 +286,12 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
     # recurrence should be ignored instead.
 
     def getrruleset(child):
-        try:
-            first_dtstart = next(iter(child.getrruleset(addRDate=True)),
-                                 None)
-        except TypeError as e:
-            # TODO: The problem was fixed in VObject 0.9.5
-            raise VObjectBugException(
-                "failed to call getrruleset: %s" % e) from e
-        if first_dtstart is None:
-            # TODO: The problem was fixed in VObject 0.9.5
-            raise VObjectBugException(
-                "empty iterator from getrruleset")
         if (hasattr(child, "rrule") and
                 ";UNTIL=" not in child.rrule.value.upper() and
                 ";COUNT=" not in child.rrule.value.upper()):
-            if infinity_fn(_date_to_datetime(first_dtstart)):
+            first_dtstart = next(iter(child.getrruleset(addRDate=True)), None)
+            if (first_dtstart is not None and
+                    infinity_fn(_date_to_datetime(first_dtstart))):
                 return (), True
         return child.getrruleset(addRDate=True), False
 
@@ -1137,12 +1124,6 @@ def report(base_prefix, path, xml_request, collection):
                 if not all(match(item, filter_[0]) for filter_ in filters
                            if filter_):
                     continue
-            except VObjectBugException as e:
-                # HACK: Just return all items that can't be filtered because
-                # of bugs in VObject.
-                collection.logger.warning(
-                    "Failed to filter item %r from %r (Bug in VObject): %s",
-                    item.href, collection.path, e, exc_info=True)
             except Exception as e:
                 raise RuntimeError("Failed to filter item %r from %r: %s" %
                                    (item.href, collection.path, e)) from e
