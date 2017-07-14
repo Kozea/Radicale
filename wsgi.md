@@ -8,7 +8,7 @@ Radicale is compatible with the WSGI specification. Use `radicale.wsgi` from
 the source code as the WSGI file.
 
 A configuration file can be set with the `RADICALE_CONFIG` environment variable,
-otherwise the default configuration is used.
+otherwise no configuration file is loaded and the default configuration is used.
 
 Be reminded that Radicale's default configuration enforces limits on the
 maximum upload file size.
