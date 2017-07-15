@@ -37,6 +37,13 @@ from radicale.auth import BaseAuth
 
 class Auth(BaseAuth):
     def is_authenticated(self, user, password):
+        # Example custom configuration option
+        foo = ""
+        if self.configuration.has_option("auth", "foo"):
+            foo = self.configuration.get("auth", "foo")
+        self.logger.info("Configuration option %r is %r", "foo", foo)
+
+        # Check authentication
         self.logger.info("Login attempt by %r with password %r",
                          user, password)
         return user == password
@@ -49,7 +56,13 @@ python3 -m pip install --upgrade .
 ```
 
 To make use this great creation in Radicale, set the configuration option
-`type` in the `auth` section to `radicale_silly_auth`.
+`type` in the `auth` section to `radicale_silly_auth`:
+
+```ini
+[auth]
+type = radicale_silly_auth
+foo = bar
+```
 
 You can uninstall the module with:
 ```shell
