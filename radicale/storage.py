@@ -362,7 +362,11 @@ class Item:
     def item(self):
         if self._item is None:
             try:
-                self._item = vobject.readOne(self._text)
+                items = tuple(vobject.readComponents(self._text))
+                if len(items) != 1:
+                    raise RuntimeError(
+                        "Content contains %d components" % len(items))
+                self._item = items[0]
             except Exception as e:
                 raise RuntimeError("Failed to parse item %r from %r: %s" %
                                    (self.href, self.collection.path, e)) from e

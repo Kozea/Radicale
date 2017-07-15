@@ -814,7 +814,10 @@ class Application:
                 return PRECONDITION_FAILED
 
             try:
-                items = list(vobject.readComponents(content or ""))
+                items = tuple(vobject.readComponents(content or ""))
+                if not write_whole_collection and len(items) != 1:
+                    raise RuntimeError(
+                        "Content contains %d components" % len(items))
                 for i in items:
                     storage.check_and_sanitize_item(
                         i, is_collection=write_whole_collection, uid=item.uid
