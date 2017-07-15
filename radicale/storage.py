@@ -688,11 +688,15 @@ class Collection(BaseCollection):
         if not cls.configuration.getboolean("storage", "filesystem_fsync"):
             return
         if os.name == "posix":
-            fd = os.open(path, 0)
             try:
-                cls._fsync(fd)
-            finally:
-                os.close(fd)
+                fd = os.open(path, 0)
+                try:
+                    cls._fsync(fd)
+                finally:
+                    os.close(fd)
+            except OSError as e:
+                raise RuntimeError("Fsync'ing directory %r failed: %s" %
+                                   (path, e)) from e
 
     @classmethod
     def _makedirs_synced(cls, filesystem_path):
