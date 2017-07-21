@@ -18,3 +18,8 @@ Found a bug? Want a new feature? Report a new issue on the
 Interested in hacking? Feel free to clone the
 [git repository on Github](https://github.com/Kozea/Radicale) if you want to
 add new features, fix bugs or update the documentation.
+
+## Documentation
+
+To change or complement the documentation create a pull request to
+[https://github.com/Kozea/Radicale/tree/gh-pages](https://github.com/Kozea/Radicale/tree/gh-pages).
