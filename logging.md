@@ -58,8 +58,8 @@ permissions accordingly.
 
 ### Timed rotation of disk log files
 
-An example **handler** configuration to write the log output to the file `/var/log/radicale/log` and rotate it .
-Replace the section `handle_file` from the file logging example:
+An example **handler** configuration to write the log output to the file `/var/log/radicale/log` and rotate it.
+Replace the section `handler_file` from the file logging example:
 ```ini
 [handler_file]
 class = handlers.TimedRotatingFileHandler
