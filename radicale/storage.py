@@ -167,6 +167,9 @@ def check_and_sanitize_item(vobject_item, is_collection=False, uid=None):
             vobject_item.add("UID").value = uid or random_uuid4()
         elif not object_uid:
             vobject_item.uid.value = uid or random_uuid4()
+    elif vobject_item.name == "VLIST":
+        # Custom format used by SOGo Connector to store lists of contacts
+        pass
     else:
         raise ValueError("Unknown item type: %r" % vobject_item.name)
 
