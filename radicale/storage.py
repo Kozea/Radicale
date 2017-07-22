@@ -414,10 +414,26 @@ class BaseCollection:
     """The sanitized path of the collection without leading or trailing ``/``.
     """
     path = ""
-    """The owner of the collection. (``path.split("/", maxsplit=1)[0]``)"""
-    owner = ""
-    """Collection is a principal. (``bool(path) and "/" not in path``)"""
-    is_principal = False
+
+    @property
+    def owner(self):
+        """The owner of the collection."""
+        return self.path.split("/", maxsplit=1)[0]
+
+    @property
+    def is_principal(self):
+        """Collection is a principal."""
+        return bool(self.path) and "/" not in self.path
+
+    @owner.setter
+    def owner(self, value):
+        # DEPRECATED: Included for compatibility reasons
+        pass
+
+    @is_principal.setter
+    def is_principal(self, value):
+        # DEPRECATED: Included for compatibility reasons
+        pass
 
     @classmethod
     def discover(cls, path, depth="0"):
@@ -706,10 +722,6 @@ class Collection(BaseCollection):
         self._filesystem_path = path_to_filesystem(folder, self.path)
         self._props_path = os.path.join(
             self._filesystem_path, ".Radicale.props")
-        self.owner = self.path.split("/", maxsplit=1)[0]
-        if principal is None:
-            principal = bool(self.path) and "/" not in self.path
-        self.is_principal = principal
         self._meta_cache = None
         self._etag_cache = None
         if self._item_cache_tag is None:
