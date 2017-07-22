@@ -358,7 +358,11 @@ class Item:
 
     def serialize(self):
         if self._text is None:
-            self._text = self.item.serialize()
+            try:
+                self._text = self.item.serialize()
+            except Exception as e:
+                raise RuntimeError("Failed to serialize item %r from %r: %s" %
+                                   (self.href, self.collection.path, e)) from e
         return self._text
 
     @property
@@ -1120,12 +1124,12 @@ class Collection(BaseCollection):
                 vobject_item = Item(self, href=href,
                                     text=btext.decode(self.encoding)).item
                 check_and_sanitize_item(vobject_item, uid=cuid)
+                # Serialize the object again, to normalize the text
+                # representation. The storage may have been edited externally.
+                ctext = vobject_item.serialize()
             except Exception as e:
                 raise RuntimeError("Failed to load item %r in %r: %s" %
                                    (href, self.path, e)) from e
-            # Serialize the object again, to normalize the text representation.
-            # The storage may have been edited externally.
-            ctext = vobject_item.serialize()
             cetag = get_etag(ctext)
             cuid = get_uid_from_object(vobject_item)
             try:
