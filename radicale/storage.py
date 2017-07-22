@@ -459,6 +459,7 @@ class BaseCollection:
         etag = md5()
         for item in self.get_all():
             etag.update((item.href + "/" + item.etag).encode("utf-8"))
+        etag.update(json.dumps(self.get_meta(), sort_keys=True).encode())
         return '"%s"' % etag.hexdigest()
 
     @classmethod
