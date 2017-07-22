@@ -621,6 +621,7 @@ class Application:
             # TODO: use this?
             # timezone = props.get("C:calendar-timezone")
             try:
+                storage.check_and_sanitize_props(props)
                 self.Collection.create_collection(path, props=props)
             except ValueError as e:
                 self.logger.warning(
@@ -647,6 +648,7 @@ class Application:
                 return WEBDAV_PRECONDITION_FAILED
             props = xmlutils.props_from_request(xml_content)
             try:
+                storage.check_and_sanitize_props(props)
                 self.Collection.create_collection(path, props=props)
             except ValueError as e:
                 self.logger.warning(
@@ -764,8 +766,13 @@ class Application:
                 return WEBDAV_PRECONDITION_FAILED
             headers = {"DAV": DAV_HEADERS,
                        "Content-Type": "text/xml; charset=%s" % self.encoding}
-            xml_answer = xmlutils.proppatch(base_prefix, path, xml_content,
-                                            item)
+            try:
+                xml_answer = xmlutils.proppatch(base_prefix, path, xml_content,
+                                                item)
+            except ValueError as e:
+                self.logger.warning(
+                    "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
+                return BAD_REQUEST
             return (client.MULTI_STATUS, headers,
                     self._write_xml_content(xml_answer))
 
@@ -841,18 +848,23 @@ class Application:
                 return BAD_REQUEST
 
             if write_whole_collection:
+                props = {"tag": tag} if tag else {}
                 try:
+                    storage.check_and_sanitize_props(props)
                     new_item = self.Collection.create_collection(
-                        path, items, {"tag": tag} if tag else None)
+                        path, items, props)
                 except ValueError as e:
                     self.logger.warning(
                         "Bad PUT request on %r: %s", path, e, exc_info=True)
                     return BAD_REQUEST
             else:
-                if tag and not parent_item.get_meta("tag"):
-                    parent_item.set_meta({"tag": tag})
                 href = posixpath.basename(path.strip("/"))
                 try:
+                    if tag and not parent_item.get_meta("tag"):
+                        new_props = parent_item.get_meta()
+                        new_props["tag"] = tag
+                        storage.check_and_sanitize_props(new_props)
+                        parent_item.set_meta_all(new_props)
                     new_item = parent_item.upload(href, items[0])
                 except ValueError as e:
                     self.logger.warning(

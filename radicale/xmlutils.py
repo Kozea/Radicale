@@ -998,12 +998,18 @@ def proppatch(base_prefix, path, xml_request, collection):
     href.text = _href(base_prefix, path)
     response.append(href)
 
-    for short_name in props_to_remove:
-        props_to_set[short_name] = ""
-    collection.set_meta(props_to_set)
-
-    for short_name in props_to_set:
+    new_props = collection.get_meta()
+    for short_name, value in props_to_set.items():
+        new_props[short_name] = value
         _add_propstat_to(response, short_name, 200)
+    for short_name in props_to_remove:
+        try:
+            del new_props[short_name]
+        except KeyError:
+            pass
+        _add_propstat_to(response, short_name, 200)
+    storage.check_and_sanitize_props(new_props)
+    collection.set_meta_all(new_props)
 
     return multistatus
 

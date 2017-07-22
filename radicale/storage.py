@@ -178,6 +178,13 @@ def check_and_sanitize_item(vobject_item, is_collection=False, uid=None,
                          (vobject_item.name, repr(tag) if tag else "generic"))
 
 
+def check_and_sanitize_props(props):
+    """Check collection properties for common errors."""
+    tag = props.get("tag")
+    if tag and tag not in ("VCALENDAR", "VADDRESSBOOK"):
+        raise ValueError("Unsupported collection tag: %r" % tag)
+
+
 def random_uuid4():
     """Generate a pseudo-random UUID"""
     r = "%016x" % getrandbits(128)
@@ -589,8 +596,23 @@ class BaseCollection:
         ``props`` a dict with updates for properties. If a value is empty, the
         property must be deleted.
 
+        DEPRECATED: use ``set_meta_all`` instead
+
         """
         raise NotImplementedError
+
+    def set_meta_all(self, props):
+        """Set metadata values for collection.
+
+        ``props`` a dict with values for properties.
+
+        """
+        delta_props = self.get_meta()
+        for key in delta_props.keys():
+            if key not in props:
+                delta_props[key] = ""
+        delta_props.update(props)
+        self.set_meta(self, delta_props)
 
     @property
     def last_modified(self):
@@ -850,7 +872,7 @@ class Collection(BaseCollection):
             tmp_filesystem_path = os.path.join(tmp_dir, "collection")
             os.makedirs(tmp_filesystem_path)
             self = cls("/", folder=tmp_filesystem_path)
-            self.set_meta(props)
+            self.set_meta_all(props)
 
             if collection:
                 if props.get("tag") == "VCALENDAR":
@@ -1292,23 +1314,20 @@ class Collection(BaseCollection):
         # reuse cached value if the storage is read-only
         if self._writer or self._meta_cache is None:
             try:
-                with open(self._props_path, encoding=self.encoding) as f:
-                    self._meta_cache = json.load(f)
-            except FileNotFoundError:
-                self._meta_cache = {}
+                try:
+                    with open(self._props_path, encoding=self.encoding) as f:
+                        self._meta_cache = json.load(f)
+                except FileNotFoundError:
+                    self._meta_cache = {}
+                check_and_sanitize_props(self._meta_cache)
             except ValueError as e:
-                raise RuntimeError("Failed to load properties of collect"
-                                   "ion %r: %s" % (self.path, e)) from e
+                raise RuntimeError("Failed to load properties of collection "
+                                   "%r: %s" % (self.path, e)) from e
         return self._meta_cache.get(key) if key else self._meta_cache
 
-    def set_meta(self, props):
-        new_props = self.get_meta()
-        new_props.update(props)
-        for key in tuple(new_props.keys()):
-            if not new_props[key]:
-                del new_props[key]
+    def set_meta_all(self, props):
         with self._atomic_write(self._props_path, "w") as f:
-            json.dump(new_props, f)
+            json.dump(props, f)
 
     @property
     def last_modified(self):
