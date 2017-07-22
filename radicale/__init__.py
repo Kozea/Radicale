@@ -289,7 +289,7 @@ class Application:
                 write_allowed_items.append(item)
             self.logger.debug(
                 "%s has %s access to %s",
-                "%r" % user if user else "anonymous user",
+                repr(user) if user else "anonymous user",
                 " and ".join(text_status) if text_status else "NO", target)
         return read_allowed_items, write_allowed_items
 
@@ -355,7 +355,7 @@ class Application:
 
         remote_host = "unknown"
         if environ.get("REMOTE_HOST"):
-            remote_host = "%r" % environ["REMOTE_HOST"]
+            remote_host = repr(environ["REMOTE_HOST"])
         elif environ.get("REMOTE_ADDR"):
             remote_host = environ["REMOTE_ADDR"]
         if environ.get("HTTP_X_FORWARDED_FOR"):
@@ -464,7 +464,7 @@ class Application:
                 environ, base_prefix, path, user)
             if (status, headers, answer) == NOT_ALLOWED:
                 self.logger.info("Access to %r denied for %s", path,
-                                 "%r" % user if user else "anonymous user")
+                                 repr(user) if user else "anonymous user")
         else:
             status, headers, answer = NOT_ALLOWED
 
