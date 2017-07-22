@@ -445,7 +445,10 @@ class BaseCollection:
     @property
     def etag(self):
         """Encoded as quoted-string (see RFC 2616)."""
-        return get_etag(self.serialize())
+        etag = md5()
+        for item in self.get_all():
+            etag.update((item.href + "/" + item.etag).encode("utf-8"))
+        return '"%s"' % etag.hexdigest()
 
     @classmethod
     def create_collection(cls, href, collection=None, props=None):
@@ -1328,10 +1331,7 @@ class Collection(BaseCollection):
     def etag(self):
         # reuse cached value if the storage is read-only
         if self._writer or self._etag_cache is None:
-            etag = md5()
-            for item in self.get_all():
-                etag.update((item.href + "/" + item.etag).encode("utf-8"))
-            self._etag_cache = '"%s"' % etag.hexdigest()
+            self._etag_cache = super().etag
         return self._etag_cache
 
     _lock = threading.Lock()
