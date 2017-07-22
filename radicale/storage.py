@@ -700,7 +700,9 @@ class Collection(BaseCollection):
             folder = self._get_collection_root_folder()
         # Path should already be sanitized
         self.path = sanitize_path(path).strip("/")
-        self.encoding = self.configuration.get("encoding", "stock")
+        self._encoding = self.configuration.get("encoding", "stock")
+        # DEPRECATED: Use ``self._encoding`` instead
+        self.encoding = self._encoding
         self._filesystem_path = path_to_filesystem(folder, self.path)
         self._props_path = os.path.join(
             self._filesystem_path, ".Radicale.props")
@@ -731,7 +733,7 @@ class Collection(BaseCollection):
         directory = os.path.dirname(path)
         tmp = NamedTemporaryFile(
             mode=mode, dir=directory, delete=False, prefix=".Radicale.tmp-",
-            newline=newline, encoding=None if "b" in mode else self.encoding)
+            newline=newline, encoding=None if "b" in mode else self._encoding)
         try:
             yield tmp
             self._fsync(tmp.fileno())
@@ -932,7 +934,7 @@ class Collection(BaseCollection):
                     raise UnsafePathError(href)
                 path = path_to_filesystem(self._filesystem_path, href)
                 fs.append(stack.enter_context(
-                    open(path, "w", encoding=self.encoding, newline="")))
+                    open(path, "w", encoding=self._encoding, newline="")))
                 fs[-1].write(item.serialize())
             # sync everything at once because it's slightly faster.
             for f in fs:
@@ -1194,7 +1196,7 @@ class Collection(BaseCollection):
         if input_hash != cinput_hash:
             try:
                 vobject_item = Item(self, href=href,
-                                    text=btext.decode(self.encoding)).item
+                                    text=btext.decode(self._encoding)).item
                 check_and_sanitize_item(vobject_item, uid=cuid,
                                         tag=self.get_meta("tag"))
                 # Serialize the object again, to normalize the text
@@ -1316,7 +1318,7 @@ class Collection(BaseCollection):
         if self._writer or self._meta_cache is None:
             try:
                 try:
-                    with open(self._props_path, encoding=self.encoding) as f:
+                    with open(self._props_path, encoding=self._encoding) as f:
                         self._meta_cache = json.load(f)
                 except FileNotFoundError:
                     self._meta_cache = {}
