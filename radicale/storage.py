@@ -1328,7 +1328,7 @@ class Collection(BaseCollection):
 
     def set_meta_all(self, props):
         with self._atomic_write(self._props_path, "w") as f:
-            json.dump(props, f)
+            json.dump(props, f, sort_keys=True)
 
     @property
     def last_modified(self):
