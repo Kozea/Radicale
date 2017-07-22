@@ -824,7 +824,7 @@ class Application:
                 items = tuple(vobject.readComponents(content or ""))
                 if not write_whole_collection and len(items) != 1:
                     raise RuntimeError(
-                        "Content contains %d components" % len(items))
+                        "Item contains %d components" % len(items))
                 if write_whole_collection or not parent_item.get_meta("tag"):
                     content_type = environ.get("CONTENT_TYPE",
                                                "").split(";")[0]
@@ -837,6 +837,9 @@ class Application:
                         tag = "VADDRESSBOOK"
                 else:
                     tag = parent_item.get_meta("tag")
+                if tag == "VCALENDAR" and len(items) > 1:
+                    raise RuntimeError("VCALENDAR collection contains %d "
+                                       "components" % len(items))
                 for i in items:
                     storage.check_and_sanitize_item(
                         i, is_collection=write_whole_collection, uid=item.uid
