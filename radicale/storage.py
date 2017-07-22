@@ -116,7 +116,8 @@ def load(configuration, logger):
     return CollectionCopy
 
 
-def check_and_sanitize_item(vobject_item, is_collection=False, uid=None):
+def check_and_sanitize_item(vobject_item, is_collection=False, uid=None,
+                            tag=None):
     """Check vobject items for common errors and add missing UIDs.
 
     ``multiple`` indicates that the vobject_item contains unrelated components.
@@ -124,7 +125,9 @@ def check_and_sanitize_item(vobject_item, is_collection=False, uid=None):
     If ``uid`` is not set, the UID is generated randomly.
 
     """
-    if vobject_item.name == "VCALENDAR":
+    if tag and tag not in ("VCALENDAR", "VADDRESSBOOK"):
+        raise ValueError("Unsupported collection tag: %r" % tag)
+    if vobject_item.name == "VCALENDAR" and tag == "VCALENDAR":
         component_name = None
         object_uid = None
         object_uid_set = False
@@ -160,18 +163,19 @@ def check_and_sanitize_item(vobject_item, is_collection=False, uid=None):
             except Exception as e:
                 raise ValueError("invalid recurrence rules in %s" %
                                  component.name) from e
-    elif vobject_item.name == "VCARD":
+    elif vobject_item.name == "VCARD" and tag == "VADDRESSBOOK":
         # https://tools.ietf.org/html/rfc6352#section-5.1
         object_uid = get_uid(vobject_item)
         if object_uid is None:
             vobject_item.add("UID").value = uid or random_uuid4()
         elif not object_uid:
             vobject_item.uid.value = uid or random_uuid4()
-    elif vobject_item.name == "VLIST":
+    elif vobject_item.name == "VLIST" and tag == "VADDRESSBOOK":
         # Custom format used by SOGo Connector to store lists of contacts
         pass
     else:
-        raise ValueError("Unknown item type: %r" % vobject_item.name)
+        raise ValueError("Item type %r not supported in %s collection" %
+                         (vobject_item.name, repr(tag) if tag else "generic"))
 
 
 def random_uuid4():
@@ -1168,7 +1172,8 @@ class Collection(BaseCollection):
             try:
                 vobject_item = Item(self, href=href,
                                     text=btext.decode(self.encoding)).item
-                check_and_sanitize_item(vobject_item, uid=cuid)
+                check_and_sanitize_item(vobject_item, uid=cuid,
+                                        tag=self.get_meta("tag"))
                 # Serialize the object again, to normalize the text
                 # representation. The storage may have been edited externally.
                 ctext = vobject_item.serialize()
