@@ -596,14 +596,56 @@ class BaseCollection:
     def serialize(self):
         """Get the unicode string representing the whole collection."""
         if self.get_meta("tag") == "VCALENDAR":
-            collection = vobject.iCalendar()
+            in_vcalendar = False
+            vtimezones = ""
+            included_tzids = set()
+            vtimezone = []
+            tzid = None
+            components = ""
+            # Concatenate all child elements of VCALENDAR from all items
+            # together, while preventing duplicated VTIMEZONE entries.
+            # VTIMEZONEs are only distinguished by their TZID, if different
+            # timezones share the same TZID this produces errornous ouput.
+            # VObject fails at this too.
             for item in self.get_all():
-                for content in ("vevent", "vtodo", "vjournal"):
-                    for component in getattr(item, "%s_list" % content, ()):
-                        collection.add(component)
-            return collection.serialize()
+                depth = 0
+                for line in item.serialize().split("\r\n"):
+                    if line.startswith("BEGIN:"):
+                        depth += 1
+                    if depth == 1 and line == "BEGIN:VCALENDAR":
+                        in_vcalendar = True
+                    elif in_vcalendar:
+                        if depth == 1 and line.startswith("END:"):
+                            in_vcalendar = False
+                        if depth == 2 and line == "BEGIN:VTIMEZONE":
+                            vtimezone.append(line)
+                        elif vtimezone:
+                            vtimezone.append(line)
+                            if depth == 2 and line.startswith("TZID:"):
+                                tzid = line[len("TZID:"):]
+                            elif depth == 2 and line.startswith("END:"):
+                                if tzid is None or tzid not in included_tzids:
+                                    if vtimezones:
+                                        vtimezones += "\r\n"
+                                    vtimezones += "\r\n".join(vtimezone)
+                                    included_tzids.add(tzid)
+                                vtimezone.clear()
+                                tzid = None
+                        elif depth >= 2:
+                            if components:
+                                components += "\r\n"
+                            components += line
+                    if line.startswith("END:"):
+                        depth -= 1
+            return "\r\n".join(filter(bool, (
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//PYVOBJECT//NONSGML Version 1//EN",
+                vtimezones,
+                components,
+                "END:VCALENDAR")))
         elif self.get_meta("tag") == "VADDRESSBOOK":
-            return "".join(item.serialize() for item in self.get_all())
+            return "".join((item.serialize() for item in self.get_all()))
         return ""
 
     @classmethod
@@ -1271,61 +1313,6 @@ class Collection(BaseCollection):
             (os.path.join(self._filesystem_path, h) for h in self.list()))
         last = max(map(os.path.getmtime, relevant_files))
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(last))
-
-    def serialize(self):
-        # serialize collection
-        if self.get_meta("tag") == "VCALENDAR":
-            in_vcalendar = False
-            vtimezones = ""
-            included_tzids = set()
-            vtimezone = []
-            tzid = None
-            components = ""
-            # Concatenate all child elements of VCALENDAR from all items
-            # together, while preventing duplicated VTIMEZONE entries.
-            # VTIMEZONEs are only distinguished by their TZID, if different
-            # timezones share the same TZID this produces errornous ouput.
-            # VObject fails at this too.
-            for item in self.get_all():
-                depth = 0
-                for line in item.serialize().split("\r\n"):
-                    if line.startswith("BEGIN:"):
-                        depth += 1
-                    if depth == 1 and line == "BEGIN:VCALENDAR":
-                        in_vcalendar = True
-                    elif in_vcalendar:
-                        if depth == 1 and line.startswith("END:"):
-                            in_vcalendar = False
-                        if depth == 2 and line == "BEGIN:VTIMEZONE":
-                            vtimezone.append(line)
-                        elif vtimezone:
-                            vtimezone.append(line)
-                            if depth == 2 and line.startswith("TZID:"):
-                                tzid = line[len("TZID:"):]
-                            elif depth == 2 and line.startswith("END:"):
-                                if tzid is None or tzid not in included_tzids:
-                                    if vtimezones:
-                                        vtimezones += "\r\n"
-                                    vtimezones += "\r\n".join(vtimezone)
-                                    included_tzids.add(tzid)
-                                vtimezone.clear()
-                                tzid = None
-                        elif depth >= 2:
-                            if components:
-                                components += "\r\n"
-                            components += line
-                    if line.startswith("END:"):
-                        depth -= 1
-            return "\r\n".join(filter(bool, (
-                "BEGIN:VCALENDAR",
-                "VERSION:2.0",
-                "PRODID:-//PYVOBJECT//NONSGML Version 1//EN",
-                vtimezones,
-                components,
-                "END:VCALENDAR")))
-        elif self.get_meta("tag") == "VADDRESSBOOK":
-            return "".join((item.serialize() for item in self.get_all()))
-        return ""
 
     @property
     def etag(self):
