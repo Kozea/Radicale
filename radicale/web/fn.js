@@ -339,14 +339,24 @@ function create_edit_collection(user, password, collection, create, callback) {
                      '<set>' +
                          '<prop>' +
                              (create ? '<resourcetype><collection />' + resourcetype + '</resourcetype>' : '') +
-                             '<C:supported-calendar-component-set>' + components + '</C:supported-calendar-component-set>' +
-                             '<displayname>' + displayname + '</displayname>' +
-                             '<I:calendar-color>' + calendar_color + '</I:calendar-color>' +
-                             '<INF:addressbook-color>' + addressbook_color + '</INF:addressbook-color>' +
-                             '<CR:addressbook-description>' + addressbook_description + '</CR:addressbook-description>' +
-                             '<C:calendar-description>' + calendar_description + '</C:calendar-description>' +
+                             (components ? '<C:supported-calendar-component-set>' + components + '</C:supported-calendar-component-set>' : '') +
+                             (displayname ? '<displayname>' + displayname + '</displayname>' : '') +
+                             (calendar_color ? '<I:calendar-color>' + calendar_color + '</I:calendar-color>' : '') +
+                             (addressbook_color ? '<INF:addressbook-color>' + addressbook_color + '</INF:addressbook-color>' : '') +
+                             (addressbook_description ? '<CR:addressbook-description>' + addressbook_description + '</CR:addressbook-description>' : '') +
+                             (calendar_description ? '<C:calendar-description>' + calendar_description + '</C:calendar-description>' : '') +
                          '</prop>' +
                      '</set>' +
+                     (!create ? ('<remove>' +
+                         '<prop>' +
+                             (!components ? '<C:supported-calendar-component-set />' : '') +
+                             (!displayname ? '<displayname />' : '') +
+                             (!calendar_color ? '<I:calendar-color />' : '') +
+                             (!addressbook_color ? '<INF:addressbook-color />' : '') +
+                             (!addressbook_description ? '<CR:addressbook-description />' : '') +
+                             (!calendar_description ? '<C:calendar-description />' : '') +
+                         '</prop>' +
+                     '</remove>'): '') +
                  '</' + xml_request + '>');
     return request;
 }
