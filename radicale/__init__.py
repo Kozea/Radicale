@@ -818,21 +818,27 @@ class Application:
                 if not write_whole_collection and len(items) != 1:
                     raise RuntimeError(
                         "Content contains %d components" % len(items))
+                if write_whole_collection or not parent_item.get_meta("tag"):
+                    content_type = environ.get("CONTENT_TYPE",
+                                               "").split(";")[0]
+                    tags = {value: key
+                            for key, value in xmlutils.MIMETYPES.items()}
+                    tag = tags.get(content_type)
+                    if items and items[0].name == "VCALENDAR":
+                        tag = "VCALENDAR"
+                    elif items and items[0].name in ("VCARD", "VLIST"):
+                        tag = "VADDRESSBOOK"
+                else:
+                    tag = parent_item.get_meta("tag")
                 for i in items:
                     storage.check_and_sanitize_item(
                         i, is_collection=write_whole_collection, uid=item.uid
-                        if not write_whole_collection and item else None)
+                        if not write_whole_collection and item else None,
+                        tag=tag)
             except Exception as e:
                 self.logger.warning(
                     "Bad PUT request on %r: %s", path, e, exc_info=True)
                 return BAD_REQUEST
-            content_type = environ.get("CONTENT_TYPE", "").split(";")[0]
-            tags = {value: key for key, value in xmlutils.MIMETYPES.items()}
-            tag = tags.get(content_type)
-            if items and items[0].name == "VCALENDAR":
-                tag = "VCALENDAR"
-            elif items and items[0].name == "VCARD":
-                tag = "VADDRESSBOOK"
 
             if write_whole_collection:
                 try:
