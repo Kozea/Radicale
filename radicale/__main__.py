@@ -54,44 +54,75 @@ def export_storage(config, path, debug=False):
     temp = tempfile.mkdtemp(prefix="Radicale.export.")
     try:
         os.mkdir(os.path.join(temp, "root"))
-        remaining_collections = list(ical.Collection.from_path("/", depth="0"))
+        try:
+            remaining_collections = list(
+                ical.Collection.from_path("/", depth="0"))
+        except Exception as e:
+            print("ERROR: Failed to find child collections of %r: %s" %
+                  ("/", e))
+            if debug:
+                traceback.print_exc()
+            exit(1)
         while remaining_collections:
             collection = remaining_collections.pop(0)
             try:
-                filesystem_path = pathutils.path_to_filesystem(
-                    collection.path,
-                    os.path.join(temp, "root", "collection-root"))
-            except ValueError as e:
-                print(
-                    "WARNING: Skipping unsafe collection %r: %s" %
-                    ("/" + collection.path, e))
+                try:
+                    filesystem_path = pathutils.path_to_filesystem(
+                        collection.path,
+                        os.path.join(temp, "root", "collection-root"))
+                except ValueError as e:
+                    print(
+                        "WARNING: Skipping unsafe collection %r: %s" %
+                        ("/" + collection.path, e))
+                    if debug:
+                        traceback.print_exc()
+                    continue
+                try:
+                    remaining_collections.extend(collection.children(
+                        collection.path))
+                except Exception as e:
+                    print("ERROR: Failed to find child collections of %r: %s" %
+                          ("/", e))
+                    if debug:
+                        traceback.print_exc()
+                    exit(1)
+                os.makedirs(filesystem_path)
+                with collection.props as props:
+                    if props:
+                        props_filename = os.path.join(
+                            filesystem_path, ".Radicale.props")
+                        with open(props_filename, "w") as f:
+                            json.dump(props, f)
+                for component in collection.components:
+                    try:
+                        if not pathutils.is_safe_filesystem_path_component(
+                                component.name):
+                            print("WARNING: Skipping unsafe item '%s' from "
+                                  "collection %r" %
+                                  ("/" + component.name, collection.path))
+                            continue
+                        items = [component]
+                        if collection.resource_type == "calendar":
+                            items.extend(collection.timezones)
+                        text = ical.serialize(
+                            collection.tag, collection.headers, items)
+                        component_filename = os.path.join(
+                            filesystem_path, component.name)
+                        with open(component_filename, "wb") as f:
+                            f.write(text.encode("utf-8"))
+                    except Exception as e:
+                        print("ERROR: Failed to export component %r from "
+                              "collection %r: %s" %
+                              (component.name, "/" + collection.path, e))
+                        if debug:
+                            traceback.print_exc()
+                        exit(1)
+            except Exception as e:
+                print("ERROR: Failed to export collection %r: %s" %
+                      ("/" + collection.path, e))
                 if debug:
                     traceback.print_exc()
-                continue
-            remaining_collections.extend(collection.children(collection.path))
-            os.makedirs(filesystem_path)
-            with collection.props as props:
-                if props:
-                    props_filename = os.path.join(
-                        filesystem_path, ".Radicale.props")
-                    with open(props_filename, "w") as f:
-                        json.dump(props, f)
-            for component in collection.components:
-                if not pathutils.is_safe_filesystem_path_component(
-                        component.name):
-                    print("WARNING: Skipping unsafe item '%s' from "
-                          "collection %r" %
-                          ("/" + component.name, collection.path))
-                    continue
-                items = [component]
-                if collection.resource_type == "calendar":
-                    items.extend(collection.timezones)
-                text = ical.serialize(
-                    collection.tag, collection.headers, items)
-                component_filename = os.path.join(
-                    filesystem_path, component.name)
-                with open(component_filename, "wb") as f:
-                    f.write(text.encode("utf-8"))
+                exit(1)
         try:
             shutil.move(os.path.join(temp, "root"), path)
         except (OSError, shutil.Error) as e:
