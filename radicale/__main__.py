@@ -30,6 +30,7 @@ import sys
 import optparse
 import signal
 import threading
+import traceback
 from wsgiref.simple_server import make_server
 
 from . import (
@@ -40,7 +41,7 @@ from . import (
 # pylint: disable=R0912,R0914
 
 
-def export_storage(config, path):
+def export_storage(config, path, debug=False):
     """Export the storage for Radicale 2.0.0."""
     import json
     import shutil
@@ -60,10 +61,12 @@ def export_storage(config, path):
                 filesystem_path = pathutils.path_to_filesystem(
                     collection.path,
                     os.path.join(temp, "root", "collection-root"))
-            except ValueError:
+            except ValueError as e:
                 print(
-                    "WARNING: Skipping unsafe collection '/%s'" %
-                    collection.path)
+                    "WARNING: Skipping unsafe collection %r: %s" %
+                    ("/" + collection.path, e))
+                if debug:
+                    traceback.print_exc()
                 continue
             remaining_collections.extend(collection.children(collection.path))
             os.makedirs(filesystem_path)
@@ -76,9 +79,9 @@ def export_storage(config, path):
             for component in collection.components:
                 if not pathutils.is_safe_filesystem_path_component(
                         component.name):
-                    print(
-                        "WARNING: Skipping unsafe item '%s' from collection"
-                        " '/%s'" % (component.name, collection.path))
+                    print("WARNING: Skipping unsafe item '%s' from "
+                          "collection %r" %
+                          ("/" + component.name, collection.path))
                     continue
                 items = [component]
                 if collection.resource_type == "calendar":
@@ -91,8 +94,10 @@ def export_storage(config, path):
                     f.write(text.encode("utf-8"))
         try:
             shutil.move(os.path.join(temp, "root"), path)
-        except OSError as e:
-            print("ERROR: Can't create '%s' directory: %s" % (path, e))
+        except (OSError, shutil.Error) as e:
+            print("ERROR: Can't create %r directory: %s" % (path, e))
+            if debug:
+                traceback.print_exc()
             exit(1)
     finally:
         shutil.rmtree(temp)
@@ -159,7 +164,7 @@ def run():
         if not configuration_found:
             print("WARNING: Configuration file '%s' not found" %
                   options.config)
-        export_storage(config, options.export_storage)
+        export_storage(config, options.export_storage, debug=options.debug)
         exit(0)
 
     # Start logging
