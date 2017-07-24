@@ -49,7 +49,7 @@ def export_storage(config, path, debug=False):
     from . import ical, pathutils, storage
     storage.load()
 
-    print("INFO: Exporting storage for Radicale 2.0.0 to '%s'" % path)
+    print("INFO: Exporting storage for Radicale 2.0.0 to %r" % path)
 
     temp = tempfile.mkdtemp(prefix="Radicale.export.")
     try:
@@ -58,8 +58,7 @@ def export_storage(config, path, debug=False):
             remaining_collections = list(
                 ical.Collection.from_path("/", depth="0"))
         except Exception as e:
-            print("ERROR: Failed to find child collections of %r: %s" %
-                  ("/", e))
+            print("ERROR: Failed to find collection %r: %s" % ("/", e))
             if debug:
                 traceback.print_exc()
             exit(1)
@@ -85,7 +84,7 @@ def export_storage(config, path, debug=False):
                         collection.path))
                 except Exception as e:
                     print("ERROR: Failed to find child collections of %r: %s" %
-                          ("/", e))
+                          ("/" + collection.path, e))
                     if debug:
                         traceback.print_exc()
                     exit(1)
@@ -103,9 +102,9 @@ def export_storage(config, path, debug=False):
                     try:
                         if not pathutils.is_safe_filesystem_path_component(
                                 component.name):
-                            print("WARNING: Skipping unsafe item '%s' from "
+                            print("WARNING: Skipping unsafe item %r from "
                                   "collection %r" %
-                                  ("/" + component.name, collection.path))
+                                  (component.name, "/" + collection.path))
                             continue
                         items = [component]
                         if collection.resource_type == "calendar":
