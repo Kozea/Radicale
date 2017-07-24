@@ -65,6 +65,9 @@ def export_storage(config, path, debug=False):
             exit(1)
         while remaining_collections:
             collection = remaining_collections.pop(0)
+            if debug:
+                print("DEBUG: Exporting collection %r" %
+                      ("/" + collection.path))
             try:
                 try:
                     filesystem_path = pathutils.path_to_filesystem(
@@ -94,6 +97,9 @@ def export_storage(config, path, debug=False):
                         with open(props_filename, "w") as f:
                             json.dump(props, f)
                 for component in collection.components:
+                    if debug:
+                        print("DEBUG: Exporting component %r of collection %r"
+                              % (component.name, "/" + collection.path))
                     try:
                         if not pathutils.is_safe_filesystem_path_component(
                                 component.name):
