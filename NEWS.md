@@ -1,6 +1,19 @@
 News
 ====
 
+2.1.2 - Wild Radish
+-------------------
+
+This feature is not compatible with the 1.x.x versions. See
+http://radicale.org/1to2/ if you want to switch from 1.x.x to
+2.x.x.
+
+* Remove workarounds for bugs in VObject < 0.9.5
+* Error checking of collection tags and associated components
+* Improve error checking of uploaded collections and components
+* Don't delete empty collection properties implicitly
+* Improve logging of VObject serialization
+
 2.1.1 - Wild Radish Again
 -------------------
 
