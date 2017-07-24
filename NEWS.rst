@@ -3,6 +3,11 @@
 ======
 
 
+1.1.6 - Sixth Law of Nature
+===========================
+
+* Improve logging for ``--export-storage``
+
 1.1.5 - Sixth Law of Nature
 ===========================
 
