@@ -130,8 +130,11 @@ def export_storage(config, path, debug=False):
                     traceback.print_exc()
                 exit(1)
         try:
+            # This check is prone to a race condition
+            if os.path.exists(path):
+                raise Exception("Destination path %r already exists" % path)
             shutil.move(os.path.join(temp, "root"), path)
-        except (OSError, shutil.Error) as e:
+        except Exception as e:
             print("ERROR: Can't create %r directory: %s" % (path, e))
             if debug:
                 traceback.print_exc()
