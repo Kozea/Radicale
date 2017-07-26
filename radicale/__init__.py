@@ -154,7 +154,8 @@ class HTTPSServer(HTTPServer):
             cert_reqs=ssl.CERT_REQUIRED if self.certificate_authority else
             ssl.CERT_NONE,
             ca_certs=self.certificate_authority or None,
-            ssl_version=self.protocol, ciphers=self.ciphers)
+            ssl_version=self.protocol, ciphers=self.ciphers,
+            do_handshake_on_connect=False)
 
         self.server_bind()
         self.server_activate()
@@ -168,6 +169,19 @@ class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
 
 class ThreadedHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
     def process_request_thread(self, request, client_address):
+        try:
+            try:
+                request.do_handshake()
+            except socket.timeout:
+                raise
+            except Exception as e:
+                raise RuntimeError("SSL handshake failed: %s" % e) from e
+        except Exception:
+            try:
+                self.handle_error(request, client_address)
+            finally:
+                self.shutdown_request(request)
+            return
         with self.connections_guard:
             return super().process_request_thread(request, client_address)
 
