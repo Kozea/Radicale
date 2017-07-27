@@ -1182,6 +1182,29 @@ class BaseRequestsMixIn:
         assert status == 404
         assert headers.get("test") == "123"
 
+    def test_missing_uid(self):
+        """Verify that missing UIDs are added in a stable manner."""
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
+        event_without_uid = get_file_content("event1.ics").replace(
+            "UID:event1\n", "")
+        assert "UID" not in event_without_uid
+        path = "/calendar.ics/event1.ics"
+        status, _, _ = self.request("PUT", path, event_without_uid)
+        assert status == 201
+        status, _, answer = self.request("GET", path)
+        assert status == 200
+        uid = None
+        for line in answer.split("\r\n"):
+            if line.startswith("UID:"):
+                uid = line[len("UID:"):]
+        assert uid
+        status, _, _ = self.request("PUT", path, event_without_uid)
+        assert status == 201
+        status, _, answer = self.request("GET", path)
+        assert status == 200
+        assert "UID:%s\r\n" % uid in answer
+
 
 class BaseFileSystemTest(BaseTest):
     """Base class for filesystem backend tests."""
