@@ -1179,6 +1179,55 @@ class Collection(BaseCollection):
         item, metadata = self._get_with_metadata(href, verify_href=verify_href)
         return item
 
+    def _item_cache_hash(self, raw_text):
+        _hash = md5()
+        _hash.update(self._item_cache_tag)
+        _hash.update(raw_text)
+        return _hash.hexdigest()
+
+    def _store_item_cache(self, href, vobject_item, cache_hash=None):
+        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
+                                    "item")
+        text = vobject_item.serialize()
+        if cache_hash is None:
+            cache_hash = self._item_cache_hash(text.encode(self._encoding))
+        etag = get_etag(text)
+        uid = get_uid_from_object(vobject_item)
+        tag, start, end = xmlutils.find_tag_and_time_range(vobject_item)
+        self._makedirs_synced(cache_folder)
+        try:
+            # Race: Other processes might have created and locked the
+            # file.
+            with self._atomic_write(os.path.join(cache_folder, href),
+                                    "wb") as f:
+                pickle.dump((cache_hash, uid, etag, text,
+                             tag, start, end), f)
+        except PermissionError:
+            pass
+        return cache_hash, uid, etag, text, tag, start, end
+
+    def _load_item_cache(self, href):
+        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
+                                    "item")
+        cache_hash = uid = etag = text = tag = start = end = None
+        try:
+            with open(os.path.join(cache_folder, href), "rb") as f:
+                cache_hash, uid, etag, text, tag, start, end = pickle.load(f)
+        except FileNotFoundError as e:
+            pass
+        except (pickle.UnpicklingError, ValueError) as e:
+            self.logger.warning(
+                "Failed to load item cache entry %r in %r: %s",
+                href, self.path, e, exc_info=True)
+        return cache_hash, uid, etag, text, tag, start, end
+
+    def _clean_item_cache(self):
+        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
+                                    "item")
+        self._clean_cache(cache_folder, (
+            href for href in scandir(cache_folder) if not
+            os.path.isfile(os.path.join(self._filesystem_path, href))))
+
     def _get_with_metadata(self, href, verify_href=True):
         """Like ``get`` but additonally returns the following metadata:
         tag, start, end: see ``xmlutils.find_tag_and_time_range``. If
@@ -1197,74 +1246,41 @@ class Collection(BaseCollection):
             path = os.path.join(self._filesystem_path, href)
         try:
             with open(path, "rb") as f:
-                btext = f.read()
+                raw_text = f.read()
         except (FileNotFoundError, IsADirectoryError):
             return None, None
         # The hash of the component in the file system. This is used to check,
         # if the entry in the cache is still valid.
-        input_hash = md5()
-        input_hash.update(self._item_cache_tag)
-        input_hash.update(btext)
-        input_hash = input_hash.hexdigest()
-        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
-                                    "item")
-        cinput_hash = cuid = cetag = ctext = ctag = cstart = cend = None
-        try:
-            with open(os.path.join(cache_folder, href), "rb") as f:
-                cinput_hash, cuid, cetag, ctext, ctag, cstart, cend = \
-                    pickle.load(f)
-        except FileNotFoundError as e:
-            pass
-        except (pickle.UnpicklingError, ValueError) as e:
-            self.logger.warning(
-                "Failed to load item cache entry %r in %r: %s",
-                href, self.path, e, exc_info=True)
+        input_hash = self._item_cache_hash(raw_text)
+        cache_hash, uid, etag, text, tag, start, end = self._load_item_cache(
+            href)
         vobject_item = None
-        if input_hash != cinput_hash:
+        if input_hash != cache_hash:
             try:
-                vobject_item = Item(self, href=href,
-                                    text=btext.decode(self._encoding)).item
-                check_and_sanitize_item(vobject_item, uid=cuid,
+                vobject_items = tuple(vobject.readComponents(
+                    raw_text.decode(self._encoding)))
+                if len(vobject_items) != 1:
+                    raise RuntimeError(
+                        "Content contains %d components" % len(vobject_items))
+                vobject_item = vobject_items[0]
+                check_and_sanitize_item(vobject_item, uid=uid,
                                         tag=self.get_meta("tag"))
-                # Serialize the object again, to normalize the text
-                # representation. The storage may have been edited externally.
-                ctext = vobject_item.serialize()
+                cache_hash, uid, etag, text, tag, start, end = \
+                    self._store_item_cache(href, vobject_item, input_hash)
             except Exception as e:
                 raise RuntimeError("Failed to load item %r in %r: %s" %
                                    (href, self.path, e)) from e
-            cetag = get_etag(ctext)
-            cuid = get_uid_from_object(vobject_item)
-            try:
-                ctag, cstart, cend = xmlutils.find_tag_and_time_range(
-                    vobject_item)
-            except Exception as e:
-                raise RuntimeError("Failed to find tag and time range of item "
-                                   "%r from %r: %s" % (href, self.path,
-                                                       e)) from e
-            self._makedirs_synced(cache_folder)
-            try:
-                # Race: Other processes might have created and locked the
-                # file.
-                with self._atomic_write(os.path.join(cache_folder, href),
-                                        "wb") as f:
-                    pickle.dump((input_hash, cuid, cetag, ctext,
-                                 ctag, cstart, cend), f)
-            except PermissionError:
-                pass
-            # Clean cache entries (max once per request)
-            # This happens once after new uploads, or if the data in the
-            # file system was edited externally.
+            # Clean cache entriesn once after the data in the file system was
+            # edited externally.
             if not self._item_cache_cleaned:
                 self._item_cache_cleaned = True
-                self._clean_cache(cache_folder, (
-                    href for href in scandir(cache_folder) if not
-                    os.path.isfile(os.path.join(self._filesystem_path, href))))
+                self._clean_item_cache()
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
         return Item(
-            self, href=href, last_modified=last_modified, etag=cetag,
-            text=ctext, item=vobject_item, uid=cuid), (ctag, cstart, cend)
+            self, href=href, last_modified=last_modified, etag=etag,
+            text=text, item=vobject_item, uid=uid), (tag, start, end)
 
     def get_multi2(self, hrefs):
         # It's faster to check for file name collissions here, because
