@@ -941,14 +941,27 @@ class Collection(BaseCollection):
 
         """
         with contextlib.ExitStack() as stack:
+            cache_folder = os.path.join(self._filesystem_path,
+                                        ".Radicale.cache", "item")
+            self._makedirs_synced(cache_folder)
             fs = []
-            for href, item in vobject_items.items():
+            for href, vobject_item in vobject_items.items():
                 if not is_safe_filesystem_path_component(href):
                     raise UnsafePathError(href)
+                try:
+                    cache_content = self._item_cache_content(href,
+                                                             vobject_item)
+                    _, _, _, text, _, _, _ = cache_content
+                except Exception as e:
+                    raise ValueError("Failed to store item %r in temporary "
+                                     "collection: %s" % (href, e)) from e
+                fs.append(stack.enter_context(
+                    open(os.path.join(cache_folder, href), "wb")))
+                pickle.dump(cache_content, fs[-1])
                 path = path_to_filesystem(self._filesystem_path, href)
                 fs.append(stack.enter_context(
                     open(path, "w", encoding=self._encoding, newline="")))
-                fs[-1].write(item.serialize())
+                fs[-1].write(text)
             # sync everything at once because it's slightly faster.
             for f in fs:
                 self._fsync(f.fileno())
@@ -1184,26 +1197,29 @@ class Collection(BaseCollection):
         _hash.update(raw_text)
         return _hash.hexdigest()
 
-    def _store_item_cache(self, href, vobject_item, cache_hash=None):
-        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
-                                    "item")
+    def _item_cache_content(self, href, vobject_item, cache_hash=None):
         text = vobject_item.serialize()
         if cache_hash is None:
             cache_hash = self._item_cache_hash(text.encode(self._encoding))
         etag = get_etag(text)
         uid = get_uid_from_object(vobject_item)
         tag, start, end = xmlutils.find_tag_and_time_range(vobject_item)
+        return cache_hash, uid, etag, text, tag, start, end
+
+    def _store_item_cache(self, href, vobject_item, cache_hash=None):
+        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
+                                    "item")
+        content = self._item_cache_content(href, vobject_item, cache_hash)
         self._makedirs_synced(cache_folder)
         try:
             # Race: Other processes might have created and locked the
             # file.
             with self._atomic_write(os.path.join(cache_folder, href),
                                     "wb") as f:
-                pickle.dump((cache_hash, uid, etag, text,
-                             tag, start, end), f)
+                pickle.dump(content, f)
         except PermissionError:
             pass
-        return cache_hash, uid, etag, text, tag, start, end
+        return content
 
     def _load_item_cache(self, href):
         cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
@@ -1319,10 +1335,20 @@ class Collection(BaseCollection):
     def upload(self, href, vobject_item):
         if not is_safe_filesystem_path_component(href):
             raise UnsafePathError(href)
+        try:
+            cache_hash, uid, etag, text, _, _, _ = self._store_item_cache(
+                href, vobject_item)
+        except Exception as e:
+            raise ValueError("Failed to store item %r in collection %r: %s" %
+                             (href, self.path, e)) from e
         path = path_to_filesystem(self._filesystem_path, href)
-        item = Item(self, href=href, item=vobject_item)
         with self._atomic_write(path, newline="") as fd:
-            fd.write(item.serialize())
+            fd.write(text)
+        # Clean the cache after the actual item is stored, or the cache entry
+        # will be removed again.
+        self._clean_item_cache()
+        item = Item(self, href=href, etag=etag, text=text, item=vobject_item,
+                    uid=uid)
         # Track the change
         self._update_history_etag(href, item)
         self._clean_history_cache()
