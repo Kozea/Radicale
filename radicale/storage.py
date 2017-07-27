@@ -733,6 +733,7 @@ class Collection(BaseCollection):
                     "VObject version not found: %s", e, exc_info=True)
                 vobject_version = ""
             Collection._item_cache_tag = vobject_version.encode() + b"\0"
+        self._item_cache_cleaned = False
 
     @classmethod
     def _get_collection_root_folder(cls):
@@ -1172,8 +1173,6 @@ class Collection(BaseCollection):
                         "Skipping item %r in %r", href, self.path)
                 continue
             yield href
-
-    _item_cache_cleaned = False
 
     def get(self, href, verify_href=True):
         item, metadata = self._get_with_metadata(href, verify_href=verify_href)
