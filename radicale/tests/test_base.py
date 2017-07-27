@@ -1168,6 +1168,44 @@ class BaseRequestsMixIn:
         status, _, _ = self.request("PROPFIND", "/")
         assert status == 207
 
+    def test_custom_headers(self):
+        if not self.configuration.has_section("headers"):
+            self.configuration.add_section("headers")
+        self.configuration.set("headers", "test", "123")
+        # Test if header is set on success
+        status, headers, _ = self.request("OPTIONS", "/")
+        assert status == 200
+        assert headers.get("test") == "123"
+        # Test if header is set on failure
+        status, headers, _ = self.request(
+            "GET", "/.well-known/does not exist")
+        assert status == 404
+        assert headers.get("test") == "123"
+
+
+class BaseFileSystemTest(BaseTest):
+    """Base class for filesystem backend tests."""
+    storage_type = None
+
+    def setup(self):
+        self.configuration = config.load()
+        self.configuration["storage"]["type"] = self.storage_type
+        self.colpath = tempfile.mkdtemp()
+        self.configuration["storage"]["filesystem_folder"] = self.colpath
+        # Disable syncing to disk for better performance
+        self.configuration["storage"]["filesystem_fsync"] = "False"
+        # Required on Windows, doesn't matter on Unix
+        self.configuration["storage"]["filesystem_close_lock_file"] = "True"
+        self.application = Application(self.configuration, self.logger)
+
+    def teardown(self):
+        shutil.rmtree(self.colpath)
+
+
+class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
+    """Test BaseRequests on multifilesystem."""
+    storage_type = "multifilesystem"
+
     def test_fsync(self):
         """Create a directory and file with syncing enabled."""
         self.configuration["storage"]["filesystem_fsync"] = "True"
@@ -1216,44 +1254,6 @@ class BaseRequestsMixIn:
         self.configuration["storage"]["hook"] = "exit 1"
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status != 201
-
-    def test_custom_headers(self):
-        if not self.configuration.has_section("headers"):
-            self.configuration.add_section("headers")
-        self.configuration.set("headers", "test", "123")
-        # Test if header is set on success
-        status, headers, _ = self.request("OPTIONS", "/")
-        assert status == 200
-        assert headers.get("test") == "123"
-        # Test if header is set on failure
-        status, headers, _ = self.request(
-            "GET", "/.well-known/does not exist")
-        assert status == 404
-        assert headers.get("test") == "123"
-
-
-class BaseFileSystemTest(BaseTest):
-    """Base class for filesystem backend tests."""
-    storage_type = None
-
-    def setup(self):
-        self.configuration = config.load()
-        self.configuration["storage"]["type"] = self.storage_type
-        self.colpath = tempfile.mkdtemp()
-        self.configuration["storage"]["filesystem_folder"] = self.colpath
-        # Disable syncing to disk for better performance
-        self.configuration["storage"]["filesystem_fsync"] = "False"
-        # Required on Windows, doesn't matter on Unix
-        self.configuration["storage"]["filesystem_close_lock_file"] = "True"
-        self.application = Application(self.configuration, self.logger)
-
-    def teardown(self):
-        shutil.rmtree(self.colpath)
-
-
-class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
-    """Test BaseRequests on multifilesystem."""
-    storage_type = "multifilesystem"
 
 
 class TestCustomStorageSystem(BaseFileSystemTest):
