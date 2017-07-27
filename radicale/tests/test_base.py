@@ -1255,6 +1255,25 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status != 201
 
+    def test_item_cache_rebuild(self):
+        """Delete the item cache and verify that it is rebuild."""
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        status, _, _ = self.request("PUT", path, event)
+        assert status == 201
+        status, _, answer1 = self.request("GET", path)
+        assert status == 200
+        cache_folder = os.path.join(self.colpath, "collection-root",
+                                    "calendar.ics", ".Radicale.cache", "item")
+        assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
+        shutil.rmtree(cache_folder)
+        status, _, answer2 = self.request("GET", path)
+        assert status == 200
+        assert answer1 == answer2
+        assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
+
 
 class TestCustomStorageSystem(BaseFileSystemTest):
     """Test custom backend loading."""
