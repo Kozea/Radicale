@@ -963,6 +963,21 @@ class Collection(BaseCollection):
         cls._sync_directory(to_collection._filesystem_path)
         if item.collection._filesystem_path != to_collection._filesystem_path:
             cls._sync_directory(item.collection._filesystem_path)
+        # Move the item cache entry
+        cache_folder = os.path.join(item.collection._filesystem_path,
+                                    ".Radicale.cache", "item")
+        to_cache_folder = os.path.join(to_collection._filesystem_path,
+                                       ".Radicale.cache", "item")
+        cls._makedirs_synced(to_cache_folder)
+        try:
+            os.replace(os.path.join(cache_folder, item.href),
+                       os.path.join(to_cache_folder, to_href))
+        except FileNotFoundError:
+            pass
+        else:
+            cls._makedirs_synced(to_cache_folder)
+            if cache_folder != to_cache_folder:
+                cls._makedirs_synced(cache_folder)
         # Track the change
         to_collection._update_history_etag(to_href, item)
         item.collection._update_history_etag(item.href, None)
