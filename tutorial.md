@@ -49,6 +49,8 @@ C:\Users\User> python -m pip install --upgrade radicale
 C:\Users\User> python -m radicale --config "" --storage-filesystem-folder=~/radicale/collections
 ```
 
+If you are using PowerShell replace ``--config ""`` with ``--config '""'``.
+
 Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser!
 You can login with any username and password.
 
