@@ -256,11 +256,9 @@ def serve(configuration, logger):
         try:
             rlist, _, xlist = select.select(
                 sockets, [], sockets, select_timeout)
-        except select.error:
-            continue
-        except KeyboardInterrupt:
-            shutdown()
-            continue
+        except (KeyboardInterrupt, select.error):
+            # SIGINT is handled by signal handler above
+            rlist, xlist = [], []
         if xlist:
             raise RuntimeError("unhandled socket error")
         if rlist:
