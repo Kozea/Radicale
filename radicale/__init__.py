@@ -458,7 +458,13 @@ class Application:
                         None)
                 if not principal:
                     with self.Collection.acquire_lock("w", user):
-                        self.Collection.create_collection(principal_path)
+                        try:
+                            self.Collection.create_collection(principal_path)
+                        except ValueError as e:
+                            self.logger.warning(
+                                "Failed to create principal collection %r: %s",
+                                principal_path, e)
+                            is_authenticated = False
             else:
                 self.logger.warning("Access to principal path %r denied by "
                                     "rights backend", principal_path)
