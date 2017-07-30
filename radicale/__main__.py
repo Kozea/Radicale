@@ -245,9 +245,9 @@ def serve(configuration, logger):
     if shutdown_program_socket_out:
         # Use socket pair to get notified of program shutdown
         sockets.append(shutdown_program_socket_out)
-        select_timeout = None
-    else:
-        # Fallback to busy waiting
+    select_timeout = None
+    if not shutdown_program_socket_out or os.name == "nt":
+        # Fallback to busy waiting. (select.select blocks SIGINT on Windows.)
         select_timeout = 1.0
     if configuration.getboolean("server", "daemon"):
         daemonize(configuration, logger)
