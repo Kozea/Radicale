@@ -118,7 +118,7 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
                 self.max_connections)
         else:
             # use dummy context manager
-            self.connections_guard = contextlib.suppress()
+            self.connections_guard = contextlib.ExitStack()
 
     def get_request(self):
         # Set timeout for client
