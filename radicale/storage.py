@@ -1299,17 +1299,15 @@ class Collection(BaseCollection):
             href)
         vobject_item = None
         if input_hash != cache_hash:
-            # Lock the item cache to prevent multpile processes from generating
-            # the same data in parallel. This is only needed for performance.
-            if self._lock.locked() == "w":
-                # The access is already exclusive, use dummy context manager.
-                lock = contextlib.suppress()
-            else:
-                lock = self._acquire_cache_lock("item")
-            with lock:
-                # Check if another process created the file in the meantime.
-                cache_hash, uid, etag, text, tag, start, end = \
-                    self._load_item_cache(href)
+            with contextlib.ExitStack() as lock_stack:
+                # Lock the item cache to prevent multpile processes from
+                # generating the same data in parallel.
+                # This improves the performance for multiple requests.
+                if self._lock.locked() == "r":
+                    lock_stack.enter_context(self._acquire_cache_lock("item"))
+                    # Check if another process created the file in the meantime
+                    cache_hash, uid, etag, text, tag, start, end = \
+                        self._load_item_cache(href)
                 if input_hash != cache_hash:
                     try:
                         vobject_items = tuple(vobject.readComponents(
