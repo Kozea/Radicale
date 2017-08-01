@@ -461,9 +461,8 @@ class Application:
                         try:
                             self.Collection.create_collection(principal_path)
                         except ValueError as e:
-                            self.logger.warning(
-                                "Failed to create principal collection %r: %s",
-                                principal_path, e)
+                            self.logger.warning("Failed to create principal "
+                                                "collection %r: %s", user, e)
                             is_authenticated = False
             else:
                 self.logger.warning("Access to principal path %r denied by "
