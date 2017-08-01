@@ -17,10 +17,10 @@ RUN apk add --no-cache \
       build-base \
       libffi-dev
 # Install Radicale
-RUN wget --quiet https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz && \
-    tar xzf ${VERSION}.tar.gz && \
+RUN wget --quiet https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz --output-document=radicale.tar.gz && \
+    tar xzf radicale.tar.gz && \
     python3 -m pip install ./Radicale-${VERSION} && \
-    rm -r ${VERSION}.tar.gz Radicale-${VERSION}
+    rm -r radicale.tar.gz Radicale-${VERSION}
 # Persistent storage for data (Mount it somewhere on the host!)
 VOLUME /var/lib/radicale
 # Configuration data (Put the "config" file here!)
