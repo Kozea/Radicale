@@ -1,6 +1,18 @@
 News
 ====
 
+2.1.3 - Wild Radish
+-------------------
+
+This feature is not compatible with the 1.x.x versions. See
+http://radicale.org/1to2/ if you want to switch from 1.x.x to
+2.x.x.
+
+* Enable timeout for SSL handshakes and move them out of the main thread
+* Create cache entries during upload of items
+* Stop built-in server on Windows when Ctrl+C is pressed
+* Prevent slow down when multiple requests hit a collection during cache warm-up
+
 2.1.2 - Wild Radish
 -------------------
 
