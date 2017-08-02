@@ -703,8 +703,9 @@ class BaseCollection:
 class Collection(BaseCollection):
     """Collection stored in several files per calendar."""
 
-    def __init__(self, path, principal=None, folder=None):
-        # DEPRECATED: Remove useless principal attribute
+    def __init__(self, path, principal=None, folder=None,
+                 filesystem_path=None):
+        # DEPRECATED: Remove principal and folder attributes
         if folder is None:
             folder = self._get_collection_root_folder()
         # Path should already be sanitized
@@ -712,7 +713,9 @@ class Collection(BaseCollection):
         self._encoding = self.configuration.get("encoding", "stock")
         # DEPRECATED: Use ``self._encoding`` instead
         self.encoding = self._encoding
-        self._filesystem_path = path_to_filesystem(folder, self.path)
+        if filesystem_path is None:
+            filesystem_path = path_to_filesystem(folder, self.path)
+        self._filesystem_path = filesystem_path
         self._props_path = os.path.join(
             self._filesystem_path, ".Radicale.props")
         self._meta_cache = None
@@ -871,7 +874,7 @@ class Collection(BaseCollection):
             # The temporary directory itself can't be renamed
             tmp_filesystem_path = os.path.join(tmp_dir, "collection")
             os.makedirs(tmp_filesystem_path)
-            self = cls("/", folder=tmp_filesystem_path)
+            self = cls(sane_path, filesystem_path=tmp_filesystem_path)
             self.set_meta_all(props)
 
             if collection:
@@ -937,8 +940,9 @@ class Collection(BaseCollection):
                                                              vobject_item)
                     _, _, _, text, _, _, _ = cache_content
                 except Exception as e:
-                    raise ValueError("Failed to store item %r in temporary "
-                                     "collection: %s" % (href, e)) from e
+                    raise ValueError(
+                        "Failed to store item %r in temporary collection %r: "
+                        "%s" % (href, self.path, e)) from e
                 fs.append(stack.enter_context(
                     open(os.path.join(cache_folder, href), "wb")))
                 pickle.dump(cache_content, fs[-1])
