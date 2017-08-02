@@ -273,6 +273,8 @@ Default:
 ### type
 The backend that provides the web interface of Radicale.
 
+Available backends:
+
 `none`
 : Just shows the message "Radicale works!".
 
