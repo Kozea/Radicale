@@ -1,7 +1,7 @@
 FROM alpine:latest
 
 # Version of Radicale (e.g. 2.0.0)
-ENV VERSION master
+ARG VERSION=master
 
 # Install dependencies
 RUN apk add --no-cache \
@@ -17,8 +17,8 @@ RUN apk add --no-cache \
       build-base \
       libffi-dev
 # Install Radicale
-ADD https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz radicale.tar.gz
-RUN tar xzf radicale.tar.gz && \
+RUN wget --quiet https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz --output-document=radicale.tar.gz && \
+    tar xzf radicale.tar.gz && \
     python3 -m pip install ./Radicale-${VERSION} && \
     rm -r radicale.tar.gz Radicale-${VERSION}
 # Persistent storage for data (Mount it somewhere on the host!)
