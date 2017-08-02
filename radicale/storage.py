@@ -43,7 +43,6 @@ from itertools import chain, groupby
 from random import getrandbits
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
-import pkg_resources
 import vobject
 
 if sys.version_info >= (3, 5):
@@ -704,8 +703,6 @@ class BaseCollection:
 class Collection(BaseCollection):
     """Collection stored in several files per calendar."""
 
-    _item_cache_tag = None
-
     def __init__(self, path, principal=None, folder=None):
         # DEPRECATED: Remove useless principal attribute
         if folder is None:
@@ -720,15 +717,6 @@ class Collection(BaseCollection):
             self._filesystem_path, ".Radicale.props")
         self._meta_cache = None
         self._etag_cache = None
-        if self._item_cache_tag is None:
-            try:
-                vobject_version = pkg_resources.require("vobject")[0].version
-                self.logger.debug("VObject version: %r", vobject_version)
-            except Exception as e:
-                self.logger.warning(
-                    "VObject version not found: %s", e, exc_info=True)
-                vobject_version = ""
-            Collection._item_cache_tag = vobject_version.encode() + b"\0"
         self._item_cache_cleaned = False
 
     @classmethod
@@ -1189,7 +1177,6 @@ class Collection(BaseCollection):
 
     def _item_cache_hash(self, raw_text):
         _hash = md5()
-        _hash.update(self._item_cache_tag)
         _hash.update(raw_text)
         return _hash.hexdigest()
 
