@@ -279,44 +279,44 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
     """
     child = getattr(vobject_item, child_name.lower())
 
-    # TODO: Single recurrences can be overwritten by components with
-    # RECURRENCE-ID (http://www.kanzaki.com/docs/ical/recurrenceId.html). They
-    # may overwrite the start and end time. Currently these components and
-    # the overwritten recurrences are both considered. The overwritten
-    # recurrence should be ignored instead.
-
-    def getrruleset(child):
+    def getrruleset(child, ignore=()):
         if (hasattr(child, "rrule") and
                 ";UNTIL=" not in child.rrule.value.upper() and
                 ";COUNT=" not in child.rrule.value.upper()):
-            first_dtstart = next(iter(child.getrruleset(addRDate=True)), None)
-            if (first_dtstart is not None and
-                    infinity_fn(_date_to_datetime(first_dtstart))):
-                return (), True
-        return child.getrruleset(addRDate=True), False
+            for dtstart in child.getrruleset(addRDate=True):
+                if dtstart in ignore:
+                    continue
+                if infinity_fn(_date_to_datetime(dtstart)):
+                    return (), True
+                break
+        return filter(lambda dtstart: dtstart not in ignore,
+                      child.getrruleset(addRDate=True)), False
 
     def get_children(components):
         main = None
+        recurrences = []
         for comp in components:
             if hasattr(comp, "recurrence_id") and comp.recurrence_id.value:
+                recurrences.append(comp.recurrence_id.value)
                 if comp.rruleset:
                     # Prevent possible infinite loop
                     raise ValueError("Overwritten recurrence with RRULESET")
-                yield comp, True
+                yield comp, True, ()
             else:
                 if main is not None:
                     raise ValueError("Multiple main components")
                 main = comp
-        yield main, False
+        yield main, False, recurrences
 
     # Comments give the lines in the tables of the specification
     if child_name == "VEVENT":
-        for child, recurrence in get_children(vobject_item.vevent_list):
+        for child, recurrence, recurrences in get_children(
+                vobject_item.vevent_list):
             # TODO: check if there's a timezone
             dtstart = child.dtstart.value
 
             if child.rruleset:
-                dtstarts, infinity = getrruleset(child)
+                dtstarts, infinity = getrruleset(child, recurrences)
                 if infinity:
                     return
             else:
@@ -362,7 +362,8 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
                         return
 
     elif child_name == "VTODO":
-        for child, recurrence in get_children(vobject_item.vtodo_list):
+        for child, recurrence, recurrences in get_children(
+                vobject_item.vtodo_list):
             dtstart = getattr(child, "dtstart", None)
             duration = getattr(child, "duration", None)
             due = getattr(child, "due", None)
@@ -386,7 +387,7 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
                 created = _date_to_datetime(created.value)
 
             if child.rruleset:
-                reference_dates, infinity = getrruleset(child)
+                reference_dates, infinity = getrruleset(child, recurrences)
                 if infinity:
                     return
             else:
@@ -461,13 +462,14 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
                         return
 
     elif child_name == "VJOURNAL":
-        for child, recurrence in get_children(vobject_item.vjournal_list):
+        for child, recurrence, recurrences in get_children(
+                vobject_item.vjournal_list):
             dtstart = getattr(child, "dtstart", None)
 
             if dtstart is not None:
                 dtstart = dtstart.value
                 if child.rruleset:
-                    dtstarts, infinity = getrruleset(child)
+                    dtstarts, infinity = getrruleset(child, recurrences)
                     if infinity:
                         return
                 else:
