@@ -736,7 +736,11 @@ class Collection(BaseCollection):
             newline=newline, encoding=None if "b" in mode else self._encoding)
         try:
             yield tmp
-            self._fsync(tmp.fileno())
+            try:
+                self._fsync(tmp.fileno())
+            except OSError as e:
+                raise RuntimeError("Fsync'ing file %r failed: %s" %
+                                   (path, e)) from e
             tmp.close()
             os.replace(tmp.name, path)
         except:
@@ -952,7 +956,11 @@ class Collection(BaseCollection):
                 fs[-1].write(text)
             # sync everything at once because it's slightly faster.
             for f in fs:
-                self._fsync(f.fileno())
+                try:
+                    self._fsync(f.fileno())
+                except OSError as e:
+                    raise RuntimeError("Fsync'ing file %r failed: %s" %
+                                       (f.name, e)) from e
         self._sync_directory(self._filesystem_path)
 
     @classmethod
