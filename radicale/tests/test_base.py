@@ -401,15 +401,15 @@ class BaseRequestsMixIn:
         assert status == 200
         assert answer.count("BEGIN:VEVENT") == 2
 
-    def _test_filter(self, filters, kind="event", items=1):
+    def _test_filter(self, filters, kind="event", items=(1,)):
         filters_text = "".join(
             "<C:filter>%s</C:filter>" % filter_ for filter_ in filters)
         status, _, _ = self.request("DELETE", "/calendar.ics/")
         assert status in (200, 404)
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status == 201
-        for i in range(items):
-            filename = "{}{}.ics".format(kind, i + 1)
+        for i in items:
+            filename = "{}{}.ics".format(kind, i)
             event = get_file_content(filename)
             status, _, _ = self.request(
                 "PUT", "/calendar.ics/%s" % filename, event)
@@ -621,7 +621,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20130801T000000Z" end="20131001T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "event", items=5)
+            </C:comp-filter>"""], "event", items=range(1, 6))
         assert "href>/calendar.ics/event1.ics</" in answer
         assert "href>/calendar.ics/event2.ics</" in answer
         assert "href>/calendar.ics/event3.ics</" in answer
@@ -637,7 +637,7 @@ class BaseRequestsMixIn:
                 </C:prop-filter>
                 <C:time-range start="20130801T000000Z" end="20131001T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], items=5)
+            </C:comp-filter>"""], items=range(1, 6))
         assert "href>/calendar.ics/event1.ics</" not in answer
         assert "href>/calendar.ics/event2.ics</" not in answer
         assert "href>/calendar.ics/event3.ics</" not in answer
@@ -648,7 +648,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20130902T000000Z" end="20131001T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], items=5)
+            </C:comp-filter>"""], items=range(1, 6))
         assert "href>/calendar.ics/event1.ics</" not in answer
         assert "href>/calendar.ics/event2.ics</" in answer
         assert "href>/calendar.ics/event3.ics</" in answer
@@ -659,7 +659,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20130903T000000Z" end="20130908T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], items=5)
+            </C:comp-filter>"""], items=range(1, 6))
         assert "href>/calendar.ics/event1.ics</" not in answer
         assert "href>/calendar.ics/event2.ics</" not in answer
         assert "href>/calendar.ics/event3.ics</" in answer
@@ -670,7 +670,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20130903T000000Z" end="20130904T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], items=5)
+            </C:comp-filter>"""], items=range(1, 6))
         assert "href>/calendar.ics/event1.ics</" not in answer
         assert "href>/calendar.ics/event2.ics</" not in answer
         assert "href>/calendar.ics/event3.ics</" in answer
@@ -681,7 +681,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20130805T000000Z" end="20130810T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], items=5)
+            </C:comp-filter>"""], items=range(1, 6))
         assert "href>/calendar.ics/event1.ics</" not in answer
         assert "href>/calendar.ics/event2.ics</" not in answer
         assert "href>/calendar.ics/event3.ics</" not in answer
@@ -692,7 +692,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20170701T060000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], items=7)
+            </C:comp-filter>"""], items=(6, 7))
         # HACK: VObject doesn't match RECURRENCE-ID to recurrences, the
         # overwritten recurrence is still used for filtering.
         assert "href>/calendar.ics/event6.ics</" in answer
@@ -702,7 +702,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20170701T080000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], items=7)
+            </C:comp-filter>"""], items=(6, 7))
         assert "href>/calendar.ics/event6.ics</" not in answer
         assert "href>/calendar.ics/event7.ics</" not in answer
 
@@ -713,7 +713,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20130801T000000Z" end="20131001T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "event", items=2)
+            </C:comp-filter>"""], "event", items=(1, 2))
         assert "href>/calendar.ics/event1.ics</" in answer
         assert "href>/calendar.ics/event2.ics</" in answer
         answer = self._test_filter(["""
@@ -721,7 +721,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20140801T000000Z" end="20141001T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "event", items=2)
+            </C:comp-filter>"""], "event", items=(1, 2))
         assert "href>/calendar.ics/event1.ics</" not in answer
         assert "href>/calendar.ics/event2.ics</" in answer
         answer = self._test_filter(["""
@@ -729,7 +729,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20120801T000000Z" end="20121001T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "event", items=2)
+            </C:comp-filter>"""], "event", items=(1, 2))
         assert "href>/calendar.ics/event1.ics</" not in answer
         assert "href>/calendar.ics/event2.ics</" not in answer
         answer = self._test_filter(["""
@@ -737,7 +737,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20130903T000000Z" end="20130907T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "event", items=2)
+            </C:comp-filter>"""], "event", items=(1, 2))
         assert "href>/calendar.ics/event1.ics</" not in answer
         assert "href>/calendar.ics/event2.ics</" not in answer
 
@@ -748,7 +748,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VTODO">
                 <C:time-range start="20130801T000000Z" end="20131001T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "todo", items=8)
+            </C:comp-filter>"""], "todo", items=range(1, 9))
         assert "href>/calendar.ics/todo1.ics</" in answer
         assert "href>/calendar.ics/todo2.ics</" in answer
         assert "href>/calendar.ics/todo3.ics</" in answer
@@ -762,7 +762,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VTODO">
                 <C:time-range start="20130901T160000Z" end="20130901T183000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "todo", items=8)
+            </C:comp-filter>"""], "todo", items=range(1, 9))
         assert "href>/calendar.ics/todo1.ics</" not in answer
         assert "href>/calendar.ics/todo2.ics</" in answer
         assert "href>/calendar.ics/todo3.ics</" in answer
@@ -776,28 +776,28 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VTODO">
                 <C:time-range start="20130903T160000Z" end="20130901T183000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "todo", items=8)
+            </C:comp-filter>"""], "todo", items=range(1, 9))
         assert "href>/calendar.ics/todo2.ics</" not in answer
         answer = self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VTODO">
                 <C:time-range start="20130903T160000Z" end="20130901T173000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "todo", items=8)
+            </C:comp-filter>"""], "todo", items=range(1, 9))
         assert "href>/calendar.ics/todo2.ics</" not in answer
         answer = self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VTODO">
                 <C:time-range start="20130903T160000Z" end="20130903T173000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "todo", items=8)
+            </C:comp-filter>"""], "todo", items=range(1, 9))
         assert "href>/calendar.ics/todo3.ics</" not in answer
         answer = self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VTODO">
                 <C:time-range start="20130903T160000Z" end="20130803T203000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "todo", items=8)
+            </C:comp-filter>"""], "todo", items=range(1, 9))
         assert "href>/calendar.ics/todo7.ics</" in answer
 
     def test_time_range_filter_todos_rrule(self):
@@ -807,7 +807,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VTODO">
                 <C:time-range start="20130801T000000Z" end="20131001T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "todo", items=2)
+            </C:comp-filter>"""], "todo", items=(1, 2))
         assert "href>/calendar.ics/todo1.ics</" in answer
         assert "href>/calendar.ics/todo2.ics</" in answer
         answer = self._test_filter(["""
@@ -815,7 +815,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VTODO">
                 <C:time-range start="20140801T000000Z" end="20141001T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "todo", items=2)
+            </C:comp-filter>"""], "todo", items=(1, 2))
         assert "href>/calendar.ics/todo1.ics</" not in answer
         assert "href>/calendar.ics/todo2.ics</" in answer
         answer = self._test_filter(["""
@@ -823,7 +823,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VTODO">
                 <C:time-range start="20140902T000000Z" end="20140903T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "todo", items=2)
+            </C:comp-filter>"""], "todo", items=(1, 2))
         assert "href>/calendar.ics/todo1.ics</" not in answer
         assert "href>/calendar.ics/todo2.ics</" in answer
         answer = self._test_filter(["""
@@ -831,7 +831,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VTODO">
                 <C:time-range start="20140904T000000Z" end="20140914T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "todo", items=2)
+            </C:comp-filter>"""], "todo", items=(1, 2))
         assert "href>/calendar.ics/todo1.ics</" not in answer
         assert "href>/calendar.ics/todo2.ics</" not in answer
 
@@ -842,7 +842,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VJOURNAL">
                 <C:time-range start="19991229T000000Z" end="20000202T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "journal", items=3)
+            </C:comp-filter>"""], "journal", items=(1, 2, 3))
         assert "href>/calendar.ics/journal1.ics</" not in answer
         assert "href>/calendar.ics/journal2.ics</" in answer
         assert "href>/calendar.ics/journal3.ics</" in answer
@@ -851,7 +851,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VJOURNAL">
                 <C:time-range start="19991229T000000Z" end="20000202T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "journal", items=3)
+            </C:comp-filter>"""], "journal", items=(1, 2, 3))
         assert "href>/calendar.ics/journal1.ics</" not in answer
         assert "href>/calendar.ics/journal2.ics</" in answer
         assert "href>/calendar.ics/journal3.ics</" in answer
@@ -860,7 +860,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VJOURNAL">
                 <C:time-range start="19981229T000000Z" end="19991012T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "journal", items=3)
+            </C:comp-filter>"""], "journal", items=(1, 2, 3))
         assert "href>/calendar.ics/journal1.ics</" not in answer
         assert "href>/calendar.ics/journal2.ics</" not in answer
         assert "href>/calendar.ics/journal3.ics</" not in answer
@@ -869,7 +869,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VJOURNAL">
                 <C:time-range start="20131229T000000Z" end="21520202T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "journal", items=3)
+            </C:comp-filter>"""], "journal", items=(1, 2, 3))
         assert "href>/calendar.ics/journal1.ics</" not in answer
         assert "href>/calendar.ics/journal2.ics</" in answer
         assert "href>/calendar.ics/journal3.ics</" not in answer
@@ -878,7 +878,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VJOURNAL">
                 <C:time-range start="20000101T000000Z" end="20000202T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "journal", items=3)
+            </C:comp-filter>"""], "journal", items=(1, 2, 3))
         assert "href>/calendar.ics/journal1.ics</" not in answer
         assert "href>/calendar.ics/journal2.ics</" in answer
         assert "href>/calendar.ics/journal3.ics</" in answer
@@ -890,7 +890,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VJOURNAL">
                 <C:time-range start="19991229T000000Z" end="20000202T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "journal", items=2)
+            </C:comp-filter>"""], "journal", items=(1, 2))
         assert "href>/calendar.ics/journal1.ics</" not in answer
         assert "href>/calendar.ics/journal2.ics</" in answer
         answer = self._test_filter(["""
@@ -898,7 +898,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VJOURNAL">
                 <C:time-range start="20051229T000000Z" end="20060202T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "journal", items=2)
+            </C:comp-filter>"""], "journal", items=(1, 2))
         assert "href>/calendar.ics/journal1.ics</" not in answer
         assert "href>/calendar.ics/journal2.ics</" in answer
         answer = self._test_filter(["""
@@ -906,7 +906,7 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VJOURNAL">
                 <C:time-range start="20060102T000000Z" end="20060202T000000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], "journal", items=2)
+            </C:comp-filter>"""], "journal", items=(1, 2))
         assert "href>/calendar.ics/journal1.ics</" not in answer
         assert "href>/calendar.ics/journal2.ics</" not in answer
 
