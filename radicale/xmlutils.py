@@ -246,12 +246,12 @@ def _time_range_match(vobject_item, filter_, child_name):
 
     matched = False
 
-    def range_fn(range_start, range_end):
+    def range_fn(range_start, range_end, recurrence):
         nonlocal matched
         if start < range_end and range_start < end:
             matched = True
             return True
-        if end < range_start:
+        if end < range_start and not recurrence:
             return True
         return False
 
@@ -267,8 +267,8 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
     `vobject_item`` with visitors ``range_fn`` and ``infinity_fn``.
 
     ``range_fn`` gets called for every time_range with ``start`` and ``end``
-    datetimes as arguments. If the function returns True, the operation is
-    cancelled.
+    datetimes and ``recurrence`` as arguments. If the function returns True,
+    the operation is cancelled.
 
     ``infinity_fn`` gets called when an infiite recurrence rule is detected
     with ``start`` datetime as argument. If the function returns True, the
@@ -295,9 +295,23 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
                 return (), True
         return child.getrruleset(addRDate=True), False
 
+    def get_children(components):
+        main = None
+        for comp in components:
+            if hasattr(comp, "recurrence_id") and comp.recurrence_id.value:
+                if comp.rruleset:
+                    # Prevent possible infinite loop
+                    raise ValueError("Overwritten recurrence with RRULESET")
+                yield comp, True
+            else:
+                if main is not None:
+                    raise ValueError("Multiple main components")
+                main = comp
+        yield main, False
+
     # Comments give the lines in the tables of the specification
     if child_name == "VEVENT":
-        for child in vobject_item.vevent_list:
+        for child, recurrence in get_children(vobject_item.vevent_list):
             # TODO: check if there's a timezone
             dtstart = child.dtstart.value
 
@@ -325,30 +339,30 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
                 if dtend is not None:
                     # Line 1
                     dtend = dtstart + timedelta(seconds=original_duration)
-                    if range_fn(dtstart, dtend):
+                    if range_fn(dtstart, dtend, recurrence):
                         return
                 elif duration is not None:
                     if original_duration is None:
                         original_duration = duration.seconds
                     if duration.seconds > 0:
                         # Line 2
-                        if range_fn(dtstart, dtstart + duration):
+                        if range_fn(dtstart, dtstart + duration, recurrence):
                             return
                     else:
                         # Line 3
-                        if range_fn(dtstart, dtstart + SECOND):
+                        if range_fn(dtstart, dtstart + SECOND, recurrence):
                             return
                 elif dtstart_is_datetime:
                     # Line 4
-                    if range_fn(dtstart, dtstart + SECOND):
+                    if range_fn(dtstart, dtstart + SECOND, recurrence):
                         return
                 else:
                     # Line 5
-                    if range_fn(dtstart, dtstart + DAY):
+                    if range_fn(dtstart, dtstart + DAY, recurrence):
                         return
 
     elif child_name == "VTODO":
-        for child in vobject_item.vtodo_list:
+        for child, recurrence in get_children(vobject_item.vtodo_list):
             dtstart = getattr(child, "dtstart", None)
             duration = getattr(child, "duration", None)
             due = getattr(child, "due", None)
@@ -386,7 +400,7 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
                     reference_dates = (created,)
                 else:
                     # Line 8
-                    if range_fn(DATETIME_MIN, DATETIME_MAX):
+                    if range_fn(DATETIME_MIN, DATETIME_MAX, recurrence):
                         return
                     reference_dates = ()
 
@@ -396,50 +410,58 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
                 if dtstart is not None and duration is not None:
                     # Line 1
                     if range_fn(reference_date,
-                                reference_date + duration + SECOND):
+                                reference_date + duration + SECOND,
+                                recurrence):
                         return
                     if range_fn(reference_date + duration - SECOND,
-                                reference_date + duration + SECOND):
+                                reference_date + duration + SECOND,
+                                recurrence):
                         return
                 elif dtstart is not None and due is not None:
                     # Line 2
                     due = reference_date + timedelta(seconds=original_duration)
-                    if (range_fn(reference_date, due) or
+                    if (range_fn(reference_date, due, recurrence) or
                             range_fn(reference_date,
-                                     reference_date + SECOND) or
-                            range_fn(due - SECOND, due) or
-                            range_fn(due - SECOND, reference_date + SECOND)):
+                                     reference_date + SECOND, recurrence) or
+                            range_fn(due - SECOND, due, recurrence) or
+                            range_fn(due - SECOND, reference_date + SECOND,
+                                     recurrence)):
                         return
                 elif dtstart is not None:
-                    if range_fn(reference_date, reference_date + SECOND):
+                    if range_fn(reference_date, reference_date + SECOND,
+                                recurrence):
                         return
                 elif due is not None:
                     # Line 4
-                    if range_fn(reference_date - SECOND, reference_date):
+                    if range_fn(reference_date - SECOND, reference_date,
+                                recurrence):
                         return
                 elif completed is not None and created is not None:
                     # Line 5
                     completed = reference_date + timedelta(
                         seconds=original_duration)
                     if (range_fn(reference_date - SECOND,
-                                 reference_date + SECOND) or
-                            range_fn(completed - SECOND, completed + SECOND) or
+                                 reference_date + SECOND,
+                                 recurrence) or
+                            range_fn(completed - SECOND, completed + SECOND,
+                                     recurrence) or
                             range_fn(reference_date - SECOND,
-                                     reference_date + SECOND) or
-                            range_fn(completed - SECOND, completed + SECOND)):
+                                     reference_date + SECOND, recurrence) or
+                            range_fn(completed - SECOND, completed + SECOND,
+                                     recurrence)):
                         return
                 elif completed is not None:
                     # Line 6
                     if range_fn(reference_date - SECOND,
-                                reference_date + SECOND):
+                                reference_date + SECOND, recurrence):
                                 return
                 elif created is not None:
                     # Line 7
-                    if range_fn(reference_date, DATETIME_MAX):
+                    if range_fn(reference_date, DATETIME_MAX, recurrence):
                         return
 
     elif child_name == "VJOURNAL":
-        for child in vobject_item.vjournal_list:
+        for child, recurrence in get_children(vobject_item.vjournal_list):
             dtstart = getattr(child, "dtstart", None)
 
             if dtstart is not None:
@@ -457,18 +479,18 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
 
                     if dtstart_is_datetime:
                         # Line 1
-                        if range_fn(dtstart, dtstart + SECOND):
+                        if range_fn(dtstart, dtstart + SECOND, recurrence):
                             return
                     else:
                         # Line 2
-                        if range_fn(dtstart, dtstart + DAY):
+                        if range_fn(dtstart, dtstart + DAY, recurrence):
                             return
 
     elif isinstance(child, date):
-        if range_fn(child, child + DAY):
+        if range_fn(child, child + DAY, False):
             return
     elif isinstance(child, datetime):
-        if range_fn(child, child + SECOND):
+        if range_fn(child, child + SECOND, False):
             return
 
 
@@ -587,7 +609,7 @@ def find_tag_and_time_range(vobject_item):
         return (None, TIMESTAMP_MIN, TIMESTAMP_MAX)
     start = end = None
 
-    def range_fn(range_start, range_end):
+    def range_fn(range_start, range_end, recurrence):
         nonlocal start, end
         if start is None or range_start < start:
             start = range_start
