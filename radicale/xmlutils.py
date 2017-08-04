@@ -277,6 +277,12 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
     See rfc4791-9.9.
 
     """
+
+    # HACK: According to rfc5545-3.8.4.4 an recurrance that is resheduled
+    # with Recurrence ID affects the recurrence itself and all following
+    # recurrences too. This is not respected and client don't seem to bother
+    # either.
+
     child = getattr(vobject_item, child_name.lower())
 
     def getrruleset(child, ignore=()):
