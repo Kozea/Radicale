@@ -930,10 +930,11 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
             elif tag == _tag("D", "owner"):
-                if is_leaf and item.owner:
-                    element.text = "/%s/" % item.owner
-                else:
-                    is404 = True
+                # return empty elment, if no owner available (rfc3744-5.1)
+                if collection.owner:
+                    tag = ET.Element(_tag("D", "href"))
+                    tag.text = _href(base_prefix, "/%s/" % collection.owner)
+                    element.append(tag)
             elif tag == _tag("D", "displayname"):
                 if is_leaf:
                     element.text = item.get_meta("D:displayname") or item.path
