@@ -1,6 +1,17 @@
 News
 ====
 
+2.1.4 - Wild Radish
+-------------------
+
+This feature is not compatible with the 1.x.x versions. See
+http://radicale.org/1to2/ if you want to switch from 1.x.x to
+2.x.x.
+
+* Fix incorrect time range matching and calculation for some edge-cases with
+  rescheduled recurrences
+* Fix owner property
+
 2.1.3 - Wild Radish
 -------------------
 
