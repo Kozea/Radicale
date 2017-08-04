@@ -29,7 +29,7 @@ var SERVER = (location.protocol + '//' + location.hostname +
  * @const
  * @type {string}
  */
-var ROOT_PATH = location.pathname.replace(new RegExp("/+[^/]+/*(/index\.html?)?$"), "") + '/';
+var ROOT_PATH = location.pathname.replace(new RegExp("/+[^/]+/*(/index\\.html?)?$"), "") + '/';
 
 /**
  * time between updates of collections (milliseconds)
