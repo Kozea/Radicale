@@ -622,7 +622,7 @@ class BaseCollection:
         delta_props = self.get_meta()
         for key in delta_props.keys():
             if key not in props:
-                delta_props[key] = ""
+                delta_props[key] = None
         delta_props.update(props)
         self.set_meta(self, delta_props)
 
