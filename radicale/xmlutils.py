@@ -952,7 +952,7 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
             else:
                 human_tag = _tag_from_clark(tag)
                 meta = item.get_meta(human_tag)
-                if meta:
+                if meta is not None:
                     element.text = meta
                 else:
                     is404 = True
