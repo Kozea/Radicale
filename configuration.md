@@ -284,7 +284,7 @@ Available backends:
 Default: `internal`
 
 ## logging
-## debug
+### debug
 Set the default logging level to debug.
 
 Default: `False`
