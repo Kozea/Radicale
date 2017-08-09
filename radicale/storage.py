@@ -729,7 +729,7 @@ class Collection(BaseCollection):
         return os.path.join(filesystem_folder, "collection-root")
 
     @contextmanager
-    def _atomic_write(self, path, mode="w", newline=None):
+    def _atomic_write(self, path, mode="w", newline=None, sync_directory=True):
         directory = os.path.dirname(path)
         tmp = NamedTemporaryFile(
             mode=mode, dir=directory, delete=False, prefix=".Radicale.tmp-",
@@ -747,7 +747,8 @@ class Collection(BaseCollection):
             tmp.close()
             os.remove(tmp.name)
             raise
-        self._sync_directory(directory)
+        if sync_directory:
+            self._sync_directory(directory)
 
     @staticmethod
     def _find_available_file_name(exists_fn, suffix=""):
@@ -931,36 +932,26 @@ class Collection(BaseCollection):
         uploads them nonatomic and without existence checks.
 
         """
-        with contextlib.ExitStack() as stack:
-            cache_folder = os.path.join(self._filesystem_path,
-                                        ".Radicale.cache", "item")
-            self._makedirs_synced(cache_folder)
-            fs = []
-            for href, vobject_item in vobject_items.items():
-                if not is_safe_filesystem_path_component(href):
-                    raise UnsafePathError(href)
-                try:
-                    cache_content = self._item_cache_content(href,
-                                                             vobject_item)
-                    _, _, _, text, _, _, _ = cache_content
-                except Exception as e:
-                    raise ValueError(
-                        "Failed to store item %r in temporary collection %r: "
-                        "%s" % (href, self.path, e)) from e
-                fs.append(stack.enter_context(
-                    open(os.path.join(cache_folder, href), "wb")))
-                pickle.dump(cache_content, fs[-1])
-                path = path_to_filesystem(self._filesystem_path, href)
-                fs.append(stack.enter_context(
-                    open(path, "w", encoding=self._encoding, newline="")))
-                fs[-1].write(text)
-            # sync everything at once because it's slightly faster.
-            for f in fs:
-                try:
-                    self._fsync(f.fileno())
-                except OSError as e:
-                    raise RuntimeError("Fsync'ing file %r failed: %s" %
-                                       (f.name, e)) from e
+        cache_folder = os.path.join(self._filesystem_path,
+                                    ".Radicale.cache", "item")
+        self._makedirs_synced(cache_folder)
+        for href, vobject_item in vobject_items.items():
+            if not is_safe_filesystem_path_component(href):
+                raise UnsafePathError(href)
+            try:
+                cache_content = self._item_cache_content(href, vobject_item)
+                _, _, _, text, _, _, _ = cache_content
+            except Exception as e:
+                raise ValueError(
+                    "Failed to store item %r in temporary collection %r: %s" %
+                    (href, self.path, e)) from e
+            with self._atomic_write(os.path.join(cache_folder, href), "wb",
+                                    sync_directory=False) as f:
+                pickle.dump(cache_content, f)
+            path = path_to_filesystem(self._filesystem_path, href)
+            with self._atomic_write(
+                    path, newline="", sync_directory=False) as f:
+                f.write(text)
         self._sync_directory(self._filesystem_path)
 
     @classmethod
