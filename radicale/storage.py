@@ -952,6 +952,7 @@ class Collection(BaseCollection):
             with self._atomic_write(
                     path, newline="", sync_directory=False) as f:
                 f.write(text)
+        self._sync_directory(cache_folder)
         self._sync_directory(self._filesystem_path)
 
     @classmethod
