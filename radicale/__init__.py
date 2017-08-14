@@ -250,6 +250,8 @@ class Application:
         authorization = request_environ.get("HTTP_AUTHORIZATION", "")
         if mask_passwords and authorization.startswith("Basic"):
             request_environ["HTTP_AUTHORIZATION"] = "Basic **masked**"
+        if request_environ.get("HTTP_COOKIE"):
+            request_environ["HTTP_COOKIE"] = "**masked**"
 
         return request_environ
 
