@@ -810,9 +810,7 @@ class Collection(BaseCollection):
     def discover(cls, path, depth="0"):
         # Path should already be sanitized
         sane_path = sanitize_path(path).strip("/")
-        attributes = sane_path.split("/")
-        if not attributes[0]:
-            attributes.pop()
+        attributes = sane_path.split("/") if sane_path else []
 
         folder = cls._get_collection_root_folder()
         # Create the root collection

@@ -247,9 +247,8 @@ class Application:
         # Mask passwords
         mask_passwords = self.configuration.getboolean(
             "logging", "mask_passwords")
-        authorization = request_environ.get(
-            "HTTP_AUTHORIZATION", "").startswith("Basic")
-        if mask_passwords and authorization:
+        authorization = request_environ.get("HTTP_AUTHORIZATION", "")
+        if mask_passwords and authorization.startswith("Basic"):
             request_environ["HTTP_AUTHORIZATION"] = "Basic **masked**"
 
         return request_environ
