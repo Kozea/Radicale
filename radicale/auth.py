@@ -211,6 +211,8 @@ class Auth(BaseAuth):
         try:
             with open(self.filename) as fd:
                 for line in fd:
+                    if line.startswith("#"):
+                        continue
                     line = line.strip()
                     if line:
                         try:
