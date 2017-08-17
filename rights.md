@@ -31,7 +31,7 @@ permission =
 # Authenticated users can read and write their own collections.
 [owner-write]
 user = .+
-collection = %(login)s/.*
+collection = %(login)s(/.*)?
 permission = rw
 
 # Everyone can read the root collection
