@@ -121,6 +121,9 @@ class TestBaseAuthRequests(BaseTest):
         self._test_htpasswd("plain", " tmp : bepo ", (
             (" tmp ", " bepo ", 207), ("tmp", "bepo", 401)))
 
+    def test_htpasswd_comment(self):
+        self._test_htpasswd("plain", "#comment\n #comment\n \ntmp:bepo\n\n")
+
     def test_remote_user(self):
         self.configuration["auth"]["type"] = "remote_user"
         self.application = Application(self.configuration, self.logger)

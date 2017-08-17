@@ -216,7 +216,7 @@ class Auth(BaseAuth):
             with open(self.filename) as f:
                 for line in f:
                     line = line.rstrip("\n")
-                    if line.lstrip():
+                    if line.lstrip() and not line.lstrip().startswith("#"):
                         try:
                             login, hash_value = line.split(":", maxsplit=1)
                             # Always compare both login and password to avoid
