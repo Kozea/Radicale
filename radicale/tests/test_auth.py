@@ -52,7 +52,8 @@ class TestBaseAuthRequests(BaseTest):
     def teardown(self):
         shutil.rmtree(self.colpath)
 
-    def _test_htpasswd(self, htpasswd_encryption, htpasswd_content):
+    def _test_htpasswd(self, htpasswd_encryption, htpasswd_content,
+                       test_matrix=None):
         """Test htpasswd authentication with user "tmp" and password "bepo"."""
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
         with open(htpasswd_file_path, "w") as f:
@@ -61,9 +62,11 @@ class TestBaseAuthRequests(BaseTest):
         self.configuration["auth"]["htpasswd_filename"] = htpasswd_file_path
         self.configuration["auth"]["htpasswd_encryption"] = htpasswd_encryption
         self.application = Application(self.configuration, self.logger)
-        for user, password, expected_status in (
+        if test_matrix is None:
+            test_matrix = (
                 ("tmp", "bepo", 207), ("tmp", "tmp", 401), ("tmp", "", 401),
-                ("unk", "unk", 401), ("unk", "", 401), ("", "", 401)):
+                ("unk", "unk", 401), ("unk", "", 401), ("", "", 401))
+        for user, password, expected_status in test_matrix:
             status, _, answer = self.request(
                 "PROPFIND", "/",
                 HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
@@ -72,6 +75,10 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_htpasswd_plain(self):
         self._test_htpasswd("plain", "tmp:bepo")
+
+    def test_htpasswd_plain_password_split(self):
+        self._test_htpasswd("plain", "tmp:be:po", (
+            ("tmp", "be:po", 207), ("tmp", "bepo", 401)))
 
     def test_htpasswd_sha1(self):
         self._test_htpasswd("sha1", "tmp:{SHA}UWRS3uSJJq2itZQEUyIH8rRajCM=")
@@ -106,6 +113,13 @@ class TestBaseAuthRequests(BaseTest):
         self._test_htpasswd(
             "bcrypt",
             "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
+
+    def test_htpasswd_multi(self):
+        self._test_htpasswd("plain", "ign:ign\ntmp:bepo")
+
+    def test_htpasswd_whitespace(self):
+        self._test_htpasswd("plain", " tmp : bepo ", (
+            (" tmp ", " bepo ", 207), ("tmp", "bepo", 401)))
 
     def test_remote_user(self):
         self.configuration["auth"]["type"] = "remote_user"
