@@ -41,6 +41,9 @@ location /radicale/ {
 }
 ```
 
+**Security:** Untrusted clients should not be able to access the Radicale
+server directly. Otherwise, they can authenticate as any user.
+
 ## Secure connection between Radicale and the reverse proxy
 SSL certificates can be used to encrypt and authenticate the connection between
 Radicale and the reverse proxy. First you have to generate a certificate for
