@@ -71,6 +71,7 @@ Example **nginx** configuration:
 
 ```nginx
 location /radicale/ {
+    proxy_pass https://localhost:5232/;
     ...
     # Place the files somewhere nginx is allowed to access (e.g. /etc/nginx/...).
     proxy_ssl_certificate         /path/to/client_cert.pem;
