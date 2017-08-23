@@ -312,6 +312,8 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
                 if main is not None:
                     raise ValueError("Multiple main components")
                 main = comp
+        if main is None:
+            raise ValueError("Main component missing")
         yield main, False, recurrences
 
     # Comments give the lines in the tables of the specification
