@@ -327,10 +327,11 @@ class Application:
             self.logger.error("An exception occurred during %s request on %r: "
                               "%s", method, path, e, exc_info=True)
             status, headers, answer = INTERNAL_SERVER_ERROR
+            answer = answer.encode("ascii")
             status = "%d %s" % (
                 status, client.responses.get(status, "Unknown"))
             headers = [("Content-Length", str(len(answer)))] + list(headers)
-            answers = [answer.encode("ascii")]
+            answers = [answer]
         start_response(status, headers)
         return answers
 
