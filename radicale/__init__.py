@@ -109,16 +109,20 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
             # Only allow IPv6 connections to the IPv6 socket
             self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
 
-        if bind_and_activate:
-            self.server_bind()
-            self.server_activate()
-
         if self.max_connections:
             self.connections_guard = threading.BoundedSemaphore(
                 self.max_connections)
         else:
             # use dummy context manager
             self.connections_guard = contextlib.ExitStack()
+
+        if bind_and_activate:
+            try:
+                self.server_bind()
+                self.server_activate()
+            except:
+                self.server_close()
+                raise
 
     def get_request(self):
         # Set timeout for client
