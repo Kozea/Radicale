@@ -4,9 +4,7 @@ News
 2.1.4 - Wild Radish
 -------------------
 
-This feature is not compatible with the 1.x.x versions. See
-http://radicale.org/1to2/ if you want to switch from 1.x.x to
-2.x.x.
+This release is compatible with version 2.0.0.
 
 * Fix incorrect time range matching and calculation for some edge-cases with
   rescheduled recurrences
@@ -15,9 +13,7 @@ http://radicale.org/1to2/ if you want to switch from 1.x.x to
 2.1.3 - Wild Radish
 -------------------
 
-This feature is not compatible with the 1.x.x versions. See
-http://radicale.org/1to2/ if you want to switch from 1.x.x to
-2.x.x.
+This release is compatible with version 2.0.0.
 
 * Enable timeout for SSL handshakes and move them out of the main thread
 * Create cache entries during upload of items
@@ -27,9 +23,7 @@ http://radicale.org/1to2/ if you want to switch from 1.x.x to
 2.1.2 - Wild Radish
 -------------------
 
-This feature is not compatible with the 1.x.x versions. See
-http://radicale.org/1to2/ if you want to switch from 1.x.x to
-2.x.x.
+This release is compatible with version 2.0.0.
 
 * Remove workarounds for bugs in VObject < 0.9.5
 * Error checking of collection tags and associated components
