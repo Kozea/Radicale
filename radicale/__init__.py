@@ -124,6 +124,10 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
                 self.server_close()
                 raise
 
+        if self.client_timeout and sys.version_info < (3, 5, 2):
+            self.logger.warning("Using server.timeout with Python < 3.5.2 "
+                                "can cause network connection failures")
+
     def get_request(self):
         # Set timeout for client
         _socket, address = super().get_request()
