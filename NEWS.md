@@ -1,6 +1,18 @@
 News
 ====
 
+2.1.5 - Wild Radish
+-------------------
+
+This release is compatible with version 2.0.0.
+
+* Add ``--verify-storage`` command-line argument
+* Allow comments in the htpasswd file
+* Don't strip whitespaces from user names and passwords in the htpasswd file
+* Remove cookies from logging output
+* Allow uploads of whole collections with many components
+* Show warning message if server.timeout is used with Python < 3.5.2
+
 2.1.4 - Wild Radish
 -------------------
 
