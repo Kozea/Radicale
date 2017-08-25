@@ -699,6 +699,11 @@ class BaseCollection:
         """
         raise NotImplementedError
 
+    @classmethod
+    def verify(cls):
+        """Check the storage for errors."""
+        return True
+
 
 class Collection(BaseCollection):
     """Collection stored in several files per calendar."""
@@ -807,7 +812,8 @@ class Collection(BaseCollection):
         cls._sync_directory(parent_filesystem_path)
 
     @classmethod
-    def discover(cls, path, depth="0"):
+    def discover(cls, path, depth="0", child_context_manager=(
+                 lambda path, href=None: contextlib.ExitStack())):
         # Path should already be sanitized
         sane_path = sanitize_path(path).strip("/")
         attributes = sane_path.split("/") if sane_path else []
@@ -844,8 +850,9 @@ class Collection(BaseCollection):
         if depth == "0":
             return
 
-        for item in collection.list():
-            yield collection.get(item)
+        for href in collection.list():
+            with child_context_manager(sane_path, href):
+                yield collection.get(href)
 
         for href in scandir(filesystem_path, only_dirs=True):
             if not is_safe_filesystem_path_component(href):
@@ -854,7 +861,47 @@ class Collection(BaseCollection):
                                      sane_path)
                 continue
             child_path = posixpath.join(sane_path, href)
-            yield cls(child_path)
+            with child_context_manager(child_path):
+                yield cls(child_path)
+
+    @classmethod
+    def verify(cls):
+        item_errors = collection_errors = 0
+
+        @contextlib.contextmanager
+        def exception_cm(path, href=None):
+            nonlocal item_errors, collection_errors
+            try:
+                yield
+            except Exception as e:
+                if href:
+                    item_errors += 1
+                    name = "item %r in %r" % (href, path.strip("/"))
+                else:
+                    collection_errors += 1
+                    name = "collection %r" % path.strip("/")
+                cls.logger.error("Invalid %s: %s", name, e, exc_info=True)
+
+        remaining_paths = [""]
+        while remaining_paths:
+            path = remaining_paths.pop(0)
+            cls.logger.debug("Verifying collection %r", path)
+            with exception_cm(path):
+                saved_item_errors = item_errors
+                collection = None
+                for item in cls.discover(path, "1", exception_cm):
+                    if not collection:
+                        collection = item
+                        collection.get_meta()
+                        continue
+                    if isinstance(item, BaseCollection):
+                        remaining_paths.append(item.path)
+                    else:
+                        cls.logger.debug("Verified item %r in %r",
+                                         item.href, path)
+                if item_errors == saved_item_errors:
+                    collection.sync()
+        return item_errors == 0 and collection_errors == 0
 
     @classmethod
     def create_collection(cls, href, collection=None, props=None):

@@ -33,7 +33,7 @@ import sys
 from wsgiref.simple_server import make_server
 
 from . import (VERSION, Application, RequestHandler, ThreadedHTTPServer,
-               ThreadedHTTPSServer, config, log)
+               ThreadedHTTPSServer, config, log, storage)
 
 
 def run():
@@ -42,6 +42,8 @@ def run():
     parser = argparse.ArgumentParser(usage="radicale [OPTIONS]")
 
     parser.add_argument("--version", action="version", version=VERSION)
+    parser.add_argument("--verify-storage", action="store_true",
+                        help="check the storage for errors and exit")
     parser.add_argument(
         "-C", "--config", help="use a specific configuration file")
 
@@ -103,6 +105,10 @@ def run():
             if value is not None:
                 configuration.set(section, action.split('_', 1)[1], value)
 
+    if args.verify_storage:
+        # Write to stderr when storage verification is requested
+        configuration["logging"]["config"] = ""
+
     # Start logging
     filename = os.path.expanduser(configuration.get("logging", "config"))
     debug = configuration.getboolean("logging", "debug")
@@ -113,6 +119,20 @@ def run():
         if debug:
             raise
         exit(1)
+
+    if args.verify_storage:
+        logger.info("Verifying storage")
+        try:
+            Collection = storage.load(configuration, logger)
+            with Collection.acquire_lock("r"):
+                if not Collection.verify():
+                    logger.error("Storage verifcation failed")
+                    exit(1)
+        except Exception as e:
+            logger.error("An exception occurred during storage verification: "
+                         "%s", e, exc_info=True)
+            exit(1)
+        return
 
     try:
         serve(configuration, logger)
