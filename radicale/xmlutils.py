@@ -173,7 +173,7 @@ def _comp_match(item, filter_, scope="collection"):
         tag = item.component_name
     if not tag:
         return False
-    name = filter_.get("name")
+    name = filter_.get("name").upper()
     if filter_length == 0:
         # Point #1 of rfc4791-9.7.1
         return name == tag
@@ -561,7 +561,7 @@ def _param_filter_match(vobject_item, filter_, parent_name, ns):
     See rfc4791-9.7.3.
 
     """
-    name = filter_.get("name")
+    name = filter_.get("name").upper()
     children = getattr(vobject_item, "%s_list" % parent_name, [])
     condition = any(name in child.params for child in children)
     if len(filter_):
@@ -587,7 +587,7 @@ def simplify_prefilters(filters):
     simple = len(flat_filters) <= 1
     for col_filter in flat_filters:
         if (col_filter.tag != _tag("C", "comp-filter") or
-                col_filter.get("name") != "VCALENDAR"):
+                col_filter.get("name").upper() != "VCALENDAR"):
             simple = False
             continue
         simple &= len(col_filter) <= 1
@@ -595,7 +595,7 @@ def simplify_prefilters(filters):
             if comp_filter.tag != _tag("C", "comp-filter"):
                 simple = False
                 continue
-            tag = comp_filter.get("name")
+            tag = comp_filter.get("name").upper()
             if (tag not in ("VTODO", "VEVENT", "VJOURNAL") or comp_filter.find(
                     _tag("C", "is-not-defined")) is not None):
                 simple = False
