@@ -1203,6 +1203,12 @@ def report(base_prefix, path, xml_request, collection):
             for child in filter_:
                 if child.tag != _tag("CR", "prop-filter"):
                     raise ValueError("Unexpected %r in filter" % child.tag)
+            test = filter_.get("test", "anyof")
+            if test == "anyof":
+                return any(_prop_match(item.item, f, "CR") for f in filter_)
+            if test == "allof":
+                return all(_prop_match(item.item, f, "CR") for f in filter_)
+            raise ValueError("Unsupported filter test: %r" % test)
             return all(_prop_match(item.item, f, "CR") for f in filter_)
         raise ValueError("unsupported filter %r for %r" % (filter_.tag, tag))
 
