@@ -1140,6 +1140,44 @@ class BaseRequestsMixIn:
                                                       sync_token)
         assert sync_token == new_sync_token
 
+    def test_calendar_getcontenttype(self):
+        """Test report request on an item"""
+        status, _, _ = self.request("MKCALENDAR", "/test/")
+        assert status == 201
+        for component in ("event", "todo", "journal"):
+            event = get_file_content("{}1.ics".format(component))
+            status, _, _ = self.request("PUT", "/test/test.ics", event)
+            assert status == 201
+            status, _, answer = self.request(
+                "REPORT", "/test/",
+                """<?xml version="1.0" encoding="utf-8" ?>
+                   <C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+                     <D:prop xmlns:D="DAV:">
+                       <D:getcontenttype />
+                     </D:prop>
+                   </C:calendar-query>""")
+            assert status == 207
+            assert ">text/calendar;charset=utf-8;component=V{}<".format(
+                component.upper()) in answer
+
+    def test_addressbook_getcontenttype(self):
+        """Test report request on an item"""
+        status, _, _ = self._create_addressbook("/test/")
+        assert status == 201
+        contact = get_file_content("contact1.vcf")
+        status, _, _ = self.request("PUT", "/test/test.vcf", contact)
+        assert status == 201
+        status, _, answer = self.request(
+            "REPORT", "/test/",
+            """<?xml version="1.0" encoding="utf-8" ?>
+               <C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+                 <D:prop xmlns:D="DAV:">
+                   <D:getcontenttype />
+                 </D:prop>
+               </C:calendar-query>""")
+        assert status == 207
+        assert ">text/vcard;charset=utf-8<" in answer
+
     def test_authorization(self):
         authorization = "Basic " + base64.b64encode(b"user:").decode()
         status, _, answer = self.request(

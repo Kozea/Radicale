@@ -602,6 +602,18 @@ def simplify_prefilters(filters):
     return None, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
 
 
+def get_content_type(item):
+    """Get the content-type of an item with charset and component parameters.
+    """
+    mimetype = OBJECT_MIMETYPES[item.name]
+    encoding = item.collection.configuration.get("encoding", "request")
+    tag = find_tag(item)
+    content_type = "%s;charset=%s" % (mimetype, encoding)
+    if tag:
+        content_type += ";component=%s" % tag
+    return content_type
+
+
 def find_tag(vobject_item):
     """Find tag from ``vobject_item``."""
     if vobject_item.name == "VCALENDAR":
@@ -967,9 +979,7 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
                     is404 = True
         # Not for collections
         elif tag == _tag("D", "getcontenttype"):
-            name = item.name.lower()
-            mimetype = "text/vcard" if name == "vcard" else "text/calendar"
-            element.text = "%s; component=%s" % (mimetype, name)
+            element.text = get_content_type(item)
         elif tag == _tag("D", "resourcetype"):
             # resourcetype must be returned empty for non-collection elements
             pass
@@ -1182,10 +1192,7 @@ def report(base_prefix, path, xml_request, collection):
                 element.text = item.etag
                 found_props.append(element)
             elif tag == _tag("D", "getcontenttype"):
-                name = item.name.lower()
-                mimetype = (
-                    "text/vcard" if name == "vcard" else "text/calendar")
-                element.text = "%s; component=%s" % (mimetype, name)
+                element.text = get_content_type(item)
                 found_props.append(element)
             elif tag in (
                     _tag("C", "calendar-data"),
