@@ -1089,6 +1089,7 @@ def report(base_prefix, path, xml_request, collection):
     Read rfc3253-3.6 for info.
 
     """
+    logger = collection.logger
     multistatus = ET.Element(_tag("D", "multistatus"))
     if xml_request is None:
         return client.MULTI_STATUS, multistatus
@@ -1101,8 +1102,8 @@ def report(base_prefix, path, xml_request, collection):
         # properties, just return an empty result.
         # InfCloud asks for expand-property reports (even if we don't announce
         # support for them) and stops working if an error code is returned.
-        collection.logger.warning("Unsupported REPORT method %r on %r "
-                                  "requested", root.tag, path)
+        logger.warning("Unsupported REPORT method %r on %r requested",
+                       root.tag, path)
         return client.MULTI_STATUS, multistatus
     prop_element = root.find(_tag("D", "prop"))
     props = (
@@ -1120,21 +1121,20 @@ def report(base_prefix, path, xml_request, collection):
             if (href_path + "/").startswith(base_prefix + "/"):
                 hreferences.add(href_path[len(base_prefix):])
             else:
-                collection.logger.warning("Skipping invalid path %r in REPORT "
-                                          "request on %r", href_path, path)
+                logger.warning("Skipping invalid path %r in REPORT request on "
+                               "%r", href_path, path)
     elif root.tag == _tag("D", "sync-collection"):
         old_sync_token_element = root.find(_tag("D", "sync-token"))
         old_sync_token = ""
         if old_sync_token_element is not None and old_sync_token_element.text:
             old_sync_token = old_sync_token_element.text.strip()
-        collection.logger.debug("Client provided sync token: %r",
-                                old_sync_token)
+        logger.debug("Client provided sync token: %r", old_sync_token)
         try:
             sync_token, names = collection.sync(old_sync_token)
         except ValueError as e:
             # Invalid sync token
-            collection.logger.warning("Client provided invalid sync token %r: "
-                                      "%s", old_sync_token, e, exc_info=True)
+            logger.warning("Client provided invalid sync token %r: %s",
+                           old_sync_token, e, exc_info=True)
             return (client.PRECONDITION_FAILED,
                     _webdav_error("D", "valid-sync-token"))
         hreferences = ("/" + posixpath.join(collection.path, n) for n in names)
@@ -1164,9 +1164,8 @@ def report(base_prefix, path, xml_request, collection):
                 try:
                     name = name_from_path(hreference, collection)
                 except ValueError as e:
-                    collection.logger.warning(
-                        "Skipping invalid path %r in REPORT request on %r: %s",
-                        hreference, path, e)
+                    logger.warning("Skipping invalid path %r in REPORT request"
+                                   " on %r: %s", hreference, path, e)
                     response = _item_response(base_prefix, hreference,
                                               found_item=False)
                     multistatus.append(response)
