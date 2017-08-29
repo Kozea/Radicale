@@ -607,14 +607,12 @@ class Application:
             if not item:
                 return NOT_FOUND
             if isinstance(item, storage.BaseCollection):
-                collection = item
-                if collection.get_meta("tag") not in (
-                        "VADDRESSBOOK", "VCALENDAR"):
+                tag = item.get_meta("tag")
+                if not tag:
                     return DIRECTORY_LISTING
+                content_type = xmlutils.MIMETYPES[tag]
             else:
-                collection = item.collection
-            content_type = xmlutils.MIMETYPES.get(
-                collection.get_meta("tag"), "text/plain")
+                content_type = xmlutils.OBJECT_MIMETYPES[item.name]
             headers = {
                 "Content-Type": content_type,
                 "Last-Modified": item.last_modified,

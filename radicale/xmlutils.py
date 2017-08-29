@@ -42,6 +42,11 @@ MIMETYPES = {
     "VADDRESSBOOK": "text/vcard",
     "VCALENDAR": "text/calendar"}
 
+OBJECT_MIMETYPES = {
+    "VCARD": "text/vcard",
+    "VLIST": "text/x-vlist",
+    "VCALENDAR": "text/calendar"}
+
 NAMESPACES = {
     "C": "urn:ietf:params:xml:ns:caldav",
     "CR": "urn:ietf:params:xml:ns:carddav",

@@ -63,6 +63,7 @@ class BaseRequestsMixIn:
         status, headers, answer = self.request("GET", path)
         assert status == 200
         assert "ETag" in headers
+        assert headers["Content-Type"] == "text/calendar; charset=utf-8"
         assert "VEVENT" in answer
         assert "Event" in answer
         assert "UID:event" in answer
@@ -102,6 +103,7 @@ class BaseRequestsMixIn:
         status, headers, answer = self.request("GET", path)
         assert status == 200
         assert "ETag" in headers
+        assert headers["Content-Type"] == "text/calendar; charset=utf-8"
         assert "VTODO" in answer
         assert "Todo" in answer
         assert "UID:todo" in answer
@@ -132,6 +134,7 @@ class BaseRequestsMixIn:
         status, headers, answer = self.request("GET", path)
         assert status == 200
         assert "ETag" in headers
+        assert headers["Content-Type"] == "text/vcard; charset=utf-8"
         assert "VCARD" in answer
         assert "UID:contact1" in answer
         status, _, answer = self.request("GET", path)
