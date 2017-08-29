@@ -292,8 +292,6 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
     # recurrences too. This is not respected and client don't seem to bother
     # either.
 
-    child = getattr(vobject_item, child_name.lower())
-
     def getrruleset(child, ignore=()):
         if (hasattr(child, "rrule") and
                 ";UNTIL=" not in child.rrule.value.upper() and
@@ -506,12 +504,13 @@ def _visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
                         if range_fn(dtstart, dtstart + DAY, is_recurrence):
                             return
 
-    elif isinstance(child, date):
-        if range_fn(child, child + DAY, False):
-            return
-    elif isinstance(child, datetime):
-        if range_fn(child, child + SECOND, False):
-            return
+    else:
+        # Match a property
+        child = getattr(vobject_item, child_name.lower())
+        if isinstance(child, date):
+            range_fn(child, child + DAY, False)
+        elif isinstance(child, datetime):
+            range_fn(child, child + SECOND, False)
 
 
 def _text_match(vobject_item, filter_, child_name, ns, attrib_name=None):
