@@ -519,14 +519,28 @@ def _text_match(vobject_item, filter_, child_name, attrib_name=None):
     # TODO: collations are not supported, but the default ones needed
     # for DAV servers are actually pretty useless. Texts are lowered to
     # be case-insensitive, almost as the "i;ascii-casemap" value.
-    match = next(filter_.itertext()).lower()
+    text = next(filter_.itertext()).lower()
+    match_type = filter_.get("match-type", match_type)
+
+    def match(value):
+        value = value.lower()
+        if match_type == "equals":
+            return value == text
+        if match_type == "contains":
+            return text in value
+        if match_type == "starts-with":
+            return value.startswith(text)
+        if match_type == "ends-with":
+            return value.endswith(text)
+        raise ValueError("Unexpected text-match match-type: %r" % match_type)
+
     children = getattr(vobject_item, "%s_list" % child_name, [])
     if attrib_name:
         condition = any(
-            match in attrib.lower() for child in children
+            match(attrib) for child in children
             for attrib in child.params.get(attrib_name, []))
     else:
-        condition = any(match in child.value.lower() for child in children)
+        condition = any(match(child.value) for child in children)
     if filter_.get("negate-condition") == "yes":
         return not condition
     else:
