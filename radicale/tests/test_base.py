@@ -25,6 +25,7 @@ import posixpath
 import shutil
 import tempfile
 import xml.etree.ElementTree as ET
+from functools import partial
 
 import pytest
 
@@ -404,30 +405,161 @@ class BaseRequestsMixIn:
         assert status == 200
         assert answer.count("BEGIN:VEVENT") == 2
 
-    def _test_filter(self, filters, kind="event", items=(1,)):
-        filters_text = "".join(
-            "<C:filter>%s</C:filter>" % filter_ for filter_ in filters)
-        status, _, _ = self.request("DELETE", "/calendar.ics/")
+    def _test_filter(self, filters, kind="event", test=None, items=(1,)):
+        filter_template = "<C:filter>{}</C:filter>"
+        if kind in ("event", "journal", "todo"):
+            create_collection_fn = partial(self.request, "MKCALENDAR")
+            path = "/calendar.ics/"
+            filename_template = "{}{}.ics"
+            namespace = "urn:ietf:params:xml:ns:caldav"
+            report = "calendar-query"
+        elif kind == "contact":
+            create_collection_fn = self._create_addressbook
+            if test:
+                filter_template = '<C:filter test="{}">{{}}</C:filter>'.format(
+                    test)
+            path = "/contacts.vcf/"
+            filename_template = "{}{}.vcf"
+            namespace = "urn:ietf:params:xml:ns:carddav"
+            report = "addressbook-query"
+        else:
+            raise ValueError("Unsupported kind: %r" % kind)
+        status, _, _ = self.request("DELETE", path)
         assert status in (200, 404)
-        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        status, _, _ = create_collection_fn(path)
         assert status == 201
         for i in items:
-            filename = "{}{}.ics".format(kind, i)
+            filename = filename_template.format(kind, i)
             event = get_file_content(filename)
             status, _, _ = self.request(
-                "PUT", "/calendar.ics/%s" % filename, event)
+                "PUT", posixpath.join(path, filename), event)
             assert status == 201
+        filters_text = "".join(
+            filter_template.format(filter_) for filter_ in filters)
         status, _, answer = self.request(
-            "REPORT", "/calendar.ics",
+            "REPORT", path,
             """<?xml version="1.0" encoding="utf-8" ?>
-               <C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+               <C:{1} xmlns:C="{0}">
                  <D:prop xmlns:D="DAV:">
                    <D:getetag/>
                  </D:prop>
-                 %s
-               </C:calendar-query>""" % filters_text)
+                 {2}
+               </C:{1}>""".format(namespace, report, filters_text))
         assert status == 207
         return answer
+
+    def test_addressbook_empty_filter(self):
+        self._test_filter([""], kind="contact")
+
+    def test_addressbook_prop_filter(self):
+        assert "href>/contacts.vcf/contact1.vcf</" in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+                            match-type="contains"
+              >es</C:text-match>
+            </C:prop-filter>"""], "contact")
+        assert "href>/contacts.vcf/contact1.vcf</" in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+              >es</C:text-match>
+            </C:prop-filter>"""], "contact")
+        assert "href>/contacts.vcf/contact1.vcf</" not in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+                            match-type="contains"
+              >a</C:text-match>
+            </C:prop-filter>"""], "contact")
+        assert "href>/contacts.vcf/contact1.vcf</" in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+                            match-type="equals"
+              >test</C:text-match>
+            </C:prop-filter>"""], "contact")
+        assert "href>/contacts.vcf/contact1.vcf</" not in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+                            match-type="equals"
+              >tes</C:text-match>
+            </C:prop-filter>"""], "contact")
+        assert "href>/contacts.vcf/contact1.vcf</" not in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+                            match-type="equals"
+              >est</C:text-match>
+            </C:prop-filter>"""], "contact")
+        assert "href>/contacts.vcf/contact1.vcf</" in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+                            match-type="starts-with"
+              >tes</C:text-match>
+            </C:prop-filter>"""], "contact")
+        assert "href>/contacts.vcf/contact1.vcf</" not in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+                            match-type="starts-with"
+              >est</C:text-match>
+            </C:prop-filter>"""], "contact")
+        assert "href>/contacts.vcf/contact1.vcf</" in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+                            match-type="ends-with"
+              >est</C:text-match>
+            </C:prop-filter>"""], "contact")
+        assert "href>/contacts.vcf/contact1.vcf</" not in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+                            match-type="ends-with"
+              >tes</C:text-match>
+            </C:prop-filter>"""], "contact")
+
+    def test_addressbook_prop_filter_any(self):
+        assert "href>/contacts.vcf/contact1.vcf</" in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+              >test</C:text-match>
+            </C:prop-filter>
+            <C:prop-filter name="EMAIL">
+              <C:text-match collation="i;unicode-casemap"
+              >test</C:text-match>
+            </C:prop-filter>"""], "contact", test="anyof")
+        assert "href>/contacts.vcf/contact1.vcf</" not in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+              >a</C:text-match>
+            </C:prop-filter>
+            <C:prop-filter name="EMAIL">
+              <C:text-match collation="i;unicode-casemap"
+              >test</C:text-match>
+            </C:prop-filter>"""], "contact", test="anyof")
+        assert "href>/contacts.vcf/contact1.vcf</" in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+              >test</C:text-match>
+            </C:prop-filter>
+            <C:prop-filter name="EMAIL">
+              <C:text-match collation="i;unicode-casemap"
+              >test</C:text-match>
+            </C:prop-filter>"""], "contact")
+
+    def test_addressbook_prop_filter_all(self):
+        assert "href>/contacts.vcf/contact1.vcf</" in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+              >tes</C:text-match>
+            </C:prop-filter>
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+              >est</C:text-match>
+            </C:prop-filter>"""], "contact", test="allof")
+        assert "href>/contacts.vcf/contact1.vcf</" not in self._test_filter(["""
+            <C:prop-filter name="NICKNAME">
+              <C:text-match collation="i;unicode-casemap"
+              >test</C:text-match>
+            </C:prop-filter>
+            <C:prop-filter name="EMAIL">
+              <C:text-match collation="i;unicode-casemap"
+              >test</C:text-match>
+            </C:prop-filter>"""], "contact", test="allof")
 
     def test_calendar_empty_filter(self):
         self._test_filter([""])
