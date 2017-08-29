@@ -764,6 +764,13 @@ class BaseRequestsMixIn:
         assert "href>/calendar.ics/event5.ics</" in answer
         answer = self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VTODO">
+                <C:time-range start="20130801T000000Z" end="20131001T000000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], "event", items=range(1, 6))
+        assert "href>/calendar.ics/event1.ics</" not in answer
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:prop-filter name="ATTENDEE">
                   <C:param-filter name="PARTSTAT">
