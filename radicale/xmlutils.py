@@ -607,7 +607,7 @@ def get_content_type(item):
     """
     mimetype = OBJECT_MIMETYPES[item.name]
     encoding = item.collection.configuration.get("encoding", "request")
-    tag = find_tag(item)
+    tag = item.component_name
     content_type = "%s;charset=%s" % (mimetype, encoding)
     if tag:
         content_type += ";component=%s" % tag

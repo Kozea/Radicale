@@ -334,7 +334,8 @@ class ComponentNotFoundError(ValueError):
 
 class Item:
     def __init__(self, collection, item=None, href=None, last_modified=None,
-                 text=None, etag=None, uid=None):
+                 text=None, etag=None, uid=None, name=None,
+                 component_name=None):
         """Initialize an item.
 
         ``collection`` the parent collection.
@@ -362,6 +363,8 @@ class Item:
         self._item = item
         self._etag = etag
         self._uid = uid
+        self._name = name
+        self._component_name = component_name
 
     def __getattr__(self, attr):
         return getattr(self.item, attr)
@@ -397,6 +400,18 @@ class Item:
         if self._uid is None:
             self._uid = get_uid_from_object(self.item)
         return self._uid
+
+    @property
+    def name(self):
+        if self._name is not None:
+            return self._name
+        return self.item.name
+
+    @property
+    def component_name(self):
+        if self._component_name is not None:
+            return self._component_name
+        return xmlutils.find_tag(self.item)
 
 
 class BaseCollection:
@@ -985,7 +1000,7 @@ class Collection(BaseCollection):
                 raise UnsafePathError(href)
             try:
                 cache_content = self._item_cache_content(href, vobject_item)
-                _, _, _, text, _, _, _ = cache_content
+                _, _, _, text, _, _, _, _ = cache_content
             except Exception as e:
                 raise ValueError(
                     "Failed to store item %r in temporary collection %r: %s" %
@@ -1235,8 +1250,9 @@ class Collection(BaseCollection):
             cache_hash = self._item_cache_hash(text.encode(self._encoding))
         etag = get_etag(text)
         uid = get_uid_from_object(vobject_item)
+        name = vobject_item.name
         tag, start, end = xmlutils.find_tag_and_time_range(vobject_item)
-        return cache_hash, uid, etag, text, tag, start, end
+        return cache_hash, uid, etag, text, name, tag, start, end
 
     def _store_item_cache(self, href, vobject_item, cache_hash=None):
         cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
@@ -1288,17 +1304,18 @@ class Collection(BaseCollection):
     def _load_item_cache(self, href):
         cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
                                     "item")
-        cache_hash = uid = etag = text = tag = start = end = None
+        cache_hash = uid = etag = text = name = tag = start = end = None
         try:
             with open(os.path.join(cache_folder, href), "rb") as f:
-                cache_hash, uid, etag, text, tag, start, end = pickle.load(f)
+                cache_hash, uid, etag, text, name, tag, start, end = \
+                    pickle.load(f)
         except FileNotFoundError as e:
             pass
         except (pickle.UnpicklingError, ValueError) as e:
             self.logger.warning(
                 "Failed to load item cache entry %r in %r: %s",
                 href, self.path, e, exc_info=True)
-        return cache_hash, uid, etag, text, tag, start, end
+        return cache_hash, uid, etag, text, name, tag, start, end
 
     def _clean_item_cache(self):
         cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
@@ -1331,8 +1348,8 @@ class Collection(BaseCollection):
         # The hash of the component in the file system. This is used to check,
         # if the entry in the cache is still valid.
         input_hash = self._item_cache_hash(raw_text)
-        cache_hash, uid, etag, text, tag, start, end = self._load_item_cache(
-            href)
+        cache_hash, uid, etag, text, name, tag, start, end = \
+            self._load_item_cache(href)
         vobject_item = None
         if input_hash != cache_hash:
             with contextlib.ExitStack() as lock_stack:
@@ -1342,7 +1359,7 @@ class Collection(BaseCollection):
                 if self._lock.locked() == "r":
                     lock_stack.enter_context(self._acquire_cache_lock("item"))
                     # Check if another process created the file in the meantime
-                    cache_hash, uid, etag, text, tag, start, end = \
+                    cache_hash, uid, etag, text, name, tag, start, end = \
                         self._load_item_cache(href)
                 if input_hash != cache_hash:
                     try:
@@ -1354,7 +1371,7 @@ class Collection(BaseCollection):
                         vobject_item = vobject_items[0]
                         check_and_sanitize_item(vobject_item, uid=uid,
                                                 tag=self.get_meta("tag"))
-                        cache_hash, uid, etag, text, tag, start, end = \
+                        cache_hash, uid, etag, text, name, tag, start, end = \
                             self._store_item_cache(
                                 href, vobject_item, input_hash)
                     except Exception as e:
@@ -1370,7 +1387,8 @@ class Collection(BaseCollection):
             time.gmtime(os.path.getmtime(path)))
         return Item(
             self, href=href, last_modified=last_modified, etag=etag,
-            text=text, item=vobject_item, uid=uid), (tag, start, end)
+            text=text, item=vobject_item, uid=uid, name=name,
+            component_name=tag), (tag, start, end)
 
     def get_multi2(self, hrefs):
         # It's faster to check for file name collissions here, because
@@ -1411,8 +1429,8 @@ class Collection(BaseCollection):
         if not is_safe_filesystem_path_component(href):
             raise UnsafePathError(href)
         try:
-            cache_hash, uid, etag, text, _, _, _ = self._store_item_cache(
-                href, vobject_item)
+            cache_hash, uid, etag, text, name, tag, _, _ = \
+                self._store_item_cache(href, vobject_item)
         except Exception as e:
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
@@ -1423,7 +1441,7 @@ class Collection(BaseCollection):
         # will be removed again.
         self._clean_item_cache()
         item = Item(self, href=href, etag=etag, text=text, item=vobject_item,
-                    uid=uid)
+                    uid=uid, name=name, component_name=tag)
         # Track the change
         self._update_history_etag(href, item)
         self._clean_history_cache()
