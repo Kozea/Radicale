@@ -927,6 +927,11 @@ class Application:
             else:
                 collection = item.collection
             headers = {"Content-Type": "text/xml; charset=%s" % self.encoding}
-            status, xml_answer = xmlutils.report(
-                base_prefix, path, xml_content, collection)
+            try:
+                status, xml_answer = xmlutils.report(
+                    base_prefix, path, xml_content, collection)
+            except ValueError as e:
+                self.logger.warning(
+                    "Bad REPORT request on %r: %s", path, e, exc_info=True)
+                return BAD_REQUEST
             return (status, headers, self._write_xml_content(xml_answer))
