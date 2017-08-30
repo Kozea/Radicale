@@ -166,7 +166,6 @@ def _comp_match(item, filter_, scope="collection"):
     # TODO: Filtering VALARM and VFREEBUSY is not implemented
     # HACK: the filters are tested separately against all components
 
-    filter_length = len(filter_)
     if scope == "collection":
         tag = item.name
     else:
@@ -174,10 +173,10 @@ def _comp_match(item, filter_, scope="collection"):
     if not tag:
         return False
     name = filter_.get("name").upper()
-    if filter_length == 0:
+    if len(filter_) == 0:
         # Point #1 of rfc4791-9.7.1
         return name == tag
-    if filter_length == 1:
+    if len(filter_) == 1:
         if filter_[0].tag == _tag("C", "is-not-defined"):
             # Point #2 of rfc4791-9.7.1
             return name != tag
