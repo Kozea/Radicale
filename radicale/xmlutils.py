@@ -153,10 +153,10 @@ def _date_to_datetime(date_):
     return date_
 
 
-def _comp_match(item, filter_, scope="collection"):
+def _comp_match(item, filter_, level=0):
     """Check whether the ``item`` matches the comp ``filter_``.
 
-    If ``scope`` is ``"collection"``, the filter is applied on the
+    If ``level`` is ``0``, the filter is applied on the
     item's collection. Otherwise, it's applied on the item.
 
     See rfc4791-9.7.1.
@@ -166,10 +166,14 @@ def _comp_match(item, filter_, scope="collection"):
     # TODO: Filtering VALARM and VFREEBUSY is not implemented
     # HACK: the filters are tested separately against all components
 
-    if scope == "collection":
+    if level == 0:
         tag = item.name
-    else:
+    elif level == 1:
         tag = item.component_name
+    else:
+        item.collection.logger.warning(
+            "Filters with three levels of comp-filter are not supported")
+        return True
     if not tag:
         return False
     name = filter_.get("name").upper()
@@ -186,7 +190,7 @@ def _comp_match(item, filter_, scope="collection"):
         item.collection.logger.warning("Filtering %s is not supported" % name)
         return True
     # Point #3 and #4 of rfc4791-9.7.1
-    components = ([item.item] if scope == "collection"
+    components = ([item.item] if level == 0
                   else list(getattr(item, "%s_list" % tag.lower())))
     for child in filter_:
         if child.tag == _tag("C", "prop-filter"):
@@ -197,7 +201,7 @@ def _comp_match(item, filter_, scope="collection"):
             if not _time_range_match(item.item, filter_[0], tag):
                 return False
         elif child.tag == _tag("C", "comp-filter"):
-            if not _comp_match(item, child, scope="component"):
+            if not _comp_match(item, child, level=level + 1):
                 return False
         else:
             raise ValueError("Unexpected %r in comp-filter" % child.tag)
