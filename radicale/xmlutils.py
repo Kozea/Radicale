@@ -186,7 +186,8 @@ def _comp_match(item, filter_, level=0):
             return name != tag
     if name != tag:
         return False
-    if name in ("VALARM", "VFREEBUSY"):
+    if (level == 0 and name != "VCALENDAR" or
+            level == 1 and name not in ("VTODO", "VEVENT", "VJOURNAL")):
         item.collection.logger.warning("Filtering %s is not supported" % name)
         return True
     # Point #3 and #4 of rfc4791-9.7.1
@@ -643,8 +644,7 @@ def find_tag(vobject_item):
     """Find tag from ``vobject_item``."""
     if vobject_item.name == "VCALENDAR":
         for component in vobject_item.components():
-            if component.name in ("VTODO", "VEVENT", "VJOURNAL",
-                                  "VFREEBUSY", "VALARM"):
+            if component.name != "VTIMEZONE":
                 return component.name
     return None
 
