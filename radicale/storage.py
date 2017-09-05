@@ -687,6 +687,16 @@ class BaseCollection:
                     if line.startswith("END:"):
                         depth -= 1
             template = vobject.iCalendar()
+            displayname = self.get_meta("D:displayname")
+            if displayname:
+                template.add("X-WR-CALNAME")
+                template.x_wr_calname.value_param = "TEXT"
+                template.x_wr_calname.value = displayname
+            description = self.get_meta("C:calendar-description")
+            if description:
+                template.add("X-WR-CALDESC")
+                template.x_wr_caldesc.value_param = "TEXT"
+                template.x_wr_caldesc.value = description
             template = template.serialize()
             template_insert_pos = template.find("\r\nEND:VCALENDAR\r\n") + 2
             assert template_insert_pos != -1
