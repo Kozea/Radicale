@@ -878,7 +878,18 @@ class Application:
                 return BAD_REQUEST
 
             if write_whole_collection:
-                props = {"tag": tag} if tag else {}
+                props = {}
+                if tag:
+                    props["tag"] = tag
+                if tag == "VCALENDAR" and items:
+                    if hasattr(items[0], "x_wr_calname"):
+                        calname = items[0].x_wr_calname.value
+                        if calname:
+                            props["D:displayname"] = calname
+                    if hasattr(items[0], "x_wr_caldesc"):
+                        caldesc = items[0].x_wr_caldesc.value
+                        if caldesc:
+                            props["C:calendar-description"] = caldesc
                 try:
                     storage.check_and_sanitize_props(props)
                     new_item = self.Collection.create_collection(
