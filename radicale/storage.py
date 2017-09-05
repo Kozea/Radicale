@@ -671,32 +671,28 @@ class BaseCollection:
                         if depth == 1 and line.startswith("END:"):
                             in_vcalendar = False
                         if depth == 2 and line == "BEGIN:VTIMEZONE":
-                            vtimezone.append(line)
+                            vtimezone.append(line + "\r\n")
                         elif vtimezone:
-                            vtimezone.append(line)
+                            vtimezone.append(line + "\r\n")
                             if depth == 2 and line.startswith("TZID:"):
                                 tzid = line[len("TZID:"):]
                             elif depth == 2 and line.startswith("END:"):
                                 if tzid is None or tzid not in included_tzids:
-                                    if vtimezones:
-                                        vtimezones += "\r\n"
-                                    vtimezones += "\r\n".join(vtimezone)
+                                    vtimezones += "".join(vtimezone)
                                     included_tzids.add(tzid)
                                 vtimezone.clear()
                                 tzid = None
                         elif depth >= 2:
-                            if components:
-                                components += "\r\n"
-                            components += line
+                            components += line + "\r\n"
                     if line.startswith("END:"):
                         depth -= 1
-            return "\r\n".join(filter(bool, (
-                "BEGIN:VCALENDAR",
-                "VERSION:2.0",
-                "PRODID:-//PYVOBJECT//NONSGML Version 1//EN",
-                vtimezones,
-                components,
-                "END:VCALENDAR")))
+            template = vobject.iCalendar()
+            template = template.serialize()
+            template_insert_pos = template.find("\r\nEND:VCALENDAR\r\n") + 2
+            assert template_insert_pos != -1
+            return (template[:template_insert_pos] +
+                    vtimezones + components +
+                    template[template_insert_pos:])
         elif self.get_meta("tag") == "VADDRESSBOOK":
             return "".join((item.serialize() for item in self.get_all()))
         return ""
