@@ -600,12 +600,14 @@ def simplify_prefilters(filters):
                 simple = False
                 continue
             tag = comp_filter.get("name").upper()
-            if (tag not in ("VTODO", "VEVENT", "VJOURNAL") or comp_filter.find(
-                    _tag("C", "is-not-defined")) is not None):
+            if comp_filter.find(_tag("C", "is-not-defined")) is not None:
                 simple = False
                 continue
             simple &= len(comp_filter) <= 1
             for time_filter in comp_filter:
+                if tag not in ("VTODO", "VEVENT", "VJOURNAL"):
+                    simple = False
+                    break
                 if time_filter.tag != _tag("C", "time-range"):
                     simple = False
                     continue
