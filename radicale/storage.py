@@ -1420,7 +1420,8 @@ class Collection(BaseCollection):
         return (self.get(href, verify_href=False) for href in self.list())
 
     def get_all_filtered(self, filters):
-        tag, start, end, simple = xmlutils.simplify_prefilters(filters)
+        tag, start, end, simple = xmlutils.simplify_prefilters(
+            filters, collection_tag=self.get_meta("tag"))
         if not tag:
             # no filter
             yield from ((item, simple) for item in self.get_all())

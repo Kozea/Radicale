@@ -578,7 +578,7 @@ def _param_filter_match(vobject_item, filter_, parent_name, ns):
         return condition
 
 
-def simplify_prefilters(filters):
+def simplify_prefilters(filters, collection_tag="VCALENDAR"):
     """Creates a simplified condition from ``filters``.
 
     Returns a tuple (``tag``, ``start``, ``end``, ``simple``) where ``tag`` is
@@ -590,6 +590,9 @@ def simplify_prefilters(filters):
     flat_filters = tuple(chain.from_iterable(filters))
     simple = len(flat_filters) <= 1
     for col_filter in flat_filters:
+        if collection_tag != "VCALENDAR":
+            simple = False
+            break
         if (col_filter.tag != _tag("C", "comp-filter") or
                 col_filter.get("name").upper() != "VCALENDAR"):
             simple = False
