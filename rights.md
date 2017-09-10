@@ -8,7 +8,7 @@ This page describes the format of the rights file for the `from_file`
 authentication backend. The configuration option `file` in the `rights`
 section must point to the rights file.
 
-The recommended rights mehtod is `owner_only`. If access to calendars
+The recommended rights method is `owner_only`. If access to calendars
 and address books outside of the home directory of users (that's `/USERNAME/`)
 is granted, clients won't detect these collections and will not show them to
 the user.
