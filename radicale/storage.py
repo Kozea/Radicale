@@ -40,6 +40,7 @@ from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
 from itertools import chain, groupby
+from math import log
 from random import getrandbits
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
@@ -306,6 +307,11 @@ def path_to_filesystem(root, *paths):
                     part not in scandir(safe_path_parent)):
                 raise CollidingPathError(part)
     return safe_path
+
+
+def left_encode_int(v):
+    length = int(log(v, 256)) + 1 if v != 0 else 1
+    return b"%c%s" % (length, v.to_bytes(length, 'little'))
 
 
 class UnsafePathError(ValueError):
@@ -724,6 +730,9 @@ class BaseCollection:
     def verify(cls):
         """Check the storage for errors."""
         return True
+
+
+ITEM_CACHE_VERSION = 1
 
 
 class Collection(BaseCollection):
@@ -1247,6 +1256,7 @@ class Collection(BaseCollection):
 
     def _item_cache_hash(self, raw_text):
         _hash = md5()
+        _hash.update(left_encode_int(ITEM_CACHE_VERSION))
         _hash.update(raw_text)
         return _hash.hexdigest()
 
