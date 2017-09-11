@@ -143,7 +143,31 @@ INITIAL_CONFIG = OrderedDict([
         ("delay", {
             "value": "1",
             "help": "incorrect authentication delay",
-            "type": positive_float})])),
+            "type": positive_float}),
+        ("ldap_url", {
+            "value": "ldap://localhost:389",
+            "help": "LDAP server URL, with protocol and port",
+            "type": str}),
+        ("ldap_base", {
+            "value": "ou=users,dc=example",
+            "help": "LDAP base DN for users",
+            "type": str}),
+        ("ldap_filter", {
+            "value": "(&(objectclass=user)(username=%username))",
+            "help": "LDAP search filter to find login user",
+            "type": str}),
+        ("ldap_attribute", {
+            "value": "username",
+            "help": "LDAP attribute to uniquely identify the user",
+            "type": str}),
+        ("ldap_binddn", {
+            "value": "",
+            "help": "LDAP dn used if server does not allow anonymous search",
+            "type": str}),
+        ("ldap_password", {
+            "value": "",
+            "help": "LDAP password used with ldap_binddn",
+            "type": str})])),
     ("rights", OrderedDict([
         ("type", {
             "value": "owner_only",

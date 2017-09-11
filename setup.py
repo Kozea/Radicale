@@ -70,7 +70,7 @@ setup(
     package_data={"radicale": WEB_FILES},
     provides=["radicale"],
     scripts=["bin/radicale"],
-    install_requires=["vobject"],
+    install_requires=["vobject", "ldap3"],
     setup_requires=pytest_runner,
     tests_require=[
         "pytest-runner", "pytest-cov", "pytest-flake8", "pytest-isort"],

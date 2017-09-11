@@ -60,8 +60,10 @@ import hmac
 import os
 from importlib import import_module
 
+import ldap3
+
 INTERNAL_TYPES = ("None", "none", "remote_user", "http_x_remote_user",
-                  "htpasswd")
+                  "htpasswd", "ldap")
 
 
 def load(configuration, logger):
@@ -75,6 +77,8 @@ def load(configuration, logger):
         class_ = HttpXRemoteUserAuth
     elif auth_type == "htpasswd":
         class_ = Auth
+    elif auth_type == "ldap":
+        class_ = LdapAuth
     else:
         try:
             class_ = import_module(auth_type).Auth
@@ -242,3 +246,139 @@ class RemoteUserAuth(NoneAuth):
 class HttpXRemoteUserAuth(NoneAuth):
     def get_external_login(self, environ):
         return environ.get("HTTP_X_REMOTE_USER", ""), ""
+
+
+class LdapAuth(BaseAuth):
+    ldap_url = ""
+    ldap_base = ""
+    ldap_filter = ""
+    ldap_attribute = ""
+    ldap_binddn = ""
+    ldap_password = ""
+
+    def __init__(self, configuration, logger):
+        super().__init__(configuration, logger)
+
+        if configuration.has_option("auth", "ldap_url"):
+            # also get rid of trailing slashes which are typical for uris
+            self.ldap_url = configuration.get("auth", "ldap_url").rstrip("/")
+        else:
+            raise RuntimeError(
+                "The ldap_url configuration for ldap auth is required.")
+
+        if configuration.has_option("auth", "ldap_base"):
+            self.ldap_base = configuration.get("auth", "ldap_base")
+        else:
+            raise RuntimeError(
+                "The ldap_base configuration for ldap auth is required.")
+
+        if configuration.has_option("auth", "ldap_filter"):
+            self.ldap_filter = configuration.get("auth", "ldap_filter")
+        else:
+            raise RuntimeError(
+                "The ldap_filter configuration for ldap auth is required.")
+
+        if configuration.has_option("auth", "ldap_attribute"):
+            self.ldap_attribute = configuration.get("auth", "ldap_attribute")
+        else:
+            raise RuntimeError(
+                "The ldap_attribute configuration for ldap auth is required.")
+
+        if configuration.has_option("auth", "ldap_binddn"):
+            self.ldap_binddn = configuration.get("auth", "ldap_binddn")
+        else:
+            raise RuntimeError(
+                "The ldap_binddn configuration for ldap auth is required.")
+
+        if configuration.has_option("auth", "ldap_password"):
+            self.ldap_password = configuration.get("auth", "ldap_password")
+        else:
+            raise RuntimeError(
+                "The ldap_password configuration for ldap auth is required.")
+
+        self.logger.info("LDAP auth configuration:")
+        self.logger.info("  %r is %r", "ldap_url", self.ldap_url)
+        self.logger.info("  %r is %r", "ldap_base", self.ldap_base)
+        self.logger.info("  %r is %r", "ldap_filter", self.ldap_filter)
+        self.logger.info("  %r is %r", "ldap_attribute", self.ldap_attribute)
+        self.logger.info("  %r is %r", "ldap_binddn", self.ldap_binddn)
+        self.logger.info("  %r is %r", "ldap_password", self.ldap_password)
+
+    def is_authenticated(self, user, password):
+        if user == "" or password == "":
+            return False
+
+        server = ldap3.Server(self.ldap_url, get_info=ldap3.ALL)
+        conn = ldap3.Connection(server=server, user=self.ldap_binddn,
+                                password=self.ldap_password, check_names=True,
+                                lazy=False, raise_exceptions=False)
+        conn.open()
+        conn.bind()
+
+        if conn.result["result"] != 0:
+            self.logger.error(conn.result)
+            return False
+
+        final_search_filter = self.ldap_filter.replace("%username", user)
+        conn.search(search_base=self.ldap_base,
+                    search_filter=final_search_filter,
+                    attributes=ldap3.ALL_ATTRIBUTES)
+
+        if conn.result["result"] != 0:
+            self.logger.error(conn.result)
+            return False
+
+        if len(conn.response) == 0:
+            return False
+
+        final_user_dn = conn.response[0]["dn"]
+
+        conn.unbind()
+
+        # new connection to check the password as we cannot rebind here
+        conn = ldap3.Connection(server=server, user=final_user_dn,
+                                password=password, check_names=True,
+                                lazy=False, raise_exceptions=False)
+        conn.open()
+        conn.bind()
+
+        return conn.result["result"] == 0
+
+    def map_login_to_user(self, login):
+        if login == "":
+            return login
+
+        server = ldap3.Server(self.ldap_url, get_info=ldap3.ALL)
+        conn = ldap3.Connection(server=server, user=self.ldap_binddn,
+                                password=self.ldap_password, check_names=True,
+                                lazy=False, raise_exceptions=False)
+        conn.open()
+        conn.bind()
+
+        if conn.result["result"] != 0:
+            raise RuntimeError(conn.result)
+
+        final_search_filter = self.ldap_filter.replace("%username", login)
+        conn.search(search_base=self.ldap_base,
+                    search_filter=final_search_filter,
+                    attributes=ldap3.ALL_ATTRIBUTES)
+
+        if conn.result["result"] != 0:
+            raise RuntimeError(conn.result)
+
+        if len(conn.response) == 0:
+            raise RuntimeError("No user found for login name")
+
+        if self.ldap_attribute not in conn.response[0]["attributes"]:
+            raise RuntimeError(
+                "LDAP record does not contain " + self.ldap_attribute)
+
+        if len(conn.response[0]["attributes"][self.ldap_attribute]) == 0:
+            raise RuntimeError(
+                "LDAP user has empty attribute " + self.ldap_attribute)
+
+        final_login = conn.response[0]["attributes"][self.ldap_attribute][0]
+
+        conn.unbind()
+
+        return final_login

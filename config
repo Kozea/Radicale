@@ -70,7 +70,7 @@
 [auth]
 
 # Authentication method
-# Value: none | htpasswd | remote_user | http_x_remote_user
+# Value: none | htpasswd | remote_user | http_x_remote_user | ldap
 #type = none
 
 # Htpasswd filename
@@ -84,6 +84,28 @@
 
 # Incorrect authentication delay (seconds)
 #delay = 1
+
+# LDAP server URL, with protocol and port
+#ldap_url = ldap://localhost:389/
+
+# LDAP base path
+#ldap_base = ou=users,dc=example,dc=com
+
+# LDAP filter string to find the user attempting to login
+# The first search result is used to attempt a bind to validate the password
+# %username will be replaced with the username login value, this allows to login with multiple attributes
+# example: (&(objectclass=user)(|(username=%username)(mail=%username)))
+#ldap_filter = (&(objectclass=user)(username=%username))
+
+# LDAP attribute to uniquely map a user to a collection
+#ldap_attribute = username
+
+# LDAP dn for initial login, used if LDAP server does not allow anonymous searches
+# Leave empty if searches are anonymous
+#ldap_binddn =
+
+# LDAP password for initial login, used with ldap_binddn
+#ldap_password =
 
 
 [rights]
