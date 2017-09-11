@@ -311,7 +311,7 @@ def path_to_filesystem(root, *paths):
 
 def left_encode_int(v):
     length = int(log(v, 256)) + 1 if v != 0 else 1
-    return b"%c%s" % (length, v.to_bytes(length, 'little'))
+    return bytes((length,)) + v.to_bytes(length, 'little')
 
 
 class UnsafePathError(ValueError):
