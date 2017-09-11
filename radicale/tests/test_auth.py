@@ -117,9 +117,14 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_multi(self):
         self._test_htpasswd("plain", "ign:ign\ntmp:bepo")
 
-    def test_htpasswd_whitespace(self):
-        self._test_htpasswd("plain", " tmp : bepo ", (
-            (" tmp ", " bepo ", 207), ("tmp", "bepo", 401)))
+    @pytest.mark.skipif(os.name == "nt", reason="leading and trailing "
+                        "whitespaces not allowed in file names")
+    def test_htpasswd_whitespace_preserved(self):
+        self._test_htpasswd("plain", " tmp : bepo ",
+                            ((" tmp ", " bepo ", 207),))
+
+    def test_htpasswd_whitespace_not_trimmed(self):
+        self._test_htpasswd("plain", " tmp : bepo ", (("tmp", "bepo", 401),))
 
     def test_htpasswd_comment(self):
         self._test_htpasswd("plain", "#comment\n #comment\n \ntmp:bepo\n\n")
