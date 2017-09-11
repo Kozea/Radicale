@@ -1,6 +1,20 @@
 News
 ====
 
+2.1.6 - Wild Radish
+-------------------
+
+This release is compatible with version 2.0.0.
+
+* Fix content-type of VLIST
+* Specify correct COMPONENT in content-type of VCALENDAR
+* Cache COMPONENT of calendar objects (improves speed with some clients)
+* Stricter parsing of filters
+* Improve support for CardDAV filter
+* Fix some smaller bugs in CalDAV filter
+* Add X-WR-CALNAME and X-WR-CALDESC to calendars downloaded via HTTP/WebDAV
+* Use X-WR-CALNAME and X-WR-CALDESC from calendars published via WebDAV
+
 2.1.5 - Wild Radish
 -------------------
 
