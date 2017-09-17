@@ -62,7 +62,7 @@ for short, url in NAMESPACES.items():
     ET.register_namespace("" if short == "D" else short, url)
 
 CLARK_TAG_REGEX = re.compile(r"{(?P<namespace>[^}]*)}(?P<tag>.*)", re.VERBOSE)
-HUMAN_REGEX = re.compile(r"(?P<namespace>[^:{}]*)(?P<tag>.*)", re.VERBOSE)
+HUMAN_REGEX = re.compile(r"(?P<namespace>[^:{}]*):(?P<tag>.*)", re.VERBOSE)
 
 DAY = timedelta(days=1)
 SECOND = timedelta(seconds=1)
