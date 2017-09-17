@@ -962,6 +962,12 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
                 report_tag.append(supported_report_tag)
                 supported.append(report_tag)
                 element.append(supported)
+        elif tag == _tag("D", "getcontentlength"):
+            if not is_collection or is_leaf:
+                encoding = collection.configuration.get("encoding", "request")
+                element.text = str(len(item.serialize().encode(encoding)))
+            else:
+                is404 = True
         elif is_collection:
             if tag == _tag("D", "getcontenttype"):
                 if is_leaf:
@@ -1022,9 +1028,6 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
         elif tag == _tag("D", "resourcetype"):
             # resourcetype must be returned empty for non-collection elements
             pass
-        elif tag == _tag("D", "getcontentlength"):
-            encoding = collection.configuration.get("encoding", "request")
-            element.text = str(len(item.serialize().encode(encoding)))
         else:
             is404 = True
 
