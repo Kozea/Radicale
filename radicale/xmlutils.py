@@ -779,17 +779,12 @@ def propfind(base_prefix, path, xml_request, read_collections,
                ET.Element(_tag("D", "allprop")))
 
     props = ()
+    allprop = False
+    propname = False
     if top_tag.tag == _tag("D", "allprop"):
-        props = [
-            _tag("D", "getcontenttype"),
-            _tag("D", "resourcetype"),
-            _tag("D", "displayname"),
-            _tag("D", "owner"),
-            _tag("D", "getetag"),
-            _tag("CS", "getctag"),
-            _tag("C", "supported-calendar-component-set"),
-            _tag("D", "supported-report-set"),
-        ]
+        allprop = True
+    elif top_tag.tag == _tag("D", "propname"):
+        propname = True
     elif top_tag.tag == _tag("D", "prop"):
         props = [prop.tag for prop in top_tag]
 
@@ -805,25 +800,17 @@ def propfind(base_prefix, path, xml_request, read_collections,
     collections = []
     for collection in write_collections:
         collections.append(collection)
-        if top_tag.tag == _tag("D", "propname"):
-            response = _propfind_response(
-                base_prefix, path, collection, (), user, write=True,
-                propnames=True)
-        else:
-            response = _propfind_response(
-                base_prefix, path, collection, props, user, write=True)
+        response = _propfind_response(
+            base_prefix, path, collection, props, user, write=True,
+            allprop=allprop, propname=propname)
         if response:
             multistatus.append(response)
     for collection in read_collections:
         if collection in collections:
             continue
-        if top_tag.tag == _tag("D", "propname"):
-            response = _propfind_response(
-                base_prefix, path, collection, (), user, write=False,
-                propnames=True)
-        else:
-            response = _propfind_response(
-                base_prefix, path, collection, props, user, write=False)
+        response = _propfind_response(
+            base_prefix, path, collection, props, user, write=False,
+            allprop=allprop, propname=propname)
         if response:
             multistatus.append(response)
 
@@ -831,8 +818,10 @@ def propfind(base_prefix, path, xml_request, read_collections,
 
 
 def _propfind_response(base_prefix, path, item, props, user, write=False,
-                       propnames=False):
+                       propname=False, allprop=False):
     """Build and return a PROPFIND response."""
+    if propname and allprop or (props and (propname or allprop)):
+        raise ValueError("Only use one of props, propname and allprops")
     is_collection = isinstance(item, storage.BaseCollection)
     if is_collection:
         is_leaf = item.get_meta("tag") in ("VADDRESSBOOK", "VCALENDAR")
@@ -862,33 +851,48 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
     prop404 = ET.Element(_tag("D", "prop"))
     propstat404.append(prop404)
 
-    if propnames:
+    if propname or allprop:
+        props = []
         # Should list all properties that can be retrieved by the code below
-        prop200.append(ET.Element(_tag("D", "getetag")))
-        prop200.append(ET.Element(_tag("D", "principal-URL")))
-        prop200.append(ET.Element(_tag("D", "principal-collection-set")))
-        prop200.append(ET.Element(_tag("C", "calendar-user-address-set")))
-        prop200.append(ET.Element(_tag("CR", "addressbook-home-set")))
-        prop200.append(ET.Element(_tag("C", "calendar-home-set")))
-        prop200.append(ET.Element(
-            _tag("C", "supported-calendar-component-set")))
-        prop200.append(ET.Element(_tag("D", "current-user-privilege-set")))
-        prop200.append(ET.Element(_tag("D", "supported-report-set")))
-        prop200.append(ET.Element(_tag("D", "getcontenttype")))
-        prop200.append(ET.Element(_tag("D", "resourcetype")))
+        props.append(_tag("D", "principal-collection-set"))
+        props.append(_tag("D", "current-user-principal"))
+        props.append(_tag("D", "current-user-privilege-set"))
+        props.append(_tag("D", "supported-report-set"))
+        props.append(_tag("D", "resourcetype"))
+        props.append(_tag("D", "owner"))
+
+        if is_collection and collection.is_principal:
+            props.append(_tag("C", "calendar-user-address-set"))
+            props.append(_tag("D", "principal-URL"))
+            props.append(_tag("CR", "addressbook-home-set"))
+            props.append(_tag("C", "calendar-home-set"))
+
+        if not is_collection or is_leaf:
+            props.append(_tag("D", "getetag"))
+            props.append(_tag("D", "getlastmodified"))
+            props.append(_tag("D", "getcontenttype"))
+            props.append(_tag("D", "getcontentlength"))
 
         if is_collection:
-            prop200.append(ET.Element(_tag("CS", "getctag")))
-            prop200.append(ET.Element(_tag("D", "sync-token")))
-            prop200.append(ET.Element(_tag("D", "displayname")))
-            prop200.append(ET.Element(_tag("D", "owner")))
-
             if is_leaf:
-                meta = item.get_meta()
-                for tag in meta:
-                    clark_tag = _tag_from_human(tag)
-                    if prop200.find(clark_tag) is None:
-                        prop200.append(ET.Element(clark_tag))
+                props.append(_tag("D", "displayname"))
+                props.append(_tag("D", "sync-token"))
+            if collection.get_meta("tag") == "VCALENDAR":
+                props.append(_tag("CS", "getctag"))
+                props.append(_tag("C", "supported-calendar-component-set"))
+
+            meta = item.get_meta()
+            for tag in meta:
+                if tag == "tag":
+                    continue
+                clark_tag = _tag_from_human(tag)
+                if clark_tag not in props:
+                    props.append(clark_tag)
+
+    if propname:
+        for tag in props:
+            prop200.append(ET.Element(tag))
+        props = ()
 
     for tag in props:
         element = ET.Element(tag)
