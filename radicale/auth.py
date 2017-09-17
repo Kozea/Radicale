@@ -102,12 +102,22 @@ class BaseAuth:
         """
         return ()
 
-    def is_authenticated(self, user, password):
+    def is_authenticated2(self, login, user, password):
         """Validate credentials.
+
+        ``login`` the login name
 
         ``user`` the user from ``map_login_to_user(login)``.
 
         ``password`` the login password
+
+        """
+        return self.is_authenticated(user, password)
+
+    def is_authenticated(self, user, password):
+        """Validate credentials.
+
+        DEPRECATED: use ``is_authenticated2`` instead
 
         """
         raise NotImplementedError
@@ -119,7 +129,7 @@ class BaseAuth:
 
         Returns a string with the user name.
         If a login can't be mapped to an user, return ``login`` and
-        return ``False`` in ``is_authenticated(...)``.
+        return ``False`` in ``is_authenticated2(...)``.
 
         """
         return login

@@ -446,7 +446,8 @@ class Application:
             self.logger.info("Refused unsafe username: %r", user)
             is_authenticated = False
         else:
-            is_authenticated = self.Auth.is_authenticated(user, password)
+            is_authenticated = self.Auth.is_authenticated2(login, user,
+                                                           password)
             if not is_authenticated:
                 self.logger.info("Failed login attempt: %r", user)
                 # Random delay to avoid timing oracles and bruteforce attacks
