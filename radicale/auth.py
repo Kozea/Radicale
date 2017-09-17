@@ -227,7 +227,7 @@ class Auth(BaseAuth):
                             # timing attacks, see #591.
                             login_ok = hmac.compare_digest(login, user)
                             password_ok = self.verify(hash_value, password)
-                            if login_ok & password_ok:
+                            if login_ok and password_ok:
                                 return True
                         except ValueError as e:
                             raise RuntimeError("Invalid htpasswd file %r: %s" %
