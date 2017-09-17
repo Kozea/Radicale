@@ -996,13 +996,16 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
             elif tag == _tag("RADICALE", "displayname"):
                 # Only for internal use by the web interface
                 displayname = item.get_meta("D:displayname")
-                if is_leaf and displayname is not None:
+                if displayname is not None:
                     element.text = displayname
                 else:
                     is404 = True
             elif tag == _tag("D", "displayname"):
-                if is_leaf:
-                    element.text = item.get_meta("D:displayname") or item.path
+                displayname = item.get_meta("D:displayname")
+                if not displayname and is_leaf:
+                    displayname = item.path
+                if displayname is not None:
+                    element.text = displayname
                 else:
                     is404 = True
             elif tag == _tag("CS", "getctag"):
