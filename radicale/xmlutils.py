@@ -968,6 +968,12 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
                 element.text = str(len(item.serialize().encode(encoding)))
             else:
                 is404 = True
+        elif tag == _tag("D", "owner"):
+            # return empty elment, if no owner available (rfc3744-5.1)
+            if collection.owner:
+                tag = ET.Element(_tag("D", "href"))
+                tag.text = _href(base_prefix, "/%s/" % collection.owner)
+                element.append(tag)
         elif is_collection:
             if tag == _tag("D", "getcontenttype"):
                 if is_leaf:
@@ -987,12 +993,6 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
                         element.append(tag)
                 tag = ET.Element(_tag("D", "collection"))
                 element.append(tag)
-            elif tag == _tag("D", "owner"):
-                # return empty elment, if no owner available (rfc3744-5.1)
-                if collection.owner:
-                    tag = ET.Element(_tag("D", "href"))
-                    tag.text = _href(base_prefix, "/%s/" % collection.owner)
-                    element.append(tag)
             elif tag == _tag("RADICALE", "displayname"):
                 # Only for internal use by the web interface
                 displayname = item.get_meta("D:displayname")
