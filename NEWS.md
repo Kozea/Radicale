@@ -1,6 +1,28 @@
 News
 ====
 
+2.1.7 - Wild Radish
+-------------------
+
+This release is compatible with version 2.0.0.
+
+* Don't print warning when cache format changes
+* Add documentation for ``BaseAuth``
+* Add ``is_authenticated2(login, user, password)`` to ``BaseAuth``
+* Fix names of custom properties in PROPFIND requests with
+  ``D:propname`` or ``D:allprop``
+* Return all properties in PROPFIND requests with ``D:propname`` or
+  ``D:allprop``
+* Allow ``D:displayname`` property on all collections
+* Answer with ``D:unauthenticated`` for ``D:current-user-principal`` property
+  when not logged in
+* Remove non-existing ``ICAL:calendar-color`` and ``C:calendar-timezone``
+  properties from PROPFIND requests with ``D:propname`` or ``D:allprop``
+* Add ``D:owner`` property to calendar and address book objects
+* Remove ``D:getetag`` and ``D:getlastmodified`` properties from regular
+  collections
+
+
 2.1.6 - Wild Radish
 -------------------
 
