@@ -894,9 +894,15 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
         element = ET.Element(tag)
         is404 = False
         if tag == _tag("D", "getetag"):
-            element.text = item.etag
+            if not is_collection or is_leaf:
+                element.text = item.etag
+            else:
+                is404 = True
         elif tag == _tag("D", "getlastmodified"):
-            element.text = item.last_modified
+            if not is_collection or is_leaf:
+                element.text = item.last_modified
+            else:
+                is404 = True
         elif tag == _tag("D", "principal-collection-set"):
             tag = ET.Element(_tag("D", "href"))
             tag.text = _href(base_prefix, "/")
