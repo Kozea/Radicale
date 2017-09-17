@@ -99,11 +99,7 @@ class BaseAuth:
         return ()
 
     def is_authenticated(self, user, password):
-        """Validate credentials.
-
-        Iterate through htpasswd credential file until user matches, extract
-        hash (encrypted password) and check hash against user-given password,
-        using the method specified in the Radicale config.
+        """Validate credentials."""
 
         """
         raise NotImplementedError
@@ -209,9 +205,17 @@ class Auth(BaseAuth):
         return md5_apr1.verify(password, hash_value)
 
     def is_authenticated(self, user, password):
-        # The content of the file is not cached because reading is generally a
-        # very cheap operation, and it's useful to get live updates of the
-        # htpasswd file.
+        """Validate credentials.
+
+        Iterate through htpasswd credential file until user matches, extract
+        hash (encrypted password) and check hash against user-given password,
+        using the method specified in the Radicale config.
+
+        The content of the file is not cached because reading is generally a
+        very cheap operation, and it's useful to get live updates of the
+        htpasswd file.
+
+        """
         try:
             with open(self.filename) as f:
                 for line in f:
