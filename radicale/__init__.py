@@ -420,6 +420,10 @@ class Application:
         # Get function corresponding to method
         function = getattr(self, "do_%s" % environ["REQUEST_METHOD"].upper())
 
+        # If "/.well-known" is not available, clients query "/"
+        if path == "/.well-known" or path.startswith("/.well-known/"):
+            return response(*NOT_FOUND)
+
         # Ask authentication backend to check rights
         external_login = self.Auth.get_external_login(environ)
         authorization = environ.get("HTTP_AUTHORIZATION", "")
@@ -434,10 +438,6 @@ class Application:
             login = environ.get("REMOTE_USER", "")
             password = ""
         user = self.Auth.map_login_to_user(login)
-
-        # If "/.well-known" is not available, clients query "/"
-        if path == "/.well-known" or path.startswith("/.well-known/"):
-            return response(*NOT_FOUND)
 
         if not user:
             is_authenticated = True
