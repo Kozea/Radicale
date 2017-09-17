@@ -1317,14 +1317,15 @@ class Collection(BaseCollection):
                     if not lock.in_use():
                         del self._cache_locks[lock_id]
 
-    def _load_item_cache(self, href):
+    def _load_item_cache(self, href, input_hash):
         cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
                                     "item")
         cache_hash = uid = etag = text = name = tag = start = end = None
         try:
             with open(os.path.join(cache_folder, href), "rb") as f:
-                cache_hash, uid, etag, text, name, tag, start, end = \
-                    pickle.load(f)
+                cache_hash, *content = pickle.load(f)
+                if cache_hash == input_hash:
+                    uid, etag, text, name, tag, start, end = content
         except FileNotFoundError as e:
             pass
         except (pickle.UnpicklingError, ValueError) as e:
@@ -1365,7 +1366,7 @@ class Collection(BaseCollection):
         # if the entry in the cache is still valid.
         input_hash = self._item_cache_hash(raw_text)
         cache_hash, uid, etag, text, name, tag, start, end = \
-            self._load_item_cache(href)
+            self._load_item_cache(href, input_hash)
         vobject_item = None
         if input_hash != cache_hash:
             with contextlib.ExitStack() as lock_stack:
@@ -1376,7 +1377,7 @@ class Collection(BaseCollection):
                     lock_stack.enter_context(self._acquire_cache_lock("item"))
                     # Check if another process created the file in the meantime
                     cache_hash, uid, etag, text, name, tag, start, end = \
-                        self._load_item_cache(href)
+                        self._load_item_cache(href, input_hash)
                 if input_hash != cache_hash:
                     try:
                         vobject_items = tuple(vobject.readComponents(
