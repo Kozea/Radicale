@@ -93,19 +93,35 @@ class BaseAuth:
     def get_external_login(self, environ):
         """Optionally provide the login and password externally.
 
-        Returns a tuple (login, password) or ().
+        ``environ`` a dict with the WSGI environment
+
+        If ``()`` is returned, Radicale handles HTTP authentication.
+        Otherwise, returns a tuple ``(login, password)``. For anonymous users
+        ``login`` must be ``""``.
 
         """
         return ()
 
     def is_authenticated(self, user, password):
-        """Validate credentials."""
+        """Validate credentials.
+
+        ``user`` the user from ``map_login_to_user(login)``.
+
+        ``password`` the login password
 
         """
         raise NotImplementedError
 
     def map_login_to_user(self, login):
-        """Map login to internal username."""
+        """Map login name to internal user.
+
+        ``login`` the login name, ``""`` for anonymous users
+
+        Returns a string with the user name.
+        If a login can't be mapped to an user, return ``login`` and
+        return ``False`` in ``is_authenticated(...)``.
+
+        """
         return login
 
 
