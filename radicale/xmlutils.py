@@ -786,7 +786,6 @@ def propfind(base_prefix, path, xml_request, read_collections,
             _tag("D", "displayname"),
             _tag("D", "owner"),
             _tag("D", "getetag"),
-            _tag("ICAL", "calendar-color"),
             _tag("CS", "getctag"),
             _tag("C", "supported-calendar-component-set"),
             _tag("D", "supported-report-set"),
@@ -881,9 +880,7 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
         if is_collection:
             prop200.append(ET.Element(_tag("CS", "getctag")))
             prop200.append(ET.Element(_tag("D", "sync-token")))
-            prop200.append(ET.Element(_tag("C", "calendar-timezone")))
             prop200.append(ET.Element(_tag("D", "displayname")))
-            prop200.append(ET.Element(_tag("ICAL", "calendar-color")))
             prop200.append(ET.Element(_tag("D", "owner")))
 
             if is_leaf:
