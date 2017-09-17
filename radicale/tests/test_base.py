@@ -370,6 +370,34 @@ class BaseRequestsMixIn:
         assert "href>%s</" % calendar_path in answer
         assert "href>%s</" % event_path in answer
 
+    def test_propfind_propname(self):
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
+        event = get_file_content("event1.ics")
+        status, _, _ = self.request("PUT", "/calendar.ics/event.ics", event)
+        assert status == 201
+        propfind = get_file_content("propname.xml")
+        status, _, answer = self.request(
+            "PROPFIND", "/calendar.ics/", propfind)
+        assert "<sync-token />" in answer
+        status, _, answer = self.request(
+            "PROPFIND", "/calendar.ics/event.ics", propfind)
+        assert "<getetag />" in answer
+
+    def test_propfind_allprop(self):
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
+        event = get_file_content("event1.ics")
+        status, _, _ = self.request("PUT", "/calendar.ics/event.ics", event)
+        assert status == 201
+        propfind = get_file_content("allprop.xml")
+        status, _, answer = self.request(
+            "PROPFIND", "/calendar.ics/", propfind)
+        assert "<sync-token>" in answer
+        status, _, answer = self.request(
+            "PROPFIND", "/calendar.ics/event.ics", propfind)
+        assert "<getetag>" in answer
+
     def test_proppatch(self):
         """Write a property and read it back."""
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
@@ -385,8 +413,12 @@ class BaseRequestsMixIn:
         status, _, answer = self.request(
             "PROPFIND", "/calendar.ics/", propfind)
         assert status == 207
-        assert ":calendar-color>#BADA55</" in answer
+        assert "<ICAL:calendar-color>#BADA55</" in answer
         assert "200 OK</status" in answer
+        propfind = get_file_content("allprop.xml")
+        status, _, answer = self.request(
+            "PROPFIND", "/calendar.ics/", propfind)
+        assert "<ICAL:calendar-color>" in answer
 
     def test_put_whole_calendar_multiple_events_with_same_uid(self):
         """Add two events with the same UID."""
