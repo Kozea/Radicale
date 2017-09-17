@@ -927,9 +927,12 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
             else:
                 is404 = True
         elif tag == _tag("D", "current-user-principal"):
-            tag = ET.Element(_tag("D", "href"))
-            tag.text = _href(base_prefix, ("/%s/" % user) if user else "/")
-            element.append(tag)
+            if user:
+                tag = ET.Element(_tag("D", "href"))
+                tag.text = _href(base_prefix, "/%s/" % user)
+                element.append(tag)
+            else:
+                element.append(ET.Element(_tag("D", "unauthenticated")))
         elif tag == _tag("D", "current-user-privilege-set"):
             privileges = [("D", "read")]
             if write:
