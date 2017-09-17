@@ -221,10 +221,6 @@ function get_collections(user, password, collection, callback) {
                         description = calendardesc_element ? calendardesc_element.textContent : "";
                     }
                 }
-                // Quirks
-                if (href === (displayname ? "/" + displayname + "/" : "/")) {
-                    displayname = "";
-                }
                 var sane_color = color.trim();
                 if (sane_color) {
                     var color_match = COLOR_RE.exec(sane_color);
@@ -249,10 +245,14 @@ function get_collections(user, password, collection, callback) {
         }
     };
     request.send('<?xml version="1.0" encoding="utf-8" ?>' +
-                 '<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:I="http://apple.com/ns/ical/" xmlns:INF="http://inf-it.com/ns/ab/">' +
+                 '<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" ' +
+                         'xmlns:CR="urn:ietf:params:xml:ns:carddav" ' +
+                         'xmlns:I="http://apple.com/ns/ical/" ' +
+                         'xmlns:INF="http://inf-it.com/ns/ab/" ' +
+                         'xmlns:RADICALE="http://radicale.org/ns/">' +
                      '<prop>' +
                          '<resourcetype />' +
-                         '<displayname />' +
+                         '<RADICALE:displayname />' +
                          '<I:calendar-color />' +
                          '<INF:addressbook-color />' +
                          '<C:calendar-description />' +

@@ -53,7 +53,8 @@ NAMESPACES = {
     "D": "DAV:",
     "CS": "http://calendarserver.org/ns/",
     "ICAL": "http://apple.com/ns/ical/",
-    "ME": "http://me.com/_namespace/"}
+    "ME": "http://me.com/_namespace/",
+    "RADICALE": "http://radicale.org/ns/"}
 
 NAMESPACES_REV = {}
 for short, url in NAMESPACES.items():
@@ -986,6 +987,13 @@ def _propfind_response(base_prefix, path, item, props, user, write=False,
                     tag = ET.Element(_tag("D", "href"))
                     tag.text = _href(base_prefix, "/%s/" % collection.owner)
                     element.append(tag)
+            elif tag == _tag("RADICALE", "displayname"):
+                # Only for internal use by the web interface
+                displayname = item.get_meta("D:displayname")
+                if is_leaf and displayname is not None:
+                    element.text = displayname
+                else:
+                    is404 = True
             elif tag == _tag("D", "displayname"):
                 if is_leaf:
                     element.text = item.get_meta("D:displayname") or item.path
