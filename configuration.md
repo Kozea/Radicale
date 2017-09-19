@@ -192,6 +192,11 @@ Available methods:
 
 Default: `bcrypt`
 
+### delay
+Incorrect authentication delay (seconds)
+
+Default: `1`
+
 ## rights
 ### type
 The backend that is used to check the access rights of collections.
