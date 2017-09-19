@@ -21,6 +21,7 @@ Example **uWSGI** configuration:
 ```ini
 [uwsgi]
 http-socket = 127.0.0.1:5232
+threads = 8
 plugin = python3
 wsgi-file = /path/to/radicale.wsgi
 env = RADICALE_CONFIG=/etc/radicale/config
