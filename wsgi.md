@@ -16,6 +16,16 @@ maximum upload file size.
 **Security:** The `None` authentication type disables all rights checking.
 Don't use it with `REMOTE_USER`. Use `remote_user` instead.
 
+Example **uWSGI** configuration:
+
+```ini
+[uwsgi]
+http-socket = 127.0.0.1:5232
+plugin = python3
+wsgi-file = /path/to/radicale.wsgi
+env = RADICALE_CONFIG=/etc/radicale/config
+```
+
 ## Manage user accounts with the WSGI server
 Set the configuration option `type` in the `auth` section to `remote_user`.
 Radicale uses the user name provided by the WSGI server and disables
