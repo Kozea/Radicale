@@ -121,9 +121,9 @@ $ curl -u user -X MKCOL 'http://localhost:5232/user/calendar' --data \
         <C:comp name="VJOURNAL" />
         <C:comp name="VTODO" />
       </C:supported-calendar-component-set>
-      <displayname></displayname>
-      <C:calendar-description></C:calendar-description>
-      <I:calendar-color></I:calendar-color>
+      <displayname>Calendar</displayname>
+      <C:calendar-description>Example calendar</C:calendar-description>
+      <I:calendar-color>#ff0000ff</I:calendar-color>
     </prop>
   </set>
 </create>'
@@ -141,8 +141,8 @@ $ curl -u user -X MKCOL 'http://localhost:5232/user/addressbook' --data \
         <collection />
         <CR:addressbook />
       </resourcetype>
-      <displayname></displayname>
-      <CR:addressbook-description></CR:addressbook-description>
+      <displayname>Address book</displayname>
+      <CR:addressbook-description>Example address book</CR:addressbook-description>
     </prop>
   </set>
 </create>'
