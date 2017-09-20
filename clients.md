@@ -26,7 +26,7 @@ collections.
 In some clients you can just enter the URL of the Radicale server
 (e.g. `http://localhost:5232`) and your user name. In others, you have to
 enter the URL of the collection directly
-(e.g. `http://localhost:5232/user/calendar.ics`).
+(e.g. `http://localhost:5232/user/calendar`).
 
 ## DAVdroid
 
@@ -49,13 +49,13 @@ address books.
 ### CardBook
 
 Add a new address book on the network with CardDAV. You have to enter the full
-URL of the collection (e.g. `http://localhost:5232/user/addressbook.ics`) and
+URL of the collection (e.g. `http://localhost:5232/user/addressbook`) and
 your user name.
 
 ### Lightning
 
 Add a new calendar on the network with CalDAV. You have to enter the full URL
-of the collection (e.g. `http://localhost:5232/user/calendar.ics`).
+of the collection (e.g. `http://localhost:5232/user/calendar`).
 If you want to add calendars from different users on the same server, you can
 specify the user name in the URL (e.g. `http://user@localhost...`)
 
@@ -81,7 +81,7 @@ address books. Use Radicale's web interface or a client with support for it
 ### Direct editing of the storage
 
 To create a new collection, you have to create the corresponding folder in the
-file system storage (e.g. `collection-root/user/calendar.ics`).
+file system storage (e.g. `collection-root/user/calendar`).
 To tell Radicale and clients that the collection is a calendar, you have to
 create the file ``.Radicale.props`` with the following content in the folder:
 
@@ -89,7 +89,7 @@ create the file ``.Radicale.props`` with the following content in the folder:
 {"tag": "VCALENDAR"}
 ```
 
-The calendar is now available at the URL path ``/user/calendar.ics``.
+The calendar is now available at the URL path ``/user/calendar``.
 For address books the file must contain:
 
 ```json
@@ -107,7 +107,7 @@ Delete collections by deleting the corresponding folders.
 To create a new calendar run something like:
 
 ```shell
-$ curl -u user -X MKCOL 'http://localhost:5232/user/calendar.ics' --data \
+$ curl -u user -X MKCOL 'http://localhost:5232/user/calendar' --data \
 '<?xml version="1.0" encoding="UTF-8" ?>
 <create xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:I="http://apple.com/ns/ical/">
   <set>
@@ -132,7 +132,7 @@ $ curl -u user -X MKCOL 'http://localhost:5232/user/calendar.ics' --data \
 To create a new address book run something like:
 
 ```shell
-$ curl -u user -X MKCOL 'http://localhost:5232/user/addressbook.ics' --data \
+$ curl -u user -X MKCOL 'http://localhost:5232/user/addressbook' --data \
 '<?xml version="1.0" encoding="UTF-8" ?>
 <create xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
   <set>
@@ -156,5 +156,5 @@ children of the path `/USERNAME/`.
 Delete the collections by running something like:
 
 ```shell
-$ curl -u user -X DELETE 'http://localhost:5232/user/calendar.ics'
+$ curl -u user -X DELETE 'http://localhost:5232/user/calendar'
 ```
