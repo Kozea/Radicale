@@ -72,7 +72,7 @@ icons and buttons, a terminal or another web application.
 
 ## Code Architecture
 
-The ``radicale`` package offers 8 modules.
+The ``radicale`` package offers 9 modules.
 
 `__main__`
 : The main module provides a simple function called run. Its main work is to
@@ -123,3 +123,6 @@ The ``radicale`` package offers 8 modules.
   Radicale, and the class storing these collections and items in your
   filesystem. Other storage classes can inherit from the base class in this
   file and be provided as plugins.
+
+`web`
+: This module contains the web interface.
