@@ -193,7 +193,7 @@ Available methods:
 Default: `bcrypt`
 
 ### delay
-Incorrect authentication delay (seconds)
+Average delay after failed login attempts in seconds.
 
 Default: `1`
 
