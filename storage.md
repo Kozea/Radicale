@@ -41,7 +41,7 @@ In theory, it should be safe to delete the folder. Caches will be recreated
 automatically and clients will be told that their sync-token isn't valid
 anymore.
 
-You may encounter files or folders that start with `.Radicale.tmp.`.
+You may encounter files or folders that start with `.Radicale.tmp-`.
 Radicale uses them for atomic creation and deletion of files and folders.
 They should be deleted after requests are finished but it's possible that
 they are left behind when Radicale or the computer crashes.

@@ -13,7 +13,7 @@ file `.gitignore` with the following content:
 ```
 .Radicale.cache
 .Radicale.lock
-.Radicale.tmp.*
+.Radicale.tmp-*
 ```
 
 The configuration option `hook` in the `storage` section must be set to
