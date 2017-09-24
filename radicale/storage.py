@@ -771,6 +771,7 @@ class Collection(BaseCollection):
             newline=newline, encoding=None if "b" in mode else self._encoding)
         try:
             yield tmp
+            tmp.flush()
             try:
                 self._fsync(tmp.fileno())
             except OSError as e:
