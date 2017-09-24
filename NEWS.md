@@ -1,6 +1,13 @@
 News
 ====
 
+2.1.8 - Wild Radish
+-------------------
+
+This release is compatible with version 2.0.0.
+
+* Flush files before fsync'ing
+
 2.1.7 - Wild Radish
 -------------------
 
