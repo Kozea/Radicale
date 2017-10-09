@@ -66,7 +66,7 @@ class = handlers.TimedRotatingFileHandler
 # Specify the output file and parameter for rotation here.
 # See https://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler
 # Example: rollover at midnight and keep 7 files (means one week)
-args = ('/var/log/radicale/log', when='midnight', interval=1, backupCount=7)
+args = ('/var/log/radicale/log', 'midnight', 1, 7)
 formatter = full
 ```
 
