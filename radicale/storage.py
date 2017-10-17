@@ -138,7 +138,7 @@ def check_and_sanitize_item(vobject_item, is_collection=False, uid=None,
             if component_name is None or is_collection:
                 component_name = component.name
             elif component_name != component.name:
-                raise ValueError("Muliple component types in object: %r, %r" %
+                raise ValueError("Multiple component types in object: %r, %r" %
                                  (component_name, component.name))
             if component_name not in ("VTODO", "VEVENT", "VJOURNAL"):
                 continue
@@ -155,7 +155,7 @@ def check_and_sanitize_item(vobject_item, is_collection=False, uid=None,
                                  "object" % component_name)
             elif object_uid != component_uid:
                 raise ValueError(
-                    "Muliple %s components with different UIDs in object: "
+                    "Multiple %s components with different UIDs in object: "
                     "%r, %r" % (component_name, object_uid, component_uid))
             # vobject interprets recurrence rules on demand
             try:
