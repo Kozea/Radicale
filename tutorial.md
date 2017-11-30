@@ -20,7 +20,7 @@ Follow one of the chapters below depending on your operating system.
 
 First of all, make sure that **python** 3.3 or later and **pip** are
 installed. On most distributions it should be enough to install the package
-``python3-pip``.
+``python3-pip``. You might also need to install the package ``python3-setuptools``.
 
 Then open a console and type:
 
