@@ -23,7 +23,7 @@ All configuration options are described in detail on the
 
 ## Authentication
 
-In it's default configuration Radicale doesn't check user names or passwords.
+In its default configuration Radicale doesn't check user names or passwords.
 If the server is reachable over a network, you should change this.
 
 First a `users` file with all user names and passwords must be created.
