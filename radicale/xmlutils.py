@@ -1138,7 +1138,7 @@ def report(base_prefix, path, xml_request, collection):
         # InfCloud asks for expand-property reports (even if we don't announce
         # support for them) and stops working if an error code is returned.
         logger.warning("Unsupported REPORT method %r on %r requested",
-                       root.tag, path)
+                       _tag_from_clark(root.tag), path)
         return client.MULTI_STATUS, multistatus
     prop_element = root.find(_tag("D", "prop"))
     props = (
