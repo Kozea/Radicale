@@ -779,7 +779,7 @@ class Collection(BaseCollection):
                                    (path, e)) from e
             tmp.close()
             os.replace(tmp.name, path)
-        except:
+        except BaseException:
             tmp.close()
             os.remove(tmp.name)
             raise
