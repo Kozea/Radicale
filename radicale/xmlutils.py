@@ -1140,6 +1140,16 @@ def report(base_prefix, path, xml_request, collection):
         logger.warning("Unsupported REPORT method %r on %r requested",
                        _tag_from_clark(root.tag), path)
         return client.MULTI_STATUS, multistatus
+    if (root.tag == _tag("C", "calendar-multiget") and
+            collection.get_meta("tag") != "VCALENDAR" or
+            root.tag == _tag("CR", "addressbook-multiget") and
+            collection.get_meta("tag") != "VADDRESSBOOK" or
+            root.tag == _tag("D", "sync-collection") and
+            collection.get_meta("tag") not in ("VADDRESSBOOK", "VCALENDAR")):
+        logger.warning("Invalid REPORT method %r on %r requested",
+                       _tag_from_clark(root.tag), path)
+        return (client.PRECONDITION_FAILED,
+                _webdav_error("D", "supported-report"))
     prop_element = root.find(_tag("D", "prop"))
     props = (
         [prop.tag for prop in prop_element]
