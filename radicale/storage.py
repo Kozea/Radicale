@@ -1363,6 +1363,12 @@ class Collection(BaseCollection):
                 raw_text = f.read()
         except (FileNotFoundError, IsADirectoryError):
             return None, None
+        except PermissionError:
+            # Windows raises ``PermissionError`` when ``path`` is a directory
+            if (os.name == "nt" and
+                    os.path.isdir(path) and os.access(path, os.R_OK)):
+                return None, None
+            raise
         # The hash of the component in the file system. This is used to check,
         # if the entry in the cache is still valid.
         input_hash = self._item_cache_hash(raw_text)
