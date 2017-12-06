@@ -647,7 +647,7 @@ def get_content_type(item):
 
 
 def find_tag(vobject_item):
-    """Find tag from ``vobject_item``."""
+    """Find component name from ``vobject_item``."""
     if vobject_item.name == "VCALENDAR":
         for component in vobject_item.components():
             if component.name != "VTIMEZONE":
@@ -656,7 +656,7 @@ def find_tag(vobject_item):
 
 
 def find_tag_and_time_range(vobject_item):
-    """Find tag and enclosing time range from ``vobject item``.
+    """Find component name and enclosing time range from ``vobject item``.
 
     Returns a tuple (``tag``, ``start``, ``end``) where ``tag`` is a string
     and ``start`` and ``end`` are POSIX timestamps (as int).
