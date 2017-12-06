@@ -120,7 +120,7 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
             try:
                 self.server_bind()
                 self.server_activate()
-            except:
+            except BaseException:
                 self.server_close()
                 raise
 
