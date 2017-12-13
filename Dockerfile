@@ -1,8 +1,5 @@
 FROM alpine:latest
 
-# Version of Radicale (e.g. 2.0.0)
-ARG VERSION=master
-
 # Install dependencies
 RUN apk add --no-cache \
       ca-certificates \
@@ -16,11 +13,11 @@ RUN apk add --no-cache \
       bcrypt \
       passlib && \
     apk del .deps
+
+ADD . /srv/radicale/
+
 # Install Radicale
-RUN wget --quiet https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz --output-document=radicale.tar.gz && \
-    tar xzf radicale.tar.gz && \
-    python3 -m pip install ./Radicale-${VERSION} && \
-    rm -r radicale.tar.gz Radicale-${VERSION}
+RUN python3 -m pip install /srv/radicale
 # Persistent storage for data (Mount it somewhere on the host!)
 VOLUME /var/lib/radicale
 # Configuration data (Put the "config" file here!)
