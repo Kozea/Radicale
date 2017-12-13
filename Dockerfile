@@ -1,5 +1,7 @@
 FROM alpine:latest
 
+# For documentation see docker folder
+
 # Install dependencies
 RUN apk add --no-cache \
       ca-certificates \
@@ -18,11 +20,8 @@ ADD . /srv/radicale/
 
 # Install Radicale
 RUN python3 -m pip install /srv/radicale
-# Persistent storage for data (Mount it somewhere on the host!)
+
 VOLUME /var/lib/radicale
-# Configuration data (Put the "config" file here!)
 VOLUME /etc/radicale
-# TCP port of Radicale (Publish it on a host interface!)
 EXPOSE 5232
-# Run Radicale (Configure it here or provide a "config" file!)
 ENTRYPOINT ["/srv/radicale/docker/entrypoint.sh"]
