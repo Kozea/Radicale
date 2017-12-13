@@ -5,17 +5,17 @@ ARG VERSION=master
 
 # Install dependencies
 RUN apk add --no-cache \
-      python3 \
-      python3-dev \
+      ca-certificates \
+      openssl \
+      python3 && \
+    apk add --no-cache --virtual .deps \
       build-base \
       libffi-dev \
-      ca-certificates \
-      openssl && \
-    python3 -m pip install passlib bcrypt && \
-    apk del \
-      python3-dev \
-      build-base \
-      libffi-dev
+      python3-dev && \
+    python3 -m pip install \
+      bcrypt \
+      passlib && \
+    apk del .deps
 # Install Radicale
 RUN wget --quiet https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz --output-document=radicale.tar.gz && \
     tar xzf radicale.tar.gz && \
