@@ -25,4 +25,4 @@ VOLUME /etc/radicale
 # TCP port of Radicale (Publish it on a host interface!)
 EXPOSE 5232
 # Run Radicale (Configure it here or provide a "config" file!)
-CMD ["radicale", "--hosts", "0.0.0.0:5232"]
+ENTRYPOINT ["/srv/radicale/docker/entrypoint.sh"]
