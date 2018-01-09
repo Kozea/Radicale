@@ -41,8 +41,8 @@ from hashlib import md5
 from importlib import import_module
 from itertools import chain, groupby
 from math import log
-from random import getrandbits
 from tempfile import NamedTemporaryFile, TemporaryDirectory
+from uuid import uuid4
 
 import vobject
 
@@ -147,9 +147,9 @@ def check_and_sanitize_item(vobject_item, is_collection=False, uid=None,
                 object_uid_set = True
                 object_uid = component_uid
                 if component_uid is None:
-                    component.add("UID").value = uid or random_uuid4()
+                    component.add("UID").value = uid or str(uuid4())
                 elif not component_uid:
-                    component.uid.value = uid or random_uuid4()
+                    component.uid.value = uid or str(uuid4())
             elif not object_uid or not component_uid:
                 raise ValueError("Multiple %s components without UID in "
                                  "object" % component_name)
@@ -167,9 +167,9 @@ def check_and_sanitize_item(vobject_item, is_collection=False, uid=None,
         # https://tools.ietf.org/html/rfc6352#section-5.1
         object_uid = get_uid(vobject_item)
         if object_uid is None:
-            vobject_item.add("UID").value = uid or random_uuid4()
+            vobject_item.add("UID").value = uid or str(uuid4())
         elif not object_uid:
-            vobject_item.uid.value = uid or random_uuid4()
+            vobject_item.uid.value = uid or str(uuid4())
     elif vobject_item.name == "VLIST" and tag == "VADDRESSBOOK":
         # Custom format used by SOGo Connector to store lists of contacts
         pass
@@ -183,12 +183,6 @@ def check_and_sanitize_props(props):
     tag = props.get("tag")
     if tag and tag not in ("VCALENDAR", "VADDRESSBOOK"):
         raise ValueError("Unsupported collection tag: %r" % tag)
-
-
-def random_uuid4():
-    """Generate a pseudo-random UUID"""
-    r = "%016x" % getrandbits(128)
-    return "%s-%s-%s-%s-%s" % (r[:8], r[8:12], r[12:16], r[16:20], r[20:])
 
 
 def scandir(path, only_dirs=False, only_files=False):
@@ -790,7 +784,7 @@ class Collection(BaseCollection):
     def _find_available_file_name(exists_fn, suffix=""):
         # Prevent infinite loop
         for _ in range(1000):
-            file_name = random_uuid4() + suffix
+            file_name = str(uuid4()) + suffix
             if not exists_fn(file_name):
                 return file_name
         # something is wrong with the PRNG
