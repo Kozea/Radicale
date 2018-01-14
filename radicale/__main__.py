@@ -183,7 +183,7 @@ def daemonize(configuration, logger):
 
 def serve(configuration, logger):
     """Serve radicale from configuration."""
-    logger.info("Starting Radicale")
+    logger.info("Starting Radicale.")
 
     # Create collection servers
     servers = {}
@@ -249,16 +249,18 @@ def serve(configuration, logger):
     # SIGTERM and SIGINT (aka KeyboardInterrupt) should just mark this for
     # shutdown
     def shutdown(*args):
+        logger.debug('Handling a shutdown signal.')
         nonlocal shutdown_program
         if shutdown_program:
-            # Ignore following signals
+            logger.debug('Ignoring signal as shutdown was already triggered.')
             return
-        logger.info("Stopping Radicale")
+        logger.info("Stopping Radicale.")
         shutdown_program = True
         if shutdown_program_socket_in:
             shutdown_program_socket_in.sendall(b"goodbye")
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
+    logger.debug('Registered signal handlers.')
 
     # Main loop: wait for requests on any of the servers or program shutdown
     sockets = list(servers.keys())
@@ -271,7 +273,7 @@ def serve(configuration, logger):
         select_timeout = 1.0
     if configuration.getboolean("server", "daemon"):
         daemonize(configuration, logger)
-    logger.info("Radicale server ready")
+    logger.info("Radicale server ready.")
     while not shutdown_program:
         try:
             rlist, _, xlist = select.select(
