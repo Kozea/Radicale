@@ -36,7 +36,7 @@ from http import client
 from itertools import chain
 from urllib.parse import quote, unquote, urlparse
 
-from . import storage
+from radicale import storage
 
 MIMETYPES = {
     "VADDRESSBOOK": "text/vcard",

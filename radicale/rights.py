@@ -43,7 +43,7 @@ import posixpath
 import re
 from importlib import import_module
 
-from . import storage
+from radicale import storage
 
 INTERNAL_TYPES = ("None", "none", "authenticated", "owner_write", "owner_only",
                   "from_file")
