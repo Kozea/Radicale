@@ -22,7 +22,7 @@ from importlib import import_module
 
 import pkg_resources
 
-from . import storage
+from radicale import storage
 
 NOT_FOUND = (
     client.NOT_FOUND, (("Content-Type", "text/plain"),),

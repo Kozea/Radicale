@@ -28,7 +28,7 @@ import os
 from collections import OrderedDict
 from configparser import RawConfigParser as ConfigParser
 
-from . import auth, rights, storage, web
+from radicale import auth, rights, storage, web
 
 
 def positive_int(value):

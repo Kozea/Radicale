@@ -51,7 +51,7 @@ from xml.etree import ElementTree as ET
 
 import vobject
 
-from . import auth, rights, storage, web, xmlutils
+from radicale import auth, rights, storage, web, xmlutils
 
 
 VERSION = pkg_resources.get_distribution('radicale').version
