@@ -40,7 +40,8 @@ import sys
 from setuptools import setup
 
 # When the version is updated, a new section in the NEWS.md file must be
-# added too.
+# added too. Be aware that the builds of Docker images depend on the way
+# the version information is noted here.
 VERSION = "2.1.8"
 WEB_FILES = ["web/css/icon.png", "web/css/main.css", "web/fn.js",
              "web/index.html"]

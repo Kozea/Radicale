@@ -3,9 +3,9 @@
 
 MANIFEST
 
-build
+/build
 dist
-Radicale.egg-info
+*.egg-info
 
 .cache
 .coverage

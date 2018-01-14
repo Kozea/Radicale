@@ -1,11 +1,14 @@
-.DEFAULT_GOAL := build
+.DEFAULT_GOAL = build
 
-IMAGE_NAME = kozea/radicale
+REPO_NAME = kozea/radicale
+VERSION = $(shell grep "VERSION = " ../setup.py | cut -d"=" -f2 | tr -d ' "')
+export IMAGE_NAME = $(REPO_NAME):$(VERSION)
+export GIT_SHA1 = $(shell git rev-parse HEAD)
 
 
 .PHONY: build
 build:
-	docker build -t $(IMAGE_NAME) ..
+	../hooks/build
 
 .PHONY: test-invokation
 test-invokation: build

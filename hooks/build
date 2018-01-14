@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+
+# this script is used to build a Radicale Docker image locally
+# as well as on the Docker Hub.
+
+echo "------ HOOK START - BUILD -------"
+
+printenv | sort
+docker build \
+    --build-arg BUILD_DATE="$(date --rfc-3339 seconds)" \
+    --build-arg SOURCE_COMMIT="${GIT_SHA1}" \
+    --build-arg VERSION=$(grep "VERSION = " ../setup.py | cut -d"=" -f2 | tr -d ' "') \
+    --file ../Dockerfile \
+    --tag $IMAGE_NAME \
+    ..
+
+echo "------ HOOK END - BUILD -------"
