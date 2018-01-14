@@ -42,9 +42,6 @@ from setuptools import setup
 # When the version is updated, a new section in the NEWS.md file must be
 # added too.
 VERSION = "2.1.8"
-WEB_FILES = ["web/css/icon.png", "web/css/main.css", "web/fn.js",
-             "web/index.html"]
-
 
 needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
 pytest_runner = ['pytest-runner'] if needs_pytest else []
@@ -63,7 +60,7 @@ setup(
     license="GNU GPL v3",
     platforms="Any",
     packages=["radicale"],
-    package_data={"radicale": WEB_FILES},
+    include_package_data=True,
     entry_points={'console_scripts': ['radicale = radicale.main:run']},
     install_requires=["vobject"],
     setup_requires=pytest_runner,

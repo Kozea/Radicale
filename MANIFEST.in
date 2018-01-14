@@ -1,1 +1,5 @@
-include COPYING NEWS.md README.md config logging radicale.py radicale.fcgi radicale.wsgi
+include COPYING NEWS.md README.md
+include config logging rights
+include radicale.py radicale.fcgi radicale.wsgi
+
+recursive-include radicale/web *
