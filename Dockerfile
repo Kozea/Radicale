@@ -1,27 +1,29 @@
-FROM alpine:latest
+FROM python:alpine
 
-# For documentation see docker folder
+# For usage documentation see docker/README.md
+
+
+# metadata
+ENTRYPOINT ["/radicale/docker/entrypoint.sh"]
+EXPOSE 5232
+VOLUME ["/etc/radicale", "/var/lib/radicale"]
+
 
 # Install dependencies
 RUN apk add --no-cache \
       ca-certificates \
       openssl \
-      python3 && \
-    apk add --no-cache --virtual .deps \
+ && apk add --no-cache --virtual .builddeps \
       build-base \
       libffi-dev \
-      python3-dev && \
-    python3 -m pip install \
+      python3-dev \
+ && python -m pip install \
       bcrypt \
-      passlib && \
-    apk del .deps
+      passlib \
+ && apk del .builddeps
 
-ADD . /srv/radicale/
+ADD . /radicale/
 
 # Install Radicale
-RUN python3 -m pip install /srv/radicale
-
-VOLUME /var/lib/radicale
-VOLUME /etc/radicale
-EXPOSE 5232
-ENTRYPOINT ["/srv/radicale/docker/entrypoint.sh"]
+RUN python -m pip install /radicale \
+ && rm -rf /root/.cache
