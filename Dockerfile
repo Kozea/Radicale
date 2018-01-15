@@ -10,16 +10,22 @@ VOLUME ["/etc/radicale", "/var/lib/radicale"]
 
 # Install dependencies
 RUN apk add --no-cache \
+      apr \
+      apr-util \
       ca-certificates \
       openssl \
  && apk add --no-cache --virtual .builddeps \
+      apache2-utils \
       build-base \
       libffi-dev \
       python3-dev \
- && python -m pip install \
-      bcrypt \
-      passlib \
- && apk del .builddeps
+ && cp /usr/bin/htpasswd /tmp \
+ && pip install \
+      passlib[bcrypt] \
+ && apk del .builddeps \
+ && rm -rf /root/.cache \
+ && mv /tmp/htpasswd /usr/bin
+
 
 # Add source
 ADD . /radicale/
