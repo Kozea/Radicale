@@ -1,0 +1,9 @@
+version: '2'
+
+services:
+  radicale:
+    image: kozea/radicale:2.1.8
+    ports:
+      - "5232:5232"
+    volumes:
+      - ./config:/etc/radicale
