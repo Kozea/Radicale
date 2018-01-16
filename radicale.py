@@ -25,6 +25,6 @@ Launch the server according to configuration and command-line options.
 
 """
 
-import radicale.__main__
+import radicale.main
 
-radicale.__main__.run()
+radicale.main.run()

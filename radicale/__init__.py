@@ -33,6 +33,7 @@ import io
 import itertools
 import logging
 import os
+import pkg_resources
 import posixpath
 import pprint
 import random
@@ -50,9 +51,10 @@ from xml.etree import ElementTree as ET
 
 import vobject
 
-from . import auth, rights, storage, web, xmlutils
+from radicale import auth, rights, storage, web, xmlutils
 
-VERSION = "2.1.8"
+
+VERSION = pkg_resources.get_distribution('radicale').version
 
 NOT_ALLOWED = (
     client.FORBIDDEN, (("Content-Type", "text/plain"),),

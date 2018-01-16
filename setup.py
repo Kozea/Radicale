@@ -35,41 +35,33 @@ For further information, please visit the `Radicale Website
 
 """
 
-import re
 import sys
-from os import path
 
 from setuptools import setup
 
-WEB_FILES = ["web/css/icon.png", "web/css/main.css", "web/fn.js",
-             "web/index.html"]
-
-init_path = path.join(path.dirname(__file__), "radicale", "__init__.py")
-with open(init_path, "r", encoding="utf-8") as fd:
-    version = re.search('VERSION = "([^"]+)"', fd.read().strip()).group(1)
-
+# When the version is updated, a new section in the NEWS.md file must be
+# added too.
+VERSION = "2.1.8"
 
 needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
 pytest_runner = ['pytest-runner'] if needs_pytest else []
 
-# When the version is updated, ``radicale.VERSION`` must be modified.
-# A new section in the ``NEWS`` file must be added too.
+
 setup(
     name="Radicale",
-    version=version,
+    version=VERSION,
     description="CalDAV and CardDAV Server",
     long_description=__doc__,
     author="Guillaume Ayoub",
     author_email="guillaume.ayoub@kozea.fr",
     url="http://www.radicale.org/",
     download_url=("http://pypi.python.org/packages/source/R/Radicale/"
-                  "Radicale-%s.tar.gz" % version),
+                  "Radicale-%s.tar.gz" % VERSION),
     license="GNU GPL v3",
     platforms="Any",
     packages=["radicale"],
-    package_data={"radicale": WEB_FILES},
-    provides=["radicale"],
-    scripts=["bin/radicale"],
+    include_package_data=True,
+    entry_points={'console_scripts': ['radicale = radicale.main:run']},
     install_requires=["vobject"],
     setup_requires=pytest_runner,
     tests_require=[
