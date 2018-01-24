@@ -8,7 +8,7 @@ export GIT_SHA1 = $(shell git rev-parse HEAD)
 
 .PHONY: build
 build:
-	../hooks/build
+	hooks/build
 
 .PHONY: test-invokation
 test-invokation: build
