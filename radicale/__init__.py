@@ -405,6 +405,8 @@ class Application:
             unsafe_base_prefix = environ["HTTP_X_SCRIPT_NAME"]
             self.logger.debug("Script name overwritten by client: %r",
                               unsafe_base_prefix)
+            if "HTTP_X_PATH_INFO" in environ:
+                environ["PATH_INFO"] = environ["HTTP_X_PATH_INFO"]
         else:
             # SCRIPT_NAME is already removed from PATH_INFO, according to the
             # WSGI specification.
