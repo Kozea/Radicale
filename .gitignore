@@ -1,5 +1,7 @@
 *~
+.*.swp
 *.pyc
+__pycache__
 
 /MANIFEST
 /build
