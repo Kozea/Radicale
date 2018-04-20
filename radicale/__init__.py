@@ -51,7 +51,7 @@ from xml.etree import ElementTree as ET
 
 import vobject
 
-from radicale import auth, rights, storage, web, xmlutils
+from radicale import auth, config, log, rights, storage, web, xmlutils
 
 
 VERSION = pkg_resources.get_distribution('radicale').version
@@ -949,3 +949,25 @@ class Application:
                     "Bad REPORT request on %r: %s", path, e, exc_info=True)
                 return BAD_REQUEST
             return (status, headers, self._write_xml_content(xml_answer))
+
+
+_application = None
+_application_lock = threading.Lock()
+
+
+def application(environ, start_response):
+    global _application
+    if _application is None:
+        with _application_lock:
+            if _application is None:
+                config_paths = []
+                if os.environ.get("RADICALE_CONFIG"):
+                    config_paths.append(os.environ["RADICALE_CONFIG"])
+                configuration = config.load(config_paths,
+                                            ignore_missing_paths=False)
+                filename = os.path.expanduser(configuration.get("logging",
+                                                                "config"))
+                debug = configuration.getboolean("logging", "debug")
+                logger = log.start("radicale", filename, debug)
+                _application = Application(configuration, logger)
+    return _application(environ, start_response)
