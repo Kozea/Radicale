@@ -48,7 +48,7 @@ import vobject
 
 if sys.version_info >= (3, 5):
     # HACK: Avoid import cycle for Python < 3.5
-    from . import xmlutils
+    from radicale import xmlutils
 
 if os.name == "nt":
     import ctypes
@@ -97,7 +97,7 @@ def load(configuration, logger):
     if sys.version_info < (3, 5):
         # HACK: Avoid import cycle for Python < 3.5
         global xmlutils
-        from . import xmlutils
+        from radicale import xmlutils
     storage_type = configuration.get("storage", "type")
     if storage_type == "multifilesystem":
         collection_class = Collection
