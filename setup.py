@@ -68,8 +68,7 @@ setup(
     platforms="Any",
     packages=["radicale"],
     package_data={"radicale": WEB_FILES},
-    provides=["radicale"],
-    scripts=["bin/radicale"],
+    entry_points={'console_scripts': ['radicale = radicale.__main__:run']},
     install_requires=["vobject"],
     setup_requires=pytest_runner,
     tests_require=[
