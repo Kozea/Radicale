@@ -48,7 +48,8 @@ WEB_FILES = ["web/css/icon.png", "web/css/main.css", "web/fn.js",
 
 needs_pytest = {"pytest", "test", "ptr"}.intersection(sys.argv)
 pytest_runner = ["pytest-runner"] if needs_pytest else []
-
+tests_require = ["pytest-runner", "pytest", "pytest-cov", "pytest-flake8",
+                 "pytest-isort"]
 
 setup(
     name="Radicale",
@@ -67,10 +68,8 @@ setup(
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
     install_requires=["vobject"],
     setup_requires=pytest_runner,
-    tests_require=[
-        "pytest-runner", "pytest-cov", "pytest-flake8", "pytest-isort"],
-    extras_require={"test": [
-        "pytest-runner", "pytest-cov", "pytest-flake8", "pytest-isort"]},
+    tests_require=tests_require,
+    extras_require={"test": tests_require},
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
     python_requires=">=3.3",
     classifiers=[
