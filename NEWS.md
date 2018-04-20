@@ -1,6 +1,17 @@
 News
 ====
 
+2.1.9 - Wild Radish
+-------------------
+
+* Specify versions for dependencies
+* Move WSGI initialization into module
+* Check if ``REPORT`` method is actually supported
+* Include ``rights`` file in source distribution
+* Specify ``md5`` and ``bcrypt`` as extras
+* Improve logging messages
+* Windows: Fix crash when item path is a directory
+
 2.1.8 - Wild Radish
 -------------------
 
