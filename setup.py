@@ -69,7 +69,10 @@ setup(
     install_requires=["vobject==0.9.5", "python-dateutil==2.6.1"],
     setup_requires=pytest_runner,
     tests_require=tests_require,
-    extras_require={"test": tests_require},
+    extras_require={
+        "test": tests_require,
+        "md5": "passlib",
+        "bcrypt": "passlib[bcrypt]"},
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
     python_requires=">=3.3",
     classifiers=[
