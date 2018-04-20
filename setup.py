@@ -66,7 +66,7 @@ setup(
     packages=["radicale"],
     package_data={"radicale": WEB_FILES},
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
-    install_requires=["vobject"],
+    install_requires=["vobject==0.9.5", "python-dateutil==2.6.1"],
     setup_requires=pytest_runner,
     tests_require=tests_require,
     extras_require={"test": tests_require},
