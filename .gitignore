@@ -1,11 +1,10 @@
 *~
 *.pyc
 
-MANIFEST
-
-build
-dist
-Radicale.egg-info
+/MANIFEST
+/build
+/dist
+/Radicale.egg-info
 
 .cache
 .coverage
