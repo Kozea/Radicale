@@ -30,7 +30,8 @@ EXAMPLES_FOLDER = os.path.join(os.path.dirname(__file__), "static")
 
 def get_file_content(file_name):
     try:
-        with open(os.path.join(EXAMPLES_FOLDER, file_name)) as fd:
+        with open(os.path.join(EXAMPLES_FOLDER, file_name),
+                  encoding="utf-8") as fd:
             return fd.read()
     except IOError:
         print("Couldn't open the file %s" % file_name)
