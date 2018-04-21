@@ -23,6 +23,7 @@ import base64
 import os
 import posixpath
 import shutil
+import sys
 import tempfile
 import xml.etree.ElementTree as ET
 from functools import partial
@@ -1405,6 +1406,8 @@ class BaseRequestsMixIn:
         assert status == 404
         assert headers.get("test") == "123"
 
+    @pytest.mark.skipif(sys.version_info < (3, 6),
+                        reason="Unsupported in Python < 3.6")
     def test_timezone_seconds(self):
         """Verify that timezones with minutes and seconds work."""
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
