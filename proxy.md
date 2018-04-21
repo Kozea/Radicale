@@ -18,21 +18,15 @@ location /radicale/ { # The trailing / is important!
 }
 ```
 
-Example **Apache** configuration using front end authentication:
+Example **Apache** configuration:
 ```apache
 RewriteEngine On
 RewriteRule ^/radicale$ /radicale/ [R,L]
 
 <Location "/radicale/">
-    AuthType      Basic
-    AuthName      "Radicale - Password Required"
-    AuthUserFile  "/etc/radicale/htpasswd"
-    Require       valid-user
-
     ProxyPass        http://localhost:5232/ retry=0
     ProxyPassReverse http://localhost:5232/
     RequestHeader    set X-Script-Name /radicale/
-    RequestHeader    set X-Remote-User expr=%{REMOTE_USER}
 </Location>
 ```
 
@@ -57,6 +51,24 @@ location /radicale/ {
     auth_basic           "Radicale - Password Required";
     auth_basic_user_file /etc/nginx/htpasswd;
 }
+```
+
+Example **Apache** configuration:
+```apache
+RewriteEngine On
+RewriteRule ^/radicale$ /radicale/ [R,L]
+
+<Location "/radicale/">
+    AuthType      Basic
+    AuthName      "Radicale - Password Required"
+    AuthUserFile  "/etc/radicale/htpasswd"
+    Require       valid-user
+
+    ProxyPass        http://localhost:5232/ retry=0
+    ProxyPassReverse http://localhost:5232/
+    RequestHeader    set X-Script-Name /radicale/
+    RequestHeader    set X-Remote-User expr=%{REMOTE_USER}
+</Location>
 ```
 
 **Security:** Untrusted clients should not be able to access the Radicale
