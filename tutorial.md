@@ -18,9 +18,9 @@ Follow one of the chapters below depending on your operating system.
 
 ## Linux / \*BSD
 
-First of all, make sure that **python** 3.3 or later and **pip** are
-installed. On most distributions it should be enough to install the package
-``python3-pip``.
+First of all, make sure that **python** 3.3 or later (**python** ≥ 3.6 is
+recommended) and **pip** are installed. On most distributions it should be
+enough to install the package ``python3-pip``.
 
 Then open a console and type:
 
