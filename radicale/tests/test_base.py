@@ -1405,6 +1405,14 @@ class BaseRequestsMixIn:
         assert status == 404
         assert headers.get("test") == "123"
 
+    def test_timezone_seconds(self):
+        """Verify that timezones with minutes and seconds work."""
+        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
+        assert status == 201
+        event = get_file_content("event_timezone_seconds.ics")
+        status, _, _ = self.request("PUT", "/calendar.ics/event.ics", event)
+        assert status == 201
+
     def test_missing_uid(self):
         """Verify that missing UIDs are added in a stable manner."""
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
