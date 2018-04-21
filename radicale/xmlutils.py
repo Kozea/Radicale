@@ -29,6 +29,7 @@ import copy
 import math
 import posixpath
 import re
+import sys
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from datetime import date, datetime, timedelta, timezone
@@ -689,7 +690,13 @@ def find_tag_and_time_range(vobject_item):
         start = DATETIME_MIN
     if end is None:
         end = DATETIME_MAX
-    return tag, math.floor(start.timestamp()), math.ceil(end.timestamp())
+    try:
+        return tag, math.floor(start.timestamp()), math.ceil(end.timestamp())
+    except ValueError as e:
+        if str(e) == ("offset must be a timedelta representing a whole "
+                      "number of minutes") and sys.version_info < (3, 6):
+            raise RuntimeError("Unsupported in Python < 3.6: %s" % e) from e
+        raise
 
 
 def name_from_path(path, collection):
