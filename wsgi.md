@@ -26,6 +26,12 @@ module = radicale
 env = RADICALE_CONFIG=/etc/radicale/config
 ```
 
+Example **Gunicorn** configuration:
+
+```shell
+gunicorn --bind '127.0.0.1:5232' --threads 8 --env 'RADICALE_CONFIG=/etc/radicale/config' radicale
+```
+
 ## Manage user accounts with the WSGI server
 Set the configuration option `type` in the `auth` section to `remote_user`.
 Radicale uses the user name provided by the WSGI server and disables
