@@ -4,6 +4,8 @@ News
 2.1.9 - Wild Radish
 -------------------
 
+This release is compatible with version 2.0.0.
+
 * Specify versions for dependencies
 * Move WSGI initialization into module
 * Check if ``REPORT`` method is actually supported
