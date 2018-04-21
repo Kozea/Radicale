@@ -4,8 +4,7 @@ title: WSGI
 permalink: /wsgi/
 ---
 
-Radicale is compatible with the WSGI specification. Use `radicale.wsgi` from
-the [source code]({{ site.baseurl }}/download/) as the WSGI file.
+Radicale is compatible with the WSGI specification.
 
 A configuration file can be set with the `RADICALE_CONFIG` environment variable,
 otherwise no configuration file is loaded and the default configuration is used.
@@ -23,7 +22,7 @@ Example **uWSGI** configuration:
 http-socket = 127.0.0.1:5232
 threads = 8
 plugin = python3
-wsgi-file = /path/to/radicale.wsgi
+module = radicale
 env = RADICALE_CONFIG=/etc/radicale/config
 ```
 
