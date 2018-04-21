@@ -54,10 +54,11 @@ your user name.
 
 ### Lightning
 
-Add a new calendar on the network with CalDAV. You have to enter the full URL
-of the collection (e.g. `http://localhost:5232/user/calendar`).
-If you want to add calendars from different users on the same server, you can
-specify the user name in the URL (e.g. `http://user@localhost...`)
+Add a new calendar on the network with `CalDAV`. (Don't use `iCalendar (ICS)`!)
+You have to enter the full URL of the collection (e.g.
+`http://localhost:5232/user/calendar`). If you want to add calendars from
+different users on the same server, you can specify the user name in the URL
+(e.g. `http://user@localhost...`)
 
 ## InfCloud, CalDavZAP and CardDavMATE
 
