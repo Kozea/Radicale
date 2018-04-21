@@ -18,6 +18,28 @@ location /radicale/ { # The trailing / is important!
 }
 ```
 
+Example **Apache** configuration using front end authentication:
+```apache
+## https://www.nginx.com/resources/wiki/start/topics/examples/likeapache/
+##
+## See proxy-chain-auth if authentication is performed on the back end
+
+RewriteEngine On
+RewriteRule ^/radicale$ /radicale/ [R,L]
+
+<Location "/radicale/">
+    AuthType      Basic
+    AuthName      "Authentication Required"
+    AuthUserFile  "/etc/radicale/passwd"
+    AuthGroupFile "/etc/radicale/group"
+    Require       valid-user
+
+    ProxyPass        http://localhost:5232/ retry=0
+    ProxyPassReverse http://localhost:5232/
+    RequestHeader    set X-SCRIPT-NAME /radicale/
+</Location>
+```
+
 Be reminded that Radicale's default configuration enforces limits on the
 maximum number of parallel connections, the maximum file size and the rate of
 incorrect authentication attempts. Connections are terminated after a timeout.
