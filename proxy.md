@@ -37,6 +37,7 @@ RewriteRule ^/radicale$ /radicale/ [R,L]
     ProxyPass        http://localhost:5232/ retry=0
     ProxyPassReverse http://localhost:5232/
     RequestHeader    set X-SCRIPT-NAME /radicale/
+    RequestHeader    set X-Remote-User expr=%{REMOTE_USER}
 </Location>
 ```
 
