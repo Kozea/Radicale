@@ -46,7 +46,7 @@ Re-type new password:
 **bcrypt** is used to secure the passwords. Radicale requires additional
 dependencies for this encryption method:
 ```shell
-$ python3 -m pip install --upgrade passlib bcrypt
+$ python3 -m pip install --upgrade radicale[bcrypt]
 ```
 
 Authentication can be enabled with the following configuration:
