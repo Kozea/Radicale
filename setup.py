@@ -63,10 +63,10 @@ setup(
                   "Radicale-%s.tar.gz" % VERSION),
     license="GNU GPL v3",
     platforms="Any",
-    packages=["radicale"],
+    packages=["radicale", "radicale_vobject"],
     package_data={"radicale": WEB_FILES},
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
-    install_requires=["vobject==0.9.5", "python-dateutil==2.6.1"],
+    install_requires=["python-dateutil==2.6.1"],
     setup_requires=pytest_runner,
     tests_require=tests_require,
     extras_require={

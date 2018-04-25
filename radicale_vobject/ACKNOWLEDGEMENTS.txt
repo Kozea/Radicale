@@ -1,0 +1,8 @@
+Enormous thanks to:
+Jeffrey Harris, for his incredible work on the original package
+Tim Baxter, for all his work maintaining vobject over the past few years
+Adieu, for keeping things alive on github
+Kristian Glass, for his enormous help with testing and Python3 matters
+Gustavo Niemeyer, for all his work on dateutil
+Dave Cridland, for helping talk about vobject and working on vcard
+TJ Gabbour, for putting his heart into parsing
