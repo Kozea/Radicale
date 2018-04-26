@@ -1,0 +1,18 @@
+home.begin:vcard
+version:3.0
+source:ldap://cn=Meister%20Berger,o=Universitaet%20Goerlitz,c=DE
+name:Meister Berger
+fn:Meister Berger
+n:Berger;Meister
+bday;value=date:1963-09-21
+o:Universit=E6t G=F6rlitz
+title:Mayor
+title;language=de;value=text:Burgermeister
+note:The Mayor of the great city of
+  Goerlitz in the great country of Germany.\nNext line.
+email;internet:mb@goerlitz.de
+home.tel;type=fax,voice;type=msg:+49 3581 123456
+home.label:Hufenshlagel 1234\n
+ 02828 Goerlitz\n
+ Deutschland
+END:VCARD
