@@ -1,0 +1,39 @@
+BEGIN:VCALENDAR
+METHOD:PUBLISH
+CALSCALE:GREGORIAN
+PRODID:-//EVDB//www.evdb.com//EN
+VERSION:2.0
+X-WR-CALNAME:EVDB Event Feed
+BEGIN:VEVENT
+DTSTART:20060922T000100Z
+DTEND:20060922T050100Z
+DTSTAMP:20050914T163414Z
+SUMMARY:The title こんにちはキティ
+DESCRIPTION:hello\nHere is a description\n\n\nこんにちはキティ
+	\n\n\n\nZwei Java-schwere Entwicklerpositionen und irgendeine Art sond
+	erbar-klingende Netzsichtbarmachungöffnung\, an einer interessanten F
+	irma im Gebäude\, in dem ich angerufenen Semantic Research bearbeite.
+	 1. Zauberer Des Semantica Software Engineer 2. Älterer Semantica Sof
+	tware-Englisch-3. Graph/Semantica Netz-Visualization/Navigation Sie ei
+	ngestufte Software-Entwicklung für die Regierung. Die Firma ist stark
+	 und die Projekte sind sehr kühl und schließen irgendeinen Spielraum
+	 ein. Wenn ich Ihnen irgendwie mehr erkläre\, muß ich Sie töten. Ps
+	. Tat schnell -- jemand ist\, wenn es hier interviewt\, wie ich dieses
+	 schreibe. Er schaut intelligent (er trägt Kleidhosen) Semantica Soft
+	ware Engineer FIRMA: Semantische Forschung\, Inc. REPORTS ZU: Vizeprä
+	sident\, Produkt-Entwicklung POSITION: San Diego (Pint Loma) WEB SITE:
+	 www.semanticresearch.com email: dorie@semanticresearch.com FIRMA-HINT
+	ERGRUND Semantische Forschung ist der führende Versorger der semantis
+	cher Netzwerkanschluß gegründeten nicht linearen Wissen Darstellung 
+	Werkzeuge. Die Firma stellt diese Werkzeuge zum Intel\, zur reg.\, zum
+	 EDU und zu den kommerziellen Märkten zur Verfügung. BRINGEN SIE ZUS
+	AMMENFASSUNG IN POSITION Semantische Forschung\, Inc. basiert in San D
+	iego\, Ca im alten realen Weltsan Diego Haus...\, das wir den Weltbest
+	en Platz haben zum zu arbeiten. Wir suchen nach Superstarentwicklern\,
+	 um uns in der fortfahrenden Entwicklung unserer Semantica Produktseri
+	e zu unterstützen.
+LOCATION:こんにちはキティ
+SEQUENCE:0
+UID:E0-001-000276068-2
+END:VEVENT
+END:VCALENDAR

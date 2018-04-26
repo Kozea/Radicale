@@ -1,0 +1,85 @@
+
+Unicode in vCards
+.................
+
+>>> import vobject
+>>> card = vobject.vCard()
+>>> card.add('fn').value = u'Hello\u1234 World!'
+>>> card.add('n').value = vobject.vcard.Name('World', u'Hello\u1234')
+>>> card.add('adr').value = vobject.vcard.Address(u'5\u1234 Nowhere, Apt 1', 'Berkeley', 'CA', '94704', 'USA')
+>>> card
+<VCARD| [<ADR{}5? Nowhere, Apt 1\nBerkeley, CA 94704\nUSA>, <FN{}Hello? World!>, <N{} Hello?  World >]>
+>>> card.serialize()
+u'BEGIN:VCARD\r\nVERSION:3.0\r\nADR:;;5\u1234 Nowhere\\, Apt 1;Berkeley;CA;94704;USA\r\nFN:Hello\u1234 World!\r\nN:World;Hello\u1234;;;\r\nEND:VCARD\r\n'
+>>> print(card.serialize())
+BEGIN:VCARD
+VERSION:3.0
+ADR:;;5ሴ Nowhere\, Apt 1;Berkeley;CA;94704;USA
+FN:Helloሴ World!
+N:World;Helloሴ;;;
+END:VCARD
+
+Helper function
+...............
+>>> from pkg_resources import resource_stream
+>>> def get_stream(path):
+...     try:
+...         return resource_stream(__name__, 'test_files/' + path)
+...     except: # different paths, depending on whether doctest is run directly
+...         return resource_stream(__name__, path)
+
+Unicode in TZID
+...............
+>>> f = get_stream("tzid_8bit.ics")
+>>> cal = vobject.readOne(f)
+>>> print(cal.vevent.dtstart.value)
+2008-05-30 15:00:00+06:00
+>>> print(cal.vevent.dtstart.serialize())
+DTSTART;TZID=Екатеринбург:20080530T150000
+
+Commas in TZID
+..............
+>>> f = get_stream("ms_tzid.ics")
+>>> cal = vobject.readOne(f)
+>>> print(cal.vevent.dtstart.value)
+2008-05-30 15:00:00+10:00
+
+Equality in vCards
+..................
+
+>>> card.adr.value == vobject.vcard.Address('Just a street')
+False
+>>> card.adr.value == vobject.vcard.Address(u'5\u1234 Nowhere, Apt 1', 'Berkeley', 'CA', '94704', 'USA')
+True
+
+Organization (org)
+..................
+
+>>> card.add('org').value = ["Company, Inc.", "main unit", "sub-unit"]
+>>> print(card.org.serialize())
+ORG:Company\, Inc.;main unit;sub-unit
+
+Ruby escapes semi-colons in rrules
+..................................
+
+>>> f = get_stream("ruby_rrule.ics")
+>>> cal = vobject.readOne(f)
+>>> iter(cal.vevent.rruleset).next()
+datetime.datetime(2003, 1, 1, 7, 0)
+
+quoted-printable
+................
+
+>>> vcf = 'BEGIN:VCARD\nVERSION:2.1\nN;ENCODING=QUOTED-PRINTABLE:;=E9\nFN;ENCODING=QUOTED-PRINTABLE:=E9\nTEL;HOME:0111111111\nEND:VCARD\n\n'
+>>> vcf = vobject.readOne(vcf)
+>>> vcf.n.value
+<Name:  ?   >
+>>> vcf.n.value.given
+u'\xe9'
+>>> vcf.serialize()
+'BEGIN:VCARD\r\nVERSION:2.1\r\nFN:\xc3\xa9\r\nN:;\xc3\xa9;;;\r\nTEL:0111111111\r\nEND:VCARD\r\n'
+
+>>> vcs = 'BEGIN:VCALENDAR\r\nPRODID:-//OpenSync//NONSGML OpenSync vformat 0.3//EN\r\nVERSION:1.0\r\nBEGIN:VEVENT\r\nDESCRIPTION;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:foo =C3=A5=0Abar =C3=A4=\r\n=0Abaz =C3=B6\r\nUID:20080406T152030Z-7822\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n'
+>>> vcs = vobject.readOne(vcs, allowQP = True)
+>>> vcs.serialize()
+'BEGIN:VCALENDAR\r\nVERSION:1.0\r\nPRODID:-//OpenSync//NONSGML OpenSync vformat 0.3//EN\r\nBEGIN:VEVENT\r\nUID:20080406T152030Z-7822\r\nDESCRIPTION:foo \xc3\xa5\\nbar \xc3\xa4\\nbaz \xc3\xb6\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n'
