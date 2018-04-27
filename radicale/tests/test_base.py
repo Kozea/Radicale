@@ -869,28 +869,45 @@ class BaseRequestsMixIn:
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20170601T063000Z" end="20170601T070000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], items=(6, 7, 8))
+            </C:comp-filter>"""], items=(6, 7, 8, 9))
         assert "href>/calendar.ics/event6.ics</" in answer
         assert "href>/calendar.ics/event7.ics</" in answer
         assert "href>/calendar.ics/event8.ics</" in answer
+        assert "href>/calendar.ics/event9.ics</" in answer
         answer = self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20170701T060000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], items=(6, 7, 8))
+            </C:comp-filter>"""], items=(6, 7, 8, 9))
         assert "href>/calendar.ics/event6.ics</" in answer
         assert "href>/calendar.ics/event7.ics</" in answer
         assert "href>/calendar.ics/event8.ics</" in answer
+        assert "href>/calendar.ics/event9.ics</" not in answer
         answer = self._test_filter(["""
             <C:comp-filter name="VCALENDAR">
               <C:comp-filter name="VEVENT">
                 <C:time-range start="20170702T070000Z" end="20170704T060000Z"/>
               </C:comp-filter>
-            </C:comp-filter>"""], items=(6, 7, 8))
+            </C:comp-filter>"""], items=(6, 7, 8, 9))
         assert "href>/calendar.ics/event6.ics</" not in answer
         assert "href>/calendar.ics/event7.ics</" not in answer
         assert "href>/calendar.ics/event8.ics</" not in answer
+        assert "href>/calendar.ics/event9.ics</" not in answer
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:time-range start="20170602T075959Z" end="20170602T080000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], items=(9,))
+        assert "href>/calendar.ics/event9.ics</" in answer
+        answer = self._test_filter(["""
+            <C:comp-filter name="VCALENDAR">
+              <C:comp-filter name="VEVENT">
+                <C:time-range start="20170602T080000Z" end="20170603T083000Z"/>
+              </C:comp-filter>
+            </C:comp-filter>"""], items=(9,))
+        assert "href>/calendar.ics/event9.ics</" not in answer
 
     def test_time_range_filter_events_rrule(self):
         """Report request with time-range filter on events with rrules."""
