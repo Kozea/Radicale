@@ -28,6 +28,7 @@ entry.
 import binascii
 import contextlib
 import json
+import logging
 import os
 import pickle
 import posixpath
@@ -1555,9 +1556,20 @@ class Collection(BaseCollection):
             hook = cls.configuration.get("storage", "hook")
             if mode == "w" and hook:
                 cls.logger.debug("Running hook")
-                subprocess.check_call(
+                debug = cls.logger.isEnabledFor(logging.DEBUG)
+                p = subprocess.Popen(
                     hook % {"user": shlex.quote(user or "Anonymous")},
-                    shell=True, cwd=folder)
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE if debug else subprocess.DEVNULL,
+                    stderr=subprocess.PIPE if debug else subprocess.DEVNULL,
+                    shell=True, universal_newlines=True, cwd=folder)
+                stdout_data, stderr_data = p.communicate()
+                if stdout_data:
+                    cls.logger.debug("Captured stdout hook:\n%s", stdout_data)
+                if stderr_data:
+                    cls.logger.debug("Captured stderr hook:\n%s", stderr_data)
+                if p.returncode != 0:
+                    raise subprocess.CalledProcessError(p.returncode, p.args)
 
 
 class FileBackedRwLock:
