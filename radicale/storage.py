@@ -1311,6 +1311,8 @@ class Collection(BaseCollection):
 
     @contextmanager
     def _acquire_cache_lock(self, ns=""):
+        if "/" in ns:
+            raise ValueError("ns must not include '/'")
         with contextlib.ExitStack() as lock_stack:
             with contextlib.ExitStack() as locks_lock_stack:
                 locks_lock_stack.enter_context(self._cache_locks_lock)
