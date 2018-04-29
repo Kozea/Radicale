@@ -955,19 +955,21 @@ _application = None
 _application_lock = threading.Lock()
 
 
-def application(environ, start_response):
+def _init_application(config_path):
     global _application
+    with _application_lock:
+        if _application is not None:
+            return
+        configuration = config.load([config_path] if config_path else [],
+                                    ignore_missing_paths=False)
+        filename = os.path.expanduser(configuration.get("logging", "config"))
+        debug = configuration.getboolean("logging", "debug")
+        logger = log.start("radicale", filename, debug)
+        _application = Application(configuration, logger)
+
+
+def application(environ, start_response):
+    config_path = os.environ.get("RADICALE_CONFIG")
     if _application is None:
-        with _application_lock:
-            if _application is None:
-                config_paths = []
-                if os.environ.get("RADICALE_CONFIG"):
-                    config_paths.append(os.environ["RADICALE_CONFIG"])
-                configuration = config.load(config_paths,
-                                            ignore_missing_paths=False)
-                filename = os.path.expanduser(configuration.get("logging",
-                                                                "config"))
-                debug = configuration.getboolean("logging", "debug")
-                logger = log.start("radicale", filename, debug)
-                _application = Application(configuration, logger)
+        _init_application(config_path)
     return _application(environ, start_response)
