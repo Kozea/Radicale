@@ -952,14 +952,16 @@ class Application:
 
 
 _application = None
+_application_config_path = None
 _application_lock = threading.Lock()
 
 
 def _init_application(config_path):
-    global _application
+    global _application, _application_config_path
     with _application_lock:
         if _application is not None:
             return
+        _application_config_path = config_path
         configuration = config.load([config_path] if config_path else [],
                                     ignore_missing_paths=False)
         filename = os.path.expanduser(configuration.get("logging", "config"))
@@ -969,7 +971,10 @@ def _init_application(config_path):
 
 
 def application(environ, start_response):
-    config_path = os.environ.get("RADICALE_CONFIG")
+    config_path = environ.get("RADICALE_CONFIG")
     if _application is None:
         _init_application(config_path)
+    if _application_config_path != config_path:
+        raise ValueError("RADICALE_CONFIG must not change: %s != %s" %
+                         (repr(config_path), repr(_application_config_path)))
     return _application(environ, start_response)
