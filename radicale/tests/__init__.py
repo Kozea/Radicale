@@ -23,6 +23,7 @@ import os
 import sys
 from io import BytesIO
 
+# Allow importing of tests.custom....
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 
