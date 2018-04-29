@@ -114,6 +114,7 @@ def load(configuration, logger):
         """Collection copy, avoids overriding the original class attributes."""
     CollectionCopy.configuration = configuration
     CollectionCopy.logger = logger
+    CollectionCopy.static_init()
     return CollectionCopy
 
 
@@ -432,6 +433,11 @@ class BaseCollection:
     """
     path = ""
 
+    @classmethod
+    def static_init():
+        """init collection copy"""
+        pass
+
     @property
     def owner(self):
         """The owner of the collection."""
@@ -738,6 +744,19 @@ ITEM_CACHE_VERSION = 1
 
 class Collection(BaseCollection):
     """Collection stored in several files per calendar."""
+
+    @classmethod
+    def static_init(cls):
+        # init storage lock
+        folder = os.path.expanduser(cls.configuration.get(
+            "storage", "filesystem_folder"))
+        cls._makedirs_synced(folder)
+        lock_path = None
+        if cls.configuration.getboolean("storage", "filesystem_locking"):
+            lock_path = os.path.join(folder, ".Radicale.lock")
+        close_lock_file = cls.configuration.getboolean(
+            "storage", "filesystem_close_lock_file")
+        cls._lock = FileBackedRwLock(lock_path, close_lock_file)
 
     def __init__(self, path, principal=None, folder=None,
                  filesystem_path=None):
@@ -1535,26 +1554,16 @@ class Collection(BaseCollection):
             self._etag_cache = super().etag
         return self._etag_cache
 
-    _lock = None
-
     @classmethod
     @contextmanager
     def acquire_lock(cls, mode, user=None):
-        folder = os.path.expanduser(cls.configuration.get(
-            "storage", "filesystem_folder"))
-        if not cls._lock:
-            cls._makedirs_synced(folder)
-            lock_path = None
-            if cls.configuration.getboolean("storage", "filesystem_locking"):
-                lock_path = os.path.join(folder, ".Radicale.lock")
-            close_lock_file = cls.configuration.getboolean(
-                "storage", "filesystem_close_lock_file")
-            cls._lock = FileBackedRwLock(lock_path, close_lock_file)
         with cls._lock.acquire_lock(mode):
             yield
             # execute hook
             hook = cls.configuration.get("storage", "hook")
             if mode == "w" and hook:
+                folder = os.path.expanduser(cls.configuration.get(
+                    "storage", "filesystem_folder"))
                 cls.logger.debug("Running hook")
                 debug = cls.logger.isEnabledFor(logging.DEBUG)
                 p = subprocess.Popen(
