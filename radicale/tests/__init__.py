@@ -44,15 +44,13 @@ class BaseTest:
             args["wsgi.input"] = BytesIO(data)
             args["CONTENT_LENGTH"] = str(len(data))
         args["wsgi.errors"] = sys.stderr
-        self.application._answer = self.application(args, self.start_response)
+        status = headers = None
 
-        return (
-            int(self.application._status.split()[0]),
-            dict(self.application._headers),
-            self.application._answer[0].decode("utf-8")
-            if self.application._answer else None)
+        def start_response(status_, headers_):
+            nonlocal status, headers
+            status = status_
+            headers = headers_
+        answer = self.application(args, start_response)
 
-    def start_response(self, status, headers):
-        """Put the response values into the current application."""
-        self.application._status = status
-        self.application._headers = headers
+        return (int(status.split()[0]), dict(headers),
+                answer[0].decode("utf-8") if answer else None)
