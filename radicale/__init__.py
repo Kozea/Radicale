@@ -431,6 +431,7 @@ class Application:
         authorization = environ.get("HTTP_AUTHORIZATION", "")
         if external_login:
             login, password = external_login
+            login, password = login or "", password or ""
         elif authorization.startswith("Basic"):
             authorization = authorization[len("Basic"):].strip()
             login, password = self.decode(base64.b64decode(
@@ -439,30 +440,28 @@ class Application:
             # DEPRECATED: use remote_user backend instead
             login = environ.get("REMOTE_USER", "")
             password = ""
-        user = self.Auth.map_login_to_user(login)
 
-        if not user:
-            is_authenticated = True
-        elif not storage.is_safe_path_component(user):
+        user = self.Auth.login(login, password) or "" if login else ""
+        if user and login == user:
+            self.logger.info("Successful login: %r", user)
+        elif user:
+            self.logger.info("Successful login: %r -> %r", login, user)
+        elif login:
+            self.logger.info("Failed login attempt: %r", login)
+            # Random delay to avoid timing oracles and bruteforce attacks
+            delay = self.configuration.getfloat("auth", "delay")
+            if delay > 0:
+                random_delay = delay * (0.5 + random.random())
+                self.logger.debug("Sleeping %.3f seconds", random_delay)
+                time.sleep(random_delay)
+
+        if user and not storage.is_safe_path_component(user):
             # Prevent usernames like "user/calendar.ics"
             self.logger.info("Refused unsafe username: %r", user)
-            is_authenticated = False
-        else:
-            is_authenticated = self.Auth.is_authenticated2(login, user,
-                                                           password)
-            if not is_authenticated:
-                self.logger.info("Failed login attempt: %r", user)
-                # Random delay to avoid timing oracles and bruteforce attacks
-                delay = self.configuration.getfloat("auth", "delay")
-                if delay > 0:
-                    random_delay = delay * (0.5 + random.random())
-                    self.logger.debug("Sleeping %.3f seconds", random_delay)
-                    time.sleep(random_delay)
-            else:
-                self.logger.info("Successful login: %r", user)
+            user = ""
 
         # Create principal collection
-        if user and is_authenticated:
+        if user:
             principal_path = "/%s/" % user
             if self.Rights.authorized(user, principal_path, "w"):
                 with self.Collection.acquire_lock("r", user):
@@ -476,7 +475,7 @@ class Application:
                         except ValueError as e:
                             self.logger.warning("Failed to create principal "
                                                 "collection %r: %s", user, e)
-                            is_authenticated = False
+                            user = ""
             else:
                 self.logger.warning("Access to principal path %r denied by "
                                     "rights backend", principal_path)
@@ -491,7 +490,7 @@ class Application:
                     "Request body too large: %d", content_length)
                 return response(*REQUEST_ENTITY_TOO_LARGE)
 
-        if is_authenticated:
+        if not login or user:
             status, headers, answer = function(
                 environ, base_prefix, path, user)
             if (status, headers, answer) == NOT_ALLOWED:
@@ -500,8 +499,8 @@ class Application:
         else:
             status, headers, answer = NOT_ALLOWED
 
-        if (status, headers, answer) == NOT_ALLOWED and not (
-                user and is_authenticated) and not external_login:
+        if ((status, headers, answer) == NOT_ALLOWED and not user and
+                not external_login):
             # Unknown or unauthorized user
             self.logger.debug("Asking client for authentication")
             status = client.UNAUTHORIZED
