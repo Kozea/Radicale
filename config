@@ -27,10 +27,10 @@
 #max_connections = 20
 
 # Max size of request body (bytes)
-#max_content_length = 10000000
+#max_content_length = 100000000
 
 # Socket timeout (seconds)
-#timeout = 10
+#timeout = 30
 
 # SSL flag, enable HTTPS protocol
 #ssl = False

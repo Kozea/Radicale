@@ -73,11 +73,11 @@ INITIAL_CONFIG = OrderedDict([
             "help": "maximum number of parallel connections",
             "type": positive_int}),
         ("max_content_length", {
-            "value": "10000000",
+            "value": "100000000",
             "help": "maximum size of request body in bytes",
             "type": positive_int}),
         ("timeout", {
-            "value": "10",
+            "value": "30",
             "help": "socket timeout",
             "type": positive_int}),
         ("ssl", {
