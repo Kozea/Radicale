@@ -122,9 +122,12 @@ def check_and_sanitize_item(vobject_item, is_collection=False, uid=None,
                             tag=None):
     """Check vobject items for common errors and add missing UIDs.
 
-    ``multiple`` indicates that the vobject_item contains unrelated components.
+    ``is_collection`` indicates that vobject_item contains unrelated
+    components.
 
     If ``uid`` is not set, the UID is generated randomly.
+
+    The ``tag`` of the collection.
 
     """
     if tag and tag not in ("VCALENDAR", "VADDRESSBOOK"):
