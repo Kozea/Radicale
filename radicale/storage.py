@@ -230,8 +230,8 @@ def get_etag(text):
 
 def get_uid(vobject_component):
     """UID value of an item if defined."""
-    return ((hasattr(vobject_component, "uid") or None) and
-            vobject_component.uid.value)
+    return (vobject_component.uid.value
+            if hasattr(vobject_component, "uid") else None)
 
 
 def get_uid_from_object(vobject_item):
