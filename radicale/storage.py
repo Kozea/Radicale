@@ -761,6 +761,10 @@ class Collection(BaseCollection):
             "storage", "filesystem_close_lock_file")
         cls._lock = FileBackedRwLock(lock_path, close_lock_file)
 
+        # init cache lock
+        cls._cache_locks = {}
+        cls._cache_locks_lock = threading.Lock()
+
     def __init__(self, path, principal=None, folder=None,
                  filesystem_path=None):
         # DEPRECATED: Remove principal and folder attributes
@@ -1308,9 +1312,6 @@ class Collection(BaseCollection):
         except PermissionError:
             pass
         return content
-
-    _cache_locks = {}
-    _cache_locks_lock = threading.Lock()
 
     @contextmanager
     def _acquire_cache_lock(self, ns=""):
