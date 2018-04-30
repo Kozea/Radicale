@@ -134,7 +134,7 @@ def _href(base_prefix, href):
     return quote("%s%s" % (base_prefix, href))
 
 
-def _webdav_error(namespace, name):
+def webdav_error(namespace, name):
     """Generate XML error message."""
     root = ET.Element(_tag("D", "error"))
     root.append(ET.Element(_tag(namespace, name)))
@@ -1156,7 +1156,7 @@ def report(base_prefix, path, xml_request, collection):
         logger.warning("Invalid REPORT method %r on %r requested",
                        _tag_from_clark(root.tag), path)
         return (client.PRECONDITION_FAILED,
-                _webdav_error("D", "supported-report"))
+                webdav_error("D", "supported-report"))
     prop_element = root.find(_tag("D", "prop"))
     props = (
         [prop.tag for prop in prop_element]
@@ -1188,7 +1188,7 @@ def report(base_prefix, path, xml_request, collection):
             logger.warning("Client provided invalid sync token %r: %s",
                            old_sync_token, e, exc_info=True)
             return (client.PRECONDITION_FAILED,
-                    _webdav_error("D", "valid-sync-token"))
+                    webdav_error("D", "valid-sync-token"))
         hreferences = ("/" + posixpath.join(collection.path, n) for n in names)
         # Append current sync token to response
         sync_token_element = ET.Element(_tag("D", "sync-token"))
