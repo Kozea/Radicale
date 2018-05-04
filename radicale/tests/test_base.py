@@ -1207,7 +1207,7 @@ class BaseRequestsMixIn:
         status, _, _ = self.request("MKCALENDAR", calendar_path)
         assert status == 201
         event1 = get_file_content("event1.ics")
-        event2 = get_file_content("event2.ics")
+        event2 = get_file_content("event1_modified.ics")
         event_path = posixpath.join(calendar_path, "event1.ics")
         status, _, _ = self.request("PUT", event_path, event1)
         assert status == 201
@@ -1316,6 +1316,8 @@ class BaseRequestsMixIn:
         assert status == 201
         for component in ("event", "todo", "journal"):
             event = get_file_content("{}1.ics".format(component))
+            status, _, _ = self.request("DELETE", "/test/test.ics")
+            assert status in (200, 404)
             status, _, _ = self.request("PUT", "/test/test.ics", event)
             assert status == 201
             status, _, answer = self.request(
