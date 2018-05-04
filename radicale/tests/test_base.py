@@ -78,21 +78,7 @@ class BaseRequestsMixIn:
         assert "\nUID:" not in event
         path = "/calendar.ics/event.ics"
         status, _, _ = self.request("PUT", path, event)
-        assert status == 201
-        status, _, answer = self.request("GET", path)
-        assert status == 200
-        uids = []
-        for line in answer.split("\r\n"):
-            if line.startswith("UID:"):
-                uids.append(line[len("UID:"):])
-        assert len(uids) == 1 and uids[0]
-        # Overwrite the event with an event without UID and check that the UID
-        # is still the same
-        status, _, _ = self.request("PUT", path, event)
-        assert status == 201
-        status, _, answer = self.request("GET", path)
-        assert status == 200
-        assert "\r\nUID:%s\r\n" % uids[0] in answer
+        assert status == 400
 
     def test_add_todo(self):
         """Add a todo."""
@@ -144,7 +130,7 @@ class BaseRequestsMixIn:
         assert "UID:contact1" in answer
 
     def test_add_contact_without_uid(self):
-        """Add a contact."""
+        """Add a contact without UID."""
         status, _, _ = self._create_addressbook("/contacts.vcf/")
         assert status == 201
         contact = get_file_content("contact1.vcf").replace("UID:contact1\n",
@@ -152,21 +138,7 @@ class BaseRequestsMixIn:
         assert "\nUID" not in contact
         path = "/contacts.vcf/contact.vcf"
         status, _, _ = self.request("PUT", path, contact)
-        assert status == 201
-        status, _, answer = self.request("GET", path)
-        assert status == 200
-        uids = []
-        for line in answer.split("\r\n"):
-            if line.startswith("UID:"):
-                uids.append(line[len("UID:"):])
-        assert len(uids) == 1 and uids[0]
-        # Overwrite the contact with an contact without UID and check that the
-        # UID is still the same
-        status, _, _ = self.request("PUT", path, contact)
-        assert status == 201
-        status, _, answer = self.request("GET", path)
-        assert status == 200
-        assert "\r\nUID:%s\r\n" % uids[0] in answer
+        assert status == 400
 
     def test_update(self):
         """Update an event."""
@@ -1441,29 +1413,6 @@ class BaseRequestsMixIn:
         event = get_file_content("event_timezone_seconds.ics")
         status, _, _ = self.request("PUT", "/calendar.ics/event.ics", event)
         assert status == 201
-
-    def test_missing_uid(self):
-        """Verify that missing UIDs are added in a stable manner."""
-        status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
-        assert status == 201
-        event_without_uid = get_file_content("event1.ics").replace(
-            "UID:event1\n", "")
-        assert "UID" not in event_without_uid
-        path = "/calendar.ics/event1.ics"
-        status, _, _ = self.request("PUT", path, event_without_uid)
-        assert status == 201
-        status, _, answer = self.request("GET", path)
-        assert status == 200
-        uid = None
-        for line in answer.split("\r\n"):
-            if line.startswith("UID:"):
-                uid = line[len("UID:"):]
-        assert uid
-        status, _, _ = self.request("PUT", path, event_without_uid)
-        assert status == 201
-        status, _, answer = self.request("GET", path)
-        assert status == 200
-        assert "UID:%s\r\n" % uid in answer
 
 
 class BaseFileSystemTest(BaseTest):
