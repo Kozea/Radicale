@@ -1155,7 +1155,7 @@ def report(base_prefix, path, xml_request, collection):
             collection.get_meta("tag") not in ("VADDRESSBOOK", "VCALENDAR")):
         logger.warning("Invalid REPORT method %r on %r requested",
                        _tag_from_clark(root.tag), path)
-        return (client.PRECONDITION_FAILED,
+        return (client.CONFLICT,
                 webdav_error("D", "supported-report"))
     prop_element = root.find(_tag("D", "prop"))
     props = (
@@ -1187,7 +1187,7 @@ def report(base_prefix, path, xml_request, collection):
             # Invalid sync token
             logger.warning("Client provided invalid sync token %r: %s",
                            old_sync_token, e, exc_info=True)
-            return (client.PRECONDITION_FAILED,
+            return (client.CONFLICT,
                     webdav_error("D", "valid-sync-token"))
         hreferences = ("/" + posixpath.join(collection.path, n) for n in names)
         # Append current sync token to response

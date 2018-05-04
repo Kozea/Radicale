@@ -1155,7 +1155,7 @@ class BaseRequestsMixIn:
                  </prop>
                  %s
                </sync-collection>""" % sync_token_xml)
-        if sync_token and status == 412:
+        if sync_token and status == 409:
             return None, None
         assert status == 207
         xml = ET.fromstring(answer)
