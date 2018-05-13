@@ -1042,7 +1042,7 @@ class Collection(BaseCollection):
             if not is_safe_filesystem_path_component(href):
                 raise UnsafePathError(href)
             try:
-                cache_content = self._item_cache_content(href, vobject_item)
+                cache_content = self._item_cache_content(vobject_item)
                 _, _, _, text, _, _, _, _ = cache_content
             except Exception as e:
                 raise ValueError(
@@ -1288,7 +1288,7 @@ class Collection(BaseCollection):
         _hash.update(raw_text)
         return _hash.hexdigest()
 
-    def _item_cache_content(self, href, vobject_item, cache_hash=None):
+    def _item_cache_content(self, vobject_item, cache_hash=None):
         text = vobject_item.serialize()
         if cache_hash is None:
             cache_hash = self._item_cache_hash(text.encode(self._encoding))
@@ -1301,7 +1301,7 @@ class Collection(BaseCollection):
     def _store_item_cache(self, href, vobject_item, cache_hash=None):
         cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
                                     "item")
-        content = self._item_cache_content(href, vobject_item, cache_hash)
+        content = self._item_cache_content(vobject_item, cache_hash)
         self._makedirs_synced(cache_folder)
         try:
             # Race: Other processes might have created and locked the
