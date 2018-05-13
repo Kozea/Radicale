@@ -16,9 +16,9 @@ matrix:
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install python3 || brew upgrade python3; fi
+  - pip3 install --upgrade six
 
 install:
-  - pip3 install --upgrade six
   - pip3 install --upgrade --editable .[test,md5,bcrypt]
 
 script:
