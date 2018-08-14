@@ -414,21 +414,7 @@ class RecurringComponent(Component):
                 if addfunc is None:
                     addfunc = getattr(rruleset, name)
 
-                try:
-                    dtstart = self.dtstart.value
-                except (AttributeError, KeyError):
-                    # Special for VTODO - try DUE property instead
-                    try:
-                        if self.name == "VTODO":
-                            dtstart = self.due.value
-                        else:
-                            # if there's no dtstart, just return None
-                            logging.error('failed to get dtstart with VTODO')
-                            return None
-                    except (AttributeError, KeyError):
-                        # if there's no due, just return None
-                        logging.error('failed to find DUE at all.')
-                        return None
+                dtstart = self.dtstart.value
 
                 if name in DATENAMES:
                     if type(line.value[0]) == datetime.datetime:
@@ -440,22 +426,31 @@ class RecurringComponent(Component):
                         # ignore RDATEs with PERIOD values for now
                         pass
                 elif name in RULENAMES:
+                    try:
+                        dtstart = self.dtstart.value
+                    except (AttributeError, KeyError):
+                        # Special for VTODO - try DUE property instead
+                        try:
+                            if self.name == "VTODO":
+                                dtstart = self.due.value
+                            else:
+                                # if there's no dtstart, just return None
+                                logging.error('failed to get dtstart with VTODO')
+                                return None
+                        except (AttributeError, KeyError):
+                            # if there's no due, just return None
+                            logging.error('failed to find DUE at all.')
+                            return None
+
                     # a Ruby iCalendar library escapes semi-colons in rrules,
                     # so also remove any backslashes
                     value = line.value.replace('\\', '')
-                    # If dtstart has no time zone, `until`
-                    # shouldn't get one, either:
-                    ignoretz = (not isinstance(dtstart, datetime.datetime) or
-                                dtstart.tzinfo is None)
-                    try:
-                        until = rrule.rrulestr(value, ignoretz=ignoretz)._until
-                    except ValueError:
-                        # WORKAROUND: dateutil<=2.7.2 doesn't set the time zone
-                        # of dtstart
-                        if ignoretz:
-                            raise
-                        utc_now = datetime.datetime.now(datetime.timezone.utc)
-                        until = rrule.rrulestr(value, dtstart=utc_now)._until
+                    rule = rrule.rrulestr(
+                        value, dtstart=dtstart,
+                        # If dtstart has no time zone, `until`
+                        # shouldn't get one, either:
+                        ignoretz=isinstance(dtstart, datetime.date))
+                    until = rule._until
 
                     if until is not None and isinstance(dtstart,
                                                         datetime.datetime) and \
@@ -463,7 +458,7 @@ class RecurringComponent(Component):
                         # dateutil converts the UNTIL date to a datetime,
                         # check to see if the UNTIL parameter value was a date
                         vals = dict(pair.split('=') for pair in
-                                    value.upper().split(';'))
+                                    line.value.upper().split(';'))
                         if len(vals.get('UNTIL', '')) == 8:
                             until = datetime.datetime.combine(until.date(),
                                                               dtstart.time())
@@ -493,12 +488,7 @@ class RecurringComponent(Component):
                         if dtstart.tzinfo is None:
                             until = until.replace(tzinfo=None)
 
-                    value_without_until = ';'.join(
-                        pair for pair in value.split(';')
-                        if pair.split('=')[0].upper() != 'UNTIL')
-                    rule = rrule.rrulestr(value_without_until,
-                                          dtstart=dtstart, ignoretz=ignoretz)
-                    rule._until = until
+                        rule._until = until
 
                     # add the rrule or exrule to the rruleset
                     addfunc(rule)
