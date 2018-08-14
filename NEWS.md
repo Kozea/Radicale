@@ -1,6 +1,19 @@
 News
 ====
 
+2.1.10 - Wild Radish
+--------------------
+
+This release is compatible with version 2.0.0.
+
+* Update required versions for dependencies
+* Get ``RADICALE_CONFIG`` from WSGI environ
+* Improve HTTP status codes
+* Fix race condition in storage lock creation
+* Raise default limits for content length and timeout
+* Log output from hook
+* Simplify Auth plugin interface
+
 2.1.9 - Wild Radish
 -------------------
 
