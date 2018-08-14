@@ -44,7 +44,7 @@ from math import log
 from random import getrandbits
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
-import radicale_vobject as vobject
+import vobject
 
 if sys.version_info >= (3, 5):
     # HACK: Avoid import cycle for Python < 3.5

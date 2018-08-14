@@ -49,7 +49,7 @@ from http import client
 from urllib.parse import unquote, urlparse
 from xml.etree import ElementTree as ET
 
-import radicale_vobject as vobject
+import vobject
 
 from radicale import auth, config, log, rights, storage, web, xmlutils
 
