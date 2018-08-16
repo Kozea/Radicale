@@ -206,6 +206,8 @@ class ThreadedHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
 
 class ServerHandler(wsgiref.simple_server.ServerHandler):
 
+    # Don't pollute WSGI environ with OS environment
+    os_environ = {}
 
     def log_exception(self, exc_info):
         logger.error("An exception occurred during request: %s",
@@ -268,11 +270,6 @@ class Application:
     def headers_log(self, environ):
         """Sanitize headers for logging."""
         request_environ = dict(environ)
-
-        # Remove environment variables
-        if not self.configuration.getboolean("logging", "full_environment"):
-            for shell_variable in os.environ:
-                request_environ.pop(shell_variable, None)
 
         # Mask passwords
         mask_passwords = self.configuration.getboolean(

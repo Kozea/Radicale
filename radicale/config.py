@@ -178,10 +178,6 @@ INITIAL_CONFIG = OrderedDict([
             "help": "print debug information",
             "aliases": ["-D", "--debug"],
             "type": bool}),
-        ("full_environment", {
-            "value": "False",
-            "help": "store all environment variables",
-            "type": bool}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs",
