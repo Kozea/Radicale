@@ -919,14 +919,8 @@ class Application:
                         tag = "VADDRESSBOOK"
                 else:
                     tag = parent_item.get_meta("tag")
-                if tag == "VCALENDAR" and len(items) > 1:
-                    raise RuntimeError("VCALENDAR collection contains %d "
-                                       "components" % len(items))
-                for i in items:
-                    storage.check_and_sanitize_item(
-                        i, is_collection=write_whole_collection, uid=item.uid
-                        if not write_whole_collection and item else None,
-                        tag=tag)
+                storage.check_and_sanitize_items(
+                    items, is_collection=write_whole_collection, tag=tag)
             except Exception as e:
                 logger.warning(
                     "Bad PUT request on %r: %s", path, e, exc_info=True)
@@ -954,6 +948,13 @@ class Application:
                         "Bad PUT request on %r: %s", path, e, exc_info=True)
                     return BAD_REQUEST
             else:
+                uid = storage.get_uid_from_object(items[0])
+                if (item and item.uid != uid or
+                        not item and parent_item.has_uid(uid)):
+                    return self._webdav_error_response(
+                        "C" if tag == "VCALENDAR" else "CR",
+                        "no-uid-conflict")
+
                 href = posixpath.basename(path.strip("/"))
                 try:
                     if tag and not parent_item.get_meta("tag"):

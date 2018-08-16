@@ -119,21 +119,33 @@ def load(configuration):
     return CollectionCopy
 
 
-def check_and_sanitize_item(vobject_item, is_collection=False, uid=None,
-                            tag=None):
+def check_and_sanitize_items(vobject_items, is_collection=False, tag=None):
     """Check vobject items for common errors and add missing UIDs.
 
     ``is_collection`` indicates that vobject_item contains unrelated
     components.
-
-    If ``uid`` is not set, the UID is generated randomly.
 
     The ``tag`` of the collection.
 
     """
     if tag and tag not in ("VCALENDAR", "VADDRESSBOOK"):
         raise ValueError("Unsupported collection tag: %r" % tag)
-    if vobject_item.name == "VCALENDAR" and tag == "VCALENDAR":
+    if not is_collection and len(vobject_items) != 1:
+        raise ValueError("Item contains %d components" % len(vobject_items))
+    if tag == "VCALENDAR":
+        if len(vobject_items) > 1:
+            raise RuntimeError("VCALENDAR collection contains %d "
+                               "components" % len(vobject_items))
+        vobject_item = vobject_items[0]
+        if vobject_item.name != "VCALENDAR":
+            raise ValueError("Item type %r not supported in %r "
+                             "collection" % (vobject_item.name, tag))
+        component_uids = set()
+        for component in vobject_item.components():
+            if component.name in ("VTODO", "VEVENT", "VJOURNAL"):
+                component_uid = get_uid(component)
+                if component_uid:
+                    component_uids.add(component_uid)
         component_name = None
         object_uid = None
         object_uid_set = False
@@ -152,10 +164,17 @@ def check_and_sanitize_item(vobject_item, is_collection=False, uid=None,
             if not object_uid_set or is_collection:
                 object_uid_set = True
                 object_uid = component_uid
-                if component_uid is None:
-                    component.add("UID").value = uid or random_uuid4()
-                elif not component_uid:
-                    component.uid.value = uid or random_uuid4()
+                if not component_uid:
+                    if not is_collection:
+                        raise ValueError("%s component without UID in object" %
+                                         component_name)
+                    component_uid = find_available_name(
+                        component_uids.__contains__)
+                    component_uids.add(component_uid)
+                    if hasattr(component, "uid"):
+                        component.uid.value = component_uid
+                    else:
+                        component.add("UID").value = component_uid
             elif not object_uid or not component_uid:
                 raise ValueError("Multiple %s components without UID in "
                                  "object" % component_name)
@@ -169,19 +188,37 @@ def check_and_sanitize_item(vobject_item, is_collection=False, uid=None,
             except Exception as e:
                 raise ValueError("invalid recurrence rules in %s" %
                                  component.name) from e
-    elif vobject_item.name == "VCARD" and tag == "VADDRESSBOOK":
+    elif tag == "VADDRESSBOOK":
         # https://tools.ietf.org/html/rfc6352#section-5.1
-        object_uid = get_uid(vobject_item)
-        if object_uid is None:
-            vobject_item.add("UID").value = uid or random_uuid4()
-        elif not object_uid:
-            vobject_item.uid.value = uid or random_uuid4()
-    elif vobject_item.name == "VLIST" and tag == "VADDRESSBOOK":
-        # Custom format used by SOGo Connector to store lists of contacts
-        pass
+        object_uids = set()
+        for vobject_item in vobject_items:
+            if vobject_item.name == "VCARD":
+                object_uid = get_uid(vobject_item)
+                if object_uid:
+                    object_uids.add(object_uid)
+        for vobject_item in vobject_items:
+            if vobject_item.name == "VLIST":
+                # Custom format used by SOGo Connector to store lists of
+                # contacts
+                continue
+            if vobject_item.name != "VCARD":
+                raise ValueError("Item type %r not supported in %r "
+                                 "collection" % (vobject_item.name, tag))
+            object_uid = get_uid(vobject_item)
+            if not object_uid:
+                if not is_collection:
+                    raise ValueError("%s object without UID" %
+                                     vobject_item.name)
+                object_uid = find_available_name(object_uids.__contains__)
+                object_uids.add(object_uid)
+                if hasattr(vobject_item, "uid"):
+                    vobject_item.uid.value = object_uid
+                else:
+                    vobject_item.add("UID").value = object_uid
     else:
-        raise ValueError("Item type %r not supported in %s collection" %
-                         (vobject_item.name, repr(tag) if tag else "generic"))
+        for i in vobject_items:
+            raise ValueError("Item type %r not supported in %s collection" %
+                             (i.name, repr(tag) if tag else "generic"))
 
 
 def check_and_sanitize_props(props):
@@ -191,10 +228,17 @@ def check_and_sanitize_props(props):
         raise ValueError("Unsupported collection tag: %r" % tag)
 
 
-def random_uuid4():
-    """Generate a pseudo-random UUID"""
-    r = "%016x" % getrandbits(128)
-    return "%s-%s-%s-%s-%s" % (r[:8], r[8:12], r[12:16], r[16:20], r[20:])
+def find_available_name(exists_fn, suffix=""):
+    """Generate a pseudo-random UID"""
+    # Prevent infinite loop
+    for _ in range(1000):
+        r = "%016x" % getrandbits(128)
+        name = "%s-%s-%s-%s-%s%s" % (
+            r[:8], r[8:12], r[12:16], r[16:20], r[20:], suffix)
+        if not exists_fn(name):
+            return name
+    # something is wrong with the PRNG
+    raise RuntimeError("No unique random sequence found")
 
 
 def scandir(path, only_dirs=False, only_files=False):
@@ -612,6 +656,13 @@ class BaseCollection:
         """
         return self.get(href) is not None
 
+    def has_uid(self, uid):
+        """Check if a UID exists in the collection."""
+        for item in self.get_all():
+            if item.uid == uid:
+                return True
+        return False
+
     def upload(self, href, vobject_item):
         """Upload a new or replace an existing item."""
         raise NotImplementedError
@@ -791,7 +842,8 @@ class Collection(BaseCollection):
         return os.path.join(filesystem_folder, "collection-root")
 
     @contextmanager
-    def _atomic_write(self, path, mode="w", newline=None, sync_directory=True):
+    def _atomic_write(self, path, mode="w", newline=None, sync_directory=True,
+                      replace_fn=os.replace):
         directory = os.path.dirname(path)
         tmp = NamedTemporaryFile(
             mode=mode, dir=directory, delete=False, prefix=".Radicale.tmp-",
@@ -805,23 +857,13 @@ class Collection(BaseCollection):
                 raise RuntimeError("Fsync'ing file %r failed: %s" %
                                    (path, e)) from e
             tmp.close()
-            os.replace(tmp.name, path)
+            replace_fn(tmp.name, path)
         except BaseException:
             tmp.close()
             os.remove(tmp.name)
             raise
         if sync_directory:
             self._sync_directory(directory)
-
-    @staticmethod
-    def _find_available_file_name(exists_fn, suffix=""):
-        # Prevent infinite loop
-        for _ in range(1000):
-            file_name = random_uuid4() + suffix
-            if not exists_fn(file_name):
-                return file_name
-        # something is wrong with the PRNG
-        raise RuntimeError("No unique random sequence found")
 
     @classmethod
     def _fsync(cls, fd):
@@ -947,17 +989,29 @@ class Collection(BaseCollection):
             with exception_cm(path):
                 saved_item_errors = item_errors
                 collection = None
+                uids = set()
+                has_child_collections = False
                 for item in cls.discover(path, "1", exception_cm):
                     if not collection:
                         collection = item
                         collection.get_meta()
                         continue
                     if isinstance(item, BaseCollection):
+                        has_child_collections = True
                         remaining_paths.append(item.path)
+                    elif item.uid in uids:
+                        cls.logger.error(
+                            "Invalid item %r in %r: UID conflict %r",
+                            item.href, path.strip("/"), item.uid)
                     else:
+                        uids.add(item.uid)
                         logger.debug("Verified item %r in %r", item.href, path)
                 if item_errors == saved_item_errors:
                     collection.sync()
+                if has_child_collections and collection.get_meta("tag"):
+                    cls.logger.error("Invalid collection %r: %r must not have "
+                                     "child collections", path.strip("/"),
+                                     collection.get_meta("tag"))
         return item_errors == 0 and collection_errors == 0
 
     @classmethod
@@ -992,26 +1046,16 @@ class Collection(BaseCollection):
                         items.extend(
                             getattr(collection, "%s_list" % content, []))
                     items_by_uid = groupby(sorted(items, key=get_uid), get_uid)
-                    vobject_items = {}
-                    for uid, items in items_by_uid:
-                        new_collection = vobject.iCalendar()
-                        for item in items:
-                            new_collection.add(item)
-                        # href must comply to is_safe_filesystem_path_component
-                        # and no file name collisions must exist between hrefs
-                        href = self._find_available_file_name(
-                            vobject_items.get, suffix=".ics")
-                        vobject_items[href] = new_collection
-                    self._upload_all_nonatomic(vobject_items)
+
+                    def vobject_items():
+                        for uid, items in items_by_uid:
+                            collection = vobject.iCalendar()
+                            for item in items:
+                                collection.add(item)
+                            yield collection
+                    self._upload_all_nonatomic(vobject_items(), suffix=".ics")
                 elif props.get("tag") == "VADDRESSBOOK":
-                    vobject_items = {}
-                    for card in collection:
-                        # href must comply to is_safe_filesystem_path_component
-                        # and no file name collisions must exist between hrefs
-                        href = self._find_available_file_name(
-                            vobject_items.get, suffix=".vcf")
-                        vobject_items[href] = card
-                    self._upload_all_nonatomic(vobject_items)
+                    self._upload_all_nonatomic(collection, suffix=".vcf")
 
             # This operation is not atomic on the filesystem level but it's
             # very unlikely that one rename operations succeeds while the
@@ -1023,37 +1067,64 @@ class Collection(BaseCollection):
 
         return cls(sane_path)
 
-    def upload_all_nonatomic(self, vobject_items):
-        """DEPRECATED: Use ``_upload_all_nonatomic``"""
-        return self._upload_all_nonatomic(vobject_items)
-
-    def _upload_all_nonatomic(self, vobject_items):
+    def _upload_all_nonatomic(self, vobject_items, suffix=""):
         """Upload a new set of items.
 
-        This takes a mapping of href and vobject items and
+        This takes a list of vobject items and
         uploads them nonatomic and without existence checks.
 
         """
         cache_folder = os.path.join(self._filesystem_path,
                                     ".Radicale.cache", "item")
         self._makedirs_synced(cache_folder)
-        for href, vobject_item in vobject_items.items():
-            if not is_safe_filesystem_path_component(href):
-                raise UnsafePathError(href)
+        hrefs = set()
+        for vobject_item in vobject_items:
+            uid = get_uid_from_object(vobject_item)
             try:
                 cache_content = self._item_cache_content(vobject_item)
                 _, _, _, text, _, _, _, _ = cache_content
             except Exception as e:
                 raise ValueError(
                     "Failed to store item %r in temporary collection %r: %s" %
-                    (href, self.path, e)) from e
+                    (uid, self.path, e)) from e
+            href_candidates = []
+            if os.name in ("nt", "posix"):
+                href_candidates.append(
+                    lambda: uid if uid.lower().endswith(suffix.lower())
+                    else uid + suffix)
+            href_candidates.extend((
+                lambda: get_etag(uid).strip('"') + suffix,
+                lambda: find_available_name(hrefs.__contains__, suffix)))
+            href = None
+
+            def replace_fn(source, target):
+                nonlocal href
+                while href_candidates:
+                    href = href_candidates.pop(0)()
+                    if href in hrefs:
+                        continue
+                    if not is_safe_filesystem_path_component(href):
+                        if not href_candidates:
+                            raise UnsafePathError(href)
+                        continue
+                    try:
+                        return os.replace(source, path_to_filesystem(
+                            self._filesystem_path, href))
+                    except OSError as e:
+                        if href_candidates and (
+                                os.name == "posix" and e.errno == 22 or
+                                os.name == "nt" and e.errno == 123):
+                            continue
+                        raise
+
+            with self._atomic_write(os.path.join(self._filesystem_path, "ign"),
+                                    newline="", sync_directory=False,
+                                    replace_fn=replace_fn) as f:
+                f.write(text)
+            hrefs.add(href)
             with self._atomic_write(os.path.join(cache_folder, href), "wb",
                                     sync_directory=False) as f:
                 pickle.dump(cache_content, f)
-            path = path_to_filesystem(self._filesystem_path, href)
-            with self._atomic_write(
-                    path, newline="", sync_directory=False) as f:
-                f.write(text)
         self._sync_directory(cache_folder)
         self._sync_directory(self._filesystem_path)
 
@@ -1412,12 +1483,9 @@ class Collection(BaseCollection):
                     try:
                         vobject_items = tuple(vobject.readComponents(
                             raw_text.decode(self._encoding)))
-                        if len(vobject_items) != 1:
-                            raise RuntimeError("Content contains %d components"
-                                               % len(vobject_items))
+                        check_and_sanitize_items(vobject_items,
+                                                 tag=self.get_meta("tag"))
                         vobject_item = vobject_items[0]
-                        check_and_sanitize_item(vobject_item, uid=uid,
-                                                tag=self.get_meta("tag"))
                         cache_hash, uid, etag, text, name, tag, start, end = \
                             self._store_item_cache(
                                 href, vobject_item, input_hash)

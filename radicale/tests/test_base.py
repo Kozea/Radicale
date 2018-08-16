@@ -1508,6 +1508,62 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
         assert answer1 == answer2
         assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
 
+    @pytest.mark.skipif(os.name not in ("nt", "posix"),
+                        reason="Only supported on 'nt' and 'posix'")
+    def test_put_whole_calendar_uids_used_as_file_names(self):
+        """Test if UIDs are used as file names."""
+        BaseRequestsMixIn.test_put_whole_calendar(self)
+        for uid in ("todo", "event"):
+            status, _, answer = self.request(
+                "GET", "/calendar.ics/%s.ics" % uid)
+            assert status == 200
+            assert "\r\nUID:%s\r\n" % uid in answer
+
+    @pytest.mark.skipif(os.name not in ("nt", "posix"),
+                        reason="Only supported on 'nt' and 'posix'")
+    def test_put_whole_calendar_random_uids_used_as_file_names(self):
+        """Test if UIDs are used as file names."""
+        BaseRequestsMixIn.test_put_whole_calendar_without_uids(self)
+        status, _, answer = self.request("GET", "/calendar.ics")
+        assert status == 200
+        uids = []
+        for line in answer.split("\r\n"):
+            if line.startswith("UID:"):
+                uids.append(line[len("UID:"):])
+        for uid in uids:
+            status, _, answer = self.request(
+                "GET", "/calendar.ics/%s.ics" % uid)
+            assert status == 200
+            assert "\r\nUID:%s\r\n" % uid in answer
+
+    @pytest.mark.skipif(os.name not in ("nt", "posix"),
+                        reason="Only supported on 'nt' and 'posix'")
+    def test_put_whole_addressbook_uids_used_as_file_names(self):
+        """Test if UIDs are used as file names."""
+        BaseRequestsMixIn.test_put_whole_addressbook(self)
+        for uid in ("contact1", "contact2"):
+            status, _, answer = self.request(
+                "GET", "/contacts.vcf/%s.vcf" % uid)
+            assert status == 200
+            assert "\r\nUID:%s\r\n" % uid in answer
+
+    @pytest.mark.skipif(os.name not in ("nt", "posix"),
+                        reason="Only supported on 'nt' and 'posix'")
+    def test_put_whole_addressbook_random_uids_used_as_file_names(self):
+        """Test if UIDs are used as file names."""
+        BaseRequestsMixIn.test_put_whole_addressbook_without_uids(self)
+        status, _, answer = self.request("GET", "/contacts.vcf")
+        assert status == 200
+        uids = []
+        for line in answer.split("\r\n"):
+            if line.startswith("UID:"):
+                uids.append(line[len("UID:"):])
+        for uid in uids:
+            status, _, answer = self.request(
+                "GET", "/contacts.vcf/%s.vcf" % uid)
+            assert status == 200
+            assert "\r\nUID:%s\r\n" % uid in answer
+
 
 class TestCustomStorageSystem(BaseFileSystemTest):
     """Test custom backend loading."""
