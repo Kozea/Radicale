@@ -102,26 +102,14 @@ class BaseAuth:
         """
         return ()
 
-    def login(self, login, password):
-        """Check credentials and map login to internal user
-
-        ``login`` the login name
-
-        ``password`` the password
-
-        Returns the user name or ``""`` for invalid credentials.
-
-        """
-
-        user = self.map_login_to_user(login)
-        if user and self.is_authenticated2(login, user, password):
-            return user
-        return ""
-
     def is_authenticated2(self, login, user, password):
         """Validate credentials.
 
-        DEPRECATED: use ``login`` instead
+        ``login`` the login name
+
+        ``user`` the user from ``map_login_to_user(login)``.
+
+        ``password`` the login password
 
         """
         return self.is_authenticated(user, password)
@@ -129,7 +117,7 @@ class BaseAuth:
     def is_authenticated(self, user, password):
         """Validate credentials.
 
-        DEPRECATED: use ``login`` instead
+        DEPRECATED: use ``is_authenticated2`` instead
 
         """
         raise NotImplementedError
@@ -137,7 +125,11 @@ class BaseAuth:
     def map_login_to_user(self, login):
         """Map login name to internal user.
 
-        DEPRECATED: use ``login`` instead
+        ``login`` the login name, ``""`` for anonymous users
+
+        Returns a string with the user name.
+        If a login can't be mapped to an user, return ``login`` and
+        return ``False`` in ``is_authenticated2(...)``.
 
         """
         return login
