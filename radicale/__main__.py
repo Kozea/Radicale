@@ -23,13 +23,11 @@ from a python programme with ``radicale.__main__.run()``.
 """
 
 import argparse
-import atexit
 import os
 import select
 import signal
 import socket
 import ssl
-import sys
 from wsgiref.simple_server import make_server
 
 from radicale import (VERSION, Application, RequestHandler, ThreadedHTTPServer,
@@ -135,45 +133,6 @@ def run():
         exit(1)
 
 
-def daemonize(configuration):
-    """Fork and decouple if Radicale is configured as daemon."""
-    # Check and create PID file in a race-free manner
-    if configuration.get("server", "pid"):
-        try:
-            pid_path = os.path.abspath(os.path.expanduser(
-                configuration.get("server", "pid")))
-            pid_fd = os.open(
-                pid_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except OSError as e:
-            raise OSError("PID file exists: %r" %
-                          configuration.get("server", "pid")) from e
-    pid = os.fork()
-    if pid:
-        # Write PID
-        if configuration.get("server", "pid"):
-            with os.fdopen(pid_fd, "w") as pid_file:
-                pid_file.write(str(pid))
-        sys.exit()
-    if configuration.get("server", "pid"):
-        os.close(pid_fd)
-
-        # Register exit function
-        def cleanup():
-            """Remove the PID files."""
-            logger.debug("Cleaning up")
-            # Remove PID file
-            os.unlink(pid_path)
-        atexit.register(cleanup)
-    # Decouple environment
-    os.chdir("/")
-    os.setsid()
-    with open(os.devnull, "r") as null_in:
-        os.dup2(null_in.fileno(), sys.stdin.fileno())
-    with open(os.devnull, "w") as null_out:
-        os.dup2(null_out.fileno(), sys.stdout.fileno())
-        os.dup2(null_out.fileno(), sys.stderr.fileno())
-
-
 def serve(configuration):
     """Serve radicale from configuration."""
     logger.info("Starting Radicale")
@@ -260,8 +219,6 @@ def serve(configuration):
     if not shutdown_program_socket_out or os.name == "nt":
         # Fallback to busy waiting. (select.select blocks SIGINT on Windows.)
         select_timeout = 1.0
-    if configuration.getboolean("server", "daemon"):
-        daemonize(configuration)
     logger.info("Radicale server ready")
     while not shutdown_program:
         try:

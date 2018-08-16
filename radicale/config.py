@@ -57,17 +57,6 @@ INITIAL_CONFIG = OrderedDict([
             "help": "set server hostnames including ports",
             "aliases": ["-H", "--hosts"],
             "type": str}),
-        ("daemon", {
-            "value": "False",
-            "help": "launch as daemon",
-            "aliases": ["-d", "--daemon"],
-            "opposite": ["-f", "--foreground"],
-            "type": bool}),
-        ("pid", {
-            "value": "",
-            "help": "set PID filename for daemon mode",
-            "aliases": ["-p", "--pid"],
-            "type": str}),
         ("max_connections", {
             "value": "20",
             "help": "maximum number of parallel connections",

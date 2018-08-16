@@ -17,12 +17,6 @@
 # For example: 0.0.0.0:9999, [::]:9999
 #hosts = 127.0.0.1:5232
 
-# Daemon flag
-#daemon = False
-
-# File storing the PID in daemon mode
-#pid =
-
 # Max parallel connections
 #max_connections = 20
 
