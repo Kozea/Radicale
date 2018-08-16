@@ -17,17 +17,13 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Radicale Server module.
+Radicale WSGI application.
 
-This module offers a WSGI application class.
-
-To use this module, you should take a look at the file ``radicale.py`` that
-should have been included in this package.
+Can be used with an external WSGI server or the built-in server.
 
 """
 
 import base64
-import contextlib
 import datetime
 import io
 import itertools
@@ -38,15 +34,11 @@ import posixpath
 import pprint
 import random
 import socket
-import socketserver
-import ssl
-import sys
 import threading
 import time
-import wsgiref.simple_server
 import zlib
 from http import client
-from urllib.parse import unquote, urlparse
+from urllib.parse import urlparse
 from xml.etree import ElementTree as ET
 
 import vobject
@@ -96,162 +88,6 @@ INTERNAL_SERVER_ERROR = (
     "A server error occurred.  Please contact the administrator.")
 
 DAV_HEADERS = "1, 2, 3, calendar-access, addressbook, extended-mkcol"
-
-
-class HTTPServer(wsgiref.simple_server.WSGIServer):
-    """HTTP server."""
-
-    # These class attributes must be set before creating instance
-    client_timeout = None
-    max_connections = None
-
-    def __init__(self, address, handler, bind_and_activate=True):
-        """Create server."""
-        ipv6 = ":" in address[0]
-
-        if ipv6:
-            self.address_family = socket.AF_INET6
-
-        # Do not bind and activate, as we might change socket options
-        super().__init__(address, handler, False)
-
-        if ipv6:
-            # Only allow IPv6 connections to the IPv6 socket
-            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
-
-        if self.max_connections:
-            self.connections_guard = threading.BoundedSemaphore(
-                self.max_connections)
-        else:
-            # use dummy context manager
-            self.connections_guard = contextlib.ExitStack()
-
-        if bind_and_activate:
-            try:
-                self.server_bind()
-                self.server_activate()
-            except BaseException:
-                self.server_close()
-                raise
-
-        if self.client_timeout and sys.version_info < (3, 5, 2):
-            logger.warning("Using server.timeout with Python < 3.5.2 "
-                           "can cause network connection failures")
-
-    def get_request(self):
-        # Set timeout for client
-        _socket, address = super().get_request()
-        if self.client_timeout:
-            _socket.settimeout(self.client_timeout)
-        return _socket, address
-
-    def handle_error(self, request, client_address):
-        if issubclass(sys.exc_info()[0], socket.timeout):
-            logger.info("client timed out", exc_info=True)
-        else:
-            logger.error("An exception occurred during request: %s",
-                         sys.exc_info()[1], exc_info=True)
-
-
-class HTTPSServer(HTTPServer):
-    """HTTPS server."""
-
-    # These class attributes must be set before creating instance
-    certificate = None
-    key = None
-    protocol = None
-    ciphers = None
-    certificate_authority = None
-
-    def __init__(self, address, handler):
-        """Create server by wrapping HTTP socket in an SSL socket."""
-        super().__init__(address, handler, bind_and_activate=False)
-
-        self.socket = ssl.wrap_socket(
-            self.socket, self.key, self.certificate, server_side=True,
-            cert_reqs=ssl.CERT_REQUIRED if self.certificate_authority else
-            ssl.CERT_NONE,
-            ca_certs=self.certificate_authority or None,
-            ssl_version=self.protocol, ciphers=self.ciphers,
-            do_handshake_on_connect=False)
-
-        self.server_bind()
-        self.server_activate()
-
-
-class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
-    def process_request_thread(self, request, client_address):
-        with self.connections_guard:
-            return super().process_request_thread(request, client_address)
-
-
-class ThreadedHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
-    def process_request_thread(self, request, client_address):
-        try:
-            try:
-                request.do_handshake()
-            except socket.timeout:
-                raise
-            except Exception as e:
-                raise RuntimeError("SSL handshake failed: %s" % e) from e
-        except Exception:
-            try:
-                self.handle_error(request, client_address)
-            finally:
-                self.shutdown_request(request)
-            return
-        with self.connections_guard:
-            return super().process_request_thread(request, client_address)
-
-
-class ServerHandler(wsgiref.simple_server.ServerHandler):
-
-    # Don't pollute WSGI environ with OS environment
-    os_environ = {}
-
-    def log_exception(self, exc_info):
-        logger.error("An exception occurred during request: %s",
-                     exc_info[1], exc_info=exc_info)
-
-
-class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
-    """HTTP requests handler."""
-
-    def log_request(self, code="-", size="-"):
-        """Disable request logging."""
-
-    def log_error(self, format, *args):
-        msg = format % args
-        logger.error("An error occurred during request: %s" % msg)
-
-    def get_environ(self):
-        env = super().get_environ()
-        if hasattr(self.connection, "getpeercert"):
-            # The certificate can be evaluated by the auth module
-            env["REMOTE_CERTIFICATE"] = self.connection.getpeercert()
-        # Parent class only tries latin1 encoding
-        env["PATH_INFO"] = unquote(self.path.split("?", 1)[0])
-        return env
-
-    def handle(self):
-        """Copy of WSGIRequestHandler.handle with different ServerHandler"""
-
-        self.raw_requestline = self.rfile.readline(65537)
-        if len(self.raw_requestline) > 65536:
-            self.requestline = ''
-            self.request_version = ''
-            self.command = ''
-            self.send_error(414)
-            return
-
-        if not self.parse_request():
-            return
-
-        handler = ServerHandler(
-            self.rfile, self.wfile, self.get_stderr(), self.get_environ()
-        )
-        handler.request_handler = self
-        handler.run(self.server.get_app())
 
 
 class Application:
