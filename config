@@ -125,8 +125,9 @@
 
 [logging]
 
-# Set the logging level to debug
-#debug = False
+# Threshold for the logger
+# Value: debug | info | warning | error | critical
+#level = warning
 
 # Don't include passwords in logs
 #mask_passwords = True

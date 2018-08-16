@@ -116,16 +116,16 @@ def setup():
     handler = ThreadStreamsHandler(sys.stderr, get_default_handler())
     logging.basicConfig(format=LOGGER_FORMAT, handlers=[handler])
     register_stream = handler.register_stream
-    set_debug(True)
+    set_level(logging.DEBUG)
 
 
-def set_debug(debug):
-    """Set debug mode for global logger."""
-    if debug:
-        root_logger.setLevel(logging.DEBUG)
-        logger.setLevel(logging.DEBUG)
+def set_level(level):
+    """Set logging level for global logger."""
+    if isinstance(level, str):
+        level = getattr(logging, level.upper())
+    root_logger.setLevel(level)
+    logger.setLevel(level)
+    if level == logging.DEBUG:
         logger.removeFilter(removeTracebackFilter)
     else:
-        root_logger.setLevel(logging.WARNING)
-        logger.setLevel(logging.WARNING)
         logger.addFilter(removeTracebackFilter)

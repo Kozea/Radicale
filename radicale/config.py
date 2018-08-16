@@ -49,6 +49,12 @@ def positive_float(value):
     return value
 
 
+def logging_level(value):
+    if value not in ("debug", "info", "warning", "error", "critical"):
+        raise ValueError("unsupported level: %s" % value)
+    return value
+
+
 # Default configuration
 INITIAL_CONFIG = OrderedDict([
     ("server", OrderedDict([
@@ -173,11 +179,10 @@ INITIAL_CONFIG = OrderedDict([
             "type": str,
             "internal": web.INTERNAL_TYPES})])),
     ("logging", OrderedDict([
-        ("debug", {
-            "value": "False",
-            "help": "print debug information",
-            "aliases": ["-D", "--debug"],
-            "type": bool}),
+        ("level", {
+            "value": "warning",
+            "help": "threshold for the logger",
+            "type": logging_level}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs",

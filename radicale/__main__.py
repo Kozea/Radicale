@@ -41,6 +41,8 @@ def run():
                         help="check the storage for errors and exit")
     parser.add_argument(
         "-C", "--config", help="use a specific configuration file")
+    parser.add_argument("-D", "--debug", action="store_true",
+                        help="print debug information")
 
     groups = {}
     for section, values in config.INITIAL_CONFIG.items():
@@ -76,7 +78,10 @@ def run():
     args = parser.parse_args()
 
     # Preliminary configure logging
-    log.set_debug(args.logging_debug)
+    if args.debug:
+        args.logging_level = "debug"
+    if args.logging_level is not None:
+        log.set_level(args.logging_level)
 
     if args.config is not None:
         config_paths = [args.config] if args.config else []
@@ -103,7 +108,7 @@ def run():
                 configuration.set(section, action.split('_', 1)[1], value)
 
     # Configure logging
-    log.set_debug(configuration.getboolean("logging", "debug"))
+    log.set_level(configuration.get("logging", "level"))
 
     if args.verify_storage:
         logger.info("Verifying storage")

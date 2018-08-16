@@ -850,7 +850,7 @@ def _init_application(config_path, wsgi_errors):
             _application_config_path = config_path
             configuration = config.load([config_path] if config_path else [],
                                         ignore_missing_paths=False)
-            log.set_debug(configuration.getboolean("logging", "debug"))
+            log.set_level(configuration.get("logging", "level"))
             _application = Application(configuration)
 
 
