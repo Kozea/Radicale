@@ -1013,7 +1013,8 @@ def _init_application(config_path):
 
 
 def application(environ, start_response):
-    config_path = environ.get("RADICALE_CONFIG")
+    config_path = environ.get("RADICALE_CONFIG",
+                              os.environ.get("RADICALE_CONFIG"))
     if _application is None:
         _init_application(config_path)
     if _application_config_path != config_path:
