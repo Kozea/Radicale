@@ -114,10 +114,10 @@ The default values should be fine for most scenarios.
 ```ini
 [server]
 max_connections = 20
-# 1 Megabyte
-max_content_length = 10000000
-# 10 seconds
-timeout = 10
+# 100 Megabyte
+max_content_length = 100000000
+# 30 seconds
+timeout = 30
 
 [auth]
 # Average delay after failed login attempts in seconds

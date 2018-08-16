@@ -64,12 +64,12 @@ Default: `20`
 ### max_content_length
 The maximum size of the request body. (bytes)
 
-Default: `10000000`
+Default: `100000000`
 
 ### timeout
 Socket timeout. (seconds)
 
-Default: `10`
+Default: `30`
 
 ### ssl
 Enable transport layer encryption.
