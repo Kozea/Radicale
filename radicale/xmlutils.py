@@ -1121,7 +1121,7 @@ def proppatch(base_prefix, path, xml_request, collection):
             pass
         _add_propstat_to(response, short_name, 200)
     storage.check_and_sanitize_props(new_props)
-    collection.set_meta_all(new_props)
+    collection.set_meta(new_props)
 
     return multistatus
 
@@ -1229,7 +1229,7 @@ def report(base_prefix, path, xml_request, collection):
                     # Reference is a collection
                     collection_requested = True
 
-        for name, item in collection.get_multi2(get_names()):
+        for name, item in collection.get_multi(get_names()):
             if not item:
                 uri = "/" + posixpath.join(collection.path, name)
                 response = _item_response(base_prefix, uri,

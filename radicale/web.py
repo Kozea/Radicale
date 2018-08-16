@@ -45,13 +45,13 @@ MIMETYPES = {
     ".xml": "text/xml"}
 FALLBACK_MIMETYPE = "application/octet-stream"
 
-INTERNAL_TYPES = ("None", "none", "internal")
+INTERNAL_TYPES = ("none", "internal")
 
 
 def load(configuration):
     """Load the web module chosen in configuration."""
     web_type = configuration.get("web", "type")
-    if web_type in ("None", "none"):  # DEPRECATED: use "none"
+    if web_type == "none":
         web_class = NoneWeb
     elif web_type == "internal":
         web_class = Web

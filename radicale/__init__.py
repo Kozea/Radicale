@@ -449,6 +449,7 @@ class Application:
             return response(*NOT_FOUND)
 
         # Ask authentication backend to check rights
+        login = password = ""
         external_login = self.Auth.get_external_login(environ)
         authorization = environ.get("HTTP_AUTHORIZATION", "")
         if external_login:
@@ -458,10 +459,6 @@ class Application:
             authorization = authorization[len("Basic"):].strip()
             login, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
-        else:
-            # DEPRECATED: use remote_user backend instead
-            login = environ.get("REMOTE_USER", "")
-            password = ""
 
         user = self.Auth.login(login, password) or "" if login else ""
         if user and login == user:
@@ -961,7 +958,7 @@ class Application:
                         new_props = parent_item.get_meta()
                         new_props["tag"] = tag
                         storage.check_and_sanitize_props(new_props)
-                        parent_item.set_meta_all(new_props)
+                        parent_item.set_meta(new_props)
                     new_item = parent_item.upload(href, items[0])
                 except ValueError as e:
                     logger.warning(

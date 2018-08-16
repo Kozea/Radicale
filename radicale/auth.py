@@ -62,14 +62,13 @@ from importlib import import_module
 
 from radicale.log import logger
 
-INTERNAL_TYPES = ("None", "none", "remote_user", "http_x_remote_user",
-                  "htpasswd")
+INTERNAL_TYPES = ("none", "remote_user", "http_x_remote_user", "htpasswd")
 
 
 def load(configuration):
     """Load the authentication manager chosen in configuration."""
     auth_type = configuration.get("auth", "type")
-    if auth_type in ("None", "none"):  # DEPRECATED: use "none"
+    if auth_type == "none":
         class_ = NoneAuth
     elif auth_type == "remote_user":
         class_ = RemoteUserAuth
@@ -114,39 +113,12 @@ class BaseAuth:
 
         """
 
-        user = self.map_login_to_user(login)
-        if user and self.is_authenticated2(login, user, password):
-            return user
-        return ""
-
-    def is_authenticated2(self, login, user, password):
-        """Validate credentials.
-
-        DEPRECATED: use ``login`` instead
-
-        """
-        return self.is_authenticated(user, password)
-
-    def is_authenticated(self, user, password):
-        """Validate credentials.
-
-        DEPRECATED: use ``login`` instead
-
-        """
         raise NotImplementedError
-
-    def map_login_to_user(self, login):
-        """Map login name to internal user.
-
-        DEPRECATED: use ``login`` instead
-
-        """
-        return login
 
 
 class NoneAuth(BaseAuth):
-    def is_authenticated(self, user, password):
-        return True
+    def login(self, login, password):
+        return login
 
 
 class Auth(BaseAuth):
@@ -239,11 +211,11 @@ class Auth(BaseAuth):
         hash_value = hash_value.strip()
         return md5_apr1.verify(password, hash_value)
 
-    def is_authenticated(self, user, password):
+    def login(self, login, password):
         """Validate credentials.
 
-        Iterate through htpasswd credential file until user matches, extract
-        hash (encrypted password) and check hash against user-given password,
+        Iterate through htpasswd credential file until login matches, extract
+        hash (encrypted password) and check hash against password,
         using the method specified in the Radicale config.
 
         The content of the file is not cached because reading is generally a
@@ -257,20 +229,21 @@ class Auth(BaseAuth):
                     line = line.rstrip("\n")
                     if line.lstrip() and not line.lstrip().startswith("#"):
                         try:
-                            login, hash_value = line.split(":", maxsplit=1)
+                            hash_login, hash_value = line.split(
+                                ":", maxsplit=1)
                             # Always compare both login and password to avoid
                             # timing attacks, see #591.
-                            login_ok = hmac.compare_digest(login, user)
+                            login_ok = hmac.compare_digest(hash_login, login)
                             password_ok = self.verify(hash_value, password)
                             if login_ok and password_ok:
-                                return True
+                                return login
                         except ValueError as e:
                             raise RuntimeError("Invalid htpasswd file %r: %s" %
                                                (self.filename, e)) from e
         except OSError as e:
             raise RuntimeError("Failed to load htpasswd file %r: %s" %
                                (self.filename, e)) from e
-        return False
+        return ""
 
 
 class RemoteUserAuth(NoneAuth):

@@ -495,16 +495,6 @@ class BaseCollection:
         """Collection is a principal."""
         return bool(self.path) and "/" not in self.path
 
-    @owner.setter
-    def owner(self, value):
-        # DEPRECATED: Included for compatibility reasons
-        pass
-
-    @is_principal.setter
-    def is_principal(self, value):
-        # DEPRECATED: Included for compatibility reasons
-        pass
-
     @classmethod
     def discover(cls, path, depth="0"):
         """Discover a list of collections under the given ``path``.
@@ -596,14 +586,6 @@ class BaseCollection:
         raise NotImplementedError
 
     def get_multi(self, hrefs):
-        """Fetch multiple items. Duplicate hrefs must be ignored.
-
-        DEPRECATED: use ``get_multi2`` instead
-
-        """
-        return (self.get(href) for href in set(hrefs))
-
-    def get_multi2(self, hrefs):
         """Fetch multiple items.
 
         Functionally similar to ``get``, but might bring performance benefits
@@ -638,14 +620,6 @@ class BaseCollection:
         This returns all events by default
         """
         return ((item, False) for item in self.get_all())
-
-    def pre_filtered_list(self, filters):
-        """List collection items with optional pre filtering.
-
-        DEPRECATED: use ``get_all_filtered`` instead
-
-        """
-        return self.get_all()
 
     def has(self, href):
         """Check if an item exists by its href.
@@ -687,26 +661,10 @@ class BaseCollection:
     def set_meta(self, props):
         """Set metadata values for collection.
 
-        ``props`` a dict with updates for properties. If a value is empty, the
-        property must be deleted.
-
-        DEPRECATED: use ``set_meta_all`` instead
-
-        """
-        raise NotImplementedError
-
-    def set_meta_all(self, props):
-        """Set metadata values for collection.
-
         ``props`` a dict with values for properties.
 
         """
-        delta_props = self.get_meta()
-        for key in delta_props.keys():
-            if key not in props:
-                delta_props[key] = None
-        delta_props.update(props)
-        self.set_meta(self, delta_props)
+        raise NotImplementedError
 
     @property
     def last_modified(self):
@@ -808,16 +766,11 @@ class Collection(BaseCollection):
         lock_path = os.path.join(folder, ".Radicale.lock")
         cls._lock = FileBackedRwLock(lock_path)
 
-    def __init__(self, path, principal=None, folder=None,
-                 filesystem_path=None):
-        # DEPRECATED: Remove principal and folder attributes
-        if folder is None:
-            folder = self._get_collection_root_folder()
+    def __init__(self, path, filesystem_path=None):
+        folder = self._get_collection_root_folder()
         # Path should already be sanitized
         self.path = sanitize_path(path).strip("/")
         self._encoding = self.configuration.get("encoding", "stock")
-        # DEPRECATED: Use ``self._encoding`` instead
-        self.encoding = self._encoding
         if filesystem_path is None:
             filesystem_path = path_to_filesystem(folder, self.path)
         self._filesystem_path = filesystem_path
@@ -1028,7 +981,7 @@ class Collection(BaseCollection):
             tmp_filesystem_path = os.path.join(tmp_dir, "collection")
             os.makedirs(tmp_filesystem_path)
             self = cls(sane_path, filesystem_path=tmp_filesystem_path)
-            self.set_meta_all(props)
+            self.set_meta(props)
 
             if collection:
                 if props.get("tag") == "VCALENDAR":
@@ -1475,7 +1428,7 @@ class Collection(BaseCollection):
             text=text, item=vobject_item, uid=uid, name=name,
             component_name=tag), (tag, start, end)
 
-    def get_multi2(self, hrefs):
+    def get_multi(self, hrefs):
         # It's faster to check for file name collissions here, because
         # we only need to call os.listdir once.
         files = None
@@ -1575,7 +1528,7 @@ class Collection(BaseCollection):
                                    "%r: %s" % (self.path, e)) from e
         return self._meta_cache.get(key) if key else self._meta_cache
 
-    def set_meta_all(self, props):
+    def set_meta(self, props):
         with self._atomic_write(self._props_path, "w") as f:
             json.dump(props, f, sort_keys=True)
 
