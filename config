@@ -117,11 +117,6 @@
 # Delete sync token that are older (seconds)
 #max_sync_token_age = 2592000
 
-# Close the lock file when no more clients are waiting.
-# This option is not very useful in general, but on Windows files that are
-# opened cannot be deleted.
-#filesystem_close_lock_file = False
-
 # Command that is run after changes to storage
 # Example: ([ -d .git ] || git init) && git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
 #hook =

@@ -173,14 +173,6 @@ INITIAL_CONFIG = OrderedDict([
             "value": "True",
             "help": "sync all changes to filesystem during requests",
             "type": bool}),
-        ("filesystem_locking", {
-            "value": "True",
-            "help": "lock the storage while accessing it",
-            "type": bool}),
-        ("filesystem_close_lock_file", {
-            "value": "False",
-            "help": "close the lock file when no more clients are waiting",
-            "type": bool}),
         ("hook", {
             "value": "",
             "help": "command that is run after changes to storage",

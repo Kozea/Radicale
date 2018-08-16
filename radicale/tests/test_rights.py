@@ -37,8 +37,6 @@ class TestBaseAuthRequests(BaseTest):
         self.configuration["storage"]["filesystem_folder"] = self.colpath
         # Disable syncing to disk for better performance
         self.configuration["storage"]["filesystem_fsync"] = "False"
-        # Required on Windows, doesn't matter on Unix
-        self.configuration["storage"]["filesystem_close_lock_file"] = "True"
 
     def teardown(self):
         shutil.rmtree(self.colpath)
