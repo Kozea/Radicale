@@ -22,6 +22,7 @@ http://docs.python.org/library/logging.config.html
 
 """
 
+import contextlib
 import logging
 import sys
 import threading
@@ -43,16 +44,64 @@ class RemoveTracebackFilter(logging.Filter):
 removeTracebackFilter = RemoveTracebackFilter()
 
 
+class ThreadStreamsHandler(logging.Handler):
+
+    terminator = "\n"
+
+    def __init__(self, fallback_stream, fallback_handler):
+        super().__init__()
+        self._streams = {}
+        self.fallback_stream = fallback_stream
+        self.fallback_handler = fallback_handler
+
+    def setFormatter(self, form):
+        super().setFormatter(form)
+        self.fallback_handler.setFormatter(form)
+
+    def emit(self, record):
+        try:
+            stream = self._streams.get(threading.get_ident())
+            if stream is None:
+                self.fallback_handler.emit(record)
+            else:
+                msg = self.format(record)
+                stream.write(msg)
+                stream.write(self.terminator)
+                if hasattr(stream, "flush"):
+                    stream.flush()
+        except Exception:
+            self.handleError(record)
+
+    @contextlib.contextmanager
+    def register_stream(self, stream):
+        if stream == self.fallback_stream:
+            yield
+            return
+        key = threading.get_ident()
+        self._streams[key] = stream
+        try:
+            yield
+        finally:
+            del self._streams[key]
+
+
 def get_default_handler():
     handler = logging.StreamHandler(sys.stderr)
     return handler
 
 
+@contextlib.contextmanager
+def register_stream(stream):
+    """Register global errors stream for the current thread."""
+    yield
+
+
 def setup():
     """Set global logging up."""
     global register_stream, unregister_stream
-    handler = get_default_handler()
+    handler = ThreadStreamsHandler(sys.stderr, get_default_handler())
     logging.basicConfig(format=LOGGER_FORMAT, handlers=[handler])
+    register_stream = handler.register_stream
     set_debug(True)
 
 

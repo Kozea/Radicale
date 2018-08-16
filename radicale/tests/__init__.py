@@ -43,6 +43,7 @@ class BaseTest:
             data = data.encode("utf-8")
             args["wsgi.input"] = BytesIO(data)
             args["CONTENT_LENGTH"] = str(len(data))
+        args["wsgi.errors"] = sys.stderr
         self.application._answer = self.application(args, self.start_response)
 
         return (

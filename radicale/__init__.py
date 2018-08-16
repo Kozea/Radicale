@@ -204,19 +204,23 @@ class ThreadedHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
             return super().process_request_thread(request, client_address)
 
 
+class ServerHandler(wsgiref.simple_server.ServerHandler):
+
+
+    def log_exception(self, exc_info):
+        logger.error("An exception occurred during request: %s",
+                     exc_info[1], exc_info=exc_info)
+
+
 class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     """HTTP requests handler."""
 
-    def __init__(self, *args, **kwargs):
-        # Store exception for logging
-        self.error_stream = io.StringIO()
-        super().__init__(*args, **kwargs)
+    def log_request(self, code="-", size="-"):
+        """Disable request logging."""
 
-    def get_stderr(self):
-        return self.error_stream
-
-    def log_message(self, *args, **kwargs):
-        """Disable inner logging management."""
+    def log_error(self, format, *args):
+        msg = format % args
+        logger.error("An error occurred during request: %s" % msg)
 
     def get_environ(self):
         env = super().get_environ()
@@ -228,12 +232,24 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
         return env
 
     def handle(self):
-        super().handle()
-        # Log exception
-        error = self.error_stream.getvalue().strip("\n")
-        if error:
-            logger.error(
-                "An unhandled exception occurred during request:\n%s" % error)
+        """Copy of WSGIRequestHandler.handle with different ServerHandler"""
+
+        self.raw_requestline = self.rfile.readline(65537)
+        if len(self.raw_requestline) > 65536:
+            self.requestline = ''
+            self.request_version = ''
+            self.command = ''
+            self.send_error(414)
+            return
+
+        if not self.parse_request():
+            return
+
+        handler = ServerHandler(
+            self.rfile, self.wfile, self.get_stderr(), self.get_environ()
+        )
+        handler.request_handler = self
+        handler.run(self.server.get_app())
 
 
 class Application:
@@ -323,26 +339,28 @@ class Application:
         return read_allowed_items, write_allowed_items
 
     def __call__(self, environ, start_response):
-        try:
-            status, headers, answers = self._handle_request(environ)
-        except Exception as e:
+        with log.register_stream(environ["wsgi.errors"]):
             try:
-                method = str(environ["REQUEST_METHOD"])
-            except Exception:
-                method = "unknown"
-            try:
-                path = str(environ.get("PATH_INFO", ""))
-            except Exception:
-                path = ""
-            logger.error("An exception occurred during %s request on %r: "
-                         "%s", method, path, e, exc_info=True)
-            status, headers, answer = INTERNAL_SERVER_ERROR
-            answer = answer.encode("ascii")
-            status = "%d %s" % (
-                status, client.responses.get(status, "Unknown"))
-            headers = [("Content-Length", str(len(answer)))] + list(headers)
-            answers = [answer]
-        start_response(status, headers)
+                status, headers, answers = self._handle_request(environ)
+            except Exception as e:
+                try:
+                    method = str(environ["REQUEST_METHOD"])
+                except Exception:
+                    method = "unknown"
+                try:
+                    path = str(environ.get("PATH_INFO", ""))
+                except Exception:
+                    path = ""
+                logger.error("An exception occurred during %s request on %r: "
+                             "%s", method, path, e, exc_info=True)
+                status, headers, answer = INTERNAL_SERVER_ERROR
+                answer = answer.encode("ascii")
+                status = "%d %s" % (
+                    status, client.responses.get(status, "Unknown"))
+                headers = [
+                    ("Content-Length", str(len(answer)))] + list(headers)
+                answers = [answer]
+            start_response(status, headers)
         return answers
 
     def _handle_request(self, environ):
@@ -990,24 +1008,25 @@ _application_config_path = None
 _application_lock = threading.Lock()
 
 
-def _init_application(config_path):
+def _init_application(config_path, wsgi_errors):
     global _application, _application_config_path
     with _application_lock:
         if _application is not None:
             return
         log.setup()
-        _application_config_path = config_path
-        configuration = config.load([config_path] if config_path else [],
-                                    ignore_missing_paths=False)
-        log.set_debug(configuration.getboolean("logging", "debug"))
-        _application = Application(configuration)
+        with log.register_stream(wsgi_errors):
+            _application_config_path = config_path
+            configuration = config.load([config_path] if config_path else [],
+                                        ignore_missing_paths=False)
+            log.set_debug(configuration.getboolean("logging", "debug"))
+            _application = Application(configuration)
 
 
 def application(environ, start_response):
     config_path = environ.get("RADICALE_CONFIG",
                               os.environ.get("RADICALE_CONFIG"))
     if _application is None:
-        _init_application(config_path)
+        _init_application(config_path, environ["wsgi.errors"])
     if _application_config_path != config_path:
         raise ValueError("RADICALE_CONFIG must not change: %s != %s" %
                          (repr(config_path), repr(_application_config_path)))
