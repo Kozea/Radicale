@@ -52,7 +52,7 @@ from xml.etree import ElementTree as ET
 import vobject
 
 from radicale import auth, config, log, rights, storage, web, xmlutils
-
+from radicale.log import logger
 
 VERSION = pkg_resources.get_distribution('radicale').version
 
@@ -104,7 +104,6 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
     # These class attributes must be set before creating instance
     client_timeout = None
     max_connections = None
-    logger = None
 
     def __init__(self, address, handler, bind_and_activate=True):
         """Create server."""
@@ -136,8 +135,8 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
                 raise
 
         if self.client_timeout and sys.version_info < (3, 5, 2):
-            self.logger.warning("Using server.timeout with Python < 3.5.2 "
-                                "can cause network connection failures")
+            logger.warning("Using server.timeout with Python < 3.5.2 "
+                           "can cause network connection failures")
 
     def get_request(self):
         # Set timeout for client
@@ -148,10 +147,10 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
 
     def handle_error(self, request, client_address):
         if issubclass(sys.exc_info()[0], socket.timeout):
-            self.logger.info("client timed out", exc_info=True)
+            logger.info("client timed out", exc_info=True)
         else:
-            self.logger.error("An exception occurred during request: %s",
-                              sys.exc_info()[1], exc_info=True)
+            logger.error("An exception occurred during request: %s",
+                         sys.exc_info()[1], exc_info=True)
 
 
 class HTTPSServer(HTTPServer):
@@ -208,9 +207,6 @@ class ThreadedHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
 class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     """HTTP requests handler."""
 
-    # These class attributes must be set before creating instance
-    logger = None
-
     def __init__(self, *args, **kwargs):
         # Store exception for logging
         self.error_stream = io.StringIO()
@@ -236,22 +232,21 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
         # Log exception
         error = self.error_stream.getvalue().strip("\n")
         if error:
-            self.logger.error(
+            logger.error(
                 "An unhandled exception occurred during request:\n%s" % error)
 
 
 class Application:
     """WSGI application managing collections."""
 
-    def __init__(self, configuration, logger):
+    def __init__(self, configuration):
         """Initialize application."""
         super().__init__()
         self.configuration = configuration
-        self.logger = logger
-        self.Auth = auth.load(configuration, logger)
-        self.Collection = storage.load(configuration, logger)
-        self.Rights = rights.load(configuration, logger)
-        self.Web = web.load(configuration, logger)
+        self.Auth = auth.load(configuration)
+        self.Collection = storage.load(configuration)
+        self.Rights = rights.load(configuration)
+        self.Web = web.load(configuration)
         self.encoding = configuration.get("encoding", "request")
 
     def headers_log(self, environ):
@@ -321,7 +316,7 @@ class Application:
             if can_write:
                 text_status.append("write")
                 write_allowed_items.append(item)
-            self.logger.debug(
+            logger.debug(
                 "%s has %s access to %s",
                 repr(user) if user else "anonymous user",
                 " and ".join(text_status) if text_status else "NO", target)
@@ -339,8 +334,8 @@ class Application:
                 path = str(environ.get("PATH_INFO", ""))
             except Exception:
                 path = ""
-            self.logger.error("An exception occurred during %s request on %r: "
-                              "%s", method, path, e, exc_info=True)
+            logger.error("An exception occurred during %s request on %r: "
+                         "%s", method, path, e, exc_info=True)
             status, headers, answer = INTERNAL_SERVER_ERROR
             answer = answer.encode("ascii")
             status = "%d %s" % (
@@ -357,7 +352,7 @@ class Application:
             # Set content length
             if answer:
                 if hasattr(answer, "encode"):
-                    self.logger.debug("Response content:\n%s", answer)
+                    logger.debug("Response content:\n%s", answer)
                     headers["Content-Type"] += "; charset=%s" % self.encoding
                     answer = answer.encode(self.encoding)
                 accept_encoding = [
@@ -381,7 +376,7 @@ class Application:
             time_end = datetime.datetime.now()
             status = "%d %s" % (
                 status, client.responses.get(status, "Unknown"))
-            self.logger.info(
+            logger.info(
                 "%s response status for %r%s in %.3f seconds: %s",
                 environ["REQUEST_METHOD"], environ.get("PATH_INFO", ""),
                 depthinfo, (time_end - time_begin).total_seconds(), status)
@@ -403,30 +398,30 @@ class Application:
         if environ.get("HTTP_DEPTH"):
             depthinfo = " with depth %r" % environ["HTTP_DEPTH"]
         time_begin = datetime.datetime.now()
-        self.logger.info(
+        logger.info(
             "%s request for %r%s received from %s%s",
             environ["REQUEST_METHOD"], environ.get("PATH_INFO", ""), depthinfo,
             remote_host, remote_useragent)
         headers = pprint.pformat(self.headers_log(environ))
-        self.logger.debug("Request headers:\n%s", headers)
+        logger.debug("Request headers:\n%s", headers)
 
         # Let reverse proxies overwrite SCRIPT_NAME
         if "HTTP_X_SCRIPT_NAME" in environ:
             # script_name must be removed from PATH_INFO by the client.
             unsafe_base_prefix = environ["HTTP_X_SCRIPT_NAME"]
-            self.logger.debug("Script name overwritten by client: %r",
-                              unsafe_base_prefix)
+            logger.debug("Script name overwritten by client: %r",
+                         unsafe_base_prefix)
         else:
             # SCRIPT_NAME is already removed from PATH_INFO, according to the
             # WSGI specification.
             unsafe_base_prefix = environ.get("SCRIPT_NAME", "")
         # Sanitize base prefix
         base_prefix = storage.sanitize_path(unsafe_base_prefix).rstrip("/")
-        self.logger.debug("Sanitized script name: %r", base_prefix)
+        logger.debug("Sanitized script name: %r", base_prefix)
         # Sanitize request URI (a WSGI server indicates with an empty path,
         # that the URL targets the application root without a trailing slash)
         path = storage.sanitize_path(environ.get("PATH_INFO", ""))
-        self.logger.debug("Sanitized path: %r", path)
+        logger.debug("Sanitized path: %r", path)
 
         # Get function corresponding to method
         function = getattr(self, "do_%s" % environ["REQUEST_METHOD"].upper())
@@ -452,21 +447,21 @@ class Application:
 
         user = self.Auth.login(login, password) or "" if login else ""
         if user and login == user:
-            self.logger.info("Successful login: %r", user)
+            logger.info("Successful login: %r", user)
         elif user:
-            self.logger.info("Successful login: %r -> %r", login, user)
+            logger.info("Successful login: %r -> %r", login, user)
         elif login:
-            self.logger.info("Failed login attempt: %r", login)
+            logger.info("Failed login attempt: %r", login)
             # Random delay to avoid timing oracles and bruteforce attacks
             delay = self.configuration.getfloat("auth", "delay")
             if delay > 0:
                 random_delay = delay * (0.5 + random.random())
-                self.logger.debug("Sleeping %.3f seconds", random_delay)
+                logger.debug("Sleeping %.3f seconds", random_delay)
                 time.sleep(random_delay)
 
         if user and not storage.is_safe_path_component(user):
             # Prevent usernames like "user/calendar.ics"
-            self.logger.info("Refused unsafe username: %r", user)
+            logger.info("Refused unsafe username: %r", user)
             user = ""
 
         # Create principal collection
@@ -482,12 +477,12 @@ class Application:
                         try:
                             self.Collection.create_collection(principal_path)
                         except ValueError as e:
-                            self.logger.warning("Failed to create principal "
-                                                "collection %r: %s", user, e)
+                            logger.warning("Failed to create principal "
+                                           "collection %r: %s", user, e)
                             user = ""
             else:
-                self.logger.warning("Access to principal path %r denied by "
-                                    "rights backend", principal_path)
+                logger.warning("Access to principal path %r denied by "
+                               "rights backend", principal_path)
 
         # Verify content length
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
@@ -495,23 +490,22 @@ class Application:
             max_content_length = self.configuration.getint(
                 "server", "max_content_length")
             if max_content_length and content_length > max_content_length:
-                self.logger.info(
-                    "Request body too large: %d", content_length)
+                logger.info("Request body too large: %d", content_length)
                 return response(*REQUEST_ENTITY_TOO_LARGE)
 
         if not login or user:
             status, headers, answer = function(
                 environ, base_prefix, path, user)
             if (status, headers, answer) == NOT_ALLOWED:
-                self.logger.info("Access to %r denied for %s", path,
-                                 repr(user) if user else "anonymous user")
+                logger.info("Access to %r denied for %s", path,
+                            repr(user) if user else "anonymous user")
         else:
             status, headers, answer = NOT_ALLOWED
 
         if ((status, headers, answer) == NOT_ALLOWED and not user and
                 not external_login):
             # Unknown or unauthorized user
-            self.logger.debug("Asking client for authentication")
+            logger.debug("Asking client for authentication")
             status = client.UNAUTHORIZED
             realm = self.configuration.get("server", "realm")
             headers = dict(headers)
@@ -547,7 +541,7 @@ class Application:
 
     def _read_content(self, environ):
         content = self.decode(self._read_raw_content(environ), environ)
-        self.logger.debug("Request content:\n%s", content)
+        logger.debug("Request content:\n%s", content)
         return content
 
     def _read_xml_content(self, environ):
@@ -557,17 +551,17 @@ class Application:
         try:
             xml_content = ET.fromstring(content)
         except ET.ParseError as e:
-            self.logger.debug("Request content (Invalid XML):\n%s", content)
+            logger.debug("Request content (Invalid XML):\n%s", content)
             raise RuntimeError("Failed to parse XML: %s" % e) from e
-        if self.logger.isEnabledFor(logging.DEBUG):
-            self.logger.debug("Request content:\n%s",
-                              xmlutils.pretty_xml(xml_content))
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Request content:\n%s",
+                         xmlutils.pretty_xml(xml_content))
         return xml_content
 
     def _write_xml_content(self, xml_content):
-        if self.logger.isEnabledFor(logging.DEBUG):
-            self.logger.debug("Response content:\n%s",
-                              xmlutils.pretty_xml(xml_content))
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Response content:\n%s",
+                         xmlutils.pretty_xml(xml_content))
         f = io.BytesIO()
         ET.ElementTree(xml_content).write(f, encoding=self.encoding,
                                           xml_declaration=True)
@@ -652,11 +646,11 @@ class Application:
         try:
             xml_content = self._read_xml_content(environ)
         except RuntimeError as e:
-            self.logger.warning(
+            logger.warning(
                 "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
         except socket.timeout as e:
-            self.logger.debug("client timed out", exc_info=True)
+            logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
@@ -679,7 +673,7 @@ class Application:
                 storage.check_and_sanitize_props(props)
                 self.Collection.create_collection(path, props=props)
             except ValueError as e:
-                self.logger.warning(
+                logger.warning(
                     "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
                 return BAD_REQUEST
             return client.CREATED, {}, None
@@ -691,11 +685,11 @@ class Application:
         try:
             xml_content = self._read_xml_content(environ)
         except RuntimeError as e:
-            self.logger.warning(
+            logger.warning(
                 "Bad MKCOL request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
         except socket.timeout as e:
-            self.logger.debug("client timed out", exc_info=True)
+            logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
@@ -714,7 +708,7 @@ class Application:
                 storage.check_and_sanitize_props(props)
                 self.Collection.create_collection(path, props=props)
             except ValueError as e:
-                self.logger.warning(
+                logger.warning(
                     "Bad MKCOL request on %r: %s", path, e, exc_info=True)
                 return BAD_REQUEST
             return client.CREATED, {}, None
@@ -724,15 +718,15 @@ class Application:
         raw_dest = environ.get("HTTP_DESTINATION", "")
         to_url = urlparse(raw_dest)
         if to_url.netloc != environ["HTTP_HOST"]:
-            self.logger.info("Unsupported destination address: %r", raw_dest)
+            logger.info("Unsupported destination address: %r", raw_dest)
             # Remote destination server, not supported
             return REMOTE_DESTINATION
         if not self._access(user, path, "w"):
             return NOT_ALLOWED
         to_path = storage.sanitize_path(to_url.path)
         if not (to_path + "/").startswith(base_prefix + "/"):
-            self.logger.warning("Destination %r from MOVE request on %r does"
-                                "n't start with base prefix", to_path, path)
+            logger.warning("Destination %r from MOVE request on %r doesn't "
+                           "start with base prefix", to_path, path)
             return NOT_ALLOWED
         to_path = to_path[len(base_prefix):]
         if not self._access(user, to_path, "w"):
@@ -774,7 +768,7 @@ class Application:
             try:
                 self.Collection.move(item, to_collection, to_href)
             except ValueError as e:
-                self.logger.warning(
+                logger.warning(
                     "Bad MOVE request on %r: %s", path, e, exc_info=True)
                 return BAD_REQUEST
             return client.NO_CONTENT if to_item else client.CREATED, {}, None
@@ -794,11 +788,11 @@ class Application:
         try:
             xml_content = self._read_xml_content(environ)
         except RuntimeError as e:
-            self.logger.warning(
+            logger.warning(
                 "Bad PROPFIND request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
         except socket.timeout as e:
-            self.logger.debug("client timed out", exc_info=True)
+            logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("r", user):
             items = self.Collection.discover(
@@ -827,11 +821,11 @@ class Application:
         try:
             xml_content = self._read_xml_content(environ)
         except RuntimeError as e:
-            self.logger.warning(
+            logger.warning(
                 "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
         except socket.timeout as e:
-            self.logger.debug("client timed out", exc_info=True)
+            logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
@@ -845,7 +839,7 @@ class Application:
                 xml_answer = xmlutils.proppatch(base_prefix, path, xml_content,
                                                 item)
             except ValueError as e:
-                self.logger.warning(
+                logger.warning(
                     "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
                 return BAD_REQUEST
             return (client.MULTI_STATUS, headers,
@@ -858,11 +852,10 @@ class Application:
         try:
             content = self._read_content(environ)
         except RuntimeError as e:
-            self.logger.warning(
-                "Bad PUT request on %r: %s", path, e, exc_info=True)
+            logger.warning("Bad PUT request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
         except socket.timeout as e:
-            self.logger.debug("client timed out", exc_info=True)
+            logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("w", user):
             parent_path = storage.sanitize_path(
@@ -917,7 +910,7 @@ class Application:
                         if not write_whole_collection and item else None,
                         tag=tag)
             except Exception as e:
-                self.logger.warning(
+                logger.warning(
                     "Bad PUT request on %r: %s", path, e, exc_info=True)
                 return BAD_REQUEST
 
@@ -939,7 +932,7 @@ class Application:
                     new_item = self.Collection.create_collection(
                         path, items, props)
                 except ValueError as e:
-                    self.logger.warning(
+                    logger.warning(
                         "Bad PUT request on %r: %s", path, e, exc_info=True)
                     return BAD_REQUEST
             else:
@@ -952,7 +945,7 @@ class Application:
                         parent_item.set_meta_all(new_props)
                     new_item = parent_item.upload(href, items[0])
                 except ValueError as e:
-                    self.logger.warning(
+                    logger.warning(
                         "Bad PUT request on %r: %s", path, e, exc_info=True)
                     return BAD_REQUEST
             headers = {"ETag": new_item.etag}
@@ -965,11 +958,11 @@ class Application:
         try:
             xml_content = self._read_xml_content(environ)
         except RuntimeError as e:
-            self.logger.warning(
+            logger.warning(
                 "Bad REPORT request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
         except socket.timeout as e:
-            self.logger.debug("client timed out", exc_info=True)
+            logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("r", user):
             item = next(self.Collection.discover(path), None)
@@ -986,7 +979,7 @@ class Application:
                 status, xml_answer = xmlutils.report(
                     base_prefix, path, xml_content, collection)
             except ValueError as e:
-                self.logger.warning(
+                logger.warning(
                     "Bad REPORT request on %r: %s", path, e, exc_info=True)
                 return BAD_REQUEST
             return (status, headers, self._write_xml_content(xml_answer))
@@ -1002,13 +995,12 @@ def _init_application(config_path):
     with _application_lock:
         if _application is not None:
             return
+        log.setup()
         _application_config_path = config_path
         configuration = config.load([config_path] if config_path else [],
                                     ignore_missing_paths=False)
-        filename = os.path.expanduser(configuration.get("logging", "config"))
-        debug = configuration.getboolean("logging", "debug")
-        logger = log.start("radicale", filename, debug)
-        _application = Application(configuration, logger)
+        log.set_debug(configuration.getboolean("logging", "debug"))
+        _application = Application(configuration)
 
 
 def application(environ, start_response):

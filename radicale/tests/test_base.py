@@ -1396,7 +1396,7 @@ class BaseRequestsMixIn:
         self.configuration["auth"]["htpasswd_filename"] = os.devnull
         self.configuration["auth"]["htpasswd_encryption"] = "plain"
         self.configuration["rights"]["type"] = "owner_only"
-        self.application = Application(self.configuration, self.logger)
+        self.application = Application(self.configuration)
         status, headers, _ = self.request("MKCOL", "/user/")
         assert status in (401, 403)
         assert headers.get("WWW-Authenticate")
@@ -1479,7 +1479,7 @@ class BaseFileSystemTest(BaseTest):
         self.configuration["storage"]["filesystem_fsync"] = "False"
         # Required on Windows, doesn't matter on Unix
         self.configuration["storage"]["filesystem_close_lock_file"] = "True"
-        self.application = Application(self.configuration, self.logger)
+        self.application = Application(self.configuration)
 
     def teardown(self):
         shutil.rmtree(self.colpath)

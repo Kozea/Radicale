@@ -23,6 +23,7 @@ from importlib import import_module
 import pkg_resources
 
 from radicale import storage
+from radicale.log import logger
 
 NOT_FOUND = (
     client.NOT_FOUND, (("Content-Type", "text/plain"),),
@@ -47,7 +48,7 @@ FALLBACK_MIMETYPE = "application/octet-stream"
 INTERNAL_TYPES = ("None", "none", "internal")
 
 
-def load(configuration, logger):
+def load(configuration):
     """Load the web module chosen in configuration."""
     web_type = configuration.get("web", "type")
     if web_type in ("None", "none"):  # DEPRECATED: use "none"
@@ -61,13 +62,12 @@ def load(configuration, logger):
             raise RuntimeError("Failed to load web module %r: %s" %
                                (web_type, e)) from e
     logger.info("Web type is %r", web_type)
-    return web_class(configuration, logger)
+    return web_class(configuration)
 
 
 class BaseWeb:
-    def __init__(self, configuration, logger):
+    def __init__(self, configuration):
         self.configuration = configuration
-        self.logger = logger
 
     def get(self, environ, base_prefix, path, user):
         """GET request.
@@ -90,8 +90,8 @@ class NoneWeb(BaseWeb):
 
 
 class Web(BaseWeb):
-    def __init__(self, configuration, logger):
-        super().__init__(configuration, logger)
+    def __init__(self, configuration):
+        super().__init__(configuration)
         self.folder = pkg_resources.resource_filename(__name__, "web")
 
     def get(self, environ, base_prefix, path, user):
@@ -99,8 +99,8 @@ class Web(BaseWeb):
             filesystem_path = storage.path_to_filesystem(
                 self.folder, path[len("/.web"):])
         except ValueError as e:
-            self.logger.debug("Web content with unsafe path %r requested: %s",
-                              path, e, exc_info=True)
+            logger.debug("Web content with unsafe path %r requested: %s",
+                         path, e, exc_info=True)
             return NOT_FOUND
         if os.path.isdir(filesystem_path) and not path.endswith("/"):
             location = posixpath.basename(path) + "/"

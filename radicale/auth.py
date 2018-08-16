@@ -60,11 +60,13 @@ import hmac
 import os
 from importlib import import_module
 
+from radicale.log import logger
+
 INTERNAL_TYPES = ("None", "none", "remote_user", "http_x_remote_user",
                   "htpasswd")
 
 
-def load(configuration, logger):
+def load(configuration):
     """Load the authentication manager chosen in configuration."""
     auth_type = configuration.get("auth", "type")
     if auth_type in ("None", "none"):  # DEPRECATED: use "none"
@@ -82,13 +84,12 @@ def load(configuration, logger):
             raise RuntimeError("Failed to load authentication module %r: %s" %
                                (auth_type, e)) from e
     logger.info("Authentication type is %r", auth_type)
-    return class_(configuration, logger)
+    return class_(configuration)
 
 
 class BaseAuth:
-    def __init__(self, configuration, logger):
+    def __init__(self, configuration):
         self.configuration = configuration
-        self.logger = logger
 
     def get_external_login(self, environ):
         """Optionally provide the login and password externally.
@@ -149,8 +150,8 @@ class NoneAuth(BaseAuth):
 
 
 class Auth(BaseAuth):
-    def __init__(self, configuration, logger):
-        super().__init__(configuration, logger)
+    def __init__(self, configuration):
+        super().__init__(configuration)
         self.filename = os.path.expanduser(
             configuration.get("auth", "htpasswd_filename"))
         self.encryption = configuration.get("auth", "htpasswd_encryption")

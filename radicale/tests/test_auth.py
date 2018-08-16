@@ -61,7 +61,7 @@ class TestBaseAuthRequests(BaseTest):
         self.configuration["auth"]["type"] = "htpasswd"
         self.configuration["auth"]["htpasswd_filename"] = htpasswd_file_path
         self.configuration["auth"]["htpasswd_encryption"] = htpasswd_encryption
-        self.application = Application(self.configuration, self.logger)
+        self.application = Application(self.configuration)
         if test_matrix is None:
             test_matrix = (
                 ("tmp", "bepo", 207), ("tmp", "tmp", 401), ("tmp", "", 401),
@@ -131,7 +131,7 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_remote_user(self):
         self.configuration["auth"]["type"] = "remote_user"
-        self.application = Application(self.configuration, self.logger)
+        self.application = Application(self.configuration)
         status, _, answer = self.request(
             "PROPFIND", "/",
             """<?xml version="1.0" encoding="utf-8"?>
@@ -145,7 +145,7 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_http_x_remote_user(self):
         self.configuration["auth"]["type"] = "http_x_remote_user"
-        self.application = Application(self.configuration, self.logger)
+        self.application = Application(self.configuration)
         status, _, answer = self.request(
             "PROPFIND", "/",
             """<?xml version="1.0" encoding="utf-8"?>
@@ -160,7 +160,7 @@ class TestBaseAuthRequests(BaseTest):
     def test_custom(self):
         """Custom authentication."""
         self.configuration["auth"]["type"] = "tests.custom.auth"
-        self.application = Application(self.configuration, self.logger)
+        self.application = Application(self.configuration)
         status, _, answer = self.request(
             "PROPFIND", "/tmp", HTTP_AUTHORIZATION="Basic %s" %
             base64.b64encode(("tmp:").encode()).decode())

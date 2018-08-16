@@ -53,7 +53,7 @@ class TestBaseAuthRequests(BaseTest):
         self.configuration["auth"]["type"] = "htpasswd"
         self.configuration["auth"]["htpasswd_filename"] = htpasswd_file_path
         self.configuration["auth"]["htpasswd_encryption"] = "plain"
-        self.application = Application(self.configuration, self.logger)
+        self.application = Application(self.configuration)
         for u in ("tmp", "other"):
             status, _, _ = self.request(
                 "PROPFIND", "/%s" % u, HTTP_AUTHORIZATION="Basic %s" %

@@ -44,12 +44,13 @@ import re
 from importlib import import_module
 
 from radicale import storage
+from radicale.log import logger
 
 INTERNAL_TYPES = ("None", "none", "authenticated", "owner_write", "owner_only",
                   "from_file")
 
 
-def load(configuration, logger):
+def load(configuration):
     """Load the rights manager chosen in configuration."""
     rights_type = configuration.get("rights", "type")
     if configuration.get("auth", "type") in ("None", "none"):  # DEPRECATED
@@ -71,13 +72,12 @@ def load(configuration, logger):
             raise RuntimeError("Failed to load rights module %r: %s" %
                                (rights_type, e)) from e
     logger.info("Rights type is %r", rights_type)
-    return rights_class(configuration, logger)
+    return rights_class(configuration)
 
 
 class BaseRights:
-    def __init__(self, configuration, logger):
+    def __init__(self, configuration):
         self.configuration = configuration
-        self.logger = logger
 
     def authorized(self, user, path, permission):
         """Check if the user is allowed to read or write the collection.
@@ -131,8 +131,8 @@ class OwnerOnlyRights(BaseRights):
 
 
 class Rights(BaseRights):
-    def __init__(self, configuration, logger):
-        super().__init__(configuration, logger)
+    def __init__(self, configuration):
+        super().__init__(configuration)
         self.filename = os.path.expanduser(configuration.get("rights", "file"))
 
     def authorized(self, user, path, permission):
@@ -163,14 +163,13 @@ class Rights(BaseRights):
                 raise RuntimeError("Error in section %r of rights file %r: "
                                    "%s" % (section, self.filename, e)) from e
             if user_match and collection_match:
-                self.logger.debug("Rule %r:%r matches %r:%r from section %r",
-                                  user, sane_path, re_user_pattern,
-                                  re_collection_pattern, section)
+                logger.debug("Rule %r:%r matches %r:%r from section %r",
+                             user, sane_path, re_user_pattern,
+                             re_collection_pattern, section)
                 return permission in regex.get(section, "permission")
             else:
-                self.logger.debug("Rule %r:%r doesn't match %r:%r from section"
-                                  " %r", user, sane_path, re_user_pattern,
-                                  re_collection_pattern, section)
-        self.logger.info(
-            "Rights: %r:%r doesn't match any section", user, sane_path)
+                logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
+                             user, sane_path, re_user_pattern,
+                             re_collection_pattern, section)
+        logger.info("Rights: %r:%r doesn't match any section", user, sane_path)
         return False

@@ -19,24 +19,15 @@ Tests for Radicale.
 
 """
 
-import logging
 import os
 import sys
 from io import BytesIO
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-logger = logging.getLogger("radicale_test")
-if not logger.hasHandlers():
-    handler = logging.StreamHandler(sys.stderr)
-    handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
-    logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
-
 
 class BaseTest:
     """Base class for tests."""
-    logger = logger
 
     def request(self, method, path, data=None, **args):
         """Send a request."""

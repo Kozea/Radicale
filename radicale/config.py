@@ -192,10 +192,6 @@ INITIAL_CONFIG = OrderedDict([
             "type": str,
             "internal": web.INTERNAL_TYPES})])),
     ("logging", OrderedDict([
-        ("config", {
-            "value": "",
-            "help": "logging configuration file",
-            "type": str}),
         ("debug", {
             "value": "False",
             "help": "print debug information",

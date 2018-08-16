@@ -23,18 +23,15 @@ http://docs.python.org/library/logging.config.html
 """
 
 import logging
-import logging.config
-import signal
 import sys
+import threading
 
 
-def configure_from_file(logger, filename, debug):
-    logging.config.fileConfig(filename, disable_existing_loggers=False)
-    if debug:
-        logger.setLevel(logging.DEBUG)
-        for handler in logger.handlers:
-            handler.setLevel(logging.DEBUG)
-    return logger
+LOGGER_NAME = "radicale"
+LOGGER_FORMAT = "[%(processName)s/%(threadName)s] %(levelname)s: %(message)s"
+
+root_logger = logging.getLogger()
+logger = logging.getLogger(LOGGER_NAME)
 
 
 class RemoveTracebackFilter(logging.Filter):
@@ -43,33 +40,29 @@ class RemoveTracebackFilter(logging.Filter):
         return True
 
 
-def start(name="radicale", filename=None, debug=False):
-    """Start the logging according to the configuration."""
-    logger = logging.getLogger(name)
+removeTracebackFilter = RemoveTracebackFilter()
+
+
+def get_default_handler():
+    handler = logging.StreamHandler(sys.stderr)
+    return handler
+
+
+def setup():
+    """Set global logging up."""
+    global register_stream, unregister_stream
+    handler = get_default_handler()
+    logging.basicConfig(format=LOGGER_FORMAT, handlers=[handler])
+    set_debug(True)
+
+
+def set_debug(debug):
+    """Set debug mode for global logger."""
     if debug:
+        root_logger.setLevel(logging.DEBUG)
         logger.setLevel(logging.DEBUG)
+        logger.removeFilter(removeTracebackFilter)
     else:
-        logger.addFilter(RemoveTracebackFilter())
-    if filename:
-        # Configuration taken from file
-        try:
-            configure_from_file(logger, filename, debug)
-        except Exception as e:
-            raise RuntimeError("Failed to load logging configuration file %r: "
-                               "%s" % (filename, e)) from e
-        # Reload config on SIGHUP (UNIX only)
-        if hasattr(signal, "SIGHUP"):
-            def handler(signum, frame):
-                try:
-                    configure_from_file(logger, filename, debug)
-                except Exception as e:
-                    logger.error("Failed to reload logging configuration file "
-                                 "%r: %s", filename, e, exc_info=True)
-            signal.signal(signal.SIGHUP, handler)
-    else:
-        # Default configuration, standard output
-        handler = logging.StreamHandler(sys.stderr)
-        handler.setFormatter(
-            logging.Formatter("[%(thread)x] %(levelname)s: %(message)s"))
-        logger.addHandler(handler)
-    return logger
+        root_logger.setLevel(logging.WARNING)
+        logger.setLevel(logging.WARNING)
+        logger.addFilter(removeTracebackFilter)

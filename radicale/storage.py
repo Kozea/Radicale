@@ -47,6 +47,8 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import vobject
 
+from radicale.log import logger
+
 if sys.version_info >= (3, 5):
     # HACK: Avoid import cycle for Python < 3.5
     from radicale import xmlutils
@@ -93,7 +95,7 @@ elif os.name == "posix":
 INTERNAL_TYPES = ("multifilesystem",)
 
 
-def load(configuration, logger):
+def load(configuration):
     """Load the storage manager chosen in configuration."""
     if sys.version_info < (3, 5):
         # HACK: Avoid import cycle for Python < 3.5
@@ -113,7 +115,6 @@ def load(configuration, logger):
     class CollectionCopy(collection_class):
         """Collection copy, avoids overriding the original class attributes."""
     CollectionCopy.configuration = configuration
-    CollectionCopy.logger = logger
     CollectionCopy.static_init()
     return CollectionCopy
 
@@ -429,7 +430,6 @@ class BaseCollection:
 
     # Overriden on copy by the "load" function
     configuration = None
-    logger = None
 
     # Properties of instance
     """The sanitized path of the collection without leading or trailing ``/``.
@@ -883,8 +883,8 @@ class Collection(BaseCollection):
             filesystem_path = path_to_filesystem(folder, sane_path)
         except ValueError as e:
             # Path is unsafe
-            cls.logger.debug("Unsafe path %r requested from storage: %s",
-                             sane_path, e, exc_info=True)
+            logger.debug("Unsafe path %r requested from storage: %s",
+                         sane_path, e, exc_info=True)
             return
 
         # Check if the path exists and if it leads to a collection or an item
@@ -915,8 +915,8 @@ class Collection(BaseCollection):
         for href in scandir(filesystem_path, only_dirs=True):
             if not is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
-                    cls.logger.debug("Skipping collection %r in %r", href,
-                                     sane_path)
+                    logger.debug("Skipping collection %r in %r",
+                                 href, sane_path)
                 continue
             child_path = posixpath.join(sane_path, href)
             with child_context_manager(child_path):
@@ -938,12 +938,12 @@ class Collection(BaseCollection):
                 else:
                     collection_errors += 1
                     name = "collection %r" % path.strip("/")
-                cls.logger.error("Invalid %s: %s", name, e, exc_info=True)
+                logger.error("Invalid %s: %s", name, e, exc_info=True)
 
         remaining_paths = [""]
         while remaining_paths:
             path = remaining_paths.pop(0)
-            cls.logger.debug("Verifying collection %r", path)
+            logger.debug("Verifying collection %r", path)
             with exception_cm(path):
                 saved_item_errors = item_errors
                 collection = None
@@ -955,8 +955,7 @@ class Collection(BaseCollection):
                     if isinstance(item, BaseCollection):
                         remaining_paths.append(item.path)
                     else:
-                        cls.logger.debug("Verified item %r in %r",
-                                         item.href, path)
+                        logger.debug("Verified item %r in %r", item.href, path)
                 if item_errors == saved_item_errors:
                     collection.sync()
         return item_errors == 0 and collection_errors == 0
@@ -1107,7 +1106,7 @@ class Collection(BaseCollection):
                     continue
                 if mtime > age_limit:
                     continue
-            cls.logger.debug("Found expired item in cache: %r", name)
+            logger.debug("Found expired item in cache: %r", name)
             # Race: Another process might have deleted or locked the
             # file.
             try:
@@ -1133,7 +1132,7 @@ class Collection(BaseCollection):
                 cache_etag, history_etag = pickle.load(f)
         except (FileNotFoundError, pickle.UnpicklingError, ValueError) as e:
             if isinstance(e, (pickle.UnpicklingError, ValueError)):
-                self.logger.warning(
+                logger.warning(
                     "Failed to load history cache entry %r in %r: %s",
                     href, self.path, e, exc_info=True)
             cache_etag = ""
@@ -1225,7 +1224,7 @@ class Collection(BaseCollection):
             except (FileNotFoundError, pickle.UnpicklingError,
                     ValueError) as e:
                 if isinstance(e, (pickle.UnpicklingError, ValueError)):
-                    self.logger.warning(
+                    logger.warning(
                         "Failed to load stored sync token %r in %r: %s",
                         old_token_name, self.path, e, exc_info=True)
                     # Delete the damaged file
@@ -1273,8 +1272,7 @@ class Collection(BaseCollection):
         for href in scandir(self._filesystem_path, only_files=True):
             if not is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
-                    self.logger.debug(
-                        "Skipping item %r in %r", href, self.path)
+                    logger.debug("Skipping item %r in %r", href, self.path)
                 continue
             yield href
 
@@ -1356,9 +1354,8 @@ class Collection(BaseCollection):
         except FileNotFoundError as e:
             pass
         except (pickle.UnpicklingError, ValueError) as e:
-            self.logger.warning(
-                "Failed to load item cache entry %r in %r: %s",
-                href, self.path, e, exc_info=True)
+            logger.warning("Failed to load item cache entry %r in %r: %s",
+                           href, self.path, e, exc_info=True)
         return cache_hash, uid, etag, text, name, tag, start, end
 
     def _clean_item_cache(self):
@@ -1378,7 +1375,7 @@ class Collection(BaseCollection):
                     raise UnsafePathError(href)
                 path = path_to_filesystem(self._filesystem_path, href)
             except ValueError as e:
-                self.logger.debug(
+                logger.debug(
                     "Can't translate name %r safely to filesystem in %r: %s",
                     href, self.path, e, exc_info=True)
                 return None, None
@@ -1452,7 +1449,7 @@ class Collection(BaseCollection):
             path = os.path.join(self._filesystem_path, href)
             if (not is_safe_filesystem_path_component(href) or
                     href not in files and os.path.lexists(path)):
-                self.logger.debug(
+                logger.debug(
                     "Can't translate name safely to filesystem: %r", href)
                 yield (href, None)
             else:
@@ -1570,8 +1567,8 @@ class Collection(BaseCollection):
             if mode == "w" and hook:
                 folder = os.path.expanduser(cls.configuration.get(
                     "storage", "filesystem_folder"))
-                cls.logger.debug("Running hook")
-                debug = cls.logger.isEnabledFor(logging.DEBUG)
+                logger.debug("Running hook")
+                debug = logger.isEnabledFor(logging.DEBUG)
                 p = subprocess.Popen(
                     hook % {"user": shlex.quote(user or "Anonymous")},
                     stdin=subprocess.DEVNULL,
@@ -1580,9 +1577,9 @@ class Collection(BaseCollection):
                     shell=True, universal_newlines=True, cwd=folder)
                 stdout_data, stderr_data = p.communicate()
                 if stdout_data:
-                    cls.logger.debug("Captured stdout hook:\n%s", stdout_data)
+                    logger.debug("Captured stdout hook:\n%s", stdout_data)
                 if stderr_data:
-                    cls.logger.debug("Captured stderr hook:\n%s", stderr_data)
+                    logger.debug("Captured stderr hook:\n%s", stderr_data)
                 if p.returncode != 0:
                     raise subprocess.CalledProcessError(p.returncode, p.args)
 

@@ -34,10 +34,13 @@ from wsgiref.simple_server import make_server
 
 from radicale import (VERSION, Application, RequestHandler, ThreadedHTTPServer,
                       ThreadedHTTPSServer, config, log, storage)
+from radicale.log import logger
 
 
 def run():
     """Run Radicale as a standalone server."""
+    log.setup()
+
     # Get command-line arguments
     parser = argparse.ArgumentParser(usage="radicale [OPTIONS]")
 
@@ -79,6 +82,10 @@ def run():
                 group.add_argument(*args, **kwargs)
 
     args = parser.parse_args()
+
+    # Preliminary configure logging
+    log.set_debug(args.logging_debug)
+
     if args.config is not None:
         config_paths = [args.config] if args.config else []
         ignore_missing_paths = False
@@ -92,9 +99,7 @@ def run():
         configuration = config.load(config_paths,
                                     ignore_missing_paths=ignore_missing_paths)
     except Exception as e:
-        print("ERROR: Invalid configuration: %s" % e, file=sys.stderr)
-        if args.logging_debug:
-            raise
+        log.error("Invalid configuration: %s", e, exc_info=True)
         exit(1)
 
     # Update Radicale configuration according to arguments
@@ -105,25 +110,13 @@ def run():
             if value is not None:
                 configuration.set(section, action.split('_', 1)[1], value)
 
-    if args.verify_storage:
-        # Write to stderr when storage verification is requested
-        configuration["logging"]["config"] = ""
-
-    # Start logging
-    filename = os.path.expanduser(configuration.get("logging", "config"))
-    debug = configuration.getboolean("logging", "debug")
-    try:
-        logger = log.start("radicale", filename, debug)
-    except Exception as e:
-        print("ERROR: Failed to start logger: %s" % e, file=sys.stderr)
-        if debug:
-            raise
-        exit(1)
+    # Configure logging
+    log.set_debug(configuration.getboolean("logging", "debug"))
 
     if args.verify_storage:
         logger.info("Verifying storage")
         try:
-            Collection = storage.load(configuration, logger)
+            Collection = storage.load(configuration)
             with Collection.acquire_lock("r"):
                 if not Collection.verify():
                     logger.error("Storage verifcation failed")
@@ -135,14 +128,14 @@ def run():
         return
 
     try:
-        serve(configuration, logger)
+        serve(configuration)
     except Exception as e:
         logger.error("An exception occurred during server startup: %s", e,
                      exc_info=True)
         exit(1)
 
 
-def daemonize(configuration, logger):
+def daemonize(configuration):
     """Fork and decouple if Radicale is configured as daemon."""
     # Check and create PID file in a race-free manner
     if configuration.get("server", "pid"):
@@ -181,7 +174,7 @@ def daemonize(configuration, logger):
         os.dup2(null_out.fileno(), sys.stderr.fileno())
 
 
-def serve(configuration, logger):
+def serve(configuration):
     """Serve radicale from configuration."""
     logger.info("Starting Radicale")
 
@@ -211,9 +204,7 @@ def serve(configuration, logger):
     server_class.client_timeout = configuration.getint("server", "timeout")
     server_class.max_connections = configuration.getint(
         "server", "max_connections")
-    server_class.logger = logger
 
-    RequestHandler.logger = logger
     if not configuration.getboolean("server", "dns_lookup"):
         RequestHandler.address_string = lambda self: self.client_address[0]
 
@@ -226,7 +217,7 @@ def serve(configuration, logger):
         except ValueError as e:
             raise RuntimeError(
                 "Failed to parse address %r: %s" % (host, e)) from e
-        application = Application(configuration, logger)
+        application = Application(configuration)
         try:
             server = make_server(
                 address, port, application, server_class, RequestHandler)
@@ -270,7 +261,7 @@ def serve(configuration, logger):
         # Fallback to busy waiting. (select.select blocks SIGINT on Windows.)
         select_timeout = 1.0
     if configuration.getboolean("server", "daemon"):
-        daemonize(configuration, logger)
+        daemonize(configuration)
     logger.info("Radicale server ready")
     while not shutdown_program:
         try:

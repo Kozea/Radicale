@@ -38,6 +38,7 @@ from itertools import chain
 from urllib.parse import quote, unquote, urlparse
 
 from radicale import storage
+from radicale.log import logger
 
 MIMETYPES = {
     "VADDRESSBOOK": "text/vcard",
@@ -173,7 +174,7 @@ def _comp_match(item, filter_, level=0):
     elif level == 1:
         tag = item.component_name
     else:
-        item.collection.logger.warning(
+        logger.warning(
             "Filters with three levels of comp-filter are not supported")
         return True
     if not tag:
@@ -190,7 +191,7 @@ def _comp_match(item, filter_, level=0):
         return False
     if (level == 0 and name != "VCALENDAR" or
             level == 1 and name not in ("VTODO", "VEVENT", "VJOURNAL")):
-        item.collection.logger.warning("Filtering %s is not supported" % name)
+        logger.warning("Filtering %s is not supported" % name)
         return True
     # Point #3 and #4 of rfc4791-9.7.1
     components = ([item.item] if level == 0
@@ -1131,7 +1132,6 @@ def report(base_prefix, path, xml_request, collection):
     Read rfc3253-3.6 for info.
 
     """
-    logger = collection.logger
     multistatus = ET.Element(_tag("D", "multistatus"))
     if xml_request is None:
         return client.MULTI_STATUS, multistatus
