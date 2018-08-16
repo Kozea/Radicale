@@ -23,10 +23,16 @@ http://docs.python.org/library/logging.config.html
 """
 
 import contextlib
+import io
 import logging
+import os
 import sys
 import threading
 
+try:
+    from systemd import journal
+except ImportError:
+    journal = None
 
 LOGGER_NAME = "radicale"
 LOGGER_FORMAT = "[%(processName)s/%(threadName)s] %(levelname)s: %(message)s"
@@ -87,6 +93,14 @@ class ThreadStreamsHandler(logging.Handler):
 
 def get_default_handler():
     handler = logging.StreamHandler(sys.stderr)
+    # Detect systemd journal
+    with contextlib.suppress(ValueError, io.UnsupportedOperation):
+        journal_dev, journal_ino = map(
+            int, os.environ.get("JOURNAL_STREAM", "").split(":"))
+        st = os.fstat(sys.stderr.fileno())
+        if (journal and
+                st.st_dev == journal_dev and st.st_ino == journal_ino):
+            handler = journal.JournalHandler(SYSLOG_IDENTIFIER=LOGGER_NAME)
     return handler
 
 
