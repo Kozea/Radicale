@@ -73,10 +73,6 @@ class HTTPServer(wsgiref.simple_server.WSGIServer):
                 self.server_close()
                 raise
 
-        if self.client_timeout and sys.version_info < (3, 5, 2):
-            logger.warning("Using server.timeout with Python < 3.5.2 "
-                           "can cause network connection failures")
-
     def get_request(self):
         # Set timeout for client
         _socket, address = super().get_request()
@@ -249,12 +245,8 @@ def serve(configuration):
                     if configuration.getboolean("server", "ssl") else "")
 
     # Create a socket pair to notify the select syscall of program shutdown
-    # This is not available in python < 3.5 on Windows
-    if hasattr(socket, "socketpair"):
-        shutdown_program_socket_in, shutdown_program_socket_out = (
-            socket.socketpair())
-    else:
-        shutdown_program_socket_in, shutdown_program_socket_out = None, None
+    shutdown_program_socket_in, shutdown_program_socket_out = (
+        socket.socketpair())
 
     # SIGTERM and SIGINT (aka KeyboardInterrupt) should just mark this for
     # shutdown
@@ -265,18 +257,16 @@ def serve(configuration):
             return
         logger.info("Stopping Radicale")
         shutdown_program = True
-        if shutdown_program_socket_in:
-            shutdown_program_socket_in.sendall(b"goodbye")
+        shutdown_program_socket_in.sendall(b" ")
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
 
     # Main loop: wait for requests on any of the servers or program shutdown
     sockets = list(servers.keys())
-    if shutdown_program_socket_out:
-        # Use socket pair to get notified of program shutdown
-        sockets.append(shutdown_program_socket_out)
+    # Use socket pair to get notified of program shutdown
+    sockets.append(shutdown_program_socket_out)
     select_timeout = None
-    if not shutdown_program_socket_out or os.name == "nt":
+    if os.name == "nt":
         # Fallback to busy waiting. (select.select blocks SIGINT on Windows.)
         select_timeout = 1.0
     logger.info("Radicale server ready")

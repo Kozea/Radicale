@@ -4,10 +4,6 @@ sudo: false
 matrix:
   include:
     - os: linux
-      python: 3.3
-    - os: linux
-      python: 3.4
-    - os: linux
       python: 3.5
     - os: linux
       python: 3.6
