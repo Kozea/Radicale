@@ -93,7 +93,7 @@ DAV_HEADERS = "1, 2, 3, calendar-access, addressbook, extended-mkcol"
 class Application:
     """WSGI application managing collections."""
 
-    def __init__(self, configuration):
+    def __init__(self, configuration, internal_server=False):
         """Initialize application."""
         super().__init__()
         self.configuration = configuration
@@ -102,6 +102,7 @@ class Application:
         self.Rights = rights.load(configuration)
         self.Web = web.load(configuration)
         self.encoding = configuration.get("encoding", "request")
+        self.internal_server = internal_server
 
     def headers_log(self, environ):
         """Sanitize headers for logging."""
@@ -334,7 +335,7 @@ class Application:
 
         # Verify content length
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
-        if content_length:
+        if self.internal_server and content_length:
             max_content_length = self.configuration.getint(
                 "server", "max_content_length")
             if max_content_length and content_length > max_content_length:

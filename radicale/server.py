@@ -236,7 +236,7 @@ def serve(configuration):
         except ValueError as e:
             raise RuntimeError(
                 "Failed to parse address %r: %s" % (host, e)) from e
-        application = Application(configuration)
+        application = Application(configuration, internal_server=True)
         try:
             server = wsgiref.simple_server.make_server(
                 address, port, application, server_class, RequestHandler)
