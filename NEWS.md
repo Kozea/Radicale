@@ -12,7 +12,6 @@ This release is compatible with version 2.0.0.
 * Fix race condition in storage lock creation
 * Raise default limits for content length and timeout
 * Log output from hook
-* Simplify Auth plugin interface
 
 2.1.9 - Wild Radish
 -------------------
