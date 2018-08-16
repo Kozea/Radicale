@@ -48,9 +48,6 @@
 # Reverse DNS to resolve client address in logs
 #dns_lookup = True
 
-# Message displayed in the client when a password is needed
-#realm = Radicale - Password Required
-
 
 [encoding]
 
@@ -78,6 +75,9 @@
 
 # Incorrect authentication delay (seconds)
 #delay = 1
+
+# Message displayed in the client when a password is needed
+#realm = Radicale - Password Required
 
 
 [rights]
