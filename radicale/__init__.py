@@ -38,7 +38,7 @@ import threading
 import time
 import zlib
 from http import client
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 from xml.etree import ElementTree as ET
 
 import vobject
@@ -424,6 +424,35 @@ class Application:
             xmlutils.webdav_error(namespace, name))
         return status, headers, content
 
+    def _propose_filename(self, collection):
+        """Propose a filename for a collection."""
+        tag = collection.get_meta("tag")
+        if tag == "VADDRESSBOOK":
+            fallback_title = "Address book"
+            suffix = ".vcf"
+        elif tag == "VCALENDAR":
+            fallback_title = "Calendar"
+            suffix = ".ics"
+        else:
+            fallback_title = posixpath.basename(collection.path)
+            suffix = ""
+        title = collection.get_meta("D:displayname") or fallback_title
+        if title and not title.lower().endswith(suffix.lower()):
+            title += suffix
+        return title
+
+    def _content_disposition_attachement(self, filename):
+        value = "attachement"
+        try:
+            encoded_filename = quote(filename, encoding=self.encoding)
+        except UnicodeEncodeError as e:
+            logger.warning("Failed to encode filename: %r", filename,
+                           exc_info=True)
+            encoded_filename = ""
+        if encoded_filename:
+            value += "; filename*=%s''%s" % (self.encoding, encoded_filename)
+        return value
+
     def do_DELETE(self, environ, base_prefix, path, user):
         """Manage DELETE request."""
         if not self._access(user, path, "w"):
@@ -473,12 +502,17 @@ class Application:
                 if not tag:
                     return DIRECTORY_LISTING
                 content_type = xmlutils.MIMETYPES[tag]
+                content_disposition = self._content_disposition_attachement(
+                    self._propose_filename(item))
             else:
                 content_type = xmlutils.OBJECT_MIMETYPES[item.name]
+                content_disposition = ""
             headers = {
                 "Content-Type": content_type,
                 "Last-Modified": item.last_modified,
                 "ETag": item.etag}
+            if content_disposition:
+                headers["Content-Disposition"] = content_disposition
             answer = item.serialize()
             return client.OK, headers, answer
 
