@@ -57,17 +57,17 @@ class IdentLogRecordFactory:
     def __init__(self, upstream_factory):
         self.upstream_factory = upstream_factory
         self.main_pid = os.getpid()
-        self.main_thread_name = threading.current_thread().name
 
     def __call__(self, *args, **kwargs):
         record = self.upstream_factory(*args, **kwargs)
         pid = os.getpid()
-        thread_name = threading.current_thread().name
         ident = "%x" % self.main_pid
         if pid != self.main_pid:
             ident += "%+x" % (pid - self.main_pid)
-        if thread_name != self.main_thread_name:
-            ident += "/%s" % thread_name
+        main_thread = threading.main_thread()
+        current_thread = threading.current_thread()
+        if current_thread.name and main_thread != current_thread:
+            ident += "/%s" % current_thread.name
         record.ident = ident
         return record
 
