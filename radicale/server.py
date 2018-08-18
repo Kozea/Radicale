@@ -192,6 +192,7 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
 def serve(configuration):
     """Serve radicale from configuration."""
     logger.info("Starting Radicale")
+    configuration["internal"]["internal_server"] = "True"
 
     # Create collection servers
     servers = {}
@@ -232,7 +233,7 @@ def serve(configuration):
         except ValueError as e:
             raise RuntimeError(
                 "Failed to parse address %r: %s" % (host, e)) from e
-        application = Application(configuration, internal_server=True)
+        application = Application(configuration)
         try:
             server = wsgiref.simple_server.make_server(
                 address, port, application, server_class, RequestHandler)

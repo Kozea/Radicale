@@ -187,6 +187,12 @@ INITIAL_CONFIG = OrderedDict([
             "value": "True",
             "help": "mask passwords in logs",
             "type": bool})]))])
+# Default configuration for "internal" settings
+INTERNAL_CONFIG = OrderedDict([
+    ("internal_server", {
+        "value": "False",
+        "help": "the internal server is used",
+        "type": bool})])
 
 
 def load(paths=(), extra_config=None, ignore_missing_paths=True):
@@ -234,4 +240,8 @@ def load(paths=(), extra_config=None, ignore_missing_paths=True):
                     "Invalid %s value for option %r in section %r in config: "
                     "%r" % (type_.__name__, option, section,
                             config.get(section, option))) from e
+    # Add internal configuration
+    config.add_section("internal")
+    for key, data in INTERNAL_CONFIG.items():
+        config.set("internal", key, data["value"])
     return config
