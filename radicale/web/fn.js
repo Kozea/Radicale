@@ -266,6 +266,31 @@ function get_collections(user, password, collection, callback) {
 /**
  * @param {string} user
  * @param {string} password
+ * @param {string} collection_href Must always start and end with /.
+ * @param {File} file
+ * @param {function(?string)} callback Returns error or null
+ * @return {XMLHttpRequest}
+ */
+function upload_collection(user, password, collection_href, file, callback) {
+    var request = new XMLHttpRequest();
+    request.open("PUT", SERVER + collection_href, true, user, password);
+    request.onreadystatechange = function() {
+        if (request.readyState !== 4) {
+            return;
+        }
+        if (200 <= request.status && request.status < 300) {
+            callback(null);
+        } else {
+            callback(request.status + " " + request.statusText);
+        }
+    };
+    request.send(file);
+    return request;
+}
+
+/**
+ * @param {string} user
+ * @param {string} password
  * @param {Collection} collection
  * @param {function(?string)} callback Returns error or null
  * @return {XMLHttpRequest}
@@ -381,6 +406,13 @@ function create_collection(user, password, collection, callback) {
  */
 function edit_collection(user, password, collection, callback) {
     return create_edit_collection(user, password, collection, false, callback);
+}
+
+/**
+ * @return {string}
+*/
+function random_uuid() {
+    return randHex(8) + "-" + randHex(4) + "-" + randHex(4) + "-" + randHex(4) + "-" + randHex(12);
 }
 
 /**
@@ -603,6 +635,7 @@ function CollectionsScene(user, password, collection, onerror) {
     var html_scene = document.getElementById("collectionsscene");
     var template = html_scene.querySelector("[name=collectiontemplate]");
     var new_btn = html_scene.querySelector("[name=new]");
+    var upload_btn = html_scene.querySelector("[name=upload]");
 
     /** @type {?number} */ var scene_index = null;
     var saved_template_display = null;
@@ -611,11 +644,35 @@ function CollectionsScene(user, password, collection, onerror) {
     var from_update = false;
     /** @type {?Array<Collection>} */ var collections = null;
     /** @type {Array<Node>} */ var nodes = [];
+    var filesInput = document.createElement("input");
+    filesInput.setAttribute("type", "file");
+    filesInput.setAttribute("accept", ".ics, .vcf");
+    filesInput.setAttribute("multiple", "");
+    var filesInputForm = document.createElement("form");
+    filesInputForm.appendChild(filesInput);
 
     function onnew() {
         try {
             var create_collection_scene = new CreateEditCollectionScene(user, password, collection);
             push_scene(create_collection_scene, false);
+        } catch(err) {
+            console.error(err);
+        }
+        return false;
+    }
+
+    function onupload() {
+        filesInput.click();
+        return false;
+    }
+
+    function onfileschange(e) {
+        try {
+            var files = filesInput.files;
+            if (files.length > 0) {
+                var upload_scene = new UploadCollectionScene(user, password, collection, files);
+                push_scene(upload_scene);
+            }
         } catch(err) {
             console.error(err);
         }
@@ -722,6 +779,9 @@ function CollectionsScene(user, password, collection, onerror) {
         template.style.display = "none";
         html_scene.style.display = "block";
         new_btn.onclick = onnew;
+        upload_btn.onclick = onupload;
+        filesInputForm.reset();
+        filesInput.onchange = onfileschange;
         if (scene_index === null) {
             scene_index = scene_stack.length - 1;
             if (collections === null && collections_req !== null) {
@@ -744,6 +804,8 @@ function CollectionsScene(user, password, collection, onerror) {
         html_scene.style.display = "none";
         template.style.display = saved_template_display;
         new_btn.onclick = null;
+        upload_btn.onclick = null;
+        filesInput.onchange = null;
         if (timer !== null) {
             window.clearTimeout(timer);
             timer = null;
@@ -760,6 +822,137 @@ function CollectionsScene(user, password, collection, onerror) {
         if (collections_req !== null) {
             collections_req.abort();
             collections_req = null;
+        }
+        filesInputForm.reset();
+    };
+}
+
+/**
+ * @constructor
+ * @implements {Scene}
+ * @param {string} user
+ * @param {string} password
+ * @param {Collection} collection parent collection
+ * @param {Array<File>} files
+ */
+function UploadCollectionScene(user, password, collection, files) {
+    var html_scene = document.getElementById("uploadcollectionscene");
+    var template = html_scene.querySelector("[name=filetemplate]");
+    var template_pending_form = template.querySelector("[name=pending]");
+    var template_success_form = template.querySelector("[name=success]");
+    var template_error_form = template.querySelector("[name=error]");
+    var saved_template_display = null;
+    var close_btn = html_scene.querySelector("[name=close]");
+    var saved_close_btn_display = null;
+
+    /** @type {?number} */ var scene_index = null;
+    /** @type {?XMLHttpRequest} */ var upload_req = null;
+    /** @type {Array<string>} */ var errors = [];
+    /** @type {?Array<Node>} */ var nodes = null;
+
+    function upload_next() {
+        try {
+            if (files.length === errors.length) {
+                if (errors.every(error => error === null)) {
+                    pop_scene(scene_index - 1);
+                } else {
+                    close_btn.style.display = saved_close_btn_display;
+                }
+            } else {
+                var file = files[errors.length];
+                var upload_href = collection.href + random_uuid() + "/";
+                upload_req = upload_collection(user, password, upload_href, file, function(error) {
+                    if (scene_index === null) {
+                        return;
+                    }
+                    upload_req = null;
+                    errors.push(error);
+                    updateFileStatus(errors.length - 1);
+                    upload_next();
+                });
+            }
+        } catch(err) {
+            console.error(err);
+        }
+        return false;
+    }
+
+    function onclose() {
+        try {
+            pop_scene(scene_index - 1);
+        } catch(err) {
+            console.error(err);
+        }
+        return false;
+    }
+
+    function updateFileStatus(i) {
+        if (nodes === null) {
+            return;
+        }
+        console.log(i);
+        console.log(nodes);
+        var pending_form = nodes[i].querySelector("[name=pending]");
+        var success_form = nodes[i].querySelector("[name=success]");
+        var error_form = nodes[i].querySelector("[name=error]");
+        if (errors.length > i) {
+            pending_form.style.display = "none";
+            if (errors[i]) {
+                success_form.style.display = "none";
+                error_form.textContent = "Error: " + errors[i];
+                error_form.style.display = template_error_form.style.display;
+            } else {
+              success_form.style.display = template_success_form.style.display;
+              error_form.style.display = "none";
+            }
+        } else {
+            pending_form.style.display = template_pending_form.style.display;
+            success_form.style.display = "none";
+            error_form.style.display = "none";
+        }
+    }
+
+    this.show = function() {
+        saved_template_display = template.style.display;
+        template.style.display = "none";
+        html_scene.style.display = "block";
+        saved_close_btn_display = close_btn.style.display;
+        if (errors.length < files.length) {
+            close_btn.style.display = "none";
+        }
+        close_btn.onclick = onclose;
+        nodes = [];
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var node = template.cloneNode(true);
+            var name_form = node.querySelector("[name=name]");
+            name_form.textContent = file.name;
+            node.style.display = saved_template_display;
+            nodes.push(node);
+            updateFileStatus(i);
+            template.parentNode.insertBefore(node,template);
+        }
+        if (scene_index === null) {
+            scene_index = scene_stack.length - 1;
+            upload_next();
+        }
+    };
+
+    this.hide = function() {
+        html_scene.style.display = "none";
+        template.style.display = saved_template_display;
+        close_btn.style.display = saved_close_btn_display;
+        close_btn.onclick = null;
+        nodes.forEach(function(node) {
+            template.parentNode.removeChild(node);
+        });
+        nodes = null;
+    };
+    this.release = function() {
+        scene_index = null;
+        if (upload_req !== null) {
+            upload_req.abort();
+            upload_req = null;
         }
     };
 }
@@ -876,9 +1069,7 @@ function CreateEditCollectionScene(user, password, collection) {
     var error = "";
     /** @type {?Element} */ var saved_type_form = null;
 
-    var href = edit ? collection.href : (
-        collection.href + randHex(8) + "-" + randHex(4) + "-" + randHex(4) +
-        "-" + randHex(4) + "-" + randHex(12) + "/");
+    var href = edit ? collection.href : collection.href + random_uuid() + "/";
     var displayname = edit ? collection.displayname : "";
     var description = edit ? collection.description : "";
     var type = edit ? collection.type : CollectionType.CALENDAR_JOURNAL_TASKS;

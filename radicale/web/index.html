@@ -30,7 +30,10 @@
         </section>
         <section id="collectionsscene" style="display: none;">
             <h1>Collections</h1>
-            <a href="" name="new">Create new addressbook or calendar</a>
+            <ul>
+                <li><a href="" name="new">Create new addressbook or calendar</a></li>
+                <li><a href="" name="upload">Upload addressbook or calendar</a></li>
+            </ul>
             <article name="collectiontemplate">
                 <h2><span name="color">█ </span><span name="title" style="word-wrap:break-word;">Title</span> <small>[<span name="ADDRESSBOOK">addressbook</span><span name="CALENDAR_JOURNAL_TASKS">calendar, journal and tasks</span><span name="CALENDAR_JOURNAL">calendar and journal</span><span name="CALENDAR_TASKS">calendar and tasks</span><span name="JOURNAL_TASKS">journal and tasks</span><span name="CALENDAR">calendar</span><span name="JOURNAL">journal</span><span name="TASKS">tasks</span>]</small></h2>
                 <span name="description" style="word-wrap:break-word;">Description</span>
@@ -90,6 +93,20 @@
                 <span style="color: #A40000;" name="error"></span><br>
                 <button type="submit" name="submit">Create</button>
                 <button type="button" name="cancel">Cancel</button>
+            </form>
+        </section>
+        <section id="uploadcollectionscene" style="display: none;">
+            <h1>Upload collection</h1>
+            <ul>
+                <li name="filetemplate">
+                     <span name="name" style="word-wrap:break-word;">name</span><br>
+                     <span name="pending">Please wait...</span>
+                     <span style="color: #00A400;" name="success">Finished</span>
+                     <span style="color: #A40000;" name="error"></span>
+                </li>
+            </ul>
+            <form>
+                <button type="button" name="close">Close</button>
             </form>
         </section>
         <section id="deletecollectionscene" style="display: none;">
