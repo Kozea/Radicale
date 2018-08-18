@@ -173,9 +173,9 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
 
         self.raw_requestline = self.rfile.readline(65537)
         if len(self.raw_requestline) > 65536:
-            self.requestline = ''
-            self.request_version = ''
-            self.command = ''
+            self.requestline = ""
+            self.request_version = ""
+            self.command = ""
             self.send_error(414)
             return
 

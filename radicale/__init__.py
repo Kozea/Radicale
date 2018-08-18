@@ -46,7 +46,7 @@ import vobject
 from radicale import auth, config, log, rights, storage, web, xmlutils
 from radicale.log import logger
 
-VERSION = pkg_resources.get_distribution('radicale').version
+VERSION = pkg_resources.get_distribution("radicale").version
 
 NOT_ALLOWED = (
     client.FORBIDDEN, (("Content-Type", "text/plain"),),
