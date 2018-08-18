@@ -40,10 +40,10 @@ from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
 from itertools import chain, groupby
-from math import log
 from random import getrandbits
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
+import pkg_resources
 import vobject
 
 from radicale import xmlutils
@@ -89,6 +89,10 @@ elif os.name == "posix":
     import fcntl
 
 INTERNAL_TYPES = ("multifilesystem",)
+
+DEPS = ("radicale", "vobject", "python-dateutil",)
+ITEM_CACHE_TAG = (";".join(pkg_resources.get_distribution(pkg).version
+                           for pkg in DEPS) + ";").encode()
 
 
 def load(configuration):
@@ -329,11 +333,6 @@ def path_to_filesystem(root, *paths):
                                  os.scandir(safe_path_parent))):
                 raise CollidingPathError(part)
     return safe_path
-
-
-def left_encode_int(v):
-    length = int(log(v, 256)) + 1 if v != 0 else 1
-    return bytes((length,)) + v.to_bytes(length, 'little')
 
 
 class UnsafePathError(ValueError):
@@ -721,9 +720,6 @@ class BaseCollection:
     def verify(cls):
         """Check the storage for errors."""
         return True
-
-
-ITEM_CACHE_VERSION = 1
 
 
 class Collection(BaseCollection):
@@ -1277,7 +1273,7 @@ class Collection(BaseCollection):
 
     def _item_cache_hash(self, raw_text):
         _hash = md5()
-        _hash.update(left_encode_int(ITEM_CACHE_VERSION))
+        _hash.update(ITEM_CACHE_TAG)
         _hash.update(raw_text)
         return _hash.hexdigest()
 
