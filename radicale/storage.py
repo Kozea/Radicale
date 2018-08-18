@@ -1591,6 +1591,9 @@ class FileBackedRwLock:
                 raise RuntimeError("Locking the storage failed: "
                                    "Unsupported operating system")
             with self._lock:
+                if self._writer or mode == "w" and self._readers != 0:
+                    raise RuntimeError("Locking the storage failed: "
+                                       "Guarantees failed")
                 if mode == "r":
                     self._readers += 1
                 else:
