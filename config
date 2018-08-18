@@ -103,11 +103,6 @@
 # storage externally while Radicale is running if disabled.
 #filesystem_locking = True
 
-# Sync all changes to disk during requests. (This can impair performance.)
-# Disabling it increases the risk of data loss, when the system crashes or
-# power fails!
-#filesystem_fsync = True
-
 # Delete sync token that are older (seconds)
 #max_sync_token_age = 2592000
 

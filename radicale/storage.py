@@ -784,7 +784,7 @@ class Collection(BaseCollection):
 
     @classmethod
     def _fsync(cls, fd):
-        if cls.configuration.getboolean("storage", "filesystem_fsync"):
+        if cls.configuration.getboolean("internal", "filesystem_fsync"):
             if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
                 fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
             else:
@@ -797,7 +797,7 @@ class Collection(BaseCollection):
         This only works on POSIX and does nothing on other systems.
 
         """
-        if not cls.configuration.getboolean("storage", "filesystem_fsync"):
+        if not cls.configuration.getboolean("internal", "filesystem_fsync"):
             return
         if os.name == "posix":
             try:

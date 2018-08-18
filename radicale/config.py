@@ -164,10 +164,6 @@ INITIAL_CONFIG = OrderedDict([
             "value": 2592000,  # 30 days
             "help": "delete sync token that are older",
             "type": int}),
-        ("filesystem_fsync", {
-            "value": "True",
-            "help": "sync all changes to filesystem during requests",
-            "type": bool}),
         ("hook", {
             "value": "",
             "help": "command that is run after changes to storage",
@@ -189,6 +185,10 @@ INITIAL_CONFIG = OrderedDict([
             "type": bool})]))])
 # Default configuration for "internal" settings
 INTERNAL_CONFIG = OrderedDict([
+    ("filesystem_fsync", {
+        "value": "True",
+        "help": "sync all changes to filesystem during requests",
+        "type": bool}),
     ("internal_server", {
         "value": "False",
         "help": "the internal server is used",

@@ -36,7 +36,7 @@ class TestBaseAuthRequests(BaseTest):
         self.colpath = tempfile.mkdtemp()
         self.configuration["storage"]["filesystem_folder"] = self.colpath
         # Disable syncing to disk for better performance
-        self.configuration["storage"]["filesystem_fsync"] = "False"
+        self.configuration["internal"]["filesystem_fsync"] = "False"
 
     def teardown(self):
         shutil.rmtree(self.colpath)

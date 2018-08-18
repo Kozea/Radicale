@@ -43,7 +43,7 @@ class TestBaseAuthRequests(BaseTest):
         self.colpath = tempfile.mkdtemp()
         self.configuration["storage"]["filesystem_folder"] = self.colpath
         # Disable syncing to disk for better performance
-        self.configuration["storage"]["filesystem_fsync"] = "False"
+        self.configuration["internal"]["filesystem_fsync"] = "False"
         # Required on Windows, doesn't matter on Unix
         self.configuration["storage"]["filesystem_close_lock_file"] = "True"
         # Set incorrect authentication delay to a very low value

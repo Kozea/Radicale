@@ -1427,7 +1427,7 @@ class BaseFileSystemTest(BaseTest):
         self.colpath = tempfile.mkdtemp()
         self.configuration["storage"]["filesystem_folder"] = self.colpath
         # Disable syncing to disk for better performance
-        self.configuration["storage"]["filesystem_fsync"] = "False"
+        self.configuration["internal"]["filesystem_fsync"] = "False"
         self.application = Application(self.configuration)
 
     def teardown(self):
@@ -1440,7 +1440,7 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
 
     def test_fsync(self):
         """Create a directory and file with syncing enabled."""
-        self.configuration["storage"]["filesystem_fsync"] = "True"
+        self.configuration["internal"]["filesystem_fsync"] = "True"
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status == 201
 
