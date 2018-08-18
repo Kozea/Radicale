@@ -25,6 +25,7 @@ http://docs.python.org/library/logging.config.html
 import contextlib
 import io
 import logging
+import multiprocessing
 import os
 import sys
 import threading
@@ -35,7 +36,7 @@ except ImportError:
     journal = None
 
 LOGGER_NAME = "radicale"
-LOGGER_FORMAT = "[%(processName)s/%(threadName)s] %(levelname)s: %(message)s"
+LOGGER_FORMAT = "[%(ident)s] %(levelname)s: %(message)s"
 
 root_logger = logging.getLogger()
 logger = logging.getLogger(LOGGER_NAME)
@@ -50,6 +51,27 @@ class RemoveTracebackFilter(logging.Filter):
 removeTracebackFilter = RemoveTracebackFilter()
 
 
+class IdentLogRecordFactory:
+    """LogRecordFactory that adds ``ident`` attribute."""
+
+    def __init__(self, upstream_factory):
+        self.upstream_factory = upstream_factory
+        self.main_pid = os.getpid()
+        self.main_thread_name = threading.current_thread().name
+
+    def __call__(self, *args, **kwargs):
+        record = self.upstream_factory(*args, **kwargs)
+        pid = os.getpid()
+        thread_name = threading.current_thread().name
+        ident = "%x" % self.main_pid
+        if pid != self.main_pid:
+            ident += "%+x" % (pid - self.main_pid)
+        if thread_name != self.main_thread_name:
+            ident += "/%s" % thread_name
+        record.ident = ident
+        return record
+
+
 class ThreadStreamsHandler(logging.Handler):
 
     terminator = "\n"
@@ -59,6 +81,9 @@ class ThreadStreamsHandler(logging.Handler):
         self._streams = {}
         self.fallback_stream = fallback_stream
         self.fallback_handler = fallback_handler
+
+    def createLock(self):
+        self.lock = multiprocessing.Lock()
 
     def setFormatter(self, form):
         super().setFormatter(form)
@@ -116,6 +141,8 @@ def setup():
     handler = ThreadStreamsHandler(sys.stderr, get_default_handler())
     logging.basicConfig(format=LOGGER_FORMAT, handlers=[handler])
     register_stream = handler.register_stream
+    log_record_factory = IdentLogRecordFactory(logging.getLogRecordFactory())
+    logging.setLogRecordFactory(log_record_factory)
     set_level(logging.DEBUG)
 
 
