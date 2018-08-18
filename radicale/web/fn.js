@@ -891,8 +891,6 @@ function UploadCollectionScene(user, password, collection, files) {
         if (nodes === null) {
             return;
         }
-        console.log(i);
-        console.log(nodes);
         var pending_form = nodes[i].querySelector("[name=pending]");
         var success_form = nodes[i].querySelector("[name=success]");
         var error_form = nodes[i].querySelector("[name=error]");
