@@ -99,10 +99,6 @@
 # Folder for storing local collections, created if not present
 #filesystem_folder = /var/lib/radicale/collections
 
-# Lock the storage. Never start multiple instances of Radicale or edit the
-# storage externally while Radicale is running if disabled.
-#filesystem_locking = True
-
 # Delete sync token that are older (seconds)
 #max_sync_token_age = 2592000
 
