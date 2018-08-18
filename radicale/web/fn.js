@@ -284,6 +284,7 @@ function upload_collection(user, password, collection_href, file, callback) {
             callback(request.status + " " + request.statusText);
         }
     };
+    request.setRequestHeader("If-None-Match", "*");
     request.send(file);
     return request;
 }
