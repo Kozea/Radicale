@@ -1428,6 +1428,16 @@ class BaseFileSystemTest(BaseTest):
         self.configuration["storage"]["filesystem_folder"] = self.colpath
         # Disable syncing to disk for better performance
         self.configuration["internal"]["filesystem_fsync"] = "False"
+        # Allow access to anything for tests
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[allow all]
+user: .*
+collection: .*
+permissions: RrWw""")
+        self.configuration["rights"]["file"] = rights_file_path
+        self.configuration["rights"]["type"] = "from_file"
         self.application = Application(self.configuration)
 
     def teardown(self):
