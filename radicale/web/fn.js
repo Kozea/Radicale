@@ -570,23 +570,27 @@ function LoginScene() {
     }
 
     this.show = function() {
-        var saved_first_show = first_show;
-        first_show = false;
         this.release();
         fill_form();
         form.onsubmit = onlogin;
-        html_scene.style.display = "block";
-        user_form.focus();
         scene_index = scene_stack.length - 1;
+        html_scene.style.display = "block";
+        var direct_login = false;
         if (typeof(sessionStorage) !== "undefined") {
-            if (saved_first_show && sessionStorage.getItem("radicale_user")) {
+            if (first_show && sessionStorage.getItem("radicale_user")) {
                 user_form.value = sessionStorage.getItem("radicale_user");
                 password_form.value = sessionStorage.getItem("radicale_password");
-                onlogin();
+                direct_login = true;
             } else {
                 sessionStorage.setItem("radicale_user", "");
                 sessionStorage.setItem("radicale_password", "");
             }
+        }
+        first_show = false;
+        if (direct_login) {
+            onlogin();
+        } else {
+            user_form.focus();
         }
     };
     this.hide = function() {
