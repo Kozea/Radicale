@@ -38,7 +38,6 @@ except ImportError:
 LOGGER_NAME = "radicale"
 LOGGER_FORMAT = "[%(ident)s] %(levelname)s: %(message)s"
 
-root_logger = logging.getLogger()
 logger = logging.getLogger(LOGGER_NAME)
 
 
@@ -150,7 +149,6 @@ def set_level(level):
     """Set logging level for global logger."""
     if isinstance(level, str):
         level = getattr(logging, level.upper())
-    root_logger.setLevel(level)
     logger.setLevel(level)
     if level == logging.DEBUG:
         logger.removeFilter(removeTracebackFilter)
