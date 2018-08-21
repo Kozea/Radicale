@@ -771,8 +771,7 @@ def delete(base_prefix, path, collection, href=None):
     return multistatus
 
 
-def propfind(base_prefix, path, xml_request, read_collections,
-             write_collections, user):
+def propfind(base_prefix, path, xml_request, allowed_items, user):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -805,19 +804,10 @@ def propfind(base_prefix, path, xml_request, read_collections,
     # Writing answer
     multistatus = ET.Element(_tag("D", "multistatus"))
 
-    collections = []
-    for collection in write_collections:
-        collections.append(collection)
+    for item, permission in allowed_items:
+        write = permission == "w"
         response = _propfind_response(
-            base_prefix, path, collection, props, user, write=True,
-            allprop=allprop, propname=propname)
-        if response:
-            multistatus.append(response)
-    for collection in read_collections:
-        if collection in collections:
-            continue
-        response = _propfind_response(
-            base_prefix, path, collection, props, user, write=False,
+            base_prefix, path, item, props, user, write=write,
             allprop=allprop, propname=propname)
         if response:
             multistatus.append(response)

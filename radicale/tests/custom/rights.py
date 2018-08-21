@@ -23,5 +23,7 @@ from radicale import rights
 
 
 class Rights(rights.BaseRights):
-    def authorized(self, user, path, permission):
-        return path.strip("/") in ("tmp", "other")
+    def authorized(self, user, path, permissions):
+        if path.strip("/") not in ("tmp", "other"):
+            return ""
+        return rights.intersect_permissions(permissions)

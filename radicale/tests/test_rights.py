@@ -118,11 +118,11 @@ class TestBaseAuthRequests(BaseTest):
 [owner]
 user: .+
 collection: %(login)s(/.*)?
-permission: rw
+permissions: RrWw
 [custom]
 user: .*
 collection: custom(/.*)?
-permission: r""")
+permissions: Rr""")
         self.configuration["rights"]["file"] = rights_file_path
         self._test_rights("from_file", "", "/other", "r", 401)
         self._test_rights("from_file", "tmp", "/other", "r", 403)

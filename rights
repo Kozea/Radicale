@@ -19,30 +19,30 @@
 [admin]
 user: admin.*
 collection: .*
-permission: r
+permissions: Rr
 
 # This means all users may read and write any collection starting with public.
 # We do so by just not testing against the user string.
 [public]
 user: .*
 collection: public(/.+)?
-permission: rw
+permissions: RrWw
 
 # A little more complex: give read access to users from a domain for all
 # collections of all the users (ie. user@domain.tld can read domain/*).
 [domain-wide-access]
 user: .+@(.+)\..+
 collection: {0}/.+
-permission: r
+permissions: Rr
 
 # Allow authenticated user to read all collections
 [allow-everyone-read]
 user: .+
 collection: .*
-permission: r
+permissions: Rr
 
 # Give write access to owners
 [owner-write]
 user: .+
 collection: %(login)s/.*
-permission: w
+permissions: Ww

@@ -39,7 +39,6 @@ Leading or ending slashes are trimmed from collection's path.
 
 import configparser
 import os.path
-import posixpath
 import re
 from importlib import import_module
 
@@ -75,59 +74,61 @@ def load(configuration):
     return rights_class(configuration)
 
 
+def intersect_permissions(a, b="RrWw"):
+    return "".join(set(a).intersection(set(b)))
+
+
 class BaseRights:
     def __init__(self, configuration):
         self.configuration = configuration
 
-    def authorized(self, user, path, permission):
+    def authorized(self, user, path, permissions):
         """Check if the user is allowed to read or write the collection.
 
         If ``user`` is empty, check for anonymous rights.
 
         ``path`` is sanitized.
 
-        ``permission`` is "r" or "w".
+        ``permissions`` can include "R", "r", "W", "w"
+
+        Returns granted rights.
 
         """
         raise NotImplementedError
 
-    def authorized_item(self, user, path, permission):
-        """Check if the user is allowed to read or write the item."""
-        path = storage.sanitize_path(path)
-        parent_path = storage.sanitize_path(
-            "/%s/" % posixpath.dirname(path.strip("/")))
-        return self.authorized(user, parent_path, permission)
-
 
 class NoneRights(BaseRights):
-    def authorized(self, user, path, permission):
-        return True
+    def authorized(self, user, path, permissions):
+        return intersect_permissions(permissions)
 
 
 class AuthenticatedRights(BaseRights):
-    def authorized(self, user, path, permission):
-        return bool(user)
+    def authorized(self, user, path, permissions):
+        if not user:
+            return ""
+        return intersect_permissions(permissions)
 
 
 class OwnerWriteRights(BaseRights):
-    def authorized(self, user, path, permission):
+    def authorized(self, user, path, permissions):
+        if not user:
+            return ""
         sane_path = storage.sanitize_path(path).strip("/")
-        return bool(user) and (permission == "r" or
-                               user == sane_path.split("/", maxsplit=1)[0])
+        if user != sane_path.split("/", maxsplit=1)[0]:
+            return intersect_permissions(permissions, "Rr")
+        return intersect_permissions(permissions)
 
 
 class OwnerOnlyRights(BaseRights):
-    def authorized(self, user, path, permission):
+    def authorized(self, user, path, permissions):
+        if not user:
+            return ""
         sane_path = storage.sanitize_path(path).strip("/")
-        return bool(user) and (
-            permission == "r" and not sane_path or
-            user == sane_path.split("/", maxsplit=1)[0])
-
-    def authorized_item(self, user, path, permission):
-        sane_path = storage.sanitize_path(path).strip("/")
-        if "/" not in sane_path:
-            return False
-        return super().authorized_item(user, path, permission)
+        if not sane_path:
+            return intersect_permissions(permissions, "R")
+        if user != sane_path.split("/", maxsplit=1)[0]:
+            return ""
+        return intersect_permissions(permissions)
 
 
 class Rights(BaseRights):
@@ -135,41 +136,41 @@ class Rights(BaseRights):
         super().__init__(configuration)
         self.filename = os.path.expanduser(configuration.get("rights", "file"))
 
-    def authorized(self, user, path, permission):
+    def authorized(self, user, path, permissions):
         user = user or ""
         sane_path = storage.sanitize_path(path).strip("/")
         # Prevent "regex injection"
         user_escaped = re.escape(user)
         sane_path_escaped = re.escape(sane_path)
-        regex = configparser.ConfigParser(
+        rights_config = configparser.ConfigParser(
             {"login": user_escaped, "path": sane_path_escaped})
         try:
-            if not regex.read(self.filename):
+            if not rights_config.read(self.filename):
                 raise RuntimeError("No such file: %r" %
                                    self.filename)
         except Exception as e:
             raise RuntimeError("Failed to load rights file %r: %s" %
                                (self.filename, e)) from e
-        for section in regex.sections():
+        for section in rights_config.sections():
             try:
-                re_user_pattern = regex.get(section, "user")
-                re_collection_pattern = regex.get(section, "collection")
-                # Emulate fullmatch
-                user_match = re.match(r"(?:%s)\Z" % re_user_pattern, user)
-                collection_match = user_match and re.match(
-                    r"(?:%s)\Z" % re_collection_pattern.format(
+                user_pattern = rights_config.get(section, "user")
+                collection_pattern = rights_config.get(section, "collection")
+                user_match = re.fullmatch(user_pattern, user)
+                collection_match = user_match and re.fullmatch(
+                    collection_pattern.format(
                         *map(re.escape, user_match.groups())), sane_path)
             except Exception as e:
                 raise RuntimeError("Error in section %r of rights file %r: "
                                    "%s" % (section, self.filename, e)) from e
             if user_match and collection_match:
                 logger.debug("Rule %r:%r matches %r:%r from section %r",
-                             user, sane_path, re_user_pattern,
-                             re_collection_pattern, section)
-                return permission in regex.get(section, "permission")
+                             user, sane_path, user_pattern,
+                             collection_pattern, section)
+                return intersect_permissions(
+                    permissions, rights_config.get(section, "permissions"))
             else:
                 logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
-                             user, sane_path, re_user_pattern,
-                             re_collection_pattern, section)
+                             user, sane_path, user_pattern,
+                             collection_pattern, section)
         logger.info("Rights: %r:%r doesn't match any section", user, sane_path)
-        return False
+        return ""
