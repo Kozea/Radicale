@@ -819,20 +819,20 @@ class Application:
                                 vobject_collection.add(component)
                             item = storage.Item(
                                 collection_path=collection_path,
-                                item=vobject_collection)
+                                vobject_item=vobject_collection)
                             item.prepare()
                             items.append(item)
                     elif write_whole_collection and tag == "VADDRESSBOOK":
                         for vobject_item in vobject_items:
                             item = storage.Item(
                                 collection_path=collection_path,
-                                item=vobject_item)
+                                vobject_item=vobject_item)
                             item.prepare()
                             items.append(item)
                     elif not write_whole_collection:
                         vobject_item, = vobject_items
                         item = storage.Item(collection_path=collection_path,
-                                            item=vobject_item)
+                                            vobject_item=vobject_item)
                         item.prepare()
                         items.append(item)
 

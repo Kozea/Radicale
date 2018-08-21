@@ -194,15 +194,16 @@ def _comp_match(item, filter_, level=0):
         logger.warning("Filtering %s is not supported" % name)
         return True
     # Point #3 and #4 of rfc4791-9.7.1
-    components = ([item.item] if level == 0
-                  else list(getattr(item.item, "%s_list" % tag.lower())))
+    components = ([item.vobject_item] if level == 0
+                  else list(getattr(item.vobject_item,
+                                    "%s_list" % tag.lower())))
     for child in filter_:
         if child.tag == _tag("C", "prop-filter"):
             if not any(_prop_match(comp, child, "C")
                        for comp in components):
                 return False
         elif child.tag == _tag("C", "time-range"):
-            if not _time_range_match(item.item, filter_[0], tag):
+            if not _time_range_match(item.vobject_item, filter_[0], tag):
                 return False
         elif child.tag == _tag("C", "comp-filter"):
             if not _comp_match(item, child, level=level + 1):
@@ -1253,15 +1254,18 @@ def report(base_prefix, path, xml_request, collection, unlock_storage_fn):
                     raise ValueError("Unexpected %r in filter" % child.tag)
             test = filter_.get("test", "anyof")
             if test == "anyof":
-                return any(_prop_match(item.item, f, "CR") for f in filter_)
+                return any(_prop_match(item.vobject_item, f, "CR")
+                           for f in filter_)
             if test == "allof":
-                return all(_prop_match(item.item, f, "CR") for f in filter_)
+                return all(_prop_match(item.vobject_item, f, "CR")
+                           for f in filter_)
             raise ValueError("Unsupported filter test: %r" % test)
-            return all(_prop_match(item.item, f, "CR") for f in filter_)
+            return all(_prop_match(item.vobject_item, f, "CR")
+                       for f in filter_)
         raise ValueError("unsupported filter %r for %r" % (filter_.tag, tag))
 
     while retrieved_items:
-        # ``item.item`` might be accessed during filtering.
+        # ``item.vobject_item`` might be accessed during filtering.
         # Don't keep reference to ``item``, because VObject requires a lot of
         # memory.
         item, filters_matched = retrieved_items.pop(0)

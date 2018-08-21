@@ -381,9 +381,10 @@ class ComponentNotFoundError(ValueError):
 
 
 class Item:
-    def __init__(self, collection_path=None, collection=None, item=None,
-                 href=None, last_modified=None, text=None, etag=None, uid=None,
-                 name=None, component_name=None, time_range=None):
+    def __init__(self, collection_path=None, collection=None,
+                 vobject_item=None, href=None, last_modified=None, text=None,
+                 etag=None, uid=None, name=None, component_name=None,
+                 time_range=None):
         """Initialize an item.
 
         ``collection_path`` the path of the parent collection (optional if
@@ -395,10 +396,10 @@ class Item:
 
         ``last_modified`` the HTTP-datetime of when the item was modified.
 
-        ``text`` the text representation of the item (optional if ``item`` is
-        set).
+        ``text`` the text representation of the item (optional if
+        ``vobject_item`` is set).
 
-        ``item`` the vobject item (optional if ``text`` is set).
+        ``vobject_item`` the vobject item (optional if ``text`` is set).
 
         ``etag`` the etag of the item (optional). See ``get_etag``.
 
@@ -413,8 +414,9 @@ class Item:
         See ``find_tag_and_time_range``.
 
         """
-        if text is None and item is None:
-            raise ValueError("at least one of 'text' or 'item' must be set")
+        if text is None and vobject_item is None:
+            raise ValueError(
+                "at least one of 'text' or 'vobject_item' must be set")
         if collection_path is None:
             if collection is None:
                 raise ValueError("at least one of 'collection_path' or "
@@ -425,7 +427,7 @@ class Item:
         self.href = href
         self.last_modified = last_modified
         self._text = text
-        self._item = item
+        self._vobject_item = vobject_item
         self._etag = etag
         self._uid = uid
         self._name = name
@@ -435,7 +437,7 @@ class Item:
     def serialize(self):
         if self._text is None:
             try:
-                self._text = self.item.serialize()
+                self._text = self.vobject_item.serialize()
             except Exception as e:
                 raise RuntimeError("Failed to serialize item %r from %r: %s" %
                                    (self.href, self._collection_path,
@@ -443,15 +445,15 @@ class Item:
         return self._text
 
     @property
-    def item(self):
-        if self._item is None:
+    def vobject_item(self):
+        if self._vobject_item is None:
             try:
-                self._item = vobject.readOne(self._text)
+                self._vobject_item = vobject.readOne(self._text)
             except Exception as e:
                 raise RuntimeError("Failed to parse item %r from %r: %s" %
                                    (self.href, self._collection_path,
                                     e)) from e
-        return self._item
+        return self._vobject_item
 
     @property
     def etag(self):
@@ -463,38 +465,38 @@ class Item:
     @property
     def uid(self):
         if self._uid is None:
-            self._uid = get_uid_from_object(self.item)
+            self._uid = get_uid_from_object(self.vobject_item)
         return self._uid
 
     @property
     def name(self):
         if self._name is None:
-            self._name = self.item.name or ""
+            self._name = self.vobject_item.name or ""
         return self._name
 
     @property
     def component_name(self):
         if self._component_name is not None:
             return self._component_name
-        return xmlutils.find_tag(self.item)
+        return xmlutils.find_tag(self.vobject_item)
 
     @property
     def time_range(self):
         if self._time_range is None:
             self._component_name, *self._time_range = (
-                xmlutils.find_tag_and_time_range(self.item))
+                xmlutils.find_tag_and_time_range(self.vobject_item))
         return self._time_range
 
     def prepare(self):
         """Fill cache with values."""
-        orig_item = self._item
+        orig_vobject_item = self._vobject_item
         self.serialize()
         self.etag
         self.uid
         self.name
         self.time_range
         self.component_name
-        self._item = orig_item
+        self._vobject_item = orig_vobject_item
 
 
 class BaseCollection:
@@ -1414,7 +1416,8 @@ class Collection(BaseCollection):
                         check_and_sanitize_items(vobject_items,
                                                  tag=self.get_meta("tag"))
                         vobject_item, = vobject_items
-                        temp_item = Item(collection=self, item=vobject_item)
+                        temp_item = Item(collection=self,
+                                         vobject_item=vobject_item)
                         cache_hash, uid, etag, text, name, tag, start, end = \
                             self._store_item_cache(
                                 href, temp_item, input_hash)
