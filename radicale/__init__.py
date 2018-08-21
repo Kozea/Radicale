@@ -782,6 +782,11 @@ class Application:
                         tag = "VCALENDAR"
                     elif items and items[0].name in ("VCARD", "VLIST"):
                         tag = "VADDRESSBOOK"
+                    elif not tag and not items:
+                        # Maybe an empty address book
+                        tag = "VADDRESSBOOK"
+                    elif not tag:
+                        raise ValueError("Can't determine collection tag")
                 else:
                     tag = parent_item.get_meta("tag")
                 storage.check_and_sanitize_items(
@@ -822,11 +827,6 @@ class Application:
 
                 href = posixpath.basename(path.strip("/"))
                 try:
-                    if tag and not parent_item.get_meta("tag"):
-                        new_props = parent_item.get_meta()
-                        new_props["tag"] = tag
-                        storage.check_and_sanitize_props(new_props)
-                        parent_item.set_meta(new_props)
                     new_item = parent_item.upload(href, items[0])
                 except ValueError as e:
                     logger.warning(
