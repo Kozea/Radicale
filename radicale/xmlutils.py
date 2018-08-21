@@ -195,7 +195,7 @@ def _comp_match(item, filter_, level=0):
         return True
     # Point #3 and #4 of rfc4791-9.7.1
     components = ([item.item] if level == 0
-                  else list(getattr(item, "%s_list" % tag.lower())))
+                  else list(getattr(item.item, "%s_list" % tag.lower())))
     for child in filter_:
         if child.tag == _tag("C", "prop-filter"):
             if not any(_prop_match(comp, child, "C")

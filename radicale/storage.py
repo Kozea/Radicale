@@ -432,9 +432,6 @@ class Item:
         self._component_name = component_name
         self._time_range = time_range
 
-    def __getattr__(self, attr):
-        return getattr(self.item, attr)
-
     def serialize(self):
         if self._text is None:
             try:
