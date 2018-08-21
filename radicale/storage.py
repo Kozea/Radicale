@@ -39,7 +39,7 @@ import time
 from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
-from itertools import chain, groupby
+from itertools import chain
 from random import getrandbits
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
@@ -113,6 +113,27 @@ def load(configuration):
     CollectionCopy.configuration = configuration
     CollectionCopy.static_init()
     return CollectionCopy
+
+
+def predict_tag_of_parent_collection(vobject_items):
+    if len(vobject_items) != 1:
+        return ""
+    if vobject_items[0].name == "VCALENDAR":
+        return "VCALENDAR"
+    if vobject_items[0].name in ("VCARD", "VLIST"):
+        return "VADDRESSBOOK"
+    return ""
+
+
+def predict_tag_of_whole_collection(vobject_items, fallback_tag=None):
+    if vobject_items and vobject_items[0].name == "VCALENDAR":
+        return "VCALENDAR"
+    if vobject_items and vobject_items[0].name in ("VCARD", "VLIST"):
+        return "VADDRESSBOOK"
+    if not fallback_tag and not vobject_items:
+        # Maybe an empty address book
+        return "VADDRESSBOOK"
+    return fallback_tag
 
 
 def check_and_sanitize_items(vobject_items, is_collection=False, tag=None):
@@ -360,12 +381,15 @@ class ComponentNotFoundError(ValueError):
 
 
 class Item:
-    def __init__(self, collection, item=None, href=None, last_modified=None,
-                 text=None, etag=None, uid=None, name=None,
-                 component_name=None):
+    def __init__(self, collection_path=None, collection=None, item=None,
+                 href=None, last_modified=None, text=None, etag=None, uid=None,
+                 name=None, component_name=None, time_range=None):
         """Initialize an item.
 
-        ``collection`` the parent collection.
+        ``collection_path`` the path of the parent collection (optional if
+        ``collection`` is set).
+
+        ``collection`` the parent collection (optional).
 
         ``href`` the href of the item.
 
@@ -380,9 +404,23 @@ class Item:
 
         ``uid`` the UID of the object (optional). See ``get_uid_from_object``.
 
+        ``name`` the name of the item (optional). See ``vobject_item.name``.
+
+        ``component_name`` the name of the primary component (optional).
+        See ``find_tag``.
+
+        ``time_range`` the enclosing time range.
+        See ``find_tag_and_time_range``.
+
         """
         if text is None and item is None:
             raise ValueError("at least one of 'text' or 'item' must be set")
+        if collection_path is None:
+            if collection is None:
+                raise ValueError("at least one of 'collection_path' or "
+                                 "'collection' must be set")
+            collection_path = collection.path
+        self._collection_path = collection_path
         self.collection = collection
         self.href = href
         self.last_modified = last_modified
@@ -392,6 +430,7 @@ class Item:
         self._uid = uid
         self._name = name
         self._component_name = component_name
+        self._time_range = time_range
 
     def __getattr__(self, attr):
         return getattr(self.item, attr)
@@ -402,7 +441,8 @@ class Item:
                 self._text = self.item.serialize()
             except Exception as e:
                 raise RuntimeError("Failed to serialize item %r from %r: %s" %
-                                   (self.href, self.collection.path, e)) from e
+                                   (self.href, self._collection_path,
+                                    e)) from e
         return self._text
 
     @property
@@ -412,7 +452,8 @@ class Item:
                 self._item = vobject.readOne(self._text)
             except Exception as e:
                 raise RuntimeError("Failed to parse item %r from %r: %s" %
-                                   (self.href, self.collection.path, e)) from e
+                                   (self.href, self._collection_path,
+                                    e)) from e
         return self._item
 
     @property
@@ -430,15 +471,33 @@ class Item:
 
     @property
     def name(self):
-        if self._name is not None:
-            return self._name
-        return self.item.name
+        if self._name is None:
+            self._name = self.item.name or ""
+        return self._name
 
     @property
     def component_name(self):
         if self._component_name is not None:
             return self._component_name
         return xmlutils.find_tag(self.item)
+
+    @property
+    def time_range(self):
+        if self._time_range is None:
+            self._component_name, *self._time_range = (
+                xmlutils.find_tag_and_time_range(self.item))
+        return self._time_range
+
+    def prepare(self):
+        """Fill cache with values."""
+        orig_item = self._item
+        self.serialize()
+        self.etag
+        self.uid
+        self.name
+        self.time_range
+        self.component_name
+        self._item = orig_item
 
 
 class BaseCollection:
@@ -497,7 +556,7 @@ class BaseCollection:
         """
         if item.collection.path == to_collection.path and item.href == to_href:
             return
-        to_collection.upload(to_href, item.item)
+        to_collection.upload(to_href, item)
         item.collection.delete(item.href)
 
     @property
@@ -510,7 +569,7 @@ class BaseCollection:
         return '"%s"' % etag.hexdigest()
 
     @classmethod
-    def create_collection(cls, href, collection=None, props=None):
+    def create_collection(cls, href, items=None, props=None):
         """Create a collection.
 
         ``href`` is the sanitized path.
@@ -608,7 +667,7 @@ class BaseCollection:
                 return True
         return False
 
-    def upload(self, href, vobject_item):
+    def upload(self, href, item):
         """Upload a new or replace an existing item."""
         raise NotImplementedError
 
@@ -931,7 +990,7 @@ class Collection(BaseCollection):
         return item_errors == 0 and collection_errors == 0
 
     @classmethod
-    def create_collection(cls, href, collection=None, props=None):
+    def create_collection(cls, href, items=None, props=None):
         folder = cls._get_collection_root_folder()
 
         # Path should already be sanitized
@@ -953,25 +1012,11 @@ class Collection(BaseCollection):
             os.makedirs(tmp_filesystem_path)
             self = cls(sane_path, filesystem_path=tmp_filesystem_path)
             self.set_meta(props)
-
-            if collection:
+            if items is not None:
                 if props.get("tag") == "VCALENDAR":
-                    collection, = collection
-                    items = []
-                    for content in ("vevent", "vtodo", "vjournal"):
-                        items.extend(
-                            getattr(collection, "%s_list" % content, []))
-                    items_by_uid = groupby(sorted(items, key=get_uid), get_uid)
-
-                    def vobject_items():
-                        for uid, items in items_by_uid:
-                            collection = vobject.iCalendar()
-                            for item in items:
-                                collection.add(item)
-                            yield collection
-                    self._upload_all_nonatomic(vobject_items(), suffix=".ics")
+                    self._upload_all_nonatomic(items, suffix=".ics")
                 elif props.get("tag") == "VADDRESSBOOK":
-                    self._upload_all_nonatomic(collection, suffix=".vcf")
+                    self._upload_all_nonatomic(items, suffix=".vcf")
 
             # This operation is not atomic on the filesystem level but it's
             # very unlikely that one rename operations succeeds while the
@@ -983,7 +1028,7 @@ class Collection(BaseCollection):
 
         return cls(sane_path)
 
-    def _upload_all_nonatomic(self, vobject_items, suffix=""):
+    def _upload_all_nonatomic(self, items, suffix=""):
         """Upload a new set of items.
 
         This takes a list of vobject items and
@@ -994,11 +1039,10 @@ class Collection(BaseCollection):
                                     ".Radicale.cache", "item")
         self._makedirs_synced(cache_folder)
         hrefs = set()
-        for vobject_item in vobject_items:
-            uid = get_uid_from_object(vobject_item)
+        for item in items:
+            uid = item.uid
             try:
-                cache_content = self._item_cache_content(vobject_item)
-                _, _, _, text, _, _, _, _ = cache_content
+                cache_content = self._item_cache_content(item)
             except Exception as e:
                 raise ValueError(
                     "Failed to store item %r in temporary collection %r: %s" %
@@ -1036,7 +1080,7 @@ class Collection(BaseCollection):
             with self._atomic_write(os.path.join(self._filesystem_path, "ign"),
                                     newline="", sync_directory=False,
                                     replace_fn=replace_fn) as f:
-                f.write(text)
+                f.write(item.serialize())
             hrefs.add(href)
             with self._atomic_write(os.path.join(cache_folder, href), "wb",
                                     sync_directory=False) as f:
@@ -1267,30 +1311,23 @@ class Collection(BaseCollection):
                 continue
             yield href
 
-    def get(self, href, verify_href=True):
-        item, metadata = self._get_with_metadata(href, verify_href=verify_href)
-        return item
-
     def _item_cache_hash(self, raw_text):
         _hash = md5()
         _hash.update(ITEM_CACHE_TAG)
         _hash.update(raw_text)
         return _hash.hexdigest()
 
-    def _item_cache_content(self, vobject_item, cache_hash=None):
-        text = vobject_item.serialize()
+    def _item_cache_content(self, item, cache_hash=None):
+        text = item.serialize()
         if cache_hash is None:
             cache_hash = self._item_cache_hash(text.encode(self._encoding))
-        etag = get_etag(text)
-        uid = get_uid_from_object(vobject_item)
-        name = vobject_item.name
-        tag, start, end = xmlutils.find_tag_and_time_range(vobject_item)
-        return cache_hash, uid, etag, text, name, tag, start, end
+        return (cache_hash, item.uid, item.etag, text, item.name,
+                item.component_name, *item.time_range)
 
-    def _store_item_cache(self, href, vobject_item, cache_hash=None):
+    def _store_item_cache(self, href, item, cache_hash=None):
         cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
                                     "item")
-        content = self._item_cache_content(vobject_item, cache_hash)
+        content = self._item_cache_content(item, cache_hash)
         self._makedirs_synced(cache_folder)
         try:
             # Race: Other processes might have created and locked the
@@ -1335,10 +1372,7 @@ class Collection(BaseCollection):
             e.name for e in os.scandir(cache_folder) if not
             os.path.isfile(os.path.join(self._filesystem_path, e.name))))
 
-    def _get_with_metadata(self, href, verify_href=True):
-        """Like ``get`` but additonally returns the following metadata:
-        tag, start, end: see ``xmlutils.find_tag_and_time_range``. If
-        extraction of the metadata failed, the values are all ``None``."""
+    def get(self, href, verify_href=True):
         if verify_href:
             try:
                 if not is_safe_filesystem_path_component(href):
@@ -1348,26 +1382,25 @@ class Collection(BaseCollection):
                 logger.debug(
                     "Can't translate name %r safely to filesystem in %r: %s",
                     href, self.path, e, exc_info=True)
-                return None, None
+                return None
         else:
             path = os.path.join(self._filesystem_path, href)
         try:
             with open(path, "rb") as f:
                 raw_text = f.read()
         except (FileNotFoundError, IsADirectoryError):
-            return None, None
+            return None
         except PermissionError:
             # Windows raises ``PermissionError`` when ``path`` is a directory
             if (os.name == "nt" and
                     os.path.isdir(path) and os.access(path, os.R_OK)):
-                return None, None
+                return None
             raise
         # The hash of the component in the file system. This is used to check,
         # if the entry in the cache is still valid.
         input_hash = self._item_cache_hash(raw_text)
         cache_hash, uid, etag, text, name, tag, start, end = \
             self._load_item_cache(href, input_hash)
-        vobject_item = None
         if input_hash != cache_hash:
             with self._acquire_cache_lock("item"):
                 # Lock the item cache to prevent multpile processes from
@@ -1383,10 +1416,11 @@ class Collection(BaseCollection):
                             raw_text.decode(self._encoding)))
                         check_and_sanitize_items(vobject_items,
                                                  tag=self.get_meta("tag"))
-                        vobject_item = vobject_items[0]
+                        vobject_item, = vobject_items
+                        temp_item = Item(collection=self, item=vobject_item)
                         cache_hash, uid, etag, text, name, tag, start, end = \
                             self._store_item_cache(
-                                href, vobject_item, input_hash)
+                                href, temp_item, input_hash)
                     except Exception as e:
                         raise RuntimeError("Failed to load item %r in %r: %s" %
                                            (href, self.path, e)) from e
@@ -1398,10 +1432,12 @@ class Collection(BaseCollection):
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))
+        # Don't keep reference to ``vobject_item``, because it requires a lot
+        # of memory.
         return Item(
-            self, href=href, last_modified=last_modified, etag=etag,
-            text=text, item=vobject_item, uid=uid, name=name,
-            component_name=tag), (tag, start, end)
+            collection=self, href=href, last_modified=last_modified, etag=etag,
+            text=text, uid=uid, name=name, component_name=tag,
+            time_range=(start, end))
 
     def get_multi(self, hrefs):
         # It's faster to check for file name collissions here, because
@@ -1433,33 +1469,29 @@ class Collection(BaseCollection):
             # no filter
             yield from ((item, simple) for item in self.get_all())
             return
-        for item, (itag, istart, iend) in (
-                self._get_with_metadata(href, verify_href=False)
-                for href in self.list()):
-            if tag == itag and istart < end and iend > start:
+        for item in (self.get(h, verify_href=False) for h in self.list()):
+            istart, iend = item.time_range
+            if tag == item.component_name and istart < end and iend > start:
                 yield item, simple and (start <= istart or iend <= end)
 
-    def upload(self, href, vobject_item):
+    def upload(self, href, item):
         if not is_safe_filesystem_path_component(href):
             raise UnsafePathError(href)
         try:
-            cache_hash, uid, etag, text, name, tag, _, _ = \
-                self._store_item_cache(href, vobject_item)
+            self._store_item_cache(href, item)
         except Exception as e:
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
         path = path_to_filesystem(self._filesystem_path, href)
         with self._atomic_write(path, newline="") as fd:
-            fd.write(text)
+            fd.write(item.serialize())
         # Clean the cache after the actual item is stored, or the cache entry
         # will be removed again.
         self._clean_item_cache()
-        item = Item(self, href=href, etag=etag, text=text, item=vobject_item,
-                    uid=uid, name=name, component_name=tag)
         # Track the change
         self._update_history_etag(href, item)
         self._clean_history_cache()
-        return item
+        return self.get(href, verify_href=False)
 
     def delete(self, href=None):
         if href is None:

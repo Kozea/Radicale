@@ -653,8 +653,8 @@ def find_tag(vobject_item):
     if vobject_item.name == "VCALENDAR":
         for component in vobject_item.components():
             if component.name != "VTIMEZONE":
-                return component.name
-    return None
+                return component.name or ""
+    return ""
 
 
 def find_tag_and_time_range(vobject_item):
@@ -668,7 +668,7 @@ def find_tag_and_time_range(vobject_item):
     """
     tag = find_tag(vobject_item)
     if not tag:
-        return (None, TIMESTAMP_MIN, TIMESTAMP_MAX)
+        return (tag, TIMESTAMP_MIN, TIMESTAMP_MAX)
     start = end = None
 
     def range_fn(range_start, range_end, is_recurrence):
@@ -1116,7 +1116,7 @@ def proppatch(base_prefix, path, xml_request, collection):
     return multistatus
 
 
-def report(base_prefix, path, xml_request, collection):
+def report(base_prefix, path, xml_request, collection, unlock_storage_fn):
     """Read and answer REPORT requests.
 
     Read rfc3253-3.6 for info.
@@ -1230,8 +1230,15 @@ def report(base_prefix, path, xml_request, collection):
         if collection_requested:
             yield from collection.get_all_filtered(filters)
 
+    # Retrieve everything required for finishing the request.
+    retrieved_items = list(retrieve_items(collection, hreferences,
+                                          multistatus))
+    collection_tag = collection.get_meta("tag")
+    # Don't access storage after this!
+    unlock_storage_fn()
+
     def match(item, filter_):
-        tag = collection.get_meta("tag")
+        tag = collection_tag
         if (tag == "VCALENDAR" and filter_.tag != _tag("C", filter_)):
             if len(filter_) == 0:
                 return True
@@ -1253,8 +1260,11 @@ def report(base_prefix, path, xml_request, collection):
             return all(_prop_match(item.item, f, "CR") for f in filter_)
         raise ValueError("unsupported filter %r for %r" % (filter_.tag, tag))
 
-    for item, filters_matched in retrieve_items(collection, hreferences,
-                                                multistatus):
+    while retrieved_items:
+        # ``item.item`` might be accessed during filtering.
+        # Don't keep reference to ``item``, because VObject requires a lot of
+        # memory.
+        item, filters_matched = retrieved_items.pop(0)
         if filters and not filters_matched:
             try:
                 if not all(match(item, filter_) for filter_ in filters):

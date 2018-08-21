@@ -24,6 +24,7 @@ Can be used with an external WSGI server or the built-in server.
 """
 
 import base64
+import contextlib
 import datetime
 import io
 import itertools
@@ -34,6 +35,7 @@ import posixpath
 import pprint
 import random
 import socket
+import sys
 import threading
 import time
 import zlib
@@ -545,6 +547,16 @@ class Application:
         except socket.timeout as e:
             logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
+        # Prepare before locking
+        props = xmlutils.props_from_request(xml_content)
+        props["tag"] = "VCALENDAR"
+        # TODO: use this?
+        # timezone = props.get("C:calendar-timezone")
+        try:
+            storage.check_and_sanitize_props(props)
+        except ValueError as e:
+            logger.warning(
+                "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if item:
@@ -558,12 +570,7 @@ class Application:
             if (not isinstance(parent_item, storage.BaseCollection) or
                     parent_item.get_meta("tag")):
                 return FORBIDDEN
-            props = xmlutils.props_from_request(xml_content)
-            props["tag"] = "VCALENDAR"
-            # TODO: use this?
-            # timezone = props.get("C:calendar-timezone")
             try:
-                storage.check_and_sanitize_props(props)
                 self.Collection.create_collection(path, props=props)
             except ValueError as e:
                 logger.warning(
@@ -585,6 +592,17 @@ class Application:
         except socket.timeout as e:
             logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
+        # Prepare before locking
+        props = xmlutils.props_from_request(xml_content)
+        try:
+            storage.check_and_sanitize_props(props)
+        except ValueError as e:
+            logger.warning(
+                "Bad MKCOL request on %r: %s", path, e, exc_info=True)
+            return BAD_REQUEST
+        if (props.get("tag") and "w" not in permissions or
+                not props.get("tag") and "W" not in permissions):
+            return NOT_ALLOWED
         with self.Collection.acquire_lock("w", user):
             item = next(self.Collection.discover(path), None)
             if item:
@@ -597,12 +615,7 @@ class Application:
             if (not isinstance(parent_item, storage.BaseCollection) or
                     parent_item.get_meta("tag")):
                 return FORBIDDEN
-            props = xmlutils.props_from_request(xml_content)
-            if (props.get("tag") and "w" not in permissions or
-                    not props.get("tag") and "W" not in permissions):
-                return NOT_ALLOWED
             try:
-                storage.check_and_sanitize_props(props)
                 self.Collection.create_collection(path, props=props)
             except ValueError as e:
                 logger.warning(
@@ -755,9 +768,110 @@ class Application:
         except socket.timeout as e:
             logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
+        # Prepare before locking
+        parent_path = storage.sanitize_path(
+            "/%s/" % posixpath.dirname(path.strip("/")))
+        permissions = self.Rights.authorized(user, path, "Ww")
+        parent_permissions = self.Rights.authorized(user, parent_path, "w")
+
+        def prepare(vobject_items, tag=None, write_whole_collection=None):
+            if (write_whole_collection or
+                    permissions and not parent_permissions):
+                write_whole_collection = True
+                content_type = environ.get("CONTENT_TYPE",
+                                           "").split(";")[0]
+                tags = {value: key
+                        for key, value in xmlutils.MIMETYPES.items()}
+                tag = storage.predict_tag_of_whole_collection(
+                    vobject_items, tags.get(content_type))
+                if not tag:
+                    raise ValueError("Can't determine collection tag")
+                collection_path = storage.sanitize_path(path).strip("/")
+            elif (write_whole_collection is not None and
+                    not write_whole_collection or
+                    not permissions and parent_permissions):
+                write_whole_collection = False
+                if tag is None:
+                    tag = storage.predict_tag_of_parent_collection(
+                        vobject_items)
+                collection_path = posixpath.dirname(
+                    storage.sanitize_path(path).strip("/"))
+            props = None
+            stored_exc_info = None
+            items = []
+            try:
+                if tag:
+                    storage.check_and_sanitize_items(
+                        vobject_items, is_collection=write_whole_collection,
+                        tag=tag)
+                    if write_whole_collection and tag == "VCALENDAR":
+                        vobject_components = []
+                        vobject_item, = vobject_items
+                        for content in ("vevent", "vtodo", "vjournal"):
+                            vobject_components.extend(
+                                getattr(vobject_item, "%s_list" % content, []))
+                        vobject_components_by_uid = itertools.groupby(
+                            sorted(vobject_components, key=storage.get_uid),
+                            storage.get_uid)
+                        for uid, components in vobject_components_by_uid:
+                            vobject_collection = vobject.iCalendar()
+                            for component in components:
+                                vobject_collection.add(component)
+                            item = storage.Item(
+                                collection_path=collection_path,
+                                item=vobject_collection)
+                            item.prepare()
+                            items.append(item)
+                    elif write_whole_collection and tag == "VADDRESSBOOK":
+                        for vobject_item in vobject_items:
+                            item = storage.Item(
+                                collection_path=collection_path,
+                                item=vobject_item)
+                            item.prepare()
+                            items.append(item)
+                    elif not write_whole_collection:
+                        vobject_item, = vobject_items
+                        item = storage.Item(collection_path=collection_path,
+                                            item=vobject_item)
+                        item.prepare()
+                        items.append(item)
+
+                if write_whole_collection:
+                    props = {}
+                    if tag:
+                        props["tag"] = tag
+                    if tag == "VCALENDAR" and vobject_items:
+                        if hasattr(vobject_items[0], "x_wr_calname"):
+                            calname = vobject_items[0].x_wr_calname.value
+                            if calname:
+                                props["D:displayname"] = calname
+                        if hasattr(vobject_items[0], "x_wr_caldesc"):
+                            caldesc = vobject_items[0].x_wr_caldesc.value
+                            if caldesc:
+                                props["C:calendar-description"] = caldesc
+                    storage.check_and_sanitize_props(props)
+            except Exception:
+                stored_exc_info = sys.exc_info()
+
+            # Use generator for items and delete references to free memory
+            # early
+            def items_generator():
+                while items:
+                    yield items.pop(0)
+
+            return (items_generator(), tag, write_whole_collection, props,
+                    stored_exc_info)
+
+        try:
+            vobject_items = tuple(vobject.readComponents(content or ""))
+        except Exception as e:
+            logger.warning(
+                "Bad PUT request on %r: %s", path, e, exc_info=True)
+            return BAD_REQUEST
+        (prepared_items, prepared_tag, prepared_write_whole_collection,
+         prepared_props, prepared_exc_info) = prepare(vobject_items)
+
         with self.Collection.acquire_lock("w", user):
-            parent_path = storage.sanitize_path(
-                "/%s/" % posixpath.dirname(path.strip("/")))
             item = next(self.Collection.discover(path), None)
             parent_item = next(self.Collection.discover(parent_path), None)
             if not parent_item:
@@ -766,8 +880,14 @@ class Application:
             write_whole_collection = (
                 isinstance(item, storage.BaseCollection) or
                 not parent_item.get_meta("tag"))
+
             if write_whole_collection:
-                if not self.Rights.authorized(user, path, "w"):
+                tag = prepared_tag
+            else:
+                tag = parent_item.get_meta("tag")
+
+            if write_whole_collection:
+                if not self.Rights.authorized(user, path, "w" if tag else "W"):
                     return NOT_ALLOWED
             elif not self.Rights.authorized(user, parent_path, "w"):
                 return NOT_ALLOWED
@@ -785,69 +905,43 @@ class Application:
                 # Creation asked but item found: item can't be replaced
                 return PRECONDITION_FAILED
 
-            try:
-                items = tuple(vobject.readComponents(content or ""))
-                if write_whole_collection:
-                    content_type = environ.get("CONTENT_TYPE",
-                                               "").split(";")[0]
-                    tags = {value: key
-                            for key, value in xmlutils.MIMETYPES.items()}
-                    tag = tags.get(content_type)
-                    if items and items[0].name == "VCALENDAR":
-                        tag = "VCALENDAR"
-                    elif items and items[0].name in ("VCARD", "VLIST"):
-                        tag = "VADDRESSBOOK"
-                    elif not tag and not items:
-                        # Maybe an empty address book
-                        tag = "VADDRESSBOOK"
-                    elif not tag:
-                        raise ValueError("Can't determine collection tag")
-                else:
-                    tag = parent_item.get_meta("tag")
-                storage.check_and_sanitize_items(
-                    items, is_collection=write_whole_collection, tag=tag)
-            except Exception as e:
+            if (tag != prepared_tag or
+                    prepared_write_whole_collection != write_whole_collection):
+                (prepared_items, prepared_tag, prepared_write_whole_collection,
+                 prepared_props, prepared_exc_info) = prepare(
+                    vobject_items, tag, write_whole_collection)
+            props = prepared_props
+            if prepared_exc_info:
                 logger.warning(
-                    "Bad PUT request on %r: %s", path, e, exc_info=True)
+                    "Bad PUT request on %r: %s", path, prepared_exc_info[1],
+                    exc_info=prepared_exc_info)
                 return BAD_REQUEST
 
             if write_whole_collection:
-                props = {}
-                if tag:
-                    props["tag"] = tag
-                if tag == "VCALENDAR" and items:
-                    if hasattr(items[0], "x_wr_calname"):
-                        calname = items[0].x_wr_calname.value
-                        if calname:
-                            props["D:displayname"] = calname
-                    if hasattr(items[0], "x_wr_caldesc"):
-                        caldesc = items[0].x_wr_caldesc.value
-                        if caldesc:
-                            props["C:calendar-description"] = caldesc
                 try:
-                    storage.check_and_sanitize_props(props)
-                    new_item = self.Collection.create_collection(
-                        path, items, props)
+                    etag = self.Collection.create_collection(
+                        path, prepared_items, props).etag
                 except ValueError as e:
                     logger.warning(
                         "Bad PUT request on %r: %s", path, e, exc_info=True)
                     return BAD_REQUEST
             else:
-                uid = storage.get_uid_from_object(items[0])
-                if (item and item.uid != uid or
-                        not item and parent_item.has_uid(uid)):
+                prepared_item, = prepared_items
+                if (item and item.uid != prepared_item.uid or
+                        not item and parent_item.has_uid(prepared_item.uid)):
                     return self._webdav_error_response(
                         "C" if tag == "VCALENDAR" else "CR",
                         "no-uid-conflict")
 
                 href = posixpath.basename(path.strip("/"))
                 try:
-                    new_item = parent_item.upload(href, items[0])
+                    etag = parent_item.upload(href, prepared_item).etag
                 except ValueError as e:
                     logger.warning(
                         "Bad PUT request on %r: %s", path, e, exc_info=True)
                     return BAD_REQUEST
-            headers = {"ETag": new_item.etag}
+
+            headers = {"ETag": etag}
             return client.CREATED, headers, None
 
     def do_REPORT(self, environ, base_prefix, path, user):
@@ -863,7 +957,8 @@ class Application:
         except socket.timeout as e:
             logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
-        with self.Collection.acquire_lock("r", user):
+        with contextlib.ExitStack() as lock_stack:
+            lock_stack.enter_context(self.Collection.acquire_lock("r", user))
             item = next(self.Collection.discover(path), None)
             if not item:
                 return NOT_FOUND
@@ -876,7 +971,8 @@ class Application:
             headers = {"Content-Type": "text/xml; charset=%s" % self.encoding}
             try:
                 status, xml_answer = xmlutils.report(
-                    base_prefix, path, xml_content, collection)
+                    base_prefix, path, xml_content, collection,
+                    lock_stack.close)
             except ValueError as e:
                 logger.warning(
                     "Bad REPORT request on %r: %s", path, e, exc_info=True)
