@@ -510,7 +510,7 @@ class BaseCollection:
     path = ""
 
     @classmethod
-    def static_init():
+    def static_init(cls):
         """init collection copy"""
         pass
 
