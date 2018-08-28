@@ -65,7 +65,7 @@ INITIAL_CONFIG = OrderedDict([
             "aliases": ["-H", "--hosts"],
             "type": str}),
         ("max_connections", {
-            "value": "20",
+            "value": "8",
             "help": "maximum number of parallel connections",
             "type": positive_int}),
         ("max_content_length", {

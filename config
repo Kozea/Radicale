@@ -18,7 +18,7 @@
 #hosts = 127.0.0.1:5232
 
 # Max parallel connections
-#max_connections = 20
+#max_connections = 8
 
 # Max size of request body (bytes)
 #max_content_length = 100000000
