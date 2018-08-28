@@ -205,31 +205,37 @@ def serve(configuration):
     servers = {}
     if configuration.getboolean("server", "ssl"):
         server_class = ParallelHTTPSServer
-        server_class.certificate = configuration.get("server", "certificate")
-        server_class.key = configuration.get("server", "key")
-        server_class.certificate_authority = configuration.get(
+    else:
+        server_class = ParallelHTTPServer
+
+    class ServerCopy(server_class):
+        """Copy, avoids overriding the original class attributes."""
+    ServerCopy.client_timeout = configuration.getint("server", "timeout")
+    ServerCopy.max_connections = configuration.getint(
+        "server", "max_connections")
+    if configuration.getboolean("server", "ssl"):
+        ServerCopy.certificate = configuration.get("server", "certificate")
+        ServerCopy.key = configuration.get("server", "key")
+        ServerCopy.certificate_authority = configuration.get(
             "server", "certificate_authority")
-        server_class.ciphers = configuration.get("server", "ciphers")
-        server_class.protocol = getattr(
+        ServerCopy.ciphers = configuration.get("server", "ciphers")
+        ServerCopy.protocol = getattr(
             ssl, configuration.get("server", "protocol"), ssl.PROTOCOL_SSLv23)
         # Test if the SSL files can be read
         for name in ["certificate", "key"] + (
                 ["certificate_authority"]
-                if server_class.certificate_authority else []):
-            filename = getattr(server_class, name)
+                if ServerCopy.certificate_authority else []):
+            filename = getattr(ServerCopy, name)
             try:
                 open(filename, "r").close()
             except OSError as e:
                 raise RuntimeError("Failed to read SSL %s %r: %s" %
                                    (name, filename, e)) from e
-    else:
-        server_class = ParallelHTTPServer
-    server_class.client_timeout = configuration.getint("server", "timeout")
-    server_class.max_connections = configuration.getint(
-        "server", "max_connections")
 
+    class RequestHandlerCopy(RequestHandler):
+        """Copy, avoids overriding the original class attributes."""
     if not configuration.getboolean("server", "dns_lookup"):
-        RequestHandler.address_string = lambda self: self.client_address[0]
+        RequestHandlerCopy.address_string = lambda self: self.client_address[0]
 
     shutdown_program = False
 
@@ -243,7 +249,7 @@ def serve(configuration):
         application = Application(configuration)
         try:
             server = wsgiref.simple_server.make_server(
-                address, port, application, server_class, RequestHandler)
+                address, port, application, ServerCopy, RequestHandlerCopy)
         except OSError as e:
             raise RuntimeError(
                 "Failed to start server %r: %s" % (host, e)) from e
