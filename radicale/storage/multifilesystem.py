@@ -54,7 +54,7 @@ class Collection(storage.BaseCollection):
     def __init__(self, path, filesystem_path=None):
         folder = self._get_collection_root_folder()
         # Path should already be sanitized
-        self.path = pathutils.sanitize_path(path).strip("/")
+        self.path = pathutils.strip_path(path)
         self._encoding = self.configuration.get("encoding", "stock")
         if filesystem_path is None:
             filesystem_path = pathutils.path_to_filesystem(folder, self.path)
@@ -142,7 +142,7 @@ class Collection(storage.BaseCollection):
     def discover(cls, path, depth="0", child_context_manager=(
                  lambda path, href=None: contextlib.ExitStack())):
         # Path should already be sanitized
-        sane_path = pathutils.sanitize_path(path).strip("/")
+        sane_path = pathutils.strip_path(path)
         attributes = sane_path.split("/") if sane_path else []
 
         folder = cls._get_collection_root_folder()
@@ -166,7 +166,7 @@ class Collection(storage.BaseCollection):
             href = None
 
         sane_path = "/".join(attributes)
-        collection = cls(sane_path)
+        collection = cls(pathutils.unstrip_path(sane_path, True))
 
         if href:
             yield collection.get(href)
@@ -178,7 +178,8 @@ class Collection(storage.BaseCollection):
             return
 
         for href in collection.list():
-            with child_context_manager(sane_path, href):
+            with child_context_manager(
+                    pathutils.unstrip_path(sane_path, True), href):
                 yield collection.get(href)
 
         for entry in os.scandir(filesystem_path):
@@ -190,7 +191,8 @@ class Collection(storage.BaseCollection):
                     logger.debug("Skipping collection %r in %r",
                                  href, sane_path)
                 continue
-            child_path = posixpath.join(sane_path, href)
+            child_path = pathutils.unstrip_path(
+                posixpath.join(sane_path, href), True)
             with child_context_manager(child_path):
                 yield cls(child_path)
 
@@ -201,21 +203,23 @@ class Collection(storage.BaseCollection):
         @contextlib.contextmanager
         def exception_cm(path, href=None):
             nonlocal item_errors, collection_errors
+            sane_path = pathutils.strip_path(path)
             try:
                 yield
             except Exception as e:
                 if href:
                     item_errors += 1
-                    name = "item %r in %r" % (href, path.strip("/"))
+                    name = "item %r in %r" % (href, sane_path)
                 else:
                     collection_errors += 1
-                    name = "collection %r" % path.strip("/")
+                    name = "collection %r" % sane_path
                 logger.error("Invalid %s: %s", name, e, exc_info=True)
 
-        remaining_paths = [""]
-        while remaining_paths:
-            path = remaining_paths.pop(0)
-            logger.debug("Verifying collection %r", path)
+        remaining_sane_paths = [""]
+        while remaining_sane_paths:
+            sane_path = remaining_sane_paths.pop(0)
+            path = pathutils.unstrip_path(sane_path, True)
+            logger.debug("Verifying collection %r", sane_path)
             with exception_cm(path):
                 saved_item_errors = item_errors
                 collection = None
@@ -228,19 +232,20 @@ class Collection(storage.BaseCollection):
                         continue
                     if isinstance(item, storage.BaseCollection):
                         has_child_collections = True
-                        remaining_paths.append(item.path)
+                        remaining_sane_paths.append(item.path)
                     elif item.uid in uids:
                         cls.logger.error(
                             "Invalid item %r in %r: UID conflict %r",
-                            item.href, path.strip("/"), item.uid)
+                            item.href, sane_path, item.uid)
                     else:
                         uids.add(item.uid)
-                        logger.debug("Verified item %r in %r", item.href, path)
+                        logger.debug("Verified item %r in %r",
+                                     item.href, sane_path)
                 if item_errors == saved_item_errors:
                     collection.sync()
                 if has_child_collections and collection.get_meta("tag"):
                     cls.logger.error("Invalid collection %r: %r must not have "
-                                     "child collections", path.strip("/"),
+                                     "child collections", sane_path,
                                      collection.get_meta("tag"))
         return item_errors == 0 and collection_errors == 0
 
@@ -249,12 +254,12 @@ class Collection(storage.BaseCollection):
         folder = cls._get_collection_root_folder()
 
         # Path should already be sanitized
-        sane_path = pathutils.sanitize_path(href).strip("/")
+        sane_path = pathutils.strip_path(href)
         filesystem_path = pathutils.path_to_filesystem(folder, sane_path)
 
         if not props:
             cls._makedirs_synced(filesystem_path)
-            return cls(sane_path)
+            return cls(pathutils.unstrip_path(sane_path, True))
 
         parent_dir = os.path.dirname(filesystem_path)
         cls._makedirs_synced(parent_dir)
@@ -265,7 +270,8 @@ class Collection(storage.BaseCollection):
             # The temporary directory itself can't be renamed
             tmp_filesystem_path = os.path.join(tmp_dir, "collection")
             os.makedirs(tmp_filesystem_path)
-            self = cls(sane_path, filesystem_path=tmp_filesystem_path)
+            self = cls(pathutils.unstrip_path(sane_path, True),
+                       filesystem_path=tmp_filesystem_path)
             self.set_meta(props)
             if items is not None:
                 if props.get("tag") == "VCALENDAR":
@@ -281,7 +287,7 @@ class Collection(storage.BaseCollection):
             os.rename(tmp_filesystem_path, filesystem_path)
             cls._sync_directory(parent_dir)
 
-        return cls(sane_path)
+        return cls(pathutils.unstrip_path(sane_path, True))
 
     def _upload_all_nonatomic(self, items, suffix=""):
         """Upload a new set of items.

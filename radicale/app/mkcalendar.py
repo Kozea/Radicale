@@ -63,8 +63,8 @@ class ApplicationMkcalendarMixin:
             if item:
                 return self.webdav_error_response(
                     "D", "resource-must-be-null")
-            parent_path = pathutils.sanitize_path(
-                "/%s/" % posixpath.dirname(path.strip("/")))
+            parent_path = pathutils.unstrip_path(
+                posixpath.dirname(pathutils.strip_path(path)), True)
             parent_item = next(self.Collection.discover(parent_path), None)
             if not parent_item:
                 return httputils.CONFLICT

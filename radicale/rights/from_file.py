@@ -30,7 +30,7 @@ class Rights(rights.BaseRights):
 
     def authorized(self, user, path, permissions):
         user = user or ""
-        sane_path = pathutils.sanitize_path(path).strip("/")
+        sane_path = pathutils.strip_path(path)
         # Prevent "regex injection"
         user_escaped = re.escape(user)
         sane_path_escaped = re.escape(sane_path)

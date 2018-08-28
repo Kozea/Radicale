@@ -52,8 +52,8 @@ class ApplicationPutMixin:
             logger.debug("client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         # Prepare before locking
-        parent_path = pathutils.sanitize_path(
-            "/%s/" % posixpath.dirname(path.strip("/")))
+        parent_path = pathutils.unstrip_path(
+            posixpath.dirname(pathutils.strip_path(path)), True)
         permissions = self.Rights.authorized(user, path, "Ww")
         parent_permissions = self.Rights.authorized(user, parent_path, "w")
 
@@ -69,7 +69,7 @@ class ApplicationPutMixin:
                     vobject_items, tags.get(content_type))
                 if not tag:
                     raise ValueError("Can't determine collection tag")
-                collection_path = pathutils.sanitize_path(path).strip("/")
+                collection_path = pathutils.strip_path(path)
             elif (write_whole_collection is not None and
                     not write_whole_collection or
                     not permissions and parent_permissions):
@@ -78,7 +78,7 @@ class ApplicationPutMixin:
                     tag = storage.predict_tag_of_parent_collection(
                         vobject_items)
                 collection_path = posixpath.dirname(
-                    pathutils.sanitize_path(path).strip("/"))
+                    pathutils.strip_path(path))
             props = None
             stored_exc_info = None
             items = []
@@ -218,7 +218,7 @@ class ApplicationPutMixin:
                         "C" if tag == "VCALENDAR" else "CR",
                         "no-uid-conflict")
 
-                href = posixpath.basename(path.strip("/"))
+                href = posixpath.basename(pathutils.strip_path(path))
                 try:
                     etag = parent_item.upload(href, prepared_item).etag
                 except ValueError as e:

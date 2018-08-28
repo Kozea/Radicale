@@ -66,8 +66,8 @@ class ApplicationMoveMixin:
             to_item = next(self.Collection.discover(to_path), None)
             if isinstance(to_item, storage.BaseCollection):
                 return httputils.FORBIDDEN
-            to_parent_path = pathutils.sanitize_path(
-                "/%s/" % posixpath.dirname(to_path.strip("/")))
+            to_parent_path = pathutils.unstrip_path(
+                posixpath.dirname(pathutils.strip_path(to_path)), True)
             to_collection = next(
                 self.Collection.discover(to_parent_path), None)
             if not to_collection:
@@ -83,7 +83,7 @@ class ApplicationMoveMixin:
                     to_collection.has_uid(item.uid)):
                 return self.webdav_error_response(
                     "C" if tag == "VCALENDAR" else "CR", "no-uid-conflict")
-            to_href = posixpath.basename(to_path.strip("/"))
+            to_href = posixpath.basename(pathutils.strip_path(to_path))
             try:
                 self.Collection.move(item, to_collection, to_href)
             except ValueError as e:

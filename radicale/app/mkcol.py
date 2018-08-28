@@ -64,8 +64,8 @@ class ApplicationMkcolMixin:
             item = next(self.Collection.discover(path), None)
             if item:
                 return httputils.METHOD_NOT_ALLOWED
-            parent_path = pathutils.sanitize_path(
-                "/%s/" % posixpath.dirname(path.strip("/")))
+            parent_path = pathutils.unstrip_path(
+                posixpath.dirname(pathutils.strip_path(path)), True)
             parent_item = next(self.Collection.discover(parent_path), None)
             if not parent_item:
                 return httputils.CONFLICT

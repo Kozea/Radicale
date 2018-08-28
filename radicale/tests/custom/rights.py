@@ -19,11 +19,12 @@ Custom rights management.
 
 """
 
-from radicale import rights
+from radicale import pathutils, rights
 
 
 class Rights(rights.BaseRights):
     def authorized(self, user, path, permissions):
-        if path.strip("/") not in ("tmp", "other"):
+        sane_path = pathutils.strip_path(path)
+        if sane_path not in ("tmp", "other"):
             return ""
         return rights.intersect_permissions(permissions)

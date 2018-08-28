@@ -125,6 +125,20 @@ def fsync(fd):
         os.fsync(fd)
 
 
+def strip_path(path):
+    assert sanitize_path(path) == path
+    return path.strip("/")
+
+
+def unstrip_path(stripped_path, trailing_slash=False):
+    assert strip_path(sanitize_path(stripped_path)) == stripped_path
+    assert stripped_path or trailing_slash
+    path = "/%s" % stripped_path
+    if trailing_slash and not path.endswith("/"):
+        path += "/"
+    return path
+
+
 def sanitize_path(path):
     """Make path absolute with leading slash to prevent access to other data.
 
@@ -165,30 +179,31 @@ def is_safe_filesystem_path_component(path):
         is_safe_path_component(path))
 
 
-def path_to_filesystem(root, *paths):
-    """Convert path to a local filesystem path relative to base_folder.
+def path_to_filesystem(root, sane_path):
+    """Convert `sane_path` to a local filesystem path relative to `root`.
 
     `root` must be a secure filesystem path, it will be prepend to the path.
 
-    Conversion of `paths` is done in a secure manner, or raises ``ValueError``.
+    `sane_path` must be a sanitized path without leading or trailing ``/``.
+
+    Conversion of `sane_path` is done in a secure manner,
+    or raises ``ValueError``.
 
     """
-    paths = [sanitize_path(path).strip("/") for path in paths]
+    assert sane_path == strip_path(sanitize_path(sane_path))
     safe_path = root
-    for path in paths:
-        if not path:
-            continue
-        for part in path.split("/"):
-            if not is_safe_filesystem_path_component(part):
-                raise UnsafePathError(part)
-            safe_path_parent = safe_path
-            safe_path = os.path.join(safe_path, part)
-            # Check for conflicting files (e.g. case-insensitive file systems
-            # or short names on Windows file systems)
-            if (os.path.lexists(safe_path) and
-                    part not in (e.name for e in
-                                 os.scandir(safe_path_parent))):
-                raise CollidingPathError(part)
+    parts = sane_path.split("/") if sane_path else []
+    for part in parts:
+        if not is_safe_filesystem_path_component(part):
+            raise UnsafePathError(part)
+        safe_path_parent = safe_path
+        safe_path = os.path.join(safe_path, part)
+        # Check for conflicting files (e.g. case-insensitive file systems
+        # or short names on Windows file systems)
+        if (os.path.lexists(safe_path) and
+                part not in (e.name for e in
+                             os.scandir(safe_path_parent))):
+            raise CollidingPathError(part)
     return safe_path
 
 
@@ -206,11 +221,11 @@ class CollidingPathError(ValueError):
 
 def name_from_path(path, collection):
     """Return Radicale item name from ``path``."""
-    path = path.strip("/") + "/"
-    start = collection.path + "/"
-    if not path.startswith(start):
+    assert sanitize_path(path) == path
+    start = unstrip_path(collection.path, True)
+    if not (path + "/").startswith(start):
         raise ValueError("%r doesn't start with %r" % (path, start))
-    name = path[len(start):][:-1]
+    name = path[len(start):]
     if name and not is_safe_path_component(name):
         raise ValueError("%r is not a component in collection %r" %
                          (name, collection.path))

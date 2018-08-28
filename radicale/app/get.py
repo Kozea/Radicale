@@ -28,7 +28,7 @@ import posixpath
 from http import client
 from urllib.parse import quote
 
-from radicale import httputils, storage, xmlutils
+from radicale import httputils, pathutils, storage, xmlutils
 from radicale.log import logger
 
 
@@ -66,7 +66,7 @@ class ApplicationGetMixin:
     def do_GET(self, environ, base_prefix, path, user):
         """Manage GET request."""
         # Redirect to .web if the root URL is requested
-        if not path.strip("/"):
+        if not pathutils.strip_path(path):
             web_path = ".web"
             if not environ.get("PATH_INFO"):
                 web_path = posixpath.join(posixpath.basename(base_prefix),

@@ -95,9 +95,10 @@ def xml_propfind_response(base_prefix, path, item, props, user, write=False,
     href = ET.Element(xmlutils.make_tag("D", "href"))
     if is_collection:
         # Some clients expect collections to end with /
-        uri = "/%s/" % item.path if item.path else "/"
+        uri = pathutils.unstrip_path(item.path, True)
     else:
-        uri = "/" + posixpath.join(collection.path, item.href)
+        uri = pathutils.unstrip_path(
+            posixpath.join(collection.path, item.href))
 
     href.text = xmlutils.make_href(base_prefix, uri)
     response.append(href)
@@ -335,7 +336,7 @@ class ApplicationPropfindMixin:
         """Get items from request that user is allowed to access."""
         for item in items:
             if isinstance(item, storage.BaseCollection):
-                path = pathutils.sanitize_path("/%s/" % item.path)
+                path = pathutils.unstrip_path(item.path, True)
                 if item.get_meta("tag"):
                     permissions = self.Rights.authorized(user, path, "rw")
                     target = "collection with tag %r" % item.path
@@ -343,7 +344,7 @@ class ApplicationPropfindMixin:
                     permissions = self.Rights.authorized(user, path, "RW")
                     target = "collection %r" % item.path
             else:
-                path = pathutils.sanitize_path("/%s/" % item.collection.path)
+                path = pathutils.unstrip_path(item.collection.path, True)
                 permissions = self.Rights.authorized(user, path, "rw")
                 target = "item %r from %r" % (item.href, item.collection.path)
             if rights.intersect_permissions(permissions, "Ww"):

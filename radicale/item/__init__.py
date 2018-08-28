@@ -25,6 +25,7 @@ from random import getrandbits
 
 import vobject
 
+from radicale import pathutils
 from radicale.item import filter as radicale_filter
 
 
@@ -297,6 +298,8 @@ class Item:
                 raise ValueError("at least one of 'collection_path' or "
                                  "'collection' must be set")
             collection_path = collection.path
+        assert collection_path == pathutils.strip_path(
+            pathutils.sanitize_path(collection_path))
         self._collection_path = collection_path
         self.collection = collection
         self.href = href

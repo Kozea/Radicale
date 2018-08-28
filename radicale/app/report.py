@@ -100,7 +100,8 @@ def xml_report(base_prefix, path, xml_request, collection, unlock_storage_fn):
                            old_sync_token, e, exc_info=True)
             return (client.CONFLICT,
                     xmlutils.webdav_error("D", "valid-sync-token"))
-        hreferences = ("/" + posixpath.join(collection.path, n) for n in names)
+        hreferences = (pathutils.unstrip_path(
+            posixpath.join(collection.path, n)) for n in names)
         # Append current sync token to response
         sync_token_element = ET.Element(xmlutils.make_tag("D", "sync-token"))
         sync_token_element.text = sync_token
@@ -142,7 +143,8 @@ def xml_report(base_prefix, path, xml_request, collection, unlock_storage_fn):
 
         for name, item in collection.get_multi(get_names()):
             if not item:
-                uri = "/" + posixpath.join(collection.path, name)
+                uri = pathutils.unstrip_path(
+                    posixpath.join(collection.path, name))
                 response = xml_item_response(base_prefix, uri,
                                              found_item=False)
                 multistatus.append(response)
@@ -223,7 +225,8 @@ def xml_report(base_prefix, path, xml_request, collection, unlock_storage_fn):
             else:
                 not_found_props.append(element)
 
-        uri = "/" + posixpath.join(collection.path, item.href)
+        uri = pathutils.unstrip_path(
+            posixpath.join(collection.path, item.href))
         multistatus.append(xml_item_response(
             base_prefix, uri, found_props=found_props,
             not_found_props=not_found_props, found_item=True))

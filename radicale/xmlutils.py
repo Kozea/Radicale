@@ -33,6 +33,8 @@ from collections import OrderedDict
 from http import client
 from urllib.parse import quote
 
+from radicale import pathutils
+
 MIMETYPES = {
     "VADDRESSBOOK": "text/vcard",
     "VCALENDAR": "text/calendar"}
@@ -118,6 +120,7 @@ def make_response(code):
 
 def make_href(base_prefix, href):
     """Return prefixed href."""
+    assert href == pathutils.sanitize_path(href)
     return quote("%s%s" % (base_prefix, href))
 
 

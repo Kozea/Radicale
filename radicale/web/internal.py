@@ -48,9 +48,11 @@ class Web(web.BaseWeb):
                                                       "internal_data")
 
     def get(self, environ, base_prefix, path, user):
+        assert path == "/.web" or path.startswith("/.web/")
+        assert pathutils.sanitize_path(path) == path
         try:
             filesystem_path = pathutils.path_to_filesystem(
-                self.folder, path[len("/.web"):])
+                self.folder, path[len("/.web"):].strip("/"))
         except ValueError as e:
             logger.debug("Web content with unsafe path %r requested: %s",
                          path, e, exc_info=True)

@@ -324,8 +324,8 @@ class Application(
         if permissions and self.Rights.authorized(user, path, permissions):
             return True
         if parent_permissions:
-            parent_path = pathutils.sanitize_path(
-                "/%s/" % posixpath.dirname(path.strip("/")))
+            parent_path = pathutils.unstrip_path(
+                posixpath.dirname(pathutils.strip_path(path)), True)
             if self.Rights.authorized(user, parent_path, parent_permissions):
                 return True
         return False

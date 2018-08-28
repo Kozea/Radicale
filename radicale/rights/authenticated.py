@@ -27,7 +27,7 @@ class Rights(rights.BaseRights):
     def authorized(self, user, path, permissions):
         if self._verify_user and not user:
             return ""
-        sane_path = pathutils.sanitize_path(path).strip("/")
+        sane_path = pathutils.strip_path(path)
         if "/" not in sane_path:
             return rights.intersect_permissions(permissions, "RW")
         if sane_path.count("/") == 1:
