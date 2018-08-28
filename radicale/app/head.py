@@ -1,4 +1,7 @@
 # This file is part of Radicale Server - Calendar Server
+# Copyright © 2008 Nicolas Kandel
+# Copyright © 2008 Pascal Halter
+# Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
@@ -15,15 +18,16 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Custom rights management.
+Radicale WSGI application.
+
+Can be used with an external WSGI server or the built-in server.
 
 """
 
-from radicale import rights
 
-
-class Rights(rights.BaseRights):
-    def authorized(self, user, path, permissions):
-        if path.strip("/") not in ("tmp", "other"):
-            return ""
-        return rights.intersect_permissions(permissions)
+class ApplicationHeadMixin:
+    def do_HEAD(self, environ, base_prefix, path, user):
+        """Manage HEAD request."""
+        status, headers, answer = self.do_GET(
+            environ, base_prefix, path, user)
+        return status, headers, None

@@ -1,6 +1,7 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
+# Copyright © 2017-2018 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,16 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Storage backends.
-
-This module loads the storage backend, according to the storage configuration.
-
-Default storage uses one folder per collection and one file per collection
-entry.
-
-"""
-
 import binascii
 import contextlib
 import json
@@ -34,753 +25,21 @@ import pickle
 import posixpath
 import shlex
 import subprocess
-import threading
 import time
 from contextlib import contextmanager
 from hashlib import md5
-from importlib import import_module
 from itertools import chain
-from random import getrandbits
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
-import pkg_resources
 import vobject
 
-from radicale import xmlutils
+from radicale import item as radicale_item
+from radicale import pathutils, storage
+from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
-if os.name == "nt":
-    import ctypes
-    import ctypes.wintypes
-    import msvcrt
 
-    LOCKFILE_EXCLUSIVE_LOCK = 2
-    if ctypes.sizeof(ctypes.c_void_p) == 4:
-        ULONG_PTR = ctypes.c_uint32
-    else:
-        ULONG_PTR = ctypes.c_uint64
-
-    class Overlapped(ctypes.Structure):
-        _fields_ = [
-            ("internal", ULONG_PTR),
-            ("internal_high", ULONG_PTR),
-            ("offset", ctypes.wintypes.DWORD),
-            ("offset_high", ctypes.wintypes.DWORD),
-            ("h_event", ctypes.wintypes.HANDLE)]
-
-    lock_file_ex = ctypes.windll.kernel32.LockFileEx
-    lock_file_ex.argtypes = [
-        ctypes.wintypes.HANDLE,
-        ctypes.wintypes.DWORD,
-        ctypes.wintypes.DWORD,
-        ctypes.wintypes.DWORD,
-        ctypes.wintypes.DWORD,
-        ctypes.POINTER(Overlapped)]
-    lock_file_ex.restype = ctypes.wintypes.BOOL
-    unlock_file_ex = ctypes.windll.kernel32.UnlockFileEx
-    unlock_file_ex.argtypes = [
-        ctypes.wintypes.HANDLE,
-        ctypes.wintypes.DWORD,
-        ctypes.wintypes.DWORD,
-        ctypes.wintypes.DWORD,
-        ctypes.POINTER(Overlapped)]
-    unlock_file_ex.restype = ctypes.wintypes.BOOL
-elif os.name == "posix":
-    import fcntl
-
-INTERNAL_TYPES = ("multifilesystem",)
-
-DEPS = ("radicale", "vobject", "python-dateutil",)
-ITEM_CACHE_TAG = (";".join(pkg_resources.get_distribution(pkg).version
-                           for pkg in DEPS) + ";").encode()
-
-
-def load(configuration):
-    """Load the storage manager chosen in configuration."""
-    storage_type = configuration.get("storage", "type")
-    if storage_type == "multifilesystem":
-        collection_class = Collection
-    else:
-        try:
-            collection_class = import_module(storage_type).Collection
-        except Exception as e:
-            raise RuntimeError("Failed to load storage module %r: %s" %
-                               (storage_type, e)) from e
-    logger.info("Storage type is %r", storage_type)
-
-    class CollectionCopy(collection_class):
-        """Collection copy, avoids overriding the original class attributes."""
-    CollectionCopy.configuration = configuration
-    CollectionCopy.static_init()
-    return CollectionCopy
-
-
-def predict_tag_of_parent_collection(vobject_items):
-    if len(vobject_items) != 1:
-        return ""
-    if vobject_items[0].name == "VCALENDAR":
-        return "VCALENDAR"
-    if vobject_items[0].name in ("VCARD", "VLIST"):
-        return "VADDRESSBOOK"
-    return ""
-
-
-def predict_tag_of_whole_collection(vobject_items, fallback_tag=None):
-    if vobject_items and vobject_items[0].name == "VCALENDAR":
-        return "VCALENDAR"
-    if vobject_items and vobject_items[0].name in ("VCARD", "VLIST"):
-        return "VADDRESSBOOK"
-    if not fallback_tag and not vobject_items:
-        # Maybe an empty address book
-        return "VADDRESSBOOK"
-    return fallback_tag
-
-
-def check_and_sanitize_items(vobject_items, is_collection=False, tag=None):
-    """Check vobject items for common errors and add missing UIDs.
-
-    ``is_collection`` indicates that vobject_item contains unrelated
-    components.
-
-    The ``tag`` of the collection.
-
-    """
-    if tag and tag not in ("VCALENDAR", "VADDRESSBOOK"):
-        raise ValueError("Unsupported collection tag: %r" % tag)
-    if not is_collection and len(vobject_items) != 1:
-        raise ValueError("Item contains %d components" % len(vobject_items))
-    if tag == "VCALENDAR":
-        if len(vobject_items) > 1:
-            raise RuntimeError("VCALENDAR collection contains %d "
-                               "components" % len(vobject_items))
-        vobject_item = vobject_items[0]
-        if vobject_item.name != "VCALENDAR":
-            raise ValueError("Item type %r not supported in %r "
-                             "collection" % (vobject_item.name, tag))
-        component_uids = set()
-        for component in vobject_item.components():
-            if component.name in ("VTODO", "VEVENT", "VJOURNAL"):
-                component_uid = get_uid(component)
-                if component_uid:
-                    component_uids.add(component_uid)
-        component_name = None
-        object_uid = None
-        object_uid_set = False
-        for component in vobject_item.components():
-            # https://tools.ietf.org/html/rfc4791#section-4.1
-            if component.name == "VTIMEZONE":
-                continue
-            if component_name is None or is_collection:
-                component_name = component.name
-            elif component_name != component.name:
-                raise ValueError("Multiple component types in object: %r, %r" %
-                                 (component_name, component.name))
-            if component_name not in ("VTODO", "VEVENT", "VJOURNAL"):
-                continue
-            component_uid = get_uid(component)
-            if not object_uid_set or is_collection:
-                object_uid_set = True
-                object_uid = component_uid
-                if not component_uid:
-                    if not is_collection:
-                        raise ValueError("%s component without UID in object" %
-                                         component_name)
-                    component_uid = find_available_name(
-                        component_uids.__contains__)
-                    component_uids.add(component_uid)
-                    if hasattr(component, "uid"):
-                        component.uid.value = component_uid
-                    else:
-                        component.add("UID").value = component_uid
-            elif not object_uid or not component_uid:
-                raise ValueError("Multiple %s components without UID in "
-                                 "object" % component_name)
-            elif object_uid != component_uid:
-                raise ValueError(
-                    "Multiple %s components with different UIDs in object: "
-                    "%r, %r" % (component_name, object_uid, component_uid))
-            # vobject interprets recurrence rules on demand
-            try:
-                component.rruleset
-            except Exception as e:
-                raise ValueError("invalid recurrence rules in %s" %
-                                 component.name) from e
-    elif tag == "VADDRESSBOOK":
-        # https://tools.ietf.org/html/rfc6352#section-5.1
-        object_uids = set()
-        for vobject_item in vobject_items:
-            if vobject_item.name == "VCARD":
-                object_uid = get_uid(vobject_item)
-                if object_uid:
-                    object_uids.add(object_uid)
-        for vobject_item in vobject_items:
-            if vobject_item.name == "VLIST":
-                # Custom format used by SOGo Connector to store lists of
-                # contacts
-                continue
-            if vobject_item.name != "VCARD":
-                raise ValueError("Item type %r not supported in %r "
-                                 "collection" % (vobject_item.name, tag))
-            object_uid = get_uid(vobject_item)
-            if not object_uid:
-                if not is_collection:
-                    raise ValueError("%s object without UID" %
-                                     vobject_item.name)
-                object_uid = find_available_name(object_uids.__contains__)
-                object_uids.add(object_uid)
-                if hasattr(vobject_item, "uid"):
-                    vobject_item.uid.value = object_uid
-                else:
-                    vobject_item.add("UID").value = object_uid
-    else:
-        for i in vobject_items:
-            raise ValueError("Item type %r not supported in %s collection" %
-                             (i.name, repr(tag) if tag else "generic"))
-
-
-def check_and_sanitize_props(props):
-    """Check collection properties for common errors."""
-    tag = props.get("tag")
-    if tag and tag not in ("VCALENDAR", "VADDRESSBOOK"):
-        raise ValueError("Unsupported collection tag: %r" % tag)
-
-
-def find_available_name(exists_fn, suffix=""):
-    """Generate a pseudo-random UID"""
-    # Prevent infinite loop
-    for _ in range(1000):
-        r = "%016x" % getrandbits(128)
-        name = "%s-%s-%s-%s-%s%s" % (
-            r[:8], r[8:12], r[12:16], r[16:20], r[20:], suffix)
-        if not exists_fn(name):
-            return name
-    # something is wrong with the PRNG
-    raise RuntimeError("No unique random sequence found")
-
-
-def get_etag(text):
-    """Etag from collection or item.
-
-    Encoded as quoted-string (see RFC 2616).
-
-    """
-    etag = md5()
-    etag.update(text.encode("utf-8"))
-    return '"%s"' % etag.hexdigest()
-
-
-def get_uid(vobject_component):
-    """UID value of an item if defined."""
-    return (vobject_component.uid.value
-            if hasattr(vobject_component, "uid") else None)
-
-
-def get_uid_from_object(vobject_item):
-    """UID value of an calendar/addressbook object."""
-    if vobject_item.name == "VCALENDAR":
-        if hasattr(vobject_item, "vevent"):
-            return get_uid(vobject_item.vevent)
-        if hasattr(vobject_item, "vjournal"):
-            return get_uid(vobject_item.vjournal)
-        if hasattr(vobject_item, "vtodo"):
-            return get_uid(vobject_item.vtodo)
-    elif vobject_item.name == "VCARD":
-        return get_uid(vobject_item)
-    return None
-
-
-def sanitize_path(path):
-    """Make path absolute with leading slash to prevent access to other data.
-
-    Preserve a potential trailing slash.
-
-    """
-    trailing_slash = "/" if path.endswith("/") else ""
-    path = posixpath.normpath(path)
-    new_path = "/"
-    for part in path.split("/"):
-        if not is_safe_path_component(part):
-            continue
-        new_path = posixpath.join(new_path, part)
-    trailing_slash = "" if new_path.endswith("/") else trailing_slash
-    return new_path + trailing_slash
-
-
-def is_safe_path_component(path):
-    """Check if path is a single component of a path.
-
-    Check that the path is safe to join too.
-
-    """
-    return path and "/" not in path and path not in (".", "..")
-
-
-def is_safe_filesystem_path_component(path):
-    """Check if path is a single component of a local and posix filesystem
-       path.
-
-    Check that the path is safe to join too.
-
-    """
-    return (
-        path and not os.path.splitdrive(path)[0] and
-        not os.path.split(path)[0] and path not in (os.curdir, os.pardir) and
-        not path.startswith(".") and not path.endswith("~") and
-        is_safe_path_component(path))
-
-
-def path_to_filesystem(root, *paths):
-    """Convert path to a local filesystem path relative to base_folder.
-
-    `root` must be a secure filesystem path, it will be prepend to the path.
-
-    Conversion of `paths` is done in a secure manner, or raises ``ValueError``.
-
-    """
-    paths = [sanitize_path(path).strip("/") for path in paths]
-    safe_path = root
-    for path in paths:
-        if not path:
-            continue
-        for part in path.split("/"):
-            if not is_safe_filesystem_path_component(part):
-                raise UnsafePathError(part)
-            safe_path_parent = safe_path
-            safe_path = os.path.join(safe_path, part)
-            # Check for conflicting files (e.g. case-insensitive file systems
-            # or short names on Windows file systems)
-            if (os.path.lexists(safe_path) and
-                    part not in (e.name for e in
-                                 os.scandir(safe_path_parent))):
-                raise CollidingPathError(part)
-    return safe_path
-
-
-class UnsafePathError(ValueError):
-    def __init__(self, path):
-        message = "Can't translate name safely to filesystem: %r" % path
-        super().__init__(message)
-
-
-class CollidingPathError(ValueError):
-    def __init__(self, path):
-        message = "File name collision: %r" % path
-        super().__init__(message)
-
-
-class ComponentExistsError(ValueError):
-    def __init__(self, path):
-        message = "Component already exists: %r" % path
-        super().__init__(message)
-
-
-class ComponentNotFoundError(ValueError):
-    def __init__(self, path):
-        message = "Component doesn't exist: %r" % path
-        super().__init__(message)
-
-
-class Item:
-    def __init__(self, collection_path=None, collection=None,
-                 vobject_item=None, href=None, last_modified=None, text=None,
-                 etag=None, uid=None, name=None, component_name=None,
-                 time_range=None):
-        """Initialize an item.
-
-        ``collection_path`` the path of the parent collection (optional if
-        ``collection`` is set).
-
-        ``collection`` the parent collection (optional).
-
-        ``href`` the href of the item.
-
-        ``last_modified`` the HTTP-datetime of when the item was modified.
-
-        ``text`` the text representation of the item (optional if
-        ``vobject_item`` is set).
-
-        ``vobject_item`` the vobject item (optional if ``text`` is set).
-
-        ``etag`` the etag of the item (optional). See ``get_etag``.
-
-        ``uid`` the UID of the object (optional). See ``get_uid_from_object``.
-
-        ``name`` the name of the item (optional). See ``vobject_item.name``.
-
-        ``component_name`` the name of the primary component (optional).
-        See ``find_tag``.
-
-        ``time_range`` the enclosing time range.
-        See ``find_tag_and_time_range``.
-
-        """
-        if text is None and vobject_item is None:
-            raise ValueError(
-                "at least one of 'text' or 'vobject_item' must be set")
-        if collection_path is None:
-            if collection is None:
-                raise ValueError("at least one of 'collection_path' or "
-                                 "'collection' must be set")
-            collection_path = collection.path
-        self._collection_path = collection_path
-        self.collection = collection
-        self.href = href
-        self.last_modified = last_modified
-        self._text = text
-        self._vobject_item = vobject_item
-        self._etag = etag
-        self._uid = uid
-        self._name = name
-        self._component_name = component_name
-        self._time_range = time_range
-
-    def serialize(self):
-        if self._text is None:
-            try:
-                self._text = self.vobject_item.serialize()
-            except Exception as e:
-                raise RuntimeError("Failed to serialize item %r from %r: %s" %
-                                   (self.href, self._collection_path,
-                                    e)) from e
-        return self._text
-
-    @property
-    def vobject_item(self):
-        if self._vobject_item is None:
-            try:
-                self._vobject_item = vobject.readOne(self._text)
-            except Exception as e:
-                raise RuntimeError("Failed to parse item %r from %r: %s" %
-                                   (self.href, self._collection_path,
-                                    e)) from e
-        return self._vobject_item
-
-    @property
-    def etag(self):
-        """Encoded as quoted-string (see RFC 2616)."""
-        if self._etag is None:
-            self._etag = get_etag(self.serialize())
-        return self._etag
-
-    @property
-    def uid(self):
-        if self._uid is None:
-            self._uid = get_uid_from_object(self.vobject_item)
-        return self._uid
-
-    @property
-    def name(self):
-        if self._name is None:
-            self._name = self.vobject_item.name or ""
-        return self._name
-
-    @property
-    def component_name(self):
-        if self._component_name is not None:
-            return self._component_name
-        return xmlutils.find_tag(self.vobject_item)
-
-    @property
-    def time_range(self):
-        if self._time_range is None:
-            self._component_name, *self._time_range = (
-                xmlutils.find_tag_and_time_range(self.vobject_item))
-        return self._time_range
-
-    def prepare(self):
-        """Fill cache with values."""
-        orig_vobject_item = self._vobject_item
-        self.serialize()
-        self.etag
-        self.uid
-        self.name
-        self.time_range
-        self.component_name
-        self._vobject_item = orig_vobject_item
-
-
-class BaseCollection:
-
-    # Overriden on copy by the "load" function
-    configuration = None
-
-    # Properties of instance
-    """The sanitized path of the collection without leading or trailing ``/``.
-    """
-    path = ""
-
-    @classmethod
-    def static_init():
-        """init collection copy"""
-        pass
-
-    @property
-    def owner(self):
-        """The owner of the collection."""
-        return self.path.split("/", maxsplit=1)[0]
-
-    @property
-    def is_principal(self):
-        """Collection is a principal."""
-        return bool(self.path) and "/" not in self.path
-
-    @classmethod
-    def discover(cls, path, depth="0"):
-        """Discover a list of collections under the given ``path``.
-
-        ``path`` is sanitized.
-
-        If ``depth`` is "0", only the actual object under ``path`` is
-        returned.
-
-        If ``depth`` is anything but "0", it is considered as "1" and direct
-        children are included in the result.
-
-        The root collection "/" must always exist.
-
-        """
-        raise NotImplementedError
-
-    @classmethod
-    def move(cls, item, to_collection, to_href):
-        """Move an object.
-
-        ``item`` is the item to move.
-
-        ``to_collection`` is the target collection.
-
-        ``to_href`` is the target name in ``to_collection``. An item with the
-        same name might already exist.
-
-        """
-        if item.collection.path == to_collection.path and item.href == to_href:
-            return
-        to_collection.upload(to_href, item)
-        item.collection.delete(item.href)
-
-    @property
-    def etag(self):
-        """Encoded as quoted-string (see RFC 2616)."""
-        etag = md5()
-        for item in self.get_all():
-            etag.update((item.href + "/" + item.etag).encode("utf-8"))
-        etag.update(json.dumps(self.get_meta(), sort_keys=True).encode())
-        return '"%s"' % etag.hexdigest()
-
-    @classmethod
-    def create_collection(cls, href, items=None, props=None):
-        """Create a collection.
-
-        ``href`` is the sanitized path.
-
-        If the collection already exists and neither ``collection`` nor
-        ``props`` are set, this method shouldn't do anything. Otherwise the
-        existing collection must be replaced.
-
-        ``collection`` is a list of vobject components.
-
-        ``props`` are metadata values for the collection.
-
-        ``props["tag"]`` is the type of collection (VCALENDAR or
-        VADDRESSBOOK). If the key ``tag`` is missing, it is guessed from the
-        collection.
-
-        """
-        raise NotImplementedError
-
-    def sync(self, old_token=None):
-        """Get the current sync token and changed items for synchronization.
-
-        ``old_token`` an old sync token which is used as the base of the
-        delta update. If sync token is missing, all items are returned.
-        ValueError is raised for invalid or old tokens.
-
-        WARNING: This simple default implementation treats all sync-token as
-                 invalid. It adheres to the specification but some clients
-                 (e.g. InfCloud) don't like it. Subclasses should provide a
-                 more sophisticated implementation.
-
-        """
-        token = "http://radicale.org/ns/sync/%s" % self.etag.strip("\"")
-        if old_token:
-            raise ValueError("Sync token are not supported")
-        return token, self.list()
-
-    def list(self):
-        """List collection items."""
-        raise NotImplementedError
-
-    def get(self, href):
-        """Fetch a single item."""
-        raise NotImplementedError
-
-    def get_multi(self, hrefs):
-        """Fetch multiple items.
-
-        Functionally similar to ``get``, but might bring performance benefits
-        on some storages when used cleverly. It's not required to return the
-        requested items in the correct order. Duplicated hrefs can be ignored.
-
-        Returns tuples with the href and the item or None if the item doesn't
-        exist.
-
-        """
-        return ((href, self.get(href)) for href in hrefs)
-
-    def get_all(self):
-        """Fetch all items.
-
-        Functionally similar to ``get``, but might bring performance benefits
-        on some storages when used cleverly.
-
-        """
-        return map(self.get, self.list())
-
-    def get_all_filtered(self, filters):
-        """Fetch all items with optional filtering.
-
-        This can largely improve performance of reports depending on
-        the filters and this implementation.
-
-        Returns tuples in the form ``(item, filters_matched)``.
-        ``filters_matched`` is a bool that indicates if ``filters`` are fully
-        matched.
-
-        This returns all events by default
-        """
-        return ((item, False) for item in self.get_all())
-
-    def has(self, href):
-        """Check if an item exists by its href.
-
-        Functionally similar to ``get``, but might bring performance benefits
-        on some storages when used cleverly.
-
-        """
-        return self.get(href) is not None
-
-    def has_uid(self, uid):
-        """Check if a UID exists in the collection."""
-        for item in self.get_all():
-            if item.uid == uid:
-                return True
-        return False
-
-    def upload(self, href, item):
-        """Upload a new or replace an existing item."""
-        raise NotImplementedError
-
-    def delete(self, href=None):
-        """Delete an item.
-
-        When ``href`` is ``None``, delete the collection.
-
-        """
-        raise NotImplementedError
-
-    def get_meta(self, key=None):
-        """Get metadata value for collection.
-
-        Return the value of the property ``key``. If ``key`` is ``None`` return
-        a dict with all properties
-
-        """
-        raise NotImplementedError
-
-    def set_meta(self, props):
-        """Set metadata values for collection.
-
-        ``props`` a dict with values for properties.
-
-        """
-        raise NotImplementedError
-
-    @property
-    def last_modified(self):
-        """Get the HTTP-datetime of when the collection was modified."""
-        raise NotImplementedError
-
-    def serialize(self):
-        """Get the unicode string representing the whole collection."""
-        if self.get_meta("tag") == "VCALENDAR":
-            in_vcalendar = False
-            vtimezones = ""
-            included_tzids = set()
-            vtimezone = []
-            tzid = None
-            components = ""
-            # Concatenate all child elements of VCALENDAR from all items
-            # together, while preventing duplicated VTIMEZONE entries.
-            # VTIMEZONEs are only distinguished by their TZID, if different
-            # timezones share the same TZID this produces errornous ouput.
-            # VObject fails at this too.
-            for item in self.get_all():
-                depth = 0
-                for line in item.serialize().split("\r\n"):
-                    if line.startswith("BEGIN:"):
-                        depth += 1
-                    if depth == 1 and line == "BEGIN:VCALENDAR":
-                        in_vcalendar = True
-                    elif in_vcalendar:
-                        if depth == 1 and line.startswith("END:"):
-                            in_vcalendar = False
-                        if depth == 2 and line == "BEGIN:VTIMEZONE":
-                            vtimezone.append(line + "\r\n")
-                        elif vtimezone:
-                            vtimezone.append(line + "\r\n")
-                            if depth == 2 and line.startswith("TZID:"):
-                                tzid = line[len("TZID:"):]
-                            elif depth == 2 and line.startswith("END:"):
-                                if tzid is None or tzid not in included_tzids:
-                                    vtimezones += "".join(vtimezone)
-                                    included_tzids.add(tzid)
-                                vtimezone.clear()
-                                tzid = None
-                        elif depth >= 2:
-                            components += line + "\r\n"
-                    if line.startswith("END:"):
-                        depth -= 1
-            template = vobject.iCalendar()
-            displayname = self.get_meta("D:displayname")
-            if displayname:
-                template.add("X-WR-CALNAME")
-                template.x_wr_calname.value_param = "TEXT"
-                template.x_wr_calname.value = displayname
-            description = self.get_meta("C:calendar-description")
-            if description:
-                template.add("X-WR-CALDESC")
-                template.x_wr_caldesc.value_param = "TEXT"
-                template.x_wr_caldesc.value = description
-            template = template.serialize()
-            template_insert_pos = template.find("\r\nEND:VCALENDAR\r\n") + 2
-            assert template_insert_pos != -1
-            return (template[:template_insert_pos] +
-                    vtimezones + components +
-                    template[template_insert_pos:])
-        elif self.get_meta("tag") == "VADDRESSBOOK":
-            return "".join((item.serialize() for item in self.get_all()))
-        return ""
-
-    @classmethod
-    @contextmanager
-    def acquire_lock(cls, mode, user=None):
-        """Set a context manager to lock the whole storage.
-
-        ``mode`` must either be "r" for shared access or "w" for exclusive
-        access.
-
-        ``user`` is the name of the logged in user or empty.
-
-        """
-        raise NotImplementedError
-
-    @classmethod
-    def verify(cls):
-        """Check the storage for errors."""
-        return True
-
-
-class Collection(BaseCollection):
+class Collection(storage.BaseCollection):
     """Collection stored in several files per calendar."""
 
     @classmethod
@@ -790,15 +49,15 @@ class Collection(BaseCollection):
             "storage", "filesystem_folder"))
         cls._makedirs_synced(folder)
         lock_path = os.path.join(folder, ".Radicale.lock")
-        cls._lock = FileBackedRwLock(lock_path)
+        cls._lock = pathutils.RwLock(lock_path)
 
     def __init__(self, path, filesystem_path=None):
         folder = self._get_collection_root_folder()
         # Path should already be sanitized
-        self.path = sanitize_path(path).strip("/")
+        self.path = pathutils.sanitize_path(path).strip("/")
         self._encoding = self.configuration.get("encoding", "stock")
         if filesystem_path is None:
-            filesystem_path = path_to_filesystem(folder, self.path)
+            filesystem_path = pathutils.path_to_filesystem(folder, self.path)
         self._filesystem_path = filesystem_path
         self._props_path = os.path.join(
             self._filesystem_path, ".Radicale.props")
@@ -839,10 +98,7 @@ class Collection(BaseCollection):
     @classmethod
     def _fsync(cls, fd):
         if cls.configuration.getboolean("internal", "filesystem_fsync"):
-            if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
-                fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
-            else:
-                os.fsync(fd)
+            pathutils.fsync(fd)
 
     @classmethod
     def _sync_directory(cls, path):
@@ -886,14 +142,14 @@ class Collection(BaseCollection):
     def discover(cls, path, depth="0", child_context_manager=(
                  lambda path, href=None: contextlib.ExitStack())):
         # Path should already be sanitized
-        sane_path = sanitize_path(path).strip("/")
+        sane_path = pathutils.sanitize_path(path).strip("/")
         attributes = sane_path.split("/") if sane_path else []
 
         folder = cls._get_collection_root_folder()
         # Create the root collection
         cls._makedirs_synced(folder)
         try:
-            filesystem_path = path_to_filesystem(folder, sane_path)
+            filesystem_path = pathutils.path_to_filesystem(folder, sane_path)
         except ValueError as e:
             # Path is unsafe
             logger.debug("Unsafe path %r requested from storage: %s",
@@ -929,7 +185,7 @@ class Collection(BaseCollection):
             if not entry.is_dir():
                 continue
             href = entry.name
-            if not is_safe_filesystem_path_component(href):
+            if not pathutils.is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
                     logger.debug("Skipping collection %r in %r",
                                  href, sane_path)
@@ -970,7 +226,7 @@ class Collection(BaseCollection):
                         collection = item
                         collection.get_meta()
                         continue
-                    if isinstance(item, BaseCollection):
+                    if isinstance(item, storage.BaseCollection):
                         has_child_collections = True
                         remaining_paths.append(item.path)
                     elif item.uid in uids:
@@ -993,8 +249,8 @@ class Collection(BaseCollection):
         folder = cls._get_collection_root_folder()
 
         # Path should already be sanitized
-        sane_path = sanitize_path(href).strip("/")
-        filesystem_path = path_to_filesystem(folder, sane_path)
+        sane_path = pathutils.sanitize_path(href).strip("/")
+        filesystem_path = pathutils.path_to_filesystem(folder, sane_path)
 
         if not props:
             cls._makedirs_synced(filesystem_path)
@@ -1052,8 +308,9 @@ class Collection(BaseCollection):
                     lambda: uid if uid.lower().endswith(suffix.lower())
                     else uid + suffix)
             href_candidates.extend((
-                lambda: get_etag(uid).strip('"') + suffix,
-                lambda: find_available_name(hrefs.__contains__, suffix)))
+                lambda: radicale_item.get_etag(uid).strip('"') + suffix,
+                lambda: radicale_item.find_available_uid(hrefs.__contains__,
+                                                         suffix)))
             href = None
 
             def replace_fn(source, target):
@@ -1062,12 +319,12 @@ class Collection(BaseCollection):
                     href = href_candidates.pop(0)()
                     if href in hrefs:
                         continue
-                    if not is_safe_filesystem_path_component(href):
+                    if not pathutils.is_safe_filesystem_path_component(href):
                         if not href_candidates:
-                            raise UnsafePathError(href)
+                            raise pathutils.UnsafePathError(href)
                         continue
                     try:
-                        return os.replace(source, path_to_filesystem(
+                        return os.replace(source, pathutils.path_to_filesystem(
                             self._filesystem_path, href))
                     except OSError as e:
                         if href_candidates and (
@@ -1089,11 +346,13 @@ class Collection(BaseCollection):
 
     @classmethod
     def move(cls, item, to_collection, to_href):
-        if not is_safe_filesystem_path_component(to_href):
-            raise UnsafePathError(to_href)
+        if not pathutils.is_safe_filesystem_path_component(to_href):
+            raise pathutils.UnsafePathError(to_href)
         os.replace(
-            path_to_filesystem(item.collection._filesystem_path, item.href),
-            path_to_filesystem(to_collection._filesystem_path, to_href))
+            pathutils.path_to_filesystem(
+                item.collection._filesystem_path, item.href),
+            pathutils.path_to_filesystem(
+                to_collection._filesystem_path, to_href))
         cls._sync_directory(to_collection._filesystem_path)
         if item.collection._filesystem_path != to_collection._filesystem_path:
             cls._sync_directory(item.collection._filesystem_path)
@@ -1126,7 +385,7 @@ class Collection(BaseCollection):
         age_limit = time.time() - max_age if max_age is not None else None
         modified = False
         for name in names:
-            if not is_safe_filesystem_path_component(name):
+            if not pathutils.is_safe_filesystem_path_component(name):
                 continue
             if age_limit is not None:
                 try:
@@ -1172,7 +431,8 @@ class Collection(BaseCollection):
         etag = item.etag if item else ""
         if etag != cache_etag:
             self._makedirs_synced(history_folder)
-            history_etag = get_etag(history_etag + "/" + etag).strip("\"")
+            history_etag = radicale_item.get_etag(
+                history_etag + "/" + etag).strip("\"")
             try:
                 # Race: Other processes might have created and locked the file.
                 with self._atomic_write(os.path.join(history_folder, href),
@@ -1190,7 +450,7 @@ class Collection(BaseCollection):
         try:
             for entry in os.scandir(history_folder):
                 href = entry.name
-                if not is_safe_filesystem_path_component(href):
+                if not pathutils.is_safe_filesystem_path_component(href):
                     continue
                 if os.path.isfile(os.path.join(self._filesystem_path, href)):
                     continue
@@ -1304,7 +564,7 @@ class Collection(BaseCollection):
             if not entry.is_file():
                 continue
             href = entry.name
-            if not is_safe_filesystem_path_component(href):
+            if not pathutils.is_safe_filesystem_path_component(href):
                 if not href.startswith(".Radicale"):
                     logger.debug("Skipping item %r in %r", href, self.path)
                 continue
@@ -1312,7 +572,7 @@ class Collection(BaseCollection):
 
     def _item_cache_hash(self, raw_text):
         _hash = md5()
-        _hash.update(ITEM_CACHE_TAG)
+        _hash.update(storage.CACHE_VERSION)
         _hash.update(raw_text)
         return _hash.hexdigest()
 
@@ -1345,7 +605,7 @@ class Collection(BaseCollection):
         self._makedirs_synced(cache_folder)
         lock_path = os.path.join(cache_folder,
                                  ".Radicale.lock" + (".%s" % ns if ns else ""))
-        lock = FileBackedRwLock(lock_path)
+        lock = pathutils.RwLock(lock_path)
         return lock.acquire("w")
 
     def _load_item_cache(self, href, input_hash):
@@ -1374,9 +634,10 @@ class Collection(BaseCollection):
     def get(self, href, verify_href=True):
         if verify_href:
             try:
-                if not is_safe_filesystem_path_component(href):
-                    raise UnsafePathError(href)
-                path = path_to_filesystem(self._filesystem_path, href)
+                if not pathutils.is_safe_filesystem_path_component(href):
+                    raise pathutils.UnsafePathError(href)
+                path = pathutils.path_to_filesystem(
+                    self._filesystem_path, href)
             except ValueError as e:
                 logger.debug(
                     "Can't translate name %r safely to filesystem in %r: %s",
@@ -1413,11 +674,11 @@ class Collection(BaseCollection):
                     try:
                         vobject_items = tuple(vobject.readComponents(
                             raw_text.decode(self._encoding)))
-                        check_and_sanitize_items(vobject_items,
-                                                 tag=self.get_meta("tag"))
+                        radicale_item.check_and_sanitize_items(
+                            vobject_items, tag=self.get_meta("tag"))
                         vobject_item, = vobject_items
-                        temp_item = Item(collection=self,
-                                         vobject_item=vobject_item)
+                        temp_item = radicale_item.Item(
+                            collection=self, vobject_item=vobject_item)
                         cache_hash, uid, etag, text, name, tag, start, end = \
                             self._store_item_cache(
                                 href, temp_item, input_hash)
@@ -1434,7 +695,7 @@ class Collection(BaseCollection):
             time.gmtime(os.path.getmtime(path)))
         # Don't keep reference to ``vobject_item``, because it requires a lot
         # of memory.
-        return Item(
+        return radicale_item.Item(
             collection=self, href=href, last_modified=last_modified, etag=etag,
             text=text, uid=uid, name=name, component_name=tag,
             time_range=(start, end))
@@ -1449,7 +710,7 @@ class Collection(BaseCollection):
                 # empty and the for-loop is never executed.
                 files = os.listdir(self._filesystem_path)
             path = os.path.join(self._filesystem_path, href)
-            if (not is_safe_filesystem_path_component(href) or
+            if (not pathutils.is_safe_filesystem_path_component(href) or
                     href not in files and os.path.lexists(path)):
                 logger.debug(
                     "Can't translate name safely to filesystem: %r", href)
@@ -1463,7 +724,7 @@ class Collection(BaseCollection):
         return (self.get(href, verify_href=False) for href in self.list())
 
     def get_all_filtered(self, filters):
-        tag, start, end, simple = xmlutils.simplify_prefilters(
+        tag, start, end, simple = radicale_filter.simplify_prefilters(
             filters, collection_tag=self.get_meta("tag"))
         if not tag:
             # no filter
@@ -1475,14 +736,14 @@ class Collection(BaseCollection):
                 yield item, simple and (start <= istart or iend <= end)
 
     def upload(self, href, item):
-        if not is_safe_filesystem_path_component(href):
-            raise UnsafePathError(href)
+        if not pathutils.is_safe_filesystem_path_component(href):
+            raise pathutils.UnsafePathError(href)
         try:
             self._store_item_cache(href, item)
         except Exception as e:
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
-        path = path_to_filesystem(self._filesystem_path, href)
+        path = pathutils.path_to_filesystem(self._filesystem_path, href)
         with self._atomic_write(path, newline="") as fd:
             fd.write(item.serialize())
         # Clean the cache after the actual item is stored, or the cache entry
@@ -1509,11 +770,11 @@ class Collection(BaseCollection):
                 self._sync_directory(parent_dir)
         else:
             # Delete an item
-            if not is_safe_filesystem_path_component(href):
-                raise UnsafePathError(href)
-            path = path_to_filesystem(self._filesystem_path, href)
+            if not pathutils.is_safe_filesystem_path_component(href):
+                raise pathutils.UnsafePathError(href)
+            path = pathutils.path_to_filesystem(self._filesystem_path, href)
             if not os.path.isfile(path):
-                raise ComponentNotFoundError(href)
+                raise storage.ComponentNotFoundError(href)
             os.remove(path)
             self._sync_directory(os.path.dirname(path))
             # Track the change
@@ -1529,7 +790,7 @@ class Collection(BaseCollection):
                         self._meta_cache = json.load(f)
                 except FileNotFoundError:
                     self._meta_cache = {}
-                check_and_sanitize_props(self._meta_cache)
+                radicale_item.check_and_sanitize_props(self._meta_cache)
             except ValueError as e:
                 raise RuntimeError("Failed to load properties of collection "
                                    "%r: %s" % (self.path, e)) from e
@@ -1580,60 +841,3 @@ class Collection(BaseCollection):
                     logger.debug("Captured stderr hook:\n%s", stderr_data)
                 if p.returncode != 0:
                     raise subprocess.CalledProcessError(p.returncode, p.args)
-
-
-class FileBackedRwLock:
-    """A readers-Writer lock that locks a file."""
-
-    def __init__(self, path):
-        self._path = path
-        self._readers = 0
-        self._writer = False
-        self._lock = threading.Lock()
-
-    @property
-    def locked(self):
-        with self._lock:
-            if self._readers > 0:
-                return "r"
-            if self._writer:
-                return "w"
-            return ""
-
-    @contextmanager
-    def acquire(self, mode):
-        if mode not in "rw":
-            raise ValueError("Invalid mode: %r" % mode)
-        with open(self._path, "w+") as lock_file:
-            if os.name == "nt":
-                handle = msvcrt.get_osfhandle(lock_file.fileno())
-                flags = LOCKFILE_EXCLUSIVE_LOCK if mode == "w" else 0
-                overlapped = Overlapped()
-                if not lock_file_ex(handle, flags, 0, 1, 0, overlapped):
-                    raise RuntimeError("Locking the storage failed: %s" %
-                                       ctypes.FormatError())
-            elif os.name == "posix":
-                _cmd = fcntl.LOCK_EX if mode == "w" else fcntl.LOCK_SH
-                try:
-                    fcntl.flock(lock_file.fileno(), _cmd)
-                except OSError as e:
-                    raise RuntimeError("Locking the storage failed: %s" %
-                                       e) from e
-            else:
-                raise RuntimeError("Locking the storage failed: "
-                                   "Unsupported operating system")
-            with self._lock:
-                if self._writer or mode == "w" and self._readers != 0:
-                    raise RuntimeError("Locking the storage failed: "
-                                       "Guarantees failed")
-                if mode == "r":
-                    self._readers += 1
-                else:
-                    self._writer = True
-            try:
-                yield
-            finally:
-                with self._lock:
-                    if mode == "r":
-                        self._readers -= 1
-                    self._writer = False

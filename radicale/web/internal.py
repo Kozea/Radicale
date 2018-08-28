@@ -1,5 +1,5 @@
 # This file is part of Radicale Server - Calendar Server
-# Copyright (C) 2017 Unrud <unrud@outlook.com>
+# Copyright © 2017-2018 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,16 +18,11 @@ import os
 import posixpath
 import time
 from http import client
-from importlib import import_module
 
 import pkg_resources
 
-from radicale import storage
+from radicale import httputils, pathutils, web
 from radicale.log import logger
-
-NOT_FOUND = (
-    client.NOT_FOUND, (("Content-Type", "text/plain"),),
-    "The requested resource could not be found.")
 
 MIMETYPES = {
     ".css": "text/css",
@@ -45,63 +40,21 @@ MIMETYPES = {
     ".xml": "text/xml"}
 FALLBACK_MIMETYPE = "application/octet-stream"
 
-INTERNAL_TYPES = ("none", "internal")
 
-
-def load(configuration):
-    """Load the web module chosen in configuration."""
-    web_type = configuration.get("web", "type")
-    if web_type == "none":
-        web_class = NoneWeb
-    elif web_type == "internal":
-        web_class = Web
-    else:
-        try:
-            web_class = import_module(web_type).Web
-        except Exception as e:
-            raise RuntimeError("Failed to load web module %r: %s" %
-                               (web_type, e)) from e
-    logger.info("Web type is %r", web_type)
-    return web_class(configuration)
-
-
-class BaseWeb:
-    def __init__(self, configuration):
-        self.configuration = configuration
-
-    def get(self, environ, base_prefix, path, user):
-        """GET request.
-
-        ``base_prefix`` is sanitized and never ends with "/".
-
-        ``path`` is sanitized and always starts with "/.web"
-
-        ``user`` is empty for anonymous users.
-
-        """
-        raise NotImplementedError
-
-
-class NoneWeb(BaseWeb):
-    def get(self, environ, base_prefix, path, user):
-        if path != "/.web":
-            return NOT_FOUND
-        return client.OK, {"Content-Type": "text/plain"}, "Radicale works!"
-
-
-class Web(BaseWeb):
+class Web(web.BaseWeb):
     def __init__(self, configuration):
         super().__init__(configuration)
-        self.folder = pkg_resources.resource_filename(__name__, "web")
+        self.folder = pkg_resources.resource_filename(__name__,
+                                                      "internal_data")
 
     def get(self, environ, base_prefix, path, user):
         try:
-            filesystem_path = storage.path_to_filesystem(
+            filesystem_path = pathutils.path_to_filesystem(
                 self.folder, path[len("/.web"):])
         except ValueError as e:
             logger.debug("Web content with unsafe path %r requested: %s",
                          path, e, exc_info=True)
-            return NOT_FOUND
+            return httputils.NOT_FOUND
         if os.path.isdir(filesystem_path) and not path.endswith("/"):
             location = posixpath.basename(path) + "/"
             return (client.FOUND,
@@ -110,7 +63,7 @@ class Web(BaseWeb):
         if os.path.isdir(filesystem_path):
             filesystem_path = os.path.join(filesystem_path, "index.html")
         if not os.path.isfile(filesystem_path):
-            return NOT_FOUND
+            return httputils.NOT_FOUND
         content_type = MIMETYPES.get(
             os.path.splitext(filesystem_path)[1].lower(), FALLBACK_MIMETYPE)
         with open(filesystem_path, "rb") as f:

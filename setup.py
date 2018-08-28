@@ -2,6 +2,7 @@
 #
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2009-2017 Guillaume Ayoub
+# Copyright © 2017-2018 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,8 +43,10 @@ from setuptools import setup
 # When the version is updated, a new section in the NEWS.md file must be
 # added too.
 VERSION = "2.90.0"
-WEB_FILES = ["web/css/icon.png", "web/css/main.css", "web/fn.js",
-             "web/index.html"]
+WEB_FILES = ["web/internal_data/css/icon.png",
+             "web/internal_data/css/main.css",
+             "web/internal_data/fn.js",
+             "web/internal_data/index.html"]
 
 
 needs_pytest = {"pytest", "test", "ptr"}.intersection(sys.argv)

@@ -1,4 +1,7 @@
 # This file is part of Radicale Server - Calendar Server
+# Copyright © 2008 Nicolas Kandel
+# Copyright © 2008 Pascal Halter
+# Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
@@ -14,16 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Custom rights management.
-
-"""
-
-from radicale import rights
+from radicale import auth
 
 
-class Rights(rights.BaseRights):
-    def authorized(self, user, path, permissions):
-        if path.strip("/") not in ("tmp", "other"):
-            return ""
-        return rights.intersect_permissions(permissions)
+class Auth(auth.BaseAuth):
+    def login(self, login, password):
+        return login

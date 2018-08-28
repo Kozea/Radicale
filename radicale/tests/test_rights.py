@@ -1,5 +1,5 @@
 # This file is part of Radicale Server - Calendar Server
-# Copyright (C) 2017 Unrud <unrud@outlook.com>
+# Copyright © 2017-2018 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

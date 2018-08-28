@@ -14,16 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Custom rights management.
+from http import client
 
-"""
-
-from radicale import rights
+from radicale import httputils, web
 
 
-class Rights(rights.BaseRights):
-    def authorized(self, user, path, permissions):
-        if path.strip("/") not in ("tmp", "other"):
-            return ""
-        return rights.intersect_permissions(permissions)
+class Web(web.BaseWeb):
+    def get(self, environ, base_prefix, path, user):
+        if path != "/.web":
+            return httputils.NOT_FOUND
+        return client.OK, {"Content-Type": "text/plain"}, "Radicale works!"
