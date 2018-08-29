@@ -32,7 +32,7 @@ and Android clients. It is free and open-source software, released under GPL
 version 3.
 
 For further information, please visit the `Radicale Website
-<http://www.radicale.org/>`_.
+<https://radicale.org/>`_.
 
 """
 
@@ -61,8 +61,8 @@ setup(
     long_description=__doc__,
     author="Guillaume Ayoub",
     author_email="guillaume.ayoub@kozea.fr",
-    url="http://www.radicale.org/",
-    download_url=("http://pypi.python.org/packages/source/R/Radicale/"
+    url="https://radicale.org/",
+    download_url=("https://pypi.python.org/packages/source/R/Radicale/"
                   "Radicale-%s.tar.gz" % VERSION),
     license="GNU GPL v3",
     platforms="Any",

@@ -7,7 +7,7 @@
 # The path can be specified in the rights section of the configuration file
 #
 # Some examples are included in Radicale's documentation, see:
-# http://radicale.org/rights/
+# https://radicale.org/rights/
 #
 # This file gives independant examples to help users write their own
 # configuration files. Using these examples together in the same configuration
