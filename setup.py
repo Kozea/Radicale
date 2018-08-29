@@ -38,7 +38,7 @@ For further information, please visit the `Radicale Website
 
 import sys
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 # When the version is updated, a new section in the NEWS.md file must be
 # added too.
@@ -66,7 +66,8 @@ setup(
                   "Radicale-%s.tar.gz" % VERSION),
     license="GNU GPL v3",
     platforms="Any",
-    packages=["radicale"],
+    packages=find_packages(
+        exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     package_data={"radicale": WEB_FILES},
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
     install_requires=["vobject>=0.9.6", "python-dateutil>=2.7.3"],
