@@ -151,7 +151,7 @@ def xml_report(base_prefix, path, xml_request, collection, unlock_storage_fn):
             else:
                 yield item, False
         if collection_requested:
-            yield from collection.get_all_filtered(filters)
+            yield from collection.get_filtered(filters)
 
     # Retrieve everything required for finishing the request.
     retrieved_items = list(retrieve_items(collection, hreferences,

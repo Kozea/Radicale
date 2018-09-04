@@ -170,47 +170,31 @@ class BaseCollection:
         ValueError is raised for invalid or old tokens.
 
         WARNING: This simple default implementation treats all sync-token as
-                 invalid. It adheres to the specification but some clients
-                 (e.g. InfCloud) don't like it. Subclasses should provide a
-                 more sophisticated implementation.
+                 invalid.
 
         """
         token = "http://radicale.org/ns/sync/%s" % self.etag.strip("\"")
         if old_token:
             raise ValueError("Sync token are not supported")
-        return token, self.list()
-
-    def list(self):
-        """List collection items."""
-        raise NotImplementedError
-
-    def get(self, href):
-        """Fetch a single item."""
-        raise NotImplementedError
+        return token, (item.href for item in self.get_all())
 
     def get_multi(self, hrefs):
         """Fetch multiple items.
 
-        Functionally similar to ``get``, but might bring performance benefits
-        on some storages when used cleverly. It's not required to return the
-        requested items in the correct order. Duplicated hrefs can be ignored.
+        It's not required to return the requested items in the correct order.
+        Duplicated hrefs can be ignored.
 
         Returns tuples with the href and the item or None if the item doesn't
         exist.
 
         """
-        return ((href, self.get(href)) for href in hrefs)
+        raise NotImplementedError
 
     def get_all(self):
-        """Fetch all items.
+        """Fetch all items."""
+        raise NotImplementedError
 
-        Functionally similar to ``get``, but might bring performance benefits
-        on some storages when used cleverly.
-
-        """
-        return map(self.get, self.list())
-
-    def get_all_filtered(self, filters):
+    def get_filtered(self, filters):
         """Fetch all items with optional filtering.
 
         This can largely improve performance of reports depending on
@@ -221,17 +205,9 @@ class BaseCollection:
         matched.
 
         This returns all events by default
+
         """
         return ((item, False) for item in self.get_all())
-
-    def has(self, href):
-        """Check if an item exists by its href.
-
-        Functionally similar to ``get``, but might bring performance benefits
-        on some storages when used cleverly.
-
-        """
-        return self.get(href) is not None
 
     def has_uid(self, uid):
         """Check if a UID exists in the collection."""
@@ -351,4 +327,4 @@ class BaseCollection:
     @classmethod
     def verify(cls):
         """Check the storage for errors."""
-        return True
+        raise NotImplementedError

@@ -169,7 +169,7 @@ class Collection(storage.BaseCollection):
         collection = cls(pathutils.unstrip_path(sane_path, True))
 
         if href:
-            yield collection.get(href)
+            yield collection._get(href)
             return
 
         yield collection
@@ -177,10 +177,9 @@ class Collection(storage.BaseCollection):
         if depth == "0":
             return
 
-        for href in collection.list():
-            with child_context_manager(
-                    pathutils.unstrip_path(sane_path, True), href):
-                yield collection.get(href)
+        for href in collection._list():
+            with child_context_manager(sane_path, href):
+                yield collection._get(href)
 
         for entry in os.scandir(filesystem_path):
             if not entry.is_dir():
@@ -191,9 +190,9 @@ class Collection(storage.BaseCollection):
                     logger.debug("Skipping collection %r in %r",
                                  href, sane_path)
                 continue
-            child_path = pathutils.unstrip_path(
-                posixpath.join(sane_path, href), True)
-            with child_context_manager(child_path):
+            sane_child_path = posixpath.join(sane_path, href)
+            child_path = pathutils.unstrip_path(sane_child_path, True)
+            with child_context_manager(sane_child_path):
                 yield cls(child_path)
 
     @classmethod
@@ -201,9 +200,8 @@ class Collection(storage.BaseCollection):
         item_errors = collection_errors = 0
 
         @contextlib.contextmanager
-        def exception_cm(path, href=None):
+        def exception_cm(sane_path, href=None):
             nonlocal item_errors, collection_errors
-            sane_path = pathutils.strip_path(path)
             try:
                 yield
             except Exception as e:
@@ -220,7 +218,7 @@ class Collection(storage.BaseCollection):
             sane_path = remaining_sane_paths.pop(0)
             path = pathutils.unstrip_path(sane_path, True)
             logger.debug("Verifying collection %r", sane_path)
-            with exception_cm(path):
+            with exception_cm(sane_path):
                 saved_item_errors = item_errors
                 collection = None
                 uids = set()
@@ -565,7 +563,7 @@ class Collection(storage.BaseCollection):
                 changes.append(href)
         return token, changes
 
-    def list(self):
+    def _list(self):
         for entry in os.scandir(self._filesystem_path):
             if not entry.is_file():
                 continue
@@ -637,7 +635,7 @@ class Collection(storage.BaseCollection):
             e.name for e in os.scandir(cache_folder) if not
             os.path.isfile(os.path.join(self._filesystem_path, e.name))))
 
-    def get(self, href, verify_href=True):
+    def _get(self, href, verify_href=True):
         if verify_href:
             try:
                 if not pathutils.is_safe_filesystem_path_component(href):
@@ -722,21 +720,21 @@ class Collection(storage.BaseCollection):
                     "Can't translate name safely to filesystem: %r", href)
                 yield (href, None)
             else:
-                yield (href, self.get(href, verify_href=False))
+                yield (href, self._get(href, verify_href=False))
 
     def get_all(self):
         # We don't need to check for collissions, because the the file names
         # are from os.listdir.
-        return (self.get(href, verify_href=False) for href in self.list())
+        return (self._get(href, verify_href=False) for href in self._list())
 
-    def get_all_filtered(self, filters):
+    def get_filtered(self, filters):
         tag, start, end, simple = radicale_filter.simplify_prefilters(
             filters, collection_tag=self.get_meta("tag"))
         if not tag:
             # no filter
             yield from ((item, simple) for item in self.get_all())
             return
-        for item in (self.get(h, verify_href=False) for h in self.list()):
+        for item in (self._get(h, verify_href=False) for h in self._list()):
             istart, iend = item.time_range
             if tag == item.component_name and istart < end and iend > start:
                 yield item, simple and (start <= istart or iend <= end)
@@ -758,7 +756,7 @@ class Collection(storage.BaseCollection):
         # Track the change
         self._update_history_etag(href, item)
         self._clean_history_cache()
-        return self.get(href, verify_href=False)
+        return self._get(href, verify_href=False)
 
     def delete(self, href=None):
         if href is None:
@@ -811,7 +809,7 @@ class Collection(storage.BaseCollection):
         relevant_files = chain(
             (self._filesystem_path,),
             (self._props_path,) if os.path.exists(self._props_path) else (),
-            (os.path.join(self._filesystem_path, h) for h in self.list()))
+            (os.path.join(self._filesystem_path, h) for h in self._list()))
         last = max(map(os.path.getmtime, relevant_files))
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(last))
 
