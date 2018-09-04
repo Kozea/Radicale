@@ -87,9 +87,12 @@ class ParallelHTTPServer(ParallelizationMixIn,
             socket_.settimeout(self.client_timeout)
         return socket_, address
 
+    def finish_request_locked(self, request, client_address):
+        return super().finish_request(request, client_address)
+
     def finish_request(self, request, client_address):
         with self.connections_guard:
-            return super().finish_request(request, client_address)
+            return self.finish_request_locked(request, client_address)
 
     def handle_error(self, request, client_address):
         if issubclass(sys.exc_info()[0], socket.timeout):
@@ -131,20 +134,21 @@ class ParallelHTTPSServer(ParallelHTTPServer):
                 raise
 
     def finish_request(self, request, client_address):
-        try:
+        with self.connections_guard:
             try:
-                request.do_handshake()
-            except socket.timeout:
-                raise
-            except Exception as e:
-                raise RuntimeError("SSL handshake failed: %s" % e) from e
-        except Exception:
-            try:
-                self.handle_error(request, client_address)
-            finally:
-                self.shutdown_request(request)
-            return
-        return super().finish_request(request, client_address)
+                try:
+                    request.do_handshake()
+                except socket.timeout:
+                    raise
+                except Exception as e:
+                    raise RuntimeError("SSL handshake failed: %s" % e) from e
+            except Exception:
+                try:
+                    self.handle_error(request, client_address)
+                finally:
+                    self.shutdown_request(request)
+                return
+            return super().finish_request_locked(request, client_address)
 
 
 class ServerHandler(wsgiref.simple_server.ServerHandler):
