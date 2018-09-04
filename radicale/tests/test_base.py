@@ -40,6 +40,9 @@ from .helpers import get_file_content
 class BaseRequestsMixIn:
     """Tests with simple requests."""
 
+    # Allow skipping sync-token tests, when not fully supported by the backend
+    full_sync_token_support = True
+
     def test_root(self):
         """GET request at "/"."""
         status, _, answer = self.request("GET", "/")
@@ -1149,6 +1152,8 @@ class BaseRequestsMixIn:
         assert xml.find("{DAV:}response") is not None
         new_sync_token, xml = self._report_sync_token(calendar_path,
                                                       sync_token)
+        if not self.full_sync_token_support and not new_sync_token:
+            pytest.skip("storage backend does not support sync-token")
         assert sync_token == new_sync_token
         assert xml.find("{DAV:}response") is None
 
@@ -1163,7 +1168,7 @@ class BaseRequestsMixIn:
         status, _, _ = self.request("PUT", event_path, event)
         assert status == 201
         sync_token, xml = self._report_sync_token(calendar_path, sync_token)
-        if not sync_token:
+        if not self.full_sync_token_support and not sync_token:
             pytest.skip("storage backend does not support sync-token")
         assert xml.find("{DAV:}response") is not None
         assert xml.find("{DAV:}response/{DAV:}status") is None
@@ -1181,7 +1186,7 @@ class BaseRequestsMixIn:
         status, _, _ = self.request("DELETE", event_path)
         assert status == 200
         sync_token, xml = self._report_sync_token(calendar_path, sync_token)
-        if not sync_token:
+        if not self.full_sync_token_support and not sync_token:
             pytest.skip("storage backend does not support sync-token")
         assert "404" in xml.find("{DAV:}response/{DAV:}status").text
 
@@ -1198,7 +1203,7 @@ class BaseRequestsMixIn:
         status, _, _ = self.request("DELETE", event_path)
         assert status == 200
         sync_token, xml = self._report_sync_token(calendar_path, sync_token)
-        if not sync_token:
+        if not self.full_sync_token_support and not sync_token:
             pytest.skip("storage backend does not support sync-token")
         assert "404" in xml.find("{DAV:}response/{DAV:}status").text
 
@@ -1218,7 +1223,7 @@ class BaseRequestsMixIn:
         status, _, _ = self.request("PUT", event_path, event1)
         assert status == 201
         sync_token, xml = self._report_sync_token(calendar_path, sync_token)
-        if not sync_token:
+        if not self.full_sync_token_support and not sync_token:
             pytest.skip("storage backend does not support sync-token")
         assert xml.find("{DAV:}response") is not None
         assert xml.find("{DAV:}response/{DAV:}status") is None
@@ -1238,7 +1243,7 @@ class BaseRequestsMixIn:
             "MOVE", event1_path, HTTP_DESTINATION=event2_path, HTTP_HOST="")
         assert status == 201
         sync_token, xml = self._report_sync_token(calendar_path, sync_token)
-        if not sync_token:
+        if not self.full_sync_token_support and not sync_token:
             pytest.skip("storage backend does not support sync-token")
         for response in xml.findall("{DAV:}response"):
             if response.find("{DAV:}status") is None:
@@ -1265,7 +1270,7 @@ class BaseRequestsMixIn:
             "MOVE", event2_path, HTTP_DESTINATION=event1_path, HTTP_HOST="")
         assert status == 201
         sync_token, xml = self._report_sync_token(calendar_path, sync_token)
-        if not sync_token:
+        if not self.full_sync_token_support and not sync_token:
             pytest.skip("storage backend does not support sync-token")
         created = deleted = 0
         for response in xml.findall("{DAV:}response"):
@@ -1309,6 +1314,8 @@ class BaseRequestsMixIn:
         sync_token, xml = self._report_sync_token(calendar_path)
         new_sync_token, xml = self._report_sync_token(calendar_path,
                                                       sync_token)
+        if not self.full_sync_token_support and not new_sync_token:
+            pytest.skip("storage backend does not support sync-token")
         assert sync_token == new_sync_token
 
     def test_calendar_getcontenttype(self):
