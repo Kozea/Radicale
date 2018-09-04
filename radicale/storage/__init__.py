@@ -26,8 +26,8 @@ entry.
 
 """
 
+import contextlib
 import json
-from contextlib import contextmanager
 from hashlib import md5
 from importlib import import_module
 
@@ -88,9 +88,8 @@ class BaseCollection:
     path = ""
 
     @classmethod
-    def static_init():
+    def static_init(cls):
         """init collection copy"""
-        pass
 
     @property
     def owner(self):
@@ -323,7 +322,7 @@ class BaseCollection:
         return ""
 
     @classmethod
-    @contextmanager
+    @contextlib.contextmanager
     def acquire_lock(cls, mode, user=None):
         """Set a context manager to lock the whole storage.
 

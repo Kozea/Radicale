@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import os
 import posixpath
 import threading
-from contextlib import contextmanager
 
 if os.name == "nt":
     import ctypes
@@ -79,7 +79,7 @@ class RwLock:
                 return "w"
             return ""
 
-    @contextmanager
+    @contextlib.contextmanager
     def acquire(self, mode):
         if mode not in "rw":
             raise ValueError("Invalid mode: %r" % mode)
