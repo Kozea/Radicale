@@ -1,7 +1,7 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2012-2016 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2018 Unrud<unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
