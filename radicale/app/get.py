@@ -17,13 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Radicale WSGI application.
-
-Can be used with an external WSGI server or the built-in server.
-
-"""
-
 import posixpath
 from http import client
 from urllib.parse import quote

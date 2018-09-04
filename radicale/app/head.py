@@ -17,13 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Radicale WSGI application.
-
-Can be used with an external WSGI server or the built-in server.
-
-"""
-
 
 class ApplicationHeadMixin:
     def do_HEAD(self, environ, base_prefix, path, user):
