@@ -26,7 +26,6 @@ import contextlib
 import multiprocessing
 import os
 import select
-import signal
 import socket
 import socketserver
 import ssl
@@ -201,7 +200,7 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
         handler.run(self.server.get_app())
 
 
-def serve(configuration):
+def serve(configuration, shutdown_socket=None):
     """Serve radicale from configuration."""
     logger.info("Starting Radicale")
     # Copy configuration before modifying
@@ -246,8 +245,6 @@ def serve(configuration):
     if not configuration.getboolean("server", "dns_lookup"):
         RequestHandlerCopy.address_string = lambda self: self.client_address[0]
 
-    shutdown_program = False
-
     for host in configuration.get("server", "hosts").split(","):
         try:
             address, port = host.strip().rsplit(":", 1)
@@ -267,41 +264,23 @@ def serve(configuration):
                     server.server_name, server.server_port, " using SSL"
                     if configuration.getboolean("server", "ssl") else "")
 
-    # Create a socket pair to notify the select syscall of program shutdown
-    shutdown_program_socket_in, shutdown_program_socket_out = (
-        socket.socketpair())
-
-    # SIGTERM and SIGINT (aka KeyboardInterrupt) should just mark this for
-    # shutdown
-    def shutdown(*args):
-        nonlocal shutdown_program
-        if shutdown_program:
-            # Ignore following signals
-            return
-        logger.info("Stopping Radicale")
-        shutdown_program = True
-        shutdown_program_socket_in.sendall(b" ")
-    signal.signal(signal.SIGTERM, shutdown)
-    signal.signal(signal.SIGINT, shutdown)
-
     # Main loop: wait for requests on any of the servers or program shutdown
     sockets = list(servers.keys())
     # Use socket pair to get notified of program shutdown
-    sockets.append(shutdown_program_socket_out)
+    if shutdown_socket:
+        sockets.append(shutdown_socket)
     select_timeout = None
     if os.name == "nt":
         # Fallback to busy waiting. (select.select blocks SIGINT on Windows.)
         select_timeout = 1.0
     logger.info("Radicale server ready")
-    while not shutdown_program:
-        try:
-            rlist, _, xlist = select.select(
-                sockets, [], sockets, select_timeout)
-        except (KeyboardInterrupt, select.error):
-            # SIGINT is handled by signal handler above
-            rlist, xlist = [], []
+    while True:
+        rlist, _, xlist = select.select(sockets, [], sockets, select_timeout)
         if xlist:
             raise RuntimeError("unhandled socket error")
+        if shutdown_socket in rlist:
+            logger.info("Stopping Radicale")
+            break
         if rlist:
             server = servers.get(rlist[0])
             if server:

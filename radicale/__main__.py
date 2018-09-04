@@ -24,10 +24,11 @@ This module can be executed from a command line with ``$python -m radicale``.
 
 import argparse
 import os
+import signal
+import socket
 
-from radicale import VERSION, config, log, storage
+from radicale import VERSION, config, log, server, storage
 from radicale.log import logger
-from radicale.server import serve
 
 
 def run():
@@ -125,8 +126,17 @@ def run():
             exit(1)
         return
 
+    # Create a socket pair to notify the server of program shutdown
+    shutdown_socket, shutdown_socket_out = socket.socketpair()
+
+    # SIGTERM and SIGINT (aka KeyboardInterrupt) shutdown the server
+    def shutdown(*args):
+        shutdown_socket.sendall(b" ")
+    signal.signal(signal.SIGTERM, shutdown)
+    signal.signal(signal.SIGINT, shutdown)
+
     try:
-        serve(configuration)
+        server.serve(configuration, shutdown_socket_out)
     except Exception as e:
         logger.error("An exception occurred during server startup: %s", e,
                      exc_info=True)
