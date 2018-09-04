@@ -32,6 +32,7 @@ import socketserver
 import ssl
 import sys
 import wsgiref.simple_server
+from configparser import ConfigParser
 from urllib.parse import unquote
 
 from radicale import Application
@@ -199,6 +200,10 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
 def serve(configuration):
     """Serve radicale from configuration."""
     logger.info("Starting Radicale")
+    # Copy configuration before modifying
+    config_copy = ConfigParser()
+    config_copy.read_dict(configuration)
+    configuration = config_copy
     configuration["internal"]["internal_server"] = "True"
 
     # Create collection servers
