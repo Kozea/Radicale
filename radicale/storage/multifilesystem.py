@@ -35,7 +35,6 @@ import vobject
 
 from radicale import item as radicale_item
 from radicale import pathutils, storage
-from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
 
@@ -726,18 +725,6 @@ class Collection(storage.BaseCollection):
         # We don't need to check for collissions, because the the file names
         # are from os.listdir.
         return (self._get(href, verify_href=False) for href in self._list())
-
-    def get_filtered(self, filters):
-        tag, start, end, simple = radicale_filter.simplify_prefilters(
-            filters, collection_tag=self.get_meta("tag"))
-        if not tag:
-            # no filter
-            yield from ((item, simple) for item in self.get_all())
-            return
-        for item in (self._get(h, verify_href=False) for h in self._list()):
-            istart, iend = item.time_range
-            if tag == item.component_name and istart < end and iend > start:
-                yield item, simple and (start <= istart or iend <= end)
 
     def upload(self, href, item):
         if not pathutils.is_safe_filesystem_path_component(href):

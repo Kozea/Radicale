@@ -34,6 +34,7 @@ from importlib import import_module
 import pkg_resources
 import vobject
 
+from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
 INTERNAL_TYPES = ("multifilesystem",)
@@ -204,10 +205,20 @@ class BaseCollection:
         ``filters_matched`` is a bool that indicates if ``filters`` are fully
         matched.
 
-        This returns all events by default
-
         """
-        return ((item, False) for item in self.get_all())
+        tag, start, end, simple = radicale_filter.simplify_prefilters(
+            filters, collection_tag=self.get_meta("tag"))
+        for item in self.get_all():
+            if tag:
+                if tag != item.component_name:
+                    continue
+                istart, iend = item.time_range
+                if istart >= end or iend <= start:
+                    continue
+                item_simple = simple and (start <= istart or iend <= end)
+            else:
+                item_simple = simple
+            yield item, item_simple
 
     def has_uid(self, uid):
         """Check if a UID exists in the collection."""
