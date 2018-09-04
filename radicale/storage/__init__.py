@@ -130,10 +130,7 @@ class BaseCollection:
         same name might already exist.
 
         """
-        if item.collection.path == to_collection.path and item.href == to_href:
-            return
-        to_collection.upload(to_href, item)
-        item.collection.delete(item.href)
+        raise NotImplementedError
 
     @property
     def etag(self):
