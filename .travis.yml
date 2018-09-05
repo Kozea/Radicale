@@ -1,5 +1,7 @@
 language: python
 sudo: false
+env: PIP=pip3 PYTHON=python3
+dist: trusty
 
 matrix:
   include:
@@ -9,13 +11,48 @@ matrix:
       python: 3.6
     - os: osx
       language: generic
+    - os: linux
+      language: generic
+      sudo: required
+      env: WINE_PYTHON=3.5.4 PIP='wine pip' PYTHON='wine python'
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install python3 || brew upgrade python3; fi
-  - pip3 install --upgrade six
+  - |
+    if [ "${TRAVIS_OS_NAME}" == osx ]; then
+      brew install python3 ||
+      brew upgrade python3
+    fi
+  - |
+    if [ "${TRAVIS_OS_NAME}" == linux -a -n "${WINE_PYTHON}" ]; then
+      pushd "$(mktemp -d)" &&
+      sudo dpkg --add-architecture i386 &&
+      wget https://dl.winehq.org/wine-builds/Release.key -O Release.key &&
+      sudo apt-key add Release.key &&
+      sudo apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/ &&
+      sudo apt-get update &&
+      sudo apt-get install -y --no-install-recommends unzip winehq-stable &&
+      curl "https://www.python.org/ftp/python/${WINE_PYTHON}/python-${WINE_PYTHON}-embed-win32.zip" -o python.zip &&
+      curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py &&
+      unzip python.zip -d python &&
+      pushd python &&
+      LIB="$(echo python*.zip)" &&
+      mv "${LIB}" "${LIB}.tmp" &&
+      unzip "${LIB}.tmp" -d "${LIB}" &&
+      rm "${LIB}.tmp" &&
+      popd &&
+      mv python "$(winepath 'C:\python')" &&
+      printf %b 'Windows Registry Editor Version 5.00\n'\
+                '[HKEY_CURRENT_USER\\Environment]\n'\
+                '"Path"="c:\\\\windows;c:\\\\windows\\\\system;c:\\\\python;c:\\\\python\\\\scripts"\n' > path.reg &&
+      wine regedit path.reg &&
+      wine python get-pip.py &&
+      rm -rf "$(dirs -l +0)" &&
+      popd
+    fi
+  - ${PIP} install --upgrade six
 
 install:
-  - pip3 install --upgrade --editable .[test,md5,bcrypt]
+  - ${PIP} install --upgrade --editable .[test,md5,bcrypt]
 
 script:
-  - python3 setup.py test
+  - ${PYTHON} setup.py test
