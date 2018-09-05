@@ -15,7 +15,6 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import posixpath
 import time
 from http import client
 
@@ -23,6 +22,8 @@ import pkg_resources
 
 from radicale import httputils, pathutils, web
 from radicale.log import logger
+
+import posixpath  # isort:skip
 
 MIMETYPES = {
     ".css": "text/css",
