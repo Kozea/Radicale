@@ -37,7 +37,7 @@ from urllib.parse import unquote
 from radicale import Application
 from radicale.log import logger
 
-if hasattr(socketserver, "ForkingMixIn"):
+if os.name == "posix":
     ParallelizationMixIn = socketserver.ForkingMixIn
 else:
     ParallelizationMixIn = socketserver.ThreadingMixIn
