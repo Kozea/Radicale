@@ -18,7 +18,6 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
-import posixpath
 import socket
 from http import client
 from urllib.parse import unquote, urlparse
@@ -27,6 +26,8 @@ from xml.etree import ElementTree as ET
 from radicale import httputils, pathutils, storage, xmlutils
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
+
+import posixpath  # isort:skip
 
 
 def xml_report(base_prefix, path, xml_request, collection, unlock_storage_fn):

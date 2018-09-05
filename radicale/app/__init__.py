@@ -29,7 +29,6 @@ import datetime
 import io
 import logging
 import pkg_resources
-import posixpath
 import pprint
 import random
 import time
@@ -51,6 +50,8 @@ from radicale.app.proppatch import ApplicationProppatchMixin
 from radicale.app.put import ApplicationPutMixin
 from radicale.app.report import ApplicationReportMixin
 from radicale.log import logger
+
+import posixpath  # isort:skip
 
 VERSION = pkg_resources.get_distribution("radicale").version
 

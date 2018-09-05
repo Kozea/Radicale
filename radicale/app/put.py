@@ -18,7 +18,6 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
-import posixpath
 import socket
 import sys
 from http import client
@@ -29,6 +28,8 @@ from radicale import httputils
 from radicale import item as radicale_item
 from radicale import pathutils, storage, xmlutils
 from radicale.log import logger
+
+import posixpath  # isort:skip
 
 
 class ApplicationPutMixin:

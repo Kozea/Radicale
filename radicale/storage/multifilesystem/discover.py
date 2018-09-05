@@ -18,10 +18,11 @@
 
 import contextlib
 import os
-import posixpath
 
 from radicale import pathutils
 from radicale.log import logger
+
+import posixpath  # isort:skip
 
 
 class CollectionDiscoverMixin:

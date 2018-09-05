@@ -17,12 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-import posixpath
 from http import client
 from urllib.parse import urlparse
 
 from radicale import httputils, pathutils, storage
 from radicale.log import logger
+
+import posixpath  # isort:skip
 
 
 class ApplicationMoveMixin:
