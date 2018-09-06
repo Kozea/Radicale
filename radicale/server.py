@@ -288,8 +288,8 @@ def serve(configuration, shutdown_socket=None):
                     "Failed to parse address %r: %s" % (host, e)) from e
             server_addresses.append((address, port))
 
+    application = Application(configuration)
     for server_address in server_addresses:
-        application = Application(configuration)
         try:
             server = ServerCopy(server_address, RequestHandlerCopy)
             server.set_app(application)
