@@ -56,7 +56,7 @@ class TestBaseServerRequests:
         self.shutdown_socket, shutdown_socket_out = socket.socketpair()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             # Find available port
-            sock.bind(("localhost", 0))
+            sock.bind(("127.0.0.1", 0))
             self.sockname = sock.getsockname()
             self.configuration["server"]["hosts"] = "[%s]:%d" % self.sockname
         self.thread = threading.Thread(target=server.serve, args=(
@@ -117,7 +117,7 @@ class TestBaseServerRequests:
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
             sock.setsockopt(server.IPPROTO_IPV6, server.IPV6_V6ONLY, 1)
             # Find available port
-            sock.bind(("localhost", 0))
+            sock.bind(("::1", 0))
             self.sockname = sock.getsockname()[:2]
             self.configuration["server"]["hosts"] = "[%s]:%d" % self.sockname
         self.thread.start()
