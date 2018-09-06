@@ -50,20 +50,8 @@ class ParallelHTTPServer(ParallelizationMixIn,
     client_timeout = None
     max_connections = None
 
-    def __init__(self, address, handler, bind_and_activate=True):
-        """Create server."""
-        ipv6 = ":" in address[0]
-
-        if ipv6:
-            self.address_family = socket.AF_INET6
-
-        # Do not bind and activate, as we might change socket options
-        super().__init__(address, handler, False)
-
-        if ipv6:
-            # Only allow IPv6 connections to the IPv6 socket
-            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
-
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         if self.max_connections:
             self.connections_guard = multiprocessing.BoundedSemaphore(
                 self.max_connections)
@@ -71,13 +59,15 @@ class ParallelHTTPServer(ParallelizationMixIn,
             # use dummy context manager
             self.connections_guard = contextlib.ExitStack()
 
-        if bind_and_activate:
-            try:
-                self.server_bind()
-                self.server_activate()
-            except BaseException:
-                self.server_close()
-                raise
+    def server_bind(self):
+        ipv6 = ":" in self.server_address[0]
+        if ipv6 and self.address_family == socket.AF_INET:
+            self.address_family = socket.AF_INET6
+            self.socket = socket.socket(self.address_family, self.socket_type)
+        if ipv6:
+            # Only allow IPv6 connections to the IPv6 socket
+            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+        super().server_bind()
 
     def get_request(self):
         # Set timeout for client
@@ -110,12 +100,9 @@ class ParallelHTTPSServer(ParallelHTTPServer):
     ciphers = None
     certificate_authority = None
 
-    def __init__(self, address, handler, bind_and_activate=True):
+    def server_bind(self):
+        super().server_bind()
         """Create server by wrapping HTTP socket in an SSL socket."""
-
-        # Do not bind and activate, as we change the socket
-        super().__init__(address, handler, False)
-
         self.socket = ssl.wrap_socket(
             self.socket, self.key, self.certificate, server_side=True,
             cert_reqs=ssl.CERT_REQUIRED if self.certificate_authority else
@@ -123,14 +110,6 @@ class ParallelHTTPSServer(ParallelHTTPServer):
             ca_certs=self.certificate_authority or None,
             ssl_version=self.protocol, ciphers=self.ciphers,
             do_handshake_on_connect=False)
-
-        if bind_and_activate:
-            try:
-                self.server_bind()
-                self.server_activate()
-            except BaseException:
-                self.server_close()
-                raise
 
     def finish_request(self, request, client_address):
         with self.connections_guard:
