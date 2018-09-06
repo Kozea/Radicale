@@ -37,6 +37,11 @@ from urllib.parse import unquote
 from radicale import Application
 from radicale.log import logger
 
+try:
+    import systemd.daemon
+except ImportError:
+    systemd = None
+
 if os.name == "posix":
     ParallelizationMixIn = socketserver.ForkingMixIn
 else:
@@ -60,6 +65,15 @@ class ParallelHTTPServer(ParallelizationMixIn,
             self.connections_guard = contextlib.ExitStack()
 
     def server_bind(self):
+        if isinstance(self.server_address, socket.socket):
+            # Socket activation
+            self.socket = self.server_address
+            self.server_address = self.socket.getsockname()
+            host, port = self.server_address[:2]
+            self.server_name = socket.getfqdn(host)
+            self.server_port = port
+            self.setup_environ()
+            return
         ipv6 = ":" in self.server_address[0]
         if ipv6 and self.address_family == socket.AF_INET:
             self.address_family = socket.AF_INET6
@@ -224,20 +238,36 @@ def serve(configuration, shutdown_socket=None):
     if not configuration.getboolean("server", "dns_lookup"):
         RequestHandlerCopy.address_string = lambda self: self.client_address[0]
 
-    for host in configuration.get("server", "hosts").split(","):
-        try:
-            address, port = host.strip().rsplit(":", 1)
-            address, port = address.strip("[] "), int(port)
-        except ValueError as e:
-            raise RuntimeError(
-                "Failed to parse address %r: %s" % (host, e)) from e
+    if systemd:
+        listen_fds = systemd.daemon.listen_fds()
+    else:
+        listen_fds = []
+
+    server_addresses = []
+    if listen_fds:
+        logger.info("Using socket activation")
+        ServerCopy.address_family = socket.AF_UNIX
+        for fd in listen_fds:
+            server_addresses.append(socket.fromfd(
+                fd, ServerCopy.address_family, ServerCopy.socket_type))
+    else:
+        for host in configuration.get("server", "hosts").split(","):
+            try:
+                address, port = host.strip().rsplit(":", 1)
+                address, port = address.strip("[] "), int(port)
+            except ValueError as e:
+                raise RuntimeError(
+                    "Failed to parse address %r: %s" % (host, e)) from e
+            server_addresses.append((address, port))
+
+    for server_address in server_addresses:
         application = Application(configuration)
         try:
-            server = wsgiref.simple_server.make_server(
-                address, port, application, ServerCopy, RequestHandlerCopy)
+            server = ServerCopy(server_address, RequestHandlerCopy)
+            server.set_app(application)
         except OSError as e:
             raise RuntimeError(
-                "Failed to start server %r: %s" % (host, e)) from e
+                "Failed to start server %r: %s" % (server_address, e)) from e
         servers[server.socket] = server
         logger.info("Listening to %r on port %d%s",
                     server.server_name, server.server_port, " using SSL"
