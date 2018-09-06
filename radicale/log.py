@@ -32,9 +32,9 @@ import sys
 import threading
 
 try:
-    from systemd import journal
+    import systemd.journal
 except ImportError:
-    journal = None
+    systemd = None
 
 LOGGER_NAME = "radicale"
 LOGGER_FORMAT = "[%(ident)s] %(levelname)s: %(message)s"
@@ -123,9 +123,10 @@ def get_default_handler():
         journal_dev, journal_ino = map(
             int, os.environ.get("JOURNAL_STREAM", "").split(":"))
         st = os.fstat(sys.stderr.fileno())
-        if (journal and
+        if (systemd and
                 st.st_dev == journal_dev and st.st_ino == journal_ino):
-            handler = journal.JournalHandler(SYSLOG_IDENTIFIER=LOGGER_NAME)
+            handler = systemd.journal.JournalHandler(
+                SYSLOG_IDENTIFIER=LOGGER_NAME)
     return handler
 
 
@@ -137,7 +138,7 @@ def register_stream(stream):
 
 def setup():
     """Set global logging up."""
-    global register_stream, unregister_stream
+    global register_stream
     handler = ThreadStreamsHandler(sys.stderr, get_default_handler())
     logging.basicConfig(format=LOGGER_FORMAT, handlers=[handler])
     register_stream = handler.register_stream
