@@ -47,6 +47,30 @@ if os.name == "posix":
 else:
     ParallelizationMixIn = socketserver.ThreadingMixIn
 
+HAS_IPV6 = socket.has_ipv6
+if hasattr(socket, "EAI_NONAME"):
+    EAI_NONAME = socket.EAI_NONAME
+else:
+    HAS_IPV6 = False
+if hasattr(socket, "EAI_ADDRFAMILY"):
+    EAI_ADDRFAMILY = socket.EAI_ADDRFAMILY
+elif os.name == "nt":
+    EAI_ADDRFAMILY = None
+else:
+    HAS_IPV6 = False
+if hasattr(socket, "IPPROTO_IPV6"):
+    IPPROTO_IPV6 = socket.IPPROTO_IPV6
+elif os.name == "nt":
+    IPPROTO_IPV6 = 41
+else:
+    HAS_IPV6 = False
+if hasattr(socket, "IPV6_V6ONLY"):
+    IPV6_V6ONLY = socket.IPV6_V6ONLY
+elif os.name == "nt":
+    IPV6_V6ONLY = 27
+else:
+    HAS_IPV6 = False
+
 
 class ParallelHTTPServer(ParallelizationMixIn,
                          wsgiref.simple_server.WSGIServer):
@@ -74,14 +98,18 @@ class ParallelHTTPServer(ParallelizationMixIn,
             self.server_port = port
             self.setup_environ()
             return
-        ipv6 = ":" in self.server_address[0]
-        if ipv6 and self.address_family == socket.AF_INET:
+        try:
+            super().server_bind()
+        except socket.gaierror as e:
+            if (not HAS_IPV6 or self.address_family != socket.AF_INET or
+                    e.errno not in (EAI_NONAME, EAI_ADDRFAMILY)):
+                raise
+            # Try again with IPv6
             self.address_family = socket.AF_INET6
             self.socket = socket.socket(self.address_family, self.socket_type)
-        if ipv6:
             # Only allow IPv6 connections to the IPv6 socket
-            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
-        super().server_bind()
+            self.socket.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
+            super().server_bind()
 
     def get_request(self):
         # Set timeout for client

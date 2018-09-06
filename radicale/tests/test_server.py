@@ -19,18 +19,22 @@ Test the internal server.
 
 """
 
+import os
 import shutil
 import socket
 import ssl
 import tempfile
 import threading
 import time
+import warnings
 from urllib import request
 from urllib.error import HTTPError, URLError
 
 from radicale import config, server
 
 from .helpers import get_file_path
+
+import pytest  # isort:skip
 
 
 class DisabledRedirectHandler(request.HTTPRedirectHandler):
@@ -66,7 +70,10 @@ class TestBaseServerRequests:
 
     def teardown(self):
         self.shutdown_socket.sendall(b" ")
-        self.thread.join()
+        try:
+            self.thread.join()
+        except RuntimeError:  # Thread never started
+            pass
         shutil.rmtree(self.colpath)
 
     def request(self, method, path, data=None, **headers):
@@ -97,6 +104,22 @@ class TestBaseServerRequests:
         self.configuration["server"]["ssl"] = "True"
         self.configuration["server"]["certificate"] = get_file_path("cert.pem")
         self.configuration["server"]["key"] = get_file_path("key.pem")
+        self.thread.start()
+        status, _, _ = self.request("GET", "/")
+        assert status == 302
+
+    def test_ipv6(self):
+        if not server.HAS_IPV6:
+            pytest.skip("IPv6 not support")
+        if os.name == "nt" and os.environ.get("WINE_PYTHON"):
+            warnings.warn("WORKAROUND: incomplete errno conversion in WINE")
+            server.EAI_ADDRFAMILY = -9
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(server.IPPROTO_IPV6, server.IPV6_V6ONLY, 1)
+            # Find available port
+            sock.bind(("localhost", 0))
+            self.sockname = sock.getsockname()[:2]
+            self.configuration["server"]["hosts"] = "[%s]:%d" % self.sockname
         self.thread.start()
         status, _, _ = self.request("GET", "/")
         assert status == 302
