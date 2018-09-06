@@ -98,7 +98,7 @@ def run():
         configuration = config.load(config_paths,
                                     ignore_missing_paths=ignore_missing_paths)
     except Exception as e:
-        log.error("Invalid configuration: %s", e, exc_info=True)
+        logger.fatal("Invalid configuration: %s", e, exc_info=True)
         exit(1)
 
     # Update Radicale configuration according to arguments
@@ -118,10 +118,10 @@ def run():
             Collection = storage.load(configuration)
             with Collection.acquire_lock("r"):
                 if not Collection.verify():
-                    logger.error("Storage verifcation failed")
+                    logger.fatal("Storage verifcation failed")
                     exit(1)
         except Exception as e:
-            logger.error("An exception occurred during storage verification: "
+            logger.fatal("An exception occurred during storage verification: "
                          "%s", e, exc_info=True)
             exit(1)
         return
@@ -138,7 +138,7 @@ def run():
     try:
         server.serve(configuration, shutdown_socket_out)
     except Exception as e:
-        logger.error("An exception occurred during server startup: %s", e,
+        logger.fatal("An exception occurred during server startup: %s", e,
                      exc_info=True)
         exit(1)
 
