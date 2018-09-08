@@ -49,7 +49,6 @@ before_install:
       rm -rf "$(dirs -l +0)" &&
       popd
     fi
-  - ${PIP} install --upgrade six
 
 install:
   - ${PIP} install --upgrade --editable .[test,md5,bcrypt]
