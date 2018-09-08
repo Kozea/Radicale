@@ -108,16 +108,18 @@ class TestBaseServerRequests:
         assert status == 302
 
     def test_ipv6(self):
-        if (not server.HAS_IPV6 or os.environ.get("TRAVIS_OS_NAME") == "osx" or
-                os.environ.get("TRAVIS_SUDO") == "true"):
-            pytest.skip("IPv6 not support")
+        if not server.HAS_IPV6:
+            pytest.skip("IPv6 not supported")
         if os.name == "nt" and server.EAI_ADDRFAMILY is None:
             # HACK: incomplete errno conversion in WINE
             server.EAI_ADDRFAMILY = -9
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
             sock.setsockopt(server.IPPROTO_IPV6, server.IPV6_V6ONLY, 1)
-            # Find available port
-            sock.bind(("::1", 0))
+            try:
+                # Find available port
+                sock.bind(("::1", 0))
+            except OSError:
+                pytest.skip("IPv6 not supported")
             self.sockname = sock.getsockname()[:2]
             self.configuration["server"]["hosts"] = "[%s]:%d" % self.sockname
         self.thread.start()
