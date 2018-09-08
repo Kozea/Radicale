@@ -57,7 +57,7 @@ class Auth(auth.BaseAuth):
             # A call to `encrypt` raises passlib.exc.MissingBackendError with a
             # good error message if bcrypt backend is not available. Trigger
             # this here.
-            bcrypt.encrypt("test-bcrypt-backend")
+            bcrypt.hash("test-bcrypt-backend")
             self.verify = functools.partial(self._bcrypt, bcrypt)
         elif self.encryption == "crypt":
             try:

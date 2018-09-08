@@ -106,7 +106,7 @@ class TestBaseAuthRequests(BaseTest):
         except ImportError:
             pytest.skip("passlib is not installed")
         try:
-            bcrypt.encrypt("test-bcrypt-backend")
+            bcrypt.hash("test-bcrypt-backend")
         except MissingBackendError:
             pytest.skip("bcrypt backend for passlib is not installed")
         self._test_htpasswd(
