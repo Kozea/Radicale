@@ -51,11 +51,17 @@ before_install:
     fi
 
 install:
-  - pip3 install --upgrade codecov
+  - pip3 install --upgrade coverage codecov
   - ${PIP} install --upgrade --editable .[test,md5,bcrypt]
 
 script:
   - ${PYTHON} setup.py test
 
 after_success:
+  - |
+    if [ "${TRAVIS_OS_NAME}" == linux -a -n "${WINE_PYTHON}" ]; then
+        config="$(mktemp)"
+        printf '[paths]\nsource =\n    .\n    %s\n' "$(winepath --windows '')" >"${config}"
+        coverage3 combine --rcfile "${config}" .coverage
+    fi
   - codecov --env WINE_PYTHON
