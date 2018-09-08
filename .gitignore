@@ -8,8 +8,10 @@ __pycache__
 /dist
 /Radicale.egg-info
 
+.pytest_cache
 .cache
 .coverage
+.coverage.*
 .eggs
 .project
 .pydevproject
