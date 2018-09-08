@@ -42,7 +42,7 @@ try:
 except ImportError:
     systemd = None
 
-if os.name == "posix":
+if hasattr(os, "fork"):
     ParallelizationMixIn = socketserver.ForkingMixIn
 else:
     ParallelizationMixIn = socketserver.ThreadingMixIn
@@ -74,6 +74,9 @@ else:
 
 class ParallelHTTPServer(ParallelizationMixIn,
                          wsgiref.simple_server.WSGIServer):
+
+    # wait for child processes/threads
+    _block_on_close = True
 
     # These class attributes must be set before creating instance
     client_timeout = None
@@ -311,14 +314,21 @@ def serve(configuration, shutdown_socket=None):
         # Fallback to busy waiting. (select.select blocks SIGINT on Windows.)
         select_timeout = 1.0
     logger.info("Radicale server ready")
-    while True:
-        rlist, _, xlist = select.select(sockets, [], sockets, select_timeout)
-        if xlist:
-            raise RuntimeError("unhandled socket error")
-        if shutdown_socket in rlist:
-            logger.info("Stopping Radicale")
-            break
-        if rlist:
-            server = servers.get(rlist[0])
-            if server:
-                server.handle_request()
+
+    with contextlib.ExitStack() as stack:
+        for _, server in servers.items():
+            # close server
+            stack.push(server)
+        while True:
+            rlist, _, xlist = select.select(
+                sockets, [], sockets, select_timeout)
+            if xlist:
+                raise RuntimeError("unhandled socket error")
+            if shutdown_socket in rlist:
+                logger.info("Stopping Radicale")
+                break
+            if rlist:
+                server = servers.get(rlist[0])
+                if server:
+                    server.handle_request()
+                    server.service_actions()
