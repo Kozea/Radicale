@@ -12,7 +12,7 @@ matrix:
     - os: osx
       language: generic
     - os: linux
-      language: generic
+      python: 3.5
       sudo: required
       env: WINE_PYTHON=3.5.4 PIP='wine pip' PYTHON='wine python'
 
@@ -51,7 +51,11 @@ before_install:
     fi
 
 install:
+  - pip3 install --upgrade codecov
   - ${PIP} install --upgrade --editable .[test,md5,bcrypt]
 
 script:
   - ${PYTHON} setup.py test
+
+after_success:
+  - codecov --env WINE_PYTHON
