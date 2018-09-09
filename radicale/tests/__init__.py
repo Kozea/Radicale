@@ -26,6 +26,28 @@ import radicale
 import sys
 from io import BytesIO
 
+from pytest_cov import embed
+
+from radicale import server
+
+# Measure coverage of forked processes
+finish_request = server.ParallelHTTPServer.finish_request
+pid = os.getpid()
+
+
+def finish_request_cov(self, request, client_address):
+    cov = None
+    if pid != os.getpid():
+        cov = embed.init()
+    try:
+        return finish_request(self, request, client_address)
+    finally:
+        if cov:
+            embed.cleanup(cov)
+
+
+server.ParallelHTTPServer.finish_request = finish_request_cov
+
 # Allow importing of tests.custom....
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 # Enable debug output
