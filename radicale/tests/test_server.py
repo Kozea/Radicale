@@ -23,6 +23,8 @@ import os
 import shutil
 import socket
 import ssl
+import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -75,15 +77,17 @@ class TestBaseServerRequests:
             pass
         shutil.rmtree(self.colpath)
 
-    def request(self, method, path, data=None, **headers):
+    def request(self, method, path, data=None, is_alive_fn=None, **headers):
         """Send a request."""
+        if is_alive_fn is None:
+            is_alive_fn = self.thread.is_alive
         scheme = ("https" if self.configuration.getboolean("server", "ssl")
                   else "http")
         req = request.Request(
             "%s://[%s]:%d%s" % (scheme, *self.sockname, path),
             data=data, headers=headers, method=method)
         while True:
-            assert self.thread.is_alive()
+            assert is_alive_fn()
             try:
                 with self.opener.open(req) as f:
                     return f.getcode(), f.info(), f.read().decode()
@@ -128,3 +132,30 @@ class TestBaseServerRequests:
         finally:
             server.EAI_ADDRFAMILY = savedEaiAddrfamily
         assert status == 302
+
+    def test_command_line_interface(self):
+        config_args = []
+        for section, values in config.INITIAL_CONFIG.items():
+            for option, data in values.items():
+                long_name = "--{0}-{1}".format(
+                    section, option.replace("_", "-"))
+                if data["type"] == bool:
+                    if not self.configuration.getboolean(section, option):
+                        long_name = "--no{0}".format(long_name[1:])
+                    config_args.append(long_name)
+                else:
+                    config_args.append(long_name)
+                    config_args.append(self.configuration.get(section, option))
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.pathsep.join(sys.path)
+        p = subprocess.Popen(
+            [sys.executable, "-m", "radicale"] + config_args, env=env)
+        try:
+            status, _, _ = self.request(
+                "GET", "/", is_alive_fn=lambda: p.poll() is None)
+            assert status == 302
+        finally:
+            p.terminate()
+            p.wait()
+        if os.name == "posix":
+            assert p.returncode == 0
