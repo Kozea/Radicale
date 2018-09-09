@@ -196,16 +196,12 @@ INTERNAL_CONFIG = OrderedDict([
         "type": bool})])
 
 
-def load(paths=(), extra_config=None, ignore_missing_paths=True):
+def load(paths=(), ignore_missing_paths=True):
     config = ConfigParser()
     for section, values in INITIAL_CONFIG.items():
         config.add_section(section)
         for key, data in values.items():
             config.set(section, key, data["value"])
-    if extra_config:
-        for section, values in extra_config.items():
-            for key, value in values.items():
-                config.set(section, key, value)
     for path in paths:
         if path or not ignore_missing_paths:
             try:
