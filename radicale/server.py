@@ -325,8 +325,7 @@ def serve(configuration, shutdown_socket=None):
 
     with contextlib.ExitStack() as stack:
         for _, server in servers.items():
-            # close server
-            stack.push(server)
+            stack.callback(server.server_close)
         while True:
             rlist, _, xlist = select.select(
                 sockets, [], sockets, select_timeout)
