@@ -36,6 +36,7 @@ For further information, please visit the `Radicale Website
 
 """
 
+import os
 import sys
 
 from setuptools import find_packages, setup
@@ -53,6 +54,8 @@ needs_pytest = {"pytest", "test", "ptr"}.intersection(sys.argv)
 pytest_runner = ["pytest-runner"] if needs_pytest else []
 tests_require = ["pytest-runner", "pytest", "pytest-cov", "pytest-flake8",
                  "pytest-isort"]
+if os.name == "posix":
+    tests_require.append("gunicorn")
 
 setup(
     name="Radicale",

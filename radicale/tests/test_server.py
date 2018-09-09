@@ -28,6 +28,7 @@ import sys
 import tempfile
 import threading
 import time
+from configparser import ConfigParser
 from urllib import request
 from urllib.error import HTTPError, URLError
 
@@ -36,6 +37,11 @@ from radicale import config, server
 from .helpers import get_file_path
 
 import pytest  # isort:skip
+
+try:
+    import gunicorn
+except ImportError:
+    gunicorn = None
 
 
 class DisabledRedirectHandler(request.HTTPRedirectHandler):
@@ -159,3 +165,27 @@ class TestBaseServerRequests:
             p.wait()
         if os.name == "posix":
             assert p.returncode == 0
+
+    @pytest.mark.skipif(not gunicorn, reason="gunicorn module not found")
+    def test_wsgi_server(self):
+        config = ConfigParser()
+        config.read_dict(self.configuration)
+        assert config.remove_section("internal")
+        config_path = os.path.join(self.colpath, "config")
+        with open(config_path, "w") as f:
+            config.write(f)
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.pathsep.join(sys.path)
+        p = subprocess.Popen([
+            sys.executable,
+            "-c", "from gunicorn.app.wsgiapp import run; run()",
+            "--bind", self.configuration["server"]["hosts"],
+            "--env", "RADICALE_CONFIG=%s" % config_path, "radicale"], env=env)
+        try:
+            status, _, _ = self.request(
+                "GET", "/", is_alive_fn=lambda: p.poll() is None)
+            assert status == 302
+        finally:
+            p.terminate()
+            p.wait()
+        assert p.returncode == 0
