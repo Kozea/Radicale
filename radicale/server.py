@@ -121,6 +121,14 @@ class ParallelHTTPServer(ParallelizationMixIn,
             socket_.settimeout(self.client_timeout)
         return socket_, address
 
+    def process_request(self, request, client_address):
+        try:
+            return super().process_request(request, client_address)
+        finally:
+            # Modify OpenSSL's RNG state, in case process forked
+            # See https://docs.python.org/3.7/library/ssl.html#multi-processing
+            ssl.RAND_add(os.urandom(8), 0.0)
+
     def finish_request_locked(self, request, client_address):
         return super().finish_request(request, client_address)
 
