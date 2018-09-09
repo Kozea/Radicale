@@ -58,6 +58,8 @@ class TestBaseServerRequests:
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
         self.configuration["storage"]["filesystem_folder"] = self.colpath
+        # Enable debugging for new processes
+        self.configuration["logging"]["level"] = "debug"
         # Disable syncing to disk for better performance
         self.configuration["internal"]["filesystem_fsync"] = "False"
         self.shutdown_socket, shutdown_socket_out = socket.socketpair()
