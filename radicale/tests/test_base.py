@@ -28,7 +28,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 from functools import partial
 
-from radicale import Application, config
+from radicale import Application, config, storage
 
 from . import BaseTest
 from .helpers import get_file_content
@@ -249,6 +249,17 @@ class BaseRequestsMixIn:
             assert uid1
             for uid2 in uids[i + 1:]:
                 assert uid1 != uid2
+
+    def test_verify(self):
+        """Verify the storage."""
+        contacts = get_file_content("contact_multiple.vcf")
+        status, _, _ = self.request("PUT", "/contacts.vcf/", contacts)
+        assert status == 201
+        events = get_file_content("event_multiple.ics")
+        status, _, _ = self.request("PUT", "/calendar.ics/", events)
+        assert status == 201
+        s = storage.load(self.configuration)
+        assert s.verify()
 
     def test_delete(self):
         """Delete an event."""
