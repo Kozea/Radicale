@@ -107,9 +107,8 @@ class TestBaseServerRequests:
         status, _, _ = self.request("GET", "/")
         assert status == 302
 
+    @pytest.mark.skipif(not server.HAS_IPV6, reason="IPv6 not supported")
     def test_ipv6(self):
-        if not server.HAS_IPV6:
-            pytest.skip("IPv6 not supported")
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
             sock.setsockopt(server.IPPROTO_IPV6, server.IPV6_V6ONLY, 1)
             try:

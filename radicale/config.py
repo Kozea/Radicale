@@ -162,7 +162,7 @@ INITIAL_CONFIG = OrderedDict([
             "help": "path where collections are stored",
             "type": str}),
         ("max_sync_token_age", {
-            "value": 2592000,  # 30 days
+            "value": "2592000",  # 30 days
             "help": "delete sync token that are older",
             "type": int}),
         ("hook", {
