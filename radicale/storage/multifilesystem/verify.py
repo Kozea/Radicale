@@ -60,9 +60,8 @@ class CollectionVerifyMixin:
                         has_child_collections = True
                         remaining_sane_paths.append(item.path)
                     elif item.uid in uids:
-                        cls.logger.error(
-                            "Invalid item %r in %r: UID conflict %r",
-                            item.href, sane_path, item.uid)
+                        logger.error("Invalid item %r in %r: UID conflict %r",
+                                     item.href, sane_path, item.uid)
                     else:
                         uids.add(item.uid)
                         logger.debug("Verified item %r in %r",
@@ -70,7 +69,7 @@ class CollectionVerifyMixin:
                 if item_errors == saved_item_errors:
                     collection.sync()
                 if has_child_collections and collection.get_meta("tag"):
-                    cls.logger.error("Invalid collection %r: %r must not have "
-                                     "child collections", sane_path,
-                                     collection.get_meta("tag"))
+                    logger.error("Invalid collection %r: %r must not have "
+                                 "child collections", sane_path,
+                                 collection.get_meta("tag"))
         return item_errors == 0 and collection_errors == 0
