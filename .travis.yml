@@ -16,6 +16,10 @@ matrix:
       sudo: required
       env: WINE_PYTHON=3.5.4 PIP='wine pip' PYTHON='wine python'
 
+notifications:
+  webhooks:
+    - https://coveralls.io/webhook?repo_token=COVERALLS_REPO_TOKEN
+
 before_install:
   - |
     if [ "${TRAVIS_OS_NAME}" == osx ]; then
@@ -51,7 +55,7 @@ before_install:
     fi
 
 install:
-  - pip3 install --upgrade coverage codecov
+  - pip3 install --upgrade coverage coveralls
   - ${PIP} install --upgrade --editable .[test,md5,bcrypt]
 
 script:
@@ -64,4 +68,4 @@ after_success:
         printf '[paths]\nsource =\n    .\n    %s\n' "$(winepath --windows '')" >"${config}"
         coverage3 combine --rcfile "${config}" .coverage
     fi
-  - codecov --env WINE_PYTHON
+  - env COVERALLS_PARALLEL=true coveralls

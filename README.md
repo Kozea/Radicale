@@ -1,7 +1,7 @@
 Read Me
 =======
 [![Build Status](https://travis-ci.org/Kozea/Radicale.svg?branch=master)](https://travis-ci.org/Kozea/Radicale)
-[![codecov](https://codecov.io/gh/kozea/radicale/branch/master/graphs/badge.svg)](https://codecov.io/gh/kozea/radicale/branch/master)
+[![Coverage Status](https://coveralls.io/repos/github/Kozea/Radicale/badge.svg?branch=master)](https://coveralls.io/github/Kozea/Radicale?branch=master)
 
 Radicale is a free and open-source CalDAV and CardDAV server.
 
