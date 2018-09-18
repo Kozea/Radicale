@@ -69,7 +69,7 @@ class ApplicationPutMixin:
                     not permissions and parent_permissions):
                 write_whole_collection = False
                 if tag is None:
-                    tag = storage.predict_tag_of_parent_collection(
+                    tag = radicale_item.predict_tag_of_parent_collection(
                         vobject_items)
                 collection_path = posixpath.dirname(
                     pathutils.strip_path(path))
