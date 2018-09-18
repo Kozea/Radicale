@@ -72,7 +72,7 @@ def load(configuration):
         class_ = import_module(module).Auth
     except Exception as e:
         raise RuntimeError("Failed to load authentication module %r: %s" %
-                           (auth_type, e)) from e
+                           (module, e)) from e
     logger.info("Authentication type is %r", auth_type)
     return class_(configuration)
 

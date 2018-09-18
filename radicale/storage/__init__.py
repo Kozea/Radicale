@@ -55,7 +55,7 @@ def load(configuration):
         class_ = import_module(module).Collection
     except Exception as e:
         raise RuntimeError("Failed to load storage module %r: %s" %
-                           (storage_type, e)) from e
+                           (module, e)) from e
     logger.info("Storage type is %r", storage_type)
 
     class CollectionCopy(class_):

@@ -56,7 +56,7 @@ def load(configuration):
         class_ = import_module(module).Rights
     except Exception as e:
         raise RuntimeError("Failed to load rights module %r: %s" %
-                           (rights_type, e)) from e
+                           (module, e)) from e
     logger.info("Rights type is %r", rights_type)
     return class_(configuration)
 
