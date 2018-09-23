@@ -30,6 +30,6 @@ class Rights(rights.BaseRights):
         sane_path = pathutils.strip_path(path)
         if "/" not in sane_path:
             return rights.intersect_permissions(permissions, "RW")
-        if sane_path.count("/") == 1:
+        if sane_path.count("/") >= 1:
             return rights.intersect_permissions(permissions, "rw")
         return ""

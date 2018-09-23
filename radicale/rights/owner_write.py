@@ -33,7 +33,7 @@ class Rights(authenticated.Rights):
         if "/" not in sane_path:
             return rights.intersect_permissions(permissions,
                                                 "RW" if owned else "R")
-        if sane_path.count("/") == 1:
+        if sane_path.count("/") >= 1:
             return rights.intersect_permissions(permissions,
                                                 "rw" if owned else "r")
         return ""
