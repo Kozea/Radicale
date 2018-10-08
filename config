@@ -106,6 +106,9 @@
 # Example: ([ -d .git ] || git init) && git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
 #hook =
 
+#Encrypt the ics files with AES256?
+#You can only specifiy this *before* you commit your first calendar entry
+encrypt = True
 
 [web]
 

@@ -21,10 +21,20 @@ import time
 
 import vobject
 
+from Crypto.Cipher import AES
+from Crypto import Random
+import hashlib
+import binascii
+
 from radicale import item as radicale_item
 from radicale import pathutils
 from radicale.log import logger
 
+
+from Crypto.Cipher import AES
+from Crypto import Random
+import hashlib
+import binascii
 
 class CollectionGetMixin:
     def __init__(self):
@@ -67,6 +77,33 @@ class CollectionGetMixin:
                     os.path.isdir(path) and os.access(path, os.R_OK)):
                 return None
             raise
+
+        if self.configuration.getboolean("storage", "encrypt"):
+            self.filename = self.configuration.get("auth", "htpasswd_filename")
+            try:
+                with open(self.filename) as f:
+                    for line in f:
+                        line = line.rstrip("\n")
+                        if line.lstrip() and not line.lstrip().startswith("#"):
+                            try:
+                                hash_login, hash_value = line.split(
+                                    ":", maxsplit=1)
+                            except ValueError as e:
+                                raise RuntimeError("Invalid htpasswd file %r: %s" %
+                                                   (self.filename, e)) from e
+
+            except OSError as e:
+                raise RuntimeError("Failed to load htpasswd file %r: %s" %
+                                   (self.filename, e)) from e
+            raw_text = binascii.a2b_hex(raw_text)
+            iv = raw_text[:16]
+            raw_text = raw_text[16:-1]
+            key = hashlib.sha256(hash_value.encode()).digest()
+            enc_obj = AES.new(key, AES.MODE_CFB, iv)
+            raw_text = enc_obj.decrypt(raw_text)
+        else:
+            pass
+
         # The hash of the component in the file system. This is used to check,
         # if the entry in the cache is still valid.
         input_hash = self._item_cache_hash(raw_text)
