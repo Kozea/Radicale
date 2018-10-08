@@ -31,11 +31,6 @@ from radicale import pathutils
 from radicale.log import logger
 
 
-from Crypto.Cipher import AES
-from Crypto import Random
-import hashlib
-import binascii
-
 class CollectionGetMixin:
     def __init__(self):
         super().__init__()
