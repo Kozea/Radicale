@@ -19,6 +19,12 @@
 import os
 import pickle
 
+from Crypto.Cipher import AES
+from Crypto import Random
+import hashlib
+import binascii
+
+
 from radicale import item as radicale_item
 from radicale import pathutils
 
@@ -33,8 +39,37 @@ class CollectionUploadMixin:
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
         path = pathutils.path_to_filesystem(self._filesystem_path, href)
+
+        if self.configuration.getboolean("storage", "encrypt"):
+            self.auth_file = self.configuration.get("auth", "htpasswd_filename")
+            try:
+                with open(self.auth_file) as f:
+                    for line in f:
+                        line = line.rstrip("\n")
+                        if line.lstrip() and not line.lstrip().startswith("#"):
+                            try:
+                                hash_login, hash_value = line.split(
+                                    ":", maxsplit=1)
+                            except ValueError as e:
+                                raise RuntimeError("Invalid htpasswd file %r: %s" %
+                                                   (self.filename, e)) from e
+            except OSError as e:
+                raise RuntimeError("Failed to load htpasswd file %r: %s" %
+                                   (self.filename, e)) from e
+            key = hashlib.sha256(hash_value.encode()).digest()
+            iv = Random.new().read(AES.block_size)
+            enc_obj = AES.new(key, AES.MODE_CFB, iv)
+            cipher_text = enc_obj.encrypt(item.serialize())
+            cipher_text = iv + cipher_text
+            cipher_text =  binascii.b2a_hex(cipher_text)
+            cipher_text = cipher_text.decode()
+            to_write = cipher_text
+        else:
+            to_write = item.serialize()
+
         with self._atomic_write(path, newline="") as fd:
-            fd.write(item.serialize())
+            fd.write(to_write)
+
         # Clean the cache after the actual item is stored, or the cache entry
         # will be removed again.
         self._clean_item_cache()

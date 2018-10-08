@@ -168,7 +168,11 @@ INITIAL_CONFIG = OrderedDict([
         ("hook", {
             "value": "",
             "help": "command that is run after changes to storage",
-            "type": str})])),
+            "type": str}),
+        ("encrypt", {
+            "value": "False",
+            "help": "encrypt .ics files with AES256",
+            "type": bool})])),
     ("web", OrderedDict([
         ("type", {
             "value": "internal",
