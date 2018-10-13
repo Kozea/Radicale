@@ -103,7 +103,9 @@
 #max_sync_token_age = 2592000
 
 # Command that is run after changes to storage
-# Example: ([ -d .git ] || git init) && git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
+#
+# The name and email will only get set at the first commit
+# Example: ([ -d .git ] || git init) && ( git config -l | grep "user\.name" > /dev/null || git config user.name "Your Name" ) && ( git config -l | grep "user\.email" > /dev/null || git config user.email "you@example.com" ) && git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
 #hook =
 
 
