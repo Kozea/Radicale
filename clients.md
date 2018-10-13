@@ -32,7 +32,8 @@ enter the URL of the collection directly
 
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
 user name. DAVdroid will show all existing calendars and address books and you
-can create new.
+can create new. DAVdroid integrates into android in such a way that you can then
+use any calendar app you want with your Radicale calendars.
 
 ## GNOME Calendar, Contacts and Evolution
 
@@ -41,8 +42,11 @@ and address books directly, but you can add them in **Evolution**.
 
 In **Evolution** add a new calendar and address book respectively with WebDAV.
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
-user name. Clicking on the search button will list the existing calendars and
-address books.
+user name. In some versions of **Evolution**, you may have to append your user
+name to the URL (`http://localhost:5232/username/`)or **Evolution** will not be
+able to find your calendars. Clicking on the search button will list the
+existing calendars and address books. You can also use **Evolution** to connect
+to tasks stored in your Radicale calendars.
 
 ## Thunderbird
 
