@@ -41,7 +41,13 @@ class CollectionDeleteMixin:
             # Delete an item
             if not pathutils.is_safe_filesystem_path_component(href):
                 raise pathutils.UnsafePathError(href)
-            path = pathutils.path_to_filesystem(self._filesystem_path, href)
+            if self._share:
+                assert self._share.item_writethrough
+                path = pathutils.path_to_filesystem(
+                    self._base_collection._filesystem_path, href)
+            else:
+                path = pathutils.path_to_filesystem(
+                    self._filesystem_path, href)
             if not os.path.isfile(path):
                 raise storage.ComponentNotFoundError(href)
             os.remove(path)

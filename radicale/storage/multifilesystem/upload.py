@@ -25,19 +25,26 @@ from radicale import pathutils
 
 class CollectionUploadMixin:
     def upload(self, href, item):
+        if self._share:
+            assert self._share.item_writethrough
+            return self._base_collection.upload(href, item)
         if not pathutils.is_safe_filesystem_path_component(href):
             raise pathutils.UnsafePathError(href)
+        if self._share:
+            collection = self._base_collection
+        else:
+            collection = self
         try:
-            self._store_item_cache(href, item)
+            collection._store_item_cache(href, item)
         except Exception as e:
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
-        path = pathutils.path_to_filesystem(self._filesystem_path, href)
+        path = pathutils.path_to_filesystem(collection._filesystem_path, href)
         with self._atomic_write(path, newline="") as fd:
             fd.write(item.serialize())
         # Clean the cache after the actual item is stored, or the cache entry
         # will be removed again.
-        self._clean_item_cache()
+        collection._clean_item_cache()
         # Track the change
         self._update_history_etag(href, item)
         self._clean_history()
@@ -50,6 +57,7 @@ class CollectionUploadMixin:
         uploads them nonatomic and without existence checks.
 
         """
+        assert not self._share
         cache_folder = os.path.join(self._filesystem_path,
                                     ".Radicale.cache", "item")
         self._makedirs_synced(cache_folder)

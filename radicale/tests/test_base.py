@@ -28,7 +28,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 from functools import partial
 
-from radicale import Application, config, storage
+from radicale import Application, config, share, storage
 
 from . import BaseTest
 from .helpers import get_file_content
@@ -258,7 +258,8 @@ class BaseRequestsMixIn:
         events = get_file_content("event_multiple.ics")
         status, _, _ = self.request("PUT", "/calendar.ics/", events)
         assert status == 201
-        s = storage.load(self.configuration)
+        shares = share.load(self.configuration)
+        s = storage.load(self.configuration, shares)
         assert s.verify()
 
     def test_delete(self):
