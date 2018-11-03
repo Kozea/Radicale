@@ -315,6 +315,25 @@ class BaseRequestsMixIn:
         status, _, _ = self.request("GET", path2)
         assert status == 200
 
+    def test_move_between_colections(self):
+        """Move a item."""
+        status, _, _ = self.request("MKCALENDAR", "/calendar1.ics/")
+        assert status == 201
+        status, _, _ = self.request("MKCALENDAR", "/calendar2.ics/")
+        assert status == 201
+        event = get_file_content("event1.ics")
+        path1 = "/calendar1.ics/event1.ics"
+        path2 = "/calendar2.ics/event2.ics"
+        status, _, _ = self.request("PUT", path1, event)
+        assert status == 201
+        status, _, _ = self.request(
+            "MOVE", path1, HTTP_DESTINATION=path2, HTTP_HOST="")
+        assert status == 201
+        status, _, _ = self.request("GET", path1)
+        assert status == 404
+        status, _, _ = self.request("GET", path2)
+        assert status == 200
+
     def test_head(self):
         status, _, _ = self.request("HEAD", "/")
         assert status == 302
