@@ -30,6 +30,7 @@ import socket
 import socketserver
 import ssl
 import sys
+import threading
 import wsgiref.simple_server
 from configparser import ConfigParser
 from urllib.parse import unquote
@@ -42,7 +43,14 @@ try:
 except ImportError:
     systemd = None
 
-if hasattr(os, "fork"):
+USE_FORKING = hasattr(os, "fork")
+try:
+    multiprocessing.BoundedSemaphore()
+except Exception:
+    # HACK: Workaround for Android
+    USE_FORKING = False
+
+if USE_FORKING:
     ParallelizationMixIn = socketserver.ForkingMixIn
 else:
     ParallelizationMixIn = socketserver.ThreadingMixIn
@@ -84,9 +92,12 @@ class ParallelHTTPServer(ParallelizationMixIn,
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if USE_FORKING:
+            sema_class = multiprocessing.BoundedSemaphore
+        else:
+            sema_class = threading.BoundedSemaphore
         if self.max_connections:
-            self.connections_guard = multiprocessing.BoundedSemaphore(
-                self.max_connections)
+            self.connections_guard = sema_class(self.max_connections)
         else:
             # use dummy context manager
             self.connections_guard = contextlib.ExitStack()

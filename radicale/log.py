@@ -29,7 +29,10 @@ import logging
 import multiprocessing
 import os
 import sys
+import tempfile
 import threading
+
+from radicale import pathutils
 
 try:
     import systemd.journal
@@ -72,6 +75,27 @@ class IdentLogRecordFactory:
         return record
 
 
+class RwLockWrapper():
+
+    def __init__(self):
+        self._file = tempfile.NamedTemporaryFile()
+        self._lock = pathutils.RwLock(self._file.name)
+        self._cm = None
+
+    def acquire(self, blocking=True):
+        assert self._cm is None
+        if not blocking:
+            raise NotImplementedError
+        cm = self._lock.acquire("w")
+        cm.__enter__()
+        self._cm = cm
+
+    def release(self):
+        assert self._cm is not None
+        self._cm.__exit__(None, None, None)
+        self._cm = None
+
+
 class ThreadStreamsHandler(logging.Handler):
 
     terminator = "\n"
@@ -83,7 +107,11 @@ class ThreadStreamsHandler(logging.Handler):
         self.fallback_handler = fallback_handler
 
     def createLock(self):
-        self.lock = multiprocessing.Lock()
+        try:
+            self.lock = multiprocessing.Lock()
+        except Exception:
+            # HACK: Workaround for Android
+            self.lock = RwLockWrapper()
 
     def setFormatter(self, form):
         super().setFormatter(form)
