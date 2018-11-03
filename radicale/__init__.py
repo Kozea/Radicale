@@ -765,12 +765,6 @@ class Application:
                 return FORBIDDEN
             if to_item and environ.get("HTTP_OVERWRITE", "F") != "T":
                 return PRECONDITION_FAILED
-            if (to_item and item.uid != to_item.uid or
-                    not to_item and
-                    to_collection.path != item.collection.path and
-                    to_collection.has_uid(item.uid)):
-                return self._webdav_error_response(
-                    "C" if tag == "VCALENDAR" else "CR", "no-uid-conflict")
             to_href = posixpath.basename(to_path.strip("/"))
             try:
                 self.Collection.move(item, to_collection, to_href)
