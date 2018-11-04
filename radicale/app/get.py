@@ -49,7 +49,7 @@ class ApplicationGetMixin:
         value = "attachement"
         try:
             encoded_filename = quote(filename, encoding=self.encoding)
-        except UnicodeEncodeError as e:
+        except UnicodeEncodeError:
             logger.warning("Failed to encode filename: %r", filename,
                            exc_info=True)
             encoded_filename = ""

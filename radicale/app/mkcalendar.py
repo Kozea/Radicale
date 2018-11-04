@@ -39,7 +39,7 @@ class ApplicationMkcalendarMixin:
             logger.warning(
                 "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
-        except socket.timeout as e:
+        except socket.timeout:
             logger.debug("client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         # Prepare before locking

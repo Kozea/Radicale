@@ -366,7 +366,7 @@ class ApplicationPropfindMixin:
             logger.warning(
                 "Bad PROPFIND request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
-        except socket.timeout as e:
+        except socket.timeout:
             logger.debug("client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         with self.Collection.acquire_lock("r", user):
