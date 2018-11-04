@@ -656,7 +656,7 @@ class Application:
             self.logger.warning(
                 "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
-        except socket.timeout as e:
+        except socket.timeout:
             self.logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("w", user):
@@ -695,7 +695,7 @@ class Application:
             self.logger.warning(
                 "Bad MKCOL request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
-        except socket.timeout as e:
+        except socket.timeout:
             self.logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("w", user):
@@ -792,7 +792,7 @@ class Application:
             self.logger.warning(
                 "Bad PROPFIND request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
-        except socket.timeout as e:
+        except socket.timeout:
             self.logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("r", user):
@@ -825,7 +825,7 @@ class Application:
             self.logger.warning(
                 "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
-        except socket.timeout as e:
+        except socket.timeout:
             self.logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("w", user):
@@ -856,7 +856,7 @@ class Application:
             self.logger.warning(
                 "Bad PUT request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
-        except socket.timeout as e:
+        except socket.timeout:
             self.logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("w", user):
@@ -963,7 +963,7 @@ class Application:
             self.logger.warning(
                 "Bad REPORT request on %r: %s", path, e, exc_info=True)
             return BAD_REQUEST
-        except socket.timeout as e:
+        except socket.timeout:
             self.logger.debug("client timed out", exc_info=True)
             return REQUEST_TIMEOUT
         with self.Collection.acquire_lock("r", user):

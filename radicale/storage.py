@@ -1353,7 +1353,7 @@ class Collection(BaseCollection):
                 cache_hash, *content = pickle.load(f)
                 if cache_hash == input_hash:
                     uid, etag, text, name, tag, start, end = content
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             pass
         except (pickle.UnpicklingError, ValueError) as e:
             self.logger.warning(
