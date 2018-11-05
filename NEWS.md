@@ -1,6 +1,13 @@
 News
 ====
 
+2.1.11 - Wild Radish
+--------------------
+
+This release is compatible with version 2.0.0.
+
+* Fix moving items between collections
+
 2.1.10 - Wild Radish
 --------------------
 
