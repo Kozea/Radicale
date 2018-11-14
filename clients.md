@@ -159,3 +159,11 @@ Delete the collections by running something like:
 ```shell
 $ curl -u user -X DELETE 'http://localhost:5232/user/calendar'
 ```
+
+## Manual import of existing calendar
+
+To import an already existing calendar, download its ics file then :
+
+```shell
+curl -L -u "user" -X PUT http://localhost:5232/user/calendar --data-binary @calendar.ics
+```
