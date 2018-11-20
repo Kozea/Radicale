@@ -28,6 +28,53 @@ In some clients you can just enter the URL of the Radicale server
 enter the URL of the collection directly
 (e.g. `http://localhost:5232/user/calendar`).
 
+## Auto Configuration
+
+Some clients can "auto-configure" themselves, but it's not always supported by Radicale.  Here is what seems to work the best.
+
+Setup a hostname just for radicale (say dav.example.com) and have radicale answer at the web root (so SCRIPT_NAME would be empty in your proxy config if using a proxy.)
+
+setup cal and card dav DNS entries(in bind format):
+
+```
+_caldavs._tcp 86400 IN SRV 10 20 443 dav.example.com.
+_carddavs._tcp 86400 IN SRV 10 20 443 dav.example.com.
+```
+
+Which is saying, for service caldavs (secure caldav) talk on port 443 to host dav.example.com.
+and for carddavs (secure carddav) talk on port 443 to host dav.example.com 
+
+understanding of these values can be had here: https://en.wikipedia.org/wiki/SRV_record
+
+you have secure and insecure options for the service name, with the s at the end means secure mode (i.e. served over TLS/SSL, which you should always do!)
+
+so your entire DNS setup for dav.example.com would be something like(in bind format):
+
+```
+_caldavs._tcp 86400 IN SRV 10 20 443 dav.example.com.
+_carddavs._tcp 86400 IN SRV 10 20 443 dav.example.com.
+dav 1800 IN A 10.1.1.1
+dav 1800 IN AAAA fd2b:72bf:5153:06a4:b576:ca2d:3c87:f9a7
+```
+
+Also on your main www.example.com site, setup redirects for the well-known addresses ``` /.well-known/caldav/``` and ````.well-known/carddav ``` to your new dav.example.com host.
+
+in nginx something like:
+```
+#http://www.example.com/.well-known/caldav -> root of your dav server
+        location /.well-known/caldav/ {
+                return         301 https://dav.example.com$request_uri;
+        }
+        #http://www.example.com/.well-known/carddav -> root of your dav server
+        location /.well-known/carddav/ {
+                return         301 https://dav.example.com$request_uri;
+        }
+```
+
+So https://www.example.com/.well-known/caldav should redirect to: https://dav.example.com
+
+This should make most clients auto-configure, if they have that option.
+
 ## DAVdroid
 
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
