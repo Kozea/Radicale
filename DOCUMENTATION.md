@@ -1658,8 +1658,8 @@ You can download the Radicale package for each release:
 
 Radicale has been packaged for:
 
-- [ArchLinux (AUR)](https://aur.archlinux.org/packages/radicale/) by
-  Guillaume Bouchard
+- [ArchLinux](https://www.archlinux.org/packages/community/any/radicale/) by
+  David Runge
 - [Debian](http://packages.debian.org/radicale) by Jonas Smedegaard
 - [Gentoo](https://packages.gentoo.org/packages/www-apps/radicale)
   by René Neumann, Maxim Koltsov and Manuel Rüger
