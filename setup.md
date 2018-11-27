@@ -195,6 +195,9 @@ ProtectKernelModules=true
 ProtectControlGroups=true
 NoNewPrivileges=true
 ReadWritePaths=/var/lib/radicale/collections
+# If you want to enable logging you also need to
+# whitelist the logging path
+#ReadWritePaths=/var/log/radicale
 
 [Install]
 WantedBy=multi-user.target
