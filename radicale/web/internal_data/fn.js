@@ -121,7 +121,7 @@ function Collection(href, type, displayname, description, color) {
  */
 function get_principal(user, password, callback) {
     var request = new XMLHttpRequest();
-    request.open("PROPFIND", SERVER + ROOT_PATH, true, user, password);
+    request.open("PROPFIND", SERVER + ROOT_PATH + user, true, user, password);
     request.onreadystatechange = function() {
         if (request.readyState !== 4) {
             return;
