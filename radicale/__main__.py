@@ -27,7 +27,7 @@ import os
 import signal
 import socket
 
-from radicale import VERSION, config, log, server, storage
+from radicale import VERSION, config, log, server, share, storage
 from radicale.log import logger
 
 
@@ -115,7 +115,8 @@ def run():
     if args.verify_storage:
         logger.info("Verifying storage")
         try:
-            Collection = storage.load(configuration)
+            shares = share.load(configuration)
+            Collection = storage.load(configuration, shares)
             with Collection.acquire_lock("r"):
                 if not Collection.verify():
                     logger.fatal("Storage verifcation failed")

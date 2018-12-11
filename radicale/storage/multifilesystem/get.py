@@ -32,6 +32,9 @@ class CollectionGetMixin:
         self._item_cache_cleaned = False
 
     def _list(self):
+        if self._share:
+            yield from self._base_collection._list()
+            return
         for entry in os.scandir(self._filesystem_path):
             if not entry.is_file():
                 continue
@@ -43,6 +46,8 @@ class CollectionGetMixin:
             yield href
 
     def _get(self, href, verify_href=True):
+        if self._share:
+            return self._base_collection._get(href, verify_href)
         if verify_href:
             try:
                 if not pathutils.is_safe_filesystem_path_component(href):
@@ -132,4 +137,7 @@ class CollectionGetMixin:
     def get_all(self):
         # We don't need to check for collissions, because the the file names
         # are from os.listdir.
-        return (self._get(href, verify_href=False) for href in self._list())
+        for href in self._list():
+            item = self._get(href, verify_href=False)
+            if item:
+                yield item

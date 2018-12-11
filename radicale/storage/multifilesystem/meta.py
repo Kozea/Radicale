@@ -38,6 +38,9 @@ class CollectionMetaMixin:
                         self._meta_cache = json.load(f)
                 except FileNotFoundError:
                     self._meta_cache = {}
+                if self._share:
+                    self._meta_cache = self._share.get_meta(
+                        self._meta_cache, self._base_collection.get_meta())
                 radicale_item.check_and_sanitize_props(self._meta_cache)
             except ValueError as e:
                 raise RuntimeError("Failed to load properties of collection "
@@ -45,5 +48,14 @@ class CollectionMetaMixin:
         return self._meta_cache.get(key) if key else self._meta_cache
 
     def set_meta(self, props):
-        with self._atomic_write(self._props_path, "w") as f:
-            json.dump(props, f, sort_keys=True)
+        if self._share:
+            props, base_props = self._share.set_meta(
+                props, self.get_meta(), self._base_collection.get_meta())
+            with self._atomic_write(self._props_path, "w") as f1,\
+                    self._atomic_write(
+                        self._base_collection._props_path, "w") as f2:
+                json.dump(props, f1, sort_keys=True)
+                json.dump(base_props, f2, sort_keys=True)
+        else:
+            with self._atomic_write(self._props_path, "w") as f:
+                json.dump(props, f, sort_keys=True)

@@ -44,7 +44,7 @@ CACHE_VERSION = (";".join(pkg_resources.get_distribution(pkg).version
                           for pkg in CACHE_DEPS) + ";").encode()
 
 
-def load(configuration):
+def load(configuration, shares):
     """Load the storage manager chosen in configuration."""
     storage_type = configuration.get("storage", "type")
     if storage_type in INTERNAL_TYPES:
@@ -61,6 +61,7 @@ def load(configuration):
     class CollectionCopy(class_):
         """Collection copy, avoids overriding the original class attributes."""
     CollectionCopy.configuration = configuration
+    CollectionCopy.shares = shares
     CollectionCopy.static_init()
     return CollectionCopy
 
@@ -81,6 +82,7 @@ class BaseCollection:
 
     # Overriden on copy by the "load" function
     configuration = None
+    share_types = None
 
     # Properties of instance
     """The sanitized path of the collection without leading or trailing ``/``.
@@ -99,7 +101,7 @@ class BaseCollection:
     @property
     def is_principal(self):
         """Collection is a principal."""
-        return bool(self.path) and "/" not in self.path
+        return self.path and "/" not in self.path and not self.get_meta("tag")
 
     @classmethod
     def discover(cls, path, depth="0"):

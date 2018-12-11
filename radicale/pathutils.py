@@ -231,3 +231,28 @@ def name_from_path(path, collection):
         raise ValueError("%r is not a component in collection %r" %
                          (name, collection.path))
     return name
+
+
+def escape_shared_path(path):
+    return path.replace(".", "..").replace("_", "._").replace("/", "_")
+
+
+def unescape_shared_path(escaped_path):
+    path = ""
+    while escaped_path:
+        if escaped_path[0] == ".":
+            if len(escaped_path) <= 1:
+                raise ValueError("EOF")
+            if escaped_path[1] in (".", "_"):
+                path += escaped_path[1]
+            else:
+                raise ValueError("Illegal escape sequence: %r" %
+                                 escaped_path[0:2])
+            escaped_path = escaped_path[2:]
+        elif escaped_path[0] == "_":
+            path += "/"
+            escaped_path = escaped_path[1:]
+        else:
+            path += escaped_path[0]
+            escaped_path = escaped_path[1:]
+    return path

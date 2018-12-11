@@ -29,7 +29,7 @@ import os
 from collections import OrderedDict
 from configparser import RawConfigParser as ConfigParser
 
-from radicale import auth, rights, storage, web
+from radicale import auth, rights, share, storage, web
 
 
 def positive_int(value):
@@ -169,6 +169,12 @@ INITIAL_CONFIG = OrderedDict([
             "value": "",
             "help": "command that is run after changes to storage",
             "type": str})])),
+    ("share", OrderedDict([
+        ("type", {
+            "value": "read, write, birthday",
+            "help": "set share plugins",
+            "type": str,
+            "internal": share.INTERNAL_TYPES})])),
     ("web", OrderedDict([
         ("type", {
             "value": "internal",

@@ -26,18 +26,30 @@ class CollectionMoveMixin:
     def move(cls, item, to_collection, to_href):
         if not pathutils.is_safe_filesystem_path_component(to_href):
             raise pathutils.UnsafePathError(to_href)
+        collection = item.collection
+        if collection._share:
+            assert collection._share.item_writethrough
+            base_collection = collection._base_collection
+        else:
+            base_collection = collection
+        if to_collection._share:
+            assert to_collection._share.item_writethrough
+            base_to_collection = to_collection._base_collection
+        else:
+            base_to_collection = to_collection
         os.replace(
             pathutils.path_to_filesystem(
-                item.collection._filesystem_path, item.href),
+                base_collection._filesystem_path, item.href),
             pathutils.path_to_filesystem(
-                to_collection._filesystem_path, to_href))
-        cls._sync_directory(to_collection._filesystem_path)
-        if item.collection._filesystem_path != to_collection._filesystem_path:
-            cls._sync_directory(item.collection._filesystem_path)
+                base_to_collection._filesystem_path, to_href))
+        cls._sync_directory(base_to_collection._filesystem_path)
+        if (base_collection._filesystem_path !=
+                base_to_collection._filesystem_path):
+            cls._sync_directory(base_collection._filesystem_path)
         # Move the item cache entry
-        cache_folder = os.path.join(item.collection._filesystem_path,
+        cache_folder = os.path.join(base_collection._filesystem_path,
                                     ".Radicale.cache", "item")
-        to_cache_folder = os.path.join(to_collection._filesystem_path,
+        to_cache_folder = os.path.join(base_to_collection._filesystem_path,
                                        ".Radicale.cache", "item")
         cls._makedirs_synced(to_cache_folder)
         try:
@@ -51,7 +63,7 @@ class CollectionMoveMixin:
                 cls._makedirs_synced(cache_folder)
         # Track the change
         to_collection._update_history_etag(to_href, item)
-        item.collection._update_history_etag(item.href, None)
+        collection._update_history_etag(item.href, None)
         to_collection._clean_history()
-        if item.collection._filesystem_path != to_collection._filesystem_path:
-            item.collection._clean_history()
+        if collection._filesystem_path != to_collection._filesystem_path:
+            collection._clean_history()

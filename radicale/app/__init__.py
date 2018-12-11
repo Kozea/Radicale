@@ -37,7 +37,7 @@ from http import client
 from xml.etree import ElementTree as ET
 
 from radicale import (
-    auth, httputils, log, pathutils, rights, storage, web, xmlutils)
+    auth, httputils, log, pathutils, rights, share, storage, web, xmlutils)
 from radicale.app.delete import ApplicationDeleteMixin
 from radicale.app.get import ApplicationGetMixin
 from radicale.app.head import ApplicationHeadMixin
@@ -70,7 +70,8 @@ class Application(
         super().__init__()
         self.configuration = configuration
         self.Auth = auth.load(configuration)
-        self.Collection = storage.load(configuration)
+        self.shares = share.load(configuration)
+        self.Collection = storage.load(configuration, self.shares)
         self.Rights = rights.load(configuration)
         self.Web = web.load(configuration)
         self.encoding = configuration.get("encoding", "request")

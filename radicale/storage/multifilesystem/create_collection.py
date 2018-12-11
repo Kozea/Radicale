@@ -33,7 +33,7 @@ class CollectionCreateCollectionMixin:
 
         if not props:
             cls._makedirs_synced(filesystem_path)
-            return cls(pathutils.unstrip_path(sane_path, True))
+            return cls(sane_path)
 
         parent_dir = os.path.dirname(filesystem_path)
         cls._makedirs_synced(parent_dir)
@@ -44,8 +44,7 @@ class CollectionCreateCollectionMixin:
             # The temporary directory itself can't be renamed
             tmp_filesystem_path = os.path.join(tmp_dir, "collection")
             os.makedirs(tmp_filesystem_path)
-            self = cls(pathutils.unstrip_path(sane_path, True),
-                       filesystem_path=tmp_filesystem_path)
+            self = cls(sane_path, filesystem_path=tmp_filesystem_path)
             self.set_meta(props)
             if items is not None:
                 if props.get("tag") == "VCALENDAR":
@@ -61,4 +60,4 @@ class CollectionCreateCollectionMixin:
             os.rename(tmp_filesystem_path, filesystem_path)
             cls._sync_directory(parent_dir)
 
-        return cls(pathutils.unstrip_path(sane_path, True))
+        return cls(sane_path)

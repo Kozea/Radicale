@@ -17,6 +17,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
+import json
 import os
 
 from radicale import pathutils
@@ -36,6 +37,83 @@ class CollectionDiscoverMixin:
         folder = cls._get_collection_root_folder()
         # Create the root collection
         cls._makedirs_synced(folder)
+
+        if (len(attributes) >= 1 and
+                attributes[-1].startswith(".share_") or
+                len(attributes) >= 2 and
+                attributes[-1].startswith(".share_")):
+            if attributes[-1].startswith(".share_"):
+                href = None
+            else:
+                href = attributes.pop()
+            parent_sane_path = "/".join(attributes[:-1])
+            share_path = pathutils.unescape_shared_path(
+                attributes[-1][len(".share"):])
+            base_path, *share_group = share_path.rsplit("//", 1)
+            if share_group:
+                base_path += "/"
+                share_group = share_group[0]
+            else:
+                share_group = ""
+            if (base_path != pathutils.sanitize_path(base_path) or
+                    not base_path.endswith("/")):
+                return
+            base_sane_path = pathutils.strip_path(base_path)
+            for share in cls.shares:
+                if share.group == share_group:
+                    break
+            else:
+                return
+            try:
+                base_filesystem_path = pathutils.path_to_filesystem(
+                    folder, base_sane_path)
+                filesystem_path = os.path.join(pathutils.path_to_filesystem(
+                    os.path.join(
+                        pathutils.path_to_filesystem(folder, parent_sane_path),
+                        ".Radicale.shares"),
+                    base_sane_path), ".Radicale.share_group_%s" % share_group
+                    if share_group else ".Radicale.share_group")
+            except ValueError as e:
+                # Path is unsafe
+                logger.debug("Unsafe path %r requested from storage: %s",
+                             sane_path, e, exc_info=True)
+                return
+            share_uuid_path = os.path.join(filesystem_path, ".Radicale.share")
+            try:
+                with open(share_uuid_path,  encoding=cls._encoding) as f:
+                    share_uuid = json.load(f)
+            except FileNotFoundError:
+                return
+            except ValueError as e:
+                raise RuntimeError(
+                    "Invalid share of collection %r to %r: %s" %
+                    (base_sane_path, parent_sane_path, e)) from e
+            if not os.path.isdir(base_filesystem_path):
+                return
+            for share in cls.shares:
+                if share.uuid == share_uuid and share.group == share_group:
+                    break
+            else:
+                return
+            base_collection = cls(base_sane_path)
+            if base_collection.get_meta("tag") not in share.tags:
+                return
+            collection = cls(
+                sane_path, filesystem_path=filesystem_path,
+                share=share, base_collection=base_collection)
+            if href:
+                yield collection._get(href)
+                return
+            yield collection
+            if depth == "0":
+                return
+            for href in collection._list():
+                with child_context_manager(sane_path, href):
+                    child_item = collection._get(href)
+                    if child_item:
+                        yield child_item
+            return
+
         try:
             filesystem_path = pathutils.path_to_filesystem(folder, sane_path)
         except ValueError as e:
@@ -54,7 +132,7 @@ class CollectionDiscoverMixin:
             href = None
 
         sane_path = "/".join(attributes)
-        collection = cls(pathutils.unstrip_path(sane_path, True))
+        collection = cls(sane_path)
 
         if href:
             yield collection._get(href)
@@ -67,7 +145,9 @@ class CollectionDiscoverMixin:
 
         for href in collection._list():
             with child_context_manager(sane_path, href):
-                yield collection._get(href)
+                child_item = collection._get(href)
+                if child_item:
+                    yield child_item
 
         for entry in os.scandir(filesystem_path):
             if not entry.is_dir():
@@ -79,6 +159,63 @@ class CollectionDiscoverMixin:
                                  href, sane_path)
                 continue
             sane_child_path = posixpath.join(sane_path, href)
-            child_path = pathutils.unstrip_path(sane_child_path, True)
             with child_context_manager(sane_child_path):
-                yield cls(child_path)
+                yield cls(sane_child_path)
+
+        def scan_shares(shares_folder, parent_sane_path=""):
+            for entry in os.scandir(
+                    os.path.join(shares_folder, parent_sane_path)):
+                if not entry.is_dir():
+                    continue
+                if pathutils.is_safe_filesystem_path_component(entry.name):
+                    base_sane_path = os.path.join(parent_sane_path, entry.name)
+                    yield from scan_shares(shares_folder, base_sane_path)
+                    continue
+                if (entry.name != ".Radicale.share_group" and
+                        not entry.name.startswith(".Radicale.share_group_") or
+                        entry.name == ".Radicale.share_group_"):
+                    continue
+                share_group = entry.name[len(".Radicale.share_group_"):]
+                base_sane_path = parent_sane_path
+                child_filesystem_path = os.path.join(
+                    shares_folder, base_sane_path, entry.name)
+                share_uuid_path = os.path.join(
+                    child_filesystem_path, ".Radicale.share")
+                try:
+                    with open(share_uuid_path, encoding=cls._encoding) as f:
+                        share_uuid = json.load(f)
+                except FileNotFoundError:
+                    continue
+                except ValueError as e:
+                    raise RuntimeError(
+                        "Invalid share of collection %r to %r: %s" %
+                        (base_sane_path, sane_path, e)) from e
+                for share in cls.shares:
+                    if (share.uuid == share_uuid and
+                            share.group == share_group):
+                        break
+                else:
+                    continue
+                try:
+                    base_filesystem_path = pathutils.path_to_filesystem(
+                        folder, base_sane_path)
+                except ValueError:
+                    continue
+                if not os.path.isdir(base_filesystem_path):
+                    continue
+                base_collection = cls(base_sane_path)
+                if base_collection.get_meta("tag") not in share.tags:
+                    continue
+                child_sane_path = os.path.join(
+                    sane_path,
+                    ".share%s" % pathutils.escape_shared_path(
+                        pathutils.unstrip_path(base_sane_path, True) +
+                        ("/%s" % share.group if share.group else "")))
+                child_collection = cls(
+                    child_sane_path, filesystem_path=child_filesystem_path,
+                    share=share, base_collection=base_collection)
+                yield child_collection
+
+        shares_folder = os.path.join(filesystem_path, ".Radicale.shares")
+        if os.path.isdir(shares_folder):
+            yield from scan_shares(shares_folder)

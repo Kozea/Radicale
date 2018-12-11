@@ -107,6 +107,12 @@
 #hook =
 
 
+[share]
+
+# Share plugins
+#type = read, write, birthday
+
+
 [web]
 
 # Web interface backend

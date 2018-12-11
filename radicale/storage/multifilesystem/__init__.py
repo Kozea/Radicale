@@ -33,6 +33,7 @@ from radicale.storage.multifilesystem.history import CollectionHistoryMixin
 from radicale.storage.multifilesystem.lock import CollectionLockMixin
 from radicale.storage.multifilesystem.meta import CollectionMetaMixin
 from radicale.storage.multifilesystem.move import CollectionMoveMixin
+from radicale.storage.multifilesystem.share import CollectionShareMixin
 from radicale.storage.multifilesystem.sync import CollectionSyncMixin
 from radicale.storage.multifilesystem.upload import CollectionUploadMixin
 from radicale.storage.multifilesystem.verify import CollectionVerifyMixin
@@ -42,8 +43,8 @@ class Collection(
         CollectionCacheMixin, CollectionCreateCollectionMixin,
         CollectionDeleteMixin, CollectionDiscoverMixin, CollectionGetMixin,
         CollectionHistoryMixin, CollectionLockMixin, CollectionMetaMixin,
-        CollectionMoveMixin, CollectionSyncMixin, CollectionUploadMixin,
-        CollectionVerifyMixin, storage.BaseCollection):
+        CollectionMoveMixin, CollectionShareMixin, CollectionSyncMixin,
+        CollectionUploadMixin, CollectionVerifyMixin, storage.BaseCollection):
     """Collection stored in several files per calendar."""
 
     @classmethod
@@ -51,17 +52,27 @@ class Collection(
         folder = os.path.expanduser(cls.configuration.get(
             "storage", "filesystem_folder"))
         cls._makedirs_synced(folder)
+        cls._encoding = cls.configuration.get("encoding", "stock")
         super().static_init()
 
-    def __init__(self, path, filesystem_path=None):
+    @property
+    def owner(self):
+        if self._share:
+            return self._base_collection.owner
+        return super().owner
+
+    def __init__(self, sane_path, filesystem_path=None,
+                 share=None, base_collection=None):
+        assert not ((share is None) ^ (base_collection is None))
         folder = self._get_collection_root_folder()
-        # Path should already be sanitized
-        self.path = pathutils.strip_path(path)
-        self._encoding = self.configuration.get("encoding", "stock")
+        assert sane_path == pathutils.sanitize_path(sane_path).strip("/")
+        self.path = sane_path
         if filesystem_path is None:
             filesystem_path = pathutils.path_to_filesystem(folder, self.path)
         self._filesystem_path = filesystem_path
         self._etag_cache = None
+        self._share = share
+        self._base_collection = base_collection
         super().__init__()
 
     @classmethod
@@ -137,12 +148,21 @@ class Collection(
         os.makedirs(filesystem_path, exist_ok=True)
         cls._sync_directory(parent_filesystem_path)
 
+    def _last_modified_relevant_files(self):
+        yield self._filesystem_path
+        if os.path.exists(self._props_path):
+            yield self._props_path
+        if not self._share:
+            for href in self._list():
+                yield os.path.join(self._filesystem_path, href)
+
     @property
     def last_modified(self):
-        relevant_files = chain(
-            (self._filesystem_path,),
-            (self._props_path,) if os.path.exists(self._props_path) else (),
-            (os.path.join(self._filesystem_path, h) for h in self._list()))
+        relevant_files = self._last_modified_relevant_files()
+        if self._share:
+            relevant_files = chain(
+                relevant_files,
+                self._base_collection._last_modified_relevant_files())
         last = max(map(os.path.getmtime, relevant_files))
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(last))
 
