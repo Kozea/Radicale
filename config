@@ -102,9 +102,34 @@
 # Delete sync token that are older (seconds)
 #max_sync_token_age = 2592000
 
-# Command that is run after changes to storage
-# Example: ([ -d .git ] || git init) && git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
+# Command that is run after changes to storage. Default is emtpy:
 #hook =
+
+# If you want to use git to track all changes to the filesystem_folder,
+# you can use hook like the one below, but make sure you initialize
+# git repository and configure git first. The hook you want looks like this:
+#
+#hook = git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
+#
+# ... but in order for this hook to work, you need to initialize git repo
+# and to configure git. To do this, please log-in either as root or as
+# the user running Radicale and execute the following commands. Remember,
+# that you need to run them only once per filesystem_folder and there is no
+# need to place them in the hook command:
+#
+# 1) go to the filesystem_folder:
+#
+# $ cd /var/lib/radicale/collections # for global installation
+# $ cd ~/.var/lib/radicale/collections # for user installation
+#
+# 2) initialize git repository:
+#
+# $ git init
+#
+# 3) configure git user.name and user.email:
+#
+# $ git config user.name "My GIT User Name"
+# $ git config user.emails "my_git_user@email.com"
 
 
 [web]
