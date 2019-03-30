@@ -7,7 +7,7 @@ permalink: /clients/
 Radicale has been tested with:
 
   * [Android](https://android.com/) with
-    [DAVdroid](https://davdroid.bitfire.at/)
+    [DAVx⁵](https://www.davx5.com/) (formerly DAVdroid)
   * [GNOME Calendar](https://wiki.gnome.org/Apps/Calendar),
     [Contacts](https://wiki.gnome.org/Apps/Contacts) and
     [Evolution](https://wiki.gnome.org/Apps/Evolution)
@@ -28,10 +28,10 @@ In some clients you can just enter the URL of the Radicale server
 enter the URL of the collection directly
 (e.g. `http://localhost:5232/user/calendar`).
 
-## DAVdroid
+## DAVx⁵
 
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
-user name. DAVdroid will show all existing calendars and address books and you
+user name. DAVx⁵ will show all existing calendars and address books and you
 can create new.
 
 ## GNOME Calendar, Contacts and Evolution
@@ -77,7 +77,7 @@ configuration. The documentation of **InfCloud** has more details on this.
 
 This is not the recommended way of creating and managing your calendars and
 address books. Use Radicale's web interface or a client with support for it
-(e.g. **DAVdroid**).
+(e.g. **DAVx⁵**).
 
 ### Direct editing of the storage
 
