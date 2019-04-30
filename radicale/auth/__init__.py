@@ -58,7 +58,9 @@ from importlib import import_module
 
 from radicale.log import logger
 
-INTERNAL_TYPES = ("none", "remote_user", "http_x_remote_user", "htpasswd")
+INTERNAL_TYPES = (
+        "none", "remote_user", "http_x_remote_user", "htpasswd", "dovecot"
+)
 
 
 def load(configuration):

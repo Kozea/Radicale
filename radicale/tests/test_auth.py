@@ -156,6 +156,88 @@ class TestBaseAuthRequests(BaseTest):
         assert status == 207
         assert ">/test/<" in answer
 
+    def _test_dovecot(
+            self, user, password, expected_status,
+            response=b'FAIL\n1\n', mech=[b'PLAIN'], broken=None):
+        from unittest.mock import patch
+        from unittest.mock import DEFAULT
+        import socket
+
+        self.configuration["auth"]["type"] = "dovecot"
+        self.configuration["auth"]["dovecot_socket"] = "./dovecot.sock"
+        self.application = Application(self.configuration)
+
+        if broken is None:
+            broken = []
+
+        handshake = b''
+        if "version" not in broken:
+            handshake += b'VERSION\t'
+            if "incompatible" in broken:
+                handshake += b'2'
+            else:
+                handshake += b'1'
+            handshake += b'\t2\n'
+
+        if "mech" not in broken:
+            handshake += b'MECH\t%b\n' % b' '.join(mech)
+
+        if "done" not in broken:
+            handshake += b'DONE\n'
+
+        with patch.multiple(
+                'socket.socket',
+                connect=DEFAULT,
+                send=DEFAULT,
+                recv=DEFAULT
+                ) as mock_socket:
+            if "socket" in broken:
+                mock_socket["connect"].side_effect = socket.error(
+                        "Testing error with the socket"
+                )
+            mock_socket["recv"].side_effect = [handshake, response]
+            status, _, answer = self.request(
+                "PROPFIND", "/",
+                HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
+                    ("%s:%s" % (user, password)).encode()).decode())
+            assert status == expected_status
+
+    def test_dovecot_no_user(self):
+        self._test_dovecot("", "", 401)
+
+    def test_dovecot_no_password(self):
+        self._test_dovecot("user", "", 401)
+
+    def test_dovecot_broken_handshake_no_version(self):
+        self._test_dovecot("user", "password", 401, broken=["version"])
+
+    def test_dovecot_broken_handshake_incompatible(self):
+        self._test_dovecot("user", "password", 401, broken=["incompatible"])
+
+    def test_dovecot_broken_handshake_no_mech(self):
+        self._test_dovecot("user", "password", 401, broken=["mech"])
+
+    def test_dovecot_broken_handshake_unsupported_mech(self):
+        self._test_dovecot("user", "password", 401, mech=[b'ONE', b'TWO'])
+
+    def test_dovecot_broken_handshake_no_done(self):
+        self._test_dovecot("user", "password", 401, broken=["done"])
+
+    def test_dovecot_broken_socket(self):
+        self._test_dovecot("user", "password", 401, broken=["socket"])
+
+    def test_dovecot_auth_good(self):
+        self._test_dovecot("user", "password", 207, response=b'OK\t1')
+
+    def test_dovecot_auth_bad1(self):
+        self._test_dovecot("user", "password", 401, response=b'FAIL\t1')
+
+    def test_dovecot_auth_bad2(self):
+        self._test_dovecot("user", "password", 401, response=b'CONT\t1')
+
+    def test_dovecot_auth_id_mismatch(self):
+        self._test_dovecot("user", "password", 401, response=b'CONT\t2')
+
     def test_custom(self):
         """Custom authentication."""
         self.configuration["auth"]["type"] = "tests.custom.auth"

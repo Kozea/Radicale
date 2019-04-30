@@ -132,6 +132,10 @@ INITIAL_CONFIG = OrderedDict([
             "value": "bcrypt",
             "help": "htpasswd encryption method",
             "type": str}),
+        ("dovecot_socket", {
+            "value": "/var/run/dovecot/auth-client",
+            "help": "dovecot auth socket",
+            "type": str}),
         ("realm", {
             "value": "Radicale - Password Required",
             "help": "message displayed when a password is needed",
