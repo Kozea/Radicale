@@ -40,7 +40,7 @@ class Auth(auth.BaseAuth):
         This implementation communicates with a Dovecot server through the
         Dovecot Authentication Protocol v1.1.
 
-        http://wiki2.dovecot.org/Design/AuthProtocol
+        https://dovecot.org/doc/auth-protocol.txt
 
         """
 
