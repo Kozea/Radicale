@@ -182,6 +182,9 @@ class TestBaseAuthRequests(BaseTest):
         if "mech" not in broken:
             handshake += b'MECH\t%b\n' % b' '.join(mech)
 
+        if "duplicate" in broken:
+            handshake += b'VERSION\t1\t2\n'
+
         if "done" not in broken:
             handshake += b'DONE\n'
 
@@ -214,6 +217,12 @@ class TestBaseAuthRequests(BaseTest):
     def test_dovecot_broken_handshake_incompatible(self):
         self._test_dovecot("user", "password", 401, broken=["incompatible"])
 
+    def test_dovecot_broken_handshake_duplicate(self):
+        self._test_dovecot(
+                "user", "password", 207, response=b'OK\t1',
+                broken=["duplicate"]
+        )
+
     def test_dovecot_broken_handshake_no_mech(self):
         self._test_dovecot("user", "password", 401, broken=["mech"])
 
@@ -226,8 +235,14 @@ class TestBaseAuthRequests(BaseTest):
     def test_dovecot_broken_socket(self):
         self._test_dovecot("user", "password", 401, broken=["socket"])
 
-    def test_dovecot_auth_good(self):
+    def test_dovecot_auth_good1(self):
         self._test_dovecot("user", "password", 207, response=b'OK\t1')
+
+    def test_dovecot_auth_good2(self):
+        self._test_dovecot(
+                "user", "password", 207, response=b'OK\t1',
+                mech=[b'PLAIN\nEXTRA\tTERM']
+        )
 
     def test_dovecot_auth_bad1(self):
         self._test_dovecot("user", "password", 401, response=b'FAIL\t1')
@@ -236,7 +251,7 @@ class TestBaseAuthRequests(BaseTest):
         self._test_dovecot("user", "password", 401, response=b'CONT\t1')
 
     def test_dovecot_auth_id_mismatch(self):
-        self._test_dovecot("user", "password", 401, response=b'CONT\t2')
+        self._test_dovecot("user", "password", 401, response=b'OK\t2')
 
     def test_custom(self):
         """Custom authentication."""
