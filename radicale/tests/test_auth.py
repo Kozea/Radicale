@@ -51,6 +51,32 @@ class TestBaseAuthRequests(BaseTest):
     def teardown(self):
         shutil.rmtree(self.colpath)
 
+    def test_ldap(self, test_matrix=None):
+        """Test LDAP Authentication against ldap server ldap.forumsys.com"""
+
+        self.configuration["auth"]["type"] = "ldap"
+        self.configuration["auth"]["ldap_server_uri"] = "" \
+            "ldap://ldap.forumsys.com:389"
+
+        if test_matrix is None:
+            test_matrix = (
+                ("uid=%u,dc=example,dc=com", "riemann", "password", 207),
+                ("uid=%n,dc=%d,dc=com", "riemann@example", "password", 207),
+                ("uid=%u,dc=example,dc=com", "riemann", "tmp", 401),
+                ("uid=%u,dc=example,dc=com", "riemann", "", 401),
+                ("uid=%u,dc=example,dc=com", "unk", "unk", 401),
+                ("uid=%u,dc=example,dc=com", "unk", "", 401),
+                ("uid=%u,dc=example,dc=com", "", "", 401))
+
+        for bind_dn, user, password, expected_status in test_matrix:
+            self.configuration["auth"]["ldap_bind_dn"] = bind_dn
+            self.application = Application(self.configuration)
+            status, _, answer = self.request(
+                "PROPFIND", "/",
+                HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
+                    ("%s:%s" % (user, password)).encode()).decode())
+            assert status == expected_status
+
     def _test_htpasswd(self, htpasswd_encryption, htpasswd_content,
                        test_matrix=None):
         """Test htpasswd authentication with user "tmp" and password "bepo"."""
