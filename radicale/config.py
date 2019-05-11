@@ -132,6 +132,17 @@ INITIAL_CONFIG = OrderedDict([
             "value": "bcrypt",
             "help": "htpasswd encryption method",
             "type": str}),
+        ("ldap_server_uri", {
+            "value": "ldap://127.0.0.1",
+            "help": "URI of LDAP server",
+            "type": str}),
+        ("ldap_bind_dn", {
+            "value": "uid=%%n,ou=People,o=organization,dc=example,dc=com",
+            "help": "Distinguished Name to bind with, "
+                    "'%%n' is used for whole user name, "
+                    "'%%d' for domain part and "
+                    "'%%u' for local part of the username",
+            "type": str}),
         ("realm", {
             "value": "Radicale - Password Required",
             "help": "message displayed when a password is needed",
