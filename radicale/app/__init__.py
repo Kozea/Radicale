@@ -28,7 +28,6 @@ import base64
 import datetime
 import io
 import logging
-import pkg_resources
 import pprint
 import random
 import time
@@ -36,8 +35,10 @@ import zlib
 from http import client
 from xml.etree import ElementTree as ET
 
-from radicale import (
-    auth, httputils, log, pathutils, rights, storage, web, xmlutils)
+import pkg_resources
+
+from radicale import (auth, httputils, log, pathutils, rights, storage, web,
+                      xmlutils)
 from radicale.app.delete import ApplicationDeleteMixin
 from radicale.app.get import ApplicationGetMixin
 from radicale.app.head import ApplicationHeadMixin

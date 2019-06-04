@@ -373,7 +373,7 @@ def visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
                     # Line 6
                     if range_fn(reference_date - SECOND,
                                 reference_date + SECOND, is_recurrence):
-                                return
+                        return
                 elif created is not None:
                     # Line 7
                     if range_fn(reference_date, DATETIME_MAX, is_recurrence):

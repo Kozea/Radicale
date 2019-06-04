@@ -22,12 +22,11 @@ Tests for Radicale.
 
 import logging
 import os
-import radicale
 import sys
 from io import BytesIO
 
+import radicale
 from pytest_cov import embed
-
 from radicale import server
 
 # Measure coverage of forked processes

@@ -24,8 +24,8 @@ from tempfile import NamedTemporaryFile
 
 from radicale import pathutils, storage
 from radicale.storage.multifilesystem.cache import CollectionCacheMixin
-from radicale.storage.multifilesystem.create_collection import (
-    CollectionCreateCollectionMixin)
+from radicale.storage.multifilesystem.create_collection import \
+    CollectionCreateCollectionMixin
 from radicale.storage.multifilesystem.delete import CollectionDeleteMixin
 from radicale.storage.multifilesystem.discover import CollectionDiscoverMixin
 from radicale.storage.multifilesystem.get import CollectionGetMixin
