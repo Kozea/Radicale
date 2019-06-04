@@ -25,9 +25,9 @@ Can be used with an external WSGI server or the built-in server.
 """
 
 import os
-import pkg_resources
 import threading
 
+import pkg_resources
 
 from radicale import config, log
 from radicale.app import Application
