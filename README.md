@@ -14,5 +14,5 @@ For complete documentation, please visit the
 To run the tests run:
 
 ```bash
-python3 ./setup.py test
+./setup.py test
 ```

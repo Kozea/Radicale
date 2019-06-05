@@ -25,8 +25,9 @@ import os
 import sys
 from io import BytesIO
 
-import radicale
 from pytest_cov import embed
+
+import radicale
 from radicale import server
 
 # Measure coverage of forked processes
