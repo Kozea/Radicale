@@ -31,8 +31,8 @@ before_install:
     if [ "${TRAVIS_OS_NAME}" == linux -a -n "${WINE_PYTHON}" ]; then
       pushd "$(mktemp -d)" &&
       sudo dpkg --add-architecture i386 &&
-      wget https://dl.winehq.org/wine-builds/Release.key -O Release.key &&
-      sudo apt-key add Release.key &&
+      wget https://dl.winehq.org/wine-builds/winehq.key -O winehq.key &&
+      sudo apt-key add winehq.key &&
       sudo apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/ &&
       sudo apt-get update &&
       sudo apt-get install -y --no-install-recommends unzip winehq-stable &&
