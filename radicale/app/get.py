@@ -17,13 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import posixpath
 from http import client
 from urllib.parse import quote
 
 from radicale import httputils, pathutils, storage, xmlutils
 from radicale.log import logger
-
-import posixpath  # isort:skip
 
 
 def propose_filename(collection):

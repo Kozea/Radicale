@@ -18,9 +18,8 @@
 
 import contextlib
 import os
+import posixpath
 import threading
-
-import posixpath  # isort:skip
 
 if os.name == "nt":
     import ctypes

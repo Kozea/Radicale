@@ -26,11 +26,11 @@ import os
 import shutil
 import tempfile
 
+import pytest
+
 from radicale import Application, config
 
 from .test_base import BaseTest
-
-import pytest  # isort:skip
 
 
 class TestBaseAuthRequests(BaseTest):

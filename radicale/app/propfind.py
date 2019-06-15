@@ -18,14 +18,13 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+import posixpath
 import socket
 from http import client
 from xml.etree import ElementTree as ET
 
 from radicale import httputils, pathutils, rights, storage, xmlutils
 from radicale.log import logger
-
-import posixpath  # isort:skip
 
 
 def xml_propfind(base_prefix, path, xml_request, allowed_items, user):

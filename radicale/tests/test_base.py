@@ -22,20 +22,19 @@ Radicale tests with simple requests.
 
 import base64
 import os
+import posixpath
 import shutil
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
 from functools import partial
 
+import pytest
+
 from radicale import Application, config, storage
 
 from . import BaseTest
 from .helpers import get_file_content
-
-import posixpath  # isort:skip
-
-import pytest  # isort:skip
 
 
 class BaseRequestsMixIn:

@@ -32,11 +32,11 @@ from configparser import ConfigParser
 from urllib import request
 from urllib.error import HTTPError, URLError
 
+import pytest
+
 from radicale import config, server
 
 from .helpers import get_file_path
-
-import pytest  # isort:skip
 
 try:
     import gunicorn
