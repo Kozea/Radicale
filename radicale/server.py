@@ -2,7 +2,7 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@ import ssl
 import sys
 import threading
 import wsgiref.simple_server
-from configparser import ConfigParser
 from urllib.parse import unquote
 
 from radicale import Application
@@ -247,24 +246,21 @@ def serve(configuration, shutdown_socket=None):
     """Serve radicale from configuration."""
     logger.info("Starting Radicale")
     # Copy configuration before modifying
-    config_copy = ConfigParser()
-    config_copy.read_dict(configuration)
-    configuration = config_copy
-    configuration["internal"]["internal_server"] = "True"
+    configuration = configuration.copy()
+    configuration.update({"internal": {"internal_server": "True"}}, "server")
 
     # Create collection servers
     servers = {}
-    if configuration.getboolean("server", "ssl"):
+    if configuration.get("server", "ssl"):
         server_class = ParallelHTTPSServer
     else:
         server_class = ParallelHTTPServer
 
     class ServerCopy(server_class):
         """Copy, avoids overriding the original class attributes."""
-    ServerCopy.client_timeout = configuration.getint("server", "timeout")
-    ServerCopy.max_connections = configuration.getint(
-        "server", "max_connections")
-    if configuration.getboolean("server", "ssl"):
+    ServerCopy.client_timeout = configuration.get("server", "timeout")
+    ServerCopy.max_connections = configuration.get("server", "max_connections")
+    if configuration.get("server", "ssl"):
         ServerCopy.certificate = configuration.get("server", "certificate")
         ServerCopy.key = configuration.get("server", "key")
         ServerCopy.certificate_authority = configuration.get(
@@ -285,7 +281,7 @@ def serve(configuration, shutdown_socket=None):
 
     class RequestHandlerCopy(RequestHandler):
         """Copy, avoids overriding the original class attributes."""
-    if not configuration.getboolean("server", "dns_lookup"):
+    if not configuration.get("server", "dns_lookup"):
         RequestHandlerCopy.address_string = lambda self: self.client_address[0]
 
     if systemd:
@@ -301,13 +297,7 @@ def serve(configuration, shutdown_socket=None):
             server_addresses.append(socket.fromfd(
                 fd, ServerCopy.address_family, ServerCopy.socket_type))
     else:
-        for host in configuration.get("server", "hosts").split(","):
-            try:
-                address, port = host.strip().rsplit(":", 1)
-                address, port = address.strip("[] "), int(port)
-            except ValueError as e:
-                raise RuntimeError(
-                    "Failed to parse address %r: %s" % (host, e)) from e
+        for address, port in configuration.get("server", "hosts"):
             server_addresses.append((address, port))
 
     application = Application(configuration)
@@ -321,7 +311,7 @@ def serve(configuration, shutdown_socket=None):
         servers[server.socket] = server
         logger.info("Listening to %r on port %d%s",
                     server.server_name, server.server_port, " using SSL"
-                    if configuration.getboolean("server", "ssl") else "")
+                    if configuration.get("server", "ssl") else "")
 
     # Main loop: wait for requests on any of the servers or program shutdown
     sockets = list(servers.keys())

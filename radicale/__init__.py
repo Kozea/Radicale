@@ -2,7 +2,7 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,9 +47,12 @@ def _init_application(config_path, wsgi_errors):
         log.setup()
         with log.register_stream(wsgi_errors):
             _application_config_path = config_path
-            configuration = config.load([config_path] if config_path else [],
-                                        ignore_missing_paths=False)
+            configuration = config.load(config.parse_compound_paths(
+                config.DEFAULT_CONFIG_PATH,
+                config_path))
             log.set_level(configuration.get("logging", "level"))
+            # Inspect configuration after logger is configured
+            configuration.inspect()
             _application = Application(configuration)
 
 

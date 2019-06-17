@@ -1,5 +1,5 @@
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,9 +35,10 @@ class TestBaseRightsRequests(BaseTest):
     def setup(self):
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
-        self.configuration["storage"]["filesystem_folder"] = self.colpath
-        # Disable syncing to disk for better performance
-        self.configuration["internal"]["filesystem_fsync"] = "False"
+        self.configuration.update({
+            "storage": {"filesystem_folder": self.colpath},
+            # Disable syncing to disk for better performance
+            "internal": {"filesystem_fsync": "False"}}, "test")
 
     def teardown(self):
         shutil.rmtree(self.colpath)
@@ -49,11 +50,11 @@ class TestBaseRightsRequests(BaseTest):
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
         with open(htpasswd_file_path, "w") as f:
             f.write("tmp:bepo\nother:bepo")
-        self.configuration["rights"]["type"] = rights_type
-        if with_auth:
-            self.configuration["auth"]["type"] = "htpasswd"
-        self.configuration["auth"]["htpasswd_filename"] = htpasswd_file_path
-        self.configuration["auth"]["htpasswd_encryption"] = "plain"
+        self.configuration.update({
+            "rights": {"type": rights_type},
+            "auth": {"type": "htpasswd" if with_auth else "none",
+                     "htpasswd_filename": htpasswd_file_path,
+                     "htpasswd_encryption": "plain"}}, "test")
         self.application = Application(self.configuration)
         for u in ("tmp", "other"):
             status, _, _ = self.request(
@@ -132,7 +133,8 @@ permissions: RrWw
 user: .*
 collection: custom(/.*)?
 permissions: Rr""")
-        self.configuration["rights"]["file"] = rights_file_path
+        self.configuration.update(
+            {"rights": {"file": rights_file_path}}, "test")
         self._test_rights("from_file", "", "/other", "r", 401)
         self._test_rights("from_file", "tmp", "/other", "r", 403)
         self._test_rights("from_file", "", "/custom/sub", "r", 404)

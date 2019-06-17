@@ -1,5 +1,5 @@
 # This file is part of Radicale Server - Calendar Server
-# Copyright © 2018 Unrud <unrud@outlook.com>
+# Copyright © 2018-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,9 +33,10 @@ class TestBaseWebRequests(BaseTest):
     def setup(self):
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
-        self.configuration["storage"]["filesystem_folder"] = self.colpath
-        # Disable syncing to disk for better performance
-        self.configuration["internal"]["filesystem_fsync"] = "False"
+        self.configuration.update({
+            "storage": {"filesystem_folder": self.colpath},
+            # Disable syncing to disk for better performance
+            "internal": {"filesystem_fsync": "False"}}, "test")
         self.application = Application(self.configuration)
 
     def teardown(self):
@@ -50,7 +51,7 @@ class TestBaseWebRequests(BaseTest):
         assert answer
 
     def test_none(self):
-        self.configuration["web"]["type"] = "none"
+        self.configuration.update({"web": {"type": "none"}}, "test")
         self.application = Application(self.configuration)
         status, _, answer = self.request("GET", "/.web")
         assert status == 200
@@ -60,7 +61,8 @@ class TestBaseWebRequests(BaseTest):
 
     def test_custom(self):
         """Custom web plugin."""
-        self.configuration["web"]["type"] = "tests.custom.web"
+        self.configuration.update({
+            "web": {"type": "tests.custom.web"}}, "test")
         self.application = Application(self.configuration)
         status, _, answer = self.request("GET", "/.web")
         assert status == 200

@@ -2,7 +2,7 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,8 +80,7 @@ class Application(
         request_environ = dict(environ)
 
         # Mask passwords
-        mask_passwords = self.configuration.getboolean(
-            "logging", "mask_passwords")
+        mask_passwords = self.configuration.get("logging", "mask_passwords")
         authorization = request_environ.get("HTTP_AUTHORIZATION", "")
         if mask_passwords and authorization.startswith("Basic"):
             request_environ["HTTP_AUTHORIZATION"] = "Basic **masked**"
@@ -162,9 +161,8 @@ class Application(
                 headers["Content-Length"] = str(len(answer))
 
             # Add extra headers set in configuration
-            if self.configuration.has_section("headers"):
-                for key in self.configuration.options("headers"):
-                    headers[key] = self.configuration.get("headers", key)
+            for key in self.configuration.options("headers"):
+                headers[key] = self.configuration.get("headers", key)
 
             # Start response
             time_end = datetime.datetime.now()
@@ -244,7 +242,7 @@ class Application(
         elif login:
             logger.info("Failed login attempt: %r", login)
             # Random delay to avoid timing oracles and bruteforce attacks
-            delay = self.configuration.getfloat("auth", "delay")
+            delay = self.configuration.get("auth", "delay")
             if delay > 0:
                 random_delay = delay * (0.5 + random.random())
                 logger.debug("Sleeping %.3f seconds", random_delay)
@@ -275,11 +273,11 @@ class Application(
                 logger.warning("Access to principal path %r denied by "
                                "rights backend", principal_path)
 
-        if self.configuration.getboolean("internal", "internal_server"):
+        if self.configuration.get("internal", "internal_server"):
             # Verify content length
             content_length = int(environ.get("CONTENT_LENGTH") or 0)
             if content_length:
-                max_content_length = self.configuration.getint(
+                max_content_length = self.configuration.get(
                     "server", "max_content_length")
                 if max_content_length and content_length > max_content_length:
                     logger.info("Request body too large: %d", content_length)

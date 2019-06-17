@@ -1,6 +1,6 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1404,10 +1404,11 @@ class BaseRequestsMixIn:
 
     def test_authentication(self):
         """Test if server sends authentication request."""
-        self.configuration["auth"]["type"] = "htpasswd"
-        self.configuration["auth"]["htpasswd_filename"] = os.devnull
-        self.configuration["auth"]["htpasswd_encryption"] = "plain"
-        self.configuration["rights"]["type"] = "owner_only"
+        self.configuration.update({
+            "auth": {"type": "htpasswd",
+                     "htpasswd_filename": os.devnull,
+                     "htpasswd_encryption": "plain"},
+            "rights": {"type": "owner_only"}}, "test")
         self.application = Application(self.configuration)
         status, headers, _ = self.request("MKCOL", "/user/")
         assert status in (401, 403)
@@ -1431,9 +1432,8 @@ class BaseRequestsMixIn:
         assert status == 207
 
     def test_custom_headers(self):
-        if not self.configuration.has_section("headers"):
-            self.configuration.add_section("headers")
-        self.configuration.set("headers", "test", "123")
+        self.configuration.update({"headers": {"test": "123"}}, "test")
+        self.application = Application(self.configuration)
         # Test if header is set on success
         status, headers, _ = self.request("OPTIONS", "/")
         assert status == 200
@@ -1461,11 +1461,7 @@ class BaseFileSystemTest(BaseTest):
 
     def setup(self):
         self.configuration = config.load()
-        self.configuration["storage"]["type"] = self.storage_type
         self.colpath = tempfile.mkdtemp()
-        self.configuration["storage"]["filesystem_folder"] = self.colpath
-        # Disable syncing to disk for better performance
-        self.configuration["internal"]["filesystem_fsync"] = "False"
         # Allow access to anything for tests
         rights_file_path = os.path.join(self.colpath, "rights")
         with open(rights_file_path, "w") as f:
@@ -1474,8 +1470,13 @@ class BaseFileSystemTest(BaseTest):
 user: .*
 collection: .*
 permissions: RrWw""")
-        self.configuration["rights"]["file"] = rights_file_path
-        self.configuration["rights"]["type"] = "from_file"
+        self.configuration.update({
+            "storage": {"type": self.storage_type,
+                        "filesystem_folder": self.colpath},
+            # Disable syncing to disk for better performance
+            "internal": {"filesystem_fsync": "False"},
+            "rights": {"file": rights_file_path,
+                       "type": "from_file"}}, "test")
         self.application = Application(self.configuration)
 
     def teardown(self):
@@ -1488,14 +1489,18 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
 
     def test_fsync(self):
         """Create a directory and file with syncing enabled."""
-        self.configuration["internal"]["filesystem_fsync"] = "True"
+        self.configuration.update({
+            "internal": {"filesystem_fsync": "True"}}, "test")
+        self.application = Application(self.configuration)
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status == 201
 
     def test_hook(self):
         """Run hook."""
-        self.configuration["storage"]["hook"] = (
+        self.configuration.update({"storage": {"hook": (
             "mkdir %s" % os.path.join("collection-root", "created_by_hook"))
+        }}, "test")
+        self.application = Application(self.configuration)
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status == 201
         status, _, _ = self.request("PROPFIND", "/created_by_hook/")
@@ -1503,8 +1508,10 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
 
     def test_hook_read_access(self):
         """Verify that hook is not run for read accesses."""
-        self.configuration["storage"]["hook"] = (
+        self.configuration.update({"storage": {"hook": (
             "mkdir %s" % os.path.join("collection-root", "created_by_hook"))
+        }}, "test")
+        self.application = Application(self.configuration)
         status, _, _ = self.request("PROPFIND", "/")
         assert status == 207
         status, _, _ = self.request("PROPFIND", "/created_by_hook/")
@@ -1514,15 +1521,18 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
                         reason="flock command not found")
     def test_hook_storage_locked(self):
         """Verify that the storage is locked when the hook runs."""
-        self.configuration["storage"]["hook"] = (
-            "flock -n .Radicale.lock || exit 0; exit 1")
+        self.configuration.update({"storage": {"hook": (
+            "flock -n .Radicale.lock || exit 0; exit 1")}}, "test")
+        self.application = Application(self.configuration)
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status == 201
 
     def test_hook_principal_collection_creation(self):
         """Verify that the hooks runs when a new user is created."""
-        self.configuration["storage"]["hook"] = (
+        self.configuration.update({"storage": {"hook": (
             "mkdir %s" % os.path.join("collection-root", "created_by_hook"))
+        }}, "test")
+        self.application = Application(self.configuration)
         status, _, _ = self.request("PROPFIND", "/", HTTP_AUTHORIZATION=(
             "Basic " + base64.b64encode(b"user:").decode()))
         assert status == 207
@@ -1531,7 +1541,8 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
 
     def test_hook_fail(self):
         """Verify that a request fails if the hook fails."""
-        self.configuration["storage"]["hook"] = "exit 1"
+        self.configuration.update({"storage": {"hook": "exit 1"}}, "test")
+        self.application = Application(self.configuration)
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status != 201
 

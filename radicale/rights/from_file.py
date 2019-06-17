@@ -1,6 +1,6 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import configparser
-import os.path
 import re
 
 from radicale import pathutils, rights
@@ -26,7 +25,7 @@ from radicale.log import logger
 class Rights(rights.BaseRights):
     def __init__(self, configuration):
         super().__init__(configuration)
-        self.filename = os.path.expanduser(configuration.get("rights", "file"))
+        self.filename = configuration.get("rights", "file")
 
     def authorized(self, user, path, permissions):
         user = user or ""

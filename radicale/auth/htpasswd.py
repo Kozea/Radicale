@@ -2,7 +2,7 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ import base64
 import functools
 import hashlib
 import hmac
-import os
 
 from radicale import auth
 
@@ -29,8 +28,7 @@ from radicale import auth
 class Auth(auth.BaseAuth):
     def __init__(self, configuration):
         super().__init__(configuration)
-        self.filename = os.path.expanduser(
-            configuration.get("auth", "htpasswd_filename"))
+        self.filename = configuration.get("auth", "htpasswd_filename")
         self.encryption = configuration.get("auth", "htpasswd_encryption")
 
         if self.encryption == "ssha":

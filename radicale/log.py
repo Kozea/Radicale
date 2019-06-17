@@ -1,6 +1,6 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2011-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -172,7 +172,7 @@ def setup():
     register_stream = handler.register_stream
     log_record_factory = IdentLogRecordFactory(logging.getLogRecordFactory())
     logging.setLogRecordFactory(log_record_factory)
-    set_level(logging.DEBUG)
+    set_level(logging.WARNING)
 
 
 def set_level(level):

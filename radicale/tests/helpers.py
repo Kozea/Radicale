@@ -2,7 +2,7 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,3 +39,14 @@ def get_file_content(file_name):
             return fd.read()
     except IOError:
         print("Couldn't open the file %s" % file_name)
+
+
+def configuration_to_dict(configuration):
+    d = {}
+    for section in configuration.sections():
+        if configuration._schema[section].get("_internal", False):
+            continue
+        d[section] = {}
+        for option in configuration.options(section):
+            d[section][option] = configuration.get_raw(section, option)
+    return d

@@ -1,6 +1,6 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2011-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ This module can be executed from a command line with ``$python -m radicale``.
 """
 
 import argparse
+import contextlib
 import os
 import signal
 import socket
@@ -47,10 +48,14 @@ def run():
                         help="print debug information")
 
     groups = {}
-    for section, values in config.INITIAL_CONFIG.items():
+    for section, values in config.DEFAULT_CONFIG_SCHEMA.items():
+        if values.get("_internal", False):
+            continue
         group = parser.add_argument_group(section)
         groups[group] = []
         for option, data in values.items():
+            if option.startswith("_"):
+                continue
             kwargs = data.copy()
             long_name = "--{0}-{1}".format(
                 section, option.replace("_", "-"))
@@ -75,6 +80,7 @@ def run():
                     kwargs["help"], long_name)
                 group.add_argument(*opposite_args, **kwargs)
             else:
+                del kwargs["type"]
                 group.add_argument(*args, **kwargs)
 
     args = parser.parse_args()
@@ -82,35 +88,39 @@ def run():
     # Preliminary configure logging
     if args.debug:
         args.logging_level = "debug"
-    if args.logging_level is not None:
-        log.set_level(args.logging_level)
+    with contextlib.suppress(ValueError):
+        log.set_level(config.DEFAULT_CONFIG_SCHEMA["logging"]["level"]["type"](
+            args.logging_level))
 
-    if args.config is not None:
-        config_paths = [args.config] if args.config else []
-        ignore_missing_paths = False
-    else:
-        config_paths = ["/etc/radicale/config",
-                        os.path.expanduser("~/.config/radicale/config")]
-        if "RADICALE_CONFIG" in os.environ:
-            config_paths.append(os.environ["RADICALE_CONFIG"])
-        ignore_missing_paths = True
+    # Update Radicale configuration according to arguments
+    arguments_config = {}
+    for group, actions in groups.items():
+        section = group.title
+        section_config = {}
+        for action in actions:
+            value = getattr(args, action)
+            if value is not None:
+                section_config[action.split('_', 1)[1]] = value
+        if section_config:
+            arguments_config[section] = section_config
+
     try:
-        configuration = config.load(config_paths,
-                                    ignore_missing_paths=ignore_missing_paths)
+        configuration = config.load(config.parse_compound_paths(
+            config.DEFAULT_CONFIG_PATH,
+            os.environ.get("RADICALE_CONFIG"),
+            args.config))
+        if arguments_config:
+            configuration.update(
+                arguments_config, "arguments", internal=False)
     except Exception as e:
         logger.fatal("Invalid configuration: %s", e, exc_info=True)
         exit(1)
 
-    # Update Radicale configuration according to arguments
-    for group, actions in groups.items():
-        section = group.title
-        for action in actions:
-            value = getattr(args, action)
-            if value is not None:
-                configuration.set(section, action.split('_', 1)[1], value)
-
     # Configure logging
     log.set_level(configuration.get("logging", "level"))
+
+    # Inspect configuration after logger is configured
+    configuration.inspect()
 
     if args.verify_storage:
         logger.info("Verifying storage")

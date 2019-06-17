@@ -1,7 +1,7 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,8 +48,7 @@ class Collection(
 
     @classmethod
     def static_init(cls):
-        folder = os.path.expanduser(cls.configuration.get(
-            "storage", "filesystem_folder"))
+        folder = cls.configuration.get("storage", "filesystem_folder")
         cls._makedirs_synced(folder)
         super().static_init()
 
@@ -66,8 +65,8 @@ class Collection(
 
     @classmethod
     def _get_collection_root_folder(cls):
-        filesystem_folder = os.path.expanduser(
-            cls.configuration.get("storage", "filesystem_folder"))
+        filesystem_folder = cls.configuration.get(
+            "storage", "filesystem_folder")
         return os.path.join(filesystem_folder, "collection-root")
 
     @contextlib.contextmanager
@@ -96,7 +95,7 @@ class Collection(
 
     @classmethod
     def _fsync(cls, fd):
-        if cls.configuration.getboolean("internal", "filesystem_fsync"):
+        if cls.configuration.get("internal", "filesystem_fsync"):
             pathutils.fsync(fd)
 
     @classmethod
@@ -106,7 +105,7 @@ class Collection(
         This only works on POSIX and does nothing on other systems.
 
         """
-        if not cls.configuration.getboolean("internal", "filesystem_fsync"):
+        if not cls.configuration.get("internal", "filesystem_fsync"):
             return
         if os.name == "posix":
             try:

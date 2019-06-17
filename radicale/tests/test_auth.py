@@ -1,7 +1,7 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2012-2016 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,11 +42,12 @@ class TestBaseAuthRequests(BaseTest):
     def setup(self):
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
-        self.configuration["storage"]["filesystem_folder"] = self.colpath
-        # Disable syncing to disk for better performance
-        self.configuration["internal"]["filesystem_fsync"] = "False"
-        # Set incorrect authentication delay to a very low value
-        self.configuration["auth"]["delay"] = "0.002"
+        self.configuration.update({
+            "storage": {"filesystem_folder": self.colpath},
+            # Disable syncing to disk for better performance
+            "internal": {"filesystem_fsync": "False"},
+            # Set incorrect authentication delay to a very low value
+            "auth": {"delay": "0.002"}}, "test")
 
     def teardown(self):
         shutil.rmtree(self.colpath)
@@ -57,9 +58,10 @@ class TestBaseAuthRequests(BaseTest):
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
         with open(htpasswd_file_path, "w") as f:
             f.write(htpasswd_content)
-        self.configuration["auth"]["type"] = "htpasswd"
-        self.configuration["auth"]["htpasswd_filename"] = htpasswd_file_path
-        self.configuration["auth"]["htpasswd_encryption"] = htpasswd_encryption
+        self.configuration.update({
+            "auth": {"type": "htpasswd",
+                     "htpasswd_filename": htpasswd_file_path,
+                     "htpasswd_encryption": htpasswd_encryption}}, "test")
         self.application = Application(self.configuration)
         if test_matrix is None:
             test_matrix = (
@@ -129,7 +131,7 @@ class TestBaseAuthRequests(BaseTest):
         self._test_htpasswd("plain", "#comment\n #comment\n \ntmp:bepo\n\n")
 
     def test_remote_user(self):
-        self.configuration["auth"]["type"] = "remote_user"
+        self.configuration.update({"auth": {"type": "remote_user"}}, "test")
         self.application = Application(self.configuration)
         status, _, answer = self.request(
             "PROPFIND", "/",
@@ -143,7 +145,8 @@ class TestBaseAuthRequests(BaseTest):
         assert ">/test/<" in answer
 
     def test_http_x_remote_user(self):
-        self.configuration["auth"]["type"] = "http_x_remote_user"
+        self.configuration.update(
+            {"auth": {"type": "http_x_remote_user"}}, "test")
         self.application = Application(self.configuration)
         status, _, answer = self.request(
             "PROPFIND", "/",
@@ -158,7 +161,8 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_custom(self):
         """Custom authentication."""
-        self.configuration["auth"]["type"] = "tests.custom.auth"
+        self.configuration.update(
+            {"auth": {"type": "tests.custom.auth"}}, "test")
         self.application = Application(self.configuration)
         status, _, answer = self.request(
             "PROPFIND", "/tmp", HTTP_AUTHORIZATION="Basic %s" %

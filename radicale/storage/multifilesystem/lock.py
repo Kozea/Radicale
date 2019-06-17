@@ -1,7 +1,7 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,8 +30,7 @@ class CollectionLockMixin:
     @classmethod
     def static_init(cls):
         super().static_init()
-        folder = os.path.expanduser(cls.configuration.get(
-            "storage", "filesystem_folder"))
+        folder = cls.configuration.get("storage", "filesystem_folder")
         lock_path = os.path.join(folder, ".Radicale.lock")
         cls._lock = pathutils.RwLock(lock_path)
 
@@ -53,8 +52,7 @@ class CollectionLockMixin:
             # execute hook
             hook = cls.configuration.get("storage", "hook")
             if mode == "w" and hook:
-                folder = os.path.expanduser(cls.configuration.get(
-                    "storage", "filesystem_folder"))
+                folder = cls.configuration.get("storage", "filesystem_folder")
                 logger.debug("Running hook")
                 debug = logger.isEnabledFor(logging.DEBUG)
                 p = subprocess.Popen(
