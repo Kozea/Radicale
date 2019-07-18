@@ -56,7 +56,7 @@ before_install:
     fi
 
 install:
-  - pip3 install --upgrade coverage coveralls
+  - pip3 install --upgrade coverage coveralls ldap3
   - ${PIP} install --upgrade --editable .[test,md5,bcrypt]
 
 script:
