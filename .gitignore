@@ -7,7 +7,7 @@ __pycache__
 /build
 /dist
 /Radicale.egg-info
-
+.idea
 .pytest_cache
 .cache
 .coverage
