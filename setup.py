@@ -77,6 +77,7 @@ setup(
     setup_requires=pytest_runner,
     tests_require=tests_require,
     extras_require={
+        "ldap3": "ldap3",
         "test": tests_require,
         "md5": "passlib",
         "bcrypt": "passlib[bcrypt]"},
