@@ -80,8 +80,9 @@ def export_storage(config, path, debug=False):
                         traceback.print_exc()
                     continue
                 try:
-                    remaining_collections.extend(collection.children(
-                        collection.path))
+                    if collection.is_node(collection.path):
+                        remaining_collections.extend(collection.children(
+                            collection.path))
                 except Exception as e:
                     print("ERROR: Failed to find child collections of %r: %s" %
                           ("/" + collection.path, e))
