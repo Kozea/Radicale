@@ -32,7 +32,7 @@ from radicale import VERSION, config, log, server, storage
 from radicale.log import logger
 
 
-def run():
+def run(passed_args=None):
     """Run Radicale as a standalone server."""
     log.setup()
 
@@ -83,7 +83,7 @@ def run():
                 del kwargs["type"]
                 group.add_argument(*args, **kwargs)
 
-    args = parser.parse_args()
+    args = parser.parse_args(passed_args)
 
     # Preliminary configure logging
     if args.debug:
