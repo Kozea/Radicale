@@ -460,7 +460,7 @@ class Application:
             is_authenticated = self.Auth.is_authenticated2(login, user,
                                                            password)
             if not is_authenticated:
-                self.logger.info("Failed login attempt: %r", user)
+                self.logger.warning("Failed login attempt: %r from %s", user, remote_host)
                 # Random delay to avoid timing oracles and bruteforce attacks
                 delay = self.configuration.getfloat("auth", "delay")
                 if delay > 0:
@@ -468,7 +468,7 @@ class Application:
                     self.logger.debug("Sleeping %.3f seconds", random_delay)
                     time.sleep(random_delay)
             else:
-                self.logger.info("Successful login: %r", user)
+                self.logger.warning("Successful login: %r from %s", user, remote_host)
 
         # Create principal collection
         if user and is_authenticated:
