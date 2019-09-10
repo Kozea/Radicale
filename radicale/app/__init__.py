@@ -236,11 +236,11 @@ class Application(
 
         user = self.Auth.login(login, password) or "" if login else ""
         if user and login == user:
-            logger.info("Successful login: %r", user)
+            logger.warning("Successful login: %r from %s", user, remote_host)
         elif user:
-            logger.info("Successful login: %r -> %r", login, user)
+            logger.warning("Successful login: %r -> %r from %s", login, user, remote_host)
         elif login:
-            logger.info("Failed login attempt: %r", login)
+            logger.warning("Failed login attempt: %r from %s", login, remote_host)
             # Random delay to avoid timing oracles and bruteforce attacks
             delay = self.configuration.get("auth", "delay")
             if delay > 0:
