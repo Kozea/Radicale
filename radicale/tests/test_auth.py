@@ -168,3 +168,46 @@ class TestBaseAuthRequests(BaseTest):
             "PROPFIND", "/tmp", HTTP_AUTHORIZATION="Basic %s" %
             base64.b64encode(("tmp:").encode()).decode())
         assert status == 207
+
+    def _reset_env(self):
+        if os.environ.get('RADICALE_LOGIN') is not None:
+            del os.environ['RADICALE_LOGIN']
+        if os.environ.get('RADICALE_PASSWORD') is not None:
+            del os.environ['RADICALE_PASSWORD']
+
+    def test_env_not_set(self):
+        self._reset_env()
+        self.configuration.update(
+            {"auth": {"type": "env"}}, "test")
+        self.application = Application(self.configuration)
+        status, _, answer = self.request(
+                "PROPFIND", "/",
+                HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
+                    ("%s:%s" % ('admin', 'password')).encode()).decode())
+        assert status == 401
+
+    def test_env_set_password_right(self):
+        os.environ["RADICALE_LOGIN"] = 'admin'
+        os.environ["RADICALE_PASSWORD"] = 'password'
+        self.configuration.update(
+            {"auth": {"type": "env"}}, "test")
+        self.application = Application(self.configuration)
+        status, _, answer = self.request(
+                "PROPFIND", "/",
+                HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
+                    ("%s:%s" % ('admin', 'password')).encode()).decode())
+        assert status == 207
+        self._reset_env()
+
+    def test_env_set_password_wrong(self):
+        os.environ["RADICALE_LOGIN"] = 'admin'
+        os.environ["RADICALE_PASSWORD"] = 'password123'
+        self.configuration.update(
+            {"auth": {"type": "env"}}, "test")
+        self.application = Application(self.configuration)
+        status, _, answer = self.request(
+                "PROPFIND", "/",
+                HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
+                    ("%s:%s" % ('admin', 'password')).encode()).decode())
+        assert status == 401
+        self._reset_env()
