@@ -54,7 +54,7 @@ class TestBaseRightsRequests(BaseTest):
             "auth": {"type": "htpasswd" if with_auth else "none",
                      "htpasswd_filename": htpasswd_file_path,
                      "htpasswd_encryption": "plain"}}, "test")
-        self.application = Application(self.configuration)
+        self.application = Application.from_config(self.configuration)
         for u in ("tmp", "other"):
             # Indirect creation of principal collection
             self.propfind("/%s/" % u, login="%s:bepo" % u)
@@ -151,7 +151,7 @@ permissions: i""")
         self.configuration.update(
             {"rights": {"type": "from_file",
                         "file": rights_file_path}}, "test")
-        self.application = Application(self.configuration)
+        self.application = Application.from_config(self.configuration)
         self.mkcalendar("/tmp/calendar", login="tmp:bepo")
         self.mkcol("/public", login="tmp:bepo")
         self.mkcalendar("/public/calendar", login="tmp:bepo")
@@ -174,7 +174,7 @@ permissions: i""")
         Items are allowed at "/.../.../...".
 
         """
-        self.application = Application(self.configuration)
+        self.application = Application.from_config(self.configuration)
         self.mkcalendar("/", check=401)
         self.mkcalendar("/user/", check=401)
         self.mkcol("/user/")
@@ -185,7 +185,7 @@ permissions: i""")
 
     def test_put_collections_and_items(self):
         """Test rights for creation of calendars and items with PUT."""
-        self.application = Application(self.configuration)
+        self.application = Application.from_config(self.configuration)
         self.put("/user/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR", check=401)
         self.mkcol("/user/")
         self.put("/user/calendar/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")

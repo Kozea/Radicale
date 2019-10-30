@@ -57,7 +57,7 @@ def _init_application(config_path, wsgi_errors):
             for source, miss in configuration.sources():
                 logger.info("%s %s", "Skipped missing" if miss else "Loaded",
                             source)
-            _application = Application(configuration)
+            _application = Application.from_config(configuration)
 
 
 def application(environ, start_response):
