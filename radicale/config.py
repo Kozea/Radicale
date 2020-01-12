@@ -274,7 +274,7 @@ def load(paths=()):
         except Exception as e:
             raise RuntimeError(
                 "Failed to load %s: %s" % (config_source, e)) from e
-        configuration.update(config, config_source, internal=False)
+        configuration.update(config, config_source)
     return configuration
 
 
@@ -298,9 +298,9 @@ class Configuration:
                 if option.startswith("_"):
                     continue
                 values[section][option] = schema[section][option]["value"]
-        self.update(values, "default config")
+        self.update(values, "default config", internal=True)
 
-    def update(self, config, source, internal=True):
+    def update(self, config, source, internal=False):
         """Update the configuration.
 
         ``config`` a dict of the format {SECTION: {OPTION: VALUE, ...}, ...}.

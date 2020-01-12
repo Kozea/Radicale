@@ -110,8 +110,7 @@ def run():
             os.environ.get("RADICALE_CONFIG"),
             args.config))
         if arguments_config:
-            configuration.update(
-                arguments_config, "arguments", internal=False)
+            configuration.update(arguments_config, "arguments")
     except Exception as e:
         logger.fatal("Invalid configuration: %s", e, exc_info=True)
         exit(1)

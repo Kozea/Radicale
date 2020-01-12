@@ -134,10 +134,11 @@ class TestConfig:
 
     def test_internal(self):
         configuration = config.load()
-        configuration.update({"internal": {"internal_server": "True"}}, "test")
+        configuration.update({"internal": {"internal_server": "True"}}, "test",
+                             internal=True)
         with pytest.raises(Exception) as exc_info:
-            configuration.update({"internal": {"internal_server": "True"}},
-                                 "test", internal=False)
+            configuration.update(
+                {"internal": {"internal_server": "True"}}, "test")
         e = exc_info.value
         assert "Invalid section 'internal'" in str(e)
 

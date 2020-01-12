@@ -36,7 +36,7 @@ class TestBaseWebRequests(BaseTest):
         self.configuration.update({
             "storage": {"filesystem_folder": self.colpath},
             # Disable syncing to disk for better performance
-            "internal": {"filesystem_fsync": "False"}}, "test")
+            "internal": {"filesystem_fsync": "False"}}, "test", internal=True)
         self.application = Application(self.configuration)
 
     def teardown(self):

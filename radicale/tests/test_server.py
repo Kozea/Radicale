@@ -68,7 +68,7 @@ class TestBaseServerRequests:
             # Enable debugging for new processes
             "logging": {"level": "debug"},
             # Disable syncing to disk for better performance
-            "internal": {"filesystem_fsync": "False"}}, "test")
+            "internal": {"filesystem_fsync": "False"}}, "test", internal=True)
         self.thread = threading.Thread(target=server.serve, args=(
             self.configuration, shutdown_socket_out))
         ssl_context = ssl.create_default_context()

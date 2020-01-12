@@ -247,7 +247,8 @@ def serve(configuration, shutdown_socket=None):
     logger.info("Starting Radicale")
     # Copy configuration before modifying
     configuration = configuration.copy()
-    configuration.update({"internal": {"internal_server": "True"}}, "server")
+    configuration.update({"internal": {"internal_server": "True"}}, "server",
+                         internal=True)
 
     # Create collection servers
     servers = {}
