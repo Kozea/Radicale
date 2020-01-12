@@ -7,7 +7,7 @@ permalink: /clients/
 Radicale has been tested with:
 
   * [Android](https://android.com/) with
-    [DAVdroid](https://davdroid.bitfire.at/)
+    [DAVx⁵](https://www.davx5.com/)
   * [GNOME Calendar](https://wiki.gnome.org/Apps/Calendar),
     [Contacts](https://wiki.gnome.org/Apps/Contacts) and
     [Evolution](https://wiki.gnome.org/Apps/Evolution)
