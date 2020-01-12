@@ -408,10 +408,8 @@ class Configuration:
 
     def log_config_sources(self):
         """Inspect all external config sources and write problems to logger."""
-        for config, source, internal in self._configs:
-            if internal:
-                continue
+        for config, source, _ in self._configs:
             if config is self.SOURCE_MISSING:
                 logger.info("Skipped missing %s", source)
             else:
-                logger.info("Parsed %s", source)
+                logger.info("Loaded %s", source)
