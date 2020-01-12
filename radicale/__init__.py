@@ -51,8 +51,8 @@ def _init_application(config_path, wsgi_errors):
                 config.DEFAULT_CONFIG_PATH,
                 config_path))
             log.set_level(configuration.get("logging", "level"))
-            # Inspect configuration after logger is configured
-            configuration.inspect()
+            # Log configuration after logger is configured
+            configuration.log_config_sources()
             _application = Application(configuration)
 
 

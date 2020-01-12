@@ -408,7 +408,7 @@ class Configuration:
             copy.update(config, source, allow_internal)
         return copy
 
-    def inspect(self):
+    def log_config_sources(self):
         """Inspect all external config sources and write problems to logger."""
         for config, source, internal in self._configs:
             if internal:

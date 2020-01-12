@@ -119,8 +119,8 @@ def run():
     # Configure logging
     log.set_level(configuration.get("logging", "level"))
 
-    # Inspect configuration after logger is configured
-    configuration.inspect()
+    # Log configuration after logger is configured
+    configuration.log_config_sources()
 
     if args.verify_storage:
         logger.info("Verifying storage")
