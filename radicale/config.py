@@ -386,9 +386,7 @@ class Configuration:
         """
         if plugin_schema is None:
             schema = self._schema
-            skip = 1  # skip default config
         else:
-            skip = 0
             schema = self._schema.copy()
             for section, options in plugin_schema.items():
                 if (section not in schema or "type" not in schema[section] or
@@ -403,9 +401,9 @@ class Configuration:
                         raise ValueError("option already exists in %r: %r" % (
                             section, option))
                     schema[section][option] = value
-        copy = self.__class__(schema)
-        for config, source, allow_internal in self._configs[skip:]:
-            copy.update(config, source, allow_internal)
+        copy = type(self)(schema)
+        for config, source, internal in self._configs:
+            copy.update(config, source, internal)
         return copy
 
     def log_config_sources(self):
