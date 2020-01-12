@@ -331,14 +331,14 @@ class ApplicationPropfindMixin:
             if isinstance(item, storage.BaseCollection):
                 path = pathutils.unstrip_path(item.path, True)
                 if item.get_meta("tag"):
-                    permissions = self.Rights.authorized(user, path, "rw")
+                    permissions = self.rights.authorized(user, path, "rw")
                     target = "collection with tag %r" % item.path
                 else:
-                    permissions = self.Rights.authorized(user, path, "RW")
+                    permissions = self.rights.authorized(user, path, "RW")
                     target = "collection %r" % item.path
             else:
                 path = pathutils.unstrip_path(item.collection.path, True)
-                permissions = self.Rights.authorized(user, path, "rw")
+                permissions = self.rights.authorized(user, path, "rw")
                 target = "item %r from %r" % (item.href, item.collection.path)
             if rights.intersect_permissions(permissions, "Ww"):
                 permission = "w"
@@ -368,9 +368,8 @@ class ApplicationPropfindMixin:
         except socket.timeout:
             logger.debug("client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
-        with self.Collection.acquire_lock("r", user):
-            items = self.Collection.discover(
-                path, environ.get("HTTP_DEPTH", "0"))
+        with self.storage.acquire_lock("r", user):
+            items = self.storage.discover(path, environ.get("HTTP_DEPTH", "0"))
             # take root item for rights checking
             item = next(items, None)
             if not item:

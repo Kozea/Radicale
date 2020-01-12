@@ -30,7 +30,7 @@ from radicale.log import logger
 class ApplicationMkcalendarMixin:
     def do_MKCALENDAR(self, environ, base_prefix, path, user):
         """Manage MKCALENDAR request."""
-        if not self.Rights.authorized(user, path, "w"):
+        if not self.rights.authorized(user, path, "w"):
             return httputils.NOT_ALLOWED
         try:
             xml_content = self.read_xml_content(environ)
@@ -51,21 +51,21 @@ class ApplicationMkcalendarMixin:
         except ValueError as e:
             logger.warning(
                 "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
-        with self.Collection.acquire_lock("w", user):
-            item = next(self.Collection.discover(path), None)
+        with self.storage.acquire_lock("w", user):
+            item = next(self.storage.discover(path), None)
             if item:
                 return self.webdav_error_response(
                     "D", "resource-must-be-null")
             parent_path = pathutils.unstrip_path(
                 posixpath.dirname(pathutils.strip_path(path)), True)
-            parent_item = next(self.Collection.discover(parent_path), None)
+            parent_item = next(self.storage.discover(parent_path), None)
             if not parent_item:
                 return httputils.CONFLICT
             if (not isinstance(parent_item, storage.BaseCollection) or
                     parent_item.get_meta("tag")):
                 return httputils.FORBIDDEN
             try:
-                self.Collection.create_collection(path, props=props)
+                self.storage.create_collection(path, props=props)
             except ValueError as e:
                 logger.warning(
                     "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)

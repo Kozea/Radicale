@@ -69,9 +69,9 @@ class Application(
         """Initialize application."""
         super().__init__()
         self.configuration = configuration
-        self.Auth = auth.load(configuration)
-        self.Collection = storage.load(configuration)
-        self.Rights = rights.load(configuration)
+        self.auth = auth.load(configuration)
+        self.storage = storage.load(configuration)
+        self.rights = rights.load(configuration)
         self.Web = web.load(configuration)
         self.encoding = configuration.get("encoding", "request")
 
@@ -224,7 +224,7 @@ class Application(
 
         # Ask authentication backend to check rights
         login = password = ""
-        external_login = self.Auth.get_external_login(environ)
+        external_login = self.auth.get_external_login(environ)
         authorization = environ.get("HTTP_AUTHORIZATION", "")
         if external_login:
             login, password = external_login
@@ -234,7 +234,7 @@ class Application(
             login, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
 
-        user = self.Auth.login(login, password) or "" if login else ""
+        user = self.auth.login(login, password) or "" if login else ""
         if user and login == user:
             logger.info("Successful login: %r", user)
         elif user:
@@ -256,15 +256,15 @@ class Application(
         # Create principal collection
         if user:
             principal_path = "/%s/" % user
-            if self.Rights.authorized(user, principal_path, "W"):
-                with self.Collection.acquire_lock("r", user):
+            if self.rights.authorized(user, principal_path, "W"):
+                with self.storage.acquire_lock("r", user):
                     principal = next(
-                        self.Collection.discover(principal_path, depth="1"),
+                        self.storage.discover(principal_path, depth="1"),
                         None)
                 if not principal:
-                    with self.Collection.acquire_lock("w", user):
+                    with self.storage.acquire_lock("w", user):
                         try:
-                            self.Collection.create_collection(principal_path)
+                            self.storage.create_collection(principal_path)
                         except ValueError as e:
                             logger.warning("Failed to create principal "
                                            "collection %r: %s", user, e)
@@ -320,12 +320,12 @@ class Application(
         else:
             permissions = ""
             parent_permissions = permission
-        if permissions and self.Rights.authorized(user, path, permissions):
+        if permissions and self.rights.authorized(user, path, permissions):
             return True
         if parent_permissions:
             parent_path = pathutils.unstrip_path(
                 posixpath.dirname(pathutils.strip_path(path)), True)
-            if self.Rights.authorized(user, parent_path, parent_permissions):
+            if self.rights.authorized(user, parent_path, parent_permissions):
                 return True
         return False
 

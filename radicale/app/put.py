@@ -47,8 +47,8 @@ class ApplicationPutMixin:
         # Prepare before locking
         parent_path = pathutils.unstrip_path(
             posixpath.dirname(pathutils.strip_path(path)), True)
-        permissions = self.Rights.authorized(user, path, "Ww")
-        parent_permissions = self.Rights.authorized(user, parent_path, "w")
+        permissions = self.rights.authorized(user, path, "Ww")
+        parent_permissions = self.rights.authorized(user, parent_path, "w")
 
         def prepare(vobject_items, tag=None, write_whole_collection=None):
             if (write_whole_collection or
@@ -149,9 +149,9 @@ class ApplicationPutMixin:
         (prepared_items, prepared_tag, prepared_write_whole_collection,
          prepared_props, prepared_exc_info) = prepare(vobject_items)
 
-        with self.Collection.acquire_lock("w", user):
-            item = next(self.Collection.discover(path), None)
-            parent_item = next(self.Collection.discover(parent_path), None)
+        with self.storage.acquire_lock("w", user):
+            item = next(self.storage.discover(path), None)
+            parent_item = next(self.storage.discover(parent_path), None)
             if not parent_item:
                 return httputils.CONFLICT
 
@@ -165,9 +165,9 @@ class ApplicationPutMixin:
                 tag = parent_item.get_meta("tag")
 
             if write_whole_collection:
-                if not self.Rights.authorized(user, path, "w" if tag else "W"):
+                if not self.rights.authorized(user, path, "w" if tag else "W"):
                     return httputils.NOT_ALLOWED
-            elif not self.Rights.authorized(user, parent_path, "w"):
+            elif not self.rights.authorized(user, parent_path, "w"):
                 return httputils.NOT_ALLOWED
 
             etag = environ.get("HTTP_IF_MATCH", "")
@@ -197,7 +197,7 @@ class ApplicationPutMixin:
 
             if write_whole_collection:
                 try:
-                    etag = self.Collection.create_collection(
+                    etag = self.storage.create_collection(
                         path, prepared_items, props).etag
                 except ValueError as e:
                     logger.warning(

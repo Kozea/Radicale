@@ -72,8 +72,8 @@ class ApplicationGetMixin:
             return self.Web.get(environ, base_prefix, path, user)
         if not self.access(user, path, "r"):
             return httputils.NOT_ALLOWED
-        with self.Collection.acquire_lock("r", user):
-            item = next(self.Collection.discover(path), None)
+        with self.storage.acquire_lock("r", user):
+            item = next(self.storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
             if not self.access(user, path, "r", item):
