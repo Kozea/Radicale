@@ -16,25 +16,17 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Rights backends.
+The rights module used to determine if a user can read and/or write
+collections and entries.
 
-This module loads the rights backend, according to the rights
-configuration.
+Permissions:
 
-Default rights are based on a regex-based file whose name is specified in the
-config (section "right", key "file").
+  - R: read a collection
+  - r: read an address book or calendar entry
+  - W: write a collection
+  - w: read an address book or calendar entry
 
-Authentication login is matched against the "user" key, and collection's path
-is matched against the "collection" key. You can use Python's ConfigParser
-interpolation values %(login)s and %(path)s. You can also get groups from the
-user regex in the collection with {0}, {1}, etc.
-
-For example, for the "user" key, ".+" means "authenticated user" and ".*"
-means "anybody" (including anonymous users).
-
-Section names are only used for naming the rule.
-
-Leading or ending slashes are trimmed from collection's path.
+Take a look at the class ``BaseRights`` if you want to implement your own.
 
 """
 

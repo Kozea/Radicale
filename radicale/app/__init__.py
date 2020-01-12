@@ -20,7 +20,8 @@
 """
 Radicale WSGI application.
 
-Can be used with an external WSGI server or the built-in server.
+Can be used with an external WSGI server (see ``radicale.application()``) or
+the built-in server (see ``radicale.server`` module).
 
 """
 
@@ -63,10 +64,14 @@ class Application(
         ApplicationPropfindMixin, ApplicationProppatchMixin,
         ApplicationPutMixin, ApplicationReportMixin):
 
-    """WSGI application managing collections."""
+    """WSGI application."""
 
     def __init__(self, configuration):
-        """Initialize application."""
+        """Initialize application.
+
+        ``configuration`` see ``radicale.config`` module.
+
+        """
         super().__init__()
         self.configuration = configuration
         self.auth = auth.load(configuration)

@@ -17,6 +17,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Authentication backend that takes the username from the
+``HTTP_X_REMOTE_USER`` header.
+
+It's intended for use with a reverse proxy. Be aware as this will be insecure
+if the reverse proxy is not configured properly.
+
+"""
+
 import radicale.auth.none as none
 
 

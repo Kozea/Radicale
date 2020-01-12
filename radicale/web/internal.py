@@ -14,6 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+The default web backend.
+
+Features:
+
+  - Create and delete address books and calendars.
+  - Edit basic metadata of existing address books and calendars.
+  - Upload address books and calendars from files.
+
+"""
+
+
 import os
 import posixpath
 import time

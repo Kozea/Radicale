@@ -14,6 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+The web module for the website at ``/.web``.
+
+Take a look at the class ``BaseWeb`` if you want to implement your own.
+
+"""
+
 from importlib import import_module
 
 from radicale.log import logger

@@ -19,6 +19,7 @@
 Radicale executable module.
 
 This module can be executed from a command line with ``$python -m radicale``.
+Uses the built-in WSGI server.
 
 """
 

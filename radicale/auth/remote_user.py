@@ -17,6 +17,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Authentication backend that takes the username from the ``REMOTE_USER``
+WSGI environment variable.
+
+It's intended for use with an external WSGI server.
+
+"""
+
 import radicale.auth.none as none
 
 

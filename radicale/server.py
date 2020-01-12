@@ -18,7 +18,9 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Radicale WSGI server.
+Built-in WSGI server.
+
+Uses forking on POSIX to overcome Python's GIL.
 
 """
 

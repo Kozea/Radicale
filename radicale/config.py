@@ -18,9 +18,10 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Radicale configuration module.
+Configuration module
 
-Give a configparser-like interface to read and write configuration.
+Use ``load()`` to obtain an instance of ``Configuration`` for use with
+``radicale.app.Application``.
 
 """
 
@@ -254,9 +255,16 @@ def parse_compound_paths(*compound_paths):
 
 
 def load(paths=()):
-    """Load configuration from files.
+    """
+    Create instance of ``Configuration`` for use with
+    ``radicale.app.Application``.
 
-    ``paths`` a list of the format ``[(PATH, IGNORE_IF_MISSING), ...]``.
+    ``paths`` a list of configuration files with the format
+    ``[(PATH, IGNORE_IF_MISSING), ...]``.
+    If a configuration file is missing and IGNORE_IF_MISSING is set, the
+    config is set to ``Configuration.SOURCE_MISSING``.
+
+    The configuration can later be changed with ``Configuration.update()``.
 
     """
     configuration = Configuration(DEFAULT_CONFIG_SCHEMA)
@@ -287,6 +295,9 @@ class Configuration:
         ``schema`` a dict that describes the configuration format.
         See ``DEFAULT_CONFIG_SCHEMA``.
 
+        Use ``load()`` to create an instance for use with
+        ``radicale.app.Application``.
+
         """
         self._schema = schema
         self._values = {}
@@ -304,13 +315,12 @@ class Configuration:
         """Update the configuration.
 
         ``config`` a dict of the format {SECTION: {OPTION: VALUE, ...}, ...}.
-        Set to ``Configuration.SOURCE_MISSING`` to indicate a missing
-        configuration source for inspection.
+        The configuration is checked for errors according to the config schema.
 
-        ``source`` a description of the configuration source
+        ``source`` a description of the configuration source (used in error
+        messages).
 
-        ``internal`` allows updating "_internal" sections and skips the source
-        during inspection.
+        ``internal`` allows updating "_internal" sections.
 
         """
         new_values = {}
@@ -407,7 +417,14 @@ class Configuration:
         return copy
 
     def log_config_sources(self):
-        """Inspect all external config sources and write problems to logger."""
+        """
+        A helper function that writes a description of all config sources
+        to logger.
+
+        Configs set to ``Configuration.SOURCE_MISSING`` are described as
+        missing.
+
+        """
         for config, source, _ in self._configs:
             if config is self.SOURCE_MISSING:
                 logger.info("Skipped missing %s", source)

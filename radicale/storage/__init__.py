@@ -17,12 +17,9 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Storage backends.
+The storage module that stores calendars and address books.
 
-This module loads the storage backend, according to the storage configuration.
-
-Default storage uses one folder per collection and one file per collection
-entry.
+Take a look at the class ``BaseCollection`` if you want to implement your own.
 
 """
 

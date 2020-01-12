@@ -18,39 +18,13 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Authentication management.
+Authentication module.
 
-Default is htpasswd authentication.
+Authentication is based on usernames and passwords. If something more
+advanced is needed an external WSGI server or reverse proxy can be used
+(see ``remote_user`` or ``http_x_remote_user`` backend).
 
-Apache's htpasswd command (httpd.apache.org/docs/programs/htpasswd.html)
-manages a file for storing user credentials. It can encrypt passwords using
-different methods, e.g. BCRYPT, MD5-APR1 (a version of MD5 modified for
-Apache), SHA1, or by using the system's CRYPT routine. The CRYPT and SHA1
-encryption methods implemented by htpasswd are considered as insecure. MD5-APR1
-provides medium security as of 2015. Only BCRYPT can be considered secure by
-current standards.
-
-MD5-APR1-encrypted credentials can be written by all versions of htpasswd (it
-is the default, in fact), whereas BCRYPT requires htpasswd 2.4.x or newer.
-
-The `is_authenticated(user, password)` function provided by this module
-verifies the user-given credentials by parsing the htpasswd credential file
-pointed to by the ``htpasswd_filename`` configuration value while assuming
-the password encryption method specified via the ``htpasswd_encryption``
-configuration value.
-
-The following htpasswd password encrpytion methods are supported by Radicale
-out-of-the-box:
-
-    - plain-text (created by htpasswd -p...) -- INSECURE
-    - CRYPT      (created by htpasswd -d...) -- INSECURE
-    - SHA1       (created by htpasswd -s...) -- INSECURE
-
-When passlib (https://pypi.python.org/pypi/passlib) is importable, the
-following significantly more secure schemes are parsable by Radicale:
-
-    - MD5-APR1   (htpasswd -m...) -- htpasswd's default method
-    - BCRYPT     (htpasswd -B...) -- Requires htpasswd 2.4.x
+Take a look at the class ``BaseAuth`` if you want to implement your own.
 
 """
 

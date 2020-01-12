@@ -18,11 +18,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-XML and iCal requests manager.
-
-Note that all these functions need to receive unicode objects for full
-iCal requests (PUT) and string objects with charset correctly defined
-in them for XML requests (all but PUT).
+Helper functions for XML.
 
 """
 

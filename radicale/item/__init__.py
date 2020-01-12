@@ -18,6 +18,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Module for address books and calendar entries (see ``Item``).
+
+"""
+
 import math
 import sys
 from hashlib import md5
@@ -257,6 +262,8 @@ def find_tag_and_time_range(vobject_item):
 
 
 class Item:
+    """Class for address book and calendar entries."""
+
     def __init__(self, collection_path=None, collection=None,
                  vobject_item=None, href=None, last_modified=None, text=None,
                  etag=None, uid=None, name=None, component_name=None,

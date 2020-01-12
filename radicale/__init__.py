@@ -18,9 +18,10 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Radicale WSGI application.
+Entry point for external WSGI servers (like uWSGI or Gunicorn).
 
-Can be used with an external WSGI server or the built-in server.
+Configuration files can be specified in the environment variable
+``RADICALE_CONFIG``.
 
 """
 
@@ -57,6 +58,7 @@ def _init_application(config_path, wsgi_errors):
 
 
 def application(environ, start_response):
+    """Entry point for external WSGI servers."""
     config_path = environ.get("RADICALE_CONFIG",
                               os.environ.get("RADICALE_CONFIG"))
     if _application is None:

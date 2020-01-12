@@ -16,6 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Storage backend that stores data in the file system.
+
+Uses one folder per collection and one file per collection entry.
+
+"""
+
 import contextlib
 import os
 import time

@@ -17,6 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Helper functions for HTTP.
+
+"""
+
 from http import client
 
 NOT_ALLOWED = (

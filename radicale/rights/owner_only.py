@@ -15,6 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Rights backend that allows authenticated users to read and write their own
+calendars and address books.
+
+"""
+
 import radicale.rights.authenticated as authenticated
 from radicale import pathutils, rights
 

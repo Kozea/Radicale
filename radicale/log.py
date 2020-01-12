@@ -16,10 +16,15 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Radicale logging module.
+Functions to set up Python's logging facility for Radicale's WSGI application.
 
-Manage logging from a configuration file. For more information, see:
-http://docs.python.org/library/logging.config.html
+Log messages are sent to the first available target of:
+
+  - Error stream specified by the WSGI server in wsgi.errors
+  - systemd-journald
+  - stderr
+
+The logger is thread-safe and fork-safe.
 
 """
 
