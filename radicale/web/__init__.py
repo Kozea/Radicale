@@ -46,6 +46,13 @@ def load(configuration):
 
 class BaseWeb:
     def __init__(self, configuration):
+        """Initialize BaseWeb.
+
+        ``configuration`` see ``radicale.config`` module.
+        The ``configuration`` must not change during the lifetime of
+        this object, it is kept as an internal reference.
+
+        """
         self.configuration = configuration
 
     def get(self, environ, base_prefix, path, user):

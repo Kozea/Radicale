@@ -67,9 +67,11 @@ class Application(
     """WSGI application."""
 
     def __init__(self, configuration):
-        """Initialize application.
+        """Initialize Application.
 
         ``configuration`` see ``radicale.config`` module.
+        The ``configuration`` must not change during the lifetime of
+        this object, it is kept as an internal reference.
 
         """
         super().__init__()

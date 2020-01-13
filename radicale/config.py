@@ -294,6 +294,8 @@ class Configuration:
 
         ``schema`` a dict that describes the configuration format.
         See ``DEFAULT_CONFIG_SCHEMA``.
+        The content of ``schema`` must not change afterwards, it is kept
+        as an internal reference.
 
         Use ``load()`` to create an instance for use with
         ``radicale.app.Application``.
@@ -316,6 +318,8 @@ class Configuration:
 
         ``config`` a dict of the format {SECTION: {OPTION: VALUE, ...}, ...}.
         The configuration is checked for errors according to the config schema.
+        The content of ``config`` must not change afterwards, it is kept
+        as an internal reference.
 
         ``source`` a description of the configuration source (used in error
         messages).

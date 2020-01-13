@@ -59,6 +59,13 @@ def intersect_permissions(a, b="RrWw"):
 
 class BaseRights:
     def __init__(self, configuration):
+        """Initialize BaseRights.
+
+        ``configuration`` see ``radicale.config`` module.
+        The ``configuration`` must not change during the lifetime of
+        this object, it is kept as an internal reference.
+
+        """
         self.configuration = configuration
 
     def authorized(self, user, path, permissions):
