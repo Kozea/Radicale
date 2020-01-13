@@ -32,9 +32,9 @@ notifications:
 
 install:
   - ${PYTHON} --version
-  - ${PYTHON} -m pip --version
   - ${PYTHON} -m pip install --upgrade coveralls
   - ${PYTHON} -m pip install --upgrade --editable .[test,md5,bcrypt]
+  - ${PYTHON} -m pip list
 
 script:
   - ${PYTHON} setup.py test
