@@ -44,7 +44,7 @@ def run():
     parser.add_argument("--verify-storage", action="store_true",
                         help="check the storage for errors and exit")
     parser.add_argument(
-        "-C", "--config", help="use a specific configuration file")
+        "-C", "--config", help="use specific configuration files", nargs="*")
     parser.add_argument("-D", "--debug", action="store_true",
                         help="print debug information")
 
@@ -109,7 +109,7 @@ def run():
         configuration = config.load(config.parse_compound_paths(
             config.DEFAULT_CONFIG_PATH,
             os.environ.get("RADICALE_CONFIG"),
-            args.config))
+            os.pathsep.join(args.config) if args.config else None))
         if arguments_config:
             configuration.update(arguments_config, "arguments")
     except Exception as e:
