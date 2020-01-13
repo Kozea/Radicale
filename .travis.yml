@@ -1,68 +1,43 @@
 language: python
-sudo: false
-env: PIP=pip3 PYTHON=python3
-dist: xenial
+env: PYTHON=python3
 
 matrix:
   include:
-    - os: linux
+    - name: "Python 3.5 on Linux"
+      os: linux
       python: 3.5
-    - os: linux
+    - name: "Python 3.6 on Linux"
+      os: linux
       python: 3.6
-    - os: linux
+    - name: "Python 3.7 on Linux"
+      os: linux
       python: 3.7
-    - os: osx
-      language: generic
-    - os: linux
-      python: 3.5
-      sudo: required
-      env: WINE_PYTHON=3.5.4 PIP='wine pip' PYTHON='wine python'
+    - name: "Python 3.8 on Linux"
+      os: linux
+      python: 3.8
+    - name: "Python 3 on macOS"
+      os: osx
+      language: shell
+    - name: "Python 3.8 on Windows"
+      os: windows
+      language: shell
+      before_install:
+        - choco install python --version 3.8
+        - python -m pip install --upgrade pip
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH PYTHON=python
 
 notifications:
   webhooks:
     - https://coveralls.io/webhook?repo_token=COVERALLS_REPO_TOKEN
 
-before_install:
-  - |
-    if [ "${TRAVIS_OS_NAME}" == linux -a -n "${WINE_PYTHON}" ]; then
-      pushd "$(mktemp -d)" &&
-      sudo dpkg --add-architecture i386 &&
-      wget https://dl.winehq.org/wine-builds/winehq.key -O winehq.key &&
-      sudo apt-key add winehq.key &&
-      sudo apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/ &&
-      sudo apt-get update &&
-      sudo apt-get install -y --no-install-recommends unzip winehq-stable &&
-      curl "https://www.python.org/ftp/python/${WINE_PYTHON}/python-${WINE_PYTHON}-embed-win32.zip" -o python.zip &&
-      curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py &&
-      unzip python.zip -d python &&
-      pushd python &&
-      LIB="$(echo python*.zip)" &&
-      mv "${LIB}" "${LIB}.tmp" &&
-      unzip "${LIB}.tmp" -d "${LIB}" &&
-      rm "${LIB}.tmp" &&
-      popd &&
-      mv python "$(winepath 'C:\python')" &&
-      printf %b 'Windows Registry Editor Version 5.00\n'\
-                '[HKEY_CURRENT_USER\\Environment]\n'\
-                '"Path"="c:\\\\windows;c:\\\\windows\\\\system;c:\\\\python;c:\\\\python\\\\scripts"\n' > path.reg &&
-      wine regedit path.reg &&
-      wine python get-pip.py &&
-      rm -rf "$(dirs -l +0)" &&
-      popd
-    fi
-
 install:
-  - pip3 install --upgrade coverage coveralls
-  - ${PIP} install --upgrade --editable .[test,md5,bcrypt]
+  - ${PYTHON} --version
+  - ${PYTHON} -m pip --version
+  - ${PYTHON} -m pip install --upgrade coveralls
+  - ${PYTHON} -m pip install --upgrade --editable .[test,md5,bcrypt]
 
 script:
   - ${PYTHON} setup.py test
 
 after_success:
-  - |
-    if [ "${TRAVIS_OS_NAME}" == linux -a -n "${WINE_PYTHON}" ]; then
-        config="$(mktemp)"
-        printf '[paths]\nsource =\n    .\n    %s\n' "$(winepath --windows '')" >"${config}"
-        coverage3 combine --rcfile "${config}" .coverage
-    fi
-  - env COVERALLS_PARALLEL=true coveralls
+  - env COVERALLS_PARALLEL=true ${PYTHON} -m coveralls
