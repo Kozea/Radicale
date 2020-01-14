@@ -21,7 +21,7 @@ from importlib import import_module
 from radicale.log import logger
 
 
-def loader(internal_types, module_name, class_name, configuration):
+def load_plugin(internal_types, module_name, class_name, configuration):
     type_ = configuration.get(module_name, "type")
     if type_ in internal_types:
         module = "radicale.%s.%s" % (module_name, type_)

@@ -37,7 +37,7 @@ INTERNAL_TYPES = ("authenticated", "owner_write", "owner_only", "from_file")
 
 def load(configuration):
     """Load the rights module chosen in configuration."""
-    return utils.loader(INTERNAL_TYPES, "rights", "Rights", configuration)
+    return utils.load_plugin(INTERNAL_TYPES, "rights", "Rights", configuration)
 
 
 def intersect_permissions(a, b="RrWw"):

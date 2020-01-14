@@ -35,7 +35,7 @@ INTERNAL_TYPES = ("none", "remote_user", "http_x_remote_user", "htpasswd")
 
 def load(configuration):
     """Load the authentication module chosen in configuration."""
-    return utils.loader(INTERNAL_TYPES, "auth", "Auth", configuration)
+    return utils.load_plugin(INTERNAL_TYPES, "auth", "Auth", configuration)
 
 
 class BaseAuth:

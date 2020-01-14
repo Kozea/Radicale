@@ -28,7 +28,7 @@ INTERNAL_TYPES = ("none", "internal")
 
 def load(configuration):
     """Load the web module chosen in configuration."""
-    return utils.loader(INTERNAL_TYPES, "web", "Web", configuration)
+    return utils.load_plugin(INTERNAL_TYPES, "web", "Web", configuration)
 
 
 class BaseWeb:

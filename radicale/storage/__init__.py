@@ -42,7 +42,8 @@ CACHE_VERSION = (";".join(pkg_resources.get_distribution(pkg).version
 
 def load(configuration):
     """Load the storage module chosen in configuration."""
-    return utils.loader(INTERNAL_TYPES, "storage", "Storage", configuration)
+    return utils.load_plugin(
+        INTERNAL_TYPES, "storage", "Storage", configuration)
 
 
 class ComponentExistsError(ValueError):
