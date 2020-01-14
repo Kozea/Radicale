@@ -355,7 +355,7 @@ class Configuration:
                                        "%s" % (option, section, source))
                 raw_value = config[section][option]
                 try:
-                    if type_ == bool:
+                    if type_ == bool and type(raw_value) != bool:
                         raw_value = _convert_to_bool(raw_value)
                     new_values[section][option] = type_(raw_value)
                 except Exception as e:
@@ -363,7 +363,7 @@ class Configuration:
                         "Invalid %s value for option %r in section %r in %s: "
                         "%r" % (type_.__name__, option, section, source,
                                 raw_value)) from e
-        self._configs.append((config, source, internal))
+        self._configs.append((config, source, bool(internal)))
         for section in new_values:
             if section not in self._values:
                 self._values[section] = {}
