@@ -21,27 +21,14 @@ Take a look at the class ``BaseWeb`` if you want to implement your own.
 
 """
 
-from importlib import import_module
-
-from radicale.log import logger
+from radicale import utils
 
 INTERNAL_TYPES = ("none", "internal")
 
 
 def load(configuration):
     """Load the web module chosen in configuration."""
-    web_type = configuration.get("web", "type")
-    if web_type in INTERNAL_TYPES:
-        module = "radicale.web.%s" % web_type
-    else:
-        module = web_type
-    try:
-        class_ = import_module(module).Web
-    except Exception as e:
-        raise RuntimeError("Failed to load web module %r: %s" %
-                           (module, e)) from e
-    logger.info("Web type is %r", web_type)
-    return class_(configuration)
+    return utils.loader(INTERNAL_TYPES, "web", "Web", configuration)
 
 
 class BaseWeb:

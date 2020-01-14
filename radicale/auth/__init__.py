@@ -28,27 +28,14 @@ Take a look at the class ``BaseAuth`` if you want to implement your own.
 
 """
 
-from importlib import import_module
-
-from radicale.log import logger
+from radicale import utils
 
 INTERNAL_TYPES = ("none", "remote_user", "http_x_remote_user", "htpasswd")
 
 
 def load(configuration):
-    """Load the authentication manager chosen in configuration."""
-    auth_type = configuration.get("auth", "type")
-    if auth_type in INTERNAL_TYPES:
-        module = "radicale.auth.%s" % auth_type
-    else:
-        module = auth_type
-    try:
-        class_ = import_module(module).Auth
-    except Exception as e:
-        raise RuntimeError("Failed to load authentication module %r: %s" %
-                           (module, e)) from e
-    logger.info("Authentication type is %r", auth_type)
-    return class_(configuration)
+    """Load the authentication module chosen in configuration."""
+    return utils.loader(INTERNAL_TYPES, "auth", "Auth", configuration)
 
 
 class BaseAuth:

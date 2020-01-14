@@ -30,27 +30,14 @@ Take a look at the class ``BaseRights`` if you want to implement your own.
 
 """
 
-from importlib import import_module
-
-from radicale.log import logger
+from radicale import utils
 
 INTERNAL_TYPES = ("authenticated", "owner_write", "owner_only", "from_file")
 
 
 def load(configuration):
-    """Load the rights manager chosen in configuration."""
-    rights_type = configuration.get("rights", "type")
-    if rights_type in INTERNAL_TYPES:
-        module = "radicale.rights.%s" % rights_type
-    else:
-        module = rights_type
-    try:
-        class_ = import_module(module).Rights
-    except Exception as e:
-        raise RuntimeError("Failed to load rights module %r: %s" %
-                           (module, e)) from e
-    logger.info("Rights type is %r", rights_type)
-    return class_(configuration)
+    """Load the rights module chosen in configuration."""
+    return utils.loader(INTERNAL_TYPES, "rights", "Rights", configuration)
 
 
 def intersect_permissions(a, b="RrWw"):

@@ -26,13 +26,12 @@ Take a look at the class ``BaseCollection`` if you want to implement your own.
 import contextlib
 import json
 from hashlib import md5
-from importlib import import_module
 
 import pkg_resources
 import vobject
 
+from radicale import utils
 from radicale.item import filter as radicale_filter
-from radicale.log import logger
 
 INTERNAL_TYPES = ("multifilesystem",)
 
@@ -42,19 +41,8 @@ CACHE_VERSION = (";".join(pkg_resources.get_distribution(pkg).version
 
 
 def load(configuration):
-    """Load the storage manager chosen in configuration."""
-    storage_type = configuration.get("storage", "type")
-    if storage_type in INTERNAL_TYPES:
-        module = "radicale.storage.%s" % storage_type
-    else:
-        module = storage_type
-    try:
-        class_ = import_module(module).Storage
-    except Exception as e:
-        raise RuntimeError("Failed to load storage module %r: %s" %
-                           (module, e)) from e
-    logger.info("Storage type is %r", storage_type)
-    return class_(configuration)
+    """Load the storage module chosen in configuration."""
+    return utils.loader(INTERNAL_TYPES, "storage", "Storage", configuration)
 
 
 class ComponentExistsError(ValueError):
