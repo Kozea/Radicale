@@ -50,7 +50,7 @@ class CollectionHistoryMixin:
             history_etag = binascii.hexlify(os.urandom(16)).decode("ascii")
         etag = item.etag if item else ""
         if etag != cache_etag:
-            self._makedirs_synced(history_folder)
+            self._storage._makedirs_synced(history_folder)
             history_etag = radicale_item.get_etag(
                 history_etag + "/" + etag).strip("\"")
             try:
@@ -83,5 +83,5 @@ class CollectionHistoryMixin:
         history_folder = os.path.join(self._filesystem_path,
                                       ".Radicale.cache", "history")
         self._clean_cache(history_folder, self._get_deleted_history_hrefs(),
-                          max_age=self.configuration.get(
+                          max_age=self._storage.configuration.get(
                               "storage", "max_sync_token_age"))

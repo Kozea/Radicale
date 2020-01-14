@@ -86,7 +86,7 @@ class CollectionSyncMixin:
         # write the new token state or update the modification time of
         # existing token state
         if not os.path.exists(token_path):
-            self._makedirs_synced(token_folder)
+            self._storage._makedirs_synced(token_folder)
             try:
                 # Race: Other processes might have created and locked the file.
                 with self._atomic_write(token_path, "wb") as f:
@@ -96,7 +96,7 @@ class CollectionSyncMixin:
             else:
                 # clean up old sync tokens and item cache
                 self._clean_cache(token_folder, os.listdir(token_folder),
-                                  max_age=self.configuration.get(
+                                  max_age=self._storage.configuration.get(
                                       "storage", "max_sync_token_age"))
                 self._clean_history()
         else:

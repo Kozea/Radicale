@@ -27,32 +27,32 @@ from radicale.log import logger
 
 
 class CollectionLockMixin:
-    @classmethod
-    def static_init(cls):
-        super().static_init()
-        folder = cls.configuration.get("storage", "filesystem_folder")
-        lock_path = os.path.join(folder, ".Radicale.lock")
-        cls._lock = pathutils.RwLock(lock_path)
-
     def _acquire_cache_lock(self, ns=""):
-        if self._lock.locked == "w":
+        if self._storage._lock.locked == "w":
             return contextlib.ExitStack()
         cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache")
-        self._makedirs_synced(cache_folder)
+        self._storage._makedirs_synced(cache_folder)
         lock_path = os.path.join(cache_folder,
                                  ".Radicale.lock" + (".%s" % ns if ns else ""))
         lock = pathutils.RwLock(lock_path)
         return lock.acquire("w")
 
-    @classmethod
+
+class StorageLockMixin:
+    def __init__(self, configuration):
+        super().__init__(configuration)
+        folder = self.configuration.get("storage", "filesystem_folder")
+        lock_path = os.path.join(folder, ".Radicale.lock")
+        self._lock = pathutils.RwLock(lock_path)
+
     @contextlib.contextmanager
-    def acquire_lock(cls, mode, user=None):
-        with cls._lock.acquire(mode):
+    def acquire_lock(self, mode, user=None):
+        with self._lock.acquire(mode):
             yield
             # execute hook
-            hook = cls.configuration.get("storage", "hook")
+            hook = self.configuration.get("storage", "hook")
             if mode == "w" and hook:
-                folder = cls.configuration.get("storage", "filesystem_folder")
+                folder = self.configuration.get("storage", "filesystem_folder")
                 logger.debug("Running hook")
                 debug = logger.isEnabledFor(logging.DEBUG)
                 p = subprocess.Popen(

@@ -52,7 +52,7 @@ class CollectionUploadMixin:
         """
         cache_folder = os.path.join(self._filesystem_path,
                                     ".Radicale.cache", "item")
-        self._makedirs_synced(cache_folder)
+        self._storage._makedirs_synced(cache_folder)
         hrefs = set()
         for item in items:
             uid = item.uid
@@ -101,5 +101,5 @@ class CollectionUploadMixin:
             with self._atomic_write(os.path.join(cache_folder, href), "wb",
                                     sync_directory=False) as f:
                 pickle.dump(cache_content, f)
-        self._sync_directory(cache_folder)
-        self._sync_directory(self._filesystem_path)
+        self._storage._sync_directory(cache_folder)
+        self._storage._sync_directory(self._filesystem_path)

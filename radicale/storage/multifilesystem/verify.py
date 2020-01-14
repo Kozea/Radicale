@@ -22,9 +22,8 @@ from radicale import pathutils, storage
 from radicale.log import logger
 
 
-class CollectionVerifyMixin:
-    @classmethod
-    def verify(cls):
+class StorageVerifyMixin:
+    def verify(self):
         item_errors = collection_errors = 0
 
         @contextlib.contextmanager
@@ -51,7 +50,7 @@ class CollectionVerifyMixin:
                 collection = None
                 uids = set()
                 has_child_collections = False
-                for item in cls.discover(path, "1", exception_cm):
+                for item in self.discover(path, "1", exception_cm):
                     if not collection:
                         collection = item
                         collection.get_meta()

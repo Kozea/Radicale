@@ -34,9 +34,9 @@ class CollectionDeleteMixin:
                         prefix=".Radicale.tmp-", dir=parent_dir) as tmp:
                     os.rename(self._filesystem_path, os.path.join(
                         tmp, os.path.basename(self._filesystem_path)))
-                    self._sync_directory(parent_dir)
+                    self._storage._sync_directory(parent_dir)
             else:
-                self._sync_directory(parent_dir)
+                self._storage._sync_directory(parent_dir)
         else:
             # Delete an item
             if not pathutils.is_safe_filesystem_path_component(href):
@@ -45,7 +45,7 @@ class CollectionDeleteMixin:
             if not os.path.isfile(path):
                 raise storage.ComponentNotFoundError(href)
             os.remove(path)
-            self._sync_directory(os.path.dirname(path))
+            self._storage._sync_directory(os.path.dirname(path))
             # Track the change
             self._update_history_etag(href, None)
             self._clean_history()

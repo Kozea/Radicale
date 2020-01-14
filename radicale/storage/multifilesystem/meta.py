@@ -31,7 +31,7 @@ class CollectionMetaMixin:
 
     def get_meta(self, key=None):
         # reuse cached value if the storage is read-only
-        if self._lock.locked == "w" or self._meta_cache is None:
+        if self._storage._lock.locked == "w" or self._meta_cache is None:
             try:
                 try:
                     with open(self._props_path, encoding=self._encoding) as f:

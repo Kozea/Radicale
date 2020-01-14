@@ -49,17 +49,12 @@ def load(configuration):
     else:
         module = storage_type
     try:
-        class_ = import_module(module).Collection
+        class_ = import_module(module).Storage
     except Exception as e:
         raise RuntimeError("Failed to load storage module %r: %s" %
                            (module, e)) from e
     logger.info("Storage type is %r", storage_type)
-
-    class CollectionCopy(class_):
-        """Collection copy, avoids overriding the original class attributes."""
-    CollectionCopy.configuration = configuration
-    CollectionCopy.static_init()
-    return CollectionCopy
+    return class_(configuration)
 
 
 class ComponentExistsError(ValueError):
@@ -76,17 +71,11 @@ class ComponentNotFoundError(ValueError):
 
 class BaseCollection:
 
-    # Overriden on copy by the "load" function
-    configuration = None
-
-    # Properties of instance
-    """The sanitized path of the collection without leading or trailing ``/``.
-    """
-    path = ""
-
-    @classmethod
-    def static_init(cls):
-        """init collection copy"""
+    @property
+    def path(self):
+        """The sanitized path of the collection without leading or
+        trailing ``/``."""
+        raise NotImplementedError
 
     @property
     def owner(self):
@@ -98,37 +87,6 @@ class BaseCollection:
         """Collection is a principal."""
         return bool(self.path) and "/" not in self.path
 
-    @classmethod
-    def discover(cls, path, depth="0"):
-        """Discover a list of collections under the given ``path``.
-
-        ``path`` is sanitized.
-
-        If ``depth`` is "0", only the actual object under ``path`` is
-        returned.
-
-        If ``depth`` is anything but "0", it is considered as "1" and direct
-        children are included in the result.
-
-        The root collection "/" must always exist.
-
-        """
-        raise NotImplementedError
-
-    @classmethod
-    def move(cls, item, to_collection, to_href):
-        """Move an object.
-
-        ``item`` is the item to move.
-
-        ``to_collection`` is the target collection.
-
-        ``to_href`` is the target name in ``to_collection``. An item with the
-        same name might already exist.
-
-        """
-        raise NotImplementedError
-
     @property
     def etag(self):
         """Encoded as quoted-string (see RFC 2616)."""
@@ -137,27 +95,6 @@ class BaseCollection:
             etag.update((item.href + "/" + item.etag).encode("utf-8"))
         etag.update(json.dumps(self.get_meta(), sort_keys=True).encode())
         return '"%s"' % etag.hexdigest()
-
-    @classmethod
-    def create_collection(cls, href, items=None, props=None):
-        """Create a collection.
-
-        ``href`` is the sanitized path.
-
-        If the collection already exists and neither ``collection`` nor
-        ``props`` are set, this method shouldn't do anything. Otherwise the
-        existing collection must be replaced.
-
-        ``collection`` is a list of vobject components.
-
-        ``props`` are metadata values for the collection.
-
-        ``props["tag"]`` is the type of collection (VCALENDAR or
-        VADDRESSBOOK). If the key ``tag`` is missing, it is guessed from the
-        collection.
-
-        """
-        raise NotImplementedError
 
     def sync(self, old_token=None):
         """Get the current sync token and changed items for synchronization.
@@ -318,9 +255,69 @@ class BaseCollection:
             return "".join((item.serialize() for item in self.get_all()))
         return ""
 
-    @classmethod
+
+class BaseStorage:
+    def __init__(self, configuration):
+        """Initialize BaseStorage.
+
+        ``configuration`` see ``radicale.config`` module.
+        The ``configuration`` must not change during the lifetime of
+        this object, it is kept as an internal reference.
+
+        """
+        self.configuration = configuration
+
+    def discover(self, path, depth="0"):
+        """Discover a list of collections under the given ``path``.
+
+        ``path`` is sanitized.
+
+        If ``depth`` is "0", only the actual object under ``path`` is
+        returned.
+
+        If ``depth`` is anything but "0", it is considered as "1" and direct
+        children are included in the result.
+
+        The root collection "/" must always exist.
+
+        """
+        raise NotImplementedError
+
+    def move(self, item, to_collection, to_href):
+        """Move an object.
+
+        ``item`` is the item to move.
+
+        ``to_collection`` is the target collection.
+
+        ``to_href`` is the target name in ``to_collection``. An item with the
+        same name might already exist.
+
+        """
+        raise NotImplementedError
+
+    def create_collection(self, href, items=None, props=None):
+        """Create a collection.
+
+        ``href`` is the sanitized path.
+
+        If the collection already exists and neither ``collection`` nor
+        ``props`` are set, this method shouldn't do anything. Otherwise the
+        existing collection must be replaced.
+
+        ``collection`` is a list of vobject components.
+
+        ``props`` are metadata values for the collection.
+
+        ``props["tag"]`` is the type of collection (VCALENDAR or
+        VADDRESSBOOK). If the key ``tag`` is missing, it is guessed from the
+        collection.
+
+        """
+        raise NotImplementedError
+
     @contextlib.contextmanager
-    def acquire_lock(cls, mode, user=None):
+    def acquire_lock(self, mode, user=None):
         """Set a context manager to lock the whole storage.
 
         ``mode`` must either be "r" for shared access or "w" for exclusive
@@ -331,7 +328,6 @@ class BaseCollection:
         """
         raise NotImplementedError
 
-    @classmethod
-    def verify(cls):
+    def verify(self):
         """Check the storage for errors."""
         raise NotImplementedError

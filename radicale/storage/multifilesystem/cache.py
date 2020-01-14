@@ -26,8 +26,7 @@ from radicale.log import logger
 
 
 class CollectionCacheMixin:
-    @classmethod
-    def _clean_cache(cls, folder, names, max_age=None):
+    def _clean_cache(self, folder, names, max_age=None):
         """Delete all ``names`` in ``folder`` that are older than ``max_age``.
         """
         age_limit = time.time() - max_age if max_age is not None else None
@@ -52,7 +51,7 @@ class CollectionCacheMixin:
                 continue
             modified = True
         if modified:
-            cls._sync_directory(folder)
+            self._storage._sync_directory(folder)
 
     def _item_cache_hash(self, raw_text):
         _hash = md5()
@@ -71,7 +70,7 @@ class CollectionCacheMixin:
         cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
                                     "item")
         content = self._item_cache_content(item, cache_hash)
-        self._makedirs_synced(cache_folder)
+        self._storage._makedirs_synced(cache_folder)
         try:
             # Race: Other processes might have created and locked the
             # file.

@@ -24,17 +24,20 @@ from radicale import pathutils
 from radicale.log import logger
 
 
-class CollectionDiscoverMixin:
-    @classmethod
-    def discover(cls, path, depth="0", child_context_manager=(
+class StorageDiscoverMixin:
+
+    def __init__(self, configuration):
+        super().__init__(configuration)
+
+    def discover(self, path, depth="0", child_context_manager=(
                  lambda path, href=None: contextlib.ExitStack())):
         # Path should already be sanitized
         sane_path = pathutils.strip_path(path)
         attributes = sane_path.split("/") if sane_path else []
 
-        folder = cls._get_collection_root_folder()
+        folder = self._get_collection_root_folder()
         # Create the root collection
-        cls._makedirs_synced(folder)
+        self._makedirs_synced(folder)
         try:
             filesystem_path = pathutils.path_to_filesystem(folder, sane_path)
         except ValueError as e:
@@ -53,7 +56,8 @@ class CollectionDiscoverMixin:
             href = None
 
         sane_path = "/".join(attributes)
-        collection = cls(pathutils.unstrip_path(sane_path, True))
+        collection = self._collection_class(
+            self, pathutils.unstrip_path(sane_path, True))
 
         if href:
             yield collection._get(href)
@@ -80,4 +84,4 @@ class CollectionDiscoverMixin:
             sane_child_path = posixpath.join(sane_path, href)
             child_path = pathutils.unstrip_path(sane_child_path, True)
             with child_context_manager(sane_child_path):
-                yield cls(child_path)
+                yield self._collection_class(self, child_path)

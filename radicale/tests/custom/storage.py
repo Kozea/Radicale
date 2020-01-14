@@ -25,8 +25,5 @@ Copy of filesystem storage backend for testing
 from radicale.storage import multifilesystem
 
 
-# TODO: make something more in this collection (and test it)
-class Collection(multifilesystem.Collection):
-    """Collection stored in a folder."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class Storage(multifilesystem.Storage):
+    pass

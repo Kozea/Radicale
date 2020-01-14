@@ -77,7 +77,7 @@ class CollectionGetMixin:
                 # Lock the item cache to prevent multpile processes from
                 # generating the same data in parallel.
                 # This improves the performance for multiple requests.
-                if self._lock.locked == "r":
+                if self._storage._lock.locked == "r":
                     # Check if another process created the file in the meantime
                     cache_hash, uid, etag, text, name, tag, start, end = \
                         self._load_item_cache(href, input_hash)
