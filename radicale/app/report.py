@@ -29,7 +29,8 @@ from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
 
-def xml_report(base_prefix, path, xml_request, collection, unlock_storage_fn):
+def xml_report(base_prefix, path, xml_request, collection, encoding,
+               unlock_storage_fn):
     """Read and answer REPORT requests.
 
     Read rfc3253-3.6 for info.
@@ -208,7 +209,7 @@ def xml_report(base_prefix, path, xml_request, collection, unlock_storage_fn):
                 element.text = item.etag
                 found_props.append(element)
             elif tag == xmlutils.make_tag("D", "getcontenttype"):
-                element.text = xmlutils.get_content_type(item)
+                element.text = xmlutils.get_content_type(item, encoding)
                 found_props.append(element)
             elif tag in (
                     xmlutils.make_tag("C", "calendar-data"),
@@ -270,8 +271,8 @@ class ApplicationReportMixin:
             logger.debug("client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         with contextlib.ExitStack() as lock_stack:
-            lock_stack.enter_context(self.storage.acquire_lock("r", user))
-            item = next(self.storage.discover(path), None)
+            lock_stack.enter_context(self._storage.acquire_lock("r", user))
+            item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
             if not self.access(user, path, "r", item):
@@ -280,10 +281,10 @@ class ApplicationReportMixin:
                 collection = item
             else:
                 collection = item.collection
-            headers = {"Content-Type": "text/xml; charset=%s" % self.encoding}
+            headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
             try:
                 status, xml_answer = xml_report(
-                    base_prefix, path, xml_content, collection,
+                    base_prefix, path, xml_content, collection, self._encoding,
                     lock_stack.close)
             except ValueError as e:
                 logger.warning(

@@ -127,11 +127,10 @@ def webdav_error(namespace, name):
     return root
 
 
-def get_content_type(item):
+def get_content_type(item, encoding):
     """Get the content-type of an item with charset and component parameters.
     """
     mimetype = OBJECT_MIMETYPES[item.name]
-    encoding = item.collection.configuration.get("encoding", "request")
     tag = item.component_name
     content_type = "%s;charset=%s" % (mimetype, encoding)
     if tag:

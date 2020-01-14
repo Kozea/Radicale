@@ -98,8 +98,8 @@ class ApplicationProppatchMixin:
         except socket.timeout:
             logger.debug("client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
-        with self.storage.acquire_lock("w", user):
-            item = next(self.storage.discover(path), None)
+        with self._storage.acquire_lock("w", user):
+            item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
             if not self.access(user, path, "w", item):
@@ -107,7 +107,7 @@ class ApplicationProppatchMixin:
             if not isinstance(item, storage.BaseCollection):
                 return httputils.FORBIDDEN
             headers = {"DAV": httputils.DAV_HEADERS,
-                       "Content-Type": "text/xml; charset=%s" % self.encoding}
+                       "Content-Type": "text/xml; charset=%s" % self._encoding}
             try:
                 xml_answer = xml_proppatch(base_prefix, path, xml_content,
                                            item)

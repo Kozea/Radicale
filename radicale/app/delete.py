@@ -51,8 +51,8 @@ class ApplicationDeleteMixin:
         """Manage DELETE request."""
         if not self.access(user, path, "w"):
             return httputils.NOT_ALLOWED
-        with self.storage.acquire_lock("w", user):
-            item = next(self.storage.discover(path), None)
+        with self._storage.acquire_lock("w", user):
+            item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
             if not self.access(user, path, "w", item):
@@ -66,5 +66,5 @@ class ApplicationDeleteMixin:
             else:
                 xml_answer = xml_delete(
                     base_prefix, path, item.collection, item.href)
-            headers = {"Content-Type": "text/xml; charset=%s" % self.encoding}
+            headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
             return client.OK, headers, self.write_xml_content(xml_answer)

@@ -76,11 +76,11 @@ class Application(
         """
         super().__init__()
         self.configuration = configuration
-        self.auth = auth.load(configuration)
-        self.storage = storage.load(configuration)
-        self.rights = rights.load(configuration)
-        self.Web = web.load(configuration)
-        self.encoding = configuration.get("encoding", "request")
+        self._auth = auth.load(configuration)
+        self._storage = storage.load(configuration)
+        self._rights = rights.load(configuration)
+        self._web = web.load(configuration)
+        self._encoding = configuration.get("encoding", "request")
 
     def _headers_log(self, environ):
         """Sanitize headers for logging."""
@@ -107,7 +107,7 @@ class Application(
             charsets.append(
                 content_type.split("charset=")[1].split(";")[0].strip())
         # Then append default Radicale charset
-        charsets.append(self.encoding)
+        charsets.append(self._encoding)
         # Then append various fallbacks
         charsets.append("utf-8")
         charsets.append("iso8859-1")
@@ -153,8 +153,8 @@ class Application(
             if answer:
                 if hasattr(answer, "encode"):
                     logger.debug("Response content:\n%s", answer)
-                    headers["Content-Type"] += "; charset=%s" % self.encoding
-                    answer = answer.encode(self.encoding)
+                    headers["Content-Type"] += "; charset=%s" % self._encoding
+                    answer = answer.encode(self._encoding)
                 accept_encoding = [
                     encoding.strip() for encoding in
                     environ.get("HTTP_ACCEPT_ENCODING", "").split(",")
@@ -231,7 +231,7 @@ class Application(
 
         # Ask authentication backend to check rights
         login = password = ""
-        external_login = self.auth.get_external_login(environ)
+        external_login = self._auth.get_external_login(environ)
         authorization = environ.get("HTTP_AUTHORIZATION", "")
         if external_login:
             login, password = external_login
@@ -241,7 +241,7 @@ class Application(
             login, password = self.decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
 
-        user = self.auth.login(login, password) or "" if login else ""
+        user = self._auth.login(login, password) or "" if login else ""
         if user and login == user:
             logger.info("Successful login: %r", user)
         elif user:
@@ -263,15 +263,15 @@ class Application(
         # Create principal collection
         if user:
             principal_path = "/%s/" % user
-            if self.rights.authorized(user, principal_path, "W"):
-                with self.storage.acquire_lock("r", user):
+            if self._rights.authorized(user, principal_path, "W"):
+                with self._storage.acquire_lock("r", user):
                     principal = next(
-                        self.storage.discover(principal_path, depth="1"),
+                        self._storage.discover(principal_path, depth="1"),
                         None)
                 if not principal:
-                    with self.storage.acquire_lock("w", user):
+                    with self._storage.acquire_lock("w", user):
                         try:
-                            self.storage.create_collection(principal_path)
+                            self._storage.create_collection(principal_path)
                         except ValueError as e:
                             logger.warning("Failed to create principal "
                                            "collection %r: %s", user, e)
@@ -327,12 +327,12 @@ class Application(
         else:
             permissions = ""
             parent_permissions = permission
-        if permissions and self.rights.authorized(user, path, permissions):
+        if permissions and self._rights.authorized(user, path, permissions):
             return True
         if parent_permissions:
             parent_path = pathutils.unstrip_path(
                 posixpath.dirname(pathutils.strip_path(path)), True)
-            if self.rights.authorized(user, parent_path, parent_permissions):
+            if self._rights.authorized(user, parent_path, parent_permissions):
                 return True
         return False
 
@@ -369,14 +369,14 @@ class Application(
             logger.debug("Response content:\n%s",
                          xmlutils.pretty_xml(xml_content))
         f = io.BytesIO()
-        ET.ElementTree(xml_content).write(f, encoding=self.encoding,
+        ET.ElementTree(xml_content).write(f, encoding=self._encoding,
                                           xml_declaration=True)
         return f.getvalue()
 
     def webdav_error_response(self, namespace, name,
                               status=httputils.WEBDAV_PRECONDITION_FAILED[0]):
         """Generate XML error response."""
-        headers = {"Content-Type": "text/xml; charset=%s" % self.encoding}
+        headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
         content = self.write_xml_content(
             xmlutils.webdav_error(namespace, name))
         return status, headers, content

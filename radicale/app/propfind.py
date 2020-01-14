@@ -27,7 +27,8 @@ from radicale import httputils, pathutils, rights, storage, xmlutils
 from radicale.log import logger
 
 
-def xml_propfind(base_prefix, path, xml_request, allowed_items, user):
+def xml_propfind(base_prefix, path, xml_request, allowed_items, user,
+                 encoding):
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -63,7 +64,7 @@ def xml_propfind(base_prefix, path, xml_request, allowed_items, user):
     for item, permission in allowed_items:
         write = permission == "w"
         response = xml_propfind_response(
-            base_prefix, path, item, props, user, write=write,
+            base_prefix, path, item, props, user, encoding, write=write,
             allprop=allprop, propname=propname)
         if response:
             multistatus.append(response)
@@ -71,8 +72,8 @@ def xml_propfind(base_prefix, path, xml_request, allowed_items, user):
     return client.MULTI_STATUS, multistatus
 
 
-def xml_propfind_response(base_prefix, path, item, props, user, write=False,
-                          propname=False, allprop=False):
+def xml_propfind_response(base_prefix, path, item, props, user, encoding,
+                          write=False, propname=False, allprop=False):
     """Build and return a PROPFIND response."""
     if propname and allprop or (props and (propname or allprop)):
         raise ValueError("Only use one of props, propname and allprops")
@@ -234,7 +235,6 @@ def xml_propfind_response(base_prefix, path, item, props, user, write=False,
                 element.append(supported)
         elif tag == xmlutils.make_tag("D", "getcontentlength"):
             if not is_collection or is_leaf:
-                encoding = collection.configuration.get("encoding", "request")
                 element.text = str(len(item.serialize().encode(encoding)))
             else:
                 is404 = True
@@ -299,7 +299,7 @@ def xml_propfind_response(base_prefix, path, item, props, user, write=False,
                     is404 = True
         # Not for collections
         elif tag == xmlutils.make_tag("D", "getcontenttype"):
-            element.text = xmlutils.get_content_type(item)
+            element.text = xmlutils.get_content_type(item, encoding)
         elif tag == xmlutils.make_tag("D", "resourcetype"):
             # resourcetype must be returned empty for non-collection elements
             pass
@@ -331,14 +331,14 @@ class ApplicationPropfindMixin:
             if isinstance(item, storage.BaseCollection):
                 path = pathutils.unstrip_path(item.path, True)
                 if item.get_meta("tag"):
-                    permissions = self.rights.authorized(user, path, "rw")
+                    permissions = self._rights.authorized(user, path, "rw")
                     target = "collection with tag %r" % item.path
                 else:
-                    permissions = self.rights.authorized(user, path, "RW")
+                    permissions = self._rights.authorized(user, path, "RW")
                     target = "collection %r" % item.path
             else:
                 path = pathutils.unstrip_path(item.collection.path, True)
-                permissions = self.rights.authorized(user, path, "rw")
+                permissions = self._rights.authorized(user, path, "rw")
                 target = "item %r from %r" % (item.href, item.collection.path)
             if rights.intersect_permissions(permissions, "Ww"):
                 permission = "w"
@@ -368,8 +368,9 @@ class ApplicationPropfindMixin:
         except socket.timeout:
             logger.debug("client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
-        with self.storage.acquire_lock("r", user):
-            items = self.storage.discover(path, environ.get("HTTP_DEPTH", "0"))
+        with self._storage.acquire_lock("r", user):
+            items = self._storage.discover(
+                path, environ.get("HTTP_DEPTH", "0"))
             # take root item for rights checking
             item = next(items, None)
             if not item:
@@ -380,9 +381,10 @@ class ApplicationPropfindMixin:
             items = itertools.chain([item], items)
             allowed_items = self._collect_allowed_items(items, user)
             headers = {"DAV": httputils.DAV_HEADERS,
-                       "Content-Type": "text/xml; charset=%s" % self.encoding}
+                       "Content-Type": "text/xml; charset=%s" % self._encoding}
             status, xml_answer = xml_propfind(
-                base_prefix, path, xml_content, allowed_items, user)
+                base_prefix, path, xml_content, allowed_items, user,
+                self._encoding)
             if status == client.FORBIDDEN:
                 return httputils.NOT_ALLOWED
             return status, headers, self.write_xml_content(xml_answer)

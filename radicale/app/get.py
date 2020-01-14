@@ -47,13 +47,13 @@ class ApplicationGetMixin:
     def _content_disposition_attachement(self, filename):
         value = "attachement"
         try:
-            encoded_filename = quote(filename, encoding=self.encoding)
+            encoded_filename = quote(filename, encoding=self._encoding)
         except UnicodeEncodeError:
             logger.warning("Failed to encode filename: %r", filename,
                            exc_info=True)
             encoded_filename = ""
         if encoded_filename:
-            value += "; filename*=%s''%s" % (self.encoding, encoded_filename)
+            value += "; filename*=%s''%s" % (self._encoding, encoded_filename)
         return value
 
     def do_GET(self, environ, base_prefix, path, user):
@@ -69,11 +69,11 @@ class ApplicationGetMixin:
                     "Redirected to %s" % web_path)
         # Dispatch .web URL to web module
         if path == "/.web" or path.startswith("/.web/"):
-            return self.Web.get(environ, base_prefix, path, user)
+            return self._web.get(environ, base_prefix, path, user)
         if not self.access(user, path, "r"):
             return httputils.NOT_ALLOWED
-        with self.storage.acquire_lock("r", user):
-            item = next(self.storage.discover(path), None)
+        with self._storage.acquire_lock("r", user):
+            item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
             if not self.access(user, path, "r", item):
