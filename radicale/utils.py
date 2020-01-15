@@ -23,6 +23,9 @@ from radicale.log import logger
 
 def load_plugin(internal_types, module_name, class_name, configuration):
     type_ = configuration.get(module_name, "type")
+    if callable(type_):
+        logger.info("%s type is %r", module_name, type_)
+        return type_(configuration)
     if type_ in internal_types:
         module = "radicale.%s.%s" % (module_name, type_)
     else:

@@ -81,6 +81,12 @@ def list_of_ip_address(value):
     return [ip_address(s.strip()) for s in value.split(",")]
 
 
+def str_or_callable(value):
+    if callable(value):
+        return value
+    return str(value)
+
+
 def unspecified_type(value):
     return value
 
@@ -150,7 +156,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
         ("type", {
             "value": "none",
             "help": "authentication method",
-            "type": str,
+            "type": str_or_callable,
             "internal": auth.INTERNAL_TYPES}),
         ("htpasswd_filename", {
             "value": "/etc/radicale/users",
@@ -172,7 +178,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
         ("type", {
             "value": "owner_only",
             "help": "rights backend",
-            "type": str,
+            "type": str_or_callable,
             "internal": rights.INTERNAL_TYPES}),
         ("file", {
             "value": "/etc/radicale/rights",
@@ -182,7 +188,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
         ("type", {
             "value": "multifilesystem",
             "help": "storage backend",
-            "type": str,
+            "type": str_or_callable,
             "internal": storage.INTERNAL_TYPES}),
         ("filesystem_folder", {
             "value": "/var/lib/radicale/collections",
@@ -204,7 +210,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
         ("type", {
             "value": "internal",
             "help": "web interface backend",
-            "type": str,
+            "type": str_or_callable,
             "internal": web.INTERNAL_TYPES})])),
     ("logging", OrderedDict([
         ("level", {
