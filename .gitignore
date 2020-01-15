@@ -6,7 +6,7 @@ __pycache__
 /MANIFEST
 /build
 /dist
-/Radicale.egg-info
+/*.egg-info
 
 coverage.xml
 .pytest_cache
