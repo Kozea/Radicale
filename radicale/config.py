@@ -313,7 +313,7 @@ class Configuration:
                 values[section][option] = schema[section][option]["value"]
         self.update(values, "default config", internal=True)
 
-    def update(self, config, source, internal=False):
+    def update(self, config, source=None, internal=False):
         """Update the configuration.
 
         ``config`` a dict of the format {SECTION: {OPTION: VALUE, ...}, ...}.
@@ -327,6 +327,7 @@ class Configuration:
         ``internal`` allows updating "_internal" sections.
 
         """
+        source = source or "unspecified config"
         new_values = {}
         for section in config:
             if (section not in self._schema or not internal and
