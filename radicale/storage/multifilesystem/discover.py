@@ -26,9 +26,6 @@ from radicale.log import logger
 
 class StorageDiscoverMixin:
 
-    def __init__(self, configuration):
-        super().__init__(configuration)
-
     def discover(self, path, depth="0", child_context_manager=(
                  lambda path, href=None: contextlib.ExitStack())):
         # Path should already be sanitized

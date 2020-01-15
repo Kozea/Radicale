@@ -22,8 +22,6 @@ from radicale import pathutils
 
 
 class StorageMoveMixin:
-    def __init__(self, configuration):
-        super().__init__(configuration)
 
     def move(self, item, to_collection, to_href):
         if not pathutils.is_safe_filesystem_path_component(to_href):

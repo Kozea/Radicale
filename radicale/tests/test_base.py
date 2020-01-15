@@ -1487,6 +1487,14 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
     """Test BaseRequests on multifilesystem."""
     storage_type = "multifilesystem"
 
+    def test_folder_creation(self):
+        """Verify that the folder is created."""
+        folder = os.path.join(self.colpath, "subfolder")
+        self.configuration.update({"storage": {"filesystem_folder": folder}},
+                                  "test")
+        self.application = Application(self.configuration)
+        assert os.path.isdir(folder)
+
     def test_fsync(self):
         """Create a directory and file with syncing enabled."""
         self.configuration.update({

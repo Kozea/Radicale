@@ -24,9 +24,6 @@ from radicale import pathutils
 
 class StorageCreateCollectionMixin:
 
-    def __init__(self, configuration):
-        super().__init__(configuration)
-
     def create_collection(self, href, items=None, props=None):
         folder = self._get_collection_root_folder()
 

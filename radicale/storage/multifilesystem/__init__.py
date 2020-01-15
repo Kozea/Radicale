@@ -115,9 +115,9 @@ class Storage(
     _collection_class = Collection
 
     def __init__(self, configuration):
+        super().__init__(configuration)
         folder = configuration.get("storage", "filesystem_folder")
         self._makedirs_synced(folder)
-        super().__init__(configuration)
 
     def _get_collection_root_folder(self):
         filesystem_folder = self.configuration.get(

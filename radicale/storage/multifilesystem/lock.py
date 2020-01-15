@@ -39,6 +39,7 @@ class CollectionLockMixin:
 
 
 class StorageLockMixin:
+
     def __init__(self, configuration):
         super().__init__(configuration)
         folder = self.configuration.get("storage", "filesystem_folder")
