@@ -25,6 +25,7 @@ Module for address books and calendar entries (see ``Item``).
 
 import math
 import sys
+from datetime import timedelta
 from hashlib import sha256
 from random import getrandbits
 
@@ -32,6 +33,7 @@ import vobject
 
 from radicale import pathutils
 from radicale.item import filter as radicale_filter
+from radicale.log import logger
 
 
 def predict_tag_of_parent_collection(vobject_items):
@@ -118,6 +120,15 @@ def check_and_sanitize_items(vobject_items, is_collection=False, tag=None):
                 raise ValueError(
                     "Multiple %s components with different UIDs in object: "
                     "%r, %r" % (component_name, object_uid, component_uid))
+            # Workaround for bug in Lightning (Thunderbird)
+            # Rescheduling a single occurrence from a repeating event creates
+            # an event with DTEND and DURATION:PT0S
+            if (hasattr(component, "dtend") and
+                    hasattr(component, "duration") and
+                    component.duration.value == timedelta(0)):
+                logger.debug("Quirks: Removing zero duration from %s in "
+                             "object %r", component_name, component_uid)
+                del component.duration
             # vobject interprets recurrence rules on demand
             try:
                 component.rruleset
