@@ -35,8 +35,7 @@ from urllib.error import HTTPError, URLError
 import pytest
 
 from radicale import config, server
-
-from .helpers import configuration_to_dict, get_file_path
+from radicale.tests.helpers import configuration_to_dict, get_file_path
 
 try:
     import gunicorn

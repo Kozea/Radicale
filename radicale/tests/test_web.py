@@ -23,8 +23,7 @@ import shutil
 import tempfile
 
 from radicale import Application, config
-
-from .test_base import BaseTest
+from radicale.tests.test_base import BaseTest
 
 
 class TestBaseWebRequests(BaseTest):
@@ -62,7 +61,7 @@ class TestBaseWebRequests(BaseTest):
     def test_custom(self):
         """Custom web plugin."""
         self.configuration.update({
-            "web": {"type": "tests.custom.web"}}, "test")
+            "web": {"type": "radicale.tests.custom.web"}}, "test")
         self.application = Application(self.configuration)
         status, _, answer = self.request("GET", "/.web")
         assert status == 200

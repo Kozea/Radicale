@@ -22,8 +22,7 @@ from configparser import RawConfigParser
 import pytest
 
 from radicale import config
-
-from .helpers import configuration_to_dict
+from radicale.tests.helpers import configuration_to_dict
 
 
 class TestConfig:

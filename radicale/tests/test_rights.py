@@ -24,9 +24,8 @@ import shutil
 import tempfile
 
 from radicale import Application, config
-
-from .helpers import get_file_content
-from .test_base import BaseTest
+from radicale.tests.helpers import get_file_content
+from radicale.tests.test_base import BaseTest
 
 
 class TestBaseRightsRequests(BaseTest):
@@ -144,8 +143,8 @@ permissions: Rr""")
 
     def test_custom(self):
         """Custom rights management."""
-        self._test_rights("tests.custom.rights", "", "/", "r", 401)
-        self._test_rights("tests.custom.rights", "", "/tmp", "r", 207)
+        self._test_rights("radicale.tests.custom.rights", "", "/", "r", 401)
+        self._test_rights("radicale.tests.custom.rights", "", "/tmp", "r", 207)
 
     def test_collections_and_items(self):
         """Test rights for creation of collections, calendars and items.

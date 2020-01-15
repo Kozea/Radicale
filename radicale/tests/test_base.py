@@ -32,9 +32,8 @@ from functools import partial
 import pytest
 
 from radicale import Application, config, storage
-
-from . import BaseTest
-from .helpers import get_file_content
+from radicale.tests import BaseTest
+from radicale.tests.helpers import get_file_content
 
 
 class BaseRequestsMixIn:
@@ -1632,7 +1631,7 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
 
 class TestCustomStorageSystem(BaseFileSystemTest):
     """Test custom backend loading."""
-    storage_type = "tests.custom.storage_simple_sync"
+    storage_type = "radicale.tests.custom.storage_simple_sync"
     full_sync_token_support = False
     _report_sync_token = BaseRequestsMixIn._report_sync_token
     test_root = BaseRequestsMixIn.test_root

@@ -48,8 +48,6 @@ def finish_request_cov(self, request, client_address):
 
 server.ParallelHTTPServer.finish_request = finish_request_cov
 
-# Allow importing of tests.custom....
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 # Enable debug output
 radicale.log.logger.setLevel(logging.DEBUG)
 

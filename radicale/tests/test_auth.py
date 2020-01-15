@@ -29,8 +29,7 @@ import tempfile
 import pytest
 
 from radicale import Application, config
-
-from .test_base import BaseTest
+from radicale.tests.test_base import BaseTest
 
 
 class TestBaseAuthRequests(BaseTest):
@@ -162,7 +161,7 @@ class TestBaseAuthRequests(BaseTest):
     def test_custom(self):
         """Custom authentication."""
         self.configuration.update(
-            {"auth": {"type": "tests.custom.auth"}}, "test")
+            {"auth": {"type": "radicale.tests.custom.auth"}}, "test")
         self.application = Application(self.configuration)
         status, _, answer = self.request(
             "PROPFIND", "/tmp", HTTP_AUTHORIZATION="Basic %s" %
