@@ -1183,7 +1183,7 @@ class BaseRequestsMixIn:
         new_sync_token, xml = self._report_sync_token(calendar_path,
                                                       sync_token)
         if not self.full_sync_token_support and not new_sync_token:
-            pytest.skip("storage backend does not support sync-token")
+            return
         assert sync_token == new_sync_token
         assert xml.find("{DAV:}response") is None
 
@@ -1199,7 +1199,7 @@ class BaseRequestsMixIn:
         assert status == 201
         sync_token, xml = self._report_sync_token(calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
-            pytest.skip("storage backend does not support sync-token")
+            return
         assert xml.find("{DAV:}response") is not None
         assert xml.find("{DAV:}response/{DAV:}status") is None
 
@@ -1217,7 +1217,7 @@ class BaseRequestsMixIn:
         assert status == 200
         sync_token, xml = self._report_sync_token(calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
-            pytest.skip("storage backend does not support sync-token")
+            return
         assert "404" in xml.find("{DAV:}response/{DAV:}status").text
 
     def test_report_sync_collection_create_delete(self):
@@ -1234,7 +1234,7 @@ class BaseRequestsMixIn:
         assert status == 200
         sync_token, xml = self._report_sync_token(calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
-            pytest.skip("storage backend does not support sync-token")
+            return
         assert "404" in xml.find("{DAV:}response/{DAV:}status").text
 
     def test_report_sync_collection_modify_undo(self):
@@ -1254,7 +1254,7 @@ class BaseRequestsMixIn:
         assert status == 201
         sync_token, xml = self._report_sync_token(calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
-            pytest.skip("storage backend does not support sync-token")
+            return
         assert xml.find("{DAV:}response") is not None
         assert xml.find("{DAV:}response/{DAV:}status") is None
 
@@ -1274,7 +1274,7 @@ class BaseRequestsMixIn:
         assert status == 201
         sync_token, xml = self._report_sync_token(calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
-            pytest.skip("storage backend does not support sync-token")
+            return
         for response in xml.findall("{DAV:}response"):
             if response.find("{DAV:}status") is None:
                 assert response.find("{DAV:}href").text == event2_path
@@ -1301,7 +1301,7 @@ class BaseRequestsMixIn:
         assert status == 201
         sync_token, xml = self._report_sync_token(calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
-            pytest.skip("storage backend does not support sync-token")
+            return
         created = deleted = 0
         for response in xml.findall("{DAV:}response"):
             if response.find("{DAV:}status") is None:
@@ -1345,7 +1345,7 @@ class BaseRequestsMixIn:
         new_sync_token, xml = self._report_sync_token(calendar_path,
                                                       sync_token)
         if not self.full_sync_token_support and not new_sync_token:
-            pytest.skip("storage backend does not support sync-token")
+            return
         assert sync_token == new_sync_token
 
     def test_calendar_getcontenttype(self):
@@ -1624,8 +1624,13 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
 
 class TestCustomStorageSystem(BaseFileSystemTest):
     """Test custom backend loading."""
-    storage_type = "tests.custom.storage"
+    storage_type = "tests.custom.storage_simple_sync"
+    full_sync_token_support = False
+    _report_sync_token = BaseRequestsMixIn._report_sync_token
+    test_root = BaseRequestsMixIn.test_root
 
-    def test_root(self):
-        """A simple test to verify that the custom backend works."""
-        BaseRequestsMixIn.test_root(self)
+
+# include tests related to sync token
+for s in dir(BaseRequestsMixIn):
+    if s.startswith("test_") and ("_sync_" in s or s.endswith("_sync")):
+        setattr(TestCustomStorageSystem, s, getattr(BaseRequestsMixIn, s))

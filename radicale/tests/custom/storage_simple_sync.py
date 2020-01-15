@@ -18,12 +18,17 @@
 """
 Custom storage backend.
 
-Copy of filesystem storage backend for testing
+Copy of multifilesystem storage backend that uses the default ``sync``
+implementation for testing.
 
 """
 
-from radicale.storage import multifilesystem
+from radicale.storage import BaseCollection, multifilesystem
+
+
+class Collection(multifilesystem.Collection):
+    sync = BaseCollection.sync
 
 
 class Storage(multifilesystem.Storage):
-    pass
+    _collection_class = Collection
