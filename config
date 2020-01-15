@@ -70,7 +70,8 @@
 # Htpasswd encryption method
 # Value: plain | sha1 | ssha | crypt | bcrypt | md5
 # Only bcrypt can be considered secure.
-# bcrypt and md5 require the passlib library to be installed.
+# bcrypt requires the passlib[bcrypt] module and md5 requires
+# the passlib module.
 #htpasswd_encryption = bcrypt
 
 # Incorrect authentication delay (seconds)

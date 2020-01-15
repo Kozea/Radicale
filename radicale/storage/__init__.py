@@ -25,7 +25,7 @@ Take a look at the class ``BaseCollection`` if you want to implement your own.
 
 import contextlib
 import json
-from hashlib import md5
+from hashlib import sha256
 
 import pkg_resources
 import vobject
@@ -79,7 +79,7 @@ class BaseCollection:
     @property
     def etag(self):
         """Encoded as quoted-string (see RFC 2616)."""
-        etag = md5()
+        etag = sha256()
         for item in self.get_all():
             etag.update((item.href + "/" + item.etag).encode("utf-8"))
         etag.update(json.dumps(self.get_meta(), sort_keys=True).encode())

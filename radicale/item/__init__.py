@@ -25,7 +25,7 @@ Module for address books and calendar entries (see ``Item``).
 
 import math
 import sys
-from hashlib import md5
+from hashlib import sha256
 from random import getrandbits
 
 import vobject
@@ -183,7 +183,7 @@ def get_etag(text):
     Encoded as quoted-string (see RFC 2616).
 
     """
-    etag = md5()
+    etag = sha256()
     etag.update(text.encode("utf-8"))
     return '"%s"' % etag.hexdigest()
 

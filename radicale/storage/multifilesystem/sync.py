@@ -19,7 +19,7 @@
 import itertools
 import os
 import pickle
-from hashlib import md5
+from hashlib import sha256
 
 from radicale.log import logger
 
@@ -27,10 +27,10 @@ from radicale.log import logger
 class CollectionSyncMixin:
     def sync(self, old_token=None):
         # The sync token has the form http://radicale.org/ns/sync/TOKEN_NAME
-        # where TOKEN_NAME is the md5 hash of all history etags of present and
-        # past items of the collection.
+        # where TOKEN_NAME is the sha256 hash of all history etags of present
+        # and past items of the collection.
         def check_token_name(token_name):
-            if len(token_name) != 32:
+            if len(token_name) != 64:
                 return False
             for c in token_name:
                 if c not in "0123456789abcdef":
@@ -47,7 +47,7 @@ class CollectionSyncMixin:
                 raise ValueError("Malformed token: %r" % old_token)
         # Get the current state and sync-token of the collection.
         state = {}
-        token_name_hash = md5()
+        token_name_hash = sha256()
         # Find the history of all existing and deleted items
         for href, item in itertools.chain(
                 ((item.href, item) for item in self.get_all()),

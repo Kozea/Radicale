@@ -19,7 +19,7 @@
 import os
 import pickle
 import time
-from hashlib import md5
+from hashlib import sha256
 
 from radicale import pathutils, storage
 from radicale.log import logger
@@ -54,7 +54,7 @@ class CollectionCacheMixin:
             self._storage._sync_directory(folder)
 
     def _item_cache_hash(self, raw_text):
-        _hash = md5()
+        _hash = sha256()
         _hash.update(storage.CACHE_VERSION)
         _hash.update(raw_text)
         return _hash.hexdigest()
