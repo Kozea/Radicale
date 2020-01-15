@@ -20,7 +20,7 @@ Example **uWSGI** configuration:
 ```ini
 [uwsgi]
 http-socket = 127.0.0.1:5232
-threads = 8
+processes = 8
 plugin = python3
 module = radicale
 env = RADICALE_CONFIG=/etc/radicale/config
@@ -29,7 +29,7 @@ env = RADICALE_CONFIG=/etc/radicale/config
 Example **Gunicorn** configuration:
 
 ```shell
-gunicorn --bind '127.0.0.1:5232' --threads 8 --env 'RADICALE_CONFIG=/etc/radicale/config' radicale
+gunicorn --bind '127.0.0.1:5232' --workers 8 --env 'RADICALE_CONFIG=/etc/radicale/config' radicale
 ```
 
 ## Manage user accounts with the WSGI server
