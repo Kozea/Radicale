@@ -30,6 +30,7 @@ import tempfile
 import defusedxml.ElementTree as DefusedET
 import pytest
 
+import radicale.tests.custom.storage_simple_sync
 from radicale import Application, config, storage, xmlutils
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
@@ -1495,3 +1496,9 @@ class TestCustomStorageSystem(BaseFileSystemTest):
         if s.startswith("test_") and ("_sync_" in s or s.endswith("_sync")):
             locals()[s] = getattr(BaseRequestsMixIn, s)
     del s
+
+
+class TestCustomStorageSystemCallable(BaseFileSystemTest):
+    """Test custom backend loading with ``callable``."""
+    storage_type = radicale.tests.custom.storage_simple_sync.Storage
+    test_add_event = BaseRequestsMixIn.test_add_event
