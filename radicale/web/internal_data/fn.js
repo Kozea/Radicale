@@ -1142,6 +1142,8 @@ function CreateEditCollectionScene(user, password, collection) {
 }
 
 function main() {
+    // Hide startup loading message
+    document.getElementById("loadingscene").classList.add("hidden");
     push_scene(new LoginScene(), false);
 }
 
