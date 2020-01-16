@@ -8,14 +8,17 @@
 <title>Web interface for Radicale</title>
 <link href="css/main.css" media="screen" rel="stylesheet">
 <link href="css/icon.png" type="image/png" rel="shortcut icon">
+<style>
+    .hidden {display:none;}
+</style>
 
 <nav>
     <ul>
-        <li id="logoutview" style="display: none;"><a href="" name="link">Logout [<span name="user" style="word-wrap:break-word;"></span>]</a></li>
+        <li id="logoutview" class="hidden"><a href="" name="link">Logout [<span name="user" style="word-wrap:break-word;"></span>]</a></li>
     </ul>
 </nav>
 
-<section id="loginscene" style="display: none;">
+<section id="loginscene" class="hidden">
     <h1>Login</h1>
     <form name="form">
         <input name="user" type="text" placeholder="Username"><br>
@@ -25,18 +28,18 @@
     </form>
 </section>
 
-<section id="loadingscene" style="display: none;">
+<section id="loadingscene" class="hidden">
     <h1>Loading</h1>
     Please wait...
 </section>
 
-<section id="collectionsscene" style="display: none;">
+<section id="collectionsscene" class="hidden">
     <h1>Collections</h1>
     <ul>
         <li><a href="" name="new">Create new addressbook or calendar</a></li>
         <li><a href="" name="upload">Upload addressbook or calendar</a></li>
     </ul>
-    <article name="collectiontemplate">
+    <article name="collectiontemplate" class="hidden">
         <h2><span name="color">█ </span><span name="title" style="word-wrap:break-word;">Title</span> <small>[<span name="ADDRESSBOOK">addressbook</span><span name="CALENDAR_JOURNAL_TASKS">calendar, journal and tasks</span><span name="CALENDAR_JOURNAL">calendar and journal</span><span name="CALENDAR_TASKS">calendar and tasks</span><span name="JOURNAL_TASKS">journal and tasks</span><span name="CALENDAR">calendar</span><span name="JOURNAL">journal</span><span name="TASKS">tasks</span>]</small></h2>
         <span name="description" style="word-wrap:break-word;">Description</span>
         <ul>
@@ -47,7 +50,7 @@
     </article>
 </section>
 
-<section id="editcollectionscene" style="display: none;">
+<section id="editcollectionscene" class="hidden">
     <h1>Edit collection</h1>
     <h2>Edit <span name="title" style="word-wrap:break-word;font-weight:bold;">title</span>:</h2>
     <form>
@@ -74,7 +77,7 @@
     </form>
 </section>
 
-<section id="createcollectionscene" style="display: none;">
+<section id="createcollectionscene" class="hidden">
     <h1>Create new collection</h1>
     <form>
         Title:<br>
@@ -100,10 +103,10 @@
     </form>
 </section>
 
-<section id="uploadcollectionscene" style="display: none;">
+<section id="uploadcollectionscene" class="hidden">
     <h1>Upload collection</h1>
     <ul>
-        <li name="filetemplate">
+        <li name="filetemplate" class="hidden">
                 Upload <span name="name" style="word-wrap:break-word;font-weight:bold;">name</span>:<br>
                 <span name="pending">Please wait...</span>
                 <span style="color: #00A400;" name="success">Finished</span>
@@ -115,7 +118,7 @@
     </form>
 </section>
 
-<section id="deletecollectionscene" style="display: none;">
+<section id="deletecollectionscene" class="hidden">
     <h1>Delete collection</h1>
     <h2>Delete <span name="title" style="word-wrap:break-word;font-weight:bold;">title</span>?</h2>
     <span style="color: #A40000;" name="error"></span><br>

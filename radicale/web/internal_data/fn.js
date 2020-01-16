@@ -506,7 +506,7 @@ function LoginScene() {
             if (user) {
                 error = "";
                 // setup logout
-                logout_view.style.display = "block";
+                logout_view.classList.remove("hidden");
                 logout_btn.onclick = onlogout;
                 logout_user_form.textContent = user;
                 // Fetch principal
@@ -560,7 +560,7 @@ function LoginScene() {
     }
 
     function remove_logout() {
-        logout_view.style.display = "none";
+        logout_view.classList.add("hidden");
         logout_btn.onclick = null;
         logout_user_form.textContent = "";
     }
@@ -569,7 +569,7 @@ function LoginScene() {
         remove_logout();
         fill_form();
         form.onsubmit = onlogin;
-        html_scene.style.display = "block";
+        html_scene.classList.remove("hidden");
         let direct_login = false;
         if (typeof(sessionStorage) !== "undefined") {
             // Try direct login when scene is shown for the first time and credentials are stored
@@ -591,7 +591,7 @@ function LoginScene() {
     };
     this.hide = function() {
         read_form();
-        html_scene.style.display = "none";
+        html_scene.classList.add("hidden");
         form.onsubmit = null;
     };
     this.release = function() {
@@ -612,10 +612,10 @@ function LoginScene() {
 function LoadingScene() {
     let html_scene = document.getElementById("loadingscene");
     this.show = function() {
-        html_scene.style.display = "block";
+        html_scene.classList.remove("hidden");
     };
     this.hide = function() {
-        html_scene.style.display = "none";
+        html_scene.classList.add("hidden");
     };
     this.release = function() {};
 }
@@ -636,7 +636,6 @@ function CollectionsScene(user, password, collection, onerror) {
     let upload_btn = html_scene.querySelector("[name=upload]");
 
     /** @type {?number} */ let scene_index = null;
-    let saved_template_display = null;
     /** @type {?XMLHttpRequest} */ let collections_req = null;
     /** @type {?Array<Collection>} */ let collections = null;
     /** @type {Array<Node>} */ let nodes = [];
@@ -698,6 +697,7 @@ function CollectionsScene(user, password, collection, onerror) {
     function show_collections(collections) {
         collections.forEach(function (collection) {
             let node = template.cloneNode(true);
+            node.classList.remove("hidden");
             let title_form = node.querySelector("[name=title]");
             let description_form = node.querySelector("[name=description]");
             let url_form = node.querySelector("[name=url]");
@@ -707,7 +707,7 @@ function CollectionsScene(user, password, collection, onerror) {
             if (collection.color) {
                 color_form.style.color = collection.color;
             } else {
-                color_form.style.display = "none";
+                color_form.classList.add("hidden");
             }
             let possible_types = [CollectionType.ADDRESSBOOK];
             [CollectionType.CALENDAR, ""].forEach(function(e) {
@@ -721,7 +721,7 @@ function CollectionsScene(user, password, collection, onerror) {
             });
             possible_types.forEach(function(e) {
                 if (e !== collection.type) {
-                    node.querySelector("[name=" + e + "]").style.display = "none";
+                    node.querySelector("[name=" + e + "]").classList.add("hidden");
                 }
             });
             title_form.textContent = collection.displayname || collection.href;
@@ -731,7 +731,7 @@ function CollectionsScene(user, password, collection, onerror) {
             url_form.textContent = href;
             delete_btn.onclick = function(ev) {return ondelete(collection);};
             edit_btn.onclick = function(ev) {return onedit(collection);};
-            node.style.display = saved_template_display;
+            node.classList.remove("hidden");
             nodes.push(node);
             template.parentNode.insertBefore(node, template);
         });
@@ -756,9 +756,7 @@ function CollectionsScene(user, password, collection, onerror) {
     }
 
     this.show = function() {
-        saved_template_display = template.style.display;
-        template.style.display = "none";
-        html_scene.style.display = "block";
+        html_scene.classList.remove("hidden");
         new_btn.onclick = onnew;
         upload_btn.onclick = onupload;
         filesInputForm.reset();
@@ -771,8 +769,7 @@ function CollectionsScene(user, password, collection, onerror) {
         }
     };
     this.hide = function() {
-        html_scene.style.display = "none";
-        template.style.display = saved_template_display;
+        html_scene.classList.add("hidden");
         scene_index = scene_stack.length - 1;
         new_btn.onclick = null;
         upload_btn.onclick = null;
@@ -780,7 +777,7 @@ function CollectionsScene(user, password, collection, onerror) {
         collections = null;
         // remove collection
         nodes.forEach(function(node) {
-            template.parentNode.removeChild(node);
+            node.parentNode.removeChild(node);
         });
         nodes = [];
     };
@@ -806,12 +803,7 @@ function CollectionsScene(user, password, collection, onerror) {
 function UploadCollectionScene(user, password, collection, files) {
     let html_scene = document.getElementById("uploadcollectionscene");
     let template = html_scene.querySelector("[name=filetemplate]");
-    let template_pending_form = template.querySelector("[name=pending]");
-    let template_success_form = template.querySelector("[name=success]");
-    let template_error_form = template.querySelector("[name=error]");
-    let saved_template_display = null;
     let close_btn = html_scene.querySelector("[name=close]");
-    let saved_close_btn_display = null;
 
     /** @type {?number} */ let scene_index = null;
     /** @type {?XMLHttpRequest} */ let upload_req = null;
@@ -824,7 +816,7 @@ function UploadCollectionScene(user, password, collection, files) {
                 if (errors.every(error => error === null)) {
                     pop_scene(scene_index - 1);
                 } else {
-                    close_btn.style.display = saved_close_btn_display;
+                    close_btn.classList.remove("hidden");
                 }
             } else {
                 let file = files[errors.length];
@@ -862,41 +854,39 @@ function UploadCollectionScene(user, password, collection, files) {
         let success_form = nodes[i].querySelector("[name=success]");
         let error_form = nodes[i].querySelector("[name=error]");
         if (errors.length > i) {
-            pending_form.style.display = "none";
+            pending_form.classList.add("hidden");
             if (errors[i]) {
-                success_form.style.display = "none";
+                success_form.classList.add("hidden");
                 error_form.textContent = "Error: " + errors[i];
-                error_form.style.display = template_error_form.style.display;
+                error_form.classList.remove("hidden");
             } else {
-              success_form.style.display = template_success_form.style.display;
-              error_form.style.display = "none";
+              success_form.classList.remove("hidden");
+              error_form.classList.add("hidden");
             }
         } else {
-            pending_form.style.display = template_pending_form.style.display;
-            success_form.style.display = "none";
-            error_form.style.display = "none";
+            pending_form.classList.remove("hidden");
+            success_form.classList.add("hidden");
+            error_form.classList.add("hidden");
         }
     }
 
     this.show = function() {
-        saved_template_display = template.style.display;
-        template.style.display = "none";
-        html_scene.style.display = "block";
-        saved_close_btn_display = close_btn.style.display;
+        html_scene.classList.remove("hidden");
         if (errors.length < files.length) {
-            close_btn.style.display = "none";
+            close_btn.classList.add("hidden");
         }
         close_btn.onclick = onclose;
         nodes = [];
         for (let i = 0; i < files.length; i++) {
             let file = files[i];
             let node = template.cloneNode(true);
+            node.classList.remove("hidden");
             let name_form = node.querySelector("[name=name]");
             name_form.textContent = file.name;
-            node.style.display = saved_template_display;
+            node.classList.remove("hidden");
             nodes.push(node);
             updateFileStatus(i);
-            template.parentNode.insertBefore(node,template);
+            template.parentNode.insertBefore(node, template);
         }
         if (scene_index === null) {
             scene_index = scene_stack.length - 1;
@@ -905,12 +895,11 @@ function UploadCollectionScene(user, password, collection, files) {
     };
 
     this.hide = function() {
-        html_scene.style.display = "none";
-        template.style.display = saved_template_display;
-        close_btn.style.display = saved_close_btn_display;
+        html_scene.classList.add("hidden");
+        close_btn.classList.remove("hidden");
         close_btn.onclick = null;
         nodes.forEach(function(node) {
-            template.parentNode.removeChild(node);
+            node.parentNode.removeChild(node);
         });
         nodes = null;
     };
@@ -976,14 +965,14 @@ function DeleteCollectionScene(user, password, collection) {
     this.show = function() {
         this.release();
         scene_index = scene_stack.length - 1;
-        html_scene.style.display = "block";
+        html_scene.classList.remove("hidden");
         title_form.textContent = collection.displayname || collection.href;
         error_form.textContent = error ? "Error: " + error : "";
         delete_btn.onclick = ondelete;
         cancel_btn.onclick = oncancel;
     };
     this.hide = function() {
-        html_scene.style.display = "none";
+        html_scene.classList.add("hidden");
         cancel_btn.onclick = null;
         delete_btn.onclick = null;
     };
@@ -1125,7 +1114,7 @@ function CreateEditCollectionScene(user, password, collection) {
         type_form = type_form.cloneNode(true);
         saved_type_form.parentNode.replaceChild(type_form, saved_type_form);
         remove_invalid_types();
-        html_scene.style.display = "block";
+        html_scene.classList.remove("hidden");
         if (edit) {
             title_form.textContent = collection.displayname || collection.href;
         }
@@ -1135,7 +1124,7 @@ function CreateEditCollectionScene(user, password, collection) {
     };
     this.hide = function() {
         read_form();
-        html_scene.style.display = "none";
+        html_scene.classList.add("hidden");
         // restore type_form
         type_form.parentNode.replaceChild(saved_type_form, type_form);
         type_form = saved_type_form;
