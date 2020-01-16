@@ -21,21 +21,21 @@
  * @const
  * @type {string}
  */
-var SERVER = (location.protocol + '//' + location.hostname +
-              (location.port ? ':' + location.port : ''));
+const SERVER = (location.protocol + '//' + location.hostname +
+                (location.port ? ':' + location.port : ''));
 
 /**
  * Path of the root collection on the server (must end with /)
  * @const
  * @type {string}
  */
-var ROOT_PATH = location.pathname.replace(new RegExp("/+[^/]+/*(/index\\.html?)?$"), "") + '/';
+const ROOT_PATH = location.pathname.replace(new RegExp("/+[^/]+/*(/index\\.html?)?$"), "") + '/';
 
 /**
  * Regex to match and normalize color
  * @const
  */
-var COLOR_RE = new RegExp("^(#[0-9A-Fa-f]{6})(?:[0-9A-Fa-f]{2})?$");
+const COLOR_RE = new RegExp("^(#[0-9A-Fa-f]{6})(?:[0-9A-Fa-f]{2})?$");
 
 /**
  * Escape string for usage in XML
@@ -54,7 +54,7 @@ function escape_xml(s) {
 /**
  * @enum {string}
  */
-var CollectionType = {
+const CollectionType = {
     PRINCIPAL: "PRINCIPAL",
     ADDRESSBOOK: "ADDRESSBOOK",
     CALENDAR_JOURNAL_TASKS: "CALENDAR_JOURNAL_TASKS",
@@ -65,9 +65,8 @@ var CollectionType = {
     JOURNAL: "JOURNAL",
     TASKS: "TASKS",
     is_subset: function(a, b) {
-        var components = a.split("_");
-        var i;
-        for (i = 0; i < components.length; i++) {
+        let components = a.split("_");
+        for (let i = 0; i < components.length; i++) {
             if (b.search(components[i]) === -1) {
                 return false;
             }
@@ -81,7 +80,7 @@ var CollectionType = {
             }
             return this.ADDRESSBOOK;
         }
-        var union = "";
+        let union = "";
         if (a.search(this.CALENDAR) !== -1 || b.search(this.CALENDAR) !== -1) {
             union += (union ? "_" : "") + this.CALENDAR;
         }
@@ -120,16 +119,16 @@ function Collection(href, type, displayname, description, color) {
  * @return {XMLHttpRequest}
  */
 function get_principal(user, password, callback) {
-    var request = new XMLHttpRequest();
+    let request = new XMLHttpRequest();
     request.open("PROPFIND", SERVER + ROOT_PATH, true, user, password);
     request.onreadystatechange = function() {
         if (request.readyState !== 4) {
             return;
         }
         if (request.status === 207) {
-            var xml = request.responseXML;
-            var principal_element = xml.querySelector("*|multistatus:root > *|response:first-of-type > *|propstat > *|prop > *|current-user-principal > *|href");
-            var displayname_element = xml.querySelector("*|multistatus:root > *|response:first-of-type > *|propstat > *|prop > *|displayname");
+            let xml = request.responseXML;
+            let principal_element = xml.querySelector("*|multistatus:root > *|response:first-of-type > *|propstat > *|prop > *|current-user-principal > *|href");
+            let displayname_element = xml.querySelector("*|multistatus:root > *|response:first-of-type > *|propstat > *|prop > *|displayname");
             if (principal_element) {
                 callback(new Collection(
                     principal_element.textContent,
@@ -163,7 +162,7 @@ function get_principal(user, password, callback) {
  * @return {XMLHttpRequest}
  */
 function get_collections(user, password, collection, callback) {
-    var request = new XMLHttpRequest();
+    let request = new XMLHttpRequest();
     request.open("PROPFIND", SERVER + collection.href, true, user, password);
     request.setRequestHeader("depth", "1");
     request.onreadystatechange = function() {
@@ -171,28 +170,27 @@ function get_collections(user, password, collection, callback) {
             return;
         }
         if (request.status === 207) {
-            var xml = request.responseXML;
-            var collections = [];
-            var response_query = "*|multistatus:root > *|response";
-            var responses = xml.querySelectorAll(response_query);
-            var i;
-            for (i = 0; i < responses.length; i++) {
-                var response = responses[i];
-                var href_element = response.querySelector(response_query + " > *|href");
-                var resourcetype_query = response_query + " > *|propstat > *|prop > *|resourcetype";
-                var resourcetype_element = response.querySelector(resourcetype_query);
-                var displayname_element = response.querySelector(response_query + " > *|propstat > *|prop > *|displayname");
-                var calendarcolor_element = response.querySelector(response_query + " > *|propstat > *|prop > *|calendar-color");
-                var addressbookcolor_element = response.querySelector(response_query + " > *|propstat > *|prop > *|addressbook-color");
-                var calendardesc_element = response.querySelector(response_query + " > *|propstat > *|prop > *|calendar-description");
-                var addressbookdesc_element = response.querySelector(response_query + " > *|propstat > *|prop > *|addressbook-description");
-                var components_query = response_query + " > *|propstat > *|prop > *|supported-calendar-component-set";
-                var components_element = response.querySelector(components_query);
-                var href = href_element ? href_element.textContent : "";
-                var displayname = displayname_element ? displayname_element.textContent : "";
-                var type = "";
-                var color = "";
-                var description = "";
+            let xml = request.responseXML;
+            let collections = [];
+            let response_query = "*|multistatus:root > *|response";
+            let responses = xml.querySelectorAll(response_query);
+            for (let i = 0; i < responses.length; i++) {
+                let response = responses[i];
+                let href_element = response.querySelector(response_query + " > *|href");
+                let resourcetype_query = response_query + " > *|propstat > *|prop > *|resourcetype";
+                let resourcetype_element = response.querySelector(resourcetype_query);
+                let displayname_element = response.querySelector(response_query + " > *|propstat > *|prop > *|displayname");
+                let calendarcolor_element = response.querySelector(response_query + " > *|propstat > *|prop > *|calendar-color");
+                let addressbookcolor_element = response.querySelector(response_query + " > *|propstat > *|prop > *|addressbook-color");
+                let calendardesc_element = response.querySelector(response_query + " > *|propstat > *|prop > *|calendar-description");
+                let addressbookdesc_element = response.querySelector(response_query + " > *|propstat > *|prop > *|addressbook-description");
+                let components_query = response_query + " > *|propstat > *|prop > *|supported-calendar-component-set";
+                let components_element = response.querySelector(components_query);
+                let href = href_element ? href_element.textContent : "";
+                let displayname = displayname_element ? displayname_element.textContent : "";
+                let type = "";
+                let color = "";
+                let description = "";
                 if (resourcetype_element) {
                     if (resourcetype_element.querySelector(resourcetype_query + " > *|addressbook")) {
                         type = CollectionType.ADDRESSBOOK;
@@ -214,9 +212,9 @@ function get_collections(user, password, collection, callback) {
                         description = calendardesc_element ? calendardesc_element.textContent : "";
                     }
                 }
-                var sane_color = color.trim();
+                let sane_color = color.trim();
                 if (sane_color) {
-                    var color_match = COLOR_RE.exec(sane_color);
+                    let color_match = COLOR_RE.exec(sane_color);
                     if (color_match) {
                         sane_color = color_match[1];
                     } else {
@@ -228,8 +226,8 @@ function get_collections(user, password, collection, callback) {
                 }
             }
             collections.sort(function(a, b) {
-                /** @type {string} */ var ca = a.displayname || a.href;
-                /** @type {string} */ var cb = b.displayname || b.href;
+                /** @type {string} */ let ca = a.displayname || a.href;
+                /** @type {string} */ let cb = b.displayname || b.href;
                 return ca.localeCompare(cb);
             });
             callback(collections, null);
@@ -265,7 +263,7 @@ function get_collections(user, password, collection, callback) {
  * @return {XMLHttpRequest}
  */
 function upload_collection(user, password, collection_href, file, callback) {
-    var request = new XMLHttpRequest();
+    let request = new XMLHttpRequest();
     request.open("PUT", SERVER + collection_href, true, user, password);
     request.onreadystatechange = function() {
         if (request.readyState !== 4) {
@@ -290,7 +288,7 @@ function upload_collection(user, password, collection_href, file, callback) {
  * @return {XMLHttpRequest}
  */
 function delete_collection(user, password, collection, callback) {
-    var request = new XMLHttpRequest();
+    let request = new XMLHttpRequest();
     request.open("DELETE", SERVER + collection.href, true, user, password);
     request.onreadystatechange = function() {
         if (request.readyState !== 4) {
@@ -315,7 +313,7 @@ function delete_collection(user, password, collection, callback) {
  * @return {XMLHttpRequest}
  */
 function create_edit_collection(user, password, collection, create, callback) {
-    var request = new XMLHttpRequest();
+    let request = new XMLHttpRequest();
     request.open(create ? "MKCOL" : "PROPPATCH", SERVER + collection.href, true, user, password);
     request.onreadystatechange = function() {
         if (request.readyState !== 4) {
@@ -327,13 +325,13 @@ function create_edit_collection(user, password, collection, create, callback) {
             callback(request.status + " " + request.statusText);
         }
     };
-    var displayname = escape_xml(collection.displayname);
-    var calendar_color = "";
-    var addressbook_color = "";
-    var calendar_description = "";
-    var addressbook_description = "";
-    var resourcetype;
-    var components = "";
+    let displayname = escape_xml(collection.displayname);
+    let calendar_color = "";
+    let addressbook_color = "";
+    let calendar_description = "";
+    let addressbook_description = "";
+    let resourcetype;
+    let components = "";
     if (collection.type === CollectionType.ADDRESSBOOK) {
         addressbook_color = escape_xml(collection.color + (collection.color ? "ff" : ""));
         addressbook_description = escape_xml(collection.description);
@@ -352,7 +350,7 @@ function create_edit_collection(user, password, collection, create, callback) {
             components += '<C:comp name="VTODO" />';
         }
     }
-    var xml_request = create ? "mkcol" : "propertyupdate";
+    let xml_request = create ? "mkcol" : "propertyupdate";
     request.send('<?xml version="1.0" encoding="UTF-8" ?>' +
                  '<' + xml_request + ' xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:I="http://apple.com/ns/ical/" xmlns:INF="http://inf-it.com/ns/ab/">' +
                      '<set>' +
@@ -430,7 +428,7 @@ Scene.prototype.release = function() {};
 /**
  * @type {Array<Scene>}
  */
-var scene_stack = [];
+let scene_stack = [];
 
 /**
  * Push scene onto stack.
@@ -458,14 +456,14 @@ function pop_scene(index) {
     }
     scene_stack[scene_stack.length - 1].hide();
     while (scene_stack.length - 1 > index) {
-        var old_length = scene_stack.length;
+        let old_length = scene_stack.length;
         scene_stack.pop().release();
         if (old_length - 1 === index + 1) {
             break;
         }
     }
     if (scene_stack.length >= 1) {
-        var scene = scene_stack[scene_stack.length - 1];
+        let scene = scene_stack[scene_stack.length - 1];
         scene.show();
     } else {
         throw "Scene stack is empty";
@@ -477,19 +475,19 @@ function pop_scene(index) {
  * @implements {Scene}
  */
 function LoginScene() {
-    var html_scene = document.getElementById("loginscene");
-    var form = html_scene.querySelector("[name=form]");
-    var user_form = html_scene.querySelector("[name=user]");
-    var password_form = html_scene.querySelector("[name=password]");
-    var error_form = html_scene.querySelector("[name=error]");
-    var logout_view = document.getElementById("logoutview");
-    var logout_user_form = logout_view.querySelector("[name=user]");
-    var logout_btn = logout_view.querySelector("[name=link]");
+    let html_scene = document.getElementById("loginscene");
+    let form = html_scene.querySelector("[name=form]");
+    let user_form = html_scene.querySelector("[name=user]");
+    let password_form = html_scene.querySelector("[name=password]");
+    let error_form = html_scene.querySelector("[name=error]");
+    let logout_view = document.getElementById("logoutview");
+    let logout_user_form = logout_view.querySelector("[name=user]");
+    let logout_btn = logout_view.querySelector("[name=link]");
 
-    /** @type {?number} */ var scene_index = null;
-    var user = "";
-    var error = "";
-    /** @type {?XMLHttpRequest} */ var principal_req = null;
+    /** @type {?number} */ let scene_index = null;
+    let user = "";
+    let error = "";
+    /** @type {?XMLHttpRequest} */ let principal_req = null;
 
     function read_form() {
         user = user_form.value;
@@ -504,7 +502,7 @@ function LoginScene() {
     function onlogin() {
         try {
             read_form();
-            var password = password_form.value;
+            let password = password_form.value;
             if (user) {
                 error = "";
                 // setup logout
@@ -512,7 +510,7 @@ function LoginScene() {
                 logout_btn.onclick = onlogout;
                 logout_user_form.textContent = user;
                 // Fetch principal
-                var loading_scene = new LoadingScene();
+                let loading_scene = new LoadingScene();
                 push_scene(loading_scene, false);
                 principal_req = get_principal(user, password, function(collection, error1) {
                     if (scene_index === null) {
@@ -524,13 +522,13 @@ function LoginScene() {
                         pop_scene(scene_index);
                     } else {
                         // show collections
-                        var saved_user = user;
+                        let saved_user = user;
                         user = "";
                         if (typeof(sessionStorage) !== "undefined") {
                             sessionStorage.setItem("radicale_user", saved_user);
                             sessionStorage.setItem("radicale_password", password);
                         }
-                        var collections_scene = new CollectionsScene(
+                        let collections_scene = new CollectionsScene(
                             saved_user, password, collection, function(error1) {
                                 error = error1;
                                 user = saved_user;
@@ -572,7 +570,7 @@ function LoginScene() {
         fill_form();
         form.onsubmit = onlogin;
         html_scene.style.display = "block";
-        var direct_login = false;
+        let direct_login = false;
         if (typeof(sessionStorage) !== "undefined") {
             // Try direct login when scene is shown for the first time and credentials are stored
             if (scene_index === null && sessionStorage.getItem("radicale_user")) {
@@ -612,7 +610,7 @@ function LoginScene() {
  * @implements {Scene}
  */
 function LoadingScene() {
-    var html_scene = document.getElementById("loadingscene");
+    let html_scene = document.getElementById("loadingscene");
     this.show = function() {
         html_scene.style.display = "block";
     };
@@ -632,26 +630,26 @@ function LoadingScene() {
  *                                   scene is popped.
  */
 function CollectionsScene(user, password, collection, onerror) {
-    var html_scene = document.getElementById("collectionsscene");
-    var template = html_scene.querySelector("[name=collectiontemplate]");
-    var new_btn = html_scene.querySelector("[name=new]");
-    var upload_btn = html_scene.querySelector("[name=upload]");
+    let html_scene = document.getElementById("collectionsscene");
+    let template = html_scene.querySelector("[name=collectiontemplate]");
+    let new_btn = html_scene.querySelector("[name=new]");
+    let upload_btn = html_scene.querySelector("[name=upload]");
 
-    /** @type {?number} */ var scene_index = null;
-    var saved_template_display = null;
-    /** @type {?XMLHttpRequest} */ var collections_req = null;
-    /** @type {?Array<Collection>} */ var collections = null;
-    /** @type {Array<Node>} */ var nodes = [];
-    var filesInput = document.createElement("input");
+    /** @type {?number} */ let scene_index = null;
+    let saved_template_display = null;
+    /** @type {?XMLHttpRequest} */ let collections_req = null;
+    /** @type {?Array<Collection>} */ let collections = null;
+    /** @type {Array<Node>} */ let nodes = [];
+    let filesInput = document.createElement("input");
     filesInput.setAttribute("type", "file");
     filesInput.setAttribute("accept", ".ics, .vcf");
     filesInput.setAttribute("multiple", "");
-    var filesInputForm = document.createElement("form");
+    let filesInputForm = document.createElement("form");
     filesInputForm.appendChild(filesInput);
 
     function onnew() {
         try {
-            var create_collection_scene = new CreateEditCollectionScene(user, password, collection);
+            let create_collection_scene = new CreateEditCollectionScene(user, password, collection);
             push_scene(create_collection_scene, false);
         } catch(err) {
             console.error(err);
@@ -666,9 +664,9 @@ function CollectionsScene(user, password, collection, onerror) {
 
     function onfileschange(e) {
         try {
-            var files = filesInput.files;
+            let files = filesInput.files;
             if (files.length > 0) {
-                var upload_scene = new UploadCollectionScene(user, password, collection, files);
+                let upload_scene = new UploadCollectionScene(user, password, collection, files);
                 push_scene(upload_scene);
             }
         } catch(err) {
@@ -679,7 +677,7 @@ function CollectionsScene(user, password, collection, onerror) {
 
     function onedit(collection) {
         try {
-            var edit_collection_scene = new CreateEditCollectionScene(user, password, collection);
+            let edit_collection_scene = new CreateEditCollectionScene(user, password, collection);
             push_scene(edit_collection_scene, false);
         } catch(err) {
             console.error(err);
@@ -689,7 +687,7 @@ function CollectionsScene(user, password, collection, onerror) {
 
     function ondelete(collection) {
         try {
-            var delete_collection_scene = new DeleteCollectionScene(user, password, collection);
+            let delete_collection_scene = new DeleteCollectionScene(user, password, collection);
             push_scene(delete_collection_scene, false);
         } catch(err) {
             console.error(err);
@@ -699,19 +697,19 @@ function CollectionsScene(user, password, collection, onerror) {
 
     function show_collections(collections) {
         collections.forEach(function (collection) {
-            var node = template.cloneNode(true);
-            var title_form = node.querySelector("[name=title]");
-            var description_form = node.querySelector("[name=description]");
-            var url_form = node.querySelector("[name=url]");
-            var color_form = node.querySelector("[name=color]");
-            var delete_btn = node.querySelector("[name=delete]");
-            var edit_btn = node.querySelector("[name=edit]");
+            let node = template.cloneNode(true);
+            let title_form = node.querySelector("[name=title]");
+            let description_form = node.querySelector("[name=description]");
+            let url_form = node.querySelector("[name=url]");
+            let color_form = node.querySelector("[name=color]");
+            let delete_btn = node.querySelector("[name=delete]");
+            let edit_btn = node.querySelector("[name=edit]");
             if (collection.color) {
                 color_form.style.color = collection.color;
             } else {
                 color_form.style.display = "none";
             }
-            var possible_types = [CollectionType.ADDRESSBOOK];
+            let possible_types = [CollectionType.ADDRESSBOOK];
             [CollectionType.CALENDAR, ""].forEach(function(e) {
                 [CollectionType.union(e, CollectionType.JOURNAL), e].forEach(function(e) {
                     [CollectionType.union(e, CollectionType.TASKS), e].forEach(function(e) {
@@ -728,7 +726,7 @@ function CollectionsScene(user, password, collection, onerror) {
             });
             title_form.textContent = collection.displayname || collection.href;
             description_form.textContent = collection.description;
-            var href = SERVER + collection.href;
+            let href = SERVER + collection.href;
             url_form.href = href;
             url_form.textContent = href;
             delete_btn.onclick = function(ev) {return ondelete(collection);};
@@ -740,7 +738,7 @@ function CollectionsScene(user, password, collection, onerror) {
     }
 
     function update() {
-        var loading_scene = new LoadingScene();
+        let loading_scene = new LoadingScene();
         push_scene(loading_scene, false);
         collections_req = get_collections(user, password, collection, function(collections1, error) {
             if (scene_index === null) {
@@ -806,19 +804,19 @@ function CollectionsScene(user, password, collection, onerror) {
  * @param {Array<File>} files
  */
 function UploadCollectionScene(user, password, collection, files) {
-    var html_scene = document.getElementById("uploadcollectionscene");
-    var template = html_scene.querySelector("[name=filetemplate]");
-    var template_pending_form = template.querySelector("[name=pending]");
-    var template_success_form = template.querySelector("[name=success]");
-    var template_error_form = template.querySelector("[name=error]");
-    var saved_template_display = null;
-    var close_btn = html_scene.querySelector("[name=close]");
-    var saved_close_btn_display = null;
+    let html_scene = document.getElementById("uploadcollectionscene");
+    let template = html_scene.querySelector("[name=filetemplate]");
+    let template_pending_form = template.querySelector("[name=pending]");
+    let template_success_form = template.querySelector("[name=success]");
+    let template_error_form = template.querySelector("[name=error]");
+    let saved_template_display = null;
+    let close_btn = html_scene.querySelector("[name=close]");
+    let saved_close_btn_display = null;
 
-    /** @type {?number} */ var scene_index = null;
-    /** @type {?XMLHttpRequest} */ var upload_req = null;
-    /** @type {Array<string>} */ var errors = [];
-    /** @type {?Array<Node>} */ var nodes = null;
+    /** @type {?number} */ let scene_index = null;
+    /** @type {?XMLHttpRequest} */ let upload_req = null;
+    /** @type {Array<string>} */ let errors = [];
+    /** @type {?Array<Node>} */ let nodes = null;
 
     function upload_next() {
         try {
@@ -829,8 +827,8 @@ function UploadCollectionScene(user, password, collection, files) {
                     close_btn.style.display = saved_close_btn_display;
                 }
             } else {
-                var file = files[errors.length];
-                var upload_href = collection.href + random_uuid() + "/";
+                let file = files[errors.length];
+                let upload_href = collection.href + random_uuid() + "/";
                 upload_req = upload_collection(user, password, upload_href, file, function(error) {
                     if (scene_index === null) {
                         return;
@@ -860,9 +858,9 @@ function UploadCollectionScene(user, password, collection, files) {
         if (nodes === null) {
             return;
         }
-        var pending_form = nodes[i].querySelector("[name=pending]");
-        var success_form = nodes[i].querySelector("[name=success]");
-        var error_form = nodes[i].querySelector("[name=error]");
+        let pending_form = nodes[i].querySelector("[name=pending]");
+        let success_form = nodes[i].querySelector("[name=success]");
+        let error_form = nodes[i].querySelector("[name=error]");
         if (errors.length > i) {
             pending_form.style.display = "none";
             if (errors[i]) {
@@ -890,10 +888,10 @@ function UploadCollectionScene(user, password, collection, files) {
         }
         close_btn.onclick = onclose;
         nodes = [];
-        for (var i = 0; i < files.length; i++) {
-            var file = files[i];
-            var node = template.cloneNode(true);
-            var name_form = node.querySelector("[name=name]");
+        for (let i = 0; i < files.length; i++) {
+            let file = files[i];
+            let node = template.cloneNode(true);
+            let name_form = node.querySelector("[name=name]");
             name_form.textContent = file.name;
             node.style.display = saved_template_display;
             nodes.push(node);
@@ -933,20 +931,20 @@ function UploadCollectionScene(user, password, collection, files) {
  * @param {Collection} collection
  */
 function DeleteCollectionScene(user, password, collection) {
-    var html_scene = document.getElementById("deletecollectionscene");
-    var title_form = html_scene.querySelector("[name=title]");
-    var error_form = html_scene.querySelector("[name=error]");
-    var delete_btn = html_scene.querySelector("[name=delete]");
-    var cancel_btn = html_scene.querySelector("[name=cancel]");
-    var no_btn = html_scene.querySelector("[name=no]");
+    let html_scene = document.getElementById("deletecollectionscene");
+    let title_form = html_scene.querySelector("[name=title]");
+    let error_form = html_scene.querySelector("[name=error]");
+    let delete_btn = html_scene.querySelector("[name=delete]");
+    let cancel_btn = html_scene.querySelector("[name=cancel]");
+    let no_btn = html_scene.querySelector("[name=no]");
 
-    /** @type {?number} */ var scene_index = null;
-    /** @type {?XMLHttpRequest} */ var delete_req = null;
-    var error = "";
+    /** @type {?number} */ let scene_index = null;
+    /** @type {?XMLHttpRequest} */ let delete_req = null;
+    let error = "";
 
     function ondelete() {
         try {
-            var loading_scene = new LoadingScene();
+            let loading_scene = new LoadingScene();
             push_scene(loading_scene);
             delete_req = delete_collection(user, password, collection, function(error1) {
                 if (scene_index === null) {
@@ -1004,7 +1002,7 @@ function DeleteCollectionScene(user, password, collection) {
  * @return {string}
  */
 function randHex(length) {
-    var s = Math.floor(Math.random() * Math.pow(16, length)).toString(16);
+    let s = Math.floor(Math.random() * Math.pow(16, length)).toString(16);
     while (s.length < length) {
         s = "0" + s;
     }
@@ -1021,36 +1019,35 @@ function randHex(length) {
  *                                Otherwise the collection will be edited.
  */
 function CreateEditCollectionScene(user, password, collection) {
-    var edit = collection.type !== CollectionType.PRINCIPAL;
-    var html_scene = document.getElementById(edit ? "editcollectionscene" : "createcollectionscene");
-    var title_form = edit ? html_scene.querySelector("[name=title]") : null;
-    var error_form = html_scene.querySelector("[name=error]");
-    var displayname_form = html_scene.querySelector("[name=displayname]");
-    var description_form = html_scene.querySelector("[name=description]");
-    var type_form = html_scene.querySelector("[name=type]");
-    var color_form = html_scene.querySelector("[name=color]");
-    var submit_btn = html_scene.querySelector("[name=submit]");
-    var cancel_btn = html_scene.querySelector("[name=cancel]");
+    let edit = collection.type !== CollectionType.PRINCIPAL;
+    let html_scene = document.getElementById(edit ? "editcollectionscene" : "createcollectionscene");
+    let title_form = edit ? html_scene.querySelector("[name=title]") : null;
+    let error_form = html_scene.querySelector("[name=error]");
+    let displayname_form = html_scene.querySelector("[name=displayname]");
+    let description_form = html_scene.querySelector("[name=description]");
+    let type_form = html_scene.querySelector("[name=type]");
+    let color_form = html_scene.querySelector("[name=color]");
+    let submit_btn = html_scene.querySelector("[name=submit]");
+    let cancel_btn = html_scene.querySelector("[name=cancel]");
 
-    /** @type {?number} */ var scene_index = null;
-    /** @type {?XMLHttpRequest} */ var create_edit_req = null;
-    var error = "";
-    /** @type {?Element} */ var saved_type_form = null;
+    /** @type {?number} */ let scene_index = null;
+    /** @type {?XMLHttpRequest} */ let create_edit_req = null;
+    let error = "";
+    /** @type {?Element} */ let saved_type_form = null;
 
-    var href = edit ? collection.href : collection.href + random_uuid() + "/";
-    var displayname = edit ? collection.displayname : "";
-    var description = edit ? collection.description : "";
-    var type = edit ? collection.type : CollectionType.CALENDAR_JOURNAL_TASKS;
-    var color = edit && collection.color ? collection.color : "#" + randHex(6);
+    let href = edit ? collection.href : collection.href + random_uuid() + "/";
+    let displayname = edit ? collection.displayname : "";
+    let description = edit ? collection.description : "";
+    let type = edit ? collection.type : CollectionType.CALENDAR_JOURNAL_TASKS;
+    let color = edit && collection.color ? collection.color : "#" + randHex(6);
 
     function remove_invalid_types() {
         if (!edit) {
             return;
         }
-        /** @type {HTMLOptionsCollection} */ var options = type_form.options;
+        /** @type {HTMLOptionsCollection} */ let options = type_form.options;
         // remove all options that are not supersets
-        var i;
-        for (i = options.length - 1; i >= 0; i--) {
+        for (let i = options.length - 1; i >= 0; i--) {
             if (!CollectionType.is_subset(type, options[i].value)) {
                 options.remove(i);
             }
@@ -1075,9 +1072,9 @@ function CreateEditCollectionScene(user, password, collection) {
     function onsubmit() {
         try {
             read_form();
-            var sane_color = color.trim();
+            let sane_color = color.trim();
             if (sane_color) {
-                var color_match = COLOR_RE.exec(sane_color);
+                let color_match = COLOR_RE.exec(sane_color);
                 if (!color_match) {
                     error = "Invalid color";
                     fill_form();
@@ -1085,10 +1082,10 @@ function CreateEditCollectionScene(user, password, collection) {
                 }
                 sane_color = color_match[1];
             }
-            var loading_scene = new LoadingScene();
+            let loading_scene = new LoadingScene();
             push_scene(loading_scene);
-            var collection = new Collection(href, type, displayname, description, sane_color);
-            var callback = function(error1) {
+            let collection = new Collection(href, type, displayname, description, sane_color);
+            let callback = function(error1) {
                 if (scene_index === null) {
                     return;
                 }
