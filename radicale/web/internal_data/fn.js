@@ -476,13 +476,13 @@ function pop_scene(index) {
  */
 function LoginScene() {
     let html_scene = document.getElementById("loginscene");
-    let form = html_scene.querySelector("[name=form]");
-    let user_form = html_scene.querySelector("[name=user]");
-    let password_form = html_scene.querySelector("[name=password]");
-    let error_form = html_scene.querySelector("[name=error]");
+    let form = html_scene.querySelector("[data-name=form]");
+    let user_form = html_scene.querySelector("[data-name=user]");
+    let password_form = html_scene.querySelector("[data-name=password]");
+    let error_form = html_scene.querySelector("[data-name=error]");
     let logout_view = document.getElementById("logoutview");
-    let logout_user_form = logout_view.querySelector("[name=user]");
-    let logout_btn = logout_view.querySelector("[name=link]");
+    let logout_user_form = logout_view.querySelector("[data-name=user]");
+    let logout_btn = logout_view.querySelector("[data-name=link]");
 
     /** @type {?number} */ let scene_index = null;
     let user = "";
@@ -631,9 +631,9 @@ function LoadingScene() {
  */
 function CollectionsScene(user, password, collection, onerror) {
     let html_scene = document.getElementById("collectionsscene");
-    let template = html_scene.querySelector("[name=collectiontemplate]");
-    let new_btn = html_scene.querySelector("[name=new]");
-    let upload_btn = html_scene.querySelector("[name=upload]");
+    let template = html_scene.querySelector("[data-name=collectiontemplate]");
+    let new_btn = html_scene.querySelector("[data-name=new]");
+    let upload_btn = html_scene.querySelector("[data-name=upload]");
 
     /** @type {?number} */ let scene_index = null;
     /** @type {?XMLHttpRequest} */ let collections_req = null;
@@ -698,12 +698,12 @@ function CollectionsScene(user, password, collection, onerror) {
         collections.forEach(function (collection) {
             let node = template.cloneNode(true);
             node.classList.remove("hidden");
-            let title_form = node.querySelector("[name=title]");
-            let description_form = node.querySelector("[name=description]");
-            let url_form = node.querySelector("[name=url]");
-            let color_form = node.querySelector("[name=color]");
-            let delete_btn = node.querySelector("[name=delete]");
-            let edit_btn = node.querySelector("[name=edit]");
+            let title_form = node.querySelector("[data-name=title]");
+            let description_form = node.querySelector("[data-name=description]");
+            let url_form = node.querySelector("[data-name=url]");
+            let color_form = node.querySelector("[data-name=color]");
+            let delete_btn = node.querySelector("[data-name=delete]");
+            let edit_btn = node.querySelector("[data-name=edit]");
             if (collection.color) {
                 color_form.style.color = collection.color;
             } else {
@@ -721,7 +721,7 @@ function CollectionsScene(user, password, collection, onerror) {
             });
             possible_types.forEach(function(e) {
                 if (e !== collection.type) {
-                    node.querySelector("[name=" + e + "]").classList.add("hidden");
+                    node.querySelector("[data-name=" + e + "]").classList.add("hidden");
                 }
             });
             title_form.textContent = collection.displayname || collection.href;
@@ -802,8 +802,8 @@ function CollectionsScene(user, password, collection, onerror) {
  */
 function UploadCollectionScene(user, password, collection, files) {
     let html_scene = document.getElementById("uploadcollectionscene");
-    let template = html_scene.querySelector("[name=filetemplate]");
-    let close_btn = html_scene.querySelector("[name=close]");
+    let template = html_scene.querySelector("[data-name=filetemplate]");
+    let close_btn = html_scene.querySelector("[data-name=close]");
 
     /** @type {?number} */ let scene_index = null;
     /** @type {?XMLHttpRequest} */ let upload_req = null;
@@ -850,9 +850,9 @@ function UploadCollectionScene(user, password, collection, files) {
         if (nodes === null) {
             return;
         }
-        let pending_form = nodes[i].querySelector("[name=pending]");
-        let success_form = nodes[i].querySelector("[name=success]");
-        let error_form = nodes[i].querySelector("[name=error]");
+        let pending_form = nodes[i].querySelector("[data-name=pending]");
+        let success_form = nodes[i].querySelector("[data-name=success]");
+        let error_form = nodes[i].querySelector("[data-name=error]");
         if (errors.length > i) {
             pending_form.classList.add("hidden");
             if (errors[i]) {
@@ -881,7 +881,7 @@ function UploadCollectionScene(user, password, collection, files) {
             let file = files[i];
             let node = template.cloneNode(true);
             node.classList.remove("hidden");
-            let name_form = node.querySelector("[name=name]");
+            let name_form = node.querySelector("[data-name=name]");
             name_form.textContent = file.name;
             node.classList.remove("hidden");
             nodes.push(node);
@@ -921,11 +921,11 @@ function UploadCollectionScene(user, password, collection, files) {
  */
 function DeleteCollectionScene(user, password, collection) {
     let html_scene = document.getElementById("deletecollectionscene");
-    let title_form = html_scene.querySelector("[name=title]");
-    let error_form = html_scene.querySelector("[name=error]");
-    let delete_btn = html_scene.querySelector("[name=delete]");
-    let cancel_btn = html_scene.querySelector("[name=cancel]");
-    let no_btn = html_scene.querySelector("[name=no]");
+    let title_form = html_scene.querySelector("[data-name=title]");
+    let error_form = html_scene.querySelector("[data-name=error]");
+    let delete_btn = html_scene.querySelector("[data-name=delete]");
+    let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+    let no_btn = html_scene.querySelector("[data-name=no]");
 
     /** @type {?number} */ let scene_index = null;
     /** @type {?XMLHttpRequest} */ let delete_req = null;
@@ -1010,14 +1010,14 @@ function randHex(length) {
 function CreateEditCollectionScene(user, password, collection) {
     let edit = collection.type !== CollectionType.PRINCIPAL;
     let html_scene = document.getElementById(edit ? "editcollectionscene" : "createcollectionscene");
-    let title_form = edit ? html_scene.querySelector("[name=title]") : null;
-    let error_form = html_scene.querySelector("[name=error]");
-    let displayname_form = html_scene.querySelector("[name=displayname]");
-    let description_form = html_scene.querySelector("[name=description]");
-    let type_form = html_scene.querySelector("[name=type]");
-    let color_form = html_scene.querySelector("[name=color]");
-    let submit_btn = html_scene.querySelector("[name=submit]");
-    let cancel_btn = html_scene.querySelector("[name=cancel]");
+    let title_form = edit ? html_scene.querySelector("[data-name=title]") : null;
+    let error_form = html_scene.querySelector("[data-name=error]");
+    let displayname_form = html_scene.querySelector("[data-name=displayname]");
+    let description_form = html_scene.querySelector("[data-name=description]");
+    let type_form = html_scene.querySelector("[data-name=type]");
+    let color_form = html_scene.querySelector("[data-name=color]");
+    let submit_btn = html_scene.querySelector("[data-name=submit]");
+    let cancel_btn = html_scene.querySelector("[data-name=cancel]");
 
     /** @type {?number} */ let scene_index = null;
     /** @type {?XMLHttpRequest} */ let create_edit_req = null;
