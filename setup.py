@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#
+
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2009-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>

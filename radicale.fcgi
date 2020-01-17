@@ -13,5 +13,5 @@ WSGI-to-FastCGI mapper.
 from flup.server.fcgi import WSGIServer
 from radicale import application
 
-
-WSGIServer(application).run()
+if __name__ == "__main__":
+    WSGIServer(application).run()
