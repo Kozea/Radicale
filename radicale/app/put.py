@@ -70,7 +70,7 @@ def prepare(vobject_items, path, content_type, permissions, parent_permissions,
                     sorted(vobject_components,
                            key=radicale_item.get_uid),
                     radicale_item.get_uid)
-                for uid, components in vobject_components_by_uid:
+                for _, components in vobject_components_by_uid:
                     vobject_collection = vobject.iCalendar()
                     for component in components:
                         vobject_collection.add(component)
