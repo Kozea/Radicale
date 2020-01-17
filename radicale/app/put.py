@@ -31,6 +31,96 @@ from radicale import pathutils, storage, xmlutils
 from radicale.log import logger
 
 
+def prepare(vobject_items, path, content_type, permissions, parent_permissions,
+            tag=None, write_whole_collection=None):
+    if (write_whole_collection or
+            permissions and not parent_permissions):
+        write_whole_collection = True
+        tags = {value: key
+                for key, value in xmlutils.MIMETYPES.items()}
+        tag = radicale_item.predict_tag_of_whole_collection(
+            vobject_items, tags.get(content_type))
+        if not tag:
+            raise ValueError("Can't determine collection tag")
+        collection_path = pathutils.strip_path(path)
+    elif (write_whole_collection is not None and
+            not write_whole_collection or
+            not permissions and parent_permissions):
+        write_whole_collection = False
+        if tag is None:
+            tag = radicale_item.predict_tag_of_parent_collection(
+                vobject_items)
+        collection_path = posixpath.dirname(
+            pathutils.strip_path(path))
+    props = None
+    stored_exc_info = None
+    items = []
+    try:
+        if tag:
+            radicale_item.check_and_sanitize_items(
+                vobject_items, is_collection=write_whole_collection,
+                tag=tag)
+            if write_whole_collection and tag == "VCALENDAR":
+                vobject_components = []
+                vobject_item, = vobject_items
+                for content in ("vevent", "vtodo", "vjournal"):
+                    vobject_components.extend(
+                        getattr(vobject_item, "%s_list" % content, []))
+                vobject_components_by_uid = itertools.groupby(
+                    sorted(vobject_components,
+                           key=radicale_item.get_uid),
+                    radicale_item.get_uid)
+                for uid, components in vobject_components_by_uid:
+                    vobject_collection = vobject.iCalendar()
+                    for component in components:
+                        vobject_collection.add(component)
+                    item = radicale_item.Item(
+                        collection_path=collection_path,
+                        vobject_item=vobject_collection)
+                    item.prepare()
+                    items.append(item)
+            elif write_whole_collection and tag == "VADDRESSBOOK":
+                for vobject_item in vobject_items:
+                    item = radicale_item.Item(
+                        collection_path=collection_path,
+                        vobject_item=vobject_item)
+                    item.prepare()
+                    items.append(item)
+            elif not write_whole_collection:
+                vobject_item, = vobject_items
+                item = radicale_item.Item(
+                    collection_path=collection_path,
+                    vobject_item=vobject_item)
+                item.prepare()
+                items.append(item)
+
+        if write_whole_collection:
+            props = {}
+            if tag:
+                props["tag"] = tag
+            if tag == "VCALENDAR" and vobject_items:
+                if hasattr(vobject_items[0], "x_wr_calname"):
+                    calname = vobject_items[0].x_wr_calname.value
+                    if calname:
+                        props["D:displayname"] = calname
+                if hasattr(vobject_items[0], "x_wr_caldesc"):
+                    caldesc = vobject_items[0].x_wr_caldesc.value
+                    if caldesc:
+                        props["C:calendar-description"] = caldesc
+            radicale_item.check_and_sanitize_props(props)
+    except Exception:
+        stored_exc_info = sys.exc_info()
+
+    # Use generator for items and delete references to free memory
+    # early
+    def items_generator():
+        while items:
+            yield items.pop(0)
+
+    return (items_generator(), tag, write_whole_collection, props,
+            stored_exc_info)
+
+
 class ApplicationPutMixin:
     def do_PUT(self, environ, base_prefix, path, user):
         """Manage PUT request."""
@@ -45,101 +135,11 @@ class ApplicationPutMixin:
             logger.debug("client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         # Prepare before locking
+        content_type = environ.get("CONTENT_TYPE", "").split(";")[0]
         parent_path = pathutils.unstrip_path(
             posixpath.dirname(pathutils.strip_path(path)), True)
         permissions = self._rights.authorized(user, path, "Ww")
         parent_permissions = self._rights.authorized(user, parent_path, "w")
-
-        def prepare(vobject_items, tag=None, write_whole_collection=None):
-            if (write_whole_collection or
-                    permissions and not parent_permissions):
-                write_whole_collection = True
-                content_type = environ.get("CONTENT_TYPE",
-                                           "").split(";")[0]
-                tags = {value: key
-                        for key, value in xmlutils.MIMETYPES.items()}
-                tag = radicale_item.predict_tag_of_whole_collection(
-                    vobject_items, tags.get(content_type))
-                if not tag:
-                    raise ValueError("Can't determine collection tag")
-                collection_path = pathutils.strip_path(path)
-            elif (write_whole_collection is not None and
-                    not write_whole_collection or
-                    not permissions and parent_permissions):
-                write_whole_collection = False
-                if tag is None:
-                    tag = radicale_item.predict_tag_of_parent_collection(
-                        vobject_items)
-                collection_path = posixpath.dirname(
-                    pathutils.strip_path(path))
-            props = None
-            stored_exc_info = None
-            items = []
-            try:
-                if tag:
-                    radicale_item.check_and_sanitize_items(
-                        vobject_items, is_collection=write_whole_collection,
-                        tag=tag)
-                    if write_whole_collection and tag == "VCALENDAR":
-                        vobject_components = []
-                        vobject_item, = vobject_items
-                        for content in ("vevent", "vtodo", "vjournal"):
-                            vobject_components.extend(
-                                getattr(vobject_item, "%s_list" % content, []))
-                        vobject_components_by_uid = itertools.groupby(
-                            sorted(vobject_components,
-                                   key=radicale_item.get_uid),
-                            radicale_item.get_uid)
-                        for uid, components in vobject_components_by_uid:
-                            vobject_collection = vobject.iCalendar()
-                            for component in components:
-                                vobject_collection.add(component)
-                            item = radicale_item.Item(
-                                collection_path=collection_path,
-                                vobject_item=vobject_collection)
-                            item.prepare()
-                            items.append(item)
-                    elif write_whole_collection and tag == "VADDRESSBOOK":
-                        for vobject_item in vobject_items:
-                            item = radicale_item.Item(
-                                collection_path=collection_path,
-                                vobject_item=vobject_item)
-                            item.prepare()
-                            items.append(item)
-                    elif not write_whole_collection:
-                        vobject_item, = vobject_items
-                        item = radicale_item.Item(
-                            collection_path=collection_path,
-                            vobject_item=vobject_item)
-                        item.prepare()
-                        items.append(item)
-
-                if write_whole_collection:
-                    props = {}
-                    if tag:
-                        props["tag"] = tag
-                    if tag == "VCALENDAR" and vobject_items:
-                        if hasattr(vobject_items[0], "x_wr_calname"):
-                            calname = vobject_items[0].x_wr_calname.value
-                            if calname:
-                                props["D:displayname"] = calname
-                        if hasattr(vobject_items[0], "x_wr_caldesc"):
-                            caldesc = vobject_items[0].x_wr_caldesc.value
-                            if caldesc:
-                                props["C:calendar-description"] = caldesc
-                    radicale_item.check_and_sanitize_props(props)
-            except Exception:
-                stored_exc_info = sys.exc_info()
-
-            # Use generator for items and delete references to free memory
-            # early
-            def items_generator():
-                while items:
-                    yield items.pop(0)
-
-            return (items_generator(), tag, write_whole_collection, props,
-                    stored_exc_info)
-
         try:
             vobject_items = tuple(vobject.readComponents(content or ""))
         except Exception as e:
@@ -147,7 +147,9 @@ class ApplicationPutMixin:
                 "Bad PUT request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
         (prepared_items, prepared_tag, prepared_write_whole_collection,
-         prepared_props, prepared_exc_info) = prepare(vobject_items)
+         prepared_props, prepared_exc_info) = prepare(
+             vobject_items, path, content_type, permissions,
+             parent_permissions)
 
         with self._storage.acquire_lock("w", user):
             item = next(self._storage.discover(path), None)
@@ -188,7 +190,8 @@ class ApplicationPutMixin:
                     prepared_write_whole_collection != write_whole_collection):
                 (prepared_items, prepared_tag, prepared_write_whole_collection,
                  prepared_props, prepared_exc_info) = prepare(
-                    vobject_items, tag, write_whole_collection)
+                    vobject_items, path, content_type, permissions,
+                    parent_permissions, tag, write_whole_collection)
             props = prepared_props
             if prepared_exc_info:
                 logger.warning(
