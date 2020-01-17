@@ -77,7 +77,7 @@ class TestConfig:
         with pytest.raises(Exception) as exc_info:
             config.load([(config_path, False)])
         e = exc_info.value
-        assert ("Failed to load config file %r" % config_path) in str(e)
+        assert "Failed to load config file %r" % config_path in str(e)
 
     def test_load_multiple(self):
         config_path1 = self._write_config({
@@ -142,41 +142,41 @@ class TestConfig:
         assert "Invalid section 'internal'" in str(e)
 
     def test_plugin_schema(self):
-        PLUGIN_SCHEMA = {"auth": {"new_option": {"value": "False",
+        plugin_schema = {"auth": {"new_option": {"value": "False",
                                                  "type": bool}}}
         configuration = config.load()
         configuration.update({"auth": {"type": "new_plugin"}}, "test")
-        plugin_configuration = configuration.copy(PLUGIN_SCHEMA)
+        plugin_configuration = configuration.copy(plugin_schema)
         assert plugin_configuration.get("auth", "new_option") is False
         configuration.update({"auth": {"new_option": "True"}}, "test")
-        plugin_configuration = configuration.copy(PLUGIN_SCHEMA)
+        plugin_configuration = configuration.copy(plugin_schema)
         assert plugin_configuration.get("auth", "new_option") is True
 
     def test_plugin_schema_duplicate_option(self):
-        PLUGIN_SCHEMA = {"auth": {"type": {"value": "False",
+        plugin_schema = {"auth": {"type": {"value": "False",
                                            "type": bool}}}
         configuration = config.load()
         with pytest.raises(Exception) as exc_info:
-            configuration.copy(PLUGIN_SCHEMA)
+            configuration.copy(plugin_schema)
         e = exc_info.value
         assert "option already exists in 'auth': 'type'" in str(e)
 
     def test_plugin_schema_invalid(self):
-        PLUGIN_SCHEMA = {"server": {"new_option": {"value": "False",
+        plugin_schema = {"server": {"new_option": {"value": "False",
                                                    "type": bool}}}
         configuration = config.load()
         with pytest.raises(Exception) as exc_info:
-            configuration.copy(PLUGIN_SCHEMA)
+            configuration.copy(plugin_schema)
         e = exc_info.value
         assert "not a plugin section: 'server" in str(e)
 
     def test_plugin_schema_option_invalid(self):
-        PLUGIN_SCHEMA = {"auth": {}}
+        plugin_schema = {"auth": {}}
         configuration = config.load()
         configuration.update({"auth": {"type": "new_plugin",
                                        "new_option": False}}, "test")
         with pytest.raises(Exception) as exc_info:
-            configuration.copy(PLUGIN_SCHEMA)
+            configuration.copy(plugin_schema)
         e = exc_info.value
         assert "Invalid option 'new_option'" in str(e)
         assert "section 'auth'" in str(e)

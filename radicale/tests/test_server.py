@@ -132,7 +132,7 @@ class TestBaseServerRequests:
             self.sockname = sock.getsockname()[:2]
         self.configuration.update({
             "server": {"hosts": "[%s]:%d" % self.sockname}}, "test")
-        savedEaiAddrfamily = server.EAI_ADDRFAMILY
+        original_eai_addrfamily = server.EAI_ADDRFAMILY
         if os.name == "nt" and server.EAI_ADDRFAMILY is None:
             # HACK: incomplete errno conversion in WINE
             server.EAI_ADDRFAMILY = -9
@@ -140,7 +140,7 @@ class TestBaseServerRequests:
             self.thread.start()
             status, _, _ = self.request("GET", "/")
         finally:
-            server.EAI_ADDRFAMILY = savedEaiAddrfamily
+            server.EAI_ADDRFAMILY = original_eai_addrfamily
         assert status == 302
 
     def test_command_line_interface(self):

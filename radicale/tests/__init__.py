@@ -57,10 +57,6 @@ class BaseTest:
 
     def request(self, method, path, data=None, **args):
         """Send a request."""
-        self.application._status = None
-        self.application._headers = None
-        self.application._answer = None
-
         for key in args:
             args[key.upper()] = args[key]
         args["REQUEST_METHOD"] = method.upper()

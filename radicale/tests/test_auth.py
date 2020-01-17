@@ -67,7 +67,7 @@ class TestBaseAuthRequests(BaseTest):
                 ("tmp", "bepo", 207), ("tmp", "tmp", 401), ("tmp", "", 401),
                 ("unk", "unk", 401), ("unk", "", 401), ("", "", 401))
         for user, password, expected_status in test_matrix:
-            status, _, answer = self.request(
+            status, _, _ = self.request(
                 "PROPFIND", "/",
                 HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
                     ("%s:%s" % (user, password)).encode()).decode())
@@ -163,7 +163,7 @@ class TestBaseAuthRequests(BaseTest):
         self.configuration.update(
             {"auth": {"type": "radicale.tests.custom.auth"}}, "test")
         self.application = Application(self.configuration)
-        status, _, answer = self.request(
+        status, _, _ = self.request(
             "PROPFIND", "/tmp", HTTP_AUTHORIZATION="Basic %s" %
             base64.b64encode(("tmp:").encode()).decode())
         assert status == 207

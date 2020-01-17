@@ -51,9 +51,9 @@ class Collection(
         CollectionHistoryMixin, CollectionLockMixin, CollectionMetaMixin,
         CollectionSyncMixin, CollectionUploadMixin, storage.BaseCollection):
 
-    def __init__(self, storage, path, filesystem_path=None):
-        self._storage = storage
-        folder = storage._get_collection_root_folder()
+    def __init__(self, storage_, path, filesystem_path=None):
+        self._storage = storage_
+        folder = self._storage._get_collection_root_folder()
         # Path should already be sanitized
         self._path = pathutils.strip_path(path)
         self._encoding = self._storage.configuration.get("encoding", "stock")

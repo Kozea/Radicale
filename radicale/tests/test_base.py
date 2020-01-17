@@ -1317,7 +1317,7 @@ class BaseRequestsMixIn:
         calendar_path = "/calendar.ics/"
         status, _, _ = self.request("MKCALENDAR", calendar_path)
         assert status == 201
-        sync_token, xml = self._report_sync_token(
+        sync_token, _ = self._report_sync_token(
             calendar_path, "http://radicale.org/ns/sync/INVALID")
         assert not sync_token
 
@@ -1326,13 +1326,12 @@ class BaseRequestsMixIn:
         calendar_path = "/calendar.ics/"
         status, _, _ = self.request("MKCALENDAR", calendar_path)
         assert status == 201
-        sync_token, xml = self._report_sync_token(calendar_path)
+        sync_token, _ = self._report_sync_token(calendar_path)
         event = get_file_content("event1.ics")
         event_path = posixpath.join(calendar_path, "event.ics")
         status, _, _ = self.request("PUT", event_path, event)
         assert status == 201
-        new_sync_token, xml = self._report_sync_token(calendar_path,
-                                                      sync_token)
+        new_sync_token, _ = self._report_sync_token(calendar_path, sync_token)
         assert sync_token != new_sync_token
 
     def test_propfind_same_as_sync_collection_sync_token(self):
@@ -1340,9 +1339,8 @@ class BaseRequestsMixIn:
         calendar_path = "/calendar.ics/"
         status, _, _ = self.request("MKCALENDAR", calendar_path)
         assert status == 201
-        sync_token, xml = self._report_sync_token(calendar_path)
-        new_sync_token, xml = self._report_sync_token(calendar_path,
-                                                      sync_token)
+        sync_token, _ = self._report_sync_token(calendar_path)
+        new_sync_token, _ = self._report_sync_token(calendar_path, sync_token)
         if not self.full_sync_token_support and not new_sync_token:
             return
         assert sync_token == new_sync_token
@@ -1504,9 +1502,9 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
 
     def test_hook(self):
         """Run hook."""
-        self.configuration.update({"storage": {"hook": (
-            "mkdir %s" % os.path.join("collection-root", "created_by_hook"))
-        }}, "test")
+        self.configuration.update({"storage": {
+            "hook": ("mkdir %s" % os.path.join(
+                "collection-root", "created_by_hook"))}}, "test")
         self.application = Application(self.configuration)
         status, _, _ = self.request("MKCALENDAR", "/calendar.ics/")
         assert status == 201
@@ -1515,9 +1513,9 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
 
     def test_hook_read_access(self):
         """Verify that hook is not run for read accesses."""
-        self.configuration.update({"storage": {"hook": (
-            "mkdir %s" % os.path.join("collection-root", "created_by_hook"))
-        }}, "test")
+        self.configuration.update({"storage": {
+            "hook": ("mkdir %s" % os.path.join(
+                "collection-root", "created_by_hook"))}}, "test")
         self.application = Application(self.configuration)
         status, _, _ = self.request("PROPFIND", "/")
         assert status == 207
@@ -1536,9 +1534,9 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
 
     def test_hook_principal_collection_creation(self):
         """Verify that the hooks runs when a new user is created."""
-        self.configuration.update({"storage": {"hook": (
-            "mkdir %s" % os.path.join("collection-root", "created_by_hook"))
-        }}, "test")
+        self.configuration.update({"storage": {
+            "hook": ("mkdir %s" % os.path.join(
+                "collection-root", "created_by_hook"))}}, "test")
         self.application = Application(self.configuration)
         status, _, _ = self.request("PROPFIND", "/", HTTP_AUTHORIZATION=(
             "Basic " + base64.b64encode(b"user:").decode()))
@@ -1633,11 +1631,10 @@ class TestCustomStorageSystem(BaseFileSystemTest):
     """Test custom backend loading."""
     storage_type = "radicale.tests.custom.storage_simple_sync"
     full_sync_token_support = False
-    _report_sync_token = BaseRequestsMixIn._report_sync_token
     test_root = BaseRequestsMixIn.test_root
-
-
-# include tests related to sync token
-for s in dir(BaseRequestsMixIn):
-    if s.startswith("test_") and ("_sync_" in s or s.endswith("_sync")):
-        setattr(TestCustomStorageSystem, s, getattr(BaseRequestsMixIn, s))
+    _report_sync_token = BaseRequestsMixIn._report_sync_token
+    # include tests related to sync token
+    for s in dir(BaseRequestsMixIn):
+        if s.startswith("test_") and ("_sync_" in s or s.endswith("_sync")):
+            locals()[s] = getattr(BaseRequestsMixIn, s)
+    del s

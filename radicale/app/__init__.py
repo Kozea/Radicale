@@ -138,7 +138,7 @@ class Application(
                 status, headers, answer = httputils.INTERNAL_SERVER_ERROR
                 answer = answer.encode("ascii")
                 status = "%d %s" % (
-                    status, client.responses.get(status, "Unknown"))
+                    status.value, client.responses.get(status, "Unknown"))
                 headers = [
                     ("Content-Length", str(len(answer)))] + list(headers)
                 answers = [answer]

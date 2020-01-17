@@ -180,8 +180,6 @@ def xml_report(base_prefix, path, xml_request, collection, encoding,
                     radicale_filter.prop_match(item.vobject_item, f, "CR")
                     for f in filter_)
             raise ValueError("Unsupported filter test: %r" % test)
-            return all(radicale_filter.prop_match(item.vobject_item, f, "CR")
-                       for f in filter_)
         raise ValueError("unsupported filter %r for %r" % (filter_.tag, tag))
 
     while retrieved_items:

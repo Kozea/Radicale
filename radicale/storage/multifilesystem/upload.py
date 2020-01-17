@@ -62,12 +62,12 @@ class CollectionUploadMixin:
                 raise ValueError(
                     "Failed to store item %r in temporary collection %r: %s" %
                     (uid, self.path, e)) from e
-            href_candidates = []
+            href_candidate_funtions = []
             if os.name in ("nt", "posix"):
-                href_candidates.append(
+                href_candidate_funtions.append(
                     lambda: uid if uid.lower().endswith(suffix.lower())
                     else uid + suffix)
-            href_candidates.extend((
+            href_candidate_funtions.extend((
                 lambda: radicale_item.get_etag(uid).strip('"') + suffix,
                 lambda: radicale_item.find_available_uid(hrefs.__contains__,
                                                          suffix)))
@@ -75,19 +75,20 @@ class CollectionUploadMixin:
 
             def replace_fn(source, target):
                 nonlocal href
-                while href_candidates:
-                    href = href_candidates.pop(0)()
+                while href_candidate_funtions:
+                    href_fn = href_candidate_funtions.pop(0)
+                    href = href_fn()
                     if href in hrefs:
                         continue
                     if not pathutils.is_safe_filesystem_path_component(href):
-                        if not href_candidates:
+                        if not href_candidate_funtions:
                             raise pathutils.UnsafePathError(href)
                         continue
                     try:
                         return os.replace(source, pathutils.path_to_filesystem(
                             self._filesystem_path, href))
                     except OSError as e:
-                        if href_candidates and (
+                        if href_candidate_funtions and (
                                 os.name == "posix" and e.errno == 22 or
                                 os.name == "nt" and e.errno == 123):
                             continue

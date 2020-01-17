@@ -167,8 +167,8 @@ class ParallelHTTPSServer(ParallelHTTPServer):
     certificate_authority = None
 
     def server_bind(self):
-        super().server_bind()
         """Create server by wrapping HTTP socket in an SSL socket."""
+        super().server_bind()
         self.socket = ssl.wrap_socket(
             self.socket, self.key, self.certificate, server_side=True,
             cert_reqs=ssl.CERT_REQUIRED if self.certificate_authority else
@@ -210,9 +210,8 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     def log_request(self, code="-", size="-"):
         """Disable request logging."""
 
-    def log_error(self, format, *args):
-        msg = format % args
-        logger.error("An error occurred during request: %s" % msg)
+    def log_error(self, format_, *args):
+        logger.error("An error occurred during request: %s", format_ % args)
 
     def get_environ(self):
         env = super().get_environ()

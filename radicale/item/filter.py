@@ -82,7 +82,7 @@ def comp_match(item, filter_, level=0):
         return False
     if (level == 0 and name != "VCALENDAR" or
             level == 1 and name not in ("VTODO", "VEVENT", "VJOURNAL")):
-        logger.warning("Filtering %s is not supported" % name)
+        logger.warning("Filtering %s is not supported", name)
         return True
     # Point #3 and #4 of rfc4791-9.7.1
     components = ([item.vobject_item] if level == 0
@@ -463,7 +463,7 @@ def param_filter_match(vobject_item, filter_, parent_name, ns):
     name = filter_.get("name").upper()
     children = getattr(vobject_item, "%s_list" % parent_name, [])
     condition = any(name in child.params for child in children)
-    if len(filter_):
+    if len(filter_) > 0:
         if filter_[0].tag == xmlutils.make_tag(ns, "text-match"):
             return condition and text_match(
                 vobject_item, filter_[0], parent_name, ns, name)

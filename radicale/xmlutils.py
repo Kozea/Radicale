@@ -63,7 +63,7 @@ def pretty_xml(element, level=0):
     if not level:
         element = copy.deepcopy(element)
     i = "\n" + level * "  "
-    if len(element):
+    if len(element) > 0:
         if not element.text or not element.text.strip():
             element.text = i + "  "
         if not element.tail or not element.tail.strip():

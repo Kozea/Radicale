@@ -172,7 +172,7 @@ def xml_propfind_response(base_prefix, path, item, props, user, encoding,
                       xmlutils.make_tag("D", "principal-URL"),
                       xmlutils.make_tag("CR", "addressbook-home-set"),
                       xmlutils.make_tag("C", "calendar-home-set")) and
-                collection.is_principal and is_collection):
+              collection.is_principal and is_collection):
             tag = ET.Element(xmlutils.make_tag("D", "href"))
             tag.text = xmlutils.make_href(base_prefix, path)
             element.append(tag)
@@ -318,7 +318,7 @@ def xml_propfind_response(base_prefix, path, item, props, user, encoding,
     status404 = ET.Element(xmlutils.make_tag("D", "status"))
     status404.text = xmlutils.make_response(404)
     propstat404.append(status404)
-    if len(prop404):
+    if len(prop404) > 0:
         response.append(propstat404)
 
     return response

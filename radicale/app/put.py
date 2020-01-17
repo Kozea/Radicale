@@ -30,36 +30,31 @@ from radicale import item as radicale_item
 from radicale import pathutils, storage, xmlutils
 from radicale.log import logger
 
+MIMETYPE_TAGS = {value: key for key, value in xmlutils.MIMETYPES.items()}
+
 
 def prepare(vobject_items, path, content_type, permissions, parent_permissions,
             tag=None, write_whole_collection=None):
-    if (write_whole_collection or
-            permissions and not parent_permissions):
+    if (write_whole_collection or permissions and not parent_permissions):
         write_whole_collection = True
-        tags = {value: key
-                for key, value in xmlutils.MIMETYPES.items()}
         tag = radicale_item.predict_tag_of_whole_collection(
-            vobject_items, tags.get(content_type))
+            vobject_items, MIMETYPE_TAGS.get(content_type))
         if not tag:
             raise ValueError("Can't determine collection tag")
         collection_path = pathutils.strip_path(path)
-    elif (write_whole_collection is not None and
-            not write_whole_collection or
-            not permissions and parent_permissions):
+    elif (write_whole_collection is not None and not write_whole_collection or
+          not permissions and parent_permissions):
         write_whole_collection = False
         if tag is None:
-            tag = radicale_item.predict_tag_of_parent_collection(
-                vobject_items)
-        collection_path = posixpath.dirname(
-            pathutils.strip_path(path))
+            tag = radicale_item.predict_tag_of_parent_collection(vobject_items)
+        collection_path = posixpath.dirname(pathutils.strip_path(path))
     props = None
     stored_exc_info = None
     items = []
     try:
         if tag:
             radicale_item.check_and_sanitize_items(
-                vobject_items, is_collection=write_whole_collection,
-                tag=tag)
+                vobject_items, is_collection=write_whole_collection, tag=tag)
             if write_whole_collection and tag == "VCALENDAR":
                 vobject_components = []
                 vobject_item, = vobject_items
@@ -67,30 +62,26 @@ def prepare(vobject_items, path, content_type, permissions, parent_permissions,
                     vobject_components.extend(
                         getattr(vobject_item, "%s_list" % content, []))
                 vobject_components_by_uid = itertools.groupby(
-                    sorted(vobject_components,
-                           key=radicale_item.get_uid),
+                    sorted(vobject_components, key=radicale_item.get_uid),
                     radicale_item.get_uid)
                 for _, components in vobject_components_by_uid:
                     vobject_collection = vobject.iCalendar()
                     for component in components:
                         vobject_collection.add(component)
-                    item = radicale_item.Item(
-                        collection_path=collection_path,
-                        vobject_item=vobject_collection)
+                    item = radicale_item.Item(collection_path=collection_path,
+                                              vobject_item=vobject_collection)
                     item.prepare()
                     items.append(item)
             elif write_whole_collection and tag == "VADDRESSBOOK":
                 for vobject_item in vobject_items:
-                    item = radicale_item.Item(
-                        collection_path=collection_path,
-                        vobject_item=vobject_item)
+                    item = radicale_item.Item(collection_path=collection_path,
+                                              vobject_item=vobject_item)
                     item.prepare()
                     items.append(item)
             elif not write_whole_collection:
                 vobject_item, = vobject_items
-                item = radicale_item.Item(
-                    collection_path=collection_path,
-                    vobject_item=vobject_item)
+                item = radicale_item.Item(collection_path=collection_path,
+                                          vobject_item=vobject_item)
                 item.prepare()
                 items.append(item)
 
@@ -116,7 +107,6 @@ def prepare(vobject_items, path, content_type, permissions, parent_permissions,
     def items_generator():
         while items:
             yield items.pop(0)
-
     return (items_generator(), tag, write_whole_collection, props,
             stored_exc_info)
 
@@ -190,8 +180,8 @@ class ApplicationPutMixin:
                     prepared_write_whole_collection != write_whole_collection):
                 (prepared_items, prepared_tag, prepared_write_whole_collection,
                  prepared_props, prepared_exc_info) = prepare(
-                    vobject_items, path, content_type, permissions,
-                    parent_permissions, tag, write_whole_collection)
+                     vobject_items, path, content_type, permissions,
+                     parent_permissions, tag, write_whole_collection)
             props = prepared_props
             if prepared_exc_info:
                 logger.warning(

@@ -27,7 +27,7 @@ from radicale.log import logger
 class StorageDiscoverMixin:
 
     def discover(self, path, depth="0", child_context_manager=(
-                 lambda path, href=None: contextlib.ExitStack())):
+            lambda path, href=None: contextlib.ExitStack())):
         # Path should already be sanitized
         sane_path = pathutils.strip_path(path)
         attributes = sane_path.split("/") if sane_path else []

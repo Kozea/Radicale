@@ -56,7 +56,7 @@ class RemoveTracebackFilter(logging.Filter):
         return True
 
 
-removeTracebackFilter = RemoveTracebackFilter()
+REMOVE_TRACEBACK_FILTER = RemoveTracebackFilter()
 
 
 class IdentLogRecordFactory:
@@ -118,9 +118,9 @@ class ThreadStreamsHandler(logging.Handler):
             # HACK: Workaround for Android
             self.lock = RwLockWrapper()
 
-    def setFormatter(self, form):
-        super().setFormatter(form)
-        self.fallback_handler.setFormatter(form)
+    def setFormatter(self, fmt):
+        super().setFormatter(fmt)
+        self.fallback_handler.setFormatter(fmt)
 
     def emit(self, record):
         try:
@@ -186,6 +186,6 @@ def set_level(level):
         level = getattr(logging, level.upper())
     logger.setLevel(level)
     if level == logging.DEBUG:
-        logger.removeFilter(removeTracebackFilter)
+        logger.removeFilter(REMOVE_TRACEBACK_FILTER)
     else:
-        logger.addFilter(removeTracebackFilter)
+        logger.addFilter(REMOVE_TRACEBACK_FILTER)

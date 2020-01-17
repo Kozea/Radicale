@@ -125,9 +125,9 @@ def run():
     if args.verify_storage:
         logger.info("Verifying storage")
         try:
-            Collection = storage.load(configuration)
-            with Collection.acquire_lock("r"):
-                if not Collection.verify():
+            storage_ = storage.load(configuration)
+            with storage_.acquire_lock("r"):
+                if not storage_.verify():
                     logger.fatal("Storage verifcation failed")
                     exit(1)
         except Exception as e:
@@ -140,7 +140,7 @@ def run():
     shutdown_socket, shutdown_socket_out = socket.socketpair()
 
     # SIGTERM and SIGINT (aka KeyboardInterrupt) shutdown the server
-    def shutdown(*args):
+    def shutdown(signal_number, stack_frame):
         shutdown_socket.sendall(b" ")
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
