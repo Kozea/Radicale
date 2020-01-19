@@ -49,13 +49,13 @@ def xml_delete(base_prefix, path, collection, href=None):
 class ApplicationDeleteMixin:
     def do_DELETE(self, environ, base_prefix, path, user):
         """Manage DELETE request."""
-        if not self.access(user, path, "w"):
+        if not self._access(user, path, "w"):
             return httputils.NOT_ALLOWED
         with self._storage.acquire_lock("w", user):
             item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
-            if not self.access(user, path, "w", item):
+            if not self._access(user, path, "w", item):
                 return httputils.NOT_ALLOWED
             if_match = environ.get("HTTP_IF_MATCH", "*")
             if if_match not in ("*", item.etag):
@@ -67,4 +67,4 @@ class ApplicationDeleteMixin:
                 xml_answer = xml_delete(
                     base_prefix, path, item.collection, item.href)
             headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
-            return client.OK, headers, self.write_xml_content(xml_answer)
+            return client.OK, headers, self._write_xml_content(xml_answer)

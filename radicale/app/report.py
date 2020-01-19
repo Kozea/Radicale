@@ -257,10 +257,10 @@ def xml_item_response(base_prefix, href, found_props=(), not_found_props=(),
 class ApplicationReportMixin:
     def do_REPORT(self, environ, base_prefix, path, user):
         """Manage REPORT request."""
-        if not self.access(user, path, "r"):
+        if not self._access(user, path, "r"):
             return httputils.NOT_ALLOWED
         try:
-            xml_content = self.read_xml_content(environ)
+            xml_content = self._read_xml_content(environ)
         except RuntimeError as e:
             logger.warning(
                 "Bad REPORT request on %r: %s", path, e, exc_info=True)
@@ -273,7 +273,7 @@ class ApplicationReportMixin:
             item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
-            if not self.access(user, path, "r", item):
+            if not self._access(user, path, "r", item):
                 return httputils.NOT_ALLOWED
             if isinstance(item, storage.BaseCollection):
                 collection = item
@@ -288,4 +288,4 @@ class ApplicationReportMixin:
                 logger.warning(
                     "Bad REPORT request on %r: %s", path, e, exc_info=True)
                 return httputils.BAD_REQUEST
-            return (status, headers, self.write_xml_content(xml_answer))
+            return (status, headers, self._write_xml_content(xml_answer))

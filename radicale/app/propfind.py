@@ -357,10 +357,10 @@ class ApplicationPropfindMixin:
 
     def do_PROPFIND(self, environ, base_prefix, path, user):
         """Manage PROPFIND request."""
-        if not self.access(user, path, "r"):
+        if not self._access(user, path, "r"):
             return httputils.NOT_ALLOWED
         try:
-            xml_content = self.read_xml_content(environ)
+            xml_content = self._read_xml_content(environ)
         except RuntimeError as e:
             logger.warning(
                 "Bad PROPFIND request on %r: %s", path, e, exc_info=True)
@@ -375,7 +375,7 @@ class ApplicationPropfindMixin:
             item = next(items, None)
             if not item:
                 return httputils.NOT_FOUND
-            if not self.access(user, path, "r", item):
+            if not self._access(user, path, "r", item):
                 return httputils.NOT_ALLOWED
             # put item back
             items = itertools.chain([item], items)
@@ -387,4 +387,4 @@ class ApplicationPropfindMixin:
                 self._encoding)
             if status == client.FORBIDDEN:
                 return httputils.NOT_ALLOWED
-            return status, headers, self.write_xml_content(xml_answer)
+            return status, headers, self._write_xml_content(xml_answer)

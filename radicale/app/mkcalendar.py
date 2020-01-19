@@ -33,7 +33,7 @@ class ApplicationMkcalendarMixin:
         if not self._rights.authorized(user, path, "w"):
             return httputils.NOT_ALLOWED
         try:
-            xml_content = self.read_xml_content(environ)
+            xml_content = self._read_xml_content(environ)
         except RuntimeError as e:
             logger.warning(
                 "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
@@ -54,7 +54,7 @@ class ApplicationMkcalendarMixin:
         with self._storage.acquire_lock("w", user):
             item = next(self._storage.discover(path), None)
             if item:
-                return self.webdav_error_response(
+                return self._webdav_error_response(
                     "D", "resource-must-be-null")
             parent_path = pathutils.unstrip_path(
                 posixpath.dirname(pathutils.strip_path(path)), True)

@@ -34,7 +34,7 @@ class ApplicationMoveMixin:
             logger.info("Unsupported destination address: %r", raw_dest)
             # Remote destination server, not supported
             return httputils.REMOTE_DESTINATION
-        if not self.access(user, path, "w"):
+        if not self._access(user, path, "w"):
             return httputils.NOT_ALLOWED
         to_path = pathutils.sanitize_path(to_url.path)
         if not (to_path + "/").startswith(base_prefix + "/"):
@@ -42,15 +42,15 @@ class ApplicationMoveMixin:
                            "start with base prefix", to_path, path)
             return httputils.NOT_ALLOWED
         to_path = to_path[len(base_prefix):]
-        if not self.access(user, to_path, "w"):
+        if not self._access(user, to_path, "w"):
             return httputils.NOT_ALLOWED
 
         with self._storage.acquire_lock("w", user):
             item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
-            if (not self.access(user, path, "w", item) or
-                    not self.access(user, to_path, "w", item)):
+            if (not self._access(user, path, "w", item) or
+                    not self._access(user, to_path, "w", item)):
                 return httputils.NOT_ALLOWED
             if isinstance(item, storage.BaseCollection):
                 # TODO: support moving collections
@@ -74,7 +74,7 @@ class ApplicationMoveMixin:
                     not to_item and
                     to_collection.path != item.collection.path and
                     to_collection.has_uid(item.uid)):
-                return self.webdav_error_response(
+                return self._webdav_error_response(
                     "C" if tag == "VCALENDAR" else "CR", "no-uid-conflict")
             to_href = posixpath.basename(pathutils.strip_path(to_path))
             try:

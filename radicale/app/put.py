@@ -114,10 +114,10 @@ def prepare(vobject_items, path, content_type, permissions, parent_permissions,
 class ApplicationPutMixin:
     def do_PUT(self, environ, base_prefix, path, user):
         """Manage PUT request."""
-        if not self.access(user, path, "w"):
+        if not self._access(user, path, "w"):
             return httputils.NOT_ALLOWED
         try:
-            content = self.read_content(environ)
+            content = self._read_content(environ)
         except RuntimeError as e:
             logger.warning("Bad PUT request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
@@ -201,7 +201,7 @@ class ApplicationPutMixin:
                 prepared_item, = prepared_items
                 if (item and item.uid != prepared_item.uid or
                         not item and parent_item.has_uid(prepared_item.uid)):
-                    return self.webdav_error_response(
+                    return self._webdav_error_response(
                         "C" if tag == "VCALENDAR" else "CR",
                         "no-uid-conflict")
 

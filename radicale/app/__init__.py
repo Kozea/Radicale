@@ -96,7 +96,7 @@ class Application(
 
         return request_environ
 
-    def decode(self, text, environ):
+    def _decode(self, text, environ):
         """Try to magically decode ``text`` according to given ``environ``."""
         # List of charsets to try
         charsets = []
@@ -238,7 +238,7 @@ class Application(
             login, password = login or "", password or ""
         elif authorization.startswith("Basic"):
             authorization = authorization[len("Basic"):].strip()
-            login, password = self.decode(base64.b64decode(
+            login, password = self._decode(base64.b64decode(
                 authorization.encode("ascii")), environ).split(":", 1)
 
         user = self._auth.login(login, password) or "" if login else ""
@@ -312,7 +312,7 @@ class Application(
 
         return response(status, headers, answer)
 
-    def access(self, user, path, permission, item=None):
+    def _access(self, user, path, permission, item=None):
         if permission not in "rw":
             raise ValueError("Invalid permission argument: %r" % permission)
         if not item:
@@ -336,7 +336,7 @@ class Application(
                 return True
         return False
 
-    def read_raw_content(self, environ):
+    def _read_raw_content(self, environ):
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
         if not content_length:
             return b""
@@ -345,13 +345,13 @@ class Application(
             raise RuntimeError("Request body too short: %d" % len(content))
         return content
 
-    def read_content(self, environ):
-        content = self.decode(self.read_raw_content(environ), environ)
+    def _read_content(self, environ):
+        content = self._decode(self._read_raw_content(environ), environ)
         logger.debug("Request content:\n%s", content)
         return content
 
-    def read_xml_content(self, environ):
-        content = self.decode(self.read_raw_content(environ), environ)
+    def _read_xml_content(self, environ):
+        content = self._decode(self._read_raw_content(environ), environ)
         if not content:
             return None
         try:
@@ -364,7 +364,7 @@ class Application(
                          xmlutils.pretty_xml(xml_content))
         return xml_content
 
-    def write_xml_content(self, xml_content):
+    def _write_xml_content(self, xml_content):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Response content:\n%s",
                          xmlutils.pretty_xml(xml_content))
@@ -373,10 +373,10 @@ class Application(
                                           xml_declaration=True)
         return f.getvalue()
 
-    def webdav_error_response(self, namespace, name,
-                              status=httputils.WEBDAV_PRECONDITION_FAILED[0]):
+    def _webdav_error_response(self, namespace, name,
+                               status=httputils.WEBDAV_PRECONDITION_FAILED[0]):
         """Generate XML error response."""
         headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
-        content = self.write_xml_content(
+        content = self._write_xml_content(
             xmlutils.webdav_error(namespace, name))
         return status, headers, content

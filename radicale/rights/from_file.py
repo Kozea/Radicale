@@ -43,7 +43,7 @@ from radicale.log import logger
 class Rights(rights.BaseRights):
     def __init__(self, configuration):
         super().__init__(configuration)
-        self.filename = configuration.get("rights", "file")
+        self._filename = configuration.get("rights", "file")
 
     def authorized(self, user, path, permissions):
         user = user or ""
@@ -54,12 +54,12 @@ class Rights(rights.BaseRights):
         rights_config = configparser.ConfigParser(
             {"login": user_escaped, "path": sane_path_escaped})
         try:
-            if not rights_config.read(self.filename):
+            if not rights_config.read(self._filename):
                 raise RuntimeError("No such file: %r" %
-                                   self.filename)
+                                   self._filename)
         except Exception as e:
             raise RuntimeError("Failed to load rights file %r: %s" %
-                               (self.filename, e)) from e
+                               (self._filename, e)) from e
         for section in rights_config.sections():
             try:
                 user_pattern = rights_config.get(section, "user")
@@ -70,7 +70,7 @@ class Rights(rights.BaseRights):
                         *map(re.escape, user_match.groups())), sane_path)
             except Exception as e:
                 raise RuntimeError("Error in section %r of rights file %r: "
-                                   "%s" % (section, self.filename, e)) from e
+                                   "%s" % (section, self._filename, e)) from e
             if user_match and collection_match:
                 logger.debug("Rule %r:%r matches %r:%r from section %r",
                              user, sane_path, user_pattern,

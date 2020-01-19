@@ -34,7 +34,7 @@ class ApplicationMkcolMixin:
         if not permissions:
             return httputils.NOT_ALLOWED
         try:
-            xml_content = self.read_xml_content(environ)
+            xml_content = self._read_xml_content(environ)
         except RuntimeError as e:
             logger.warning(
                 "Bad MKCOL request on %r: %s", path, e, exc_info=True)

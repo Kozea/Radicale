@@ -63,24 +63,24 @@ from radicale import auth
 class Auth(auth.BaseAuth):
     def __init__(self, configuration):
         super().__init__(configuration)
-        self.filename = configuration.get("auth", "htpasswd_filename")
-        self.encryption = configuration.get("auth", "htpasswd_encryption")
+        self._filename = configuration.get("auth", "htpasswd_filename")
+        encryption = configuration.get("auth", "htpasswd_encryption")
 
-        if self.encryption == "ssha":
-            self.verify = self._ssha
-        elif self.encryption == "sha1":
-            self.verify = self._sha1
-        elif self.encryption == "plain":
-            self.verify = self._plain
-        elif self.encryption == "md5":
+        if encryption == "ssha":
+            self._verify = self._ssha
+        elif encryption == "sha1":
+            self._verify = self._sha1
+        elif encryption == "plain":
+            self._verify = self._plain
+        elif encryption == "md5":
             try:
                 from passlib.hash import apr_md5_crypt
             except ImportError as e:
                 raise RuntimeError(
                     "The htpasswd encryption method 'md5' requires "
                     "the passlib module.") from e
-            self.verify = functools.partial(self._md5apr1, apr_md5_crypt)
-        elif self.encryption == "bcrypt":
+            self._verify = functools.partial(self._md5apr1, apr_md5_crypt)
+        elif encryption == "bcrypt":
             try:
                 from passlib.hash import bcrypt
             except ImportError as e:
@@ -91,19 +91,18 @@ class Auth(auth.BaseAuth):
             # good error message if bcrypt backend is not available. Trigger
             # this here.
             bcrypt.hash("test-bcrypt-backend")
-            self.verify = functools.partial(self._bcrypt, bcrypt)
-        elif self.encryption == "crypt":
+            self._verify = functools.partial(self._bcrypt, bcrypt)
+        elif encryption == "crypt":
             try:
                 import crypt
             except ImportError as e:
                 raise RuntimeError(
                     "The htpasswd encryption method 'crypt' requires "
                     "the crypt() system support.") from e
-            self.verify = functools.partial(self._crypt, crypt)
+            self._verify = functools.partial(self._crypt, crypt)
         else:
-            raise RuntimeError(
-                "The htpasswd encryption method %r is not "
-                "supported." % self.encryption)
+            raise RuntimeError("The htpasswd encryption method %r is not "
+                               "supported." % encryption)
 
     def _plain(self, hash_value, password):
         """Check if ``hash_value`` and ``password`` match, plain method."""
@@ -162,7 +161,7 @@ class Auth(auth.BaseAuth):
 
         """
         try:
-            with open(self.filename) as f:
+            with open(self._filename) as f:
                 for line in f:
                     line = line.rstrip("\n")
                     if line.lstrip() and not line.lstrip().startswith("#"):
@@ -172,13 +171,13 @@ class Auth(auth.BaseAuth):
                             # Always compare both login and password to avoid
                             # timing attacks, see #591.
                             login_ok = hmac.compare_digest(hash_login, login)
-                            password_ok = self.verify(hash_value, password)
+                            password_ok = self._verify(hash_value, password)
                             if login_ok and password_ok:
                                 return login
                         except ValueError as e:
                             raise RuntimeError("Invalid htpasswd file %r: %s" %
-                                               (self.filename, e)) from e
+                                               (self._filename, e)) from e
         except OSError as e:
             raise RuntimeError("Failed to load htpasswd file %r: %s" %
-                               (self.filename, e)) from e
+                               (self._filename, e)) from e
         return ""

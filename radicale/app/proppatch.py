@@ -87,10 +87,10 @@ def xml_proppatch(base_prefix, path, xml_request, collection):
 class ApplicationProppatchMixin:
     def do_PROPPATCH(self, environ, base_prefix, path, user):
         """Manage PROPPATCH request."""
-        if not self.access(user, path, "w"):
+        if not self._access(user, path, "w"):
             return httputils.NOT_ALLOWED
         try:
-            xml_content = self.read_xml_content(environ)
+            xml_content = self._read_xml_content(environ)
         except RuntimeError as e:
             logger.warning(
                 "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
@@ -102,7 +102,7 @@ class ApplicationProppatchMixin:
             item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
-            if not self.access(user, path, "w", item):
+            if not self._access(user, path, "w", item):
                 return httputils.NOT_ALLOWED
             if not isinstance(item, storage.BaseCollection):
                 return httputils.FORBIDDEN
@@ -116,4 +116,4 @@ class ApplicationProppatchMixin:
                     "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
                 return httputils.BAD_REQUEST
             return (client.MULTI_STATUS, headers,
-                    self.write_xml_content(xml_answer))
+                    self._write_xml_content(xml_answer))
