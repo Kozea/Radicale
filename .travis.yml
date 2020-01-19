@@ -15,6 +15,9 @@ matrix:
     - name: "Python 3.8 on Linux"
       os: linux
       python: 3.8
+    - name: "PyPy 3 on Linux"
+      os: linux
+      python: pypy3
     - name: "Python 3 on macOS"
       os: osx
       language: shell
