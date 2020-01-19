@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import collections
 import itertools
 import posixpath
 import socket
@@ -63,11 +64,9 @@ def xml_propfind(base_prefix, path, xml_request, allowed_items, user,
 
     for item, permission in allowed_items:
         write = permission == "w"
-        response = xml_propfind_response(
+        multistatus.append(xml_propfind_response(
             base_prefix, path, item, props, user, encoding, write=write,
-            allprop=allprop, propname=propname)
-        if response:
-            multistatus.append(response)
+            allprop=allprop, propname=propname))
 
     return client.MULTI_STATUS, multistatus
 
@@ -93,19 +92,8 @@ def xml_propfind_response(base_prefix, path, item, props, user, encoding,
     else:
         uri = pathutils.unstrip_path(
             posixpath.join(collection.path, item.href))
-
     href.text = xmlutils.make_href(base_prefix, uri)
     response.append(href)
-
-    propstat404 = ET.Element(xmlutils.make_tag("D", "propstat"))
-    propstat200 = ET.Element(xmlutils.make_tag("D", "propstat"))
-    response.append(propstat200)
-
-    prop200 = ET.Element(xmlutils.make_tag("D", "prop"))
-    propstat200.append(prop200)
-
-    prop404 = ET.Element(xmlutils.make_tag("D", "prop"))
-    propstat404.append(prop404)
 
     if propname or allprop:
         props = []
@@ -146,11 +134,11 @@ def xml_propfind_response(base_prefix, path, item, props, user, encoding,
                 if clark_tag not in props:
                     props.append(clark_tag)
 
+    responses = collections.defaultdict(list)
     if propname:
         for tag in props:
-            prop200.append(ET.Element(tag))
+            responses[200].append(ET.Element(tag))
         props = ()
-
     for tag in props:
         element = ET.Element(tag)
         is404 = False
@@ -306,20 +294,19 @@ def xml_propfind_response(base_prefix, path, item, props, user, encoding,
         else:
             is404 = True
 
-        if is404:
-            prop404.append(element)
-        else:
-            prop200.append(element)
+        responses[404 if is404 else 200].append(element)
 
-    status200 = ET.Element(xmlutils.make_tag("D", "status"))
-    status200.text = xmlutils.make_response(200)
-    propstat200.append(status200)
-
-    status404 = ET.Element(xmlutils.make_tag("D", "status"))
-    status404.text = xmlutils.make_response(404)
-    propstat404.append(status404)
-    if len(prop404) > 0:
-        response.append(propstat404)
+    for status_code, childs in responses.items():
+        if not childs:
+            continue
+        propstat = ET.Element(xmlutils.make_tag("D", "propstat"))
+        response.append(propstat)
+        prop = ET.Element(xmlutils.make_tag("D", "prop"))
+        prop.extend(childs)
+        propstat.append(prop)
+        status = ET.Element(xmlutils.make_tag("D", "status"))
+        status.text = xmlutils.make_response(status_code)
+        propstat.append(status)
 
     return response
 
