@@ -26,9 +26,9 @@ import posixpath
 import shutil
 import sys
 import tempfile
-import xml.etree.ElementTree as ET
 from functools import partial
 
+import defusedxml.ElementTree as DefusedET
 import pytest
 
 from radicale import Application, config, storage
@@ -1161,7 +1161,7 @@ class BaseRequestsMixIn:
         if sync_token and status == 409:
             return None, None
         assert status == 207
-        xml = ET.fromstring(answer)
+        xml = DefusedET.fromstring(answer)
         sync_token = xml.find("{DAV:}sync-token").text.strip()
         assert sync_token
         return sync_token, xml

@@ -37,6 +37,7 @@ import zlib
 from http import client
 from xml.etree import ElementTree as ET
 
+import defusedxml.ElementTree as DefusedET
 import pkg_resources
 
 from radicale import (auth, httputils, log, pathutils, rights, storage, web,
@@ -355,7 +356,7 @@ class Application(
         if not content:
             return None
         try:
-            xml_content = ET.fromstring(content)
+            xml_content = DefusedET.fromstring(content)
         except ET.ParseError as e:
             logger.debug("Request content (Invalid XML):\n%s", content)
             raise RuntimeError("Failed to parse XML: %s" % e) from e
