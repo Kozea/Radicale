@@ -77,9 +77,8 @@ setup(
                       "python-dateutil>=2.7.3"],
     setup_requires=pytest_runner,
     tests_require=tests_require,
-    extras_require={
-        "test": tests_require,
-        "bcrypt": "passlib[bcrypt]"},
+    extras_require={"test": tests_require,
+                    "bcrypt": ["passlib[bcrypt]", "bcrypt"]},
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
     python_requires=">=3.5.2",
     classifiers=[
