@@ -25,6 +25,10 @@ from radicale import httputils, pathutils, web
 
 
 class Web(web.BaseWeb):
+    @classmethod
+    def from_config(cls, config):
+        return cls()
+
     def get(self, environ, base_prefix, path, user):
         assert path == "/.web" or path.startswith("/.web/")
         assert pathutils.sanitize_path(path) == path

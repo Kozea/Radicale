@@ -27,8 +27,8 @@ from radicale.log import logger
 
 
 class CollectionGetMixin:
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._item_cache_cleaned = False
 
     def _list(self):

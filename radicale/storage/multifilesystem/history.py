@@ -83,5 +83,4 @@ class CollectionHistoryMixin:
         history_folder = os.path.join(self._filesystem_path,
                                       ".Radicale.cache", "history")
         self._clean_cache(history_folder, self._get_deleted_history_hrefs(),
-                          max_age=self._storage.configuration.get(
-                              "storage", "max_sync_token_age"))
+                          max_age=self._storage.max_sync_token_age)

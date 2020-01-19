@@ -40,9 +40,10 @@ class CollectionLockMixin:
 
 class StorageLockMixin:
 
-    def __init__(self, configuration):
-        super().__init__(configuration)
-        folder = self.configuration.get("storage", "filesystem_folder")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        folder = self.filesystem_folder
         lock_path = os.path.join(folder, ".Radicale.lock")
         self._lock = pathutils.RwLock(lock_path)
 
@@ -51,9 +52,9 @@ class StorageLockMixin:
         with self._lock.acquire(mode):
             yield
             # execute hook
-            hook = self.configuration.get("storage", "hook")
+            hook = self.hook
             if mode == "w" and hook:
-                folder = self.configuration.get("storage", "filesystem_folder")
+                folder = self.filesystem_folder
                 logger.debug("Running hook")
                 debug = logger.isEnabledFor(logging.DEBUG)
                 p = subprocess.Popen(

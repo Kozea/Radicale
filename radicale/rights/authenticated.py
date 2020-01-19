@@ -25,9 +25,19 @@ from radicale import pathutils, rights
 
 
 class Rights(rights.BaseRights):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._verify_user = self.configuration.get("auth", "type") != "none"
+    def __init__(self, verify_user: bool):
+        """Initialize generic rights backend.
+
+        :param verify_user: Forbid anonymous access.
+        """
+
+        self._verify_user = verify_user
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(
+            verify_user=config.get("auth", "type") != "none",
+        )
 
     def authorization(self, user, path):
         if self._verify_user and not user:

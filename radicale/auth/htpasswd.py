@@ -56,11 +56,20 @@ from radicale import auth
 
 
 class Auth(auth.BaseAuth):
-    def __init__(self, configuration):
-        super().__init__(configuration)
-        self._filename = configuration.get("auth", "htpasswd_filename")
-        self._encoding = self.configuration.get("encoding", "stock")
-        encryption = configuration.get("auth", "htpasswd_encryption")
+    def __init__(
+            self, filename: str, encryption: str, *,
+            encoding: str = "utf-8"
+    ):
+        """Initialize .htpasswd auth backend.
+
+        :param filename: .htpasswd filename.
+        :param encryption: Encryption method.
+            One of: ``"plain"``, ``"md5"`` or ``"bcrypt"``.
+        :param encoding: Encoding to encode passwords before hashing.
+        """
+
+        self._filename = filename
+        self._encoding = encoding
 
         if encryption == "plain":
             self._verify = self._plain
@@ -81,6 +90,14 @@ class Auth(auth.BaseAuth):
         else:
             raise RuntimeError("The htpasswd encryption method %r is not "
                                "supported." % encryption)
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(
+            filename=config.get("auth", "htpasswd_filename"),
+            encryption=config.get("auth", "htpasswd_encryption"),
+            encoding=config.get("encoding", "stock"),
+        )
 
     def _plain(self, hash_value, password):
         """Check if ``hash_value`` and ``password`` match, plain method."""

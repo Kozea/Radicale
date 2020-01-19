@@ -51,16 +51,17 @@ class Collection(
         CollectionHistoryMixin, CollectionLockMixin, CollectionMetaMixin,
         CollectionSyncMixin, CollectionUploadMixin, storage.BaseCollection):
 
-    def __init__(self, storage_, path, filesystem_path=None):
+    def __init__(self, storage_, path, filesystem_path=None, encoding="utf-8"):
         self._storage = storage_
         folder = self._storage._get_collection_root_folder()
         # Path should already be sanitized
         self._path = pathutils.strip_path(path)
-        self._encoding = self._storage.configuration.get("encoding", "stock")
+        self._encoding = encoding
         if filesystem_path is None:
             filesystem_path = pathutils.path_to_filesystem(folder, self.path)
         self._filesystem_path = filesystem_path
         self._etag_cache = None
+
         super().__init__()
 
     @property
@@ -104,18 +105,49 @@ class Storage(
 
     _collection_class = Collection
 
-    def __init__(self, configuration):
-        super().__init__(configuration)
-        folder = configuration.get("storage", "filesystem_folder")
-        self._makedirs_synced(folder)
+    def __init__(
+            self, filesystem_folder: str, *,
+            filesystem_fsync: bool = True,
+            max_sync_token_age: float = 30 * 24 * 60 * 60,
+            hook: str = "",
+            encoding: str = "utf-8"
+    ):
+        """Initialize multifilesystem storage backend.
+
+        :param filesystem_folder: Path where collections are stored.
+        :param filesystem_fsync: Sync all changes to filesystem during
+            requests.
+        :param max_sync_token_age: Clean up sync tokens and item cache older
+            than this value.
+        :param hook: Run this command after each storage modification.
+        :param encoding: Encoding for storing local collections.
+        """
+
+        self.filesystem_folder = filesystem_folder
+        self.filesystem_fsync = filesystem_fsync
+        self.max_sync_token_age = max_sync_token_age
+        self.hook = hook
+        self.encoding = encoding
+
+        self._makedirs_synced(filesystem_folder)
+
+        super().__init__()
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(
+            filesystem_folder=config.get("storage", "filesystem_folder"),
+            filesystem_fsync=config.get("storage", "_filesystem_fsync"),
+            max_sync_token_age=config.get("storage", "max_sync_token_age"),
+            hook=config.get("storage", "hook"),
+            encoding=config.get("encoding", "stock"),
+        )
 
     def _get_collection_root_folder(self):
-        filesystem_folder = self.configuration.get(
-            "storage", "filesystem_folder")
-        return os.path.join(filesystem_folder, "collection-root")
+        return os.path.join(self.filesystem_folder, "collection-root")
 
     def _fsync(self, f):
-        if self.configuration.get("storage", "_filesystem_fsync"):
+        if self.filesystem_fsync:
             try:
                 pathutils.fsync(f.fileno())
             except OSError as e:
@@ -128,7 +160,7 @@ class Storage(
         This only works on POSIX and does nothing on other systems.
 
         """
-        if not self.configuration.get("storage", "_filesystem_fsync"):
+        if not self.filesystem_fsync:
             return
         if os.name == "posix":
             try:

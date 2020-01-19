@@ -96,8 +96,7 @@ class CollectionSyncMixin:
             else:
                 # clean up old sync tokens and item cache
                 self._clean_cache(token_folder, os.listdir(token_folder),
-                                  max_age=self._storage.configuration.get(
-                                      "storage", "max_sync_token_age"))
+                                  max_age=self._storage.max_sync_token_age)
                 self._clean_history()
         else:
             # Try to update the modification time
