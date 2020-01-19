@@ -73,12 +73,11 @@ setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     package_data={"radicale": WEB_FILES},
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
-    install_requires=["vobject>=0.9.6", "python-dateutil>=2.7.3"],
+    install_requires=["passlib", "vobject>=0.9.6", "python-dateutil>=2.7.3"],
     setup_requires=pytest_runner,
     tests_require=tests_require,
     extras_require={
         "test": tests_require,
-        "md5": "passlib",
         "bcrypt": "passlib[bcrypt]"},
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
     python_requires=">=3.5.2",

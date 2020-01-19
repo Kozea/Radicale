@@ -68,11 +68,9 @@
 #htpasswd_filename = /etc/radicale/users
 
 # Htpasswd encryption method
-# Value: plain | sha1 | ssha | crypt | bcrypt | md5
-# Only bcrypt can be considered secure.
-# bcrypt requires the passlib[bcrypt] module and md5 requires
-# the passlib module.
-#htpasswd_encryption = bcrypt
+# Value: plain | bcrypt | md5
+# bcrypt requires the passlib[bcrypt] module.
+#htpasswd_encryption = md5
 
 # Incorrect authentication delay (seconds)
 #delay = 1

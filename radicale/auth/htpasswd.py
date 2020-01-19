@@ -22,11 +22,9 @@ Authentication backend that checks credentials with a htpasswd file.
 
 Apache's htpasswd command (httpd.apache.org/docs/programs/htpasswd.html)
 manages a file for storing user credentials. It can encrypt passwords using
-different methods, e.g. BCRYPT, MD5-APR1 (a version of MD5 modified for
-Apache), SHA1, or by using the system's CRYPT routine. The CRYPT and SHA1
-encryption methods implemented by htpasswd are considered as insecure. MD5-APR1
-provides medium security as of 2015. Only BCRYPT can be considered secure by
-current standards.
+different the methods BCRYPT or MD5-APR1 (a version of MD5 modified for
+Apache). MD5-APR1 provides medium security as of 2015. Only BCRYPT can be
+considered secure by current standards.
 
 MD5-APR1-encrypted credentials can be written by all versions of htpasswd (it
 is the default, in fact), whereas BCRYPT requires htpasswd 2.4.x or newer.
@@ -41,21 +39,18 @@ The following htpasswd password encrpytion methods are supported by Radicale
 out-of-the-box:
 
     - plain-text (created by htpasswd -p...) -- INSECURE
-    - CRYPT      (created by htpasswd -d...) -- INSECURE
-    - SHA1       (created by htpasswd -s...) -- INSECURE
-
-When passlib (https://pypi.python.org/pypi/passlib) is importable, the
-following significantly more secure schemes are parsable by Radicale:
-
     - MD5-APR1   (htpasswd -m...) -- htpasswd's default method
+
+When passlib[bcrypt] is installed:
+
     - BCRYPT     (htpasswd -B...) -- Requires htpasswd 2.4.x
 
 """
 
-import base64
 import functools
-import hashlib
 import hmac
+
+from passlib.hash import apr_md5_crypt
 
 from radicale import auth
 
@@ -66,40 +61,22 @@ class Auth(auth.BaseAuth):
         self._filename = configuration.get("auth", "htpasswd_filename")
         encryption = configuration.get("auth", "htpasswd_encryption")
 
-        if encryption == "ssha":
-            self._verify = self._ssha
-        elif encryption == "sha1":
-            self._verify = self._sha1
-        elif encryption == "plain":
+        if encryption == "plain":
             self._verify = self._plain
         elif encryption == "md5":
-            try:
-                from passlib.hash import apr_md5_crypt
-            except ImportError as e:
-                raise RuntimeError(
-                    "The htpasswd encryption method 'md5' requires "
-                    "the passlib module.") from e
-            self._verify = functools.partial(self._md5apr1, apr_md5_crypt)
+            self._verify = self._md5apr1
         elif encryption == "bcrypt":
             try:
                 from passlib.hash import bcrypt
             except ImportError as e:
                 raise RuntimeError(
                     "The htpasswd encryption method 'bcrypt' requires "
-                    "the passlib module with bcrypt support.") from e
+                    "the passlib[bcrypt] module.") from e
             # A call to `encrypt` raises passlib.exc.MissingBackendError with a
             # good error message if bcrypt backend is not available. Trigger
             # this here.
             bcrypt.hash("test-bcrypt-backend")
             self._verify = functools.partial(self._bcrypt, bcrypt)
-        elif encryption == "crypt":
-            try:
-                import crypt
-            except ImportError as e:
-                raise RuntimeError(
-                    "The htpasswd encryption method 'crypt' requires "
-                    "the crypt() system support.") from e
-            self._verify = functools.partial(self._crypt, crypt)
         else:
             raise RuntimeError("The htpasswd encryption method %r is not "
                                "supported." % encryption)
@@ -108,45 +85,11 @@ class Auth(auth.BaseAuth):
         """Check if ``hash_value`` and ``password`` match, plain method."""
         return hmac.compare_digest(hash_value, password)
 
-    def _crypt(self, crypt, hash_value, password):
-        """Check if ``hash_value`` and ``password`` match, crypt method."""
-        hash_value = hash_value.strip()
-        return hmac.compare_digest(crypt.crypt(password, hash_value),
-                                   hash_value)
-
-    def _sha1(self, hash_value, password):
-        """Check if ``hash_value`` and ``password`` match, sha1 method."""
-        hash_value = base64.b64decode(hash_value.strip().replace(
-            "{SHA}", "").encode("ascii"))
-        password = password.encode(self.configuration.get("encoding", "stock"))
-        sha1 = hashlib.sha1()
-        sha1.update(password)
-        return hmac.compare_digest(sha1.digest(), hash_value)
-
-    def _ssha(self, hash_value, password):
-        """Check if ``hash_value`` and ``password`` match, salted sha1 method.
-
-        This method is not directly supported by htpasswd, but it can be
-        written with e.g. openssl, and nginx can parse it.
-
-        """
-        hash_value = base64.b64decode(hash_value.strip().replace(
-            "{SSHA}", "").encode("ascii"))
-        password = password.encode(self.configuration.get("encoding", "stock"))
-        salt_value = hash_value[20:]
-        hash_value = hash_value[:20]
-        sha1 = hashlib.sha1()
-        sha1.update(password)
-        sha1.update(salt_value)
-        return hmac.compare_digest(sha1.digest(), hash_value)
-
     def _bcrypt(self, bcrypt, hash_value, password):
-        hash_value = hash_value.strip()
-        return bcrypt.verify(password, hash_value)
+        return bcrypt.verify(password, hash_value.strip())
 
-    def _md5apr1(self, md5_apr1, hash_value, password):
-        hash_value = hash_value.strip()
-        return md5_apr1.verify(password, hash_value)
+    def _md5apr1(self, hash_value, password):
+        return apr_md5_crypt.verify(password, hash_value.strip())
 
     def login(self, login, password):
         """Validate credentials.

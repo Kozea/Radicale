@@ -160,7 +160,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
             "help": "htpasswd filename",
             "type": filepath}),
         ("htpasswd_encryption", {
-            "value": "bcrypt",
+            "value": "md5",
             "help": "htpasswd encryption method",
             "type": str}),
         ("realm", {

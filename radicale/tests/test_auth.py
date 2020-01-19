@@ -80,32 +80,15 @@ class TestBaseAuthRequests(BaseTest):
         self._test_htpasswd("plain", "tmp:be:po", (
             ("tmp", "be:po", 207), ("tmp", "bepo", 401)))
 
-    def test_htpasswd_sha1(self):
-        self._test_htpasswd("sha1", "tmp:{SHA}UWRS3uSJJq2itZQEUyIH8rRajCM=")
-
-    def test_htpasswd_ssha(self):
-        self._test_htpasswd("ssha", "tmp:{SSHA}qbD1diw9RJKi0DnW4qO8WX9SE18W")
-
     def test_htpasswd_md5(self):
-        try:
-            import passlib  # noqa: F401
-        except ImportError:
-            pytest.skip("passlib is not installed")
         self._test_htpasswd("md5", "tmp:$apr1$BI7VKCZh$GKW4vq2hqDINMr8uv7lDY/")
-
-    def test_htpasswd_crypt(self):
-        try:
-            import crypt  # noqa: F401
-        except ImportError:
-            pytest.skip("crypt is not installed")
-        self._test_htpasswd("crypt", "tmp:dxUqxoThMs04k")
 
     def test_htpasswd_bcrypt(self):
         try:
             from passlib.hash import bcrypt
             from passlib.exc import MissingBackendError
         except ImportError:
-            pytest.skip("passlib is not installed")
+            pytest.skip("passlib[bcrypt] is not installed")
         try:
             bcrypt.hash("test-bcrypt-backend")
         except MissingBackendError:

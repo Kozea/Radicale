@@ -33,7 +33,7 @@ notifications:
 install:
   - ${PYTHON} --version
   - ${PYTHON} -m pip install --upgrade coveralls
-  - ${PYTHON} -m pip install --upgrade --editable .[test,md5,bcrypt]
+  - ${PYTHON} -m pip install --upgrade --editable .[test,bcrypt]
   - ${PYTHON} -m pip list
 
 script:
