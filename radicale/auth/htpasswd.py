@@ -59,6 +59,7 @@ class Auth(auth.BaseAuth):
     def __init__(self, configuration):
         super().__init__(configuration)
         self._filename = configuration.get("auth", "htpasswd_filename")
+        self._encoding = self.configuration.get("encoding", "stock")
         encryption = configuration.get("auth", "htpasswd_encryption")
 
         if encryption == "plain":
@@ -83,7 +84,7 @@ class Auth(auth.BaseAuth):
 
     def _plain(self, hash_value, password):
         """Check if ``hash_value`` and ``password`` match, plain method."""
-        return hmac.compare_digest(hash_value, password)
+        return hmac.compare_digest(hash_value.encode(), password.encode())
 
     def _bcrypt(self, bcrypt, hash_value, password):
         return bcrypt.verify(password, hash_value.strip())
@@ -104,7 +105,7 @@ class Auth(auth.BaseAuth):
 
         """
         try:
-            with open(self._filename) as f:
+            with open(self._filename, encoding=self._encoding) as f:
                 for line in f:
                     line = line.rstrip("\n")
                     if line.lstrip() and not line.lstrip().startswith("#"):
@@ -113,7 +114,8 @@ class Auth(auth.BaseAuth):
                                 ":", maxsplit=1)
                             # Always compare both login and password to avoid
                             # timing attacks, see #591.
-                            login_ok = hmac.compare_digest(hash_login, login)
+                            login_ok = hmac.compare_digest(
+                                hash_login.encode(), login.encode())
                             password_ok = self._verify(hash_value, password)
                             if login_ok and password_ok:
                                 return login

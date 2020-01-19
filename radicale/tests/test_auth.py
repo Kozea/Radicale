@@ -52,50 +52,68 @@ class TestBaseAuthRequests(BaseTest):
         shutil.rmtree(self.colpath)
 
     def _test_htpasswd(self, htpasswd_encryption, htpasswd_content,
-                       test_matrix=None):
-        """Test htpasswd authentication with user "tmp" and password "bepo"."""
+                       test_matrix="ascii"):
+        """Test htpasswd authentication with user "tmp" and password "bepo" for
+           ``test_matrix`` "ascii" or user "😀" and password "🔑" for
+           ``test_matrix`` "unicode"."""
+        if htpasswd_encryption == "bcrypt":
+            try:
+                from passlib.hash import bcrypt
+                from passlib.exc import MissingBackendError
+            except ImportError:
+                pytest.skip("passlib[bcrypt] is not installed")
+            try:
+                bcrypt.hash("test-bcrypt-backend")
+            except MissingBackendError:
+                pytest.skip("bcrypt backend for passlib is not installed")
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
-        with open(htpasswd_file_path, "w") as f:
+        encoding = self.configuration.get("encoding", "stock")
+        with open(htpasswd_file_path, "w", encoding=encoding) as f:
             f.write(htpasswd_content)
         self.configuration.update({
             "auth": {"type": "htpasswd",
                      "htpasswd_filename": htpasswd_file_path,
                      "htpasswd_encryption": htpasswd_encryption}}, "test")
         self.application = Application(self.configuration)
-        if test_matrix is None:
-            test_matrix = (
-                ("tmp", "bepo", 207), ("tmp", "tmp", 401), ("tmp", "", 401),
-                ("unk", "unk", 401), ("unk", "", 401), ("", "", 401))
-        for user, password, expected_status in test_matrix:
+        if test_matrix == "ascii":
+            test_matrix = (("tmp", "bepo", True), ("tmp", "tmp", False),
+                           ("tmp", "", False), ("unk", "unk", False),
+                           ("unk", "", False), ("", "", False))
+        elif test_matrix == "unicode":
+            test_matrix = (("😀", "🔑", True), ("😀", "🌹", False),
+                           ("😁", "🔑", False), ("😀", "", False),
+                           ("", "🔑", False), ("", "", False))
+        for user, password, valid in test_matrix:
             status, _, _ = self.request(
                 "PROPFIND", "/",
                 HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
                     ("%s:%s" % (user, password)).encode()).decode())
-            assert status == expected_status
+            assert status == (207 if valid else 401)
 
     def test_htpasswd_plain(self):
         self._test_htpasswd("plain", "tmp:bepo")
 
     def test_htpasswd_plain_password_split(self):
         self._test_htpasswd("plain", "tmp:be:po", (
-            ("tmp", "be:po", 207), ("tmp", "bepo", 401)))
+            ("tmp", "be:po", True), ("tmp", "bepo", False)))
+
+    def test_htpasswd_plain_unicode(self):
+        self._test_htpasswd("plain", "😀:🔑", "unicode")
 
     def test_htpasswd_md5(self):
         self._test_htpasswd("md5", "tmp:$apr1$BI7VKCZh$GKW4vq2hqDINMr8uv7lDY/")
 
-    def test_htpasswd_bcrypt(self):
-        try:
-            from passlib.hash import bcrypt
-            from passlib.exc import MissingBackendError
-        except ImportError:
-            pytest.skip("passlib[bcrypt] is not installed")
-        try:
-            bcrypt.hash("test-bcrypt-backend")
-        except MissingBackendError:
-            pytest.skip("bcrypt backend for passlib is not installed")
+    def test_htpasswd_md5_unicode(self):
         self._test_htpasswd(
-            "bcrypt",
-            "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
+            "md5", "😀:$apr1$w4ev89r1$29xO8EvJmS2HEAadQ5qy11", "unicode")
+
+    def test_htpasswd_bcrypt(self):
+        self._test_htpasswd("bcrypt", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3V"
+                            "NTRI3w5KDnj8NTUKJNWfVpvRq")
+
+    def test_htpasswd_bcrypt_unicode(self):
+        self._test_htpasswd("bcrypt", "😀:$2y$10$Oyz5aHV4MD9eQJbk6GPemOs4T6edK"
+                            "6U9Sqlzr.W1mMVCS8wJUftnW", "unicode")
 
     def test_htpasswd_multi(self):
         self._test_htpasswd("plain", "ign:ign\ntmp:bepo")
@@ -105,12 +123,12 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_whitespace_user(self):
         for user in (" tmp", "tmp ", " tmp "):
             self._test_htpasswd("plain", "%s:bepo" % user, (
-                (user, "bepo", 207), ("tmp", "bepo", 401)))
+                (user, "bepo", True), ("tmp", "bepo", False)))
 
     def test_htpasswd_whitespace_password(self):
         for password in (" bepo", "bepo ", " bepo "):
             self._test_htpasswd("plain", "tmp:%s" % password, (
-                ("tmp", password, 207), ("tmp", "bepo", 401)))
+                ("tmp", password, True), ("tmp", "bepo", False)))
 
     def test_htpasswd_comment(self):
         self._test_htpasswd("plain", "#comment\n #comment\n \ntmp:bepo\n\n")
