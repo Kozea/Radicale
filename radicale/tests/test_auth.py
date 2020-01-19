@@ -119,12 +119,15 @@ class TestBaseAuthRequests(BaseTest):
 
     @pytest.mark.skipif(os.name == "nt", reason="leading and trailing "
                         "whitespaces not allowed in file names")
-    def test_htpasswd_whitespace_preserved(self):
-        self._test_htpasswd("plain", " tmp : bepo ",
-                            ((" tmp ", " bepo ", 207),))
+    def test_htpasswd_whitespace_user(self):
+        for user in (" tmp", "tmp ", " tmp "):
+            self._test_htpasswd("plain", "%s:bepo" % user, (
+                (user, "bepo", 207), ("tmp", "bepo", 401)))
 
-    def test_htpasswd_whitespace_not_trimmed(self):
-        self._test_htpasswd("plain", " tmp : bepo ", (("tmp", "bepo", 401),))
+    def test_htpasswd_whitespace_password(self):
+        for password in (" bepo", "bepo ", " bepo "):
+            self._test_htpasswd("plain", "tmp:%s" % password, (
+                ("tmp", password, 207), ("tmp", "bepo", 401)))
 
     def test_htpasswd_comment(self):
         self._test_htpasswd("plain", "#comment\n #comment\n \ntmp:bepo\n\n")
