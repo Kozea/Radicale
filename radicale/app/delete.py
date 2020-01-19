@@ -31,15 +31,15 @@ def xml_delete(base_prefix, path, collection, href=None):
     """
     collection.delete(href)
 
-    multistatus = ET.Element(xmlutils.make_tag("D", "multistatus"))
-    response = ET.Element(xmlutils.make_tag("D", "response"))
+    multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
+    response = ET.Element(xmlutils.make_clark("D:response"))
     multistatus.append(response)
 
-    href = ET.Element(xmlutils.make_tag("D", "href"))
+    href = ET.Element(xmlutils.make_clark("D:href"))
     href.text = xmlutils.make_href(base_prefix, path)
     response.append(href)
 
-    status = ET.Element(xmlutils.make_tag("D", "status"))
+    status = ET.Element(xmlutils.make_clark("D:status"))
     status.text = xmlutils.make_response(200)
     response.append(status)
 

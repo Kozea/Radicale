@@ -74,8 +74,8 @@ class ApplicationMoveMixin:
                     not to_item and
                     to_collection.path != item.collection.path and
                     to_collection.has_uid(item.uid)):
-                return self._webdav_error_response(
-                    "C" if tag == "VCALENDAR" else "CR", "no-uid-conflict")
+                return self._webdav_error_response("%s:no-uid-conflict" % (
+                    "C" if tag == "VCALENDAR" else "CR"))
             to_href = posixpath.basename(pathutils.strip_path(to_path))
             try:
                 self._storage.move(item, to_collection, to_href)

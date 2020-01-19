@@ -374,10 +374,9 @@ class Application(
                                           xml_declaration=True)
         return f.getvalue()
 
-    def _webdav_error_response(self, namespace, name,
+    def _webdav_error_response(self, human_tag,
                                status=httputils.WEBDAV_PRECONDITION_FAILED[0]):
         """Generate XML error response."""
         headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
-        content = self._write_xml_content(
-            xmlutils.webdav_error(namespace, name))
+        content = self._write_xml_content(xmlutils.webdav_error(human_tag))
         return status, headers, content

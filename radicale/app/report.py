@@ -36,42 +36,42 @@ def xml_report(base_prefix, path, xml_request, collection, encoding,
     Read rfc3253-3.6 for info.
 
     """
-    multistatus = ET.Element(xmlutils.make_tag("D", "multistatus"))
+    multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
     if xml_request is None:
         return client.MULTI_STATUS, multistatus
     root = xml_request
     if root.tag in (
-            xmlutils.make_tag("D", "principal-search-property-set"),
-            xmlutils.make_tag("D", "principal-property-search"),
-            xmlutils.make_tag("D", "expand-property")):
+            xmlutils.make_clark("D:principal-search-property-set"),
+            xmlutils.make_clark("D:principal-property-search"),
+            xmlutils.make_clark("D:expand-property")):
         # We don't support searching for principals or indirect retrieving of
         # properties, just return an empty result.
         # InfCloud asks for expand-property reports (even if we don't announce
         # support for them) and stops working if an error code is returned.
         logger.warning("Unsupported REPORT method %r on %r requested",
-                       xmlutils.tag_from_clark(root.tag), path)
+                       xmlutils.make_human_tag(root.tag), path)
         return client.MULTI_STATUS, multistatus
-    if (root.tag == xmlutils.make_tag("C", "calendar-multiget") and
+    if (root.tag == xmlutils.make_clark("C:calendar-multiget") and
             collection.get_meta("tag") != "VCALENDAR" or
-            root.tag == xmlutils.make_tag("CR", "addressbook-multiget") and
+            root.tag == xmlutils.make_clark("CR:addressbook-multiget") and
             collection.get_meta("tag") != "VADDRESSBOOK" or
-            root.tag == xmlutils.make_tag("D", "sync-collection") and
+            root.tag == xmlutils.make_clark("D:sync-collection") and
             collection.get_meta("tag") not in ("VADDRESSBOOK", "VCALENDAR")):
         logger.warning("Invalid REPORT method %r on %r requested",
-                       xmlutils.tag_from_clark(root.tag), path)
+                       xmlutils.make_human_tag(root.tag), path)
         return (client.CONFLICT,
-                xmlutils.webdav_error("D", "supported-report"))
-    prop_element = root.find(xmlutils.make_tag("D", "prop"))
+                xmlutils.webdav_error("D:supported-report"))
+    prop_element = root.find(xmlutils.make_clark("D:prop"))
     props = (
         [prop.tag for prop in prop_element]
         if prop_element is not None else [])
 
     if root.tag in (
-            xmlutils.make_tag("C", "calendar-multiget"),
-            xmlutils.make_tag("CR", "addressbook-multiget")):
+            xmlutils.make_clark("C:calendar-multiget"),
+            xmlutils.make_clark("CR:addressbook-multiget")):
         # Read rfc4791-7.9 for info
         hreferences = set()
-        for href_element in root.findall(xmlutils.make_tag("D", "href")):
+        for href_element in root.findall(xmlutils.make_clark("D:href")):
             href_path = pathutils.sanitize_path(
                 unquote(urlparse(href_element.text).path))
             if (href_path + "/").startswith(base_prefix + "/"):
@@ -79,9 +79,9 @@ def xml_report(base_prefix, path, xml_request, collection, encoding,
             else:
                 logger.warning("Skipping invalid path %r in REPORT request on "
                                "%r", href_path, path)
-    elif root.tag == xmlutils.make_tag("D", "sync-collection"):
+    elif root.tag == xmlutils.make_clark("D:sync-collection"):
         old_sync_token_element = root.find(
-            xmlutils.make_tag("D", "sync-token"))
+            xmlutils.make_clark("D:sync-token"))
         old_sync_token = ""
         if old_sync_token_element is not None and old_sync_token_element.text:
             old_sync_token = old_sync_token_element.text.strip()
@@ -93,18 +93,18 @@ def xml_report(base_prefix, path, xml_request, collection, encoding,
             logger.warning("Client provided invalid sync token %r: %s",
                            old_sync_token, e, exc_info=True)
             return (client.CONFLICT,
-                    xmlutils.webdav_error("D", "valid-sync-token"))
+                    xmlutils.webdav_error("D:valid-sync-token"))
         hreferences = (pathutils.unstrip_path(
             posixpath.join(collection.path, n)) for n in names)
         # Append current sync token to response
-        sync_token_element = ET.Element(xmlutils.make_tag("D", "sync-token"))
+        sync_token_element = ET.Element(xmlutils.make_clark("D:sync-token"))
         sync_token_element.text = sync_token
         multistatus.append(sync_token_element)
     else:
         hreferences = (path,)
     filters = (
-        root.findall("./%s" % xmlutils.make_tag("C", "filter")) +
-        root.findall("./%s" % xmlutils.make_tag("CR", "filter")))
+        root.findall("./%s" % xmlutils.make_clark("C:filter")) +
+        root.findall("./%s" % xmlutils.make_clark("CR:filter")))
 
     def retrieve_items(collection, hreferences, multistatus):
         """Retrieves all items that are referenced in ``hreferences`` from
@@ -157,18 +157,18 @@ def xml_report(base_prefix, path, xml_request, collection, encoding,
     def match(item, filter_):
         tag = collection_tag
         if (tag == "VCALENDAR" and
-                filter_.tag != xmlutils.make_tag("C", filter_)):
+                filter_.tag != xmlutils.make_clark("C:%s" % filter_)):
             if len(filter_) == 0:
                 return True
             if len(filter_) > 1:
                 raise ValueError("Filter with %d children" % len(filter_))
-            if filter_[0].tag != xmlutils.make_tag("C", "comp-filter"):
+            if filter_[0].tag != xmlutils.make_clark("C:comp-filter"):
                 raise ValueError("Unexpected %r in filter" % filter_[0].tag)
             return radicale_filter.comp_match(item, filter_[0])
         if (tag == "VADDRESSBOOK" and
-                filter_.tag != xmlutils.make_tag("CR", filter_)):
+                filter_.tag != xmlutils.make_clark("CR:%s" % filter_)):
             for child in filter_:
-                if child.tag != xmlutils.make_tag("CR", "prop-filter"):
+                if child.tag != xmlutils.make_clark("CR:prop-filter"):
                     raise ValueError("Unexpected %r in filter" % child.tag)
             test = filter_.get("test", "anyof")
             if test == "anyof":
@@ -203,15 +203,15 @@ def xml_report(base_prefix, path, xml_request, collection, encoding,
 
         for tag in props:
             element = ET.Element(tag)
-            if tag == xmlutils.make_tag("D", "getetag"):
+            if tag == xmlutils.make_clark("D:getetag"):
                 element.text = item.etag
                 found_props.append(element)
-            elif tag == xmlutils.make_tag("D", "getcontenttype"):
+            elif tag == xmlutils.make_clark("D:getcontenttype"):
                 element.text = xmlutils.get_content_type(item, encoding)
                 found_props.append(element)
             elif tag in (
-                    xmlutils.make_tag("C", "calendar-data"),
-                    xmlutils.make_tag("CR", "address-data")):
+                    xmlutils.make_clark("C:calendar-data"),
+                    xmlutils.make_clark("CR:address-data")):
                 element.text = item.serialize()
                 found_props.append(element)
             else:
@@ -228,26 +228,26 @@ def xml_report(base_prefix, path, xml_request, collection, encoding,
 
 def xml_item_response(base_prefix, href, found_props=(), not_found_props=(),
                       found_item=True):
-    response = ET.Element(xmlutils.make_tag("D", "response"))
+    response = ET.Element(xmlutils.make_clark("D:response"))
 
-    href_tag = ET.Element(xmlutils.make_tag("D", "href"))
+    href_tag = ET.Element(xmlutils.make_clark("D:href"))
     href_tag.text = xmlutils.make_href(base_prefix, href)
     response.append(href_tag)
 
     if found_item:
         for code, props in ((200, found_props), (404, not_found_props)):
             if props:
-                propstat = ET.Element(xmlutils.make_tag("D", "propstat"))
-                status = ET.Element(xmlutils.make_tag("D", "status"))
+                propstat = ET.Element(xmlutils.make_clark("D:propstat"))
+                status = ET.Element(xmlutils.make_clark("D:status"))
                 status.text = xmlutils.make_response(code)
-                prop_tag = ET.Element(xmlutils.make_tag("D", "prop"))
+                prop_tag = ET.Element(xmlutils.make_clark("D:prop"))
                 for prop in props:
                     prop_tag.append(prop)
                 propstat.append(prop_tag)
                 propstat.append(status)
                 response.append(propstat)
     else:
-        status = ET.Element(xmlutils.make_tag("D", "status"))
+        status = ET.Element(xmlutils.make_clark("D:status"))
         status.text = xmlutils.make_response(404)
         response.append(status)
 

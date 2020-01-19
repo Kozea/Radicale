@@ -23,7 +23,6 @@ Helper functions for XML.
 """
 
 import copy
-import re
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from http import client
@@ -54,9 +53,6 @@ for short, url in NAMESPACES.items():
     NAMESPACES_REV[url] = short
     ET.register_namespace("" if short == "D" else short, url)
 
-CLARK_TAG_REGEX = re.compile(r"{(?P<namespace>[^}]*)}(?P<tag>.*)", re.VERBOSE)
-HUMAN_REGEX = re.compile(r"(?P<namespace>[^:{}]*):(?P<tag>.*)", re.VERBOSE)
-
 
 def pretty_xml(element, level=0):
     """Indent an ElementTree ``element`` and its children."""
@@ -79,34 +75,47 @@ def pretty_xml(element, level=0):
         return '<?xml version="1.0"?>\n%s' % ET.tostring(element, "unicode")
 
 
-def make_tag(short_name, local):
-    """Get XML Clark notation {uri(``short_name``)}``local``."""
-    return "{%s}%s" % (NAMESPACES[short_name], local)
+def make_clark(human_tag):
+    """Get XML Clark notation from human tag ``human_tag``.
 
-
-def tag_from_clark(name):
-    """Get a human-readable variant of the XML Clark notation tag ``name``.
-
-    For a given name using the XML Clark notation, return a human-readable
-    variant of the tag name for known namespaces. Otherwise, return the name as
-    is.
+    If ``human_tag`` is already in XML Clark notation it is returned as-is.
 
     """
-    match = CLARK_TAG_REGEX.match(name)
-    if match and match.group("namespace") in NAMESPACES_REV:
-        args = {
-            "ns": NAMESPACES_REV[match.group("namespace")],
-            "tag": match.group("tag")}
-        return "%(ns)s:%(tag)s" % args
-    return name
+    if human_tag.startswith("{"):
+        ns, tag = human_tag[len("{"):].split("}", maxsplit=1)
+        if not ns or not tag:
+            raise ValueError("Invalid XML tag: %r" % human_tag)
+        return human_tag
+    ns_prefix, tag = human_tag.split(":", maxsplit=1)
+    if not ns_prefix or not tag:
+        raise ValueError("Invalid XML tag: %r" % human_tag)
+    ns = NAMESPACES.get(ns_prefix)
+    if not ns:
+        raise ValueError("Unknown XML namespace prefix: %r" % human_tag)
+    return "{%s}%s" % (ns, tag)
 
 
-def tag_from_human(name):
-    """Get an XML Clark notation tag from human-readable variant ``name``."""
-    match = HUMAN_REGEX.match(name)
-    if match and match.group("namespace") in NAMESPACES:
-        return make_tag(match.group("namespace"), match.group("tag"))
-    return name
+def make_human_tag(clark_tag):
+    """Replace known namespaces in XML Clark notation ``clark_tag`` with
+       prefix.
+
+    If the namespace is not in ``NAMESPACES`` the tag is returned as-is.
+
+    """
+    if not clark_tag.startswith("{"):
+        ns_prefix, tag = clark_tag.split(":", maxsplit=1)
+        if not ns_prefix or not tag:
+            raise ValueError("Invalid XML tag: %r" % clark_tag)
+        if ns_prefix not in NAMESPACES:
+            raise ValueError("Unknown XML namespace prefix: %r" % clark_tag)
+        return clark_tag
+    ns, tag = clark_tag[len("{"):].split("}", maxsplit=1)
+    if not ns or not tag:
+        raise ValueError("Invalid XML tag: %r" % clark_tag)
+    ns_prefix = NAMESPACES_REV.get(ns)
+    if ns_prefix:
+        return "%s:%s" % (ns_prefix, tag)
+    return clark_tag
 
 
 def make_response(code):
@@ -120,10 +129,10 @@ def make_href(base_prefix, href):
     return quote("%s%s" % (base_prefix, href))
 
 
-def webdav_error(namespace, name):
+def webdav_error(human_tag):
     """Generate XML error message."""
-    root = ET.Element(make_tag("D", "error"))
-    root.append(ET.Element(make_tag(namespace, name)))
+    root = ET.Element(make_clark("D:error"))
+    root.append(ET.Element(human_tag))
     return root
 
 
@@ -145,29 +154,29 @@ def props_from_request(xml_request, actions=("set", "remove")):
         return result
 
     for action in actions:
-        action_element = xml_request.find(make_tag("D", action))
+        action_element = xml_request.find(make_clark("D:%s" % action))
         if action_element is not None:
             break
     else:
         action_element = xml_request
 
-    prop_element = action_element.find(make_tag("D", "prop"))
+    prop_element = action_element.find(make_clark("D:prop"))
     if prop_element is not None:
         for prop in prop_element:
-            if prop.tag == make_tag("D", "resourcetype"):
+            if prop.tag == make_clark("D:resourcetype"):
                 for resource_type in prop:
-                    if resource_type.tag == make_tag("C", "calendar"):
+                    if resource_type.tag == make_clark("C:calendar"):
                         result["tag"] = "VCALENDAR"
                         break
-                    elif resource_type.tag == make_tag("CR", "addressbook"):
+                    elif resource_type.tag == make_clark("CR:addressbook"):
                         result["tag"] = "VADDRESSBOOK"
                         break
-            elif prop.tag == make_tag("C", "supported-calendar-component-set"):
-                result[tag_from_clark(prop.tag)] = ",".join(
+            elif prop.tag == make_clark("C:supported-calendar-component-set"):
+                result[make_human_tag(prop.tag)] = ",".join(
                     supported_comp.attrib["name"]
                     for supported_comp in prop
-                    if supported_comp.tag == make_tag("C", "comp"))
+                    if supported_comp.tag == make_clark("C:comp"))
             else:
-                result[tag_from_clark(prop.tag)] = prop.text
+                result[make_human_tag(prop.tag)] = prop.text
 
     return result

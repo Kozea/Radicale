@@ -75,7 +75,7 @@ def comp_match(item, filter_, level=0):
         # Point #1 of rfc4791-9.7.1
         return name == tag
     if len(filter_) == 1:
-        if filter_[0].tag == xmlutils.make_tag("C", "is-not-defined"):
+        if filter_[0].tag == xmlutils.make_clark("C:is-not-defined"):
             # Point #2 of rfc4791-9.7.1
             return name != tag
     if name != tag:
@@ -89,14 +89,14 @@ def comp_match(item, filter_, level=0):
                   else list(getattr(item.vobject_item,
                                     "%s_list" % tag.lower())))
     for child in filter_:
-        if child.tag == xmlutils.make_tag("C", "prop-filter"):
+        if child.tag == xmlutils.make_clark("C:prop-filter"):
             if not any(prop_match(comp, child, "C")
                        for comp in components):
                 return False
-        elif child.tag == xmlutils.make_tag("C", "time-range"):
+        elif child.tag == xmlutils.make_clark("C:time-range"):
             if not time_range_match(item.vobject_item, filter_[0], tag):
                 return False
-        elif child.tag == xmlutils.make_tag("C", "comp-filter"):
+        elif child.tag == xmlutils.make_clark("C:comp-filter"):
             if not comp_match(item, child, level=level + 1):
                 return False
         else:
@@ -115,20 +115,20 @@ def prop_match(vobject_item, filter_, ns):
         # Point #1 of rfc4791-9.7.2
         return name in vobject_item.contents
     if len(filter_) == 1:
-        if filter_[0].tag == xmlutils.make_tag("C", "is-not-defined"):
+        if filter_[0].tag == xmlutils.make_clark("C:is-not-defined"):
             # Point #2 of rfc4791-9.7.2
             return name not in vobject_item.contents
     if name not in vobject_item.contents:
         return False
     # Point #3 and #4 of rfc4791-9.7.2
     for child in filter_:
-        if ns == "C" and child.tag == xmlutils.make_tag("C", "time-range"):
+        if ns == "C" and child.tag == xmlutils.make_clark("C:time-range"):
             if not time_range_match(vobject_item, child, name):
                 return False
-        elif child.tag == xmlutils.make_tag(ns, "text-match"):
+        elif child.tag == xmlutils.make_clark("%s:text-match" % ns):
             if not text_match(vobject_item, child, name, ns):
                 return False
-        elif child.tag == xmlutils.make_tag(ns, "param-filter"):
+        elif child.tag == xmlutils.make_clark("%s:param-filter" % ns):
             if not param_filter_match(vobject_item, child, name, ns):
                 return False
         else:
@@ -464,10 +464,10 @@ def param_filter_match(vobject_item, filter_, parent_name, ns):
     children = getattr(vobject_item, "%s_list" % parent_name, [])
     condition = any(name in child.params for child in children)
     if len(filter_) > 0:
-        if filter_[0].tag == xmlutils.make_tag(ns, "text-match"):
+        if filter_[0].tag == xmlutils.make_clark("%s:text-match" % ns):
             return condition and text_match(
                 vobject_item, filter_[0], parent_name, ns, name)
-        elif filter_[0].tag == xmlutils.make_tag(ns, "is-not-defined"):
+        elif filter_[0].tag == xmlutils.make_clark("%s:is-not-defined" % ns):
             return not condition
     else:
         return condition
@@ -488,18 +488,18 @@ def simplify_prefilters(filters, collection_tag="VCALENDAR"):
         if collection_tag != "VCALENDAR":
             simple = False
             break
-        if (col_filter.tag != xmlutils.make_tag("C", "comp-filter") or
+        if (col_filter.tag != xmlutils.make_clark("C:comp-filter") or
                 col_filter.get("name").upper() != "VCALENDAR"):
             simple = False
             continue
         simple &= len(col_filter) <= 1
         for comp_filter in col_filter:
-            if comp_filter.tag != xmlutils.make_tag("C", "comp-filter"):
+            if comp_filter.tag != xmlutils.make_clark("C:comp-filter"):
                 simple = False
                 continue
             tag = comp_filter.get("name").upper()
             if comp_filter.find(
-                    xmlutils.make_tag("C", "is-not-defined")) is not None:
+                    xmlutils.make_clark("C:is-not-defined")) is not None:
                 simple = False
                 continue
             simple &= len(comp_filter) <= 1
@@ -507,7 +507,7 @@ def simplify_prefilters(filters, collection_tag="VCALENDAR"):
                 if tag not in ("VTODO", "VEVENT", "VJOURNAL"):
                     simple = False
                     break
-                if time_filter.tag != xmlutils.make_tag("C", "time-range"):
+                if time_filter.tag != xmlutils.make_clark("C:time-range"):
                     simple = False
                     continue
                 start = time_filter.get("start")

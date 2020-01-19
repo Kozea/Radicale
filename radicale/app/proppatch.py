@@ -35,17 +35,17 @@ def xml_add_propstat_to(element, tag, status_number):
     ``status_number``.
 
     """
-    propstat = ET.Element(xmlutils.make_tag("D", "propstat"))
+    propstat = ET.Element(xmlutils.make_clark("D:propstat"))
     element.append(propstat)
 
-    prop = ET.Element(xmlutils.make_tag("D", "prop"))
+    prop = ET.Element(xmlutils.make_clark("D:prop"))
     propstat.append(prop)
 
-    clark_tag = tag if "{" in tag else xmlutils.make_tag(*tag.split(":", 1))
+    clark_tag = xmlutils.make_clark(tag)
     prop_tag = ET.Element(clark_tag)
     prop.append(prop_tag)
 
-    status = ET.Element(xmlutils.make_tag("D", "status"))
+    status = ET.Element(xmlutils.make_clark("D:status"))
     status.text = xmlutils.make_response(status_number)
     propstat.append(status)
 
@@ -60,11 +60,11 @@ def xml_proppatch(base_prefix, path, xml_request, collection):
     props_to_remove = xmlutils.props_from_request(xml_request,
                                                   actions=("remove",))
 
-    multistatus = ET.Element(xmlutils.make_tag("D", "multistatus"))
-    response = ET.Element(xmlutils.make_tag("D", "response"))
+    multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
+    response = ET.Element(xmlutils.make_clark("D:response"))
     multistatus.append(response)
 
-    href = ET.Element(xmlutils.make_tag("D", "href"))
+    href = ET.Element(xmlutils.make_clark("D:href"))
     href.text = xmlutils.make_href(base_prefix, path)
     response.append(href)
 
