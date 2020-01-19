@@ -444,20 +444,19 @@ class BaseRequestsMixIn:
         assert answer.count("BEGIN:VEVENT") == 2
 
     def _test_filter(self, filters, kind="event", test=None, items=(1,)):
-        filter_template = "<C:filter>{}</C:filter>"
+        filter_template = "<C:filter>%s</C:filter>"
         if kind in ("event", "journal", "todo"):
             create_collection_fn = partial(self.request, "MKCALENDAR")
             path = "/calendar.ics/"
-            filename_template = "{}{}.ics"
+            filename_template = "%s%d.ics"
             namespace = "urn:ietf:params:xml:ns:caldav"
             report = "calendar-query"
         elif kind == "contact":
             create_collection_fn = self._create_addressbook
             if test:
-                filter_template = '<C:filter test="{}">{{}}</C:filter>'.format(
-                    test)
+                filter_template = '<C:filter test="%s">%%s</C:filter>' % test
             path = "/contacts.vcf/"
-            filename_template = "{}{}.vcf"
+            filename_template = "%s%d.vcf"
             namespace = "urn:ietf:params:xml:ns:carddav"
             report = "addressbook-query"
         else:
@@ -467,13 +466,12 @@ class BaseRequestsMixIn:
         status, _, _ = create_collection_fn(path)
         assert status == 201
         for i in items:
-            filename = filename_template.format(kind, i)
+            filename = filename_template % (kind, i)
             event = get_file_content(filename)
             status, _, _ = self.request(
                 "PUT", posixpath.join(path, filename), event)
             assert status == 201
-        filters_text = "".join(
-            filter_template.format(filter_) for filter_ in filters)
+        filters_text = "".join(filter_template % f for f in filters)
         status, _, answer = self.request(
             "REPORT", path,
             """<?xml version="1.0" encoding="utf-8" ?>
@@ -1350,7 +1348,7 @@ class BaseRequestsMixIn:
         status, _, _ = self.request("MKCALENDAR", "/test/")
         assert status == 201
         for component in ("event", "todo", "journal"):
-            event = get_file_content("{}1.ics".format(component))
+            event = get_file_content("%s1.ics" % component)
             status, _, _ = self.request("DELETE", "/test/test.ics")
             assert status in (200, 404)
             status, _, _ = self.request("PUT", "/test/test.ics", event)
@@ -1364,7 +1362,7 @@ class BaseRequestsMixIn:
                      </D:prop>
                    </C:calendar-query>""")
             assert status == 207
-            assert ">text/calendar;charset=utf-8;component=V{}<".format(
+            assert ">text/calendar;charset=utf-8;component=V%s<" % (
                 component.upper()) in answer
 
     def test_addressbook_getcontenttype(self):

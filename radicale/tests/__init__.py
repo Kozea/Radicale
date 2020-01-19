@@ -62,7 +62,7 @@ class BaseTest:
         args["REQUEST_METHOD"] = method.upper()
         args["PATH_INFO"] = path
         if data:
-            data = data.encode("utf-8")
+            data = data.encode()
             args["wsgi.input"] = BytesIO(data)
             args["CONTENT_LENGTH"] = str(len(data))
         args["wsgi.errors"] = sys.stderr
@@ -75,4 +75,4 @@ class BaseTest:
         answer = self.application(args, start_response)
 
         return (int(status.split()[0]), dict(headers),
-                answer[0].decode("utf-8") if answer else None)
+                answer[0].decode() if answer else None)

@@ -81,7 +81,7 @@ class BaseCollection:
         """Encoded as quoted-string (see RFC 2616)."""
         etag = sha256()
         for item in self.get_all():
-            etag.update((item.href + "/" + item.etag).encode("utf-8"))
+            etag.update((item.href + "/" + item.etag).encode())
         etag.update(json.dumps(self.get_meta(), sort_keys=True).encode())
         return '"%s"' % etag.hexdigest()
 

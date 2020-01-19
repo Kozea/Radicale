@@ -195,7 +195,7 @@ def get_etag(text):
 
     """
     etag = sha256()
-    etag.update(text.encode("utf-8"))
+    etag.update(text.encode())
     return '"%s"' % etag.hexdigest()
 
 

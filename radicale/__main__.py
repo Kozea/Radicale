@@ -58,11 +58,10 @@ def run():
             if option.startswith("_"):
                 continue
             kwargs = data.copy()
-            long_name = "--{0}-{1}".format(
-                section, option.replace("_", "-"))
+            long_name = "--%s-%s" % (section, option.replace("_", "-"))
             args = kwargs.pop("aliases", [])
             args.append(long_name)
-            kwargs["dest"] = "{0}_{1}".format(section, option)
+            kwargs["dest"] = "%s_%s" % (section, option)
             groups[group].append(kwargs["dest"])
             del kwargs["value"]
             if "internal" in kwargs:
@@ -73,11 +72,11 @@ def run():
                 kwargs["action"] = "store_const"
                 kwargs["const"] = "True"
                 opposite_args = kwargs.pop("opposite", [])
-                opposite_args.append("--no{0}".format(long_name[1:]))
+                opposite_args.append("--no%s" % long_name[1:])
                 group.add_argument(*args, **kwargs)
 
                 kwargs["const"] = "False"
-                kwargs["help"] = "do not {0} (opposite of {1})".format(
+                kwargs["help"] = "do not %s (opposite of %s)" % (
                     kwargs["help"], long_name)
                 group.add_argument(*opposite_args, **kwargs)
             else:

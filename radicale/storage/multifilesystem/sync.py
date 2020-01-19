@@ -54,7 +54,7 @@ class CollectionSyncMixin:
                 ((href, None) for href in self._get_deleted_history_hrefs())):
             history_etag = self._update_history_etag(href, item)
             state[href] = history_etag
-            token_name_hash.update((href + "/" + history_etag).encode("utf-8"))
+            token_name_hash.update((href + "/" + history_etag).encode())
         token_name = token_name_hash.hexdigest()
         token = "http://radicale.org/ns/sync/%s" % token_name
         if token_name == old_token_name:

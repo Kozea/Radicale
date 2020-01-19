@@ -151,11 +151,10 @@ class TestBaseServerRequests:
             for option, data in values.items():
                 if option.startswith("_"):
                     continue
-                long_name = "--{0}-{1}".format(
-                    section, option.replace("_", "-"))
+                long_name = "--%s-%s" % (section, option.replace("_", "-"))
                 if data["type"] == bool:
                     if not self.configuration.get(section, option):
-                        long_name = "--no{0}".format(long_name[1:])
+                        long_name = "--no%s" % long_name[1:]
                     config_args.append(long_name)
                 else:
                     config_args.append(long_name)
