@@ -31,6 +31,12 @@ It can be stored in the same directory as the configuration file.
 
 ### The secure way
 
+The secure way uses **bcrypt** to secure the passwords.
+Radicale requires additional dependencies for this encryption method:
+```shell
+$ python3 -m pip install --upgrade radicale[bcrypt]
+```
+
 The `users` file can be created and managed with
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html):
 ```shell
@@ -43,10 +49,17 @@ $ htpasswd -B /path/to/users user2
 New password:
 Re-type new password:
 ```
-**bcrypt** is used to secure the passwords. Radicale requires additional
-dependencies for this encryption method:
+
+Or without `htpasswd`, hash your password using Python's bcrypt:
 ```shell
-$ python3 -m pip install --upgrade radicale[bcrypt]
+$ python3 -c "import bcrypt, getpass; print(bcrypt.hashpw(getpass.getpass('Password: ').encode(), bcrypt.gensalt()).decode())"
+Password:
+$2b$12$Hss4bY4v5iResZTtqtNBS.z/Lod9td9.BxSZW5xvaPl1XV0z37nKO
+```
+And manually add a line to the `users` file containing the user name
+followed by the hash separated by `:`. Example:
+```
+john:$2b$12$Hss4bY4v5iResZTtqtNBS.z/Lod9td9.BxSZW5xvaPl1XV0z37nKO
 ```
 
 Authentication can be enabled with the following configuration:
