@@ -28,8 +28,8 @@ import tempfile
 
 import pytest
 
-from radicale import Application, config
-from radicale.tests.test_base import BaseTest
+from radicale import Application, config, xmlutils
+from radicale.tests import BaseTest
 
 
 class TestBaseAuthRequests(BaseTest):
@@ -84,11 +84,10 @@ class TestBaseAuthRequests(BaseTest):
                            ("😁", "🔑", False), ("😀", "", False),
                            ("", "🔑", False), ("", "", False))
         for user, password, valid in test_matrix:
-            status, _, _ = self.request(
-                "PROPFIND", "/",
-                HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
-                    ("%s:%s" % (user, password)).encode()).decode())
-            assert status == (207 if valid else 401)
+            status, _ = self.propfind(
+                "/", check=207 if valid else 401, HTTP_AUTHORIZATION=(
+                    "Basic %s" % base64.b64encode(
+                        ("%s:%s" % (user, password)).encode()).decode()))
 
     def test_htpasswd_plain(self):
         self._test_htpasswd("plain", "tmp:bepo")
@@ -136,38 +135,36 @@ class TestBaseAuthRequests(BaseTest):
     def test_remote_user(self):
         self.configuration.update({"auth": {"type": "remote_user"}}, "test")
         self.application = Application(self.configuration)
-        status, _, answer = self.request(
-            "PROPFIND", "/",
-            """<?xml version="1.0" encoding="utf-8"?>
-               <propfind xmlns="DAV:">
-                 <prop>
-                   <current-user-principal />
-                 </prop>
-               </propfind>""", REMOTE_USER="test")
-        assert status == 207
-        assert ">/test/<" in answer
+        _, responses = self.propfind("/", """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""", REMOTE_USER="test")
+        status, prop = responses["/"]["D:current-user-principal"]
+        assert status == 200
+        assert prop.find(xmlutils.make_clark("D:href")).text == "/test/"
 
     def test_http_x_remote_user(self):
         self.configuration.update(
             {"auth": {"type": "http_x_remote_user"}}, "test")
         self.application = Application(self.configuration)
-        status, _, answer = self.request(
-            "PROPFIND", "/",
-            """<?xml version="1.0" encoding="utf-8"?>
-               <propfind xmlns="DAV:">
-                 <prop>
-                   <current-user-principal />
-                 </prop>
-               </propfind>""", HTTP_X_REMOTE_USER="test")
-        assert status == 207
-        assert ">/test/<" in answer
+        _, responses = self.propfind("/", """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""", HTTP_X_REMOTE_USER="test")
+        status, prop = responses["/"]["D:current-user-principal"]
+        assert status == 200
+        assert prop.find(xmlutils.make_clark("D:href")).text == "/test/"
 
     def test_custom(self):
         """Custom authentication."""
         self.configuration.update(
             {"auth": {"type": "radicale.tests.custom.auth"}}, "test")
         self.application = Application(self.configuration)
-        status, _, _ = self.request(
-            "PROPFIND", "/tmp", HTTP_AUTHORIZATION="Basic %s" %
-            base64.b64encode(("tmp:").encode()).decode())
-        assert status == 207
+        self.propfind("/tmp/", HTTP_AUTHORIZATION="Basic %s" %
+                      base64.b64encode(("tmp:").encode()).decode())

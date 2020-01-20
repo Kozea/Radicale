@@ -35,6 +35,7 @@ from urllib.error import HTTPError, URLError
 import pytest
 
 from radicale import config, server
+from radicale.tests import BaseTest
 from radicale.tests.helpers import configuration_to_dict, get_file_path
 
 try:
@@ -50,7 +51,7 @@ class DisabledRedirectHandler(request.HTTPRedirectHandler):
     http_error_301 = http_error_303 = http_error_307 = http_error_302
 
 
-class TestBaseServerRequests:
+class TestBaseServerRequests(BaseTest):
     """Test the internal server."""
 
     def setup(self):
@@ -108,8 +109,7 @@ class TestBaseServerRequests:
 
     def test_root(self):
         self.thread.start()
-        status, _, _ = self.request("GET", "/")
-        assert status == 302
+        self.get("/", check=302)
 
     def test_ssl(self):
         self.configuration.update({
@@ -117,8 +117,7 @@ class TestBaseServerRequests:
                        "certificate": get_file_path("cert.pem"),
                        "key": get_file_path("key.pem")}}, "test")
         self.thread.start()
-        status, _, _ = self.request("GET", "/")
-        assert status == 302
+        self.get("/", check=302)
 
     @pytest.mark.skipif(not server.HAS_IPV6, reason="IPv6 not supported")
     def test_ipv6(self):
@@ -132,16 +131,8 @@ class TestBaseServerRequests:
             self.sockname = sock.getsockname()[:2]
         self.configuration.update({
             "server": {"hosts": "[%s]:%d" % self.sockname}}, "test")
-        original_eai_addrfamily = server.EAI_ADDRFAMILY
-        if os.name == "nt" and server.EAI_ADDRFAMILY is None:
-            # HACK: incomplete errno conversion in WINE
-            server.EAI_ADDRFAMILY = -9
-        try:
-            self.thread.start()
-            status, _, _ = self.request("GET", "/")
-        finally:
-            server.EAI_ADDRFAMILY = original_eai_addrfamily
-        assert status == 302
+        self.thread.start()
+        self.get("/", check=302)
 
     def test_command_line_interface(self):
         config_args = []
@@ -165,9 +156,7 @@ class TestBaseServerRequests:
         p = subprocess.Popen(
             [sys.executable, "-m", "radicale"] + config_args, env=env)
         try:
-            status, _, _ = self.request(
-                "GET", "/", is_alive_fn=lambda: p.poll() is None)
-            assert status == 302
+            self.get("/", is_alive_fn=lambda: p.poll() is None, check=302)
         finally:
             p.terminate()
             p.wait()
@@ -189,9 +178,7 @@ class TestBaseServerRequests:
             "--bind", self.configuration.get_raw("server", "hosts"),
             "--env", "RADICALE_CONFIG=%s" % config_path, "radicale"], env=env)
         try:
-            status, _, _ = self.request(
-                "GET", "/", is_alive_fn=lambda: p.poll() is None)
-            assert status == 302
+            self.get("/", is_alive_fn=lambda: p.poll() is None, check=302)
         finally:
             p.terminate()
             p.wait()

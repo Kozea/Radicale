@@ -23,7 +23,7 @@ import shutil
 import tempfile
 
 from radicale import Application, config
-from radicale.tests.test_base import BaseTest
+from radicale.tests import BaseTest
 
 
 class TestBaseWebRequests(BaseTest):
@@ -45,24 +45,20 @@ class TestBaseWebRequests(BaseTest):
         status, headers, _ = self.request("GET", "/.web")
         assert status == 302
         assert headers.get("Location") == ".web/"
-        status, _, answer = self.request("GET", "/.web/")
-        assert status == 200
+        _, answer = self.get("/.web/")
         assert answer
 
     def test_none(self):
         self.configuration.update({"web": {"type": "none"}}, "test")
         self.application = Application(self.configuration)
-        status, _, answer = self.request("GET", "/.web")
-        assert status == 200
+        _, answer = self.get("/.web")
         assert answer
-        status, _, answer = self.request("GET", "/.web/")
-        assert status == 404
+        self.get("/.web/", check=404)
 
     def test_custom(self):
         """Custom web plugin."""
         self.configuration.update({
             "web": {"type": "radicale.tests.custom.web"}}, "test")
         self.application = Application(self.configuration)
-        status, _, answer = self.request("GET", "/.web")
-        assert status == 200
+        _, answer = self.get("/.web")
         assert answer == "custom"
