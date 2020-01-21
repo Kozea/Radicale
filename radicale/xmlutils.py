@@ -54,25 +54,24 @@ for short, url in NAMESPACES.items():
     ET.register_namespace("" if short == "D" else short, url)
 
 
-def pretty_xml(element, level=0):
+def pretty_xml(element):
     """Indent an ElementTree ``element`` and its children."""
-    if not level:
-        element = copy.deepcopy(element)
-    i = "\n" + level * "  "
-    if len(element) > 0:
-        if not element.text or not element.text.strip():
-            element.text = i + "  "
-        if not element.tail or not element.tail.strip():
-            element.tail = i
-        for sub_element in element:
-            pretty_xml(sub_element, level + 1)
-        if not sub_element.tail or not sub_element.tail.strip():
-            sub_element.tail = i
-    else:
-        if level and (not element.tail or not element.tail.strip()):
-            element.tail = i
-    if not level:
-        return '<?xml version="1.0"?>\n%s' % ET.tostring(element, "unicode")
+    def pretty_xml_recursive(element, level):
+        indent = "\n" + level * "  "
+        if len(element) > 0:
+            if not (element.text or "").strip():
+                element.text = indent + "  "
+            if not (element.tail or "").strip():
+                element.tail = indent
+            for sub_element in element:
+                pretty_xml_recursive(sub_element, level + 1)
+            if not (sub_element.tail or "").strip():
+                sub_element.tail = indent
+        elif level > 0 and not (element.tail or "").strip():
+            element.tail = indent
+    element = copy.deepcopy(element)
+    pretty_xml_recursive(element, 0)
+    return '<?xml version="1.0"?>\n%s' % ET.tostring(element, "unicode")
 
 
 def make_clark(human_tag):
@@ -168,7 +167,7 @@ def props_from_request(xml_request, actions=("set", "remove")):
                     if resource_type.tag == make_clark("C:calendar"):
                         result["tag"] = "VCALENDAR"
                         break
-                    elif resource_type.tag == make_clark("CR:addressbook"):
+                    if resource_type.tag == make_clark("CR:addressbook"):
                         result["tag"] = "VADDRESSBOOK"
                         break
             elif prop.tag == make_clark("C:supported-calendar-component-set"):

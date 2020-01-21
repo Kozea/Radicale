@@ -28,6 +28,7 @@ import contextlib
 import os
 import signal
 import socket
+import sys
 
 from radicale import VERSION, config, log, server, storage
 from radicale.log import logger
@@ -113,7 +114,7 @@ def run():
             configuration.update(arguments_config, "arguments")
     except Exception as e:
         logger.fatal("Invalid configuration: %s", e, exc_info=True)
-        exit(1)
+        sys.exit(1)
 
     # Configure logging
     log.set_level(configuration.get("logging", "level"))
@@ -128,11 +129,11 @@ def run():
             with storage_.acquire_lock("r"):
                 if not storage_.verify():
                     logger.fatal("Storage verifcation failed")
-                    exit(1)
+                    sys.exit(1)
         except Exception as e:
             logger.fatal("An exception occurred during storage verification: "
                          "%s", e, exc_info=True)
-            exit(1)
+            sys.exit(1)
         return
 
     # Create a socket pair to notify the server of program shutdown
@@ -149,7 +150,7 @@ def run():
     except Exception as e:
         logger.fatal("An exception occurred during server startup: %s", e,
                      exc_info=True)
-        exit(1)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

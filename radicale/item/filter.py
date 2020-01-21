@@ -450,8 +450,7 @@ def text_match(vobject_item, filter_, child_name, ns, attrib_name=None):
         condition = any(match(child.value) for child in children)
     if filter_.get("negate-condition") == "yes":
         return not condition
-    else:
-        return condition
+    return condition
 
 
 def param_filter_match(vobject_item, filter_, parent_name, ns):
@@ -467,10 +466,9 @@ def param_filter_match(vobject_item, filter_, parent_name, ns):
         if filter_[0].tag == xmlutils.make_clark("%s:text-match" % ns):
             return condition and text_match(
                 vobject_item, filter_[0], parent_name, ns, name)
-        elif filter_[0].tag == xmlutils.make_clark("%s:is-not-defined" % ns):
+        if filter_[0].tag == xmlutils.make_clark("%s:is-not-defined" % ns):
             return not condition
-    else:
-        return condition
+    return condition
 
 
 def simplify_prefilters(filters, collection_tag="VCALENDAR"):

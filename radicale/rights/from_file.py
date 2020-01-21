@@ -77,9 +77,8 @@ class Rights(rights.BaseRights):
                              collection_pattern, section)
                 return rights.intersect_permissions(
                     permissions, rights_config.get(section, "permissions"))
-            else:
-                logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
-                             user, sane_path, user_pattern,
-                             collection_pattern, section)
+            logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
+                         user, sane_path, user_pattern, collection_pattern,
+                         section)
         logger.info("Rights: %r:%r doesn't match any section", user, sane_path)
         return ""

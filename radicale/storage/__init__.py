@@ -240,7 +240,7 @@ class BaseCollection:
             return (template[:template_insert_pos] +
                     vtimezones + components +
                     template[template_insert_pos:])
-        elif self.get_meta("tag") == "VADDRESSBOOK":
+        if self.get_meta("tag") == "VADDRESSBOOK":
             return "".join((item.serialize() for item in self.get_all()))
         return ""
 

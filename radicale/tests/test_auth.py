@@ -84,10 +84,9 @@ class TestBaseAuthRequests(BaseTest):
                            ("😁", "🔑", False), ("😀", "", False),
                            ("", "🔑", False), ("", "", False))
         for user, password, valid in test_matrix:
-            status, _ = self.propfind(
-                "/", check=207 if valid else 401, HTTP_AUTHORIZATION=(
-                    "Basic %s" % base64.b64encode(
-                        ("%s:%s" % (user, password)).encode()).decode()))
+            self.propfind("/", check=207 if valid else 401,
+                          HTTP_AUTHORIZATION=("Basic %s" % base64.b64encode(
+                              ("%s:%s" % (user, password)).encode()).decode()))
 
     def test_htpasswd_plain(self):
         self._test_htpasswd("plain", "tmp:bepo")

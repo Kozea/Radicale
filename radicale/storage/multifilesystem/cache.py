@@ -53,7 +53,8 @@ class CollectionCacheMixin:
         if modified:
             self._storage._sync_directory(folder)
 
-    def _item_cache_hash(self, raw_text):
+    @staticmethod
+    def _item_cache_hash(raw_text):
         _hash = sha256()
         _hash.update(storage.CACHE_VERSION)
         _hash.update(raw_text)
