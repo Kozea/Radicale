@@ -61,7 +61,7 @@ class ApplicationGetMixin:
         # Redirect to .web if the root URL is requested
         if not pathutils.strip_path(path):
             web_path = ".web"
-            if not environ.get("PATH_INFO"):
+            if not environ["DOCUMENT_URI"].endswith("/"):
                 web_path = posixpath.join(posixpath.basename(base_prefix),
                                           web_path)
             return (client.FOUND,
