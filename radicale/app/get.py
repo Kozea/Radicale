@@ -19,7 +19,7 @@
 
 import posixpath
 from http import client
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 from radicale import httputils, pathutils, storage, xmlutils
 from radicale.log import logger
@@ -61,7 +61,7 @@ class ApplicationGetMixin:
         # Redirect to .web if the root URL is requested
         if not pathutils.strip_path(path):
             web_path = ".web/"
-            if not environ["DOCUMENT_URI"].endswith("/"):
+            if not urlparse(environ["REQUEST_URI"]).path.endswith("/"):
                 web_path = posixpath.join(posixpath.basename(base_prefix),
                                           web_path)
             return (client.FOUND,
