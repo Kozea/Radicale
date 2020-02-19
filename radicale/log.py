@@ -24,20 +24,14 @@ Log messages are sent to the first available target of:
   - systemd-journald
   - stderr
 
-The logger is thread-safe and fork-safe.
-
 """
 
 import contextlib
 import io
 import logging
-import multiprocessing
 import os
 import sys
-import tempfile
 import threading
-
-from radicale import pathutils
 
 try:
     import systemd.journal
@@ -64,41 +58,16 @@ class IdentLogRecordFactory:
 
     def __init__(self, upstream_factory):
         self.upstream_factory = upstream_factory
-        self.main_pid = os.getpid()
 
     def __call__(self, *args, **kwargs):
         record = self.upstream_factory(*args, **kwargs)
-        pid = os.getpid()
-        ident = "%x" % self.main_pid
-        if pid != self.main_pid:
-            ident += "%+x" % (pid - self.main_pid)
+        ident = "%x" % os.getpid()
         main_thread = threading.main_thread()
         current_thread = threading.current_thread()
         if current_thread.name and main_thread != current_thread:
             ident += "/%s" % current_thread.name
         record.ident = ident
         return record
-
-
-class RwLockWrapper():
-
-    def __init__(self):
-        self._file = tempfile.NamedTemporaryFile()
-        self._lock = pathutils.RwLock(self._file.name)
-        self._cm = None
-
-    def acquire(self, blocking=True):
-        assert self._cm is None
-        if not blocking:
-            raise NotImplementedError
-        cm = self._lock.acquire("w")
-        cm.__enter__()
-        self._cm = cm
-
-    def release(self):
-        assert self._cm is not None
-        self._cm.__exit__(None, None, None)
-        self._cm = None
 
 
 class ThreadStreamsHandler(logging.Handler):
@@ -110,13 +79,6 @@ class ThreadStreamsHandler(logging.Handler):
         self._streams = {}
         self.fallback_stream = fallback_stream
         self.fallback_handler = fallback_handler
-
-    def createLock(self):
-        try:
-            self.lock = multiprocessing.Lock()
-        except Exception:
-            # HACK: Workaround for Android
-            self.lock = RwLockWrapper()
 
     def setFormatter(self, fmt):
         super().setFormatter(fmt)
