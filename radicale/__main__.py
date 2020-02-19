@@ -142,7 +142,7 @@ def run():
 
     # SIGTERM and SIGINT (aka KeyboardInterrupt) shutdown the server
     def shutdown(signal_number, stack_frame):
-        shutdown_socket.sendall(b" ")
+        shutdown_socket.close()
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
 

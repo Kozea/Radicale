@@ -84,7 +84,7 @@ else:
 class ParallelHTTPServer(ParallelizationMixIn,
                          wsgiref.simple_server.WSGIServer):
 
-    # wait for child processes/threads
+    # Python 3.6: Wait for child processes/threads (Default in Python >= 3.7)
     _block_on_close = True
 
     def __init__(self, configuration, address_family,
@@ -315,9 +315,9 @@ def serve(configuration, shutdown_socket=None):
         select_timeout = 1.0
     logger.info("Radicale server ready")
 
-    with contextlib.ExitStack() as stack:
+    with contextlib.ExitStack() as exit_stack:
         for _, server in servers.items():
-            stack.callback(server.server_close)
+            exit_stack.callback(server.server_close)
         while True:
             rlist, _, xlist = select.select(
                 sockets, [], sockets, select_timeout)
