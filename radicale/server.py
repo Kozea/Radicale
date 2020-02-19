@@ -281,11 +281,6 @@ def serve(configuration, shutdown_socket=None):
                 raise RuntimeError("Failed to read SSL %s %r: %s" %
                                    (name, filename, e)) from e
 
-    class RequestHandlerCopy(RequestHandler):
-        """Copy, avoids overriding the original class attributes."""
-    if not configuration.get("server", "dns_lookup"):
-        RequestHandlerCopy.address_string = lambda self: self.client_address[0]
-
     if systemd:
         listen_fds = systemd.daemon.listen_fds()
     else:
@@ -305,7 +300,7 @@ def serve(configuration, shutdown_socket=None):
     application = Application(configuration)
     for server_address in server_addresses:
         try:
-            server = ServerCopy(server_address, RequestHandlerCopy)
+            server = ServerCopy(server_address, RequestHandler)
             server.set_app(application)
         except OSError as e:
             raise RuntimeError(

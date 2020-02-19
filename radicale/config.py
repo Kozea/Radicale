@@ -135,11 +135,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
         ("ciphers", {
             "value": "",
             "help": "available ciphers",
-            "type": str}),
-        ("dns_lookup", {
-            "value": "True",
-            "help": "use reverse DNS to resolve client address in logs",
-            "type": bool})])),
+            "type": str})])),
     ("encoding", OrderedDict([
         ("request", {
             "value": "utf-8",

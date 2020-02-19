@@ -45,9 +45,6 @@
 # Available ciphers. See python's ssl module for available ciphers
 #ciphers =
 
-# Reverse DNS to resolve client address in logs
-#dns_lookup = True
-
 
 [encoding]
 
