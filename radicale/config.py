@@ -371,6 +371,13 @@ class Configuration:
                 break
         return fconfig[section][option]
 
+    def get_source(self, section, option):
+        """Get the source that provides ``option`` in ``section``."""
+        for config, source, _ in reversed(self._configs):
+            if option in config.get(section, {}):
+                return source
+        raise KeyError(section, option)
+
     def sections(self):
         """List all sections."""
         return self._values.keys()

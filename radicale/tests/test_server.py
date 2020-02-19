@@ -119,15 +119,25 @@ class TestBaseServerRequests(BaseTest):
         self.thread.start()
         self.get("/", check=302)
 
-    @pytest.mark.skipif(not server.HAS_IPV6, reason="IPv6 not supported")
+    def test_bind_fail(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            with pytest.raises(socket.gaierror) as exc_info:
+                sock.bind(("::1", 0))
+        assert exc_info.value.errno == server.COMPAT_EAI_ADDRFAMILY
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
+            with pytest.raises(socket.gaierror) as exc_info:
+                sock.bind(("127.0.0.1", 0))
+        assert exc_info.value.errno == server.COMPAT_EAI_ADDRFAMILY
+
     def test_ipv6(self):
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
-            sock.setsockopt(server.IPPROTO_IPV6, server.IPV6_V6ONLY, 1)
             try:
                 # Find available port
                 sock.bind(("::1", 0))
-            except OSError:
-                pytest.skip("IPv6 not supported")
+            except socket.gaierror as e:
+                if e.errno == server.COMPAT_EAI_ADDRFAMILY:
+                    pytest.skip("IPv6 not supported")
+                raise
             self.sockname = sock.getsockname()[:2]
         self.configuration.update({
             "server": {"hosts": "[%s]:%d" % self.sockname}}, "test")
