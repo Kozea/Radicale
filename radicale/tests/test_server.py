@@ -80,7 +80,7 @@ class TestBaseServerRequests(BaseTest):
             DisabledRedirectHandler)
 
     def teardown(self):
-        self.shutdown_socket.sendall(b" ")
+        self.shutdown_socket.close()
         try:
             self.thread.join()
         except RuntimeError:  # Thread never started
