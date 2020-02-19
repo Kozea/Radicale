@@ -25,6 +25,7 @@ Use ``load()`` to obtain an instance of ``Configuration`` for use with
 
 """
 
+import contextlib
 import math
 import os
 from collections import OrderedDict
@@ -360,16 +361,16 @@ class Configuration:
 
     def get(self, section, option):
         """Get the value of ``option`` in ``section``."""
-        return self._values[section][option]
+        with contextlib.suppress(KeyError):
+            return self._values[section][option]
+        raise KeyError(section, option)
 
     def get_raw(self, section, option):
         """Get the raw value of ``option`` in ``section``."""
-        fconfig = self._configs[0]
         for config, _, _ in reversed(self._configs):
-            if section in config and option in config[section]:
-                fconfig = config
-                break
-        return fconfig[section][option]
+            if option in config.get(section, {}):
+                return config[section][option]
+        raise KeyError(section, option)
 
     def get_source(self, section, option):
         """Get the source that provides ``option`` in ``section``."""
