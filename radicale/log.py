@@ -39,7 +39,8 @@ except ImportError:
     systemd = None
 
 LOGGER_NAME = "radicale"
-LOGGER_FORMAT = "[%(ident)s] %(levelname)s: %(message)s"
+LOGGER_FORMAT = "[%(asctime)s] [%(ident)s] [%(levelname)s] %(message)s"
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -61,7 +62,7 @@ class IdentLogRecordFactory:
 
     def __call__(self, *args, **kwargs):
         record = self.upstream_factory(*args, **kwargs)
-        ident = "%x" % os.getpid()
+        ident = "%d" % os.getpid()
         main_thread = threading.main_thread()
         current_thread = threading.current_thread()
         if current_thread.name and main_thread != current_thread:
@@ -135,7 +136,8 @@ def setup():
     """Set global logging up."""
     global register_stream
     handler = ThreadStreamsHandler(sys.stderr, get_default_handler())
-    logging.basicConfig(format=LOGGER_FORMAT, handlers=[handler])
+    logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT,
+                        handlers=[handler])
     register_stream = handler.register_stream
     log_record_factory = IdentLogRecordFactory(logging.getLogRecordFactory())
     logging.setLogRecordFactory(log_record_factory)
