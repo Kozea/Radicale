@@ -32,6 +32,7 @@ import pkg_resources
 
 from radicale import config, log
 from radicale.app import Application
+from radicale.log import logger
 
 VERSION = pkg_resources.get_distribution("radicale").version
 
@@ -53,7 +54,9 @@ def _init_application(config_path, wsgi_errors):
                 config_path))
             log.set_level(configuration.get("logging", "level"))
             # Log configuration after logger is configured
-            configuration.log_config_sources()
+            for source, miss in configuration.sources():
+                logger.info("%s %s", "Skipped missing" if miss else "Loaded",
+                            source)
             _application = Application(configuration)
 
 

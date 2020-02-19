@@ -31,7 +31,6 @@ from collections import OrderedDict
 from configparser import RawConfigParser
 
 from radicale import auth, rights, storage, web
-from radicale.log import logger
 
 DEFAULT_CONFIG_PATH = os.pathsep.join([
     "?/etc/radicale/config",
@@ -380,6 +379,11 @@ class Configuration:
         """List all options in ``section``"""
         return self._values[section].keys()
 
+    def sources(self):
+        """List all config sources."""
+        return [(source, config is self.SOURCE_MISSING) for
+                config, source, _ in self._configs]
+
     def copy(self, plugin_schema=None):
         """Create a copy of the configuration
 
@@ -408,18 +412,3 @@ class Configuration:
         for config, source, internal in self._configs:
             copy.update(config, source, internal)
         return copy
-
-    def log_config_sources(self):
-        """
-        A helper function that writes a description of all config sources
-        to logger.
-
-        Configs set to ``Configuration.SOURCE_MISSING`` are described as
-        missing.
-
-        """
-        for config, source, _ in self._configs:
-            if config is self.SOURCE_MISSING:
-                logger.info("Skipped missing %s", source)
-            else:
-                logger.info("Loaded %s", source)

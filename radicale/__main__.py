@@ -120,7 +120,8 @@ def run():
     log.set_level(configuration.get("logging", "level"))
 
     # Log configuration after logger is configured
-    configuration.log_config_sources()
+    for source, miss in configuration.sources():
+        logger.info("%s %s", "Skipped missing" if miss else "Loaded", source)
 
     if args.verify_storage:
         logger.info("Verifying storage")
