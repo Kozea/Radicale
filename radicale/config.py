@@ -81,6 +81,10 @@ def list_of_ip_address(value):
     return [ip_address(s.strip()) for s in value.split(",")]
 
 
+def unspecified_type(value):
+    return value
+
+
 def _convert_to_bool(value):
     if value.lower() not in RawConfigParser.BOOLEAN_STATES:
         raise ValueError("Not a boolean: %r" % value)
@@ -204,7 +208,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
             "help": "mask passwords in logs",
             "type": bool})])),
     ("headers", OrderedDict([
-        ("_allow_extra", True)])),
+        ("_allow_extra", str)])),
     ("_internal", OrderedDict([
         ("filesystem_fsync", {
             "value": "True",
@@ -321,15 +325,14 @@ class Configuration:
                     "Invalid section %r in %s" % (section, source))
             new_values[section] = {}
             extra_type = None
-            if self._schema[section].get("_allow_extra"):
-                extra_type = str
+            extra_type = self._schema[section].get("_allow_extra")
             if "type" in self._schema[section]:
                 if "type" in config[section]:
                     plugin = config[section]["type"]
                 else:
                     plugin = self.get(section, "type")
                 if plugin not in self._schema[section]["type"]["internal"]:
-                    extra_type = str
+                    extra_type = unspecified_type
             for option in config[section]:
                 type_ = extra_type
                 if option in self._schema[section]:
