@@ -15,7 +15,7 @@
 # IPv4 syntax: address:port
 # IPv6 syntax: [address]:port
 # For example: 0.0.0.0:9999, [::]:9999
-#hosts = 127.0.0.1:5232
+#hosts = localhost:5232
 
 # Max parallel connections
 #max_connections = 8

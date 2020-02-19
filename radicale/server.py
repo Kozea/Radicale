@@ -117,25 +117,14 @@ class ParallelHTTPServer(ParallelizationMixIn,
             self.setup_environ()
             return
         try:
+            if self.address_family == socket.AF_INET6:
+                # Only allow IPv6 connections to the IPv6 socket
+                self.socket.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
             self.server_bind()
             self.server_activate()
         except BaseException:
             self.server_close()
             raise
-
-    def server_bind(self):
-        try:
-            super().server_bind()
-        except socket.gaierror as e:
-            if (not HAS_IPV6 or self.address_family != socket.AF_INET or
-                    e.errno not in (EAI_NONAME, EAI_ADDRFAMILY)):
-                raise
-            # Try again with IPv6
-            self.address_family = socket.AF_INET6
-            self.socket = socket.socket(self.address_family, self.socket_type)
-            # Only allow IPv6 connections to the IPv6 socket
-            self.socket.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
-            super().server_bind()
 
     def get_request(self):
         # Set timeout for client
@@ -291,18 +280,29 @@ def serve(configuration, shutdown_socket=None):
     application = Application(configuration)
     servers = {}
     for server_address_or_socket, family in server_addresses_or_sockets:
-        try:
-            server = server_class(configuration, family,
-                                  server_address_or_socket, RequestHandler)
-            server.set_app(application)
-        except OSError as e:
-            raise RuntimeError(
-                "Failed to start server %r: %s" % (
-                    server_address_or_socket, e)) from e
-        servers[server.socket] = server
-        logger.info("Listening to %r on port %d%s",
-                    server.server_name, server.server_port, " using SSL"
-                    if configuration.get("server", "ssl") else "")
+        # If familiy is AF_INET, try to bind sockets for AF_INET and AF_INET6
+        bind_successful = False
+        for family in [family, socket.AF_INET6]:
+            try:
+                server = server_class(configuration, family,
+                                      server_address_or_socket, RequestHandler)
+                server.set_app(application)
+            except OSError as e:
+                if ((family == socket.AF_INET and HAS_IPV6 or
+                        bind_successful) and isinstance(e, socket.gaierror) and
+                        e.errno in (EAI_NONAME, EAI_ADDRFAMILY)):
+                    # Allow one of AF_INET and AF_INET6 to fail, when
+                    # the address or host don't support the address family.
+                    continue
+                raise RuntimeError(
+                    "Failed to start server %r: %s" % (
+                        server_address_or_socket, e)) from e
+            bind_successful = True
+            servers[server.socket] = server
+            logger.info("Listening to %r on port %d%s (%s)",
+                        server.server_name, server.server_port, " using SSL"
+                        if configuration.get("server", "ssl") else "",
+                        family.name)
 
     # Main loop: wait for requests on any of the servers or program shutdown
     sockets = list(servers.keys())

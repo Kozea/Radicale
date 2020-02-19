@@ -90,7 +90,7 @@ def _convert_to_bool(value):
 DEFAULT_CONFIG_SCHEMA = OrderedDict([
     ("server", OrderedDict([
         ("hosts", {
-            "value": "127.0.0.1:5232",
+            "value": "localhost:5232",
             "help": "set server hostnames including ports",
             "aliases": ["-H", "--hosts"],
             "type": list_of_ip_address}),
