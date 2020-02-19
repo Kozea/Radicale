@@ -127,15 +127,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "set CA certificate for validating clients",
             "aliases": ["--certificate-authority"],
-            "type": filepath}),
-        ("protocol", {
-            "value": "PROTOCOL_TLSv1_2",
-            "help": "SSL protocol used",
-            "type": str}),
-        ("ciphers", {
-            "value": "",
-            "help": "available ciphers",
-            "type": str})])),
+            "type": filepath})])),
     ("encoding", OrderedDict([
         ("request", {
             "value": "utf-8",

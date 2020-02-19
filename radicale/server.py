@@ -162,20 +162,18 @@ class ParallelHTTPSServer(ParallelHTTPServer):
     # These class attributes must be set before creating instance
     certificate = None
     key = None
-    protocol = None
-    ciphers = None
     certificate_authority = None
 
     def server_bind(self):
-        """Create server by wrapping HTTP socket in an SSL socket."""
         super().server_bind()
-        self.socket = ssl.wrap_socket(
-            self.socket, self.key, self.certificate, server_side=True,
-            cert_reqs=ssl.CERT_REQUIRED if self.certificate_authority else
-            ssl.CERT_NONE,
-            ca_certs=self.certificate_authority or None,
-            ssl_version=self.protocol, ciphers=self.ciphers,
-            do_handshake_on_connect=False)
+        # Wrap the TCP socket in an SSL socket
+        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        context.load_cert_chain(certfile=self.certificate, keyfile=self.key)
+        if self.certificate_authority:
+            context.load_verify_locations(cafile=self.certificate_authority)
+            context.verify_mode = ssl.CERT_REQUIRED
+        self.socket = context.wrap_socket(
+            self.socket, server_side=True, do_handshake_on_connect=False)
 
     def finish_request_locked(self, request, client_address):
         try:
@@ -267,9 +265,6 @@ def serve(configuration, shutdown_socket=None):
         ServerCopy.key = configuration.get("server", "key")
         ServerCopy.certificate_authority = configuration.get(
             "server", "certificate_authority")
-        ServerCopy.ciphers = configuration.get("server", "ciphers")
-        ServerCopy.protocol = getattr(
-            ssl, configuration.get("server", "protocol"), ssl.PROTOCOL_SSLv23)
         # Test if the SSL files can be read
         for name in ["certificate", "key"] + (
                 ["certificate_authority"]
