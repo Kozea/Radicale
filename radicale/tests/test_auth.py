@@ -44,9 +44,9 @@ class TestBaseAuthRequests(BaseTest):
         self.configuration.update({
             "storage": {"filesystem_folder": self.colpath},
             # Disable syncing to disk for better performance
-            "internal": {"filesystem_fsync": "False"},
+            "_internal": {"filesystem_fsync": "False"},
             # Set incorrect authentication delay to a very low value
-            "auth": {"delay": "0.002"}}, "test", internal=True)
+            "auth": {"delay": "0.002"}}, "test", privileged=True)
 
     def teardown(self):
         shutil.rmtree(self.colpath)

@@ -87,6 +87,7 @@ def _convert_to_bool(value):
     return RawConfigParser.BOOLEAN_STATES[value.lower()]
 
 
+INTERNAL_OPTIONS = ("_allow_extra",)
 # Default configuration
 DEFAULT_CONFIG_SCHEMA = OrderedDict([
     ("server", OrderedDict([
@@ -204,8 +205,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
             "type": bool})])),
     ("headers", OrderedDict([
         ("_allow_extra", True)])),
-    ("internal", OrderedDict([
-        ("_internal", True),
+    ("_internal", OrderedDict([
         ("filesystem_fsync", {
             "value": "True",
             "help": "sync all changes to filesystem during requests",
@@ -292,16 +292,13 @@ class Configuration:
         self._schema = schema
         self._values = {}
         self._configs = []
-        values = {}
-        for section in schema:
-            values[section] = {}
-            for option in schema[section]:
-                if option.startswith("_"):
-                    continue
-                values[section][option] = schema[section][option]["value"]
-        self.update(values, "default config", internal=True)
+        default = {section: {option: self._schema[section][option]["value"]
+                             for option in self._schema[section]
+                             if option not in INTERNAL_OPTIONS}
+                   for section in self._schema}
+        self.update(default, "default config", privileged=True)
 
-    def update(self, config, source=None, internal=False):
+    def update(self, config, source=None, privileged=False):
         """Update the configuration.
 
         ``config`` a dict of the format {SECTION: {OPTION: VALUE, ...}, ...}.
@@ -312,34 +309,33 @@ class Configuration:
         ``source`` a description of the configuration source (used in error
         messages).
 
-        ``internal`` allows updating "_internal" sections.
+        ``privileged`` allows updating sections and options starting with "_".
 
         """
         source = source or "unspecified config"
         new_values = {}
         for section in config:
-            if (section not in self._schema or not internal and
-                    self._schema[section].get("_internal", False)):
-                raise RuntimeError(
+            if (section not in self._schema or
+                    section.startswith("_") and not privileged):
+                raise ValueError(
                     "Invalid section %r in %s" % (section, source))
             new_values[section] = {}
-            if "_allow_extra" in self._schema[section]:
-                allow_extra_options = self._schema[section]["_allow_extra"]
-            elif "type" in self._schema[section]:
+            extra_type = None
+            if self._schema[section].get("_allow_extra"):
+                extra_type = str
+            if "type" in self._schema[section]:
                 if "type" in config[section]:
-                    plugin_type = config[section]["type"]
+                    plugin = config[section]["type"]
                 else:
-                    plugin_type = self.get(section, "type")
-                allow_extra_options = plugin_type not in self._schema[section][
-                    "type"].get("internal", [])
-            else:
-                allow_extra_options = False
+                    plugin = self.get(section, "type")
+                if plugin not in self._schema[section]["type"]["internal"]:
+                    extra_type = str
             for option in config[section]:
+                type_ = extra_type
                 if option in self._schema[section]:
                     type_ = self._schema[section][option]["type"]
-                elif allow_extra_options:
-                    type_ = str
-                else:
+                if (not type_ or option in INTERNAL_OPTIONS or
+                        option.startswith("_") and not privileged):
                     raise RuntimeError("Invalid option %r in section %r in "
                                        "%s" % (option, section, source))
                 raw_value = config[section][option]
@@ -352,12 +348,10 @@ class Configuration:
                         "Invalid %s value for option %r in section %r in %s: "
                         "%r" % (type_.__name__, option, section, source,
                                 raw_value)) from e
-        self._configs.append((config, source, bool(internal)))
+        self._configs.append((config, source, bool(privileged)))
         for section in new_values:
-            if section not in self._values:
-                self._values[section] = {}
-            for option in new_values[section]:
-                self._values[section][option] = new_values[section][option]
+            self._values[section] = self._values.get(section, {})
+            self._values[section].update(new_values[section])
 
     def get(self, section, option):
         """Get the value of ``option`` in ``section``."""
@@ -417,6 +411,6 @@ class Configuration:
                             section, option))
                     schema[section][option] = value
         copy = type(self)(schema)
-        for config, source, internal in self._configs:
-            copy.update(config, source, internal)
+        for config, source, privileged in self._configs:
+            copy.update(config, source, privileged)
         return copy

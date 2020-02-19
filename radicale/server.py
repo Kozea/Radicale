@@ -200,8 +200,8 @@ def serve(configuration, shutdown_socket):
     logger.info("Starting Radicale")
     # Copy configuration before modifying
     configuration = configuration.copy()
-    configuration.update({"internal": {"internal_server": "True"}}, "server",
-                         internal=True)
+    configuration.update({"_internal": {"internal_server": "True"}}, "server",
+                         privileged=True)
 
     use_ssl = configuration.get("server", "ssl")
     server_class = ParallelHTTPSServer if use_ssl else ParallelHTTPServer

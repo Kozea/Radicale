@@ -68,7 +68,8 @@ class TestBaseServerRequests(BaseTest):
             # Enable debugging for new processes
             "logging": {"level": "debug"},
             # Disable syncing to disk for better performance
-            "internal": {"filesystem_fsync": "False"}}, "test", internal=True)
+            "_internal": {"filesystem_fsync": "False"}},
+            "test", privileged=True)
         self.thread = threading.Thread(target=server.serve, args=(
             self.configuration, shutdown_socket_out))
         ssl_context = ssl.create_default_context()
@@ -147,7 +148,7 @@ class TestBaseServerRequests(BaseTest):
     def test_command_line_interface(self):
         config_args = []
         for section, values in config.DEFAULT_CONFIG_SCHEMA.items():
-            if values.get("_internal", False):
+            if section.startswith("_"):
                 continue
             for option, data in values.items():
                 if option.startswith("_"):

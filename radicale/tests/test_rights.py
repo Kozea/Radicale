@@ -37,7 +37,8 @@ class TestBaseRightsRequests(BaseTest):
         self.configuration.update({
             "storage": {"filesystem_folder": self.colpath},
             # Disable syncing to disk for better performance
-            "internal": {"filesystem_fsync": "False"}}, "test", internal=True)
+            "_internal": {"filesystem_fsync": "False"}},
+            "test", privileged=True)
 
     def teardown(self):
         shutil.rmtree(self.colpath)

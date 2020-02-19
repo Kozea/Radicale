@@ -51,7 +51,7 @@ def run():
 
     groups = {}
     for section, values in config.DEFAULT_CONFIG_SCHEMA.items():
-        if values.get("_internal", False):
+        if section.startswith("_"):
             continue
         group = parser.add_argument_group(section)
         groups[group] = []
@@ -65,7 +65,7 @@ def run():
             kwargs["dest"] = "%s_%s" % (section, option)
             groups[group].append(kwargs["dest"])
             del kwargs["value"]
-            if "internal" in kwargs:
+            with contextlib.suppress(KeyError):
                 del kwargs["internal"]
 
             if kwargs["type"] == bool:

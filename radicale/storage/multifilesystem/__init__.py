@@ -125,7 +125,7 @@ class Storage(
         return os.path.join(filesystem_folder, "collection-root")
 
     def _fsync(self, fd):
-        if self.configuration.get("internal", "filesystem_fsync"):
+        if self.configuration.get("_internal", "filesystem_fsync"):
             pathutils.fsync(fd)
 
     def _sync_directory(self, path):
@@ -134,7 +134,7 @@ class Storage(
         This only works on POSIX and does nothing on other systems.
 
         """
-        if not self.configuration.get("internal", "filesystem_fsync"):
+        if not self.configuration.get("_internal", "filesystem_fsync"):
             return
         if os.name == "posix":
             try:

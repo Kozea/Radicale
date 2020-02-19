@@ -133,13 +133,13 @@ class TestConfig:
 
     def test_internal(self):
         configuration = config.load()
-        configuration.update({"internal": {"internal_server": "True"}}, "test",
-                             internal=True)
+        configuration.update({"_internal": {"internal_server": "True"}},
+                             "test", privileged=True)
         with pytest.raises(Exception) as exc_info:
             configuration.update(
-                {"internal": {"internal_server": "True"}}, "test")
+                {"_internal": {"internal_server": "True"}}, "test")
         e = exc_info.value
-        assert "Invalid section 'internal'" in str(e)
+        assert "Invalid section '_internal'" in str(e)
 
     def test_plugin_schema(self):
         plugin_schema = {"auth": {"new_option": {"value": "False",
