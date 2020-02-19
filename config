@@ -15,7 +15,7 @@
 # IPv4 syntax: address:port
 # IPv6 syntax: [address]:port
 # For example: 0.0.0.0:9999, [::]:9999
-#hosts = localhost:5232
+#hosts = 127.0.0.1:5232
 
 # Max parallel connections
 #max_connections = 8
@@ -38,6 +38,15 @@
 # CA certificate for validating clients. This can be used to secure
 # TCP traffic between Radicale and a reverse proxy
 #certificate_authority =
+
+# SSL Protocol used. See python's ssl module for available values
+#protocol = PROTOCOL_TLSv1_2
+
+# Available ciphers. See python's ssl module for available ciphers
+#ciphers =
+
+# Reverse DNS to resolve client address in logs
+#dns_lookup = True
 
 
 [encoding]

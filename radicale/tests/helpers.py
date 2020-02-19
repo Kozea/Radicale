@@ -42,9 +42,11 @@ def get_file_content(file_name):
 
 
 def configuration_to_dict(configuration):
-    """Convert configuration to a dict with raw values."""
-    return {section: {option: configuration.get_raw(section, option)
-                      for option in configuration.options(section)
-                      if not option.startswith("_")}
-            for section in configuration.sections()
-            if not section.startswith("_")}
+    d = {}
+    for section in configuration.sections():
+        if configuration._schema[section].get("_internal", False):
+            continue
+        d[section] = {}
+        for option in configuration.options(section):
+            d[section][option] = configuration.get_raw(section, option)
+    return d

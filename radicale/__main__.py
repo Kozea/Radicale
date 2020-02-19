@@ -51,7 +51,7 @@ def run():
 
     groups = {}
     for section, values in config.DEFAULT_CONFIG_SCHEMA.items():
-        if section.startswith("_"):
+        if values.get("_internal", False):
             continue
         group = parser.add_argument_group(section)
         groups[group] = []
@@ -65,7 +65,7 @@ def run():
             kwargs["dest"] = "%s_%s" % (section, option)
             groups[group].append(kwargs["dest"])
             del kwargs["value"]
-            with contextlib.suppress(KeyError):
+            if "internal" in kwargs:
                 del kwargs["internal"]
 
             if kwargs["type"] == bool:
@@ -120,8 +120,7 @@ def run():
     log.set_level(configuration.get("logging", "level"))
 
     # Log configuration after logger is configured
-    for source, miss in configuration.sources():
-        logger.info("%s %s", "Skipped missing" if miss else "Loaded", source)
+    configuration.log_config_sources()
 
     if args.verify_storage:
         logger.info("Verifying storage")
@@ -142,7 +141,7 @@ def run():
 
     # SIGTERM and SIGINT (aka KeyboardInterrupt) shutdown the server
     def shutdown(signal_number, stack_frame):
-        shutdown_socket.close()
+        shutdown_socket.sendall(b" ")
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
 

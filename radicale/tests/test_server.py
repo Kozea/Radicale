@@ -63,13 +63,12 @@ class TestBaseServerRequests(BaseTest):
             sock.bind(("127.0.0.1", 0))
             self.sockname = sock.getsockname()
         self.configuration.update({
-            "storage": {"filesystem_folder": self.colpath,
-                        # Disable syncing to disk for better performance
-                        "_filesystem_fsync": "False"},
+            "storage": {"filesystem_folder": self.colpath},
             "server": {"hosts": "[%s]:%d" % self.sockname},
             # Enable debugging for new processes
-            "logging": {"level": "debug"}},
-            "test", privileged=True)
+            "logging": {"level": "debug"},
+            # Disable syncing to disk for better performance
+            "internal": {"filesystem_fsync": "False"}}, "test", internal=True)
         self.thread = threading.Thread(target=server.serve, args=(
             self.configuration, shutdown_socket_out))
         ssl_context = ssl.create_default_context()
@@ -80,7 +79,7 @@ class TestBaseServerRequests(BaseTest):
             DisabledRedirectHandler)
 
     def teardown(self):
-        self.shutdown_socket.close()
+        self.shutdown_socket.sendall(b" ")
         try:
             self.thread.join()
         except RuntimeError:  # Thread never started
@@ -120,25 +119,15 @@ class TestBaseServerRequests(BaseTest):
         self.thread.start()
         self.get("/", check=302)
 
-    def test_bind_fail(self):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            with pytest.raises(socket.gaierror) as exc_info:
-                sock.bind(("::1", 0))
-        assert exc_info.value.errno == server.COMPAT_EAI_ADDRFAMILY
-        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
-            with pytest.raises(socket.gaierror) as exc_info:
-                sock.bind(("127.0.0.1", 0))
-        assert exc_info.value.errno == server.COMPAT_EAI_ADDRFAMILY
-
+    @pytest.mark.skipif(not server.HAS_IPV6, reason="IPv6 not supported")
     def test_ipv6(self):
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(server.IPPROTO_IPV6, server.IPV6_V6ONLY, 1)
             try:
                 # Find available port
                 sock.bind(("::1", 0))
-            except socket.gaierror as e:
-                if e.errno == server.COMPAT_EAI_ADDRFAMILY:
-                    pytest.skip("IPv6 not supported")
-                raise
+            except OSError:
+                pytest.skip("IPv6 not supported")
             self.sockname = sock.getsockname()[:2]
         self.configuration.update({
             "server": {"hosts": "[%s]:%d" % self.sockname}}, "test")
@@ -148,7 +137,7 @@ class TestBaseServerRequests(BaseTest):
     def test_command_line_interface(self):
         config_args = []
         for section, values in config.DEFAULT_CONFIG_SCHEMA.items():
-            if section.startswith("_"):
+            if values.get("_internal", False):
                 continue
             for option, data in values.items():
                 if option.startswith("_"):

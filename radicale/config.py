@@ -25,13 +25,13 @@ Use ``load()`` to obtain an instance of ``Configuration`` for use with
 
 """
 
-import contextlib
 import math
 import os
 from collections import OrderedDict
 from configparser import RawConfigParser
 
 from radicale import auth, rights, storage, web
+from radicale.log import logger
 
 DEFAULT_CONFIG_PATH = os.pathsep.join([
     "?/etc/radicale/config",
@@ -81,22 +81,17 @@ def list_of_ip_address(value):
     return [ip_address(s.strip()) for s in value.split(",")]
 
 
-def unspecified_type(value):
-    return value
-
-
 def _convert_to_bool(value):
     if value.lower() not in RawConfigParser.BOOLEAN_STATES:
         raise ValueError("Not a boolean: %r" % value)
     return RawConfigParser.BOOLEAN_STATES[value.lower()]
 
 
-INTERNAL_OPTIONS = ("_allow_extra",)
 # Default configuration
 DEFAULT_CONFIG_SCHEMA = OrderedDict([
     ("server", OrderedDict([
         ("hosts", {
-            "value": "localhost:5232",
+            "value": "127.0.0.1:5232",
             "help": "set server hostnames including ports",
             "aliases": ["-H", "--hosts"],
             "type": list_of_ip_address}),
@@ -133,9 +128,17 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
             "help": "set CA certificate for validating clients",
             "aliases": ["--certificate-authority"],
             "type": filepath}),
-        ("_internal_server", {
-            "value": "False",
-            "help": "the internal server is used",
+        ("protocol", {
+            "value": "PROTOCOL_TLSv1_2",
+            "help": "SSL protocol used",
+            "type": str}),
+        ("ciphers", {
+            "value": "",
+            "help": "available ciphers",
+            "type": str}),
+        ("dns_lookup", {
+            "value": "True",
+            "help": "use reverse DNS to resolve client address in logs",
             "type": bool})])),
     ("encoding", OrderedDict([
         ("request", {
@@ -195,11 +198,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
         ("hook", {
             "value": "",
             "help": "command that is run after changes to storage",
-            "type": str}),
-        ("_filesystem_fsync", {
-            "value": "True",
-            "help": "sync all changes to filesystem during requests",
-            "type": bool})])),
+            "type": str})])),
     ("web", OrderedDict([
         ("type", {
             "value": "internal",
@@ -216,7 +215,17 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
             "help": "mask passwords in logs",
             "type": bool})])),
     ("headers", OrderedDict([
-        ("_allow_extra", str)]))])
+        ("_allow_extra", True)])),
+    ("internal", OrderedDict([
+        ("_internal", True),
+        ("filesystem_fsync", {
+            "value": "True",
+            "help": "sync all changes to filesystem during requests",
+            "type": bool}),
+        ("internal_server", {
+            "value": "False",
+            "help": "the internal server is used",
+            "type": bool})]))])
 
 
 def parse_compound_paths(*compound_paths):
@@ -295,13 +304,16 @@ class Configuration:
         self._schema = schema
         self._values = {}
         self._configs = []
-        default = {section: {option: self._schema[section][option]["value"]
-                             for option in self._schema[section]
-                             if option not in INTERNAL_OPTIONS}
-                   for section in self._schema}
-        self.update(default, "default config", privileged=True)
+        values = {}
+        for section in schema:
+            values[section] = {}
+            for option in schema[section]:
+                if option.startswith("_"):
+                    continue
+                values[section][option] = schema[section][option]["value"]
+        self.update(values, "default config", internal=True)
 
-    def update(self, config, source=None, privileged=False):
+    def update(self, config, source=None, internal=False):
         """Update the configuration.
 
         ``config`` a dict of the format {SECTION: {OPTION: VALUE, ...}, ...}.
@@ -312,32 +324,34 @@ class Configuration:
         ``source`` a description of the configuration source (used in error
         messages).
 
-        ``privileged`` allows updating sections and options starting with "_".
+        ``internal`` allows updating "_internal" sections.
 
         """
         source = source or "unspecified config"
         new_values = {}
         for section in config:
-            if (section not in self._schema or
-                    section.startswith("_") and not privileged):
-                raise ValueError(
+            if (section not in self._schema or not internal and
+                    self._schema[section].get("_internal", False)):
+                raise RuntimeError(
                     "Invalid section %r in %s" % (section, source))
             new_values[section] = {}
-            extra_type = None
-            extra_type = self._schema[section].get("_allow_extra")
-            if "type" in self._schema[section]:
+            if "_allow_extra" in self._schema[section]:
+                allow_extra_options = self._schema[section]["_allow_extra"]
+            elif "type" in self._schema[section]:
                 if "type" in config[section]:
-                    plugin = config[section]["type"]
+                    plugin_type = config[section]["type"]
                 else:
-                    plugin = self.get(section, "type")
-                if plugin not in self._schema[section]["type"]["internal"]:
-                    extra_type = unspecified_type
+                    plugin_type = self.get(section, "type")
+                allow_extra_options = plugin_type not in self._schema[section][
+                    "type"].get("internal", [])
+            else:
+                allow_extra_options = False
             for option in config[section]:
-                type_ = extra_type
                 if option in self._schema[section]:
                     type_ = self._schema[section][option]["type"]
-                if (not type_ or option in INTERNAL_OPTIONS or
-                        option.startswith("_") and not privileged):
+                elif allow_extra_options:
+                    type_ = str
+                else:
                     raise RuntimeError("Invalid option %r in section %r in "
                                        "%s" % (option, section, source))
                 raw_value = config[section][option]
@@ -350,30 +364,25 @@ class Configuration:
                         "Invalid %s value for option %r in section %r in %s: "
                         "%r" % (type_.__name__, option, section, source,
                                 raw_value)) from e
-        self._configs.append((config, source, bool(privileged)))
+        self._configs.append((config, source, bool(internal)))
         for section in new_values:
-            self._values[section] = self._values.get(section, {})
-            self._values[section].update(new_values[section])
+            if section not in self._values:
+                self._values[section] = {}
+            for option in new_values[section]:
+                self._values[section][option] = new_values[section][option]
 
     def get(self, section, option):
         """Get the value of ``option`` in ``section``."""
-        with contextlib.suppress(KeyError):
-            return self._values[section][option]
-        raise KeyError(section, option)
+        return self._values[section][option]
 
     def get_raw(self, section, option):
         """Get the raw value of ``option`` in ``section``."""
+        fconfig = self._configs[0]
         for config, _, _ in reversed(self._configs):
-            if option in config.get(section, {}):
-                return config[section][option]
-        raise KeyError(section, option)
-
-    def get_source(self, section, option):
-        """Get the source that provides ``option`` in ``section``."""
-        for config, source, _ in reversed(self._configs):
-            if option in config.get(section, {}):
-                return source
-        raise KeyError(section, option)
+            if section in config and option in config[section]:
+                fconfig = config
+                break
+        return fconfig[section][option]
 
     def sections(self):
         """List all sections."""
@@ -382,11 +391,6 @@ class Configuration:
     def options(self, section):
         """List all options in ``section``"""
         return self._values[section].keys()
-
-    def sources(self):
-        """List all config sources."""
-        return [(source, config is self.SOURCE_MISSING) for
-                config, source, _ in self._configs]
 
     def copy(self, plugin_schema=None):
         """Create a copy of the configuration
@@ -413,6 +417,21 @@ class Configuration:
                             section, option))
                     schema[section][option] = value
         copy = type(self)(schema)
-        for config, source, privileged in self._configs:
-            copy.update(config, source, privileged)
+        for config, source, internal in self._configs:
+            copy.update(config, source, internal)
         return copy
+
+    def log_config_sources(self):
+        """
+        A helper function that writes a description of all config sources
+        to logger.
+
+        Configs set to ``Configuration.SOURCE_MISSING`` are described as
+        missing.
+
+        """
+        for config, source, _ in self._configs:
+            if config is self.SOURCE_MISSING:
+                logger.info("Skipped missing %s", source)
+            else:
+                logger.info("Loaded %s", source)
