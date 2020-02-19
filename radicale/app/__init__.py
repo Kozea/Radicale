@@ -281,7 +281,7 @@ class Application(
                 logger.warning("Access to principal path %r denied by "
                                "rights backend", principal_path)
 
-        if self.configuration.get("_internal", "internal_server"):
+        if self.configuration.get("server", "_internal_server"):
             # Verify content length
             content_length = int(environ.get("CONTENT_LENGTH") or 0)
             if content_length:

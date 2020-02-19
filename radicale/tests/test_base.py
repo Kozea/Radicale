@@ -1348,9 +1348,9 @@ collection: .*
 permissions: RrWw""")
         self.configuration.update({
             "storage": {"type": self.storage_type,
-                        "filesystem_folder": self.colpath},
-            # Disable syncing to disk for better performance
-            "_internal": {"filesystem_fsync": "False"},
+                        "filesystem_folder": self.colpath,
+                        # Disable syncing to disk for better performance
+                        "_filesystem_fsync": "False"},
             "rights": {"file": rights_file_path,
                        "type": "from_file"}}, "test", privileged=True)
         self.application = Application(self.configuration)
@@ -1373,7 +1373,7 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
 
     def test_fsync(self):
         """Create a directory and file with syncing enabled."""
-        self.configuration.update({"_internal": {"filesystem_fsync": "True"}},
+        self.configuration.update({"storage": {"_filesystem_fsync": "True"}},
                                   "test", privileged=True)
         self.application = Application(self.configuration)
         self.mkcalendar("/calendar.ics/")

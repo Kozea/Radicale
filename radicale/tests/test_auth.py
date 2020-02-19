@@ -42,9 +42,9 @@ class TestBaseAuthRequests(BaseTest):
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
         self.configuration.update({
-            "storage": {"filesystem_folder": self.colpath},
-            # Disable syncing to disk for better performance
-            "_internal": {"filesystem_fsync": "False"},
+            "storage": {"filesystem_folder": self.colpath,
+                        # Disable syncing to disk for better performance
+                        "_filesystem_fsync": "False"},
             # Set incorrect authentication delay to a very low value
             "auth": {"delay": "0.002"}}, "test", privileged=True)
 

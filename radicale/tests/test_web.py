@@ -33,9 +33,9 @@ class TestBaseWebRequests(BaseTest):
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
         self.configuration.update({
-            "storage": {"filesystem_folder": self.colpath},
-            # Disable syncing to disk for better performance
-            "_internal": {"filesystem_fsync": "False"}},
+            "storage": {"filesystem_folder": self.colpath,
+                        # Disable syncing to disk for better performance
+                        "_filesystem_fsync": "False"}},
             "test", privileged=True)
         self.application = Application(self.configuration)
 

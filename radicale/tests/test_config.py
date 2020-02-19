@@ -131,15 +131,15 @@ class TestConfig:
         assert "section 'server" in str(e)
         assert "'x'" in str(e)
 
-    def test_internal(self):
+    def test_privileged(self):
         configuration = config.load()
-        configuration.update({"_internal": {"internal_server": "True"}},
+        configuration.update({"server": {"_internal_server": "True"}},
                              "test", privileged=True)
         with pytest.raises(Exception) as exc_info:
             configuration.update(
-                {"_internal": {"internal_server": "True"}}, "test")
+                {"server": {"_internal_server": "True"}}, "test")
         e = exc_info.value
-        assert "Invalid section '_internal'" in str(e)
+        assert "Invalid option '_internal_server'" in str(e)
 
     def test_plugin_schema(self):
         plugin_schema = {"auth": {"new_option": {"value": "False",

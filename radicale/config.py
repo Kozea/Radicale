@@ -132,7 +132,11 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "set CA certificate for validating clients",
             "aliases": ["--certificate-authority"],
-            "type": filepath})])),
+            "type": filepath}),
+        ("_internal_server", {
+            "value": "False",
+            "help": "the internal server is used",
+            "type": bool})])),
     ("encoding", OrderedDict([
         ("request", {
             "value": "utf-8",
@@ -191,7 +195,11 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
         ("hook", {
             "value": "",
             "help": "command that is run after changes to storage",
-            "type": str})])),
+            "type": str}),
+        ("_filesystem_fsync", {
+            "value": "True",
+            "help": "sync all changes to filesystem during requests",
+            "type": bool})])),
     ("web", OrderedDict([
         ("type", {
             "value": "internal",
@@ -208,16 +216,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
             "help": "mask passwords in logs",
             "type": bool})])),
     ("headers", OrderedDict([
-        ("_allow_extra", str)])),
-    ("_internal", OrderedDict([
-        ("filesystem_fsync", {
-            "value": "True",
-            "help": "sync all changes to filesystem during requests",
-            "type": bool}),
-        ("internal_server", {
-            "value": "False",
-            "help": "the internal server is used",
-            "type": bool})]))])
+        ("_allow_extra", str)]))])
 
 
 def parse_compound_paths(*compound_paths):

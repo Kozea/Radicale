@@ -200,7 +200,7 @@ def serve(configuration, shutdown_socket):
     logger.info("Starting Radicale")
     # Copy configuration before modifying
     configuration = configuration.copy()
-    configuration.update({"_internal": {"internal_server": "True"}}, "server",
+    configuration.update({"server": {"_internal_server": "True"}}, "server",
                          privileged=True)
 
     use_ssl = configuration.get("server", "ssl")

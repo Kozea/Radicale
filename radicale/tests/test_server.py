@@ -63,12 +63,12 @@ class TestBaseServerRequests(BaseTest):
             sock.bind(("127.0.0.1", 0))
             self.sockname = sock.getsockname()
         self.configuration.update({
-            "storage": {"filesystem_folder": self.colpath},
+            "storage": {"filesystem_folder": self.colpath,
+                        # Disable syncing to disk for better performance
+                        "_filesystem_fsync": "False"},
             "server": {"hosts": "[%s]:%d" % self.sockname},
             # Enable debugging for new processes
-            "logging": {"level": "debug"},
-            # Disable syncing to disk for better performance
-            "_internal": {"filesystem_fsync": "False"}},
+            "logging": {"level": "debug"}},
             "test", privileged=True)
         self.thread = threading.Thread(target=server.serve, args=(
             self.configuration, shutdown_socket_out))
