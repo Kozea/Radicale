@@ -22,6 +22,7 @@ Built-in WSGI server.
 
 """
 
+import errno
 import os
 import select
 import socket
@@ -36,8 +37,8 @@ from radicale.log import logger
 
 if hasattr(socket, "EAI_ADDRFAMILY"):
     COMPAT_EAI_ADDRFAMILY = socket.EAI_ADDRFAMILY
-elif os.name == "nt" and hasattr(socket, "EAI_NONAME"):
-    # Windows doesn't have a special error code for this
+elif hasattr(socket, "EAI_NONAME"):
+    # Windows and BSD don't have a special error code for this
     COMPAT_EAI_ADDRFAMILY = socket.EAI_NONAME
 if hasattr(socket, "IPPROTO_IPV6"):
     COMPAT_IPPROTO_IPV6 = socket.IPPROTO_IPV6
@@ -213,19 +214,26 @@ def serve(configuration, shutdown_socket):
             possible_families = (socket.AF_INET, socket.AF_INET6)
             bind_ok = False
             for i, family in enumerate(possible_families):
+                is_last = i == len(possible_families) - 1
                 try:
                     server = server_class(configuration, family, address,
                                           RequestHandler)
                 except OSError as e:
-                    if ((bind_ok or i < len(possible_families) - 1) and
-                            isinstance(e, socket.gaierror) and
-                            e.errno in (socket.EAI_NONAME,
-                                        COMPAT_EAI_ADDRFAMILY)):
-                        # Ignore unsupported families, only one must work
+                    # Ignore unsupported families (only one must work)
+                    if ((bind_ok or not is_last) and (
+                            isinstance(e, socket.gaierror) and (
+                                # Hostname does not exist or doesn't have
+                                # address for address family
+                                e.errno == socket.EAI_NONAME or
+                                # Address not for address family
+                                e.errno == COMPAT_EAI_ADDRFAMILY) or
+                            # Workaround for PyPy
+                            str(e) == "address family mismatched" or
+                            # Address family not available (e.g. IPv6 disabled)
+                            e.errno == errno.EADDRNOTAVAIL)):
                         continue
-                    raise RuntimeError(
-                        "Failed to start server %r: %s" % (
-                            format_address(address), e)) from e
+                    raise RuntimeError("Failed to start server %r: %s" % (
+                                           format_address(address), e)) from e
                 servers[server.socket] = server
                 bind_ok = True
                 server.set_app(application)

@@ -19,6 +19,7 @@ Test the internal server.
 
 """
 
+import errno
 import os
 import shutil
 import socket
@@ -116,22 +117,23 @@ class TestBaseServerRequests(BaseTest):
         self.get("/", check=302)
 
     def test_bind_fail(self):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            with pytest.raises(socket.gaierror) as exc_info:
-                sock.bind(("::1", 0))
-        assert exc_info.value.errno == server.COMPAT_EAI_ADDRFAMILY
-        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
-            with pytest.raises(socket.gaierror) as exc_info:
-                sock.bind(("127.0.0.1", 0))
-        assert exc_info.value.errno == server.COMPAT_EAI_ADDRFAMILY
+        for family, address in [(socket.AF_INET, "::1"),
+                                (socket.AF_INET6, "127.0.0.1")]:
+            with socket.socket(family, socket.SOCK_STREAM) as sock:
+                with pytest.raises(OSError) as exc_info:
+                    sock.bind((address, 0))
+            assert (isinstance(exc_info.value, socket.gaierror) and
+                    exc_info.value.errno == server.COMPAT_EAI_ADDRFAMILY or
+                    # Workaround for PyPy
+                    str(exc_info.value) == "address family mismatched")
 
     def test_ipv6(self):
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
             try:
                 # Find available port
                 sock.bind(("::1", 0))
-            except socket.gaierror as e:
-                if e.errno == server.COMPAT_EAI_ADDRFAMILY:
+            except OSError as e:
+                if e.errno == errno.EADDRNOTAVAIL:
                     pytest.skip("IPv6 not supported")
                 raise
             self.sockname = sock.getsockname()[:2]
