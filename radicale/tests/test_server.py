@@ -117,9 +117,13 @@ class TestBaseServerRequests(BaseTest):
         self.get("/", check=302)
 
     def test_bind_fail(self):
-        for family, address in [(socket.AF_INET, "::1"),
-                                (socket.AF_INET6, "127.0.0.1")]:
-            with socket.socket(family, socket.SOCK_STREAM) as sock:
+        for address_family, address in [(socket.AF_INET, "::1"),
+                                        (socket.AF_INET6, "127.0.0.1")]:
+            with socket.socket(address_family, socket.SOCK_STREAM) as sock:
+                if address_family == socket.AF_INET6:
+                    # Only allow IPv6 connections to the IPv6 socket
+                    sock.setsockopt(server.COMPAT_IPPROTO_IPV6,
+                                    socket.IPV6_V6ONLY, 1)
                 with pytest.raises(OSError) as exc_info:
                     sock.bind((address, 0))
             assert (isinstance(exc_info.value, socket.gaierror) and
@@ -130,6 +134,8 @@ class TestBaseServerRequests(BaseTest):
 
     def test_ipv6(self):
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
+            # Only allow IPv6 connections to the IPv6 socket
+            sock.setsockopt(server.COMPAT_IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
             try:
                 # Find available port
                 sock.bind(("::1", 0))
