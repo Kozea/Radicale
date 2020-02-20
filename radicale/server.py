@@ -83,7 +83,6 @@ class ParallelHTTPServer(socketserver.ThreadingMixIn,
         return super().finish_request(request, client_address)
 
     def finish_request(self, request, client_address):
-        """Don't overwrite this! (Modified by tests.)"""
         *client_address, client_socket = client_address
         client_address = tuple(client_address)
         try:

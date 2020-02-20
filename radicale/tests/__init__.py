@@ -21,33 +21,13 @@ Tests for Radicale.
 """
 
 import logging
-import os
 import sys
 from io import BytesIO
 
 import defusedxml.ElementTree as DefusedET
-from pytest_cov import embed
 
 import radicale
-from radicale import server, xmlutils
-
-# Measure coverage of forked processes
-finish_request = server.ParallelHTTPServer.finish_request
-pid = os.getpid()
-
-
-def finish_request_cov(self, request, client_address):
-    cov = None
-    if pid != os.getpid():
-        cov = embed.init()
-    try:
-        return finish_request(self, request, client_address)
-    finally:
-        if cov:
-            embed.cleanup(cov)
-
-
-server.ParallelHTTPServer.finish_request = finish_request_cov
+from radicale import xmlutils
 
 # Enable debug output
 radicale.log.logger.setLevel(logging.DEBUG)
