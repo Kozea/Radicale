@@ -38,11 +38,6 @@ from radicale import config, server
 from radicale.tests import BaseTest
 from radicale.tests.helpers import configuration_to_dict, get_file_path
 
-try:
-    import gunicorn
-except ImportError:
-    gunicorn = None
-
 
 class DisabledRedirectHandler(request.HTTPRedirectHandler):
     def http_error_302(self, req, fp, code, msg, headers):
@@ -174,7 +169,6 @@ class TestBaseServerRequests(BaseTest):
         if os.name == "posix":
             assert p.returncode == 0
 
-    @pytest.mark.skipif(not gunicorn, reason="gunicorn module not found")
     def test_wsgi_server(self):
         config_path = os.path.join(self.colpath, "config")
         parser = RawConfigParser()
@@ -183,14 +177,13 @@ class TestBaseServerRequests(BaseTest):
             parser.write(f)
         env = os.environ.copy()
         env["PYTHONPATH"] = os.pathsep.join(sys.path)
+        env["RADICALE_CONFIG"] = config_path
         p = subprocess.Popen([
-            sys.executable,
-            "-c", "from gunicorn.app.wsgiapp import run; run()",
-            "--bind", self.configuration.get_raw("server", "hosts"),
-            "--env", "RADICALE_CONFIG=%s" % config_path, "radicale"], env=env)
+            sys.executable, "-m", "waitress",
+            "--listen", self.configuration.get_raw("server", "hosts"),
+            "radicale:application"], env=env)
         try:
             self.get("/", is_alive_fn=lambda: p.poll() is None, check=302)
         finally:
             p.terminate()
             p.wait()
-        assert p.returncode == 0
