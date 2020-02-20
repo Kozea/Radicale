@@ -123,7 +123,8 @@ class TestBaseServerRequests(BaseTest):
                 with pytest.raises(OSError) as exc_info:
                     sock.bind((address, 0))
             assert (isinstance(exc_info.value, socket.gaierror) and
-                    exc_info.value.errno == server.COMPAT_EAI_ADDRFAMILY or
+                    exc_info.value.errno in (socket.EAI_NONAME,
+                                             server.COMPAT_EAI_ADDRFAMILY) or
                     # Workaround for PyPy
                     str(exc_info.value) == "address family mismatched")
 
