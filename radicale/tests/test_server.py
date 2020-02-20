@@ -126,11 +126,12 @@ class TestBaseServerRequests(BaseTest):
                                     socket.IPV6_V6ONLY, 1)
                 with pytest.raises(OSError) as exc_info:
                     sock.bind((address, 0))
+            # See ``radicale.server.serve``
             assert (isinstance(exc_info.value, socket.gaierror) and
                     exc_info.value.errno in (socket.EAI_NONAME,
                                              server.COMPAT_EAI_ADDRFAMILY) or
-                    # Workaround for PyPy
-                    str(exc_info.value) == "address family mismatched")
+                    str(exc_info.value) == "address family mismatched" or
+                    exc_info.value.errno == errno.EADDRNOTAVAIL)
 
     def test_ipv6(self):
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:

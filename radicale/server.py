@@ -223,12 +223,15 @@ def serve(configuration, shutdown_socket):
                             isinstance(e, socket.gaierror) and (
                                 # Hostname does not exist or doesn't have
                                 # address for address family
+                                # macOS: IPv6 address for INET address family
                                 e.errno == socket.EAI_NONAME or
                                 # Address not for address family
                                 e.errno == COMPAT_EAI_ADDRFAMILY) or
                             # Workaround for PyPy
                             str(e) == "address family mismatched" or
                             # Address family not available (e.g. IPv6 disabled)
+                            # macOS: IPv4 address for INET6 address family with
+                            #        IPV6_V6ONLY set
                             e.errno == errno.EADDRNOTAVAIL)):
                         continue
                     raise RuntimeError("Failed to start server %r: %s" % (
