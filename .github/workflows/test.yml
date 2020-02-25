@@ -10,7 +10,7 @@ on:
     - release/*
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -26,10 +26,37 @@ jobs:
         run: python -m pip install --editable .[test,bcrypt]
       - name: Run tests
         run: python setup.py test
-      - name: Upload coverage
+      - name: Upload coverage to Coveralls
+        if: secrets.COVERALLS_REPO_TOKEN
         env:
           COVERALLS_PARALLEL: true
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
         run: |
           python -m pip install coveralls
           python -m coveralls
+
+  coveralls-finished:
+    needs: test
+    if: secrets.COVERALLS_REPO_TOKEN
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - name: Install Coveralls
+        run: python -m pip install coveralls
+      - name: Call Coveralls parallel builds webhook
+        shell: python
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        run: |
+          import json, os, sys
+          from urllib.request import Request, urlopen
+          from coveralls import Coveralls
+          _, job, _ = Coveralls.load_config_from_github()
+          data = json.dumps({'repo_token': os.environ.get('COVERALLS_REPO_TOKEN', ''),
+                             'payload': {'status': 'done', 'build_num': job}}).encode()
+          headers = {'Content-type': 'application/json'}
+          with urlopen(Request('https://coveralls.io/webhook', data, headers)) as f:
+              sys.stderr.buffer.write(f.read() + b'\n')
