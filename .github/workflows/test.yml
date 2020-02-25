@@ -27,7 +27,7 @@ jobs:
       - name: Run tests
         run: python setup.py test
       - name: Upload coverage to Coveralls
-        if: secrets.COVERALLS_REPO_TOKEN
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         env:
           COVERALLS_PARALLEL: true
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
@@ -37,7 +37,7 @@ jobs:
 
   coveralls-finished:
     needs: test
-    if: secrets.COVERALLS_REPO_TOKEN
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
