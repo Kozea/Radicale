@@ -26,3 +26,10 @@ jobs:
         run: python -m pip install --editable .[test,bcrypt]
       - name: Run tests
         run: python setup.py test
+      - name: Upload coverage
+        env:
+          COVERALLS_PARALLEL: true
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        run: |
+          python -m pip install coveralls
+          python -m coveralls
