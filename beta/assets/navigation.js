@@ -11,14 +11,13 @@ window.addEventListener("load", function() {
     }
 
     let nav = document.querySelector("nav");
-    let sections = new Array();
-    sections.push([document.querySelector("main"), null]);
+    let sections = [[document.querySelector("main"), null]];
     for (let section of document.querySelectorAll("section")) {
         let id = section.getAttribute("id");
         let link = nav.querySelector("a[href=\\#" + id.replace(/\//g, "\\/") + "]");
         if (link !== null) {
             link = link.parentElement;
-            link.classList.remove("active")
+            link.classList.remove("active");
             sections.push([section, link]);
         }
     }

@@ -31,6 +31,9 @@ POSTPROCESSOR_EXE = os.path.join(TOOLS_PATH, "postprocessor.py")
 PANDOC_EXE = "pandoc"
 PANDOC_DOWNLOAD = ("https://github.com/jgm/pandoc/releases/download/"
                    "2.9.2/pandoc-2.9.2-1-amd64.deb")
+BRANCH_ORDERING = [  # Format: (REGEX, ORDER, DEFAULT)
+    (r'v?\d+(?:\.\d+)*', 0, True),
+    (r'.*', 1, False)]
 
 
 def convert_doc(src_path, to_path, branch, branches):
@@ -47,7 +50,7 @@ def convert_doc(src_path, to_path, branch, branches):
         "--toc-depth=4",
         "--filter=%s" % os.path.abspath(FILTER_EXE),
         "--variable=branch=%s" % branch,
-        *["--variable=branches=%s" % b for b in branches]],
+        *("--variable=branches=%s" % b for b in branches)],
         check=True, cwd=os.path.dirname(TEMPLATE_PATH))
     with open(to_path, "rb+") as f:
         data = subprocess.run([POSTPROCESSOR_EXE], input=f.read(),
@@ -71,6 +74,25 @@ def natural_sort_key(s):
     # https://stackoverflow.com/a/16090640
     return [int(part) if part.isdigit() else part.lower()
             for part in re.split(r"(\d+)", s)]
+
+
+def sort_branches(branches):
+    branches = list(branches)
+    order_least = min(order for _, order, _ in BRANCH_ORDERING) - 1
+    for i, branch in enumerate(branches):
+        for regex, order, default in BRANCH_ORDERING:
+            if re.fullmatch(regex, branch):
+                branches[i] = (order, natural_sort_key(branch), default,
+                               branch)
+                break
+        else:
+            branches[i] = (order_least, natural_sort_key(branch), False,
+                           branch)
+    branches.sort()
+    default_branch = [
+        None, *(branch for _, _, _, branch in branches),
+        *(branch for _, _, default, branch in branches if default)][-1]
+    return [branch for _, _, _, branch in branches], default_branch
 
 
 def run_git(*args):
@@ -116,7 +138,6 @@ def main():
     run_git_fetch_and_restart_if_changed(remote_commits, target_branch)
     branches = [ref[len("refs/remotes/%s/" % REMOTE):] for ref in run_git(
         "rev-parse", "--symbolic-full-name", "--remotes=%s" % REMOTE)]
-    branches.sort(key=natural_sort_key, reverse=True)
     os.makedirs(TARGET_DIR, exist_ok=True)
     for path in glob.iglob(os.path.join(TARGET_DIR, "*.html")):
         run_git("rm", "--", path)
@@ -130,14 +151,15 @@ def main():
             else:
                 branches.remove(branch)
         checkout(target_branch)
+        branches, default_branch = sort_branches(branches)
         for branch, src_path in branch_docs.items():
             to_path = os.path.join(TARGET_DIR, "%s.html" % branch)
             convert_doc(src_path, to_path, branch, branches)
             run_git("add", "--", to_path)
-    if branches:
+    if default_branch:
         index_path = os.path.join(TARGET_DIR, "index.html")
         with open(index_path, "w") as f:
-            f.write(make_index_html(branches[0]))
+            f.write(make_index_html(default_branch))
         run_git("add", "--", index_path)
     with contextlib.suppress(subprocess.CalledProcessError):
         run_git("diff", "--cached", "--quiet")

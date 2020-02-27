@@ -9,7 +9,7 @@ window.addEventListener("load", function() {
         if (branch === documentBranch) {
             option.setAttribute("selected", "");
         }
-        select.appendChild(option);
+        select.prepend(option);
     }
     select.addEventListener("change", function() {
         if (select.value !== documentBranch) {
