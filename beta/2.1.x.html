@@ -85,14 +85,14 @@
 <script src="assets/navigation.js"></script>
 <script src="assets/document-branches.js"></script>
 <script>
-    const documentBranch = "master";
+    const documentBranch = "2.1.x";
     const documentBranches = ["master", "2.1.x"];
 </script>
 <header>
 <div class="logoContainer">
 <h1>
             Radicale
-            <span class="documentBranch">master</span>
+            <span class="documentBranch">2.1.x</span>
 <select class="documentBranch"></select>
 </h1>
 <p>Free and Open-Source CalDAV and CardDAV Server</p>
@@ -222,6 +222,158 @@
 <li class="level4"><a href="#about//technical-choices">Technical Choices</a></li>
 <li class="level4"><a href="#about//history">History</a></li>
 </ul></li>
+<li class="level2"><a href="#news">News</a>
+<ul>
+<li class="level3"><a href="#news/august-16-2018---radicale-2110">August 16, 2018 - Radicale 2.1.10</a>
+<ul>
+<li class="level4"><a href="#news/august-16-2018---radicale-2110/2110---wild-radish">2.1.10 - Wild Radish</a></li>
+</ul></li>
+<li class="level3"><a href="#news/april-21-2018---radicale-219">April 21, 2018 - Radicale 2.1.9</a>
+<ul>
+<li class="level4"><a href="#news/april-21-2018---radicale-219/219---wild-radish">2.1.9 - Wild Radish</a></li>
+</ul></li>
+<li class="level3"><a href="#news/september-24-2017---radicale-218">September 24, 2017 - Radicale 2.1.8</a>
+<ul>
+<li class="level4"><a href="#news/september-24-2017---radicale-218/218---wild-radish">2.1.8 - Wild Radish</a></li>
+</ul></li>
+<li class="level3"><a href="#news/september-17-2017---radicale-217">September 17, 2017 - Radicale 2.1.7</a>
+<ul>
+<li class="level4"><a href="#news/september-17-2017---radicale-217/217---wild-radish">2.1.7 - Wild Radish</a></li>
+</ul></li>
+<li class="level3"><a href="#news/september-11-2017---radicale-216">September 11, 2017 - Radicale 2.1.6</a>
+<ul>
+<li class="level4"><a href="#news/september-11-2017---radicale-216/216---wild-radish">2.1.6 - Wild Radish</a></li>
+</ul></li>
+<li class="level3"><a href="#news/august-25-2017---radicale-215">August 25, 2017 - Radicale 2.1.5</a>
+<ul>
+<li class="level4"><a href="#news/august-25-2017---radicale-215/215---wild-radish">2.1.5 - Wild Radish</a></li>
+</ul></li>
+<li class="level3"><a href="#news/august-4-2017---radicale-214">August 4, 2017 - Radicale 2.1.4</a>
+<ul>
+<li class="level4"><a href="#news/august-4-2017---radicale-214/214---wild-radish">2.1.4 - Wild Radish</a></li>
+</ul></li>
+<li class="level3"><a href="#news/august-2-2017---radicale-213">August 2, 2017 - Radicale 2.1.3</a>
+<ul>
+<li class="level4"><a href="#news/august-2-2017---radicale-213/213---wild-radish">2.1.3 - Wild Radish</a></li>
+</ul></li>
+<li class="level3"><a href="#news/july-24-2017---radicale-212">July 24, 2017 - Radicale 2.1.2</a>
+<ul>
+<li class="level4"><a href="#news/july-24-2017---radicale-212/212---wild-radish">2.1.2 - Wild Radish</a></li>
+</ul></li>
+<li class="level3"><a href="#news/july-1-2017---radicale-211">July 1, 2017 - Radicale 2.1.1</a>
+<ul>
+<li class="level4"><a href="#news/july-1-2017---radicale-211/211---wild-radish-again">2.1.1 - Wild Radish Again</a></li>
+</ul></li>
+<li class="level3"><a href="#news/june-25-2017---radicale-210">June 25, 2017 - Radicale 2.1.0</a>
+<ul>
+<li class="level4"><a href="#news/june-25-2017---radicale-210/210---wild-radish">2.1.0 - Wild Radish</a></li>
+</ul></li>
+<li class="level3"><a href="#news/may-27-2017---radicale-200">May 27, 2017 - Radicale 2.0.0</a>
+<ul>
+<li class="level4"><a href="#news/may-27-2017---radicale-200/200---little-big-radish">2.0.0 - Little Big Radish</a></li>
+</ul></li>
+<li class="level3"><a href="#news/may-3-2017---radicale-112">May 3, 2017 - Radicale 1.1.2</a>
+<ul>
+<li class="level4"><a href="#news/may-3-2017---radicale-112/112---third-law-of-nature">1.1.2 - Third Law of Nature</a></li>
+</ul></li>
+<li class="level3"><a href="#news/december-31-2015---radicale-11">December 31, 2015 - Radicale 1.1</a>
+<ul>
+<li class="level4"><a href="#news/december-31-2015---radicale-11/11---law-of-nature">1.1 - Law of Nature</a></li>
+</ul></li>
+<li class="level3"><a href="#news/september-14-2015---radicale-10-whats-next">September 14, 2015 - Radicale 1.0, what's next?</a>
+<ul>
+<li class="level4"><a href="#news/september-14-2015---radicale-10-whats-next/10---sunflower">1.0 - Sunflower</a></li>
+</ul></li>
+<li class="level3"><a href="#news/january-12-2015---radicale-010">January 12, 2015 - Radicale 0.10</a>
+<ul>
+<li class="level4"><a href="#news/january-12-2015---radicale-010/010---lovely-endless-grass">0.10 - Lovely Endless Grass</a></li>
+</ul></li>
+<li class="level3"><a href="#news/july-12-2013---radicale-08">July 12, 2013 - Radicale 0.8</a>
+<ul>
+<li class="level4"><a href="#news/july-12-2013---radicale-08/08---rainbow">0.8 - Rainbow</a></li>
+</ul></li>
+<li class="level3"><a href="#news/august-3-2012---radicale-071">August 3, 2012 - Radicale 0.7.1</a>
+<ul>
+<li class="level4"><a href="#news/august-3-2012---radicale-071/071---waterfalls">0.7.1 - Waterfalls</a></li>
+</ul></li>
+<li class="level3"><a href="#news/march-22-2012---radicale-07">March 22, 2012 - Radicale 0.7</a>
+<ul>
+<li class="level4"><a href="#news/march-22-2012---radicale-07/07---eternal-sunshine">0.7 - Eternal Sunshine</a></li>
+</ul></li>
+<li class="level3"><a href="#news/january-5-2012---radicale-064-news-from-calypso">January 5, 2012 - Radicale 0.6.4, News from Calypso</a>
+<ul>
+<li class="level4"><a href="#news/january-5-2012---radicale-064-news-from-calypso/064---tulips">0.6.4 - Tulips</a></li>
+<li class="level4"><a href="#news/january-5-2012---radicale-064-news-from-calypso/calypso">Calypso</a></li>
+</ul></li>
+<li class="level3"><a href="#news/november-3-2011---radicale-063">November 3, 2011 - Radicale 0.6.3</a>
+<ul>
+<li class="level4"><a href="#news/november-3-2011---radicale-063/063---red-roses">0.6.3 - Red Roses</a></li>
+<li class="level4"><a href="#news/november-3-2011---radicale-063/whats-new-since-062">What's New Since 0.6.2?</a></li>
+<li class="level4"><a href="#news/november-3-2011---radicale-063/time-for-a-stable-release">Time for a Stable Release!</a></li>
+<li class="level4"><a href="#news/november-3-2011---radicale-063/whats-next">What's Next?</a></li>
+</ul></li>
+<li class="level3"><a href="#news/september-27-2011---radicale-062">September 27, 2011 - Radicale 0.6.2</a>
+<ul>
+<li class="level4"><a href="#news/september-27-2011---radicale-062/062---seeds">0.6.2 - Seeds</a></li>
+</ul></li>
+<li class="level3"><a href="#news/august-28-2011---radicale-061-changes-future">August 28, 2011 - Radicale 0.6.1, Changes, Future</a>
+<ul>
+<li class="level4"><a href="#news/august-28-2011---radicale-061-changes-future/061---growing-up">0.6.1 - Growing Up</a></li>
+<li class="level4"><a href="#news/august-28-2011---radicale-061-changes-future/github-mailing-list-new-website">GitHub, Mailing List, New Website</a></li>
+<li class="level4"><a href="#news/august-28-2011---radicale-061-changes-future/future-features">Future Features</a></li>
+</ul></li>
+<li class="level3"><a href="#news/august-1-2011---radicale-06-released">August 1, 2011 - Radicale 0.6 Released</a>
+<ul>
+<li class="level4"><a href="#news/august-1-2011---radicale-06-released/06---sapling">0.6 - Sapling</a></li>
+</ul></li>
+<li class="level3"><a href="#news/july-2-2011---feature-freeze-for-06">July 2, 2011 - Feature Freeze for 0.6</a></li>
+<li class="level3"><a href="#news/may-1-2011---ready-for-wsgi">May 1, 2011 - Ready for WSGI</a></li>
+<li class="level3"><a href="#news/april-30-2011---apple-ical-support">April 30, 2011 - Apple iCal Support</a></li>
+<li class="level3"><a href="#news/april-25-2011---two-features-and-one-new-roadmap">April 25, 2011 - Two Features and One New Roadmap</a>
+<ul>
+<li class="level4"><a href="#news/april-25-2011---two-features-and-one-new-roadmap/ldap-authentication">LDAP Authentication</a></li>
+<li class="level4"><a href="#news/april-25-2011---two-features-and-one-new-roadmap/journal-entries">Journal Entries</a></li>
+<li class="level4"><a href="#news/april-25-2011---two-features-and-one-new-roadmap/new-roadmap">New Roadmap</a></li>
+<li class="level4"><a href="#news/april-25-2011---two-features-and-one-new-roadmap/bugs">Bugs</a></li>
+</ul></li>
+<li class="level3"><a href="#news/april-10-2011---new-features">April 10, 2011 - New Features</a></li>
+<li class="level3"><a href="#news/april-2-2011---radicale-05-released">April 2, 2011 - Radicale 0.5 Released</a>
+<ul>
+<li class="level4"><a href="#news/april-2-2011---radicale-05-released/05---historical-artifacts">0.5 - Historical Artifacts</a></li>
+</ul></li>
+<li class="level3"><a href="#news/february-3-2011---jabber-room-and-iphone-support">February 3, 2011 - Jabber Room and iPhone Support</a></li>
+<li class="level3"><a href="#news/october-21-2010---news-from-radicale">October 21, 2010 - News from Radicale</a></li>
+<li class="level3"><a href="#news/august-8-2010---radicale-04-released">August 8, 2010 - Radicale 0.4 Released</a>
+<ul>
+<li class="level4"><a href="#news/august-8-2010---radicale-04-released/04---hot-days-back">0.4 - Hot Days Back</a></li>
+</ul></li>
+<li class="level3"><a href="#news/july-4-2010---three-features-added-last-week">July 4, 2010 - Three Features Added Last Week</a></li>
+<li class="level3"><a href="#news/june-14-2010---radicale-03-released">June 14, 2010 - Radicale 0.3 Released</a>
+<ul>
+<li class="level4"><a href="#news/june-14-2010---radicale-03-released/03---dancing-flowers">0.3 - Dancing Flowers</a></li>
+</ul></li>
+<li class="level3"><a href="#news/may-31-2010---may-news">May 31, 2010 - May News</a>
+<ul>
+<li class="level4"><a href="#news/may-31-2010---may-news/news-from-contributors">News from contributors</a></li>
+<li class="level4"><a href="#news/may-31-2010---may-news/news-from-software">News from software</a></li>
+</ul></li>
+<li class="level3"><a href="#news/april-19-2010---evolution-supported">April 19, 2010 - Evolution Supported</a></li>
+<li class="level3"><a href="#news/april-13-2010---radicale-02-released">April 13, 2010 - Radicale 0.2 Released</a>
+<ul>
+<li class="level4"><a href="#news/april-13-2010---radicale-02-released/02---snowflakes">0.2 - Snowflakes</a></li>
+</ul></li>
+<li class="level3"><a href="#news/january-21-2010---https-and-authentication">January 21, 2010 - HTTPS and Authentication</a></li>
+<li class="level3"><a href="#news/january-15-2010---ready-for-python-3">January 15, 2010 - Ready for Python 3</a></li>
+<li class="level3"><a href="#news/january-11-2010---twisted-no-longer-required">January 11, 2010 - Twisted no Longer Required</a></li>
+<li class="level3"><a href="#news/december-31-2009---lightning-and-sunbird-10b2pre-support">December 31, 2009 - Lightning and Sunbird 1.0b2pre Support</a></li>
+<li class="level3"><a href="#news/december-9-2009---thunderbird-3-released">December 9, 2009 - Thunderbird 3 released</a></li>
+<li class="level3"><a href="#news/september-1-2009---radicale-01-released">September 1, 2009 - Radicale 0.1 Released</a>
+<ul>
+<li class="level4"><a href="#news/september-1-2009---radicale-01-released/01---crazy-vegetables">0.1 - Crazy Vegetables</a></li>
+</ul></li>
+<li class="level3"><a href="#news/july-28-2009---radicale-on-gitorious">July 28, 2009 - Radicale on Gitorious</a></li>
+<li class="level3"><a href="#news/july-27-2009---radicale-ready-to-launch">July 27, 2009 - Radicale Ready to Launch</a></li>
+</ul></li>
 </ul>
 </nav>
 <div class="documentContainer">
@@ -252,7 +404,8 @@
 </section>
 <section class="level4" id="getting-started//whats-new">
 <h4>What's New? <a class="headerlink" href="#getting-started//whats-new">&para;</a></h4>
-<p><a href="https://github.com/Kozea/Radicale/blob/master/NEWS.md">Read the latest news</a></p>
+<p>Latest version of Radicale is 2.1.11, released on November 5, 2018 (<a href="https://github.com/Kozea/Radicale/blob/master/NEWS.md">changelog</a>).</p>
+<p><a href="#news">Read latest news&hellip;</a></p>
 </section>
 </section>
 <section class="level2" id="documentation">
@@ -1346,12 +1499,733 @@ user2:password2
 <p>Radicale often assumes that the clients are perfect and that protocol violations do not exist. That is why most of the errors in client requests have undetermined consequences for the lazy server that can reply good answers, bad answers, or even no answer.</p>
 </section>
 </section>
-<section class="level4 last" id="about//history">
+<section class="level4" id="about//history">
 <h4>History <a class="headerlink" href="#about//history">&para;</a></h4>
 <p>Radicale has been started as a (free topic) stupid school project replacing another (assigned topic) even more stupid school project.</p>
 <p>At the beginning, it was just a proof-of-concept. The main goal was to write a small, dirty and simple CalDAV server working with Lightning, using no external libraries. That's how we created a piece of code that's (quite) easy to understand, to use and to hack.</p>
 <p>The <a href="https://github.com/Kozea/Radicale/commit/b1591aea">first lines</a> have been added to the SVN (!) repository as I was drinking (many) beers at the very end of 2008 (Python 2.6 and 3.0 were just released). It's now packaged for a growing number of Linux distributions.</p>
 <p>And that was fun going from here to there thanks to you!</p>
+</section>
+</section>
+<section class="level2" id="news">
+<h2>News <a class="headerlink" href="#news">&para;</a></h2>
+<p>Latest version of Radicale is 2.1.11, released on November 5, 2018 (<a href="https://github.com/Kozea/Radicale/blob/master/NEWS.md">changelog</a>).</p>
+<section class="level3" id="news/august-16-2018---radicale-2110">
+<h3>August 16, 2018 - Radicale 2.1.10 <a class="headerlink" href="#news/august-16-2018---radicale-2110">&para;</a></h3>
+<p>Radicale 2.1.10 is out!</p>
+<section class="level4" id="news/august-16-2018---radicale-2110/2110---wild-radish">
+<h4>2.1.10 - Wild Radish <a class="headerlink" href="#news/august-16-2018---radicale-2110/2110---wild-radish">&para;</a></h4>
+<p>This release is compatible with version 2.0.0. See <a href="#documentation/migration-from-1xx-to-2xx">http://radicale.org/1to2/</a> if you want to switch from 1.x.x to 2.x.x.</p>
+<ul>
+<li>Update required versions for dependencies</li>
+<li>Get <code>RADICALE_CONFIG</code> from WSGI environ</li>
+<li>Improve HTTP status codes</li>
+<li>Fix race condition in storage lock creation</li>
+<li>Raise default limits for content length and timeout</li>
+<li>Log output from hook</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/april-21-2018---radicale-219">
+<h3>April 21, 2018 - Radicale 2.1.9 <a class="headerlink" href="#news/april-21-2018---radicale-219">&para;</a></h3>
+<p>Radicale 2.1.9 is out!</p>
+<section class="level4" id="news/april-21-2018---radicale-219/219---wild-radish">
+<h4>2.1.9 - Wild Radish <a class="headerlink" href="#news/april-21-2018---radicale-219/219---wild-radish">&para;</a></h4>
+<p>This release is compatible with version 2.0.0. See <a href="#documentation/migration-from-1xx-to-2xx">http://radicale.org/1to2/</a> if you want to switch from 1.x.x to 2.x.x.</p>
+<ul>
+<li>Specify versions for dependencies</li>
+<li>Move WSGI initialization into module</li>
+<li>Check if <code>REPORT</code> method is actually supported</li>
+<li>Include <code>rights</code> file in source distribution</li>
+<li>Specify <code>md5</code> and <code>bcrypt</code> as extras</li>
+<li>Improve logging messages</li>
+<li>Windows: Fix crash when item path is a directory</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/september-24-2017---radicale-218">
+<h3>September 24, 2017 - Radicale 2.1.8 <a class="headerlink" href="#news/september-24-2017---radicale-218">&para;</a></h3>
+<p>Radicale 2.1.8 is out!</p>
+<section class="level4" id="news/september-24-2017---radicale-218/218---wild-radish">
+<h4>2.1.8 - Wild Radish <a class="headerlink" href="#news/september-24-2017---radicale-218/218---wild-radish">&para;</a></h4>
+<p>This release is compatible with version 2.0.0. See <a href="#documentation/migration-from-1xx-to-2xx">http://radicale.org/1to2/</a> if you want to switch from 1.x.x to 2.x.x.</p>
+<ul>
+<li>Flush files before fsync'ing</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/september-17-2017---radicale-217">
+<h3>September 17, 2017 - Radicale 2.1.7 <a class="headerlink" href="#news/september-17-2017---radicale-217">&para;</a></h3>
+<p>Radicale 2.1.7 is out!</p>
+<section class="level4" id="news/september-17-2017---radicale-217/217---wild-radish">
+<h4>2.1.7 - Wild Radish <a class="headerlink" href="#news/september-17-2017---radicale-217/217---wild-radish">&para;</a></h4>
+<p>This release is compatible with version 2.0.0. See <a href="#documentation/migration-from-1xx-to-2xx">http://radicale.org/1to2/</a> if you want to switch from 1.x.x to 2.x.x.</p>
+<ul>
+<li>Don't print warning when cache format changes</li>
+<li>Add documentation for <code>BaseAuth</code></li>
+<li>Add <code>is_authenticated2(login, user, password)</code> to <code>BaseAuth</code></li>
+<li>Fix names of custom properties in PROPFIND requests with <code>D:propname</code> or <code>D:allprop</code></li>
+<li>Return all properties in PROPFIND requests with <code>D:propname</code> or <code>D:allprop</code></li>
+<li>Allow <code>D:displayname</code> property on all collections</li>
+<li>Answer with <code>D:unauthenticated</code> for <code>D:current-user-principal</code> property when not logged in</li>
+<li>Remove non-existing <code>ICAL:calendar-color</code> and <code>C:calendar-timezone</code> properties from PROPFIND requests with <code>D:propname</code> or <code>D:allprop</code></li>
+<li>Add <code>D:owner</code> property to calendar and address book objects</li>
+<li>Remove <code>D:getetag</code> and <code>D:getlastmodified</code> properties from regular collections</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/september-11-2017---radicale-216">
+<h3>September 11, 2017 - Radicale 2.1.6 <a class="headerlink" href="#news/september-11-2017---radicale-216">&para;</a></h3>
+<p>Radicale 2.1.6 is out!</p>
+<section class="level4" id="news/september-11-2017---radicale-216/216---wild-radish">
+<h4>2.1.6 - Wild Radish <a class="headerlink" href="#news/september-11-2017---radicale-216/216---wild-radish">&para;</a></h4>
+<p>This release is compatible with version 2.0.0. See <a href="#documentation/migration-from-1xx-to-2xx">http://radicale.org/1to2/</a> if you want to switch from 1.x.x to 2.x.x.</p>
+<ul>
+<li>Fix content-type of VLIST</li>
+<li>Specify correct COMPONENT in content-type of VCALENDAR</li>
+<li>Cache COMPONENT of calendar objects (improves speed with some clients)</li>
+<li>Stricter parsing of filters</li>
+<li>Improve support for CardDAV filter</li>
+<li>Fix some smaller bugs in CalDAV filter</li>
+<li>Add X-WR-CALNAME and X-WR-CALDESC to calendars downloaded via HTTP/WebDAV</li>
+<li>Use X-WR-CALNAME and X-WR-CALDESC from calendars published via WebDAV</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/august-25-2017---radicale-215">
+<h3>August 25, 2017 - Radicale 2.1.5 <a class="headerlink" href="#news/august-25-2017---radicale-215">&para;</a></h3>
+<p>Radicale 2.1.5 is out!</p>
+<section class="level4" id="news/august-25-2017---radicale-215/215---wild-radish">
+<h4>2.1.5 - Wild Radish <a class="headerlink" href="#news/august-25-2017---radicale-215/215---wild-radish">&para;</a></h4>
+<p>This release is compatible with version 2.0.0. See <a href="#documentation/migration-from-1xx-to-2xx">http://radicale.org/1to2/</a> if you want to switch from 1.x.x to 2.x.x.</p>
+<ul>
+<li>Add <code>--verify-storage</code> command-line argument</li>
+<li>Allow comments in the htpasswd file</li>
+<li>Don't strip whitespaces from user names and passwords in the htpasswd file</li>
+<li>Remove cookies from logging output</li>
+<li>Allow uploads of whole collections with many components</li>
+<li>Show warning message if server.timeout is used with Python &lt; 3.5.2</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/august-4-2017---radicale-214">
+<h3>August 4, 2017 - Radicale 2.1.4 <a class="headerlink" href="#news/august-4-2017---radicale-214">&para;</a></h3>
+<p>Radicale 2.1.4 is out!</p>
+<section class="level4" id="news/august-4-2017---radicale-214/214---wild-radish">
+<h4>2.1.4 - Wild Radish <a class="headerlink" href="#news/august-4-2017---radicale-214/214---wild-radish">&para;</a></h4>
+<p>This release is compatible with version 2.0.0. See <a href="#documentation/migration-from-1xx-to-2xx">http://radicale.org/1to2/</a> if you want to switch from 1.x.x to 2.x.x.</p>
+<ul>
+<li>Fix incorrect time range matching and calculation for some edge-cases with rescheduled recurrences</li>
+<li>Fix owner property</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/august-2-2017---radicale-213">
+<h3>August 2, 2017 - Radicale 2.1.3 <a class="headerlink" href="#news/august-2-2017---radicale-213">&para;</a></h3>
+<p>Radicale 2.1.3 is out!</p>
+<section class="level4" id="news/august-2-2017---radicale-213/213---wild-radish">
+<h4>2.1.3 - Wild Radish <a class="headerlink" href="#news/august-2-2017---radicale-213/213---wild-radish">&para;</a></h4>
+<p>This release is compatible with version 2.0.0. See <a href="#documentation/migration-from-1xx-to-2xx">http://radicale.org/1to2/</a> if you want to switch from 1.x.x to 2.x.x.</p>
+<ul>
+<li>Enable timeout for SSL handshakes and move them out of the main thread</li>
+<li>Create cache entries during upload of items</li>
+<li>Stop built-in server on Windows when Ctrl+C is pressed</li>
+<li>Prevent slow down when multiple requests hit a collection during cache warm-up</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/july-24-2017---radicale-212">
+<h3>July 24, 2017 - Radicale 2.1.2 <a class="headerlink" href="#news/july-24-2017---radicale-212">&para;</a></h3>
+<p>Radicale 2.1.2 is out!</p>
+<section class="level4" id="news/july-24-2017---radicale-212/212---wild-radish">
+<h4>2.1.2 - Wild Radish <a class="headerlink" href="#news/july-24-2017---radicale-212/212---wild-radish">&para;</a></h4>
+<p>This release is compatible with version 2.0.0. See <a href="#documentation/migration-from-1xx-to-2xx">http://radicale.org/1to2/</a> if you want to switch from 1.x.x to 2.x.x.</p>
+<ul>
+<li>Remove workarounds for bugs in VObject &lt; 0.9.5</li>
+<li>Error checking of collection tags and associated components</li>
+<li>Improve error checking of uploaded collections and components</li>
+<li>Don't delete empty collection properties implicitly</li>
+<li>Improve logging of VObject serialization</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/july-1-2017---radicale-211">
+<h3>July 1, 2017 - Radicale 2.1.1 <a class="headerlink" href="#news/july-1-2017---radicale-211">&para;</a></h3>
+<p>Radicale 2.1.1 is out!</p>
+<section class="level4" id="news/july-1-2017---radicale-211/211---wild-radish-again">
+<h4>2.1.1 - Wild Radish Again <a class="headerlink" href="#news/july-1-2017---radicale-211/211---wild-radish-again">&para;</a></h4>
+<p>This release is compatible with version 2.0.0. See <a href="#documentation/migration-from-1xx-to-2xx">http://radicale.org/1to2/</a> if you want to switch from 1.x.x to 2.x.x.</p>
+<ul>
+<li>Add missing UIDs instead of failing</li>
+<li>Improve error checking of calendar and address book objects</li>
+<li>Fix upload of whole address books</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/june-25-2017---radicale-210">
+<h3>June 25, 2017 - Radicale 2.1.0 <a class="headerlink" href="#news/june-25-2017---radicale-210">&para;</a></h3>
+<p>Radicale 2.1.0 is out!</p>
+<section class="level4" id="news/june-25-2017---radicale-210/210---wild-radish">
+<h4>2.1.0 - Wild Radish <a class="headerlink" href="#news/june-25-2017---radicale-210/210---wild-radish">&para;</a></h4>
+<p>This release is compatible with version 2.0.0. See <a href="#documentation/migration-from-1xx-to-2xx">http://radicale.org/1to2/</a> if you want to switch from 1.x.x to 2.1.0.</p>
+<ul>
+<li>Built-in web interface for creating and managing address books and calendars
+<ul>
+<li>can be extended with web plugins</li>
+</ul></li>
+<li>Much faster storage backend</li>
+<li>Significant reduction in memory usage</li>
+<li>Improved logging
+<ul>
+<li>Include paths (of invalid items / requests) in log messages</li>
+<li>Include configuration values causing problems in log messages</li>
+<li>Log warning message for invalid requests by clients</li>
+<li>Log error message for invalid files in the storage backend</li>
+<li>No stack traces unless debugging is enabled</li>
+</ul></li>
+<li>Time range filter also regards overwritten recurrences</li>
+<li>Items that couldn't be filtered because of bugs in VObject are always returned (and a warning message is logged)</li>
+<li>Basic error checking of configuration files</li>
+<li>File system locking isn't disabled implicitly anymore, instead a new configuration option gets introduced</li>
+<li>The permissions of the lock file are not changed anymore</li>
+<li>Support for sync-token</li>
+<li>Support for client-side SSL certificates</li>
+<li>Rights plugins can decide if access to an item is granted explicitly
+<ul>
+<li>Respond with 403 instead of 404 for principal collections of non-existing users when <code>owner_only</code> plugin is used (information leakage)</li>
+</ul></li>
+<li>Authentication plugins can provide the login and password from the environment
+<ul>
+<li>new <code>remote_user</code> plugin, that gets the login from the <code>REMOTE_USER</code> environment variable (for WSGI server)</li>
+<li>new <code>http_x_remote_user</code> plugin, that gets the login from the <code>X-Remote-User</code> HTTP header (for reverse proxies)</li>
+</ul></li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/may-27-2017---radicale-200">
+<h3>May 27, 2017 - Radicale 2.0.0 <a class="headerlink" href="#news/may-27-2017---radicale-200">&para;</a></h3>
+<p>Radicale 2.0.0 is out!</p>
+<section class="level4" id="news/may-27-2017---radicale-200/200---little-big-radish">
+<h4>2.0.0 - Little Big Radish <a class="headerlink" href="#news/may-27-2017---radicale-200/200---little-big-radish">&para;</a></h4>
+<p>This feature is not compatible with the 1.x.x versions. See <a href="#documentation/migration-from-1xx-to-2xx">http://radicale.org/1to2/</a> if you want to switch from 1.x.x to 2.0.0.</p>
+<ul>
+<li>Support Python 3.3+ only, Python 2 is not supported anymore</li>
+<li>Keep only one simple filesystem-based storage system</li>
+<li>Remove built-in Git support</li>
+<li>Remove built-in authentication modules</li>
+<li>Keep the WSGI interface, use Python HTTP server by default</li>
+<li>Use a real iCal parser, rely on the "vobject" external module</li>
+<li>Add a solid calendar discovery</li>
+<li>Respect the difference between "files" and "folders", don't rely on slashes</li>
+<li>Remove the calendar creation with GET requests</li>
+<li>Be stateless</li>
+<li>Use a file locker</li>
+<li>Add threading</li>
+<li>Get atomic writes</li>
+<li>Support new filters</li>
+<li>Support read-only permissions</li>
+<li>Allow External plugins for authentication, rights management, storage and version control</li>
+</ul>
+<p>This release concludes endless months of hard work from the community. You, all users and contributors, deserve a big <strong>thank you</strong>.</p>
+<p>This project has been an increadible experience for me, your dear Guillaume, creator and maintainer of Radicale. After more than 8 years of fun, I think that it's time to open this software to its contributors. Radicale can grow and become more than the toy it used to be. I've always seen Radicale as a small and simple piece of code, and I don't want to prevent people from adding features just because I can't or don't want to maintain them. The community is now large enough to handle this.</p>
+<p>If you're interested in Radicale, you can read <a href="https://github.com/Kozea/Radicale/issues/372">#372</a> and build its future.</p>
+</section>
+</section>
+<section class="level3" id="news/may-3-2017---radicale-112">
+<h3>May 3, 2017 - Radicale 1.1.2 <a class="headerlink" href="#news/may-3-2017---radicale-112">&para;</a></h3>
+<p>Radicale 1.1.2 is out!</p>
+<section class="level4" id="news/may-3-2017---radicale-112/112---third-law-of-nature">
+<h4>1.1.2 - Third Law of Nature <a class="headerlink" href="#news/may-3-2017---radicale-112/112---third-law-of-nature">&para;</a></h4>
+<ul>
+<li><strong>Security fix</strong>: Add a random timer to avoid timing oracles and simple bruteforce attacks when using the htpasswd authentication method.</li>
+<li>Various minor fixes.</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/december-31-2015---radicale-11">
+<h3>December 31, 2015 - Radicale 1.1 <a class="headerlink" href="#news/december-31-2015---radicale-11">&para;</a></h3>
+<p>Radicale 1.1 is out!</p>
+<section class="level4" id="news/december-31-2015---radicale-11/11---law-of-nature">
+<h4>1.1 - Law of Nature <a class="headerlink" href="#news/december-31-2015---radicale-11/11---law-of-nature">&para;</a></h4>
+<p>One feature in this release is <strong>not backward compatible</strong>:</p>
+<ul>
+<li>Use the first matching section for rights (inspired from daald)</li>
+</ul>
+<p>Now, the first section matching the path and current user in your custom rights file is used. In the previous versions, the most permissive rights of all the matching sections were applied. This new behaviour gives a simple way to make specific rules at the top of the file independant from the generic ones.</p>
+<p>Many <strong>improvements in this release are related to security</strong>, you should upgrade Radicale as soon as possible:</p>
+<ul>
+<li>Improve the regex used for well-known URIs (by Unrud)</li>
+<li>Prevent regex injection in rights management (by Unrud)</li>
+<li>Prevent crafted HTTP request from calling arbitrary functions (by Unrud)</li>
+<li>Improve URI sanitation and conversion to filesystem path (by Unrud)</li>
+<li>Decouple the daemon from its parent environment (by Unrud)</li>
+</ul>
+<p>Some bugs have been fixed and little enhancements have been added:</p>
+<ul>
+<li>Assign new items to corret key (by Unrud)</li>
+<li>Avoid race condition in PID file creation (by Unrud)</li>
+<li>Improve the docker version (by cdpb)</li>
+<li>Encode message and commiter for git commits</li>
+<li>Test with Python 3.5</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/september-14-2015---radicale-10-whats-next">
+<h3>September 14, 2015 - Radicale 1.0, what's next? <a class="headerlink" href="#news/september-14-2015---radicale-10-whats-next">&para;</a></h3>
+<p>Radicale 1.0 is out!</p>
+<section class="level4" id="news/september-14-2015---radicale-10-whats-next/10---sunflower">
+<h4>1.0 - Sunflower <a class="headerlink" href="#news/september-14-2015---radicale-10-whats-next/10---sunflower">&para;</a></h4>
+<ul>
+<li>Enhanced performances (by Mathieu Dupuy)</li>
+<li>Add MD5-APR1 and BCRYPT for htpasswd-based authentication (by Jan-Philip Gehrcke)</li>
+<li>Use PAM service (by Stephen Paul Weber)</li>
+<li>Don't discard PROPPATCH on empty collections (Markus Unterwaditzer)</li>
+<li>Write the path of the collection in the git message (Matthew Monaco)</li>
+<li>Tests launched on Travis</li>
+</ul>
+<p>As explained in a previous <a href="http://librelist.com/browser//radicale/2015/8/21/radicale-1-0-is-coming-what-s-next/">mail</a>, this version is called 1.0 because:</p>
+<ul>
+<li>there are no big changes since 0.10 but some small changes are really useful,</li>
+<li>simple tests are now automatically launched on Travis, and more can be added in the future (<a href="https://travis-ci.org/Kozea/Radicale">https://travis-ci.org/Kozea/Radicale</a>).</li>
+</ul>
+<p>This version will be maintained with only simple bug fixes on a separate git branch called <code>1.0.x</code>.</p>
+<p>Now that this milestone is reached, it's time to think about the future. When Radicale has been created, it was just a proof-of-concept. The main goal was to write a small, stupid and simple CalDAV server working with Lightning, using no external libraries. That's how we created a piece of code that's (quite) easy to understand, to use and to hack.</p>
+<p>The first lines have been added to the SVN (!) repository as I was drinking beers at the very end of 2008. It's now packaged for a growing number of Linux distributions.</p>
+<p>And that was fun going from here to there thanks to you. So&hellip; <strong>Thank you, you're amazing</strong>. I'm so glad I've spent endless hours fixing stupid bugs, arguing about databases and meeting invitations, reading incredibly interesting RFCs and debugging with the fabulous clients from Apple. I mean: that really, really was really, really cool :).</p>
+<p>During these years, a lot of things have changed and many users now rely on Radicale in production. For example, I use it to manage medical calendars, with thousands requests per day. Many people are happy to install Radicale on their small home servers, but are also frustrated by performance and unsupported specifications when they're trying to use it seriously.</p>
+<p>So, now is THE FUTURE! I think that Radicale 2.0 should:</p>
+<ul>
+<li>rely on a few external libraries for simple critical points (dealing with HTTP and iCal for example),</li>
+<li>be thread-safe,</li>
+<li>be small,</li>
+<li>be documented in a different way (for example by splitting the client part from the server part, and by adding use cases),</li>
+<li>let most of the "auth" modules outside in external modules,</li>
+<li>have more and more tests,</li>
+<li>have reliable and faster filesystem and database storage mechanisms,</li>
+<li>get a new design :).</li>
+</ul>
+<p>I'd also secretly love to drop the Python 2.x support.</p>
+<p>These ideas are not all mine (except from the really, really, really important "design" point :p), they have been proposed by many developers and users. I've just tried to gather them and keep points that seem important to me.</p>
+<p>Other points have been discussed with many users and contibutors, including:</p>
+<ul>
+<li>support of other clients, including Windows and BlackBerry phones,</li>
+<li>server-side meeting invitations,</li>
+<li>different storage system as default (or even unique?).</li>
+</ul>
+<p>I'm not a huge fan of these features, either because I can't do anything about them, or because I think that they're Really Bad Ideas&reg;&trade;. But I'm ready to talk about them, because, well, I may not be always right!</p>
+<p>Need to talk about this? You know how to <a href="#contribute">contact us</a>!</p>
+</section>
+</section>
+<section class="level3" id="news/january-12-2015---radicale-010">
+<h3>January 12, 2015 - Radicale 0.10 <a class="headerlink" href="#news/january-12-2015---radicale-010">&para;</a></h3>
+<p>Radicale 0.10 is out!</p>
+<section class="level4" id="news/january-12-2015---radicale-010/010---lovely-endless-grass">
+<h4>0.10 - Lovely Endless Grass <a class="headerlink" href="#news/january-12-2015---radicale-010/010---lovely-endless-grass">&para;</a></h4>
+<ul>
+<li>Support well-known URLs (by Mathieu Dupuy)</li>
+<li>Fix collection discovery (by Markus Unterwaditzer)</li>
+<li>Reload logger config on SIGHUP (by &Eacute;lie Bouttier)</li>
+<li>Remove props files when deleting a collection (by Vincent Untz)</li>
+<li>Support salted SHA1 passwords (by Marc Kleine-Budde)</li>
+<li>Don't spam the logs about non-SSL IMAP connections to localhost (by Giel van Schijndel)</li>
+</ul>
+<p>This version should bring some interesting discovery and auto-configuration features, mostly with Apple clients.</p>
+<p>Lots of love and kudos for the people who have spent hours to test features and report issues, that was long but really useful (and some of you have been really patient :p).</p>
+<p>Issues are welcome, I'm sure that you'll find horrible, terrible, crazy bugs faster than me. I'll release a version 0.10.1 if needed.</p>
+<p>What's next? It's time to fix and improve the storage methods. A real API for the storage modules is a good beginning, many pull requests are already ready to be discussed and merged, and we will probably get some good news about performance this time. Who said "databases, please"?</p>
+</section>
+</section>
+<section class="level3" id="news/july-12-2013---radicale-08">
+<h3>July 12, 2013 - Radicale 0.8 <a class="headerlink" href="#news/july-12-2013---radicale-08">&para;</a></h3>
+<p>Radicale 0.8 is out!</p>
+<section class="level4" id="news/july-12-2013---radicale-08/08---rainbow">
+<h4>0.8 - Rainbow <a class="headerlink" href="#news/july-12-2013---radicale-08/08---rainbow">&para;</a></h4>
+<ul>
+<li>New authentication and rights management modules (by Matthias Jordan)</li>
+<li>Experimental database storage</li>
+<li>Command-line option for custom configuration file (by Mark Adams)</li>
+<li>Root URL not at the root of a domain (by Clint Adams, Fabrice Bellet, Vincent Untz)</li>
+<li>Improved support for iCal, CalDAVSync, CardDAVSync, CalDavZAP and CardDavMATE</li>
+<li>Empty PROPFIND requests handled (by Christoph Polcin)</li>
+<li>Colon allowed in passwords</li>
+<li>Configurable realm message</li>
+</ul>
+<p>This version brings some of the biggest changes since Radicale's creation, including an experimental support of database storage, clean authentication modules, and rights management finally designed for real users.</p>
+<p>So, dear user, be careful: <strong>this version changes important things in the configuration file, so check twice that everything is OK when you update to 0.8, or you can have big problems</strong>.</p>
+<p>More and more clients are supported, as a lot of bug fixes and features have been added for this purpose. And before you ask: yes, 2 web-based clients, <a href="http://www.inf-it.com/open-source/clients/">CalDavZAP and CardDavMATE</a>, are now supported!</p>
+<p>Even if there has been a lot of time to test these new features, I am pretty sure that some really annoying bugs have been left in this version. We will probably release minor versions with bugfixes during the next weeks, and it will not take one more year to reach 0.8.1.</p>
+<p>The documentation has been updated, but some parts are missing and some may be out of date. You can <a href="https://github.com/Kozea/Radicale/issues">report bugs</a> or even <a href="https://github.com/Kozea/Radicale/blob/website/pages/user_documentation.rst">write documentation directly on GitHub</a> if you find something strange (and you probably will).</p>
+<p>If anything is not clear, or if the way rights work is a bit complicated to understand, or if you are so happy because everything works so well, you can <a href="#contribute">share your thoughts</a>!</p>
+<p>It has been a real pleasure to work on this version, with brilliant ideas and interesting bug reports from the community. I'd really like to thank all the people reporting bugs, chatting on IRC, sending mails and proposing pull requests: you are awesome.</p>
+</section>
+</section>
+<section class="level3" id="news/august-3-2012---radicale-071">
+<h3>August 3, 2012 - Radicale 0.7.1 <a class="headerlink" href="#news/august-3-2012---radicale-071">&para;</a></h3>
+<p>Radicale 0.7.1 is out!</p>
+<section class="level4" id="news/august-3-2012---radicale-071/071---waterfalls">
+<h4>0.7.1 - Waterfalls <a class="headerlink" href="#news/august-3-2012---radicale-071/071---waterfalls">&para;</a></h4>
+<ul>
+<li>Many address books fixes</li>
+<li>New IMAP ACL (by Daniel Aleksandersen)</li>
+<li>PAM ACL fixed (by Daniel Aleksandersen)</li>
+<li>Courier ACL fixed (by Benjamin Frank)</li>
+<li>Always set display name to collections (by Oskari Timperi)</li>
+<li>Various DELETE responses fixed</li>
+</ul>
+<p>It's been a long time since the last version&hellip; As usual, many people have contributed to this new version, that's a pleasure to get these pull requests.</p>
+<p>Most of the commits are bugfixes, especially about ACL backends and address books. Many clients (including aCal and SyncEvolution) will be much happier with this new version than with the previous one.</p>
+<p>By the way, one main new feature has been added: a new IMAP ACL backend, by Daniel. And about authentication, exciting features are coming soon, stay tuned!</p>
+<p>Next time, as many mails have come from angry and desperate coders, tests will be <em>finally</em> added to help them to add features and fix bugs. And after that, who knows, it may be time to release Radicale 1.0&hellip;</p>
+</section>
+</section>
+<section class="level3" id="news/march-22-2012---radicale-07">
+<h3>March 22, 2012 - Radicale 0.7 <a class="headerlink" href="#news/march-22-2012---radicale-07">&para;</a></h3>
+<p>Radicale 0.7 is out, at least!</p>
+<section class="level4" id="news/march-22-2012---radicale-07/07---eternal-sunshine">
+<h4>0.7 - Eternal Sunshine <a class="headerlink" href="#news/march-22-2012---radicale-07/07---eternal-sunshine">&para;</a></h4>
+<ul>
+<li>Repeating events</li>
+<li>Collection deletion</li>
+<li>Courier and PAM authentication methods</li>
+<li>CardDAV support</li>
+<li>Custom LDAP filters supported</li>
+</ul>
+<p><strong>A lot</strong> of people have reported bugs, proposed new features, added useful code and tested many clients. Thank you Lynn, Ron, Bill, Patrick, Hidde, Gerhard, Martin, Brendan, Vladimir, and everybody I've forgotten.</p>
+</section>
+</section>
+<section class="level3" id="news/january-5-2012---radicale-064-news-from-calypso">
+<h3>January 5, 2012 - Radicale 0.6.4, News from Calypso <a class="headerlink" href="#news/january-5-2012---radicale-064-news-from-calypso">&para;</a></h3>
+<p>New year, new release. Radicale 0.6.4 has a really short changelog:</p>
+<section class="level4" id="news/january-5-2012---radicale-064-news-from-calypso/064---tulips">
+<h4>0.6.4 - Tulips <a class="headerlink" href="#news/january-5-2012---radicale-064-news-from-calypso/064---tulips">&para;</a></h4>
+<ul>
+<li>Fix the installation with Python 3.1</li>
+</ul>
+<p>The bug was in fact caused by a <a href="http://bugs.python.org/issue9561">bug in Python 3.1</a>, everything should be OK now.</p>
+</section>
+<section class="level4" id="news/january-5-2012---radicale-064-news-from-calypso/calypso">
+<h4>Calypso <a class="headerlink" href="#news/january-5-2012---radicale-064-news-from-calypso/calypso">&para;</a></h4>
+<p>After a lot of changes in Radicale, Keith Packard has decided to launch a fork called <a href="http://keithp.com/blogs/calypso/">Calypso</a>, with nice features such as a Git storage mechanism and a CardDAV support.</p>
+<p>There are lots of differences between the two projects, but the final goal for Radicale is to provide these new features as soon as possible. Thanks to the work of Keith and other people on GitHub, a basic CardDAV support has been added in the <a href="https://github.com/Kozea/Radicale/tree/carddav">carddav branch</a> and already works with Evolution. Korganizer also works with existing address books, and CardDAV-Sync will be tested soon. If you want to test other clients, please let us know!</p>
+</section>
+</section>
+<section class="level3" id="news/november-3-2011---radicale-063">
+<h3>November 3, 2011 - Radicale 0.6.3 <a class="headerlink" href="#news/november-3-2011---radicale-063">&para;</a></h3>
+<p>Radicale version 0.6.3 has been released, with bugfixes that could be interesting for you!</p>
+<section class="level4" id="news/november-3-2011---radicale-063/063---red-roses">
+<h4>0.6.3 - Red Roses <a class="headerlink" href="#news/november-3-2011---radicale-063/063---red-roses">&para;</a></h4>
+<ul>
+<li>MOVE requests fixed</li>
+<li>Faster REPORT answers</li>
+<li>Executable script moved into the package</li>
+</ul>
+</section>
+<section class="level4" id="news/november-3-2011---radicale-063/whats-new-since-062">
+<h4>What's New Since 0.6.2? <a class="headerlink" href="#news/november-3-2011---radicale-063/whats-new-since-062">&para;</a></h4>
+<p>The MOVE requests were suffering a little bug that is fixed now. These requests are only sent by Apple clients, Mac users will be happy.</p>
+<p>The REPORT request were really, really slow (several minutes for large calendars). This was caused by an awful algorithm parsing the entire calendar for each event in the calendar. The calendar is now only parsed three times, and the events are found in a Python list, turning minutes into seconds! Much better, but far from perfection&hellip;</p>
+<p>Finally, the executable script parsing the command line options and starting the HTTP servers has been moved from the <code>radicale.py</code> file into the <code>radicale</code> package. Two executable are now present in the archive: the good old <code>radicale.py</code>, and <code>bin/radicale</code>. The second one is only used by <code>setup.py</code>, where the hack used to rename <code>radicale.py</code> into <code>radicale</code> has therefore been removed. As a consequence, you can now launch Radicale with the simple <code>python -m radicale</code> command, without relying on an executable.</p>
+</section>
+<section class="level4" id="news/november-3-2011---radicale-063/time-for-a-stable-release">
+<h4>Time for a Stable Release! <a class="headerlink" href="#news/november-3-2011---radicale-063/time-for-a-stable-release">&para;</a></h4>
+<p>The next release may be a stable release, symbolically called 1.0. Guess what's missing? Tests, of course!</p>
+<p>A non-regression testing suite, based on the clients' requests, will soon be added to Radicale. We're now thinking about a smart solution to store the tests, to represent the expected answers and to launch the requests. We've got crazy ideas, so be prepared: you'll definitely <em>want</em> to write tests during the next weeks!</p>
+<p>Repeating events, PAM and Courier authentication methods have already been added in master. You'll find them in the 1.0 release!</p>
+</section>
+<section class="level4" id="news/november-3-2011---radicale-063/whats-next">
+<h4>What's Next? <a class="headerlink" href="#news/november-3-2011---radicale-063/whats-next">&para;</a></h4>
+<p>Being stable is one thing, being cool is another one. If you want some cool new features, you may be interested in:</p>
+<ul>
+<li>WebDAV and CardDAV support</li>
+<li>Filters and rights management</li>
+<li>Multiple storage backends, such as databases and git</li>
+<li>Freebusy periods</li>
+<li>Email alarms</li>
+</ul>
+<p>Issues have been reported in the bug tracker, you can follow there the latest news about these features. Your beloved text editor is waiting for you!</p>
+</section>
+</section>
+<section class="level3" id="news/september-27-2011---radicale-062">
+<h3>September 27, 2011 - Radicale 0.6.2 <a class="headerlink" href="#news/september-27-2011---radicale-062">&para;</a></h3>
+<p>0.6.2 is out with minor bugfixes.</p>
+<section class="level4" id="news/september-27-2011---radicale-062/062---seeds">
+<h4>0.6.2 - Seeds <a class="headerlink" href="#news/september-27-2011---radicale-062/062---seeds">&para;</a></h4>
+<ul>
+<li>iPhone and iPad support fixed</li>
+<li>Backslashes replaced by slashes in PROPFIND answers on Windows</li>
+<li>PyPI archive set as default download URL</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/august-28-2011---radicale-061-changes-future">
+<h3>August 28, 2011 - Radicale 0.6.1, Changes, Future <a class="headerlink" href="#news/august-28-2011---radicale-061-changes-future">&para;</a></h3>
+<p>As previously imagined, a new 0.6.1 version has been released, mainly fixing obvious bugs.</p>
+<section class="level4" id="news/august-28-2011---radicale-061-changes-future/061---growing-up">
+<h4>0.6.1 - Growing Up <a class="headerlink" href="#news/august-28-2011---radicale-061-changes-future/061---growing-up">&para;</a></h4>
+<ul>
+<li>Example files included in the tarball</li>
+<li>htpasswd support fixed</li>
+<li>Redirection loop bug fixed</li>
+<li>Testing message on GET requests</li>
+</ul>
+<p>The changelog is really small, so there should be no real new problems since 0.6. The example files for logging, FastCGI and WSGI are now included in the tarball, for the pleasure of our dear packagers!</p>
+<p>A new branch has been created for various future bug fixes. You can expect to get more 0.6.x versions, making this branch a kind of "stable" branch with no big changes.</p>
+</section>
+<section class="level4" id="news/august-28-2011---radicale-061-changes-future/github-mailing-list-new-website">
+<h4>GitHub, Mailing List, New Website <a class="headerlink" href="#news/august-28-2011---radicale-061-changes-future/github-mailing-list-new-website">&para;</a></h4>
+<p>A lot of small changes occurred during the last weeks.</p>
+<p>If you're interested in code and new features, please note that we moved the project from Gitorious to GitHub. Being hosted by Gitorious was a nice experience, but the service was not that good and we were missing some useful features such as git hooks. Moreover, GitHub is really popular, we're sure that we'll meet a lot of kind users and coders there.</p>
+<p>We've also created a mailing-list on Librelist to keep a public trace of the mails we're receiving. It a bit empty now, but we're sure that you'll soon write us some kind words. For example, you can tell us what you think of our new website!</p>
+</section>
+<section class="level4" id="news/august-28-2011---radicale-061-changes-future/future-features">
+<h4>Future Features <a class="headerlink" href="#news/august-28-2011---radicale-061-changes-future/future-features">&para;</a></h4>
+<p>In the next weeks, new exciting features are coming in the master branch! Some of them are almost ready:</p>
+<ul>
+<li>Henry-Nicolas has added the support for the PAM and Courier-Authdaemon authentication mechanisms.</li>
+<li>An anonymous called Keith Packard has prepared some small changes, such as one file per event, cache and git versioning. Yes. Really.</li>
+</ul>
+<p>As you can find in the <a href="http://redmine.kozea.fr/versions/">Radicale Roadmap</a>, tests, rights and filters are expected for 0.7.</p>
+</section>
+</section>
+<section class="level3" id="news/august-1-2011---radicale-06-released">
+<h3>August 1, 2011 - Radicale 0.6 Released <a class="headerlink" href="#news/august-1-2011---radicale-06-released">&para;</a></h3>
+<p>Time for a new release with <strong>a lot</strong> of new exciting features!</p>
+<section class="level4" id="news/august-1-2011---radicale-06-released/06---sapling">
+<h4>0.6 - Sapling <a class="headerlink" href="#news/august-1-2011---radicale-06-released/06---sapling">&para;</a></h4>
+<ul>
+<li>WSGI support</li>
+<li>IPv6 support</li>
+<li>Smart, verbose and configurable logs</li>
+<li>Apple iCal 4 and iPhone support (by Łukasz Langa)</li>
+<li>CalDAV-Sync support (by Marten Gajda)</li>
+<li>aCal support</li>
+<li>KDE KOrganizer support</li>
+<li>LDAP auth backend (by Corentin Le Bail)</li>
+<li>Public and private calendars (by Ren&eacute; Neumann)</li>
+<li>PID file</li>
+<li>MOVE requests management</li>
+<li>Journal entries support</li>
+<li>Drop Python 2.5 support</li>
+</ul>
+<p>Well, it's been a little longer than expected, but for good reasons: a lot of features have been added, and a lot of clients are known to work with Radicale, thanks to kind contributors. That's definitely good news! But&hellip;</p>
+<p>Testing all the clients is really painful, moreover for the ones from Apple (I have no Mac nor iPhone of my own). We should seriously think of automated tests, even if it's really hard to maintain, and maybe not that useful. If you're interested in tests, you can look at <a href="http://repo.or.cz/w/davical.git/tree/HEAD:/testing/tests/regression-suite">the wonderful regression suite of DAViCal</a>.</p>
+<p>The new features, for example the WSGI support, are also poorly documented. If you have some Apache or lighttpd configuration working with Radicale, you can make the world a little bit better by writing a paragraph or two in the <a href="https://gitorious.org/radicale/website">Radicale documentation</a>. It's simple plain text, don't be afraid!</p>
+<p>Because of all these changes, Radicale 0.6 may be a little bit buggy; a 0.6.1 will probably be released soon, fixing small problems with clients and features. Get ready to report bugs, I'm sure that you can find one (and fix it)!</p>
+</section>
+</section>
+<section class="level3" id="news/july-2-2011---feature-freeze-for-06">
+<h3>July 2, 2011 - Feature Freeze for 0.6 <a class="headerlink" href="#news/july-2-2011---feature-freeze-for-06">&para;</a></h3>
+<p>According to the <a href="http://redmine.kozea.fr/projects/radicale/roadmap">roadmap</a>, a lot of features have been added since Radicale 0.5, much more than expected. It's now time to test Radicale with your favourite client and to report bugs before we release the next stable version!</p>
+<p>Last week, the iCal and iPhone support written by Łukasz has been fixed in order to restore the broken Lightning support. After two afternoons of tests with R&eacute;mi, we managed to access the same calendar with Lightning, iCal, iPhone and Evolution, and finally discovered that CalDAV could also be a perfect instant messaging protocol between a Mac, a PC and a phone.</p>
+<p>After that, we've had the nice surprise to see events displayed without a problem (but after some strange steps of configuration) by aCal on Salem's Android phone.</p>
+<p>It was Friday, fun fun fun fun.</p>
+<p>So, that's it: Radicale supports Lightning, Evolution, Kontact, aCal for Android, iPhone and iCal. Of course, before releasing a new tarball:</p>
+<ul>
+<li><a href="1.1.html#documentation/user-documentation/simple-usage/starting-the-client">documentation</a> is needed for the new clients that are not documented yet (Kontact, aCal and iPhone);</li>
+<li>tests are welcome, particularly for the Apple clients that I can't test anymore;</li>
+<li>no more features will be added, they'll wait in separate branches for the 0.7 development.</li>
+</ul>
+<p>Please <a href="http://redmine.kozea.fr/projects/radicale/issues">report bugs</a> if anything goes wrong during your tests, or just let us know <a href="#contribute">by Jabber or by mail</a> if everything is OK.</p>
+</section>
+<section class="level3" id="news/may-1-2011---ready-for-wsgi">
+<h3>May 1, 2011 - Ready for WSGI <a class="headerlink" href="#news/may-1-2011---ready-for-wsgi">&para;</a></h3>
+<p>Here it is! Radicale is now ready to be launched behind your favourite HTTP server (Apache, Lighttpd, Nginx or Tomcat for example). That's really good news, because:</p>
+<ul>
+<li>Real HTTP servers are much more efficient and reliable than the default Python server used in Radicale;</li>
+<li>All the authentication backends available for your server will be available for Radicale;</li>
+<li>Thanks to <a href="http://trac.saddi.com/flup">flup</a>, Radicale can be interfaced with all the servers supporting CGI, AJP, FastCGI or SCGI;</li>
+<li>Radicale works very well without any additional server, without any dependencies, without configuration, just as it was working before;</li>
+<li>This one more feature removes useless code, less is definitely more.</li>
+</ul>
+<p>The WSGI support has only be tested as a stand-alone executable and behind Lighttpd, you should definitely try if it works with you favourite server too!</p>
+<p>No more features will be added before (quite) a long time, because a lot of documentation and test is waiting for us. If you want to write tutorials for some CalDAV clients support (iCal, Android, iPhone), HTTP servers support or logging management, feel free to fork the documentation git repository and ask for a merge. It's plain text, I'm sure you can do it!</p>
+</section>
+<section class="level3" id="news/april-30-2011---apple-ical-support">
+<h3>April 30, 2011 - Apple iCal Support <a class="headerlink" href="#news/april-30-2011---apple-ical-support">&para;</a></h3>
+<p>After a long, long work, the iCal support has finally been added to Radicale! Well, this support is only for iCal&nbsp;4 and is highly experimental, but you can test it right now with the git master branch. Bug reports are welcome!</p>
+<p>Dear MacOS users, you can thank all the gentlemen who sended a lot of debugging iformation. Special thanks to Andrew from DAViCal, who helped us a lot with his tips and his tests, and R&eacute;mi Hainaud who lent his laptop for the final tests.</p>
+<p>The default server address is <code>localhost:5232/user/</code>, where calendars can be added. Multiple calendars and owner-less calendars are not tested yet, but they should work quite well. More documentation will be added during the next days. It will then be time to release the Radicale&nbsp;0.6 version, and work on the WSGI support.</p>
+</section>
+<section class="level3" id="news/april-25-2011---two-features-and-one-new-roadmap">
+<h3>April 25, 2011 - Two Features and One New Roadmap <a class="headerlink" href="#news/april-25-2011---two-features-and-one-new-roadmap">&para;</a></h3>
+<p>Two features have just reached the master branch, and the roadmap has been refreshed.</p>
+<section class="level4" id="news/april-25-2011---two-features-and-one-new-roadmap/ldap-authentication">
+<h4>LDAP Authentication <a class="headerlink" href="#news/april-25-2011---two-features-and-one-new-roadmap/ldap-authentication">&para;</a></h4>
+<p>Thanks to Corentin, the LDAP authentication is now included in Radicale. The support is experimental and may suffer unstable connexions and security problems. If you are interested in this feature (a lot of people seem to be), you can try it and give some feedback.</p>
+<p>No SSL support is included yet, but this may be quite easy to add. By the way, serious authentication methods will rely on a "real" HTTP server, as soon as Radicale supports WSGI.</p>
+</section>
+<section class="level4" id="news/april-25-2011---two-features-and-one-new-roadmap/journal-entries">
+<h4>Journal Entries <a class="headerlink" href="#news/april-25-2011---two-features-and-one-new-roadmap/journal-entries">&para;</a></h4>
+<p>Mehmet asked for the journal entries (aka. notes or memos) support, that's done! This also was an occasion to clean some code in the iCal parser, and to add a much better management of multi-lines entries. People experiencing crazy <code>X-RADICALE-NAME</code> entries can now clean their files, Radicale won't pollute them again.</p>
+</section>
+<section class="level4" id="news/april-25-2011---two-features-and-one-new-roadmap/new-roadmap">
+<h4>New Roadmap <a class="headerlink" href="#news/april-25-2011---two-features-and-one-new-roadmap/new-roadmap">&para;</a></h4>
+<p>Except from htpasswd and LDAP, most of the authentication backends (database, SASL, PAM, user groups) are not really easy to include in Radicale. The easiest solution to solve this problem is to give Radicale a CGI support, to put it behind a solid server such as Apache. Of course, CGI is not enough: a WSGI support is quite better, with the FastCGI, AJP and SCGI backends offered by <a href="http://trac.saddi.com/flup/">flup</a>. Quite exciting, isn't it?</p>
+<p>That's why it was important to add new versions on the roadmap. The 0.6 version is now waiting for the Apple iCal support, and of course for some tests to kill the last remaining bugs. The only 0.7 feature will be WSGI, allowing many new authentication methods and a real multithread support.</p>
+<p>After that, 0.8 may add CalDAV rights and filters, while 1.0 will draw thousands of rainbows and pink unicorns (WebDAV sync, CardDAV, Freebusy). A lot of funky work is waiting for you, hackers!</p>
+</section>
+<section class="level4" id="news/april-25-2011---two-features-and-one-new-roadmap/bugs">
+<h4>Bugs <a class="headerlink" href="#news/april-25-2011---two-features-and-one-new-roadmap/bugs">&para;</a></h4>
+<p>Many bugs have also been fixed, most of them due to the owner-less calendars support. Radicale 0.6 may be out in a few weeks, you should spend some time testing the master branch and filling the bug tracker.</p>
+</section>
+</section>
+<section class="level3" id="news/april-10-2011---new-features">
+<h3>April 10, 2011 - New Features <a class="headerlink" href="#news/april-10-2011---new-features">&para;</a></h3>
+<p>Radicale 0.5 was released only 8 days ago, but 3 new features have already been added to the master branch:</p>
+<ul>
+<li>IPv6 support, with multiple addresses/ports support</li>
+<li>Logs and debug mode</li>
+<li>Owner-less calendars</li>
+</ul>
+<p>Most of the code has been written by Necoro and Corentin, and that was not easy at all: Radicale is now multithreaded! For sure, you can find many bugs and report them on the <a href="http://redmine.kozea.fr/projects/radicale/issues">bug tracker</a>. And if you're fond of logging, you can even add a default configuration file and more debug messages in the source.</p>
+</section>
+<section class="level3" id="news/april-2-2011---radicale-05-released">
+<h3>April 2, 2011 - Radicale 0.5 Released <a class="headerlink" href="#news/april-2-2011---radicale-05-released">&para;</a></h3>
+<p>Radicale 0.5 is out! Here is what's new:</p>
+<section class="level4" id="news/april-2-2011---radicale-05-released/05---historical-artifacts">
+<h4>0.5 - Historical Artifacts <a class="headerlink" href="#news/april-2-2011---radicale-05-released/05---historical-artifacts">&para;</a></h4>
+<ul>
+<li>Calendar depth</li>
+<li>iPhone support</li>
+<li>MacOS and Windows support</li>
+<li>HEAD requests management</li>
+<li>htpasswd user from calendar path</li>
+</ul>
+<p>iPhone support, but no iCal support for 0.5, despite our hard work, sorry! After 1 month with no more activity on the dedicated bug, it was time to forget it and hack on new awesome features. Thanks for your help, dear Apple users, I keep the hope that one day, Radicale will work with you!</p>
+<p>So, what's next? As promised, some cool git branches will soon be merged, with LDAP support, logging, IPv6 and anonymous calendars. Sounds pretty cool, heh? Talking about new features, more and more people are asking for a CardDAV support in Radicale. A git branch and a feature request are open, feel free to hack and discuss.</p>
+</section>
+</section>
+<section class="level3" id="news/february-3-2011---jabber-room-and-iphone-support">
+<h3>February 3, 2011 - Jabber Room and iPhone Support <a class="headerlink" href="#news/february-3-2011---jabber-room-and-iphone-support">&para;</a></h3>
+<p>After a lot of help and testing work from Andrew, Bj&ouml;rn, Anders, Dorian and Pete (and other ones we could have forgotten), a simple iPhone support has been added in the git repository. If you are interested, you can test this feature <em>right now</em> by <a href="#download//git-repository">downloading the latest git version</a> (a tarball is even available too if you don't want or know how to use git).</p>
+<p>No documentation has been written yet, but using the right URL in the configuration should be enough to synchronize your calendars. If you have any problems, you can ask by joining our new Jabber room: <a href="mailto:radicale@room.jabber.kozea.fr">radicale@room.jabber.kozea.fr</a>.</p>
+<p>Radicale 0.5 will be released as soon as the iCal support is ready. If you have an Apple computer, Python skills and some time to spend, we'd be glad to help you debugging Radicale.</p>
+</section>
+<section class="level3" id="news/october-21-2010---news-from-radicale">
+<h3>October 21, 2010 - News from Radicale <a class="headerlink" href="#news/october-21-2010---news-from-radicale">&para;</a></h3>
+<p>During the last weeks, Radicale has not been idle, even if no news have been posted since August. Thanks to Pete, Pierre-Philipp and Andrew, we're trying to add a better support on MacOS, Windows and mobile devices like iPhone and Android-based phones.</p>
+<p>All the tests on Windows have been successful: launching Radicale and using Lightning as client works without any problems. On Android too, some testers have reported clients working with Radicale. These were the good news.</p>
+<p>The bad news come from Apple: both iPhone and MacOS default clients are not working yet, despite the latest enhancements given to the PROPFIND requests. The problems are quite hard to debug due to our lack of Apple hardware, but Pete is helping us in this difficult quest! Radicale 0.5 will be out as soon as these two clients are working.</p>
+<p>Some cool stuff is coming next, with calendar collections and groups, and a simple web-based CalDAV client in early development. Stay tuned!</p>
+</section>
+<section class="level3" id="news/august-8-2010---radicale-04-released">
+<h3>August 8, 2010 - Radicale 0.4 Released <a class="headerlink" href="#news/august-8-2010---radicale-04-released">&para;</a></h3>
+<p>Radicale 0.4 is out! Here is what's new:</p>
+<section class="level4" id="news/august-8-2010---radicale-04-released/04---hot-days-back">
+<h4>0.4 - Hot Days Back <a class="headerlink" href="#news/august-8-2010---radicale-04-released/04---hot-days-back">&para;</a></h4>
+<ul>
+<li>Personal calendars</li>
+<li>HEAD requests</li>
+<li>Last-Modified HTTP header</li>
+<li><code>no-ssl</code> and <code>foreground</code> options</li>
+<li>Default configuration file</li>
+</ul>
+<p>This release has mainly been released to help our dear packagers to include a default configuration file and to write init scripts. Big thanks to Necoro for his work on the new Gentoo ebuild!</p>
+</section>
+</section>
+<section class="level3" id="news/july-4-2010---three-features-added-last-week">
+<h3>July 4, 2010 - Three Features Added Last Week <a class="headerlink" href="#news/july-4-2010---three-features-added-last-week">&para;</a></h3>
+<p>Some features have been added in the git repository during the last weeks, thanks to Jerome and Mariusz!</p>
+<p>Personal Calendars Calendars accessed through the htpasswd ACL module can now be personal. Thanks to the <code>personal</code> option, a user called <code>bob</code> can access calendars at <code>/bob/*</code> but not to the <code>/alice/*</code> ones.</p>
+<p>HEAD Requests Radicale can now answer HEAD requests. HTTP headers can be retrieved thanks to this request, without getting contents given by the GET requests.</p>
+<p>Last-Modified HTTP header The Last-Modified header gives the last time when the calendar has been modified. This is used by some clients to cache the calendars and not retrieving them if they have not been modified.</p>
+</section>
+<section class="level3" id="news/june-14-2010---radicale-03-released">
+<h3>June 14, 2010 - Radicale 0.3 Released <a class="headerlink" href="#news/june-14-2010---radicale-03-released">&para;</a></h3>
+<p>Radicale 0.3 is out! Here is what&rsquo;s new:</p>
+<section class="level4" id="news/june-14-2010---radicale-03-released/03---dancing-flowers">
+<h4>0.3 - Dancing Flowers <a class="headerlink" href="#news/june-14-2010---radicale-03-released/03---dancing-flowers">&para;</a></h4>
+<ul>
+<li>Evolution support</li>
+<li>Version management</li>
+</ul>
+<p>The website changed a little bit too, with some small HTML5 and CSS3 features such as articles, sections, transitions, opacity, box shadows and rounded corners. If you&rsquo;re reading this website with Internet Explorer, you should consider using a standard-compliant browser!</p>
+<p>Radicale is now included in Squeeze, the testing branch of Debian. A <a href="http://bugs.gentoo.org/show_bug.cgi?id=322811">Radicale ebuild for Gentoo</a> has been proposed too. If you want to package Radicale for another distribution, you&rsquo;re welcome!</p>
+<p>Next step is 0.5, with calendar collections, and Windows and MacOS support.</p>
+</section>
+</section>
+<section class="level3" id="news/may-31-2010---may-news">
+<h3>May 31, 2010 - May News <a class="headerlink" href="#news/may-31-2010---may-news">&para;</a></h3>
+<section class="level4" id="news/may-31-2010---may-news/news-from-contributors">
+<h4>News from contributors <a class="headerlink" href="#news/may-31-2010---may-news/news-from-contributors">&para;</a></h4>
+<p>Jonas Smedegaard packaged Radicale for Debian last week. Two packages, called <code>radicale</code> for the daemon and <code>python-radicale</code> for the module, have been added to Sid, the unstable branch of Debian. Thank you, Jonas!</p>
+<p>Sven Guckes corrected some of the strange-English-sentences present on this website. Thank you, Sven!</p>
+</section>
+<section class="level4" id="news/may-31-2010---may-news/news-from-software">
+<h4>News from software <a class="headerlink" href="#news/may-31-2010---may-news/news-from-software">&para;</a></h4>
+<p>A simple <code>VERSION</code> has been added in the library: you can now play with <code>radicale.VERSION</code> and <code>$radicale --version</code>.</p>
+<p>After playing with the version (should not be too long), you may notice that the next version is called 0.3, and not 0.5 as previously decided. The 0.3 main goal is to offer the support for Evolution as soon as possible, without waiting for the 0.5. After more than a month of test, we corrected all the bugs we found and everything seems to be fine; we can imagine that a brand new tarball will be released during the first days of June.</p>
+</section>
+</section>
+<section class="level3" id="news/april-19-2010---evolution-supported">
+<h3>April 19, 2010 - Evolution Supported <a class="headerlink" href="#news/april-19-2010---evolution-supported">&para;</a></h3>
+<p>Radicale now supports another CalDAV client: <a href="http://projects.gnome.org/evolution/">Evolution, the default mail, addressbook and calendaring client for Gnome</a>. This feature was quite easy to add, as it required less than 20 new lines of code in the requests handler.</p>
+<p>If you are interested, just clone the <a href="http://www.gitorious.org/radicale/radicale">git repository</a>.</p>
+</section>
+<section class="level3" id="news/april-13-2010---radicale-02-released">
+<h3>April 13, 2010 - Radicale 0.2 Released <a class="headerlink" href="#news/april-13-2010---radicale-02-released">&para;</a></h3>
+<p>Radicale 0.2 is out! Here is what&rsquo;s new:</p>
+<section class="level4" id="news/april-13-2010---radicale-02-released/02---snowflakes">
+<h4>0.2 - Snowflakes <a class="headerlink" href="#news/april-13-2010---radicale-02-released/02---snowflakes">&para;</a></h4>
+<ul>
+<li>Sunbird pre-1.0 support</li>
+<li>SSL connection</li>
+<li>Htpasswd authentication</li>
+<li>Daemon mode</li>
+<li>User configuration</li>
+<li>Twisted dependency removed</li>
+<li>Python 3 support</li>
+<li>Real URLs for PUT and DELETE</li>
+<li>Concurrent modification reported to users</li>
+<li>Many bugs fixed by Roger Wenham</li>
+</ul>
+<p>First of all, we would like to thank Roger Wenham for his bugfixes and his supercool words.</p>
+<p>You may have noticed that Sunbird 1.0 has not been released, but according to the Mozilla developers, 1.0pre is something like a final version.</p>
+<p>You may have noticed too that Radicale can be <a href="http://pypi.python.org/pypi/Radicale/0.2">downloaded from PyPI</a>. Of course, it is also available on the <a href="#download">download page</a>.</p>
+</section>
+</section>
+<section class="level3" id="news/january-21-2010---https-and-authentication">
+<h3>January 21, 2010 - HTTPS and Authentication <a class="headerlink" href="#news/january-21-2010---https-and-authentication">&para;</a></h3>
+<p>HTTPS connections and authentication have been added to Radicale this week. Command-line options and personal configuration files are also ready for test. According to the TODO file included in the package, the next version will finally be 0.2, when sunbird 1.0 is out. Go, Mozilla hackers, go!</p>
+<p>HTTPS connection HTTPS connections are now available using the standard TLS mechanisms. Give Radicale a private key and a certificate, and your data are now safe.</p>
+<p>Authentication A simple authentication architecture is now available, allowing different methods thanks to different modules. The first two modules are <code>fake</code> (no authentication) and <code>htpasswd</code> (authentication with an <code>htpasswd</code> file created by the Apache tool). More methods such as LDAP are coming soon!</p>
+</section>
+<section class="level3" id="news/january-15-2010---ready-for-python-3">
+<h3>January 15, 2010 - Ready for Python 3 <a class="headerlink" href="#news/january-15-2010---ready-for-python-3">&para;</a></h3>
+<p>Dropping Twisted dependency was the first step leading to another big feature: Radicale now works with Python 3! The code was given a small cleanup, with some simplifications mainly about encoding. Before the 0.1.1 release, feel free to test the git repository, all Python versions from 2.5 should be OK.</p>
+</section>
+<section class="level3" id="news/january-11-2010---twisted-no-longer-required">
+<h3>January 11, 2010 - Twisted no Longer Required <a class="headerlink" href="#news/january-11-2010---twisted-no-longer-required">&para;</a></h3>
+<p>Good news! Radicale 0.1.1 will support Sunbird 1.0, but it has another great feature: it has no external dependency! Twisted is no longer required for the git version, removing about 50 lines of code.</p>
+</section>
+<section class="level3" id="news/december-31-2009---lightning-and-sunbird-10b2pre-support">
+<h3>December 31, 2009 - Lightning and Sunbird 1.0b2pre Support <a class="headerlink" href="#news/december-31-2009---lightning-and-sunbird-10b2pre-support">&para;</a></h3>
+<p>Lightning/Sunbird 1.0b2pre is out, adding minor changes in CalDAV support. A <a href="http://www.gitorious.org/radicale/radicale/commit/330283e">new commit</a> makes Radicale work with versions 0.9, 1.0b1 et 1.0b2. Moreover, etags are now quoted according to the RFC 2616.</p>
+</section>
+<section class="level3" id="news/december-9-2009---thunderbird-3-released">
+<h3>December 9, 2009 - Thunderbird 3 released <a class="headerlink" href="#news/december-9-2009---thunderbird-3-released">&para;</a></h3>
+<p><a href="http://www.mozillamessaging.com/thunderbird/3.0/releasenotes/">Thunderbird 3 is out</a>, and Lightning/Sunbird 1.0 should be released in a few days. The <a href="http://gitorious.org/radicale/radicale/commit/6545bc8">last commit in git</a> should make Radicale work with versions 0.9 and 1.0b1pre. Radicale 0.1.1 will soon be released adding support for version 1.0.</p>
+</section>
+<section class="level3" id="news/september-1-2009---radicale-01-released">
+<h3>September 1, 2009 - Radicale 0.1 Released <a class="headerlink" href="#news/september-1-2009---radicale-01-released">&para;</a></h3>
+<p>First Radicale release! Here is the changelog:</p>
+<section class="level4" id="news/september-1-2009---radicale-01-released/01---crazy-vegetables">
+<h4>0.1 - Crazy Vegetables <a class="headerlink" href="#news/september-1-2009---radicale-01-released/01---crazy-vegetables">&para;</a></h4>
+<ul>
+<li>First release</li>
+<li>Lightning/Sunbird 0.9 compatibility</li>
+<li>Easy installer</li>
+</ul>
+<p>You can download this version on the <a href="#download">download page</a>.</p>
+</section>
+</section>
+<section class="level3" id="news/july-28-2009---radicale-on-gitorious">
+<h3>July 28, 2009 - Radicale on Gitorious <a class="headerlink" href="#news/july-28-2009---radicale-on-gitorious">&para;</a></h3>
+<p>Radicale code has been released on Gitorious! Take a look at the <a href="http://www.gitorious.org/radicale">Radicale main page on Gitorious</a> to view and download source code.</p>
+</section>
+<section class="level3 last" id="news/july-27-2009---radicale-ready-to-launch">
+<h3>July 27, 2009 - Radicale Ready to Launch <a class="headerlink" href="#news/july-27-2009---radicale-ready-to-launch">&para;</a></h3>
+<p>The Radicale Project is launched. The code has been cleaned up and will be available soon&hellip;</p>
 </section>
 </section>
 </div>
