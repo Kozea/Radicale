@@ -37,11 +37,6 @@ Want more? Why don't you check our wonderful
 
 # Documentation
 
-This documentation page is written for version 2.x.x. If you want to update
-Radicale from 1.x.x to 2.x.x, please follow
-our [migration guide](#documentation/migration-from-1xx-to-2xx). You can find on GitHub the
-[documentation page for the 1.1.x versions](https://github.com/Kozea/Radicale/blob/website/pages/user_documentation.rst).
-
 ### Install and Set Up
 
 You're new to Radicale and you want to know how to use it? Welcome aboard!
@@ -1497,85 +1492,6 @@ This plugin is used to store collections and items.
 The module must contain a class `Collection` that extends
 `radicale.storage.BaseCollection`. Take a look at the file `radicale/storage.py`
 in Radicale's source code for more information.
-
-## Migration from 1.x.x to 2.x.x
-### Why a Migration?
-
-Radicale 2.x.x is different from 1.x.x, here's everything you need to know about
-this! **Please read this page carefully if you want to update Radicale.**
-
-You'll also find extra information
-in [issue #372](https://github.com/Kozea/Radicale/issues/372).
-
-### Python 3 Only
-
-Radicale 2.x.x works with Python >= 3.3, and **doesn't work anymore with
-Python 2**.
-
-(No, Python 3.3 is not new, it's been released more than 4 years ago.
-Debian stable provides Python 3.4.)
-
-### Dependencies
-
-Radicale now depends on [VObject](https://eventable.github.io/vobject/), a
-"full-featured Python package for parsing and creating iCalendar and vCard
-files". That's the price to pay to correctly read crazy iCalendar files and
-**support date-based filters, even on recurring events**.
-
-### Storage
-
-Calendars and address books are stored in a different way between 1.x.x and 2.x.x
-versions. **Launching 2.x.x without migrating your collections first will not
-work, Radicale won't be able to read your previous data.**
-
-There's now only one way to store data in Radicale: collections are stored as
-folders and events / contacts are stored in files. This new storage is close to
-the `multifilesystem`, but **it's now thread-safe, with atomic writes and file
-locks**. Other storage types can be used by creating
-[plugins](#documentation/plugins).
-
-To migrate data to Radicale 2.x.x the command line argument
-``--export-storage`` was added to Radicale 1.1.x.
-Start Radicale 1.x.x as you would normally do, but add the argument
-``--export-storage path/to/empty/folder``. Radicale will export the storage
-into the specified folder. This folder can be directly used with the
-default storage backend of Radicale 2.x.x.
-
-If you import big calendars or address books into Radicale 2.x.x the first
-request might take a long time, because it has to initialize its internal
-caches. Clients can time out, subsequent requests will be much faster.
-
-You can check the imported storage for errors by starting Radicale >= 2.1.5
-with the ``--verify-storage`` argument.
-
-You can install version 1.1.6 with:
-
-```bash
-$ python3 -m pip install --upgrade radicale==1.1.6
-```
-
-### Authentication
-
-**Radicale 2.x.x only provides htpasswd authentication out-of-the-box.** Other
-authentication methods can be added by creating or using
-[plugins](#documentation/plugins).
-
-### Rights
-
-In Radicale 2.x.x, rights are managed using regex-based rules based on the
-login of the authenticated user and the URL of the resource. Default
-configurations are built in for common cases, you'll find more about this on
-the [Authentication & Rights](#documentation/authentication-and-rights) page.
-
-Other rights managers can be added by creating
-[plugins](#documentation/plugins).
-
-### Versioning
-
-Support for versioning with **git** was removed from Radicale 2.x.x.
-Instead, the configuration option ``hook`` in the ``storage`` section was added,
-the [Collection Versioning](#documentation/versioning) page explains its
-usage for version control.
 
 # Contribute
 
