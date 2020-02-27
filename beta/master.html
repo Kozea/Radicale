@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta content="pandoc" name="generator">
 <meta content="width=device-width, initial-scale=1" name="viewport">
-<meta content="IE=edge" http-equiv="X-UA-Compatible">
 <style>
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
@@ -190,16 +189,6 @@
 <li class="level4"><a href="#documentation/plugins/web-plugins">Web plugins</a></li>
 <li class="level4"><a href="#documentation/plugins/storage-plugins">Storage plugins</a></li>
 </ul></li>
-<li class="level3"><a href="#documentation/migration-from-1xx-to-2xx">Migration from 1.x.x to 2.x.x</a>
-<ul>
-<li class="level4"><a href="#documentation/migration-from-1xx-to-2xx/why-a-migration">Why a Migration?</a></li>
-<li class="level4"><a href="#documentation/migration-from-1xx-to-2xx/python-3-only">Python&nbsp;3 Only</a></li>
-<li class="level4"><a href="#documentation/migration-from-1xx-to-2xx/dependencies">Dependencies</a></li>
-<li class="level4"><a href="#documentation/migration-from-1xx-to-2xx/storage">Storage</a></li>
-<li class="level4"><a href="#documentation/migration-from-1xx-to-2xx/authentication">Authentication</a></li>
-<li class="level4"><a href="#documentation/migration-from-1xx-to-2xx/rights">Rights</a></li>
-<li class="level4"><a href="#documentation/migration-from-1xx-to-2xx/versioning">Versioning</a></li>
-</ul></li>
 </ul></li>
 <li class="level2"><a href="#contribute">Contribute</a>
 <ul>
@@ -257,7 +246,6 @@
 </section>
 <section class="level2" id="documentation">
 <h2>Documentation <a class="headerlink" href="#documentation">&para;</a></h2>
-<p>This documentation page is written for version 2.x.x. If you want to update Radicale from 1.x.x to 2.x.x, please follow our <a href="#documentation/migration-from-1xx-to-2xx">migration guide</a>. You can find on GitHub the <a href="https://github.com/Kozea/Radicale/blob/website/pages/user_documentation.rst">documentation page for the 1.1.x versions</a>.</p>
 <section class="level4" id="documentation//install-and-set-up">
 <h4>Install and Set Up <a class="headerlink" href="#documentation//install-and-set-up">&para;</a></h4>
 <p>You're new to Radicale and you want to know how to use it? Welcome aboard!</p>
@@ -1181,46 +1169,6 @@ user2:password2
 <section class="level4" id="documentation/plugins/storage-plugins">
 <h4>Storage plugins <a class="headerlink" href="#documentation/plugins/storage-plugins">&para;</a></h4>
 <p>This plugin is used to store collections and items. The module must contain a class <code>Collection</code> that extends <code>radicale.storage.BaseCollection</code>. Take a look at the file <code>radicale/storage.py</code> in Radicale's source code for more information.</p>
-</section>
-</section>
-<section class="level3" id="documentation/migration-from-1xx-to-2xx">
-<h3>Migration from 1.x.x to 2.x.x <a class="headerlink" href="#documentation/migration-from-1xx-to-2xx">&para;</a></h3>
-<section class="level4" id="documentation/migration-from-1xx-to-2xx/why-a-migration">
-<h4>Why a Migration? <a class="headerlink" href="#documentation/migration-from-1xx-to-2xx/why-a-migration">&para;</a></h4>
-<p>Radicale&nbsp;2.x.x is different from 1.x.x, here's everything you need to know about this! <strong>Please read this page carefully if you want to update Radicale.</strong></p>
-<p>You'll also find extra information in <a href="https://github.com/Kozea/Radicale/issues/372">issue #372</a>.</p>
-</section>
-<section class="level4" id="documentation/migration-from-1xx-to-2xx/python-3-only">
-<h4>Python&nbsp;3 Only <a class="headerlink" href="#documentation/migration-from-1xx-to-2xx/python-3-only">&para;</a></h4>
-<p>Radicale 2.x.x works with Python&nbsp;&gt;=&nbsp;3.3, and <strong>doesn't work anymore with Python&nbsp;2</strong>.</p>
-<p>(No, Python&nbsp;3.3 is not new, it's been released more than 4 years ago. Debian stable provides Python&nbsp;3.4.)</p>
-</section>
-<section class="level4" id="documentation/migration-from-1xx-to-2xx/dependencies">
-<h4>Dependencies <a class="headerlink" href="#documentation/migration-from-1xx-to-2xx/dependencies">&para;</a></h4>
-<p>Radicale now depends on <a href="https://eventable.github.io/vobject/">VObject</a>, a "full-featured Python package for parsing and creating iCalendar and vCard files". That's the price to pay to correctly read crazy iCalendar files and <strong>support date-based filters, even on recurring events</strong>.</p>
-</section>
-<section class="level4" id="documentation/migration-from-1xx-to-2xx/storage">
-<h4>Storage <a class="headerlink" href="#documentation/migration-from-1xx-to-2xx/storage">&para;</a></h4>
-<p>Calendars and address books are stored in a different way between 1.x.x and 2.x.x versions. <strong>Launching 2.x.x without migrating your collections first will not work, Radicale won't be able to read your previous data.</strong></p>
-<p>There's now only one way to store data in Radicale: collections are stored as folders and events&nbsp;/&nbsp;contacts are stored in files. This new storage is close to the <code>multifilesystem</code>, but <strong>it's now thread-safe, with atomic writes and file locks</strong>. Other storage types can be used by creating <a href="#documentation/plugins">plugins</a>.</p>
-<p>To migrate data to Radicale 2.x.x the command line argument <code>--export-storage</code> was added to Radicale 1.1.x. Start Radicale 1.x.x as you would normally do, but add the argument <code>--export-storage path/to/empty/folder</code>. Radicale will export the storage into the specified folder. This folder can be directly used with the default storage backend of Radicale 2.x.x.</p>
-<p>If you import big calendars or address books into Radicale 2.x.x the first request might take a long time, because it has to initialize its internal caches. Clients can time out, subsequent requests will be much faster.</p>
-<p>You can check the imported storage for errors by starting Radicale &gt;= 2.1.5 with the <code>--verify-storage</code> argument.</p>
-<p>You can install version 1.1.6 with:</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1"></a>$ <span class="ex">python3</span> -m pip install --upgrade radicale==1.1.6</span></code></pre></div>
-</section>
-<section class="level4" id="documentation/migration-from-1xx-to-2xx/authentication">
-<h4>Authentication <a class="headerlink" href="#documentation/migration-from-1xx-to-2xx/authentication">&para;</a></h4>
-<p><strong>Radicale&nbsp;2.x.x only provides htpasswd authentication out-of-the-box.</strong> Other authentication methods can be added by creating or using <a href="#documentation/plugins">plugins</a>.</p>
-</section>
-<section class="level4" id="documentation/migration-from-1xx-to-2xx/rights">
-<h4>Rights <a class="headerlink" href="#documentation/migration-from-1xx-to-2xx/rights">&para;</a></h4>
-<p>In Radicale&nbsp;2.x.x, rights are managed using regex-based rules based on the login of the authenticated user and the URL of the resource. Default configurations are built in for common cases, you'll find more about this on the <a href="#documentation/authentication-and-rights">Authentication &amp; Rights</a> page.</p>
-<p>Other rights managers can be added by creating <a href="#documentation/plugins">plugins</a>.</p>
-</section>
-<section class="level4" id="documentation/migration-from-1xx-to-2xx/versioning">
-<h4>Versioning <a class="headerlink" href="#documentation/migration-from-1xx-to-2xx/versioning">&para;</a></h4>
-<p>Support for versioning with <strong>git</strong> was removed from Radicale 2.x.x. Instead, the configuration option <code>hook</code> in the <code>storage</code> section was added, the <a href="#documentation/versioning">Collection Versioning</a> page explains its usage for version control.</p>
 </section>
 </section>
 </section>
