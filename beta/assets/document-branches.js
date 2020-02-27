@@ -13,7 +13,7 @@ window.addEventListener("load", function() {
     }
     select.addEventListener("change", function() {
         if (select.value !== documentBranch) {
-            location.assign(select.value);
+            location.assign(select.value + ".html");
             select.value = documentBranch;
         }
     });
