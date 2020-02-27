@@ -1,0 +1,27 @@
+header select.documentBranch {
+    display: none;
+}
+
+header span.documentBranch {
+    display: inline;
+}
+
+nav {
+    position: relative;
+    height: auto;
+    /* Override changes made by JS to HTMLElement */
+    max-height: none !important;
+}
+
+nav .level2.active > a, nav .level3.active > a {
+    background: none;
+    border-left-color: transparent;
+}
+
+nav .level4 {
+    display: initial;
+}
+
+nav .level4 > a::after {
+    display: none !important;
+}
