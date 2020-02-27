@@ -330,8 +330,8 @@
 <h4>Installation <a class="headerlink" href="#documentation/user-documentation/installation">&para;</a></h4>
 <section class="level5" id="documentation/user-documentation/installation/dependencies">
 <h5>Dependencies <a class="headerlink" href="#documentation/user-documentation/installation/dependencies">&para;</a></h5>
-<p>Radicale is written in pure Python and does not depend on any library. It is known to work on Python 2.6, 2.7, 3.1, 3.2, 3.3, 3.4 and PyPy &gt; 1.9. The dependencies are optional, as they are only needed for various authentication methods<a href="#footnotes/1">[1]</a>.</p>
-<p>Linux and MacOS users certainly have Python already installed. For Windows users, please install Python<a href="#footnotes/2">[2]</a> thanks to the adequate installer.</p>
+<p>Radicale is written in pure Python and does not depend on any library. It is known to work on Python 2.6, 2.7, 3.1, 3.2, 3.3, 3.4 and PyPy &gt; 1.9. The dependencies are optional, as they are only needed for various authentication methods<a href="#footnotes//1">[1]</a>.</p>
+<p>Linux and MacOS users certainly have Python already installed. For Windows users, please install Python<a href="#footnotes//2">[2]</a> thanks to the adequate installer.</p>
 </section>
 <section class="level5" id="documentation/user-documentation/installation/radicale">
 <h5>Radicale <a class="headerlink" href="#documentation/user-documentation/installation/radicale">&para;</a></h5>
@@ -1178,12 +1178,12 @@ After installing and accepting it you should restart your browser.</p>
 <h4>What Radicale Is not and will not Be <a class="headerlink" href="#documentation/project-description/what-radicale-is-not-and-will-not-be">&para;</a></h4>
 <section class="level5" id="documentation/project-description/what-radicale-is-not-and-will-not-be/calendar-or-contact-user-agent">
 <h5>Calendar or Contact User Agent <a class="headerlink" href="#documentation/project-description/what-radicale-is-not-and-will-not-be/calendar-or-contact-user-agent">&para;</a></h5>
-<p>Radicale is a server, not a client. No interfaces will be created to work with the server, as it is a really (really really) much more difficult task<a href="#footnotes/3">[3]</a>.</p>
+<p>Radicale is a server, not a client. No interfaces will be created to work with the server, as it is a really (really really) much more difficult task<a href="#footnotes//3">[3]</a>.</p>
 </section>
 <section class="level5" id="documentation/project-description/what-radicale-is-not-and-will-not-be/original-calendar-or-contact-access-protocol">
 <h5>Original Calendar or Contact Access Protocol <a class="headerlink" href="#documentation/project-description/what-radicale-is-not-and-will-not-be/original-calendar-or-contact-access-protocol">&para;</a></h5>
-<p>CalDAV and CardDAV are not perfect protocols. We think that their main problem is their complexity<a href="#footnotes/4">[4]</a>, that is why we decided not to implement the whole standard but just enough to understand some of its client-side implementations <a href="#footnotes/5">[5]</a>.</p>
-<p>CalDAV and CardDAV are the best open standards available and they are quite widely used by both clients and servers<a href="#footnotes/6">[6]</a>. We decided to use it, and we will not use another one.</p>
+<p>CalDAV and CardDAV are not perfect protocols. We think that their main problem is their complexity<a href="#footnotes//4">[4]</a>, that is why we decided not to implement the whole standard but just enough to understand some of its client-side implementations <a href="#footnotes//5">[5]</a>.</p>
+<p>CalDAV and CardDAV are the best open standards available and they are quite widely used by both clients and servers<a href="#footnotes//6">[6]</a>. We decided to use it, and we will not use another one.</p>
 </section>
 </section>
 </section>
@@ -1224,7 +1224,7 @@ After installing and accepting it you should restart your browser.</p>
 <section class="level6" id="documentation/technical-choices/global-technical-choices/development-choices/oriented-to-calendar-and-contact-user-agents">
 <h6>Oriented to Calendar and Contact User Agents <a class="headerlink" href="#documentation/technical-choices/global-technical-choices/development-choices/oriented-to-calendar-and-contact-user-agents">&para;</a></h6>
 <p>Calendar and contact servers work with calendar and contact clients, using a defined protocol. CalDAV and CardDAV are good protocols, covering lots of features and use cases, but it is quite hard to implement fully.</p>
-<p>Some calendar servers have been created to follow the CalDAV and CardDAV RFCs as much as possible: Davical<a href="#footnotes/7">[7]</a>, Cosmo<a href="#footnotes/8">[8]</a> and Darwin Calendar Server<a href="#footnotes/9">[9]</a>, for example, are much more respectful of CalDAV and CardDAV and can be used with a large number of clients. They are very good choices if you want to develop and test new CalDAV clients, or if you have a possibly heterogeneous list of user agents.</p>
+<p>Some calendar servers have been created to follow the CalDAV and CardDAV RFCs as much as possible: Davical<a href="#footnotes//7">[7]</a>, Cosmo<a href="#footnotes//8">[8]</a> and Darwin Calendar Server<a href="#footnotes//9">[9]</a>, for example, are much more respectful of CalDAV and CardDAV and can be used with a large number of clients. They are very good choices if you want to develop and test new CalDAV clients, or if you have a possibly heterogeneous list of user agents.</p>
 <p>The Radicale Server does not and <strong>will not</strong> support the CalDAV and CardDAV standards. It supports the CalDAV and CardDAV implementations of different clients (Lightning, Evolution, Android, iPhone, iCal, and more).</p>
 </section>
 <section class="level6" id="documentation/technical-choices/global-technical-choices/development-choices/simple">
@@ -1235,7 +1235,7 @@ After installing and accepting it you should restart your browser.</p>
 </section>
 <section class="level6" id="documentation/technical-choices/global-technical-choices/development-choices/lazy">
 <h6>Lazy <a class="headerlink" href="#documentation/technical-choices/global-technical-choices/development-choices/lazy">&para;</a></h6>
-<p>We, Radicale Project developers, are lazy. That is why we have chosen Python: no more <code>;</code> or <code>{}</code><a href="#footnotes/10">[10]</a>. This is also why our server is lazy.</p>
+<p>We, Radicale Project developers, are lazy. That is why we have chosen Python: no more <code>;</code> or <code>{}</code><a href="#footnotes//10">[10]</a>. This is also why our server is lazy.</p>
 <p>The CalDAV RFC defines what must be done, what can be done and what cannot be done. Many violations of the protocol are totally defined and behaviours are given in such cases.</p>
 <p>The Radicale Server assumes that the clients are perfect and that protocol violations do not exist. That is why most of the errors in client requests have undetermined consequences for the lazy server that can reply good answers, bad answers, or even no answer.</p>
 <p>As already mentioned, the Radicale server doesn't fully support the CalDAV and CardDAV RFCs. For example, nested filters in queries currently don't work in all cases. Examples of not working queries can be found in issues <a href="https://github.com/Kozea/Radicale/issues/120">#120</a> and <a href="https://github.com/Kozea/Radicale/issues/121">#121</a>.</p>
