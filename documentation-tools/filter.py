@@ -8,7 +8,7 @@ import json
 import re
 import sys
 
-from build import SHIFT_HEADING
+from generate import SHIFT_HEADING
 
 
 def text_content(content):
