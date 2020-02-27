@@ -98,8 +98,19 @@ def run_git_fetch_and_restart_if_changed(remote_commits, target_branch):
         os.execv(__file__, sys.argv)
 
 
+def make_index_html(branch):
+    return """\
+<!DOCTYPE html>
+<html lang="en">
+<meta http-equiv="Refresh" content="0; url=%s.html">
+<title>Redirect</title>
+<p>Please follow <a href="%s.html">this link</a>.</p>
+""" % (branch, branch)
+
+
 def main():
-    install_dependencies()
+    if os.environ.get("GITHUB_ACTIONS", "") == "true":
+        install_dependencies()
     target_branch, = run_git("rev-parse", "--abbrev-ref", "HEAD")
     remote_commits = run_git("rev-parse", "--remotes=%s" % REMOTE)
     run_git_fetch_and_restart_if_changed(remote_commits, target_branch)
@@ -111,16 +122,21 @@ def main():
         run_git("rm", "--", path)
     with TemporaryDirectory() as temp:
         branch_docs = {}
-        for branch in branches:
+        for branch in branches[:]:
             checkout(branch)
             if os.path.exists(DOCUMENTATION_SRC):
                 branch_docs[branch] = os.path.join(temp, "%s.md" % branch)
                 shutil.copy(DOCUMENTATION_SRC, branch_docs[branch])
+            else:
+                branches.remove(branch)
         checkout(target_branch)
         for branch, src_path in branch_docs.items():
             to_path = os.path.join(TARGET_DIR, "%s.html" % branch)
             convert_doc(src_path, to_path, branch, branches)
             run_git("add", "--", to_path)
+    if branches:
+        with open(os.path.join(TARGET_DIR, "index.html"), "w") as f:
+            f.write(make_index_html(branches[0]))
     with contextlib.suppress(subprocess.CalledProcessError):
         run_git("diff", "--cached", "--quiet")
         print("No changes", file=sys.stderr)
