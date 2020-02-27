@@ -1,0 +1,15 @@
+name: Generate documentation
+on:
+  push:
+    paths:
+    - DOCUMENTATION.md
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: gh-pages
+      - name: Run generator
+        run: documentation-generator/run.py
