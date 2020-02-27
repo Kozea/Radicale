@@ -12,4 +12,4 @@ jobs:
         with:
           ref: gh-pages
       - name: Run generator
-        run: documentation-tools/generate.py
+        run: documentation-generator/run.py
