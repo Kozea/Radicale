@@ -66,10 +66,10 @@ Project and the global architectures of its different parts.
 Radicale is written in pure Python and does not depend on any library.
 It is known to work on Python 2.6, 2.7, 3.1, 3.2, 3.3, 3.4 and PyPy \>
 1.9. The dependencies are optional, as they are only needed for various
-authentication methods[\[1\]](#footnotes/1).
+authentication methods[\[1\]](#footnotes//1).
 
 Linux and MacOS users certainly have Python already installed. For
-Windows users, please install Python[\[2\]](#footnotes/2) thanks to the adequate
+Windows users, please install Python[\[2\]](#footnotes//2) thanks to the adequate
 installer.
 
 #### Radicale
@@ -1290,17 +1290,17 @@ different authentication methods.
 
 Radicale is a server, not a client. No interfaces will be created to
 work with the server, as it is a really (really really) much more
-difficult task[\[3\]](#footnotes/3).
+difficult task[\[3\]](#footnotes//3).
 
 #### Original Calendar or Contact Access Protocol
 
 CalDAV and CardDAV are not perfect protocols. We think that their main
-problem is their complexity[\[4\]](#footnotes/4), that is why we decided not to
+problem is their complexity[\[4\]](#footnotes//4), that is why we decided not to
 implement the whole standard but just enough to understand some of its
-client-side implementations [\[5\]](#footnotes/5).
+client-side implementations [\[5\]](#footnotes//5).
 
 CalDAV and CardDAV are the best open standards available and they are
-quite widely used by both clients and servers[\[6\]](#footnotes/6). We decided to use
+quite widely used by both clients and servers[\[6\]](#footnotes//6). We decided to use
 it, and we will not use another one.
 
 ## Technical Choices
@@ -1369,8 +1369,8 @@ covering lots of features and use cases, but it is quite hard to
 implement fully.
 
 Some calendar servers have been created to follow the CalDAV and CardDAV
-RFCs as much as possible: Davical[\[7\]](#footnotes/7), Cosmo[\[8\]](#footnotes/8) and Darwin Calendar
-Server[\[9\]](#footnotes/9), for example, are much more respectful of CalDAV and CardDAV
+RFCs as much as possible: Davical[\[7\]](#footnotes//7), Cosmo[\[8\]](#footnotes//8) and Darwin Calendar
+Server[\[9\]](#footnotes//9), for example, are much more respectful of CalDAV and CardDAV
 and can be used with a large number of clients. They are very good
 choices if you want to develop and test new CalDAV clients, or if you
 have a possibly heterogeneous list of user agents.
@@ -1399,7 +1399,7 @@ Documentation](#documentation/user-documentation).
 ##### Lazy
 
 We, Radicale Project developers, are lazy. That is why we have chosen
-Python: no more `;` or `{}`[\[10\]](#footnotes/10). This is also why our server is lazy.
+Python: no more `;` or `{}`[\[10\]](#footnotes//10). This is also why our server is lazy.
 
 The CalDAV RFC defines what must be done, what can be done and what
 cannot be done. Many violations of the protocol are totally defined and
