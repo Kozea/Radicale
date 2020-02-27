@@ -44,7 +44,7 @@ released on November 5, 2018
 This documentation page is written for version 2.x.x. If you want to update
 Radicale from 1.x.x to 2.x.x, please follow
 our [migration guide](#documentation/migration-from-1xx-to-2xx). You can find on GitHub the
-[documentation page for the 1.1.x versions](https://github.com/Kozea/Radicale/blob/website/pages/user_documentation.rst).
+[documentation page for the 1.1.x versions](1.1.x.html).
 
 ### Install and Set Up
 
