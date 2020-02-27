@@ -135,8 +135,10 @@ def main():
             convert_doc(src_path, to_path, branch, branches)
             run_git("add", "--", to_path)
     if branches:
-        with open(os.path.join(TARGET_DIR, "index.html"), "w") as f:
+        index_path = os.path.join(TARGET_DIR, "index.html")
+        with open(index_path, "w") as f:
             f.write(make_index_html(branches[0]))
+        run_git("add", "--", index_path)
     with contextlib.suppress(subprocess.CalledProcessError):
         run_git("diff", "--cached", "--quiet")
         print("No changes", file=sys.stderr)
