@@ -29,7 +29,8 @@ TEMPLATE_PATH = os.path.join(TOOLS_PATH, "template.html")
 FILTER_EXE = os.path.join(TOOLS_PATH, "filter.py")
 POSTPROCESSOR_EXE = os.path.join(TOOLS_PATH, "postprocessor.py")
 PANDOC_EXE = "pandoc"
-PANDOC_DOWNLOAD = "https://github.com/jgm/pandoc/releases/download/2.9.2/pandoc-2.9.2-1-amd64.deb"
+PANDOC_DOWNLOAD = ("https://github.com/jgm/pandoc/releases/download/"
+                   "2.9.2/pandoc-2.9.2-1-amd64.deb")
 
 
 def convert_doc(src_path, to_path, branch, branches):
@@ -62,8 +63,8 @@ def install_dependencies():
     with TemporaryDirectory() as temp:
         subprocess.run(["curl", "--location", "--output", "pandoc.deb",
                         PANDOC_DOWNLOAD], check=True, cwd=temp)
-        subprocess.run(["apt", "install", "--assume-yes", "./pandoc.deb"],
-                       check=True, cwd=temp)
+        subprocess.run(["sudo", "apt", "install", "--assume-yes",
+                        "./pandoc.deb"], check=True, cwd=temp)
 
 
 def natural_sort_key(s):
