@@ -124,9 +124,9 @@ def make_index_html(branch):
     return """\
 <!DOCTYPE html>
 <html lang="en">
-<meta http-equiv="Refresh" content="0; url=%s.html">
+<meta http-equiv="Refresh" content="0; url=%s">
 <title>Redirect</title>
-<p>Please follow <a href="%s.html">this link</a>.</p>
+<p>Please follow <a href="%s">this link</a>.</p>
 """ % (branch, branch)
 
 
