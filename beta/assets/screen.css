@@ -180,7 +180,7 @@ img, .tableContainer {
 }
 
 .tableContainer {
-    overflow-x: scroll;
+    overflow: auto;
 }
 
 blockquote {
@@ -200,11 +200,16 @@ blockquote > *:last-child {
     margin-bottom: 0;
 }
 
-div.sourceCode {
+div.sourceCode, :not(div) > pre {
     border-radius: 3px;
     background-color: #D2D7E3;
     padding: 10px;
     border-left: 3px solid #a40000;
+    overflow: auto;
+}
+
+pre > code {
+    white-space: pre;
 }
 
 :not(pre) > code {

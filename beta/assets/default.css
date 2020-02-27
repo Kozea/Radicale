@@ -94,6 +94,11 @@ BDO[DIR="rtl"]  { direction: rtl; unicode-bidi: bidi-override }
         /* Override changes made by JS to HTMLElement */
         max-height: none !important;
     }
+
+    table, tr, td, th, thead {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
 }
 
 @media print {
