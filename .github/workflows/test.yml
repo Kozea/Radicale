@@ -27,7 +27,7 @@ jobs:
           python -m pip install coveralls
           python -m coveralls
 
-  coveralls-finished:
+  coveralls-finish:
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
