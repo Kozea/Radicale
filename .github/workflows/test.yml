@@ -32,10 +32,14 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.x
       - name: Install Coveralls
-        run: python3 -m pip install coveralls
+        run: python -m pip install coveralls
       - name: Call Coveralls parallel builds webhook
-        shell: python3 {0}
+        shell: python
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
         run: |
