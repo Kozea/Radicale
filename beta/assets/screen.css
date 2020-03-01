@@ -299,7 +299,7 @@ nav .active > ul > .level4 {
     display: initial;
 }
 
-main p, main ul, main ol {
+.documentContainer p, .documentContainer ul, .documentContainer ol {
     max-width: 42em;
     box-sizing: border-box;
     margin-left: 0;
@@ -350,5 +350,9 @@ section > *:first-child:hover .headerlink {
 
     header .logoContainer, header select.documentBranch {
         text-shadow: 0 0 3px #050a02, 0 0 3px #050a02;
+    }
+
+    header .logoContainer, header ul, main {
+        max-width: initial;
     }
 }
