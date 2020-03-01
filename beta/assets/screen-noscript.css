@@ -25,3 +25,13 @@ nav .level4 {
 nav .level4 > a::after {
     display: none !important;
 }
+
+@media screen and (max-width: 50em) {
+    nav, .navButtonContainer {
+        display: none;
+    }
+
+    html.nav-opened {
+        overflow: initial;
+    }
+}

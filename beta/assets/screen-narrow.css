@@ -1,0 +1,76 @@
+.documentContainer {
+    width: 100%;
+}
+
+header .logoContainer {
+    padding: 2em 10px;
+    background-position: 50%;
+    min-height: 320px;
+    text-align: center;
+}
+
+header .logoContainer, header select.documentBranch {
+    text-shadow: 0 0 3px #050a02, 0 0 3px #050a02;
+}
+
+header .logoContainer, header ul, main {
+    max-width: initial;
+}
+
+nav {
+    position: fixed;
+    width: 0;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    background-color: #E4E9F6;
+    z-index: 1;
+    scrollbar-width: initial;
+    transition: width ease .2s;
+    max-height: initial !important;
+}
+
+html.nav-opened {
+    overflow: hidden;
+}
+
+.nav-opened nav {
+    width: 100vw;
+}
+
+nav::-webkit-scrollbar {
+    display: initial;
+}
+
+main, .navContainer {
+    position: relative;
+}
+
+.navButtonContainer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: start;
+    justify-content: end;
+    pointer-events: none;
+}
+
+.navButtonContainer button {
+    background: #a40000;
+    color: white;
+    border: none;
+    font-size: 1em;
+    font-weight: normal;
+    font-family: sans-serif;
+    cursor: pointer;
+    padding: 10px;
+    top: 10px;
+    position: sticky;
+    margin: 10px;
+    z-index: 1;
+    border-radius: 3px;
+    pointer-events: initial;
+}

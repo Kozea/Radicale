@@ -236,7 +236,6 @@ nav ul {
 }
 
 nav {
-    padding: 10px 0;
     margin-right: 2rem;
     flex: 1;
     position: sticky;
@@ -244,6 +243,10 @@ nav {
     height: 100vh;
     overflow-y: auto;
     scrollbar-width: none;
+}
+
+.navContainer {
+    padding: 10px 0;
 }
 
 nav::-webkit-scrollbar {
@@ -307,6 +310,10 @@ nav .active > ul > .level4 {
     display: initial;
 }
 
+.navButtonContainer {
+    display: none;
+}
+
 .documentContainer p, .documentContainer ul, .documentContainer ol {
     max-width: 42em;
     box-sizing: border-box;
@@ -338,29 +345,4 @@ td, th {
 
 section > *:first-child:hover .headerlink {
     display: initial;
-}
-
-@media all and (max-width: 50em) {
-    nav {
-        display: none;
-    }
-
-    .documentContainer {
-        width: 100%;
-    }
-
-    header .logoContainer {
-        padding: 2em 10px;
-        background-position: 50%;
-        min-height: 320px;
-        text-align: center;
-    }
-
-    header .logoContainer, header select.documentBranch {
-        text-shadow: 0 0 3px #050a02, 0 0 3px #050a02;
-    }
-
-    header .logoContainer, header ul, main {
-        max-width: initial;
-    }
 }
