@@ -144,9 +144,6 @@ def main():
     run_git_fetch_and_restart_if_changed(remote_commits, target_branch)
     branches = [ref[len("refs/remotes/%s/" % REMOTE):] for ref in run_git(
         "rev-parse", "--symbolic-full-name", "--remotes=%s" % REMOTE)]
-    os.makedirs(TARGET_DIR, exist_ok=True)
-    for path in glob.iglob(os.path.join(TARGET_DIR, "*.html")):
-        run_git("rm", "--", path)
     with TemporaryDirectory() as temp:
         branch_docs = {}
         for branch in branches[:]:
@@ -157,6 +154,9 @@ def main():
             else:
                 branches.remove(branch)
         checkout(target_branch)
+        os.makedirs(TARGET_DIR, exist_ok=True)
+        for path in glob.iglob(os.path.join(TARGET_DIR, "*.html")):
+            run_git("rm", "--", path)
         branches, default_branch = sort_branches(branches)
         branches_pretty = [pretty_branch_name(b) for b in branches]
         default_branch_pretty = pretty_branch_name(default_branch)
