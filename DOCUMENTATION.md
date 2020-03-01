@@ -1513,7 +1513,7 @@ add new features, fix bugs or update the documentation.
 ### Documentation
 
 To change or complement the documentation create a pull request to
-[https://github.com/Kozea/Radicale/tree/gh-pages](https://github.com/Kozea/Radicale/tree/gh-pages).
+[DOCUMENTATION.md](https://github.com/Kozea/Radicale/blob/master/DOCUMENTATION.md).
 
 # Download
 
