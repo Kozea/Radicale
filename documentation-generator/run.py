@@ -25,6 +25,7 @@ DOCUMENTATION_SRC = "DOCUMENTATION.md"
 TARGET_DIR = "beta"
 SHIFT_HEADING = 1
 TOOLS_PATH = os.path.dirname(__file__)
+TEMPLATE_INDEX_PATH = os.path.join(TOOLS_PATH, "template-index.html")
 TEMPLATE_PATH = os.path.join(TOOLS_PATH, "template.html")
 FILTER_EXE = os.path.join(TOOLS_PATH, "filter.py")
 POSTPROCESSOR_EXE = os.path.join(TOOLS_PATH, "postprocessor.py")
@@ -127,13 +128,8 @@ def run_git_fetch_and_restart_if_changed(remote_commits, target_branch):
 
 
 def make_index_html(branch):
-    return """\
-<!DOCTYPE html>
-<html lang="en">
-<meta http-equiv="Refresh" content="0; url=%s.html">
-<title>Redirect</title>
-<p>Please follow <a href="%s.html">this link</a>.</p>
-""" % (branch, branch)
+    with open(TEMPLATE_INDEX_PATH) as f:
+        return f.read().format(branch=branch)
 
 
 def main():
