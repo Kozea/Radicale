@@ -95,6 +95,12 @@ def sort_branches(branches):
     return [branch for _, _, _, branch in branches], default_branch
 
 
+def pretty_branch_name(branch):
+    while branch.endswith(".x"):
+        branch = branch[:-len(".x")]
+    return branch
+
+
 def run_git(*args):
     config_args = []
     for key, value in GIT_CONFIG.items():
@@ -152,14 +158,17 @@ def main():
                 branches.remove(branch)
         checkout(target_branch)
         branches, default_branch = sort_branches(branches)
+        branches_pretty = [pretty_branch_name(b) for b in branches]
+        default_branch_pretty = pretty_branch_name(default_branch)
         for branch, src_path in branch_docs.items():
-            to_path = os.path.join(TARGET_DIR, "%s.html" % branch)
-            convert_doc(src_path, to_path, branch, branches)
+            branch_pretty = pretty_branch_name(branch)
+            to_path = os.path.join(TARGET_DIR, "%s.html" % branch_pretty)
+            convert_doc(src_path, to_path, branch_pretty, branches_pretty)
             run_git("add", "--", to_path)
-    if default_branch:
+    if default_branch_pretty:
         index_path = os.path.join(TARGET_DIR, "index.html")
         with open(index_path, "w") as f:
-            f.write(make_index_html(default_branch))
+            f.write(make_index_html(default_branch_pretty))
         run_git("add", "--", index_path)
     with contextlib.suppress(subprocess.CalledProcessError):
         run_git("diff", "--cached", "--quiet")
