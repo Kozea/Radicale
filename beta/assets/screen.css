@@ -250,6 +250,14 @@ nav::-webkit-scrollbar {
     display: none;
 }
 
+nav:hover {
+    scrollbar-width: initial;
+}
+
+nav:hover::-webkit-scrollbar {
+    display: initial;
+}
+
 nav .level2 {
     padding-bottom: 20px;
 }
