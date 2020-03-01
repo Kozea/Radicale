@@ -85,6 +85,8 @@ header select.documentBranch {
     border: 1px dashed #efdddd;
     cursor: pointer;
     padding: 0 5px;
+    text-align: center;
+    text-align-last: center;
 }
 
 header select.documentBranch:hover {
