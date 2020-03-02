@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<meta charset="utf-8">
+<meta content="pandoc" name="generator">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+<link href="assets/default.css" media="all" rel="stylesheet">
+<link href="assets/screen.css" media="screen" rel="stylesheet">
+<link href="assets/screen-narrow.css" media="screen and (max-width: 50em)" rel="stylesheet">
+<noscript><link href="assets/screen-noscript.css" media="screen" rel="stylesheet"></noscript>
+<link href="https://github.com/Kozea/Radicale/releases.atom" rel="alternate" title="Radicale Releases" type="application/atom+xml">
+<link href="assets/icon.png" rel="icon" type="image/png">
+<title>Radicale - Free and Open-Source CalDAV and CardDAV Server</title>
+<meta content="Free and Open-Source CalDAV and CardDAV Server" name="description">
+<script src="assets/navigation.js"></script>
+<script src="assets/document-branches.js"></script>
+<script src="assets/narrow-menu.js"></script>
+<script>
+    const documentBranch = "1.1";
+    const documentBranches = ["1.1", "2.1", "master"];
+</script>
+<header>
+<div class="logoContainer">
+<h1>
+            Radicale
+            <span class="documentBranch">1.1</span>
+<select class="documentBranch"></select>
+</h1>
+<p>Free and Open-Source CalDAV and CardDAV Server</p>
+</div>
+<div class="linkContainer">
+<ul>
+<li><a href="https://community.kozea.fr">Made with ❤ by Kozea Community</a></li>
+<li><a href="https://github.com/Kozea/Radicale">Fork me on GitHub</a></li>
+</ul>
+</div>
+</header>
+<main>
+<div class="navButtonContainer">
+<button data-name="nav-open">Contents</button>
+</div>
+<nav>
+<div class="navContainer">
+<div class="navButtonContainer">
+<button data-name="nav-close">Close</button>
+</div>
+<h2>Contents</h2>
+<ul>
+<li class="level2"><a href="#a-simple-calendar-and-contact-server">A Simple Calendar and Contact Server</a>
+<ul>
+<li class="level4"><a href="#a-simple-calendar-and-contact-server//presentation">Presentation</a></li>
+<li class="level4"><a href="#a-simple-calendar-and-contact-server//technical-description">Technical Description</a></li>
+<li class="level4"><a href="#a-simple-calendar-and-contact-server//main-features">Main Features</a></li>
+<li class="level4"><a href="#a-simple-calendar-and-contact-server//supported-clients">Supported Clients</a></li>
+</ul></li>
+<li class="level2"><a href="#documentation">Documentation</a>
+<ul>
+<li class="level4"><a href="#documentation//user-documentation">User documentation</a></li>
+<li class="level4"><a href="#documentation//project-description">Project description</a></li>
+<li class="level4"><a href="#documentation//technical-choices">Technical choices</a></li>
+<li class="level3"><a href="#documentation/user-documentation">User Documentation</a>
+<ul>
+<li class="level4"><a href="#documentation/user-documentation/installation">Installation</a></li>
+<li class="level4"><a href="#documentation/user-documentation/simple-usage">Simple Usage</a></li>
+<li class="level4"><a href="#documentation/user-documentation/complex-configuration">Complex Configuration</a></li>
+<li class="level4"><a href="#documentation/user-documentation/python-versions-and-os-support">Python Versions and OS Support</a></li>
+</ul></li>
+<li class="level3"><a href="#documentation/project-description">Project Description</a>
+<ul>
+<li class="level4"><a href="#documentation/project-description/main-goals">Main Goals</a></li>
+<li class="level4"><a href="#documentation/project-description/what-radicale-is">What Radicale Is</a></li>
+<li class="level4"><a href="#documentation/project-description/what-radicale-is-not-and-will-not-be">What Radicale Is not and will not Be</a></li>
+</ul></li>
+<li class="level3"><a href="#documentation/technical-choices">Technical Choices</a>
+<ul>
+<li class="level4"><a href="#documentation/technical-choices/global-technical-choices">Global Technical Choices</a></li>
+<li class="level4"><a href="#documentation/technical-choices/architectures">Architectures</a></li>
+</ul></li>
+</ul></li>
+<li class="level2"><a href="#contribute">Contribute</a>
+<ul>
+<li class="level4"><a href="#contribute//chat-with-us-on-irc">Chat with Us on IRC</a></li>
+<li class="level4"><a href="#contribute//report-bugs">Report Bugs</a></li>
+<li class="level4"><a href="#contribute//hack">Hack</a></li>
+</ul></li>
+<li class="level2"><a href="#download">Download</a>
+<ul>
+<li class="level4"><a href="#download//pypi">PyPI</a></li>
+<li class="level4"><a href="#download//git-repository">Git Repository</a></li>
+<li class="level4"><a href="#download//source-packages">Source Packages</a></li>
+<li class="level4"><a href="#download//linux-distribution-packages">Linux Distribution Packages</a></li>
+</ul></li>
+<li class="level2"><a href="#news">News</a>
+<ul>
+<li class="level3"><a href="#news/april-19-2017---radicale-112">April 19, 2017 - Radicale 1.1.2</a>
+<ul>
+<li class="level4"><a href="#news/april-19-2017---radicale-112/112---third-law-of-nature">1.1.2 - Third Law of Nature</a></li>
+</ul></li>
+<li class="level3"><a href="#news/december-31-2015---radicale-11">December 31, 2015 - Radicale 1.1</a>
+<ul>
+<li class="level4"><a href="#news/december-31-2015---radicale-11/11---law-of-nature">1.1 - Law of Nature</a></li>
+</ul></li>
+<li class="level3"><a href="#news/september-14-2015---radicale-10-whats-next">September 14, 2015 - Radicale 1.0, what's next?</a>
+<ul>
+<li class="level4"><a href="#news/september-14-2015---radicale-10-whats-next/10---sunflower">1.0 - Sunflower</a></li>
+</ul></li>
+<li class="level3"><a href="#news/january-12-2015---radicale-010">January 12, 2015 - Radicale 0.10</a>
+<ul>
+<li class="level4"><a href="#news/january-12-2015---radicale-010/010---lovely-endless-grass">0.10 - Lovely Endless Grass</a></li>
+</ul></li>
+<li class="level3"><a href="#news/july-12-2013---radicale-08">July 12, 2013 - Radicale 0.8</a>
+<ul>
+<li class="level4"><a href="#news/july-12-2013---radicale-08/08---rainbow">0.8 - Rainbow</a></li>
+</ul></li>
+<li class="level3"><a href="#news/august-3-2012---radicale-071">August 3, 2012 - Radicale 0.7.1</a>
+<ul>
+<li class="level4"><a href="#news/august-3-2012---radicale-071/071---waterfalls">0.7.1 - Waterfalls</a></li>
+</ul></li>
+<li class="level3"><a href="#news/march-22-2012---radicale-07">March 22, 2012 - Radicale 0.7</a>
+<ul>
+<li class="level4"><a href="#news/march-22-2012---radicale-07/07---eternal-sunshine">0.7 - Eternal Sunshine</a></li>
+</ul></li>
+<li class="level3"><a href="#news/january-5-2012---radicale-064-news-from-calypso">January 5, 2012 - Radicale 0.6.4, News from Calypso</a>
+<ul>
+<li class="level4"><a href="#news/january-5-2012---radicale-064-news-from-calypso/064---tulips">0.6.4 - Tulips</a></li>
+<li class="level4"><a href="#news/january-5-2012---radicale-064-news-from-calypso/calypso">Calypso</a></li>
+</ul></li>
+<li class="level3"><a href="#news/november-3-2011---radicale-063">November 3, 2011 - Radicale 0.6.3</a>
+<ul>
+<li class="level4"><a href="#news/november-3-2011---radicale-063/063---red-roses">0.6.3 - Red Roses</a></li>
+<li class="level4"><a href="#news/november-3-2011---radicale-063/whats-new-since-062">What's New Since 0.6.2?</a></li>
+<li class="level4"><a href="#news/november-3-2011---radicale-063/time-for-a-stable-release">Time for a Stable Release!</a></li>
+<li class="level4"><a href="#news/november-3-2011---radicale-063/whats-next">What's Next?</a></li>
+</ul></li>
+<li class="level3"><a href="#news/september-27-2011---radicale-062">September 27, 2011 - Radicale 0.6.2</a>
+<ul>
+<li class="level4"><a href="#news/september-27-2011---radicale-062/062---seeds">0.6.2 - Seeds</a></li>
+</ul></li>
+<li class="level3"><a href="#news/august-28-2011---radicale-061-changes-future">August 28, 2011 - Radicale 0.6.1, Changes, Future</a>
+<ul>
+<li class="level4"><a href="#news/august-28-2011---radicale-061-changes-future/061---growing-up">0.6.1 - Growing Up</a></li>
+<li class="level4"><a href="#news/august-28-2011---radicale-061-changes-future/github-mailing-list-new-website">GitHub, Mailing List, New Website</a></li>
+<li class="level4"><a href="#news/august-28-2011---radicale-061-changes-future/future-features">Future Features</a></li>
+</ul></li>
+<li class="level3"><a href="#news/august-1-2011---radicale-06-released">August 1, 2011 - Radicale 0.6 Released</a>
+<ul>
+<li class="level4"><a href="#news/august-1-2011---radicale-06-released/06---sapling">0.6 - Sapling</a></li>
+</ul></li>
+<li class="level3"><a href="#news/july-2-2011---feature-freeze-for-06">July 2, 2011 - Feature Freeze for 0.6</a></li>
+<li class="level3"><a href="#news/may-1-2011---ready-for-wsgi">May 1, 2011 - Ready for WSGI</a></li>
+<li class="level3"><a href="#news/april-30-2011---apple-ical-support">April 30, 2011 - Apple iCal Support</a></li>
+<li class="level3"><a href="#news/april-25-2011---two-features-and-one-new-roadmap">April 25, 2011 - Two Features and One New Roadmap</a>
+<ul>
+<li class="level4"><a href="#news/april-25-2011---two-features-and-one-new-roadmap/ldap-authentication">LDAP Authentication</a></li>
+<li class="level4"><a href="#news/april-25-2011---two-features-and-one-new-roadmap/journal-entries">Journal Entries</a></li>
+<li class="level4"><a href="#news/april-25-2011---two-features-and-one-new-roadmap/new-roadmap">New Roadmap</a></li>
+<li class="level4"><a href="#news/april-25-2011---two-features-and-one-new-roadmap/bugs">Bugs</a></li>
+</ul></li>
+<li class="level3"><a href="#news/april-10-2011---new-features">April 10, 2011 - New Features</a></li>
+<li class="level3"><a href="#news/april-2-2011---radicale-05-released">April 2, 2011 - Radicale 0.5 Released</a>
+<ul>
+<li class="level4"><a href="#news/april-2-2011---radicale-05-released/05---historical-artifacts">0.5 - Historical Artifacts</a></li>
+</ul></li>
+<li class="level3"><a href="#news/february-3-2011---jabber-room-and-iphone-support">February 3, 2011 - Jabber Room and iPhone Support</a></li>
+<li class="level3"><a href="#news/october-21-2010---news-from-radicale">October 21, 2010 - News from Radicale</a></li>
+<li class="level3"><a href="#news/august-8-2010---radicale-04-released">August 8, 2010 - Radicale 0.4 Released</a>
+<ul>
+<li class="level4"><a href="#news/august-8-2010---radicale-04-released/04---hot-days-back">0.4 - Hot Days Back</a></li>
+</ul></li>
+<li class="level3"><a href="#news/july-4-2010---three-features-added-last-week">July 4, 2010 - Three Features Added Last Week</a></li>
+<li class="level3"><a href="#news/june-14-2010---radicale-03-released">June 14, 2010 - Radicale 0.3 Released</a>
+<ul>
+<li class="level4"><a href="#news/june-14-2010---radicale-03-released/03---dancing-flowers">0.3 - Dancing Flowers</a></li>
+</ul></li>
+<li class="level3"><a href="#news/may-31-2010---may-news">May 31, 2010 - May News</a>
+<ul>
+<li class="level4"><a href="#news/may-31-2010---may-news/news-from-contributors">News from contributors</a></li>
+<li class="level4"><a href="#news/may-31-2010---may-news/news-from-software">News from software</a></li>
+</ul></li>
+<li class="level3"><a href="#news/april-19-2010---evolution-supported">April 19, 2010 - Evolution Supported</a></li>
+<li class="level3"><a href="#news/april-13-2010---radicale-02-released">April 13, 2010 - Radicale 0.2 Released</a>
+<ul>
+<li class="level4"><a href="#news/april-13-2010---radicale-02-released/02---snowflakes">0.2 - Snowflakes</a></li>
+</ul></li>
+<li class="level3"><a href="#news/january-21-2010---https-and-authentication">January 21, 2010 - HTTPS and Authentication</a></li>
+<li class="level3"><a href="#news/january-15-2010---ready-for-python-3">January 15, 2010 - Ready for Python 3</a></li>
+<li class="level3"><a href="#news/january-11-2010---twisted-no-longer-required">January 11, 2010 - Twisted no Longer Required</a></li>
+<li class="level3"><a href="#news/december-31-2009---lightning-and-sunbird-10b2pre-support">December 31, 2009 - Lightning and Sunbird 1.0b2pre Support</a></li>
+<li class="level3"><a href="#news/december-9-2009---thunderbird-3-released">December 9, 2009 - Thunderbird 3 released</a></li>
+<li class="level3"><a href="#news/september-1-2009---radicale-01-released">September 1, 2009 - Radicale 0.1 Released</a>
+<ul>
+<li class="level4"><a href="#news/september-1-2009---radicale-01-released/01---crazy-vegetables">0.1 - Crazy Vegetables</a></li>
+</ul></li>
+<li class="level3"><a href="#news/july-28-2009---radicale-on-gitorious">July 28, 2009 - Radicale on Gitorious</a></li>
+<li class="level3"><a href="#news/july-27-2009---radicale-ready-to-launch">July 27, 2009 - Radicale Ready to Launch</a></li>
+</ul></li>
+<li class="level2"><a href="#footnotes">Footnotes</a>
+<ul>
+<li class="level4"><a href="#footnotes//1">1</a></li>
+<li class="level4"><a href="#footnotes//2">2</a></li>
+<li class="level4"><a href="#footnotes//3">3</a></li>
+<li class="level4"><a href="#footnotes//4">4</a></li>
+<li class="level4"><a href="#footnotes//5">5</a></li>
+<li class="level4"><a href="#footnotes//6">6</a></li>
+<li class="level4"><a href="#footnotes//7">7</a></li>
+<li class="level4"><a href="#footnotes//8">8</a></li>
+<li class="level4"><a href="#footnotes//9">9</a></li>
+<li class="level4"><a href="#footnotes//10">10</a></li>
+</ul></li>
+</ul>
+</div>
+</nav>
+<div class="documentContainer">
+<section class="level2" id="a-simple-calendar-and-contact-server">
+<h2>A Simple Calendar and Contact Server <a class="headerlink" href="#a-simple-calendar-and-contact-server">&para;</a></h2>
+<section class="level4" id="a-simple-calendar-and-contact-server//presentation">
+<h4>Presentation <a class="headerlink" href="#a-simple-calendar-and-contact-server//presentation">&para;</a></h4>
+<p>The Radicale Project is a complete CalDAV (calendar) and CardDAV (contact) server solution.</p>
+<p>Calendars and address books are available for both local and remote access, possibly limited through authentication policies. They can be viewed and edited by calendar and contact clients on mobile phones or computers.</p>
+</section>
+<section class="level4" id="a-simple-calendar-and-contact-server//technical-description">
+<h4>Technical Description <a class="headerlink" href="#a-simple-calendar-and-contact-server//technical-description">&para;</a></h4>
+<p>Radicale aims to be a light solution, easy to use, easy to install, easy to configure. As a consequence, it requires few software dependencies and is pre-configured to work out-of-the-box.</p>
+<p>Radicale runs on most of the UNIX-like platforms (Linux, *BSD, MacOS&nbsp;X) and Windows. It is free and open-source software, written in Python, released under GPL version 3.</p>
+</section>
+<section class="level4" id="a-simple-calendar-and-contact-server//main-features">
+<h4>Main Features <a class="headerlink" href="#a-simple-calendar-and-contact-server//main-features">&para;</a></h4>
+<ul>
+<li>Shares calendars through CalDAV, WebDAV and HTTP</li>
+<li>Shares contacts through CardDAV, WebDAV and HTTP</li>
+<li>Supports events, todos, journal entries and business cards</li>
+<li>Works out-of-the-box, no installation nor configuration required</li>
+<li>Warns users on concurrent editing</li>
+<li>Limits access by authentication</li>
+<li>Secures connections</li>
+</ul>
+</section>
+<section class="level4" id="a-simple-calendar-and-contact-server//supported-clients">
+<h4>Supported Clients <a class="headerlink" href="#a-simple-calendar-and-contact-server//supported-clients">&para;</a></h4>
+<p class="level5">Radicale supports the latest versions of <a href="#documentation/user-documentation/installation/caldav-and-carddav-clients">many CalDAV and CardDAV clients</a>.</p>
+</section>
+</section>
+<section class="level2" id="documentation">
+<h2>Documentation <a class="headerlink" href="#documentation">&para;</a></h2>
+<section class="level4" id="documentation//user-documentation">
+<h4>User documentation <a class="headerlink" href="#documentation//user-documentation">&para;</a></h4>
+<p>This document describes how to install and configure the server.</p>
+<ul>
+<li><a href="#documentation/user-documentation">User documentation</a></li>
+</ul>
+</section>
+<section class="level4" id="documentation//project-description">
+<h4>Project description <a class="headerlink" href="#documentation//project-description">&para;</a></h4>
+<p>This document defines the main goals of the Radicale Project, what it covers and what it does not.</p>
+<ul>
+<li><a href="#documentation/project-description">Project description</a></li>
+</ul>
+</section>
+<section class="level4" id="documentation//technical-choices">
+<h4>Technical choices <a class="headerlink" href="#documentation//technical-choices">&para;</a></h4>
+<p>This document describes the global technical choices of the Radicale Project and the global architectures of its different parts.</p>
+<ul>
+<li><a href="#documentation/technical-choices">Technical choices</a></li>
+</ul>
+</section>
+<section class="level3" id="documentation/user-documentation">
+<h3>User Documentation <a class="headerlink" href="#documentation/user-documentation">&para;</a></h3>
+<section class="level4" id="documentation/user-documentation/installation">
+<h4>Installation <a class="headerlink" href="#documentation/user-documentation/installation">&para;</a></h4>
+<section class="level5" id="documentation/user-documentation/installation/dependencies">
+<h5>Dependencies <a class="headerlink" href="#documentation/user-documentation/installation/dependencies">&para;</a></h5>
+<p>Radicale is written in pure Python and does not depend on any library. It is known to work on Python 2.6, 2.7, 3.1, 3.2, 3.3, 3.4 and PyPy &gt; 1.9. The dependencies are optional, as they are only needed for various authentication methods<a href="#footnotes//1">[1]</a>.</p>
+<p>Linux and MacOS users certainly have Python already installed. For Windows users, please install Python<a href="#footnotes//2">[2]</a> thanks to the adequate installer.</p>
+</section>
+<section class="level5" id="documentation/user-documentation/installation/radicale">
+<h5>Radicale <a class="headerlink" href="#documentation/user-documentation/installation/radicale">&para;</a></h5>
+<p>Radicale can be freely downloaded on the <a href="#download">project website, download section</a>. Just get the file and unzip it in a folder of your choice.</p>
+</section>
+<section class="level5" id="documentation/user-documentation/installation/caldav-and-carddav-clients">
+<h5>CalDAV and CardDAV Clients <a class="headerlink" href="#documentation/user-documentation/installation/caldav-and-carddav-clients">&para;</a></h5>
+<p>At this time Radicale has been tested and works fine with the latest version of:</p>
+<ul>
+<li><a href="http://www.mozilla.org/projects/calendar/lightning/">Mozilla Lightning</a></li>
+<li><a href="http://projects.gnome.org/evolution/">GNOME Evolution</a></li>
+<li><a href="http://userbase.kde.org/KOrganizer/">KDE KOrganizer</a></li>
+<li><a href="http://wiki.acal.me/wiki/Main_Page">aCal</a>, <a href="https://play.google.com/store/apps/details?id=com.vcard.android.free">ContactSync</a>, <a href="https://play.google.com/store/apps/details?id=com.icalparse.free">CalendarSync</a>, <a href="https://play.google.com/store/apps/details?id=org.dmfs.caldav.lib">CalDAV-Sync</a> <a href="https://play.google.com/store/apps/details?id=org.dmfs.carddav.Sync">CardDAV-Sync</a> and <a href="http://davdroid.bitfire.at">DAVdroid</a> for <a href="http://www.android.com/">Google Android</a></li>
+<li><a href="http://www.inf-it.com/open-source/clients/infcloud/">InfCloud</a>, <a href="http://www.inf-it.com/open-source/clients/caldavzap/">CalDavZAP</a>, <a href="http://www.inf-it.com/open-source/clients/carddavmate/">CardDavMATE</a></li>
+<li><a href="http://www.apple.com/iphone/">Apple iPhone</a></li>
+<li><a href="http://www.apple.com/macosx/apps/#calendar">Apple Calendar</a></li>
+<li><a href="http://www.apple.com/macosx/apps/#contacts">Apple Contacts</a></li>
+<li><a href="https://syncevolution.org/">syncEvolution</a></li>
+</ul>
+<p>More clients will be supported in the future. However, it may work with any calendar or contact client which implements CalDAV or CardDAV specifications too (luck is highly recommended).</p>
+</section>
+</section>
+<section class="level4" id="documentation/user-documentation/simple-usage">
+<h4>Simple Usage <a class="headerlink" href="#documentation/user-documentation/simple-usage">&para;</a></h4>
+<section class="level5" id="documentation/user-documentation/simple-usage/starting-the-server">
+<h5>Starting the Server <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-server">&para;</a></h5>
+<p>To start Radicale CalDAV server, you have to launch the file called <code>radicale.py</code> located in the root folder of the software package.</p>
+</section>
+<section class="level5" id="documentation/user-documentation/simple-usage/starting-the-client">
+<h5>Starting the Client <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client">&para;</a></h5>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/lightning">
+<h6>Lightning <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/lightning">&para;</a></h6>
+<p>After starting Lightning, click on <code>File</code> and <code>New Calendar</code>. Upcoming window asks you about your calendar storage. Chose a calendar <code>On the Network</code>, otherwise Lightning will use its own file system storage instead of Radicale's one and your calendar won't be remotely accessible.</p>
+<p>Next window asks you to provide information about remote calendar access. Protocol used by Radicale is <code>CalDAV</code>. A standard location for a basic use of a Radicale calendar is <code>http://localhost:5232/user/calendar.ics/</code>, where you can replace <code>user</code> and <code>calendar.ics</code> by some strings of your choice. Calendars are automatically created if needed. Please note that <strong>the trailing slash is important</strong>.</p>
+<p>You can now customize your calendar by giving it a nickname and a color. This is only used by Lightning to identify calendars among others.</p>
+<p>If no warning sign appears next to the calendar name, you can now add events and tasks to your calendar. All events and tasks are stored in the server, they can be accessed and modified from multiple clients by multiple users at the same time.</p>
+<p>Lightning and Thunderbird cannot access CardDAV servers yet. Also, as of version 17.0.5 the SOGo Connector addon is not fully functionally and will create extra address book entries with every sync.</p>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/evolution">
+<h6>Evolution <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/evolution">&para;</a></h6>
+<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/evolution/calendars">
+<p class="heading">Calendars <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/evolution/calendars">&para;</a></p>
+<p>First of all, show the calendar page in Evolution by clicking on the calendar icon at the bottom of the side pane. Then add a new calendar by choosing in the menu <code>File &rarr; New &rarr; Calendar</code>.</p>
+<p>A new window opens. The calendar <code>type</code> is <code>CalDAV</code>, and the location is something like <code>http://localhost:5232/user/calendar.ics/</code>, where you can replace <code>user</code> and <code>calendar</code> by some strings of your choice. Calendars are automatically created if needed. Please note that <strong>the trailing slash is important</strong>.</p>
+<p>You can fill other attributes like the color and the name, these are only used for Evolution and are not uploaded.</p>
+<p>Click on <code>OK</code>, and your calendar should be ready for use.</p>
+</section>
+<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/evolution/contacts">
+<p class="heading">Contacts <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/evolution/contacts">&para;</a></p>
+<p>Switch to the contacts page and click <code>File &rarr; New &rarr; Adress book</code>. In the new window choose <code>WebDAV</code> as <code>type</code> and something like <code>http://localhost:5232/user/addressbook.vcf/</code> as location. Remember to enter the correct username.</p>
+</section>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/korganizer">
+<h6>KOrganizer <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/korganizer">&para;</a></h6>
+<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/korganizer/calendars">
+<p class="heading">Calendars <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/korganizer/calendars">&para;</a></p>
+<p><em>Tested with 4.8.3, you need one running on Akonadi for Cal/CarDav support.</em></p>
+<p>The procedure below can also be done trough the sidebar "Calendar Manager". But to ensure it works for everyone this examples uses the menu-bar.</p>
+<ol>
+<li>Click <code>Settings &rarr; Configure KOrganizer</code>.</li>
+<li>Click on <code>General &rarr; Calendars</code>.</li>
+<li>Click on <code>Add</code>.</li>
+<li>Choose <code>DAV groupware resource</code> (and click <code>OK</code>).</li>
+<li>Enter your username/passord (and click on <code>Next</code>).</li>
+<li>Select <code>Configure the resource manually</code> (and click on <code>Finish</code>).</li>
+<li>Fill in a Display name.</li>
+<li>Fill in your Username and Password.</li>
+<li>Click <code>Add</code>.</li>
+<li>Choose <code>CalDav</code>.</li>
+<li>For remote URL enter <code>http://myserver:5232/Username/Calendar.ics/</code></li>
+<li>Click <code>Fetch</code>.</li>
+<li>Select desired calendar.</li>
+<li>Hit <code>OK</code>.</li>
+<li>Hit <code>OK</code> again.</li>
+<li>Close the Configuration Window (Click <code>OK</code>).</li>
+<li>Restart Korganizer for the calendar to appear in the "Calendar Manager" sidebar (at least with version 4.8.3.)</li>
+</ol>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>After you created a calender in a collection you can also use <code>http://myserver:5232/Username/</code> as an URL This will then list all available calendars.</p>
+</blockquote>
+</section>
+<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/korganizer/contacts">
+<p class="heading">Contacts <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/korganizer/contacts">&para;</a></p>
+<p>You can add a address book analogously to the above instructions, just choose CardDav and <code>http://myserver:5232/Username/AddressBook.vcf/</code> in step 10 and 11. Also, if you already have a calendar set up you can add an address book to its "DAV groupware resource" under Configure-Kontact &rarr; Calendar &rarr; General &rarr; Calendars &rarr; Modify. This way you don't have to enter username and password twice.</p>
+</section>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/calendarsync">
+<h6>CalendarSync <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/calendarsync">&para;</a></h6>
+<p>CalendarSync can be combined with any Android calendar app and can even store the calendars in existing Android calendars which are synced by other sync adapters. Of course it can also create its own calendars.</p>
+<p>So, to sync using CalendarSync you will have to:</p>
+<ul>
+<li>start the app,</li>
+<li>press the <code>Menu</code> button,</li>
+<li>select <code>Create WebiCal</code>,</li>
+<li>choose to start with a guided configuration.</li>
+</ul>
+<p>Then enter your URL, Username and Password. As URL please use <code>http(s)://server:port/username/</code>.</p>
+<p>If you can use HTTPS depends on your setup. Please replace <code>username</code> with the name of your user account.</p>
+<p>Press test connection button. If everything signaled as OK then press search calendars button, select the calendars which you want to sync, and press the configure calendar button at the top of the display. Your calendars are now configured.</p>
+<p>You can then start the first sync by going back to the main screen of the app an pressing the <code>Process Webicals</code> button. Of course you can also configure the app at its preferences to sync automatically.</p>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/contactsync">
+<h6>ContactSync <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/contactsync">&para;</a></h6>
+<p>ContactSync is designed to sync contacts from and to various sources. It can also overtake contacts and push them to the server, also if they are only available on the device (local only contacts).</p>
+<p>So to sync your contacts from the Radical server to your Android device:</p>
+<ul>
+<li>start the app</li>
+<li>press the <code>Menu</code> button,</li>
+<li>select <code>Create WebContact</code>,</li>
+<li>select guided configuration mode.</li>
+</ul>
+<p>As URL please use <code>http(s)://server:port/username/</code>.</p>
+<p>At the URL you will have to replace <code>server:port</code> and <code>username</code> so that it matches your specific setup. It also depends on your configuration if you can use HTTPS or if you have to use HTTP.</p>
+<p>Press test connection button, if everything signaled as OK then press search address book button. Select the address books which you want to sync and press the configure address book button at the top of the display.</p>
+<p>You can then start the first sync by going back to the main screen of the app and pressing the <code>Handle WebContacts</code> button. Of course you can also configure the app at its preferences to sync automatically.</p>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/caldav-sync">
+<h6>CalDAV-Sync <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/caldav-sync">&para;</a></h6>
+<p>CalDAV-Sync is implemented as sync adapter to integrate seamlessly with any calendar app and widget. Therefore you have to access it via <code>Accounts &amp; Sync</code> settings after installing it from the Market.</p>
+<p>So, to add new calendars to your phone open <code>Accounts &amp; Sync</code> settings and tap on <code>Add account</code>, selecting CalDAV as type. In the next view, you have to switch to Manual Mode. Enter the full CalDAV URL of your Radicale account (e.g. <code>http://example.com:5232/Username/</code>) and corresponding login data. If you want to create a new calendar you have to specify its full URL e.g. <code>http://example.com:5232/Username/Calendar.ics/</code>. Please note that <strong>the trailing slash is important</strong>.</p>
+<p>Tap on <code>Next</code> and the app checks for all available calendars on your account, listing them in the next view. (Note: CalDAV-Sync will not only check under the url you entered but also under <code>http://example.com:5232/UsernameYouEnteredForLogin/</code>. This might cause strange errors.) You can now select calendars you want to sync and set a local nickname and color for each. Hitting <code>Next</code> again brings up the last page. Enter your email address and uncheck <code>Sync from server to phone only</code> if you want to use two-way-sync.</p>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>CalDAV-Sync officially is in alpha state and two-way-sync is marked as an experimental feature. Though it works fine for me, using two-way-sync is on your own risk!</p>
+</blockquote>
+<p>Tap on <code>Finish</code> and you're done. You're now able to use the new calendars in the same way you were using Google calendars before.</p>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/carddav-sync">
+<h6>CardDAV-Sync <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/carddav-sync">&para;</a></h6>
+<p>Set up works like CalDAV-Sync, just use .vcf instead of .ics if you enter the URL, e.g. <code>http://example.com:5232/Username/AddressBook.vcf/</code>.</p>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/davdroid">
+<h6>DAVdroid <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/davdroid">&para;</a></h6>
+<p><a href="http://davdroid.bitfire.at">DAVdroid</a> is a free and open-source CalDAV/CardDAV client that is available in Play Store for a small fee or in FDroid for free.</p>
+<p>To make it working with Radicale, just add a new DAVdroid account and enter <code>https://example.com/radicale/user/</code> as base URL (assuming that your Radicale runs at <code>https://example.com/radicale/</code>; don't forget to set base_prefix correctly).</p>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/acal">
+<h6>aCal <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/acal">&para;</a></h6>
+<p>aCal is a CalDAV client for Android. It comes with its own calendar application and does not integrate in the Android calendar. It is a "CalDAV only" calendar, i.e. it only works in combination with a CalDAV server. It can connect to several calendars on the server and will display them all in one calendar. It works nice with Radicale.</p>
+<p>To configure aCal, start aCal, go to the <code>Settings</code> screen, select <code>Server</code>, then <code>Add server</code>. Choose <code>Manual Configuration</code> and select <code>Advanced</code> (bottom of the screen). Then enter the host name of your server, check <code>Active</code>, enter your user name and password. The <code>Simple Domain</code> of your server is the domain part of your fully qualified host name (e.g. if your server is <code>myserver.mydomain.org</code>, choose <code>mydomain.org</code>).</p>
+<p>As <code>Simple Path</code> you need to specify <code>/&lt;user&gt;</code> where user is the user you use to connect to Radicale. <code>Server Name</code> is the fully qualified name of your server machine (<code>myserver.mydomain.org</code>). The <code>Server Path</code> is <code>/&lt;user&gt;/</code>.</p>
+<p>For <code>Authentication Type</code> you need to specify the method you chose for Radicale. Check <code>Use SSL</code> if your Radicale is configured to use SSL.</p>
+<p>As the last thing you need to specify the port Radicale listens to. When your server is configured you can go back to the first <code>Settings</code> screen, and select <code>Calendars and Addressbooks</code>. You should find all the calendars that are available to your user on the Radicale server. You can then configure each of them (display colour, notifications, etc.).</p>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/infcloud-caldavzap--carddavmate">
+<h6>InfCloud, CalDavZAP &amp; CardDavMATE <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/infcloud-caldavzap--carddavmate">&para;</a></h6>
+<p>Because settings are the same for <code>InfCloud</code>, <code>CalDavZAP</code> and <code>CardDavMATE</code><br>
+only <em>InfCloud</em> is used in description below.</p>
+<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/infcloud-caldavzap--carddavmate/radicale-configuration">
+<p class="heading">Radicale configuration <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/infcloud-caldavzap--carddavmate/radicale-configuration">&para;</a></p>
+<p>Add/Modify the following section in Radicale main configuration file:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># Additional HTTP headers</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">[headers]</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="dt">Access-Control-Allow-Origin </span><span class="ot">=</span><span class="st"> *</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="dt">Access-Control-Allow-Methods </span><span class="ot">=</span><span class="st"> GET, POST, OPTIONS, PROPFIND, PROPPATCH, REPORT, PUT, MOVE, DELETE, LOCK, UNLOCK</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="dt">Access-Control-Allow-Headers </span><span class="ot">=</span><span class="st"> Authorization, Content-type, Depth, Destination, If-match, If-None-Match, Lock-Token, Overwrite, Prefer, Timeout, User-Agent, X-Client, X-Requested-With</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="dt">Access-Control-Expose-Headers </span><span class="ot">=</span><span class="st"> Etag</span></span></code></pre></div>
+<p><code>InfCloud</code> needs read access for <code>everybody</code> (including anonymous users) on Radicale's root directory. If using Radicales rights management add the following section to rights file:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># Allow caldavzap, carddavmate and infcloud to work</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">[infcloud]</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="dt">user: .*</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="dt">collection: /</span></span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="dt">permission: r</span></span></code></pre></div>
+<p>Additional you need to change <code>[owner-write]</code> section to use the same syntax for collection as shown in <code>[public]</code> section.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb3-1"><a href="#cb3-1"></a><span class="co"># Give write access to owners</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">[owner-write]</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="dt">user: .+</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="co"># collection: ^%(login)s/.+$    # DOES NOT WORK</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="dt">collection: ^%(login)s(/.+)?$</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a><span class="dt">permission: rw</span></span></code></pre></div>
+</section>
+<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/infcloud-caldavzap--carddavmate/infcloud-configuration">
+<p class="heading">InfCloud configuration <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/infcloud-caldavzap--carddavmate/infcloud-configuration">&para;</a></p>
+<p>Inside <code>InfCloud</code> configuration file <code>config.js</code> you need to set <code>globalNetworkCheckSettings</code> like following example:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode JavaScript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1"></a><span class="co">// href: </span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="co">// put in here your protocol, host and port where Radicale is listening</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="co">// additionalResources:</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="co">// put in here a comma separated list of collections you want additionally look at.</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="co">// Don't forget '' around each collections name</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="kw">var</span> globalNetworkCheckSettings<span class="op">=</span>{</span>
+<span id="cb4-7"><a href="#cb4-7"></a>    <span class="dt">href</span><span class="op">:</span> <span class="st">'https://host.example.com:5232/'</span><span class="op">,</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>    <span class="dt">hrefLabel</span><span class="op">:</span> <span class="kw">null</span><span class="op">,</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>    <span class="dt">crossDomain</span><span class="op">:</span> <span class="kw">null</span><span class="op">,</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a>    <span class="dt">additionalResources</span><span class="op">:</span> [<span class="st">'public'</span>]<span class="op">,</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a>    <span class="dt">forceReadOnly</span><span class="op">:</span> <span class="kw">null</span><span class="op">,</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a>    <span class="dt">withCredentials</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a>    <span class="dt">showHeader</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a>    <span class="dt">settingsAccount</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb4-15"><a href="#cb4-15"></a>    <span class="dt">syncInterval</span><span class="op">:</span> <span class="dv">60000</span><span class="op">,</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a>    <span class="dt">timeOut</span><span class="op">:</span> <span class="dv">30000</span><span class="op">,</span></span>
+<span id="cb4-17"><a href="#cb4-17"></a>    <span class="dt">lockTimeOut</span><span class="op">:</span> <span class="dv">10000</span><span class="op">,</span></span>
+<span id="cb4-18"><a href="#cb4-18"></a>    <span class="dt">delegation</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb4-19"><a href="#cb4-19"></a>    <span class="dt">ignoreAlarms</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb4-20"><a href="#cb4-20"></a>    <span class="dt">backgroundCalendars</span><span class="op">:</span> []</span>
+<span id="cb4-21"><a href="#cb4-21"></a>}</span></code></pre></div>
+<blockquote>
+<p><strong>Note</strong></p>
+<p><code>InfCloud</code>, <code>CardDavMATE</code> and <code>CalDavZAP</code> cannot create calendars and/or address books. <strong>They need to be created before first login.</strong> Each user needs to have minimum of one calendar and/or one adressbook even if only using shared addresses and/or calendars. Client will not login, if the user collections don't exists.</p>
+</blockquote>
+<p>You can easily create them by directly calling the URL's from your browser:<br>
+&nbsp;&nbsp;<code>http(s)://host.example.com:5232/user/calendar.ics/</code><br>
+&nbsp;&nbsp;<code>http(s)://host.example.com:5232/user/addresses.vcf/</code></p>
+<p>Replace "http(s)" with the correct protocol, "host.example.com:5232" with you host:port where Radicale is running,<br>
+"user" with the correct login name or the shared resource name i.e. 'public',<br>
+"calendar.ics" and "addresses.vcf" with the collection names you want to use<br>
+and <strong>do NOT forget the '/' at line end</strong>.</p>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>If using self-signed certificates you need to do the following steps before using <code>InfCloud, CardDavMATE</code> or <code>CalDavZAP</code>.<br>
+With your browser call one of the above URLs.<br>
+Your browser warn you that you are trying to access an <code>Insecure</code> site.<br>
+Download and accept the certificate offered by the Radicale server.<br>
+After installing and accepting it you should restart your browser.</p>
+</blockquote>
+</section>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad">
+<h6>iPhone &amp; iPad <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad">&para;</a></h6>
+<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad/calendars">
+<p class="heading">Calendars <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad/calendars">&para;</a></p>
+<p>For iOS devices, the setup is fairly straightforward but there are a few settings that are critical for proper operation.</p>
+<ol>
+<li>From the Home screen, open <code>Settings</code></li>
+<li>Select <code>Mail, Contacts, Calendars</code></li>
+<li>Select <code>Add Account&hellip;</code> &rarr; <code>Other</code> &rarr; <code>Add CalDAV Account</code></li>
+<li>Enter the server URL here, including <code>https</code>, the port, and the user/calendar path, ex: <code>https://myserver.domain.com:3000/bob/birthdays.ics/</code> (please note that <strong>the trailing slash is important</strong>)</li>
+<li>Enter your username and password as defined in your server config</li>
+<li>Enter a good description of the calendar in the <code>Description</code> field. Otherwise it will put the whole servername in the field.</li>
+<li>Now go back to the <code>Mail, Contacts, Calendars</code> screen and scroll down to the <code>Calendars</code> section. You must change the <code>Sync</code> option to sync <code>All events</code> otherwise new events won't show up on your iOS devices!</li>
+</ol>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>Everything should be working now so test creating events and make sure they stay created. If you create events on your iOS device and they disappear after the fetch period, you probably forgot to change the sync setting in step 7. Likewise, if you create events on another device and they don't appear on your iPad of iPhone, then make sure your sync settings are correct</p>
+</blockquote>
+<blockquote>
+<p><strong>Warning</strong></p>
+<p>In iOS 5.x, please check twice that the <code>Sync all entries</code> option is activated, otherwise some events may not be shown in your calendar.</p>
+</blockquote>
+</section>
+<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad/contacts">
+<p class="heading">Contacts <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad/contacts">&para;</a></p>
+<p>In Contacts on iOS 6:</p>
+<ol>
+<li>From the Home screen, open <code>Settings</code></li>
+<li>Select <code>Mail, Contacts, Calendars</code></li>
+<li>Select <code>Add Account&hellip;</code> &rarr; <code>Other</code> &rarr; <code>Add CardDAV Account</code></li>
+<li>As <code>Server</code> use the Radicale server URL with port, for example <code>localhost:5232</code></li>
+<li>Add any <code>User name</code> you like (if you didn't configure authentication)</li>
+<li>Add any <code>Password</code> you like (again, if you didn't configure authentication)</li>
+<li>Change the <code>Description</code> to something more readable (optional)</li>
+<li>Tap <code>Next</code></li>
+<li>An alert showing <code>Cannot Connect Using SSL</code> will pop up as we haven't configured SSL yet, <code>Continue</code> for now</li>
+<li>Back on the <code>Mail, Contacts, Calendars</code> screen you scroll to the <code>Contacts</code> section, select the Radicale server as <code>Default Account</code> when you want to save new contacts to the Radicale server</li>
+<li>Exit to the Home screen and open <code>Contacts</code>, tap <code>Groups</code>, you should see the Radicale server</li>
+</ol>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>You'll need version 0.8.1 or up for this to work. Earlier versions will forget your new settings after a reboot.</p>
+</blockquote>
+</section>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/os-x">
+<h6>OS X <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/os-x">&para;</a></h6>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>This description assumes you do not have any authentication or encryption configured. If you want to use iCal with authentication or encryption, you just have to fill in the corresponding fields in your calendar's configuration.</p>
+</blockquote>
+<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/os-x/calendars">
+<p class="heading">Calendars <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/os-x/calendars">&para;</a></p>
+<p>In iCal 4.0 or iCal 5.0:</p>
+<ol>
+<li>Open the <code>Preferences</code> dialog and select the <code>Accounts</code> tab</li>
+<li>Click the <code>+</code> button at the lower left to open the account creation wizard</li>
+<li>As <code>Account type</code> select <code>CalDAV</code></li>
+<li>Select any <code>User name</code> you like</li>
+<li>The <code>Password</code> field can be left empty (we did not configure authentication)</li>
+<li>As <code>Server address</code> use <code>domain:port</code>, for example <code>localhost:5232</code> (this would be the case if you start an unconfigured Radicale on your local machine)</li>
+</ol>
+<p>Click <code>Create</code>. The wizard will now tell you, that no encryption is in place (<code>Unsecured Connection</code>). This is expected and will change if you configure Radicale to use SSL. Click <code>Continue</code>.</p>
+<blockquote>
+<p><strong>Warning</strong></p>
+<p>In iCal 5.x, please check twice that the <code>Sync all entries</code> option is activated, otherwise some events may not be shown in your calendar.</p>
+</blockquote>
+<p>The wizard will close, leaving you in the <code>Account</code> tab again. The account is now set-up. You can close the <code>Preferences</code> window.</p>
+<blockquote>
+<p><strong>Important</strong></p>
+<p>To add a calendar to your shiny new account you have to go to the menu and select <code>File &rarr; New Calendar &rarr; &lt;your shiny new account&gt;</code>. A new calendar appears in the left panel waiting for you to enter a name.</p>
+<p>This is needed because the behaviour of the big <code>+</code> button in the main window is confusing as you can't focus an empty account and iCal will just add a calendar to another account.</p>
+</blockquote>
+</section>
+<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/os-x/contacts">
+<p class="heading">Contacts <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/os-x/contacts">&para;</a></p>
+<p>In Contacts 7 (previously known as AddressBook):</p>
+<ol>
+<li>Open the <code>Preferences</code> dialog and select the <code>Accounts</code> tab.</li>
+<li>Click the <code>+</code> button at the lower left to open the account creation wizard.</li>
+<li>As <code>Account type</code> select <code>CardDAV</code>.</li>
+<li>Add any <code>User name</code> you like.</li>
+<li>The <code>Password</code> field can be left empty (if we didn't configure authentication).</li>
+<li>As <code>Server address</code> use <code>domain:port</code>, for example <code>localhost:5232</code> (this would be the case if you start an unconfigured Radicale server on your local machine).</li>
+<li>Click <code>Create</code>. Contacts will complain about an <code>Unsecured Connection</code> if you don't have SSL enabled. Click <code>Create</code> again.</li>
+<li>You might want to change the <code>Description</code> of the newly added account to something more readable. (optional)</li>
+<li>Switch to the <code>General</code> tab in the preferences and select the Radicale server as <code>Default Account</code> at the bottom of the screen. It probably shows up as <code>`domain:port</code> or the name you choose if you changed the description. Newly added contacts are added to the default account and by default this will be the local <code>On My Mac</code> account.</li>
+</ol>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>You'll need version 0.8.1 or up for this to work. Earlier versions can read CardDAV contacts but can't add new contacts.</p>
+</blockquote>
+</section>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/syncevolution">
+<h6>syncEvolution <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/syncevolution">&para;</a></h6>
+<p>You can find more information about syncEvolution and Radicale on the <a href="https://syncevolution.org/wiki/synchronizing-radicale">syncEvolution wiki page</a>.</p>
+</section>
+<section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/nokia--microsoft-windows-phones">
+<h6>Nokia / Microsoft Windows Phones <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/nokia--microsoft-windows-phones">&para;</a></h6>
+<ol>
+<li>Go to "Settings" &gt; "email+accounts"</li>
+<li>Click "add an account" &gt; "iCloud"</li>
+<li>Enter random email address (e.g. "<a href="mailto:foo@bar">foo@bar</a>" and "qwerty") &gt; "sign in"</li>
+<li>A new account "iCloud" with the given email address appears on the list. The status is "Not up to date". Click the account.</li>
+<li>An error message is given. Click "close".</li>
+<li>Enter new and "real" values to the account setting fields:
+<ul>
+<li>"Account name": This name appears on the calendar etc. Examples: "Home", "Word", "Sauna reservation"</li>
+<li>"Email address": Not used</li>
+<li>"Sync contacts and calendar": Select the sync interval</li>
+<li>"Content to sync": Uncheck "Contacts", check "Calendar"</li>
+<li>"Your name": Not used</li>
+<li>"Username": Username to your Radicale server</li>
+<li>"Password": Password to your Radicale server</li>
+<li>Click "advanced settings"</li>
+<li>"Calendar server (CalDAV)": Enter the full path to the calendar .ics file. Don't forget the trailing slash. Example: <code>https://my.server.fi:5232/myusername/calendarname.ics/</code></li>
+</ul></li>
+</ol>
+<p>Don't forget to add your CA to the phone if you're using a self-signed certificate on your Radicale. Make the CA downloadable to Internet Explorer. The correct certificate format is X509 (with .cer file extension).</p>
+</section>
+</section>
+</section>
+<section class="level4" id="documentation/user-documentation/complex-configuration">
+<h4>Complex Configuration <a class="headerlink" href="#documentation/user-documentation/complex-configuration">&para;</a></h4>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>This section is written for Linux users, but can be easily adapted for Windows and MacOS users.</p>
+</blockquote>
+<section class="level5" id="documentation/user-documentation/complex-configuration/installing-the-server">
+<h5>Installing the Server <a class="headerlink" href="#documentation/user-documentation/complex-configuration/installing-the-server">&para;</a></h5>
+<p>You can install Radicale thanks to the following command, with superuser rights:</p>
+<pre><code>python setup.py install
+</code></pre>
+<p>Then, launching the server can be easily done by typing as a normal user:</p>
+<pre><code>radicale
+</code></pre>
+</section>
+<section class="level5" id="documentation/user-documentation/complex-configuration/configuring-the-server">
+<h5>Configuring the Server <a class="headerlink" href="#documentation/user-documentation/complex-configuration/configuring-the-server">&para;</a></h5>
+<section class="level6" id="documentation/user-documentation/complex-configuration/configuring-the-server/main-configuration-file">
+<h6>Main Configuration File <a class="headerlink" href="#documentation/user-documentation/complex-configuration/configuring-the-server/main-configuration-file">&para;</a></h6>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>This section is following the latest stable version changes. Please look at the default configuration file included in your package if you have an older version of Radicale.</p>
+</blockquote>
+<p>The server configuration can be modified in <code>/etc/radicale/config</code> or in <code>~/.config/radicale/config</code>. You can use the <code>--config</code> parameter in the command line to choose a specific path. You can also set the <code>RADICALE_CONFIG</code> environment variable to a path of your choice. Here is the default configuration file, with the main parameters:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">[server]</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="co"># CalDAV server hostnames separated by a comma</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="co"># IPv4 syntax: address:port</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="co"># IPv6 syntax: [address]:port</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="co"># For example: 0.0.0.0:9999, [::]:9999</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="co"># IPv6 adresses are configured to only allow IPv6 connections</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="co">#hosts = 0.0.0.0:5232</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a></span>
+<span id="cb7-10"><a href="#cb7-10"></a><span class="co"># Daemon flag</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="co">#daemon = False</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a></span>
+<span id="cb7-13"><a href="#cb7-13"></a><span class="co"># File storing the PID in daemon mode</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a><span class="co">#pid =</span></span>
+<span id="cb7-15"><a href="#cb7-15"></a></span>
+<span id="cb7-16"><a href="#cb7-16"></a><span class="co"># SSL flag, enable HTTPS protocol</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a><span class="co">#ssl = False</span></span>
+<span id="cb7-18"><a href="#cb7-18"></a></span>
+<span id="cb7-19"><a href="#cb7-19"></a><span class="co"># SSL certificate path</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a><span class="co">#certificate = /etc/apache2/ssl/server.crt</span></span>
+<span id="cb7-21"><a href="#cb7-21"></a></span>
+<span id="cb7-22"><a href="#cb7-22"></a><span class="co"># SSL private key</span></span>
+<span id="cb7-23"><a href="#cb7-23"></a><span class="co">#key = /etc/apache2/ssl/server.key</span></span>
+<span id="cb7-24"><a href="#cb7-24"></a></span>
+<span id="cb7-25"><a href="#cb7-25"></a><span class="co"># SSL Protocol used. See python's ssl module for available values</span></span>
+<span id="cb7-26"><a href="#cb7-26"></a><span class="co">#protocol = PROTOCOL_SSLv23</span></span>
+<span id="cb7-27"><a href="#cb7-27"></a></span>
+<span id="cb7-28"><a href="#cb7-28"></a><span class="co"># Ciphers available. See python's ssl module for available ciphers</span></span>
+<span id="cb7-29"><a href="#cb7-29"></a><span class="co">#ciphers =</span></span>
+<span id="cb7-30"><a href="#cb7-30"></a></span>
+<span id="cb7-31"><a href="#cb7-31"></a><span class="co"># Reverse DNS to resolve client address in logs</span></span>
+<span id="cb7-32"><a href="#cb7-32"></a><span class="co">#dns_lookup = True</span></span>
+<span id="cb7-33"><a href="#cb7-33"></a></span>
+<span id="cb7-34"><a href="#cb7-34"></a><span class="co"># Root URL of Radicale (starting and ending with a slash)</span></span>
+<span id="cb7-35"><a href="#cb7-35"></a><span class="co">#base_prefix = /</span></span>
+<span id="cb7-36"><a href="#cb7-36"></a></span>
+<span id="cb7-37"><a href="#cb7-37"></a><span class="co"># Possibility to allow URLs cleaned by a HTTP server, without the base_prefix</span></span>
+<span id="cb7-38"><a href="#cb7-38"></a><span class="co">#can_skip_base_prefix = False</span></span>
+<span id="cb7-39"><a href="#cb7-39"></a></span>
+<span id="cb7-40"><a href="#cb7-40"></a><span class="co"># Message displayed in the client when a password is needed</span></span>
+<span id="cb7-41"><a href="#cb7-41"></a><span class="co">#realm = Radicale - Password Required</span></span>
+<span id="cb7-42"><a href="#cb7-42"></a></span>
+<span id="cb7-43"><a href="#cb7-43"></a></span>
+<span id="cb7-44"><a href="#cb7-44"></a><span class="kw">[encoding]</span></span>
+<span id="cb7-45"><a href="#cb7-45"></a></span>
+<span id="cb7-46"><a href="#cb7-46"></a><span class="co"># Encoding for responding requests</span></span>
+<span id="cb7-47"><a href="#cb7-47"></a><span class="co">#request = utf-8</span></span>
+<span id="cb7-48"><a href="#cb7-48"></a></span>
+<span id="cb7-49"><a href="#cb7-49"></a><span class="co"># Encoding for storing local collections</span></span>
+<span id="cb7-50"><a href="#cb7-50"></a><span class="co">#stock = utf-8</span></span>
+<span id="cb7-51"><a href="#cb7-51"></a></span>
+<span id="cb7-52"><a href="#cb7-52"></a></span>
+<span id="cb7-53"><a href="#cb7-53"></a><span class="kw">[well-known]</span></span>
+<span id="cb7-54"><a href="#cb7-54"></a></span>
+<span id="cb7-55"><a href="#cb7-55"></a><span class="co"># Path where /.well-known/caldav/ is redirected</span></span>
+<span id="cb7-56"><a href="#cb7-56"></a><span class="co">#caldav = '/%(user)s/caldav/'</span></span>
+<span id="cb7-57"><a href="#cb7-57"></a></span>
+<span id="cb7-58"><a href="#cb7-58"></a><span class="co"># Path where /.well-known/carddav/ is redirected</span></span>
+<span id="cb7-59"><a href="#cb7-59"></a><span class="co">#carddav = '/%(user)s/carddav/'</span></span>
+<span id="cb7-60"><a href="#cb7-60"></a></span>
+<span id="cb7-61"><a href="#cb7-61"></a></span>
+<span id="cb7-62"><a href="#cb7-62"></a><span class="kw">[auth]</span></span>
+<span id="cb7-63"><a href="#cb7-63"></a></span>
+<span id="cb7-64"><a href="#cb7-64"></a><span class="co"># Authentication method</span></span>
+<span id="cb7-65"><a href="#cb7-65"></a><span class="co"># Value: None | htpasswd | IMAP | LDAP | PAM | courier | http | remote_user | custom</span></span>
+<span id="cb7-66"><a href="#cb7-66"></a><span class="co">#type = None</span></span>
+<span id="cb7-67"><a href="#cb7-67"></a></span>
+<span id="cb7-68"><a href="#cb7-68"></a><span class="co"># Custom authentication handler</span></span>
+<span id="cb7-69"><a href="#cb7-69"></a><span class="co">#custom_handler =</span></span>
+<span id="cb7-70"><a href="#cb7-70"></a></span>
+<span id="cb7-71"><a href="#cb7-71"></a><span class="co"># Htpasswd filename</span></span>
+<span id="cb7-72"><a href="#cb7-72"></a><span class="co">#htpasswd_filename = /etc/radicale/users</span></span>
+<span id="cb7-73"><a href="#cb7-73"></a></span>
+<span id="cb7-74"><a href="#cb7-74"></a><span class="co"># Htpasswd encryption method</span></span>
+<span id="cb7-75"><a href="#cb7-75"></a><span class="co"># Value: plain | sha1 | ssha | crypt | bcrypt | md5</span></span>
+<span id="cb7-76"><a href="#cb7-76"></a><span class="co">#htpasswd_encryption = crypt</span></span>
+<span id="cb7-77"><a href="#cb7-77"></a></span>
+<span id="cb7-78"><a href="#cb7-78"></a><span class="co"># LDAP server URL, with protocol and port</span></span>
+<span id="cb7-79"><a href="#cb7-79"></a><span class="co">#ldap_url = ldap://localhost:389/</span></span>
+<span id="cb7-80"><a href="#cb7-80"></a></span>
+<span id="cb7-81"><a href="#cb7-81"></a><span class="co"># LDAP base path</span></span>
+<span id="cb7-82"><a href="#cb7-82"></a><span class="co">#ldap_base = ou=users,dc=example,dc=com</span></span>
+<span id="cb7-83"><a href="#cb7-83"></a></span>
+<span id="cb7-84"><a href="#cb7-84"></a><span class="co"># LDAP login attribute</span></span>
+<span id="cb7-85"><a href="#cb7-85"></a><span class="co">#ldap_attribute = uid</span></span>
+<span id="cb7-86"><a href="#cb7-86"></a></span>
+<span id="cb7-87"><a href="#cb7-87"></a><span class="co"># LDAP filter string</span></span>
+<span id="cb7-88"><a href="#cb7-88"></a><span class="co"># placed as X in a query of the form (&amp;(...)X)</span></span>
+<span id="cb7-89"><a href="#cb7-89"></a><span class="co"># example: (objectCategory=Person)(objectClass=User)(memberOf=cn=calenderusers,ou=users,dc=example,dc=org)</span></span>
+<span id="cb7-90"><a href="#cb7-90"></a><span class="co"># leave empty if no additional filter is needed</span></span>
+<span id="cb7-91"><a href="#cb7-91"></a><span class="co">#ldap_filter =</span></span>
+<span id="cb7-92"><a href="#cb7-92"></a></span>
+<span id="cb7-93"><a href="#cb7-93"></a><span class="co"># LDAP dn for initial login, used if LDAP server does not allow anonymous searches</span></span>
+<span id="cb7-94"><a href="#cb7-94"></a><span class="co"># Leave empty if searches are anonymous</span></span>
+<span id="cb7-95"><a href="#cb7-95"></a><span class="co">#ldap_binddn =</span></span>
+<span id="cb7-96"><a href="#cb7-96"></a></span>
+<span id="cb7-97"><a href="#cb7-97"></a><span class="co"># LDAP password for initial login, used with ldap_binddn</span></span>
+<span id="cb7-98"><a href="#cb7-98"></a><span class="co">#ldap_password =</span></span>
+<span id="cb7-99"><a href="#cb7-99"></a></span>
+<span id="cb7-100"><a href="#cb7-100"></a><span class="co"># LDAP scope of the search</span></span>
+<span id="cb7-101"><a href="#cb7-101"></a><span class="co">#ldap_scope = OneLevel</span></span>
+<span id="cb7-102"><a href="#cb7-102"></a></span>
+<span id="cb7-103"><a href="#cb7-103"></a><span class="co"># IMAP Configuration</span></span>
+<span id="cb7-104"><a href="#cb7-104"></a><span class="co">#imap_hostname = localhost</span></span>
+<span id="cb7-105"><a href="#cb7-105"></a><span class="co">#imap_port = 143</span></span>
+<span id="cb7-106"><a href="#cb7-106"></a><span class="co">#imap_ssl = False</span></span>
+<span id="cb7-107"><a href="#cb7-107"></a></span>
+<span id="cb7-108"><a href="#cb7-108"></a><span class="co"># PAM group user should be member of</span></span>
+<span id="cb7-109"><a href="#cb7-109"></a><span class="co">#pam_group_membership =</span></span>
+<span id="cb7-110"><a href="#cb7-110"></a></span>
+<span id="cb7-111"><a href="#cb7-111"></a><span class="co"># Path to the Courier Authdaemon socket</span></span>
+<span id="cb7-112"><a href="#cb7-112"></a><span class="co">#courier_socket =</span></span>
+<span id="cb7-113"><a href="#cb7-113"></a></span>
+<span id="cb7-114"><a href="#cb7-114"></a><span class="co"># HTTP authentication request URL endpoint</span></span>
+<span id="cb7-115"><a href="#cb7-115"></a><span class="co">#http_url =</span></span>
+<span id="cb7-116"><a href="#cb7-116"></a><span class="co"># POST parameter to use for username</span></span>
+<span id="cb7-117"><a href="#cb7-117"></a><span class="co">#http_user_parameter =</span></span>
+<span id="cb7-118"><a href="#cb7-118"></a><span class="co"># POST parameter to use for password</span></span>
+<span id="cb7-119"><a href="#cb7-119"></a><span class="co">#http_password_parameter =</span></span>
+<span id="cb7-120"><a href="#cb7-120"></a></span>
+<span id="cb7-121"><a href="#cb7-121"></a></span>
+<span id="cb7-122"><a href="#cb7-122"></a><span class="kw">[git]</span></span>
+<span id="cb7-123"><a href="#cb7-123"></a></span>
+<span id="cb7-124"><a href="#cb7-124"></a><span class="co"># Git default options</span></span>
+<span id="cb7-125"><a href="#cb7-125"></a><span class="co">#committer = Radicale &lt;radicale@example.com&gt;</span></span>
+<span id="cb7-126"><a href="#cb7-126"></a></span>
+<span id="cb7-127"><a href="#cb7-127"></a></span>
+<span id="cb7-128"><a href="#cb7-128"></a><span class="kw">[rights]</span></span>
+<span id="cb7-129"><a href="#cb7-129"></a></span>
+<span id="cb7-130"><a href="#cb7-130"></a><span class="co"># Rights backend</span></span>
+<span id="cb7-131"><a href="#cb7-131"></a><span class="co"># Value: None | authenticated | owner_only | owner_write | from_file | custom</span></span>
+<span id="cb7-132"><a href="#cb7-132"></a><span class="co">#type = None</span></span>
+<span id="cb7-133"><a href="#cb7-133"></a></span>
+<span id="cb7-134"><a href="#cb7-134"></a><span class="co"># Custom rights handler</span></span>
+<span id="cb7-135"><a href="#cb7-135"></a><span class="co">#custom_handler =</span></span>
+<span id="cb7-136"><a href="#cb7-136"></a></span>
+<span id="cb7-137"><a href="#cb7-137"></a><span class="co"># File for rights management from_file</span></span>
+<span id="cb7-138"><a href="#cb7-138"></a><span class="co">#file = ~/.config/radicale/rights</span></span>
+<span id="cb7-139"><a href="#cb7-139"></a></span>
+<span id="cb7-140"><a href="#cb7-140"></a></span>
+<span id="cb7-141"><a href="#cb7-141"></a><span class="kw">[storage]</span></span>
+<span id="cb7-142"><a href="#cb7-142"></a></span>
+<span id="cb7-143"><a href="#cb7-143"></a><span class="co"># Storage backend</span></span>
+<span id="cb7-144"><a href="#cb7-144"></a><span class="co"># -------</span></span>
+<span id="cb7-145"><a href="#cb7-145"></a><span class="co"># </span><span class="al">WARNING</span><span class="co">: ONLY "filesystem" IS DOCUMENTED AND TESTED,</span></span>
+<span id="cb7-146"><a href="#cb7-146"></a><span class="co">#          OTHER BACKENDS ARE NOT READY FOR PRODUCTION.</span></span>
+<span id="cb7-147"><a href="#cb7-147"></a><span class="co"># -------</span></span>
+<span id="cb7-148"><a href="#cb7-148"></a><span class="co"># Value: filesystem | multifilesystem | database | custom</span></span>
+<span id="cb7-149"><a href="#cb7-149"></a><span class="co">#type = filesystem</span></span>
+<span id="cb7-150"><a href="#cb7-150"></a></span>
+<span id="cb7-151"><a href="#cb7-151"></a><span class="co"># Custom storage handler</span></span>
+<span id="cb7-152"><a href="#cb7-152"></a><span class="co">#custom_handler =</span></span>
+<span id="cb7-153"><a href="#cb7-153"></a></span>
+<span id="cb7-154"><a href="#cb7-154"></a><span class="co"># Folder for storing local collections, created if not present</span></span>
+<span id="cb7-155"><a href="#cb7-155"></a><span class="co">#filesystem_folder = ~/.config/radicale/collections</span></span>
+<span id="cb7-156"><a href="#cb7-156"></a></span>
+<span id="cb7-157"><a href="#cb7-157"></a><span class="co"># Database URL for SQLAlchemy</span></span>
+<span id="cb7-158"><a href="#cb7-158"></a><span class="co"># dialect+driver://user:password@host/dbname[?key=value..]</span></span>
+<span id="cb7-159"><a href="#cb7-159"></a><span class="co"># For example: sqlite:///var/db/radicale.db, postgresql://user:password@localhost/radicale</span></span>
+<span id="cb7-160"><a href="#cb7-160"></a><span class="co"># See http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#sqlalchemy.create_engine</span></span>
+<span id="cb7-161"><a href="#cb7-161"></a><span class="co">#database_url =</span></span>
+<span id="cb7-162"><a href="#cb7-162"></a></span>
+<span id="cb7-163"><a href="#cb7-163"></a></span>
+<span id="cb7-164"><a href="#cb7-164"></a><span class="kw">[logging]</span></span>
+<span id="cb7-165"><a href="#cb7-165"></a></span>
+<span id="cb7-166"><a href="#cb7-166"></a><span class="co"># Logging configuration file</span></span>
+<span id="cb7-167"><a href="#cb7-167"></a><span class="co"># If no config is given, simple information is printed on the standard output</span></span>
+<span id="cb7-168"><a href="#cb7-168"></a><span class="co"># For more information about the syntax of the configuration file, see:</span></span>
+<span id="cb7-169"><a href="#cb7-169"></a><span class="co"># http://docs.python.org/library/logging.config.html</span></span>
+<span id="cb7-170"><a href="#cb7-170"></a><span class="co">#config = /etc/radicale/logging</span></span>
+<span id="cb7-171"><a href="#cb7-171"></a><span class="co"># Set the default logging level to debug</span></span>
+<span id="cb7-172"><a href="#cb7-172"></a><span class="co">#debug = False</span></span>
+<span id="cb7-173"><a href="#cb7-173"></a><span class="co"># Store all environment variables (including those set in the shell)</span></span>
+<span id="cb7-174"><a href="#cb7-174"></a><span class="co">#full_environment = False</span></span>
+<span id="cb7-175"><a href="#cb7-175"></a></span>
+<span id="cb7-176"><a href="#cb7-176"></a></span>
+<span id="cb7-177"><a href="#cb7-177"></a><span class="kw">[headers]</span></span>
+<span id="cb7-178"><a href="#cb7-178"></a></span>
+<span id="cb7-179"><a href="#cb7-179"></a><span class="co"># Additional HTTP headers</span></span>
+<span id="cb7-180"><a href="#cb7-180"></a><span class="co">#Access-Control-Allow-Origin = *</span></span></code></pre></div>
+<p>This configuration file is read each time the server is launched. If some values are not given, the default ones are used. If no configuration file is available, all the default values are used.</p>
+</section>
+<section class="level6" id="documentation/user-documentation/complex-configuration/configuring-the-server/logging-configuration-file">
+<h6>Logging Configuration File <a class="headerlink" href="#documentation/user-documentation/complex-configuration/configuring-the-server/logging-configuration-file">&para;</a></h6>
+<p>Radicale uses the default logging facility for Python. The default configuration prints the information messages to the standard output. It is possible to print debug messages thanks to:</p>
+<pre><code>radicale --debug
+</code></pre>
+<p>Radicale can also be configured to send the messages to the console, logging files, syslog, etc. For more information about the syntax of the configuration file, see: <a href="http://docs.python.org/library/logging.config.html">http://docs.python.org/library/logging.config.html</a>. Here is an example of logging configuration file:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb9-1"><a href="#cb9-1"></a><span class="co"># Loggers, handlers and formatters keys</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="kw">[loggers]</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="co"># Loggers names, main configuration slots</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="dt">keys </span><span class="ot">=</span><span class="st"> root</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="kw">[handlers]</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="co"># Logging handlers, defining logging output methods</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="dt">keys </span><span class="ot">=</span><span class="st"> console,file</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a></span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="kw">[formatters]</span></span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="co"># Logging formatters</span></span>
+<span id="cb9-13"><a href="#cb9-13"></a><span class="dt">keys </span><span class="ot">=</span><span class="st"> simple,full</span></span>
+<span id="cb9-14"><a href="#cb9-14"></a></span>
+<span id="cb9-15"><a href="#cb9-15"></a></span>
+<span id="cb9-16"><a href="#cb9-16"></a><span class="co"># Loggers</span></span>
+<span id="cb9-17"><a href="#cb9-17"></a></span>
+<span id="cb9-18"><a href="#cb9-18"></a><span class="kw">[logger_root]</span></span>
+<span id="cb9-19"><a href="#cb9-19"></a><span class="co"># Root logger</span></span>
+<span id="cb9-20"><a href="#cb9-20"></a><span class="dt">level </span><span class="ot">=</span><span class="st"> DEBUG</span></span>
+<span id="cb9-21"><a href="#cb9-21"></a><span class="dt">handlers </span><span class="ot">=</span><span class="st"> console,file</span></span>
+<span id="cb9-22"><a href="#cb9-22"></a></span>
+<span id="cb9-23"><a href="#cb9-23"></a></span>
+<span id="cb9-24"><a href="#cb9-24"></a><span class="co"># Handlers</span></span>
+<span id="cb9-25"><a href="#cb9-25"></a></span>
+<span id="cb9-26"><a href="#cb9-26"></a><span class="kw">[handler_console]</span></span>
+<span id="cb9-27"><a href="#cb9-27"></a><span class="co"># Console handler</span></span>
+<span id="cb9-28"><a href="#cb9-28"></a><span class="dt">class </span><span class="ot">=</span><span class="st"> StreamHandler</span></span>
+<span id="cb9-29"><a href="#cb9-29"></a><span class="dt">level </span><span class="ot">=</span><span class="st"> INFO</span></span>
+<span id="cb9-30"><a href="#cb9-30"></a><span class="dt">args </span><span class="ot">=</span><span class="st"> (sys.stdout,)</span></span>
+<span id="cb9-31"><a href="#cb9-31"></a><span class="dt">formatter </span><span class="ot">=</span><span class="st"> simple</span></span>
+<span id="cb9-32"><a href="#cb9-32"></a></span>
+<span id="cb9-33"><a href="#cb9-33"></a><span class="kw">[handler_file]</span></span>
+<span id="cb9-34"><a href="#cb9-34"></a><span class="co"># File handler</span></span>
+<span id="cb9-35"><a href="#cb9-35"></a><span class="dt">class </span><span class="ot">=</span><span class="st"> FileHandler</span></span>
+<span id="cb9-36"><a href="#cb9-36"></a><span class="dt">args </span><span class="ot">=</span><span class="st"> ('/var/log/radicale',)</span></span>
+<span id="cb9-37"><a href="#cb9-37"></a><span class="dt">formatter </span><span class="ot">=</span><span class="st"> full</span></span>
+<span id="cb9-38"><a href="#cb9-38"></a></span>
+<span id="cb9-39"><a href="#cb9-39"></a></span>
+<span id="cb9-40"><a href="#cb9-40"></a><span class="co"># Formatters</span></span>
+<span id="cb9-41"><a href="#cb9-41"></a></span>
+<span id="cb9-42"><a href="#cb9-42"></a><span class="kw">[formatter_simple]</span></span>
+<span id="cb9-43"><a href="#cb9-43"></a><span class="co"># Simple output format</span></span>
+<span id="cb9-44"><a href="#cb9-44"></a><span class="dt">format </span><span class="ot">=</span><span class="st"> %(message)s</span></span>
+<span id="cb9-45"><a href="#cb9-45"></a></span>
+<span id="cb9-46"><a href="#cb9-46"></a><span class="kw">[formatter_full]</span></span>
+<span id="cb9-47"><a href="#cb9-47"></a><span class="co"># Full output format</span></span>
+<span id="cb9-48"><a href="#cb9-48"></a><span class="dt">format </span><span class="ot">=</span><span class="st"> %(asctime)s - %(levelname)s: %(message)s</span></span></code></pre></div>
+</section>
+<section class="level6" id="documentation/user-documentation/complex-configuration/configuring-the-server/command-line-options">
+<h6>Command Line Options <a class="headerlink" href="#documentation/user-documentation/complex-configuration/configuring-the-server/command-line-options">&para;</a></h6>
+<p>All the options of the <code>server</code> part can be changed with command line options. These options are available by typing:</p>
+<pre><code>radicale --help
+</code></pre>
+</section>
+</section>
+<section class="level5" id="documentation/user-documentation/complex-configuration/wsgi-cgi-and-fastcgi">
+<h5>WSGI, CGI and FastCGI <a class="headerlink" href="#documentation/user-documentation/complex-configuration/wsgi-cgi-and-fastcgi">&para;</a></h5>
+<p>Radicale comes with a <a href="http://wsgi.org/">WSGI</a> support, allowing the software to be used behind any HTTP server supporting WSGI such as Apache.</p>
+<p>Moreover, it is possible to use <a href="https://pypi.python.org/pypi/flup/">flup</a> to wrap Radicale into a CGI, FastCGI, SCGI or AJP application, and therefore use it with Lighttpd, Nginx or even Tomcat.</p>
+<section class="level6" id="documentation/user-documentation/complex-configuration/wsgi-cgi-and-fastcgi/apache-and-mod_wsgi">
+<h6>Apache and mod_wsgi <a class="headerlink" href="#documentation/user-documentation/complex-configuration/wsgi-cgi-and-fastcgi/apache-and-mod_wsgi">&para;</a></h6>
+<p>To use Radicale with Apache's <code>mod_wsgi</code>, you first have to install the Radicale module in your Python path and write your <code>.wsgi</code> file (in <code>/var/www</code> for example):</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1"></a><span class="im">import</span> radicale</span>
+<span id="cb11-2"><a href="#cb11-2"></a>radicale.log.start()</span>
+<span id="cb11-3"><a href="#cb11-3"></a>application <span class="op">=</span> radicale.Application()</span></code></pre></div>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>The <code>hosts</code>, <code>daemon</code>, <code>pid</code>, <code>ssl</code>, <code>certificate</code>, <code>key</code>, <code>protocol</code> and <code>ciphers</code> keys of the <code>[server]</code> part of the configuration are ignored.</p>
+</blockquote>
+<p>Next you have to create the Apache virtual host (adapt the configuration to your environment):</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode apache"><code class="sourceCode apache"><span id="cb12-1"><a href="#cb12-1"></a><span class="fu">&lt;VirtualHost</span><span class="at"> *:80</span><span class="fu">&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a>    ServerName<span class="st"> cal.yourdomain.org</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a></span>
+<span id="cb12-4"><a href="#cb12-4"></a>    WSGIDaemonProcess radicale user<span class="st">=www-data group=www-data threads=1</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>    WSGIScriptAlias / /var/www/radicale.wsgi</span>
+<span id="cb12-6"><a href="#cb12-6"></a></span>
+<span id="cb12-7"><a href="#cb12-7"></a>    <span class="fu">&lt;Directory</span><span class="at"> /var/www</span><span class="fu">&gt;</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a>        WSGIProcessGroup radicale</span>
+<span id="cb12-9"><a href="#cb12-9"></a>        WSGIApplicationGroup %{GLOBAL}</span>
+<span id="cb12-10"><a href="#cb12-10"></a>        <span class="ex">AllowOverride</span><span class="ch"> </span><span class="kw">None</span></span>
+<span id="cb12-11"><a href="#cb12-11"></a>        <span class="ex">Order</span><span class="ch"> </span><span class="kw">allow,deny</span></span>
+<span id="cb12-12"><a href="#cb12-12"></a>        allow<span class="st"> from all</span></span>
+<span id="cb12-13"><a href="#cb12-13"></a>    <span class="fu">&lt;/Directory&gt;</span></span>
+<span id="cb12-14"><a href="#cb12-14"></a><span class="fu">&lt;/VirtualHost&gt;</span></span></code></pre></div>
+<blockquote>
+<p><strong>Warning</strong></p>
+<p>You should use the root of the (sub)domain (<code>WSGIScriptAlias /</code>), else some CalDAV features may not work.</p>
+</blockquote>
+<p>If you want to use authentication with Apache, you <em>really</em> should use one of the Apache authentication modules, instead of the ones from Radicale: they're just better.</p>
+<p>Deactivate any rights and module in Radicale and use your favourite Apache authentication backend. You can then restrict the access: allow the <code>alice</code> user to access <code>/alice/*</code> URLs, and everything should work as expected.</p>
+<p>Here is one example of Apache configuration file:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode apache"><code class="sourceCode apache"><span id="cb13-1"><a href="#cb13-1"></a><span class="fu">&lt;VirtualHost</span><span class="at"> *:80</span><span class="fu">&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a>    ServerName<span class="st"> radicale.local</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a></span>
+<span id="cb13-4"><a href="#cb13-4"></a>    WSGIDaemonProcess radicale user<span class="st">=radicale group=radicale threads=1</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a>    WSGIScriptAlias / /usr/share/radicale/radicale.wsgi</span>
+<span id="cb13-6"><a href="#cb13-6"></a></span>
+<span id="cb13-7"><a href="#cb13-7"></a>    <span class="fu">&lt;Directory</span><span class="at"> /usr/share/radicale/</span><span class="fu">&gt;</span></span>
+<span id="cb13-8"><a href="#cb13-8"></a>        WSGIProcessGroup radicale</span>
+<span id="cb13-9"><a href="#cb13-9"></a>        WSGIApplicationGroup %{GLOBAL}</span>
+<span id="cb13-10"><a href="#cb13-10"></a></span>
+<span id="cb13-11"><a href="#cb13-11"></a>        <span class="ex">AuthType</span><span class="ch"> </span><span class="kw">Basic</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a>        AuthName<span class="st"> "Radicale Authentication"</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a>        AuthBasicProvider<span class="st"> file</span></span>
+<span id="cb13-14"><a href="#cb13-14"></a>        AuthUserFile<span class="st"> /usr/share/radicale/radicale.passwd</span></span>
+<span id="cb13-15"><a href="#cb13-15"></a></span>
+<span id="cb13-16"><a href="#cb13-16"></a>        <span class="ex">AllowOverride</span><span class="ch"> </span><span class="kw">None</span></span>
+<span id="cb13-17"><a href="#cb13-17"></a>        Require<span class="st"> valid-user</span></span>
+<span id="cb13-18"><a href="#cb13-18"></a></span>
+<span id="cb13-19"><a href="#cb13-19"></a>        <span class="ex">RewriteEngine</span><span class="ch"> </span><span class="kw">On</span></span>
+<span id="cb13-20"><a href="#cb13-20"></a>        RewriteCond<span class="st"> %{REMOTE_USER}%{PATH_INFO} !^([^/]+/)\1</span></span>
+<span id="cb13-21"><a href="#cb13-21"></a>        RewriteRule<span class="st"> .* - [Forbidden]</span></span>
+<span id="cb13-22"><a href="#cb13-22"></a>    <span class="fu">&lt;/Directory&gt;</span></span>
+<span id="cb13-23"><a href="#cb13-23"></a><span class="fu">&lt;/VirtualHost&gt;</span></span></code></pre></div>
+<p>If you're still convinced that access control is better with Radicale, you have to add <code>WSGIPassAuthorization On</code> in your Apache configuration files, as explained in <a href="http://code.google.com/p/modwsgi/wiki/ConfigurationGuidelines#User_Authentication">the mod_wsgi documentation</a>.</p>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>Read-only calendars or address books can also be served by a simple Apache HTTP server, as Radicale stores full-text icalendar and vcard files with the default configuration.</p>
+</blockquote>
+</section>
+</section>
+<section class="level5" id="documentation/user-documentation/complex-configuration/authentication">
+<h5>Authentication <a class="headerlink" href="#documentation/user-documentation/complex-configuration/authentication">&para;</a></h5>
+<p>Authentication is possible through:</p>
+<ul>
+<li>Courier-Authdaemon socket</li>
+<li>htpasswd file, including list of plain user/password couples</li>
+<li>HTTP, checking status code of a POST request</li>
+<li>IMAP</li>
+<li>LDAP</li>
+<li>PAM</li>
+<li>Remote user given by HTTP server</li>
+</ul>
+<p>Check the <code>[auth]</code> section of your configuration file to know the different options offered by these authentication modules.</p>
+<p>Some authentication methods need additional modules, see <a href="#documentation/user-documentation/python-versions-and-os-support">Python Versions and OS Support</a> for further information.</p>
+<p>You can also write and use a custom module handle authentication if you use a different technology.</p>
+<p>Please note that these modules have not been verified by security experts. If you need a really secure way to handle authentication, you should put Radicale behind a real HTTP server and use its authentication and rights management methods.</p>
+</section>
+<section class="level5" id="documentation/user-documentation/complex-configuration/rights-management">
+<h5>Rights Management <a class="headerlink" href="#documentation/user-documentation/complex-configuration/rights-management">&para;</a></h5>
+<p>You can set read and write rights for collections according to the authenticated user and the owner of the collection.</p>
+<p>The <em>owner of a collection</em> is determined by the URL of the collection. For example, <code>http://my.server.com:5232/anna/calendar.ics/</code> is owned by the user called <code>anna</code>.</p>
+<p>The <em>authenticated user</em> is the login used for authentication.</p>
+<p>5 different configurations are available, you can choose the one you want in your configuration file. You can also write and use a custom module handle rights management if you need a specific pattern.</p>
+<section class="level6" id="documentation/user-documentation/complex-configuration/rights-management/none">
+<h6>None <a class="headerlink" href="#documentation/user-documentation/complex-configuration/rights-management/none">&para;</a></h6>
+<p>Everybody (including anonymous users) has read and write access to all collections.</p>
+</section>
+<section class="level6" id="documentation/user-documentation/complex-configuration/rights-management/authenticated">
+<h6>Authenticated <a class="headerlink" href="#documentation/user-documentation/complex-configuration/rights-management/authenticated">&para;</a></h6>
+<p>An authenticated users has read and write access to all collections, anonymous users have no access to these collections.</p>
+</section>
+<section class="level6" id="documentation/user-documentation/complex-configuration/rights-management/owner-only">
+<h6>Owner Only <a class="headerlink" href="#documentation/user-documentation/complex-configuration/rights-management/owner-only">&para;</a></h6>
+<p>Only owners have read and write access to their own collections. The other users, authenticated or anonymous, have no access to these collections.</p>
+</section>
+<section class="level6" id="documentation/user-documentation/complex-configuration/rights-management/owner-write">
+<h6>Owner Write <a class="headerlink" href="#documentation/user-documentation/complex-configuration/rights-management/owner-write">&para;</a></h6>
+<p>Authenticated users have read access to all collections, but only owners have write access to their own collections. Anonymous users have no access to collections.</p>
+</section>
+<section class="level6" id="documentation/user-documentation/complex-configuration/rights-management/from-file">
+<h6>From File <a class="headerlink" href="#documentation/user-documentation/complex-configuration/rights-management/from-file">&para;</a></h6>
+<p>Rights are based on a regex-based file whose name is specified in the config (section "right", key "file").</p>
+<p>Authentication login is matched against the "user" key, and collection's path is matched against the "collection" key. You can use Python's ConfigParser interpolation values %(login)s and %(path)s. You can also get groups from the user regex in the collection with {0}, {1}, etc.</p>
+<p>For example, for the "user" key, ".+" means "authenticated user" and ".*" means "anybody" (including anonymous users).</p>
+<p>Section names are only used for naming the rule.</p>
+<p>Leading or ending slashes are trimmed from collection's path.</p>
+<p>Example:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb14-1"><a href="#cb14-1"></a><span class="co"># The default path for this kind of files is ~/.config/radicale/rights</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="co"># This can be changed in the configuration file</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="co">#</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a><span class="co"># This file gives independant examples to help users write their own</span></span>
+<span id="cb14-5"><a href="#cb14-5"></a><span class="co"># configuration files. Using these examples together in the same configuration</span></span>
+<span id="cb14-6"><a href="#cb14-6"></a><span class="co"># file is meaningless.</span></span>
+<span id="cb14-7"><a href="#cb14-7"></a><span class="co">#</span></span>
+<span id="cb14-8"><a href="#cb14-8"></a><span class="co"># The first rule matching both user and collection patterns will be returned.</span></span>
+<span id="cb14-9"><a href="#cb14-9"></a></span>
+<span id="cb14-10"><a href="#cb14-10"></a><span class="co"># This means all users starting with "admin" may read any collection</span></span>
+<span id="cb14-11"><a href="#cb14-11"></a><span class="kw">[admin]</span></span>
+<span id="cb14-12"><a href="#cb14-12"></a><span class="dt">user: ^admin.*$</span></span>
+<span id="cb14-13"><a href="#cb14-13"></a><span class="dt">collection: .*</span></span>
+<span id="cb14-14"><a href="#cb14-14"></a><span class="dt">permission: r</span></span>
+<span id="cb14-15"><a href="#cb14-15"></a></span>
+<span id="cb14-16"><a href="#cb14-16"></a><span class="co"># This means all users may read and write any collection starting with public.</span></span>
+<span id="cb14-17"><a href="#cb14-17"></a><span class="co"># We do so by just not testing against the user string.</span></span>
+<span id="cb14-18"><a href="#cb14-18"></a><span class="kw">[public]</span></span>
+<span id="cb14-19"><a href="#cb14-19"></a><span class="dt">user: .*</span></span>
+<span id="cb14-20"><a href="#cb14-20"></a><span class="dt">collection: ^public(/.+)?$</span></span>
+<span id="cb14-21"><a href="#cb14-21"></a><span class="dt">permission: rw</span></span>
+<span id="cb14-22"><a href="#cb14-22"></a></span>
+<span id="cb14-23"><a href="#cb14-23"></a><span class="co"># A little more complex: give read access to users from a domain for all</span></span>
+<span id="cb14-24"><a href="#cb14-24"></a><span class="co"># collections of all the users (ie. user@domain.tld can read domain/*).</span></span>
+<span id="cb14-25"><a href="#cb14-25"></a><span class="kw">[domain-wide-access]</span></span>
+<span id="cb14-26"><a href="#cb14-26"></a><span class="dt">user: ^.+@(.+)\..+$</span></span>
+<span id="cb14-27"><a href="#cb14-27"></a><span class="dt">collection: ^{0}/.+$</span></span>
+<span id="cb14-28"><a href="#cb14-28"></a><span class="dt">permission: r</span></span>
+<span id="cb14-29"><a href="#cb14-29"></a></span>
+<span id="cb14-30"><a href="#cb14-30"></a><span class="co"># Allow authenticated user to read all collections</span></span>
+<span id="cb14-31"><a href="#cb14-31"></a><span class="kw">[allow-everyone-read]</span></span>
+<span id="cb14-32"><a href="#cb14-32"></a><span class="dt">user: .+</span></span>
+<span id="cb14-33"><a href="#cb14-33"></a><span class="dt">collection: .*</span></span>
+<span id="cb14-34"><a href="#cb14-34"></a><span class="dt">permission: r</span></span>
+<span id="cb14-35"><a href="#cb14-35"></a></span>
+<span id="cb14-36"><a href="#cb14-36"></a><span class="co"># Give write access to owners</span></span>
+<span id="cb14-37"><a href="#cb14-37"></a><span class="kw">[owner-write]</span></span>
+<span id="cb14-38"><a href="#cb14-38"></a><span class="dt">user: .+</span></span>
+<span id="cb14-39"><a href="#cb14-39"></a><span class="dt">collection: ^%(login)s/.*$</span></span>
+<span id="cb14-40"><a href="#cb14-40"></a><span class="dt">permission: w</span></span></code></pre></div>
+</section>
+</section>
+<section class="level5" id="documentation/user-documentation/complex-configuration/git-support">
+<h5>Git Support <a class="headerlink" href="#documentation/user-documentation/complex-configuration/git-support">&para;</a></h5>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>If the project doesn't comply with the requirements to use Git, Radicale will still work. Your collections will run fine but without the versionning system.</p>
+</blockquote>
+<p>Git is now automatically supported on Radicale. It depends on <a href="https://github.com/jelmer/dulwich">dulwich</a>.</p>
+<section class="level6" id="documentation/user-documentation/complex-configuration/git-support/configure-radicale">
+<h6>Configure Radicale <a class="headerlink" href="#documentation/user-documentation/complex-configuration/git-support/configure-radicale">&para;</a></h6>
+<p>Radicale automatically detects the <em>.git</em> folder in the path you configured for the filesystem_folder variable in the <code>[storage]</code> section of your configuration file. Make sure a repository is created at this location or create one (using <em>git init .</em> for instance) else it won't work.</p>
+<p>To summarize :</p>
+<ul>
+<li>Configure your Git installation</li>
+<li>Get Radicale and dulwich</li>
+<li>Create the repository where your collections are stored</li>
+<li>Run Radicale and it should work</li>
+</ul>
+</section>
+<section class="level6" id="documentation/user-documentation/complex-configuration/git-support/how-it-works">
+<h6>How it works <a class="headerlink" href="#documentation/user-documentation/complex-configuration/git-support/how-it-works">&para;</a></h6>
+<p>Radicale will automatically commit any changes on your collections. It will use your git config to find parameters such as the committer and that's all.</p>
+</section>
+<section class="level6" id="documentation/user-documentation/complex-configuration/git-support/issues">
+<h6>Issues <a class="headerlink" href="#documentation/user-documentation/complex-configuration/git-support/issues">&para;</a></h6>
+<p>A dulwich project ported on Python 3 exists but it seems that it doesn't follow the current api (committer is mandatory and not retrieved from the git config by default). Until this problem isn't fixed, the Git support for Radicale on Python 3 will not be ensured.</p>
+</section>
+</section>
+</section>
+<section class="level4" id="documentation/user-documentation/python-versions-and-os-support">
+<h4>Python Versions and OS Support <a class="headerlink" href="#documentation/user-documentation/python-versions-and-os-support">&para;</a></h4>
+<section class="level5" id="documentation/user-documentation/python-versions-and-os-support/tls-support">
+<h5>TLS Support <a class="headerlink" href="#documentation/user-documentation/python-versions-and-os-support/tls-support">&para;</a></h5>
+<p>Python 2.6 suffered <a href="http://bugs.python.org/issue5103">a bug</a> causing huge timeout problems with TLS. The bug is fixed since Python 2.6.6.</p>
+<p>IMAP authentication over TLS requires Python 3.2.</p>
+<p>Python 2.7 and Python 3.x do not suffer this bug.</p>
+</section>
+<section class="level5" id="documentation/user-documentation/python-versions-and-os-support/crypt-support">
+<h5>Crypt Support <a class="headerlink" href="#documentation/user-documentation/python-versions-and-os-support/crypt-support">&para;</a></h5>
+<p>With the htpasswd access, many encryption methods are available, and crypt is the default one in Radicale. Unfortunately, the <code>crypt</code> module is unavailable on Windows, you have to pick another method on this OS.</p>
+<p>Additional <code>md5</code> and <code>bcrypt</code> methods are available when the <code>passlib</code> module is installed.</p>
+</section>
+<section class="level5" id="documentation/user-documentation/python-versions-and-os-support/imap-authentication">
+<h5>IMAP Authentication <a class="headerlink" href="#documentation/user-documentation/python-versions-and-os-support/imap-authentication">&para;</a></h5>
+<p>The IMAP authentication module relies on the imaplib module, available with 2.x versions of Python. However, TLS is only available in Python 3.2. Older versions of Python or a non-modern server who does not support STARTTLS can only authenticate against <code>localhost</code> as passwords are transmitted in PLAIN. Legacy SSL mode on port 993 is not supported.</p>
+</section>
+<section class="level5" id="documentation/user-documentation/python-versions-and-os-support/ldap-authentication">
+<h5>LDAP Authentication <a class="headerlink" href="#documentation/user-documentation/python-versions-and-os-support/ldap-authentication">&para;</a></h5>
+<p>The LDAP authentication module relies on <a href="http://www.python-ldap.org/">the python-ldap module</a>, and thus only works with 2.x versions of Python.</p>
+</section>
+<section class="level5" id="documentation/user-documentation/python-versions-and-os-support/pam-authentication">
+<h5>PAM Authentication <a class="headerlink" href="#documentation/user-documentation/python-versions-and-os-support/pam-authentication">&para;</a></h5>
+<p>The PAM authentication module relies on <a href="https://pypi.python.org/pypi/python-pam/">the python-pam module</a>.</p>
+<p>Bear in mind that on Linux systems, if you're authenticating against PAM files (i.e. <code>/etc/shadow</code>), the user running Radicale must have the right permissions. For instance, you might want to add the <code>radicale</code> user to the <code>shadow</code> group.</p>
+</section>
+<section class="level5" id="documentation/user-documentation/python-versions-and-os-support/http-authentication">
+<h5>HTTP Authentication <a class="headerlink" href="#documentation/user-documentation/python-versions-and-os-support/http-authentication">&para;</a></h5>
+<p>The HTTP authentication module relies on <a href="http://docs.python-requests.org/en/latest/">the requests module</a>.</p>
+</section>
+<section class="level5" id="documentation/user-documentation/python-versions-and-os-support/daemon-mode">
+<h5>Daemon Mode <a class="headerlink" href="#documentation/user-documentation/python-versions-and-os-support/daemon-mode">&para;</a></h5>
+<p>The daemon mode relies on forks, and thus only works on Unix-like OSes (incuding Linux, OS X, BSD).</p>
+</section>
+</section>
+</section>
+<section class="level3" id="documentation/project-description">
+<h3>Project Description <a class="headerlink" href="#documentation/project-description">&para;</a></h3>
+<section class="level4" id="documentation/project-description/main-goals">
+<h4>Main Goals <a class="headerlink" href="#documentation/project-description/main-goals">&para;</a></h4>
+<p>The Radicale Project is a complete calendar and contact storing and manipulating solution. It can store multiple calendars and multiple address books.</p>
+<p>Calendar and contact manipulation is available from both local and distant accesses, possibly limited through authentication policies.</p>
+</section>
+<section class="level4" id="documentation/project-description/what-radicale-is">
+<h4>What Radicale Is <a class="headerlink" href="#documentation/project-description/what-radicale-is">&para;</a></h4>
+<section class="level5" id="documentation/project-description/what-radicale-is/calendar-and-contact-server">
+<h5>Calendar and Contact Server <a class="headerlink" href="#documentation/project-description/what-radicale-is/calendar-and-contact-server">&para;</a></h5>
+<p>The Radicale Project is mainly a calendar and contact server, giving local and distant access for reading, creating, modifying and deleting multiple calendars through simplified CalDAV and CardDAV protocols.</p>
+<p>Data can be encrypted by SSL, and their access can be restricted using different authentication methods.</p>
+</section>
+</section>
+<section class="level4" id="documentation/project-description/what-radicale-is-not-and-will-not-be">
+<h4>What Radicale Is not and will not Be <a class="headerlink" href="#documentation/project-description/what-radicale-is-not-and-will-not-be">&para;</a></h4>
+<section class="level5" id="documentation/project-description/what-radicale-is-not-and-will-not-be/calendar-or-contact-user-agent">
+<h5>Calendar or Contact User Agent <a class="headerlink" href="#documentation/project-description/what-radicale-is-not-and-will-not-be/calendar-or-contact-user-agent">&para;</a></h5>
+<p>Radicale is a server, not a client. No interfaces will be created to work with the server, as it is a really (really really) much more difficult task<a href="#footnotes//3">[3]</a>.</p>
+</section>
+<section class="level5" id="documentation/project-description/what-radicale-is-not-and-will-not-be/original-calendar-or-contact-access-protocol">
+<h5>Original Calendar or Contact Access Protocol <a class="headerlink" href="#documentation/project-description/what-radicale-is-not-and-will-not-be/original-calendar-or-contact-access-protocol">&para;</a></h5>
+<p>CalDAV and CardDAV are not perfect protocols. We think that their main problem is their complexity<a href="#footnotes//4">[4]</a>, that is why we decided not to implement the whole standard but just enough to understand some of its client-side implementations <a href="#footnotes//5">[5]</a>.</p>
+<p>CalDAV and CardDAV are the best open standards available and they are quite widely used by both clients and servers<a href="#footnotes//6">[6]</a>. We decided to use it, and we will not use another one.</p>
+</section>
+</section>
+</section>
+<section class="level3" id="documentation/technical-choices">
+<h3>Technical Choices <a class="headerlink" href="#documentation/technical-choices">&para;</a></h3>
+<section class="level4" id="documentation/technical-choices/global-technical-choices">
+<h4>Global Technical Choices <a class="headerlink" href="#documentation/technical-choices/global-technical-choices">&para;</a></h4>
+<section class="level5" id="documentation/technical-choices/global-technical-choices/general-description">
+<h5>General Description <a class="headerlink" href="#documentation/technical-choices/global-technical-choices/general-description">&para;</a></h5>
+<p>The Radicale Project aims to be a light solution, easy to use, easy to install, easy to configure. As a consequence, it requires few software dependencies and is pre-configured to work out-of-the-box.</p>
+<p>The Radicale Project runs on most of the UNIX-like platforms (Linux, *BSD, MacOS&nbsp;X) and Windows. It is free and open-source software.</p>
+</section>
+<section class="level5" id="documentation/technical-choices/global-technical-choices/language">
+<h5>Language <a class="headerlink" href="#documentation/technical-choices/global-technical-choices/language">&para;</a></h5>
+<p>The different parts of the Radicale Project are written in Python. This is a high-level language, fully object-oriented, available for the main operating systems and released with a lot of useful libraries.</p>
+</section>
+<section class="level5" id="documentation/technical-choices/global-technical-choices/protocols-and-formats">
+<h5>Protocols and Formats <a class="headerlink" href="#documentation/technical-choices/global-technical-choices/protocols-and-formats">&para;</a></h5>
+<p>The main protocols and formats fully or partially implemented in the Radicale Project are described by RFCs:</p>
+<ul>
+<li>HyperText Transfer Protocol (HTTP) <a href="http://www.faqs.org/rfcs/rfc2616.html" title="RFC 2616">RFC 2616</a></li>
+<li>WebDAV Access Control Protocol (ACL) <a href="http://www.faqs.org/rfcs/rfc3744.html" title="RFC 3744">RFC 3744</a></li>
+<li>Calendaring Extensions to WebDAV (CalDAV) <a href="http://www.faqs.org/rfcs/rfc4791.html" title="RFC 4791">RFC 4791</a></li>
+<li>HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV) <a href="http://www.faqs.org/rfcs/rfc4918.html" title="RFC 4918">RFC 4918</a></li>
+<li>Transport Layer Security (TLS) <a href="http://www.faqs.org/rfcs/rfc5246.html" title="RFC 5246">RFC 5246</a></li>
+<li>iCalendar format (iCal) <a href="http://www.faqs.org/rfcs/rfc5545.html" title="RFC 5545">RFC 5545</a></li>
+<li>vCard Format Specification <a href="http://www.faqs.org/rfcs/rfc6350.html" title="RFC 6350">RFC 6350</a></li>
+<li>vCard Extensions to Web Distributed Authoring and Versioning (CardDAV) <a href="http://www.faqs.org/rfcs/rfc6352.html" title="RFC 6352">RFC 6352</a></li>
+</ul>
+<blockquote>
+<p><strong>Note</strong></p>
+<p class="level5">CalDAV and CardDAV implementations <strong>require</strong> iCal, vCard, ACL, WebDAV, HTTP and TLS. The Radicale Server <strong>does not and will not implement correctly</strong> these standards, as explained in the <a href="#documentation/technical-choices/global-technical-choices/development-choices">Development Choices</a> part.</p>
+</blockquote>
+</section>
+<section class="level5" id="documentation/technical-choices/global-technical-choices/development-choices">
+<h5>Development Choices <a class="headerlink" href="#documentation/technical-choices/global-technical-choices/development-choices">&para;</a></h5>
+<p>Important global development choices have been decided before writing code. They are very useful to understand why the Radicale Project is different from other CalDAV and CardDAV servers, and why features are included or not in the code.</p>
+<section class="level6" id="documentation/technical-choices/global-technical-choices/development-choices/oriented-to-calendar-and-contact-user-agents">
+<h6>Oriented to Calendar and Contact User Agents <a class="headerlink" href="#documentation/technical-choices/global-technical-choices/development-choices/oriented-to-calendar-and-contact-user-agents">&para;</a></h6>
+<p>Calendar and contact servers work with calendar and contact clients, using a defined protocol. CalDAV and CardDAV are good protocols, covering lots of features and use cases, but it is quite hard to implement fully.</p>
+<p>Some calendar servers have been created to follow the CalDAV and CardDAV RFCs as much as possible: Davical<a href="#footnotes//7">[7]</a>, Cosmo<a href="#footnotes//8">[8]</a> and Darwin Calendar Server<a href="#footnotes//9">[9]</a>, for example, are much more respectful of CalDAV and CardDAV and can be used with a large number of clients. They are very good choices if you want to develop and test new CalDAV clients, or if you have a possibly heterogeneous list of user agents.</p>
+<p>The Radicale Server does not and <strong>will not</strong> support the CalDAV and CardDAV standards. It supports the CalDAV and CardDAV implementations of different clients (Lightning, Evolution, Android, iPhone, iCal, and more).</p>
+</section>
+<section class="level6" id="documentation/technical-choices/global-technical-choices/development-choices/simple">
+<h6>Simple <a class="headerlink" href="#documentation/technical-choices/global-technical-choices/development-choices/simple">&para;</a></h6>
+<p>The Radicale Server is designed to be simple to install, simple to configure, simple to use.</p>
+<p>The installation is very easy, particularly with Linux: no dependencies, no superuser rights needed, no configuration required. Launching the main script out-of-the-box, as a normal user, is often the only step to have a simple remote calendar and contact access.</p>
+<p>Contrary to other servers that are often complicated, require high privileges or need a strong configuration, the Radicale Server can (sometimes, if not often) be launched in a couple of minutes, if you follow the <a href="#documentation/user-documentation">User Documentation</a>.</p>
+</section>
+<section class="level6" id="documentation/technical-choices/global-technical-choices/development-choices/lazy">
+<h6>Lazy <a class="headerlink" href="#documentation/technical-choices/global-technical-choices/development-choices/lazy">&para;</a></h6>
+<p>We, Radicale Project developers, are lazy. That is why we have chosen Python: no more <code>;</code> or <code>{}</code><a href="#footnotes//10">[10]</a>. This is also why our server is lazy.</p>
+<p>The CalDAV RFC defines what must be done, what can be done and what cannot be done. Many violations of the protocol are totally defined and behaviours are given in such cases.</p>
+<p>The Radicale Server assumes that the clients are perfect and that protocol violations do not exist. That is why most of the errors in client requests have undetermined consequences for the lazy server that can reply good answers, bad answers, or even no answer.</p>
+<p>As already mentioned, the Radicale server doesn't fully support the CalDAV and CardDAV RFCs. For example, nested filters in queries currently don't work in all cases. Examples of not working queries can be found in issues <a href="https://github.com/Kozea/Radicale/issues/120">#120</a> and <a href="https://github.com/Kozea/Radicale/issues/121">#121</a>.</p>
+</section>
+</section>
+</section>
+<section class="level4" id="documentation/technical-choices/architectures">
+<h4>Architectures <a class="headerlink" href="#documentation/technical-choices/architectures">&para;</a></h4>
+<section class="level5" id="documentation/technical-choices/architectures/general-architecture">
+<h5>General Architecture <a class="headerlink" href="#documentation/technical-choices/architectures/general-architecture">&para;</a></h5>
+<p>Here is a simple overview of the global architecture for reaching a calendar through network:</p>
+<div class="tableContainer"><table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Layer</th>
+<th>Protocol or Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td rowspan="2">Server</td>
+<td>Calendar/Contact Storage</td>
+<td>iCal/vCard</td>
+</tr>
+<tr>
+<td>Calendar/Contact Server</td>
+<td>CalDAV/CardDAV Server</td>
+</tr>
+<tr>
+<td>Transfer</td>
+<td>Network</td>
+<td>CalDAV/CardDAV (HTTP + TLS)</td>
+</tr>
+<tr>
+<td rowspan="2">Client</td>
+<td>Calendar/Contact Client</td>
+<td>CalDAV/CardDAV Client</td>
+</tr>
+<tr>
+<td>GUI</td>
+<td>Terminal, GTK, etc.</td>
+</tr>
+</tbody>
+</table></div>
+<p>The Radicale Project is <strong>only the server part</strong> of this architecture.</p>
+</section>
+<section class="level5" id="documentation/technical-choices/architectures/code-architecture">
+<h5>Code Architecture <a class="headerlink" href="#documentation/technical-choices/architectures/code-architecture">&para;</a></h5>
+<p>The package offers 8 modules.</p>
+<ul>
+<li><p><code>__main__</code><br>
+The main module provides a simple function called <code>run</code>. Its main work is to read the configuration from the configuration file and from the options given in the command line; then it creates a server, according to the configuration.</p></li>
+<li><p><code>__init__</code><br>
+This is the core part of the module, with the code for the CalDAV server. The server inherits from a HTTP or HTTPS server class, which relies on the default HTTP server class given by Python. The code managing the different HTTP requests according to the CalDAV normalization is written here.</p></li>
+<li><p><code>config</code><br>
+This part gives a dict-like access to the server configuration, read from the configuration file. The configuration can be altered when launching the executable with some command line options.</p></li>
+<li><p><code>ical</code><br>
+In this module are written the classes to represent collections and items in Radicale. The simple iCalendar and vCard readers and writers are included in this file. The readers and writers are small and stupid: they do not fully understand the iCalendar format and do not know at all what a date is.</p></li>
+<li><p><code>xmlutils</code><br>
+The functions defined in this module are mainly called by the CalDAV server class to read the XML part of the request, read or alter the calendars, and create the XML part of the response. The main part of this code relies on ElementTree.</p></li>
+<li><p><code>log</code><br>
+The <code>start</code> function provided by this module starts a logging mechanism based on the default Python logging module. Logging options can be stored in a logging configuration file.</p></li>
+<li><p><code>acl</code><br>
+This module is a set of Access Control Lists, a set of methods used by Radicale to manage rights to access the calendars. When the CalDAV server is launched, an Access Control List is chosen in the set, according to the configuration. The HTTP requests are then filtered to restrict the access using a list of login/password-based access controls.</p></li>
+<li><p><code>storage</code><br>
+This folder is a set of storage modules able to read and write collections. Currently there are three storage modules: <code>filesystem</code>, storing each collection into one flat plain-text file, <code>multifilesystem</code>, storing each entries into separates plain-text files, and <code>database</code>, storing entries in a database. <code>filesystem</code> is stable and battle-tested, others are experimentals.</p></li>
+</ul>
+<!-- end list -->
+</section>
+</section>
+</section>
+</section>
+<section class="level2" id="contribute">
+<h2>Contribute <a class="headerlink" href="#contribute">&para;</a></h2>
+<section class="level4" id="contribute//chat-with-us-on-irc">
+<h4>Chat with Us on IRC <a class="headerlink" href="#contribute//chat-with-us-on-irc">&para;</a></h4>
+<p>Want to say something? Join our IRC room: ##kozea on Freenode.</p>
+</section>
+<section class="level4" id="contribute//report-bugs">
+<h4>Report Bugs <a class="headerlink" href="#contribute//report-bugs">&para;</a></h4>
+<p>Found a bug? Want a new feature? Report a new issue on the <code>Radicale bug-tracker</code>.</p>
+</section>
+<section class="level4" id="contribute//hack">
+<h4>Hack <a class="headerlink" href="#contribute//hack">&para;</a></h4>
+<p>Interested in hacking? Feel free to clone the <code>git repository on Github</code> if you want to add new features, fix bugs or update documentation.</p>
+</section>
+</section>
+<section class="level2" id="download">
+<h2>Download <a class="headerlink" href="#download">&para;</a></h2>
+<section class="level4" id="download//pypi">
+<h4>PyPI <a class="headerlink" href="#download//pypi">&para;</a></h4>
+<p>Radicale is <a href="http://pypi.python.org/pypi/Radicale/">available on PyPI</a>. To install, just type as superuser:</p>
+<pre><code>pip install radicale
+</code></pre>
+</section>
+<section class="level4" id="download//git-repository">
+<h4>Git Repository <a class="headerlink" href="#download//git-repository">&para;</a></h4>
+<p>If you want the development version of Radicale, take a look at the <code>git repository on GitHub</code>, or clone it thanks to:</p>
+<pre><code>git clone git://github.com/Kozea/Radicale.git
+</code></pre>
+<p>You can also download <a href="https://github.com/Kozea/Radicale/tarball/master">the Radicale package of the git repository</a>.</p>
+</section>
+<section class="level4" id="download//source-packages">
+<h4>Source Packages <a class="headerlink" href="#download//source-packages">&para;</a></h4>
+<p>You can download the Radicale package for each release:</p>
+<ul>
+<li><a href="https://files.pythonhosted.org/packages/source/R/Radicale/Radicale-1.1.2.tar.gz">Radicale-1.1.2.tar.gz</a> (47 KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-1.1.1.tar.gz">Radicale-1.1.1.tar.gz</a> (47 KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-1.1.tar.gz">Radicale-1.1.tar.gz</a> (47&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-1.0.1.tar.gz">Radicale-1.0.1.tar.gz</a> (42&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-1.0.tar.gz">Radicale-1.0.tar.gz</a> (42&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.10.tar.gz">Radicale-0.10.tar.gz</a> (42&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.9.tar.gz">Radicale-0.9.tar.gz</a> (42&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.8.tar.gz">Radicale-0.8.tar.gz</a> (38&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.7.1.tar.gz">Radicale-0.7.1.tar.gz</a> (34&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.7.tar.gz">Radicale-0.7.tar.gz</a> (34&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.6.4.tar.gz">Radicale-0.6.4.tar.gz</a> (31&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.6.3.tar.gz">Radicale-0.6.3.tar.gz</a> (31&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.6.2.tar.gz">Radicale-0.6.2.tar.gz</a> (30&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.6.1.tar.gz">Radicale-0.6.1.tar.gz</a> (30&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.6.tar.gz">Radicale-0.6.tar.gz</a> (30&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.5.tar.gz">Radicale-0.5.tar.gz</a> (24&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.4.tar.gz">Radicale-0.4.tar.gz</a> (23&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.3.tar.gz">Radicale-0.3.tar.gz</a> (22&nbsp;KiB)</li>
+<li><a href="http://pypi.python.org/packages/source/R/Radicale/Radicale-0.2.tar.gz">Radicale-0.2.tar.gz</a> (22&nbsp;KiB)</li>
+</ul>
+</section>
+<section class="level4" id="download//linux-distribution-packages">
+<h4>Linux Distribution Packages <a class="headerlink" href="#download//linux-distribution-packages">&para;</a></h4>
+<p>Radicale has been packaged for:</p>
+<ul>
+<li><a href="https://aur.archlinux.org/packages/radicale/">ArchLinux (AUR)</a> by Guillaume Bouchard</li>
+<li><a href="http://packages.debian.org/radicale">Debian</a> by Jonas Smedegaard</li>
+<li><a href="http://bugs.gentoo.org/show_bug.cgi?id=322811">Gentoo (Sunrise Overlay)</a> by Ren&eacute; Neumann</li>
+<li><a href="https://admin.fedoraproject.org/pkgdb/package/radicale/">Fedora</a> by Jorti</li>
+<li><a href="http://sophie.zarb.org/search/results?search=radicale">Mandriva/Mageia</a> by Jani V&auml;limaa</li>
+<li><a href="http://openports.se/productivity/radicale">OpenBSD</a> by Sergey Bronnikov, Stuart Henderson and Ian Darwin</li>
+<li><a href="http://software.opensuse.org/package/Radicale?search_term=radicale">openSUSE</a></li>
+<li><a href="http://code.activestate.com/pypm/radicale/">PyPM</a></li>
+<li><a href="http://schoepfer.info/slackware.xhtml#packages-network">Slackware</a> by Johannes Sch&ouml;pfer</li>
+<li><a href="http://packages.trisquel.info/search?searchon=names&amp;keywords=radicale">Trisquel</a></li>
+<li><a href="http://packages.ubuntu.com/radicale">Ubuntu</a> by the MOTU and Jonas Smedegaard</li>
+</ul>
+<p>Radicale is also <a href="https://cloudron.io/button.html?app=org.radicale.cloudronapp">available on Cloudron</a> and has a Dockerfile.</p>
+<p>If you are interested in creating packages for other Linux distributions, read the <a href="#contribute">"Contribute" page</a>.</p>
+</section>
+</section>
+<section class="level2" id="news">
+<h2>News <a class="headerlink" href="#news">&para;</a></h2>
+<section class="level3" id="news/april-19-2017---radicale-112">
+<h3>April 19, 2017 - Radicale 1.1.2 <a class="headerlink" href="#news/april-19-2017---radicale-112">&para;</a></h3>
+<p>Radicale 1.1.2 is out!</p>
+<section class="level4" id="news/april-19-2017---radicale-112/112---third-law-of-nature">
+<h4>1.1.2 - Third Law of Nature <a class="headerlink" href="#news/april-19-2017---radicale-112/112---third-law-of-nature">&para;</a></h4>
+<ul>
+<li>Security fix: Add a random timer to avoid timing oracles and simple bruteforce attacks when using the htpasswd authentication method.</li>
+<li>Various minor fixes.</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/december-31-2015---radicale-11">
+<h3>December 31, 2015 - Radicale 1.1 <a class="headerlink" href="#news/december-31-2015---radicale-11">&para;</a></h3>
+<p>Radicale 1.1 is out!</p>
+<section class="level4" id="news/december-31-2015---radicale-11/11---law-of-nature">
+<h4>1.1 - Law of Nature <a class="headerlink" href="#news/december-31-2015---radicale-11/11---law-of-nature">&para;</a></h4>
+<p>One feature in this release is <strong>not backward compatible</strong>:</p>
+<ul>
+<li>Use the first matching section for rights (inspired from daald)</li>
+</ul>
+<p>Now, the first section matching the path and current user in your custom rights file is used. In the previous versions, the most permissive rights of all the matching sections were applied. This new behaviour gives a simple way to make specific rules at the top of the file independant from the generic ones.</p>
+<p>Many <strong>improvements in this release are related to security</strong>, you should upgrade Radicale as soon as possible:</p>
+<ul>
+<li>Improve the regex used for well-known URIs (by Unrud)</li>
+<li>Prevent regex injection in rights management (by Unrud)</li>
+<li>Prevent crafted HTTP request from calling arbitrary functions (by Unrud)</li>
+<li>Improve URI sanitation and conversion to filesystem path (by Unrud)</li>
+<li>Decouple the daemon from its parent environment (by Unrud)</li>
+</ul>
+<p>Some bugs have been fixed and little enhancements have been added:</p>
+<ul>
+<li>Assign new items to corret key (by Unrud)</li>
+<li>Avoid race condition in PID file creation (by Unrud)</li>
+<li>Improve the docker version (by cdpb)</li>
+<li>Encode message and commiter for git commits</li>
+<li>Test with Python 3.5</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/september-14-2015---radicale-10-whats-next">
+<h3>September 14, 2015 - Radicale 1.0, what's next? <a class="headerlink" href="#news/september-14-2015---radicale-10-whats-next">&para;</a></h3>
+<p>Radicale 1.0 is out!</p>
+<section class="level4" id="news/september-14-2015---radicale-10-whats-next/10---sunflower">
+<h4>1.0 - Sunflower <a class="headerlink" href="#news/september-14-2015---radicale-10-whats-next/10---sunflower">&para;</a></h4>
+<ul>
+<li>Enhanced performances (by Mathieu Dupuy)</li>
+<li>Add MD5-APR1 and BCRYPT for htpasswd-based authentication (by Jan-Philip Gehrcke)</li>
+<li>Use PAM service (by Stephen Paul Weber)</li>
+<li>Don't discard PROPPATCH on empty collections (Markus Unterwaditzer)</li>
+<li>Write the path of the collection in the git message (Matthew Monaco)</li>
+<li>Tests launched on Travis</li>
+</ul>
+<p>As explained in a previous <a href="http://librelist.com/browser//radicale/2015/8/21/radicale-1-0-is-coming-what-s-next/">mail</a>, this version is called 1.0 because:</p>
+<ul>
+<li>there are no big changes since 0.10 but some small changes are really useful,</li>
+<li>simple tests are now automatically launched on Travis, and more can be added in the future (<a href="https://travis-ci.org/Kozea/Radicale">https://travis-ci.org/Kozea/Radicale</a>).</li>
+</ul>
+<p>This version will be maintained with only simple bug fixes on a separate git branch called <code>1.0.x</code>.</p>
+<p>Now that this milestone is reached, it's time to think about the future. When Radicale has been created, it was just a proof-of-concept. The main goal was to write a small, stupid and simple CalDAV server working with Lightning, using no external libraries. That's how we created a piece of code that's (quite) easy to understand, to use and to hack.</p>
+<p>The first lines have been added to the SVN (!) repository as I was drinking beers at the very end of 2008. It's now packaged for a growing number of Linux distributions.</p>
+<p>And that was fun going from here to there thanks to you. So&hellip; <strong>Thank you, you're amazing</strong>. I'm so glad I've spent endless hours fixing stupid bugs, arguing about databases and meeting invitations, reading incredibly interesting RFCs and debugging with the fabulous clients from Apple. I mean: that really, really was really, really cool :).</p>
+<p>During these years, a lot of things have changed and many users now rely on Radicale in production. For example, I use it to manage medical calendars, with thousands requests per day. Many people are happy to install Radicale on their small home servers, but are also frustrated by performance and unsupported specifications when they're trying to use it seriously.</p>
+<p>So, now is THE FUTURE! I think that Radicale 2.0 should:</p>
+<ul>
+<li>rely on a few external libraries for simple critical points (dealing with HTTP and iCal for example),</li>
+<li>be thread-safe,</li>
+<li>be small,</li>
+<li>be documented in a different way (for example by splitting the client part from the server part, and by adding use cases),</li>
+<li>let most of the "auth" modules outside in external modules,</li>
+<li>have more and more tests,</li>
+<li>have reliable and faster filesystem and database storage mechanisms,</li>
+<li>get a new design :).</li>
+</ul>
+<p>I'd also secretly love to drop the Python 2.x support.</p>
+<p>These ideas are not all mine (except from the really, really, really important "design" point :p), they have been proposed by many developers and users. I've just tried to gather them and keep points that seem important to me.</p>
+<p>Other points have been discussed with many users and contibutors, including:</p>
+<ul>
+<li>support of other clients, including Windows and BlackBerry phones,</li>
+<li>server-side meeting invitations,</li>
+<li>different storage system as default (or even unique?).</li>
+</ul>
+<p>I'm not a huge fan of these features, either because I can't do anything about them, or because I think that they're Really Bad Ideas&reg;&trade;. But I'm ready to talk about them, because, well, I may not be always right!</p>
+<p>Need to talk about this? You know how to <a href="#contribute">contact us</a>!</p>
+</section>
+</section>
+<section class="level3" id="news/january-12-2015---radicale-010">
+<h3>January 12, 2015 - Radicale 0.10 <a class="headerlink" href="#news/january-12-2015---radicale-010">&para;</a></h3>
+<p>Radicale 0.10 is out!</p>
+<section class="level4" id="news/january-12-2015---radicale-010/010---lovely-endless-grass">
+<h4>0.10 - Lovely Endless Grass <a class="headerlink" href="#news/january-12-2015---radicale-010/010---lovely-endless-grass">&para;</a></h4>
+<ul>
+<li>Support well-known URLs (by Mathieu Dupuy)</li>
+<li>Fix collection discovery (by Markus Unterwaditzer)</li>
+<li>Reload logger config on SIGHUP (by &Eacute;lie Bouttier)</li>
+<li>Remove props files when deleting a collection (by Vincent Untz)</li>
+<li>Support salted SHA1 passwords (by Marc Kleine-Budde)</li>
+<li>Don't spam the logs about non-SSL IMAP connections to localhost (by Giel van Schijndel)</li>
+</ul>
+<p>This version should bring some interesting discovery and auto-configuration features, mostly with Apple clients.</p>
+<p>Lots of love and kudos for the people who have spent hours to test features and report issues, that was long but really useful (and some of you have been really patient :p).</p>
+<p>Issues are welcome, I'm sure that you'll find horrible, terrible, crazy bugs faster than me. I'll release a version 0.10.1 if needed.</p>
+<p>What's next? It's time to fix and improve the storage methods. A real API for the storage modules is a good beginning, many pull requests are already ready to be discussed and merged, and we will probably get some good news about performance this time. Who said "databases, please"?</p>
+</section>
+</section>
+<section class="level3" id="news/july-12-2013---radicale-08">
+<h3>July 12, 2013 - Radicale 0.8 <a class="headerlink" href="#news/july-12-2013---radicale-08">&para;</a></h3>
+<p>Radicale 0.8 is out!</p>
+<section class="level4" id="news/july-12-2013---radicale-08/08---rainbow">
+<h4>0.8 - Rainbow <a class="headerlink" href="#news/july-12-2013---radicale-08/08---rainbow">&para;</a></h4>
+<ul>
+<li>New authentication and rights management modules (by Matthias Jordan)</li>
+<li>Experimental database storage</li>
+<li>Command-line option for custom configuration file (by Mark Adams)</li>
+<li>Root URL not at the root of a domain (by Clint Adams, Fabrice Bellet, Vincent Untz)</li>
+<li>Improved support for iCal, CalDAVSync, CardDAVSync, CalDavZAP and CardDavMATE</li>
+<li>Empty PROPFIND requests handled (by Christoph Polcin)</li>
+<li>Colon allowed in passwords</li>
+<li>Configurable realm message</li>
+</ul>
+<p>This version brings some of the biggest changes since Radicale's creation, including an experimental support of database storage, clean authentication modules, and rights management finally designed for real users.</p>
+<p>So, dear user, be careful: <strong>this version changes important things in the configuration file, so check twice that everything is OK when you update to 0.8, or you can have big problems</strong>.</p>
+<p>More and more clients are supported, as a lot of bug fixes and features have been added for this purpose. And before you ask: yes, 2 web-based clients, <a href="http://www.inf-it.com/open-source/clients/">CalDavZAP and CardDavMATE</a>, are now supported!</p>
+<p>Even if there has been a lot of time to test these new features, I am pretty sure that some really annoying bugs have been left in this version. We will probably release minor versions with bugfixes during the next weeks, and it will not take one more year to reach 0.8.1.</p>
+<p>The documentation has been updated, but some parts are missing and some may be out of date. You can <a href="https://github.com/Kozea/Radicale/issues">report bugs</a> or even <a href="https://github.com/Kozea/Radicale/blob/website/pages/user_documentation.rst">write documentation directly on GitHub</a> if you find something strange (and you probably will).</p>
+<p>If anything is not clear, or if the way rights work is a bit complicated to understand, or if you are so happy because everything works so well, you can <a href="#contribute">share your thoughts</a>!</p>
+<p>It has been a real pleasure to work on this version, with brilliant ideas and interesting bug reports from the community. I'd really like to thank all the people reporting bugs, chatting on IRC, sending mails and proposing pull requests: you are awesome.</p>
+</section>
+</section>
+<section class="level3" id="news/august-3-2012---radicale-071">
+<h3>August 3, 2012 - Radicale 0.7.1 <a class="headerlink" href="#news/august-3-2012---radicale-071">&para;</a></h3>
+<p>Radicale 0.7.1 is out!</p>
+<section class="level4" id="news/august-3-2012---radicale-071/071---waterfalls">
+<h4>0.7.1 - Waterfalls <a class="headerlink" href="#news/august-3-2012---radicale-071/071---waterfalls">&para;</a></h4>
+<ul>
+<li>Many address books fixes</li>
+<li>New IMAP ACL (by Daniel Aleksandersen)</li>
+<li>PAM ACL fixed (by Daniel Aleksandersen)</li>
+<li>Courier ACL fixed (by Benjamin Frank)</li>
+<li>Always set display name to collections (by Oskari Timperi)</li>
+<li>Various DELETE responses fixed</li>
+</ul>
+<p>It's been a long time since the last version&hellip; As usual, many people have contributed to this new version, that's a pleasure to get these pull requests.</p>
+<p>Most of the commits are bugfixes, especially about ACL backends and address books. Many clients (including aCal and SyncEvolution) will be much happier with this new version than with the previous one.</p>
+<p>By the way, one main new feature has been added: a new IMAP ACL backend, by Daniel. And about authentication, exciting features are coming soon, stay tuned!</p>
+<p>Next time, as many mails have come from angry and desperate coders, tests will be <em>finally</em> added to help them to add features and fix bugs. And after that, who knows, it may be time to release Radicale 1.0&hellip;</p>
+</section>
+</section>
+<section class="level3" id="news/march-22-2012---radicale-07">
+<h3>March 22, 2012 - Radicale 0.7 <a class="headerlink" href="#news/march-22-2012---radicale-07">&para;</a></h3>
+<p>Radicale 0.7 is out, at least!</p>
+<section class="level4" id="news/march-22-2012---radicale-07/07---eternal-sunshine">
+<h4>0.7 - Eternal Sunshine <a class="headerlink" href="#news/march-22-2012---radicale-07/07---eternal-sunshine">&para;</a></h4>
+<ul>
+<li>Repeating events</li>
+<li>Collection deletion</li>
+<li>Courier and PAM authentication methods</li>
+<li>CardDAV support</li>
+<li>Custom LDAP filters supported</li>
+</ul>
+<p><strong>A lot</strong> of people have reported bugs, proposed new features, added useful code and tested many clients. Thank you Lynn, Ron, Bill, Patrick, Hidde, Gerhard, Martin, Brendan, Vladimir, and everybody I've forgotten.</p>
+</section>
+</section>
+<section class="level3" id="news/january-5-2012---radicale-064-news-from-calypso">
+<h3>January 5, 2012 - Radicale 0.6.4, News from Calypso <a class="headerlink" href="#news/january-5-2012---radicale-064-news-from-calypso">&para;</a></h3>
+<p>New year, new release. Radicale 0.6.4 has a really short changelog:</p>
+<section class="level4" id="news/january-5-2012---radicale-064-news-from-calypso/064---tulips">
+<h4>0.6.4 - Tulips <a class="headerlink" href="#news/january-5-2012---radicale-064-news-from-calypso/064---tulips">&para;</a></h4>
+<ul>
+<li>Fix the installation with Python 3.1</li>
+</ul>
+<p>The bug was in fact caused by a <a href="http://bugs.python.org/issue9561">bug in Python 3.1</a>, everything should be OK now.</p>
+</section>
+<section class="level4" id="news/january-5-2012---radicale-064-news-from-calypso/calypso">
+<h4>Calypso <a class="headerlink" href="#news/january-5-2012---radicale-064-news-from-calypso/calypso">&para;</a></h4>
+<p>After a lot of changes in Radicale, Keith Packard has decided to launch a fork called <a href="http://keithp.com/blogs/calypso/">Calypso</a>, with nice features such as a Git storage mechanism and a CardDAV support.</p>
+<p>There are lots of differences between the two projects, but the final goal for Radicale is to provide these new features as soon as possible. Thanks to the work of Keith and other people on GitHub, a basic CardDAV support has been added in the <a href="https://github.com/Kozea/Radicale/tree/carddav">carddav branch</a> and already works with Evolution. Korganizer also works with existing address books, and CardDAV-Sync will be tested soon. If you want to test other clients, please let us know!</p>
+</section>
+</section>
+<section class="level3" id="news/november-3-2011---radicale-063">
+<h3>November 3, 2011 - Radicale 0.6.3 <a class="headerlink" href="#news/november-3-2011---radicale-063">&para;</a></h3>
+<p>Radicale version 0.6.3 has been released, with bugfixes that could be interesting for you!</p>
+<section class="level4" id="news/november-3-2011---radicale-063/063---red-roses">
+<h4>0.6.3 - Red Roses <a class="headerlink" href="#news/november-3-2011---radicale-063/063---red-roses">&para;</a></h4>
+<ul>
+<li>MOVE requests fixed</li>
+<li>Faster REPORT answers</li>
+<li>Executable script moved into the package</li>
+</ul>
+</section>
+<section class="level4" id="news/november-3-2011---radicale-063/whats-new-since-062">
+<h4>What's New Since 0.6.2? <a class="headerlink" href="#news/november-3-2011---radicale-063/whats-new-since-062">&para;</a></h4>
+<p>The MOVE requests were suffering a little bug that is fixed now. These requests are only sent by Apple clients, Mac users will be happy.</p>
+<p>The REPORT request were really, really slow (several minutes for large calendars). This was caused by an awful algorithm parsing the entire calendar for each event in the calendar. The calendar is now only parsed three times, and the events are found in a Python list, turning minutes into seconds! Much better, but far from perfection&hellip;</p>
+<p>Finally, the executable script parsing the command line options and starting the HTTP servers has been moved from the <code>radicale.py</code> file into the <code>radicale</code> package. Two executable are now present in the archive: the good old <code>radicale.py</code>, and <code>bin/radicale</code>. The second one is only used by <code>setup.py</code>, where the hack used to rename <code>radicale.py</code> into <code>radicale</code> has therefore been removed. As a consequence, you can now launch Radicale with the simple <code>python -m radicale</code> command, without relying on an executable.</p>
+</section>
+<section class="level4" id="news/november-3-2011---radicale-063/time-for-a-stable-release">
+<h4>Time for a Stable Release! <a class="headerlink" href="#news/november-3-2011---radicale-063/time-for-a-stable-release">&para;</a></h4>
+<p>The next release may be a stable release, symbolically called 1.0. Guess what's missing? Tests, of course!</p>
+<p>A non-regression testing suite, based on the clients' requests, will soon be added to Radicale. We're now thinking about a smart solution to store the tests, to represent the expected answers and to launch the requests. We've got crazy ideas, so be prepared: you'll definitely <em>want</em> to write tests during the next weeks!</p>
+<p>Repeating events, PAM and Courier authentication methods have already been added in master. You'll find them in the 1.0 release!</p>
+</section>
+<section class="level4" id="news/november-3-2011---radicale-063/whats-next">
+<h4>What's Next? <a class="headerlink" href="#news/november-3-2011---radicale-063/whats-next">&para;</a></h4>
+<p>Being stable is one thing, being cool is another one. If you want some cool new features, you may be interested in:</p>
+<ul>
+<li>WebDAV and CardDAV support</li>
+<li>Filters and rights management</li>
+<li>Multiple storage backends, such as databases and git</li>
+<li>Freebusy periods</li>
+<li>Email alarms</li>
+</ul>
+<p>Issues have been reported in the bug tracker, you can follow there the latest news about these features. Your beloved text editor is waiting for you!</p>
+</section>
+</section>
+<section class="level3" id="news/september-27-2011---radicale-062">
+<h3>September 27, 2011 - Radicale 0.6.2 <a class="headerlink" href="#news/september-27-2011---radicale-062">&para;</a></h3>
+<p>0.6.2 is out with minor bugfixes.</p>
+<section class="level4" id="news/september-27-2011---radicale-062/062---seeds">
+<h4>0.6.2 - Seeds <a class="headerlink" href="#news/september-27-2011---radicale-062/062---seeds">&para;</a></h4>
+<ul>
+<li>iPhone and iPad support fixed</li>
+<li>Backslashes replaced by slashes in PROPFIND answers on Windows</li>
+<li>PyPI archive set as default download URL</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="news/august-28-2011---radicale-061-changes-future">
+<h3>August 28, 2011 - Radicale 0.6.1, Changes, Future <a class="headerlink" href="#news/august-28-2011---radicale-061-changes-future">&para;</a></h3>
+<p>As previously imagined, a new 0.6.1 version has been released, mainly fixing obvious bugs.</p>
+<section class="level4" id="news/august-28-2011---radicale-061-changes-future/061---growing-up">
+<h4>0.6.1 - Growing Up <a class="headerlink" href="#news/august-28-2011---radicale-061-changes-future/061---growing-up">&para;</a></h4>
+<ul>
+<li>Example files included in the tarball</li>
+<li>htpasswd support fixed</li>
+<li>Redirection loop bug fixed</li>
+<li>Testing message on GET requests</li>
+</ul>
+<p>The changelog is really small, so there should be no real new problems since 0.6. The example files for logging, FastCGI and WSGI are now included in the tarball, for the pleasure of our dear packagers!</p>
+<p>A new branch has been created for various future bug fixes. You can expect to get more 0.6.x versions, making this branch a kind of "stable" branch with no big changes.</p>
+</section>
+<section class="level4" id="news/august-28-2011---radicale-061-changes-future/github-mailing-list-new-website">
+<h4>GitHub, Mailing List, New Website <a class="headerlink" href="#news/august-28-2011---radicale-061-changes-future/github-mailing-list-new-website">&para;</a></h4>
+<p>A lot of small changes occurred during the last weeks.</p>
+<p>If you're interested in code and new features, please note that we moved the project from Gitorious to <code>GitHub</code>. Being hosted by Gitorious was a nice experience, but the service was not that good and we were missing some useful features such as git hooks. Moreover, GitHub is really popular, we're sure that we'll meet a lot of kind users and coders there.</p>
+<p>We've also created a <code>mailing-list on Librelist</code> to keep a public trace of the mails we're receiving. It a bit empty now, but we're sure that you'll soon write us some kind words. For example, you can tell us what you think of our new website!</p>
+</section>
+<section class="level4" id="news/august-28-2011---radicale-061-changes-future/future-features">
+<h4>Future Features <a class="headerlink" href="#news/august-28-2011---radicale-061-changes-future/future-features">&para;</a></h4>
+<p>In the next weeks, new exciting features are coming in the master branch! Some of them are almost ready:</p>
+<ul>
+<li>Henry-Nicolas has added the support for the PAM and Courier-Authdaemon authentication mechanisms.</li>
+<li>An anonymous called Keith Packard has prepared some small changes, such as one file per event, cache and git versioning. Yes. Really.</li>
+</ul>
+<p>As you can find in the <a href="http://redmine.kozea.fr/versions/">Radicale Roadmap</a>, tests, rights and filters are expected for 0.7.</p>
+</section>
+</section>
+<section class="level3" id="news/august-1-2011---radicale-06-released">
+<h3>August 1, 2011 - Radicale 0.6 Released <a class="headerlink" href="#news/august-1-2011---radicale-06-released">&para;</a></h3>
+<p>Time for a new release with <strong>a lot</strong> of new exciting features!</p>
+<section class="level4" id="news/august-1-2011---radicale-06-released/06---sapling">
+<h4>0.6 - Sapling <a class="headerlink" href="#news/august-1-2011---radicale-06-released/06---sapling">&para;</a></h4>
+<ul>
+<li>WSGI support</li>
+<li>IPv6 support</li>
+<li>Smart, verbose and configurable logs</li>
+<li>Apple iCal 4 and iPhone support (by Łukasz Langa)</li>
+<li>CalDAV-Sync support (by Marten Gajda)</li>
+<li>aCal support</li>
+<li>KDE KOrganizer support</li>
+<li>LDAP auth backend (by Corentin Le Bail)</li>
+<li>Public and private calendars (by Ren&eacute; Neumann)</li>
+<li>PID file</li>
+<li>MOVE requests management</li>
+<li>Journal entries support</li>
+<li>Drop Python 2.5 support</li>
+</ul>
+<p>Well, it's been a little longer than expected, but for good reasons: a lot of features have been added, and a lot of clients are known to work with Radicale, thanks to kind contributors. That's definitely good news! But&hellip;</p>
+<p>Testing all the clients is really painful, moreover for the ones from Apple (I have no Mac nor iPhone of my own). We should seriously think of automated tests, even if it's really hard to maintain, and maybe not that useful. If you're interested in tests, you can look at <a href="http://repo.or.cz/w/davical.git/tree/HEAD:/testing/tests/regression-suite">the wonderful regression suite of DAViCal</a>.</p>
+<p>The new features, for example the WSGI support, are also poorly documented. If you have some Apache or lighttpd configuration working with Radicale, you can make the world a little bit better by writing a paragraph or two in the <a href="https://gitorious.org/radicale/website">Radicale documentation</a>. It's simple plain text, don't be afraid!</p>
+<p>Because of all these changes, Radicale 0.6 may be a little bit buggy; a 0.6.1 will probably be released soon, fixing small problems with clients and features. Get ready to report bugs, I'm sure that you can find one (and fix it)!</p>
+</section>
+</section>
+<section class="level3" id="news/july-2-2011---feature-freeze-for-06">
+<h3>July 2, 2011 - Feature Freeze for 0.6 <a class="headerlink" href="#news/july-2-2011---feature-freeze-for-06">&para;</a></h3>
+<p>According to the <a href="http://redmine.kozea.fr/projects/radicale/roadmap">roadmap</a>, a lot of features have been added since Radicale 0.5, much more than expected. It's now time to test Radicale with your favourite client and to report bugs before we release the next stable version!</p>
+<p>Last week, the iCal and iPhone support written by Łukasz has been fixed in order to restore the broken Lightning support. After two afternoons of tests with R&eacute;mi, we managed to access the same calendar with Lightning, iCal, iPhone and Evolution, and finally discovered that CalDAV could also be a perfect instant messaging protocol between a Mac, a PC and a phone.</p>
+<p>After that, we've had the nice surprise to see events displayed without a problem (but after some strange steps of configuration) by aCal on Salem's Android phone.</p>
+<p>It was Friday, fun fun fun fun.</p>
+<p>So, that's it: Radicale supports Lightning, Evolution, Kontact, aCal for Android, iPhone and iCal. Of course, before releasing a new tarball:</p>
+<ul>
+<li class="level5"><a href="#documentation/user-documentation/simple-usage/starting-the-client">documentation</a> is needed for the new clients that are not documented yet (Kontact, aCal and iPhone);</li>
+<li>tests are welcome, particularly for the Apple clients that I can't test anymore;</li>
+<li>no more features will be added, they'll wait in separate branches for the 0.7 development.</li>
+</ul>
+<p>Please <a href="http://redmine.kozea.fr/projects/radicale/issues">report bugs</a> if anything goes wrong during your tests, or just let us know <a href="#contribute">by Jabber or by mail</a> if everything is OK.</p>
+</section>
+<section class="level3" id="news/may-1-2011---ready-for-wsgi">
+<h3>May 1, 2011 - Ready for WSGI <a class="headerlink" href="#news/may-1-2011---ready-for-wsgi">&para;</a></h3>
+<p>Here it is! Radicale is now ready to be launched behind your favourite HTTP server (Apache, Lighttpd, Nginx or Tomcat for example). That's really good news, because:</p>
+<ul>
+<li>Real HTTP servers are much more efficient and reliable than the default Python server used in Radicale;</li>
+<li>All the authentication backends available for your server will be available for Radicale;</li>
+<li>Thanks to <a href="http://trac.saddi.com/flup">flup</a>, Radicale can be interfaced with all the servers supporting CGI, AJP, FastCGI or SCGI;</li>
+<li>Radicale works very well without any additional server, without any dependencies, without configuration, just as it was working before;</li>
+<li>This one more feature removes useless code, less is definitely more.</li>
+</ul>
+<p>The WSGI support has only be tested as a stand-alone executable and behind Lighttpd, you should definitely try if it works with you favourite server too!</p>
+<p>No more features will be added before (quite) a long time, because a lot of documentation and test is waiting for us. If you want to write tutorials for some CalDAV clients support (iCal, Android, iPhone), HTTP servers support or logging management, feel free to fork the <a href="https://gitorious.org/radicale/website">documentation git repository</a> and ask for a merge. It's plain text, I'm sure you can do it!</p>
+</section>
+<section class="level3" id="news/april-30-2011---apple-ical-support">
+<h3>April 30, 2011 - Apple iCal Support <a class="headerlink" href="#news/april-30-2011---apple-ical-support">&para;</a></h3>
+<p>After a long, long work, the iCal support has finally been added to Radicale! Well, this support is only for iCal&nbsp;4 and is highly experimental, but you can test it right now with the git master branch. Bug reports are welcome!</p>
+<p>Dear MacOS users, you can thank all the gentlemen who sended a lot of debugging iformation. Special thanks to Andrew from DAViCal, who helped us a lot with his tips and his tests, and R&eacute;mi Hainaud who lent his laptop for the final tests.</p>
+<p>The default server address is <code>localhost:5232/user/</code>, where calendars can be added. Multiple calendars and owner-less calendars are not tested yet, but they should work quite well. More documentation will be added during the next days. It will then be time to release the Radicale&nbsp;0.6 version, and work on the WSGI support.</p>
+</section>
+<section class="level3" id="news/april-25-2011---two-features-and-one-new-roadmap">
+<h3>April 25, 2011 - Two Features and One New Roadmap <a class="headerlink" href="#news/april-25-2011---two-features-and-one-new-roadmap">&para;</a></h3>
+<p>Two features have just reached the master branch, and the roadmap has been refreshed.</p>
+<section class="level4" id="news/april-25-2011---two-features-and-one-new-roadmap/ldap-authentication">
+<h4>LDAP Authentication <a class="headerlink" href="#news/april-25-2011---two-features-and-one-new-roadmap/ldap-authentication">&para;</a></h4>
+<p>Thanks to Corentin, the LDAP authentication is now included in Radicale. The support is experimental and may suffer unstable connexions and security problems. If you are interested in this feature (a lot of people seem to be), you can try it and give some feedback.</p>
+<p>No SSL support is included yet, but this may be quite easy to add. By the way, serious authentication methods will rely on a "real" HTTP server, as soon as Radicale supports WSGI.</p>
+</section>
+<section class="level4" id="news/april-25-2011---two-features-and-one-new-roadmap/journal-entries">
+<h4>Journal Entries <a class="headerlink" href="#news/april-25-2011---two-features-and-one-new-roadmap/journal-entries">&para;</a></h4>
+<p>Mehmet asked for the journal entries (aka. notes or memos) support, that's done! This also was an occasion to clean some code in the iCal parser, and to add a much better management of multi-lines entries. People experiencing crazy <code>X-RADICALE-NAME</code> entries can now clean their files, Radicale won't pollute them again.</p>
+</section>
+<section class="level4" id="news/april-25-2011---two-features-and-one-new-roadmap/new-roadmap">
+<h4>New Roadmap <a class="headerlink" href="#news/april-25-2011---two-features-and-one-new-roadmap/new-roadmap">&para;</a></h4>
+<p>Except from htpasswd and LDAP, most of the authentication backends (database, SASL, PAM, user groups) are not really easy to include in Radicale. The easiest solution to solve this problem is to give Radicale a CGI support, to put it behind a solid server such as Apache. Of course, CGI is not enough: a WSGI support is quite better, with the FastCGI, AJP and SCGI backends offered by <a href="http://trac.saddi.com/flup/">flup</a>. Quite exciting, isn't it?</p>
+<p>That's why it was important to add new versions on the roadmap. The 0.6 version is now waiting for the Apple iCal support, and of course for some tests to kill the last remaining bugs. The only 0.7 feature will be WSGI, allowing many new authentication methods and a real multithread support.</p>
+<p>After that, 0.8 may add CalDAV rights and filters, while 1.0 will draw thousands of rainbows and pink unicorns (WebDAV sync, CardDAV, Freebusy). A lot of funky work is waiting for you, hackers!</p>
+</section>
+<section class="level4" id="news/april-25-2011---two-features-and-one-new-roadmap/bugs">
+<h4>Bugs <a class="headerlink" href="#news/april-25-2011---two-features-and-one-new-roadmap/bugs">&para;</a></h4>
+<p>Many bugs have also been fixed, most of them due to the owner-less calendars support. Radicale 0.6 may be out in a few weeks, you should spend some time testing the master branch and filling the bug tracker.</p>
+</section>
+</section>
+<section class="level3" id="news/april-10-2011---new-features">
+<h3>April 10, 2011 - New Features <a class="headerlink" href="#news/april-10-2011---new-features">&para;</a></h3>
+<p>Radicale 0.5 was released only 8 days ago, but 3 new features have already been added to the master branch:</p>
+<ul>
+<li>IPv6 support, with multiple addresses/ports support</li>
+<li>Logs and debug mode</li>
+<li>Owner-less calendars</li>
+</ul>
+<p>Most of the code has been written by Necoro and Corentin, and that was not easy at all: Radicale is now multithreaded! For sure, you can find many bugs and report them on the <a href="http://redmine.kozea.fr/projects/radicale/issues">bug tracker</a>. And if you're fond of logging, you can even add a default configuration file and more debug messages in the source.</p>
+</section>
+<section class="level3" id="news/april-2-2011---radicale-05-released">
+<h3>April 2, 2011 - Radicale 0.5 Released <a class="headerlink" href="#news/april-2-2011---radicale-05-released">&para;</a></h3>
+<p>Radicale 0.5 is out! Here is what's new:</p>
+<section class="level4" id="news/april-2-2011---radicale-05-released/05---historical-artifacts">
+<h4>0.5 - Historical Artifacts <a class="headerlink" href="#news/april-2-2011---radicale-05-released/05---historical-artifacts">&para;</a></h4>
+<ul>
+<li>Calendar depth</li>
+<li>iPhone support</li>
+<li>MacOS and Windows support</li>
+<li>HEAD requests management</li>
+<li>htpasswd user from calendar path</li>
+</ul>
+<p>iPhone support, but no iCal support for 0.5, despite our hard work, sorry! After 1 month with no more activity on the dedicated bug, it was time to forget it and hack on new awesome features. Thanks for your help, dear Apple users, I keep the hope that one day, Radicale will work with you!</p>
+<p>So, what's next? As promised, some cool git branches will soon be merged, with LDAP support, logging, IPv6 and anonymous calendars. Sounds pretty cool, heh? Talking about new features, more and more people are asking for a CardDAV support in Radicale. <a href="https://www.gitorious.org/~deepdiver/radicale/deepdivers-radicale">A git branch</a> and <a href="http://redmine.kozea.fr/issues/247">a feature request</a> are open, feel free to hack and discuss.</p>
+</section>
+</section>
+<section class="level3" id="news/february-3-2011---jabber-room-and-iphone-support">
+<h3>February 3, 2011 - Jabber Room and iPhone Support <a class="headerlink" href="#news/february-3-2011---jabber-room-and-iphone-support">&para;</a></h3>
+<p>After a lot of help and testing work from Andrew, Bj&ouml;rn, Anders, Dorian and Pete (and other ones we could have forgotten), a simple iPhone support has been added in the git repository. If you are interested, you can test this feature <em>right now</em> by <a href="#download//git-repository">downloading the latest git version</a> (a tarball is even available too if you don't want or know how to use git).</p>
+<p>No documentation has been written yet, but using the right URL in the configuration should be enough to synchronize your calendars. If you have any problems, you can ask by joining our new Jabber room: <a href="mailto:radicale@room.jabber.kozea.fr">radicale@room.jabber.kozea.fr</a>.</p>
+<p>Radicale 0.5 will be released as soon as the iCal support is ready. If you have an Apple computer, Python skills and some time to spend, we'd be glad to help you debugging Radicale.</p>
+</section>
+<section class="level3" id="news/october-21-2010---news-from-radicale">
+<h3>October 21, 2010 - News from Radicale <a class="headerlink" href="#news/october-21-2010---news-from-radicale">&para;</a></h3>
+<p>During the last weeks, Radicale has not been idle, even if no news have been posted since August. Thanks to Pete, Pierre-Philipp and Andrew, we're trying to add a better support on MacOS, Windows and mobile devices like iPhone and Android-based phones.</p>
+<p>All the tests on Windows have been successful: launching Radicale and using Lightning as client works without any problems. On Android too, some testers have reported clients working with Radicale. These were the good news.</p>
+<p>The bad news come from Apple: both iPhone and MacOS default clients are not working yet, despite the latest enhancements given to the PROPFIND requests. The problems are quite hard to debug due to our lack of Apple hardware, but Pete is helping us in this difficult quest! Radicale 0.5 will be out as soon as these two clients are working.</p>
+<p>Some cool stuff is coming next, with calendar collections and groups, and a simple web-based CalDAV client in early development. Stay tuned!</p>
+</section>
+<section class="level3" id="news/august-8-2010---radicale-04-released">
+<h3>August 8, 2010 - Radicale 0.4 Released <a class="headerlink" href="#news/august-8-2010---radicale-04-released">&para;</a></h3>
+<p>Radicale 0.4 is out! Here is what's new:</p>
+<section class="level4" id="news/august-8-2010---radicale-04-released/04---hot-days-back">
+<h4>0.4 - Hot Days Back <a class="headerlink" href="#news/august-8-2010---radicale-04-released/04---hot-days-back">&para;</a></h4>
+<ul>
+<li>Personal calendars</li>
+<li>HEAD requests</li>
+<li>Last-Modified HTTP header</li>
+<li><code>no-ssl</code> and <code>foreground</code> options</li>
+<li>Default configuration file</li>
+</ul>
+<p>This release has mainly been released to help our dear packagers to include a default configuration file and to write init scripts. Big thanks to Necoro for his work on the new Gentoo ebuild!</p>
+</section>
+</section>
+<section class="level3" id="news/july-4-2010---three-features-added-last-week">
+<h3>July 4, 2010 - Three Features Added Last Week <a class="headerlink" href="#news/july-4-2010---three-features-added-last-week">&para;</a></h3>
+<p>Some features have been added in the git repository during the last weeks, thanks to Jerome and Mariusz!</p>
+<ul>
+<li><p>Personal Calendars<br>
+Calendars accessed through the htpasswd ACL module can now be personal. Thanks to the <code>personal</code> option, a user called <code>bob</code> can access calendars at <code>/bob/*</code> but not to the <code>/alice/*</code> ones.</p></li>
+<li><p>HEAD Requests<br>
+Radicale can now answer HEAD requests. HTTP headers can be retrieved thanks to this request, without getting contents given by the GET requests.</p></li>
+<li><p>Last-Modified HTTP header<br>
+The Last-Modified header gives the last time when the calendar has been modified. This is used by some clients to cache the calendars and not retrieving them if they have not been modified.</p></li>
+</ul>
+</section>
+<section class="level3" id="news/june-14-2010---radicale-03-released">
+<h3>June 14, 2010 - Radicale 0.3 Released <a class="headerlink" href="#news/june-14-2010---radicale-03-released">&para;</a></h3>
+<p>Radicale 0.3 is out! Here is what&rsquo;s new:</p>
+<section class="level4" id="news/june-14-2010---radicale-03-released/03---dancing-flowers">
+<h4>0.3 - Dancing Flowers <a class="headerlink" href="#news/june-14-2010---radicale-03-released/03---dancing-flowers">&para;</a></h4>
+<ul>
+<li>Evolution support</li>
+<li>Version management</li>
+</ul>
+<p>The website changed a little bit too, with some small HTML5 and CSS3 features such as articles, sections, transitions, opacity, box shadows and rounded corners. If you&rsquo;re reading this website with Internet Explorer, you should consider using a standard-compliant browser!</p>
+<p>Radicale is now included in Squeeze, the testing branch of Debian. A <a href="http://bugs.gentoo.org/show_bug.cgi?id=322811">Radicale ebuild for Gentoo</a> has been proposed too. If you want to package Radicale for another distribution, you&rsquo;re welcome!</p>
+<p>Next step is 0.5, with calendar collections, and Windows and MacOS support.</p>
+</section>
+</section>
+<section class="level3" id="news/may-31-2010---may-news">
+<h3>May 31, 2010 - May News <a class="headerlink" href="#news/may-31-2010---may-news">&para;</a></h3>
+<section class="level4" id="news/may-31-2010---may-news/news-from-contributors">
+<h4>News from contributors <a class="headerlink" href="#news/may-31-2010---may-news/news-from-contributors">&para;</a></h4>
+<p>Jonas Smedegaard packaged Radicale for Debian last week. Two packages, called <code>radicale</code> for the daemon and <code>python-radicale</code> for the module, have been added to Sid, the unstable branch of Debian. Thank you, Jonas!</p>
+<p>Sven Guckes corrected some of the strange-English-sentences present on this website. Thank you, Sven!</p>
+</section>
+<section class="level4" id="news/may-31-2010---may-news/news-from-software">
+<h4>News from software <a class="headerlink" href="#news/may-31-2010---may-news/news-from-software">&para;</a></h4>
+<p>A simple <code>VERSION</code> has been added in the library: you can now play with <code>radicale.VERSION</code> and <code>$radicale --version</code>.</p>
+<p>After playing with the version (should not be too long), you may notice that the next version is called 0.3, and not 0.5 as previously decided. The 0.3 main goal is to offer the support for Evolution as soon as possible, without waiting for the 0.5. After more than a month of test, we corrected all the bugs we found and everything seems to be fine; we can imagine that a brand new tarball will be released during the first days of June.</p>
+</section>
+</section>
+<section class="level3" id="news/april-19-2010---evolution-supported">
+<h3>April 19, 2010 - Evolution Supported <a class="headerlink" href="#news/april-19-2010---evolution-supported">&para;</a></h3>
+<p>Radicale now supports another CalDAV client: <a href="http://projects.gnome.org/evolution/">Evolution, the default mail, addressbook and calendaring client for Gnome</a>. This feature was quite easy to add, as it required less than 20 new lines of code in the requests handler.</p>
+<p>If you are interested, just clone the <a href="http://www.gitorious.org/radicale/radicale">git repository</a>.</p>
+</section>
+<section class="level3" id="news/april-13-2010---radicale-02-released">
+<h3>April 13, 2010 - Radicale 0.2 Released <a class="headerlink" href="#news/april-13-2010---radicale-02-released">&para;</a></h3>
+<p>Radicale 0.2 is out! Here is what&rsquo;s new:</p>
+<section class="level4" id="news/april-13-2010---radicale-02-released/02---snowflakes">
+<h4>0.2 - Snowflakes <a class="headerlink" href="#news/april-13-2010---radicale-02-released/02---snowflakes">&para;</a></h4>
+<ul>
+<li>Sunbird pre-1.0 support</li>
+<li>SSL connection</li>
+<li>Htpasswd authentication</li>
+<li>Daemon mode</li>
+<li>User configuration</li>
+<li>Twisted dependency removed</li>
+<li>Python 3 support</li>
+<li>Real URLs for PUT and DELETE</li>
+<li>Concurrent modification reported to users</li>
+<li>Many bugs fixed by Roger Wenham</li>
+</ul>
+<p>First of all, we would like to thank Roger Wenham for his bugfixes and his supercool words.</p>
+<p>You may have noticed that Sunbird 1.0 has not been released, but according to the Mozilla developers, 1.0pre is something like a final version.</p>
+<p>You may have noticed too that Radicale can be <a href="http://pypi.python.org/pypi/Radicale/0.2">downloaded from PyPI</a>. Of course, it is also available on the <a href="#download">download page</a>.</p>
+</section>
+</section>
+<section class="level3" id="news/january-21-2010---https-and-authentication">
+<h3>January 21, 2010 - HTTPS and Authentication <a class="headerlink" href="#news/january-21-2010---https-and-authentication">&para;</a></h3>
+<p>HTTPS connections and authentication have been added to Radicale this week. Command-line options and personal configuration files are also ready for test. According to the TODO file included in the package, the next version will finally be 0.2, when sunbird 1.0 is out. Go, Mozilla hackers, go!</p>
+<ul>
+<li><p>HTTPS connection<br>
+HTTPS connections are now available using the standard TLS mechanisms. Give Radicale a private key and a certificate, and your data are now safe.</p></li>
+<li><p>Authentication<br>
+A simple authentication architecture is now available, allowing different methods thanks to different modules. The first two modules are <code>fake</code> (no authentication) and <code>htpasswd</code> (authentication with an <code>htpasswd</code> file created by the Apache tool). More methods such as LDAP are coming soon!</p></li>
+</ul>
+</section>
+<section class="level3" id="news/january-15-2010---ready-for-python-3">
+<h3>January 15, 2010 - Ready for Python 3 <a class="headerlink" href="#news/january-15-2010---ready-for-python-3">&para;</a></h3>
+<p>Dropping Twisted dependency was the first step leading to another big feature: Radicale now works with Python 3! The code was given a small cleanup, with some simplifications mainly about encoding. Before the 0.1.1 release, feel free to test the git repository, all Python versions from 2.5 should be OK.</p>
+</section>
+<section class="level3" id="news/january-11-2010---twisted-no-longer-required">
+<h3>January 11, 2010 - Twisted no Longer Required <a class="headerlink" href="#news/january-11-2010---twisted-no-longer-required">&para;</a></h3>
+<p>Good news! Radicale 0.1.1 will support Sunbird 1.0, but it has another great feature: it has no external dependency! Twisted is no longer required for the git version, removing about 50 lines of code.</p>
+</section>
+<section class="level3" id="news/december-31-2009---lightning-and-sunbird-10b2pre-support">
+<h3>December 31, 2009 - Lightning and Sunbird 1.0b2pre Support <a class="headerlink" href="#news/december-31-2009---lightning-and-sunbird-10b2pre-support">&para;</a></h3>
+<p>Lightning/Sunbird 1.0b2pre is out, adding minor changes in CalDAV support. A <a href="http://www.gitorious.org/radicale/radicale/commit/330283e">new commit</a> makes Radicale work with versions 0.9, 1.0b1 et 1.0b2. Moreover, etags are now quoted according to the <a href="http://www.faqs.org/rfcs/rfc2616.html" title="RFC 2616">RFC 2616</a>.</p>
+</section>
+<section class="level3" id="news/december-9-2009---thunderbird-3-released">
+<h3>December 9, 2009 - Thunderbird 3 released <a class="headerlink" href="#news/december-9-2009---thunderbird-3-released">&para;</a></h3>
+<p><a href="http://www.mozillamessaging.com/thunderbird/3.0/releasenotes/">Thunderbird 3 is out</a>, and Lightning/Sunbird 1.0 should be released in a few days. The <a href="http://gitorious.org/radicale/radicale/commit/6545bc8">last commit in git</a> should make Radicale work with versions 0.9 and 1.0b1pre. Radicale 0.1.1 will soon be released adding support for version 1.0.</p>
+</section>
+<section class="level3" id="news/september-1-2009---radicale-01-released">
+<h3>September 1, 2009 - Radicale 0.1 Released <a class="headerlink" href="#news/september-1-2009---radicale-01-released">&para;</a></h3>
+<p>First Radicale release! Here is the changelog:</p>
+<section class="level4" id="news/september-1-2009---radicale-01-released/01---crazy-vegetables">
+<h4>0.1 - Crazy Vegetables <a class="headerlink" href="#news/september-1-2009---radicale-01-released/01---crazy-vegetables">&para;</a></h4>
+<ul>
+<li>First release</li>
+<li>Lightning/Sunbird 0.9 compatibility</li>
+<li>Easy installer</li>
+</ul>
+<p>You can download this version on the <a href="#download">download page</a>.</p>
+</section>
+</section>
+<section class="level3" id="news/july-28-2009---radicale-on-gitorious">
+<h3>July 28, 2009 - Radicale on Gitorious <a class="headerlink" href="#news/july-28-2009---radicale-on-gitorious">&para;</a></h3>
+<p>Radicale code has been released on Gitorious! Take a look at the <a href="http://www.gitorious.org/radicale">Radicale main page on Gitorious</a> to view and download source code.</p>
+</section>
+<section class="level3" id="news/july-27-2009---radicale-ready-to-launch">
+<h3>July 27, 2009 - Radicale Ready to Launch <a class="headerlink" href="#news/july-27-2009---radicale-ready-to-launch">&para;</a></h3>
+<p>The Radicale Project is launched. The code has been cleaned up and will be available soon&hellip;</p>
+</section>
+</section>
+<section class="level2" id="footnotes">
+<h2>Footnotes <a class="headerlink" href="#footnotes">&para;</a></h2>
+<section class="level4" id="footnotes//1">
+<h4>1 <a class="headerlink" href="#footnotes//1">&para;</a></h4>
+<p>See <a href="#documentation/user-documentation/python-versions-and-os-support">Python Versions and OS Support</a> for further information.</p>
+</section>
+<section class="level4" id="footnotes//2">
+<h4>2 <a class="headerlink" href="#footnotes//2">&para;</a></h4>
+<p><a href="http://python.org/download/">Python download page</a>.</p>
+</section>
+<section class="level4" id="footnotes//3">
+<h4>3 <a class="headerlink" href="#footnotes//3">&para;</a></h4>
+<p class="level6">I repeat: <a href="#documentation/technical-choices/global-technical-choices/development-choices/lazy">we are lazy</a>.</p>
+</section>
+<section class="level4" id="footnotes//4">
+<h4>4 <a class="headerlink" href="#footnotes//4">&para;</a></h4>
+<p>Try to read <a href="http://www.faqs.org/rfcs/rfc4791.html" title="RFC 4791">RFC 4791</a>. Then try to understand it. Then try to implement it. Then try to read it again.</p>
+</section>
+<section class="level4" id="footnotes//5">
+<h4>5 <a class="headerlink" href="#footnotes//5">&para;</a></h4>
+<p class="level6">Radicale is <a href="#documentation/technical-choices/global-technical-choices/development-choices/oriented-to-calendar-and-contact-user-agents">oriented to calendar user agents</a>.</p>
+</section>
+<section class="level4" id="footnotes//6">
+<h4>6 <a class="headerlink" href="#footnotes//6">&para;</a></h4>
+<p><a href="http://en.wikipedia.org/wiki/CalDAV#Implementations">CalDAV implementations</a>, by Wikipedia.</p>
+</section>
+<section class="level4" id="footnotes//7">
+<h4>7 <a class="headerlink" href="#footnotes//7">&para;</a></h4>
+<p><a href="http://www.davical.org/">Davical</a>, a standards-compliant calendar server.</p>
+</section>
+<section class="level4" id="footnotes//8">
+<h4>8 <a class="headerlink" href="#footnotes//8">&para;</a></h4>
+<p><a href="http://chandlerproject.org/Projects/CosmoHome">Cosmo</a>, the web contents and calendars sharing server build to support the Chandler Project.</p>
+</section>
+<section class="level4" id="footnotes//9">
+<h4>9 <a class="headerlink" href="#footnotes//9">&para;</a></h4>
+<p><a href="http://trac.calendarserver.org/">Darwin Calendar Server</a>, a standards-compliant calendar server mainly developed by Apple.</p>
+</section>
+<section class="level4 last" id="footnotes//10">
+<h4>10 <a class="headerlink" href="#footnotes//10">&para;</a></h4>
+<p>Who says "Ruby is even less verbose!" should read the <a href="http://www.python.org/dev/peps/pep-0020/" title="PEP 20">PEP 20</a>.</p>
+</section>
+</section>
+</div>
+</main>
+</html>
