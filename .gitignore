@@ -7,6 +7,7 @@ __pycache__
 /build
 /dist
 /*.egg-info
+/_site
 
 coverage.xml
 .pytest_cache
@@ -19,3 +20,5 @@ coverage.xml
 .settings
 .tox
 .vscode
+.sass-cache
+Gemfile.lock
