@@ -6,12 +6,19 @@ __pycache__
 /MANIFEST
 /build
 /dist
-/Radicale.egg-info
+/*.egg-info
+/_site
 
+coverage.xml
+.pytest_cache
 .cache
 .coverage
+.coverage.*
 .eggs
 .project
 .pydevproject
 .settings
 .tox
+.vscode
+.sass-cache
+Gemfile.lock
