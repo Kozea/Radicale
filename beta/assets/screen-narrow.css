@@ -28,6 +28,7 @@ nav {
     scrollbar-width: initial;
     transition: width ease .2s;
     max-height: initial !important;
+    margin: 0;
 }
 
 html.nav-opened {
@@ -73,4 +74,9 @@ main, .navContainer {
     z-index: 1;
     border-radius: 3px;
     pointer-events: initial;
+    transition: color .2s ease;
+}
+
+.navButtonContainer button:hover {
+    color: black;
 }
