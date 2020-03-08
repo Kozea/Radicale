@@ -244,23 +244,36 @@ nav {
     top: 0;
     height: 100vh;
     overflow-y: auto;
-    scrollbar-width: none;
 }
 
 .navContainer {
     padding: 10px 0;
 }
 
-nav::-webkit-scrollbar {
-    display: none;
-}
+@media not all and (max-width: 50em) {
+    /* Use media query because any change to ::-webkit-scrollbar makes it
+     * impossible to restore system scrollbars */
 
-nav:hover {
-    scrollbar-width: initial;
-}
+    nav {
+        scrollbar-width: none;
+    }
 
-nav:hover::-webkit-scrollbar {
-    display: initial;
+    nav:hover, nav:focus-within {
+        scrollbar-width: initial;
+    }
+
+    nav::-webkit-scrollbar {
+        display: none;
+        background-color: #D2D7E3;
+    }
+
+    nav::-webkit-scrollbar-thumb {
+        background-color: #424247;
+    }
+
+    nav:hover::-webkit-scrollbar, nav:focus-within::-webkit-scrollbar {
+        display: initial;
+    }
 }
 
 nav .level2 {

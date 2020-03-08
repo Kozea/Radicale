@@ -26,7 +26,7 @@ nav .level4 > a::after {
     display: none !important;
 }
 
-@media screen and (max-width: 50em) {
+@media all and (max-width: 50em) {
     nav, .navButtonContainer {
         display: none;
     }
