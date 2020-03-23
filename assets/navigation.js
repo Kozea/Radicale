@@ -15,7 +15,7 @@ window.addEventListener("load", function() {
     for (let section of document.querySelectorAll("section")) {
         let id = section.getAttribute("id");
         let link = nav.querySelector("a[href=\\#" + id.replace(/\//g, "\\/") + "]");
-        if (link !== null) {
+        if (link) {
             link = link.parentElement;
             link.classList.remove("active");
             sections.push([section, link]);
@@ -43,13 +43,12 @@ window.addEventListener("load", function() {
             }
             link = link.parentElement;
         }
-        if (link === null) {
-            nav.scrollTop = 0;
-        } else {
+        if (link) {
             let topLink = link.getBoundingClientRect().y;
             let topNav = nav.getBoundingClientRect().y;
-            let y = nav.scrollTop + topLink - topNav - 10;
-            nav.scrollTo(0, y);
+            nav.scrollTop += topLink - topNav - 10;
+        } else {
+            nav.scrollTop = 0;
         }
     }
     function resizeNav() {

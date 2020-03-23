@@ -19,15 +19,16 @@ header .logoContainer, header ul, main {
 
 nav {
     position: fixed;
-    width: 0;
+    width: 100vw;
     height: 100vh;
     top: 0;
     left: 0;
     background-color: #E4E9F6;
     z-index: 1;
-    transition: width ease .2s;
     max-height: initial !important;
     margin: 0;
+    transform: translate(-100vw);
+    transition: transform ease .2s;
 }
 
 html.nav-opened {
@@ -35,7 +36,7 @@ html.nav-opened {
 }
 
 .nav-opened nav {
-    width: 100vw;
+    transform: translate(0);
 }
 
 main, .navContainer {
