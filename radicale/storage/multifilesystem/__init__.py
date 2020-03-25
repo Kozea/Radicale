@@ -25,6 +25,7 @@ Uses one folder per collection and one file per collection entry.
 
 import contextlib
 import os
+import stat
 import time
 from itertools import chain
 from tempfile import NamedTemporaryFile
@@ -83,6 +84,15 @@ class Collection(
                 raise RuntimeError("Fsync'ing file %r failed: %s" %
                                    (path, e)) from e
             tmp.close()
+            if os.path.exists(path):
+                os.chmod(tmp.name, os.stat(path).st_mode)
+            else:
+                tmp_mode = os.stat(tmp.name).st_mode
+                current_mask = os.umask(0)
+                os.umask(current_mask)
+                if not (current_mask & stat.S_IRGRP):
+                    tmp_mode |= stat.S_IRGRP
+                    os.chmod(tmp.name, tmp_mode)
             replace_fn(tmp.name, path)
         except BaseException:
             tmp.close()
