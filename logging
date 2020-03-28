@@ -7,7 +7,7 @@
 # The path must be specified in the logging section of the configuration file
 #
 # Some examples are included in Radicale's documentation, see:
-# http://radicale.org/logging/
+# https://radicale.org/2.1.html#documentation/logging
 #
 # Other handlers are available. For more information, see:
 # http://docs.python.org/library/logging.config.html

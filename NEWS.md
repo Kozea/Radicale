@@ -165,8 +165,8 @@ This release is compatible with version 2.0.0.
 2.0.0 - Little Big Radish
 -------------------------
 
-This feature is not compatible with the 1.x.x versions. See
-http://radicale.org/1to2/ if you want to switch from 1.x.x to
+This feature is not compatible with the 1.x.x versions. Follow our
+[migration guide](https://radicale.org/2.1.html#documentation/migration-from-1xx-to-2xx) if you want to switch from 1.x.x to
 2.0.0.
 
 * Support Python 3.3+ only, Python 2 is not supported anymore

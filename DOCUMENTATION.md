@@ -1794,8 +1794,8 @@ Radicale 2.1.10 is out!
 
 ### 2.1.10 - Wild Radish
 
-This release is compatible with version 2.0.0. See
-[http://radicale.org/1to2/](#documentation/migration-from-1xx-to-2xx) if you want to switch
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Update required versions for dependencies
@@ -1811,8 +1811,8 @@ Radicale 2.1.9 is out!
 
 ### 2.1.9 - Wild Radish
 
-This release is compatible with version 2.0.0. See
-[http://radicale.org/1to2/](#documentation/migration-from-1xx-to-2xx) if you want to switch
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Specify versions for dependencies
@@ -1829,8 +1829,8 @@ Radicale 2.1.8 is out!
 
 ### 2.1.8 - Wild Radish
 
-This release is compatible with version 2.0.0. See
-[http://radicale.org/1to2/](#documentation/migration-from-1xx-to-2xx) if you want to switch
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Flush files before fsync'ing
@@ -1841,8 +1841,8 @@ Radicale 2.1.7 is out!
 
 ### 2.1.7 - Wild Radish
 
-This release is compatible with version 2.0.0. See
-[http://radicale.org/1to2/](#documentation/migration-from-1xx-to-2xx) if you want to switch
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Don't print warning when cache format changes
@@ -1867,8 +1867,8 @@ Radicale 2.1.6 is out!
 
 ### 2.1.6 - Wild Radish
 
-This release is compatible with version 2.0.0. See
-[http://radicale.org/1to2/](#documentation/migration-from-1xx-to-2xx) if you want to switch
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Fix content-type of VLIST
@@ -1886,8 +1886,8 @@ Radicale 2.1.5 is out!
 
 ### 2.1.5 - Wild Radish
 
-This release is compatible with version 2.0.0. See
-[http://radicale.org/1to2/](#documentation/migration-from-1xx-to-2xx) if you want to switch
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Add ``--verify-storage`` command-line argument
@@ -1903,8 +1903,8 @@ Radicale 2.1.4 is out!
 
 ### 2.1.4 - Wild Radish
 
-This release is compatible with version 2.0.0. See
-[http://radicale.org/1to2/](#documentation/migration-from-1xx-to-2xx) if you want to switch
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Fix incorrect time range matching and calculation for some edge-cases with
@@ -1917,8 +1917,8 @@ Radicale 2.1.3 is out!
 
 ### 2.1.3 - Wild Radish
 
-This release is compatible with version 2.0.0. See
-[http://radicale.org/1to2/](#documentation/migration-from-1xx-to-2xx) if you want to switch
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Enable timeout for SSL handshakes and move them out of the main thread
@@ -1932,8 +1932,8 @@ Radicale 2.1.2 is out!
 
 ### 2.1.2 - Wild Radish
 
-This release is compatible with version 2.0.0. See
-[http://radicale.org/1to2/](#documentation/migration-from-1xx-to-2xx) if you want to switch
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Remove workarounds for bugs in VObject < 0.9.5
@@ -1948,8 +1948,8 @@ Radicale 2.1.1 is out!
 
 ### 2.1.1 - Wild Radish Again
 
-This release is compatible with version 2.0.0. See
-[http://radicale.org/1to2/](#documentation/migration-from-1xx-to-2xx) if you want to switch
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Add missing UIDs instead of failing
@@ -1962,8 +1962,8 @@ Radicale 2.1.0 is out!
 
 ### 2.1.0 - Wild Radish
 
-This release is compatible with version 2.0.0. See
-[http://radicale.org/1to2/](#documentation/migration-from-1xx-to-2xx) if you want to switch
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.1.0.
 
 * Built-in web interface for creating and managing address books and calendars
@@ -2001,8 +2001,8 @@ Radicale 2.0.0 is out!
 
 ### 2.0.0 - Little Big Radish
 
-This feature is not compatible with the 1.x.x versions. See
-[http://radicale.org/1to2/](#documentation/migration-from-1xx-to-2xx) if you want to switch
+This feature is not compatible with the 1.x.x versions. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.0.0.
 
 - Support Python 3.3+ only, Python 2 is not supported anymore
