@@ -5,4 +5,4 @@
 Radicale is a free and open-source CalDAV and CardDAV server.
 
 For the complete documentation, please visit `Radicale "1.1" documentation
-<http://www.radicale.org/1.1.html>`_.
+<http://radicale.org/1.1.html>`_.
