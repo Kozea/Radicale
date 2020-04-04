@@ -1,9 +1,9 @@
-header select.documentBranch {
+header .documentBranch::after, header .documentBranch select {
     display: none;
 }
 
-header span.documentBranch {
-    display: inline;
+header .documentBranch span {
+    display: initial;
 }
 
 nav {

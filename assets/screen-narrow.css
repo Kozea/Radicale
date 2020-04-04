@@ -9,7 +9,7 @@ header .logoContainer {
     text-align: center;
 }
 
-header .logoContainer, header select.documentBranch {
+header .logoContainer, header .documentBranch select {
     text-shadow: 0 0 3px #050a02, 0 0 3px #050a02;
 }
 

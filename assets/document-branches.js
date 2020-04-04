@@ -1,5 +1,5 @@
 window.addEventListener("load", function() {
-    let select = document.querySelector("header select.documentBranch");
+    let select = document.querySelector("header .documentBranch select");
     while (select.firstChild) {
         select.removeChild(select.firstChild);
     }

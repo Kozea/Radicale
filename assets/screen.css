@@ -67,13 +67,32 @@ header h1 {
     margin-bottom: 2rem;
 }
 
-header span.documentBranch {
-    border: 1px dashed #efdddd;
+header .documentBranch span {
     padding: 0 5px;
     display: none;
 }
 
-header select.documentBranch {
+header .documentBranch {
+    display: inline-block;
+    position: relative;
+    border: 1px dashed #efdddd;
+}
+
+header .documentBranch::after {
+    content: "";
+    display: block;
+    position: absolute;
+    pointer-events: none;
+    right: 5px;
+    bottom: 5px;
+    width: 0;
+    height: 0;
+    border-left: 0.125em solid transparent;
+    border-right: 0.125em solid transparent;
+    border-top: 0.125em solid #efdddd;
+}
+
+header .documentBranch select {
     background: none;
     color: #efdddd;
     border: none;
@@ -82,18 +101,18 @@ header select.documentBranch {
     font-family: sans-serif;
     -webkit-appearance: none;
     -moz-appearance: none;
-    border: 1px dashed #efdddd;
+    appearance: none;
     cursor: pointer;
     padding: 0 5px;
     text-align: center;
     text-align-last: center;
 }
 
-header select.documentBranch:hover {
+header .documentBranch select:hover {
     text-decoration: underline;
 }
 
-header select.documentBranch option {
+header .documentBranch option {
     color: initial;
     font-size: initial;
     font-weight: initial;
