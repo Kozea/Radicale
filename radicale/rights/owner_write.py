@@ -22,24 +22,22 @@ address books but only grants write access to their own.
 """
 
 import radicale.rights.authenticated as authenticated
-from radicale import pathutils, rights
+from radicale import pathutils
 
 
 class Rights(authenticated.Rights):
-    def authorized(self, user, path, permissions):
+    def authorization(self, user, path):
         if self._verify_user and not user:
             return ""
         sane_path = pathutils.strip_path(path)
         if not sane_path:
-            return rights.intersect_permissions(permissions, "R")
+            return "R"
         if self._verify_user:
             owned = user == sane_path.split("/", maxsplit=1)[0]
         else:
             owned = True
         if "/" not in sane_path:
-            return rights.intersect_permissions(permissions,
-                                                "RW" if owned else "R")
+            return "RW" if owned else "R"
         if sane_path.count("/") == 1:
-            return rights.intersect_permissions(permissions,
-                                                "rw" if owned else "r")
+            return "rw" if owned else "r"
         return ""

@@ -29,12 +29,12 @@ class Rights(rights.BaseRights):
         super().__init__(*args, **kwargs)
         self._verify_user = self.configuration.get("auth", "type") != "none"
 
-    def authorized(self, user, path, permissions):
+    def authorization(self, user, path):
         if self._verify_user and not user:
             return ""
         sane_path = pathutils.strip_path(path)
         if "/" not in sane_path:
-            return rights.intersect_permissions(permissions, "RW")
+            return "RW"
         if sane_path.count("/") == 1:
-            return rights.intersect_permissions(permissions, "rw")
+            return "rw"
         return ""

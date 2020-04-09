@@ -40,7 +40,12 @@ def load(configuration):
     return utils.load_plugin(INTERNAL_TYPES, "rights", "Rights", configuration)
 
 
-def intersect_permissions(a, b="RrWw"):
+def intersect(a, b):
+    """Intersect two lists of rights.
+
+    Returns all rights that are both in ``a`` and ``b``.
+
+    """
     return "".join(set(a).intersection(set(b)))
 
 
@@ -55,16 +60,14 @@ class BaseRights:
         """
         self.configuration = configuration
 
-    def authorized(self, user, path, permissions):
-        """Check if the user is allowed to read or write the collection.
+    def authorization(self, user, path):
+        """Get granted rights of ``user`` for the collection ``path``.
 
         If ``user`` is empty, check for anonymous rights.
 
         ``path`` is sanitized.
 
-        ``permissions`` can include "R", "r", "W", "w"
-
-        Returns granted rights.
+        Returns granted rights (e.g. ``"RW"``).
 
         """
         raise NotImplementedError

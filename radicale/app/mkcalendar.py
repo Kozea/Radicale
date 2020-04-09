@@ -30,7 +30,7 @@ from radicale.log import logger
 class ApplicationMkcalendarMixin:
     def do_MKCALENDAR(self, environ, base_prefix, path, user):
         """Manage MKCALENDAR request."""
-        if not self._rights.authorized(user, path, "w"):
+        if "w" not in self._rights.authorization(user, path):
             return httputils.NOT_ALLOWED
         try:
             xml_content = self._read_xml_content(environ)

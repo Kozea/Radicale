@@ -314,19 +314,22 @@ class ApplicationPropfindMixin:
             if isinstance(item, storage.BaseCollection):
                 path = pathutils.unstrip_path(item.path, True)
                 if item.get_meta("tag"):
-                    permissions = self._rights.authorized(user, path, "rw")
+                    permissions = rights.intersect(
+                        self._rights.authorization(user, path), "rw")
                     target = "collection with tag %r" % item.path
                 else:
-                    permissions = self._rights.authorized(user, path, "RW")
+                    permissions = rights.intersect(
+                        self._rights.authorization(user, path), "RW")
                     target = "collection %r" % item.path
             else:
                 path = pathutils.unstrip_path(item.collection.path, True)
-                permissions = self._rights.authorized(user, path, "rw")
+                permissions = rights.intersect(
+                    self._rights.authorization(user, path), "rw")
                 target = "item %r from %r" % (item.href, item.collection.path)
-            if rights.intersect_permissions(permissions, "Ww"):
+            if rights.intersect(permissions, "Ww"):
                 permission = "w"
                 status = "write"
-            elif rights.intersect_permissions(permissions, "Rr"):
+            elif rights.intersect(permissions, "Rr"):
                 permission = "r"
                 status = "read"
             else:

@@ -264,7 +264,7 @@ class Application(
         # Create principal collection
         if user:
             principal_path = "/%s/" % user
-            if self._rights.authorized(user, principal_path, "W"):
+            if "W" in self._rights.authorization(user, principal_path):
                 with self._storage.acquire_lock("r", user):
                     principal = next(
                         self._storage.discover(principal_path, depth="1"),
@@ -328,12 +328,14 @@ class Application(
         else:
             permissions = ""
             parent_permissions = permission
-        if permissions and self._rights.authorized(user, path, permissions):
+        if permissions and rights.intersect(
+                self._rights.authorization(user, path), permissions):
             return True
         if parent_permissions:
             parent_path = pathutils.unstrip_path(
                 posixpath.dirname(pathutils.strip_path(path)), True)
-            if self._rights.authorized(user, parent_path, parent_permissions):
+            if rights.intersect(self._rights.authorization(user, parent_path),
+                                parent_permissions):
                 return True
         return False
 

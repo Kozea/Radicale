@@ -23,14 +23,15 @@ from http import client
 
 from radicale import httputils
 from radicale import item as radicale_item
-from radicale import pathutils, storage, xmlutils
+from radicale import pathutils, rights, storage, xmlutils
 from radicale.log import logger
 
 
 class ApplicationMkcolMixin:
     def do_MKCOL(self, environ, base_prefix, path, user):
         """Manage MKCOL request."""
-        permissions = self._rights.authorized(user, path, "Ww")
+        permissions = rights.intersect(
+            self._rights.authorization(user, path), "Ww")
         if not permissions:
             return httputils.NOT_ALLOWED
         try:

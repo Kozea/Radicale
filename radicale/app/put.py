@@ -27,7 +27,7 @@ import vobject
 
 from radicale import httputils
 from radicale import item as radicale_item
-from radicale import pathutils, storage, xmlutils
+from radicale import pathutils, rights, storage, xmlutils
 from radicale.log import logger
 
 MIMETYPE_TAGS = {value: key for key, value in xmlutils.MIMETYPES.items()}
@@ -128,8 +128,10 @@ class ApplicationPutMixin:
         content_type = environ.get("CONTENT_TYPE", "").split(";")[0]
         parent_path = pathutils.unstrip_path(
             posixpath.dirname(pathutils.strip_path(path)), True)
-        permissions = self._rights.authorized(user, path, "Ww")
-        parent_permissions = self._rights.authorized(user, parent_path, "w")
+        permissions = rights.intersect(
+            self._rights.authorization(user, path), "Ww")
+        parent_permissions = rights.intersect(
+            self._rights.authorization(user, parent_path), "w")
         try:
             vobject_items = tuple(vobject.readComponents(content or ""))
         except Exception as e:
@@ -157,10 +159,10 @@ class ApplicationPutMixin:
                 tag = parent_item.get_meta("tag")
 
             if write_whole_collection:
-                if not self._rights.authorized(
-                        user, path, "w" if tag else "W"):
+                if ("w" if tag else "W") not in self._rights.authorization(
+                        user, path):
                     return httputils.NOT_ALLOWED
-            elif not self._rights.authorized(user, parent_path, "w"):
+            elif "w" not in self._rights.authorization(user, parent_path):
                 return httputils.NOT_ALLOWED
 
             etag = environ.get("HTTP_IF_MATCH", "")

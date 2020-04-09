@@ -45,7 +45,7 @@ class Rights(rights.BaseRights):
         super().__init__(configuration)
         self._filename = configuration.get("rights", "file")
 
-    def authorized(self, user, path, permissions):
+    def authorization(self, user, path):
         user = user or ""
         sane_path = pathutils.strip_path(path)
         # Prevent "regex injection"
@@ -75,8 +75,7 @@ class Rights(rights.BaseRights):
                 logger.debug("Rule %r:%r matches %r:%r from section %r",
                              user, sane_path, user_pattern,
                              collection_pattern, section)
-                return rights.intersect_permissions(
-                    permissions, rights_config.get(section, "permissions"))
+                return rights_config.get(section, "permissions")
             logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
                          user, sane_path, user_pattern, collection_pattern,
                          section)
