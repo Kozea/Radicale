@@ -128,8 +128,9 @@ class TestBaseServerRequests(BaseTest):
                     sock.bind((address, 0))
             # See ``radicale.server.serve``
             assert (isinstance(exc_info.value, socket.gaierror) and
-                    exc_info.value.errno in (socket.EAI_NONAME,
-                                             server.COMPAT_EAI_ADDRFAMILY) or
+                    exc_info.value.errno in (
+                        socket.EAI_NONAME, server.COMPAT_EAI_ADDRFAMILY,
+                        server.COMPAT_EAI_NODATA) or
                     str(exc_info.value) == "address family mismatched" or
                     exc_info.value.errno == errno.EADDRNOTAVAIL)
 

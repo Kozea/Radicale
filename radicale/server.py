@@ -40,6 +40,11 @@ if hasattr(socket, "EAI_ADDRFAMILY"):
 elif hasattr(socket, "EAI_NONAME"):
     # Windows and BSD don't have a special error code for this
     COMPAT_EAI_ADDRFAMILY = socket.EAI_NONAME
+if hasattr(socket, "EAI_NODATA"):
+    COMPAT_EAI_NODATA = socket.EAI_NODATA
+elif hasattr(socket, "EAI_NONAME"):
+    # Windows and BSD don't have a special error code for this
+    COMPAT_EAI_NODATA = socket.EAI_NONAME
 if hasattr(socket, "IPPROTO_IPV6"):
     COMPAT_IPPROTO_IPV6 = socket.IPPROTO_IPV6
 elif os.name == "nt":
@@ -226,7 +231,8 @@ def serve(configuration, shutdown_socket):
                                 # macOS: IPv6 address for INET address family
                                 e.errno == socket.EAI_NONAME or
                                 # Address not for address family
-                                e.errno == COMPAT_EAI_ADDRFAMILY) or
+                                e.errno == COMPAT_EAI_ADDRFAMILY or
+                                e.errno == COMPAT_EAI_NODATA) or
                             # Workaround for PyPy
                             str(e) == "address family mismatched" or
                             # Address family not available (e.g. IPv6 disabled)
