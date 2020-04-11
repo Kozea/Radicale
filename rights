@@ -6,7 +6,7 @@
 # The default path for this file is /etc/radicale/rights
 # The path can be specified in the rights section of the configuration file
 #
-# Section names used for naming rules and must be unique.
+# Section names are used for naming rules and must be unique.
 # The first rule matching both user and collection patterns will be used.
 
 
@@ -72,7 +72,8 @@
 #permissions: Rr
 
 
-# Example: Allow everybody (including anonymous) to read the collection "public"
+# Example: Allow everybody (including unauthenticated users) to read
+# the collection "public"
 
 # Allow reading collection "public"
 #[public-principal]
