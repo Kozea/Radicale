@@ -6,43 +6,100 @@
 # The default path for this file is /etc/radicale/rights
 # The path can be specified in the rights section of the configuration file
 #
-# Some examples are included in Radicale's documentation, see:
-# https://radicale.org/master.html#documentation/authentication-and-rights
-#
-# This file gives independant examples to help users write their own
-# configuration files. Using these examples together in the same configuration
-# file is meaningless.
-#
-# The first rule matching both user and collection patterns will be returned.
+# Section names used for naming rules and must be unique.
+# The first rule matching both user and collection patterns will be used.
 
-# This means all users starting with "admin" may read any collection
-[admin]
-user: admin.*
-collection: .*
-permissions: Rr
 
-# This means all users may read and write any collection starting with public.
-# We do so by just not testing against the user string.
-[public]
-user: .*
-collection: public(/.+)?
-permissions: RrWw
+# Example: owner_only plugin
 
-# A little more complex: give read access to users from a domain for all
-# collections of all the users (ie. user@domain.tld can read domain/*).
-[domain-wide-access]
-user: .+@(.+)\..+
-collection: {0}/.+
-permissions: Rr
+# Allow reading root collection for authenticated users
+#[root]
+#user: .+
+#collection:
+#permissions: R
 
-# Allow authenticated user to read all collections
-[allow-everyone-read]
-user: .+
-collection: .*
-permissions: Rr
+# Allow reading and writing principal collection (same as user name)
+#[principal]
+#user: .+
+#collection: %(login)s
+#permissions: RW
 
-# Give write access to owners
-[owner-write]
-user: .+
-collection: %(login)s/.*
-permissions: Ww
+# Allow reading and writing calendars and address books that are direct
+# children of the principal collection
+#[calendars]
+#user: .+
+#collection: %(login)s/[^/]+
+#permissions: rw
+
+
+# Example: owner_write plugin
+# Only listed additional rules for the owner_only plugin example.
+
+# Allow reading principal collections of all users
+#[read-all-principals]
+#user: .+
+#collection: [^/]+
+#permissions: R
+
+# Allow reading all calendars and address books that are direct children of any
+# principal collection
+#[read-all-calendars]
+#user: .+
+#collection: [^/]+/[^/]+
+#permissions: r
+
+
+# Example: authenticated plugin
+
+# Allow reading and writing root and principal collections of all users
+#[root-and-principals]
+#user: .+
+#collection: [^/]*
+#permissions: RW
+
+# Allow reading and writing all calendars and address books that are direct
+# children of any principal collection
+#[calendars]
+#user: .+
+#collection: [^/]+/[^/]+
+#permissions: rw
+
+
+# Example: Allow user "admin" to read everything
+#[admin-read-all]
+#user: admin
+#collection: .*
+#permissions: Rr
+
+
+# Example: Allow everybody (including anonymous) to read the collection "public"
+
+# Allow reading collection "public"
+#[public-principal]
+#user: .*
+#collection: public
+#permissions: R
+
+# Allow reading all calendars and address books that are direct children of
+# the collection "public"
+#[public-calendars]
+#user: .*
+#collection: public/[^/]+
+#permissions: r
+
+
+# Example: Grant users of the form user@domain.tld read access to the
+# collection "domain.tld"
+
+# Allow reading the domain collection
+#[read-domain-principal]
+#user: .+@([^@]+)
+#collection: {0}
+#permissions: R
+
+# Allow reading all calendars and address books that are direct children of
+# the domain collection
+#[read-domain-calendars]
+#user: .+@([^@]+)
+#collection: {0}/[^/]+
+#permissions: r
