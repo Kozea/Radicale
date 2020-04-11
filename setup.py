@@ -48,7 +48,6 @@ WEB_FILES = ["web/internal_data/css/icon.png",
              "web/internal_data/fn.js",
              "web/internal_data/index.html"]
 
-
 needs_pytest = {"pytest", "test", "ptr"}.intersection(sys.argv)
 pytest_runner = ["pytest-runner"] if needs_pytest else []
 tests_require = ["pytest-runner", "pytest", "pytest-cov", "pytest-flake8",
