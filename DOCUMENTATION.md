@@ -21,7 +21,7 @@ Radicale is really easy to install and works out-of-the-box.
 
 ```bash
 $ python3 -m pip install --upgrade radicale
-$ python3 -m radicale --config "" --storage-filesystem-folder=~/.var/lib/radicale/collections
+$ python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
 When your server is launched, you can check that everything's OK by going
@@ -60,7 +60,6 @@ fit your needs.
 - [What can I configure?](#documentation/configuration)
 - [Authentication & Rights.](#documentation/authentication-and-rights)
 - [Storage.](#documentation/storage)
-- [Logging.](#documentation/logging)
 
 ### Hack
 
@@ -97,7 +96,7 @@ Then open a console and type:
 # Run the following command as root or
 # add the --user argument to only install for the current user
 $ python3 -m pip install --upgrade radicale
-$ python3 -m radicale --config "" --storage-filesystem-folder=~/.var/lib/radicale/collections
+$ python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
 Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser!
@@ -115,10 +114,8 @@ Launch a command prompt and type:
 
 ```powershell
 C:\Users\User> python -m pip install --upgrade radicale
-C:\Users\User> python -m radicale --config "" --storage-filesystem-folder=~/radicale/collections
+C:\Users\User> python -m radicale --storage-filesystem-folder=~/radicale/collections
 ```
-
-If you are using PowerShell replace ``--config ""`` with ``--config '""'``.
 
 Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser!
 You can login with any username and password.
@@ -134,10 +131,12 @@ Installation instructions can be found on the
 
 ### Configuration
 
-Radicale tries to load configuration files from `/etc/radicale/config`,
-`~/.config/radicale/config` and the `RADICALE_CONFIG` environment variable.
-A custom path can be specified with the `--config /path/to/config` command
-line argument.
+Radicale tries to load configuration files from `/etc/radicale/config` and
+`~/.config/radicale/config`.
+Custom paths can be specified with the `--config /path/to/config` command
+line argument or the `RADICALE_CONFIG` environment variable.
+Multiple configuration files can be separated by `:` (resp. `;` on Windows).
+Paths that start with `?` are optional.
 
 You should create a new configuration file at the desired location.
 (If the use of a configuration file is inconvenient, all options can be
@@ -160,18 +159,13 @@ The `users` file can be created and managed with
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html):
 ```bash
 # Create a new htpasswd file with the user "user1"
-$ htpasswd -B -c /path/to/users user1
+$ htpasswd -c /path/to/users user1
 New password:
 Re-type new password:
 # Add another user
-$ htpasswd -B /path/to/users user2
+$ htpasswd /path/to/users user2
 New password:
 Re-type new password:
-```
-**bcrypt** is used to secure the passwords. Radicale requires additional
-dependencies for this encryption method:
-```bash
-$ python3 -m pip install --upgrade radicale[bcrypt]
 ```
 
 Authentication can be enabled with the following configuration:
@@ -180,7 +174,7 @@ Authentication can be enabled with the following configuration:
 type = htpasswd
 htpasswd_filename = /path/to/users
 # encryption method used in the htpasswd file
-htpasswd_encryption = bcrypt
+htpasswd_encryption = md5
 ```
 
 #### The simple but insecure way
@@ -206,14 +200,12 @@ htpasswd_encryption = plain
 
 The default configuration binds the server to localhost. It can't be reached
 from other computers. This can be changed with the following configuration
-options:
+options (IPv4 and IPv6):
 
 ```ini
 [server]
-hosts = 0.0.0.0:5232
+hosts = 0.0.0.0:5232, [::]:5232
 ```
-
-More addresses can be added (separated by commas).
 
 ### Storage
 
@@ -341,21 +333,6 @@ $ journalctl --unit radicale.service
 ### MacOS with launchd
 
 *To be written.*
-
-### Classic daemonization
-
-Set the configuration option `daemon` in the section `server` to `True`.
-You may want to set the option `pid` to the path of a PID file.
-
-After daemonization the server will not log anything. You have to configure
-[Logging](#documentation/logging).
-
-If you start Radicale now, it will initialize and fork into the background.
-The main process exits, after the PID file is written.
-
-**Security:** You can set the **umask** with `umask 0027` before you start the
-daemon, to protect your calendar data and log files from other users.
-Don't forget to set permissions of files that are already created!
 
 ### Windows with "NSSM - the Non-Sucking Service Manager"
 
@@ -569,7 +546,7 @@ Radicale has been tested with:
 Many clients do not support the creation of new calendars and address books.
 You can use Radicale's web interface
 (e.g. [http://localhost:5232](http://localhost:5232)) to create and manage
-collections.
+address books and calendars.
 
 In some clients you can just enter the URL of the Radicale server
 (e.g. `http://localhost:5232`) and your user name. In others, you have to
@@ -716,60 +693,49 @@ An example configuration file looks like:
 ```ini
 [server]
 # Bind all addresses
-hosts = 0.0.0.0:5232
+hosts = 0.0.0.0:5232, [::]:5232
 
 [auth]
 type = htpasswd
 htpasswd_filename = /path/to/users
-htpasswd_encryption = bcrypt
+htpasswd_encryption = md5
 [storage]
 filesystem_folder = ~/.var/lib/radicale/collections
 ```
 
-Radicale tries to load configuration files from `/etc/radicale/config`,
-`~/.config/radicale/config` and the `RADICALE_CONFIG` environment variable.
-This behaviour can be overwritten by specifying a path with the
-`--config /path/to/config` command line argument.
+Radicale tries to load configuration files from `/etc/radicale/config` and
+`~/.config/radicale/config`.
+Custom paths can be specified with the `--config /path/to/config` command
+line argument or the `RADICALE_CONFIG` environment variable.
+Multiple configuration files can be separated by `:` (resp. `;` on Windows).
+Paths that start with `?` are optional.
 
 The same example configuration via command line arguments looks like:
 ```bash
-python3 -m radicale --config "" --server-hosts 0.0.0.0:5232 --auth-type htpasswd --htpasswd-filename /path/to/htpasswd --htpasswd-encryption bcrypt
+python3 -m radicale --server-hosts 0.0.0.0:5232,[::]:5232 --auth-type htpasswd --htpasswd-filename /path/to/htpasswd --htpasswd-encryption md5
 ```
 
-The `--config ""` argument is required to stop Radicale from trying
-to load configuration files. Run `python3 -m radicale --help` for more information.
+Add the argument `--config ""` to stop Radicale from loading the default
+configuration files. Run `python3 -m radicale --help` for more information.
 
 In the following, all configuration categories and options are described.
 
 ### server
 
-Most configuration options in this category are only relevant in standalone
-mode. All options beside `max_content_length` and `realm` are ignored,
-when Radicale runs via WSGI.
+The configuration options in this category are only relevant in standalone
+mode. All options are ignored, when Radicale runs via WSGI.
 
 #### hosts
 
 A comma separated list of addresses that the server will bind to.
 
-Default: `127.0.0.1:5232`
-
-#### daemon
-
-Daemonize the Radicale process. It does not reset the umask.
-
-Default: `False`
-
-#### pid
-
-If daemon mode is enabled, Radicale will write its PID to this file.
-
-Default:
+Default: `localhost:5232`
 
 #### max_connections
 
 The maximum number of parallel connections. Set to `0` to disable the limit.
 
-Default: `20`
+Default: `8`
 
 #### max_content_length
 
@@ -809,30 +775,6 @@ authenticate users with client-side certificates, you also have to write an
 authentication plugin that extracts the user name from the certifcate.
 
 Default:
-
-#### protocol
-
-SSL protocol used. See python's ssl module for available values.
-
-Default: `PROTOCOL_TLSv1_2`
-
-#### ciphers
-
-Available ciphers for SSL. See python's ssl module for available ciphers.
-
-Default:
-
-#### dns_lookup
-
-Reverse DNS to resolve client address in logs.
-
-Default: `True`
-
-#### realm
-
-Message displayed in the client when a password is needed.
-
-Default: `Radicale - Password Required`
 
 ### encoding
 #### request
@@ -897,31 +839,24 @@ Available methods:
 
 `bcrypt`
 : This uses a modified version of the Blowfish stream cipher. It's very secure.
-  The **passlib** python module is required for this. Additionally you may need
-  one of the following python modules: **bcrypt**, **py-bcrypt** or **bcryptor**.
+  The installation of **radicale[bcrypt]** is required for this.
 
 `md5`
 : This uses an iterated md5 digest of the password with a salt.
-  The **passlib** python module is required for this.
 
-`sha1`
-: Passwords are stored as SHA1 hashes. It's insecure!
-
-`ssha`
-: Passwords are stored as salted SHA1 hashes. It's insecure!
-
-`crypt`
-: This uses UNIX
-  [crypt(3)](https://manpages.debian.org/unstable/manpages-dev/crypt.3.en.html).
-  It's insecure!
-
-Default: `bcrypt`
+Default: `md5`
 
 #### delay
 
 Average delay after failed login attempts in seconds.
 
 Default: `1`
+
+#### realm
+
+Message displayed in the client when a password is needed.
+
+Default: `Radicale - Password Required`
 
 ### rights
 #### type
@@ -978,27 +913,11 @@ Folder for storing local collections, created if not present.
 
 Default: `/var/lib/radicale/collections`
 
-#### filesystem_locking
-
-Lock the storage. This must be disabled if locking is not supported by the
-underlying file system. Never start multiple instances of Radicale or edit the
-storage externally while Radicale is running if disabled.
-
-Default: `True`
-
 #### max_sync_token_age
 
 Delete sync-token that are older than the specified time. (seconds)
 
 Default: `2592000`
-
-#### filesystem_fsync
-
-Sync all changes to disk during requests. (This can impair performance.)
-Disabling it increases the risk of data loss, when the system crashes or
-power fails!
-
-Default: `True`
 
 #### hook
 
@@ -1023,29 +942,19 @@ Available backends:
 Default: `internal`
 
 ### logging
-#### debug
+#### level
 
-Set the default logging level to debug.
+Set the logging level.
 
-Default: `False`
+Available levels: **debug**, **info**, **warning**, **error**, **critical**
 
-#### full_environment
-
-Log all environment variables (including those set in the shell).
-
-Default: `False`
+Default: `warning`
 
 #### mask_passwords
 
 Don't include passwords in logs.
 
 Default: `True`
-
-#### config
-
-Logging configuration file. See the [Logging](#documentation/logging) page.
-
-Default:
 
 ### headers
 
@@ -1110,7 +1019,7 @@ The path of the collection is separated by `/` and has no leading or trailing
 
 `%(login)s` gets replaced by the user name and `%(path)s` by the path of
 the collection. You can also get groups from the `user` regex in the
-`collection` regex with `{0}`, `{1}`, etc.
+`collection` regex with `{1}`, `{2}`, etc.
 
 ## Storage
 
@@ -1196,84 +1105,8 @@ and `nNumberOfBytesToLockHigh` to `0` works.
 ## Logging
 
 Radicale logs to `stderr`. The verbosity of the log output can be controlled
-with `--debug` command line argument or the `debug` configuration option in
+with `--debug` command line argument or the `level` configuration option in
 the `logging` section.
-
-This is the recommended configuration for use with modern init systems
-(like **systemd**) or if you just test Radicale in a terminal.
-
-You can configure Radicale to write its logging output to files (and even
-rotate them).
-This is useful if the process daemonizes or if your chosen method of running
-Radicale doesn't handle logging output.
-
-A logging configuration file can be specified in the `config` configuration
-option in the `logging` section. The file format is explained in the
-[Python Logging Module](https://docs.python.org/3/library/logging.config.html#configuration-file-format).
-
-### Logging to a file
-
-An example configuration to write the log output to the file `/var/log/radicale/log`:
-```ini
-[loggers]
-keys = root
-
-[handlers]
-keys = file
-
-[formatters]
-keys = full
-
-[logger_root]
-# Change this to DEBUG or INFO for higher verbosity.
-level = WARNING
-handlers = file
-
-[handler_file]
-class = FileHandler
-# Specify the output file here.
-args = ('/var/log/radicale/log',)
-formatter = full
-
-[formatter_full]
-format = %(asctime)s - [%(thread)x] %(levelname)s: %(message)s
-```
-
-You can specify multiple **logger**, **handler** and **formatter** if you want
-to have multiple simultaneous log outputs.
-
-The parent folder of the log files must exist and must be writable by Radicale.
-
-**Security:** The log files should not be readable by unauthorized users. Set
-permissions accordingly.
-
-#### Timed rotation of disk log files
-
-An example **handler** configuration to write the log output to the file `/var/log/radicale/log` and rotate it.
-Replace the section `handler_file` from the file logging example:
-```ini
-[handler_file]
-class = handlers.TimedRotatingFileHandler
-# Specify the output file and parameter for rotation here.
-# See https://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler
-# Example: rollover at midnight and keep 7 files (means one week)
-args = ('/var/log/radicale/log', 'midnight', 1, 7)
-formatter = full
-```
-
-#### Rotation of disk log files based on size
-
-An example **handler** configuration to write the log output to the file `/var/log/radicale/log` and rotate it .
-Replace the section `handle_file` from the file logging example:
-```ini
-[handler_file]
-class = handlers.RotatingFileHandler
-# Specify the output file and parameter for rotation here.
-# See https://docs.python.org/3/library/logging.handlers.html#logging.handlers.RotatingFileHandler
-# Example: rollover at 100000 kB and keep 10 files (means 1 MB)
-args = ('/var/log/radicale/log', 'a', 100000, 10)
-formatter = full
-```
 
 ## Architecture
 
@@ -1343,60 +1176,62 @@ icons and buttons, a terminal or another web application.
 
 ### Code Architecture
 
-The ``radicale`` package offers 9 modules.
-
-`__main__`
-: The main module provides a simple function called run. Its main work is to
-  read the configuration from the configuration file and from the options given
-  in the command line; then it creates a server, according to the configuration.
+The ``radicale`` package offers the following modules.
 
 `__init__`
-: This is the core part of the module, with the code for the CalDAV/CardDAV
-  server. The server inherits from a WSGIServer server class, which relies on
-  the default HTTP server class given by Python. The code managing the
-  different HTTP requests according to the CalDAV/CardDAV normalization is
-  written here.
+: Contains the entry point for WSGI.
 
-`config`
-: This part gives a dict-like access to the server configuration, read from the
-  configuration file. The configuration can be altered when launching the
-  executable with some command line options.
+`__main__`
+: Provides the entry point for the ``radicale`` executable and
+  includes the command line parser. It loads configuration files from
+  the default (or specified) paths and starts the internal server.
 
-`xmlutils`
-: The functions defined in this module are mainly called by the CalDAV/CardDAV
-  server class to read the XML part of the request, read or alter the
-  calendars, and create the XML part of the response. The main part of this
-  code relies on ElementTree.
-
-`log`
-: The start function provided by this module starts a logging mechanism based
-  on the default Python logging module. Logging options can be stored in a
-  logging configuration file.
+`app`
+: This is the core part of Radicale, with the code for the CalDAV/CardDAV
+  server. The code managing the different HTTP requests according to the
+  CalDAV/CardDAV specification can be found here.
 
 `auth`
-: This module provides a default authentication manager equivalent to Apache's
-  htpasswd. Login + password couples are stored in a file and used to
-  authenticate users. Passwords can be encrypted using various methods. Other
-  authentication methods can inherit from the base class in this file and be
-  provided as plugins.
+: Used for authenticating users based on username and password, mapping
+  usernames to internal users and optionally retrieving credentials from
+  the environment.
+
+`config`
+: Contains the code for managing configuration and loading settings from files.
+
+`ìtem`
+: Internal represenation of address book and calendar entries. Based on
+  [VObject](https://eventable.github.io/vobject/).
+
+`log`
+: The logger for Radicale based on the default Python logging module.
 
 `rights`
-: This module is a set of Access Control Lists, a set of methods used by
-  Radicale to manage rights to access the calendars. When the CalDAV/CardDAV
-  server is launched, an Access Control List is chosen in the set, according to
-  the configuration. The HTTP requests are then filtered to restrict the access
-  depending on who is authenticated. Other configurations can be written using
-  regex-based rules. Other rights managers can also inherit from the base class
-  in this file and be provided as plugins.
+: This module is used by Radicale to manage access rights to collections,
+  address books and calendars.
+
+`server`
+: The integrated HTTP server for standalone use.
 
 `storage`
-: In this module are written the classes representing collections and items in
-  Radicale, and the class storing these collections and items in your
-  filesystem. Other storage classes can inherit from the base class in this
-  file and be provided as plugins.
+: This module contains the classes representing collections in Radicale and
+  the code for storing and loading them in the filesystem.
 
 `web`
 : This module contains the web interface.
+
+`utils`
+: Contains general helper functions.
+
+`httputils`
+: Contains helper functions for working with HTTP.
+
+`pathutils`
+: Helper functions for working with paths and the filesystem.
+
+`xmlutils`
+: Helper functions for working with the XML part of CalDAV/CardDAV requests
+  and responses. It's based on the ElementTree XML API.
 
 ## Plugins
 
@@ -1406,7 +1241,7 @@ storage. Plugins are **python** modules.
 ### Getting started
 
 To get started we walk through the creation of a simple authentication
-plugin, that accepts login attempts if the username and password are equal.
+plugin, that accepts login attempts with a static password.
 
 The easiest way to develop and install **python** modules is
 [Distutils](https://docs.python.org/3/distutils/setupscript.html).
@@ -1418,31 +1253,36 @@ in an empty folder:
 
 from distutils.core import setup
 
-setup(name="radicale_silly_auth", packages=["radicale_silly_auth"])
+setup(name="radicale_static_password_auth", packages=["radicale_static_password_auth"])
 ```
 
-In the same folder create the sub-folder `radicale_silly_auth`. The folder
-must have the same name as specified in `packages` above.
+In the same folder create the sub-folder `radicale_static_password_auth`.
+The folder must have the same name as specified in `packages` above.
 
-Create the file `__init__.py` in the `radicale_silly_auth` folder with the
-following content:
+Create the file `__init__.py` in the `radicale_static_password_auth` folder
+with the following content:
 
 ```python
 from radicale.auth import BaseAuth
+from radicale.log import logger
+
+PLUGIN_CONFIG_SCHEMA = {"auth": {
+    "password": {"value": "", "type": str}}}
 
 
 class Auth(BaseAuth):
-    def is_authenticated(self, user, password):
-        # Example custom configuration option
-        foo = ""
-        if self.configuration.has_option("auth", "foo"):
-            foo = self.configuration.get("auth", "foo")
-        self.logger.info("Configuration option %r is %r", "foo", foo)
+    def __init__(self, configuration):
+        super().__init__(configuration.copy(PLUGIN_CONFIG_SCHEMA))
 
+    def login(self, user, password):
+        # Get password from configuration option
+        static_password = self.configuration.get("auth", "password")
         # Check authentication
-        self.logger.info("Login attempt by %r with password %r",
-                         user, password)
-        return user == password
+        logger.info("Login attempt by %r with password %r",
+                    user, password)
+        if password == static_password:
+            return user
+        return ""
 ```
 
 Install the python module by running the following command in the same folder
@@ -1452,46 +1292,46 @@ python3 -m pip install --upgrade .
 ```
 
 To make use this great creation in Radicale, set the configuration option
-`type` in the `auth` section to `radicale_silly_auth`:
+`type` in the `auth` section to `radicale_static_password_auth`:
 
 ```ini
 [auth]
-type = radicale_silly_auth
-foo = bar
+type = radicale_static_password_auth
+password = secret
 ```
 
 You can uninstall the module with:
 ```bash
-python3 -m pip uninstall radicale_silly_auth
+python3 -m pip uninstall radicale_static_password_auth
 ```
 
 ### Authentication plugins
 
 This plugin type is used to check login credentials.
 The module must contain a class `Auth` that extends
-`radicale.auth.BaseAuth`. Take a look at the file `radicale/auth.py` in
-Radicale's source code for more information.
+`radicale.auth.BaseAuth`. Take a look at the file `radicale/auth/__init__.py`
+in Radicale's source code for more information.
 
 ### Rights management plugins
 
 This plugin type is used to check if a user has access to a path.
 The module must contain a class `Rights` that extends
-`radicale.rights.BaseRights`. Take a look at the file `radicale/rights.py` in
-Radicale's source code for more information.
+`radicale.rights.BaseRights`. Take a look at the file
+`radicale/rights/__init__.py` in Radicale's source code for more information.
 
 ### Web plugins
 
 This plugin type is used to provide the web interface for Radicale.
 The module must contain a class `Web` that extends
-`radicale.web.BaseWeb`. Take a look at the file `radicale/web.py` in
+`radicale.web.BaseWeb`. Take a look at the file `radicale/web/__init__.py` in
 Radicale's source code for more information.
 
 ### Storage plugins
 
 This plugin is used to store collections and items.
-The module must contain a class `Collection` that extends
-`radicale.storage.BaseCollection`. Take a look at the file `radicale/storage.py`
-in Radicale's source code for more information.
+The module must contain a class `Storage` that extends
+`radicale.storage.BaseStorage`. Take a look at the file
+`radicale/storage/__init__.py` in Radicale's source code for more information.
 
 # Contribute
 
@@ -1507,7 +1347,7 @@ Found a bug? Want a new feature? Report a new issue on the
 ### Hack
 
 Interested in hacking? Feel free to clone the
-[git repository on Github](https://github.com/Kozea/Radicale) if you want to
+[git repository on GitHub](https://github.com/Kozea/Radicale) if you want to
 add new features, fix bugs or update the documentation.
 
 ### Documentation
@@ -1537,34 +1377,8 @@ You can also download the content of the repository as an
 
 ### Source Packages
 
-You can download the Radicale package for each release:
-
-- [**2.1.11 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.11)
-- [**2.1.10 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.10)
-- [**2.1.9 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.9)
-- [**2.1.8 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.8)
-- [**2.1.7 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.7)
-- [**2.1.6 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.6)
-- [**2.1.5 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.5)
-- [**2.1.4 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.4)
-- [**2.1.3 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.3)
-- [**2.1.2 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.2)
-- [**1.1.6 - Sixth Law of Nature**](https://api.github.com/repos/Kozea/Radicale/tarball/1.1.6)
-- [**2.1.1 - Wild Radish Again**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.1)
-- [**2.1.0 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.0)
-- [**1.1.4 - Fifth Law of Nature**](https://api.github.com/repos/Kozea/Radicale/tarball/1.1.4)
-- [2.1.0rc3](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.0rc3)
-- [2.1.0rc2](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.0rc2)
-- [2.1.0rc1](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.0rc1)
-- [**2.0.0 - Little Big Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.0.0)
-- [**1.1.3 - Fourth Law of Nature**](https://api.github.com/repos/Kozea/Radicale/tarball/1.1.3)
-- [2.0.0rc2](https://api.github.com/repos/Kozea/Radicale/tarball/2.0.0rc2)
-- [**1.1.2 - Third Law of Nature**](https://api.github.com/repos/Kozea/Radicale/tarball/1.1.2)
-- [2.0.0rc1](https://api.github.com/repos/Kozea/Radicale/tarball/2.0.0rc1)
-- [**1.1.1 - Second Law of Nature**](https://api.github.com/repos/Kozea/Radicale/tarball/1.1.1)
-- [**1.1 - Law of Nature**](https://api.github.com/repos/Kozea/Radicale/tarball/1.1)
-- [**1.0.1 - Sunflower Again**](https://api.github.com/repos/Kozea/Radicale/tarball/1.0.1)
-- [**1.0 - Sunflower**](https://api.github.com/repos/Kozea/Radicale/tarball/1.0)
+You can find the source packages of all releases on
+[GitHub](https://github.com/Kozea/Radicale/releases).
 
 ### Linux Distribution Packages
 
