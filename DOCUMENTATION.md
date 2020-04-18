@@ -45,7 +45,7 @@ When everything works, you can get a [client](#documentation/supported-clients)
 and start creating calendars and address books. The server **only** binds to
 localhost (is **not** reachable over the network) and you can log in with any
 user name and password. If Radicale fits your needs, it may be time for
-[some basic configuration](#tutorials/basic-setup).
+[some basic configuration](#tutorials/basic-configuration).
 
 Follow one of the chapters below depending on your operating system.
 
