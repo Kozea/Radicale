@@ -1455,7 +1455,7 @@ steps to have a simple remote calendar and contact access.
 Contrary to other servers that are often complicated, require high privileges
 or need a strong configuration, the Radicale Server can (sometimes, if not
 often) be launched in a couple of minutes, if you follow the
-[tutorial](#tutorials/simple-5-minute-tutorial).
+[tutorial](#tutorials/simple-5-minute-setup).
 
 #### Lazy
 
