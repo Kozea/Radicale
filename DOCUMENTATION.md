@@ -442,12 +442,6 @@ A configuration file can be set with the `RADICALE_CONFIG` environment
 variable, otherwise no configuration file is loaded and the default
 configuration is used.
 
-Be reminded that Radicale's default configuration enforces limits on the
-maximum upload file size.
-
-> **Security:** The `None` authentication type disables all rights checking.
-> Don't use it with `REMOTE_USER`. Use `remote_user` instead.
-
 Example **uWSGI** configuration:
 
 ```ini
