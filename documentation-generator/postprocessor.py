@@ -43,6 +43,22 @@ def main():
         header.append(" ")
         header.append(link)
 
+    # Check for duplicate ids
+    visited_ids = set()
+    for element in soup.select("*[id]"):
+        if element["id"] in visited_ids:
+            print("ERROR: Duplicate id %r" % element["id"],
+                  file=sys.stderr)
+            exit(1)
+        visited_ids.add(element["id"])
+
+    # Check for dead internal links
+    for link in soup.select("a[href^=\\#]"):
+        if link["href"][1:] not in visited_ids:
+            print("ERROR: Dead internal link %r" % link["href"],
+                  file=sys.stderr)
+            exit(1)
+
     sys.stdout.buffer.write(soup.encode(formatter="html5") + b"\n")
 
 
