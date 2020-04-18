@@ -522,10 +522,6 @@ user2:password2
 <h3>WSGI Server <a class="headerlink" href="#tutorials/wsgi-server">&para;</a></h3>
 <p>Radicale is compatible with the WSGI specification.</p>
 <p>A configuration file can be set with the <code>RADICALE_CONFIG</code> environment variable, otherwise no configuration file is loaded and the default configuration is used.</p>
-<p>Be reminded that Radicale's default configuration enforces limits on the maximum upload file size.</p>
-<blockquote>
-<p><strong>Security:</strong> The <code>None</code> authentication type disables all rights checking. Don't use it with <code>REMOTE_USER</code>. Use <code>remote_user</code> instead.</p>
-</blockquote>
 <p>Example <strong>uWSGI</strong> configuration:</p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">[uwsgi]</span></span>
 <span id="cb22-2"><a href="#cb22-2"></a><span class="dt">http-socket </span><span class="ot">=</span><span class="st"> </span><span class="dv">127</span><span class="st">.</span><span class="dv">0</span><span class="st">.</span><span class="fl">0.1</span><span class="st">:</span><span class="dv">5232</span></span>
