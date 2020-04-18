@@ -333,7 +333,9 @@ user2:password2
 <p>Data is stored in the folder <code>/var/lib/radicale/collections</code>. The path can be changed with the following configuration:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">[storage]</span></span>
 <span id="cb9-2"><a href="#cb9-2"></a><span class="dt">filesystem_folder </span><span class="ot">=</span><span class="st"> /path/to/storage</span></span></code></pre></div>
-<p><strong>Security:</strong> The storage folder should not be readable by unauthorized users. Otherwise, they can read the calendar data and lock the storage. You can find OS dependent instructions in the <strong>Running as a service</strong> section.</p>
+<blockquote>
+<p><strong>Security:</strong> The storage folder should not be readable by unauthorized users. Otherwise, they can read the calendar data and lock the storage. You can find OS dependent instructions in the <a href="#tutorials/running-as-a-service">Running as a service</a> section.</p>
+</blockquote>
 </section>
 <section class="level4" id="tutorials/basic-configuration/limits">
 <h4>Limits <a class="headerlink" href="#tutorials/basic-configuration/limits">&para;</a></h4>
@@ -356,7 +358,9 @@ user2:password2
 <section class="level4" id="tutorials/running-as-a-service/linux-with-systemd-system-wide">
 <h4>Linux with systemd system-wide <a class="headerlink" href="#tutorials/running-as-a-service/linux-with-systemd-system-wide">&para;</a></h4>
 <p>Create the <strong>radicale</strong> user and group for the Radicale service. (Run <code>useradd --system --home-dir / --shell /sbin/nologin radicale</code> as root.) The storage folder must be writable by <strong>radicale</strong>. (Run <code>mkdir -p /var/lib/radicale/collections &amp;&amp; chown -R radicale:radicale /var/lib/radicale/collections</code> as root.)</p>
+<blockquote>
 <p><strong>Security:</strong> The storage should not be readable by others. (Run <code>chmod -R o= /var/lib/radicale/collections</code> as root.)</p>
+</blockquote>
 <p>Create the file <code>/etc/systemd/system/radicale.service</code>:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">[Unit]</span></span>
 <span id="cb11-2"><a href="#cb11-2"></a><span class="dt">Description</span><span class="ot">=</span><span class="st">A simple CalDAV (calendar) and CardDAV (contact) server</span></span>
@@ -431,7 +435,9 @@ user2:password2
 <li>Error: <code>C:\Path\To\Radicale.log</code></li>
 </ul></li>
 </ul>
+<blockquote>
 <p><strong>Security:</strong> Be aware that the service runs in the local system account, you might want to change this. Managing user accounts is beyond the scope of this manual. Also make sure that the storage folder and log file is not readable by unauthorized users.</p>
+</blockquote>
 <p>The log file might grow very big over time, you can configure file rotation in <strong>NSSM</strong> to prevent this.</p>
 <p>The service is configured to start automatically when the computer starts. To start the service manually open <strong>Services</strong> in <strong>Computer Management</strong> and start the <strong>Radicale</strong> service.</p>
 </section>
@@ -485,7 +491,9 @@ user2:password2
 <span id="cb18-12"><a href="#cb18-12"></a>    RequestHeader<span class="st">    set X-Script-Name /radicale/</span></span>
 <span id="cb18-13"><a href="#cb18-13"></a>    RequestHeader<span class="st">    set X-Remote-User expr=%{REMOTE_USER}</span></span>
 <span id="cb18-14"><a href="#cb18-14"></a><span class="fu">&lt;/Location&gt;</span></span></code></pre></div>
+<blockquote>
 <p><strong>Security:</strong> Untrusted clients should not be able to access the Radicale server directly. Otherwise, they can authenticate as any user.</p>
+</blockquote>
 </section>
 <section class="level4" id="tutorials/reverse-proxy/secure-connection-between-radicale-and-the-reverse-proxy">
 <h4>Secure connection between Radicale and the reverse proxy <a class="headerlink" href="#tutorials/reverse-proxy/secure-connection-between-radicale-and-the-reverse-proxy">&para;</a></h4>
@@ -515,7 +523,9 @@ user2:password2
 <p>Radicale is compatible with the WSGI specification.</p>
 <p>A configuration file can be set with the <code>RADICALE_CONFIG</code> environment variable, otherwise no configuration file is loaded and the default configuration is used.</p>
 <p>Be reminded that Radicale's default configuration enforces limits on the maximum upload file size.</p>
+<blockquote>
 <p><strong>Security:</strong> The <code>None</code> authentication type disables all rights checking. Don't use it with <code>REMOTE_USER</code>. Use <code>remote_user</code> instead.</p>
+</blockquote>
 <p>Example <strong>uWSGI</strong> configuration:</p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">[uwsgi]</span></span>
 <span id="cb22-2"><a href="#cb22-2"></a><span class="dt">http-socket </span><span class="ot">=</span><span class="st"> </span><span class="dv">127</span><span class="st">.</span><span class="dv">0</span><span class="st">.</span><span class="fl">0.1</span><span class="st">:</span><span class="dv">5232</span></span>
