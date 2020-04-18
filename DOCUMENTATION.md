@@ -179,9 +179,10 @@ be changed with the following configuration:
 filesystem_folder = /path/to/storage
 ```
 
-**Security:** The storage folder should not be readable by unauthorized users.
-Otherwise, they can read the calendar data and lock the storage.
-You can find OS dependent instructions in the **Running as a service** section.
+> **Security:** The storage folder should not be readable by unauthorized users.
+> Otherwise, they can read the calendar data and lock the storage.
+> You can find OS dependent instructions in the
+> [Running as a service](#tutorials/running-as-a-service) section.
 
 ### Limits
 
@@ -217,8 +218,8 @@ The storage folder must be writable by **radicale**. (Run
 `mkdir -p /var/lib/radicale/collections && chown -R radicale:radicale /var/lib/radicale/collections`
 as root.)
 
-**Security:** The storage should not be readable by others.
-(Run `chmod -R o= /var/lib/radicale/collections` as root.)
+> **Security:** The storage should not be readable by others.
+> (Run `chmod -R o= /var/lib/radicale/collections` as root.)
 
 Create the file `/etc/systemd/system/radicale.service`:
 
@@ -308,10 +309,10 @@ prompt. Apply the following configuration:
   * I/O redirection
       * Error: `C:\Path\To\Radicale.log`
 
-**Security:** Be aware that the service runs in the local system account,
-you might want to change this. Managing user accounts is beyond the scope of
-this manual. Also make sure that the storage folder and log file is not
-readable by unauthorized users.
+> **Security:** Be aware that the service runs in the local system account,
+> you might want to change this. Managing user accounts is beyond the scope of
+> this manual. Also make sure that the storage folder and log file is not
+> readable by unauthorized users.
 
 The log file might grow very big over time, you can configure file rotation
 in **NSSM** to prevent this.
@@ -393,8 +394,8 @@ RewriteRule ^/radicale$ /radicale/ [R,L]
 </Location>
 ```
 
-**Security:** Untrusted clients should not be able to access the Radicale
-server directly. Otherwise, they can authenticate as any user.
+> **Security:** Untrusted clients should not be able to access the Radicale
+> server directly. Otherwise, they can authenticate as any user.
 
 ### Secure connection between Radicale and the reverse proxy
 
@@ -444,8 +445,8 @@ configuration is used.
 Be reminded that Radicale's default configuration enforces limits on the
 maximum upload file size.
 
-**Security:** The `None` authentication type disables all rights checking.
-Don't use it with `REMOTE_USER`. Use `remote_user` instead.
+> **Security:** The `None` authentication type disables all rights checking.
+> Don't use it with `REMOTE_USER`. Use `remote_user` instead.
 
 Example **uWSGI** configuration:
 
