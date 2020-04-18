@@ -15,6 +15,7 @@ def add_class(element, class_):
 
 def main():
     soup = BeautifulSoup(sys.stdin.buffer, "html.parser")
+    checks_failed = False
 
     # Mark the hierachical levels in the navigation
     nav = soup.select("main nav")[0]
@@ -49,7 +50,7 @@ def main():
         if element["id"] in visited_ids:
             print("ERROR: Duplicate id %r" % element["id"],
                   file=sys.stderr)
-            exit(1)
+            checks_failed = True
         visited_ids.add(element["id"])
 
     # Check for dead internal links
@@ -57,8 +58,10 @@ def main():
         if link["href"][1:] not in visited_ids:
             print("ERROR: Dead internal link %r" % link["href"],
                   file=sys.stderr)
-            exit(1)
+            checks_failed = True
 
+    if checks_failed:
+        exit(1)
     sys.stdout.buffer.write(soup.encode(formatter="html5") + b"\n")
 
 
