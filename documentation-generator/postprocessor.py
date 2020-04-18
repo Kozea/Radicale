@@ -17,14 +17,15 @@ def main():
     soup = BeautifulSoup(sys.stdin.buffer, "html.parser")
 
     # Mark the hierachical levels in the navigation
-    for section in soup.select("section"):
-        link = soup.find("a", href="#" + section["id"])
+    nav = soup.select("main nav")[0]
+    for section in soup.select("main section"):
+        link = nav.find("a", href="#" + section["id"])
         if link is None:
             continue
         add_class(link.parent, section["class"][0])
 
     # Mark last section
-    add_class(soup.select("section")[-1], "last")
+    add_class(soup.select("main section")[-1], "last")
 
     # Wrap tables in a div container (for scrolling)
     for table in soup.select("main table"):
@@ -33,7 +34,7 @@ def main():
         table.wrap(container)
 
     # Add a link with the fragment to every header
-    for header in soup.select("section > *:first-child"):
+    for header in soup.select("main section > *:first-child"):
         section = header.parent
         link = soup.new_tag("a")
         add_class(link, "headerlink")
