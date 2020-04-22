@@ -264,12 +264,11 @@ class Application(
         # Create principal collection
         if user:
             principal_path = "/%s/" % user
-            if "W" in self._rights.authorization(user, principal_path):
-                with self._storage.acquire_lock("r", user):
-                    principal = next(
-                        self._storage.discover(principal_path, depth="1"),
-                        None)
-                if not principal:
+            with self._storage.acquire_lock("r", user):
+                principal = next(self._storage.discover(
+                    principal_path, depth="1"), None)
+            if not principal:
+                if "W" in self._rights.authorization(user, principal_path):
                     with self._storage.acquire_lock("w", user):
                         try:
                             self._storage.create_collection(principal_path)
@@ -277,9 +276,9 @@ class Application(
                             logger.warning("Failed to create principal "
                                            "collection %r: %s", user, e)
                             user = ""
-            else:
-                logger.warning("Access to principal path %r denied by "
-                               "rights backend", principal_path)
+                else:
+                    logger.warning("Access to principal path %r denied by "
+                                   "rights backend", principal_path)
 
         if self.configuration.get("server", "_internal_server"):
             # Verify content length
@@ -312,32 +311,6 @@ class Application(
                 "Basic realm=\"%s\"" % realm})
 
         return response(status, headers, answer)
-
-    def _access(self, user, path, permission, item=None):
-        if permission not in "rw":
-            raise ValueError("Invalid permission argument: %r" % permission)
-        if not item:
-            permissions = permission + permission.upper()
-            parent_permissions = permission
-        elif isinstance(item, storage.BaseCollection):
-            if item.get_meta("tag"):
-                permissions = permission
-            else:
-                permissions = permission.upper()
-            parent_permissions = ""
-        else:
-            permissions = ""
-            parent_permissions = permission
-        if permissions and rights.intersect(
-                self._rights.authorization(user, path), permissions):
-            return True
-        if parent_permissions:
-            parent_path = pathutils.unstrip_path(
-                posixpath.dirname(pathutils.strip_path(path)), True)
-            if rights.intersect(self._rights.authorization(user, parent_path),
-                                parent_permissions):
-                return True
-        return False
 
     def _read_raw_content(self, environ):
         content_length = int(environ.get("CONTENT_LENGTH") or 0)
@@ -382,3 +355,44 @@ class Application(
         headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
         content = self._write_xml_content(xmlutils.webdav_error(human_tag))
         return status, headers, content
+
+
+class Access:
+    """Helper class to check access rights of an item"""
+
+    def __init__(self, rights, user, path):
+        self._rights = rights
+        self.user = user
+        self.path = path
+        self.parent_path = pathutils.unstrip_path(
+            posixpath.dirname(pathutils.strip_path(path)), True)
+        self.permissions = self._rights.authorization(self.user, self.path)
+        self._parent_permissions = None
+
+    @property
+    def parent_permissions(self):
+        if self.path == self.parent_path:
+            return self.permissions
+        if self._parent_permissions is None:
+            self._parent_permissions = self._rights.authorization(
+                self.user, self.parent_path)
+        return self._parent_permissions
+
+    def check(self, permission, item=None):
+        if permission not in "rw":
+            raise ValueError("Invalid permission argument: %r" % permission)
+        if not item:
+            permissions = permission + permission.upper()
+            parent_permissions = permission
+        elif isinstance(item, storage.BaseCollection):
+            if item.get_meta("tag"):
+                permissions = permission
+            else:
+                permissions = permission.upper()
+            parent_permissions = ""
+        else:
+            permissions = ""
+            parent_permissions = permission
+        return bool(rights.intersect(self.permissions, permissions) or (
+            self.path != self.parent_path and
+            rights.intersect(self.parent_permissions, parent_permissions)))

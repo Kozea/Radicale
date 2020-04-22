@@ -25,7 +25,7 @@ from http import client
 
 import vobject
 
-from radicale import httputils
+from radicale import app, httputils
 from radicale import item as radicale_item
 from radicale import pathutils, rights, storage, xmlutils
 from radicale.log import logger
@@ -114,7 +114,8 @@ def prepare(vobject_items, path, content_type, permissions, parent_permissions,
 class ApplicationPutMixin:
     def do_PUT(self, environ, base_prefix, path, user):
         """Manage PUT request."""
-        if not self._access(user, path, "w"):
+        access = app.Access(self._rights, user, path)
+        if not access.check("w"):
             return httputils.NOT_ALLOWED
         try:
             content = self._read_content(environ)
@@ -126,12 +127,6 @@ class ApplicationPutMixin:
             return httputils.REQUEST_TIMEOUT
         # Prepare before locking
         content_type = environ.get("CONTENT_TYPE", "").split(";")[0]
-        parent_path = pathutils.unstrip_path(
-            posixpath.dirname(pathutils.strip_path(path)), True)
-        permissions = rights.intersect(
-            self._rights.authorization(user, path), "Ww")
-        parent_permissions = rights.intersect(
-            self._rights.authorization(user, parent_path), "w")
         try:
             vobject_items = tuple(vobject.readComponents(content or ""))
         except Exception as e:
@@ -140,12 +135,14 @@ class ApplicationPutMixin:
             return httputils.BAD_REQUEST
         (prepared_items, prepared_tag, prepared_write_whole_collection,
          prepared_props, prepared_exc_info) = prepare(
-             vobject_items, path, content_type, permissions,
-             parent_permissions)
+             vobject_items, path, content_type,
+             bool(rights.intersect(access.permissions, "Ww")),
+             bool(rights.intersect(access.parent_permissions, "w")))
 
         with self._storage.acquire_lock("w", user):
             item = next(self._storage.discover(path), None)
-            parent_item = next(self._storage.discover(parent_path), None)
+            parent_item = next(
+                self._storage.discover(access.parent_path), None)
             if not parent_item:
                 return httputils.CONFLICT
 
@@ -159,10 +156,9 @@ class ApplicationPutMixin:
                 tag = parent_item.get_meta("tag")
 
             if write_whole_collection:
-                if ("w" if tag else "W") not in self._rights.authorization(
-                        user, path):
+                if ("w" if tag else "W") not in access.permissions:
                     return httputils.NOT_ALLOWED
-            elif "w" not in self._rights.authorization(user, parent_path):
+            elif "w" not in access.parent_permissions:
                 return httputils.NOT_ALLOWED
 
             etag = environ.get("HTTP_IF_MATCH", "")
@@ -182,8 +178,10 @@ class ApplicationPutMixin:
                     prepared_write_whole_collection != write_whole_collection):
                 (prepared_items, prepared_tag, prepared_write_whole_collection,
                  prepared_props, prepared_exc_info) = prepare(
-                     vobject_items, path, content_type, permissions,
-                     parent_permissions, tag, write_whole_collection)
+                     vobject_items, path, content_type,
+                     bool(rights.intersect(access.permissions, "Ww")),
+                     bool(rights.intersect(access.parent_permissions, "w")),
+                     tag, write_whole_collection)
             props = prepared_props
             if prepared_exc_info:
                 logger.warning(

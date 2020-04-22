@@ -21,7 +21,7 @@ import posixpath
 from http import client
 from urllib.parse import urlparse
 
-from radicale import httputils, pathutils, storage
+from radicale import app, httputils, pathutils, storage
 from radicale.log import logger
 
 
@@ -34,7 +34,8 @@ class ApplicationMoveMixin:
             logger.info("Unsupported destination address: %r", raw_dest)
             # Remote destination server, not supported
             return httputils.REMOTE_DESTINATION
-        if not self._access(user, path, "w"):
+        access = app.Access(self._rights, user, path)
+        if not access.check("w"):
             return httputils.NOT_ALLOWED
         to_path = pathutils.sanitize_path(to_url.path)
         if not (to_path + "/").startswith(base_prefix + "/"):
@@ -42,15 +43,16 @@ class ApplicationMoveMixin:
                            "start with base prefix", to_path, path)
             return httputils.NOT_ALLOWED
         to_path = to_path[len(base_prefix):]
-        if not self._access(user, to_path, "w"):
+        to_access = app.Access(self._rights, user, to_path)
+        if not to_access.check("w"):
             return httputils.NOT_ALLOWED
 
         with self._storage.acquire_lock("w", user):
             item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
-            if (not self._access(user, path, "w", item) or
-                    not self._access(user, to_path, "w", item)):
+            if (not access.check("w", item) or
+                    not to_access.check("w", item)):
                 return httputils.NOT_ALLOWED
             if isinstance(item, storage.BaseCollection):
                 # TODO: support moving collections

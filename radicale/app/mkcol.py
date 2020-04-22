@@ -30,9 +30,8 @@ from radicale.log import logger
 class ApplicationMkcolMixin:
     def do_MKCOL(self, environ, base_prefix, path, user):
         """Manage MKCOL request."""
-        permissions = rights.intersect(
-            self._rights.authorization(user, path), "Ww")
-        if not permissions:
+        permissions = self._rights.authorization(user, path)
+        if not rights.intersect(permissions, "Ww"):
             return httputils.NOT_ALLOWED
         try:
             xml_content = self._read_xml_content(environ)

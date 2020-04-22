@@ -21,7 +21,7 @@ import socket
 from http import client
 from xml.etree import ElementTree as ET
 
-from radicale import httputils
+from radicale import app, httputils
 from radicale import item as radicale_item
 from radicale import storage, xmlutils
 from radicale.log import logger
@@ -87,7 +87,8 @@ def xml_proppatch(base_prefix, path, xml_request, collection):
 class ApplicationProppatchMixin:
     def do_PROPPATCH(self, environ, base_prefix, path, user):
         """Manage PROPPATCH request."""
-        if not self._access(user, path, "w"):
+        access = app.Access(self._rights, user, path)
+        if not access.check("w"):
             return httputils.NOT_ALLOWED
         try:
             xml_content = self._read_xml_content(environ)
@@ -102,7 +103,7 @@ class ApplicationProppatchMixin:
             item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
-            if not self._access(user, path, "w", item):
+            if not access.check("w", item):
                 return httputils.NOT_ALLOWED
             if not isinstance(item, storage.BaseCollection):
                 return httputils.FORBIDDEN

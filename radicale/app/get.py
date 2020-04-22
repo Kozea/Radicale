@@ -21,7 +21,7 @@ import posixpath
 from http import client
 from urllib.parse import quote
 
-from radicale import httputils, pathutils, storage, xmlutils
+from radicale import app, httputils, pathutils, storage, xmlutils
 from radicale.log import logger
 
 
@@ -70,13 +70,14 @@ class ApplicationGetMixin:
         # Dispatch .web URL to web module
         if path == "/.web" or path.startswith("/.web/"):
             return self._web.get(environ, base_prefix, path, user)
-        if not self._access(user, path, "r"):
+        access = app.Access(self._rights, user, path)
+        if not access.check("r"):
             return httputils.NOT_ALLOWED
         with self._storage.acquire_lock("r", user):
             item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
-            if not self._access(user, path, "r", item):
+            if not access.check("r", item):
                 return httputils.NOT_ALLOWED
             if isinstance(item, storage.BaseCollection):
                 tag = item.get_meta("tag")

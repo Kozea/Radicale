@@ -24,7 +24,7 @@ from http import client
 from urllib.parse import unquote, urlparse
 from xml.etree import ElementTree as ET
 
-from radicale import httputils, pathutils, storage, xmlutils
+from radicale import app, httputils, pathutils, storage, xmlutils
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
@@ -257,7 +257,8 @@ def xml_item_response(base_prefix, href, found_props=(), not_found_props=(),
 class ApplicationReportMixin:
     def do_REPORT(self, environ, base_prefix, path, user):
         """Manage REPORT request."""
-        if not self._access(user, path, "r"):
+        access = app.Access(self._rights, user, path)
+        if not access.check("r"):
             return httputils.NOT_ALLOWED
         try:
             xml_content = self._read_xml_content(environ)
@@ -273,7 +274,7 @@ class ApplicationReportMixin:
             item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
-            if not self._access(user, path, "r", item):
+            if not access.check("r", item):
                 return httputils.NOT_ALLOWED
             if isinstance(item, storage.BaseCollection):
                 collection = item

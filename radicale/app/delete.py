@@ -20,7 +20,7 @@
 from http import client
 from xml.etree import ElementTree as ET
 
-from radicale import httputils, storage, xmlutils
+from radicale import app, httputils, storage, xmlutils
 
 
 def xml_delete(base_prefix, path, collection, href=None):
@@ -49,13 +49,14 @@ def xml_delete(base_prefix, path, collection, href=None):
 class ApplicationDeleteMixin:
     def do_DELETE(self, environ, base_prefix, path, user):
         """Manage DELETE request."""
-        if not self._access(user, path, "w"):
+        access = app.Access(self._rights, user, path)
+        if not access.check("w"):
             return httputils.NOT_ALLOWED
         with self._storage.acquire_lock("w", user):
             item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
-            if not self._access(user, path, "w", item):
+            if not access.check("w", item):
                 return httputils.NOT_ALLOWED
             if_match = environ.get("HTTP_IF_MATCH", "*")
             if if_match not in ("*", item.etag):

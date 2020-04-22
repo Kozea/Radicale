@@ -24,7 +24,7 @@ import socket
 from http import client
 from xml.etree import ElementTree as ET
 
-from radicale import httputils, pathutils, rights, storage, xmlutils
+from radicale import app, httputils, pathutils, rights, storage, xmlutils
 from radicale.log import logger
 
 
@@ -343,7 +343,8 @@ class ApplicationPropfindMixin:
 
     def do_PROPFIND(self, environ, base_prefix, path, user):
         """Manage PROPFIND request."""
-        if not self._access(user, path, "r"):
+        access = app.Access(self._rights, user, path)
+        if not access.check("r"):
             return httputils.NOT_ALLOWED
         try:
             xml_content = self._read_xml_content(environ)
@@ -361,7 +362,7 @@ class ApplicationPropfindMixin:
             item = next(items, None)
             if not item:
                 return httputils.NOT_FOUND
-            if not self._access(user, path, "r", item):
+            if not access.check("r", item):
                 return httputils.NOT_ALLOWED
             # put item back
             items = itertools.chain([item], items)
