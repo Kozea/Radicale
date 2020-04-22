@@ -1397,7 +1397,7 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
         self.propfind("/")
         self.propfind("/created_by_hook/", check=404)
 
-    @pytest.mark.skipif(os.system("type flock") != 0,
+    @pytest.mark.skipif(not shutil.which("flock"),
                         reason="flock command not found")
     def test_hook_storage_locked(self):
         """Verify that the storage is locked when the hook runs."""
@@ -1492,6 +1492,7 @@ class TestCustomStorageSystem(BaseFileSystemTest):
     test_root = BaseRequestsMixIn.test_root
     _report_sync_token = BaseRequestsMixIn._report_sync_token
     # include tests related to sync token
+    s = None
     for s in dir(BaseRequestsMixIn):
         if s.startswith("test_") and ("_sync_" in s or s.endswith("_sync")):
             locals()[s] = getattr(BaseRequestsMixIn, s)

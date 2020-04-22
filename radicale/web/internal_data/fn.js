@@ -661,7 +661,7 @@ function CollectionsScene(user, password, collection, onerror) {
         return false;
     }
 
-    function onfileschange(e) {
+    function onfileschange() {
         try {
             let files = filesInput.files;
             if (files.length > 0) {
@@ -729,8 +729,8 @@ function CollectionsScene(user, password, collection, onerror) {
             let href = SERVER + collection.href;
             url_form.href = href;
             url_form.textContent = href;
-            delete_btn.onclick = function(ev) {return ondelete(collection);};
-            edit_btn.onclick = function(ev) {return onedit(collection);};
+            delete_btn.onclick = function() {return ondelete(collection);};
+            edit_btn.onclick = function() {return onedit(collection);};
             node.classList.remove("hidden");
             nodes.push(node);
             template.parentNode.insertBefore(node, template);
@@ -925,7 +925,6 @@ function DeleteCollectionScene(user, password, collection) {
     let error_form = html_scene.querySelector("[data-name=error]");
     let delete_btn = html_scene.querySelector("[data-name=delete]");
     let cancel_btn = html_scene.querySelector("[data-name=cancel]");
-    let no_btn = html_scene.querySelector("[data-name=no]");
 
     /** @type {?number} */ let scene_index = null;
     /** @type {?XMLHttpRequest} */ let delete_req = null;
