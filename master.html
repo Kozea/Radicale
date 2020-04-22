@@ -838,25 +838,27 @@ user2:password2
 <span id="cb33-7"><a href="#cb33-7"></a><span class="co"># Allow reading and writing principal collection (same as user name)</span></span>
 <span id="cb33-8"><a href="#cb33-8"></a><span class="kw">[principal]</span></span>
 <span id="cb33-9"><a href="#cb33-9"></a><span class="dt">user: .+</span></span>
-<span id="cb33-10"><a href="#cb33-10"></a><span class="dt">collection: %(login)s</span></span>
+<span id="cb33-10"><a href="#cb33-10"></a><span class="dt">collection: {user}</span></span>
 <span id="cb33-11"><a href="#cb33-11"></a><span class="dt">permissions: RW</span></span>
 <span id="cb33-12"><a href="#cb33-12"></a></span>
 <span id="cb33-13"><a href="#cb33-13"></a><span class="co"># Allow reading and writing calendars and address books that are direct</span></span>
 <span id="cb33-14"><a href="#cb33-14"></a><span class="co"># children of the principal collection</span></span>
 <span id="cb33-15"><a href="#cb33-15"></a><span class="kw">[calendars]</span></span>
 <span id="cb33-16"><a href="#cb33-16"></a><span class="dt">user: .+</span></span>
-<span id="cb33-17"><a href="#cb33-17"></a><span class="dt">collection: %(login)s/</span><span class="kw">[^/]</span><span class="dt">+</span></span>
+<span id="cb33-17"><a href="#cb33-17"></a><span class="dt">collection: {user}/</span><span class="kw">[^/]</span><span class="dt">+</span></span>
 <span id="cb33-18"><a href="#cb33-18"></a><span class="dt">permissions: rw</span></span></code></pre></div>
 <p>The titles of the sections are ignored (but must be unique). The keys <code>user</code> and <code>collection</code> contain regular expressions, that are matched against the user name and the path of the collection. Permissions from the first matching section are used. If no section matches, access gets denied.</p>
 <p>The user name is empty for anonymous users. Therefore, the regex <code>.+</code> only matches authenticated users and <code>.*</code> matches everyone (including anonymous users).</p>
 <p>The path of the collection is separated by <code>/</code> and has no leading or trailing <code>/</code>. Therefore, the path of the root collection is empty.</p>
-<p><code>%(login)s</code> gets replaced by the user name and <code>%(path)s</code> by the path of the collection. You can also use groups from the <code>user</code> regex in the <code>collection</code> regex with <code>{1}</code>, <code>{2}</code>, etc.</p>
+<p>In the <code>collection</code> regex you can use <code>{user}</code> and get groups from the <code>user</code> regex with <code>{0}</code>, <code>{1}</code>, etc.</p>
+<p>In consequence of the parameter subsitution you have to write <code>{{</code> and <code>}}</code> if you want to use regular curly braces in the <code>user</code> and <code>collection</code> regexes.</p>
 <p>The following <code>permissions</code> are recognized:</p>
 <ul>
-<li><strong>R</strong>: read a collection (excluding address book or calendar collections)</li>
-<li><strong>r</strong>: read an address book or calendar collection</li>
-<li><strong>W</strong>: write a collection (excluding address book or calendar collections)</li>
-<li><strong>w</strong>: write an address book or calendar collection</li>
+<li><strong>R:</strong> read collections (excluding address books and calendars)</li>
+<li><strong>r:</strong> read address book and calendar collections</li>
+<li><strong>i:</strong> subset of <strong>r</strong> that only allows direct access via HTTP method GET (CalDAV/CardDAV is susceptible to expensive search requests)</li>
+<li><strong>W:</strong> write collections (excluding address books and calendars)</li>
+<li><strong>w:</strong> write address book and calendar collections</li>
 </ul>
 </section>
 <section class="level3" id="documentation/storage">
