@@ -75,19 +75,24 @@
 # Example: Allow everybody (including unauthenticated users) to read
 # the collection "public"
 
-# Allow reading collection "public"
+# Allow reading collection "public" for authenticated users
 #[public-principal]
-#user: .*
+#user: .+
 #collection: public
 #permissions: R
 
 # Allow reading all calendars and address books that are direct children of
-# the collection "public"
+# the collection "public" for authenticated users
 #[public-calendars]
-#user: .*
+#user: .+
 #collection: public/[^/]+
 #permissions: r
 
+# Allow access to public calendars and address books via HTTP GET for everyone
+#[public-calendars-restricted]
+#user: .*
+#collection: public/[^/]+
+#permissions: i
 
 # Example: Grant users of the form user@domain.tld read access to the
 # collection "domain.tld"

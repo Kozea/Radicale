@@ -136,6 +136,30 @@ permissions: Rr""")
         self._test_rights("from_file", "", "/custom/sub", "w", 401)
         self._test_rights("from_file", "tmp", "/custom/sub", "w", 403)
 
+    def test_from_file_limited_get(self):
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[write-all]
+user: tmp
+collection: .*
+permissions: RrWw
+[limited-public]
+user: .*
+collection: public/[^/]*
+permissions: i""")
+        self.configuration.update(
+            {"rights": {"type": "from_file",
+                        "file": rights_file_path}}, "test")
+        self.application = Application(self.configuration)
+        self.mkcalendar("/tmp/calendar", login="tmp:bepo")
+        self.mkcol("/public", login="tmp:bepo")
+        self.mkcalendar("/public/calendar", login="tmp:bepo")
+        self.get("/tmp/calendar", check=401)
+        self.get("/public/", check=401)
+        self.get("/public/calendar")
+        self.get("/public/calendar/1.ics", check=401)
+
     def test_custom(self):
         """Custom rights management."""
         self._test_rights("radicale.tests.custom.rights", "", "/", "r", 401)

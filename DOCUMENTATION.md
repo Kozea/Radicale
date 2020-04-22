@@ -963,10 +963,12 @@ if you want to use regular curly braces in the `user` and `collection` regexes.
 
 The following `permissions` are recognized:
 
-  * **R:** read a collection (excluding address book or calendar collections)
-  * **r:** read an address book or calendar collection
-  * **W:** write a collection (excluding address book or calendar collections)
-  * **w:** write an address book or calendar collection
+  * **R:** read collections (excluding address books and calendars)
+  * **r:** read address book and calendar collections
+  * **i:** subset of **r** that only allows direct access via HTTP method GET
+    (CalDAV/CardDAV is susceptible to expensive search requests)
+  * **W:** write collections (excluding address books and calendars)
+  * **w:** write address book and calendar collections
 
 ## Storage
 

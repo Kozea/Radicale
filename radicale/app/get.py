@@ -71,21 +71,28 @@ class ApplicationGetMixin:
         if path == "/.web" or path.startswith("/.web/"):
             return self._web.get(environ, base_prefix, path, user)
         access = app.Access(self._rights, user, path)
-        if not access.check("r"):
+        if not access.check("r") and "i" not in access.permissions:
             return httputils.NOT_ALLOWED
         with self._storage.acquire_lock("r", user):
             item = next(self._storage.discover(path), None)
             if not item:
                 return httputils.NOT_FOUND
-            if not access.check("r", item):
+            if access.check("r", item):
+                limited_access = False
+            elif "i" in access.permissions:
+                limited_access = True
+            else:
                 return httputils.NOT_ALLOWED
             if isinstance(item, storage.BaseCollection):
                 tag = item.get_meta("tag")
                 if not tag:
-                    return httputils.DIRECTORY_LISTING
+                    return (httputils.NOT_ALLOWED if limited_access else
+                            httputils.DIRECTORY_LISTING)
                 content_type = xmlutils.MIMETYPES[tag]
                 content_disposition = self._content_disposition_attachement(
                     propose_filename(item))
+            elif limited_access:
+                return httputils.NOT_ALLOWED
             else:
                 content_type = xmlutils.OBJECT_MIMETYPES[item.name]
                 content_disposition = ""
