@@ -17,12 +17,13 @@
 
 """
 Rights backend based on a regex-based file whose name is specified in the
-config (section "right", key "file").
+config (section "rights", key "file").
 
-Authentication login is matched against the "user" key, and collection's path
-is matched against the "collection" key. You can use Python's ConfigParser
-interpolation values %(login)s and %(path)s. You can also get groups from the
-user regex in the collection with {0}, {1}, etc.
+The login is matched against the "user" key, and the collection path
+is matched against the "collection" key. In the "collection" regex you can use
+`{user}` and get groups from the "user" regex with `{0}`, `{1}`, etc.
+In consequence of the parameter subsitution you have to write `{{` and `}}`
+if you want to use regular curly braces in the "user" and "collection" regexes.
 
 For example, for the "user" key, ".+" means "authenticated user" and ".*"
 means "anybody" (including anonymous users).
@@ -49,10 +50,8 @@ class Rights(rights.BaseRights):
         user = user or ""
         sane_path = pathutils.strip_path(path)
         # Prevent "regex injection"
-        user_escaped = re.escape(user)
-        sane_path_escaped = re.escape(sane_path)
-        rights_config = configparser.ConfigParser(
-            {"login": user_escaped, "path": sane_path_escaped})
+        escaped_user = re.escape(user)
+        rights_config = configparser.ConfigParser()
         try:
             if not rights_config.read(self._filename):
                 raise RuntimeError("No such file: %r" %
@@ -64,10 +63,12 @@ class Rights(rights.BaseRights):
             try:
                 user_pattern = rights_config.get(section, "user")
                 collection_pattern = rights_config.get(section, "collection")
-                user_match = re.fullmatch(user_pattern, user)
+                # Use empty format() for harmonized handling of curly braces
+                user_match = re.fullmatch(user_pattern.format(), user)
                 collection_match = user_match and re.fullmatch(
                     collection_pattern.format(
-                        *map(re.escape, user_match.groups())), sane_path)
+                        *map(re.escape, user_match.groups()),
+                        user=escaped_user), sane_path)
             except Exception as e:
                 raise RuntimeError("Error in section %r of rights file %r: "
                                    "%s" % (section, self._filename, e)) from e

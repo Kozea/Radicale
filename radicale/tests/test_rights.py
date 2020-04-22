@@ -125,7 +125,7 @@ class TestBaseRightsRequests(BaseTest):
             f.write("""\
 [owner]
 user: .+
-collection: %(login)s(/.*)?
+collection: {user}(/.*)?
 permissions: RrWw
 [custom]
 user: .*

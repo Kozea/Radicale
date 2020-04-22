@@ -932,14 +932,14 @@ permissions: R
 # Allow reading and writing principal collection (same as user name)
 [principal]
 user: .+
-collection: %(login)s
+collection: {user}
 permissions: RW
 
 # Allow reading and writing calendars and address books that are direct
 # children of the principal collection
 [calendars]
 user: .+
-collection: %(login)s/[^/]+
+collection: {user}/[^/]+
 permissions: rw
 ```
 
@@ -955,16 +955,18 @@ users).
 The path of the collection is separated by `/` and has no leading or trailing
 `/`. Therefore, the path of the root collection is empty.
 
-`%(login)s` gets replaced by the user name and `%(path)s` by the path of
-the collection. You can also use groups from the `user` regex in the
-`collection` regex with `{1}`, `{2}`, etc.
+In the `collection` regex you can use `{user}` and get groups from the `user`
+regex with `{0}`, `{1}`, etc.
+
+In consequence of the parameter subsitution you have to write `{{` and `}}`
+if you want to use regular curly braces in the `user` and `collection` regexes.
 
 The following `permissions` are recognized:
 
-  * **R**: read a collection (excluding address book or calendar collections)
-  * **r**: read an address book or calendar collection
-  * **W**: write a collection (excluding address book or calendar collections)
-  * **w**: write an address book or calendar collection
+  * **R:** read a collection (excluding address book or calendar collections)
+  * **r:** read an address book or calendar collection
+  * **W:** write a collection (excluding address book or calendar collections)
+  * **w:** write an address book or calendar collection
 
 ## Storage
 

@@ -21,14 +21,14 @@
 # Allow reading and writing principal collection (same as user name)
 #[principal]
 #user: .+
-#collection: %(login)s
+#collection: {user}
 #permissions: RW
 
 # Allow reading and writing calendars and address books that are direct
 # children of the principal collection
 #[calendars]
 #user: .+
-#collection: %(login)s/[^/]+
+#collection: {user}/[^/]+
 #permissions: rw
 
 
