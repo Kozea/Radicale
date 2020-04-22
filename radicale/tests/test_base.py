@@ -20,7 +20,6 @@ Radicale tests with simple requests.
 
 """
 
-import base64
 import os
 import posixpath
 import shutil
@@ -1273,14 +1272,13 @@ class BaseRequestsMixIn:
         assert status == 200 and prop.text == "text/vcard;charset=utf-8"
 
     def test_authorization(self):
-        authorization = "Basic " + base64.b64encode(b"user:").decode()
         _, responses = self.propfind("/", """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
     <prop>
         <current-user-principal />
     </prop>
-</propfind>""", HTTP_AUTHORIZATION=authorization)
+</propfind>""", login="user:")
         assert len(responses["/"]) == 1
         status, prop = responses["/"]["D:current-user-principal"]
         assert status == 200 and len(prop) == 1
@@ -1300,8 +1298,7 @@ class BaseRequestsMixIn:
 
     def test_principal_collection_creation(self):
         """Verify existence of the principal collection."""
-        self.propfind("/user/", HTTP_AUTHORIZATION=(
-            "Basic " + base64.b64encode(b"user:").decode()))
+        self.propfind("/user/", login="user:")
 
     def test_existence_of_root_collections(self):
         """Verify that the root collection always exists."""
@@ -1412,16 +1409,14 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
             "hook": ("mkdir %s" % os.path.join(
                 "collection-root", "created_by_hook"))}}, "test")
         self.application = Application(self.configuration)
-        self.propfind("/", HTTP_AUTHORIZATION=(
-            "Basic " + base64.b64encode(b"user:").decode()))
+        self.propfind("/", login="user:")
         self.propfind("/created_by_hook/")
 
     def test_hook_fail(self):
         """Verify that a request fails if the hook fails."""
         self.configuration.update({"storage": {"hook": "exit 1"}}, "test")
         self.application = Application(self.configuration)
-        status = self.mkcalendar("/calendar.ics/", check=False)
-        assert status != 201
+        self.mkcalendar("/calendar.ics/", check=500)
 
     def test_item_cache_rebuild(self):
         """Delete the item cache and verify that it is rebuild."""

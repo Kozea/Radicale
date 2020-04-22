@@ -18,7 +18,6 @@
 Radicale tests with simple requests and rights.
 """
 
-import base64
 import os
 import shutil
 import tempfile
@@ -57,13 +56,10 @@ class TestBaseRightsRequests(BaseTest):
                      "htpasswd_encryption": "plain"}}, "test")
         self.application = Application(self.configuration)
         for u in ("tmp", "other"):
-            status, _ = self.propfind(
-                "/%s/" % u, HTTP_AUTHORIZATION="Basic %s" %
-                base64.b64encode(("%s:bepo" % u).encode()).decode())
-        status, _ = (self.propfind if mode == "r" else self.proppatch)(
-            path, check=False, HTTP_AUTHORIZATION="Basic %s" %
-            base64.b64encode(("tmp:bepo").encode()).decode() if user else "")
-        assert status == expected_status
+            # Indirect creation of principal collection
+            self.propfind("/%s/" % u, login="%s:bepo" % u)
+        (self.propfind if mode == "r" else self.proppatch)(
+            path, check=expected_status, login="tmp:bepo" if user else None)
 
     def test_owner_only(self):
         self._test_rights("owner_only", "", "/", "r", 401)

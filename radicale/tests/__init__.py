@@ -20,6 +20,7 @@ Tests for Radicale.
 
 """
 
+import base64
 import logging
 import sys
 from io import BytesIO
@@ -36,10 +37,13 @@ radicale.log.logger.setLevel(logging.DEBUG)
 class BaseTest:
     """Base class for tests."""
 
-    def request(self, method, path, data=None, **args):
+    def request(self, method, path, data=None, login=None, **args):
         """Send a request."""
         for key in args:
             args[key.upper()] = args[key]
+        if login:
+            args["HTTP_AUTHORIZATION"] = "Basic " + base64.b64encode(
+                login.encode()).decode()
         args["REQUEST_METHOD"] = method.upper()
         args["PATH_INFO"] = path
         if data:
@@ -89,8 +93,10 @@ class BaseTest:
 
     @staticmethod
     def _check_status(status, good_status, check=True):
-        if check is not False:
-            assert status in (good_status, check)
+        if check is True:
+            assert status == good_status
+        elif check is not False:
+            assert status == check
         return status == good_status
 
     def get(self, path, check=True, **args):

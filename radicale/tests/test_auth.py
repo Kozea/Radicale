@@ -21,7 +21,6 @@ Radicale tests with simple requests and authentication.
 
 """
 
-import base64
 import os
 import shutil
 import tempfile
@@ -85,8 +84,7 @@ class TestBaseAuthRequests(BaseTest):
                            ("", "🔑", False), ("", "", False))
         for user, password, valid in test_matrix:
             self.propfind("/", check=207 if valid else 401,
-                          HTTP_AUTHORIZATION=("Basic %s" % base64.b64encode(
-                              ("%s:%s" % (user, password)).encode()).decode()))
+                          login="%s:%s" % (user, password))
 
     def test_htpasswd_plain(self):
         self._test_htpasswd("plain", "tmp:bepo")
@@ -165,5 +163,4 @@ class TestBaseAuthRequests(BaseTest):
         self.configuration.update(
             {"auth": {"type": "radicale.tests.custom.auth"}}, "test")
         self.application = Application(self.configuration)
-        self.propfind("/tmp/", HTTP_AUTHORIZATION="Basic %s" %
-                      base64.b64encode(("tmp:").encode()).decode())
+        self.propfind("/tmp/", login="tmp:")
