@@ -16,8 +16,8 @@ This release is incompatible with previous releases. See the upgrade checklist b
           * Major refactor
           * Never sanitize paths multiple times (check if they are sanitized)
   * Config
-      * Multiple configuration files with the format /path/to/config1:/path/to/config2
-      * Optional configuration files by prepending filepath with ``?``
+      * Multiple configuration files separated by ``:`` (resp. ``;`` on Windows)
+      * Optional configuration files by prepending file path with ``?``
       * Check validity of every configuration file and command line arguments separately
           * Report the source of invalid configuration parameters in error messages
       * Code cleanup:
@@ -49,7 +49,7 @@ This release is incompatible with previous releases. See the upgrade checklist b
       * Show warning if JavaScript is disabled
       * Pass HTML Validator
   * Storage
-      * Check for missin UIDs in items
+      * Check for missing UIDs in items
       * Check for child collections in address books and calendars
       * Code cleanup:
           * Split BaseCollection in BaseStorage and BaseCollection
@@ -68,7 +68,7 @@ This release is incompatible with previous releases. See the upgrade checklist b
           * Replaced variable ``%(login)s`` by ``{user}``
           * Removed variable ``%(path)s``
           * ``{`` must be escaped as ``{{`` and ``}`` as ``}}`` in regexes
-  * Filesystem storage
+  * File system storage
       * The storage format is compatible with Radicale 2.x.x
       * Run ``radiale --verify-storage`` to check for errors
   * Custom plugins:
