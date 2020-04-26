@@ -17,13 +17,13 @@ This release is incompatible with previous releases. See the upgrade checklist b
           * Never sanitize paths multiple times (check if they are sanitized)
   * Config
       * Multiple configuration files with the format /path/to/config1:/path/to/config2
-      * Optional configuration files by prepending filepath with ``?`
+      * Optional configuration files by prepending filepath with ``?``
       * Check validity of every configuration file and command line arguments separately
           * Report the source of invalid configuration parameters in error messages
       * Code cleanup:
           * Store configuration as parsed values
           * Use Schema that describes configuration and allow plugins to apply their own schemas
-          * Mark internal settings with ``_`
+          * Mark internal settings with ``_``
   * Internal server
       * Bind to IPv4 and IPv6 address, when both are available for hostname
       * Set default address to ``localhost:5232``
@@ -62,12 +62,12 @@ This release is incompatible with previous releases. See the upgrade checklist b
       * The settings ``server.realm`` moved to ``auth.realm``
       * The settings ``logging.debug`` was replaced by ``logging.level``
       * The format of the ``rights.file`` configuration file changed:
-          * Permission ``r` replaced by ``Rr``
-          * Permission ``w` replaced by ``Ww``
-          * New permission ``i` added as subset of ``r`
+          * Permission ``r`` replaced by ``Rr``
+          * Permission ``w`` replaced by ``Ww``
+          * New permission ``i`` added as subset of ``r``
           * Replaced variable ``%(login)s`` by ``{user}``
           * Removed variable ``%(path)s``
-          * ``{` must be escaped as ``{{`` and ``}` as ``}}`` in regexes
+          * ``{`` must be escaped as ``{{`` and ``}`` as ``}}`` in regexes
   * Filesystem storage
       * The storage format is compatible with Radicale 2.x.x
       * Run ``radiale --verify-storage`` to check for errors
