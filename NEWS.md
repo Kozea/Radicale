@@ -2,45 +2,54 @@
 
 ## master
 
-This release is incompatible with previous releases. See the upgrade checklist below.
+This release is incompatible with previous releases.
+See the upgrade checklist below.
 
-  * Common
-      * Parallel write requests
-      * Support PyPy
-      * Protect against XML denial-of-service attacks
-      * Check for duplicated UIDs in calendars/address books
-      * Only add missing UIDs for uploaded whole calendars/address books
-      * Switch from md5 to sha256 for UIDs and tokens
-      * Code cleanup:
-          * All plugin interfaces were simplified and are incompatible with old plugins
-          * Major refactor
-          * Never sanitize paths multiple times (check if they are sanitized)
+  * Parallel write requests
+  * Support PyPy
+  * Protect against XML denial-of-service attacks
+  * Check for duplicated UIDs in calendars/address books
+  * Only add missing UIDs for uploaded whole calendars/address books
+  * Switch from md5 to sha256 for UIDs and tokens
+  * Code cleanup:
+      * All plugin interfaces were simplified and are incompatible with
+        old plugins
+      * Major refactor
+      * Never sanitize paths multiple times (check if they are sanitized)
   * Config
-      * Multiple configuration files separated by ``:`` (resp. ``;`` on Windows)
+      * Multiple configuration files separated by ``:`` (resp. ``;``
+        on Windows)
       * Optional configuration files by prepending file path with ``?``
-      * Check validity of every configuration file and command line arguments separately
-          * Report the source of invalid configuration parameters in error messages
+      * Check validity of every configuration file and command line
+        arguments separately
+          * Report the source of invalid configuration parameters in
+            error messages
       * Code cleanup:
           * Store configuration as parsed values
-          * Use Schema that describes configuration and allow plugins to apply their own schemas
+          * Use Schema that describes configuration and allow plugins to apply
+            their own schemas
           * Mark internal settings with ``_``
   * Internal server
       * Bind to IPv4 and IPv6 address, when both are available for hostname
       * Set default address to ``localhost:5232``
-      * Remove settings for SSL ciphers and protocol versions (enforce safe defaults instead)
+      * Remove settings for SSL ciphers and protocol versions (enforce safe
+        defaults instead)
       * Remove settings for file locking because they are of little use
       * Remove daemonization (should be handled by service managers)
   * Logging
-      * Replace complex Python logger configuration with simple logging.level setting
+      * Replace complex Python logger configuration with simple
+        ``logging.level`` setting
       * Write PID and ``threadName`` instead of cryptic id's in log messages
       * Use ``wsgi.errors`` for logging (as required by the WSGI spec)
       * Code cleanup:
-          * Don't pass logger object around (use ``logging.getLogger()`` instead)
+          * Don't pass logger object around (use ``logging.getLogger()``
+            instead)
   * Auth
       * Use ``md5`` as default for ``htpasswd_encryption`` setting
       * Move setting ``realm`` from section ``server`` to ``auth``
   * Rights
-      * Use permissions ``RW`` for non-leaf collections and ``rw`` for address books/calendars
+      * Use permissions ``RW`` for non-leaf collections and ``rw`` for
+        address books/calendars
       * New permission ``i`` that only allows access with HTTP method GET
         (CalDAV/CardDAV is susceptible to expensive search requests)
   * Web
@@ -56,7 +65,7 @@ This release is incompatible with previous releases. See the upgrade checklist b
 
 ## Upgrade checklist
 
-  * Configuration
+  * Config
       * Some settings were removed
       * The default of ``auth.htpasswd_encryption`` changed to ``md5``
       * The settings ``server.realm`` moved to ``auth.realm``
