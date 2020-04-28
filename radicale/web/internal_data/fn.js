@@ -44,11 +44,11 @@ const COLOR_RE = new RegExp("^(#[0-9A-Fa-f]{6})(?:[0-9A-Fa-f]{2})?$");
  */
 function escape_xml(s) {
     return (s
-            .replace("&", "&amp;")
-            .replace('"', "&quot;")
-            .replace("'", "&apos;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;"));
+            .replace(/&/g, "&amp;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&apos;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;"));
 }
 
 /**
