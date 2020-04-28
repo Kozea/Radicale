@@ -80,17 +80,17 @@ const CollectionType = {
             }
             return this.ADDRESSBOOK;
         }
-        let union = "";
+        let union = [];
         if (a.search(this.CALENDAR) !== -1 || b.search(this.CALENDAR) !== -1) {
-            union += (union ? "_" : "") + this.CALENDAR;
+            union.push(this.CALENDAR);
         }
         if (a.search(this.JOURNAL) !== -1 || b.search(this.JOURNAL) !== -1) {
-            union += (union ? "_" : "") + this.JOURNAL;
+            union.push(this.JOURNAL);
         }
         if (a.search(this.TASKS) !== -1 || b.search(this.TASKS) !== -1) {
-            union += (union ? "_" : "") + this.TASKS;
+            union.push(this.TASKS);
         }
-        return union;
+        return union.join("_");
     }
 };
 
