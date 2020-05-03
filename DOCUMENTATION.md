@@ -334,7 +334,7 @@ location /radicale/ { # The trailing / is important!
     proxy_pass        http://localhost:5232/; # The / is important!
     proxy_set_header  X-Script-Name /radicale;
     proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header Host $http_host;
+    proxy_set_header  Host $http_host;
     proxy_pass_header Authorization;
 }
 ```
