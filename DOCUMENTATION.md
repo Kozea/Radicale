@@ -1248,14 +1248,14 @@ class Auth(BaseAuth):
     def __init__(self, configuration):
         super().__init__(configuration.copy(PLUGIN_CONFIG_SCHEMA))
 
-    def login(self, user, password):
+    def login(self, login, password):
         # Get password from configuration option
         static_password = self.configuration.get("auth", "password")
         # Check authentication
         logger.info("Login attempt by %r with password %r",
-                    user, password)
+                    login, password)
         if password == static_password:
-            return user
+            return login
         return ""
 ```
 
@@ -1263,7 +1263,7 @@ Install the python module by running the following command in the same folder
 as `setup.py`:
 
 ```bash
-python3 -m pip install --upgrade .
+python3 -m pip install .
 ```
 
 To make use this great creation in Radicale, set the configuration option
