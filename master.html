@@ -1009,17 +1009,17 @@ user2:password2
 <span id="cb38-9"><a href="#cb38-9"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, configuration):</span>
 <span id="cb38-10"><a href="#cb38-10"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(configuration.copy(PLUGIN_CONFIG_SCHEMA))</span>
 <span id="cb38-11"><a href="#cb38-11"></a></span>
-<span id="cb38-12"><a href="#cb38-12"></a>    <span class="kw">def</span> login(<span class="va">self</span>, user, password):</span>
+<span id="cb38-12"><a href="#cb38-12"></a>    <span class="kw">def</span> login(<span class="va">self</span>, login, password):</span>
 <span id="cb38-13"><a href="#cb38-13"></a>        <span class="co"># Get password from configuration option</span></span>
 <span id="cb38-14"><a href="#cb38-14"></a>        static_password <span class="op">=</span> <span class="va">self</span>.configuration.get(<span class="st">"auth"</span>, <span class="st">"password"</span>)</span>
 <span id="cb38-15"><a href="#cb38-15"></a>        <span class="co"># Check authentication</span></span>
 <span id="cb38-16"><a href="#cb38-16"></a>        logger.info(<span class="st">"Login attempt by </span><span class="sc">%r</span><span class="st"> with password </span><span class="sc">%r</span><span class="st">"</span>,</span>
-<span id="cb38-17"><a href="#cb38-17"></a>                    user, password)</span>
+<span id="cb38-17"><a href="#cb38-17"></a>                    login, password)</span>
 <span id="cb38-18"><a href="#cb38-18"></a>        <span class="cf">if</span> password <span class="op">==</span> static_password:</span>
-<span id="cb38-19"><a href="#cb38-19"></a>            <span class="cf">return</span> user</span>
+<span id="cb38-19"><a href="#cb38-19"></a>            <span class="cf">return</span> login</span>
 <span id="cb38-20"><a href="#cb38-20"></a>        <span class="cf">return</span> <span class="st">""</span></span></code></pre></div>
 <p>Install the python module by running the following command in the same folder as <code>setup.py</code>:</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1"></a><span class="ex">python3</span> -m pip install --upgrade .</span></code></pre></div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1"></a><span class="ex">python3</span> -m pip install .</span></code></pre></div>
 <p>To make use this great creation in Radicale, set the configuration option <code>type</code> in the <code>auth</code> section to <code>radicale_static_password_auth</code>:</p>
 <div class="sourceCode" id="cb40"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">[auth]</span></span>
 <span id="cb40-2"><a href="#cb40-2"></a><span class="dt">type </span><span class="ot">=</span><span class="st"> radicale_static_password_auth</span></span>
