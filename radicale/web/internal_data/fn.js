@@ -524,10 +524,6 @@ function LoginScene() {
                         // show collections
                         let saved_user = user;
                         user = "";
-                        if (typeof(sessionStorage) !== "undefined") {
-                            sessionStorage.setItem("radicale_user", saved_user);
-                            sessionStorage.setItem("radicale_password", password);
-                        }
                         let collections_scene = new CollectionsScene(
                             saved_user, password, collection, function(error1) {
                                 error = error1;
@@ -570,24 +566,8 @@ function LoginScene() {
         fill_form();
         form.onsubmit = onlogin;
         html_scene.classList.remove("hidden");
-        let direct_login = false;
-        if (typeof(sessionStorage) !== "undefined") {
-            // Try direct login when scene is shown for the first time and credentials are stored
-            if (scene_index === null && sessionStorage.getItem("radicale_user")) {
-                user_form.value = sessionStorage.getItem("radicale_user");
-                password_form.value = sessionStorage.getItem("radicale_password");
-                direct_login = true;
-            } else {
-                sessionStorage.setItem("radicale_user", "");
-                sessionStorage.setItem("radicale_password", "");
-            }
-        }
         scene_index = scene_stack.length - 1;
-        if (direct_login) {
-            onlogin();
-        } else {
-            user_form.focus();
-        }
+        user_form.focus();
     };
     this.hide = function() {
         read_form();
