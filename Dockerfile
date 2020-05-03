@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-# Version of Radicale (e.g. 2.0.0)
+# Version of Radicale (e.g. 3.0.0)
 ARG VERSION=master
 
 # Install dependencies
@@ -14,10 +14,8 @@ RUN apk add --no-cache \
 # Install Radicale
 RUN wget --quiet https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz --output-document=radicale.tar.gz && \
     tar xzf radicale.tar.gz && \
-    pip3 install ./Radicale-${VERSION}[md5,bcrypt] && \
+    pip3 install ./Radicale-${VERSION} && \
     rm -r radicale.tar.gz Radicale-${VERSION}
-# Install dependencies for Radicale<2.1.9
-RUN pip3 install passlib[bcrypt]
 # Remove build dependencies
 RUN apk del \
       python3-dev \
