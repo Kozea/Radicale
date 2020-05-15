@@ -55,6 +55,8 @@ from radicale.app.put import ApplicationPutMixin
 from radicale.app.report import ApplicationReportMixin
 from radicale.log import logger
 
+secure_random = random.SystemRandom()
+
 VERSION = pkg_resources.get_distribution("radicale").version
 
 
@@ -252,7 +254,7 @@ class Application(
             # Random delay to avoid timing oracles and bruteforce attacks
             delay = self.configuration.get("auth", "delay")
             if delay > 0:
-                random_delay = delay * (0.5 + random.random())
+                random_delay = delay * (0.5 + secure_random.random())
                 logger.debug("Sleeping %.3f seconds", random_delay)
                 time.sleep(random_delay)
 
