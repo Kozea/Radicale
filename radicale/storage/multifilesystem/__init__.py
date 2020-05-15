@@ -68,8 +68,7 @@ class Collection(
         return self._path
 
     @contextlib.contextmanager
-    def _atomic_write(self, path, mode="w", newline=None, sync_directory=True,
-                      replace_fn=os.replace):
+    def _atomic_write(self, path, mode="w", newline=None):
         directory = os.path.dirname(path)
         tmp = NamedTemporaryFile(
             mode=mode, dir=directory, delete=False, prefix=".Radicale.tmp-",
@@ -77,19 +76,14 @@ class Collection(
         try:
             yield tmp
             tmp.flush()
-            try:
-                self._storage._fsync(tmp.fileno())
-            except OSError as e:
-                raise RuntimeError("Fsync'ing file %r failed: %s" %
-                                   (path, e)) from e
+            self._storage._fsync(tmp)
             tmp.close()
-            replace_fn(tmp.name, path)
+            os.replace(tmp.name, path)
         except BaseException:
             tmp.close()
             os.remove(tmp.name)
             raise
-        if sync_directory:
-            self._storage._sync_directory(directory)
+        self._storage._sync_directory(directory)
 
     @property
     def last_modified(self):
@@ -124,9 +118,13 @@ class Storage(
             "storage", "filesystem_folder")
         return os.path.join(filesystem_folder, "collection-root")
 
-    def _fsync(self, fd):
+    def _fsync(self, f):
         if self.configuration.get("storage", "_filesystem_fsync"):
-            pathutils.fsync(fd)
+            try:
+                pathutils.fsync(f.fileno())
+            except OSError as e:
+                raise RuntimeError("Fsync'ing file %r failed: %s" %
+                                   (f.name, e)) from e
 
     def _sync_directory(self, path):
         """Sync directory to disk.
@@ -140,7 +138,7 @@ class Storage(
             try:
                 fd = os.open(path, 0)
                 try:
-                    self._fsync(fd)
+                    pathutils.fsync(fd)
                 finally:
                     os.close(fd)
             except OSError as e:

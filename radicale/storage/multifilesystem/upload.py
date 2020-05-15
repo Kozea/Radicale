@@ -71,36 +71,34 @@ class CollectionUploadMixin:
                 lambda: radicale_item.get_etag(uid).strip('"') + suffix,
                 lambda: radicale_item.find_available_uid(hrefs.__contains__,
                                                          suffix)))
-            href = None
-
-            def replace_fn(source, target):
-                nonlocal href
-                while href_candidate_funtions:
-                    href_fn = href_candidate_funtions.pop(0)
-                    href = href_fn()
-                    if href in hrefs:
+            href = f = None
+            while href_candidate_funtions:
+                href = href_candidate_funtions.pop(0)()
+                if href in hrefs:
+                    continue
+                if not pathutils.is_safe_filesystem_path_component(href):
+                    if not href_candidate_funtions:
+                        raise pathutils.UnsafePathError(href)
+                    continue
+                try:
+                    f = open(pathutils.path_to_filesystem(
+                        self._filesystem_path, href),
+                        "w", newline="", encoding=self._encoding)
+                    break
+                except OSError as e:
+                    if href_candidate_funtions and (
+                            os.name == "posix" and e.errno == 22 or
+                            os.name == "nt" and e.errno == 123):
                         continue
-                    if not pathutils.is_safe_filesystem_path_component(href):
-                        if not href_candidate_funtions:
-                            raise pathutils.UnsafePathError(href)
-                        continue
-                    try:
-                        return os.replace(source, pathutils.path_to_filesystem(
-                            self._filesystem_path, href))
-                    except OSError as e:
-                        if href_candidate_funtions and (
-                                os.name == "posix" and e.errno == 22 or
-                                os.name == "nt" and e.errno == 123):
-                            continue
-                        raise
-
-            with self._atomic_write(os.path.join(self._filesystem_path, "ign"),
-                                    newline="", sync_directory=False,
-                                    replace_fn=replace_fn) as f:
+                    raise
+            with f:
                 f.write(item.serialize())
+                f.flush()
+                self._storage._fsync(f)
             hrefs.add(href)
-            with self._atomic_write(os.path.join(cache_folder, href), "wb",
-                                    sync_directory=False) as f:
+            with open(os.path.join(cache_folder, href), "wb") as f:
                 pickle.dump(cache_content, f)
+                f.flush()
+                self._storage._fsync(f)
         self._storage._sync_directory(cache_folder)
         self._storage._sync_directory(self._filesystem_path)
