@@ -404,7 +404,7 @@ function edit_collection(user, password, collection, callback) {
  * @return {string}
 */
 function random_uuid() {
-    return randHex(8) + "-" + randHex(4) + "-" + randHex(4) + "-" + randHex(4) + "-" + randHex(12);
+    return random_hex(8) + "-" + random_hex(4) + "-" + random_hex(4) + "-" + random_hex(4) + "-" + random_hex(12);
 }
 
 /**
@@ -969,12 +969,10 @@ function DeleteCollectionScene(user, password, collection) {
  * @param {number} length
  * @return {string}
  */
-function randHex(length) {
-    let s = Math.floor(Math.random() * Math.pow(16, length)).toString(16);
-    while (s.length < length) {
-        s = "0" + s;
-    }
-    return s;
+function random_hex(length) {
+    let bytes = new Uint8Array(Math.ceil(length / 2));
+    window.crypto.getRandomValues(bytes);
+    return bytes.reduce((s, b) => s + b.toString(16).padStart(2, "0"), "").substring(0, length);
 }
 
 /**
@@ -1007,7 +1005,7 @@ function CreateEditCollectionScene(user, password, collection) {
     let displayname = edit ? collection.displayname : "";
     let description = edit ? collection.description : "";
     let type = edit ? collection.type : CollectionType.CALENDAR_JOURNAL_TASKS;
-    let color = edit && collection.color ? collection.color : "#" + randHex(6);
+    let color = edit && collection.color ? collection.color : "#" + random_hex(6);
 
     function remove_invalid_types() {
         if (!edit) {

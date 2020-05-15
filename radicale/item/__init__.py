@@ -23,11 +23,12 @@ Module for address books and calendar entries (see ``Item``).
 
 """
 
+import binascii
 import math
+import os
 import sys
 from datetime import timedelta
 from hashlib import sha256
-from random import getrandbits
 
 import vobject
 
@@ -179,7 +180,7 @@ def find_available_uid(exists_fn, suffix=""):
     """Generate a pseudo-random UID"""
     # Prevent infinite loop
     for _ in range(1000):
-        r = "%016x" % getrandbits(128)
+        r = binascii.hexlify(os.urandom(16)).decode("ascii")
         name = "%s-%s-%s-%s-%s%s" % (
             r[:8], r[8:12], r[12:16], r[16:20], r[20:], suffix)
         if not exists_fn(name):
