@@ -42,7 +42,7 @@ from setuptools import find_packages, setup
 
 # When the version is updated, a new section in the NEWS.md file must be
 # added too.
-VERSION = "2.90.0"
+VERSION = "master"
 WEB_FILES = ["web/internal_data/css/icon.png",
              "web/internal_data/css/main.css",
              "web/internal_data/fn.js",
