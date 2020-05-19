@@ -1558,6 +1558,11 @@ repository](https://github.com/Kozea/Radicale/tarball/master).
 
 You can download the Radicale package for each release:
 
+  - [Radicale-1.1.7.tar.gz](https://files.pythonhosted.org/packages/source/R/Radicale/Radicale-1.1.7.tar.gz)
+  - [Radicale-1.1.6.tar.gz](https://files.pythonhosted.org/packages/source/R/Radicale/Radicale-1.1.6.tar.gz)
+  - [Radicale-1.1.5.tar.gz](https://files.pythonhosted.org/packages/source/R/Radicale/Radicale-1.1.5.tar.gz)
+  - [Radicale-1.1.4.tar.gz](https://files.pythonhosted.org/packages/source/R/Radicale/Radicale-1.1.4.tar.gz)
+  - [Radicale-1.1.3.tar.gz](https://files.pythonhosted.org/packages/source/R/Radicale/Radicale-1.1.3.tar.gz)
   - [Radicale-1.1.2.tar.gz](https://files.pythonhosted.org/packages/source/R/Radicale/Radicale-1.1.2.tar.gz)
     (47 KiB)
   - [Radicale-1.1.1.tar.gz](http://pypi.python.org/packages/source/R/Radicale/Radicale-1.1.1.tar.gz)
@@ -1630,6 +1635,48 @@ distributions, read the ["Contribute" page](#contribute).
 
 # News
 
+
+## May 19, 2020 - Radicale 1.1.7
+
+Radicale 1.1.7 is out\!
+
+### 1.1.7 - Third Law of Nature
+
+  - Fix error in `--export-storage`
+  - Include documentation in source archive
+
+## Jul 24, 2017 - Radicale 1.1.6
+
+Radicale 1.1.6 is out\!
+
+### 1.1.6 - Third Law of Nature
+
+  - Improve logging for `--export-storage`
+
+## Jul 24, 2017 - Radicale 1.1.5
+
+Radicale 1.1.5 is out\!
+
+### 1.1.5 - Third Law of Nature
+
+  - Improve logging for `--export-storage`
+
+## Jun 25, 2017 - Radicale 1.1.4
+
+Radicale 1.1.4 is out\!
+
+### 1.1.4 - Third Law of Nature
+
+  - Use shutil.move for `--export-storage`
+
+## May 27, 2017 - Radicale 1.1.3
+
+Radicale 1.1.3 is out\!
+
+### 1.1.3 - Third Law of Nature
+
+  - Add a `--export-storage=FOLDER` command-line argument (by Unrud, see
+    [#606](https://github.com/Kozea/Radicale/pull/606))
 
 ## April 19, 2017 - Radicale 1.1.2
 

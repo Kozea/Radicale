@@ -3,20 +3,30 @@
 ======
 
 
+1.1.7 - Sixth Law of Nature
+===========================
+
+* Fix error in ``--export-storage``
+* Include documentation in source archive
+
+
 1.1.6 - Sixth Law of Nature
 ===========================
 
 * Improve logging for ``--export-storage``
+
 
 1.1.5 - Sixth Law of Nature
 ===========================
 
 * Improve logging for ``--export-storage``
 
+
 1.1.4 - Fifth Law of Nature
 ===========================
 
 * Use ``shutil.move`` for ``--export-storage``
+
 
 1.1.3 - Fourth Law of Nature
 ============================
