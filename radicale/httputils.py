@@ -38,9 +38,6 @@ NOT_FOUND = (
 CONFLICT = (
     client.CONFLICT, (("Content-Type", "text/plain"),),
     "Conflict in the request.")
-WEBDAV_PRECONDITION_FAILED = (
-    client.CONFLICT, (("Content-Type", "text/plain"),),
-    "WebDAV precondition failed.")
 METHOD_NOT_ALLOWED = (
     client.METHOD_NOT_ALLOWED, (("Content-Type", "text/plain"),),
     "The method is not allowed on the requested resource.")
