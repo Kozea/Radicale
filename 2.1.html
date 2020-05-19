@@ -1379,8 +1379,8 @@ user2:password2
 <p>To migrate data to Radicale 2.x.x the command line argument <code>--export-storage</code> was added to Radicale 1.1.x. Start Radicale 1.x.x as you would normally do, but add the argument <code>--export-storage path/to/empty/folder</code>. Radicale will export the storage into the specified folder. This folder can be directly used with the default storage backend of Radicale 2.x.x.</p>
 <p>If you import big calendars or address books into Radicale 2.x.x the first request might take a long time, because it has to initialize its internal caches. Clients can time out, subsequent requests will be much faster.</p>
 <p>You can check the imported storage for errors by starting Radicale &gt;= 2.1.5 with the <code>--verify-storage</code> argument.</p>
-<p>You can install version 1.1.6 with:</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1"></a>$ <span class="ex">python3</span> -m pip install --upgrade radicale==1.1.6</span></code></pre></div>
+<p>You can install version 1.1.x with:</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1"></a>$ <span class="ex">python3</span> -m pip install --upgrade radicale==1.1.*</span></code></pre></div>
 </section>
 <section class="level4" id="documentation/migration-from-1xx-to-2xx/authentication">
 <h4>Authentication <a class="headerlink" href="#documentation/migration-from-1xx-to-2xx/authentication">&para;</a></h4>
