@@ -74,11 +74,11 @@ def filepath(value):
 def list_of_ip_address(value):
     def ip_address(value):
         try:
-            address, port = value.strip().rsplit(":", 1)
+            address, port = value.rsplit(":", 1)
             return address.strip("[] "), int(port)
         except ValueError:
             raise ValueError("malformed IP address: %r" % value)
-    return [ip_address(s.strip()) for s in value.split(",")]
+    return [ip_address(s) for s in value.split(",")]
 
 
 def str_or_callable(value):
