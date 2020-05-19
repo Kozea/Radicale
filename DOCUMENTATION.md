@@ -1552,10 +1552,10 @@ caches. Clients can time out, subsequent requests will be much faster.
 You can check the imported storage for errors by starting Radicale >= 2.1.5
 with the ``--verify-storage`` argument.
 
-You can install version 1.1.6 with:
+You can install version 1.1.x with:
 
 ```bash
-$ python3 -m pip install --upgrade radicale==1.1.6
+$ python3 -m pip install --upgrade radicale==1.1.*
 ```
 
 ### Authentication
