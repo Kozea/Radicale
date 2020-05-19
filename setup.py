@@ -41,7 +41,7 @@ from setuptools import setup
 
 # When the version is updated, a new section in the NEWS.md file must be
 # added too.
-VERSION = "2.1.11"
+VERSION = "2.1.12"
 WEB_FILES = ["web/css/icon.png", "web/css/main.css", "web/fn.js",
              "web/index.html"]
 

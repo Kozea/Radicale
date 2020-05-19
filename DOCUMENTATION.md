@@ -33,9 +33,9 @@ Want more? Why don't you check our wonderful
 
 ### What's New?
 
-Latest version of Radicale is 2.1.11,
-released on November 5, 2018
-([changelog](https://github.com/Kozea/Radicale/blob/master/NEWS.md)).
+Latest version of Radicale is 2.1.12,
+released on May 19, 2020
+([changelog](https://github.com/Kozea/Radicale/blob/2.1.12/NEWS.md)).
 
 [Read latest news…](#news)
 
@@ -1627,6 +1627,7 @@ You can also download the content of the repository as an
 
 You can download the Radicale package for each release:
 
+- [**2.1.12 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.12)
 - [**2.1.11 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.11)
 - [**2.1.10 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.10)
 - [**2.1.9 - Wild Radish**](https://api.github.com/repos/Kozea/Radicale/tarball/2.1.9)
@@ -1784,9 +1785,33 @@ And that was fun going from here to there thanks to you!
 
 # News
 
-Latest version of Radicale is 2.1.11,
-released on November 5, 2018
-([changelog](https://github.com/Kozea/Radicale/blob/master/NEWS.md)).
+Latest version of Radicale is 2.1.12,
+released on May 19, 2020
+([changelog](https://github.com/Kozea/Radicale/blob/2.1.12/NEWS.md)).
+
+## May 19, 2020 - Radicale 2.1.12
+
+Radicale 2.1.12 is out!
+
+### 2.1.12 - Wild Radish
+
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+from 1.x.x to 2.x.x.
+
+* Include documentation in source archive
+
+## November 5, 2018 - Radicale 2.1.11
+
+Radicale 2.1.11 is out!
+
+### 2.1.11 - Wild Radish
+
+This release is compatible with version 2.0.0. Follow our
+[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+from 1.x.x to 2.x.x.
+
+* Fix moving items between collections
 
 ## August 16, 2018 - Radicale 2.1.10
 

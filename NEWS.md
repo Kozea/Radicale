@@ -1,6 +1,13 @@
 News
 ====
 
+2.1.12 - Wild Radish
+--------------------
+
+This release is compatible with version 2.0.0.
+
+* Include documentation in source archive
+
 2.1.11 - Wild Radish
 --------------------
 
