@@ -33,7 +33,7 @@ Want more? Check the [tutorials](#tutorials) and the
 ### What's New?
 
 Read the
-[changelog on GitHub.](https://github.com/Kozea/Radicale/blob/master/NEWS.md)
+[changelog on GitHub.](https://github.com/Kozea/Radicale/blob/3.0.x/NEWS.md)
 
 # Tutorials
 ## Simple 5-minute setup
@@ -1331,7 +1331,7 @@ add new features, fix bugs or update the documentation.
 ### Documentation
 
 To change or complement the documentation create a pull request to
-[DOCUMENTATION.md](https://github.com/Kozea/Radicale/blob/master/DOCUMENTATION.md).
+[DOCUMENTATION.md](https://github.com/Kozea/Radicale/blob/3.0.x/DOCUMENTATION.md).
 
 # Download
 

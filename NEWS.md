@@ -1,6 +1,6 @@
 # News
 
-## master
+## 3.0.0
 
 This release is incompatible with previous releases.
 See the upgrade checklist below.
