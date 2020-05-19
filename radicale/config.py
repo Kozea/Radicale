@@ -28,6 +28,7 @@ Use ``load()`` to obtain an instance of ``Configuration`` for use with
 import contextlib
 import math
 import os
+import string
 from collections import OrderedDict
 from configparser import RawConfigParser
 
@@ -75,7 +76,7 @@ def list_of_ip_address(value):
     def ip_address(value):
         try:
             address, port = value.rsplit(":", 1)
-            return address.strip("[] "), int(port)
+            return address.strip(string.whitespace + "[]"), int(port)
         except ValueError:
             raise ValueError("malformed IP address: %r" % value)
     return [ip_address(s) for s in value.split(",")]
