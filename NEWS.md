@@ -2,6 +2,10 @@
 
 ## master
 
+## 3.0.1
+
+  * Fix XML error messages
+
 ## 3.0.0
 
 This release is incompatible with previous releases.
