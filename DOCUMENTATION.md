@@ -1,7 +1,7 @@
 # Getting started
 ### About Radicale
 
-Radicale is a small but powerful CalDAV (calendars, todo-lists) and CardDAV
+Radicale is a small but powerful CalDAV (calendars, to-do lists) and CardDAV
 (contacts) server, that:
 
   * Shares calendars and contact lists through CalDAV, CardDAV and HTTP.
@@ -39,7 +39,7 @@ Read the
 ## Simple 5-minute setup
 
 You want to try Radicale but only have 5 minutes free in your calendar? Let's
-go right now and play a little bit with Radicale!
+go right now and play a bit with Radicale!
 
 When everything works, you can get a [client](#documentation/supported-clients)
 and start creating calendars and address books. The server **only** binds to
@@ -51,7 +51,7 @@ Follow one of the chapters below depending on your operating system.
 
 ### Linux / \*BSD
 
-First of all, make sure that **python** 3.5 or later (**python** ≥ 3.6 is
+First, make sure that **python** 3.5 or later (**python** ≥ 3.6 is
 recommended) and **pip** are installed. On most distributions it should be
 enough to install the package ``python3-pip``.
 
@@ -65,7 +65,7 @@ $ python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collection
 ```
 
 Victory! Open http://localhost:5232/ in your browser!
-You can login with any username and password.
+You can log in with any username and password.
 
 ### Windows
 
@@ -83,7 +83,7 @@ C:\Users\User> python -m radicale --storage-filesystem-folder=~/radicale/collect
 ```
 
 Victory! Open http://localhost:5232/ in your browser!
-You can login with any username and password.
+You can log in with any username and password.
 
 ## Basic Configuration
 
@@ -311,7 +311,7 @@ prompt. Apply the following configuration:
 
 > **Security:** Be aware that the service runs in the local system account,
 > you might want to change this. Managing user accounts is beyond the scope of
-> this manual. Also make sure that the storage folder and log file is not
+> this manual. Also, make sure that the storage folder and log file is not
 > readable by unauthorized users.
 
 The log file might grow very big over time, you can configure file rotation
@@ -584,7 +584,7 @@ Default: `/etc/ssl/radicale.key.pem`
 Path to the CA certificate for validating client certificates. This can be used
 to secure TCP traffic between Radicale and a reverse proxy. If you want to
 authenticate users with client-side certificates, you also have to write an
-authentication plugin that extracts the user name from the certifcate.
+authentication plugin that extracts the user name from the certificate.
 
 Default:
 
@@ -677,7 +677,7 @@ Default: `Radicale - Password Required`
 The backend that is used to check the access rights of collections.
 
 The recommended backend is `owner_only`. If access to calendars
-and address books outside of the home directory of users (that's `/USERNAME/`)
+and address books outside the home directory of users (that's `/USERNAME/`)
 is granted, clients won't detect these collections and will not show them to
 the user. Choosing any other method is only useful if you access calendars and
 address books directly via URL.
@@ -914,7 +914,7 @@ authentication backend. The configuration option `file` in the `rights`
 section must point to the rights file.
 
 The recommended rights method is `owner_only`. If access to calendars
-and address books outside of the home directory of users (that's `/USERNAME/`)
+and address books outside the home directory of users (that's `/USERNAME/`)
 is granted, clients won't detect these collections and will not show them to
 the user.
 This is only useful if you access calendars and address books directly via URL.
@@ -957,7 +957,7 @@ The path of the collection is separated by `/` and has no leading or trailing
 In the `collection` regex you can use `{user}` and get groups from the `user`
 regex with `{0}`, `{1}`, etc.
 
-In consequence of the parameter subsitution you have to write `{{` and `}}`
+In consequence of the parameter substitution you have to write `{{` and `}}`
 if you want to use regular curly braces in the `user` and `collection` regexes.
 
 The following `permissions` are recognized:
@@ -1000,8 +1000,8 @@ If you introduce syntax errors in any of the files, all requests that access
 the faulty data will fail. The logging output should contain the names of the
 culprits.
 
-Future releases of Radicale 2.x.x will store caches and sync-tokens in the
-`.Radicale.cache` folder inside of collections.
+Caches and sync-tokens are stored in the `.Radicale.cache` folder inside of
+collections.
 This folder may be created or modified, while the storage is locked for shared
 access.
 In theory, it should be safe to delete the folder. Caches will be recreated
@@ -1070,7 +1070,7 @@ For address books the file must contain:
 
 Calendar and address book collections must not have any child collections.
 Clients with automatic discovery of collections will only show calendars and
-addressbooks that are direct children of the path `/USERNAME/`.
+address books that are direct children of the path `/USERNAME/`.
 
 Delete collections by deleting the corresponding folders.
 
@@ -1082,7 +1082,7 @@ the `logging` section.
 
 ## Architecture
 
-Radicale is a really small piece of software, but understanding it is not as
+Radicale is a small piece of software, but understanding it is not as
 easy as it seems. But don't worry, reading this short section is enough to
 understand what a CalDAV/CardDAV server is, and how Radicale's code is
 organized.
@@ -1172,7 +1172,7 @@ The ``radicale`` package offers the following modules.
 : Contains the code for managing configuration and loading settings from files.
 
 `ìtem`
-: Internal represenation of address book and calendar entries. Based on
+: Internal representation of address book and calendar entries. Based on
   [VObject](https://eventable.github.io/vobject/).
 
 `log`
@@ -1397,7 +1397,7 @@ accesses, possibly limited through authentication policies.
 
 It aims to be a lightweight solution, easy to use, easy to install, easy to
 configure. As a consequence, it requires few software dependencies and is
-pre-configured to work out-of-the-box.
+preconfigured to work out-of-the-box.
 
 Radicale is written in Python. It runs on most of the UNIX-like platforms
 (Linux, \*BSD, macOS) and Windows. It is free and open-source software.
@@ -1405,13 +1405,13 @@ Radicale is written in Python. It runs on most of the UNIX-like platforms
 ### What Radicale Will Never Be
 
 Radicale is a server, not a client. No interfaces will be created to work with
-the server, as it is a really (really really) much more difficult task.
+the server.
 
 CalDAV and CardDAV are not perfect protocols. We think that their main problem
 is their complexity, that is why we decided not to implement the whole standard
 but just enough to understand some of its client-side implementations.
 
-CalDAV and CardDAV are the best open standards available and they are quite
+CalDAV and CardDAV are the best open standards available, and they are quite
 widely used by both clients and servers. We decided to use it, and we will not
 use another one.
 
@@ -1432,12 +1432,12 @@ Some calendar servers have been created to follow the CalDAV and CardDAV RFCs
 as much as possible: [Davical](http://www.davical.org/),
 [Baïkal](http://sabre.io/baikal/) and
 [Darwin Calendar Server](http://trac.calendarserver.org/), for example, are
-much more respectful of CalDAV and CardDAV and can be used with a large number
-of clients. They are very good choices if you want to develop and test new
-CalDAV clients, or if you have a possibly heterogeneous list of user agents.
+much more respectful of CalDAV and CardDAV and can be used with many clients.
+They are very good choices if you want to develop and test new CalDAV clients,
+or if you have a possibly heterogeneous list of user agents.
 
 Even if it tries it best to follow the RFCs, Radicale does not and **will not**
-blindly implements the CalDAV and CardDAV standards. It is mainly designed to
+blindly implement the CalDAV and CardDAV standards. It is mainly designed to
 support the CalDAV and CardDAV implementations of different clients.
 
 #### Simple
@@ -1458,7 +1458,7 @@ often) be launched in a couple of minutes, if you follow the
 #### Lazy
 
 The CalDAV RFC defines what must be done, what can be done and what cannot be
-done. Many violations of the protocol are totally defined and behaviours are
+done. Many violations of the protocol are totally defined and behaviors are
 given in such cases.
 
 Radicale often assumes that the clients are perfect and that protocol
