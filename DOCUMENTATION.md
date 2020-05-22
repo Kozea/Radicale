@@ -608,8 +608,8 @@ The method to verify usernames and passwords.
 
 Available backends:
 
-`None`
-: Just allows all usernames and passwords. It also disables rights checking.
+`none`
+: Just allows all usernames and passwords.
 
 `htpasswd`
 : Use an
@@ -626,7 +626,7 @@ Available backends:
   authentication. This can be used to provide the user name from a reverse
   proxy.
 
-Default: `None`
+Default: `none`
 
 #### htpasswd_filename
 
@@ -683,9 +683,6 @@ the user. Choosing any other method is only useful if you access calendars and
 address books directly via URL.
 
 Available backends:
-
-`None`
-: Everyone can read and write everything.
 
 `authenticated`
 : Authenticated users can read and write everything.
