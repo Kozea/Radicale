@@ -131,7 +131,7 @@ def make_href(base_prefix, href):
 def webdav_error(human_tag):
     """Generate XML error message."""
     root = ET.Element(make_clark("D:error"))
-    root.append(ET.Element(human_tag))
+    root.append(ET.Element(make_clark(human_tag)))
     return root
 
 

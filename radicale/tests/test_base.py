@@ -1059,10 +1059,13 @@ class BaseRequestsMixIn:
     </prop>
     %s
 </sync-collection>""" % sync_token_xml)
-        if sync_token and status == 409:
+        xml = DefusedET.fromstring(answer)
+        if status in (403, 409):
+            assert xml.tag == xmlutils.make_clark("D:error")
+            assert sync_token and xml.find(
+                xmlutils.make_clark("D:valid-sync-token")) is not None
             return None, None
         assert status == 207
-        xml = DefusedET.fromstring(answer)
         assert xml.tag == xmlutils.make_clark("D:multistatus")
         sync_token = xml.find(xmlutils.make_clark("D:sync-token")).text.strip()
         assert sync_token
