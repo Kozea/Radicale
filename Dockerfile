@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-# Version of Radicale (e.g. 3.0.0)
+# Version of Radicale (e.g. 3.0.x)
 ARG VERSION=master
 
 # Install dependencies
