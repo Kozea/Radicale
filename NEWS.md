@@ -90,7 +90,7 @@ See the upgrade checklist below.
           * ``{`` must be escaped as ``{{`` and ``}`` as ``}}`` in regexes
   * File system storage
       * The storage format is compatible with Radicale 2.x.x
-      * Run ``radiale --verify-storage`` to check for errors
+      * Run ``radicale --verify-storage`` to check for errors
   * Custom plugins:
       * ``auth`` and ``web`` plugins require minor adjustments
       * ``rights`` plugins must be adapted to the new permission model
