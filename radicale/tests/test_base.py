@@ -1303,6 +1303,19 @@ class BaseRequestsMixIn:
         """Verify existence of the principal collection."""
         self.propfind("/user/", login="user:")
 
+    def test_authentication_current_user_principal_workaround(self):
+        """Test if server sends authentication request when accessing
+           current-user-principal prop (workaround for DAVx5)."""
+        status, headers, _ = self.request("PROPFIND", "/", """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""")
+        assert status in (401, 403)
+        assert headers.get("WWW-Authenticate")
+
     def test_existence_of_root_collections(self):
         """Verify that the root collection always exists."""
         # Use PROPFIND because GET returns message
