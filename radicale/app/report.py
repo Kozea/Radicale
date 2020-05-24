@@ -59,7 +59,7 @@ def xml_report(base_prefix, path, xml_request, collection, encoding,
             collection.get_meta("tag") not in ("VADDRESSBOOK", "VCALENDAR")):
         logger.warning("Invalid REPORT method %r on %r requested",
                        xmlutils.make_human_tag(root.tag), path)
-        return (client.CONFLICT,
+        return (client.FORBIDDEN,
                 xmlutils.webdav_error("D:supported-report"))
     prop_element = root.find(xmlutils.make_clark("D:prop"))
     props = (
@@ -92,7 +92,8 @@ def xml_report(base_prefix, path, xml_request, collection, encoding,
             # Invalid sync token
             logger.warning("Client provided invalid sync token %r: %s",
                            old_sync_token, e, exc_info=True)
-            return (client.CONFLICT,
+            # client.CONFLICT doesn't work with some clients (e.g. InfCloud)
+            return (client.FORBIDDEN,
                     xmlutils.webdav_error("D:valid-sync-token"))
         hreferences = (pathutils.unstrip_path(
             posixpath.join(collection.path, n)) for n in names)
