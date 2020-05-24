@@ -56,7 +56,7 @@ def xml_propfind(base_prefix, path, xml_request, allowed_items, user,
     if xmlutils.make_clark("D:current-user-principal") in props and not user:
         # Ask for authentication
         # Returning the DAV:unauthenticated pseudo-principal as specified in
-        # RFC 5397 doesn't seem to work with DAVdroid.
+        # RFC 5397 doesn't seem to work with DAVx5.
         return client.FORBIDDEN, None
 
     # Writing answer
@@ -372,6 +372,6 @@ class ApplicationPropfindMixin:
             status, xml_answer = xml_propfind(
                 base_prefix, path, xml_content, allowed_items, user,
                 self._encoding)
-            if status == client.FORBIDDEN:
+            if status == client.FORBIDDEN and xml_answer is None:
                 return httputils.NOT_ALLOWED
             return status, headers, self._write_xml_content(xml_answer)
