@@ -2,6 +2,11 @@
 
 ## master
 
+## 3.0.2
+
+  * Use 403 response for supported-report and valid-sync-token errors
+  * Internal server: Handle missing IPv6 support
+
 ## 3.0.1
 
   * Fix XML error messages
