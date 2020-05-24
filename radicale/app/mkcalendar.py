@@ -54,7 +54,8 @@ class ApplicationMkcalendarMixin:
         with self._storage.acquire_lock("w", user):
             item = next(self._storage.discover(path), None)
             if item:
-                return self._webdav_error_response("D:resource-must-be-null")
+                return self._webdav_error_response(
+                    client.CONFLICT, "D:resource-must-be-null")
             parent_path = pathutils.unstrip_path(
                 posixpath.dirname(pathutils.strip_path(path)), True)
             parent_item = next(self._storage.discover(parent_path), None)
