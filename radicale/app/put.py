@@ -201,8 +201,9 @@ class ApplicationPutMixin:
                 prepared_item, = prepared_items
                 if (item and item.uid != prepared_item.uid or
                         not item and parent_item.has_uid(prepared_item.uid)):
-                    return self._webdav_error_response("%s:no-uid-conflict" % (
-                        "C" if tag == "VCALENDAR" else "CR"))
+                    return self._webdav_error_response(
+                        client.CONFLICT, "%s:no-uid-conflict" % (
+                            "C" if tag == "VCALENDAR" else "CR"))
 
                 href = posixpath.basename(pathutils.strip_path(path))
                 try:

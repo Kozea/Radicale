@@ -349,7 +349,7 @@ class Application(
                                           xml_declaration=True)
         return f.getvalue()
 
-    def _webdav_error_response(self, human_tag, status=client.CONFLICT):
+    def _webdav_error_response(self, status, human_tag):
         """Generate XML error response."""
         headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
         content = self._write_xml_content(xmlutils.webdav_error(human_tag))
