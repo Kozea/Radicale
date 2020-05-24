@@ -238,7 +238,9 @@ def serve(configuration, shutdown_socket):
                             # Address family not available (e.g. IPv6 disabled)
                             # macOS: IPv4 address for INET6 address family with
                             #        IPV6_V6ONLY set
-                            e.errno == errno.EADDRNOTAVAIL)):
+                            e.errno == errno.EADDRNOTAVAIL or
+                            # Address family not supported
+                            e.errno == errno.EAFNOSUPPORT)):
                         continue
                     raise RuntimeError("Failed to start server %r: %s" % (
                                            format_address(address), e)) from e
