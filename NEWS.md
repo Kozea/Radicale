@@ -72,8 +72,8 @@ See the upgrade checklist below.
   * Config
       * Some settings were removed
       * The default of ``auth.htpasswd_encryption`` changed to ``md5``
-      * The settings ``server.realm`` moved to ``auth.realm``
-      * The settings ``logging.debug`` was replaced by ``logging.level``
+      * The setting ``server.realm`` moved to ``auth.realm``
+      * The setting ``logging.debug`` was replaced by ``logging.level``
       * The format of the ``rights.file`` configuration file changed:
           * Permission ``r`` replaced by ``Rr``
           * Permission ``w`` replaced by ``Ww``
