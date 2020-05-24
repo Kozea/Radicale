@@ -129,15 +129,14 @@ class BaseRequestsMixIn:
         """Update an event."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
+        event_modified = get_file_content("event1_modified.ics")
         path = "/calendar.ics/event1.ics"
         self.put(path, event)
-        event = get_file_content("event1-prime.ics")
-        self.put(path, event)
+        self.put(path, event_modified)
         _, answer = self.get("/calendar.ics/")
         assert answer.count("BEGIN:VEVENT") == 1
         _, answer = self.get(path)
-        assert "DTSTART;TZID=Europe/Paris:20140901T180000" in answer
-        assert "DTEND;TZID=Europe/Paris:20140901T210000" in answer
+        assert "DTSTAMP:20130902T150159Z" in answer
 
     def test_update_event_uid_event(self):
         """Update an event with a different UID."""
