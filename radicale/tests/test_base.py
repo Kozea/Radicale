@@ -75,6 +75,18 @@ class BaseRequestsMixIn:
         path = "/calendar.ics/event.ics"
         self.put(path, event, check=400)
 
+    def test_add_event_duplicate_uid(self):
+        """Add an event with an existing UID."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        self.put("/calendar.ics/event1.ics", event)
+        status, answer = self.put(
+            "/calendar.ics/event1-duplicate.ics", event, check=False)
+        assert status in (403, 409)
+        xml = DefusedET.fromstring(answer)
+        assert xml.tag == xmlutils.make_clark("D:error")
+        assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
+
     def test_add_todo(self):
         """Add a todo."""
         self.mkcalendar("/calendar.ics/")
@@ -113,37 +125,32 @@ class BaseRequestsMixIn:
         path = "/contacts.vcf/contact.vcf"
         self.put(path, contact, check=400)
 
-    def test_update(self):
+    def test_update_event(self):
         """Update an event."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
         path = "/calendar.ics/event1.ics"
         self.put(path, event)
-        status, headers, answer = self.request("GET", path)
-        assert "ETag" in headers
-        assert status == 200
-        assert "VEVENT" in answer
-        assert "Event" in answer
-        assert "UID:event" in answer
-        assert "DTSTART;TZID=Europe/Paris:20130901T180000" in answer
-        assert "DTEND;TZID=Europe/Paris:20130901T190000" in answer
-
-        # Then we send another PUT request
         event = get_file_content("event1-prime.ics")
         self.put(path, event)
         _, answer = self.get("/calendar.ics/")
         assert answer.count("BEGIN:VEVENT") == 1
-
-        status, headers, answer = self.request("GET", path)
-        assert status == 200
-        assert "ETag" in headers
-        assert "VEVENT" in answer
-        assert "Event" in answer
-        assert "UID:event" in answer
-        assert "DTSTART;TZID=Europe/Paris:20130901T180000" not in answer
-        assert "DTEND;TZID=Europe/Paris:20130901T190000" not in answer
+        _, answer = self.get(path)
         assert "DTSTART;TZID=Europe/Paris:20140901T180000" in answer
         assert "DTEND;TZID=Europe/Paris:20140901T210000" in answer
+
+    def test_update_event_uid_event(self):
+        """Update an event with a different UID."""
+        self.mkcalendar("/calendar.ics/")
+        event1 = get_file_content("event1.ics")
+        event2 = get_file_content("event2.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event1)
+        status, answer = self.put(path, event2, check=False)
+        assert status in (403, 409)
+        xml = DefusedET.fromstring(answer)
+        assert xml.tag == xmlutils.make_clark("D:error")
+        assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
 
     def test_put_whole_calendar(self):
         """Create and overwrite a whole calendar."""
@@ -216,7 +223,6 @@ class BaseRequestsMixIn:
         event = get_file_content("event1.ics")
         path = "/calendar.ics/event1.ics"
         self.put(path, event)
-        # Then we send a DELETE request
         _, responses = self.delete(path)
         assert responses[path] == 200
         _, answer = self.get("/calendar.ics/")
@@ -228,6 +234,16 @@ class BaseRequestsMixIn:
         _, answer = self.get("/calendar.ics/")
         assert "BEGIN:VCALENDAR" in answer
         assert "END:VCALENDAR" in answer
+
+    def test_mkcalendar_overwrite(self):
+        """Make a calendar."""
+        self.mkcalendar("/calendar.ics/")
+        status, answer = self.mkcalendar("/calendar.ics/", check=False)
+        assert status in (403, 409)
+        xml = DefusedET.fromstring(answer)
+        assert xml.tag == xmlutils.make_clark("D:error")
+        assert xml.find(xmlutils.make_clark(
+            "D:resource-must-be-null")) is not None
 
     def test_move(self):
         """Move a item."""
@@ -255,6 +271,56 @@ class BaseRequestsMixIn:
         assert status == 201
         self.get(path1, check=404)
         self.get(path2)
+
+    def test_move_between_colections_duplicate_uid(self):
+        """Move a item to a collection which already contains the UID."""
+        self.mkcalendar("/calendar1.ics/")
+        self.mkcalendar("/calendar2.ics/")
+        event = get_file_content("event1.ics")
+        path1 = "/calendar1.ics/event1.ics"
+        path2 = "/calendar2.ics/event2.ics"
+        self.put(path1, event)
+        self.put("/calendar2.ics/event1.ics", event)
+        status, _, answer = self.request(
+            "MOVE", path1, HTTP_DESTINATION=path2, HTTP_HOST="")
+        assert status in (403, 409)
+        xml = DefusedET.fromstring(answer)
+        assert xml.tag == xmlutils.make_clark("D:error")
+        assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
+
+    def test_move_between_colections_overwrite(self):
+        """Move a item to a collection which already contains the item."""
+        self.mkcalendar("/calendar1.ics/")
+        self.mkcalendar("/calendar2.ics/")
+        event = get_file_content("event1.ics")
+        path1 = "/calendar1.ics/event1.ics"
+        path2 = "/calendar2.ics/event1.ics"
+        self.put(path1, event)
+        self.put(path2, event)
+        status, _, _ = self.request(
+            "MOVE", path1, HTTP_DESTINATION=path2, HTTP_HOST="")
+        assert status == 412
+        status, _, _ = self.request("MOVE", path1, HTTP_DESTINATION=path2,
+                                    HTTP_HOST="", HTTP_OVERWRITE="T")
+        assert status == 204
+
+    def test_move_between_colections_overwrite_uid_conflict(self):
+        """Move a item to a collection which already contains the item with
+           a different UID."""
+        self.mkcalendar("/calendar1.ics/")
+        self.mkcalendar("/calendar2.ics/")
+        event1 = get_file_content("event1.ics")
+        event2 = get_file_content("event2.ics")
+        path1 = "/calendar1.ics/event1.ics"
+        path2 = "/calendar2.ics/event2.ics"
+        self.put(path1, event1)
+        self.put(path2, event2)
+        status, _, answer = self.request("MOVE", path1, HTTP_DESTINATION=path2,
+                                         HTTP_HOST="", HTTP_OVERWRITE="T")
+        assert status in (403, 409)
+        xml = DefusedET.fromstring(answer)
+        assert xml.tag == xmlutils.make_clark("D:error")
+        assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
 
     def test_head(self):
         status, _, _ = self.request("HEAD", "/")

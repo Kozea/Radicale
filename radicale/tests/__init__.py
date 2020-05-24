@@ -107,7 +107,7 @@ class BaseTest:
     def put(self, path, data, check=True, **args):
         status, _, answer = self.request("PUT", path, data, **args)
         self._check_status(status, 201, check)
-        return status
+        return status, answer
 
     def propfind(self, path, data=None, check=True, **args):
         status, _, answer = self.request("PROPFIND", path, data, **args)
@@ -141,9 +141,9 @@ class BaseTest:
         return status, responses
 
     def mkcalendar(self, path, data=None, check=True, **args):
-        status, _, _ = self.request("MKCALENDAR", path, data, **args)
+        status, _, answer = self.request("MKCALENDAR", path, data, **args)
         self._check_status(status, 201, check)
-        return status
+        return status, answer
 
     def mkcol(self, path, data=None, check=True, **args):
         status, _, _ = self.request("MKCOL", path, data, **args)
