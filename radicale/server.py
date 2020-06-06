@@ -260,7 +260,7 @@ def serve(configuration, shutdown_socket):
         max_connections = configuration.get("server", "max_connections")
         logger.info("Radicale server ready")
         while True:
-            rlist = xlist = []
+            rlist = []
             # Wait for finished clients
             for server in servers.values():
                 rlist.extend(server.client_sockets)
@@ -269,9 +269,7 @@ def serve(configuration, shutdown_socket):
                 rlist.extend(servers)
             # Use socket to get notified of program shutdown
             rlist.append(shutdown_socket)
-            rlist, _, xlist = select.select(rlist, [], xlist, select_timeout)
-            if xlist:
-                raise RuntimeError("unhandled socket error")
+            rlist, _, _ = select.select(rlist, [], [], select_timeout)
             rlist = set(rlist)
             if shutdown_socket in rlist:
                 logger.info("Stopping Radicale")
