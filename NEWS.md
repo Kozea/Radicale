@@ -1,5 +1,9 @@
 # News
 
+## 3.0.3
+
+  * Fix internal server on OpenBSD
+
 ## 3.0.2
 
   * Use 403 response for supported-report and valid-sync-token errors
