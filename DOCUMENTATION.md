@@ -782,7 +782,8 @@ Access-Control-Allow-Origin = *
 Radicale has been tested with:
 
   * [Android](https://android.com/) with
-    [DAVx⁵](https://www.davx5.com/) (formerly DAVdroid)
+    [DAVx⁵](https://www.davx5.com/) (formerly DAVdroid),
+    [OneCalendar](https://www.onecalendar.nl)
   * [GNOME Calendar](https://wiki.gnome.org/Apps/Calendar),
     [Contacts](https://wiki.gnome.org/Apps/Contacts) and
     [Evolution](https://wiki.gnome.org/Apps/Evolution)
@@ -807,6 +808,13 @@ enter the URL of the collection directly
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
 user name. DAVx⁵ will show all existing calendars and address books and you
 can create new.
+
+### OneCalendar
+
+When adding account, select CalDAV account type, then enter user name, password and the 
+Radicale server (e.g. `https://yourdomain:5232`). OneCalendar will show all
+existing calendars and (FIXME: address books), you need to select which ones
+you want to see. OneCalendar supports many other server types too.
 
 ### GNOME Calendar, Contacts and Evolution
 
