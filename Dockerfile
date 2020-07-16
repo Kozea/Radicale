@@ -13,6 +13,8 @@ RUN apk add --no-cache \
       openssl
 # Install pip3
 RUN apk add cmd:pip3
+# Install bcrypt (for authentication)
+RUN pip3 install py-bcrypt
 # Install Radicale
 RUN wget --quiet https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz --output-document=radicale.tar.gz && \
     tar xzf radicale.tar.gz && \
