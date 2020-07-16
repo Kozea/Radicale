@@ -11,6 +11,8 @@ RUN apk add --no-cache \
       libffi-dev \
       ca-certificates \
       openssl
+# Install pip3
+RUN apk add cmd:pip3
 # Install Radicale
 RUN wget --quiet https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz --output-document=radicale.tar.gz && \
     tar xzf radicale.tar.gz && \
