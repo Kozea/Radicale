@@ -1379,7 +1379,7 @@ Radicale has been packaged for:
     Smedegaard
 
 Radicale is also
-[available on Cloudron](https://cloudron.io/button.html?app=org.radicale.cloudronapp)
+[available on Cloudron](https://cloudron.io/button.html?app=org.radicale.cloudronapp2)
 and has a Dockerfile.
 
 If you are interested in creating packages for other Linux distributions, read
