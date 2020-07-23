@@ -57,8 +57,8 @@ class TestBaseAuthRequests(BaseTest):
            ``test_matrix`` "unicode"."""
         if htpasswd_encryption == "bcrypt":
             try:
-                from passlib.hash import bcrypt
                 from passlib.exc import MissingBackendError
+                from passlib.hash import bcrypt
             except ImportError:
                 pytest.skip("passlib[bcrypt] is not installed")
             try:
