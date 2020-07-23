@@ -6,6 +6,7 @@ ARG VERSION=master
 # Install dependencies
 RUN apk add --no-cache \
       python3 \
+      py3-pip \
       python3-dev \
       build-base \
       libffi-dev \
