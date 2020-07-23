@@ -15,7 +15,7 @@ RUN apk add --no-cache \
 # Install Radicale
 RUN wget --quiet https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz --output-document=radicale.tar.gz && \
     tar xzf radicale.tar.gz && \
-    pip3 install ./Radicale-${VERSION} && \
+    pip3 install ./Radicale-${VERSION}[bcrypt] && \
     rm -r radicale.tar.gz Radicale-${VERSION}
 # Remove build dependencies
 RUN apk del \
