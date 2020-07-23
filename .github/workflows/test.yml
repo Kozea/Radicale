@@ -10,8 +10,7 @@ jobs:
         python-version: [3.5, 3.6, 3.7, 3.8, pypy3]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v1
+      - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install from source
@@ -32,8 +31,7 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v1
+      - uses: actions/setup-python@v2
         with:
           python-version: 3.x
       - name: Install Coveralls
