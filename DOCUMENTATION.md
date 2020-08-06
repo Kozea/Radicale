@@ -1542,7 +1542,7 @@ documentation.
 Radicale is [available on PyPI](http://pypi.python.org/pypi/Radicale/).
 To install, just type as superuser:
 
-    pip install radicale
+    pip install radicale==1.1.*
 
 ### Git Repository
 
