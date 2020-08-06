@@ -20,7 +20,7 @@ Radicale is a small but powerful CalDAV (calendars, todo-lists) and CardDAV
 Radicale is really easy to install and works out-of-the-box.
 
 ```bash
-$ python3 -m pip install --upgrade radicale
+$ python3 -m pip install --upgrade radicale==2.1.*
 $ python3 -m radicale --config "" --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
@@ -105,7 +105,7 @@ Then open a console and type:
 ```bash
 # Run the following command as root or
 # add the --user argument to only install for the current user
-$ python3 -m pip install --upgrade radicale
+$ python3 -m pip install --upgrade radicale==2.1.*
 $ python3 -m radicale --config "" --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
@@ -123,7 +123,7 @@ click on "Install now". Wait a couple of minutes, it's done!
 Launch a command prompt and type:
 
 ```powershell
-C:\Users\User> python -m pip install --upgrade radicale
+C:\Users\User> python -m pip install --upgrade radicale==2.1.*
 C:\Users\User> python -m radicale --config "" --storage-filesystem-folder=~/radicale/collections
 ```
 
@@ -180,7 +180,7 @@ Re-type new password:
 **bcrypt** is used to secure the passwords. Radicale requires additional
 dependencies for this encryption method:
 ```bash
-$ python3 -m pip install --upgrade radicale[bcrypt]
+$ python3 -m pip install --upgrade radicale[bcrypt]==2.1.*
 ```
 
 Authentication can be enabled with the following configuration:
@@ -1610,7 +1610,7 @@ To change or complement the documentation create a pull request to
 Radicale is [available on PyPI](https://pypi.python.org/pypi/Radicale/). To
 install, just type as superuser:
 
-    $ python3 -m pip install --upgrade radicale
+    $ python3 -m pip install --upgrade radicale==2.1.*
 
 ### Git Repository
 
