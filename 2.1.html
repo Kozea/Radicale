@@ -417,7 +417,7 @@
 <section class="level4" id="getting-started//installation">
 <h4>Installation <a class="headerlink" href="#getting-started//installation">&para;</a></h4>
 <p>Radicale is really easy to install and works out-of-the-box.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1"></a>$ <span class="ex">python3</span> -m pip install --upgrade radicale</span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1"></a>$ <span class="ex">python3</span> -m pip install --upgrade radicale==2.1.*</span>
 <span id="cb1-2"><a href="#cb1-2"></a>$ <span class="ex">python3</span> -m radicale --config <span class="st">""</span> --storage-filesystem-folder=~/.var/lib/radicale/collections</span></code></pre></div>
 <p>When your server is launched, you can check that everything's OK by going to <a href="http://localhost:5232/">http://localhost:5232/</a> with your browser! You can login with any username and password.</p>
 <p>Want more? Why don't you check our wonderful <a href="#documentation">documentation</a>?</p>
@@ -479,7 +479,7 @@
 <p>Then open a console and type:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># Run the following command as root or</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a><span class="co"># add the --user argument to only install for the current user</span></span>
-<span id="cb2-3"><a href="#cb2-3"></a>$ <span class="ex">python3</span> -m pip install --upgrade radicale</span>
+<span id="cb2-3"><a href="#cb2-3"></a>$ <span class="ex">python3</span> -m pip install --upgrade radicale==2.1.*</span>
 <span id="cb2-4"><a href="#cb2-4"></a>$ <span class="ex">python3</span> -m radicale --config <span class="st">""</span> --storage-filesystem-folder=~/.var/lib/radicale/collections</span></code></pre></div>
 <p>Victory! Open <a href="http://localhost:5232/">http://localhost:5232/</a> in your browser! You can login with any username and password.</p>
 </section>
@@ -487,7 +487,7 @@
 <h4>Windows <a class="headerlink" href="#documentation/tutorial/windows">&para;</a></h4>
 <p>The first step is to install Python. Go to <a href="https://python.org">python.org</a> and download the latest version of Python 3. Then run the installer. On the first window of the installer, check the "Add Python to PATH" box and click on "Install now". Wait a couple of minutes, it's done!</p>
 <p>Launch a command prompt and type:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb3-1"><a href="#cb3-1"></a>C:\Users\User&gt; python -m pip install --upgrade radicale</span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb3-1"><a href="#cb3-1"></a>C:\Users\User&gt; python -m pip install --upgrade radicale==2.<span class="fu">1</span>.*</span>
 <span id="cb3-2"><a href="#cb3-2"></a>C:\Users\User&gt; python -m radicale --config <span class="st">""</span> --storage-filesystem-folder=~/radicale/collections</span></code></pre></div>
 <p>If you are using PowerShell replace <code>--config ""</code> with <code>--config '""'</code>.</p>
 <p>Victory! Open <a href="http://localhost:5232/">http://localhost:5232/</a> in your browser! You can login with any username and password.</p>
@@ -522,7 +522,7 @@
 <span id="cb4-7"><a href="#cb4-7"></a><span class="ex">New</span> password:</span>
 <span id="cb4-8"><a href="#cb4-8"></a><span class="ex">Re-type</span> new password:</span></code></pre></div>
 <p><strong>bcrypt</strong> is used to secure the passwords. Radicale requires additional dependencies for this encryption method:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1"></a>$ <span class="ex">python3</span> -m pip install --upgrade radicale[bcrypt]</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1"></a>$ <span class="ex">python3</span> -m pip install --upgrade radicale[bcrypt]==2.1.*</span></code></pre></div>
 <p>Authentication can be enabled with the following configuration:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">[auth]</span></span>
 <span id="cb6-2"><a href="#cb6-2"></a><span class="dt">type </span><span class="ot">=</span><span class="st"> htpasswd</span></span>
@@ -1421,7 +1421,7 @@ user2:password2
 <section class="level4" id="download//pypi">
 <h4>PyPI <a class="headerlink" href="#download//pypi">&para;</a></h4>
 <p>Radicale is <a href="https://pypi.python.org/pypi/Radicale/">available on PyPI</a>. To install, just type as superuser:</p>
-<pre><code>$ python3 -m pip install --upgrade radicale
+<pre><code>$ python3 -m pip install --upgrade radicale==2.1.*
 </code></pre>
 </section>
 <section class="level4" id="download//git-repository">
