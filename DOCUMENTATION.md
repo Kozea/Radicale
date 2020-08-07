@@ -20,7 +20,7 @@ Radicale is a small but powerful CalDAV (calendars, to-do lists) and CardDAV
 Radicale is really easy to install and works out-of-the-box.
 
 ```bash
-$ python3 -m pip install --upgrade radicale
+$ python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
 $ python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
@@ -60,7 +60,7 @@ Then open a console and type:
 ```bash
 # Run the following command as root or
 # add the --user argument to only install for the current user
-$ python3 -m pip install --upgrade radicale
+$ python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
 $ python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
@@ -78,7 +78,7 @@ click on "Install now". Wait a couple of minutes, it's done!
 Launch a command prompt and type:
 
 ```powershell
-C:\Users\User> python -m pip install --upgrade radicale
+C:\Users\User> python -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
 C:\Users\User> python -m radicale --storage-filesystem-folder=~/radicale/collections
 ```
 
