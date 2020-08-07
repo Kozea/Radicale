@@ -1345,7 +1345,7 @@ If you want the development version of Radicale, take a look at the
 [git repository on GitHub](https://github.com/Kozea/Radicale/), or install it
 directly with:
 
-    $ python3 -m pip install --upgrade git+https://github.com/Kozea/Radicale
+    $ python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
 
 You can also download the content of the repository as an
 [archive](https://github.com/Kozea/Radicale/tarball/master).
