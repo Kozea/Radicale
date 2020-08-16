@@ -490,10 +490,10 @@ user2:password2
 <span id="cb19-2"><a href="#cb19-2"></a>RewriteRule<span class="st"> ^/radicale$ /radicale/ [R,L]</span></span>
 <span id="cb19-3"><a href="#cb19-3"></a></span>
 <span id="cb19-4"><a href="#cb19-4"></a><span class="fu">&lt;Location</span><span class="at"> "/radicale/"</span><span class="fu">&gt;</span></span>
-<span id="cb19-5"><a href="#cb19-5"></a>    <span class="ex">AuthType</span><span class="ch">      </span><span class="kw">Basic</span></span>
-<span id="cb19-6"><a href="#cb19-6"></a>    AuthName<span class="st">      "Radicale - Password Required"</span></span>
-<span id="cb19-7"><a href="#cb19-7"></a>    AuthUserFile<span class="st">  "/etc/radicale/htpasswd"</span></span>
-<span id="cb19-8"><a href="#cb19-8"></a>    Require<span class="st">       valid-user</span></span>
+<span id="cb19-5"><a href="#cb19-5"></a>    <span class="ex">AuthType</span><span class="ch">     </span><span class="kw">Basic</span></span>
+<span id="cb19-6"><a href="#cb19-6"></a>    AuthName<span class="st">     "Radicale - Password Required"</span></span>
+<span id="cb19-7"><a href="#cb19-7"></a>    AuthUserFile<span class="st"> "/etc/radicale/htpasswd"</span></span>
+<span id="cb19-8"><a href="#cb19-8"></a>    Require<span class="st">      valid-user</span></span>
 <span id="cb19-9"><a href="#cb19-9"></a></span>
 <span id="cb19-10"><a href="#cb19-10"></a>    ProxyPass<span class="st">        http://localhost:5232/ retry=0</span></span>
 <span id="cb19-11"><a href="#cb19-11"></a>    ProxyPassReverse<span class="st"> http://localhost:5232/</span></span>
