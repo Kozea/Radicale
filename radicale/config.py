@@ -140,6 +140,11 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
             "help": "set CA certificate for validating clients",
             "aliases": ["--certificate-authority"],
             "type": filepath}),
+        ("subdirectory", {
+            "value": "",
+            "help": "set subdirectory",
+            "aliases": ["--subdirectory"],
+            "type": filepath}),
         ("_internal_server", {
             "value": "False",
             "help": "the internal server is used",

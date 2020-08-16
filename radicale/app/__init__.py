@@ -211,6 +211,8 @@ class Application(
             unsafe_base_prefix = environ["HTTP_X_SCRIPT_NAME"]
             logger.debug("Script name overwritten by client: %r",
                          unsafe_base_prefix)
+        elif self.configuration.get("server", "subdirectory"):
+            unsafe_base_prefix = self.configuration.get("server", "subdirectory")
         else:
             # SCRIPT_NAME is already removed from PATH_INFO, according to the
             # WSGI specification.
