@@ -348,8 +348,19 @@ RewriteRule ^/radicale$ /radicale/ [R,L]
 <Location "/radicale/">
     ProxyPass        http://localhost:5232/ retry=0
     ProxyPassReverse http://localhost:5232/
-    RequestHeader    set X-Script-Name /radicale/
+    RequestHeader    set X-Script-Name /radicale
 </Location>
+```
+
+Example **Apache .htaccess** configuration:
+
+```apache
+DirectoryIndex disabled
+RewriteEngine On
+RewriteRule ^(.*)$ http://localhost:5232/$1 [P,L]
+
+# Set to directory of .htaccess file:
+RequestHeader set X-Script-Name /radicale
 ```
 
 Be reminded that Radicale's default configuration enforces limits on the
@@ -384,16 +395,33 @@ RewriteEngine On
 RewriteRule ^/radicale$ /radicale/ [R,L]
 
 <Location "/radicale/">
-    AuthType      Basic
-    AuthName      "Radicale - Password Required"
-    AuthUserFile  "/etc/radicale/htpasswd"
-    Require       valid-user
+    AuthType     Basic
+    AuthName     "Radicale - Password Required"
+    AuthUserFile "/etc/radicale/htpasswd"
+    Require      valid-user
 
     ProxyPass        http://localhost:5232/ retry=0
     ProxyPassReverse http://localhost:5232/
-    RequestHeader    set X-Script-Name /radicale/
+    RequestHeader    set X-Script-Name /radicale
     RequestHeader    set X-Remote-User expr=%{REMOTE_USER}
 </Location>
+```
+
+Example **Apache .htaccess** configuration:
+
+```apache
+DirectoryIndex disabled
+RewriteEngine On
+RewriteRule ^(.*)$ http://localhost:5232/$1 [P,L]
+
+AuthType     Basic
+AuthName     "Radicale - Password Required"
+AuthUserFile "/etc/radicale/htpasswd"
+Require      valid-user
+
+# Set to directory of .htaccess file:
+RequestHeader set X-Script-Name /radicale
+RequestHeader set X-Remote-User expr=%{REMOTE_USER}
 ```
 
 > **Security:** Untrusted clients should not be able to access the Radicale
