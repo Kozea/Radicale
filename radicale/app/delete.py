@@ -21,6 +21,7 @@ from http import client
 from xml.etree import ElementTree as ET
 
 from radicale import app, httputils, storage, xmlutils
+from radicale.hook.rabbitmq import QueueItem, QueueItemTypes
 
 
 def xml_delete(base_prefix, path, collection, href=None):
@@ -64,8 +65,11 @@ class ApplicationDeleteMixin:
                 return httputils.PRECONDITION_FAILED
             if isinstance(item, storage.BaseCollection):
                 xml_answer = xml_delete(base_prefix, path, item)
+                for item in item.get_all():
+                    self._hook.notify(QueueItem(QueueItemTypes.DELETE, item.uid))
             else:
                 xml_answer = xml_delete(
                     base_prefix, path, item.collection, item.href)
+                self._hook.notify(QueueItem(QueueItemTypes.DELETE, item.uid))
             headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
             return client.OK, headers, self._write_xml_content(xml_answer)

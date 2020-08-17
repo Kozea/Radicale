@@ -29,6 +29,7 @@ from radicale import app, httputils
 from radicale import item as radicale_item
 from radicale import pathutils, rights, storage, xmlutils
 from radicale.log import logger
+from radicale.hook.rabbitmq import QueueItem, QueueItemTypes
 
 MIMETYPE_TAGS = {value: key for key, value in xmlutils.MIMETYPES.items()}
 
@@ -193,6 +194,8 @@ class ApplicationPutMixin:
                 try:
                     etag = self._storage.create_collection(
                         path, prepared_items, props).etag
+                    for item in prepared_items:
+                        self._hook.notify(QueueItem(QueueItemTypes.UPSERT, item.serialize()))
                 except ValueError as e:
                     logger.warning(
                         "Bad PUT request on %r: %s", path, e, exc_info=True)
@@ -208,6 +211,7 @@ class ApplicationPutMixin:
                 href = posixpath.basename(pathutils.strip_path(path))
                 try:
                     etag = parent_item.upload(href, prepared_item).etag
+                    self._hook.notify(QueueItem(QueueItemTypes.UPSERT, prepared_item.serialize()))
                 except ValueError as e:
                     logger.warning(
                         "Bad PUT request on %r: %s", path, e, exc_info=True)
