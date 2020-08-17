@@ -118,3 +118,11 @@
 
 # Additional HTTP headers
 #Access-Control-Allow-Origin = *
+
+[hook]
+
+# Hook types
+# Value: none | rabbitmq
+#type = none
+#rabbitmq_endpoint =
+#rabbitmq_topic =
