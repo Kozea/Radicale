@@ -63,18 +63,26 @@ class ApplicationDeleteMixin:
             if if_match not in ("*", item.etag):
                 # ETag precondition not verified, do not delete item
                 return httputils.PRECONDITION_FAILED
+            hook_notification_item_list = []
             if isinstance(item, storage.BaseCollection):
-                cache_items = item.get_all()
+                for i in item.get_all():
+                    hook_notification_item_list.append(
+                        HookNotificationItem(
+                            HookNotificationItemTypes.DELETE,
+                            i.uid
+                        )
+                    )
                 xml_answer = xml_delete(base_prefix, path, item)
-                for cache_item in cache_items:
-                    hook_notification_item = HookNotificationItem(
-                        HookNotificationItemTypes.DELETE, cache_item.uid)
-                    self._hook.notify(hook_notification_item)
             else:
+                hook_notification_item_list.append(
+                    HookNotificationItem(
+                        HookNotificationItemTypes.DELETE,
+                        item.uid
+                    )
+                )
                 xml_answer = xml_delete(
                     base_prefix, path, item.collection, item.href)
-                hook_notification_item = HookNotificationItem(
-                    HookNotificationItemTypes.DELETE, item.uid)
-                self._hook.notify(hook_notification_item)
+            for i in hook_notification_item_list:
+                self._hook.notify(i)
             headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
             return client.OK, headers, self._write_xml_content(xml_answer)
