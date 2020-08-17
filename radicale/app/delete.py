@@ -65,9 +65,9 @@ class ApplicationDeleteMixin:
                 return httputils.PRECONDITION_FAILED
             if isinstance(item, storage.BaseCollection):
                 xml_answer = xml_delete(base_prefix, path, item)
-                for item in item.get_all():
+                for i in item.get_all():
                     hook_notification_item = HookNotificationItem(
-                        HookNotificationItemTypes.DELETE, item.uid)
+                        HookNotificationItemTypes.DELETE, i.uid)
                     self._hook.notify(hook_notification_item)
             else:
                 xml_answer = xml_delete(
