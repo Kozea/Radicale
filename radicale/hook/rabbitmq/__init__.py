@@ -21,7 +21,7 @@ class Hook(hook.BaseHook):
         self._channel = connection.channel()
 
     def _make_declare_queue_synced(self, topic):
-        self._channel.queue_declare(queue=topic)
+        self._channel.queue_declare(queue=topic, durable=True)
 
     def notify(self, notification_item):
         if isinstance(notification_item, HookNotificationItem):
