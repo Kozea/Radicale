@@ -196,7 +196,9 @@ class ApplicationPutMixin:
                         path, prepared_items, props).etag
                     for item in prepared_items:
                         hook_notification_item = HookNotificationItem(
-                            HookNotificationItemTypes.UPSERT, item.serialize())
+                            HookNotificationItemTypes.UPSERT,
+                            item.serialize()
+                        )
                         self._hook.notify(hook_notification_item)
                 except ValueError as e:
                     logger.warning(
@@ -214,7 +216,9 @@ class ApplicationPutMixin:
                 try:
                     etag = parent_item.upload(href, prepared_item).etag
                     hook_notification_item = HookNotificationItem(
-                        HookNotificationItemTypes.UPSERT, prepared_item.serialize())
+                        HookNotificationItemTypes.UPSERT,
+                        prepared_item.serialize()
+                    )
                     self._hook.notify(hook_notification_item)
                 except ValueError as e:
                     logger.warning(

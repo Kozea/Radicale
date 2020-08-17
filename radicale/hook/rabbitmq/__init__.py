@@ -28,4 +28,5 @@ class Hook(hook.BaseHook):
             self.channel.basic_publish(
                 exchange='',
                 routing_key=self.topic,
-                body=notification_item.to_json().encode(encoding=self.encoding))
+                body=notification_item.to_json().encode(encoding=self.encoding)
+            )
