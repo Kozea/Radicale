@@ -66,14 +66,14 @@ class ApplicationDeleteMixin:
             if isinstance(item, storage.BaseCollection):
                 xml_answer = xml_delete(base_prefix, path, item)
                 for item in item.get_all():
-                    hook_notification_item = \
-                        HookNotificationItem(HookNotificationItemTypes.DELETE, item.uid)
+                    hook_notification_item = HookNotificationItem(
+                        HookNotificationItemTypes.DELETE, item.uid)
                     self._hook.notify(hook_notification_item)
             else:
                 xml_answer = xml_delete(
                     base_prefix, path, item.collection, item.href)
-                hook_notification_item = \
-                    HookNotificationItem(HookNotificationItemTypes.DELETE, item.uid)
+                hook_notification_item = HookNotificationItem(
+                    HookNotificationItemTypes.DELETE, item.uid)
                 self._hook.notify(hook_notification_item)
             headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
             return client.OK, headers, self._write_xml_content(xml_answer)
