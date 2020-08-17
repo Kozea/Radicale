@@ -1,4 +1,5 @@
 import pika
+
 from radicale import hook
 from radicale.hook import HookNotificationItem
 
