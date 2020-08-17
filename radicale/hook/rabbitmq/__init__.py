@@ -38,11 +38,11 @@ class Hook(hook.BaseHook):
                     encoding=self._encoding
                 )
             )
-        except ChannelWrongStateError as e:
-            if recall:
+        except Exception as e:
+            if isinstance(e, ChannelWrongStateError) and recall:
                 self._make_connection_synced()
                 self._notify(notification_item, False)
                 return
-            logger.error("An exception is occurred while "
+            logger.error("An exception occurred during "
                          "publishing hook notification item: %s",
                          e, exc_info=True)
