@@ -64,10 +64,11 @@ class ApplicationDeleteMixin:
                 # ETag precondition not verified, do not delete item
                 return httputils.PRECONDITION_FAILED
             if isinstance(item, storage.BaseCollection):
+                cache_items = item.get_all()
                 xml_answer = xml_delete(base_prefix, path, item)
-                for i in item.get_all():
+                for cache_item in cache_items:
                     hook_notification_item = HookNotificationItem(
-                        HookNotificationItemTypes.DELETE, i.uid)
+                        HookNotificationItemTypes.DELETE, cache_item.uid)
                     self._hook.notify(hook_notification_item)
             else:
                 xml_answer = xml_delete(
