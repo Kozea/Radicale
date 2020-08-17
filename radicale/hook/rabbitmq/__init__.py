@@ -1,7 +1,7 @@
 import pika
 
-from radicale.hook import HookNotificationItem
 from radicale import hook
+from radicale.hook import HookNotificationItem
 
 
 class Hook(hook.BaseHook):

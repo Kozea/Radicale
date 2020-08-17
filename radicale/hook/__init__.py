@@ -1,7 +1,7 @@
 import json
+from enum import Enum
 
 from radicale import utils
-from enum import Enum
 
 INTERNAL_TYPES = ("none", "rabbitmq")
 

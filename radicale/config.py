@@ -32,7 +32,7 @@ import string
 from collections import OrderedDict
 from configparser import RawConfigParser
 
-from radicale import auth, rights, storage, web, hook
+from radicale import auth, hook, rights, storage, web
 
 DEFAULT_CONFIG_PATH = os.pathsep.join([
     "?/etc/radicale/config",

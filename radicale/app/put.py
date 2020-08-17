@@ -28,8 +28,8 @@ import vobject
 from radicale import app, httputils
 from radicale import item as radicale_item
 from radicale import pathutils, rights, storage, xmlutils
-from radicale.log import logger
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
+from radicale.log import logger
 
 MIMETYPE_TAGS = {value: key for key, value in xmlutils.MIMETYPES.items()}
 
