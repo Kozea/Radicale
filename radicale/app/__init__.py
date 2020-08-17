@@ -40,8 +40,8 @@ from xml.etree import ElementTree as ET
 import defusedxml.ElementTree as DefusedET
 import pkg_resources
 
-from radicale import (auth, hook, httputils, log, pathutils, rights, storage, web,
-                      xmlutils)
+from radicale import (auth, hook, httputils, log, pathutils, rights, storage,
+                      web, xmlutils)
 from radicale.app.delete import ApplicationDeleteMixin
 from radicale.app.get import ApplicationGetMixin
 from radicale.app.head import ApplicationHeadMixin
