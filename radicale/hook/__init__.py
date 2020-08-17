@@ -1,7 +1,7 @@
 import json
 from enum import Enum
 
-from radicale import utils
+from radicale import pathutils, utils
 
 INTERNAL_TYPES = ("none", "rabbitmq")
 
@@ -33,10 +33,20 @@ class HookNotificationItemTypes(Enum):
     DELETE = "delete"
 
 
+def _cleanup(path):
+    sane_path = pathutils.strip_path(path)
+    attributes = sane_path.split("/") if sane_path else []
+
+    if len(attributes) < 2:
+        return ""
+    return attributes[0] + "/" + attributes[1]
+
+
 class HookNotificationItem:
 
-    def __init__(self, notification_item_type, content):
+    def __init__(self, notification_item_type, path, content):
         self.type = notification_item_type.value
+        self.point = _cleanup(path)
         self.content = content
 
     def to_json(self):

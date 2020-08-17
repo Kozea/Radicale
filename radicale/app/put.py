@@ -197,6 +197,7 @@ class ApplicationPutMixin:
                     for item in prepared_items:
                         hook_notification_item = HookNotificationItem(
                             HookNotificationItemTypes.UPSERT,
+                            access.path,
                             item.serialize()
                         )
                         self._hook.notify(hook_notification_item)
@@ -217,6 +218,7 @@ class ApplicationPutMixin:
                     etag = parent_item.upload(href, prepared_item).etag
                     hook_notification_item = HookNotificationItem(
                         HookNotificationItemTypes.UPSERT,
+                        access.path,
                         prepared_item.serialize()
                     )
                     self._hook.notify(hook_notification_item)

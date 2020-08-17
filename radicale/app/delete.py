@@ -69,6 +69,7 @@ class ApplicationDeleteMixin:
                     hook_notification_item_list.append(
                         HookNotificationItem(
                             HookNotificationItemTypes.DELETE,
+                            access.path,
                             i.uid
                         )
                     )
@@ -77,6 +78,7 @@ class ApplicationDeleteMixin:
                 hook_notification_item_list.append(
                     HookNotificationItem(
                         HookNotificationItemTypes.DELETE,
+                        access.path,
                         item.uid
                     )
                 )
