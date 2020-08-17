@@ -777,6 +777,33 @@ An example to relax the same-origin policy:
 Access-Control-Allow-Origin = *
 ```
 
+### hook
+#### type
+
+Hook binding for event changes and deletion notifications.
+
+Available types:
+
+`none`
+: Disabled. Nothing will be notified.
+
+`rabbitmq`
+: Push the message to the rabbitmq server.
+
+Default: `none`
+
+#### rabbitmq_endpoint
+
+End-point address for rabbitmq server.
+
+Default: 
+
+#### rabbitmq_topic
+
+RabbitMQ topic to publish message.
+
+Default:
+
 ## Supported Clients
 
 Radicale has been tested with:
