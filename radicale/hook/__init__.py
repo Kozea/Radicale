@@ -1,4 +1,7 @@
+import json
+
 from radicale import utils
+from enum import Enum
 
 INTERNAL_TYPES = ("none", "rabbitmq")
 
@@ -20,6 +23,21 @@ class BaseHook:
         """
         self.configuration = configuration
 
-    def notify(self, content):
+    def notify(self, notification_item):
         """Upload a new or replace an existing item."""
         raise NotImplementedError
+
+
+class HookNotificationItemTypes(Enum):
+    UPSERT = "upsert"
+    DELETE = "delete"
+
+
+class HookNotificationItem:
+
+    def __init__(self, notification_item_type, content):
+        self.type = notification_item_type.value
+        self.content = content
+
+    def to_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
