@@ -1,5 +1,9 @@
 # News
 
+## 3.0.4
+
+  * Fix internal server on FreeBSD
+
 ## 3.0.3
 
   * Fix internal server on OpenBSD
