@@ -113,8 +113,6 @@ class ApplicationProppatchMixin:
             headers = {"DAV": httputils.DAV_HEADERS,
                        "Content-Type": "text/xml; charset=%s" % self._encoding}
             try:
-                xml_answer = xml_proppatch(base_prefix, path, xml_content,
-                                           item)
                 hook_notification_item = HookNotificationItem(
                     HookNotificationItemTypes.CPATCH,
                     access.path,
@@ -123,6 +121,8 @@ class ApplicationProppatchMixin:
                         encoding=self._encoding
                     ).decode(encoding=self._encoding)
                 )
+                xml_answer = xml_proppatch(base_prefix, path, xml_content,
+                                           item)
                 self._hook.notify(hook_notification_item)
             except ValueError as e:
                 logger.warning(
