@@ -132,8 +132,9 @@ class TestBaseServerRequests(BaseTest):
                         socket.EAI_NONAME, server.COMPAT_EAI_ADDRFAMILY,
                         server.COMPAT_EAI_NODATA) or
                     str(exc_info.value) == "address family mismatched" or
-                    exc_info.value.errno == errno.EADDRNOTAVAIL or
-                    exc_info.value.errno == errno.EAFNOSUPPORT)
+                    exc_info.value.errno in (
+                        errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT,
+                        errno.EPROTONOSUPPORT))
 
     def test_ipv6(self):
         try:
@@ -145,7 +146,8 @@ class TestBaseServerRequests(BaseTest):
                 sock.bind(("::1", 0))
                 self.sockname = sock.getsockname()[:2]
         except OSError as e:
-            if e.errno in (errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT):
+            if e.errno in (errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT,
+                           errno.EPROTONOSUPPORT):
                 pytest.skip("IPv6 not supported")
             raise
         self.configuration.update({

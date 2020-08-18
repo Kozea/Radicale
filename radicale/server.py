@@ -240,7 +240,9 @@ def serve(configuration, shutdown_socket):
                             #        IPV6_V6ONLY set
                             e.errno == errno.EADDRNOTAVAIL or
                             # Address family not supported
-                            e.errno == errno.EAFNOSUPPORT)):
+                            e.errno == errno.EAFNOSUPPORT or
+                            # Protocol not supported
+                            e.errno == errno.EPROTONOSUPPORT)):
                         continue
                     raise RuntimeError("Failed to start server %r: %s" % (
                                            format_address(address), e)) from e
