@@ -113,17 +113,18 @@ class ApplicationProppatchMixin:
             headers = {"DAV": httputils.DAV_HEADERS,
                        "Content-Type": "text/xml; charset=%s" % self._encoding}
             try:
-                hook_notification_item = HookNotificationItem(
-                    HookNotificationItemTypes.CPATCH,
-                    access.path,
-                    DefusedET.tostring(
-                        xml_content,
-                        encoding=self._encoding
-                    ).decode(encoding=self._encoding)
-                )
                 xml_answer = xml_proppatch(base_prefix, path, xml_content,
                                            item)
-                self._hook.notify(hook_notification_item)
+                if xml_content is not None:
+                    hook_notification_item = HookNotificationItem(
+                        HookNotificationItemTypes.CPATCH,
+                        access.path,
+                        DefusedET.tostring(
+                            xml_content,
+                            encoding=self._encoding
+                        ).decode(encoding=self._encoding)
+                    )
+                    self._hook.notify(hook_notification_item)
             except ValueError as e:
                 logger.warning(
                     "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
