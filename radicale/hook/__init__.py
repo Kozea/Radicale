@@ -29,6 +29,7 @@ class BaseHook:
 
 
 class HookNotificationItemTypes(Enum):
+    CPATCH = "cpatch"
     UPSERT = "upsert"
     DELETE = "delete"
 
