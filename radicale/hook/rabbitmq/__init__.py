@@ -1,5 +1,5 @@
 import pika
-from pika.exceptions import ChannelWrongStateError
+from pika.exceptions import ChannelWrongStateError, StreamLostError
 
 from radicale import hook
 from radicale.hook import HookNotificationItem
@@ -39,7 +39,8 @@ class Hook(hook.BaseHook):
                 )
             )
         except Exception as e:
-            if isinstance(e, ChannelWrongStateError) and recall:
+            if (isinstance(e, ChannelWrongStateError) or
+                    isinstance(e, StreamLostError)) and recall:
                 self._make_connection_synced()
                 self._notify(notification_item, False)
                 return
