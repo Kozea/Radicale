@@ -118,8 +118,10 @@ class ApplicationProppatchMixin:
                 hook_notification_item = HookNotificationItem(
                     HookNotificationItemTypes.CPATCH,
                     access.path,
-                    DefusedET.tostring(xml_content, encoding=self._encoding)
-                        .decode(encoding=self._encoding)
+                    DefusedET.tostring(
+                        xml_content,
+                        encoding=self._encoding
+                    ).decode(encoding=self._encoding)
                 )
                 self._hook.notify(hook_notification_item)
             except ValueError as e:
