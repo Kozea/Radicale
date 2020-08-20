@@ -1,6 +1,4 @@
-html, body {
-    margin: 0;
-    padding: 0;
+html {
     font-family: sans-serif;
     line-height: 1.4;
     background-color: #E4E9F6;
@@ -11,6 +9,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin: 0;
 }
 
 body > * {
