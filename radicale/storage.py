@@ -792,26 +792,18 @@ class Collection(BaseCollection):
 
     @contextmanager
     def _atomic_write(self, path, mode="w", newline=None, sync_directory=True):
-        directory = os.path.dirname(path)
-        tmp = NamedTemporaryFile(
-            mode=mode, dir=directory, delete=False, prefix=".Radicale.tmp-",
-            newline=newline, encoding=None if "b" in mode else self._encoding)
-        try:
-            yield tmp
-            tmp.flush()
-            try:
+        parent_dir, name = os.path.split(path)
+        # Do not use mkstemp because it creates with permissions 0o600
+        with TemporaryDirectory(
+                prefix=".Radicale.tmp-", dir=parent_dir) as tmp_dir:
+            with open(os.path.join(tmp_dir, name), mode, newline=newline,
+                      encoding=None if "b" in mode else self._encoding) as tmp:
+                yield tmp
+                tmp.flush()
                 self._fsync(tmp.fileno())
-            except OSError as e:
-                raise RuntimeError("Fsync'ing file %r failed: %s" %
-                                   (path, e)) from e
-            tmp.close()
-            os.replace(tmp.name, path)
-        except BaseException:
-            tmp.close()
-            os.remove(tmp.name)
-            raise
+            os.replace(os.path.join(tmp_dir, name), path)
         if sync_directory:
-            self._sync_directory(directory)
+            self._sync_directory(parent_dir)
 
     @staticmethod
     def _find_available_file_name(exists_fn, suffix=""):
