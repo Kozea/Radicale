@@ -39,16 +39,6 @@ def load(configuration):
 
 
 class BaseAuth:
-    def __init__(self, configuration):
-        """Initialize BaseAuth.
-
-        ``configuration`` see ``radicale.config`` module.
-        The ``configuration`` must not change during the lifetime of
-        this object, it is kept as an internal reference.
-
-        """
-        self.configuration = configuration
-
     def get_external_login(self, environ):
         """Optionally provide the login and password externally.
 

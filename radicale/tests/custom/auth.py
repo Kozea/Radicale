@@ -28,6 +28,10 @@ from radicale import auth
 
 
 class Auth(auth.BaseAuth):
+    @classmethod
+    def from_config(cls, config):
+        return cls()
+
     def login(self, login, password):
         if login == "tmp":
             return login

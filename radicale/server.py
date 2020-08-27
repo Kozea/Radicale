@@ -210,7 +210,7 @@ def serve(configuration, shutdown_socket):
 
     use_ssl = configuration.get("server", "ssl")
     server_class = ParallelHTTPSServer if use_ssl else ParallelHTTPServer
-    application = Application(configuration)
+    application = Application.from_config(configuration)
     servers = {}
     try:
         for address in configuration.get("server", "hosts"):

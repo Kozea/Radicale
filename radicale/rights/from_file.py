@@ -42,9 +42,19 @@ from radicale.log import logger
 
 
 class Rights(rights.BaseRights):
-    def __init__(self, configuration):
-        super().__init__(configuration)
-        self._filename = configuration.get("rights", "file")
+    def __init__(self, filename: str):
+        """Initialize regex-based file rights backend.
+
+        :param filename: File for rights management.
+        """
+
+        self._filename = filename
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(
+            filename=config.get("rights", "file"),
+        )
 
     def authorization(self, user, path):
         user = user or ""

@@ -37,7 +37,7 @@ class TestBaseWebRequests(BaseTest):
                         # Disable syncing to disk for better performance
                         "_filesystem_fsync": "False"}},
             "test", privileged=True)
-        self.application = Application(self.configuration)
+        self.application = Application.from_config(self.configuration)
 
     def teardown(self):
         shutil.rmtree(self.colpath)
@@ -51,7 +51,7 @@ class TestBaseWebRequests(BaseTest):
 
     def test_none(self):
         self.configuration.update({"web": {"type": "none"}}, "test")
-        self.application = Application(self.configuration)
+        self.application = Application.from_config(self.configuration)
         _, answer = self.get("/.web")
         assert answer
         self.get("/.web/", check=404)
@@ -60,6 +60,6 @@ class TestBaseWebRequests(BaseTest):
         """Custom web plugin."""
         self.configuration.update({
             "web": {"type": "radicale.tests.custom.web"}}, "test")
-        self.application = Application(self.configuration)
+        self.application = Application.from_config(self.configuration)
         _, answer = self.get("/.web")
         assert answer == "custom"

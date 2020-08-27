@@ -73,7 +73,7 @@ class TestBaseAuthRequests(BaseTest):
             "auth": {"type": "htpasswd",
                      "htpasswd_filename": htpasswd_file_path,
                      "htpasswd_encryption": htpasswd_encryption}}, "test")
-        self.application = Application(self.configuration)
+        self.application = Application.from_config(self.configuration)
         if test_matrix == "ascii":
             test_matrix = (("tmp", "bepo", True), ("tmp", "tmp", False),
                            ("tmp", "", False), ("unk", "unk", False),
@@ -131,7 +131,7 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_remote_user(self):
         self.configuration.update({"auth": {"type": "remote_user"}}, "test")
-        self.application = Application(self.configuration)
+        self.application = Application.from_config(self.configuration)
         _, responses = self.propfind("/", """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
@@ -146,7 +146,7 @@ class TestBaseAuthRequests(BaseTest):
     def test_http_x_remote_user(self):
         self.configuration.update(
             {"auth": {"type": "http_x_remote_user"}}, "test")
-        self.application = Application(self.configuration)
+        self.application = Application.from_config(self.configuration)
         _, responses = self.propfind("/", """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
@@ -162,5 +162,5 @@ class TestBaseAuthRequests(BaseTest):
         """Custom authentication."""
         self.configuration.update(
             {"auth": {"type": "radicale.tests.custom.auth"}}, "test")
-        self.application = Application(self.configuration)
+        self.application = Application.from_config(self.configuration)
         self.propfind("/tmp/", login="tmp:")

@@ -246,16 +246,6 @@ class BaseCollection:
 
 
 class BaseStorage:
-    def __init__(self, configuration):
-        """Initialize BaseStorage.
-
-        ``configuration`` see ``radicale.config`` module.
-        The ``configuration`` must not change during the lifetime of
-        this object, it is kept as an internal reference.
-
-        """
-        self.configuration = configuration
-
     def discover(self, path, depth="0"):
         """Discover a list of collections under the given ``path``.
 

@@ -35,6 +35,7 @@ import random
 import time
 import zlib
 from http import client
+from typing import Mapping, Optional
 from xml.etree import ElementTree as ET
 
 import defusedxml.ElementTree as DefusedET
@@ -67,30 +68,74 @@ class Application(
 
     """WSGI application."""
 
-    def __init__(self, configuration):
-        """Initialize Application.
+    def __init__(
+            self, *, auth, rights, storage, web,
+            auth_delay: float = 0,
+            auth_realm: str = "Radicale - Password Required",
+            encoding: str = "utf-8",
+            headers: Optional[Mapping[str, str]] = None,
+            internal_server: bool = False,
+            mask_passwords: bool = True,
+            max_content_length: int = 0
+    ) -> None:
+        """Initialize application.
 
-        ``configuration`` see ``radicale.config`` module.
-        The ``configuration`` must not change during the lifetime of
-        this object, it is kept as an internal reference.
-
+        :param auth_delay: Incorrect authentication delay in seconds.
+            Set this to number greater than 0 to enable random delay (up to
+            ``auth_delay``) to avoid timing oracles and bruteforce attacks.
+        :param auth_realm: Message displayed when a password is needed.
+        :param encoding: Encode responses using given codec.
+        :param headers: Extra headers to include in every response.
+        :param internal_server: The internal server is used.
+            Set this to ``True`` if application is running by
+            :func:`radicale.server.serve`.
+        :param max_content_length: If ``internal_server`` is ``True`` and
+            value is greater than 0 - reject incoming request if
+            Content-Length header value is higher than ``max_content_length``.
         """
+
         super().__init__()
-        self.configuration = configuration
-        self._auth = auth.load(configuration)
-        self._storage = storage.load(configuration)
-        self._rights = rights.load(configuration)
-        self._web = web.load(configuration)
-        self._encoding = configuration.get("encoding", "request")
+
+        self._auth = auth
+        self._rights = rights
+        self._storage = storage
+        self._web = web
+
+        self._auth_delay = auth_delay
+        self._auth_realm = auth_realm
+        self._encoding = encoding
+        self._headers = headers or {}
+        self._internal_server = internal_server
+        self._mask_passwords = mask_passwords
+        self._max_content_length = max_content_length
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(
+            auth=auth.load(config),
+            rights=rights.load(config),
+            storage=storage.load(config),
+            web=web.load(config),
+
+            auth_delay=config.get("auth", "delay"),
+            auth_realm=config.get("auth", "realm"),
+            encoding=config.get("encoding", "request"),
+            headers={
+                key: config.get("headers", key)
+                for key in config.options("headers")
+            },
+            internal_server=config.get("server", "_internal_server"),
+            mask_passwords=config.get("logging", "mask_passwords"),
+            max_content_length=config.get("server", "max_content_length"),
+        )
 
     def _headers_log(self, environ):
         """Sanitize headers for logging."""
         request_environ = dict(environ)
 
         # Mask passwords
-        mask_passwords = self.configuration.get("logging", "mask_passwords")
         authorization = request_environ.get("HTTP_AUTHORIZATION", "")
-        if mask_passwords and authorization.startswith("Basic"):
+        if self._mask_passwords and authorization.startswith("Basic"):
             request_environ["HTTP_AUTHORIZATION"] = "Basic **masked**"
         if request_environ.get("HTTP_COOKIE"):
             request_environ["HTTP_COOKIE"] = "**masked**"
@@ -169,8 +214,7 @@ class Application(
                 headers["Content-Length"] = str(len(answer))
 
             # Add extra headers set in configuration
-            for key in self.configuration.options("headers"):
-                headers[key] = self.configuration.get("headers", key)
+            headers.update(self._headers)
 
             # Start response
             time_end = datetime.datetime.now()
@@ -250,7 +294,7 @@ class Application(
         elif login:
             logger.info("Failed login attempt: %r", login)
             # Random delay to avoid timing oracles and bruteforce attacks
-            delay = self.configuration.get("auth", "delay")
+            delay = self._auth_delay
             if delay > 0:
                 random_delay = delay * (0.5 + random.random())
                 logger.debug("Sleeping %.3f seconds", random_delay)
@@ -280,12 +324,11 @@ class Application(
                     logger.warning("Access to principal path %r denied by "
                                    "rights backend", principal_path)
 
-        if self.configuration.get("server", "_internal_server"):
+        if self._internal_server:
             # Verify content length
             content_length = int(environ.get("CONTENT_LENGTH") or 0)
             if content_length:
-                max_content_length = self.configuration.get(
-                    "server", "max_content_length")
+                max_content_length = self._max_content_length
                 if max_content_length and content_length > max_content_length:
                     logger.info("Request body too large: %d", content_length)
                     return response(*httputils.REQUEST_ENTITY_TOO_LARGE)
@@ -304,7 +347,7 @@ class Application(
             # Unknown or unauthorized user
             logger.debug("Asking client for authentication")
             status = client.UNAUTHORIZED
-            realm = self.configuration.get("auth", "realm")
+            realm = self._auth_realm
             headers = dict(headers)
             headers.update({
                 "WWW-Authenticate":

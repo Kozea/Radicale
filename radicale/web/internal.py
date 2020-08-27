@@ -54,10 +54,13 @@ FALLBACK_MIMETYPE = "application/octet-stream"
 
 
 class Web(web.BaseWeb):
-    def __init__(self, configuration):
-        super().__init__(configuration)
+    def __init__(self):
         self.folder = pkg_resources.resource_filename(__name__,
                                                       "internal_data")
+
+    @classmethod
+    def from_config(cls, config):
+        return cls()
 
     def get(self, environ, base_prefix, path, user):
         assert path == "/.web" or path.startswith("/.web/")

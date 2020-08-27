@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import warnings
 from importlib import import_module
 
 from radicale.log import logger
@@ -25,7 +26,7 @@ def load_plugin(internal_types, module_name, class_name, configuration):
     type_ = configuration.get(module_name, "type")
     if callable(type_):
         logger.info("%s type is %r", module_name, type_)
-        return type_(configuration)
+        return type_.from_config(configuration)
     if type_ in internal_types:
         module = "radicale.%s.%s" % (module_name, type_)
     else:
@@ -36,4 +37,13 @@ def load_plugin(internal_types, module_name, class_name, configuration):
         raise RuntimeError("Failed to load %s module %r: %s" %
                            (module_name, module, e)) from e
     logger.info("%s type is %r", module_name, module)
-    return class_(configuration)
+
+    if not hasattr(class_, "from_config"):
+        warnings.warn(
+            "Plugins without \"from_config\" method are deprecated",
+            DeprecationWarning,
+        )
+
+        return class_(configuration)
+
+    return class_.from_config(configuration)
