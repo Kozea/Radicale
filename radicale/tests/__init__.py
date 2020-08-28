@@ -104,6 +104,11 @@ class BaseTest:
         self._check_status(status, 200, check)
         return status, answer
 
+    def post(self, path, check=True, **args):
+        status, _, answer = self.request("POST", path, **args)
+        self._check_status(status, 200, check)
+        return status, answer
+
     def put(self, path, data, check=True, **args):
         status, _, answer = self.request("PUT", path, data, **args)
         self._check_status(status, 201, check)

@@ -49,6 +49,7 @@ from radicale.app.mkcalendar import ApplicationMkcalendarMixin
 from radicale.app.mkcol import ApplicationMkcolMixin
 from radicale.app.move import ApplicationMoveMixin
 from radicale.app.options import ApplicationOptionsMixin
+from radicale.app.post import ApplicationPostMixin
 from radicale.app.propfind import ApplicationPropfindMixin
 from radicale.app.proppatch import ApplicationProppatchMixin
 from radicale.app.put import ApplicationPutMixin
@@ -63,7 +64,8 @@ class Application(
         ApplicationMkcalendarMixin, ApplicationMkcolMixin,
         ApplicationMoveMixin, ApplicationOptionsMixin,
         ApplicationPropfindMixin, ApplicationProppatchMixin,
-        ApplicationPutMixin, ApplicationReportMixin):
+        ApplicationPostMixin, ApplicationPutMixin,
+        ApplicationReportMixin):
 
     """WSGI application."""
 
