@@ -27,7 +27,6 @@ import argparse
 import contextlib
 import os
 import signal
-import socket
 import sys
 
 from radicale import VERSION, config, log, server, storage
@@ -36,10 +35,22 @@ from radicale.log import logger
 
 def run():
     """Run Radicale as a standalone server."""
+
+    # Raise SystemExit when signal arrives to run cleanup code
+    # (like destructors, try-finish etc.), otherwise the process exits
+    # without running any of them
+    def signal_handler(signal_number, stack_frame):
+        sys.exit(1)
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    if os.name == "posix":
+        signal.signal(signal.SIGHUP, signal_handler)
+
     log.setup()
 
     # Get command-line arguments
-    parser = argparse.ArgumentParser(usage="radicale [OPTIONS]")
+    parser = argparse.ArgumentParser(
+        prog="radicale", usage="%(prog)s [OPTIONS]")
 
     parser.add_argument("--version", action="version", version=VERSION)
     parser.add_argument("--verify-storage", action="store_true",
@@ -137,17 +148,8 @@ def run():
             sys.exit(1)
         return
 
-    # Create a socket pair to notify the server of program shutdown
-    shutdown_socket, shutdown_socket_out = socket.socketpair()
-
-    # SIGTERM and SIGINT (aka KeyboardInterrupt) shutdown the server
-    def shutdown(signal_number, stack_frame):
-        shutdown_socket.close()
-    signal.signal(signal.SIGTERM, shutdown)
-    signal.signal(signal.SIGINT, shutdown)
-
     try:
-        server.serve(configuration, shutdown_socket_out)
+        server.serve(configuration)
     except Exception as e:
         logger.fatal("An exception occurred during server startup: %s", e,
                      exc_info=True)
