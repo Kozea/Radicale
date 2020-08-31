@@ -172,17 +172,14 @@ class TestBaseServerRequests(BaseTest):
                     config_args.append(long_name)
                     config_args.append(
                         self.configuration.get_raw(section, option))
-        env = os.environ.copy()
-        env["PYTHONPATH"] = os.pathsep.join(sys.path)
         p = subprocess.Popen(
-            [sys.executable, "-m", "radicale"] + config_args, env=env)
+            [sys.executable, "-m", "radicale"] + config_args,
+            env={**os.environ, "PYTHONPATH": os.pathsep.join(sys.path)})
         try:
             self.get("/", is_alive_fn=lambda: p.poll() is None, check=302)
         finally:
             p.terminate()
             p.wait()
-        if os.name == "posix":
-            assert p.returncode == 0
 
     def test_wsgi_server(self):
         config_path = os.path.join(self.colpath, "config")
