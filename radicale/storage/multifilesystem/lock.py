@@ -62,7 +62,11 @@ class StorageLockMixin:
                     stdout=subprocess.PIPE if debug else subprocess.DEVNULL,
                     stderr=subprocess.PIPE if debug else subprocess.DEVNULL,
                     shell=True, universal_newlines=True, cwd=folder)
-                stdout_data, stderr_data = p.communicate()
+                try:
+                    stdout_data, stderr_data = p.communicate()
+                except BaseException:  # e.g. KeyboardInterrupt or SystemExit
+                    p.kill()
+                    raise
                 if stdout_data:
                     logger.debug("Captured stdout hook:\n%s", stdout_data)
                 if stderr_data:
