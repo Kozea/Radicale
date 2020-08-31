@@ -54,14 +54,22 @@ class StorageLockMixin:
             hook = self.configuration.get("storage", "hook")
             if mode == "w" and hook:
                 folder = self.configuration.get("storage", "filesystem_folder")
-                logger.debug("Running hook")
                 debug = logger.isEnabledFor(logging.DEBUG)
-                p = subprocess.Popen(
-                    hook % {"user": shlex.quote(user or "Anonymous")},
+                popen_kwargs = dict(
                     stdin=subprocess.DEVNULL,
                     stdout=subprocess.PIPE if debug else subprocess.DEVNULL,
                     stderr=subprocess.PIPE if debug else subprocess.DEVNULL,
                     shell=True, universal_newlines=True, cwd=folder)
+                # Use new process group for child to prevent terminals
+                # from sending SIGINT etc.
+                if os.name == "posix":
+                    popen_kwargs["preexec_fn"] = os.setpgrp
+                elif os.name == "nt":
+                    popen_kwargs["creationflags"] = (
+                        subprocess.CREATE_NEW_PROCESS_GROUP)
+                command = hook % {"user": shlex.quote(user or "Anonymous")}
+                logger.debug("Running hook")
+                p = subprocess.Popen(command, **popen_kwargs)
                 try:
                     stdout_data, stderr_data = p.communicate()
                 except BaseException:  # e.g. KeyboardInterrupt or SystemExit
