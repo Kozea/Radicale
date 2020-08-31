@@ -200,8 +200,16 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
         handler.run(self.server.get_app())
 
 
-def serve(configuration, shutdown_socket):
-    """Serve radicale from configuration."""
+def serve(configuration, shutdown_socket=None):
+    """Serve radicale from configuration.
+
+    `shutdown_socket` can be used to gracefully shutdown the server.
+    The socket can be created with `socket.socketpair()`, when the other socket
+    gets closed the server stops accepting new requests by clients and the
+    function returns after all active requests are finished.
+
+    """
+
     logger.info("Starting Radicale")
     # Copy configuration before modifying
     configuration = configuration.copy()
@@ -270,7 +278,8 @@ def serve(configuration, shutdown_socket):
             if max_connections <= 0 or len(rlist) < max_connections:
                 rlist.extend(servers)
             # Use socket to get notified of program shutdown
-            rlist.append(shutdown_socket)
+            if shutdown_socket is not None:
+                rlist.append(shutdown_socket)
             rlist, _, _ = select.select(rlist, [], [], select_timeout)
             rlist = set(rlist)
             if shutdown_socket in rlist:
