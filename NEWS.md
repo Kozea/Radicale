@@ -1,5 +1,12 @@
 # News
 
+## 3.0.5
+
+  * Start storage hook in own process group
+  * Kill storage hook on error or exit
+  * Try to kill child processes of storage hook
+  * Internal Server: Exit immediately when signal is received (do not wait for clients or storage hook to finish)
+
 ## 3.0.4
 
   * Fix internal server on FreeBSD
