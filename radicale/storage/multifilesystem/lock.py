@@ -20,6 +20,7 @@ import contextlib
 import logging
 import os
 import shlex
+import signal
 import subprocess
 
 from radicale import pathutils
@@ -63,6 +64,7 @@ class StorageLockMixin:
                 # Use new process group for child to prevent terminals
                 # from sending SIGINT etc.
                 if os.name == "posix":
+                    # Process group is also used to identify child processes
                     popen_kwargs["preexec_fn"] = os.setpgrp
                 elif os.name == "nt":
                     popen_kwargs["creationflags"] = (
@@ -75,6 +77,11 @@ class StorageLockMixin:
                 except BaseException:  # e.g. KeyboardInterrupt or SystemExit
                     p.kill()
                     raise
+                finally:
+                    if os.name == "posix":
+                        # Try to kill child processes
+                        with contextlib.suppress(OSError):
+                            os.killpg(p.pid, signal.SIGKILL)
                 if stdout_data:
                     logger.debug("Captured stdout hook:\n%s", stdout_data)
                 if stderr_data:
