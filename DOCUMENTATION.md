@@ -213,7 +213,7 @@ requirements.
 ### Linux with systemd system-wide
 
 Create the **radicale** user and group for the Radicale service.
-(Run `useradd --system --home-dir / --shell /sbin/nologin radicale` as root.)
+(Run `useradd --system --user-group --home-dir / --shell /sbin/nologin radicale` as root.)
 The storage folder must be writable by **radicale**. (Run
 `mkdir -p /var/lib/radicale/collections && chown -R radicale:radicale /var/lib/radicale/collections`
 as root.)
