@@ -357,7 +357,7 @@ user2:password2
 <p>The method to run Radicale as a service depends on your host operating system. Follow one of the chapters below depending on your operating system and requirements.</p>
 <section class="level4" id="tutorials/running-as-a-service/linux-with-systemd-system-wide">
 <h4>Linux with systemd system-wide <a class="headerlink" href="#tutorials/running-as-a-service/linux-with-systemd-system-wide">&para;</a></h4>
-<p>Create the <strong>radicale</strong> user and group for the Radicale service. (Run <code>useradd --system --home-dir / --shell /sbin/nologin radicale</code> as root.) The storage folder must be writable by <strong>radicale</strong>. (Run <code>mkdir -p /var/lib/radicale/collections &amp;&amp; chown -R radicale:radicale /var/lib/radicale/collections</code> as root.)</p>
+<p>Create the <strong>radicale</strong> user and group for the Radicale service. (Run <code>useradd --system --user-group --home-dir / --shell /sbin/nologin radicale</code> as root.) The storage folder must be writable by <strong>radicale</strong>. (Run <code>mkdir -p /var/lib/radicale/collections &amp;&amp; chown -R radicale:radicale /var/lib/radicale/collections</code> as root.)</p>
 <blockquote>
 <p><strong>Security:</strong> The storage should not be readable by others. (Run <code>chmod -R o= /var/lib/radicale/collections</code> as root.)</p>
 </blockquote>
