@@ -224,7 +224,10 @@ class Application(
         logger.debug("Sanitized path: %r", path)
 
         # Get function corresponding to method
-        function = getattr(self, "do_%s" % environ["REQUEST_METHOD"].upper())
+        function = getattr(
+            self, "do_%s" % environ["REQUEST_METHOD"].upper(), None)
+        if not function:
+            return response(*httputils.METHOD_NOT_ALLOWED)
 
         # If "/.well-known" is not available, clients query "/"
         if path == "/.well-known" or path.startswith("/.well-known/"):
