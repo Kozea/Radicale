@@ -80,6 +80,10 @@ def decode_request(configuration, environ, text):
     # Then append various fallbacks
     charsets.append("utf-8")
     charsets.append("iso8859-1")
+    # Remove duplicates
+    for i, s in reversed(list(enumerate(charsets))):
+        if s in charsets[:i]:
+            del charsets[i]
 
     # Try to decode
     for charset in charsets:
@@ -87,7 +91,8 @@ def decode_request(configuration, environ, text):
             return text.decode(charset)
         except UnicodeDecodeError:
             pass
-    raise UnicodeDecodeError
+    raise UnicodeDecodeError("decode_request", text, 0, len(text),
+                             "all codecs failed [%s]" % ", ".join(charsets))
 
 
 def read_raw_request_body(configuration, environ):
