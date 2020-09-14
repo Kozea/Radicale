@@ -29,4 +29,5 @@ class Web(web.BaseWeb):
         return client.OK, {"Content-Type": "text/plain"}, "custom"
 
     def post(self, environ, base_prefix, path, user):
-        return client.OK, {"Content-Type": "text/plain"}, "custom post"
+        answer = "echo:" + environ["wsgi.input"].read().decode()
+        return client.OK, {"Content-Type": "text/plain"}, answer
