@@ -63,5 +63,8 @@ class BaseWeb:
 
         ``user`` is empty for anonymous users.
 
+        Use ``httputils.read*_request_body(self.configuration, environ)`` to
+        read the body.
+
         """
         return httputils.METHOD_NOT_ALLOWED

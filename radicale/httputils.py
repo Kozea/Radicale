@@ -24,6 +24,8 @@ Helper functions for HTTP.
 
 from http import client
 
+from radicale.log import logger
+
 NOT_ALLOWED = (
     client.FORBIDDEN, (("Content-Type", "text/plain"),),
     "Access to the requested resource forbidden.")
@@ -61,3 +63,45 @@ INTERNAL_SERVER_ERROR = (
     "A server error occurred.  Please contact the administrator.")
 
 DAV_HEADERS = "1, 2, 3, calendar-access, addressbook, extended-mkcol"
+
+
+def decode_request(configuration, environ, text):
+    """Try to magically decode ``text`` according to given ``environ``."""
+    # List of charsets to try
+    charsets = []
+
+    # First append content charset given in the request
+    content_type = environ.get("CONTENT_TYPE")
+    if content_type and "charset=" in content_type:
+        charsets.append(
+            content_type.split("charset=")[1].split(";")[0].strip())
+    # Then append default Radicale charset
+    charsets.append(configuration.get("encoding", "request"))
+    # Then append various fallbacks
+    charsets.append("utf-8")
+    charsets.append("iso8859-1")
+
+    # Try to decode
+    for charset in charsets:
+        try:
+            return text.decode(charset)
+        except UnicodeDecodeError:
+            pass
+    raise UnicodeDecodeError
+
+
+def read_raw_request_body(configuration, environ):
+    content_length = int(environ.get("CONTENT_LENGTH") or 0)
+    if not content_length:
+        return b""
+    content = environ["wsgi.input"].read(content_length)
+    if len(content) < content_length:
+        raise RuntimeError("Request body too short: %d" % len(content))
+    return content
+
+
+def read_request_body(configuration, environ):
+    content = decode_request(
+        configuration, environ, read_raw_request_body(configuration, environ))
+    logger.debug("Request content:\n%s", content)
+    return content

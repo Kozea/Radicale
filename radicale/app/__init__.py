@@ -99,30 +99,6 @@ class Application(
 
         return request_environ
 
-    def _decode(self, text, environ):
-        """Try to magically decode ``text`` according to given ``environ``."""
-        # List of charsets to try
-        charsets = []
-
-        # First append content charset given in the request
-        content_type = environ.get("CONTENT_TYPE")
-        if content_type and "charset=" in content_type:
-            charsets.append(
-                content_type.split("charset=")[1].split(";")[0].strip())
-        # Then append default Radicale charset
-        charsets.append(self._encoding)
-        # Then append various fallbacks
-        charsets.append("utf-8")
-        charsets.append("iso8859-1")
-
-        # Try to decode
-        for charset in charsets:
-            try:
-                return text.decode(charset)
-            except UnicodeDecodeError:
-                pass
-        raise UnicodeDecodeError
-
     def __call__(self, environ, start_response):
         with log.register_stream(environ["wsgi.errors"]):
             try:
@@ -244,8 +220,9 @@ class Application(
             login, password = login or "", password or ""
         elif authorization.startswith("Basic"):
             authorization = authorization[len("Basic"):].strip()
-            login, password = self._decode(base64.b64decode(
-                authorization.encode("ascii")), environ).split(":", 1)
+            login, password = httputils.decode_request(
+                self.configuration, environ, base64.b64decode(
+                    authorization.encode("ascii"))).split(":", 1)
 
         user = self._auth.login(login, password) or "" if login else ""
         if user and login == user:
@@ -317,22 +294,10 @@ class Application(
 
         return response(status, headers, answer)
 
-    def _read_raw_content(self, environ):
-        content_length = int(environ.get("CONTENT_LENGTH") or 0)
-        if not content_length:
-            return b""
-        content = environ["wsgi.input"].read(content_length)
-        if len(content) < content_length:
-            raise RuntimeError("Request body too short: %d" % len(content))
-        return content
-
-    def _read_content(self, environ):
-        content = self._decode(self._read_raw_content(environ), environ)
-        logger.debug("Request content:\n%s", content)
-        return content
-
-    def _read_xml_content(self, environ):
-        content = self._decode(self._read_raw_content(environ), environ)
+    def _read_xml_request_body(self, environ):
+        content = httputils.decode_request(
+            self.configuration, environ,
+            httputils.read_raw_request_body(self.configuration, environ))
         if not content:
             return None
         try:

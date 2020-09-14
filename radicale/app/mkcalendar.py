@@ -33,7 +33,7 @@ class ApplicationMkcalendarMixin:
         if "w" not in self._rights.authorization(user, path):
             return httputils.NOT_ALLOWED
         try:
-            xml_content = self._read_xml_content(environ)
+            xml_content = self._read_xml_request_body(environ)
         except RuntimeError as e:
             logger.warning(
                 "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)

@@ -118,7 +118,7 @@ class ApplicationPutMixin:
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         try:
-            content = self._read_content(environ)
+            content = httputils.read_request_body(self.configuration, environ)
         except RuntimeError as e:
             logger.warning("Bad PUT request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
