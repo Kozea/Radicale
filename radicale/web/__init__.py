@@ -21,7 +21,7 @@ Take a look at the class ``BaseWeb`` if you want to implement your own.
 
 """
 
-from radicale import utils
+from radicale import httputils, utils
 
 INTERNAL_TYPES = ("none", "internal")
 
@@ -52,4 +52,16 @@ class BaseWeb:
         ``user`` is empty for anonymous users.
 
         """
-        raise NotImplementedError
+        return httputils.METHOD_NOT_ALLOWED
+
+    def post(self, environ, base_prefix, path, user):
+        """POST request.
+
+        ``base_prefix`` is sanitized and never ends with "/".
+
+        ``path`` is sanitized and always starts with "/.web"
+
+        ``user`` is empty for anonymous users.
+
+        """
+        return httputils.METHOD_NOT_ALLOWED
