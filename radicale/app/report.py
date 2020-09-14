@@ -290,4 +290,4 @@ class ApplicationReportMixin:
                 logger.warning(
                     "Bad REPORT request on %r: %s", path, e, exc_info=True)
                 return httputils.BAD_REQUEST
-            return (status, headers, self._write_xml_content(xml_answer))
+            return status, headers, self._xml_response(xml_answer)

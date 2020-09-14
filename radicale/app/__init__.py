@@ -345,7 +345,7 @@ class Application(
                          xmlutils.pretty_xml(xml_content))
         return xml_content
 
-    def _write_xml_content(self, xml_content):
+    def _xml_response(self, xml_content):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Response content:\n%s",
                          xmlutils.pretty_xml(xml_content))
@@ -357,7 +357,7 @@ class Application(
     def _webdav_error_response(self, status, human_tag):
         """Generate XML error response."""
         headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
-        content = self._write_xml_content(xmlutils.webdav_error(human_tag))
+        content = self._xml_response(xmlutils.webdav_error(human_tag))
         return status, headers, content
 
 

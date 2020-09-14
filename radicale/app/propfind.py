@@ -374,4 +374,4 @@ class ApplicationPropfindMixin:
                 self._encoding)
             if status == client.FORBIDDEN and xml_answer is None:
                 return httputils.NOT_ALLOWED
-            return status, headers, self._write_xml_content(xml_answer)
+            return status, headers, self._xml_response(xml_answer)

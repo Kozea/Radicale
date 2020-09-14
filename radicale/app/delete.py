@@ -68,4 +68,4 @@ class ApplicationDeleteMixin:
                 xml_answer = xml_delete(
                     base_prefix, path, item.collection, item.href)
             headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
-            return client.OK, headers, self._write_xml_content(xml_answer)
+            return client.OK, headers, self._xml_response(xml_answer)
