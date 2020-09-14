@@ -48,6 +48,7 @@ class TestBaseWebRequests(BaseTest):
         assert headers.get("Location") == ".web/"
         _, answer = self.get("/.web/")
         assert answer
+        self.post("/.web", check=405)
 
     def test_none(self):
         self.configuration.update({"web": {"type": "none"}}, "test")
@@ -55,6 +56,7 @@ class TestBaseWebRequests(BaseTest):
         _, answer = self.get("/.web")
         assert answer
         self.get("/.web/", check=404)
+        self.post("/.web", check=405)
 
     def test_custom(self):
         """Custom web plugin."""
@@ -63,6 +65,5 @@ class TestBaseWebRequests(BaseTest):
         self.application = Application(self.configuration)
         _, answer = self.get("/.web")
         assert answer == "custom"
-
-        _, answer = self.post("/.web")
-        assert answer == "custom post"
+        _, answer = self.post("/.web", "body content")
+        assert answer == "echo:body content"
