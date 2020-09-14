@@ -1,5 +1,9 @@
 # News
 
+## 3.0.6
+
+  * Allow web plugins to handle POST requests
+
 ## 3.0.5
 
   * Start storage hook in own process group
