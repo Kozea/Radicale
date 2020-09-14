@@ -21,7 +21,7 @@ Custom web plugin.
 
 from http import client
 
-from radicale import web
+from radicale import httputils, web
 
 
 class Web(web.BaseWeb):
@@ -29,5 +29,5 @@ class Web(web.BaseWeb):
         return client.OK, {"Content-Type": "text/plain"}, "custom"
 
     def post(self, environ, base_prefix, path, user):
-        answer = "echo:" + environ["wsgi.input"].read().decode()
-        return client.OK, {"Content-Type": "text/plain"}, answer
+        content = httputils.read_request_body(self.configuration, environ)
+        return client.OK, {"Content-Type": "text/plain"}, "echo:" + content
