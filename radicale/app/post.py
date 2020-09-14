@@ -1,5 +1,9 @@
 # This file is part of Radicale Server - Calendar Server
+# Copyright © 2008 Nicolas Kandel
+# Copyright © 2008 Pascal Halter
+# Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2020 Tom Hacohen <tom@stosb.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,19 +18,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Custom web plugin.
-
-"""
-
-from http import client
-
-from radicale import web
+from radicale import httputils
 
 
-class Web(web.BaseWeb):
-    def get(self, environ, base_prefix, path, user):
-        return client.OK, {"Content-Type": "text/plain"}, "custom"
+class ApplicationPostMixin:
+    def do_POST(self, environ, base_prefix, path, user):
+        """Manage POST request."""
+        if path == "/.web" or path.startswith("/.web/"):
+            return self._web.post(environ, base_prefix, path, user)
 
-    def post(self, environ, base_prefix, path, user):
-        return client.OK, {"Content-Type": "text/plain"}, "custom post"
+        return httputils.METHOD_NOT_ALLOWED

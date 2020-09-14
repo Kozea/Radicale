@@ -63,3 +63,6 @@ class TestBaseWebRequests(BaseTest):
         self.application = Application(self.configuration)
         _, answer = self.get("/.web")
         assert answer == "custom"
+
+        _, answer = self.post("/.web")
+        assert answer == "custom post"
