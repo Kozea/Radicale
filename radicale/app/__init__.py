@@ -230,7 +230,7 @@ class Application(
         elif user:
             logger.info("Successful login: %r -> %r", login, user)
         elif login:
-            logger.info("Failed login attempt: %r", login)
+            logger.warning("Failed login attempt from %s: %r", remote_host, login)
             # Random delay to avoid timing oracles and bruteforce attacks
             delay = self.configuration.get("auth", "delay")
             if delay > 0:
