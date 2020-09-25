@@ -108,5 +108,6 @@ def read_raw_request_body(configuration, environ):
 def read_request_body(configuration, environ):
     content = decode_request(
         configuration, environ, read_raw_request_body(configuration, environ))
-    logger.debug("Request content:\n%s", content)
+    if configuration.get("logging", "log_request_content"):
+        logger.debug("Request content:\n%s", content)
     return content

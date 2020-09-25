@@ -113,6 +113,15 @@
 # Don't include passwords in logs
 #mask_passwords = True
 
+# include request headers in debug log
+log_request_headers = False
+
+# include request content in debug log
+#log_request_content = False
+
+# include response content in debug log
+#log_response_content = False
+
 
 [headers]
 

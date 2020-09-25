@@ -181,7 +181,8 @@ class Application(
             environ["REQUEST_METHOD"], environ.get("PATH_INFO", ""), depthinfo,
             remote_host, remote_useragent)
         headers = pprint.pformat(self._headers_log(environ))
-        logger.debug("Request headers:\n%s", headers)
+        if self.configuration.get("logging", "log_request_headers"):
+            logger.debug("Request headers:\n%s", headers)
 
         # Let reverse proxies overwrite SCRIPT_NAME
         if "HTTP_X_SCRIPT_NAME" in environ:
@@ -306,13 +307,15 @@ class Application(
             logger.debug("Request content (Invalid XML):\n%s", content)
             raise RuntimeError("Failed to parse XML: %s" % e) from e
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Request content:\n%s",
+            if self.configuration.get("logging", "log_request_content"):
+                logger.debug("Request content:\n%s",
                          xmlutils.pretty_xml(xml_content))
         return xml_content
 
     def _xml_response(self, xml_content):
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Response content:\n%s",
+            if self.configuration.get("logging", "log_response_content"):
+                logger.debug("Response content:\n%s",
                          xmlutils.pretty_xml(xml_content))
         f = io.BytesIO()
         ET.ElementTree(xml_content).write(f, encoding=self._encoding,
