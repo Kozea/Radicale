@@ -218,6 +218,18 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
             "value": "warning",
             "help": "threshold for the logger",
             "type": logging_level}),
+        ("log_request_headers", {
+            "value": "True",
+            "help": "log request headers in debug log",
+            "type": bool}),
+        ("log_request_content", {
+            "value": "True",
+            "help": "log request content in debug log",
+            "type": bool}),
+        ("log_response_content", {
+            "value": "True",
+            "help": "log response content in debug log",
+            "type": bool}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs",
