@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import socket
 from http import client
 from xml.etree import ElementTree as ET
@@ -33,18 +34,12 @@ def xml_proppatch(base_prefix, path, xml_request, collection):
     Read rfc4918-9.2 for info.
 
     """
-    props_to_set = xmlutils.props_from_request(xml_request, actions=("set",))
-    props_to_remove = xmlutils.props_from_request(xml_request,
-                                                  actions=("remove",))
-
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
     response = ET.Element(xmlutils.make_clark("D:response"))
     multistatus.append(response)
-
     href = ET.Element(xmlutils.make_clark("D:href"))
     href.text = xmlutils.make_href(base_prefix, path)
     response.append(href)
-
     # Create D:propstat element for props with status 200 OK
     propstat = ET.Element(xmlutils.make_clark("D:propstat"))
     status = ET.Element(xmlutils.make_clark("D:status"))
@@ -55,14 +50,12 @@ def xml_proppatch(base_prefix, path, xml_request, collection):
     response.append(propstat)
 
     new_props = collection.get_meta()
-    for short_name, value in props_to_set.items():
-        new_props[short_name] = value
-        props_ok.append(ET.Element(xmlutils.make_clark(short_name)))
-    for short_name in props_to_remove:
-        try:
-            del new_props[short_name]
-        except KeyError:
-            pass
+    for short_name, value in xmlutils.props_from_request(xml_request).items():
+        if value is None:
+            with contextlib.suppress(KeyError):
+                del new_props[short_name]
+        else:
+            new_props[short_name] = value
         props_ok.append(ET.Element(xmlutils.make_clark(short_name)))
     radicale_item.check_and_sanitize_props(new_props)
     collection.set_meta(new_props)

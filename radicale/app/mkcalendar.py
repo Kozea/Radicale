@@ -43,6 +43,7 @@ class ApplicationMkcalendarMixin:
             return httputils.REQUEST_TIMEOUT
         # Prepare before locking
         props = xmlutils.props_from_request(xml_content)
+        props = {k: v for k, v in props.items() if v is not None}
         props["tag"] = "VCALENDAR"
         # TODO: use this?
         # timezone = props.get("C:calendar-timezone")
