@@ -44,6 +44,7 @@ class ApplicationMkcolMixin:
             return httputils.REQUEST_TIMEOUT
         # Prepare before locking
         props = xmlutils.props_from_request(xml_content)
+        props = {k: v for k, v in props.items() if v is not None}
         try:
             radicale_item.check_and_sanitize_props(props)
         except ValueError as e:
