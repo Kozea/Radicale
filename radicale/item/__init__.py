@@ -134,8 +134,8 @@ def check_and_sanitize_items(vobject_items, is_collection=False, tag=None):
             try:
                 component.rruleset
             except Exception as e:
-                raise ValueError("invalid recurrence rules in %s" %
-                                 component.name) from e
+                raise ValueError("Invalid recurrence rules in %s in object %r"
+                                 % (component.name, component_uid)) from e
     elif tag == "VADDRESSBOOK":
         # https://tools.ietf.org/html/rfc6352#section-5.1
         object_uids = set()
@@ -311,10 +311,10 @@ class Item:
         """
         if text is None and vobject_item is None:
             raise ValueError(
-                "at least one of 'text' or 'vobject_item' must be set")
+                "At least one of 'text' or 'vobject_item' must be set")
         if collection_path is None:
             if collection is None:
-                raise ValueError("at least one of 'collection_path' or "
+                raise ValueError("At least one of 'collection_path' or "
                                  "'collection' must be set")
             collection_path = collection.path
         assert collection_path == pathutils.strip_path(

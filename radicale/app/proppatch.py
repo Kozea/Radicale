@@ -76,7 +76,7 @@ class ApplicationProppatchMixin:
                 "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
         except socket.timeout:
-            logger.debug("client timed out", exc_info=True)
+            logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         with self._storage.acquire_lock("w", user):
             item = next(self._storage.discover(path), None)
