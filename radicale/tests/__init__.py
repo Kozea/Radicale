@@ -76,11 +76,11 @@ class BaseTest:
                 status = propstat.find(xmlutils.make_clark("D:status"))
                 assert status.text.startswith("HTTP/1.1 ")
                 status_code = int(status.text.split(" ")[1])
-                for prop in propstat.findall(xmlutils.make_clark("D:prop")):
-                    for element in prop:
-                        human_tag = xmlutils.make_human_tag(element.tag)
-                        assert human_tag not in prop_respones
-                        prop_respones[human_tag] = (status_code, element)
+                for element in propstat.findall(
+                        "./%s/*" % xmlutils.make_clark("D:prop")):
+                    human_tag = xmlutils.make_human_tag(element.tag)
+                    assert human_tag not in prop_respones
+                    prop_respones[human_tag] = (status_code, element)
             status = response.find(xmlutils.make_clark("D:status"))
             if status is not None:
                 assert not prop_respones
