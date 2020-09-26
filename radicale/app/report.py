@@ -181,7 +181,7 @@ def xml_report(base_prefix, path, xml_request, collection, encoding,
                     radicale_filter.prop_match(item.vobject_item, f, "CR")
                     for f in filter_)
             raise ValueError("Unsupported filter test: %r" % test)
-        raise ValueError("unsupported filter %r for %r" % (filter_.tag, tag))
+        raise ValueError("Unsupported filter %r for %r" % (filter_.tag, tag))
 
     while retrieved_items:
         # ``item.vobject_item`` might be accessed during filtering.
@@ -268,7 +268,7 @@ class ApplicationReportMixin:
                 "Bad REPORT request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
         except socket.timeout:
-            logger.debug("client timed out", exc_info=True)
+            logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         with contextlib.ExitStack() as lock_stack:
             lock_stack.enter_context(self._storage.acquire_lock("r", user))
