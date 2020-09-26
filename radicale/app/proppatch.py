@@ -27,29 +27,6 @@ from radicale import storage, xmlutils
 from radicale.log import logger
 
 
-def xml_add_propstat_to(element, tag, status_number):
-    """Add a PROPSTAT response structure to an element.
-
-    The PROPSTAT answer structure is defined in rfc4918-9.1. It is added to the
-    given ``element``, for the following ``tag`` with the given
-    ``status_number``.
-
-    """
-    propstat = ET.Element(xmlutils.make_clark("D:propstat"))
-    element.append(propstat)
-
-    prop = ET.Element(xmlutils.make_clark("D:prop"))
-    propstat.append(prop)
-
-    clark_tag = xmlutils.make_clark(tag)
-    prop_tag = ET.Element(clark_tag)
-    prop.append(prop_tag)
-
-    status = ET.Element(xmlutils.make_clark("D:status"))
-    status.text = xmlutils.make_response(status_number)
-    propstat.append(status)
-
-
 def xml_proppatch(base_prefix, path, xml_request, collection):
     """Read and answer PROPPATCH requests.
 
@@ -68,16 +45,25 @@ def xml_proppatch(base_prefix, path, xml_request, collection):
     href.text = xmlutils.make_href(base_prefix, path)
     response.append(href)
 
+    # Create D:propstat element for props with status 200 OK
+    propstat = ET.Element(xmlutils.make_clark("D:propstat"))
+    status = ET.Element(xmlutils.make_clark("D:status"))
+    status.text = xmlutils.make_response(200)
+    props_ok = ET.Element(xmlutils.make_clark("D:prop"))
+    propstat.append(props_ok)
+    propstat.append(status)
+    response.append(propstat)
+
     new_props = collection.get_meta()
     for short_name, value in props_to_set.items():
         new_props[short_name] = value
-        xml_add_propstat_to(response, short_name, 200)
+        props_ok.append(ET.Element(xmlutils.make_clark(short_name)))
     for short_name in props_to_remove:
         try:
             del new_props[short_name]
         except KeyError:
             pass
-        xml_add_propstat_to(response, short_name, 200)
+        props_ok.append(ET.Element(xmlutils.make_clark(short_name)))
     radicale_item.check_and_sanitize_props(new_props)
     collection.set_meta(new_props)
 
