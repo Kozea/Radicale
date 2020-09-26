@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:remove>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/" />
+    </D:prop>
+  </D:remove>
+  <D:set>
+    <D:prop>
+      <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">test2</C:calendar-description>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>

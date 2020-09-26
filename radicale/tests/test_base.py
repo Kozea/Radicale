@@ -235,7 +235,7 @@ class BaseRequestsMixIn:
         assert "END:VCALENDAR" in answer
 
     def test_mkcalendar_overwrite(self):
-        """Make a calendar."""
+        """Try to overwrite an existing calendar."""
         self.mkcalendar("/calendar.ics/")
         status, answer = self.mkcalendar("/calendar.ics/", check=False)
         assert status in (403, 409)
@@ -243,6 +243,40 @@ class BaseRequestsMixIn:
         assert xml.tag == xmlutils.make_clark("D:error")
         assert xml.find(xmlutils.make_clark(
             "D:resource-must-be-null")) is not None
+
+    def test_mkcalendar_intermediate(self):
+        """Try make a calendar in a unmapped collection."""
+        status, _ = self.mkcalendar("/unmapped/calendar.ics/", check=False)
+        assert status == 409
+
+    def test_mkcol(self):
+        """Make a collection."""
+        self.mkcol("/user/")
+
+    def test_mkcol_overwrite(self):
+        """Try to overwrite an existing collection."""
+        self.mkcol("/user/")
+        status = self.mkcol("/user/", check=False)
+        assert status == 405
+
+    def test_mkcol_intermediate(self):
+        """Try make a collection in a unmapped collection."""
+        status = self.mkcol("/unmapped/user/", check=False)
+        assert status == 409
+
+    def test_mkcol_make_calendar(self):
+        """Make a calendar with additional props."""
+        mkcol_make_calendar = get_file_content("mkcol_make_calendar.xml")
+        self.mkcol("/calendar.ics/", mkcol_make_calendar)
+        _, answer = self.get("/calendar.ics/")
+        assert "BEGIN:VCALENDAR" in answer
+        assert "END:VCALENDAR" in answer
+        # Read additional properties
+        propfind = get_file_content("propfind_calendar_color.xml")
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        assert len(responses["/calendar.ics/"]) == 1
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 200 and prop.text == "#BADA55"
 
     def test_move(self):
         """Move a item."""
@@ -390,22 +424,22 @@ class BaseRequestsMixIn:
     def test_propfind_nonexistent(self):
         """Read a property that does not exist."""
         self.mkcalendar("/calendar.ics/")
-        propfind = get_file_content("propfind1.xml")
+        propfind = get_file_content("propfind_calendar_color.xml")
         _, responses = self.propfind("/calendar.ics/", propfind)
         assert len(responses["/calendar.ics/"]) == 1
         status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
         assert status == 404 and not prop.text
 
     def test_proppatch(self):
-        """Write a property and read it back."""
+        """Set/Remove a property and read it back."""
         self.mkcalendar("/calendar.ics/")
-        proppatch = get_file_content("proppatch1.xml")
+        proppatch = get_file_content("proppatch_set_calendar_color.xml")
         _, responses = self.proppatch("/calendar.ics/", proppatch)
         assert len(responses["/calendar.ics/"]) == 1
         status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
         assert status == 200 and not prop.text
         # Read property back
-        propfind = get_file_content("propfind1.xml")
+        propfind = get_file_content("propfind_calendar_color.xml")
         _, responses = self.propfind("/calendar.ics/", propfind)
         assert len(responses["/calendar.ics/"]) == 1
         status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
@@ -414,6 +448,109 @@ class BaseRequestsMixIn:
         _, responses = self.propfind("/calendar.ics/", propfind)
         status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
         assert status == 200 and prop.text == "#BADA55"
+        # Remove property
+        proppatch = get_file_content("proppatch_remove_calendar_color.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        assert len(responses["/calendar.ics/"]) == 1
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        # Read property back
+        propfind = get_file_content("propfind_calendar_color.xml")
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        assert len(responses["/calendar.ics/"]) == 1
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 404
+
+    def test_proppatch_multiple1(self):
+        """Set/Remove a multiple properties and read them back."""
+        self.mkcalendar("/calendar.ics/")
+        propfind = get_file_content("propfind_multiple.xml")
+        proppatch = get_file_content("proppatch_set_multiple1.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        assert len(responses["/calendar.ics/"]) == 2
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        status, prop = responses["/calendar.ics/"]["C:calendar-description"]
+        assert status == 200 and not prop.text
+        # Read properties back
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        assert len(responses["/calendar.ics/"]) == 2
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 200 and prop.text == "#BADA55"
+        status, prop = responses["/calendar.ics/"]["C:calendar-description"]
+        assert status == 200 and prop.text == "test"
+        # Remove properties
+        proppatch = get_file_content("proppatch_remove_multiple1.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        assert len(responses["/calendar.ics/"]) == 2
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        status, prop = responses["/calendar.ics/"]["C:calendar-description"]
+        assert status == 200 and not prop.text
+        # Read properties back
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        assert len(responses["/calendar.ics/"]) == 2
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 404
+        status, prop = responses["/calendar.ics/"]["C:calendar-description"]
+        assert status == 404
+
+    def test_proppatch_multiple2(self):
+        """Set/Remove a multiple properties and read them back."""
+        self.mkcalendar("/calendar.ics/")
+        propfind = get_file_content("propfind_multiple.xml")
+        proppatch = get_file_content("proppatch_set_multiple2.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        assert len(responses["/calendar.ics/"]) == 2
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        status, prop = responses["/calendar.ics/"]["C:calendar-description"]
+        assert status == 200 and not prop.text
+        # Read properties back
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        assert len(responses["/calendar.ics/"]) == 2
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 200 and prop.text == "#BADA55"
+        status, prop = responses["/calendar.ics/"]["C:calendar-description"]
+        assert status == 200 and prop.text == "test"
+        # Remove properties
+        proppatch = get_file_content("proppatch_remove_multiple2.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        assert len(responses["/calendar.ics/"]) == 2
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        status, prop = responses["/calendar.ics/"]["C:calendar-description"]
+        assert status == 200 and not prop.text
+        # Read properties back
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        assert len(responses["/calendar.ics/"]) == 2
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 404
+        status, prop = responses["/calendar.ics/"]["C:calendar-description"]
+        assert status == 404
+
+    def test_proppatch_set_and_remove(self):
+        """Set and remove multiple properties in single request."""
+        self.mkcalendar("/calendar.ics/")
+        propfind = get_file_content("propfind_multiple.xml")
+        # Prepare
+        proppatch = get_file_content("proppatch_set_multiple1.xml")
+        self.proppatch("/calendar.ics/", proppatch)
+        # Remove and set properties in single request
+        proppatch = get_file_content("proppatch_set_and_remove.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        assert len(responses["/calendar.ics/"]) == 2
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        status, prop = responses["/calendar.ics/"]["C:calendar-description"]
+        assert status == 200 and not prop.text
+        # Read properties back
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        assert len(responses["/calendar.ics/"]) == 2
+        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        assert status == 404
+        status, prop = responses["/calendar.ics/"]["C:calendar-description"]
+        assert status == 200 and prop.text == "test2"
 
     def test_put_whole_calendar_multiple_events_with_same_uid(self):
         """Add two events with the same UID."""
