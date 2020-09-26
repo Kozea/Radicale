@@ -40,18 +40,18 @@ def xml_propfind(base_prefix, path, xml_request, allowed_items, user,
     """
     # A client may choose not to submit a request body.  An empty PROPFIND
     # request body MUST be treated as if it were an 'allprop' request.
-    top_tag = (xml_request[0] if xml_request is not None else
-               ET.Element(xmlutils.make_clark("D:allprop")))
+    top_element = (xml_request[0] if xml_request is not None else
+                   ET.Element(xmlutils.make_clark("D:allprop")))
 
     props = ()
     allprop = False
     propname = False
-    if top_tag.tag == xmlutils.make_clark("D:allprop"):
+    if top_element.tag == xmlutils.make_clark("D:allprop"):
         allprop = True
-    elif top_tag.tag == xmlutils.make_clark("D:propname"):
+    elif top_element.tag == xmlutils.make_clark("D:propname"):
         propname = True
-    elif top_tag.tag == xmlutils.make_clark("D:prop"):
-        props = [prop.tag for prop in top_tag]
+    elif top_element.tag == xmlutils.make_clark("D:prop"):
+        props = [prop.tag for prop in top_element]
 
     if xmlutils.make_clark("D:current-user-principal") in props and not user:
         # Ask for authentication
@@ -152,17 +152,17 @@ def xml_propfind_response(base_prefix, path, item, props, user, encoding,
             else:
                 is404 = True
         elif tag == xmlutils.make_clark("D:principal-collection-set"):
-            tag = ET.Element(xmlutils.make_clark("D:href"))
-            tag.text = xmlutils.make_href(base_prefix, "/")
-            element.append(tag)
+            child_element = ET.Element(xmlutils.make_clark("D:href"))
+            child_element.text = xmlutils.make_href(base_prefix, "/")
+            element.append(child_element)
         elif (tag in (xmlutils.make_clark("C:calendar-user-address-set"),
                       xmlutils.make_clark("D:principal-URL"),
                       xmlutils.make_clark("CR:addressbook-home-set"),
                       xmlutils.make_clark("C:calendar-home-set")) and
               collection.is_principal and is_collection):
-            tag = ET.Element(xmlutils.make_clark("D:href"))
-            tag.text = xmlutils.make_href(base_prefix, path)
-            element.append(tag)
+            child_element = ET.Element(xmlutils.make_clark("D:href"))
+            child_element.text = xmlutils.make_href(base_prefix, path)
+            element.append(child_element)
         elif tag == xmlutils.make_clark("C:supported-calendar-component-set"):
             human_tag = xmlutils.make_human_tag(tag)
             if is_collection and is_leaf:
@@ -179,9 +179,10 @@ def xml_propfind_response(base_prefix, path, item, props, user, encoding,
                 is404 = True
         elif tag == xmlutils.make_clark("D:current-user-principal"):
             if user:
-                tag = ET.Element(xmlutils.make_clark("D:href"))
-                tag.text = xmlutils.make_href(base_prefix, "/%s/" % user)
-                element.append(tag)
+                child_element = ET.Element(xmlutils.make_clark("D:href"))
+                child_element.text = xmlutils.make_href(
+                    base_prefix, "/%s/" % user)
+                element.append(child_element)
             else:
                 element.append(ET.Element(
                     xmlutils.make_clark("D:unauthenticated")))
@@ -213,9 +214,10 @@ def xml_propfind_response(base_prefix, path, item, props, user, encoding,
             for human_tag in reports:
                 supported_report = ET.Element(
                     xmlutils.make_clark("D:supported-report"))
-                report_tag = ET.Element(xmlutils.make_clark("D:report"))
-                report_tag.append(ET.Element(xmlutils.make_clark(human_tag)))
-                supported_report.append(report_tag)
+                report_element = ET.Element(xmlutils.make_clark("D:report"))
+                report_element.append(
+                    ET.Element(xmlutils.make_clark(human_tag)))
+                supported_report.append(report_element)
                 element.append(supported_report)
         elif tag == xmlutils.make_clark("D:getcontentlength"):
             if not is_collection or is_leaf:
@@ -225,10 +227,10 @@ def xml_propfind_response(base_prefix, path, item, props, user, encoding,
         elif tag == xmlutils.make_clark("D:owner"):
             # return empty elment, if no owner available (rfc3744-5.1)
             if collection.owner:
-                tag = ET.Element(xmlutils.make_clark("D:href"))
-                tag.text = xmlutils.make_href(
+                child_element = ET.Element(xmlutils.make_clark("D:href"))
+                child_element.text = xmlutils.make_href(
                     base_prefix, "/%s/" % collection.owner)
-                element.append(tag)
+                element.append(child_element)
         elif is_collection:
             if tag == xmlutils.make_clark("D:getcontenttype"):
                 if is_leaf:
@@ -237,18 +239,20 @@ def xml_propfind_response(base_prefix, path, item, props, user, encoding,
                     is404 = True
             elif tag == xmlutils.make_clark("D:resourcetype"):
                 if item.is_principal:
-                    tag = ET.Element(xmlutils.make_clark("D:principal"))
-                    element.append(tag)
+                    child_element = ET.Element(
+                        xmlutils.make_clark("D:principal"))
+                    element.append(child_element)
                 if is_leaf:
                     if item.get_meta("tag") == "VADDRESSBOOK":
-                        tag = ET.Element(
+                        child_element = ET.Element(
                             xmlutils.make_clark("CR:addressbook"))
-                        element.append(tag)
+                        element.append(child_element)
                     elif item.get_meta("tag") == "VCALENDAR":
-                        tag = ET.Element(xmlutils.make_clark("C:calendar"))
-                        element.append(tag)
-                tag = ET.Element(xmlutils.make_clark("D:collection"))
-                element.append(tag)
+                        child_element = ET.Element(
+                            xmlutils.make_clark("C:calendar"))
+                        element.append(child_element)
+                child_element = ET.Element(xmlutils.make_clark("D:collection"))
+                element.append(child_element)
             elif tag == xmlutils.make_clark("RADICALE:displayname"):
                 # Only for internal use by the web interface
                 displayname = item.get_meta("D:displayname")

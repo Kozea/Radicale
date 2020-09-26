@@ -104,8 +104,8 @@ def xml_report(base_prefix, path, xml_request, collection, encoding,
     else:
         hreferences = (path,)
     filters = (
-        root.findall("./%s" % xmlutils.make_clark("C:filter")) +
-        root.findall("./%s" % xmlutils.make_clark("CR:filter")))
+        root.findall(xmlutils.make_clark("C:filter")) +
+        root.findall(xmlutils.make_clark("CR:filter")))
 
     def retrieve_items(collection, hreferences, multistatus):
         """Retrieves all items that are referenced in ``hreferences`` from
@@ -231,9 +231,9 @@ def xml_item_response(base_prefix, href, found_props=(), not_found_props=(),
                       found_item=True):
     response = ET.Element(xmlutils.make_clark("D:response"))
 
-    href_tag = ET.Element(xmlutils.make_clark("D:href"))
-    href_tag.text = xmlutils.make_href(base_prefix, href)
-    response.append(href_tag)
+    href_element = ET.Element(xmlutils.make_clark("D:href"))
+    href_element.text = xmlutils.make_href(base_prefix, href)
+    response.append(href_element)
 
     if found_item:
         for code, props in ((200, found_props), (404, not_found_props)):
@@ -241,10 +241,10 @@ def xml_item_response(base_prefix, href, found_props=(), not_found_props=(),
                 propstat = ET.Element(xmlutils.make_clark("D:propstat"))
                 status = ET.Element(xmlutils.make_clark("D:status"))
                 status.text = xmlutils.make_response(code)
-                prop_tag = ET.Element(xmlutils.make_clark("D:prop"))
+                prop_element = ET.Element(xmlutils.make_clark("D:prop"))
                 for prop in props:
-                    prop_tag.append(prop)
-                propstat.append(prop_tag)
+                    prop_element.append(prop)
+                propstat.append(prop_element)
                 propstat.append(status)
                 response.append(propstat)
     else:
