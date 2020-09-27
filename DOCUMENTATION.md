@@ -1392,7 +1392,7 @@ Radicale has been packaged for:
   * [Debian](http://packages.debian.org/radicale) by Jonas Smedegaard
   * [Gentoo](https://packages.gentoo.org/packages/www-apps/radicale)
     by René Neumann, Maxim Koltsov and Manuel Rüger
-  * [Fedora](https://admin.fedoraproject.org/pkgdb/package/radicale/) by Jorti
+  * [Fedora/RHEL/CentOS](https://src.fedoraproject.org/rpms/radicale) by Jorti and Peter Bieringer
   * [Mageia](http://madb.mageia.org/package/show/application/0/name/radicale)
     by Jani Välimaa
   * [OpenBSD](http://openports.se/productivity/radicale) by Sergey Bronnikov,
