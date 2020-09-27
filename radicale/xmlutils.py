@@ -146,36 +146,46 @@ def get_content_type(item, encoding):
     return content_type
 
 
-def props_from_request(xml_request, actions=("set", "remove")):
-    """Return a list of properties as a dictionary."""
+def props_from_request(xml_request):
+    """Return a list of properties as a dictionary.
+
+    Properties that should be removed are set to `None`.
+
+    """
     result = OrderedDict()
     if xml_request is None:
         return result
 
-    for action in actions:
-        action_element = xml_request.find(make_clark("D:%s" % action))
-        if action_element is not None:
-            break
-    else:
-        action_element = xml_request
-
-    prop_element = action_element.find(make_clark("D:prop"))
-    if prop_element is not None:
-        for prop in prop_element:
-            if prop.tag == make_clark("D:resourcetype"):
+    # Requests can contain multipe <D:set> and <D:remove> elements.
+    # Each of these elements must contain exactly one <D:prop> element which
+    # can contain multpile properties.
+    # The order of the elements in the document must be respected.
+    props = []
+    for element in xml_request:
+        if element.tag in (make_clark("D:set"), make_clark("D:remove")):
+            for prop in element.findall("./%s/*" % make_clark("D:prop")):
+                props.append((element.tag == make_clark("D:set"), prop))
+    for is_set, prop in props:
+        key = make_human_tag(prop.tag)
+        value = None
+        if prop.tag == make_clark("D:resourcetype"):
+            key = "tag"
+            if is_set:
                 for resource_type in prop:
                     if resource_type.tag == make_clark("C:calendar"):
-                        result["tag"] = "VCALENDAR"
+                        value = "VCALENDAR"
                         break
                     if resource_type.tag == make_clark("CR:addressbook"):
-                        result["tag"] = "VADDRESSBOOK"
+                        value = "VADDRESSBOOK"
                         break
-            elif prop.tag == make_clark("C:supported-calendar-component-set"):
-                result[make_human_tag(prop.tag)] = ",".join(
-                    supported_comp.attrib["name"]
-                    for supported_comp in prop
+        elif prop.tag == make_clark("C:supported-calendar-component-set"):
+            if is_set:
+                value = ",".join(
+                    supported_comp.attrib["name"] for supported_comp in prop
                     if supported_comp.tag == make_clark("C:comp"))
-            else:
-                result[make_human_tag(prop.tag)] = prop.text
+        elif is_set:
+            value = prop.text or ""
+        result[key] = value
+        result.move_to_end(key)
 
     return result

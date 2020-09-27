@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import socket
 from http import client
 from xml.etree import ElementTree as ET
@@ -27,57 +28,35 @@ from radicale import storage, xmlutils
 from radicale.log import logger
 
 
-def xml_add_propstat_to(element, tag, status_number):
-    """Add a PROPSTAT response structure to an element.
-
-    The PROPSTAT answer structure is defined in rfc4918-9.1. It is added to the
-    given ``element``, for the following ``tag`` with the given
-    ``status_number``.
-
-    """
-    propstat = ET.Element(xmlutils.make_clark("D:propstat"))
-    element.append(propstat)
-
-    prop = ET.Element(xmlutils.make_clark("D:prop"))
-    propstat.append(prop)
-
-    clark_tag = xmlutils.make_clark(tag)
-    prop_tag = ET.Element(clark_tag)
-    prop.append(prop_tag)
-
-    status = ET.Element(xmlutils.make_clark("D:status"))
-    status.text = xmlutils.make_response(status_number)
-    propstat.append(status)
-
-
 def xml_proppatch(base_prefix, path, xml_request, collection):
     """Read and answer PROPPATCH requests.
 
     Read rfc4918-9.2 for info.
 
     """
-    props_to_set = xmlutils.props_from_request(xml_request, actions=("set",))
-    props_to_remove = xmlutils.props_from_request(xml_request,
-                                                  actions=("remove",))
-
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
     response = ET.Element(xmlutils.make_clark("D:response"))
     multistatus.append(response)
-
     href = ET.Element(xmlutils.make_clark("D:href"))
     href.text = xmlutils.make_href(base_prefix, path)
     response.append(href)
+    # Create D:propstat element for props with status 200 OK
+    propstat = ET.Element(xmlutils.make_clark("D:propstat"))
+    status = ET.Element(xmlutils.make_clark("D:status"))
+    status.text = xmlutils.make_response(200)
+    props_ok = ET.Element(xmlutils.make_clark("D:prop"))
+    propstat.append(props_ok)
+    propstat.append(status)
+    response.append(propstat)
 
     new_props = collection.get_meta()
-    for short_name, value in props_to_set.items():
-        new_props[short_name] = value
-        xml_add_propstat_to(response, short_name, 200)
-    for short_name in props_to_remove:
-        try:
-            del new_props[short_name]
-        except KeyError:
-            pass
-        xml_add_propstat_to(response, short_name, 200)
+    for short_name, value in xmlutils.props_from_request(xml_request).items():
+        if value is None:
+            with contextlib.suppress(KeyError):
+                del new_props[short_name]
+        else:
+            new_props[short_name] = value
+        props_ok.append(ET.Element(xmlutils.make_clark(short_name)))
     radicale_item.check_and_sanitize_props(new_props)
     collection.set_meta(new_props)
 
@@ -97,7 +76,7 @@ class ApplicationProppatchMixin:
                 "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
         except socket.timeout:
-            logger.debug("client timed out", exc_info=True)
+            logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         with self._storage.acquire_lock("w", user):
             item = next(self._storage.discover(path), None)

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<D:mkcol xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <D:set>
+    <D:prop>
+      <D:resourcetype><collection /><C:calendar /></D:resourcetype>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#BADA55</I:calendar-color>
+    </D:prop>
+  </D:set>
+</D:mkcol>

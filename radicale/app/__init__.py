@@ -167,8 +167,8 @@ class Application(
         elif environ.get("REMOTE_ADDR"):
             remote_host = environ["REMOTE_ADDR"]
         if environ.get("HTTP_X_FORWARDED_FOR"):
-            remote_host = "%r (forwarded by %s)" % (
-                environ["HTTP_X_FORWARDED_FOR"], remote_host)
+            remote_host = "%s (forwarded for %r)" % (
+                remote_host, environ["HTTP_X_FORWARDED_FOR"])
         remote_useragent = ""
         if environ.get("HTTP_USER_AGENT"):
             remote_useragent = " using %r" % environ["HTTP_USER_AGENT"]
@@ -230,7 +230,8 @@ class Application(
         elif user:
             logger.info("Successful login: %r -> %r", login, user)
         elif login:
-            logger.info("Failed login attempt: %r", login)
+            logger.warning("Failed login attempt from %s: %r",
+                           remote_host, login)
             # Random delay to avoid timing oracles and bruteforce attacks
             delay = self.configuration.get("auth", "delay")
             if delay > 0:

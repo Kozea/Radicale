@@ -123,7 +123,7 @@ class ApplicationPutMixin:
             logger.warning("Bad PUT request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
         except socket.timeout:
-            logger.debug("client timed out", exc_info=True)
+            logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         # Prepare before locking
         content_type = environ.get("CONTENT_TYPE", "").split(";")[0]

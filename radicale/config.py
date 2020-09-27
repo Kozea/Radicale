@@ -94,7 +94,7 @@ def unspecified_type(value):
 
 def _convert_to_bool(value):
     if value.lower() not in RawConfigParser.BOOLEAN_STATES:
-        raise ValueError("Not a boolean: %r" % value)
+        raise ValueError("not a boolean: %r" % value)
     return RawConfigParser.BOOLEAN_STATES[value.lower()]
 
 
