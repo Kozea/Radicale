@@ -39,10 +39,11 @@ class ApplicationMkcalendarMixin:
                 "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
         except socket.timeout:
-            logger.debug("client timed out", exc_info=True)
+            logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         # Prepare before locking
         props = xmlutils.props_from_request(xml_content)
+        props = {k: v for k, v in props.items() if v is not None}
         props["tag"] = "VCALENDAR"
         # TODO: use this?
         # timezone = props.get("C:calendar-timezone")
