@@ -19,8 +19,8 @@
 
 import contextlib
 import socket
+import xml.etree.ElementTree as ET
 from http import client
-from xml.etree import ElementTree as ET
 
 from radicale import app, httputils
 from radicale import item as radicale_item

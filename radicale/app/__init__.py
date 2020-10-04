@@ -33,9 +33,9 @@ import posixpath
 import pprint
 import random
 import time
+import xml.etree.ElementTree as ET
 import zlib
 from http import client
-from xml.etree import ElementTree as ET
 
 import defusedxml.ElementTree as DefusedET
 import pkg_resources
