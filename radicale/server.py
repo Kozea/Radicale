@@ -260,7 +260,8 @@ def serve(configuration, shutdown_socket=None):
                 logger.info("Listening on %r%s",
                             format_address(server.server_address),
                             " with SSL" if use_ssl else "")
-        assert servers, "no servers started"
+        if not servers:
+            raise RuntimeError("No servers started")
 
         # Mainloop
         select_timeout = None
