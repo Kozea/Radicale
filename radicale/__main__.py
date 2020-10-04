@@ -27,6 +27,7 @@ import argparse
 import contextlib
 import os
 import signal
+import socket
 import sys
 
 from radicale import VERSION, config, log, server, storage
@@ -35,16 +36,20 @@ from radicale.log import logger
 
 def run():
     """Run Radicale as a standalone server."""
+    exit_signal_numbers = [signal.SIGTERM, signal.SIGINT]
+    if os.name == "posix":
+        exit_signal_numbers.append(signal.SIGHUP)
+        exit_signal_numbers.append(signal.SIGQUIT)
+    elif os.name == "nt":
+        exit_signal_numbers.append(signal.SIGBREAK)
 
     # Raise SystemExit when signal arrives to run cleanup code
     # (like destructors, try-finish etc.), otherwise the process exits
     # without running any of them
-    def signal_handler(signal_number, stack_frame):
+    def exit_signal_handler(signal_number, stack_frame):
         sys.exit(1)
-    signal.signal(signal.SIGTERM, signal_handler)
-    signal.signal(signal.SIGINT, signal_handler)
-    if os.name == "posix":
-        signal.signal(signal.SIGHUP, signal_handler)
+    for signal_number in exit_signal_numbers:
+        signal.signal(signal_number, exit_signal_handler)
 
     log.setup()
 
@@ -148,8 +153,17 @@ def run():
             sys.exit(1)
         return
 
+    # Create a socket pair to notify the server of program shutdown
+    shutdown_socket, shutdown_socket_out = socket.socketpair()
+
+    # Shutdown server when signal arrives
+    def shutdown_signal_handler(signal_number, stack_frame):
+        shutdown_socket.close()
+    for signal_number in exit_signal_numbers:
+        signal.signal(signal_number, shutdown_signal_handler)
+
     try:
-        server.serve(configuration)
+        server.serve(configuration, shutdown_socket_out)
     except Exception as e:
         logger.fatal("An exception occurred during server startup: %s", e,
                      exc_info=True)
