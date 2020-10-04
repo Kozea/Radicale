@@ -71,7 +71,7 @@ def run():
                 continue
             kwargs = data.copy()
             long_name = "--%s-%s" % (section, option.replace("_", "-"))
-            args = kwargs.pop("aliases", [])
+            args = list(kwargs.pop("aliases", ()))
             args.append(long_name)
             kwargs["dest"] = "%s_%s" % (section, option)
             groups[group].append(kwargs["dest"])
