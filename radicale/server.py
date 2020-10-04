@@ -30,21 +30,25 @@ import socketserver
 import ssl
 import sys
 import wsgiref.simple_server
+from typing import MutableMapping
 from urllib.parse import unquote
 
 from radicale import Application, config
 from radicale.log import logger
 
+COMPAT_EAI_ADDRFAMILY: int
 if hasattr(socket, "EAI_ADDRFAMILY"):
-    COMPAT_EAI_ADDRFAMILY = socket.EAI_ADDRFAMILY
+    COMPAT_EAI_ADDRFAMILY = socket.EAI_ADDRFAMILY  # type: ignore[attr-defined]
 elif hasattr(socket, "EAI_NONAME"):
     # Windows and BSD don't have a special error code for this
     COMPAT_EAI_ADDRFAMILY = socket.EAI_NONAME
+COMPAT_EAI_NODATA: int
 if hasattr(socket, "EAI_NODATA"):
     COMPAT_EAI_NODATA = socket.EAI_NODATA
 elif hasattr(socket, "EAI_NONAME"):
     # Windows and BSD don't have a special error code for this
     COMPAT_EAI_NODATA = socket.EAI_NONAME
+COMPAT_IPPROTO_IPV6: int
 if hasattr(socket, "IPPROTO_IPV6"):
     COMPAT_IPPROTO_IPV6 = socket.IPPROTO_IPV6
 elif os.name == "nt":
@@ -155,7 +159,7 @@ class ParallelHTTPSServer(ParallelHTTPServer):
 class ServerHandler(wsgiref.simple_server.ServerHandler):
 
     # Don't pollute WSGI environ with OS environment
-    os_environ = {}
+    os_environ: MutableMapping[str, str] = {}
 
     def log_exception(self, exc_info):
         logger.error("An exception occurred during request: %s",

@@ -27,6 +27,7 @@ import posixpath
 import sys
 import threading
 from tempfile import TemporaryDirectory
+from typing import Type, Union
 
 if os.name == "nt":
     import ctypes
@@ -34,6 +35,7 @@ if os.name == "nt":
     import msvcrt
 
     LOCKFILE_EXCLUSIVE_LOCK = 2
+    ULONG_PTR: Union[Type[ctypes.c_uint32], Type[ctypes.c_uint64]]
     if ctypes.sizeof(ctypes.c_void_p) == 4:
         ULONG_PTR = ctypes.c_uint32
     else:
@@ -47,7 +49,8 @@ if os.name == "nt":
             ("offset_high", ctypes.wintypes.DWORD),
             ("h_event", ctypes.wintypes.HANDLE)]
 
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32 = ctypes.WinDLL(  # type: ignore[attr-defined]
+        "kernel32", use_last_error=True)
     lock_file_ex = kernel32.LockFileEx
     lock_file_ex.argtypes = [
         ctypes.wintypes.HANDLE,

@@ -58,7 +58,7 @@ from radicale.log import logger
 
 # WORKAROUND: https://github.com/tiran/defusedxml/issues/54
 import defusedxml.ElementTree as DefusedET  # isort: skip
-sys.modules["xml.etree"].ElementTree = ET
+sys.modules["xml.etree"].ElementTree = ET  # type: ignore[attr-defined]
 
 VERSION = pkg_resources.get_distribution("radicale").version
 
