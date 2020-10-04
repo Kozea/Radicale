@@ -31,6 +31,7 @@ import os
 import string
 from collections import OrderedDict
 from configparser import RawConfigParser
+from typing import Any, ClassVar
 
 from radicale import auth, rights, storage, web
 
@@ -285,7 +286,7 @@ def load(paths=()):
 
 
 class Configuration:
-    SOURCE_MISSING = {}
+    SOURCE_MISSING: ClassVar[Any] = {}
 
     def __init__(self, schema):
         """Initialize configuration.

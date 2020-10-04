@@ -36,6 +36,7 @@ For further information, please visit the `Radicale Website
 
 """
 
+import os
 import sys
 
 from setuptools import find_packages, setup
@@ -52,6 +53,11 @@ needs_pytest = {"pytest", "test", "ptr"}.intersection(sys.argv)
 pytest_runner = ["pytest-runner"] if needs_pytest else []
 tests_require = ["pytest-runner", "pytest", "pytest-cov", "pytest-flake8",
                  "pytest-isort", "waitress"]
+os.environ["PYTEST_ADDOPTS"] = os.environ.get("PYTEST_ADDOPTS", "")
+# Mypy only supports CPython
+if sys.implementation.name == "cpython":
+    tests_require.extend(["pytest-mypy", "types-setuptools"])
+    os.environ["PYTEST_ADDOPTS"] += " --mypy"
 
 setup(
     name="Radicale",

@@ -25,6 +25,7 @@ import posixpath
 import shutil
 import sys
 import tempfile
+from typing import Any, ClassVar
 
 import defusedxml.ElementTree as DefusedET
 import pytest
@@ -1549,7 +1550,8 @@ class BaseRequestsMixIn:
 
 class BaseFileSystemTest(BaseTest):
     """Base class for filesystem backend tests."""
-    storage_type = None
+
+    storage_type: ClassVar[Any]
 
     def setup(self):
         self.configuration = config.load()
