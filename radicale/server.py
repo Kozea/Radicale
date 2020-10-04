@@ -97,7 +97,7 @@ class ParallelHTTPServer(socketserver.ThreadingMixIn,
 
     def handle_error(self, request, client_address):
         if issubclass(sys.exc_info()[0], socket.timeout):
-            logger.info("client timed out", exc_info=True)
+            logger.info("Client timed out", exc_info=True)
         else:
             logger.error("An exception occurred during request: %s",
                          sys.exc_info()[1], exc_info=True)
