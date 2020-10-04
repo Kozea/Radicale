@@ -105,7 +105,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
         ("hosts", {
             "value": "localhost:5232",
             "help": "set server hostnames including ports",
-            "aliases": ["-H", "--hosts"],
+            "aliases": ("-H", "--hosts",),
             "type": list_of_ip_address}),
         ("max_connections", {
             "value": "8",
@@ -122,23 +122,23 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
         ("ssl", {
             "value": "False",
             "help": "use SSL connection",
-            "aliases": ["-s", "--ssl"],
+            "aliases": ("-s", "--ssl",),
             "opposite": ["-S", "--no-ssl"],
             "type": bool}),
         ("certificate", {
             "value": "/etc/ssl/radicale.cert.pem",
             "help": "set certificate file",
-            "aliases": ["-c", "--certificate"],
+            "aliases": ("-c", "--certificate",),
             "type": filepath}),
         ("key", {
             "value": "/etc/ssl/radicale.key.pem",
             "help": "set private key file",
-            "aliases": ["-k", "--key"],
+            "aliases": ("-k", "--key",),
             "type": filepath}),
         ("certificate_authority", {
             "value": "",
             "help": "set CA certificate for validating clients",
-            "aliases": ["--certificate-authority"],
+            "aliases": ("--certificate-authority",),
             "type": filepath}),
         ("_internal_server", {
             "value": "False",
