@@ -21,8 +21,8 @@ import collections
 import itertools
 import posixpath
 import socket
+import xml.etree.ElementTree as ET
 from http import client
-from xml.etree import ElementTree as ET
 
 from radicale import app, httputils, pathutils, rights, storage, xmlutils
 from radicale.log import logger

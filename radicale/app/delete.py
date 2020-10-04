@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import xml.etree.ElementTree as ET
 from http import client
-from xml.etree import ElementTree as ET
 
 from radicale import app, httputils, storage, xmlutils
 

@@ -20,9 +20,9 @@
 import contextlib
 import posixpath
 import socket
+import xml.etree.ElementTree as ET
 from http import client
 from urllib.parse import unquote, urlparse
-from xml.etree import ElementTree as ET
 
 from radicale import app, httputils, pathutils, storage, xmlutils
 from radicale.item import filter as radicale_filter
