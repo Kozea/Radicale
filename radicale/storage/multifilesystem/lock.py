@@ -70,21 +70,22 @@ class StorageLockMixin:
                     popen_kwargs["creationflags"] = (
                         subprocess.CREATE_NEW_PROCESS_GROUP)
                 command = hook % {"user": shlex.quote(user or "Anonymous")}
-                logger.debug("Running hook")
+                logger.debug("Running storage hook")
                 p = subprocess.Popen(command, **popen_kwargs)
                 try:
                     stdout_data, stderr_data = p.communicate()
                 except BaseException:  # e.g. KeyboardInterrupt or SystemExit
                     p.kill()
+                    p.wait()
                     raise
                 finally:
                     if os.name == "posix":
-                        # Try to kill child processes
+                        # Kill remaining children identified by process group
                         with contextlib.suppress(OSError):
                             os.killpg(p.pid, signal.SIGKILL)
                 if stdout_data:
-                    logger.debug("Captured stdout hook:\n%s", stdout_data)
+                    logger.debug("Captured stdout from hook:\n%s", stdout_data)
                 if stderr_data:
-                    logger.debug("Captured stderr hook:\n%s", stderr_data)
+                    logger.debug("Captured stderr from hook:\n%s", stderr_data)
                 if p.returncode != 0:
                     raise subprocess.CalledProcessError(p.returncode, p.args)
