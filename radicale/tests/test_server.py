@@ -41,10 +41,17 @@ from radicale.tests.helpers import configuration_to_dict, get_file_path
 
 
 class DisabledRedirectHandler(request.HTTPRedirectHandler):
+    def http_error_301(self, req, fp, code, msg, headers):
+        raise HTTPError(req.full_url, code, msg, headers, fp)
+
     def http_error_302(self, req, fp, code, msg, headers):
         raise HTTPError(req.full_url, code, msg, headers, fp)
 
-    http_error_301 = http_error_303 = http_error_307 = http_error_302
+    def http_error_303(self, req, fp, code, msg, headers):
+        raise HTTPError(req.full_url, code, msg, headers, fp)
+
+    def http_error_307(self, req, fp, code, msg, headers):
+        raise HTTPError(req.full_url, code, msg, headers, fp)
 
 
 class TestBaseServerRequests(BaseTest):
