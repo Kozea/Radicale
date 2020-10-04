@@ -61,6 +61,7 @@ class ParallelHTTPServer(socketserver.ThreadingMixIn,
 
     # We wait for child threads ourself
     block_on_close = False
+    daemon_threads = True
 
     def __init__(self, configuration, family, address, RequestHandlerClass):
         self.configuration = configuration

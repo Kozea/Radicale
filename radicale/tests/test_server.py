@@ -180,6 +180,8 @@ class TestBaseServerRequests(BaseTest):
         finally:
             p.terminate()
             p.wait()
+        if os.name == "posix":
+            assert p.returncode == 0
 
     def test_wsgi_server(self):
         config_path = os.path.join(self.colpath, "config")
