@@ -32,12 +32,12 @@ import logging
 import posixpath
 import pprint
 import random
+import sys
 import time
 import xml.etree.ElementTree as ET
 import zlib
 from http import client
 
-import defusedxml.ElementTree as DefusedET
 import pkg_resources
 
 from radicale import (auth, httputils, log, pathutils, rights, storage, web,
@@ -55,6 +55,10 @@ from radicale.app.proppatch import ApplicationProppatchMixin
 from radicale.app.put import ApplicationPutMixin
 from radicale.app.report import ApplicationReportMixin
 from radicale.log import logger
+
+# WORKAROUND: https://github.com/tiran/defusedxml/issues/54
+import defusedxml.ElementTree as DefusedET  # isort: skip
+sys.modules["xml.etree"].ElementTree = ET
 
 VERSION = pkg_resources.get_distribution("radicale").version
 
