@@ -410,9 +410,12 @@ def visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
         # Match a property
         child = getattr(vobject_item, child_name.lower())
         if isinstance(child, date):
-            range_fn(child, child + DAY, False)
-        elif isinstance(child, datetime):
-            range_fn(child, child + SECOND, False)
+            child_is_datetime = isinstance(child, datetime)
+            child = date_to_datetime(child)
+            if child_is_datetime:
+                range_fn(child, child + SECOND, False)
+            else:
+                range_fn(child, child + DAY, False)
 
 
 def text_match(vobject_item, filter_, child_name, ns, attrib_name=None):
