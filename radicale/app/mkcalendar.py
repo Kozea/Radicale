@@ -52,6 +52,7 @@ class ApplicationMkcalendarMixin:
         except ValueError as e:
             logger.warning(
                 "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
+            return httputils.BAD_REQUEST
         with self._storage.acquire_lock("w", user):
             item = next(self._storage.discover(path), None)
             if item:
