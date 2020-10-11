@@ -171,9 +171,22 @@ def check_and_sanitize_items(vobject_items, is_collection=False, tag=None):
 
 def check_and_sanitize_props(props):
     """Check collection properties for common errors."""
-    tag = props.get("tag")
-    if tag and tag not in ("VCALENDAR", "VADDRESSBOOK"):
-        raise ValueError("Unsupported collection tag: %r" % tag)
+    for k, v in props.copy().items():  # Make copy to be able to delete items
+        if not isinstance(k, str):
+            raise ValueError("Key must be %r not %r: %r" % (
+                str.__name__, type(k).__name__, k))
+        if not isinstance(v, str):
+            if v is None:
+                del props[k]
+                continue
+            raise ValueError("Value of %r must be %r not %r: %r" % (
+                k, str.__name__, type(v).__name__, v))
+        if k == "tag":
+            if not v:
+                del props[k]
+                continue
+            if v not in ("VCALENDAR", "VADDRESSBOOK"):
+                raise ValueError("Unsupported collection tag: %r" % v)
 
 
 def find_available_uid(exists_fn, suffix=""):
