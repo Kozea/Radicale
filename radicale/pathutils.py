@@ -45,7 +45,8 @@ if os.name == "nt":
             ("offset_high", ctypes.wintypes.DWORD),
             ("h_event", ctypes.wintypes.HANDLE)]
 
-    lock_file_ex = ctypes.windll.kernel32.LockFileEx
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    lock_file_ex = kernel32.LockFileEx
     lock_file_ex.argtypes = [
         ctypes.wintypes.HANDLE,
         ctypes.wintypes.DWORD,
@@ -54,7 +55,7 @@ if os.name == "nt":
         ctypes.wintypes.DWORD,
         ctypes.POINTER(Overlapped)]
     lock_file_ex.restype = ctypes.wintypes.BOOL
-    unlock_file_ex = ctypes.windll.kernel32.UnlockFileEx
+    unlock_file_ex = kernel32.UnlockFileEx
     unlock_file_ex.argtypes = [
         ctypes.wintypes.HANDLE,
         ctypes.wintypes.DWORD,
@@ -93,9 +94,12 @@ class RwLock:
                 handle = msvcrt.get_osfhandle(lock_file.fileno())
                 flags = LOCKFILE_EXCLUSIVE_LOCK if mode == "w" else 0
                 overlapped = Overlapped()
-                if not lock_file_ex(handle, flags, 0, 1, 0, overlapped):
+                try:
+                    if not lock_file_ex(handle, flags, 0, 1, 0, overlapped):
+                        raise ctypes.WinError()
+                except OSError as e:
                     raise RuntimeError("Locking the storage failed: %s" %
-                                       ctypes.FormatError())
+                                       e) from e
             elif os.name == "posix":
                 _cmd = fcntl.LOCK_EX if mode == "w" else fcntl.LOCK_SH
                 try:
