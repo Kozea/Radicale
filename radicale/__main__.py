@@ -55,7 +55,7 @@ def run():
 
     # Get command-line arguments
     parser = argparse.ArgumentParser(
-        prog="radicale", usage="%(prog)s [OPTIONS]")
+        prog="radicale", usage="%(prog)s [OPTIONS]", allow_abbrev=False)
 
     parser.add_argument("--version", action="version", version=VERSION)
     parser.add_argument("--verify-storage", action="store_true",
