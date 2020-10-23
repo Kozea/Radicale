@@ -55,12 +55,10 @@ class StorageCreateCollectionMixin:
                 elif props.get("tag") == "VADDRESSBOOK":
                     col._upload_all_nonatomic(items, suffix=".vcf")
 
-            # This operation is not atomic on the filesystem level but it's
-            # very unlikely that one rename operations succeeds while the
-            # other fails or that only one gets written to disk.
-            if os.path.exists(filesystem_path):
-                os.rename(filesystem_path, os.path.join(tmp_dir, "delete"))
-            os.rename(tmp_filesystem_path, filesystem_path)
+            if os.path.lexists(filesystem_path):
+                pathutils.rename_exchange(tmp_filesystem_path, filesystem_path)
+            else:
+                os.rename(tmp_filesystem_path, filesystem_path)
             self._sync_directory(parent_dir)
 
         return self._collection_class(

@@ -24,7 +24,9 @@ Helper functions for working with the file system.
 import contextlib
 import os
 import posixpath
+import sys
 import threading
+from tempfile import TemporaryDirectory
 
 if os.name == "nt":
     import ctypes
@@ -65,6 +67,23 @@ if os.name == "nt":
     unlock_file_ex.restype = ctypes.wintypes.BOOL
 elif os.name == "posix":
     import fcntl
+
+HAVE_RENAMEAT2 = False
+if sys.platform == "linux":
+    import ctypes
+
+    RENAME_EXCHANGE = 2
+    try:
+        renameat2 = ctypes.CDLL(None, use_errno=True).renameat2
+    except AttributeError:
+        pass
+    else:
+        HAVE_RENAMEAT2 = True
+        renameat2.argtypes = [
+            ctypes.c_int, ctypes.c_char_p,
+            ctypes.c_int, ctypes.c_char_p,
+            ctypes.c_uint]
+        renameat2.restype = ctypes.c_int
 
 
 class RwLock:
@@ -125,6 +144,45 @@ class RwLock:
                     if mode == "r":
                         self._readers -= 1
                     self._writer = False
+
+
+def rename_exchange(src, dst):
+    """Exchange the files or directories `src` and `dst`.
+
+    Both `src` and `dst` must exist but may be of different types.
+
+    On Linux with renameat2 the operation is atomic.
+    On other platforms it's not atomic.
+
+    """
+    src_dir, src_base = os.path.split(src)
+    dst_dir, dst_base = os.path.split(dst)
+    src_dir = src_dir or os.curdir
+    dst_dir = dst_dir or os.curdir
+    if not src_base or not dst_base:
+        raise ValueError("Invalid arguments: %r -> %r" % (src, dst))
+    if HAVE_RENAMEAT2:
+        src_base_bytes = os.fsencode(src_base)
+        dst_base_bytes = os.fsencode(dst_base)
+        src_dir_fd = os.open(src_dir, 0)
+        try:
+            dst_dir_fd = os.open(dst_dir, 0)
+            try:
+                if renameat2(src_dir_fd, src_base_bytes,
+                             dst_dir_fd, dst_base_bytes,
+                             RENAME_EXCHANGE) != 0:
+                    errno = ctypes.get_errno()
+                    raise OSError(errno, os.strerror(errno))
+            finally:
+                os.close(dst_dir_fd)
+        finally:
+            os.close(src_dir_fd)
+    else:
+        with TemporaryDirectory(
+                prefix=".Radicale.tmp-", dir=src_dir) as tmp_dir:
+            os.rename(dst, os.path.join(tmp_dir, "interim"))
+            os.rename(src, dst)
+            os.rename(os.path.join(tmp_dir, "interim"), src)
 
 
 def fsync(fd):
