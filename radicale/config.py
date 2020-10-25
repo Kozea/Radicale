@@ -118,7 +118,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
         ("timeout", {
             "value": "30",
             "help": "socket timeout",
-            "type": positive_int}),
+            "type": positive_float}),
         ("ssl", {
             "value": "False",
             "help": "use SSL connection",
