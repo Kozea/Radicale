@@ -195,7 +195,7 @@ class BaseCollection:
             # Concatenate all child elements of VCALENDAR from all items
             # together, while preventing duplicated VTIMEZONE entries.
             # VTIMEZONEs are only distinguished by their TZID, if different
-            # timezones share the same TZID this produces errornous ouput.
+            # timezones share the same TZID this produces erroneous ouput.
             # VObject fails at this too.
             for item in self.get_all():
                 depth = 0
