@@ -11,9 +11,7 @@ EXPOSE 5232
 # Run Radicale (Configure it here or provide a "config" file!)
 CMD ["radicale", "--hosts", "0.0.0.0:5232"]
 
-# Install dependencies
-RUN apk add --no-cache gcc musl-dev libffi-dev ca-certificates openssl
-# Install Radicale
-RUN pip install --no-cache-dir "Radicale[bcrypt] @ https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz"
-# Remove build dependencies
-RUN apk del gcc musl-dev libffi-dev
+RUN apk add --no-cache ca-certificates openssl \
+ && apk add --no-cache --virtual .build-deps gcc libffi-dev musl-dev \
+ && pip install --no-cache-dir "Radicale[bcrypt] @ https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz" \
+ && apk del .build-deps
