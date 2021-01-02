@@ -1,14 +1,16 @@
+# This file is intended to be used apart from the containing source code tree.
+
 FROM python:3-alpine
 
 # Version of Radicale
 ARG VERSION=v3
-# Persistent storage for data (Mount it somewhere on the host!)
+# Persistent storage for data
 VOLUME /var/lib/radicale
 # Configuration data (Put the "config" file here!)
 VOLUME /etc/radicale
-# TCP port of Radicale (Publish it on a host interface!)
+# TCP port of Radicale
 EXPOSE 5232
-# Run Radicale (Configure it here or provide a "config" file!)
+# Run Radicale
 CMD ["radicale", "--hosts", "0.0.0.0:5232"]
 
 RUN apk add --no-cache ca-certificates openssl \
