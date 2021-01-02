@@ -6,8 +6,6 @@ FROM python:3-alpine
 ARG VERSION=v3
 # Persistent storage for data
 VOLUME /var/lib/radicale
-# Configuration data (Put the "config" file here!)
-VOLUME /etc/radicale
 # TCP port of Radicale
 EXPOSE 5232
 # Run Radicale
