@@ -115,7 +115,7 @@ def prop_match(vobject_item, filter_, ns):
         # Point #1 of rfc4791-9.7.2
         return name in vobject_item.contents
     if len(filter_) == 1:
-        if filter_[0].tag == xmlutils.make_clark("C:is-not-defined"):
+        if filter_[0].tag == xmlutils.make_clark("%s:is-not-defined" % ns):
             # Point #2 of rfc4791-9.7.2
             return name not in vobject_item.contents
     if name not in vobject_item.contents:
