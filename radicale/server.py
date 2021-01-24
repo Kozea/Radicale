@@ -35,6 +35,13 @@ from urllib.parse import unquote
 from radicale import Application, config
 from radicale.log import logger
 
+has_systemd = False
+try:
+    from systemd.daemon import listen_fds as sd_listen_fds
+    has_systemd = True
+except Exception:
+    pass
+
 if hasattr(socket, "EAI_ADDRFAMILY"):
     COMPAT_EAI_ADDRFAMILY = socket.EAI_ADDRFAMILY
 elif hasattr(socket, "EAI_NONAME"):
@@ -56,21 +63,47 @@ def format_address(address):
     return "[%s]:%d" % address[:2]
 
 
-class ParallelHTTPServer(socketserver.ThreadingMixIn,
-                         wsgiref.simple_server.WSGIServer):
+class sdHTTPServer(socketserver.ThreadingMixIn,
+                   wsgiref.simple_server.WSGIServer):
+    """HTTP Server started as a socket-activated systemd service."""
+    def __init__(self, address, handler, sck=None):
+        super().__init__(address, handler, False)
+        self.socket_fromfd = False
+        if sck is not None:
+            self.socket = sck
+            self.server_address = self.socket.getsockname()
+            self.socket_fromfd = True
+        try:
+            self.server_bind()
+            self.server_activate()
+        except BaseException:
+            self.server_close()
+            raise
+
+    def server_bind(self):
+        """Override WSGIServer and HTTPServer"""
+        if not self.socket_fromfd:
+            socketserver.TCPServer.server_bind(self)
+        host, port = self.server_address[:2]
+        self.server_name = socket.getfqdn(host)
+        self.server_port = port
+        self.setup_environ()
+
+class ParallelHTTPServer(sdHTTPServer):
 
     # We wait for child threads ourself
     block_on_close = False
     daemon_threads = True
 
-    def __init__(self, configuration, family, address, RequestHandlerClass):
+    def __init__(self, configuration, family, address, RequestHandlerClass, socket):
         self.configuration = configuration
         self.address_family = family
-        super().__init__(address, RequestHandlerClass)
+        super().__init__(address, RequestHandlerClass, socket)
         self.client_sockets = set()
 
     def server_bind(self):
-        if self.address_family == socket.AF_INET6:
+        if self.address_family == socket.AF_INET6 and \
+           not self.socket_fromfd:
             # Only allow IPv6 connections to the IPv6 socket
             self.socket.setsockopt(COMPAT_IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
         super().server_bind()
@@ -222,15 +255,25 @@ def serve(configuration, shutdown_socket=None):
     application = Application(configuration)
     servers = {}
     try:
-        for address in configuration.get("server", "hosts"):
+        hosts = [(x, None) for x in configuration.get("server", "hosts")]
+        if has_systemd:
+            fds = sd_listen_fds()
+            if len(fds) > 0:
+                hosts = []
+            for fd in fds:
+                s = socket.socket(fileno=fd)
+                hosts.append((s.getsockname(), s))
+        for address, sck in hosts:
             # Try to bind sockets for IPv4 and IPv6
             possible_families = (socket.AF_INET, socket.AF_INET6)
             bind_ok = False
             for i, family in enumerate(possible_families):
                 is_last = i == len(possible_families) - 1
+                if sck is not None and sck.family != family:
+                    continue
                 try:
                     server = server_class(configuration, family, address,
-                                          RequestHandler)
+                                          RequestHandler, sck)
                 except OSError as e:
                     # Ignore unsupported families (only one must work)
                     if ((bind_ok or not is_last) and (
