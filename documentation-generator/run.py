@@ -23,6 +23,7 @@ GIT_CONFIG = {"protocol.version": "2",
 COMMIT_MESSAGE = "Generate documentation"
 DOCUMENTATION_SRC = "DOCUMENTATION.md"
 SHIFT_HEADING = 1
+TOC_DEPTH = 3
 TOOLS_PATH = os.path.dirname(__file__)
 TEMPLATE_INDEX_PATH = os.path.join(TOOLS_PATH, "template-index.html")
 TEMPLATE_PATH = os.path.join(TOOLS_PATH, "template.html")
@@ -37,27 +38,25 @@ BRANCH_ORDERING = [  # Format: (REGEX, ORDER, DEFAULT)
 
 
 def convert_doc(src_path, to_path, branch, branches):
-    subprocess.run([
+    raw_html = subprocess.run([
         PANDOC_EXE,
         "--from=gfm",
         "--to=html5",
         os.path.abspath(src_path),
         "--toc",
         "--template=%s" % os.path.basename(TEMPLATE_PATH),
-        "--output=%s" % os.path.abspath(to_path),
         "--section-divs",
         "--shift-heading-level-by=%d" % SHIFT_HEADING,
-        "--toc-depth=4",
+        "--toc-depth=%d" % (TOC_DEPTH+SHIFT_HEADING),
         "--filter=%s" % os.path.abspath(FILTER_EXE),
         "--variable=branch=%s" % branch,
         *("--variable=branches=%s" % b for b in branches)],
-        check=True, cwd=os.path.dirname(TEMPLATE_PATH))
-    with open(to_path, "rb+") as f:
-        data = subprocess.run([POSTPROCESSOR_EXE], input=f.read(),
+        cwd=os.path.dirname(TEMPLATE_PATH),
+        stdout=subprocess.PIPE, check=True).stdout
+    raw_html = subprocess.run([POSTPROCESSOR_EXE], input=raw_html,
                               stdout=subprocess.PIPE, check=True).stdout
-        f.seek(0)
-        f.truncate()
-        f.write(data)
+    with open(to_path, "wb") as f:
+        f.write(raw_html)
 
 
 def install_dependencies():
