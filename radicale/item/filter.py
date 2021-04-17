@@ -189,6 +189,21 @@ def visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
 
     """
 
+    def wrap_getrruleset(iterator):
+        """The vobject.icalendar.RecurringComponent.getrruleset method
+        occasionally compares timestamps in an unchecked fashion, leading to
+        TypeError("can't compare offset-naive and offset-aware datetimes")
+        errors that break the whole REPORT query when raised unchecked.
+
+        This iterator wraps such iterators, and terminates them safely rather
+        than raising the error; a warning is shown instead."""
+        try:
+            yield from iterator
+        except TypeError as e:
+            logger.warning("Recurrence calculation ran into comparison error "
+                    "(%r), ignoring iteration data.", e)
+            return
+
     # HACK: According to rfc5545-3.8.4.4 an recurrance that is resheduled
     # with Recurrence ID affects the recurrence itself and all following
     # recurrences too. This is not respected and client don't seem to bother
@@ -198,14 +213,14 @@ def visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
         if (hasattr(child, "rrule") and
                 ";UNTIL=" not in child.rrule.value.upper() and
                 ";COUNT=" not in child.rrule.value.upper()):
-            for dtstart in child.getrruleset(addRDate=True):
+            for dtstart in wrap_getrruleset(child.getrruleset(addRDate=True)):
                 if dtstart in ignore:
                     continue
                 if infinity_fn(date_to_datetime(dtstart)):
                     return (), True
                 break
         return filter(lambda dtstart: dtstart not in ignore,
-                      child.getrruleset(addRDate=True)), False
+                      wrap_getrruleset(child.getrruleset(addRDate=True))), False
 
     def get_children(components):
         main = None
