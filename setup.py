@@ -70,7 +70,7 @@ setup(
     package_data={"radicale": WEB_FILES},
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
     install_requires=["defusedxml", "passlib", "vobject>=0.9.6",
-                      "python-dateutil>=2.7.3"],
+                      "python-dateutil>=2.7.3", "setuptools"],
     setup_requires=pytest_runner,
     tests_require=tests_require,
     extras_require={"test": tests_require,
