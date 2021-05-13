@@ -34,11 +34,8 @@ def get_file_path(file_name):
 
 
 def get_file_content(file_name):
-    try:
-        with open(get_file_path(file_name), encoding="utf-8") as fd:
-            return fd.read()
-    except IOError:
-        print("Couldn't open the file %s" % file_name)
+    with open(get_file_path(file_name), encoding="utf-8") as fd:
+        return fd.read()
 
 
 def configuration_to_dict(configuration):
