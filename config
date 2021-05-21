@@ -110,6 +110,8 @@
 # Value: debug | info | warning | error | critical
 #level = warning
 
+logfile = /var/log/radicale.log
+
 # Don't include passwords in logs
 #mask_passwords = True
 

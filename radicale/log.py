@@ -31,6 +31,8 @@ import os
 import sys
 import threading
 
+from radicale import config
+
 LOGGER_NAME = "radicale"
 LOGGER_FORMAT = "[%(asctime)s] [%(ident)s] [%(levelname)s] %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
@@ -111,6 +113,16 @@ def setup():
     register_stream = handler.register_stream
     log_record_factory = IdentLogRecordFactory(logging.getLogRecordFactory())
     logging.setLogRecordFactory(log_record_factory)
+
+    """If a logfile is provided, also add a filehandler as logger"""
+    configuration = config.load()
+    logfile = configuration.get("logging", "logfile")
+
+    if logfile:
+        logfile_handler = logging.FileHandler(logfile, mode="w")
+        logger.addHandler(logfile_handler)
+        logger.info(f"Registered filelogger to {logfile}")
+        
     set_level(logging.WARNING)
 
 
