@@ -167,6 +167,10 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
             "value": "md5",
             "help": "htpasswd encryption method",
             "type": str}),
+        ("dovecot_socket", {
+            "value": "/var/run/dovecot/auth-client",
+            "help": "dovecot auth socket",
+            "type": str}),
         ("realm", {
             "value": "Radicale - Password Required",
             "help": "message displayed when a password is needed",
