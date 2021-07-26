@@ -21,15 +21,14 @@ Test the internal server.
 
 import errno
 import os
-import shutil
 import socket
 import ssl
 import subprocess
 import sys
-import tempfile
 import threading
 import time
 from configparser import RawConfigParser
+from typing import Callable, Dict, NoReturn, Optional, Tuple, cast
 from urllib import request
 from urllib.error import HTTPError, URLError
 
@@ -41,34 +40,43 @@ from radicale.tests.helpers import configuration_to_dict, get_file_path
 
 
 class DisabledRedirectHandler(request.HTTPRedirectHandler):
-    def http_error_301(self, req, fp, code, msg, headers):
+
+    # HACK: typeshed annotation are wrong for `fp` and `msg`
+    #       (https://github.com/python/typeshed/pull/5728)
+    #       `headers` is incompatible with `http.client.HTTPMessage`
+    #       (https://github.com/python/typeshed/issues/5729)
+    def http_error_301(self, req: request.Request, fp, code: int,
+                       msg, headers) -> NoReturn:
         raise HTTPError(req.full_url, code, msg, headers, fp)
 
-    def http_error_302(self, req, fp, code, msg, headers):
+    def http_error_302(self, req: request.Request, fp, code: int,
+                       msg, headers) -> NoReturn:
         raise HTTPError(req.full_url, code, msg, headers, fp)
 
-    def http_error_303(self, req, fp, code, msg, headers):
+    def http_error_303(self, req: request.Request, fp, code: int,
+                       msg, headers) -> NoReturn:
         raise HTTPError(req.full_url, code, msg, headers, fp)
 
-    def http_error_307(self, req, fp, code, msg, headers):
+    def http_error_307(self, req: request.Request, fp, code: int,
+                       msg, headers) -> NoReturn:
         raise HTTPError(req.full_url, code, msg, headers, fp)
 
 
 class TestBaseServerRequests(BaseTest):
     """Test the internal server."""
 
-    def setup(self):
-        self.configuration = config.load()
-        self.colpath = tempfile.mkdtemp()
+    shutdown_socket: socket.socket
+    thread: threading.Thread
+    opener: request.OpenerDirector
+
+    def setup(self) -> None:
+        super().setup()
         self.shutdown_socket, shutdown_socket_out = socket.socketpair()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             # Find available port
             sock.bind(("127.0.0.1", 0))
             self.sockname = sock.getsockname()
         self.configuration.update({
-            "storage": {"filesystem_folder": self.colpath,
-                        # Disable syncing to disk for better performance
-                        "_filesystem_fsync": "False"},
             "server": {"hosts": "[%s]:%d" % self.sockname},
             # Enable debugging for new processes
             "logging": {"level": "debug"}},
@@ -82,40 +90,57 @@ class TestBaseServerRequests(BaseTest):
             request.HTTPSHandler(context=ssl_context),
             DisabledRedirectHandler)
 
-    def teardown(self):
+    def teardown(self) -> None:
         self.shutdown_socket.close()
         try:
             self.thread.join()
         except RuntimeError:  # Thread never started
             pass
-        shutil.rmtree(self.colpath)
+        super().teardown()
 
-    def request(self, method, path, data=None, is_alive_fn=None, **headers):
+    def request(self, method: str, path: str, data: Optional[str] = None,
+                **kwargs) -> Tuple[int, Dict[str, str], str]:
         """Send a request."""
+        login = kwargs.pop("login", None)
+        if login is not None and not isinstance(login, str):
+            raise TypeError("login argument must be %r, not %r" %
+                            (str, type(login)))
+        if login:
+            raise NotImplementedError
+        is_alive_fn: Optional[Callable[[], bool]] = kwargs.pop(
+            "is_alive_fn", None)
+        headers: Dict[str, str] = kwargs
+        for k, v in headers.items():
+            if not isinstance(v, str):
+                raise TypeError("type of %r is %r, expected %r" %
+                                (k, type(v), str))
         if is_alive_fn is None:
             is_alive_fn = self.thread.is_alive
-        scheme = ("https" if self.configuration.get("server", "ssl") else
-                  "http")
+        encoding: str = self.configuration.get("encoding", "request")
+        scheme = "https" if self.configuration.get("server", "ssl") else "http"
+        data_bytes = None
+        if data:
+            data_bytes = data.encode(encoding)
         req = request.Request(
             "%s://[%s]:%d%s" % (scheme, *self.sockname, path),
-            data=data, headers=headers, method=method)
+            data=data_bytes, headers=headers, method=method)
         while True:
             assert is_alive_fn()
             try:
                 with self.opener.open(req) as f:
-                    return f.getcode(), f.info(), f.read().decode()
+                    return f.getcode(), dict(f.info()), f.read().decode()
             except HTTPError as e:
-                return e.code, e.headers, e.read().decode()
+                return e.code, dict(e.headers), e.read().decode()
             except URLError as e:
                 if not isinstance(e.reason, ConnectionRefusedError):
                     raise
             time.sleep(0.1)
 
-    def test_root(self):
+    def test_root(self) -> None:
         self.thread.start()
         self.get("/", check=302)
 
-    def test_ssl(self):
+    def test_ssl(self) -> None:
         self.configuration.update({
             "server": {"ssl": "True",
                        "certificate": get_file_path("cert.pem"),
@@ -123,7 +148,7 @@ class TestBaseServerRequests(BaseTest):
         self.thread.start()
         self.get("/", check=302)
 
-    def test_bind_fail(self):
+    def test_bind_fail(self) -> None:
         for address_family, address in [(socket.AF_INET, "::1"),
                                         (socket.AF_INET6, "127.0.0.1")]:
             with socket.socket(address_family, socket.SOCK_STREAM) as sock:
@@ -143,7 +168,7 @@ class TestBaseServerRequests(BaseTest):
                         errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT,
                         errno.EPROTONOSUPPORT))
 
-    def test_ipv6(self):
+    def test_ipv6(self) -> None:
         try:
             with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
                 # Only allow IPv6 connections to the IPv6 socket
@@ -162,7 +187,7 @@ class TestBaseServerRequests(BaseTest):
         self.thread.start()
         self.get("/", check=302)
 
-    def test_command_line_interface(self):
+    def test_command_line_interface(self) -> None:
         config_args = []
         for section, values in config.DEFAULT_CONFIG_SCHEMA.items():
             if section.startswith("_"):
@@ -172,13 +197,14 @@ class TestBaseServerRequests(BaseTest):
                     continue
                 long_name = "--%s-%s" % (section, option.replace("_", "-"))
                 if data["type"] == bool:
-                    if not self.configuration.get(section, option):
+                    if not cast(bool, self.configuration.get(section, option)):
                         long_name = "--no%s" % long_name[1:]
                     config_args.append(long_name)
                 else:
                     config_args.append(long_name)
-                    config_args.append(
-                        self.configuration.get_raw(section, option))
+                    raw_value = self.configuration.get_raw(section, option)
+                    assert isinstance(raw_value, str)
+                    config_args.append(raw_value)
         p = subprocess.Popen(
             [sys.executable, "-m", "radicale"] + config_args,
             env={**os.environ, "PYTHONPATH": os.pathsep.join(sys.path)})
@@ -190,7 +216,7 @@ class TestBaseServerRequests(BaseTest):
         if os.name == "posix":
             assert p.returncode == 0
 
-    def test_wsgi_server(self):
+    def test_wsgi_server(self) -> None:
         config_path = os.path.join(self.colpath, "config")
         parser = RawConfigParser()
         parser.read_dict(configuration_to_dict(self.configuration))
@@ -199,9 +225,10 @@ class TestBaseServerRequests(BaseTest):
         env = os.environ.copy()
         env["PYTHONPATH"] = os.pathsep.join(sys.path)
         env["RADICALE_CONFIG"] = config_path
+        raw_server_hosts = self.configuration.get_raw("server", "hosts")
+        assert isinstance(raw_server_hosts, str)
         p = subprocess.Popen([
-            sys.executable, "-m", "waitress",
-            "--listen", self.configuration.get_raw("server", "hosts"),
+            sys.executable, "-m", "waitress", "--listen", raw_server_hosts,
             "radicale:application"], env=env)
         try:
             self.get("/", is_alive_fn=lambda: p.poll() is None, check=302)
