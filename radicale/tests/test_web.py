@@ -19,30 +19,14 @@ Test web plugin.
 
 """
 
-import shutil
-import tempfile
-
-from radicale import Application, config
+from radicale import Application
 from radicale.tests import BaseTest
 
 
 class TestBaseWebRequests(BaseTest):
     """Test web plugin."""
 
-    def setup(self):
-        self.configuration = config.load()
-        self.colpath = tempfile.mkdtemp()
-        self.configuration.update({
-            "storage": {"filesystem_folder": self.colpath,
-                        # Disable syncing to disk for better performance
-                        "_filesystem_fsync": "False"}},
-            "test", privileged=True)
-        self.application = Application(self.configuration)
-
-    def teardown(self):
-        shutil.rmtree(self.colpath)
-
-    def test_internal(self):
+    def test_internal(self) -> None:
         status, headers, _ = self.request("GET", "/.web")
         assert status == 302
         assert headers.get("Location") == ".web/"
@@ -50,7 +34,7 @@ class TestBaseWebRequests(BaseTest):
         assert answer
         self.post("/.web", check=405)
 
-    def test_none(self):
+    def test_none(self) -> None:
         self.configuration.update({"web": {"type": "none"}}, "test")
         self.application = Application(self.configuration)
         _, answer = self.get("/.web")
@@ -58,7 +42,7 @@ class TestBaseWebRequests(BaseTest):
         self.get("/.web/", check=404)
         self.post("/.web", check=405)
 
-    def test_custom(self):
+    def test_custom(self) -> None:
         """Custom web plugin."""
         self.configuration.update({
             "web": {"type": "radicale.tests.custom.web"}}, "test")
