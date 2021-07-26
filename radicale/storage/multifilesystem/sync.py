@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import itertools
 import os
 import pickle
@@ -25,7 +26,7 @@ from radicale.log import logger
 
 
 class CollectionSyncMixin:
-    def sync(self, old_token=None):
+    def sync(self, old_token=""):
         # The sync token has the form http://radicale.org/ns/sync/TOKEN_NAME
         # where TOKEN_NAME is the sha256 hash of all history etags of present
         # and past items of the collection.
@@ -37,7 +38,7 @@ class CollectionSyncMixin:
                     return False
             return True
 
-        old_token_name = None
+        old_token_name = ""
         if old_token:
             # Extract the token name from the sync token
             if not old_token.startswith("http://radicale.org/ns/sync/"):
@@ -78,10 +79,9 @@ class CollectionSyncMixin:
                         "Failed to load stored sync token %r in %r: %s",
                         old_token_name, self.path, e, exc_info=True)
                     # Delete the damaged file
-                    try:
+                    with contextlib.suppress(FileNotFoundError,
+                                             PermissionError):
                         os.remove(old_token_path)
-                    except (FileNotFoundError, PermissionError):
-                        pass
                 raise ValueError("Token not found: %r" % old_token)
         # write the new token state or update the modification time of
         # existing token state
@@ -101,11 +101,9 @@ class CollectionSyncMixin:
                 self._clean_history()
         else:
             # Try to update the modification time
-            try:
+            with contextlib.suppress(FileNotFoundError):
                 # Race: Another process might have deleted the file.
                 os.utime(token_path)
-            except FileNotFoundError:
-                pass
         changes = []
         # Find all new, changed and deleted (that are still in the item cache)
         # items

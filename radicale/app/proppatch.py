@@ -17,18 +17,20 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-import contextlib
 import socket
 import xml.etree.ElementTree as ET
 from http import client
+from typing import Dict, Optional, cast
 
-from radicale import app, httputils
-from radicale import item as radicale_item
-from radicale import storage, xmlutils
+import radicale.item as radicale_item
+from radicale import httputils, storage, types, xmlutils
+from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
 
 
-def xml_proppatch(base_prefix, path, xml_request, collection):
+def xml_proppatch(base_prefix: str, path: str,
+                  xml_request: Optional[ET.Element],
+                  collection: storage.BaseCollection) -> ET.Element:
     """Read and answer PROPPATCH requests.
 
     Read rfc4918-9.2 for info.
@@ -49,24 +51,24 @@ def xml_proppatch(base_prefix, path, xml_request, collection):
     propstat.append(status)
     response.append(propstat)
 
-    new_props = collection.get_meta()
-    for short_name, value in xmlutils.props_from_request(xml_request).items():
-        if value is None:
-            with contextlib.suppress(KeyError):
-                del new_props[short_name]
-        else:
-            new_props[short_name] = value
+    props_with_remove = xmlutils.props_from_request(xml_request)
+    all_props_with_remove = cast(Dict[str, Optional[str]],
+                                 dict(collection.get_meta()))
+    all_props_with_remove.update(props_with_remove)
+    all_props = radicale_item.check_and_sanitize_props(all_props_with_remove)
+    collection.set_meta(all_props)
+    for short_name in props_with_remove:
         props_ok.append(ET.Element(xmlutils.make_clark(short_name)))
-    radicale_item.check_and_sanitize_props(new_props)
-    collection.set_meta(new_props)
 
     return multistatus
 
 
-class ApplicationProppatchMixin:
-    def do_PROPPATCH(self, environ, base_prefix, path, user):
+class ApplicationPartProppatch(ApplicationBase):
+
+    def do_PROPPATCH(self, environ: types.WSGIEnviron, base_prefix: str,
+                     path: str, user: str) -> types.WSGIResponse:
         """Manage PROPPATCH request."""
-        access = app.Access(self._rights, user, path)
+        access = Access(self._rights, user, path)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         try:
@@ -79,7 +81,7 @@ class ApplicationProppatchMixin:
             logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         with self._storage.acquire_lock("w", user):
-            item = next(self._storage.discover(path), None)
+            item = next(iter(self._storage.discover(path)), None)
             if not item:
                 return httputils.NOT_FOUND
             if not access.check("w", item):

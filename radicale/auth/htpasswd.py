@@ -49,18 +49,23 @@ When passlib[bcrypt] is installed:
 
 import functools
 import hmac
+from typing import Any
 
 from passlib.hash import apr_md5_crypt
 
-from radicale import auth
+from radicale import auth, config
 
 
 class Auth(auth.BaseAuth):
-    def __init__(self, configuration):
+
+    _filename: str
+    _encoding: str
+
+    def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
         self._filename = configuration.get("auth", "htpasswd_filename")
-        self._encoding = self.configuration.get("encoding", "stock")
-        encryption = configuration.get("auth", "htpasswd_encryption")
+        self._encoding = configuration.get("encoding", "stock")
+        encryption: str = configuration.get("auth", "htpasswd_encryption")
 
         if encryption == "plain":
             self._verify = self._plain
@@ -82,17 +87,17 @@ class Auth(auth.BaseAuth):
             raise RuntimeError("The htpasswd encryption method %r is not "
                                "supported." % encryption)
 
-    def _plain(self, hash_value, password):
+    def _plain(self, hash_value: str, password: str) -> bool:
         """Check if ``hash_value`` and ``password`` match, plain method."""
         return hmac.compare_digest(hash_value.encode(), password.encode())
 
-    def _bcrypt(self, bcrypt, hash_value, password):
+    def _bcrypt(self, bcrypt: Any, hash_value: str, password: str) -> bool:
         return bcrypt.verify(password, hash_value.strip())
 
-    def _md5apr1(self, hash_value, password):
+    def _md5apr1(self, hash_value: str, password: str) -> bool:
         return apr_md5_crypt.verify(password, hash_value.strip())
 
-    def login(self, login, password):
+    def login(self, login: str, password: str) -> str:
         """Validate credentials.
 
         Iterate through htpasswd credential file until login matches, extract

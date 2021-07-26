@@ -119,7 +119,7 @@ class BaseTest:
         if not self._check_status(status, 207, check):
             return status, None
         responses = self.parse_responses(answer)
-        if args.get("HTTP_DEPTH", 0) == 0:
+        if args.get("HTTP_DEPTH", "0") == "0":
             assert len(responses) == 1 and path in responses
         return status, responses
 

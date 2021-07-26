@@ -30,13 +30,14 @@ import os
 import posixpath
 import time
 from http import client
+from typing import Mapping
 
 import pkg_resources
 
-from radicale import httputils, pathutils, web
+from radicale import config, httputils, pathutils, types, web
 from radicale.log import logger
 
-MIMETYPES = {
+MIMETYPES: Mapping[str, str] = {
     ".css": "text/css",
     ".eot": "application/vnd.ms-fontobject",
     ".gif": "image/gif",
@@ -50,16 +51,20 @@ MIMETYPES = {
     ".woff": "application/font-woff",
     ".woff2": "font/woff2",
     ".xml": "text/xml"}
-FALLBACK_MIMETYPE = "application/octet-stream"
+FALLBACK_MIMETYPE: str = "application/octet-stream"
 
 
 class Web(web.BaseWeb):
-    def __init__(self, configuration):
+
+    folder: str
+
+    def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
         self.folder = pkg_resources.resource_filename(__name__,
                                                       "internal_data")
 
-    def get(self, environ, base_prefix, path, user):
+    def get(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
+            user: str) -> types.WSGIResponse:
         assert path == "/.web" or path.startswith("/.web/")
         assert pathutils.sanitize_path(path) == path
         try:
