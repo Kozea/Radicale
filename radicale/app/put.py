@@ -22,20 +22,30 @@ import posixpath
 import socket
 import sys
 from http import client
+from types import TracebackType
+from typing import Iterator, List, Mapping, MutableMapping, Optional, Tuple
 
 import vobject
 
-from radicale import app, httputils
-from radicale import item as radicale_item
-from radicale import pathutils, rights, storage, xmlutils
+import radicale.item as radicale_item
+from radicale import httputils, pathutils, rights, storage, types, xmlutils
+from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
 
-MIMETYPE_TAGS = {value: key for key, value in xmlutils.MIMETYPES.items()}
+MIMETYPE_TAGS: Mapping[str, str] = {value: key for key, value in
+                                    xmlutils.MIMETYPES.items()}
 
 
-def prepare(vobject_items, path, content_type, permissions, parent_permissions,
-            tag=None, write_whole_collection=None):
-    if (write_whole_collection or permissions and not parent_permissions):
+def prepare(vobject_items: List[vobject.base.Component], path: str,
+            content_type: str, permission: bool, parent_permission: bool,
+            tag: Optional[str] = None,
+            write_whole_collection: Optional[bool] = None) -> Tuple[
+                Iterator[radicale_item.Item],  # items
+                Optional[str],  # tag
+                Optional[bool],  # write_whole_collection
+                Optional[MutableMapping[str, str]],  # props
+                Optional[Tuple[type, BaseException, Optional[TracebackType]]]]:
+    if (write_whole_collection or permission and not parent_permission):
         write_whole_collection = True
         tag = radicale_item.predict_tag_of_whole_collection(
             vobject_items, MIMETYPE_TAGS.get(content_type))
@@ -43,20 +53,20 @@ def prepare(vobject_items, path, content_type, permissions, parent_permissions,
             raise ValueError("Can't determine collection tag")
         collection_path = pathutils.strip_path(path)
     elif (write_whole_collection is not None and not write_whole_collection or
-          not permissions and parent_permissions):
+          not permission and parent_permission):
         write_whole_collection = False
         if tag is None:
             tag = radicale_item.predict_tag_of_parent_collection(vobject_items)
         collection_path = posixpath.dirname(pathutils.strip_path(path))
-    props = None
+    props: Optional[MutableMapping[str, str]] = None
     stored_exc_info = None
     items = []
     try:
-        if tag:
+        if tag and write_whole_collection is not None:
             radicale_item.check_and_sanitize_items(
                 vobject_items, is_collection=write_whole_collection, tag=tag)
             if write_whole_collection and tag == "VCALENDAR":
-                vobject_components = []
+                vobject_components: List[vobject.base.Component] = []
                 vobject_item, = vobject_items
                 for content in ("vevent", "vtodo", "vjournal"):
                     vobject_components.extend(
@@ -98,23 +108,25 @@ def prepare(vobject_items, path, content_type, permissions, parent_permissions,
                     caldesc = vobject_items[0].x_wr_caldesc.value
                     if caldesc:
                         props["C:calendar-description"] = caldesc
-            radicale_item.check_and_sanitize_props(props)
+            props = radicale_item.check_and_sanitize_props(props)
     except Exception:
-        stored_exc_info = sys.exc_info()
+        exc_info_or_none_tuple = sys.exc_info()
+        assert exc_info_or_none_tuple[0] is not None
+        stored_exc_info = exc_info_or_none_tuple
 
-    # Use generator for items and delete references to free memory
-    # early
-    def items_generator():
+    # Use iterator for items and delete references to free memory early
+    def items_iter() -> Iterator[radicale_item.Item]:
         while items:
             yield items.pop(0)
-    return (items_generator(), tag, write_whole_collection, props,
-            stored_exc_info)
+    return items_iter(), tag, write_whole_collection, props, stored_exc_info
 
 
-class ApplicationPutMixin:
-    def do_PUT(self, environ, base_prefix, path, user):
+class ApplicationPartPut(ApplicationBase):
+
+    def do_PUT(self, environ: types.WSGIEnviron, base_prefix: str,
+               path: str, user: str) -> types.WSGIResponse:
         """Manage PUT request."""
-        access = app.Access(self._rights, user, path)
+        access = Access(self._rights, user, path)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         try:
@@ -126,9 +138,10 @@ class ApplicationPutMixin:
             logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         # Prepare before locking
-        content_type = environ.get("CONTENT_TYPE", "").split(";")[0]
+        content_type = environ.get("CONTENT_TYPE", "").split(";",
+                                                             maxsplit=1)[0]
         try:
-            vobject_items = tuple(vobject.readComponents(content or ""))
+            vobject_items = list(vobject.readComponents(content or ""))
         except Exception as e:
             logger.warning(
                 "Bad PUT request on %r: %s", path, e, exc_info=True)
@@ -140,20 +153,20 @@ class ApplicationPutMixin:
              bool(rights.intersect(access.parent_permissions, "w")))
 
         with self._storage.acquire_lock("w", user):
-            item = next(self._storage.discover(path), None)
-            parent_item = next(
-                self._storage.discover(access.parent_path), None)
-            if not parent_item:
+            item = next(iter(self._storage.discover(path)), None)
+            parent_item = next(iter(
+                self._storage.discover(access.parent_path)), None)
+            if not isinstance(parent_item, storage.BaseCollection):
                 return httputils.CONFLICT
 
             write_whole_collection = (
                 isinstance(item, storage.BaseCollection) or
-                not parent_item.get_meta("tag"))
+                not parent_item.tag)
 
             if write_whole_collection:
                 tag = prepared_tag
             else:
-                tag = parent_item.get_meta("tag")
+                tag = parent_item.tag
 
             if write_whole_collection:
                 if ("w" if tag else "W") not in access.permissions:
@@ -198,6 +211,7 @@ class ApplicationPutMixin:
                         "Bad PUT request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
             else:
+                assert not isinstance(item, storage.BaseCollection)
                 prepared_item, = prepared_items
                 if (item and item.uid != prepared_item.uid or
                         not item and parent_item.has_uid(prepared_item.uid)):

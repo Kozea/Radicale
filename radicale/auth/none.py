@@ -26,5 +26,6 @@ from radicale import auth
 
 
 class Auth(auth.BaseAuth):
-    def login(self, login, password):
+
+    def login(self, login: str, password: str) -> str:
         return login

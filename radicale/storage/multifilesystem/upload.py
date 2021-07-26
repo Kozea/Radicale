@@ -18,8 +18,9 @@
 
 import os
 import pickle
+import sys
 
-from radicale import item as radicale_item
+import radicale.item as radicale_item
 from radicale import pathutils
 
 
@@ -63,7 +64,7 @@ class CollectionUploadMixin:
                     "Failed to store item %r in temporary collection %r: %s" %
                     (uid, self.path, e)) from e
             href_candidate_funtions = []
-            if os.name in ("nt", "posix"):
+            if os.name == "posix" or sys.platform == "win32":
                 href_candidate_funtions.append(
                     lambda: uid if uid.lower().endswith(suffix.lower())
                     else uid + suffix)
@@ -88,7 +89,7 @@ class CollectionUploadMixin:
                 except OSError as e:
                     if href_candidate_funtions and (
                             os.name == "posix" and e.errno == 22 or
-                            os.name == "nt" and e.errno == 123):
+                            sys.platform == "win32" and e.errno == 123):
                         continue
                     raise
             with f:

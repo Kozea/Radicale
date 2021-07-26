@@ -32,17 +32,21 @@ Take a look at the class ``BaseRights`` if you want to implement your own.
 
 """
 
-from radicale import utils
+from typing import Sequence
 
-INTERNAL_TYPES = ("authenticated", "owner_write", "owner_only", "from_file")
+from radicale import config, utils
+
+INTERNAL_TYPES: Sequence[str] = ("authenticated", "owner_write", "owner_only",
+                                 "from_file")
 
 
-def load(configuration):
+def load(configuration: "config.Configuration") -> "BaseRights":
     """Load the rights module chosen in configuration."""
-    return utils.load_plugin(INTERNAL_TYPES, "rights", "Rights", configuration)
+    return utils.load_plugin(INTERNAL_TYPES, "rights", "Rights", BaseRights,
+                             configuration)
 
 
-def intersect(a, b):
+def intersect(a: str, b: str) -> str:
     """Intersect two lists of rights.
 
     Returns all rights that are both in ``a`` and ``b``.
@@ -52,7 +56,8 @@ def intersect(a, b):
 
 
 class BaseRights:
-    def __init__(self, configuration):
+
+    def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseRights.
 
         ``configuration`` see ``radicale.config`` module.
@@ -62,7 +67,7 @@ class BaseRights:
         """
         self.configuration = configuration
 
-    def authorization(self, user, path):
+    def authorization(self, user: str, path: str) -> str:
         """Get granted rights of ``user`` for the collection ``path``.
 
         If ``user`` is empty, check for anonymous rights.

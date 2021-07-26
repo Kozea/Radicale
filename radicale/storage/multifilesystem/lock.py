@@ -22,6 +22,7 @@ import os
 import shlex
 import signal
 import subprocess
+import sys
 
 from radicale import pathutils
 from radicale.log import logger
@@ -48,7 +49,7 @@ class StorageLockMixin:
         self._lock = pathutils.RwLock(lock_path)
 
     @contextlib.contextmanager
-    def acquire_lock(self, mode, user=None):
+    def acquire_lock(self, mode, user=""):
         with self._lock.acquire(mode):
             yield
             # execute hook
@@ -66,7 +67,7 @@ class StorageLockMixin:
                 if os.name == "posix":
                     # Process group is also used to identify child processes
                     popen_kwargs["preexec_fn"] = os.setpgrp
-                elif os.name == "nt":
+                elif sys.platform == "win32":
                     popen_kwargs["creationflags"] = (
                         subprocess.CREATE_NEW_PROCESS_GROUP)
                 command = hook % {"user": shlex.quote(user or "Anonymous")}

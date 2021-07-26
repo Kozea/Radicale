@@ -18,11 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-from radicale import httputils
+from radicale import httputils, types
+from radicale.app.base import ApplicationBase
 
 
-class ApplicationPostMixin:
-    def do_POST(self, environ, base_prefix, path, user):
+class ApplicationPartPost(ApplicationBase):
+
+    def do_POST(self, environ: types.WSGIEnviron, base_prefix: str,
+                path: str, user: str) -> types.WSGIResponse:
         """Manage POST request."""
         if path == "/.web" or path.startswith("/.web/"):
             return self._web.post(environ, base_prefix, path, user)

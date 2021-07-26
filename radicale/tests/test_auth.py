@@ -23,6 +23,7 @@ Radicale tests with simple requests and authentication.
 
 import os
 import shutil
+import sys
 import tempfile
 
 import pytest
@@ -114,7 +115,7 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_multi(self):
         self._test_htpasswd("plain", "ign:ign\ntmp:bepo")
 
-    @pytest.mark.skipif(os.name == "nt", reason="leading and trailing "
+    @pytest.mark.skipif(sys.platform == "win32", reason="leading and trailing "
                         "whitespaces not allowed in file names")
     def test_htpasswd_whitespace_user(self):
         for user in (" tmp", "tmp ", " tmp "):

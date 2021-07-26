@@ -19,7 +19,7 @@
 import json
 import os
 
-from radicale import item as radicale_item
+import radicale.item as radicale_item
 
 
 class CollectionMetaMixin:
@@ -35,14 +35,15 @@ class CollectionMetaMixin:
             try:
                 try:
                     with open(self._props_path, encoding=self._encoding) as f:
-                        self._meta_cache = json.load(f)
+                        temp_meta = json.load(f)
                 except FileNotFoundError:
-                    self._meta_cache = {}
-                radicale_item.check_and_sanitize_props(self._meta_cache)
+                    temp_meta = {}
+                self._meta_cache = radicale_item.check_and_sanitize_props(
+                    temp_meta)
             except ValueError as e:
                 raise RuntimeError("Failed to load properties of collection "
                                    "%r: %s" % (self.path, e)) from e
-        return self._meta_cache.get(key) if key else self._meta_cache
+        return self._meta_cache if key is None else self._meta_cache.get(key)
 
     def set_meta(self, props):
         with self._atomic_write(self._props_path, "w") as f:
