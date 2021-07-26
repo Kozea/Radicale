@@ -21,14 +21,16 @@ import posixpath
 import socket
 from http import client
 
-from radicale import httputils
-from radicale import item as radicale_item
-from radicale import pathutils, storage, xmlutils
+import radicale.item as radicale_item
+from radicale import httputils, pathutils, storage, types, xmlutils
+from radicale.app.base import ApplicationBase
 from radicale.log import logger
 
 
-class ApplicationMkcalendarMixin:
-    def do_MKCALENDAR(self, environ, base_prefix, path, user):
+class ApplicationPartMkcalendar(ApplicationBase):
+
+    def do_MKCALENDAR(self, environ: types.WSGIEnviron, base_prefix: str,
+                      path: str, user: str) -> types.WSGIResponse:
         """Manage MKCALENDAR request."""
         if "w" not in self._rights.authorization(user, path):
             return httputils.NOT_ALLOWED
@@ -42,29 +44,28 @@ class ApplicationMkcalendarMixin:
             logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         # Prepare before locking
-        props = xmlutils.props_from_request(xml_content)
-        props = {k: v for k, v in props.items() if v is not None}
-        props["tag"] = "VCALENDAR"
-        # TODO: use this?
-        # timezone = props.get("C:calendar-timezone")
+        props_with_remove = xmlutils.props_from_request(xml_content)
+        props_with_remove["tag"] = "VCALENDAR"
         try:
-            radicale_item.check_and_sanitize_props(props)
+            props = radicale_item.check_and_sanitize_props(props_with_remove)
         except ValueError as e:
             logger.warning(
                 "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
+        # TODO: use this?
+        # timezone = props.get("C:calendar-timezone")
         with self._storage.acquire_lock("w", user):
-            item = next(self._storage.discover(path), None)
+            item = next(iter(self._storage.discover(path)), None)
             if item:
                 return self._webdav_error_response(
                     client.CONFLICT, "D:resource-must-be-null")
             parent_path = pathutils.unstrip_path(
                 posixpath.dirname(pathutils.strip_path(path)), True)
-            parent_item = next(self._storage.discover(parent_path), None)
+            parent_item = next(iter(self._storage.discover(parent_path)), None)
             if not parent_item:
                 return httputils.CONFLICT
             if (not isinstance(parent_item, storage.BaseCollection) or
-                    parent_item.get_meta("tag")):
+                    parent_item.tag):
                 return httputils.FORBIDDEN
             try:
                 self._storage.create_collection(path, props=props)

@@ -17,10 +17,11 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import binascii
+import contextlib
 import os
 import pickle
 
-from radicale import item as radicale_item
+import radicale.item as radicale_item
 from radicale import pathutils
 from radicale.log import logger
 
@@ -53,13 +54,10 @@ class CollectionHistoryMixin:
             self._storage._makedirs_synced(history_folder)
             history_etag = radicale_item.get_etag(
                 history_etag + "/" + etag).strip("\"")
-            try:
-                # Race: Other processes might have created and locked the file.
-                with self._atomic_write(os.path.join(history_folder, href),
-                                        "wb") as f:
-                    pickle.dump([etag, history_etag], f)
-            except PermissionError:
-                pass
+            # Race: Other processes might have created and locked the file.
+            with contextlib.suppress(PermissionError), self._atomic_write(
+                    os.path.join(history_folder, href), "wb") as f:
+                pickle.dump([etag, history_etag], f)
         return history_etag
 
     def _get_deleted_history_hrefs(self):
@@ -67,7 +65,7 @@ class CollectionHistoryMixin:
         history cache."""
         history_folder = os.path.join(self._filesystem_path,
                                       ".Radicale.cache", "history")
-        try:
+        with contextlib.suppress(FileNotFoundError):
             for entry in os.scandir(history_folder):
                 href = entry.name
                 if not pathutils.is_safe_filesystem_path_component(href):
@@ -75,8 +73,6 @@ class CollectionHistoryMixin:
                 if os.path.isfile(os.path.join(self._filesystem_path, href)):
                     continue
                 yield href
-        except FileNotFoundError:
-            pass
 
     def _clean_history(self):
         # Delete all expired history entries of deleted items.

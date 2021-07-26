@@ -17,12 +17,18 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 from importlib import import_module
+from typing import Callable, Sequence, Type, TypeVar, Union
 
+from radicale import config
 from radicale.log import logger
 
+_T_co = TypeVar("_T_co", covariant=True)
 
-def load_plugin(internal_types, module_name, class_name, configuration):
-    type_ = configuration.get(module_name, "type")
+
+def load_plugin(internal_types: Sequence[str], module_name: str,
+                class_name: str, base_class: Type[_T_co],
+                configuration: "config.Configuration") -> _T_co:
+    type_: Union[str, Callable] = configuration.get(module_name, "type")
     if callable(type_):
         logger.info("%s type is %r", module_name, type_)
         return type_(configuration)

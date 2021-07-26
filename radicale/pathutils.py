@@ -21,20 +21,21 @@ Helper functions for working with the file system.
 
 """
 
-import contextlib
 import os
 import posixpath
 import sys
 import threading
 from tempfile import TemporaryDirectory
-from typing import Type, Union
+from typing import Iterator, Type, Union
 
-if os.name == "nt":
+from radicale import storage, types
+
+if sys.platform == "win32":
     import ctypes
     import ctypes.wintypes
     import msvcrt
 
-    LOCKFILE_EXCLUSIVE_LOCK = 2
+    LOCKFILE_EXCLUSIVE_LOCK: int = 2
     ULONG_PTR: Union[Type[ctypes.c_uint32], Type[ctypes.c_uint64]]
     if ctypes.sizeof(ctypes.c_void_p) == 4:
         ULONG_PTR = ctypes.c_uint32
@@ -49,8 +50,7 @@ if os.name == "nt":
             ("offset_high", ctypes.wintypes.DWORD),
             ("h_event", ctypes.wintypes.HANDLE)]
 
-    kernel32 = ctypes.WinDLL(  # type: ignore[attr-defined]
-        "kernel32", use_last_error=True)
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     lock_file_ex = kernel32.LockFileEx
     lock_file_ex.argtypes = [
         ctypes.wintypes.HANDLE,
@@ -71,13 +71,13 @@ if os.name == "nt":
 elif os.name == "posix":
     import fcntl
 
-HAVE_RENAMEAT2 = False
+HAVE_RENAMEAT2: bool = False
 if sys.platform == "linux":
     import ctypes
 
-    RENAME_EXCHANGE = 2
+    RENAME_EXCHANGE: int = 2
     try:
-        renameat2 = ctypes.CDLL(None, use_errno=True).renameat2
+        renameat2 = ctypes.CDLL("", use_errno=True).renameat2
     except AttributeError:
         pass
     else:
@@ -92,14 +92,19 @@ if sys.platform == "linux":
 class RwLock:
     """A readers-Writer lock that locks a file."""
 
-    def __init__(self, path):
+    _path: str
+    _readers: int
+    _writer: bool
+    _lock: threading.Lock
+
+    def __init__(self, path: str) -> None:
         self._path = path
         self._readers = 0
         self._writer = False
         self._lock = threading.Lock()
 
     @property
-    def locked(self):
+    def locked(self) -> str:
         with self._lock:
             if self._readers > 0:
                 return "r"
@@ -107,12 +112,12 @@ class RwLock:
                 return "w"
             return ""
 
-    @contextlib.contextmanager
-    def acquire(self, mode):
+    @types.contextmanager
+    def acquire(self, mode: str) -> Iterator[None]:
         if mode not in "rw":
             raise ValueError("Invalid mode: %r" % mode)
         with open(self._path, "w+") as lock_file:
-            if os.name == "nt":
+            if sys.platform == "win32":
                 handle = msvcrt.get_osfhandle(lock_file.fileno())
                 flags = LOCKFILE_EXCLUSIVE_LOCK if mode == "w" else 0
                 overlapped = Overlapped()
@@ -120,15 +125,15 @@ class RwLock:
                     if not lock_file_ex(handle, flags, 0, 1, 0, overlapped):
                         raise ctypes.WinError()
                 except OSError as e:
-                    raise RuntimeError("Locking the storage failed: %s" %
-                                       e) from e
+                    raise RuntimeError("Locking the storage failed: %s" % e
+                                       ) from e
             elif os.name == "posix":
                 _cmd = fcntl.LOCK_EX if mode == "w" else fcntl.LOCK_SH
                 try:
                     fcntl.flock(lock_file.fileno(), _cmd)
                 except OSError as e:
-                    raise RuntimeError("Locking the storage failed: %s" %
-                                       e) from e
+                    raise RuntimeError("Locking the storage failed: %s" % e
+                                       ) from e
             else:
                 raise RuntimeError("Locking the storage failed: "
                                    "Unsupported operating system")
@@ -149,7 +154,7 @@ class RwLock:
                     self._writer = False
 
 
-def rename_exchange(src, dst):
+def rename_exchange(src: str, dst: str) -> None:
     """Exchange the files or directories `src` and `dst`.
 
     Both `src` and `dst` must exist but may be of different types.
@@ -181,26 +186,26 @@ def rename_exchange(src, dst):
         finally:
             os.close(src_dir_fd)
     else:
-        with TemporaryDirectory(
-                prefix=".Radicale.tmp-", dir=src_dir) as tmp_dir:
+        with TemporaryDirectory(prefix=".Radicale.tmp-", dir=src_dir
+                                ) as tmp_dir:
             os.rename(dst, os.path.join(tmp_dir, "interim"))
             os.rename(src, dst)
             os.rename(os.path.join(tmp_dir, "interim"), src)
 
 
-def fsync(fd):
+def fsync(fd: int) -> None:
     if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
         fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
     else:
         os.fsync(fd)
 
 
-def strip_path(path):
+def strip_path(path: str) -> str:
     assert sanitize_path(path) == path
     return path.strip("/")
 
 
-def unstrip_path(stripped_path, trailing_slash=False):
+def unstrip_path(stripped_path: str, trailing_slash: bool = False) -> str:
     assert strip_path(sanitize_path(stripped_path)) == stripped_path
     assert stripped_path or trailing_slash
     path = "/%s" % stripped_path
@@ -209,7 +214,7 @@ def unstrip_path(stripped_path, trailing_slash=False):
     return path
 
 
-def sanitize_path(path):
+def sanitize_path(path: str) -> str:
     """Make path absolute with leading slash to prevent access to other data.
 
     Preserve potential trailing slash.
@@ -226,16 +231,16 @@ def sanitize_path(path):
     return new_path + trailing_slash
 
 
-def is_safe_path_component(path):
+def is_safe_path_component(path: str) -> bool:
     """Check if path is a single component of a path.
 
     Check that the path is safe to join too.
 
     """
-    return path and "/" not in path and path not in (".", "..")
+    return bool(path) and "/" not in path and path not in (".", "..")
 
 
-def is_safe_filesystem_path_component(path):
+def is_safe_filesystem_path_component(path: str) -> bool:
     """Check if path is a single component of a local and posix filesystem
        path.
 
@@ -243,13 +248,13 @@ def is_safe_filesystem_path_component(path):
 
     """
     return (
-        path and not os.path.splitdrive(path)[0] and
+        bool(path) and not os.path.splitdrive(path)[0] and
         not os.path.split(path)[0] and path not in (os.curdir, os.pardir) and
         not path.startswith(".") and not path.endswith("~") and
         is_safe_path_component(path))
 
 
-def path_to_filesystem(root, sane_path):
+def path_to_filesystem(root: str, sane_path: str) -> str:
     """Convert `sane_path` to a local filesystem path relative to `root`.
 
     `root` must be a secure filesystem path, it will be prepend to the path.
@@ -271,25 +276,25 @@ def path_to_filesystem(root, sane_path):
         # Check for conflicting files (e.g. case-insensitive file systems
         # or short names on Windows file systems)
         if (os.path.lexists(safe_path) and
-                part not in (e.name for e in
-                             os.scandir(safe_path_parent))):
+                part not in (e.name for e in os.scandir(safe_path_parent))):
             raise CollidingPathError(part)
     return safe_path
 
 
 class UnsafePathError(ValueError):
-    def __init__(self, path):
-        message = "Can't translate name safely to filesystem: %r" % path
-        super().__init__(message)
+
+    def __init__(self, path: str) -> None:
+        super().__init__("Can't translate name safely to filesystem: %r" %
+                         path)
 
 
 class CollidingPathError(ValueError):
-    def __init__(self, path):
-        message = "File name collision: %r" % path
-        super().__init__(message)
+
+    def __init__(self, path: str) -> None:
+        super().__init__("File name collision: %r" % path)
 
 
-def name_from_path(path, collection):
+def name_from_path(path: str, collection: "storage.BaseCollection") -> str:
     """Return Radicale item name from ``path``."""
     assert sanitize_path(path) == path
     start = unstrip_path(collection.path, True)

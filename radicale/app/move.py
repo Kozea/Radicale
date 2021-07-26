@@ -21,12 +21,15 @@ import posixpath
 from http import client
 from urllib.parse import urlparse
 
-from radicale import app, httputils, pathutils, storage
+from radicale import httputils, pathutils, storage, types
+from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
 
 
-class ApplicationMoveMixin:
-    def do_MOVE(self, environ, base_prefix, path, user):
+class ApplicationPartMove(ApplicationBase):
+
+    def do_MOVE(self, environ: types.WSGIEnviron, base_prefix: str,
+                path: str, user: str) -> types.WSGIResponse:
         """Manage MOVE request."""
         raw_dest = environ.get("HTTP_DESTINATION", "")
         to_url = urlparse(raw_dest)
@@ -34,7 +37,7 @@ class ApplicationMoveMixin:
             logger.info("Unsupported destination address: %r", raw_dest)
             # Remote destination server, not supported
             return httputils.REMOTE_DESTINATION
-        access = app.Access(self._rights, user, path)
+        access = Access(self._rights, user, path)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         to_path = pathutils.sanitize_path(to_url.path)
@@ -43,12 +46,12 @@ class ApplicationMoveMixin:
                            "start with base prefix", to_path, path)
             return httputils.NOT_ALLOWED
         to_path = to_path[len(base_prefix):]
-        to_access = app.Access(self._rights, user, to_path)
+        to_access = Access(self._rights, user, to_path)
         if not to_access.check("w"):
             return httputils.NOT_ALLOWED
 
         with self._storage.acquire_lock("w", user):
-            item = next(self._storage.discover(path), None)
+            item = next(iter(self._storage.discover(path)), None)
             if not item:
                 return httputils.NOT_FOUND
             if (not access.check("w", item) or
@@ -58,17 +61,19 @@ class ApplicationMoveMixin:
                 # TODO: support moving collections
                 return httputils.METHOD_NOT_ALLOWED
 
-            to_item = next(self._storage.discover(to_path), None)
+            to_item = next(iter(self._storage.discover(to_path)), None)
             if isinstance(to_item, storage.BaseCollection):
                 return httputils.FORBIDDEN
             to_parent_path = pathutils.unstrip_path(
                 posixpath.dirname(pathutils.strip_path(to_path)), True)
-            to_collection = next(
-                self._storage.discover(to_parent_path), None)
+            to_collection = next(iter(
+                self._storage.discover(to_parent_path)), None)
             if not to_collection:
                 return httputils.CONFLICT
-            tag = item.collection.get_meta("tag")
-            if not tag or tag != to_collection.get_meta("tag"):
+            assert isinstance(to_collection, storage.BaseCollection)
+            assert item.collection is not None
+            collection_tag = item.collection.tag
+            if not collection_tag or collection_tag != to_collection.tag:
                 return httputils.FORBIDDEN
             if to_item and environ.get("HTTP_OVERWRITE", "F") != "T":
                 return httputils.PRECONDITION_FAILED
@@ -78,7 +83,7 @@ class ApplicationMoveMixin:
                     to_collection.has_uid(item.uid)):
                 return self._webdav_error_response(
                     client.CONFLICT, "%s:no-uid-conflict" % (
-                        "C" if tag == "VCALENDAR" else "CR"))
+                        "C" if collection_tag == "VCALENDAR" else "CR"))
             to_href = posixpath.basename(pathutils.strip_path(to_path))
             try:
                 self._storage.move(item, to_collection, to_href)

@@ -17,11 +17,12 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import time
 
 import vobject
 
-from radicale import item as radicale_item
+import radicale.item as radicale_item
 from radicale import pathutils
 from radicale.log import logger
 
@@ -63,7 +64,7 @@ class CollectionGetMixin:
             return None
         except PermissionError:
             # Windows raises ``PermissionError`` when ``path`` is a directory
-            if (os.name == "nt" and
+            if (sys.platform == "win32" and
                     os.path.isdir(path) and os.access(path, os.R_OK)):
                 return None
             raise
@@ -83,10 +84,10 @@ class CollectionGetMixin:
                         self._load_item_cache(href, input_hash)
                 if input_hash != cache_hash:
                     try:
-                        vobject_items = tuple(vobject.readComponents(
+                        vobject_items = list(vobject.readComponents(
                             raw_text.decode(self._encoding)))
                         radicale_item.check_and_sanitize_items(
-                            vobject_items, tag=self.get_meta("tag"))
+                            vobject_items, tag=self.tag)
                         vobject_item, = vobject_items
                         temp_item = radicale_item.Item(
                             collection=self, vobject_item=vobject_item)

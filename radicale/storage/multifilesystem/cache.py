@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import os
 import pickle
 import time
@@ -72,14 +73,10 @@ class CollectionCacheMixin:
                                     "item")
         content = self._item_cache_content(item, cache_hash)
         self._storage._makedirs_synced(cache_folder)
-        try:
-            # Race: Other processes might have created and locked the
-            # file.
-            with self._atomic_write(os.path.join(cache_folder, href),
-                                    "wb") as f:
-                pickle.dump(content, f)
-        except PermissionError:
-            pass
+        # Race: Other processes might have created and locked the file.
+        with contextlib.suppress(PermissionError), self._atomic_write(
+                os.path.join(cache_folder, href), "wb") as f:
+            pickle.dump(content, f)
         return content
 
     def _load_item_cache(self, href, input_hash):

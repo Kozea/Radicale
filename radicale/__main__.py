@@ -29,24 +29,27 @@ import os
 import signal
 import socket
 import sys
+from types import FrameType
+from typing import Dict, List, cast
 
 from radicale import VERSION, config, log, server, storage
 from radicale.log import logger
 
 
-def run():
+def run() -> None:
     """Run Radicale as a standalone server."""
     exit_signal_numbers = [signal.SIGTERM, signal.SIGINT]
     if os.name == "posix":
         exit_signal_numbers.append(signal.SIGHUP)
         exit_signal_numbers.append(signal.SIGQUIT)
-    elif os.name == "nt":
+    if sys.platform == "win32":
         exit_signal_numbers.append(signal.SIGBREAK)
 
     # Raise SystemExit when signal arrives to run cleanup code
     # (like destructors, try-finish etc.), otherwise the process exits
     # without running any of them
-    def exit_signal_handler(signal_number, stack_frame):
+    def exit_signal_handler(signal_number: "signal.Signals",
+                            stack_frame: FrameType) -> None:
         sys.exit(1)
     for signal_number in exit_signal_numbers:
         signal.signal(signal_number, exit_signal_handler)
@@ -60,12 +63,12 @@ def run():
     parser.add_argument("--version", action="version", version=VERSION)
     parser.add_argument("--verify-storage", action="store_true",
                         help="check the storage for errors and exit")
-    parser.add_argument(
-        "-C", "--config", help="use specific configuration files", nargs="*")
+    parser.add_argument("-C", "--config",
+                        help="use specific configuration files", nargs="*")
     parser.add_argument("-D", "--debug", action="store_true",
                         help="print debug information")
 
-    groups = {}
+    groups: Dict["argparse._ArgumentGroup", List[str]] = {}
     for section, values in config.DEFAULT_CONFIG_SCHEMA.items():
         if section.startswith("_"):
             continue
@@ -76,7 +79,7 @@ def run():
                 continue
             kwargs = data.copy()
             long_name = "--%s-%s" % (section, option.replace("_", "-"))
-            args = list(kwargs.pop("aliases", ()))
+            args: List[str] = list(kwargs.pop("aliases", ()))
             args.append(long_name)
             kwargs["dest"] = "%s_%s" % (section, option)
             groups[group].append(kwargs["dest"])
@@ -100,22 +103,22 @@ def run():
                 del kwargs["type"]
                 group.add_argument(*args, **kwargs)
 
-    args = parser.parse_args()
+    args_ns = parser.parse_args()
 
     # Preliminary configure logging
-    if args.debug:
-        args.logging_level = "debug"
+    if args_ns.debug:
+        args_ns.logging_level = "debug"
     with contextlib.suppress(ValueError):
         log.set_level(config.DEFAULT_CONFIG_SCHEMA["logging"]["level"]["type"](
-            args.logging_level))
+            args_ns.logging_level))
 
     # Update Radicale configuration according to arguments
     arguments_config = {}
     for group, actions in groups.items():
-        section = group.title
+        section = group.title or ""
         section_config = {}
         for action in actions:
-            value = getattr(args, action)
+            value = getattr(args_ns, action)
             if value is not None:
                 section_config[action.split('_', 1)[1]] = value
         if section_config:
@@ -125,31 +128,31 @@ def run():
         configuration = config.load(config.parse_compound_paths(
             config.DEFAULT_CONFIG_PATH,
             os.environ.get("RADICALE_CONFIG"),
-            os.pathsep.join(args.config) if args.config else None))
+            os.pathsep.join(args_ns.config) if args_ns.config else None))
         if arguments_config:
-            configuration.update(arguments_config, "arguments")
+            configuration.update(arguments_config, "command line arguments")
     except Exception as e:
-        logger.fatal("Invalid configuration: %s", e, exc_info=True)
+        logger.critical("Invalid configuration: %s", e, exc_info=True)
         sys.exit(1)
 
     # Configure logging
-    log.set_level(configuration.get("logging", "level"))
+    log.set_level(cast(str, configuration.get("logging", "level")))
 
     # Log configuration after logger is configured
     for source, miss in configuration.sources():
         logger.info("%s %s", "Skipped missing" if miss else "Loaded", source)
 
-    if args.verify_storage:
+    if args_ns.verify_storage:
         logger.info("Verifying storage")
         try:
             storage_ = storage.load(configuration)
             with storage_.acquire_lock("r"):
                 if not storage_.verify():
-                    logger.fatal("Storage verifcation failed")
+                    logger.critical("Storage verifcation failed")
                     sys.exit(1)
         except Exception as e:
-            logger.fatal("An exception occurred during storage verification: "
-                         "%s", e, exc_info=True)
+            logger.critical("An exception occurred during storage "
+                            "verification: %s", e, exc_info=True)
             sys.exit(1)
         return
 
@@ -157,7 +160,8 @@ def run():
     shutdown_socket, shutdown_socket_out = socket.socketpair()
 
     # Shutdown server when signal arrives
-    def shutdown_signal_handler(signal_number, stack_frame):
+    def shutdown_signal_handler(signal_number: "signal.Signals",
+                                stack_frame: FrameType) -> None:
         shutdown_socket.close()
     for signal_number in exit_signal_numbers:
         signal.signal(signal_number, shutdown_signal_handler)
@@ -165,8 +169,8 @@ def run():
     try:
         server.serve(configuration, shutdown_socket_out)
     except Exception as e:
-        logger.fatal("An exception occurred during server startup: %s", e,
-                     exc_info=True)
+        logger.critical("An exception occurred during server startup: %s", e,
+                        exc_info=True)
         sys.exit(1)
 
 

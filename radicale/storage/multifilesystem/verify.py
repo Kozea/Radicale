@@ -67,8 +67,8 @@ class StorageVerifyMixin:
                                      item.href, sane_path)
                 if item_errors == saved_item_errors:
                     collection.sync()
-                if has_child_collections and collection.get_meta("tag"):
+                if has_child_collections and collection.tag:
                     logger.error("Invalid collection %r: %r must not have "
                                  "child collections", sane_path,
-                                 collection.get_meta("tag"))
+                                 collection.tag)
         return item_errors == 0 and collection_errors == 0

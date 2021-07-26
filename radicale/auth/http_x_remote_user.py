@@ -26,9 +26,14 @@ if the reverse proxy is not configured properly.
 
 """
 
-import radicale.auth.none as none
+from typing import Tuple, Union
+
+from radicale import types
+from radicale.auth import none
 
 
 class Auth(none.Auth):
-    def get_external_login(self, environ):
+
+    def get_external_login(self, environ: types.WSGIEnviron) -> Union[
+            Tuple[()], Tuple[str, str]]:
         return environ.get("HTTP_X_REMOTE_USER", ""), ""

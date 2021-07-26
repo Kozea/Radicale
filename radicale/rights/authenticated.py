@@ -21,15 +21,16 @@ calendars and address books.
 
 """
 
-from radicale import pathutils, rights
+from radicale import config, pathutils, rights
 
 
 class Rights(rights.BaseRights):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+
+    def __init__(self, configuration: config.Configuration) -> None:
+        super().__init__(configuration)
         self._verify_user = self.configuration.get("auth", "type") != "none"
 
-    def authorization(self, user, path):
+    def authorization(self, user: str, path: str) -> str:
         if self._verify_user and not user:
             return ""
         sane_path = pathutils.strip_path(path)

@@ -27,53 +27,53 @@ the built-in server (see ``radicale.server`` module).
 
 import base64
 import datetime
-import io
-import logging
-import posixpath
 import pprint
 import random
-import sys
 import time
-import xml.etree.ElementTree as ET
 import zlib
 from http import client
+from typing import Iterable, List, Mapping, Tuple, Union
 
 import pkg_resources
 
-from radicale import (auth, httputils, log, pathutils, rights, storage, web,
-                      xmlutils)
-from radicale.app.delete import ApplicationDeleteMixin
-from radicale.app.get import ApplicationGetMixin
-from radicale.app.head import ApplicationHeadMixin
-from radicale.app.mkcalendar import ApplicationMkcalendarMixin
-from radicale.app.mkcol import ApplicationMkcolMixin
-from radicale.app.move import ApplicationMoveMixin
-from radicale.app.options import ApplicationOptionsMixin
-from radicale.app.post import ApplicationPostMixin
-from radicale.app.propfind import ApplicationPropfindMixin
-from radicale.app.proppatch import ApplicationProppatchMixin
-from radicale.app.put import ApplicationPutMixin
-from radicale.app.report import ApplicationReportMixin
+from radicale import config, httputils, log, pathutils, types
+from radicale.app.base import ApplicationBase
+from radicale.app.delete import ApplicationPartDelete
+from radicale.app.get import ApplicationPartGet
+from radicale.app.head import ApplicationPartHead
+from radicale.app.mkcalendar import ApplicationPartMkcalendar
+from radicale.app.mkcol import ApplicationPartMkcol
+from radicale.app.move import ApplicationPartMove
+from radicale.app.options import ApplicationPartOptions
+from radicale.app.post import ApplicationPartPost
+from radicale.app.propfind import ApplicationPartPropfind
+from radicale.app.proppatch import ApplicationPartProppatch
+from radicale.app.put import ApplicationPartPut
+from radicale.app.report import ApplicationPartReport
 from radicale.log import logger
 
-# WORKAROUND: https://github.com/tiran/defusedxml/issues/54
-import defusedxml.ElementTree as DefusedET  # isort: skip
-sys.modules["xml.etree"].ElementTree = ET  # type: ignore[attr-defined]
+VERSION: str = pkg_resources.get_distribution("radicale").version
 
-VERSION = pkg_resources.get_distribution("radicale").version
+# Combination of types.WSGIStartResponse and WSGI application return value
+_IntermediateResponse = Tuple[str, List[Tuple[str, str]], Iterable[bytes]]
 
 
-class Application(
-        ApplicationDeleteMixin, ApplicationGetMixin, ApplicationHeadMixin,
-        ApplicationMkcalendarMixin, ApplicationMkcolMixin,
-        ApplicationMoveMixin, ApplicationOptionsMixin,
-        ApplicationPropfindMixin, ApplicationProppatchMixin,
-        ApplicationPostMixin, ApplicationPutMixin,
-        ApplicationReportMixin):
-
+class Application(ApplicationPartDelete, ApplicationPartHead,
+                  ApplicationPartGet, ApplicationPartMkcalendar,
+                  ApplicationPartMkcol, ApplicationPartMove,
+                  ApplicationPartOptions, ApplicationPartPropfind,
+                  ApplicationPartProppatch, ApplicationPartPost,
+                  ApplicationPartPut, ApplicationPartReport, ApplicationBase):
     """WSGI application."""
 
-    def __init__(self, configuration):
+    _mask_passwords: bool
+    _auth_delay: float
+    _internal_server: bool
+    _max_content_length: int
+    _auth_realm: str
+    _extra_headers: Mapping[str, str]
+
+    def __init__(self, configuration: config.Configuration) -> None:
         """Initialize Application.
 
         ``configuration`` see ``radicale.config`` module.
@@ -81,60 +81,59 @@ class Application(
         this object, it is kept as an internal reference.
 
         """
-        super().__init__()
-        self.configuration = configuration
-        self._auth = auth.load(configuration)
-        self._storage = storage.load(configuration)
-        self._rights = rights.load(configuration)
-        self._web = web.load(configuration)
-        self._encoding = configuration.get("encoding", "request")
+        super().__init__(configuration)
+        self._mask_passwords = configuration.get("logging", "mask_passwords")
+        self._auth_delay = configuration.get("auth", "delay")
+        self._internal_server = configuration.get("server", "_internal_server")
+        self._max_content_length = configuration.get(
+            "server", "max_content_length")
+        self._auth_realm = configuration.get("auth", "realm")
+        self._extra_headers = dict()
+        for key in self.configuration.options("headers"):
+            self._extra_headers[key] = configuration.get("headers", key)
 
-    def _headers_log(self, environ):
-        """Sanitize headers for logging."""
-        request_environ = dict(environ)
+    def _scrub_headers(self, environ: types.WSGIEnviron) -> types.WSGIEnviron:
+        """Mask passwords and cookies."""
+        headers = dict(environ)
+        if (self._mask_passwords and
+                headers.get("HTTP_AUTHORIZATION", "").startswith("Basic")):
+            headers["HTTP_AUTHORIZATION"] = "Basic **masked**"
+        if headers.get("HTTP_COOKIE"):
+            headers["HTTP_COOKIE"] = "**masked**"
+        return headers
 
-        # Mask passwords
-        mask_passwords = self.configuration.get("logging", "mask_passwords")
-        authorization = request_environ.get("HTTP_AUTHORIZATION", "")
-        if mask_passwords and authorization.startswith("Basic"):
-            request_environ["HTTP_AUTHORIZATION"] = "Basic **masked**"
-        if request_environ.get("HTTP_COOKIE"):
-            request_environ["HTTP_COOKIE"] = "**masked**"
-
-        return request_environ
-
-    def __call__(self, environ, start_response):
+    def __call__(self, environ: types.WSGIEnviron, start_response:
+                 types.WSGIStartResponse) -> Iterable[bytes]:
         with log.register_stream(environ["wsgi.errors"]):
             try:
-                status, headers, answers = self._handle_request(environ)
+                status_text, headers, answers = self._handle_request(environ)
             except Exception as e:
-                try:
-                    method = str(environ["REQUEST_METHOD"])
-                except Exception:
-                    method = "unknown"
-                try:
-                    path = str(environ.get("PATH_INFO", ""))
-                except Exception:
-                    path = ""
                 logger.error("An exception occurred during %s request on %r: "
-                             "%s", method, path, e, exc_info=True)
-                status, headers, answer = httputils.INTERNAL_SERVER_ERROR
-                answer = answer.encode("ascii")
-                status = "%d %s" % (
-                    status.value, client.responses.get(status, "Unknown"))
-                headers = [
-                    ("Content-Length", str(len(answer)))] + list(headers)
+                             "%s", environ.get("REQUEST_METHOD", "unknown"),
+                             environ.get("PATH_INFO", ""), e, exc_info=True)
+                # Make minimal response
+                status, raw_headers, raw_answer = (
+                    httputils.INTERNAL_SERVER_ERROR)
+                assert isinstance(raw_answer, str)
+                answer = raw_answer.encode("ascii")
+                status_text = "%d %s" % (
+                    status, client.responses.get(status, "Unknown"))
+                headers = [*raw_headers, ("Content-Length", str(len(answer)))]
                 answers = [answer]
-            start_response(status, headers)
+            start_response(status_text, headers)
         return answers
 
-    def _handle_request(self, environ):
+    def _handle_request(self, environ: types.WSGIEnviron
+                        ) -> _IntermediateResponse:
         """Manage a request."""
-        def response(status, headers=(), answer=None):
+        def response(status: int, headers: types.WSGIResponseHeaders,
+                     answer: Union[None, str, bytes]) -> _IntermediateResponse:
+            """Helper to create response from internal types.WSGIResponse"""
             headers = dict(headers)
             # Set content length
-            if answer:
-                if hasattr(answer, "encode"):
+            answers = []
+            if answer is not None:
+                if isinstance(answer, str):
                     logger.debug("Response content:\n%s", answer)
                     headers["Content-Type"] += "; charset=%s" % self._encoding
                     answer = answer.encode(self._encoding)
@@ -149,21 +148,22 @@ class Application(
                     headers["Content-Encoding"] = "gzip"
 
                 headers["Content-Length"] = str(len(answer))
+                answers.append(answer)
 
             # Add extra headers set in configuration
-            for key in self.configuration.options("headers"):
-                headers[key] = self.configuration.get("headers", key)
+            headers.update(self._extra_headers)
 
             # Start response
             time_end = datetime.datetime.now()
-            status = "%d %s" % (
+            status_text = "%d %s" % (
                 status, client.responses.get(status, "Unknown"))
             logger.info(
                 "%s response status for %r%s in %.3f seconds: %s",
                 environ["REQUEST_METHOD"], environ.get("PATH_INFO", ""),
-                depthinfo, (time_end - time_begin).total_seconds(), status)
+                depthinfo, (time_end - time_begin).total_seconds(),
+                status_text)
             # Return response content
-            return status, list(headers.items()), [answer] if answer else []
+            return status_text, list(headers.items()), answers
 
         remote_host = "unknown"
         if environ.get("REMOTE_HOST"):
@@ -184,8 +184,8 @@ class Application(
             "%s request for %r%s received from %s%s",
             environ["REQUEST_METHOD"], environ.get("PATH_INFO", ""), depthinfo,
             remote_host, remote_useragent)
-        headers = pprint.pformat(self._headers_log(environ))
-        logger.debug("Request headers:\n%s", headers)
+        logger.debug("Request headers:\n%s",
+                     pprint.pformat(self._scrub_headers(environ)))
 
         # Let reverse proxies overwrite SCRIPT_NAME
         if "HTTP_X_SCRIPT_NAME" in environ:
@@ -237,9 +237,8 @@ class Application(
             logger.warning("Failed login attempt from %s: %r",
                            remote_host, login)
             # Random delay to avoid timing oracles and bruteforce attacks
-            delay = self.configuration.get("auth", "delay")
-            if delay > 0:
-                random_delay = delay * (0.5 + random.random())
+            if self._auth_delay > 0:
+                random_delay = self._auth_delay * (0.5 + random.random())
                 logger.debug("Sleeping %.3f seconds", random_delay)
                 time.sleep(random_delay)
 
@@ -252,8 +251,8 @@ class Application(
         if user:
             principal_path = "/%s/" % user
             with self._storage.acquire_lock("r", user):
-                principal = next(self._storage.discover(
-                    principal_path, depth="1"), None)
+                principal = next(iter(self._storage.discover(
+                    principal_path, depth="1")), None)
             if not principal:
                 if "W" in self._rights.authorization(user, principal_path):
                     with self._storage.acquire_lock("w", user):
@@ -267,13 +266,12 @@ class Application(
                     logger.warning("Access to principal path %r denied by "
                                    "rights backend", principal_path)
 
-        if self.configuration.get("server", "_internal_server"):
+        if self._internal_server:
             # Verify content length
             content_length = int(environ.get("CONTENT_LENGTH") or 0)
             if content_length:
-                max_content_length = self.configuration.get(
-                    "server", "max_content_length")
-                if max_content_length and content_length > max_content_length:
+                if (self._max_content_length > 0 and
+                        content_length > self._max_content_length):
                     logger.info("Request body too large: %d", content_length)
                     return response(*httputils.REQUEST_ENTITY_TOO_LARGE)
 
@@ -291,82 +289,9 @@ class Application(
             # Unknown or unauthorized user
             logger.debug("Asking client for authentication")
             status = client.UNAUTHORIZED
-            realm = self.configuration.get("auth", "realm")
             headers = dict(headers)
             headers.update({
                 "WWW-Authenticate":
-                "Basic realm=\"%s\"" % realm})
+                "Basic realm=\"%s\"" % self._auth_realm})
 
         return response(status, headers, answer)
-
-    def _read_xml_request_body(self, environ):
-        content = httputils.decode_request(
-            self.configuration, environ,
-            httputils.read_raw_request_body(self.configuration, environ))
-        if not content:
-            return None
-        try:
-            xml_content = DefusedET.fromstring(content)
-        except ET.ParseError as e:
-            logger.debug("Request content (Invalid XML):\n%s", content)
-            raise RuntimeError("Failed to parse XML: %s" % e) from e
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Request content:\n%s",
-                         xmlutils.pretty_xml(xml_content))
-        return xml_content
-
-    def _xml_response(self, xml_content):
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Response content:\n%s",
-                         xmlutils.pretty_xml(xml_content))
-        f = io.BytesIO()
-        ET.ElementTree(xml_content).write(f, encoding=self._encoding,
-                                          xml_declaration=True)
-        return f.getvalue()
-
-    def _webdav_error_response(self, status, human_tag):
-        """Generate XML error response."""
-        headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
-        content = self._xml_response(xmlutils.webdav_error(human_tag))
-        return status, headers, content
-
-
-class Access:
-    """Helper class to check access rights of an item"""
-
-    def __init__(self, rights, user, path):
-        self._rights = rights
-        self.user = user
-        self.path = path
-        self.parent_path = pathutils.unstrip_path(
-            posixpath.dirname(pathutils.strip_path(path)), True)
-        self.permissions = self._rights.authorization(self.user, self.path)
-        self._parent_permissions = None
-
-    @property
-    def parent_permissions(self):
-        if self.path == self.parent_path:
-            return self.permissions
-        if self._parent_permissions is None:
-            self._parent_permissions = self._rights.authorization(
-                self.user, self.parent_path)
-        return self._parent_permissions
-
-    def check(self, permission, item=None):
-        if permission not in "rw":
-            raise ValueError("Invalid permission argument: %r" % permission)
-        if not item:
-            permissions = permission + permission.upper()
-            parent_permissions = permission
-        elif isinstance(item, storage.BaseCollection):
-            if item.get_meta("tag"):
-                permissions = permission
-            else:
-                permissions = permission.upper()
-            parent_permissions = ""
-        else:
-            permissions = ""
-            parent_permissions = permission
-        return bool(rights.intersect(self.permissions, permissions) or (
-            self.path != self.parent_path and
-            rights.intersect(self.parent_permissions, parent_permissions)))
