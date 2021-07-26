@@ -18,20 +18,24 @@
 
 import os
 from tempfile import TemporaryDirectory
+from typing import Optional
 
 from radicale import pathutils, storage
+from radicale.storage.multifilesystem.base import CollectionBase
+from radicale.storage.multifilesystem.history import CollectionPartHistory
 
 
-class CollectionDeleteMixin:
-    def delete(self, href=None):
+class CollectionPartDelete(CollectionPartHistory, CollectionBase):
+
+    def delete(self, href: Optional[str] = None) -> None:
         if href is None:
             # Delete the collection
             parent_dir = os.path.dirname(self._filesystem_path)
             try:
                 os.rmdir(self._filesystem_path)
             except OSError:
-                with TemporaryDirectory(
-                        prefix=".Radicale.tmp-", dir=parent_dir) as tmp:
+                with TemporaryDirectory(prefix=".Radicale.tmp-", dir=parent_dir
+                                        ) as tmp:
                     os.rename(self._filesystem_path, os.path.join(
                         tmp, os.path.basename(self._filesystem_path)))
                     self._storage._sync_directory(parent_dir)
