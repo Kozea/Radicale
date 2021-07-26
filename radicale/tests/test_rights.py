@@ -19,10 +19,8 @@ Radicale tests with simple requests and rights.
 """
 
 import os
-import shutil
-import tempfile
 
-from radicale import Application, config
+from radicale import Application
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -30,20 +28,8 @@ from radicale.tests.helpers import get_file_content
 class TestBaseRightsRequests(BaseTest):
     """Tests basic requests with rights."""
 
-    def setup(self):
-        self.configuration = config.load()
-        self.colpath = tempfile.mkdtemp()
-        self.configuration.update({
-            "storage": {"filesystem_folder": self.colpath,
-                        # Disable syncing to disk for better performance
-                        "_filesystem_fsync": "False"}},
-            "test", privileged=True)
-
-    def teardown(self):
-        shutil.rmtree(self.colpath)
-
-    def _test_rights(self, rights_type, user, path, mode, expected_status,
-                     with_auth=True):
+    def _test_rights(self, rights_type: str, user: str, path: str, mode: str,
+                     expected_status: int, with_auth: bool = True) -> None:
         assert mode in ("r", "w")
         assert user in ("", "tmp")
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
@@ -61,7 +47,7 @@ class TestBaseRightsRequests(BaseTest):
         (self.propfind if mode == "r" else self.proppatch)(
             path, check=expected_status, login="tmp:bepo" if user else None)
 
-    def test_owner_only(self):
+    def test_owner_only(self) -> None:
         self._test_rights("owner_only", "", "/", "r", 401)
         self._test_rights("owner_only", "", "/", "w", 401)
         self._test_rights("owner_only", "", "/tmp/", "r", 401)
@@ -73,13 +59,13 @@ class TestBaseRightsRequests(BaseTest):
         self._test_rights("owner_only", "tmp", "/other/", "r", 403)
         self._test_rights("owner_only", "tmp", "/other/", "w", 403)
 
-    def test_owner_only_without_auth(self):
+    def test_owner_only_without_auth(self) -> None:
         self._test_rights("owner_only", "", "/", "r", 207, False)
         self._test_rights("owner_only", "", "/", "w", 401, False)
         self._test_rights("owner_only", "", "/tmp/", "r", 207, False)
         self._test_rights("owner_only", "", "/tmp/", "w", 207, False)
 
-    def test_owner_write(self):
+    def test_owner_write(self) -> None:
         self._test_rights("owner_write", "", "/", "r", 401)
         self._test_rights("owner_write", "", "/", "w", 401)
         self._test_rights("owner_write", "", "/tmp/", "r", 401)
@@ -91,13 +77,13 @@ class TestBaseRightsRequests(BaseTest):
         self._test_rights("owner_write", "tmp", "/other/", "r", 207)
         self._test_rights("owner_write", "tmp", "/other/", "w", 403)
 
-    def test_owner_write_without_auth(self):
+    def test_owner_write_without_auth(self) -> None:
         self._test_rights("owner_write", "", "/", "r", 207, False)
         self._test_rights("owner_write", "", "/", "w", 401, False)
         self._test_rights("owner_write", "", "/tmp/", "r", 207, False)
         self._test_rights("owner_write", "", "/tmp/", "w", 207, False)
 
-    def test_authenticated(self):
+    def test_authenticated(self) -> None:
         self._test_rights("authenticated", "", "/", "r", 401)
         self._test_rights("authenticated", "", "/", "w", 401)
         self._test_rights("authenticated", "", "/tmp/", "r", 401)
@@ -109,13 +95,13 @@ class TestBaseRightsRequests(BaseTest):
         self._test_rights("authenticated", "tmp", "/other/", "r", 207)
         self._test_rights("authenticated", "tmp", "/other/", "w", 207)
 
-    def test_authenticated_without_auth(self):
+    def test_authenticated_without_auth(self) -> None:
         self._test_rights("authenticated", "", "/", "r", 207, False)
         self._test_rights("authenticated", "", "/", "w", 207, False)
         self._test_rights("authenticated", "", "/tmp/", "r", 207, False)
         self._test_rights("authenticated", "", "/tmp/", "w", 207, False)
 
-    def test_from_file(self):
+    def test_from_file(self) -> None:
         rights_file_path = os.path.join(self.colpath, "rights")
         with open(rights_file_path, "w") as f:
             f.write("""\
@@ -160,13 +146,13 @@ permissions: i""")
         self.get("/public/calendar")
         self.get("/public/calendar/1.ics", check=401)
 
-    def test_custom(self):
+    def test_custom(self) -> None:
         """Custom rights management."""
         self._test_rights("radicale.tests.custom.rights", "", "/", "r", 401)
         self._test_rights(
             "radicale.tests.custom.rights", "", "/tmp/", "r", 207)
 
-    def test_collections_and_items(self):
+    def test_collections_and_items(self) -> None:
         """Test rights for creation of collections, calendars and items.
 
         Collections are allowed at "/" and "/.../".
@@ -183,7 +169,7 @@ permissions: i""")
         self.mkcol("/user/calendar/item", check=401)
         self.mkcalendar("/user/calendar/item", check=401)
 
-    def test_put_collections_and_items(self):
+    def test_put_collections_and_items(self) -> None:
         """Test rights for creation of calendars and items with PUT."""
         self.application = Application(self.configuration)
         self.put("/user/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR", check=401)

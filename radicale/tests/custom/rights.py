@@ -23,7 +23,8 @@ from radicale import pathutils, rights
 
 
 class Rights(rights.BaseRights):
-    def authorization(self, user, path):
+
+    def authorization(self, user: str, path: str) -> str:
         sane_path = pathutils.strip_path(path)
         if sane_path not in ("tmp", "other"):
             return ""
