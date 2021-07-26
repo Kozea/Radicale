@@ -20,13 +20,25 @@ import binascii
 import contextlib
 import os
 import pickle
+from typing import BinaryIO, Optional, cast
 
 import radicale.item as radicale_item
 from radicale import pathutils
 from radicale.log import logger
+from radicale.storage import multifilesystem
+from radicale.storage.multifilesystem.base import CollectionBase
 
 
-class CollectionHistoryMixin:
+class CollectionPartHistory(CollectionBase):
+
+    _max_sync_token_age: int
+
+    def __init__(self, storage_: "multifilesystem.Storage", path: str,
+                 filesystem_path: Optional[str] = None) -> None:
+        super().__init__(storage_, path, filesystem_path)
+        self._max_sync_token_age = storage_.configuration.get(
+            "storage", "max_sync_token_age")
+
     def _update_history_etag(self, href, item):
         """Updates and retrieves the history etag from the history cache.
 
@@ -56,8 +68,9 @@ class CollectionHistoryMixin:
                 history_etag + "/" + etag).strip("\"")
             # Race: Other processes might have created and locked the file.
             with contextlib.suppress(PermissionError), self._atomic_write(
-                    os.path.join(history_folder, href), "wb") as f:
-                pickle.dump([etag, history_etag], f)
+                    os.path.join(history_folder, href), "wb") as fo:
+                fb = cast(BinaryIO, fo)
+                pickle.dump([etag, history_etag], fb)
         return history_etag
 
     def _get_deleted_history_hrefs(self):
@@ -79,5 +92,4 @@ class CollectionHistoryMixin:
         history_folder = os.path.join(self._filesystem_path,
                                       ".Radicale.cache", "history")
         self._clean_cache(history_folder, self._get_deleted_history_hrefs(),
-                          max_age=self._storage.configuration.get(
-                              "storage", "max_sync_token_age"))
+                          max_age=self._max_sync_token_age)
