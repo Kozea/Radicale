@@ -19,13 +19,21 @@
 import os
 import pickle
 import sys
+from typing import Iterable, Set, TextIO, cast
 
 import radicale.item as radicale_item
 from radicale import pathutils
+from radicale.storage.multifilesystem.base import CollectionBase
+from radicale.storage.multifilesystem.cache import CollectionPartCache
+from radicale.storage.multifilesystem.get import CollectionPartGet
+from radicale.storage.multifilesystem.history import CollectionPartHistory
 
 
-class CollectionUploadMixin:
-    def upload(self, href, item):
+class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
+                           CollectionPartHistory, CollectionBase):
+
+    def upload(self, href: str, item: radicale_item.Item
+               ) -> radicale_item.Item:
         if not pathutils.is_safe_filesystem_path_component(href):
             raise pathutils.UnsafePathError(href)
         try:
@@ -34,17 +42,22 @@ class CollectionUploadMixin:
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
         path = pathutils.path_to_filesystem(self._filesystem_path, href)
-        with self._atomic_write(path, newline="") as fd:
-            fd.write(item.serialize())
+        with self._atomic_write(path, newline="") as fo:
+            f = cast(TextIO, fo)
+            f.write(item.serialize())
         # Clean the cache after the actual item is stored, or the cache entry
         # will be removed again.
         self._clean_item_cache()
         # Track the change
         self._update_history_etag(href, item)
         self._clean_history()
-        return self._get(href, verify_href=False)
+        uploaded_item = self._get(href, verify_href=False)
+        if uploaded_item is None:
+            raise RuntimeError("Storage modified externally")
+        return uploaded_item
 
-    def _upload_all_nonatomic(self, items, suffix=""):
+    def _upload_all_nonatomic(self, items: Iterable[radicale_item.Item],
+                              suffix: str = "") -> None:
         """Upload a new set of items.
 
         This takes a list of vobject items and
@@ -54,7 +67,7 @@ class CollectionUploadMixin:
         cache_folder = os.path.join(self._filesystem_path,
                                     ".Radicale.cache", "item")
         self._storage._makedirs_synced(cache_folder)
-        hrefs = set()
+        hrefs: Set[str] = set()
         for item in items:
             uid = item.uid
             try:
@@ -92,14 +105,15 @@ class CollectionUploadMixin:
                             sys.platform == "win32" and e.errno == 123):
                         continue
                     raise
+            assert href is not None and f is not None
             with f:
                 f.write(item.serialize())
                 f.flush()
                 self._storage._fsync(f)
             hrefs.add(href)
-            with open(os.path.join(cache_folder, href), "wb") as f:
-                pickle.dump(cache_content, f)
-                f.flush()
-                self._storage._fsync(f)
+            with open(os.path.join(cache_folder, href), "wb") as fb:
+                pickle.dump(cache_content, fb)
+                fb.flush()
+                self._storage._fsync(fb)
         self._storage._sync_directory(cache_folder)
         self._storage._sync_directory(self._filesystem_path)

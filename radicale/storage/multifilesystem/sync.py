@@ -21,16 +21,22 @@ import itertools
 import os
 import pickle
 from hashlib import sha256
+from typing import BinaryIO, Iterable, Tuple, cast
 
 from radicale.log import logger
+from radicale.storage.multifilesystem.base import CollectionBase
+from radicale.storage.multifilesystem.cache import CollectionPartCache
+from radicale.storage.multifilesystem.history import CollectionPartHistory
 
 
-class CollectionSyncMixin:
-    def sync(self, old_token=""):
+class CollectionPartSync(CollectionPartCache, CollectionPartHistory,
+                         CollectionBase):
+
+    def sync(self, old_token: str = "") -> Tuple[str, Iterable[str]]:
         # The sync token has the form http://radicale.org/ns/sync/TOKEN_NAME
         # where TOKEN_NAME is the sha256 hash of all history etags of present
         # and past items of the collection.
-        def check_token_name(token_name):
+        def check_token_name(token_name: str) -> bool:
             if len(token_name) != 64:
                 return False
             for c in token_name:
@@ -89,15 +95,15 @@ class CollectionSyncMixin:
             self._storage._makedirs_synced(token_folder)
             try:
                 # Race: Other processes might have created and locked the file.
-                with self._atomic_write(token_path, "wb") as f:
-                    pickle.dump(state, f)
+                with self._atomic_write(token_path, "wb") as fo:
+                    fb = cast(BinaryIO, fo)
+                    pickle.dump(state, fb)
             except PermissionError:
                 pass
             else:
                 # clean up old sync tokens and item cache
                 self._clean_cache(token_folder, os.listdir(token_folder),
-                                  max_age=self._storage.configuration.get(
-                                      "storage", "max_sync_token_age"))
+                                  max_age=self._max_sync_token_age)
                 self._clean_history()
         else:
             # Try to update the modification time
