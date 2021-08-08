@@ -30,7 +30,7 @@ Take a look at the class ``BaseAuth`` if you want to implement your own.
 
 from radicale import utils
 
-INTERNAL_TYPES = ("none", "remote_user", "http_x_remote_user", "htpasswd")
+INTERNAL_TYPES = ("none", "remote_user", "http_x_remote_user", "htpasswd", "bsdauth")
 
 
 def load(configuration):
