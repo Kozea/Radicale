@@ -553,7 +553,7 @@ Paths that start with `?` are optional.
 The same example configuration via command line arguments looks like:
 
 ```bash
-python3 -m radicale --server-hosts 0.0.0.0:5232,[::]:5232 --auth-type htpasswd --htpasswd-filename ~/.config/radicale/users --htpasswd-encryption md5
+python3 -m radicale --server-hosts 0.0.0.0:5232,[::]:5232 --auth-type htpasswd --auth-htpasswd-filename ~/.config/radicale/users --auth-htpasswd-encryption md5
 ```
 
 Add the argument `--config ""` to stop Radicale from loading the default
