@@ -590,7 +590,7 @@ user2:password2
 <span id="cb28-11"><a href="#cb28-11"></a><span class="dt">filesystem_folder </span><span class="ot">=</span><span class="st"> ~/.var/lib/radicale/collections</span></span></code></pre></div>
 <p>Radicale tries to load configuration files from <code>/etc/radicale/config</code> and <code>~/.config/radicale/config</code>. Custom paths can be specified with the <code>--config /path/to/config</code> command line argument or the <code>RADICALE_CONFIG</code> environment variable. Multiple configuration files can be separated by <code>:</code> (resp. <code>;</code> on Windows). Paths that start with <code>?</code> are optional.</p>
 <p>The same example configuration via command line arguments looks like:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1"></a><span class="ex">python3</span> -m radicale --server-hosts 0.0.0.0:5232,[::]:5232 --auth-type htpasswd --htpasswd-filename ~/.config/radicale/users --htpasswd-encryption md5</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1"></a><span class="ex">python3</span> -m radicale --server-hosts 0.0.0.0:5232,[::]:5232 --auth-type htpasswd --auth-htpasswd-filename ~/.config/radicale/users --auth-htpasswd-encryption md5</span></code></pre></div>
 <p>Add the argument <code>--config ""</code> to stop Radicale from loading the default configuration files. Run <code>python3 -m radicale --help</code> for more information.</p>
 <p>In the following, all configuration categories and options are described.</p>
 <section class="level4" id="documentation/configuration/server">
@@ -1114,7 +1114,7 @@ user2:password2
 <li><a href="https://src.fedoraproject.org/rpms/radicale">Fedora/RHEL/CentOS</a> by Jorti and Peter Bieringer</li>
 <li><a href="http://madb.mageia.org/package/show/application/0/name/radicale">Mageia</a> by Jani V&auml;limaa</li>
 <li><a href="http://openports.se/productivity/radicale">OpenBSD</a> by Sergey Bronnikov, Stuart Henderson and Ian Darwin</li>
-<li><a href="http://software.opensuse.org/package/Radicale?search_term=radicale">openSUSE</a> by &Aacute;kos Szőts and Rueckert</li>
+<li><a href="http://software.opensuse.org/package/Radicale?search_term=radicale">openSUSE</a> by &Aacute;kos Sz&odblac;ts and Rueckert</li>
 <li><a href="http://code.activestate.com/pypm/radicale/">PyPM</a></li>
 <li><a href="http://schoepfer.info/slackware.xhtml#packages-network">Slackware</a> by Johannes Sch&ouml;pfer</li>
 <li><a href="http://packages.trisquel.info/search?searchon=names&amp;keywords=radicale">Trisquel</a></li>
