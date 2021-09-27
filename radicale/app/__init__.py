@@ -34,8 +34,6 @@ import zlib
 from http import client
 from typing import Iterable, List, Mapping, Tuple, Union
 
-import pkg_resources
-
 from radicale import config, httputils, log, pathutils, types
 from radicale.app.base import ApplicationBase
 from radicale.app.delete import ApplicationPartDelete
@@ -51,8 +49,6 @@ from radicale.app.proppatch import ApplicationPartProppatch
 from radicale.app.put import ApplicationPartPut
 from radicale.app.report import ApplicationPartReport
 from radicale.log import logger
-
-VERSION: str = pkg_resources.get_distribution("radicale").version
 
 # Combination of types.WSGIStartResponse and WSGI application return value
 _IntermediateResponse = Tuple[str, List[Tuple[str, str]], Iterable[bytes]]
