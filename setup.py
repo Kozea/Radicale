@@ -49,8 +49,9 @@ WEB_FILES = ["web/internal_data/css/icon.png",
              "web/internal_data/fn.js",
              "web/internal_data/index.html"]
 
-needs_pytest = {"pytest", "test", "ptr"}.intersection(sys.argv)
-pytest_runner = ["pytest-runner"] if needs_pytest else []
+setup_requires = []
+if {"pytest", "test", "ptr"}.intersection(sys.argv):
+    setup_requires.append("pytest-runner")
 tests_require = ["pytest-runner", "pytest", "pytest-cov", "pytest-flake8",
                  "pytest-isort", "typeguard", "waitress"]
 os.environ["PYTEST_ADDOPTS"] = os.environ.get("PYTEST_ADDOPTS", "")
@@ -77,7 +78,7 @@ setup(
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
     install_requires=["defusedxml", "passlib", "vobject>=0.9.6",
                       "python-dateutil>=2.7.3", "setuptools"],
-    setup_requires=pytest_runner,
+    setup_requires=setup_requires,
     tests_require=tests_require,
     extras_require={"test": tests_require,
                     "bcrypt": ["passlib[bcrypt]", "bcrypt"]},
