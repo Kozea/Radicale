@@ -114,6 +114,8 @@ def setup() -> None:
     handler = ThreadedStreamHandler()
     logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT,
                         handlers=[handler])
+    logger.addHandler(logging.handlers.SysLogHandler(address='/dev/log',
+                                                     facility=logging.handlers.SysLogHandler.LOG_DAEMON))
     register_stream = handler.register_stream
     log_record_factory = IdentLogRecordFactory(logging.getLogRecordFactory())
     logging.setLogRecordFactory(log_record_factory)
