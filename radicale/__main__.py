@@ -91,7 +91,7 @@ def run() -> None:
                 del kwargs["type"]
                 kwargs["action"] = "store_const"
                 kwargs["const"] = "True"
-                opposite_args = kwargs.pop("opposite", [])
+                opposite_args = list(kwargs.pop("opposite", ()))
                 opposite_args.append("--no%s" % long_name[1:])
                 group.add_argument(*args, **kwargs)
 
