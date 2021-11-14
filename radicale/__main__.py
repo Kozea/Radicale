@@ -101,14 +101,12 @@ def run() -> None:
                 del kwargs["type"]
                 opposite_args = list(kwargs.pop("opposite_aliases", ()))
                 opposite_args.append("--no%s" % long_name[1:])
-                kwargs["action"] = "store_const"
-                kwargs["const"] = "True"
-                group.add_argument(*args, **kwargs)
+                group.add_argument(*args, nargs="?", const="True", **kwargs)
                 # Opposite argument
-                kwargs["const"] = "False"
                 kwargs["help"] = "do not %s (opposite of %s)" % (
                     kwargs["help"], long_name)
-                group.add_argument(*opposite_args, **kwargs)
+                group.add_argument(*opposite_args, action="store_const",
+                                   const="False", **kwargs)
             else:
                 del kwargs["type"]
                 group.add_argument(*args, **kwargs)

@@ -187,7 +187,7 @@ class TestBaseServerRequests(BaseTest):
         self.thread.start()
         self.get("/", check=302)
 
-    def test_command_line_interface(self) -> None:
+    def test_command_line_interface(self, with_bool_options=False) -> None:
         self.configuration.update({"headers": {"Test-Server": "test"}})
         config_args = []
         for section in self.configuration.sections():
@@ -197,7 +197,7 @@ class TestBaseServerRequests(BaseTest):
                 if option.startswith("_"):
                     continue
                 long_name = "--%s-%s" % (section, option.replace("_", "-"))
-                if config.DEFAULT_CONFIG_SCHEMA.get(
+                if with_bool_options and config.DEFAULT_CONFIG_SCHEMA.get(
                         section, {}).get(option, {}).get("type") == bool:
                     if not cast(bool, self.configuration.get(section, option)):
                         long_name = "--no%s" % long_name[1:]
@@ -223,6 +223,9 @@ class TestBaseServerRequests(BaseTest):
             p.wait()
         if os.name == "posix":
             assert p.returncode == 0
+
+    def test_command_line_interface_with_bool_options(self) -> None:
+        self.test_command_line_interface(with_bool_options=True)
 
     def test_wsgi_server(self) -> None:
         config_path = os.path.join(self.colpath, "config")
