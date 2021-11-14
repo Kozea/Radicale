@@ -65,7 +65,7 @@ def run() -> None:
     parser.add_argument("--verify-storage", action="store_true",
                         help="check the storage for errors and exit")
     parser.add_argument("-C", "--config",
-                        help="use specific configuration files", nargs="*")
+                        help="use specific configuration files", nargs="+")
     parser.add_argument("-D", "--debug", action="store_const", const="debug",
                         dest="c:logging:level", default=argparse.SUPPRESS,
                         help="print debug information")
