@@ -30,9 +30,9 @@ import signal
 import socket
 import sys
 from types import FrameType
-from typing import Dict, List, cast
+from typing import List, cast
 
-from radicale import VERSION, config, log, server, storage
+from radicale import VERSION, config, log, server, storage, types
 from radicale.log import logger
 
 
@@ -57,6 +57,7 @@ def run() -> None:
     log.setup()
 
     # Get command-line arguments
+    # Configuration options are stored in dest with format "c:SECTION:OPTION"
     parser = argparse.ArgumentParser(
         prog="radicale", usage="%(prog)s [OPTIONS]", allow_abbrev=False)
 
@@ -65,36 +66,38 @@ def run() -> None:
                         help="check the storage for errors and exit")
     parser.add_argument("-C", "--config",
                         help="use specific configuration files", nargs="*")
-    parser.add_argument("-D", "--debug", action="store_true",
+    parser.add_argument("-D", "--debug", action="store_const", const="debug",
+                        dest="c:logging:level", default=argparse.SUPPRESS,
                         help="print debug information")
 
-    groups: Dict["argparse._ArgumentGroup", List[str]] = {}
-    for section, values in config.DEFAULT_CONFIG_SCHEMA.items():
+    for section, section_data in config.DEFAULT_CONFIG_SCHEMA.items():
         if section.startswith("_"):
             continue
+        assert ":" not in section  # check field separator
+        assert "-" not in section and "_" not in section  # not implemented
         group = parser.add_argument_group(section)
-        groups[group] = []
-        for option, data in values.items():
+        for option, data in section_data.items():
             if option.startswith("_"):
                 continue
             kwargs = data.copy()
             long_name = "--%s-%s" % (section, option.replace("_", "-"))
             args: List[str] = list(kwargs.pop("aliases", ()))
             args.append(long_name)
-            kwargs["dest"] = "%s_%s" % (section, option)
-            groups[group].append(kwargs["dest"])
+            kwargs["dest"] = "c:%s:%s" % (section, option)
+            kwargs["metavar"] = "VALUE"
+            kwargs["default"] = argparse.SUPPRESS
             del kwargs["value"]
             with contextlib.suppress(KeyError):
                 del kwargs["internal"]
 
             if kwargs["type"] == bool:
                 del kwargs["type"]
-                kwargs["action"] = "store_const"
-                kwargs["const"] = "True"
                 opposite_args = list(kwargs.pop("opposite_aliases", ()))
                 opposite_args.append("--no%s" % long_name[1:])
+                kwargs["action"] = "store_const"
+                kwargs["const"] = "True"
                 group.add_argument(*args, **kwargs)
-
+                # Opposite argument
                 kwargs["const"] = "False"
                 kwargs["help"] = "do not %s (opposite of %s)" % (
                     kwargs["help"], long_name)
@@ -106,23 +109,17 @@ def run() -> None:
     args_ns = parser.parse_args()
 
     # Preliminary configure logging
-    if args_ns.debug:
-        args_ns.logging_level = "debug"
     with contextlib.suppress(ValueError):
         log.set_level(config.DEFAULT_CONFIG_SCHEMA["logging"]["level"]["type"](
-            args_ns.logging_level))
+            vars(args_ns).get("c:logging:level", "")))
 
     # Update Radicale configuration according to arguments
-    arguments_config = {}
-    for group, actions in groups.items():
-        section = group.title or ""
-        section_config = {}
-        for action in actions:
-            value = getattr(args_ns, action)
-            if value is not None:
-                section_config[action.split('_', 1)[1]] = value
-        if section_config:
-            arguments_config[section] = section_config
+    arguments_config: types.MUTABLE_CONFIG = {}
+    for key, value in vars(args_ns).items():
+        if key.startswith("c:"):
+            _, section, option = key.split(":", maxsplit=2)
+            arguments_config[section] = arguments_config.get(section, {})
+            arguments_config[section][option] = value
 
     try:
         configuration = config.load(config.parse_compound_paths(
