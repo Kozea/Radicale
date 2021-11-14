@@ -75,7 +75,14 @@ def run() -> None:
             continue
         assert ":" not in section  # check field separator
         assert "-" not in section and "_" not in section  # not implemented
-        group = parser.add_argument_group(section)
+        group_description = None
+        if section_data.get("_allow_extra"):
+            group_description = "additional options allowed"
+            if section == "headers":
+                group_description += " (e.g. --headers-Pragma=no-cache)"
+        elif "type" in section_data:
+            group_description = "backend specific options omitted"
+        group = parser.add_argument_group(section, group_description)
         for option, data in section_data.items():
             if option.startswith("_"):
                 continue
@@ -106,7 +113,32 @@ def run() -> None:
                 del kwargs["type"]
                 group.add_argument(*args, **kwargs)
 
-    args_ns = parser.parse_args()
+    args_ns, remaining_args = parser.parse_known_args()
+    unrecognized_args = []
+    while remaining_args:
+        arg = remaining_args.pop(0)
+        for section, data in config.DEFAULT_CONFIG_SCHEMA.items():
+            if "type" not in data and not data.get("_allow_extra"):
+                continue
+            prefix = "--%s-" % section
+            if arg.startswith(prefix):
+                arg = arg[len(prefix):]
+                break
+        else:
+            unrecognized_args.append(arg)
+            continue
+        value = ""
+        if "=" in arg:
+            arg, value = arg.split("=", maxsplit=1)
+        elif remaining_args and not remaining_args[0].startswith("-"):
+            value = remaining_args.pop(0)
+        option = arg
+        if not data.get("_allow_extra"):  # preserve dash in HTTP header names
+            option = option.replace("-", "_")
+        vars(args_ns)["c:%s:%s" % (section, option)] = value
+    if unrecognized_args:
+        parser.error("unrecognized arguments: %s" %
+                     " ".join(unrecognized_args))
 
     # Preliminary configure logging
     with contextlib.suppress(ValueError):

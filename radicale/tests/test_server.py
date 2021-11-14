@@ -188,15 +188,17 @@ class TestBaseServerRequests(BaseTest):
         self.get("/", check=302)
 
     def test_command_line_interface(self) -> None:
+        self.configuration.update({"headers": {"Test-Server": "test"}})
         config_args = []
-        for section, values in config.DEFAULT_CONFIG_SCHEMA.items():
+        for section in self.configuration.sections():
             if section.startswith("_"):
                 continue
-            for option, data in values.items():
+            for option in self.configuration.options(section):
                 if option.startswith("_"):
                     continue
                 long_name = "--%s-%s" % (section, option.replace("_", "-"))
-                if data["type"] == bool:
+                if config.DEFAULT_CONFIG_SCHEMA.get(
+                        section, {}).get(option, {}).get("type") == bool:
                     if not cast(bool, self.configuration.get(section, option)):
                         long_name = "--no%s" % long_name[1:]
                     config_args.append(long_name)
@@ -205,11 +207,17 @@ class TestBaseServerRequests(BaseTest):
                     raw_value = self.configuration.get_raw(section, option)
                     assert isinstance(raw_value, str)
                     config_args.append(raw_value)
+        config_args.append("--headers-Test-Header=test")
         p = subprocess.Popen(
             [sys.executable, "-m", "radicale"] + config_args,
             env={**os.environ, "PYTHONPATH": os.pathsep.join(sys.path)})
         try:
-            self.get("/", is_alive_fn=lambda: p.poll() is None, check=302)
+            status, headers, _ = self.request(
+                "GET", "/", is_alive_fn=lambda: p.poll() is None)
+            self._check_status(status, 302)
+            for key in self.configuration.options("headers"):
+                assert headers.get(key) == self.configuration.get(
+                    "headers", key)
         finally:
             p.terminate()
             p.wait()
