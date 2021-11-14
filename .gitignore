@@ -15,6 +15,7 @@ coverage.xml
 .coverage
 .coverage.*
 .eggs
+.mypy_cache
 .project
 .pydevproject
 .settings
