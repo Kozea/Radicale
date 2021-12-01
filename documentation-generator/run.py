@@ -104,12 +104,6 @@ def sort_branches(branches):
     return [branch for _, _, _, branch in branches], default_branch
 
 
-def pretty_branch_name(branch):
-    while branch.endswith(".x"):
-        branch = branch[:-len(".x")]
-    return branch
-
-
 def run_git(*args):
     config_args = []
     for key, value in GIT_CONFIG.items():
@@ -156,11 +150,9 @@ def main():
         for path in glob.iglob("*.html"):
             run_git("rm", "--", path)
         branches, default_branch = sort_branches(branches)
-        branches_pretty = [pretty_branch_name(b) for b in branches]
         for branch, src_path in branch_docs.items():
-            branch_pretty = pretty_branch_name(branch)
-            to_path = "%s.html" % branch_pretty
-            convert_doc(src_path, to_path, branch_pretty, branches_pretty)
+            to_path = "%s.html" % branch
+            convert_doc(src_path, to_path, branch, branches)
             run_git("add", "--", to_path)
     try:
         with open(REDIRECT_CONFIG_PATH) as f:
@@ -173,7 +165,7 @@ def main():
         if target == ":DEFAULT_BRANCH:":
             if default_branch is None:
                 raise RuntimeError("no default branch")
-            target = pretty_branch_name(default_branch)
+            target = default_branch
         source_path = "%s.html" % str(source)
         target_url = urllib.parse.quote("%s.html" % str(target))
         with open(source_path, "w") as f:
