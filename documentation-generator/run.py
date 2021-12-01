@@ -35,6 +35,8 @@ POSTPROCESSOR_EXE = os.path.join(TOOLS_PATH, "postprocessor.py")
 PANDOC_EXE = "pandoc"
 PANDOC_DOWNLOAD = ("https://github.com/jgm/pandoc/releases/download/"
                    "2.9.2/pandoc-2.9.2-1-amd64.deb")
+PANDOC_SHA256 = ("78525735ac6181f639c5c8776572d0ca"
+                 "10f0314c0052f5af2f369b5d0e1980b3")
 BRANCH_ORDERING = [  # Format: (REGEX, ORDER, DEFAULT)
     (r'v?\d+(?:\.\d+)*(?:\.x)*', 0, True),
     (r'.*', 1, False)]
@@ -68,6 +70,9 @@ def install_dependencies():
     with TemporaryDirectory() as temp:
         subprocess.run(["curl", "--location", "--output", "pandoc.deb",
                         PANDOC_DOWNLOAD], check=True, cwd=temp)
+        subprocess.run(["sha256sum", "--check", "--strict", "--quiet"],
+                       input="%s *pandoc.deb" % PANDOC_SHA256,
+                       check=True, cwd=temp)
         subprocess.run(["sudo", "apt", "install", "--assume-yes",
                         "./pandoc.deb"], check=True, cwd=temp)
 
