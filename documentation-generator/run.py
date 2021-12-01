@@ -34,9 +34,9 @@ FILTER_EXE = os.path.join(TOOLS_PATH, "filter.py")
 POSTPROCESSOR_EXE = os.path.join(TOOLS_PATH, "postprocessor.py")
 PANDOC_EXE = "pandoc"
 PANDOC_DOWNLOAD = ("https://github.com/jgm/pandoc/releases/download/"
-                   "2.9.2/pandoc-2.9.2-1-amd64.deb")
-PANDOC_SHA256 = ("78525735ac6181f639c5c8776572d0ca"
-                 "10f0314c0052f5af2f369b5d0e1980b3")
+                   "2.16.2/pandoc-2.16.2-1-amd64.deb")
+PANDOC_SHA256 = ("2001d93463c003f8fee6c36b1bfeccd5"
+                 "51ab6e35370b24f74f457e3f6dffb8b7")
 BRANCH_ORDERING = [  # Format: (REGEX, ORDER, DEFAULT)
     (r'v?\d+(?:\.\d+)*(?:\.x)*', 0, True),
     (r'.*', 1, False)]
@@ -45,11 +45,13 @@ BRANCH_ORDERING = [  # Format: (REGEX, ORDER, DEFAULT)
 def convert_doc(src_path, to_path, branch, branches):
     raw_html = subprocess.run([
         PANDOC_EXE,
+        "--sandbox",
         "--from=gfm",
         "--to=html5",
         os.path.abspath(src_path),
         "--toc",
         "--template=%s" % os.path.basename(TEMPLATE_PATH),
+        "--metadata=document-css=false",
         "--section-divs",
         "--shift-heading-level-by=%d" % SHIFT_HEADING,
         "--toc-depth=%d" % (TOC_DEPTH+SHIFT_HEADING),
