@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="utf-8">
-<meta http-equiv="Refresh" content="0; url={target}">
+<noscript><meta http-equiv="Refresh" content="0; url={target}"></noscript>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://github.com/Kozea/Radicale/releases.atom" type="application/atom+xml" rel="alternate" title="Radicale Releases">
 <title>Redirect</title>
-<p>Please follow <a href="{target}">this link</a>.</p>
+<p>Please follow <a href="{target}" id="link">this link</a>.</p>
+<script>
+    window.location.href = link.href = "{target}" + (window.location.search || "") + (window.location.hash || "");
+</script>
