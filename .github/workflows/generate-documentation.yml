@@ -3,7 +3,7 @@ on:
   push:
     paths:
     - 'documentation-generator/**'
-    - DOCUMENTATION.md
+    - redirect.json
 
 jobs:
   generate:

@@ -9,11 +9,13 @@ Gracefully handles conflicting commits.
 
 import contextlib
 import glob
+import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import urllib.parse
 from tempfile import TemporaryDirectory
 
 REMOTE = "origin"
@@ -22,10 +24,11 @@ GIT_CONFIG = {"protocol.version": "2",
               "user.name": "Github Actions"}
 COMMIT_MESSAGE = "Generate documentation"
 DOCUMENTATION_SRC = "DOCUMENTATION.md"
+REDIRECT_CONFIG_PATH = "redirect.json"
 SHIFT_HEADING = 1
 TOC_DEPTH = 3
 TOOLS_PATH = os.path.dirname(__file__)
-TEMPLATE_INDEX_PATH = os.path.join(TOOLS_PATH, "template-index.html")
+REDIRECT_TEMPLATE_PATH = os.path.join(TOOLS_PATH, "template-redirect.html")
 TEMPLATE_PATH = os.path.join(TOOLS_PATH, "template.html")
 FILTER_EXE = os.path.join(TOOLS_PATH, "filter.py")
 POSTPROCESSOR_EXE = os.path.join(TOOLS_PATH, "postprocessor.py")
@@ -125,11 +128,6 @@ def run_git_fetch_and_restart_if_changed(remote_commits, target_branch):
         os.execv(__file__, sys.argv)
 
 
-def make_index_html(branch):
-    with open(TEMPLATE_INDEX_PATH) as f:
-        return f.read().format(branch=branch)
-
-
 def main():
     if os.environ.get("GITHUB_ACTIONS", "") == "true":
         install_dependencies()
@@ -152,17 +150,28 @@ def main():
             run_git("rm", "--", path)
         branches, default_branch = sort_branches(branches)
         branches_pretty = [pretty_branch_name(b) for b in branches]
-        default_branch_pretty = pretty_branch_name(default_branch)
         for branch, src_path in branch_docs.items():
             branch_pretty = pretty_branch_name(branch)
             to_path = "%s.html" % branch_pretty
             convert_doc(src_path, to_path, branch_pretty, branches_pretty)
             run_git("add", "--", to_path)
-    if default_branch_pretty:
-        index_path = "index.html"
-        with open(index_path, "w") as f:
-            f.write(make_index_html(default_branch_pretty))
-        run_git("add", "--", index_path)
+    try:
+        with open(REDIRECT_CONFIG_PATH) as f:
+            redirect_config = json.load(f)
+    except FileNotFoundError:
+        redirect_config = {}
+    with open(REDIRECT_TEMPLATE_PATH) as f:
+        redirect_template = f.read()
+    for source, target in redirect_config.items():
+        if target == ":DEFAULT_BRANCH:":
+            if default_branch is None:
+                raise RuntimeError("no default branch")
+            target = pretty_branch_name(default_branch)
+        source_path = "%s.html" % str(source)
+        target_url = urllib.parse.quote("%s.html" % str(target))
+        with open(source_path, "w") as f:
+            f.write(redirect_template.format(target=target_url))
+        run_git("add", "--", source_path)
     with contextlib.suppress(subprocess.CalledProcessError):
         run_git("diff", "--cached", "--quiet")
         print("No changes", file=sys.stderr)
