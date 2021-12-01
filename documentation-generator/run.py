@@ -71,7 +71,7 @@ def install_dependencies():
         subprocess.run(["curl", "--location", "--output", "pandoc.deb",
                         PANDOC_DOWNLOAD], check=True, cwd=temp)
         subprocess.run(["sha256sum", "--check", "--strict", "--quiet"],
-                       input="%s *pandoc.deb" % PANDOC_SHA256,
+                       input="%s *pandoc.deb" % PANDOC_SHA256, text=True,
                        check=True, cwd=temp)
         subprocess.run(["sudo", "apt", "install", "--assume-yes",
                         "./pandoc.deb"], check=True, cwd=temp)
