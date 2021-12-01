@@ -34,7 +34,7 @@ FILTER_EXE = os.path.join(TOOLS_PATH, "filter.py")
 POSTPROCESSOR_EXE = os.path.join(TOOLS_PATH, "postprocessor.py")
 PANDOC_EXE = "pandoc"
 PANDOC_DOWNLOAD = ("https://github.com/jgm/pandoc/releases/download/"
-                   "2.9.2/pandoc-2.9.2-1-amd64.deb")
+                   "2.16.2/pandoc-2.16.2-1-amd64.deb")
 BRANCH_ORDERING = [  # Format: (REGEX, ORDER, DEFAULT)
     (r'v?\d+(?:\.\d+)*(?:\.x)*', 0, True),
     (r'.*', 1, False)]
