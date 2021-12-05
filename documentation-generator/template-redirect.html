@@ -7,5 +7,6 @@
 <title>Redirect</title>
 <p>Please follow <a href="{target}" id="link">this link</a>.</p>
 <script>
-    window.location.href = link.href = "{target}" + (window.location.search || "") + (window.location.hash || "");
+    link.href += (window.location.search || "") + (window.location.hash || "");
+    window.location.replace(link.href);
 </script>
