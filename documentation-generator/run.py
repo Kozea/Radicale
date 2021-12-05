@@ -49,9 +49,10 @@ def convert_doc(src_path, to_path, branch, branches):
         json.dump({
             "document-css": False,
             "branch": branch,
-            "branches": [{"default": b == branch,
+            "branches": [{"name": b,
                           "href": urllib.parse.quote_plus("%s.html" % b),
-                          "name": b} for b in branches]}, metadata_file)
+                          "default": b == branch}
+                         for b in reversed(branches)]}, metadata_file)
         metadata_file.flush()
         raw_html = subprocess.run([
             PANDOC_EXE,
