@@ -28,7 +28,7 @@ $endif$
             Radicale
             <span class="documentBranch">
                 <span>$branch$</span>
-                <select>
+                <select style="display: none;">
 $for(branches)$
                     <option value="$it.href$"$if(it.default)$ selected$endif$>$it.name$</option>
 $endfor$
@@ -46,12 +46,12 @@ $endfor$
 </header>
 
 <main>
-    <div class="navButtonContainer">
+    <div class="navButtonContainer" style="display: none;">
         <button data-name="nav-open">Contents</button>
     </div>
     <nav>
         <div class="navContainer">
-            <div class="navButtonContainer">
+            <div class="navButtonContainer" style="display: none;">
                 <button data-name="nav-close">Close</button>
             </div>
             <h2>Contents</h2>

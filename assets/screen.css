@@ -92,6 +92,7 @@ header .documentBranch::after {
 }
 
 header .documentBranch select {
+    display: initial !important;
     background: none;
     color: #efdddd;
     border: none;
@@ -341,10 +342,6 @@ nav .level4 {
 
 nav .active > ul > .level4 {
     display: initial;
-}
-
-.navButtonContainer {
-    display: none;
 }
 
 .documentContainer p, .documentContainer ul, .documentContainer ol {

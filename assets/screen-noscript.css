@@ -1,5 +1,5 @@
-header .documentBranch::after, header .documentBranch select {
-    display: none;
+header .documentBranch::after, header .documentBranch select, .navButtonContainer {
+    display: none !important;
 }
 
 header .documentBranch span {
@@ -27,7 +27,7 @@ nav .level4 > a::after {
 }
 
 @media all and (max-width: 50em) {
-    nav, .navButtonContainer {
+    nav {
         display: none;
     }
 

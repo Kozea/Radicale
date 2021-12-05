@@ -49,7 +49,7 @@ main, .navContainer {
     height: 100%;
     top: 0;
     left: 0;
-    display: flex;
+    display: flex !important;
     align-items: start;
     justify-content: flex-end;
     pointer-events: none;

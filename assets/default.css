@@ -80,7 +80,7 @@ BDO[DIR="rtl"]  { direction: rtl; unicode-bidi: bidi-override }
 /* END: https://www.w3.org/TR/CSS22/ */
 
 @media not screen {
-    header .documentBranch select, nav, .navButtonContainer, .headerlink {
+    nav, .headerlink {
         display: none;
     }
 
