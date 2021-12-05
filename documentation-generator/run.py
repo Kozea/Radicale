@@ -9,6 +9,7 @@ Gracefully handles conflicting commits.
 
 import contextlib
 import glob
+import html
 import json
 import os
 import re
@@ -38,8 +39,22 @@ PANDOC_DOWNLOAD = ("https://github.com/jgm/pandoc/releases/download/"
 PANDOC_SHA256 = ("2001d93463c003f8fee6c36b1bfeccd5"
                  "51ab6e35370b24f74f457e3f6dffb8b7")
 BRANCH_ORDERING = [  # Format: (REGEX, ORDER, DEFAULT)
-    (r'v?\d+(?:\.\d+)*(?:\.x)*', 0, True),
-    (r'.*', 1, False)]
+    (r"v?\d+(?:\.\d+)*(?:\.x)*", 0, True),
+    (r".*", 1, False)]
+
+
+def escape_js(s):
+    return s.translate(str.maketrans({
+        "\t": "\\t",
+        "\v": "\\v",
+        "\0": "\\0",
+        "\b": "\\b",
+        "\f": "\\f",
+        "\n": "\\n",
+        "\r": "\\r",
+        "\'": "\\'",
+        "\"": "\\\"",
+        "\\": "\\\\"}))
 
 
 def convert_doc(src_path, to_path, branch, branches):
@@ -56,8 +71,9 @@ def convert_doc(src_path, to_path, branch, branches):
         "--shift-heading-level-by=%d" % SHIFT_HEADING,
         "--toc-depth=%d" % (TOC_DEPTH+SHIFT_HEADING),
         "--filter=%s" % os.path.abspath(FILTER_EXE),
-        "--variable=branch=%s" % branch,
-        *("--variable=branches=%s" % b for b in branches)],
+        "--variable=branch_html=%s" % html.escape(branch),
+        "--variable=branch_js=%s" % escape_js(branch),
+        *("--variable=branches_js=%s" % escape_js(b) for b in branches)],
         cwd=os.path.dirname(TEMPLATE_PATH),
         stdout=subprocess.PIPE, check=True).stdout
     raw_html = subprocess.run([POSTPROCESSOR_EXE], input=raw_html,
@@ -167,7 +183,7 @@ def main():
                 raise RuntimeError("no default branch")
             target = default_branch
         source_path = "%s.html" % str(source)
-        target_url = urllib.parse.quote("%s.html" % str(target))
+        target_url = urllib.parse.quote_plus("%s.html" % str(target))
         with open(source_path, "w") as f:
             f.write(redirect_template.format(target=target_url))
         run_git("add", "--", source_path)

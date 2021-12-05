@@ -1,19 +1,14 @@
 window.addEventListener("load", function() {
     let select = document.querySelector("header .documentBranch select");
-    while (select.firstChild) {
-        select.removeChild(select.firstChild);
+    while (select.length > 0) {
+        select.remove(0);
     }
     for (let branch of documentBranches) {
-        let option = document.createElement("option");
-        option.textContent = branch;
-        if (branch === documentBranch) {
-            option.setAttribute("selected", "");
-        }
-        select.prepend(option);
+        select.add(new Option(branch, branch, branch === documentBranch, branch === documentBranch), 0);
     }
     select.addEventListener("change", function() {
         if (select.value !== documentBranch) {
-            location.assign(select.value + ".html");
+            location.assign(encodeURIComponent(select.value + ".html"));
             select.value = documentBranch;
         }
     });
