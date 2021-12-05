@@ -9,7 +9,6 @@ Gracefully handles conflicting commits.
 
 import contextlib
 import glob
-import html
 import json
 import os
 import re
@@ -17,7 +16,7 @@ import shutil
 import subprocess
 import sys
 import urllib.parse
-from tempfile import TemporaryDirectory
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 REMOTE = "origin"
 GIT_CONFIG = {"protocol.version": "2",
@@ -41,41 +40,34 @@ PANDOC_SHA256 = ("2001d93463c003f8fee6c36b1bfeccd5"
 BRANCH_ORDERING = [  # Format: (REGEX, ORDER, DEFAULT)
     (r"v?\d+(?:\.\d+)*(?:\.x)*", 0, True),
     (r".*", 1, False)]
-
-
-def escape_js(s):
-    return s.translate(str.maketrans({
-        "\t": "\\t",
-        "\v": "\\v",
-        "\0": "\\0",
-        "\b": "\\b",
-        "\f": "\\f",
-        "\n": "\\n",
-        "\r": "\\r",
-        "\'": "\\'",
-        "\"": "\\\"",
-        "\\": "\\\\"}))
+PROG = "documentation-generator"
 
 
 def convert_doc(src_path, to_path, branch, branches):
-    raw_html = subprocess.run([
-        PANDOC_EXE,
-        "--sandbox",
-        "--from=gfm",
-        "--to=html5",
-        os.path.abspath(src_path),
-        "--toc",
-        "--template=%s" % os.path.basename(TEMPLATE_PATH),
-        "--metadata=document-css=false",
-        "--section-divs",
-        "--shift-heading-level-by=%d" % SHIFT_HEADING,
-        "--toc-depth=%d" % (TOC_DEPTH+SHIFT_HEADING),
-        "--filter=%s" % os.path.abspath(FILTER_EXE),
-        "--variable=branch_html=%s" % html.escape(branch),
-        "--variable=branch_js=%s" % escape_js(branch),
-        *("--variable=branches_js=%s" % escape_js(b) for b in branches)],
-        cwd=os.path.dirname(TEMPLATE_PATH),
-        stdout=subprocess.PIPE, check=True).stdout
+    with NamedTemporaryFile(mode="w", prefix="%s-" % PROG,
+                            suffix=".json") as metadata_file:
+        json.dump({
+            "document-css": False,
+            "branch": branch,
+            "branches": [{"default": b == branch,
+                          "href": urllib.parse.quote_plus("%s.html" % b),
+                          "name": b} for b in branches]}, metadata_file)
+        metadata_file.flush()
+        raw_html = subprocess.run([
+            PANDOC_EXE,
+            "--sandbox",
+            "--from=gfm",
+            "--to=html5",
+            os.path.abspath(src_path),
+            "--toc",
+            "--template=%s" % os.path.basename(TEMPLATE_PATH),
+            "--metadata-file=%s" % os.path.abspath(metadata_file.name),
+            "--section-divs",
+            "--shift-heading-level-by=%d" % SHIFT_HEADING,
+            "--toc-depth=%d" % (TOC_DEPTH+SHIFT_HEADING),
+            "--filter=%s" % os.path.abspath(FILTER_EXE)],
+            cwd=os.path.dirname(TEMPLATE_PATH),
+            stdout=subprocess.PIPE, check=True).stdout
     raw_html = subprocess.run([POSTPROCESSOR_EXE], input=raw_html,
                               stdout=subprocess.PIPE, check=True).stdout
     with open(to_path, "wb") as f:
@@ -153,7 +145,7 @@ def main():
     run_git_fetch_and_restart_if_changed(remote_commits, target_branch)
     branches = [ref[len("refs/remotes/%s/" % REMOTE):] for ref in run_git(
         "rev-parse", "--symbolic-full-name", "--remotes=%s" % REMOTE)]
-    with TemporaryDirectory() as temp:
+    with TemporaryDirectory(prefix="%s-" % PROG) as temp:
         branch_docs = {}
         for branch in branches[:]:
             checkout(branch)

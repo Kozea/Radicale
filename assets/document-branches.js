@@ -1,15 +1,16 @@
 window.addEventListener("load", function() {
-    let select = document.querySelector("header .documentBranch select");
-    while (select.length > 0) {
-        select.remove(0);
-    }
-    for (let branch of documentBranches) {
-        select.add(new Option(branch, branch, branch === documentBranch, branch === documentBranch), 0);
-    }
-    select.addEventListener("change", function() {
-        if (select.value !== documentBranch) {
-            location.assign(encodeURIComponent(select.value + ".html"));
-            select.value = documentBranch;
+    function resetSelect(select) {
+        for (let option of select.options) {
+            option.selected = option.defaultSelected;
         }
+    }
+    let select = document.querySelector("header .documentBranch select");
+    resetSelect(select);
+    select.addEventListener("change", function() {
+        let option = select.selectedOptions.item(0);
+        if (option && !option.defaultSelected) {
+            location.assign(option.value);
+        }
+        resetSelect(select);
     });
 });
