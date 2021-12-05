@@ -88,17 +88,18 @@
 <script src="assets/document-branches.js"></script>
 <script src="assets/narrow-menu.js"></script>
 <script src="assets/navigation-scroll-fix.js"></script>
-<script>
-    const documentBranch = "master";
-    const documentBranches = ["v1", "v2", "v3", "master"];
-</script>
 <header>
 <div class="logoContainer">
 <h1>
             Radicale
             <span class="documentBranch">
 <span>master</span>
-<select></select>
+<select style="display: none;">
+<option value="v1.html">v1</option>
+<option value="v2.html">v2</option>
+<option value="v3.html">v3</option>
+<option selected value="master.html">master</option>
+</select>
 </span>
 </h1>
 <p>Free and Open-Source CalDAV and CardDAV Server</p>
@@ -111,12 +112,12 @@
 </div>
 </header>
 <main>
-<div class="navButtonContainer">
+<div class="navButtonContainer" style="display: none;">
 <button data-name="nav-open">Contents</button>
 </div>
 <nav>
 <div class="navContainer">
-<div class="navButtonContainer">
+<div class="navButtonContainer" style="display: none;">
 <button data-name="nav-close">Close</button>
 </div>
 <h2>Contents</h2>
