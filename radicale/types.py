@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2020 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
