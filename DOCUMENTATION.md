@@ -744,6 +744,9 @@ Available backends:
 `multifilesystem`
 : Stores the data in the filesystem.
 
+`multifilesystem_nolock`
+: The `multifilesystem` backend without file-based locking. Must only be used with a single process.
+
 Default: `multifilesystem`
 
 ##### filesystem_folder

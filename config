@@ -83,7 +83,7 @@
 [storage]
 
 # Storage backend
-# Value: multifilesystem
+# Value: multifilesystem | multifilesystem_nolock
 #type = multifilesystem
 
 # Folder for storing local collections, created if not present
