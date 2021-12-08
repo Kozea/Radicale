@@ -37,7 +37,7 @@ from radicale import item as radicale_item
 from radicale import types, utils
 from radicale.item import filter as radicale_filter
 
-INTERNAL_TYPES: Sequence[str] = ("multifilesystem",)
+INTERNAL_TYPES: Sequence[str] = ("multifilesystem", "multifilesystem_nolock",)
 
 CACHE_DEPS: Sequence[str] = ("radicale", "vobject", "python-dateutil",)
 CACHE_VERSION: bytes = "".join(

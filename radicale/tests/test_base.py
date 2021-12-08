@@ -1751,6 +1751,15 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
             assert "\r\nUID:%s\r\n" % uid in answer
 
 
+class TestMultiFileSystemNoLock(BaseFileSystemTest):
+    """Test BaseRequests on multifilesystem_nolock."""
+
+    storage_type: ClassVar[StorageType] = "multifilesystem_nolock"
+
+    test_add_event = BaseRequestsMixIn.test_add_event
+    test_item_cache_rebuild = TestMultiFileSystem.test_item_cache_rebuild
+
+
 class TestCustomStorageSystem(BaseFileSystemTest):
     """Test custom backend loading."""
 
