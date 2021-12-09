@@ -1772,7 +1772,7 @@ class TestCustomStorageSystem(BaseFileSystemTest):
     # include tests related to sync token
     s: str = ""
     for s in dir(BaseRequestsMixIn):
-        if s.startswith("test_") and ("_sync_" in s or s.endswith("_sync")):
+        if s.startswith("test_") and "sync" in s.split("_"):
             locals()[s] = getattr(BaseRequestsMixIn, s)
     del s
 
