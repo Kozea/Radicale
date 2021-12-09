@@ -74,7 +74,7 @@ setup(
     platforms="Any",
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
-    package_data={"radicale": [*WEB_FILES, 'py.typed']},
+    package_data={"radicale": [*WEB_FILES, "py.typed"]},
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
     install_requires=["defusedxml", "passlib", "vobject>=0.9.6",
                       "python-dateutil>=2.7.3", "setuptools"],
