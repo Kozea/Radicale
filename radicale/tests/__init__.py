@@ -32,7 +32,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import defusedxml.ElementTree as DefusedET
 
 import radicale
-from radicale import app, config, xmlutils
+from radicale import app, config, types, xmlutils
 
 RESPONSES = Dict[str, Union[int, Dict[str, Tuple[int, ET.Element]]]]
 
@@ -50,12 +50,15 @@ class BaseTest:
     def setup(self) -> None:
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
-        self.configuration.update({
+        self.configure({
             "storage": {"filesystem_folder": self.colpath,
                         # Disable syncing to disk for better performance
                         "_filesystem_fsync": "False"},
             # Set incorrect authentication delay to a short duration
-            "auth": {"delay": "0.001"}}, "test", privileged=True)
+            "auth": {"delay": "0.001"}})
+
+    def configure(self, config_: types.CONFIG) -> None:
+        self.configuration.update(config_, "test", privileged=True)
         self.application = app.Application(self.configuration)
 
     def teardown(self) -> None:

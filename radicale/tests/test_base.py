@@ -31,7 +31,7 @@ import defusedxml.ElementTree as DefusedET
 import pytest
 
 import radicale.tests.custom.storage_simple_sync
-from radicale import Application, config, storage, xmlutils
+from radicale import config, storage, xmlutils
 from radicale.tests import RESPONSES, BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -1544,12 +1544,10 @@ class BaseRequestsMixIn(BaseTest):
 
     def test_authentication(self) -> None:
         """Test if server sends authentication request."""
-        self.configuration.update({
-            "auth": {"type": "htpasswd",
-                     "htpasswd_filename": os.devnull,
-                     "htpasswd_encryption": "plain"},
-            "rights": {"type": "owner_only"}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": os.devnull,
+                                 "htpasswd_encryption": "plain"},
+                        "rights": {"type": "owner_only"}})
         status, headers, _ = self.request("MKCOL", "/user/")
         assert status in (401, 403)
         assert headers.get("WWW-Authenticate")
@@ -1580,8 +1578,7 @@ class BaseRequestsMixIn(BaseTest):
         self.propfind("/")
 
     def test_custom_headers(self) -> None:
-        self.configuration.update({"headers": {"test": "123"}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"headers": {"test": "123"}})
         # Test if header is set on success
         status, headers, _ = self.request("OPTIONS", "/")
         assert status == 200
@@ -1615,11 +1612,9 @@ class BaseStorageTest(BaseTest):
 user: .*
 collection: .*
 permissions: RrWw""")
-        self.configuration.update({
-            "storage": {"type": self.storage_type},
-            "rights": {"file": rights_file_path,
-                       "type": "from_file"}}, "test", privileged=True)
-        self.application = Application(self.configuration)
+        self.configure({"storage": {"type": self.storage_type},
+                        "rights": {"file": rights_file_path,
+                                   "type": "from_file"}})
 
 
 class TestMultiFileSystem(BaseStorageTest, BaseRequestsMixIn):
@@ -1630,33 +1625,25 @@ class TestMultiFileSystem(BaseStorageTest, BaseRequestsMixIn):
     def test_folder_creation(self) -> None:
         """Verify that the folder is created."""
         folder = os.path.join(self.colpath, "subfolder")
-        self.configuration.update(
-            {"storage": {"filesystem_folder": folder}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"storage": {"filesystem_folder": folder}})
         assert os.path.isdir(folder)
 
     def test_fsync(self) -> None:
         """Create a directory and file with syncing enabled."""
-        self.configuration.update({"storage": {"_filesystem_fsync": "True"}},
-                                  "test", privileged=True)
-        self.application = Application(self.configuration)
+        self.configure({"storage": {"_filesystem_fsync": "True"}})
         self.mkcalendar("/calendar.ics/")
 
     def test_hook(self) -> None:
         """Run hook."""
-        self.configuration.update({"storage": {
-            "hook": ("mkdir %s" % os.path.join(
-                "collection-root", "created_by_hook"))}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"storage": {"hook": "mkdir %s" % os.path.join(
+            "collection-root", "created_by_hook")}})
         self.mkcalendar("/calendar.ics/")
         self.propfind("/created_by_hook/")
 
     def test_hook_read_access(self) -> None:
         """Verify that hook is not run for read accesses."""
-        self.configuration.update({"storage": {
-            "hook": ("mkdir %s" % os.path.join(
-                "collection-root", "created_by_hook"))}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"storage": {"hook": "mkdir %s" % os.path.join(
+            "collection-root", "created_by_hook")}})
         self.propfind("/")
         self.propfind("/created_by_hook/", check=404)
 
@@ -1664,24 +1651,20 @@ class TestMultiFileSystem(BaseStorageTest, BaseRequestsMixIn):
                         reason="flock command not found")
     def test_hook_storage_locked(self) -> None:
         """Verify that the storage is locked when the hook runs."""
-        self.configuration.update({"storage": {"hook": (
-            "flock -n .Radicale.lock || exit 0; exit 1")}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"storage": {"hook": (
+            "flock -n .Radicale.lock || exit 0; exit 1")}})
         self.mkcalendar("/calendar.ics/")
 
     def test_hook_principal_collection_creation(self) -> None:
         """Verify that the hooks runs when a new user is created."""
-        self.configuration.update({"storage": {
-            "hook": ("mkdir %s" % os.path.join(
-                "collection-root", "created_by_hook"))}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"storage": {"hook": "mkdir %s" % os.path.join(
+            "collection-root", "created_by_hook")}})
         self.propfind("/", login="user:")
         self.propfind("/created_by_hook/")
 
     def test_hook_fail(self) -> None:
         """Verify that a request fails if the hook fails."""
-        self.configuration.update({"storage": {"hook": "exit 1"}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"storage": {"hook": "exit 1"}})
         self.mkcalendar("/calendar.ics/", check=500)
 
     def test_item_cache_rebuild(self) -> None:

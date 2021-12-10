@@ -27,7 +27,7 @@ from typing import Iterable, Tuple, Union
 
 import pytest
 
-from radicale import Application, xmlutils
+from radicale import xmlutils
 from radicale.tests import BaseTest
 
 
@@ -58,11 +58,9 @@ class TestBaseAuthRequests(BaseTest):
         encoding: str = self.configuration.get("encoding", "stock")
         with open(htpasswd_file_path, "w", encoding=encoding) as f:
             f.write(htpasswd_content)
-        self.configuration.update({
-            "auth": {"type": "htpasswd",
-                     "htpasswd_filename": htpasswd_file_path,
-                     "htpasswd_encryption": htpasswd_encryption}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": htpasswd_file_path,
+                                 "htpasswd_encryption": htpasswd_encryption}})
         if test_matrix == "ascii":
             test_matrix = (("tmp", "bepo", True), ("tmp", "tmp", False),
                            ("tmp", "", False), ("unk", "unk", False),
@@ -121,8 +119,7 @@ class TestBaseAuthRequests(BaseTest):
         self._test_htpasswd("plain", "#comment\n #comment\n \ntmp:bepo\n\n")
 
     def test_remote_user(self) -> None:
-        self.configuration.update({"auth": {"type": "remote_user"}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"auth": {"type": "remote_user"}})
         _, responses = self.propfind("/", """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
@@ -139,9 +136,7 @@ class TestBaseAuthRequests(BaseTest):
         assert href_element is not None and href_element.text == "/test/"
 
     def test_http_x_remote_user(self) -> None:
-        self.configuration.update(
-            {"auth": {"type": "http_x_remote_user"}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"auth": {"type": "http_x_remote_user"}})
         _, responses = self.propfind("/", """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
@@ -159,7 +154,5 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_custom(self) -> None:
         """Custom authentication."""
-        self.configuration.update(
-            {"auth": {"type": "radicale.tests.custom.auth"}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"auth": {"type": "radicale.tests.custom.auth"}})
         self.propfind("/tmp/", login="tmp:")
