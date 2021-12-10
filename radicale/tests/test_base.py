@@ -1600,7 +1600,7 @@ class BaseRequestsMixIn(BaseTest):
         self.put("/calendar.ics/event.ics", event)
 
 
-class BaseFileSystemTest(BaseTest):
+class BaseStorageTest(BaseTest):
     """Base class for filesystem backend tests."""
 
     storage_type: ClassVar[StorageType]
@@ -1622,7 +1622,7 @@ permissions: RrWw""")
         self.application = Application(self.configuration)
 
 
-class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
+class TestMultiFileSystem(BaseStorageTest, BaseRequestsMixIn):
     """Test BaseRequests on multifilesystem."""
 
     storage_type: ClassVar[StorageType] = "multifilesystem"
@@ -1751,7 +1751,7 @@ class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
             assert "\r\nUID:%s\r\n" % uid in answer
 
 
-class TestMultiFileSystemNoLock(BaseFileSystemTest):
+class TestMultiFileSystemNoLock(BaseStorageTest):
     """Test BaseRequests on multifilesystem_nolock."""
 
     storage_type: ClassVar[StorageType] = "multifilesystem_nolock"
@@ -1760,7 +1760,7 @@ class TestMultiFileSystemNoLock(BaseFileSystemTest):
     test_item_cache_rebuild = TestMultiFileSystem.test_item_cache_rebuild
 
 
-class TestCustomStorageSystem(BaseFileSystemTest):
+class TestCustomStorageSystem(BaseStorageTest):
     """Test custom backend loading."""
 
     storage_type: ClassVar[StorageType] = (
@@ -1777,7 +1777,7 @@ class TestCustomStorageSystem(BaseFileSystemTest):
     del s
 
 
-class TestCustomStorageSystemCallable(BaseFileSystemTest):
+class TestCustomStorageSystemCallable(BaseStorageTest):
     """Test custom backend loading with ``callable``."""
 
     storage_type: ClassVar[StorageType] = (
