@@ -76,11 +76,9 @@ class TestBaseServerRequests(BaseTest):
             # Find available port
             sock.bind(("127.0.0.1", 0))
             self.sockname = sock.getsockname()
-        self.configuration.update({
-            "server": {"hosts": "[%s]:%d" % self.sockname},
-            # Enable debugging for new processes
-            "logging": {"level": "debug"}},
-            "test", privileged=True)
+        self.configure({"server": {"hosts": "[%s]:%d" % self.sockname},
+                        # Enable debugging for new processes
+                        "logging": {"level": "debug"}})
         self.thread = threading.Thread(target=server.serve, args=(
             self.configuration, shutdown_socket_out))
         ssl_context = ssl.create_default_context()
@@ -141,10 +139,9 @@ class TestBaseServerRequests(BaseTest):
         self.get("/", check=302)
 
     def test_ssl(self) -> None:
-        self.configuration.update({
-            "server": {"ssl": "True",
-                       "certificate": get_file_path("cert.pem"),
-                       "key": get_file_path("key.pem")}}, "test")
+        self.configure({"server": {"ssl": "True",
+                                   "certificate": get_file_path("cert.pem"),
+                                   "key": get_file_path("key.pem")}})
         self.thread.start()
         self.get("/", check=302)
 
@@ -182,13 +179,12 @@ class TestBaseServerRequests(BaseTest):
                            errno.EPROTONOSUPPORT):
                 pytest.skip("IPv6 not supported")
             raise
-        self.configuration.update({
-            "server": {"hosts": "[%s]:%d" % self.sockname}}, "test")
+        self.configure({"server": {"hosts": "[%s]:%d" % self.sockname}})
         self.thread.start()
         self.get("/", check=302)
 
     def test_command_line_interface(self, with_bool_options=False) -> None:
-        self.configuration.update({"headers": {"Test-Server": "test"}})
+        self.configure({"headers": {"Test-Server": "test"}})
         config_args = []
         for section in self.configuration.sections():
             if section.startswith("_"):

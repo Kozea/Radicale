@@ -20,7 +20,6 @@ Radicale tests with simple requests and rights.
 
 import os
 
-from radicale import Application
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -35,12 +34,11 @@ class TestBaseRightsRequests(BaseTest):
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
         with open(htpasswd_file_path, "w") as f:
             f.write("tmp:bepo\nother:bepo")
-        self.configuration.update({
+        self.configure({
             "rights": {"type": rights_type},
             "auth": {"type": "htpasswd" if with_auth else "none",
                      "htpasswd_filename": htpasswd_file_path,
-                     "htpasswd_encryption": "plain"}}, "test")
-        self.application = Application(self.configuration)
+                     "htpasswd_encryption": "plain"}})
         for u in ("tmp", "other"):
             # Indirect creation of principal collection
             self.propfind("/%s/" % u, login="%s:bepo" % u)
@@ -113,8 +111,7 @@ permissions: RrWw
 user: .*
 collection: custom(/.*)?
 permissions: Rr""")
-        self.configuration.update(
-            {"rights": {"file": rights_file_path}}, "test")
+        self.configure({"rights": {"file": rights_file_path}})
         self._test_rights("from_file", "", "/other/", "r", 401)
         self._test_rights("from_file", "tmp", "/other/", "r", 403)
         self._test_rights("from_file", "", "/custom/sub", "r", 404)
@@ -134,10 +131,8 @@ permissions: RrWw
 user: .*
 collection: public/[^/]*
 permissions: i""")
-        self.configuration.update(
-            {"rights": {"type": "from_file",
-                        "file": rights_file_path}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"rights": {"type": "from_file",
+                                   "file": rights_file_path}})
         self.mkcalendar("/tmp/calendar", login="tmp:bepo")
         self.mkcol("/public", login="tmp:bepo")
         self.mkcalendar("/public/calendar", login="tmp:bepo")
@@ -160,7 +155,6 @@ permissions: i""")
         Items are allowed at "/.../.../...".
 
         """
-        self.application = Application(self.configuration)
         self.mkcalendar("/", check=401)
         self.mkcalendar("/user/", check=401)
         self.mkcol("/user/")
@@ -171,7 +165,6 @@ permissions: i""")
 
     def test_put_collections_and_items(self) -> None:
         """Test rights for creation of calendars and items with PUT."""
-        self.application = Application(self.configuration)
         self.put("/user/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR", check=401)
         self.mkcol("/user/")
         self.put("/user/calendar/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
