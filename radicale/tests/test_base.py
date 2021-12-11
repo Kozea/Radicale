@@ -22,27 +22,34 @@ Radicale tests with simple requests.
 
 import os
 import posixpath
-import shutil
 import sys
-from typing import (Any, Callable, ClassVar, Iterable, List, Optional, Tuple,
-                    Union)
+from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
 import defusedxml.ElementTree as DefusedET
 import pytest
 
-import radicale.tests.custom.storage_simple_sync
-from radicale import config, storage, xmlutils
+from radicale import storage, xmlutils
 from radicale.tests import RESPONSES, BaseTest
 from radicale.tests.helpers import get_file_content
 
-StorageType = Union[str, Callable[[config.Configuration], storage.BaseStorage]]
 
-
-class BaseRequestsMixIn(BaseTest):
+class TestBaseRequests(BaseTest):
     """Tests with simple requests."""
 
     # Allow skipping sync-token tests, when not fully supported by the backend
     full_sync_token_support: ClassVar[bool] = True
+
+    def setup(self) -> None:
+        BaseTest.setup(self)
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[allow all]
+user: .*
+collection: .*
+permissions: RrWw""")
+        self.configure({"rights": {"file": rights_file_path,
+                                   "type": "from_file"}})
 
     def test_root(self) -> None:
         """GET request at "/"."""
@@ -1595,175 +1602,3 @@ class BaseRequestsMixIn(BaseTest):
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_timezone_seconds.ics")
         self.put("/calendar.ics/event.ics", event)
-
-
-class BaseStorageTest(BaseTest):
-    """Base class for filesystem backend tests."""
-
-    storage_type: ClassVar[StorageType]
-
-    def setup(self) -> None:
-        super().setup()
-        # Allow access to anything for tests
-        rights_file_path = os.path.join(self.colpath, "rights")
-        with open(rights_file_path, "w") as f:
-            f.write("""\
-[allow all]
-user: .*
-collection: .*
-permissions: RrWw""")
-        self.configure({"storage": {"type": self.storage_type},
-                        "rights": {"file": rights_file_path,
-                                   "type": "from_file"}})
-
-
-class TestMultiFileSystem(BaseStorageTest, BaseRequestsMixIn):
-    """Test BaseRequests on multifilesystem."""
-
-    storage_type: ClassVar[StorageType] = "multifilesystem"
-
-    def test_folder_creation(self) -> None:
-        """Verify that the folder is created."""
-        folder = os.path.join(self.colpath, "subfolder")
-        self.configure({"storage": {"filesystem_folder": folder}})
-        assert os.path.isdir(folder)
-
-    def test_fsync(self) -> None:
-        """Create a directory and file with syncing enabled."""
-        self.configure({"storage": {"_filesystem_fsync": "True"}})
-        self.mkcalendar("/calendar.ics/")
-
-    def test_hook(self) -> None:
-        """Run hook."""
-        self.configure({"storage": {"hook": "mkdir %s" % os.path.join(
-            "collection-root", "created_by_hook")}})
-        self.mkcalendar("/calendar.ics/")
-        self.propfind("/created_by_hook/")
-
-    def test_hook_read_access(self) -> None:
-        """Verify that hook is not run for read accesses."""
-        self.configure({"storage": {"hook": "mkdir %s" % os.path.join(
-            "collection-root", "created_by_hook")}})
-        self.propfind("/")
-        self.propfind("/created_by_hook/", check=404)
-
-    @pytest.mark.skipif(not shutil.which("flock"),
-                        reason="flock command not found")
-    def test_hook_storage_locked(self) -> None:
-        """Verify that the storage is locked when the hook runs."""
-        self.configure({"storage": {"hook": (
-            "flock -n .Radicale.lock || exit 0; exit 1")}})
-        self.mkcalendar("/calendar.ics/")
-
-    def test_hook_principal_collection_creation(self) -> None:
-        """Verify that the hooks runs when a new user is created."""
-        self.configure({"storage": {"hook": "mkdir %s" % os.path.join(
-            "collection-root", "created_by_hook")}})
-        self.propfind("/", login="user:")
-        self.propfind("/created_by_hook/")
-
-    def test_hook_fail(self) -> None:
-        """Verify that a request fails if the hook fails."""
-        self.configure({"storage": {"hook": "exit 1"}})
-        self.mkcalendar("/calendar.ics/", check=500)
-
-    def test_item_cache_rebuild(self) -> None:
-        """Delete the item cache and verify that it is rebuild."""
-        self.mkcalendar("/calendar.ics/")
-        event = get_file_content("event1.ics")
-        path = "/calendar.ics/event1.ics"
-        self.put(path, event)
-        _, answer1 = self.get(path)
-        cache_folder = os.path.join(self.colpath, "collection-root",
-                                    "calendar.ics", ".Radicale.cache", "item")
-        assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
-        shutil.rmtree(cache_folder)
-        _, answer2 = self.get(path)
-        assert answer1 == answer2
-        assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
-
-    @pytest.mark.skipif(os.name != "posix" and sys.platform != "win32",
-                        reason="Only supported on 'posix' and 'win32'")
-    def test_put_whole_calendar_uids_used_as_file_names(self) -> None:
-        """Test if UIDs are used as file names."""
-        BaseRequestsMixIn.test_put_whole_calendar(self)
-        for uid in ("todo", "event"):
-            _, answer = self.get("/calendar.ics/%s.ics" % uid)
-            assert "\r\nUID:%s\r\n" % uid in answer
-
-    @pytest.mark.skipif(os.name != "posix" and sys.platform != "win32",
-                        reason="Only supported on 'posix' and 'win32'")
-    def test_put_whole_calendar_random_uids_used_as_file_names(self) -> None:
-        """Test if UIDs are used as file names."""
-        BaseRequestsMixIn.test_put_whole_calendar_without_uids(self)
-        _, answer = self.get("/calendar.ics")
-        assert answer is not None
-        uids = []
-        for line in answer.split("\r\n"):
-            if line.startswith("UID:"):
-                uids.append(line[len("UID:"):])
-        for uid in uids:
-            _, answer = self.get("/calendar.ics/%s.ics" % uid)
-            assert answer is not None
-            assert "\r\nUID:%s\r\n" % uid in answer
-
-    @pytest.mark.skipif(os.name != "posix" and sys.platform != "win32",
-                        reason="Only supported on 'posix' and 'win32'")
-    def test_put_whole_addressbook_uids_used_as_file_names(self) -> None:
-        """Test if UIDs are used as file names."""
-        BaseRequestsMixIn.test_put_whole_addressbook(self)
-        for uid in ("contact1", "contact2"):
-            _, answer = self.get("/contacts.vcf/%s.vcf" % uid)
-            assert "\r\nUID:%s\r\n" % uid in answer
-
-    @pytest.mark.skipif(os.name != "posix" and sys.platform != "win32",
-                        reason="Only supported on 'posix' and 'win32'")
-    def test_put_whole_addressbook_random_uids_used_as_file_names(
-            self) -> None:
-        """Test if UIDs are used as file names."""
-        BaseRequestsMixIn.test_put_whole_addressbook_without_uids(self)
-        _, answer = self.get("/contacts.vcf")
-        assert answer is not None
-        uids = []
-        for line in answer.split("\r\n"):
-            if line.startswith("UID:"):
-                uids.append(line[len("UID:"):])
-        for uid in uids:
-            _, answer = self.get("/contacts.vcf/%s.vcf" % uid)
-            assert answer is not None
-            assert "\r\nUID:%s\r\n" % uid in answer
-
-
-class TestMultiFileSystemNoLock(BaseStorageTest):
-    """Test BaseRequests on multifilesystem_nolock."""
-
-    storage_type: ClassVar[StorageType] = "multifilesystem_nolock"
-
-    test_add_event = BaseRequestsMixIn.test_add_event
-    test_item_cache_rebuild = TestMultiFileSystem.test_item_cache_rebuild
-
-
-class TestCustomStorageSystem(BaseStorageTest):
-    """Test custom backend loading."""
-
-    storage_type: ClassVar[StorageType] = (
-        "radicale.tests.custom.storage_simple_sync")
-    full_sync_token_support: ClassVar[bool] = False
-
-    test_root = BaseRequestsMixIn.test_root
-    _report_sync_token = BaseRequestsMixIn._report_sync_token
-    # include tests related to sync token
-    s: str = ""
-    for s in dir(BaseRequestsMixIn):
-        if s.startswith("test_") and "sync" in s.split("_"):
-            locals()[s] = getattr(BaseRequestsMixIn, s)
-    del s
-
-
-class TestCustomStorageSystemCallable(BaseStorageTest):
-    """Test custom backend loading with ``callable``."""
-
-    storage_type: ClassVar[StorageType] = (
-        radicale.tests.custom.storage_simple_sync.Storage)
-
-    test_add_event = BaseRequestsMixIn.test_add_event
