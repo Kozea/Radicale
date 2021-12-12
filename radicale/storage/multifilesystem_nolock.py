@@ -43,7 +43,6 @@ class RwLock(pathutils.RwLock):
                                     mode == "r" or self._readers == 0))
             if mode == "r":
                 self._readers += 1
-                self._cond.notify()
             else:
                 self._writer = True
         try:
@@ -53,7 +52,8 @@ class RwLock(pathutils.RwLock):
                 if mode == "r":
                     self._readers -= 1
                 self._writer = False
-                self._cond.notify()
+                if self._readers == 0:
+                    self._cond.notify_all()
 
 
 class LockDict:
