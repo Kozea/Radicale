@@ -20,7 +20,7 @@ The multifilesystem backend without file-based locking.
 
 import threading
 from collections import deque
-from typing import Deque, Dict, Hashable, Iterator
+from typing import ClassVar, Deque, Dict, Hashable, Iterator, Type
 
 from radicale import config, pathutils, types
 from radicale.storage import multifilesystem
@@ -103,7 +103,7 @@ class Collection(multifilesystem.Collection):
 
 class Storage(multifilesystem.Storage):
 
-    _collection_class = Collection
+    _collection_class: ClassVar[Type[Collection]] = Collection
 
     _cache_lock: LockDict
 
