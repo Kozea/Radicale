@@ -25,7 +25,7 @@ Uses one folder per collection and one file per collection entry.
 
 import os
 import time
-from typing import Iterator, Optional
+from typing import ClassVar, Iterator, Optional, Type
 
 from radicale import config
 from radicale.storage.multifilesystem.base import CollectionBase, StorageBase
@@ -84,7 +84,7 @@ class Storage(
         StoragePartCreateCollection, StoragePartLock, StoragePartMove,
         StoragePartVerify, StoragePartDiscover, StorageBase):
 
-    _collection_class = Collection
+    _collection_class: ClassVar[Type[Collection]] = Collection
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)

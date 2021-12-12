@@ -18,7 +18,7 @@
 
 import os
 from tempfile import TemporaryDirectory
-from typing import IO, AnyStr, Iterator, Optional, Type
+from typing import IO, AnyStr, ClassVar, Iterator, Optional, Type
 
 from radicale import config, pathutils, storage, types
 from radicale.storage import multifilesystem  # noqa:F401
@@ -62,7 +62,8 @@ class CollectionBase(storage.BaseCollection):
 
 class StorageBase(storage.BaseStorage):
 
-    _collection_class: Type["multifilesystem.Collection"]
+    _collection_class: ClassVar[Type["multifilesystem.Collection"]]
+
     _filesystem_folder: str
     _filesystem_fsync: bool
 
