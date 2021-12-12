@@ -20,7 +20,7 @@ The multifilesystem backend without file-based locking.
 
 import threading
 from collections import deque
-from typing import Deque, Dict, Iterator, Tuple
+from typing import Deque, Dict, Hashable, Iterator
 
 from radicale import config, pathutils, types
 from radicale.storage import multifilesystem
@@ -56,20 +56,21 @@ class RwLock(pathutils.RwLock):
                 self._cond.notify()
 
 
-class Collection(multifilesystem.Collection):
+class LockDict:
 
-    _storage: "Storage"
+    _lock: threading.Lock
+    _dict: Dict[Hashable, Deque[threading.Lock]]
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._dict = {}
 
     @types.contextmanager
-    def _acquire_cache_lock(self, ns: str = "") -> Iterator[None]:
-        if self._storage._lock.locked == "w":
-            yield
-            return
-        key = (self.path, ns)
-        with self._storage._cache_lock:
-            waiters = self._storage._cache_locks.get(key)
+    def acquire(self, key: Hashable) -> Iterator[None]:
+        with self._lock:
+            waiters = self._dict.get(key)
             if waiters is None:
-                self._storage._cache_locks[key] = waiters = deque()
+                self._dict[key] = waiters = deque()
             wait = bool(waiters)
             waiter = threading.Lock()
             waiter.acquire()
@@ -79,25 +80,34 @@ class Collection(multifilesystem.Collection):
         try:
             yield
         finally:
-            with self._storage._cache_lock:
-                removedWaiter = waiters.popleft()
-                assert removedWaiter is waiter
+            with self._lock:
+                del waiters[0]
                 if waiters:
                     waiters[0].release()
                 else:
-                    removedWaiters = self._storage._cache_locks.pop(key)
-                    assert removedWaiters is waiters
+                    del self._dict[key]
+
+
+class Collection(multifilesystem.Collection):
+
+    _storage: "Storage"
+
+    @types.contextmanager
+    def _acquire_cache_lock(self, ns: str = "") -> Iterator[None]:
+        if self._storage._lock.locked == "w":
+            yield
+            return
+        with self._storage._cache_lock.acquire((self.path, ns)):
+            yield
 
 
 class Storage(multifilesystem.Storage):
 
     _collection_class = Collection
 
-    _cache_lock: threading.Lock
-    _cache_locks: Dict[Tuple[str, str], Deque[threading.Lock]]
+    _cache_lock: LockDict
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
         self._lock = RwLock()
-        self._cache_lock = threading.Lock()
-        self._cache_locks = {}
+        self._cache_lock = LockDict()
