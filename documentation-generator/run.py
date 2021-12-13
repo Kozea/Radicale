@@ -25,8 +25,7 @@ GIT_CONFIG = {"protocol.version": "2",
 COMMIT_MESSAGE = "Generate documentation"
 DOCUMENTATION_SRC = "DOCUMENTATION.md"
 REDIRECT_CONFIG_PATH = "redirect.json"
-SHIFT_HEADING = 1
-TOC_DEPTH = 3
+TOC_DEPTH = 4
 TOOLS_PATH = os.path.dirname(__file__)
 REDIRECT_TEMPLATE_PATH = os.path.join(TOOLS_PATH, "template-redirect.html")
 TEMPLATE_PATH = os.path.join(TOOLS_PATH, "template.html")
@@ -64,8 +63,7 @@ def convert_doc(src_path, to_path, branch, branches):
             "--template=%s" % os.path.basename(TEMPLATE_PATH),
             "--metadata-file=%s" % os.path.abspath(metadata_file.name),
             "--section-divs",
-            "--shift-heading-level-by=%d" % SHIFT_HEADING,
-            "--toc-depth=%d" % (TOC_DEPTH+SHIFT_HEADING),
+            "--toc-depth=%d" % TOC_DEPTH,
             "--filter=%s" % os.path.abspath(FILTER_EXE)],
             cwd=os.path.dirname(TEMPLATE_PATH),
             stdout=subprocess.PIPE, check=True).stdout

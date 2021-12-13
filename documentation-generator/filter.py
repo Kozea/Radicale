@@ -8,7 +8,7 @@ import json
 import re
 import sys
 
-from run import SHIFT_HEADING
+TITLE = "Documentation"
 
 
 def text_content(content):
@@ -33,13 +33,23 @@ def convert_framgent(*titles):
 def main():
     data = json.load(sys.stdin)
 
+    delete_block_indices = []
+    level1_heading = None
     # Use hierachical link fragments (e.g. #heading/subheading)
     headings = []
-    for block in data["blocks"]:
+    for i, block in enumerate(data["blocks"]):
         if block["t"] != "Header":
             continue
         level, (attr_id, attr_class, attr_name), content = block["c"]
-        shifted_level = level - SHIFT_HEADING
+        if level == 1:
+            if level1_heading is not None:
+                print("ERROR: Mulitple level 1 headings found",
+                      file=sys.stderr)
+                exit(1)
+            delete_block_indices.append(i)
+            level1_heading = content
+            continue
+        shifted_level = level - 1  # Ignore level 1 heading
         title = text_content(content)
         headings = headings[:shifted_level - 1]
         while len(headings) < shifted_level - 1:
@@ -47,6 +57,12 @@ def main():
         headings.append(title)
         full_attr_id = convert_framgent(*headings)
         block["c"] = [level, [full_attr_id, attr_class, attr_name], content]
+    if level1_heading != [{'t': 'Str', 'c': TITLE}]:
+        print("ERROR: Level 1 heading must be %r" % TITLE, file=sys.stderr)
+        exit(1)
+    data["meta"]["title"] = {"t": "MetaInlines", "c": level1_heading}
+    for i in reversed(delete_block_indices):
+        del data["blocks"][i]
 
     json.dump(data, sys.stdout)
 
