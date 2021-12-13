@@ -407,22 +407,17 @@
 </section>
 <section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/evolution">
 <h6>Evolution <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/evolution">&para;</a></h6>
-<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/evolution/calendars">
-<p class="heading">Calendars <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/evolution/calendars">&para;</a></p>
+<p>####### Calendars</p>
 <p>First of all, show the calendar page in Evolution by clicking on the calendar icon at the bottom of the side pane. Then add a new calendar by choosing in the menu <code>File &rarr; New &rarr; Calendar</code>.</p>
 <p>A new window opens. The calendar <code>type</code> is <code>CalDAV</code>, and the location is something like <code>http://localhost:5232/user/calendar.ics/</code>, where you can replace <code>user</code> and <code>calendar</code> by some strings of your choice. Calendars are automatically created if needed. Please note that <strong>the trailing slash is important</strong>.</p>
 <p>You can fill other attributes like the color and the name, these are only used for Evolution and are not uploaded.</p>
 <p>Click on <code>OK</code>, and your calendar should be ready for use.</p>
-</section>
-<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/evolution/contacts">
-<p class="heading">Contacts <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/evolution/contacts">&para;</a></p>
+<p>####### Contacts</p>
 <p>Switch to the contacts page and click <code>File &rarr; New &rarr; Adress book</code>. In the new window choose <code>WebDAV</code> as <code>type</code> and something like <code>http://localhost:5232/user/addressbook.vcf/</code> as location. Remember to enter the correct username.</p>
-</section>
 </section>
 <section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/korganizer">
 <h6>KOrganizer <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/korganizer">&para;</a></h6>
-<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/korganizer/calendars">
-<p class="heading">Calendars <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/korganizer/calendars">&para;</a></p>
+<p>####### Calendars</p>
 <p><em>Tested with 4.8.3, you need one running on Akonadi for Cal/CarDav support.</em></p>
 <p>The procedure below can also be done trough the sidebar "Calendar Manager". But to ensure it works for everyone this examples uses the menu-bar.</p>
 <ol type="1">
@@ -448,11 +443,8 @@
 <p><strong>Note</strong></p>
 <p>After you created a calender in a collection you can also use <code>http://myserver:5232/Username/</code> as an URL This will then list all available calendars.</p>
 </blockquote>
-</section>
-<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/korganizer/contacts">
-<p class="heading">Contacts <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/korganizer/contacts">&para;</a></p>
+<p>####### Contacts</p>
 <p>You can add a address book analogously to the above instructions, just choose CardDav and <code>http://myserver:5232/Username/AddressBook.vcf/</code> in step 10 and 11. Also, if you already have a calendar set up you can add an address book to its "DAV groupware resource" under Configure-Kontact &rarr; Calendar &rarr; General &rarr; Calendars &rarr; Modify. This way you don't have to enter username and password twice.</p>
-</section>
 </section>
 <section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/calendarsync">
 <h6>CalendarSync <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/calendarsync">&para;</a></h6>
@@ -516,8 +508,7 @@
 <h6>InfCloud, CalDavZAP &amp; CardDavMATE <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/infcloud-caldavzap--carddavmate">&para;</a></h6>
 <p>Because settings are the same for <code>InfCloud</code>, <code>CalDavZAP</code> and <code>CardDavMATE</code><br>
 only <em>InfCloud</em> is used in description below.</p>
-<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/infcloud-caldavzap--carddavmate/radicale-configuration">
-<p class="heading">Radicale configuration <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/infcloud-caldavzap--carddavmate/radicale-configuration">&para;</a></p>
+<p>####### Radicale configuration</p>
 <p>Add/Modify the following section in Radicale main configuration file:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb1-1"><a aria-hidden="true" href="#cb1-1" tabindex="-1"></a><span class="co"># Additional HTTP headers</span></span>
 <span id="cb1-2"><a aria-hidden="true" href="#cb1-2" tabindex="-1"></a><span class="kw">[headers]</span></span>
@@ -538,9 +529,7 @@ only <em>InfCloud</em> is used in description below.</p>
 <span id="cb3-4"><a aria-hidden="true" href="#cb3-4" tabindex="-1"></a><span class="co"># collection: ^%(login)s/.+$    # DOES NOT WORK</span></span>
 <span id="cb3-5"><a aria-hidden="true" href="#cb3-5" tabindex="-1"></a><span class="dt">collection: ^%(login)s(/.+)?$</span></span>
 <span id="cb3-6"><a aria-hidden="true" href="#cb3-6" tabindex="-1"></a><span class="dt">permission: rw</span></span></code></pre></div>
-</section>
-<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/infcloud-caldavzap--carddavmate/infcloud-configuration">
-<p class="heading">InfCloud configuration <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/infcloud-caldavzap--carddavmate/infcloud-configuration">&para;</a></p>
+<p>####### InfCloud configuration</p>
 <p>Inside <code>InfCloud</code> configuration file <code>config.js</code> you need to set <code>globalNetworkCheckSettings</code> like following example:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode JavaScript"><code class="sourceCode javascript"><span id="cb4-1"><a aria-hidden="true" href="#cb4-1" tabindex="-1"></a><span class="co">// href: </span></span>
 <span id="cb4-2"><a aria-hidden="true" href="#cb4-2" tabindex="-1"></a><span class="co">// put in here your protocol, host and port where Radicale is listening</span></span>
@@ -583,11 +572,9 @@ Download and accept the certificate offered by the Radicale server.<br>
 After installing and accepting it you should restart your browser.</p>
 </blockquote>
 </section>
-</section>
 <section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad">
 <h6>iPhone &amp; iPad <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad">&para;</a></h6>
-<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad/calendars">
-<p class="heading">Calendars <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad/calendars">&para;</a></p>
+<p>####### Calendars</p>
 <p>For iOS devices, the setup is fairly straightforward but there are a few settings that are critical for proper operation.</p>
 <ol type="1">
 <li>From the Home screen, open <code>Settings</code></li>
@@ -606,9 +593,7 @@ After installing and accepting it you should restart your browser.</p>
 <p><strong>Warning</strong></p>
 <p>In iOS 5.x, please check twice that the <code>Sync all entries</code> option is activated, otherwise some events may not be shown in your calendar.</p>
 </blockquote>
-</section>
-<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad/contacts">
-<p class="heading">Contacts <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad/contacts">&para;</a></p>
+<p>####### Contacts</p>
 <p>In Contacts on iOS 6:</p>
 <ol type="1">
 <li>From the Home screen, open <code>Settings</code></li>
@@ -628,15 +613,13 @@ After installing and accepting it you should restart your browser.</p>
 <p>You'll need version 0.8.1 or up for this to work. Earlier versions will forget your new settings after a reboot.</p>
 </blockquote>
 </section>
-</section>
 <section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/os-x">
 <h6>OS X <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/os-x">&para;</a></h6>
 <blockquote>
 <p><strong>Note</strong></p>
 <p>This description assumes you do not have any authentication or encryption configured. If you want to use iCal with authentication or encryption, you just have to fill in the corresponding fields in your calendar's configuration.</p>
 </blockquote>
-<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/os-x/calendars">
-<p class="heading">Calendars <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/os-x/calendars">&para;</a></p>
+<p>####### Calendars</p>
 <p>In iCal 4.0 or iCal 5.0:</p>
 <ol type="1">
 <li>Open the <code>Preferences</code> dialog and select the <code>Accounts</code> tab</li>
@@ -657,9 +640,7 @@ After installing and accepting it you should restart your browser.</p>
 <p>To add a calendar to your shiny new account you have to go to the menu and select <code>File &rarr; New Calendar &rarr; &lt;your shiny new account&gt;</code>. A new calendar appears in the left panel waiting for you to enter a name.</p>
 <p>This is needed because the behaviour of the big <code>+</code> button in the main window is confusing as you can't focus an empty account and iCal will just add a calendar to another account.</p>
 </blockquote>
-</section>
-<section class="level7" id="documentation/user-documentation/simple-usage/starting-the-client/os-x/contacts">
-<p class="heading">Contacts <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/os-x/contacts">&para;</a></p>
+<p>####### Contacts</p>
 <p>In Contacts 7 (previously known as AddressBook):</p>
 <ol type="1">
 <li>Open the <code>Preferences</code> dialog and select the <code>Accounts</code> tab.</li>
@@ -676,7 +657,6 @@ After installing and accepting it you should restart your browser.</p>
 <p><strong>Note</strong></p>
 <p>You'll need version 0.8.1 or up for this to work. Earlier versions can read CardDAV contacts but can't add new contacts.</p>
 </blockquote>
-</section>
 </section>
 <section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/syncevolution">
 <h6>syncEvolution <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/syncevolution">&para;</a></h6>
@@ -916,7 +896,7 @@ After installing and accepting it you should restart your browser.</p>
 <p>Radicale uses the default logging facility for Python. The default configuration prints the information messages to the standard output. It is possible to print debug messages thanks to:</p>
 <pre><code>radicale --debug</code></pre>
 <p>Radicale can also be configured to send the messages to the console, logging files, syslog, etc. For more information about the syntax of the configuration file, see: <a href="http://docs.python.org/library/logging.config.html">http://docs.python.org/library/logging.config.html</a>. Here is an example of logging configuration file:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb9-1"><a aria-hidden="true" href="#cb9-1" tabindex="-1"></a><span class="co"># Loggers, handlers and formatters keys</span></span>
+<div class="sourceCode" id="cb9"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb9-1"><a aria-hidden="true" href="#cb9-1" tabindex="-1"></a><span class="co">## Loggers, handlers and formatters keys</span></span>
 <span id="cb9-2"><a aria-hidden="true" href="#cb9-2" tabindex="-1"></a></span>
 <span id="cb9-3"><a aria-hidden="true" href="#cb9-3" tabindex="-1"></a><span class="kw">[loggers]</span></span>
 <span id="cb9-4"><a aria-hidden="true" href="#cb9-4" tabindex="-1"></a><span class="co"># Loggers names, main configuration slots</span></span>
@@ -931,7 +911,7 @@ After installing and accepting it you should restart your browser.</p>
 <span id="cb9-13"><a aria-hidden="true" href="#cb9-13" tabindex="-1"></a><span class="dt">keys </span><span class="ot">=</span><span class="st"> simple,full</span></span>
 <span id="cb9-14"><a aria-hidden="true" href="#cb9-14" tabindex="-1"></a></span>
 <span id="cb9-15"><a aria-hidden="true" href="#cb9-15" tabindex="-1"></a></span>
-<span id="cb9-16"><a aria-hidden="true" href="#cb9-16" tabindex="-1"></a><span class="co"># Loggers</span></span>
+<span id="cb9-16"><a aria-hidden="true" href="#cb9-16" tabindex="-1"></a><span class="co">## Loggers</span></span>
 <span id="cb9-17"><a aria-hidden="true" href="#cb9-17" tabindex="-1"></a></span>
 <span id="cb9-18"><a aria-hidden="true" href="#cb9-18" tabindex="-1"></a><span class="kw">[logger_root]</span></span>
 <span id="cb9-19"><a aria-hidden="true" href="#cb9-19" tabindex="-1"></a><span class="co"># Root logger</span></span>
@@ -939,7 +919,7 @@ After installing and accepting it you should restart your browser.</p>
 <span id="cb9-21"><a aria-hidden="true" href="#cb9-21" tabindex="-1"></a><span class="dt">handlers </span><span class="ot">=</span><span class="st"> console,file</span></span>
 <span id="cb9-22"><a aria-hidden="true" href="#cb9-22" tabindex="-1"></a></span>
 <span id="cb9-23"><a aria-hidden="true" href="#cb9-23" tabindex="-1"></a></span>
-<span id="cb9-24"><a aria-hidden="true" href="#cb9-24" tabindex="-1"></a><span class="co"># Handlers</span></span>
+<span id="cb9-24"><a aria-hidden="true" href="#cb9-24" tabindex="-1"></a><span class="co">## Handlers</span></span>
 <span id="cb9-25"><a aria-hidden="true" href="#cb9-25" tabindex="-1"></a></span>
 <span id="cb9-26"><a aria-hidden="true" href="#cb9-26" tabindex="-1"></a><span class="kw">[handler_console]</span></span>
 <span id="cb9-27"><a aria-hidden="true" href="#cb9-27" tabindex="-1"></a><span class="co"># Console handler</span></span>
@@ -955,7 +935,7 @@ After installing and accepting it you should restart your browser.</p>
 <span id="cb9-37"><a aria-hidden="true" href="#cb9-37" tabindex="-1"></a><span class="dt">formatter </span><span class="ot">=</span><span class="st"> full</span></span>
 <span id="cb9-38"><a aria-hidden="true" href="#cb9-38" tabindex="-1"></a></span>
 <span id="cb9-39"><a aria-hidden="true" href="#cb9-39" tabindex="-1"></a></span>
-<span id="cb9-40"><a aria-hidden="true" href="#cb9-40" tabindex="-1"></a><span class="co"># Formatters</span></span>
+<span id="cb9-40"><a aria-hidden="true" href="#cb9-40" tabindex="-1"></a><span class="co">## Formatters</span></span>
 <span id="cb9-41"><a aria-hidden="true" href="#cb9-41" tabindex="-1"></a></span>
 <span id="cb9-42"><a aria-hidden="true" href="#cb9-42" tabindex="-1"></a><span class="kw">[formatter_simple]</span></span>
 <span id="cb9-43"><a aria-hidden="true" href="#cb9-43" tabindex="-1"></a><span class="co"># Simple output format</span></span>
@@ -1091,7 +1071,7 @@ After installing and accepting it you should restart your browser.</p>
 <span id="cb14-5"><a aria-hidden="true" href="#cb14-5" tabindex="-1"></a><span class="co"># configuration files. Using these examples together in the same configuration</span></span>
 <span id="cb14-6"><a aria-hidden="true" href="#cb14-6" tabindex="-1"></a><span class="co"># file is meaningless.</span></span>
 <span id="cb14-7"><a aria-hidden="true" href="#cb14-7" tabindex="-1"></a><span class="co">#</span></span>
-<span id="cb14-8"><a aria-hidden="true" href="#cb14-8" tabindex="-1"></a><span class="co"># The first rule matching both user and collection patterns will be returned.</span></span>
+<span id="cb14-8"><a aria-hidden="true" href="#cb14-8" tabindex="-1"></a><span class="co">## The first rule matching both user and collection patterns will be returned.</span></span>
 <span id="cb14-9"><a aria-hidden="true" href="#cb14-9" tabindex="-1"></a></span>
 <span id="cb14-10"><a aria-hidden="true" href="#cb14-10" tabindex="-1"></a><span class="co"># This means all users starting with "admin" may read any collection</span></span>
 <span id="cb14-11"><a aria-hidden="true" href="#cb14-11" tabindex="-1"></a><span class="kw">[admin]</span></span>
