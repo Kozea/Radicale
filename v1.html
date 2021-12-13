@@ -407,17 +407,17 @@
 </section>
 <section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/evolution">
 <h6>Evolution <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/evolution">&para;</a></h6>
-<p>####### Calendars</p>
+<p><strong>Calendars</strong></p>
 <p>First of all, show the calendar page in Evolution by clicking on the calendar icon at the bottom of the side pane. Then add a new calendar by choosing in the menu <code>File &rarr; New &rarr; Calendar</code>.</p>
 <p>A new window opens. The calendar <code>type</code> is <code>CalDAV</code>, and the location is something like <code>http://localhost:5232/user/calendar.ics/</code>, where you can replace <code>user</code> and <code>calendar</code> by some strings of your choice. Calendars are automatically created if needed. Please note that <strong>the trailing slash is important</strong>.</p>
 <p>You can fill other attributes like the color and the name, these are only used for Evolution and are not uploaded.</p>
 <p>Click on <code>OK</code>, and your calendar should be ready for use.</p>
-<p>####### Contacts</p>
+<p><strong>Contacts</strong></p>
 <p>Switch to the contacts page and click <code>File &rarr; New &rarr; Adress book</code>. In the new window choose <code>WebDAV</code> as <code>type</code> and something like <code>http://localhost:5232/user/addressbook.vcf/</code> as location. Remember to enter the correct username.</p>
 </section>
 <section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/korganizer">
 <h6>KOrganizer <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/korganizer">&para;</a></h6>
-<p>####### Calendars</p>
+<p><strong>Calendars</strong></p>
 <p><em>Tested with 4.8.3, you need one running on Akonadi for Cal/CarDav support.</em></p>
 <p>The procedure below can also be done trough the sidebar "Calendar Manager". But to ensure it works for everyone this examples uses the menu-bar.</p>
 <ol type="1">
@@ -443,7 +443,7 @@
 <p><strong>Note</strong></p>
 <p>After you created a calender in a collection you can also use <code>http://myserver:5232/Username/</code> as an URL This will then list all available calendars.</p>
 </blockquote>
-<p>####### Contacts</p>
+<p><strong>Contacts</strong></p>
 <p>You can add a address book analogously to the above instructions, just choose CardDav and <code>http://myserver:5232/Username/AddressBook.vcf/</code> in step 10 and 11. Also, if you already have a calendar set up you can add an address book to its "DAV groupware resource" under Configure-Kontact &rarr; Calendar &rarr; General &rarr; Calendars &rarr; Modify. This way you don't have to enter username and password twice.</p>
 </section>
 <section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/calendarsync">
@@ -508,7 +508,7 @@
 <h6>InfCloud, CalDavZAP &amp; CardDavMATE <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/infcloud-caldavzap--carddavmate">&para;</a></h6>
 <p>Because settings are the same for <code>InfCloud</code>, <code>CalDavZAP</code> and <code>CardDavMATE</code><br>
 only <em>InfCloud</em> is used in description below.</p>
-<p>####### Radicale configuration</p>
+<p><strong>Radicale configuration</strong></p>
 <p>Add/Modify the following section in Radicale main configuration file:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb1-1"><a aria-hidden="true" href="#cb1-1" tabindex="-1"></a><span class="co"># Additional HTTP headers</span></span>
 <span id="cb1-2"><a aria-hidden="true" href="#cb1-2" tabindex="-1"></a><span class="kw">[headers]</span></span>
@@ -529,7 +529,7 @@ only <em>InfCloud</em> is used in description below.</p>
 <span id="cb3-4"><a aria-hidden="true" href="#cb3-4" tabindex="-1"></a><span class="co"># collection: ^%(login)s/.+$    # DOES NOT WORK</span></span>
 <span id="cb3-5"><a aria-hidden="true" href="#cb3-5" tabindex="-1"></a><span class="dt">collection: ^%(login)s(/.+)?$</span></span>
 <span id="cb3-6"><a aria-hidden="true" href="#cb3-6" tabindex="-1"></a><span class="dt">permission: rw</span></span></code></pre></div>
-<p>####### InfCloud configuration</p>
+<p><strong>InfCloud configuration</strong></p>
 <p>Inside <code>InfCloud</code> configuration file <code>config.js</code> you need to set <code>globalNetworkCheckSettings</code> like following example:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode JavaScript"><code class="sourceCode javascript"><span id="cb4-1"><a aria-hidden="true" href="#cb4-1" tabindex="-1"></a><span class="co">// href: </span></span>
 <span id="cb4-2"><a aria-hidden="true" href="#cb4-2" tabindex="-1"></a><span class="co">// put in here your protocol, host and port where Radicale is listening</span></span>
@@ -574,7 +574,7 @@ After installing and accepting it you should restart your browser.</p>
 </section>
 <section class="level6" id="documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad">
 <h6>iPhone &amp; iPad <a class="headerlink" href="#documentation/user-documentation/simple-usage/starting-the-client/iphone--ipad">&para;</a></h6>
-<p>####### Calendars</p>
+<p><strong>Calendars</strong></p>
 <p>For iOS devices, the setup is fairly straightforward but there are a few settings that are critical for proper operation.</p>
 <ol type="1">
 <li>From the Home screen, open <code>Settings</code></li>
@@ -593,7 +593,7 @@ After installing and accepting it you should restart your browser.</p>
 <p><strong>Warning</strong></p>
 <p>In iOS 5.x, please check twice that the <code>Sync all entries</code> option is activated, otherwise some events may not be shown in your calendar.</p>
 </blockquote>
-<p>####### Contacts</p>
+<p><strong>Contacts</strong></p>
 <p>In Contacts on iOS 6:</p>
 <ol type="1">
 <li>From the Home screen, open <code>Settings</code></li>
@@ -619,7 +619,7 @@ After installing and accepting it you should restart your browser.</p>
 <p><strong>Note</strong></p>
 <p>This description assumes you do not have any authentication or encryption configured. If you want to use iCal with authentication or encryption, you just have to fill in the corresponding fields in your calendar's configuration.</p>
 </blockquote>
-<p>####### Calendars</p>
+<p><strong>Calendars</strong></p>
 <p>In iCal 4.0 or iCal 5.0:</p>
 <ol type="1">
 <li>Open the <code>Preferences</code> dialog and select the <code>Accounts</code> tab</li>
@@ -640,7 +640,7 @@ After installing and accepting it you should restart your browser.</p>
 <p>To add a calendar to your shiny new account you have to go to the menu and select <code>File &rarr; New Calendar &rarr; &lt;your shiny new account&gt;</code>. A new calendar appears in the left panel waiting for you to enter a name.</p>
 <p>This is needed because the behaviour of the big <code>+</code> button in the main window is confusing as you can't focus an empty account and iCal will just add a calendar to another account.</p>
 </blockquote>
-<p>####### Contacts</p>
+<p><strong>Contacts</strong></p>
 <p>In Contacts 7 (previously known as AddressBook):</p>
 <ol type="1">
 <li>Open the <code>Preferences</code> dialog and select the <code>Accounts</code> tab.</li>
