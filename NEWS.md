@@ -1,5 +1,26 @@
 # News
 
+## master
+
+* Single `<D:propstat>` element in PROPPATCH response
+* Allow multiple `<D:set>` and `<D:remove>` elements
+* Improve log messages
+* Fix date filter
+* Improve sanitization of collection properties
+* Cancel mkcalendar request on error
+* Use **renameat2** on Linux for atomic overwriting of collections
+* Command Line Parser
+  * Disallow abbreviated arguments
+  * Support backend specific options and HTTP headers
+  * Optional argument for boolean options
+  * Require argument for `--config`
+* Allow float for server->timeout setting
+* Fix **is-not-defined** filter in **addressbook-query** report
+* Add python type hints
+* Add **multifilesystem_nolock** storage
+* Add support for Python 3.9 and 3.10
+* Drop support for Python 3.5
+
 ## 3.0.6
 
 * Allow web plugins to handle POST requests
