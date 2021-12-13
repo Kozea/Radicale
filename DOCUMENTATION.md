@@ -1,6 +1,8 @@
-# Getting started
+# Documentation
 
-### About Radicale
+## Getting started
+
+#### About Radicale
 
 Radicale is a small but powerful CalDAV (calendars, todo-lists) and CardDAV
 (contacts) server, that:
@@ -15,7 +17,7 @@ Radicale is a small but powerful CalDAV (calendars, todo-lists) and CardDAV
   * Works with many CalDAV and CardDAV clients.
   * Is GPLv3-licensed free software.
 
-### Installation
+#### Installation
 
 Radicale is really easy to install and works out-of-the-box.
 
@@ -31,7 +33,7 @@ You can login with any username and password.
 Want more? Why don't you check our wonderful
 [documentation](#documentation)?
 
-### What's New?
+#### What's New?
 
 Latest version of Radicale is 2.1.12,
 released on May 19, 2020
@@ -39,14 +41,14 @@ released on May 19, 2020
 
 [Read latest news…](#news)
 
-# Documentation
+## Documentation
 
 This documentation page is written for version 2.x.x. If you want to update
 Radicale from 1.x.x to 2.x.x, please follow
 our [migration guide](#documentation/migration-from-1xx-to-2xx). You can find on GitHub the
 [documentation page for the 1.1.x versions](1.1.x.html).
 
-### Install and Set Up
+#### Install and Set Up
 
 You're new to Radicale and you want to know how to use it? Welcome aboard!
 
@@ -57,11 +59,11 @@ You're new to Radicale and you want to know how to use it? Welcome aboard!
 - [Run with a WSGI server.](#documentation/wsgi)
 - [Track all changes to calendars and address books with Git.](#documentation/versioning)
 
-### Use
+#### Use
 
 - [Which clients are supported?](#documentation/clients)
 
-### Configure
+#### Configure
 
 Now that you have Radicale running, let's see what we can configure to make it
 fit your needs.
@@ -71,7 +73,7 @@ fit your needs.
 - [Storage.](#documentation/storage)
 - [Logging.](#documentation/logging)
 
-### Hack
+#### Hack
 
 Using is fun, but hacking is soooooooo coooooool. Radicale is a really small
 and simple piece of code, it may be the perfect project to start hacking!
@@ -80,7 +82,7 @@ and simple piece of code, it may be the perfect project to start hacking!
 - [Plugins.](#documentation/plugins)
 - [Adding or fixing documentation.](#contribute)
 
-## Tutorial
+### Tutorial
 
 You want to try Radicale but only have 5 minutes free in your calendar? Let's
 go right now! You won't have the best installation ever, but it will be enough
@@ -94,7 +96,7 @@ user name and password. If Radicale fits your needs, it may be time for
 
 Follow one of the chapters below depending on your operating system.
 
-### Linux / \*BSD
+#### Linux / \*BSD
 
 First of all, make sure that **python** 3.3 or later (**python** ≥ 3.6 is
 recommended) and **pip** are installed. On most distributions it should be
@@ -112,7 +114,7 @@ $ python3 -m radicale --config "" --storage-filesystem-folder=~/.var/lib/radical
 Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser!
 You can login with any username and password.
 
-### Windows
+#### Windows
 
 The first step is to install Python. Go to
 [python.org](https://python.org) and download the latest version of Python 3.
@@ -132,16 +134,16 @@ If you are using PowerShell replace ``--config ""`` with ``--config '""'``.
 Victory! Open [http://localhost:5232/](http://localhost:5232/) in your browser!
 You can login with any username and password.
 
-### MacOS
+#### MacOS
 
 *To be written.*
 
-## Basic Setup
+### Basic Setup
 
 Installation instructions can be found on the
 [Tutorial](#documentation/tutorial) page.
 
-### Configuration
+#### Configuration
 
 Radicale tries to load configuration files from `/etc/radicale/config`,
 `~/.config/radicale/config` and the `RADICALE_CONFIG` environment variable.
@@ -155,7 +157,7 @@ passed via command line arguments.)
 All configuration options are described in detail on the
 [Configuration](#documentation/configuration) page.
 
-### Authentication
+#### Authentication
 
 In its default configuration Radicale doesn't check user names or passwords.
 If the server is reachable over a network, you should change this.
@@ -163,7 +165,7 @@ If the server is reachable over a network, you should change this.
 First a `users` file with all user names and passwords must be created.
 It can be stored in the same directory as the configuration file.
 
-#### The secure way
+##### The secure way
 
 The `users` file can be created and managed with
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html):
@@ -192,7 +194,7 @@ htpasswd_filename = /path/to/users
 htpasswd_encryption = bcrypt
 ```
 
-#### The simple but insecure way
+##### The simple but insecure way
 
 Create the `users` file by hand with lines containing the user name and
 password separated by `:`. Example:
@@ -211,7 +213,7 @@ htpasswd_filename = /path/to/users
 htpasswd_encryption = plain
 ```
 
-### Addresses
+#### Addresses
 
 The default configuration binds the server to localhost. It can't be reached
 from other computers. This can be changed with the following configuration
@@ -224,7 +226,7 @@ hosts = 0.0.0.0:5232
 
 More addresses can be added (separated by commas).
 
-### Storage
+#### Storage
 
 Data is stored in the folder `/var/lib/radicale/collections`. The path can
 be changed with the following configuration:
@@ -238,7 +240,7 @@ filesystem_folder = /path/to/storage
 Otherwise, they can read the calendar data and lock the storage.
 You can find OS dependent instructions in the **Running as a service** section.
 
-### Limits
+#### Limits
 
 Radicale enforces limits on the maximum number of parallel connections,
 the maximum file size (important for contacts with big photos) and the rate of
@@ -258,13 +260,13 @@ timeout = 30
 delay = 1
 ```
 
-### Running as a service
+#### Running as a service
 
 The method to run Radicale as a service depends on your host operating system.
 Follow one of the chapters below depending on your operating system and
 requirements.
 
-#### Linux with systemd as a user
+##### Linux with systemd as a user
 
 Create the file `~/.config/systemd/user/radicale.service`:
 ```ini
@@ -295,7 +297,7 @@ $ systemctl --user status radicale
 $ journalctl --user --unit radicale.service
 ```
 
-#### Linux with systemd system-wide
+##### Linux with systemd system-wide
 
 Create the **radicale** user and group for the Radicale service.
 (Run `useradd --system --home-dir / --shell /sbin/nologin radicale` as root.)
@@ -347,11 +349,11 @@ $ systemctl status radicale
 $ journalctl --unit radicale.service
 ```
 
-### MacOS with launchd
+#### MacOS with launchd
 
 *To be written.*
 
-### Classic daemonization
+#### Classic daemonization
 
 Set the configuration option `daemon` in the section `server` to `True`.
 You may want to set the option `pid` to the path of a PID file.
@@ -366,7 +368,7 @@ The main process exits, after the PID file is written.
 daemon, to protect your calendar data and log files from other users.
 Don't forget to set permissions of files that are already created!
 
-### Windows with "NSSM - the Non-Sucking Service Manager"
+#### Windows with "NSSM - the Non-Sucking Service Manager"
 
 First install [NSSM](https://nssm.cc/) and start `nssm install` in a command
 prompt. Apply the following configuration:
@@ -390,7 +392,7 @@ The service is configured to start automatically when the computer starts.
 To start the service manually open **Services** in **Computer Management** and
 start the **Radicale** service.
 
-## Reverse Proxy
+### Reverse Proxy
 
 When a reverse proxy is used, the path at which Radicale is available must
 be provided via the `X-Script-Name` header. The proxy must remove the location
@@ -422,7 +424,7 @@ Be reminded that Radicale's default configuration enforces limits on the
 maximum number of parallel connections, the maximum file size and the rate of
 incorrect authentication attempts. Connections are terminated after a timeout.
 
-### Manage user accounts with the reverse proxy
+#### Manage user accounts with the reverse proxy
 
 Set the configuration option `type` in the `auth` section to
 `http_x_remote_user`.
@@ -463,7 +465,7 @@ RewriteRule ^/radicale$ /radicale/ [R,L]
 **Security:** Untrusted clients should not be able to access the Radicale
 server directly. Otherwise, they can authenticate as any user.
 
-### Secure connection between Radicale and the reverse proxy
+#### Secure connection between Radicale and the reverse proxy
 
 SSL certificates can be used to encrypt and authenticate the connection between
 Radicale and the reverse proxy. First you have to generate a certificate for
@@ -500,7 +502,7 @@ location /radicale/ {
 }
 ```
 
-## WSGI
+### WSGI
 
 Radicale is compatible with the WSGI specification.
 
@@ -530,13 +532,13 @@ Example **Gunicorn** configuration:
 gunicorn --bind '127.0.0.1:5232' --workers 8 --env 'RADICALE_CONFIG=/etc/radicale/config' radicale
 ```
 
-### Manage user accounts with the WSGI server
+#### Manage user accounts with the WSGI server
 
 Set the configuration option `type` in the `auth` section to `remote_user`.
 Radicale uses the user name provided by the WSGI server and disables
 authentication over HTTP.
 
-## Versioning
+### Versioning
 
 This page describes how to keep track of all changes to calendars and
 address books with **git** (or any other version control system).
@@ -559,7 +561,7 @@ git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
 The command gets executed after every change to the storage and commits
 the changes into the **git** repository.
 
-## Clients
+### Clients
 
 Radicale has been tested with:
 
@@ -585,13 +587,13 @@ In some clients you can just enter the URL of the Radicale server
 enter the URL of the collection directly
 (e.g. `http://localhost:5232/user/calendar`).
 
-### DAVx⁵
+#### DAVx⁵
 
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
 user name. DAVx⁵ will show all existing calendars and address books and you
 can create new.
 
-### GNOME Calendar, Contacts and Evolution
+#### GNOME Calendar, Contacts and Evolution
 
 **GNOME Calendar** and **Contacts** do not support adding WebDAV calendars
 and address books directly, but you can add them in **Evolution**.
@@ -601,14 +603,14 @@ Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
 user name. Clicking on the search button will list the existing calendars and
 address books.
 
-### Thunderbird
-#### CardBook
+#### Thunderbird
+##### CardBook
 
 Add a new address book on the network with CardDAV. You have to enter the full
 URL of the collection (e.g. `http://localhost:5232/user/addressbook`) and
 your user name.
 
-#### Lightning
+##### Lightning
 
 Add a new calendar on the network with `CalDAV`. (Don't use `iCalendar (ICS)`!)
 You have to enter the full URL of the collection (e.g.
@@ -616,7 +618,7 @@ You have to enter the full URL of the collection (e.g.
 different users on the same server, you can specify the user name in the URL
 (e.g. `http://user@localhost...`)
 
-### InfCloud, CalDavZAP and CardDavMATE
+#### InfCloud, CalDavZAP and CardDavMATE
 
 You can integrate InfCloud into Radicale's web interface with
 [RadicaleInfCloud](https://github.com/Unrud/RadicaleInfCloud). No additional
@@ -629,13 +631,13 @@ the Radicale server, because of the
 You have to add additional HTTP header in the `headers` section of Radicale's
 configuration. The documentation of **InfCloud** has more details on this.
 
-### Manual creation of calendars and address books
+#### Manual creation of calendars and address books
 
 This is not the recommended way of creating and managing your calendars and
 address books. Use Radicale's web interface or a client with support for it
 (e.g. **DAVx⁵**).
 
-#### Direct editing of the storage
+##### Direct editing of the storage
 
 To create a new collection, you have to create the corresponding folder in the
 file system storage (e.g. `collection-root/user/calendar`).
@@ -659,7 +661,7 @@ addressbooks that are direct children of the path `/USERNAME/`.
 
 Delete collections by deleting the corresponding folders.
 
-#### HTTP requests with curl
+##### HTTP requests with curl
 
 To create a new calendar run something like:
 
@@ -716,7 +718,7 @@ Delete the collections by running something like:
 $ curl -u user -X DELETE 'http://localhost:5232/user/calendar'
 ```
 
-## Configuration
+### Configuration
 
 Radicale can be configured with a configuration file or with
 command line arguments.
@@ -750,67 +752,67 @@ to load configuration files. Run `python3 -m radicale --help` for more informati
 
 In the following, all configuration categories and options are described.
 
-### server
+#### server
 
 Most configuration options in this category are only relevant in standalone
 mode. All options beside `max_content_length` and `realm` are ignored,
 when Radicale runs via WSGI.
 
-#### hosts
+##### hosts
 
 A comma separated list of addresses that the server will bind to.
 
 Default: `127.0.0.1:5232`
 
-#### daemon
+##### daemon
 
 Daemonize the Radicale process. It does not reset the umask.
 
 Default: `False`
 
-#### pid
+##### pid
 
 If daemon mode is enabled, Radicale will write its PID to this file.
 
 Default:
 
-#### max_connections
+##### max_connections
 
 The maximum number of parallel connections. Set to `0` to disable the limit.
 
 Default: `20`
 
-#### max_content_length
+##### max_content_length
 
 The maximum size of the request body. (bytes)
 
 Default: `100000000`
 
-#### timeout
+##### timeout
 
 Socket timeout. (seconds)
 
 Default: `30`
 
-#### ssl
+##### ssl
 
 Enable transport layer encryption.
 
 Default: `False`
 
-#### certificate
+##### certificate
 
 Path of the SSL certifcate.
 
 Default: `/etc/ssl/radicale.cert.pem`
 
-#### key
+##### key
 
 Path to the private key for SSL. Only effective if `ssl` is enabled.
 
 Default: `/etc/ssl/radicale.key.pem`
 
-#### certificate_authority
+##### certificate_authority
 
 Path to the CA certificate for validating client certificates. This can be used
 to secure TCP traffic between Radicale and a reverse proxy. If you want to
@@ -819,45 +821,45 @@ authentication plugin that extracts the user name from the certifcate.
 
 Default:
 
-#### protocol
+##### protocol
 
 SSL protocol used. See python's ssl module for available values.
 
 Default: `PROTOCOL_TLSv1_2`
 
-#### ciphers
+##### ciphers
 
 Available ciphers for SSL. See python's ssl module for available ciphers.
 
 Default:
 
-#### dns_lookup
+##### dns_lookup
 
 Reverse DNS to resolve client address in logs.
 
 Default: `True`
 
-#### realm
+##### realm
 
 Message displayed in the client when a password is needed.
 
 Default: `Radicale - Password Required`
 
-### encoding
-#### request
+#### encoding
+##### request
 
 Encoding for responding requests.
 
 Default: `utf-8`
 
-#### stock
+##### stock
 
 Encoding for storing local collections
 
 Default: `utf-8`
 
-### auth
-#### type
+#### auth
+##### type
 
 The method to verify usernames and passwords.
 
@@ -882,13 +884,13 @@ Available backends:
 
 Default: `None`
 
-#### htpasswd_filename
+##### htpasswd_filename
 
 Path to the htpasswd file.
 
 Default:
 
-#### htpasswd_encryption
+##### htpasswd_encryption
 
 The encryption method that is used in the htpasswd file. Use the
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html)
@@ -926,14 +928,14 @@ Available methods:
 
 Default: `bcrypt`
 
-#### delay
+##### delay
 
 Average delay after failed login attempts in seconds.
 
 Default: `1`
 
-### rights
-#### type
+#### rights
+##### type
 
 The backend that is used to check the access rights of collections.
 
@@ -964,13 +966,13 @@ Available backends:
 
 Default: `owner_only`
 
-#### file
+##### file
 
 File for the rights backend `from_file`.  See the
 [Rights](#documentation/authentication-and-rights) page.
 
-### storage
-#### type
+#### storage
+##### type
 
 The backend that is used to store data.
 
@@ -981,13 +983,13 @@ Available backends:
 
 Default: `multifilesystem`
 
-#### filesystem_folder
+##### filesystem_folder
 
 Folder for storing local collections, created if not present.
 
 Default: `/var/lib/radicale/collections`
 
-#### filesystem_locking
+##### filesystem_locking
 
 Lock the storage. This must be disabled if locking is not supported by the
 underlying file system. Never start multiple instances of Radicale or edit the
@@ -995,13 +997,13 @@ storage externally while Radicale is running if disabled.
 
 Default: `True`
 
-#### max_sync_token_age
+##### max_sync_token_age
 
 Delete sync-token that are older than the specified time. (seconds)
 
 Default: `2592000`
 
-#### filesystem_fsync
+##### filesystem_fsync
 
 Sync all changes to disk during requests. (This can impair performance.)
 Disabling it increases the risk of data loss, when the system crashes or
@@ -1009,15 +1011,15 @@ power fails!
 
 Default: `True`
 
-#### hook
+##### hook
 
 Command that is run after changes to storage. Take a look at the
 [Versioning](#documentation/versioning) page for an example.
 
 Default:
 
-### web
-#### type
+#### web
+##### type
 
 The backend that provides the web interface of Radicale.
 
@@ -1031,32 +1033,32 @@ Available backends:
 
 Default: `internal`
 
-### logging
-#### debug
+#### logging
+##### debug
 
 Set the default logging level to debug.
 
 Default: `False`
 
-#### full_environment
+##### full_environment
 
 Log all environment variables (including those set in the shell).
 
 Default: `False`
 
-#### mask_passwords
+##### mask_passwords
 
 Don't include passwords in logs.
 
 Default: `True`
 
-#### config
+##### config
 
 Logging configuration file. See the [Logging](#documentation/logging) page.
 
 Default:
 
-### headers
+#### headers
 
 In this section additional HTTP headers that are sent to clients can be
 specified.
@@ -1066,7 +1068,7 @@ An example to relax the same-origin policy:
 Access-Control-Allow-Origin = *
 ```
 
-## Authentication and Rights
+### Authentication and Rights
 
 This page describes the format of the rights file for the `from_file`
 authentication backend. The configuration option `file` in the `rights`
@@ -1121,7 +1123,7 @@ The path of the collection is separated by `/` and has no leading or trailing
 the collection. You can also get groups from the `user` regex in the
 `collection` regex with `{0}`, `{1}`, etc.
 
-## Storage
+### Storage
 
 This document describes the layout and format of the file system storage
 (`multifilesystem` backend).
@@ -1132,7 +1134,7 @@ Scripts can be invoked manually, periodically (e.g. with
 change to the storage with the configuration option `hook` in the `storage`
 section (e.g. [Git Versioning](#documentation/versioning)).
 
-### Layout
+#### Layout
 
 The file system contains the following files and folders:
 
@@ -1166,14 +1168,14 @@ They should be deleted after requests are finished but it's possible that
 they are left behind when Radicale or the computer crashes.
 It's safe to delete them.
 
-### Locking
+#### Locking
 
 When the data is accessed by hand or by an externally invoked script,
 the storage must be locked. The storage can be locked for exclusive or
 shared access. It prevents Radicale from reading or writing the file system.
 The storage is locked with exclusive access while the `hook` runs.
 
-#### Linux shell scripts
+##### Linux shell scripts
 
 Use the
 [flock](https://manpages.debian.org/unstable/util-linux/flock.1.en.html)
@@ -1186,14 +1188,14 @@ $ flock --exclusive /path/to/storage/.Radicale.lock COMMAND
 $ flock --shared /path/to/storage/.Radicale.lock COMMAND
 ```
 
-#### Linux and MacOS
+##### Linux and MacOS
 
 Use the
 [flock](https://manpages.debian.org/unstable/manpages-dev/flock.2.en.html)
 syscall. Python provides it in the
 [fcntl](https://docs.python.org/3/library/fcntl.html#fcntl.flock) module.
 
-#### Windows
+##### Windows
 
 Use
 [LockFile](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365202%28v=vs.85%29.aspx)
@@ -1202,7 +1204,7 @@ for exclusive access or
 which also supports shared access. Setting `nNumberOfBytesToLockLow` to `1`
 and `nNumberOfBytesToLockHigh` to `0` works.
 
-## Logging
+### Logging
 
 Radicale logs to `stderr`. The verbosity of the log output can be controlled
 with `--debug` command line argument or the `debug` configuration option in
@@ -1220,7 +1222,7 @@ A logging configuration file can be specified in the `config` configuration
 option in the `logging` section. The file format is explained in the
 [Python Logging Module](https://docs.python.org/3/library/logging.config.html#configuration-file-format).
 
-### Logging to a file
+#### Logging to a file
 
 An example configuration to write the log output to the file `/var/log/radicale/log`:
 ```ini
@@ -1256,7 +1258,7 @@ The parent folder of the log files must exist and must be writable by Radicale.
 **Security:** The log files should not be readable by unauthorized users. Set
 permissions accordingly.
 
-#### Timed rotation of disk log files
+##### Timed rotation of disk log files
 
 An example **handler** configuration to write the log output to the file `/var/log/radicale/log` and rotate it.
 Replace the section `handler_file` from the file logging example:
@@ -1270,7 +1272,7 @@ args = ('/var/log/radicale/log', 'midnight', 1, 7)
 formatter = full
 ```
 
-#### Rotation of disk log files based on size
+##### Rotation of disk log files based on size
 
 An example **handler** configuration to write the log output to the file `/var/log/radicale/log` and rotate it .
 Replace the section `handle_file` from the file logging example:
@@ -1284,14 +1286,14 @@ args = ('/var/log/radicale/log', 'a', 100000, 10)
 formatter = full
 ```
 
-## Architecture
+### Architecture
 
 Radicale is a really small piece of software, but understanding it is not as
 easy as it seems. But don't worry, reading this short page is enough to
 understand what a CalDAV/CardDAV server is, and how Radicale's code is
 organized.
 
-### General Architecture
+#### General Architecture
 
 Here is a simple overview of the global architecture for reaching a calendar or
 an address book through network:
@@ -1350,7 +1352,7 @@ If you want to see or edit your events and your contacts, you have to use
 another software called a client, that can be a "normal" applications with
 icons and buttons, a terminal or another web application.
 
-### Code Architecture
+#### Code Architecture
 
 The ``radicale`` package offers 9 modules.
 
@@ -1407,12 +1409,12 @@ The ``radicale`` package offers 9 modules.
 `web`
 : This module contains the web interface.
 
-## Plugins
+### Plugins
 
 Radicale can be extended by plugins for authentication, rights management and
 storage. Plugins are **python** modules.
 
-### Getting started
+#### Getting started
 
 To get started we walk through the creation of a simple authentication
 plugin, that accepts login attempts if the username and password are equal.
@@ -1474,36 +1476,36 @@ You can uninstall the module with:
 python3 -m pip uninstall radicale_silly_auth
 ```
 
-### Authentication plugins
+#### Authentication plugins
 
 This plugin type is used to check login credentials.
 The module must contain a class `Auth` that extends
 `radicale.auth.BaseAuth`. Take a look at the file `radicale/auth.py` in
 Radicale's source code for more information.
 
-### Rights management plugins
+#### Rights management plugins
 
 This plugin type is used to check if a user has access to a path.
 The module must contain a class `Rights` that extends
 `radicale.rights.BaseRights`. Take a look at the file `radicale/rights.py` in
 Radicale's source code for more information.
 
-### Web plugins
+#### Web plugins
 
 This plugin type is used to provide the web interface for Radicale.
 The module must contain a class `Web` that extends
 `radicale.web.BaseWeb`. Take a look at the file `radicale/web.py` in
 Radicale's source code for more information.
 
-### Storage plugins
+#### Storage plugins
 
 This plugin is used to store collections and items.
 The module must contain a class `Collection` that extends
 `radicale.storage.BaseCollection`. Take a look at the file `radicale/storage.py`
 in Radicale's source code for more information.
 
-## Migration from 1.x.x to 2.x.x
-### Why a Migration?
+### Migration from 1.x.x to 2.x.x
+#### Why a Migration?
 
 Radicale 2.x.x is different from 1.x.x, here's everything you need to know about
 this! **Please read this page carefully if you want to update Radicale.**
@@ -1511,7 +1513,7 @@ this! **Please read this page carefully if you want to update Radicale.**
 You'll also find extra information
 in [issue #372](https://github.com/Kozea/Radicale/issues/372).
 
-### Python 3 Only
+#### Python 3 Only
 
 Radicale 2.x.x works with Python >= 3.3, and **doesn't work anymore with
 Python 2**.
@@ -1519,14 +1521,14 @@ Python 2**.
 (No, Python 3.3 is not new, it's been released more than 4 years ago.
 Debian stable provides Python 3.4.)
 
-### Dependencies
+#### Dependencies
 
 Radicale now depends on [VObject](https://eventable.github.io/vobject/), a
 "full-featured Python package for parsing and creating iCalendar and vCard
 files". That's the price to pay to correctly read crazy iCalendar files and
 **support date-based filters, even on recurring events**.
 
-### Storage
+#### Storage
 
 Calendars and address books are stored in a different way between 1.x.x and 2.x.x
 versions. **Launching 2.x.x without migrating your collections first will not
@@ -1558,13 +1560,13 @@ You can install version 1.1.x with:
 $ python3 -m pip install --upgrade radicale==1.1.*
 ```
 
-### Authentication
+#### Authentication
 
 **Radicale 2.x.x only provides htpasswd authentication out-of-the-box.** Other
 authentication methods can be added by creating or using
 [plugins](#documentation/plugins).
 
-### Rights
+#### Rights
 
 In Radicale 2.x.x, rights are managed using regex-based rules based on the
 login of the authenticated user and the URL of the resource. Default
@@ -1574,45 +1576,45 @@ the [Authentication & Rights](#documentation/authentication-and-rights) page.
 Other rights managers can be added by creating
 [plugins](#documentation/plugins).
 
-### Versioning
+#### Versioning
 
 Support for versioning with **git** was removed from Radicale 2.x.x.
 Instead, the configuration option ``hook`` in the ``storage`` section was added,
 the [Collection Versioning](#documentation/versioning) page explains its
 usage for version control.
 
-# Contribute
+## Contribute
 
-### Chat with Us on IRC
+#### Chat with Us on IRC
 
 Want to say something? Join our IRC room: `##kozea` on Freenode.
 
-### Report Bugs
+#### Report Bugs
 
 Found a bug? Want a new feature? Report a new issue on the
 [Radicale bug-tracker](https://github.com/Kozea/Radicale/issues).
 
-### Hack
+#### Hack
 
 Interested in hacking? Feel free to clone the
 [git repository on Github](https://github.com/Kozea/Radicale) if you want to
 add new features, fix bugs or update the documentation.
 
-### Documentation
+#### Documentation
 
 To change or complement the documentation create a pull request to
 [DOCUMENTATION.md](https://github.com/Kozea/Radicale/blob/master/DOCUMENTATION.md).
 
-# Download
+## Download
 
-### PyPI
+#### PyPI
 
 Radicale is [available on PyPI](https://pypi.python.org/pypi/Radicale/). To
 install, just type as superuser:
 
     $ python3 -m pip install --upgrade radicale==2.1.*
 
-### Git Repository
+#### Git Repository
 
 If you want the development version of Radicale, take a look at the
 [git repository on GitHub](https://github.com/Kozea/Radicale/), or install it
@@ -1623,7 +1625,7 @@ directly with:
 You can also download the content of the repository as an
 [archive](https://github.com/Kozea/Radicale/tarball/master).
 
-### Source Packages
+#### Source Packages
 
 You can download the Radicale package for each release:
 
@@ -1655,7 +1657,7 @@ You can download the Radicale package for each release:
 - [**1.0.1 - Sunflower Again**](https://api.github.com/repos/Kozea/Radicale/tarball/1.0.1)
 - [**1.0 - Sunflower**](https://api.github.com/repos/Kozea/Radicale/tarball/1.0)
 
-### Linux Distribution Packages
+#### Linux Distribution Packages
 
 Radicale has been packaged for:
 
@@ -1685,9 +1687,9 @@ and has a Dockerfile.
 If you are interested in creating packages for other Linux distributions, read
 the ["Contribute" page](#contribute).
 
-# About
+## About
 
-### Main Goals
+#### Main Goals
 
 Radicale is a complete calendar and contact storing and manipulating
 solution. It can store multiple calendars and multiple address books.
@@ -1702,7 +1704,7 @@ pre-configured to work out-of-the-box.
 Radicale is written in Python. It runs on most of the UNIX-like platforms
 (Linux, \*BSD, macOS) and Windows. It is free and open-source software.
 
-### What Radicale Will Never Be
+#### What Radicale Will Never Be
 
 Radicale is a server, not a client. No interfaces will be created to work with
 the server, as it is a really (really really) much more difficult task.
@@ -1715,14 +1717,14 @@ CalDAV and CardDAV are the best open standards available and they are quite
 widely used by both clients and servers. We decided to use it, and we will not
 use another one.
 
-### Technical Choices
+#### Technical Choices
 
 Important global development choices have been decided before writing
 code. They are very useful to understand why the Radicale Project is different
 from other CalDAV and CardDAV servers, and why features are included or not in
 the code.
 
-#### Oriented to Calendar and Contact User Agents
+##### Oriented to Calendar and Contact User Agents
 
 Calendar and contact servers work with calendar and contact clients, using a
 defined protocol. CalDAV and CardDAV are good protocols, covering lots of
@@ -1740,7 +1742,7 @@ Even if it tries it best to follow the RFCs, Radicale does not and **will not**
 blindly implements the CalDAV and CardDAV standards. It is mainly designed to
 support the CalDAV and CardDAV implementations of different clients.
 
-#### Simple
+##### Simple
 
 Radicale is designed to be simple to install, simple to configure, simple to
 use.
@@ -1755,7 +1757,7 @@ or need a strong configuration, the Radicale Server can (sometimes, if not
 often) be launched in a couple of minutes, if you follow the
 [tutorial](#documentation/tutorial).
 
-#### Lazy
+##### Lazy
 
 The CalDAV RFC defines what must be done, what can be done and what cannot be
 done. Many violations of the protocol are totally defined and behaviours are
@@ -1766,7 +1768,7 @@ violations do not exist. That is why most of the errors in client requests have
 undetermined consequences for the lazy server that can reply good answers, bad
 answers, or even no answer.
 
-### History
+#### History
 
 Radicale has been started as a (free topic) stupid school project replacing
 another (assigned topic) even more stupid school project.
@@ -1783,17 +1785,17 @@ growing number of Linux distributions.
 
 And that was fun going from here to there thanks to you!
 
-# News
+## News
 
 Latest version of Radicale is 2.1.12,
 released on May 19, 2020
 ([changelog](https://github.com/Kozea/Radicale/blob/2.1.12/NEWS.md)).
 
-## May 19, 2020 - Radicale 2.1.12
+### May 19, 2020 - Radicale 2.1.12
 
 Radicale 2.1.12 is out!
 
-### 2.1.12 - Wild Radish
+#### 2.1.12 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -1801,11 +1803,11 @@ from 1.x.x to 2.x.x.
 
 * Include documentation in source archive
 
-## November 5, 2018 - Radicale 2.1.11
+### November 5, 2018 - Radicale 2.1.11
 
 Radicale 2.1.11 is out!
 
-### 2.1.11 - Wild Radish
+#### 2.1.11 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -1813,11 +1815,11 @@ from 1.x.x to 2.x.x.
 
 * Fix moving items between collections
 
-## August 16, 2018 - Radicale 2.1.10
+### August 16, 2018 - Radicale 2.1.10
 
 Radicale 2.1.10 is out!
 
-### 2.1.10 - Wild Radish
+#### 2.1.10 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -1830,11 +1832,11 @@ from 1.x.x to 2.x.x.
 * Raise default limits for content length and timeout
 * Log output from hook
 
-## April 21, 2018 - Radicale 2.1.9
+### April 21, 2018 - Radicale 2.1.9
 
 Radicale 2.1.9 is out!
 
-### 2.1.9 - Wild Radish
+#### 2.1.9 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -1848,11 +1850,11 @@ from 1.x.x to 2.x.x.
 * Improve logging messages
 * Windows: Fix crash when item path is a directory
 
-## September 24, 2017 - Radicale 2.1.8
+### September 24, 2017 - Radicale 2.1.8
 
 Radicale 2.1.8 is out!
 
-### 2.1.8 - Wild Radish
+#### 2.1.8 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -1860,11 +1862,11 @@ from 1.x.x to 2.x.x.
 
 * Flush files before fsync'ing
 
-## September 17, 2017 - Radicale 2.1.7
+### September 17, 2017 - Radicale 2.1.7
 
 Radicale 2.1.7 is out!
 
-### 2.1.7 - Wild Radish
+#### 2.1.7 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -1886,11 +1888,11 @@ from 1.x.x to 2.x.x.
 * Remove ``D:getetag`` and ``D:getlastmodified`` properties from regular
   collections
 
-## September 11, 2017 - Radicale 2.1.6
+### September 11, 2017 - Radicale 2.1.6
 
 Radicale 2.1.6 is out!
 
-### 2.1.6 - Wild Radish
+#### 2.1.6 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -1905,11 +1907,11 @@ from 1.x.x to 2.x.x.
 * Add X-WR-CALNAME and X-WR-CALDESC to calendars downloaded via HTTP/WebDAV
 * Use X-WR-CALNAME and X-WR-CALDESC from calendars published via WebDAV
 
-## August 25, 2017 - Radicale 2.1.5
+### August 25, 2017 - Radicale 2.1.5
 
 Radicale 2.1.5 is out!
 
-### 2.1.5 - Wild Radish
+#### 2.1.5 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -1922,11 +1924,11 @@ from 1.x.x to 2.x.x.
 * Allow uploads of whole collections with many components
 * Show warning message if server.timeout is used with Python < 3.5.2
 
-## August 4, 2017 - Radicale 2.1.4
+### August 4, 2017 - Radicale 2.1.4
 
 Radicale 2.1.4 is out!
 
-### 2.1.4 - Wild Radish
+#### 2.1.4 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -1936,11 +1938,11 @@ from 1.x.x to 2.x.x.
   rescheduled recurrences
 * Fix owner property
 
-## August 2, 2017 - Radicale 2.1.3
+### August 2, 2017 - Radicale 2.1.3
 
 Radicale 2.1.3 is out!
 
-### 2.1.3 - Wild Radish
+#### 2.1.3 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -1951,11 +1953,11 @@ from 1.x.x to 2.x.x.
 * Stop built-in server on Windows when Ctrl+C is pressed
 * Prevent slow down when multiple requests hit a collection during cache warm-up
 
-## July 24, 2017 - Radicale 2.1.2
+### July 24, 2017 - Radicale 2.1.2
 
 Radicale 2.1.2 is out!
 
-### 2.1.2 - Wild Radish
+#### 2.1.2 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -1967,11 +1969,11 @@ from 1.x.x to 2.x.x.
 * Don't delete empty collection properties implicitly
 * Improve logging of VObject serialization
 
-## July 1, 2017 - Radicale 2.1.1
+### July 1, 2017 - Radicale 2.1.1
 
 Radicale 2.1.1 is out!
 
-### 2.1.1 - Wild Radish Again
+#### 2.1.1 - Wild Radish Again
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -1981,11 +1983,11 @@ from 1.x.x to 2.x.x.
 * Improve error checking of calendar and address book objects
 * Fix upload of whole address books
 
-## June 25, 2017 - Radicale 2.1.0
+### June 25, 2017 - Radicale 2.1.0
 
 Radicale 2.1.0 is out!
 
-### 2.1.0 - Wild Radish
+#### 2.1.0 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -2020,11 +2022,11 @@ from 1.x.x to 2.1.0.
   * new ``http_x_remote_user`` plugin, that gets the login from the
     ``X-Remote-User`` HTTP header (for reverse proxies)
 
-## May 27, 2017 - Radicale 2.0.0
+### May 27, 2017 - Radicale 2.0.0
 
 Radicale 2.0.0 is out!
 
-### 2.0.0 - Little Big Radish
+#### 2.0.0 - Little Big Radish
 
 This feature is not compatible with the 1.x.x versions. Follow our
 [migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
@@ -2062,21 +2064,21 @@ If you're interested in Radicale, you can
 read [#372](https://github.com/Kozea/Radicale/issues/372) and build its
 future.
 
-## May 3, 2017 - Radicale 1.1.2
+### May 3, 2017 - Radicale 1.1.2
 
 Radicale 1.1.2 is out!
 
-### 1.1.2 - Third Law of Nature
+#### 1.1.2 - Third Law of Nature
 
 * **Security fix**: Add a random timer to avoid timing oracles and simple
   bruteforce attacks when using the htpasswd authentication method.
 * Various minor fixes.
 
-## December 31, 2015 - Radicale 1.1
+### December 31, 2015 - Radicale 1.1
 
 Radicale 1.1 is out!
 
-### 1.1 - Law of Nature
+#### 1.1 - Law of Nature
 
 One feature in this release is **not backward compatible**:
 
@@ -2104,11 +2106,11 @@ Some bugs have been fixed and little enhancements have been added:
 * Encode message and commiter for git commits
 * Test with Python 3.5
 
-## September 14, 2015 - Radicale 1.0, what's next?
+### September 14, 2015 - Radicale 1.0, what's next?
 
 Radicale 1.0 is out!
 
-### 1.0 - Sunflower
+#### 1.0 - Sunflower
 
 * Enhanced performances (by Mathieu Dupuy)
 * Add MD5-APR1 and BCRYPT for htpasswd-based authentication (by Jan-Philip Gehrcke)
@@ -2180,11 +2182,11 @@ about them, because, well, I may not be always right!
 
 Need to talk about this? You know how to [contact us](#contribute)!
 
-## January 12, 2015 - Radicale 0.10
+### January 12, 2015 - Radicale 0.10
 
 Radicale 0.10 is out!
 
-### 0.10 - Lovely Endless Grass
+#### 0.10 - Lovely Endless Grass
 
 * Support well-known URLs (by Mathieu Dupuy)
 * Fix collection discovery (by Markus Unterwaditzer)
@@ -2208,11 +2210,11 @@ the storage modules is a good beginning, many pull requests are already ready
 to be discussed and merged, and we will probably get some good news about
 performance this time. Who said "databases, please"?
 
-## July 12, 2013 - Radicale 0.8
+### July 12, 2013 - Radicale 0.8
 
 Radicale 0.8 is out!
 
-### 0.8 - Rainbow
+#### 0.8 - Rainbow
 
 * New authentication and rights management modules (by Matthias Jordan)
 * Experimental database storage
@@ -2255,11 +2257,11 @@ interesting bug reports from the community. I'd really like to thank all the
 people reporting bugs, chatting on IRC, sending mails and proposing pull
 requests: you are awesome.
 
-## August 3, 2012 - Radicale 0.7.1
+### August 3, 2012 - Radicale 0.7.1
 
 Radicale 0.7.1 is out!
 
-### 0.7.1 - Waterfalls
+#### 0.7.1 - Waterfalls
 
 * Many address books fixes
 * New IMAP ACL (by Daniel Aleksandersen)
@@ -2283,11 +2285,11 @@ Next time, as many mails have come from angry and desperate coders, tests will
 be *finally* added to help them to add features and fix bugs. And after that,
 who knows, it may be time to release Radicale 1.0…
 
-## March 22, 2012 - Radicale 0.7
+### March 22, 2012 - Radicale 0.7
 
 Radicale 0.7 is out, at least!
 
-### 0.7 - Eternal Sunshine
+#### 0.7 - Eternal Sunshine
 
 * Repeating events
 * Collection deletion
@@ -2299,11 +2301,11 @@ Radicale 0.7 is out, at least!
 code and tested many clients. Thank you Lynn, Ron, Bill, Patrick, Hidde,
 Gerhard, Martin, Brendan, Vladimir, and everybody I've forgotten.
 
-## January 5, 2012 - Radicale 0.6.4, News from Calypso
+### January 5, 2012 - Radicale 0.6.4, News from Calypso
 
 New year, new release. Radicale 0.6.4 has a really short changelog:
 
-### 0.6.4 - Tulips
+#### 0.6.4 - Tulips
 
 * Fix the installation with Python 3.1
 
@@ -2311,7 +2313,7 @@ The bug was in fact caused by a
 [bug in Python 3.1](http://bugs.python.org/issue9561), everything should be OK
 now.
 
-### Calypso
+#### Calypso
 
 After a lot of changes in Radicale, Keith Packard has decided to launch a fork
 called [Calypso](http://keithp.com/blogs/calypso/), with nice features such
@@ -2325,18 +2327,18 @@ and already works with Evolution. Korganizer also works with existing address
 books, and CardDAV-Sync will be tested soon. If you want to test other clients,
 please let us know!
 
-## November 3, 2011 - Radicale 0.6.3
+### November 3, 2011 - Radicale 0.6.3
 
 Radicale version 0.6.3 has been released, with bugfixes that could be
 interesting for you!
 
-### 0.6.3 - Red Roses
+#### 0.6.3 - Red Roses
 
 * MOVE requests fixed
 * Faster REPORT answers
 * Executable script moved into the package
 
-### What's New Since 0.6.2?
+#### What's New Since 0.6.2?
 
 The MOVE requests were suffering a little bug that is fixed now. These requests
 are only sent by Apple clients, Mac users will be happy.
@@ -2355,7 +2357,7 @@ old ``radicale.py``, and ``bin/radicale``. The second one is only used by
 has therefore been removed. As a consequence, you can now launch Radicale with
 the simple ``python -m radicale`` command, without relying on an executable.
 
-### Time for a Stable Release!
+#### Time for a Stable Release!
 
 The next release may be a stable release, symbolically called 1.0. Guess what's
 missing? Tests, of course!
@@ -2369,7 +2371,7 @@ next weeks!
 Repeating events, PAM and Courier authentication methods have already been
 added in master. You'll find them in the 1.0 release!
 
-### What's Next?
+#### What's Next?
 
 Being stable is one thing, being cool is another one. If you want some cool new
 features, you may be interested in:
@@ -2383,22 +2385,22 @@ features, you may be interested in:
 Issues have been reported in the bug tracker, you can follow there the latest
 news about these features. Your beloved text editor is waiting for you!
 
-## September 27, 2011 - Radicale 0.6.2
+### September 27, 2011 - Radicale 0.6.2
 
 0.6.2 is out with minor bugfixes.
 
-### 0.6.2 - Seeds
+#### 0.6.2 - Seeds
 
 * iPhone and iPad support fixed
 * Backslashes replaced by slashes in PROPFIND answers on Windows
 * PyPI archive set as default download URL
 
-## August 28, 2011 - Radicale 0.6.1, Changes, Future
+### August 28, 2011 - Radicale 0.6.1, Changes, Future
 
 As previously imagined, a new 0.6.1 version has been released, mainly fixing
 obvious bugs.
 
-### 0.6.1 - Growing Up
+#### 0.6.1 - Growing Up
 
 * Example files included in the tarball
 * htpasswd support fixed
@@ -2413,7 +2415,7 @@ A new branch has been created for various future bug fixes. You can expect to
 get more 0.6.x versions, making this branch a kind of "stable" branch with no
 big changes.
 
-### GitHub, Mailing List, New Website
+#### GitHub, Mailing List, New Website
 
 A lot of small changes occurred during the last weeks.
 
@@ -2428,7 +2430,7 @@ trace of the mails we're receiving. It a bit empty now, but we're sure that
 you'll soon write us some kind words. For example, you can tell us what you
 think of our new website!
 
-### Future Features
+#### Future Features
 
 In the next weeks, new exciting features are coming in the master branch! Some
 of them are almost ready:
@@ -2441,11 +2443,11 @@ of them are almost ready:
 As you can find in the [Radicale Roadmap](http://redmine.kozea.fr/versions/),
 tests, rights and filters are expected for 0.7.
 
-## August 1, 2011 - Radicale 0.6 Released
+### August 1, 2011 - Radicale 0.6 Released
 
 Time for a new release with **a lot** of new exciting features!
 
-### 0.6 - Sapling
+#### 0.6 - Sapling
 
 * WSGI support
 * IPv6 support
@@ -2482,7 +2484,7 @@ will probably be released soon, fixing small problems with clients and
 features. Get ready to report bugs, I'm sure that you can find one (and fix
 it)!
 
-## July 2, 2011 - Feature Freeze for 0.6
+### July 2, 2011 - Feature Freeze for 0.6
 
 According to the [roadmap](http://redmine.kozea.fr/projects/radicale/roadmap),
 a lot of features have been added since Radicale 0.5, much more than
@@ -2515,7 +2517,7 @@ Please [report bugs](http://redmine.kozea.fr/projects/radicale/issues) if
 anything goes wrong during your tests, or just let us know
 [by Jabber or by mail](#contribute) if everything is OK.
 
-## May 1, 2011 - Ready for WSGI
+### May 1, 2011 - Ready for WSGI
 
 Here it is! Radicale is now ready to be launched behind your favourite HTTP
 server (Apache, Lighttpd, Nginx or Tomcat for example). That's really good
@@ -2540,7 +2542,7 @@ some CalDAV clients support (iCal, Android, iPhone), HTTP servers support or
 logging management, feel free to fork the documentation git repository and ask
 for a merge. It's plain text, I'm sure you can do it!
 
-## April 30, 2011 - Apple iCal Support
+### April 30, 2011 - Apple iCal Support
 
 After a long, long work, the iCal support has finally been added to Radicale!
 Well, this support is only for iCal 4 and is highly experimental, but you can
@@ -2556,12 +2558,12 @@ should work quite well. More documentation will be added during the next
 days. It will then be time to release the Radicale 0.6 version, and work on the
 WSGI support.
 
-## April 25, 2011 - Two Features and One New Roadmap
+### April 25, 2011 - Two Features and One New Roadmap
 
 Two features have just reached the master branch, and the roadmap has been
 refreshed.
 
-### LDAP Authentication
+#### LDAP Authentication
 
 Thanks to Corentin, the LDAP authentication is now included in Radicale. The
 support is experimental and may suffer unstable connexions and security
@@ -2572,7 +2574,7 @@ No SSL support is included yet, but this may be quite easy to add. By the way,
 serious authentication methods will rely on a "real" HTTP server, as soon as
 Radicale supports WSGI.
 
-### Journal Entries
+#### Journal Entries
 
 Mehmet asked for the journal entries (aka. notes or memos) support, that's
 done! This also was an occasion to clean some code in the iCal parser, and to
@@ -2580,7 +2582,7 @@ add a much better management of multi-lines entries. People experiencing crazy
 `X-RADICALE-NAME` entries can now clean their files, Radicale won't pollute
 them again.
 
-### New Roadmap
+#### New Roadmap
 
 Except from htpasswd and LDAP, most of the authentication backends (database,
 SASL, PAM, user groups) are not really easy to include in Radicale. The easiest
@@ -2598,13 +2600,13 @@ After that, 0.8 may add CalDAV rights and filters, while 1.0 will draw
 thousands of rainbows and pink unicorns (WebDAV sync, CardDAV, Freebusy). A lot
 of funky work is waiting for you, hackers!
 
-### Bugs
+#### Bugs
 
 Many bugs have also been fixed, most of them due to the owner-less calendars
 support. Radicale 0.6 may be out in a few weeks, you should spend some time
 testing the master branch and filling the bug tracker.
 
-## April 10, 2011 - New Features
+### April 10, 2011 - New Features
 
 Radicale 0.5 was released only 8 days ago, but 3 new features have already been
 added to the master branch:
@@ -2620,11 +2622,11 @@ report them on the
 fond of logging, you can even add a default configuration file and more debug
 messages in the source.
 
-## April 2, 2011 - Radicale 0.5 Released
+### April 2, 2011 - Radicale 0.5 Released
 
 Radicale 0.5 is out! Here is what's new:
 
-### 0.5 - Historical Artifacts
+#### 0.5 - Historical Artifacts
 
 * Calendar depth
 * iPhone support
@@ -2643,7 +2645,7 @@ Talking about new features, more and more people are asking for a CardDAV
 support in Radicale. A git branch and a feature request are open, feel free to
 hack and discuss.
 
-## February 3, 2011 - Jabber Room and iPhone Support
+### February 3, 2011 - Jabber Room and iPhone Support
 
 After a lot of help and testing work from Andrew, Björn, Anders, Dorian and
 Pete (and other ones we could have forgotten), a simple iPhone support has been
@@ -2661,7 +2663,7 @@ Radicale 0.5 will be released as soon as the iCal support is ready. If you have
 an Apple computer, Python skills and some time to spend, we'd be glad to help
 you debugging Radicale.
 
-## October 21, 2010 - News from Radicale
+### October 21, 2010 - News from Radicale
 
 During the last weeks, Radicale has not been idle, even if no news have been
 posted since August. Thanks to Pete, Pierre-Philipp and Andrew, we're trying to
@@ -2681,11 +2683,11 @@ out as soon as these two clients are working.
 Some cool stuff is coming next, with calendar collections and groups, and a
 simple web-based CalDAV client in early development. Stay tuned!
 
-## August 8, 2010 - Radicale 0.4 Released
+### August 8, 2010 - Radicale 0.4 Released
 
 Radicale 0.4 is out! Here is what's new:
 
-### 0.4 - Hot Days Back
+#### 0.4 - Hot Days Back
 
 * Personal calendars
 * HEAD requests
@@ -2695,7 +2697,7 @@ Radicale 0.4 is out! Here is what's new:
 
 This release has mainly been released to help our dear packagers to include a default configuration file and to write init scripts. Big thanks to Necoro for his work on the new Gentoo ebuild!
 
-## July 4, 2010 - Three Features Added Last Week
+### July 4, 2010 - Three Features Added Last Week
 
 Some features have been added in the git repository during the last weeks,
 thanks to Jerome and Mariusz!
@@ -2714,11 +2716,11 @@ Last-Modified HTTP header
   modified. This is used by some clients to cache the calendars and not
   retrieving them if they have not been modified.
 
-## June 14, 2010 - Radicale 0.3 Released
+### June 14, 2010 - Radicale 0.3 Released
 
 Radicale 0.3 is out! Here is what’s new:
 
-### 0.3 - Dancing Flowers
+#### 0.3 - Dancing Flowers
 
 * Evolution support
 * Version management
@@ -2735,8 +2737,8 @@ you’re welcome!
 
 Next step is 0.5, with calendar collections, and Windows and MacOS support.
 
-## May 31, 2010 - May News
-### News from contributors
+### May 31, 2010 - May News
+#### News from contributors
 
 Jonas Smedegaard packaged Radicale for Debian last week. Two packages, called
 ``radicale`` for the daemon and ``python-radicale`` for the module, have been
@@ -2745,7 +2747,7 @@ added to Sid, the unstable branch of Debian. Thank you, Jonas!
 Sven Guckes corrected some of the strange-English-sentences present on this
 website. Thank you, Sven!
 
-### News from software
+#### News from software
 
 A simple ``VERSION`` has been added in the library: you can now play with
 ``radicale.VERSION`` and ``$radicale --version``.
@@ -2757,7 +2759,7 @@ for the 0.5. After more than a month of test, we corrected all the bugs we
 found and everything seems to be fine; we can imagine that a brand new tarball
 will be released during the first days of June.
 
-## April 19, 2010 - Evolution Supported
+### April 19, 2010 - Evolution Supported
 
 Radicale now supports another CalDAV client:
 [Evolution, the default mail, addressbook and calendaring client for Gnome](http://projects.gnome.org/evolution/).
@@ -2767,11 +2769,11 @@ code in the requests handler.
 If you are interested, just clone the
 [git repository](http://www.gitorious.org/radicale/radicale).
 
-## April 13, 2010 - Radicale 0.2 Released
+### April 13, 2010 - Radicale 0.2 Released
 
 Radicale 0.2 is out! Here is what’s new:
 
-### 0.2 - Snowflakes
+#### 0.2 - Snowflakes
 
 * Sunbird pre-1.0 support
 * SSL connection
@@ -2794,7 +2796,7 @@ You may have noticed too that Radicale can be
 [downloaded from PyPI](http://pypi.python.org/pypi/Radicale/0.2). Of course, it
 is also available on the [download page](#download).
 
-## January 21, 2010 - HTTPS and Authentication
+### January 21, 2010 - HTTPS and Authentication
 
 HTTPS connections and authentication have been added to Radicale this
 week. Command-line options and personal configuration files are also ready for
@@ -2811,27 +2813,27 @@ Authentication
   authentication) and ``htpasswd`` (authentication with an ``htpasswd`` file
   created by the Apache tool). More methods such as LDAP are coming soon!
 
-## January 15, 2010 - Ready for Python 3
+### January 15, 2010 - Ready for Python 3
 
 Dropping Twisted dependency was the first step leading to another big feature:
 Radicale now works with Python 3! The code was given a small cleanup, with some
 simplifications mainly about encoding. Before the 0.1.1 release, feel free to
 test the git repository, all Python versions from 2.5 should be OK.
 
-## January 11, 2010 - Twisted no Longer Required
+### January 11, 2010 - Twisted no Longer Required
 
 Good news! Radicale 0.1.1 will support Sunbird 1.0, but it has another great
 feature: it has no external dependency! Twisted is no longer required for the
 git version, removing about 50 lines of code.
 
-## December 31, 2009 - Lightning and Sunbird 1.0b2pre Support
+### December 31, 2009 - Lightning and Sunbird 1.0b2pre Support
 
 Lightning/Sunbird 1.0b2pre is out, adding minor changes in CalDAV support. A
 [new commit](http://www.gitorious.org/radicale/radicale/commit/330283e) makes
 Radicale work with versions 0.9, 1.0b1 et 1.0b2. Moreover, etags are now quoted
 according to the RFC 2616.
 
-## December 9, 2009 - Thunderbird 3 released
+### December 9, 2009 - Thunderbird 3 released
 
 [Thunderbird 3 is out](http://www.mozillamessaging.com/thunderbird/3.0/releasenotes/),
 and Lightning/Sunbird 1.0 should be released in a few days. The
@@ -2839,11 +2841,11 @@ and Lightning/Sunbird 1.0 should be released in a few days. The
 should make Radicale work with versions 0.9 and 1.0b1pre. Radicale 0.1.1 will
 soon be released adding support for version 1.0.
 
-## September 1, 2009 - Radicale 0.1 Released
+### September 1, 2009 - Radicale 0.1 Released
 
 First Radicale release! Here is the changelog:
 
-### 0.1 - Crazy Vegetables
+#### 0.1 - Crazy Vegetables
 
 * First release
 * Lightning/Sunbird 0.9 compatibility
@@ -2851,13 +2853,13 @@ First Radicale release! Here is the changelog:
 
 You can download this version on the [download page](#download).
 
-## July 28, 2009 - Radicale on Gitorious
+### July 28, 2009 - Radicale on Gitorious
 
 Radicale code has been released on Gitorious! Take a look at the
 [Radicale main page on Gitorious](http://www.gitorious.org/radicale) to view
 and download source code.
 
-## July 27, 2009 - Radicale Ready to Launch
+### July 27, 2009 - Radicale Ready to Launch
 
 The Radicale Project is launched. The code has been cleaned up and will be
 available soon…
