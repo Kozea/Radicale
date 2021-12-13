@@ -896,7 +896,7 @@ After installing and accepting it you should restart your browser.</p>
 <p>Radicale uses the default logging facility for Python. The default configuration prints the information messages to the standard output. It is possible to print debug messages thanks to:</p>
 <pre><code>radicale --debug</code></pre>
 <p>Radicale can also be configured to send the messages to the console, logging files, syslog, etc. For more information about the syntax of the configuration file, see: <a href="http://docs.python.org/library/logging.config.html">http://docs.python.org/library/logging.config.html</a>. Here is an example of logging configuration file:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb9-1"><a aria-hidden="true" href="#cb9-1" tabindex="-1"></a><span class="co">## Loggers, handlers and formatters keys</span></span>
+<div class="sourceCode" id="cb9"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb9-1"><a aria-hidden="true" href="#cb9-1" tabindex="-1"></a><span class="co"># Loggers, handlers and formatters keys</span></span>
 <span id="cb9-2"><a aria-hidden="true" href="#cb9-2" tabindex="-1"></a></span>
 <span id="cb9-3"><a aria-hidden="true" href="#cb9-3" tabindex="-1"></a><span class="kw">[loggers]</span></span>
 <span id="cb9-4"><a aria-hidden="true" href="#cb9-4" tabindex="-1"></a><span class="co"># Loggers names, main configuration slots</span></span>
@@ -911,7 +911,7 @@ After installing and accepting it you should restart your browser.</p>
 <span id="cb9-13"><a aria-hidden="true" href="#cb9-13" tabindex="-1"></a><span class="dt">keys </span><span class="ot">=</span><span class="st"> simple,full</span></span>
 <span id="cb9-14"><a aria-hidden="true" href="#cb9-14" tabindex="-1"></a></span>
 <span id="cb9-15"><a aria-hidden="true" href="#cb9-15" tabindex="-1"></a></span>
-<span id="cb9-16"><a aria-hidden="true" href="#cb9-16" tabindex="-1"></a><span class="co">## Loggers</span></span>
+<span id="cb9-16"><a aria-hidden="true" href="#cb9-16" tabindex="-1"></a><span class="co"># Loggers</span></span>
 <span id="cb9-17"><a aria-hidden="true" href="#cb9-17" tabindex="-1"></a></span>
 <span id="cb9-18"><a aria-hidden="true" href="#cb9-18" tabindex="-1"></a><span class="kw">[logger_root]</span></span>
 <span id="cb9-19"><a aria-hidden="true" href="#cb9-19" tabindex="-1"></a><span class="co"># Root logger</span></span>
@@ -919,7 +919,7 @@ After installing and accepting it you should restart your browser.</p>
 <span id="cb9-21"><a aria-hidden="true" href="#cb9-21" tabindex="-1"></a><span class="dt">handlers </span><span class="ot">=</span><span class="st"> console,file</span></span>
 <span id="cb9-22"><a aria-hidden="true" href="#cb9-22" tabindex="-1"></a></span>
 <span id="cb9-23"><a aria-hidden="true" href="#cb9-23" tabindex="-1"></a></span>
-<span id="cb9-24"><a aria-hidden="true" href="#cb9-24" tabindex="-1"></a><span class="co">## Handlers</span></span>
+<span id="cb9-24"><a aria-hidden="true" href="#cb9-24" tabindex="-1"></a><span class="co"># Handlers</span></span>
 <span id="cb9-25"><a aria-hidden="true" href="#cb9-25" tabindex="-1"></a></span>
 <span id="cb9-26"><a aria-hidden="true" href="#cb9-26" tabindex="-1"></a><span class="kw">[handler_console]</span></span>
 <span id="cb9-27"><a aria-hidden="true" href="#cb9-27" tabindex="-1"></a><span class="co"># Console handler</span></span>
@@ -935,7 +935,7 @@ After installing and accepting it you should restart your browser.</p>
 <span id="cb9-37"><a aria-hidden="true" href="#cb9-37" tabindex="-1"></a><span class="dt">formatter </span><span class="ot">=</span><span class="st"> full</span></span>
 <span id="cb9-38"><a aria-hidden="true" href="#cb9-38" tabindex="-1"></a></span>
 <span id="cb9-39"><a aria-hidden="true" href="#cb9-39" tabindex="-1"></a></span>
-<span id="cb9-40"><a aria-hidden="true" href="#cb9-40" tabindex="-1"></a><span class="co">## Formatters</span></span>
+<span id="cb9-40"><a aria-hidden="true" href="#cb9-40" tabindex="-1"></a><span class="co"># Formatters</span></span>
 <span id="cb9-41"><a aria-hidden="true" href="#cb9-41" tabindex="-1"></a></span>
 <span id="cb9-42"><a aria-hidden="true" href="#cb9-42" tabindex="-1"></a><span class="kw">[formatter_simple]</span></span>
 <span id="cb9-43"><a aria-hidden="true" href="#cb9-43" tabindex="-1"></a><span class="co"># Simple output format</span></span>
@@ -1071,7 +1071,7 @@ After installing and accepting it you should restart your browser.</p>
 <span id="cb14-5"><a aria-hidden="true" href="#cb14-5" tabindex="-1"></a><span class="co"># configuration files. Using these examples together in the same configuration</span></span>
 <span id="cb14-6"><a aria-hidden="true" href="#cb14-6" tabindex="-1"></a><span class="co"># file is meaningless.</span></span>
 <span id="cb14-7"><a aria-hidden="true" href="#cb14-7" tabindex="-1"></a><span class="co">#</span></span>
-<span id="cb14-8"><a aria-hidden="true" href="#cb14-8" tabindex="-1"></a><span class="co">## The first rule matching both user and collection patterns will be returned.</span></span>
+<span id="cb14-8"><a aria-hidden="true" href="#cb14-8" tabindex="-1"></a><span class="co"># The first rule matching both user and collection patterns will be returned.</span></span>
 <span id="cb14-9"><a aria-hidden="true" href="#cb14-9" tabindex="-1"></a></span>
 <span id="cb14-10"><a aria-hidden="true" href="#cb14-10" tabindex="-1"></a><span class="co"># This means all users starting with "admin" may read any collection</span></span>
 <span id="cb14-11"><a aria-hidden="true" href="#cb14-11" tabindex="-1"></a><span class="kw">[admin]</span></span>
