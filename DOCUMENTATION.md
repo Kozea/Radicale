@@ -31,7 +31,7 @@ to http://localhost:5232/ with your browser!
 You can login with any username and password.
 
 Want more? Why don't you check our wonderful
-[documentation](#documentation)?
+[documentation](#documentation-1)?
 
 #### What's New?
 
@@ -45,7 +45,7 @@ released on May 19, 2020
 
 This documentation page is written for version 2.x.x. If you want to update
 Radicale from 1.x.x to 2.x.x, please follow
-our [migration guide](#documentation/migration-from-1xx-to-2xx). You can find on GitHub the
+our [migration guide](#migration-from-1xx-to-2xx). You can find on GitHub the
 [documentation page for the 1.1.x versions](1.1.x.html).
 
 #### Install and Set Up
@@ -53,33 +53,33 @@ our [migration guide](#documentation/migration-from-1xx-to-2xx). You can find on
 You're new to Radicale and you want to know how to use it? Welcome aboard!
 
 - [What is Radicale?](#about)
-- [A really simple 5-minute tutorial.](#documentation/tutorial)
-- [A simple but solid setup.](#documentation/basic-setup)
-- [Run behind a reverse proxy.](#documentation/reverse-proxy)
-- [Run with a WSGI server.](#documentation/wsgi)
-- [Track all changes to calendars and address books with Git.](#documentation/versioning)
+- [A really simple 5-minute tutorial.](#tutorial)
+- [A simple but solid setup.](#basic-setup)
+- [Run behind a reverse proxy.](#reverse-proxy)
+- [Run with a WSGI server.](#wsgi)
+- [Track all changes to calendars and address books with Git.](#versioning)
 
 #### Use
 
-- [Which clients are supported?](#documentation/clients)
+- [Which clients are supported?](#clients)
 
 #### Configure
 
 Now that you have Radicale running, let's see what we can configure to make it
 fit your needs.
 
-- [What can I configure?](#documentation/configuration)
-- [Authentication & Rights.](#documentation/authentication-and-rights)
-- [Storage.](#documentation/storage)
-- [Logging.](#documentation/logging)
+- [What can I configure?](#configuration-1)
+- [Authentication & Rights.](#authentication-and-rights)
+- [Storage.](#storage-2)
+- [Logging.](#logging-1)
 
 #### Hack
 
 Using is fun, but hacking is soooooooo coooooool. Radicale is a really small
 and simple piece of code, it may be the perfect project to start hacking!
 
-- [How does Radicale work?](#documentation/architecture)
-- [Plugins.](#documentation/plugins)
+- [How does Radicale work?](#architecture)
+- [Plugins.](#plugins)
 - [Adding or fixing documentation.](#contribute)
 
 ### Tutorial
@@ -88,11 +88,11 @@ You want to try Radicale but only have 5 minutes free in your calendar? Let's
 go right now! You won't have the best installation ever, but it will be enough
 to play a little bit with Radicale.
 
-When everything works, you can get a [client](#documentation/clients) and
+When everything works, you can get a [client](#clients) and
 start creating calendars and address books. The server **only** binds to
 localhost (is **not** reachable over the network) and you can log in with any
 user name and password. If Radicale fits your needs, it may be time for
-[some basic configuration](#documentation/basic-setup).
+[some basic configuration](#basic-setup).
 
 Follow one of the chapters below depending on your operating system.
 
@@ -141,7 +141,7 @@ You can login with any username and password.
 ### Basic Setup
 
 Installation instructions can be found on the
-[Tutorial](#documentation/tutorial) page.
+[Tutorial](#tutorial) page.
 
 #### Configuration
 
@@ -155,7 +155,7 @@ You should create a new configuration file at the desired location.
 passed via command line arguments.)
 
 All configuration options are described in detail on the
-[Configuration](#documentation/configuration) page.
+[Configuration](#configuration-1) page.
 
 #### Authentication
 
@@ -359,7 +359,7 @@ Set the configuration option `daemon` in the section `server` to `True`.
 You may want to set the option `pid` to the path of a PID file.
 
 After daemonization the server will not log anything. You have to configure
-[Logging](#documentation/logging).
+[Logging](#logging-1).
 
 If you start Radicale now, it will initialize and fork into the background.
 The main process exits, after the PID file is written.
@@ -969,7 +969,7 @@ Default: `owner_only`
 ##### file
 
 File for the rights backend `from_file`.  See the
-[Rights](#documentation/authentication-and-rights) page.
+[Rights](#authentication-and-rights) page.
 
 #### storage
 ##### type
@@ -1014,7 +1014,7 @@ Default: `True`
 ##### hook
 
 Command that is run after changes to storage. Take a look at the
-[Versioning](#documentation/versioning) page for an example.
+[Versioning](#versioning) page for an example.
 
 Default:
 
@@ -1054,7 +1054,7 @@ Default: `True`
 
 ##### config
 
-Logging configuration file. See the [Logging](#documentation/logging) page.
+Logging configuration file. See the [Logging](#logging-1) page.
 
 Default:
 
@@ -1132,7 +1132,7 @@ It's safe to access and manipulate the data by hand or with scripts.
 Scripts can be invoked manually, periodically (e.g. with
 [cron](https://manpages.debian.org/unstable/cron/cron.8.en.html)) or after each
 change to the storage with the configuration option `hook` in the `storage`
-section (e.g. [Git Versioning](#documentation/versioning)).
+section (e.g. [Git Versioning](#versioning)).
 
 #### Layout
 
@@ -1538,7 +1538,7 @@ There's now only one way to store data in Radicale: collections are stored as
 folders and events / contacts are stored in files. This new storage is close to
 the `multifilesystem`, but **it's now thread-safe, with atomic writes and file
 locks**. Other storage types can be used by creating
-[plugins](#documentation/plugins).
+[plugins](#plugins).
 
 To migrate data to Radicale 2.x.x the command line argument
 ``--export-storage`` was added to Radicale 1.1.x.
@@ -1564,23 +1564,23 @@ $ python3 -m pip install --upgrade radicale==1.1.*
 
 **Radicale 2.x.x only provides htpasswd authentication out-of-the-box.** Other
 authentication methods can be added by creating or using
-[plugins](#documentation/plugins).
+[plugins](#plugins).
 
 #### Rights
 
 In Radicale 2.x.x, rights are managed using regex-based rules based on the
 login of the authenticated user and the URL of the resource. Default
 configurations are built in for common cases, you'll find more about this on
-the [Authentication & Rights](#documentation/authentication-and-rights) page.
+the [Authentication & Rights](#authentication-and-rights) page.
 
 Other rights managers can be added by creating
-[plugins](#documentation/plugins).
+[plugins](#plugins).
 
 #### Versioning
 
 Support for versioning with **git** was removed from Radicale 2.x.x.
 Instead, the configuration option ``hook`` in the ``storage`` section was added,
-the [Collection Versioning](#documentation/versioning) page explains its
+the [Collection Versioning](#versioning) page explains its
 usage for version control.
 
 ## Contribute
@@ -1755,7 +1755,7 @@ steps to have a simple remote calendar and contact access.
 Contrary to other servers that are often complicated, require high privileges
 or need a strong configuration, the Radicale Server can (sometimes, if not
 often) be launched in a couple of minutes, if you follow the
-[tutorial](#documentation/tutorial).
+[tutorial](#tutorial).
 
 ##### Lazy
 
@@ -1798,7 +1798,7 @@ Radicale 2.1.12 is out!
 #### 2.1.12 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Include documentation in source archive
@@ -1810,7 +1810,7 @@ Radicale 2.1.11 is out!
 #### 2.1.11 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Fix moving items between collections
@@ -1822,7 +1822,7 @@ Radicale 2.1.10 is out!
 #### 2.1.10 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Update required versions for dependencies
@@ -1839,7 +1839,7 @@ Radicale 2.1.9 is out!
 #### 2.1.9 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Specify versions for dependencies
@@ -1857,7 +1857,7 @@ Radicale 2.1.8 is out!
 #### 2.1.8 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Flush files before fsync'ing
@@ -1869,7 +1869,7 @@ Radicale 2.1.7 is out!
 #### 2.1.7 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Don't print warning when cache format changes
@@ -1895,7 +1895,7 @@ Radicale 2.1.6 is out!
 #### 2.1.6 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Fix content-type of VLIST
@@ -1914,7 +1914,7 @@ Radicale 2.1.5 is out!
 #### 2.1.5 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Add ``--verify-storage`` command-line argument
@@ -1931,7 +1931,7 @@ Radicale 2.1.4 is out!
 #### 2.1.4 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Fix incorrect time range matching and calculation for some edge-cases with
@@ -1945,7 +1945,7 @@ Radicale 2.1.3 is out!
 #### 2.1.3 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Enable timeout for SSL handshakes and move them out of the main thread
@@ -1960,7 +1960,7 @@ Radicale 2.1.2 is out!
 #### 2.1.2 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Remove workarounds for bugs in VObject < 0.9.5
@@ -1976,7 +1976,7 @@ Radicale 2.1.1 is out!
 #### 2.1.1 - Wild Radish Again
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.x.x.
 
 * Add missing UIDs instead of failing
@@ -1990,7 +1990,7 @@ Radicale 2.1.0 is out!
 #### 2.1.0 - Wild Radish
 
 This release is compatible with version 2.0.0. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.1.0.
 
 * Built-in web interface for creating and managing address books and calendars
@@ -2029,7 +2029,7 @@ Radicale 2.0.0 is out!
 #### 2.0.0 - Little Big Radish
 
 This feature is not compatible with the 1.x.x versions. Follow our
-[migration guide](#documentation/migration-from-1xx-to-2xx) if you want to switch
+[migration guide](#migration-from-1xx-to-2xx) if you want to switch
 from 1.x.x to 2.0.0.
 
 - Support Python 3.3+ only, Python 2 is not supported anymore
@@ -2651,7 +2651,7 @@ After a lot of help and testing work from Andrew, Björn, Anders, Dorian and
 Pete (and other ones we could have forgotten), a simple iPhone support has been
 added in the git repository. If you are interested, you can test this feature
 *right now* by
-[downloading the latest git version](#download//git-repository)
+[downloading the latest git version](#git-repository)
 (a tarball is even available too if you don't want or know how to use git).
 
 No documentation has been written yet, but using the right URL in the
