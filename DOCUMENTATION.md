@@ -35,7 +35,7 @@ released under GPL version 3.
 #### Supported Clients
 
 Radicale supports the latest versions of [many CalDAV and CardDAV
-clients](#documentation/user-documentation/installation/caldav-and-carddav-clients).
+clients](#caldav-and-carddav-clients).
 
 ## Documentation
 
@@ -43,21 +43,21 @@ clients](#documentation/user-documentation/installation/caldav-and-carddav-clien
 
 This document describes how to install and configure the server.
 
-  - [User documentation](#documentation/user-documentation)
+  - [User documentation](#user-documentation-1)
 
 #### Project description
 
 This document defines the main goals of the Radicale Project, what it
 covers and what it does not.
 
-  - [Project description](#documentation/project-description)
+  - [Project description](#project-description-1)
 
 #### Technical choices
 
 This document describes the global technical choices of the Radicale
 Project and the global architectures of its different parts.
 
-  - [Technical choices](#documentation/technical-choices)
+  - [Technical choices](#technical-choices-1)
 
 ### User Documentation
 
@@ -68,10 +68,10 @@ Project and the global architectures of its different parts.
 Radicale is written in pure Python and does not depend on any library.
 It is known to work on Python 2.6, 2.7, 3.1, 3.2, 3.3, 3.4 and PyPy \>
 1.9. The dependencies are optional, as they are only needed for various
-authentication methods[\[1\]](#footnotes//1).
+authentication methods[\[1\]](#1).
 
 Linux and MacOS users certainly have Python already installed. For
-Windows users, please install Python[\[2\]](#footnotes//2) thanks to the adequate
+Windows users, please install Python[\[2\]](#2) thanks to the adequate
 installer.
 
 ##### Radicale
@@ -1060,7 +1060,7 @@ Check the `[auth]` section of your configuration file to know the
 different options offered by these authentication modules.
 
 Some authentication methods need additional modules, see [Python
-Versions and OS Support](#documentation/user-documentation/python-versions-and-os-support) for further
+Versions and OS Support](#python-versions-and-os-support) for further
 information.
 
 You can also write and use a custom module handle authentication if you
@@ -1292,17 +1292,17 @@ different authentication methods.
 
 Radicale is a server, not a client. No interfaces will be created to
 work with the server, as it is a really (really really) much more
-difficult task[\[3\]](#footnotes//3).
+difficult task[\[3\]](#3).
 
 ##### Original Calendar or Contact Access Protocol
 
 CalDAV and CardDAV are not perfect protocols. We think that their main
-problem is their complexity[\[4\]](#footnotes//4), that is why we decided not to
+problem is their complexity[\[4\]](#4), that is why we decided not to
 implement the whole standard but just enough to understand some of its
-client-side implementations [\[5\]](#footnotes//5).
+client-side implementations [\[5\]](#5).
 
 CalDAV and CardDAV are the best open standards available and they are
-quite widely used by both clients and servers[\[6\]](#footnotes//6). We decided to use
+quite widely used by both clients and servers[\[6\]](#6). We decided to use
 it, and we will not use another one.
 
 ### Technical Choices
@@ -1353,7 +1353,7 @@ Radicale Project are described by RFCs:
 > CalDAV and CardDAV implementations **require** iCal, vCard, ACL, WebDAV,
 > HTTP and TLS. The Radicale Server **does not and will not implement
 > correctly** these standards, as explained in the [Development
-> Choices](#documentation/technical-choices/global-technical-choices/development-choices) part.
+> Choices](#development-choices) part.
 
 
 ##### Development Choices
@@ -1371,8 +1371,8 @@ covering lots of features and use cases, but it is quite hard to
 implement fully.
 
 Some calendar servers have been created to follow the CalDAV and CardDAV
-RFCs as much as possible: Davical[\[7\]](#footnotes//7), Cosmo[\[8\]](#footnotes//8) and Darwin Calendar
-Server[\[9\]](#footnotes//9), for example, are much more respectful of CalDAV and CardDAV
+RFCs as much as possible: Davical[\[7\]](#7), Cosmo[\[8\]](#8) and Darwin Calendar
+Server[\[9\]](#9), for example, are much more respectful of CalDAV and CardDAV
 and can be used with a large number of clients. They are very good
 choices if you want to develop and test new CalDAV clients, or if you
 have a possibly heterogeneous list of user agents.
@@ -1396,12 +1396,12 @@ Contrary to other servers that are often complicated, require high
 privileges or need a strong configuration, the Radicale Server can
 (sometimes, if not often) be launched in a couple of minutes, if you
 follow the [User
-Documentation](#documentation/user-documentation).
+Documentation](#user-documentation-1).
 
 ###### Lazy
 
 We, Radicale Project developers, are lazy. That is why we have chosen
-Python: no more `;` or `{}`[\[10\]](#footnotes//10). This is also why our server is lazy.
+Python: no more `;` or `{}`[\[10\]](#10). This is also why our server is lazy.
 
 The CalDAV RFC defines what must be done, what can be done and what
 cannot be done. Many violations of the protocol are totally defined and
@@ -2149,7 +2149,7 @@ It was Friday, fun fun fun fun.
 So, that's it: Radicale supports Lightning, Evolution, Kontact, aCal for
 Android, iPhone and iCal. Of course, before releasing a new tarball:
 
-  - [documentation](#documentation/user-documentation/simple-usage/starting-the-client)
+  - [documentation](#starting-the-client)
     is needed for the new clients that are not documented yet (Kontact,
     aCal and iPhone);
   - tests are welcome, particularly for the Apple clients that I can't
@@ -2305,7 +2305,7 @@ After a lot of help and testing work from Andrew, Björn, Anders, Dorian
 and Pete (and other ones we could have forgotten), a simple iPhone
 support has been added in the git repository. If you are interested, you
 can test this feature *right now* by [downloading the latest git
-version](#download//git-repository) (a tarball is even
+version](#git-repository) (a tarball is even
 available too if you don't want or know how to use git).
 
 No documentation has been written yet, but using the right URL in the
@@ -2541,7 +2541,7 @@ be available soon…
 #### 1
 
 See [Python Versions and OS
-Support](#documentation/user-documentation/python-versions-and-os-support) for further information.
+Support](#python-versions-and-os-support) for further information.
 
 #### 2
 
@@ -2550,7 +2550,7 @@ Support](#documentation/user-documentation/python-versions-and-os-support) for f
 #### 3
 
 I repeat: [we are
-lazy](#documentation/technical-choices/global-technical-choices/development-choices/lazy).
+lazy](#lazy).
 
 #### 4
 
@@ -2562,7 +2562,7 @@ again.
 #### 5
 
 Radicale is [oriented to calendar user
-agents](#documentation/technical-choices/global-technical-choices/development-choices/oriented-to-calendar-and-contact-user-agents).
+agents](#oriented-to-calendar-and-contact-user-agents).
 
 #### 6
 
