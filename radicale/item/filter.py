@@ -254,7 +254,11 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
             dtend = getattr(child, "dtend", None)
             if dtend is not None:
                 dtend = dtend.value
-                original_duration = (dtend - dtstart).total_seconds()
+                try:
+                    original_duration = (dtend - dtstart).total_seconds()
+                except TypeError:
+                    dtend = dtend.replace(tzinfo=timezone.utc)
+                    original_duration = (dtend - dtstart).total_seconds()
                 dtend = date_to_datetime(dtend)
 
             duration = getattr(child, "duration", None)
