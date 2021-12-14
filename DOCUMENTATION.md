@@ -13,7 +13,7 @@ Radicale is a small but powerful CalDAV (calendars, to-do lists) and CardDAV
 * Can limit access by authentication.
 * Can secure connections with TLS.
 * Works with many
-  [CalDAV and CardDAV clients](#documentation/supported-clients).
+  [CalDAV and CardDAV clients](#supported-clients).
 * Stores all data on the file system in a simple folder structure.
 * Can be extended with plugins.
 * Is GPLv3-licensed free software.
@@ -31,7 +31,7 @@ When the server is launched, open <http://localhost:5232> in your browser!
 You can login with any username and password.
 
 Want more? Check the [tutorials](#tutorials) and the
-[documentation](#documentation).
+[documentation](#documentation-1).
 
 #### What's New?
 
@@ -45,11 +45,11 @@ Read the
 You want to try Radicale but only have 5 minutes free in your calendar? Let's
 go right now and play a bit with Radicale!
 
-When everything works, you can get a [client](#documentation/supported-clients)
+When everything works, you can get a [client](#supported-clients)
 and start creating calendars and address books. The server **only** binds to
 localhost (is **not** reachable over the network) and you can log in with any
 user name and password. If Radicale fits your needs, it may be time for
-[some basic configuration](#tutorials/basic-configuration).
+[some basic configuration](#basic-configuration).
 
 Follow one of the chapters below depending on your operating system.
 
@@ -92,7 +92,7 @@ You can log in with any username and password.
 ### Basic Configuration
 
 Installation instructions can be found in the
-[simple 5-minute setup](#tutorials/simple-5-minute-setup) tutorial.
+[simple 5-minute setup](#simple-5-minute-setup) tutorial.
 
 Radicale tries to load configuration files from `/etc/radicale/config` and
 `~/.config/radicale/config`.
@@ -106,7 +106,7 @@ You should create a new configuration file at the desired location.
 passed via command line arguments.)
 
 All configuration options are described in detail in the
-[Configuration](#documentation/configuration) section.
+[Configuration](#configuration) section.
 
 #### Authentication
 
@@ -186,7 +186,7 @@ filesystem_folder = /path/to/storage
 > **Security:** The storage folder should not be readable by unauthorized users.
 > Otherwise, they can read the calendar data and lock the storage.
 > You can find OS dependent instructions in the
-> [Running as a service](#tutorials/running-as-a-service) section.
+> [Running as a service](#running-as-a-service) section.
 
 #### Limits
 
@@ -746,7 +746,7 @@ Default: `owner_only`
 ##### file
 
 File for the rights backend `from_file`.  See the
-[Rights](#documentation/authentication-and-rights) section.
+[Rights](#authentication-and-rights) section.
 
 #### storage
 
@@ -780,7 +780,7 @@ Default: `2592000`
 ##### hook
 
 Command that is run after changes to storage. Take a look at the
-[Versioning with Git](#tutorials/versioning-with-git) tutorial for an example.
+[Versioning with Git](#versioning-with-git) tutorial for an example.
 
 Default:
 
@@ -1029,7 +1029,7 @@ It's safe to access and manipulate the data by hand or with scripts.
 Scripts can be invoked manually, periodically (e.g. with
 [cron](https://manpages.debian.org/unstable/cron/cron.8.en.html)) or after each
 change to the storage with the configuration option `hook` in the `storage`
-section (e.g. [Versioning with Git](#tutorials/versioning-with-git)).
+section (e.g. [Versioning with Git](#versioning-with-git)).
 
 #### Layout
 
@@ -1482,7 +1482,7 @@ steps to have a simple remote calendar and contact access.
 Contrary to other servers that are often complicated, require high privileges
 or need a strong configuration, the Radicale Server can (sometimes, if not
 often) be launched in a couple of minutes, if you follow the
-[tutorial](#tutorials/simple-5-minute-setup).
+[tutorial](#simple-5-minute-setup).
 
 ##### Lazy
 
