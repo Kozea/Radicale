@@ -191,7 +191,7 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
     datetimes and ``is_recurrence`` as arguments. If the function returns True,
     the operation is cancelled.
 
-    ``infinity_fn`` gets called when an infiite recurrence rule is detected
+    ``infinity_fn`` gets called when an infinite recurrence rule is detected
     with ``start`` datetime as argument. If the function returns True, the
     operation is cancelled.
 
@@ -206,9 +206,13 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
 
     def getrruleset(child: vobject.base.Component, ignore: Sequence[date]
                     ) -> Tuple[Iterable[date], bool]:
-        if (hasattr(child, "rrule") and
-                ";UNTIL=" not in child.rrule.value.upper() and
-                ";COUNT=" not in child.rrule.value.upper()):
+        infinite = False
+        for rrule in child.contents.get("rrule", []):
+            if (";UNTIL=" not in child.rrule.value.upper() and
+                    ";COUNT=" not in child.rrule.value.upper()):
+                infinite = True
+                break
+        if infinite:
             for dtstart in child.getrruleset(addRDate=True):
                 if dtstart in ignore:
                     continue
