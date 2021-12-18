@@ -208,8 +208,8 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                     ) -> Tuple[Iterable[date], bool]:
         infinite = False
         for rrule in child.contents.get("rrule", []):
-            if (";UNTIL=" not in child.rrule.value.upper() and
-                    ";COUNT=" not in child.rrule.value.upper()):
+            if (";UNTIL=" not in rrule.value.upper() and
+                    ";COUNT=" not in rrule.value.upper()):
                 infinite = True
                 break
         if infinite:
