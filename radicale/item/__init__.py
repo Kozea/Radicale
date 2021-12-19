@@ -24,11 +24,13 @@ Module for address books and calendar entries (see ``Item``).
 """
 
 import binascii
+import contextlib
 import math
 import os
 import sys
 from datetime import datetime, timedelta
 from hashlib import sha256
+from itertools import chain
 from typing import (Any, Callable, List, MutableMapping, Optional, Sequence,
                     Tuple)
 
@@ -142,6 +144,28 @@ def check_and_sanitize_items(
                 logger.debug("Quirks: Removing zero duration from %s in "
                              "object %r", component_name, component_uid)
                 del component.duration
+            # Workaround for Evolution
+            # EXDATE has value DATE even if DTSTART/DTEND is DATE-TIME.
+            # The RFC is vaguely formulated on the issue.
+            # To resolve the issue convert EXDATE and RDATE to
+            # the same type as DTDSTART
+            if hasattr(component, "dtstart"):
+                ref_date = component.dtstart.value
+                ref_value_param = component.dtstart.params.get("VALUE")
+                for dates in chain(component.contents.get("exdate", []),
+                                   component.contents.get("rdate", [])):
+                    replace_value_param = False
+                    for i, date in enumerate(dates.value):
+                        if type(date) != type(ref_date):
+                            replace_value_param = True
+                            dates.value[i] = ref_date.replace(
+                                date.year, date.month, date.day)
+                    if replace_value_param:
+                        if ref_value_param is None:
+                            with contextlib.suppress(KeyError):
+                                del dates.params["VALUE"]
+                        else:
+                            dates.params["VALUE"] = ref_value_param
             # vobject interprets recurrence rules on demand
             try:
                 component.rruleset
@@ -176,9 +200,9 @@ def check_and_sanitize_items(
                 else:
                     vobject_item.add("UID").value = object_uid
     else:
-        for i in vobject_items:
+        for item in vobject_items:
             raise ValueError("Item type %r not supported in %s collection" %
-                             (i.name, repr(tag) if tag else "generic"))
+                             (item.name, repr(tag) if tag else "generic"))
 
 
 def check_and_sanitize_props(props: MutableMapping[Any, Any]

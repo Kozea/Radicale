@@ -97,6 +97,12 @@ permissions: RrWw""")
         assert xml.tag == xmlutils.make_clark("D:error")
         assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
 
+    def test_add_event_with_mixed_datetime_and_date(self) -> None:
+        """Test event with DTSTART as DATE-TIME and EXDATE as DATE."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_mixed_datetime_and_date.ics")
+        self.put("/calendar.ics/event.ics", event)
+
     def test_add_todo(self) -> None:
         """Add a todo."""
         self.mkcalendar("/calendar.ics/")
