@@ -48,7 +48,7 @@ def run() -> None:
     # Raise SystemExit when signal arrives to run cleanup code
     # (like destructors, try-finish etc.), otherwise the process exits
     # without running any of them
-    def exit_signal_handler(signal_number: "signal.Signals",
+    def exit_signal_handler(signal_number: int,
                             stack_frame: FrameType) -> None:
         sys.exit(1)
     for signal_number in exit_signal_numbers:
@@ -187,7 +187,7 @@ def run() -> None:
     shutdown_socket, shutdown_socket_out = socket.socketpair()
 
     # Shutdown server when signal arrives
-    def shutdown_signal_handler(signal_number: "signal.Signals",
+    def shutdown_signal_handler(signal_number: int,
                                 stack_frame: FrameType) -> None:
         shutdown_socket.close()
     for signal_number in exit_signal_numbers:
