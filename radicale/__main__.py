@@ -30,7 +30,7 @@ import signal
 import socket
 import sys
 from types import FrameType
-from typing import List, cast
+from typing import List, Optional, cast
 
 from radicale import VERSION, config, log, server, storage, types
 from radicale.log import logger
@@ -49,7 +49,7 @@ def run() -> None:
     # (like destructors, try-finish etc.), otherwise the process exits
     # without running any of them
     def exit_signal_handler(signal_number: int,
-                            stack_frame: FrameType) -> None:
+                            stack_frame: Optional[FrameType]) -> None:
         sys.exit(1)
     for signal_number in exit_signal_numbers:
         signal.signal(signal_number, exit_signal_handler)
@@ -188,7 +188,7 @@ def run() -> None:
 
     # Shutdown server when signal arrives
     def shutdown_signal_handler(signal_number: int,
-                                stack_frame: FrameType) -> None:
+                                stack_frame: Optional[FrameType]) -> None:
         shutdown_socket.close()
     for signal_number in exit_signal_numbers:
         signal.signal(signal_number, shutdown_signal_handler)
