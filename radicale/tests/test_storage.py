@@ -30,14 +30,14 @@ import pytest
 import radicale.tests.custom.storage_simple_sync
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
-from radicale.tests.test_base import TestBaseRequests
+from radicale.tests.test_base import TestBaseRequests as _TestBaseRequests
 
 
 class TestMultiFileSystem(BaseTest):
     """Tests for multifilesystem."""
 
     def setup(self) -> None:
-        TestBaseRequests.setup(cast(TestBaseRequests, self))
+        _TestBaseRequests.setup(cast(_TestBaseRequests, self))
         self.configure({"storage": {"type": "multifilesystem"}})
 
     def test_folder_creation(self) -> None:
@@ -104,7 +104,8 @@ class TestMultiFileSystem(BaseTest):
                         reason="Only supported on 'posix' and 'win32'")
     def test_put_whole_calendar_uids_used_as_file_names(self) -> None:
         """Test if UIDs are used as file names."""
-        TestBaseRequests.test_put_whole_calendar(cast(TestBaseRequests, self))
+        _TestBaseRequests.test_put_whole_calendar(
+            cast(_TestBaseRequests, self))
         for uid in ("todo", "event"):
             _, answer = self.get("/calendar.ics/%s.ics" % uid)
             assert "\r\nUID:%s\r\n" % uid in answer
@@ -113,8 +114,8 @@ class TestMultiFileSystem(BaseTest):
                         reason="Only supported on 'posix' and 'win32'")
     def test_put_whole_calendar_random_uids_used_as_file_names(self) -> None:
         """Test if UIDs are used as file names."""
-        TestBaseRequests.test_put_whole_calendar_without_uids(
-            cast(TestBaseRequests, self))
+        _TestBaseRequests.test_put_whole_calendar_without_uids(
+            cast(_TestBaseRequests, self))
         _, answer = self.get("/calendar.ics")
         assert answer is not None
         uids = []
@@ -130,8 +131,8 @@ class TestMultiFileSystem(BaseTest):
                         reason="Only supported on 'posix' and 'win32'")
     def test_put_whole_addressbook_uids_used_as_file_names(self) -> None:
         """Test if UIDs are used as file names."""
-        TestBaseRequests.test_put_whole_addressbook(
-            cast(TestBaseRequests, self))
+        _TestBaseRequests.test_put_whole_addressbook(
+            cast(_TestBaseRequests, self))
         for uid in ("contact1", "contact2"):
             _, answer = self.get("/contacts.vcf/%s.vcf" % uid)
             assert "\r\nUID:%s\r\n" % uid in answer
@@ -141,8 +142,8 @@ class TestMultiFileSystem(BaseTest):
     def test_put_whole_addressbook_random_uids_used_as_file_names(
             self) -> None:
         """Test if UIDs are used as file names."""
-        TestBaseRequests.test_put_whole_addressbook_without_uids(
-            cast(TestBaseRequests, self))
+        _TestBaseRequests.test_put_whole_addressbook_without_uids(
+            cast(_TestBaseRequests, self))
         _, answer = self.get("/contacts.vcf")
         assert answer is not None
         uids = []
@@ -159,10 +160,10 @@ class TestMultiFileSystemNoLock(BaseTest):
     """Tests for multifilesystem_nolock."""
 
     def setup(self) -> None:
-        TestBaseRequests.setup(cast(TestBaseRequests, self))
+        _TestBaseRequests.setup(cast(_TestBaseRequests, self))
         self.configure({"storage": {"type": "multifilesystem_nolock"}})
 
-    test_add_event = TestBaseRequests.test_add_event
+    test_add_event = _TestBaseRequests.test_add_event
     test_item_cache_rebuild = TestMultiFileSystem.test_item_cache_rebuild
 
 
@@ -170,19 +171,19 @@ class TestCustomStorageSystem(BaseTest):
     """Test custom backend loading."""
 
     def setup(self) -> None:
-        TestBaseRequests.setup(cast(TestBaseRequests, self))
+        _TestBaseRequests.setup(cast(_TestBaseRequests, self))
         self.configure({"storage": {
             "type": "radicale.tests.custom.storage_simple_sync"}})
 
     full_sync_token_support: ClassVar[bool] = False
 
-    test_add_event = TestBaseRequests.test_add_event
-    _report_sync_token = TestBaseRequests._report_sync_token
+    test_add_event = _TestBaseRequests.test_add_event
+    _report_sync_token = _TestBaseRequests._report_sync_token
     # include tests related to sync token
     s: str = ""
-    for s in dir(TestBaseRequests):
+    for s in dir(_TestBaseRequests):
         if s.startswith("test_") and "sync" in s.split("_"):
-            locals()[s] = getattr(TestBaseRequests, s)
+            locals()[s] = getattr(_TestBaseRequests, s)
     del s
 
 
@@ -190,8 +191,8 @@ class TestCustomStorageSystemCallable(BaseTest):
     """Test custom backend loading with ``callable``."""
 
     def setup(self) -> None:
-        TestBaseRequests.setup(cast(TestBaseRequests, self))
+        _TestBaseRequests.setup(cast(_TestBaseRequests, self))
         self.configure({"storage": {
             "type": radicale.tests.custom.storage_simple_sync.Storage}})
 
-    test_add_event = TestBaseRequests.test_add_event
+    test_add_event = _TestBaseRequests.test_add_event
