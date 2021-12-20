@@ -1,7 +1,7 @@
 FROM python:3-alpine
 
 # Version of Radicale
-ARG VERSION=3.0.x
+ARG VERSION=v3
 # Persistent storage for data (Mount it somewhere on the host!)
 VOLUME /var/lib/radicale
 # Configuration data (Put the "config" file here!)
