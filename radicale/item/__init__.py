@@ -154,18 +154,15 @@ def check_and_sanitize_items(
                 ref_value_param = component.dtstart.params.get("VALUE")
                 for dates in chain(component.contents.get("exdate", []),
                                    component.contents.get("rdate", [])):
-                    replace_value_param = False
+                    if all(type(d) == type(ref_date) for d in dates.value):
+                        continue
                     for i, date in enumerate(dates.value):
-                        if type(date) != type(ref_date):
-                            replace_value_param = True
-                            dates.value[i] = ref_date.replace(
-                                date.year, date.month, date.day)
-                    if replace_value_param:
-                        if ref_value_param is None:
-                            with contextlib.suppress(KeyError):
-                                del dates.params["VALUE"]
-                        else:
-                            dates.params["VALUE"] = ref_value_param
+                        dates.value[i] = ref_date.replace(
+                            date.year, date.month, date.day)
+                    with contextlib.suppress(KeyError):
+                        del dates.params["VALUE"]
+                    if ref_value_param is not None:
+                        dates.params["VALUE"] = ref_value_param
             # vobject interprets recurrence rules on demand
             try:
                 component.rruleset
