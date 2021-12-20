@@ -2,7 +2,7 @@
 
 FROM python:3-alpine
 
-# Version of Radicale (e.g. 3.0.x)
+# Version of Radicale (e.g. v3)
 ARG VERSION=master
 # Persistent storage for data
 VOLUME /var/lib/radicale
