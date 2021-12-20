@@ -81,6 +81,7 @@ class LockDict:
             yield
         finally:
             with self._lock:
+                assert waiters[0] is waiter and self._dict[key] is waiters
                 del waiters[0]
                 if waiters:
                     waiters[0].release()
