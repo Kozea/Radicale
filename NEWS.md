@@ -20,6 +20,7 @@
 * Add **multifilesystem_nolock** storage
 * Add support for Python 3.9 and 3.10
 * Drop support for Python 3.5
+* Fix compatibility with Evolution (Exceptions from recurrence rules)
 
 ## 3.0.6
 
