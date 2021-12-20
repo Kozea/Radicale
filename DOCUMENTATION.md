@@ -82,8 +82,8 @@ click on "Install now". Wait a couple of minutes, it's done!
 Launch a command prompt and type:
 
 ```powershell
-C:\Users\User> python -m pip install --upgrade radicale
-C:\Users\User> python -m radicale --storage-filesystem-folder=~/radicale/collections
+python -m pip install --upgrade radicale
+python -m radicale --storage-filesystem-folder=~/radicale/collections
 ```
 
 Victory! Open <http://localhost:5232> in your browser!
