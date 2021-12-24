@@ -13,7 +13,7 @@
   * Disallow abbreviated arguments
   * Support backend specific options and HTTP headers
   * Optional argument for boolean options
-  * Require argument for `--config`
+  * Load no config file for `--config` without argument
 * Allow float for server->timeout setting
 * Fix **is-not-defined** filter in **addressbook-query** report
 * Add python type hints

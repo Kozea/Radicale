@@ -155,7 +155,8 @@ def run() -> None:
         configuration = config.load(config.parse_compound_paths(
             config.DEFAULT_CONFIG_PATH,
             os.environ.get("RADICALE_CONFIG"),
-            os.pathsep.join(args_ns.config) if args_ns.config else None))
+            os.pathsep.join(args_ns.config) if args_ns.config is not None
+            else None))
         if arguments_config:
             configuration.update(arguments_config, "command line arguments")
     except Exception as e:
