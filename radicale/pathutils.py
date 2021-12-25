@@ -77,7 +77,7 @@ if sys.platform == "linux":
 
     RENAME_EXCHANGE: int = 2
     try:
-        renameat2 = ctypes.CDLL("", use_errno=True).renameat2
+        renameat2 = ctypes.CDLL(None, use_errno=True).renameat2
     except AttributeError:
         pass
     else:
