@@ -1,6 +1,6 @@
 # News
 
-## master
+## 3.1.0
 
 * Single `<D:propstat>` element in PROPPATCH response
 * Allow multiple `<D:set>` and `<D:remove>` elements
