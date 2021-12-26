@@ -247,9 +247,9 @@
 <section class="level4" id="installation">
 <h4>Installation <a class="headerlink" href="#installation">&para;</a></h4>
 <p>Radicale is really easy to install and works out-of-the-box.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a aria-hidden="true" href="#cb1-1" tabindex="-1"></a><span class="ex">$</span> python3 <span class="at">-m</span> pip install <span class="at">--upgrade</span> radicale</span>
-<span id="cb1-2"><a aria-hidden="true" href="#cb1-2" tabindex="-1"></a><span class="ex">$</span> python3 <span class="at">-m</span> radicale <span class="at">--storage-filesystem-folder</span><span class="op">=</span>~/.var/lib/radicale/collections</span></code></pre></div>
-<p>When the server is launched, open http://localhost:5232/ in your browser! You can login with any username and password.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a aria-hidden="true" href="#cb1-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip install <span class="at">--upgrade</span> radicale</span>
+<span id="cb1-2"><a aria-hidden="true" href="#cb1-2" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> radicale <span class="at">--storage-filesystem-folder</span><span class="op">=</span>~/.var/lib/radicale/collections</span></code></pre></div>
+<p>When the server is launched, open <a href="http://localhost:5232">http://localhost:5232</a> in your browser! You can login with any username and password.</p>
 <p>Want more? Check the <a href="#tutorials">tutorials</a> and the <a href="#documentation-1">documentation</a>.</p>
 </section>
 <section class="level4" id="whats-new">
@@ -272,15 +272,15 @@
 <span id="cb2-2"><a aria-hidden="true" href="#cb2-2" tabindex="-1"></a><span class="co"># add the --user argument to only install for the current user</span></span>
 <span id="cb2-3"><a aria-hidden="true" href="#cb2-3" tabindex="-1"></a><span class="ex">$</span> python3 <span class="at">-m</span> pip install <span class="at">--upgrade</span> radicale</span>
 <span id="cb2-4"><a aria-hidden="true" href="#cb2-4" tabindex="-1"></a><span class="ex">$</span> python3 <span class="at">-m</span> radicale <span class="at">--storage-filesystem-folder</span><span class="op">=</span>~/.var/lib/radicale/collections</span></code></pre></div>
-<p>Victory! Open http://localhost:5232/ in your browser! You can log in with any username and password.</p>
+<p>Victory! Open <a href="http://localhost:5232">http://localhost:5232</a> in your browser! You can log in with any username and password.</p>
 </section>
 <section class="level4" id="windows">
 <h4>Windows <a class="headerlink" href="#windows">&para;</a></h4>
 <p>The first step is to install Python. Go to <a href="https://python.org">python.org</a> and download the latest version of Python 3. Then run the installer. On the first window of the installer, check the "Add Python to PATH" box and click on "Install now". Wait a couple of minutes, it's done!</p>
 <p>Launch a command prompt and type:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb3-1"><a aria-hidden="true" href="#cb3-1" tabindex="-1"></a>C<span class="op">:</span>\Users\User<span class="op">&gt;</span> python <span class="op">-</span>m pip install <span class="op">--</span>upgrade radicale</span>
-<span id="cb3-2"><a aria-hidden="true" href="#cb3-2" tabindex="-1"></a>C<span class="op">:</span>\Users\User<span class="op">&gt;</span> python <span class="op">-</span>m radicale <span class="op">--</span>storage<span class="op">-</span>filesystem<span class="op">-</span>folder<span class="op">=~/</span>radicale<span class="op">/</span>collections</span></code></pre></div>
-<p>Victory! Open http://localhost:5232/ in your browser! You can log in with any username and password.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb3-1"><a aria-hidden="true" href="#cb3-1" tabindex="-1"></a>python <span class="op">-</span>m pip install <span class="op">--</span>upgrade radicale</span>
+<span id="cb3-2"><a aria-hidden="true" href="#cb3-2" tabindex="-1"></a>python <span class="op">-</span>m radicale <span class="op">--</span>storage<span class="op">-</span>filesystem<span class="op">-</span>folder<span class="op">=~/</span>radicale<span class="op">/</span>collections</span></code></pre></div>
+<p>Victory! Open <a href="http://localhost:5232">http://localhost:5232</a> in your browser! You can log in with any username and password.</p>
 </section>
 </section>
 <section class="level3" id="basic-configuration">
@@ -520,8 +520,10 @@ user2:password2</code></pre>
 <section class="level4" id="secure-connection-between-radicale-and-the-reverse-proxy">
 <h4>Secure connection between Radicale and the reverse proxy <a class="headerlink" href="#secure-connection-between-radicale-and-the-reverse-proxy">&para;</a></h4>
 <p>SSL certificates can be used to encrypt and authenticate the connection between Radicale and the reverse proxy. First you have to generate a certificate for Radicale and a certificate for the reverse proxy. The following commands generate self-signed certificates. You will be asked to enter additional information about the certificate, the values don't matter and you can keep the defaults.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a aria-hidden="true" href="#cb21-1" tabindex="-1"></a><span class="ex">$</span> openssl req <span class="at">-x509</span> <span class="at">-newkey</span> rsa:4096 <span class="at">-keyout</span> server_key.pem <span class="at">-out</span> server_cert.pem <span class="at">-nodes</span> <span class="at">-days</span> 9999</span>
-<span id="cb21-2"><a aria-hidden="true" href="#cb21-2" tabindex="-1"></a><span class="ex">$</span> openssl req <span class="at">-x509</span> <span class="at">-newkey</span> rsa:4096 <span class="at">-keyout</span> client_key.pem <span class="at">-out</span> client_cert.pem <span class="at">-nodes</span> <span class="at">-days</span> 9999</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a aria-hidden="true" href="#cb21-1" tabindex="-1"></a><span class="ex">openssl</span> req <span class="at">-x509</span> <span class="at">-newkey</span> rsa:4096 <span class="at">-keyout</span> server_key.pem <span class="at">-out</span> server_cert.pem <span class="dt">\</span></span>
+<span id="cb21-2"><a aria-hidden="true" href="#cb21-2" tabindex="-1"></a>        <span class="at">-nodes</span> <span class="at">-days</span> 9999</span>
+<span id="cb21-3"><a aria-hidden="true" href="#cb21-3" tabindex="-1"></a><span class="ex">openssl</span> req <span class="at">-x509</span> <span class="at">-newkey</span> rsa:4096 <span class="at">-keyout</span> client_key.pem <span class="at">-out</span> client_cert.pem <span class="dt">\</span></span>
+<span id="cb21-4"><a aria-hidden="true" href="#cb21-4" tabindex="-1"></a>        <span class="at">-nodes</span> <span class="at">-days</span> 9999</span></code></pre></div>
 <p>Use the following configuration for Radicale:</p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb22-1"><a aria-hidden="true" href="#cb22-1" tabindex="-1"></a><span class="kw">[server]</span></span>
 <span id="cb22-2"><a aria-hidden="true" href="#cb22-2" tabindex="-1"></a><span class="dt">ssl </span><span class="ot">=</span><span class="st"> </span><span class="kw">True</span></span>
@@ -551,7 +553,8 @@ user2:password2</code></pre>
 <span id="cb24-5"><a aria-hidden="true" href="#cb24-5" tabindex="-1"></a><span class="dt">module </span><span class="ot">=</span><span class="st"> radicale</span></span>
 <span id="cb24-6"><a aria-hidden="true" href="#cb24-6" tabindex="-1"></a><span class="dt">env </span><span class="ot">=</span><span class="st"> RADICALE_CONFIG=/etc/radicale/config</span></span></code></pre></div>
 <p>Example <strong>Gunicorn</strong> configuration:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb25-1"><a aria-hidden="true" href="#cb25-1" tabindex="-1"></a><span class="ex">gunicorn</span> <span class="at">--bind</span> <span class="st">'127.0.0.1:5232'</span> <span class="at">--workers</span> 8 <span class="at">--env</span> <span class="st">'RADICALE_CONFIG=/etc/radicale/config'</span> radicale</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb25-1"><a aria-hidden="true" href="#cb25-1" tabindex="-1"></a><span class="ex">gunicorn</span> <span class="at">--bind</span> <span class="st">'127.0.0.1:5232'</span> <span class="at">--env</span> <span class="st">'RADICALE_CONFIG=/etc/radicale/config'</span> <span class="dt">\</span></span>
+<span id="cb25-2"><a aria-hidden="true" href="#cb25-2" tabindex="-1"></a>         <span class="at">--workers</span> 8 radicale</span></code></pre></div>
 <section class="level4" id="manage-user-accounts-with-the-wsgi-server">
 <h4>Manage user accounts with the WSGI server <a class="headerlink" href="#manage-user-accounts-with-the-wsgi-server">&para;</a></h4>
 <p>Set the configuration option <code>type</code> in the <code>auth</code> section to <code>remote_user</code>. Radicale uses the user name provided by the WSGI server and disables authentication over HTTP.</p>
@@ -561,7 +564,7 @@ user2:password2</code></pre>
 <h3>Versioning with Git <a class="headerlink" href="#versioning-with-git">&para;</a></h3>
 <p>This tutorial describes how to keep track of all changes to calendars and address books with <strong>git</strong> (or any other version control system).</p>
 <p>The repository must be initialized by running <code>git init</code> in the file system folder. Internal files of Radicale can be excluded by creating the file <code>.gitignore</code> with the following content:</p>
-<pre><code>.Radicale.cache
+<pre class="gitignore"><code>.Radicale.cache
 .Radicale.lock
 .Radicale.tmp-*</code></pre>
 <p>The configuration option <code>hook</code> in the <code>storage</code> section must be set to the following command:</p>
@@ -588,7 +591,9 @@ user2:password2</code></pre>
 <span id="cb28-11"><a aria-hidden="true" href="#cb28-11" tabindex="-1"></a><span class="dt">filesystem_folder </span><span class="ot">=</span><span class="st"> ~/.var/lib/radicale/collections</span></span></code></pre></div>
 <p>Radicale tries to load configuration files from <code>/etc/radicale/config</code> and <code>~/.config/radicale/config</code>. Custom paths can be specified with the <code>--config /path/to/config</code> command line argument or the <code>RADICALE_CONFIG</code> environment variable. Multiple configuration files can be separated by <code>:</code> (resp. <code>;</code> on Windows). Paths that start with <code>?</code> are optional.</p>
 <p>The same example configuration via command line arguments looks like:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb29-1"><a aria-hidden="true" href="#cb29-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> radicale <span class="at">--server-hosts</span> 0.0.0.0:5232,[::]:5232 <span class="at">--auth-type</span> htpasswd <span class="at">--htpasswd-filename</span> ~/.config/radicale/users <span class="at">--htpasswd-encryption</span> md5</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb29-1"><a aria-hidden="true" href="#cb29-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> radicale <span class="at">--server-hosts</span> 0.0.0.0:5232,[::]:5232 <span class="dt">\</span></span>
+<span id="cb29-2"><a aria-hidden="true" href="#cb29-2" tabindex="-1"></a>        <span class="at">--auth-type</span> htpasswd <span class="at">--auth-htpasswd-filename</span> ~/.config/radicale/users <span class="dt">\</span></span>
+<span id="cb29-3"><a aria-hidden="true" href="#cb29-3" tabindex="-1"></a>        <span class="at">--auth-htpasswd-encryption</span> md5</span></code></pre></div>
 <p>Add the argument <code>--config ""</code> to stop Radicale from loading the default configuration files. Run <code>python3 -m radicale --help</code> for more information.</p>
 <p>In the following, all configuration categories and options are described.</p>
 <section class="level4" id="server">
@@ -712,6 +717,7 @@ user2:password2</code></pre>
 <p>The backend that is used to store data.</p>
 <p>Available backends:</p>
 <p><code>multifilesystem</code> : Stores the data in the filesystem.</p>
+<p><code>multifilesystem_nolock</code> : The <code>multifilesystem</code> backend without file-based locking. Must only be used with a single process.</p>
 <p>Default: <code>multifilesystem</code></p>
 </section>
 <section class="level5" id="filesystem_folder">
@@ -771,7 +777,7 @@ user2:password2</code></pre>
 <li><a href="https://www.mozilla.org/thunderbird/">Mozilla Thunderbird</a> with <a href="https://addons.mozilla.org/thunderbird/addon/cardbook/">CardBook</a> and <a href="https://www.mozilla.org/projects/calendar/">Lightning</a></li>
 <li><a href="https://www.inf-it.com/open-source/clients/infcloud/">InfCloud</a>, <a href="https://www.inf-it.com/open-source/clients/caldavzap/">CalDavZAP</a> and <a href="https://www.inf-it.com/open-source/clients/carddavmate/">CardDavMATE</a></li>
 </ul>
-<p>Many clients do not support the creation of new calendars and address books. You can use Radicale's web interface (e.g. http://localhost:5232) to create and manage address books and calendars.</p>
+<p>Many clients do not support the creation of new calendars and address books. You can use Radicale's web interface (e.g. <a href="http://localhost:5232">http://localhost:5232</a>) to create and manage address books and calendars.</p>
 <p>In some clients you can just enter the URL of the Radicale server (e.g. <code>http://localhost:5232</code>) and your user name. In others, you have to enter the URL of the collection directly (e.g. <code>http://localhost:5232/user/calendar</code>).</p>
 <section class="level4" id="davx⁵">
 <h4>DAVx⁵ <a class="headerlink" href="#davx⁵">&para;</a></h4>
@@ -839,7 +845,7 @@ user2:password2</code></pre>
 <span id="cb33-14"><a aria-hidden="true" href="#cb33-14" tabindex="-1"></a><span class="st">&lt;/create&gt;'</span></span></code></pre></div>
 <p>The collection <code>/USERNAME</code> will be created automatically, when the user authenticates to Radicale for the first time. Clients with automatic discovery of collections will only show calendars and address books that are direct children of the path <code>/USERNAME/</code>.</p>
 <p>Delete the collections by running something like:</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb34-1"><a aria-hidden="true" href="#cb34-1" tabindex="-1"></a><span class="ex">$</span> curl <span class="at">-u</span> user <span class="at">-X</span> DELETE <span class="st">'http://localhost:5232/user/calendar'</span></span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb34-1"><a aria-hidden="true" href="#cb34-1" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-u</span> user <span class="at">-X</span> DELETE <span class="st">'http://localhost:5232/user/calendar'</span></span></code></pre></div>
 </section>
 </section>
 <section class="level3" id="authentication-and-rights">
@@ -939,33 +945,35 @@ user2:password2</code></pre>
 <p>Here is a simple overview of the global architecture for reaching a calendar or an address book through network:</p>
 <div class="tableContainer"><table>
 <thead>
-<tr>
+<tr class="header">
 <th>Part</th>
 <th>Layer</th>
 <th>Protocol or Format</th>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td rowspan="2">Server</td>
+<tr class="odd">
+<td>Server</td>
 <td>Calendar/Contact Storage</td>
 <td>iCal/vCard</td>
 </tr>
-<tr>
+<tr class="even">
+<td>''</td>
 <td>Calendar/Contact Server</td>
 <td>CalDAV/CardDAV Server</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>Transfer</td>
 <td>Network</td>
 <td>CalDAV/CardDAV (HTTP + TLS)</td>
 </tr>
-<tr>
-<td rowspan="2">Client</td>
+<tr class="even">
+<td>Client</td>
 <td>Calendar/Contact Client</td>
 <td>CalDAV/CardDAV Client</td>
 </tr>
-<tr>
+<tr class="odd">
+<td>''</td>
 <td>GUI</td>
 <td>Terminal, GTK, Web interface, etc.</td>
 </tr>
@@ -1087,12 +1095,12 @@ user2:password2</code></pre>
 <section class="level4" id="pypi">
 <h4>PyPI <a class="headerlink" href="#pypi">&para;</a></h4>
 <p>Radicale is <a href="https://pypi.python.org/pypi/Radicale/">available on PyPI</a>. To install, just type as superuser:</p>
-<pre><code>$ python3 -m pip install --upgrade radicale</code></pre>
+<div class="sourceCode" id="cb44"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb44-1"><a aria-hidden="true" href="#cb44-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip install <span class="at">--upgrade</span> radicale</span></code></pre></div>
 </section>
 <section class="level4" id="git-repository">
 <h4>Git Repository <a class="headerlink" href="#git-repository">&para;</a></h4>
 <p>If you want the development version of Radicale, take a look at the <a href="https://github.com/Kozea/Radicale/">git repository on GitHub</a>, or install it directly with:</p>
-<pre><code>$ python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz</code></pre>
+<div class="sourceCode" id="cb45"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb45-1"><a aria-hidden="true" href="#cb45-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip install <span class="at">--upgrade</span> https://github.com/Kozea/Radicale/archive/master.tar.gz</span></code></pre></div>
 <p>You can also download the content of the repository as an <a href="https://github.com/Kozea/Radicale/tarball/master">archive</a>.</p>
 </section>
 <section class="level4" id="source-packages">
