@@ -870,19 +870,15 @@ address books.
 
 #### Thunderbird
 
-##### CardBook
+Add a new calendar on the network. Enter your username and the URL of the
+Radicale server (e.g. `http://localhost:5232`). After asking for your password,
+it will list the existing calendars.
 
-Add a new address book on the network with CardDAV. You have to enter the full
-URL of the collection (e.g. `http://localhost:5232/user/addressbook`) and
-your user name.
+##### Adress books with CardBook add-on
 
-##### Lightning
-
-Add a new calendar on the network with `CalDAV`. (Don't use `iCalendar (ICS)`!)
-You have to enter the full URL of the collection (e.g.
-`http://localhost:5232/user/calendar`). If you want to add calendars from
-different users on the same server, you can specify the user name in the URL
-(e.g. `http://user@localhost...`)
+Add a new address book on the network with CardDAV. Enter the URL of the
+Radicale server (e.g. `http://localhost:5232`) and your username and password.
+It will list your existing address books.
 
 #### InfCloud, CalDavZAP and CardDavMATE
 
