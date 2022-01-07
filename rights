@@ -18,7 +18,7 @@
 #collection:
 #permissions: R
 
-# Allow reading and writing principal collection (same as user name)
+# Allow reading and writing principal collection (same as username)
 #[principal]
 #user: .+
 #collection: {user}

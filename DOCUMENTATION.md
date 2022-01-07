@@ -48,7 +48,7 @@ go right now and play a bit with Radicale!
 When everything works, you can get a [client](#supported-clients)
 and start creating calendars and address books. The server **only** binds to
 localhost (is **not** reachable over the network) and you can log in with any
-user name and password. If Radicale fits your needs, it may be time for
+username and password. If Radicale fits your needs, it may be time for
 [some basic configuration](#basic-configuration).
 
 Follow one of the chapters below depending on your operating system.
@@ -110,10 +110,10 @@ All configuration options are described in detail in the
 
 #### Authentication
 
-In its default configuration Radicale doesn't check user names or passwords.
+In its default configuration Radicale doesn't check usernames or passwords.
 If the server is reachable over a network, you should change this.
 
-First a `users` file with all user names and passwords must be created.
+First a `users` file with all usernames and passwords must be created.
 It can be stored in the same directory as the configuration file.
 
 ##### The secure way
@@ -144,7 +144,7 @@ htpasswd_encryption = md5
 
 ##### The simple but insecure way
 
-Create the `users` file by hand with lines containing the user name and
+Create the `users` file by hand with lines containing the username and
 password separated by `:`. Example:
 
 ```htpasswd
@@ -376,7 +376,7 @@ incorrect authentication attempts. Connections are terminated after a timeout.
 
 Set the configuration option `type` in the `auth` section to
 `http_x_remote_user`.
-Radicale uses the user name provided in the `X-Remote-User` HTTP header and
+Radicale uses the username provided in the `X-Remote-User` HTTP header and
 disables HTTP authentication.
 
 Example **nginx** configuration:
@@ -500,7 +500,7 @@ gunicorn --bind '127.0.0.1:5232' --env 'RADICALE_CONFIG=/etc/radicale/config' \
 #### Manage user accounts with the WSGI server
 
 Set the configuration option `type` in the `auth` section to `remote_user`.
-Radicale uses the user name provided by the WSGI server and disables
+Radicale uses the username provided by the WSGI server and disables
 authentication over HTTP.
 
 ### Versioning with Git
@@ -623,7 +623,7 @@ Default: `/etc/ssl/radicale.key.pem`
 Path to the CA certificate for validating client certificates. This can be used
 to secure TCP traffic between Radicale and a reverse proxy. If you want to
 authenticate users with client-side certificates, you also have to write an
-authentication plugin that extracts the user name from the certificate.
+authentication plugin that extracts the username from the certificate.
 
 Default:
 
@@ -658,13 +658,13 @@ Available backends:
   to store usernames and passwords.
 
 `remote_user`
-: Takes the user name from the `REMOTE_USER` environment variable and disables
-  HTTP authentication. This can be used to provide the user name from a WSGI
+: Takes the username from the `REMOTE_USER` environment variable and disables
+  HTTP authentication. This can be used to provide the username from a WSGI
   server.
 
 `http_x_remote_user`
-: Takes the user name from the `X-Remote-User` HTTP header and disables HTTP
-  authentication. This can be used to provide the user name from a reverse
+: Takes the username from the `X-Remote-User` HTTP header and disables HTTP
+  authentication. This can be used to provide the username from a reverse
   proxy.
 
 Default: `none`
@@ -848,14 +848,14 @@ You can use Radicale's web interface
 (e.g. <http://localhost:5232>) to create and manage address books and calendars.
 
 In some clients you can just enter the URL of the Radicale server
-(e.g. `http://localhost:5232`) and your user name. In others, you have to
+(e.g. `http://localhost:5232`) and your username. In others, you have to
 enter the URL of the collection directly
 (e.g. `http://localhost:5232/user/calendar`).
 
 #### DAVx⁵
 
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
-user name. DAVx⁵ will show all existing calendars and address books and you
+username. DAVx⁵ will show all existing calendars and address books and you
 can create new.
 
 #### GNOME Calendar, Contacts and Evolution
@@ -865,7 +865,7 @@ and address books directly, but you can add them in **Evolution**.
 
 In **Evolution** add a new calendar and address book respectively with WebDAV.
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
-user name. Clicking on the search button will list the existing calendars and
+username. Clicking on the search button will list the existing calendars and
 address books.
 
 #### Thunderbird
@@ -975,7 +975,7 @@ user: .+
 collection:
 permissions: R
 
-# Allow reading and writing principal collection (same as user name)
+# Allow reading and writing principal collection (same as username)
 [principal]
 user: .+
 collection: {user}
@@ -991,10 +991,10 @@ permissions: rw
 
 The titles of the sections are ignored (but must be unique). The keys `user`
 and `collection` contain regular expressions, that are matched against the
-user name and the path of the collection. Permissions from the first
+username and the path of the collection. Permissions from the first
 matching section are used. If no section matches, access gets denied.
 
-The user name is empty for anonymous users. Therefore, the regex `.+` only
+The username is empty for anonymous users. Therefore, the regex `.+` only
 matches authenticated users and `.*` matches everyone (including anonymous
 users).
 
