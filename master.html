@@ -262,7 +262,7 @@
 <section class="level3" id="simple-5-minute-setup">
 <h3>Simple 5-minute setup <a class="headerlink" href="#simple-5-minute-setup">&para;</a></h3>
 <p>You want to try Radicale but only have 5 minutes free in your calendar? Let's go right now and play a bit with Radicale!</p>
-<p>When everything works, you can get a <a href="#supported-clients">client</a> and start creating calendars and address books. The server <strong>only</strong> binds to localhost (is <strong>not</strong> reachable over the network) and you can log in with any user name and password. If Radicale fits your needs, it may be time for <a href="#basic-configuration">some basic configuration</a>.</p>
+<p>When everything works, you can get a <a href="#supported-clients">client</a> and start creating calendars and address books. The server <strong>only</strong> binds to localhost (is <strong>not</strong> reachable over the network) and you can log in with any username and password. If Radicale fits your needs, it may be time for <a href="#basic-configuration">some basic configuration</a>.</p>
 <p>Follow one of the chapters below depending on your operating system.</p>
 <section class="level4" id="linux--bsd">
 <h4>Linux / *BSD <a class="headerlink" href="#linux--bsd">&para;</a></h4>
@@ -291,8 +291,8 @@
 <p>All configuration options are described in detail in the <a href="#configuration">Configuration</a> section.</p>
 <section class="level4" id="authentication">
 <h4>Authentication <a class="headerlink" href="#authentication">&para;</a></h4>
-<p>In its default configuration Radicale doesn't check user names or passwords. If the server is reachable over a network, you should change this.</p>
-<p>First a <code>users</code> file with all user names and passwords must be created. It can be stored in the same directory as the configuration file.</p>
+<p>In its default configuration Radicale doesn't check usernames or passwords. If the server is reachable over a network, you should change this.</p>
+<p>First a <code>users</code> file with all usernames and passwords must be created. It can be stored in the same directory as the configuration file.</p>
 <section class="level5" id="the-secure-way">
 <h5>The secure way <a class="headerlink" href="#the-secure-way">&para;</a></h5>
 <p>The <code>users</code> file can be created and managed with <a href="https://httpd.apache.org/docs/current/programs/htpasswd.html">htpasswd</a>:</p>
@@ -313,7 +313,7 @@
 </section>
 <section class="level5" id="the-simple-but-insecure-way">
 <h5>The simple but insecure way <a class="headerlink" href="#the-simple-but-insecure-way">&para;</a></h5>
-<p>Create the <code>users</code> file by hand with lines containing the user name and password separated by <code>:</code>. Example:</p>
+<p>Create the <code>users</code> file by hand with lines containing the username and password separated by <code>:</code>. Example:</p>
 <pre class="htpasswd"><code>user1:password1
 user2:password2</code></pre>
 <p>Authentication can be enabled with the following configuration:</p>
@@ -474,7 +474,7 @@ user2:password2</code></pre>
 <p>Be reminded that Radicale's default configuration enforces limits on the maximum number of parallel connections, the maximum file size and the rate of incorrect authentication attempts. Connections are terminated after a timeout.</p>
 <section class="level4" id="manage-user-accounts-with-the-reverse-proxy">
 <h4>Manage user accounts with the reverse proxy <a class="headerlink" href="#manage-user-accounts-with-the-reverse-proxy">&para;</a></h4>
-<p>Set the configuration option <code>type</code> in the <code>auth</code> section to <code>http_x_remote_user</code>. Radicale uses the user name provided in the <code>X-Remote-User</code> HTTP header and disables HTTP authentication.</p>
+<p>Set the configuration option <code>type</code> in the <code>auth</code> section to <code>http_x_remote_user</code>. Radicale uses the username provided in the <code>X-Remote-User</code> HTTP header and disables HTTP authentication.</p>
 <p>Example <strong>nginx</strong> configuration:</p>
 <pre class="nginx"><code>location /radicale/ {
     proxy_pass           http://localhost:5232/;
@@ -557,7 +557,7 @@ user2:password2</code></pre>
 <span id="cb25-2"><a aria-hidden="true" href="#cb25-2" tabindex="-1"></a>         <span class="at">--workers</span> 8 radicale</span></code></pre></div>
 <section class="level4" id="manage-user-accounts-with-the-wsgi-server">
 <h4>Manage user accounts with the WSGI server <a class="headerlink" href="#manage-user-accounts-with-the-wsgi-server">&para;</a></h4>
-<p>Set the configuration option <code>type</code> in the <code>auth</code> section to <code>remote_user</code>. Radicale uses the user name provided by the WSGI server and disables authentication over HTTP.</p>
+<p>Set the configuration option <code>type</code> in the <code>auth</code> section to <code>remote_user</code>. Radicale uses the username provided by the WSGI server and disables authentication over HTTP.</p>
 </section>
 </section>
 <section class="level3" id="versioning-with-git">
@@ -636,7 +636,7 @@ user2:password2</code></pre>
 </section>
 <section class="level5" id="certificate_authority">
 <h5>certificate_authority <a class="headerlink" href="#certificate_authority">&para;</a></h5>
-<p>Path to the CA certificate for validating client certificates. This can be used to secure TCP traffic between Radicale and a reverse proxy. If you want to authenticate users with client-side certificates, you also have to write an authentication plugin that extracts the user name from the certificate.</p>
+<p>Path to the CA certificate for validating client certificates. This can be used to secure TCP traffic between Radicale and a reverse proxy. If you want to authenticate users with client-side certificates, you also have to write an authentication plugin that extracts the username from the certificate.</p>
 <p>Default:</p>
 </section>
 </section>
@@ -661,8 +661,8 @@ user2:password2</code></pre>
 <p>Available backends:</p>
 <p><code>none</code> : Just allows all usernames and passwords.</p>
 <p><code>htpasswd</code> : Use an <a href="https://httpd.apache.org/docs/current/programs/htpasswd.html">Apache htpasswd file</a> to store usernames and passwords.</p>
-<p><code>remote_user</code> : Takes the user name from the <code>REMOTE_USER</code> environment variable and disables HTTP authentication. This can be used to provide the user name from a WSGI server.</p>
-<p><code>http_x_remote_user</code> : Takes the user name from the <code>X-Remote-User</code> HTTP header and disables HTTP authentication. This can be used to provide the user name from a reverse proxy.</p>
+<p><code>remote_user</code> : Takes the username from the <code>REMOTE_USER</code> environment variable and disables HTTP authentication. This can be used to provide the username from a WSGI server.</p>
+<p><code>http_x_remote_user</code> : Takes the username from the <code>X-Remote-User</code> HTTP header and disables HTTP authentication. This can be used to provide the username from a reverse proxy.</p>
 <p>Default: <code>none</code></p>
 </section>
 <section class="level5" id="htpasswd_filename">
@@ -778,25 +778,22 @@ user2:password2</code></pre>
 <li><a href="https://www.inf-it.com/open-source/clients/infcloud/">InfCloud</a>, <a href="https://www.inf-it.com/open-source/clients/caldavzap/">CalDavZAP</a> and <a href="https://www.inf-it.com/open-source/clients/carddavmate/">CardDavMATE</a></li>
 </ul>
 <p>Many clients do not support the creation of new calendars and address books. You can use Radicale's web interface (e.g. <a href="http://localhost:5232">http://localhost:5232</a>) to create and manage address books and calendars.</p>
-<p>In some clients you can just enter the URL of the Radicale server (e.g. <code>http://localhost:5232</code>) and your user name. In others, you have to enter the URL of the collection directly (e.g. <code>http://localhost:5232/user/calendar</code>).</p>
+<p>In some clients you can just enter the URL of the Radicale server (e.g. <code>http://localhost:5232</code>) and your username. In others, you have to enter the URL of the collection directly (e.g. <code>http://localhost:5232/user/calendar</code>).</p>
 <section class="level4" id="davx⁵">
 <h4>DAVx⁵ <a class="headerlink" href="#davx⁵">&para;</a></h4>
-<p>Enter the URL of the Radicale server (e.g. <code>http://localhost:5232</code>) and your user name. DAVx⁵ will show all existing calendars and address books and you can create new.</p>
+<p>Enter the URL of the Radicale server (e.g. <code>http://localhost:5232</code>) and your username. DAVx⁵ will show all existing calendars and address books and you can create new.</p>
 </section>
 <section class="level4" id="gnome-calendar-contacts-and-evolution">
 <h4>GNOME Calendar, Contacts and Evolution <a class="headerlink" href="#gnome-calendar-contacts-and-evolution">&para;</a></h4>
 <p><strong>GNOME Calendar</strong> and <strong>Contacts</strong> do not support adding WebDAV calendars and address books directly, but you can add them in <strong>Evolution</strong>.</p>
-<p>In <strong>Evolution</strong> add a new calendar and address book respectively with WebDAV. Enter the URL of the Radicale server (e.g. <code>http://localhost:5232</code>) and your user name. Clicking on the search button will list the existing calendars and address books.</p>
+<p>In <strong>Evolution</strong> add a new calendar and address book respectively with WebDAV. Enter the URL of the Radicale server (e.g. <code>http://localhost:5232</code>) and your username. Clicking on the search button will list the existing calendars and address books.</p>
 </section>
 <section class="level4" id="thunderbird">
 <h4>Thunderbird <a class="headerlink" href="#thunderbird">&para;</a></h4>
-<section class="level5" id="cardbook">
-<h5>CardBook <a class="headerlink" href="#cardbook">&para;</a></h5>
-<p>Add a new address book on the network with CardDAV. You have to enter the full URL of the collection (e.g. <code>http://localhost:5232/user/addressbook</code>) and your user name.</p>
-</section>
-<section class="level5" id="lightning">
-<h5>Lightning <a class="headerlink" href="#lightning">&para;</a></h5>
-<p>Add a new calendar on the network with <code>CalDAV</code>. (Don't use <code>iCalendar (ICS)</code>!) You have to enter the full URL of the collection (e.g. <code>http://localhost:5232/user/calendar</code>). If you want to add calendars from different users on the same server, you can specify the user name in the URL (e.g. <code>http://user@localhost...</code>)</p>
+<p>Add a new calendar on the network. Enter your username and the URL of the Radicale server (e.g. <code>http://localhost:5232</code>). After asking for your password, it will list the existing calendars.</p>
+<section class="level5" id="adress-books-with-cardbook-add-on">
+<h5>Adress books with CardBook add-on <a class="headerlink" href="#adress-books-with-cardbook-add-on">&para;</a></h5>
+<p>Add a new address book on the network with CardDAV. Enter the URL of the Radicale server (e.g. <code>http://localhost:5232</code>) and your username and password. It will list your existing address books.</p>
 </section>
 </section>
 <section class="level4" id="infcloud-caldavzap-and-carddavmate">
@@ -859,7 +856,7 @@ user2:password2</code></pre>
 <span id="cb35-4"><a aria-hidden="true" href="#cb35-4" tabindex="-1"></a><span class="dt">collection:</span></span>
 <span id="cb35-5"><a aria-hidden="true" href="#cb35-5" tabindex="-1"></a><span class="dt">permissions: R</span></span>
 <span id="cb35-6"><a aria-hidden="true" href="#cb35-6" tabindex="-1"></a></span>
-<span id="cb35-7"><a aria-hidden="true" href="#cb35-7" tabindex="-1"></a><span class="co"># Allow reading and writing principal collection (same as user name)</span></span>
+<span id="cb35-7"><a aria-hidden="true" href="#cb35-7" tabindex="-1"></a><span class="co"># Allow reading and writing principal collection (same as username)</span></span>
 <span id="cb35-8"><a aria-hidden="true" href="#cb35-8" tabindex="-1"></a><span class="kw">[principal]</span></span>
 <span id="cb35-9"><a aria-hidden="true" href="#cb35-9" tabindex="-1"></a><span class="dt">user: .+</span></span>
 <span id="cb35-10"><a aria-hidden="true" href="#cb35-10" tabindex="-1"></a><span class="dt">collection: {user}</span></span>
@@ -871,8 +868,8 @@ user2:password2</code></pre>
 <span id="cb35-16"><a aria-hidden="true" href="#cb35-16" tabindex="-1"></a><span class="dt">user: .+</span></span>
 <span id="cb35-17"><a aria-hidden="true" href="#cb35-17" tabindex="-1"></a><span class="dt">collection: {user}/</span><span class="kw">[^/]</span><span class="dt">+</span></span>
 <span id="cb35-18"><a aria-hidden="true" href="#cb35-18" tabindex="-1"></a><span class="dt">permissions: rw</span></span></code></pre></div>
-<p>The titles of the sections are ignored (but must be unique). The keys <code>user</code> and <code>collection</code> contain regular expressions, that are matched against the user name and the path of the collection. Permissions from the first matching section are used. If no section matches, access gets denied.</p>
-<p>The user name is empty for anonymous users. Therefore, the regex <code>.+</code> only matches authenticated users and <code>.*</code> matches everyone (including anonymous users).</p>
+<p>The titles of the sections are ignored (but must be unique). The keys <code>user</code> and <code>collection</code> contain regular expressions, that are matched against the username and the path of the collection. Permissions from the first matching section are used. If no section matches, access gets denied.</p>
+<p>The username is empty for anonymous users. Therefore, the regex <code>.+</code> only matches authenticated users and <code>.*</code> matches everyone (including anonymous users).</p>
 <p>The path of the collection is separated by <code>/</code> and has no leading or trailing <code>/</code>. Therefore, the path of the root collection is empty.</p>
 <p>In the <code>collection</code> regex you can use <code>{user}</code> and get groups from the <code>user</code> regex with <code>{0}</code>, <code>{1}</code>, etc.</p>
 <p>In consequence of the parameter substitution you have to write <code>{{</code> and <code>}}</code> if you want to use regular curly braces in the <code>user</code> and <code>collection</code> regexes.</p>
