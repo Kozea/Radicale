@@ -21,8 +21,7 @@
  * @const
  * @type {string}
  */
-const SERVER = (location.protocol + '//' + location.hostname +
-                (location.port ? ':' + location.port : ''));
+const SERVER = location.origin;
 
 /**
  * Path of the root collection on the server (must end with /)
