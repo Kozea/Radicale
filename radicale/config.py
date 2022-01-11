@@ -276,17 +276,18 @@ def load(paths: Optional[Iterable[Tuple[str, bool]]] = None
     for path, ignore_if_missing in paths:
         parser = RawConfigParser()
         config_source = "config file %r" % path
+        config: types.CONFIG
         try:
-            if not parser.read(path):
-                config = Configuration.SOURCE_MISSING
-                if not ignore_if_missing:
-                    raise RuntimeError("No such file: %r" % path)
-            else:
+            with open(path, "r") as f:
+                parser.read_file(f)
                 config = {s: {o: parser[s][o] for o in parser.options(s)}
                           for s in parser.sections()}
         except Exception as e:
-            raise RuntimeError("Failed to load %s: %s" % (config_source, e)
-                               ) from e
+            if isinstance(e, FileNotFoundError) and ignore_if_missing:
+                config = Configuration.SOURCE_MISSING
+            else:
+                raise RuntimeError("Failed to load %s: %s" % (config_source, e)
+                                   ) from e
         configuration.update(config, config_source)
     return configuration
 

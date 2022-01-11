@@ -56,8 +56,8 @@ class Rights(rights.BaseRights):
         escaped_user = re.escape(user)
         rights_config = configparser.ConfigParser()
         try:
-            if not rights_config.read(self._filename):
-                raise RuntimeError("No such file: %r" % self._filename)
+            with open(self._filename, "r") as f:
+                rights_config.read_file(f)
         except Exception as e:
             raise RuntimeError("Failed to load rights file %r: %s" %
                                (self._filename, e)) from e
