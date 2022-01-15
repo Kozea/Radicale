@@ -183,19 +183,12 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         logger.debug("Request headers:\n%s",
                      pprint.pformat(self._scrub_headers(environ)))
 
-        # Let reverse proxies overwrite SCRIPT_NAME
-        if "HTTP_X_SCRIPT_NAME" in environ:
-            # script_name must be removed from PATH_INFO by the client.
-            unsafe_base_prefix = environ["HTTP_X_SCRIPT_NAME"]
-            logger.debug("Script name overwritten by client: %r",
-                         unsafe_base_prefix)
-        else:
-            # SCRIPT_NAME is already removed from PATH_INFO, according to the
-            # WSGI specification.
-            unsafe_base_prefix = environ.get("SCRIPT_NAME", "")
-        # Sanitize base prefix
-        base_prefix = pathutils.sanitize_path(unsafe_base_prefix).rstrip("/")
-        logger.debug("Sanitized script name: %r", base_prefix)
+        # SCRIPT_NAME is already removed from PATH_INFO, according to the
+        # WSGI specification.
+        # Reverse proxies can overwrite SCRIPT_NAME with X-SCRIPT-NAME header
+        base_prefix = environ.get("HTTP_X_SCRIPT_NAME",
+                                  environ.get("SCRIPT_NAME", ""))
+        logger.debug("Base prefix: %r", base_prefix)
         # Sanitize request URI (a WSGI server indicates with an empty path,
         # that the URL targets the application root without a trailing slash)
         path = pathutils.sanitize_path(environ.get("PATH_INFO", ""))
