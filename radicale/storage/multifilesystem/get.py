@@ -21,8 +21,6 @@ import sys
 import time
 from typing import Iterable, Iterator, Optional, Tuple
 
-import vobject
-
 import radicale.item as radicale_item
 from radicale import pathutils
 from radicale.log import logger
@@ -93,8 +91,8 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                     cache_content = self._load_item_cache(href, cache_hash)
                 if cache_content is None:
                     try:
-                        vobject_items = list(vobject.readComponents(
-                            raw_text.decode(self._encoding)))
+                        vobject_items = radicale_item.read_components(
+                            raw_text.decode(self._encoding))
                         radicale_item.check_and_sanitize_items(
                             vobject_items, tag=self.tag)
                         vobject_item, = vobject_items
