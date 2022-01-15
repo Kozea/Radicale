@@ -141,7 +141,7 @@ class ApplicationPartPut(ApplicationBase):
         content_type = environ.get("CONTENT_TYPE", "").split(";",
                                                              maxsplit=1)[0]
         try:
-            vobject_items = list(vobject.readComponents(content or ""))
+            vobject_items = radicale_item.read_components(content or "")
         except Exception as e:
             logger.warning(
                 "Bad PUT request on %r: %s", path, e, exc_info=True)

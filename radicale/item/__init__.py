@@ -27,6 +27,7 @@ import binascii
 import contextlib
 import math
 import os
+import re
 import sys
 from datetime import datetime, timedelta
 from hashlib import sha256
@@ -40,6 +41,16 @@ from radicale import storage  # noqa:F401
 from radicale import pathutils
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
+
+
+def read_components(s: str) -> List[vobject.base.Component]:
+    """Wrapper for vobject.readComponents"""
+    # Workaround for bug in InfCloud
+    # PHOTO is a data URI
+    s = re.sub(r"^(PHOTO(?:;[^:\r\n]*)?;ENCODING=b(?:;[^:\r\n]*)?:)"
+               r"data:[^;,\r\n]*;base64,", r"\1", s,
+               flags=re.MULTILINE | re.IGNORECASE)
+    return list(vobject.readComponents(s))
 
 
 def predict_tag_of_parent_collection(

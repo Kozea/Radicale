@@ -139,6 +139,12 @@ permissions: RrWw""")
         _, answer = self.get(path)
         assert "UID:contact1" in answer
 
+    def test_add_contact_photo_with_data_uri(self) -> None:
+        """Test workaround for broken PHOTO data from InfCloud"""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("contact_photo_with_data_uri.vcf")
+        self.put("/contacts.vcf/contact.vcf", contact)
+
     def test_add_contact_without_uid(self) -> None:
         """Add a contact without UID."""
         self.create_addressbook("/contacts.vcf/")
