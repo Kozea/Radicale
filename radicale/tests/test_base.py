@@ -382,8 +382,9 @@ permissions: RrWw""")
         assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
 
     def test_head(self) -> None:
-        status, _, _ = self.request("HEAD", "/")
+        status, headers, answer = self.request("HEAD", "/")
         assert status == 302
+        assert int(headers.get("Content-Length", "0")) > 0 and not answer
 
     def test_options(self) -> None:
         status, headers, _ = self.request("OPTIONS", "/")
