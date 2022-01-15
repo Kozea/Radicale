@@ -27,5 +27,4 @@ class ApplicationPartHead(ApplicationPartGet, ApplicationBase):
     def do_HEAD(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
                 user: str) -> types.WSGIResponse:
         """Manage HEAD request."""
-        status, headers, _ = self.do_GET(environ, base_prefix, path, user)
-        return status, headers, None
+        return self.do_GET(environ, base_prefix, path, user)

@@ -121,6 +121,9 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
     def _handle_request(self, environ: types.WSGIEnviron
                         ) -> _IntermediateResponse:
+        time_begin = datetime.datetime.now()
+        request_method = environ["REQUEST_METHOD"].upper()
+
         """Manage a request."""
         def response(status: int, headers: types.WSGIResponseHeaders,
                      answer: Union[None, str, bytes]) -> _IntermediateResponse:
@@ -144,7 +147,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     headers["Content-Encoding"] = "gzip"
 
                 headers["Content-Length"] = str(len(answer))
-                answers.append(answer)
+                if request_method != "HEAD":
+                    answers.append(answer)
 
             # Add extra headers set in configuration
             headers.update(self._extra_headers)
@@ -161,8 +165,6 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             # Return response content
             return status_text, list(headers.items()), answers
 
-        time_begin = datetime.datetime.now()
-        request_method = environ["REQUEST_METHOD"].upper()
         unsafe_path = environ.get("PATH_INFO", "")
         remote_host = "unknown"
         if environ.get("REMOTE_HOST"):
