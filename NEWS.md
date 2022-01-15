@@ -1,5 +1,14 @@
 # News
 
+## master
+
+* Workaround for contact photo bug in InfCloud
+* Redirect GET and HEAD requests to sanitized path
+* Set `Content-Length` header for HEAD requests
+* Never send body for HEAD requests
+* Improve error messages for `from_file` rights backend
+* Don't sanitize WSGI script name
+
 ## 3.1.0
 
 * Single `<D:propstat>` element in PROPPATCH response
