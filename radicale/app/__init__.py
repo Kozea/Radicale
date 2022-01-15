@@ -161,6 +161,9 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             # Return response content
             return status_text, list(headers.items()), answers
 
+        time_begin = datetime.datetime.now()
+        request_method = environ["REQUEST_METHOD"].upper()
+        unsafe_path = environ.get("PATH_INFO", "")
         remote_host = "unknown"
         if environ.get("REMOTE_HOST"):
             remote_host = repr(environ["REMOTE_HOST"])
@@ -175,11 +178,9 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         depthinfo = ""
         if environ.get("HTTP_DEPTH"):
             depthinfo = " with depth %r" % environ["HTTP_DEPTH"]
-        time_begin = datetime.datetime.now()
-        logger.info(
-            "%s request for %r%s received from %s%s",
-            environ["REQUEST_METHOD"], environ.get("PATH_INFO", ""), depthinfo,
-            remote_host, remote_useragent)
+        logger.info("%s request for %r%s received from %s%s",
+                    request_method, unsafe_path, depthinfo,
+                    remote_host, remote_useragent)
         logger.debug("Request headers:\n%s",
                      pprint.pformat(self._scrub_headers(environ)))
 
@@ -191,12 +192,19 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         logger.debug("Base prefix: %r", base_prefix)
         # Sanitize request URI (a WSGI server indicates with an empty path,
         # that the URL targets the application root without a trailing slash)
-        path = pathutils.sanitize_path(environ.get("PATH_INFO", ""))
+        path = pathutils.sanitize_path(unsafe_path)
+        if unsafe_path != path and request_method in ["GET", "HEAD"]:
+            location = base_prefix + path
+            logger.info("Redirecting to sanitized path: %r ==> %r",
+                        base_prefix + unsafe_path, location)
+            return response(
+                client.MOVED_PERMANENTLY,
+                {"Location": location, "Content-Type": "text/plain"},
+                "Redirected to %s" % location)
         logger.debug("Sanitized path: %r", path)
 
         # Get function corresponding to method
-        function = getattr(
-            self, "do_%s" % environ["REQUEST_METHOD"].upper(), None)
+        function = getattr(self, "do_%s" % request_method, None)
         if not function:
             return response(*httputils.METHOD_NOT_ALLOWED)
 

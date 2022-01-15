@@ -28,7 +28,7 @@ const SERVER = location.origin;
  * @const
  * @type {string}
  */
-const ROOT_PATH = location.pathname.replace(new RegExp("/+[^/]+/*(/index\\.html?)?$"), "") + '/';
+const ROOT_PATH = (new URL("..", location.href)).pathname;
 
 /**
  * Regex to match and normalize color
