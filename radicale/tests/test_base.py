@@ -60,8 +60,15 @@ permissions: RrWw""")
         """GET request at "/" with SCRIPT_NAME."""
         _, answer = self.get("/", check=302, SCRIPT_NAME="/radicale")
         assert answer == "Redirected to .web"
-        _, answer = self.get("", check=302, SCRIPT_NAME="/radicale")
-        assert answer == "Redirected to radicale/.web"
+
+    def test_sanitized_path(self) -> None:
+        """GET request with unsanitized paths."""
+        for path, sane_path in [("//", "/"), ("", "/"), ("/a//b", "/a/b"),
+                                ("/a//b/", "/a/b/")]:
+            _, answer = self.get(path, check=301)
+            assert answer == "Redirected to %s" % sane_path
+            _, answer = self.get(path, check=301, SCRIPT_NAME="/radicale")
+            assert answer == "Redirected to /radicale%s" % sane_path
 
     def test_add_event(self) -> None:
         """Add an event."""
