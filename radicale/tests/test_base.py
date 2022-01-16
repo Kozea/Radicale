@@ -76,8 +76,7 @@ permissions: RrWw""")
         event = get_file_content("event1.ics")
         path = "/calendar.ics/event1.ics"
         self.put(path, event)
-        status, headers, answer = self.request("GET", path)
-        assert status == 200
+        _, headers, answer = self.request("GET", path, check=200)
         assert "ETag" in headers
         assert headers["Content-Type"] == "text/calendar; charset=utf-8"
         assert "VEVENT" in answer
@@ -98,7 +97,7 @@ permissions: RrWw""")
         event = get_file_content("event1.ics")
         self.put("/calendar.ics/event1.ics", event)
         status, answer = self.put(
-            "/calendar.ics/event1-duplicate.ics", event, check=False)
+            "/calendar.ics/event1-duplicate.ics", event, check=None)
         assert status in (403, 409)
         xml = DefusedET.fromstring(answer)
         assert xml.tag == xmlutils.make_clark("D:error")
@@ -116,8 +115,7 @@ permissions: RrWw""")
         todo = get_file_content("todo1.ics")
         path = "/calendar.ics/todo1.ics"
         self.put(path, todo)
-        status, headers, answer = self.request("GET", path)
-        assert status == 200
+        _, headers, answer = self.request("GET", path, check=200)
         assert "ETag" in headers
         assert headers["Content-Type"] == "text/calendar; charset=utf-8"
         assert "VTODO" in answer
@@ -130,8 +128,7 @@ permissions: RrWw""")
         contact = get_file_content("contact1.vcf")
         path = "/contacts.vcf/contact.vcf"
         self.put(path, contact)
-        status, headers, answer = self.request("GET", path)
-        assert status == 200
+        _, headers, answer = self.request("GET", path, check=200)
         assert "ETag" in headers
         assert headers["Content-Type"] == "text/vcard; charset=utf-8"
         assert "VCARD" in answer
@@ -174,7 +171,7 @@ permissions: RrWw""")
         event2 = get_file_content("event2.ics")
         path = "/calendar.ics/event1.ics"
         self.put(path, event1)
-        status, answer = self.put(path, event2, check=False)
+        status, answer = self.put(path, event2, check=None)
         assert status in (403, 409)
         xml = DefusedET.fromstring(answer)
         assert xml.tag == xmlutils.make_clark("D:error")
@@ -267,7 +264,7 @@ permissions: RrWw""")
     def test_mkcalendar_overwrite(self) -> None:
         """Try to overwrite an existing calendar."""
         self.mkcalendar("/calendar.ics/")
-        status, answer = self.mkcalendar("/calendar.ics/", check=False)
+        status, answer = self.mkcalendar("/calendar.ics/", check=None)
         assert status in (403, 409)
         xml = DefusedET.fromstring(answer)
         assert xml.tag == xmlutils.make_clark("D:error")
@@ -276,8 +273,7 @@ permissions: RrWw""")
 
     def test_mkcalendar_intermediate(self) -> None:
         """Try make a calendar in a unmapped collection."""
-        status, _ = self.mkcalendar("/unmapped/calendar.ics/", check=False)
-        assert status == 409
+        self.mkcalendar("/unmapped/calendar.ics/", check=409)
 
     def test_mkcol(self) -> None:
         """Make a collection."""
@@ -286,13 +282,11 @@ permissions: RrWw""")
     def test_mkcol_overwrite(self) -> None:
         """Try to overwrite an existing collection."""
         self.mkcol("/user/")
-        status = self.mkcol("/user/", check=False)
-        assert status == 405
+        self.mkcol("/user/", check=405)
 
     def test_mkcol_intermediate(self) -> None:
         """Try make a collection in a unmapped collection."""
-        status = self.mkcol("/unmapped/user/", check=False)
-        assert status == 409
+        self.mkcol("/unmapped/user/", check=409)
 
     def test_mkcol_make_calendar(self) -> None:
         """Make a calendar with additional props."""
@@ -317,9 +311,8 @@ permissions: RrWw""")
         path1 = "/calendar.ics/event1.ics"
         path2 = "/calendar.ics/event2.ics"
         self.put(path1, event)
-        status, _, _ = self.request(
-            "MOVE", path1, HTTP_DESTINATION=path2, HTTP_HOST="")
-        assert status == 201
+        self.request("MOVE", path1, check=201,
+                     HTTP_DESTINATION=path2, HTTP_HOST="")
         self.get(path1, check=404)
         self.get(path2)
 
@@ -331,9 +324,8 @@ permissions: RrWw""")
         path1 = "/calendar1.ics/event1.ics"
         path2 = "/calendar2.ics/event2.ics"
         self.put(path1, event)
-        status, _, _ = self.request(
-            "MOVE", path1, HTTP_DESTINATION=path2, HTTP_HOST="")
-        assert status == 201
+        self.request("MOVE", path1, check=201,
+                     HTTP_DESTINATION=path2, HTTP_HOST="")
         self.get(path1, check=404)
         self.get(path2)
 
@@ -362,12 +354,10 @@ permissions: RrWw""")
         path2 = "/calendar2.ics/event1.ics"
         self.put(path1, event)
         self.put(path2, event)
-        status, _, _ = self.request(
-            "MOVE", path1, HTTP_DESTINATION=path2, HTTP_HOST="")
-        assert status == 412
-        status, _, _ = self.request("MOVE", path1, HTTP_DESTINATION=path2,
-                                    HTTP_HOST="", HTTP_OVERWRITE="T")
-        assert status == 204
+        self.request("MOVE", path1, check=412,
+                     HTTP_DESTINATION=path2, HTTP_HOST="")
+        self.request("MOVE", path1, check=204,
+                     HTTP_DESTINATION=path2, HTTP_HOST="", HTTP_OVERWRITE="T")
 
     def test_move_between_colections_overwrite_uid_conflict(self) -> None:
         """Move a item to a collection which already contains the item with
@@ -388,13 +378,11 @@ permissions: RrWw""")
         assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
 
     def test_head(self) -> None:
-        status, headers, answer = self.request("HEAD", "/")
-        assert status == 302
+        _, headers, answer = self.request("HEAD", "/", check=302)
         assert int(headers.get("Content-Length", "0")) > 0 and not answer
 
     def test_options(self) -> None:
-        status, headers, _ = self.request("OPTIONS", "/")
-        assert status == 200
+        _, headers, _ = self.request("OPTIONS", "/", check=200)
         assert "DAV" in headers
 
     def test_delete_collection(self) -> None:
@@ -650,7 +638,7 @@ permissions: RrWw""")
             report = "addressbook-query"
         else:
             raise ValueError("Unsupported kind: %r" % kind)
-        status, _, = self.delete(path, check=False)
+        status, _, = self.delete(path, check=None)
         assert status in (200, 404)
         create_collection_fn(path)
         for i in items:
@@ -1439,9 +1427,8 @@ permissions: RrWw""")
         self.put(event1_path, event)
         sync_token, responses = self._report_sync_token(calendar_path)
         assert len(responses) == 1 and responses[event1_path] == 200
-        status, _, _ = self.request(
-            "MOVE", event1_path, HTTP_DESTINATION=event2_path, HTTP_HOST="")
-        assert status == 201
+        self.request("MOVE", event1_path, check=201,
+                     HTTP_DESTINATION=event2_path, HTTP_HOST="")
         sync_token, responses = self._report_sync_token(
             calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
@@ -1459,12 +1446,10 @@ permissions: RrWw""")
         self.put(event1_path, event)
         sync_token, responses = self._report_sync_token(calendar_path)
         assert len(responses) == 1 and responses[event1_path] == 200
-        status, _, _ = self.request(
-            "MOVE", event1_path, HTTP_DESTINATION=event2_path, HTTP_HOST="")
-        assert status == 201
-        status, _, _ = self.request(
-            "MOVE", event2_path, HTTP_DESTINATION=event1_path, HTTP_HOST="")
-        assert status == 201
+        self.request("MOVE", event1_path, check=201,
+                     HTTP_DESTINATION=event2_path, HTTP_HOST="")
+        self.request("MOVE", event2_path, check=201,
+                     HTTP_DESTINATION=event1_path, HTTP_HOST="")
         sync_token, responses = self._report_sync_token(
             calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
@@ -1518,7 +1503,7 @@ permissions: RrWw""")
         self.mkcalendar("/test/")
         for component in ("event", "todo", "journal"):
             event = get_file_content("%s1.ics" % component)
-            status, _ = self.delete("/test/test.ics", check=False)
+            status, _ = self.delete("/test/test.ics", check=None)
             assert status in (200, 404)
             self.put("/test/test.ics", event)
             _, responses = self.report("/test/", """\
@@ -1607,12 +1592,11 @@ permissions: RrWw""")
     def test_custom_headers(self) -> None:
         self.configure({"headers": {"test": "123"}})
         # Test if header is set on success
-        status, headers, _ = self.request("OPTIONS", "/")
-        assert status == 200
+        _, headers, _ = self.request("OPTIONS", "/", check=200)
         assert headers.get("test") == "123"
         # Test if header is set on failure
-        status, headers, _ = self.request("GET", "/.well-known/does not exist")
-        assert status == 404
+        _, headers, _ = self.request("GET", "/.well-known/does not exist",
+                                     check=404)
         assert headers.get("test") == "123"
 
     @pytest.mark.skipif(sys.version_info < (3, 6),

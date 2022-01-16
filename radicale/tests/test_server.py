@@ -97,7 +97,8 @@ class TestBaseServerRequests(BaseTest):
         super().teardown()
 
     def request(self, method: str, path: str, data: Optional[str] = None,
-                **kwargs) -> Tuple[int, Dict[str, str], str]:
+                check: Optional[int] = None, **kwargs
+                ) -> Tuple[int, Dict[str, str], str]:
         """Send a request."""
         login = kwargs.pop("login", None)
         if login is not None and not isinstance(login, str):
@@ -128,6 +129,8 @@ class TestBaseServerRequests(BaseTest):
                 with self.opener.open(req) as f:
                     return f.getcode(), dict(f.info()), f.read().decode()
             except HTTPError as e:
+                assert check is None or e.code == check, "%d != %d" % (e.code,
+                                                                       check)
                 return e.code, dict(e.headers), e.read().decode()
             except URLError as e:
                 if not isinstance(e.reason, ConnectionRefusedError):
@@ -209,8 +212,7 @@ class TestBaseServerRequests(BaseTest):
             env={**os.environ, "PYTHONPATH": os.pathsep.join(sys.path)})
         try:
             status, headers, _ = self.request(
-                "GET", "/", is_alive_fn=lambda: p.poll() is None)
-            self._check_status(status, 302)
+                "GET", "/", check=302, is_alive_fn=lambda: p.poll() is None)
             for key in self.configuration.options("headers"):
                 assert headers.get(key) == self.configuration.get(
                     "headers", key)
