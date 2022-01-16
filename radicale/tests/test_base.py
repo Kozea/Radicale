@@ -53,10 +53,11 @@ permissions: RrWw""")
 
     def test_root(self) -> None:
         """GET request at "/"."""
-        _, answer = self.get("/", check=302)
+        status, headers, answer = self.request("GET", "/", check=302)
+        assert headers.get("Location") == ".web"
         assert answer == "Redirected to .web"
 
-    def test_script_name(self) -> None:
+    def test_root_script_name(self) -> None:
         """GET request at "/" with SCRIPT_NAME."""
         _, answer = self.get("/", check=302, SCRIPT_NAME="/radicale")
         assert answer == "Redirected to .web"
@@ -65,9 +66,12 @@ permissions: RrWw""")
         """GET request with unsanitized paths."""
         for path, sane_path in [("//", "/"), ("", "/"), ("/a//b", "/a/b"),
                                 ("/a//b/", "/a/b/")]:
-            _, answer = self.get(path, check=301)
+            _, headers, answer = self.request("GET", path, check=301)
+            assert headers.get("Location") == sane_path
             assert answer == "Redirected to %s" % sane_path
-            _, answer = self.get(path, check=301, SCRIPT_NAME="/radicale")
+            _, headers, answer = self.request("GET", path, check=301,
+                                              SCRIPT_NAME="/radicale")
+            assert headers.get("Location") == "/radicale%s" % sane_path
             assert answer == "Redirected to /radicale%s" % sane_path
 
     def test_add_event(self) -> None:
