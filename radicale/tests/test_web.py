@@ -26,8 +26,7 @@ class TestBaseWebRequests(BaseTest):
     """Test web plugin."""
 
     def test_internal(self) -> None:
-        status, headers, _ = self.request("GET", "/.web")
-        assert status == 302
+        _, headers, _ = self.request("GET", "/.web", check=302)
         assert headers.get("Location") == ".web/"
         _, answer = self.get("/.web/")
         assert answer

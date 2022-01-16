@@ -65,7 +65,8 @@ class BaseTest:
         shutil.rmtree(self.colpath)
 
     def request(self, method: str, path: str, data: Optional[str] = None,
-                **kwargs) -> Tuple[int, Dict[str, str], str]:
+                check: Optional[int] = None, **kwargs
+                ) -> Tuple[int, Dict[str, str], str]:
         """Send a request."""
         login = kwargs.pop("login", None)
         if login is not None and not isinstance(login, str):
@@ -92,13 +93,13 @@ class BaseTest:
         def start_response(status_: str, headers_: List[Tuple[str, str]]
                            ) -> None:
             nonlocal status, headers
-            status = status_
-            headers = headers_
+            status = int(status_.split()[0])
+            headers = dict(headers_)
         answers = list(self.application(environ, start_response))
         assert status is not None and headers is not None
+        assert check is None or status == check, "%d != %d" % (status, check)
 
-        return (int(status.split()[0]), dict(headers),
-                answers[0].decode() if answers else "")
+        return status, headers, answers[0].decode() if answers else ""
 
     @staticmethod
     def parse_responses(text: str) -> RESPONSES:
@@ -130,38 +131,30 @@ class BaseTest:
                 path_responses[href.text] = prop_respones
         return path_responses
 
-    @staticmethod
-    def _check_status(status: int, good_status: int,
-                      check: Union[bool, int] = True) -> bool:
-        if check is not False:
-            expected = good_status if check is True else check
-            assert status == expected, "%d != %d" % (status, expected)
-        return status == good_status
-
-    def get(self, path: str, check: Union[bool, int] = True, **kwargs
+    def get(self, path: str, check: Optional[int] = 200, **kwargs
             ) -> Tuple[int, str]:
         assert "data" not in kwargs
-        status, _, answer = self.request("GET", path, **kwargs)
-        self._check_status(status, 200, check)
+        status, _, answer = self.request("GET", path, check=check, **kwargs)
         return status, answer
 
-    def post(self, path: str, data: str = None, check: Union[bool, int] = True,
+    def post(self, path: str, data: str = None, check: Optional[int] = 200,
              **kwargs) -> Tuple[int, str]:
-        status, _, answer = self.request("POST", path, data, **kwargs)
-        self._check_status(status, 200, check)
+        status, _, answer = self.request("POST", path, data, check=check,
+                                         **kwargs)
         return status, answer
 
-    def put(self, path: str, data: str, check: Union[bool, int] = True,
+    def put(self, path: str, data: str, check: Optional[int] = 201,
             **kwargs) -> Tuple[int, str]:
-        status, _, answer = self.request("PUT", path, data, **kwargs)
-        self._check_status(status, 201, check)
+        status, _, answer = self.request("PUT", path, data, check=check,
+                                         **kwargs)
         return status, answer
 
     def propfind(self, path: str, data: Optional[str] = None,
-                 check: Union[bool, int] = True, **kwargs
+                 check: Optional[int] = 207, **kwargs
                  ) -> Tuple[int, RESPONSES]:
-        status, _, answer = self.request("PROPFIND", path, data, **kwargs)
-        if not self._check_status(status, 207, check):
+        status, _, answer = self.request("PROPFIND", path, data, check=check,
+                                         **kwargs)
+        if status < 200 or 300 <= status:
             return status, {}
         assert answer is not None
         responses = self.parse_responses(answer)
@@ -170,29 +163,31 @@ class BaseTest:
         return status, responses
 
     def proppatch(self, path: str, data: Optional[str] = None,
-                  check: Union[bool, int] = True, **kwargs
+                  check: Optional[int] = 207, **kwargs
                   ) -> Tuple[int, RESPONSES]:
-        status, _, answer = self.request("PROPPATCH", path, data, **kwargs)
-        if not self._check_status(status, 207, check):
+        status, _, answer = self.request("PROPPATCH", path, data, check=check,
+                                         **kwargs)
+        if status < 200 or 300 <= status:
             return status, {}
         assert answer is not None
         responses = self.parse_responses(answer)
         assert len(responses) == 1 and path in responses
         return status, responses
 
-    def report(self, path: str, data: str, check: Union[bool, int] = True,
+    def report(self, path: str, data: str, check: Optional[int] = 207,
                **kwargs) -> Tuple[int, RESPONSES]:
-        status, _, answer = self.request("REPORT", path, data, **kwargs)
-        if not self._check_status(status, 207, check):
+        status, _, answer = self.request("REPORT", path, data, check=check,
+                                         **kwargs)
+        if status < 200 or 300 <= status:
             return status, {}
         assert answer is not None
         return status, self.parse_responses(answer)
 
-    def delete(self, path: str, check: Union[bool, int] = True, **kwargs
+    def delete(self, path: str, check: Optional[int] = 200, **kwargs
                ) -> Tuple[int, RESPONSES]:
         assert "data" not in kwargs
-        status, _, answer = self.request("DELETE", path, **kwargs)
-        if not self._check_status(status, 200, check):
+        status, _, answer = self.request("DELETE", path, check=check, **kwargs)
+        if status < 200 or 300 <= status:
             return status, {}
         assert answer is not None
         responses = self.parse_responses(answer)
@@ -200,19 +195,18 @@ class BaseTest:
         return status, responses
 
     def mkcalendar(self, path: str, data: Optional[str] = None,
-                   check: Union[bool, int] = True, **kwargs
+                   check: Optional[int] = 201, **kwargs
                    ) -> Tuple[int, str]:
-        status, _, answer = self.request("MKCALENDAR", path, data, **kwargs)
-        self._check_status(status, 201, check)
+        status, _, answer = self.request("MKCALENDAR", path, data, check=check,
+                                         **kwargs)
         return status, answer
 
     def mkcol(self, path: str, data: Optional[str] = None,
-              check: Union[bool, int] = True, **kwargs) -> int:
-        status, _, _ = self.request("MKCOL", path, data, **kwargs)
-        self._check_status(status, 201, check)
+              check: Optional[int] = 201, **kwargs) -> int:
+        status, _, _ = self.request("MKCOL", path, data, check=check, **kwargs)
         return status
 
-    def create_addressbook(self, path: str, check: Union[bool, int] = True,
+    def create_addressbook(self, path: str, check: Optional[int] = 201,
                            **kwargs) -> int:
         assert "data" not in kwargs
         return self.mkcol(path, """\
