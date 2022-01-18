@@ -31,5 +31,5 @@ class Web(web.BaseWeb):
         assert path == "/.web" or path.startswith("/.web/")
         assert pathutils.sanitize_path(path) == path
         if path != "/.web":
-            return httputils.NOT_FOUND
+            return httputils.redirect(base_prefix + "/.web")
         return client.OK, {"Content-Type": "text/plain"}, "Radicale works!"
