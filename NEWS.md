@@ -3,7 +3,7 @@
 ## master
 
 * Workaround for contact photo bug in InfCloud
-* Redirect GET and HEAD requests to sanitized path
+* Redirect GET and HEAD requests under `/.web` to sanitized path
 * Set `Content-Length` header for HEAD requests
 * Never send body for HEAD requests
 * Improve error messages for `from_file` rights backend
