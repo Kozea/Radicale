@@ -1,4 +1,4 @@
-# News
+# Changelog
 
 ## master
 
