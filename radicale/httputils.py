@@ -23,10 +23,12 @@ Helper functions for HTTP.
 """
 
 import contextlib
+import os
+import time
 from http import client
-from typing import List, cast
+from typing import List, Mapping, cast
 
-from radicale import config, types
+from radicale import config, pathutils, types
 from radicale.log import logger
 
 NOT_ALLOWED: types.WSGIResponse = (
@@ -66,6 +68,22 @@ INTERNAL_SERVER_ERROR: types.WSGIResponse = (
     "A server error occurred.  Please contact the administrator.")
 
 DAV_HEADERS: str = "1, 2, 3, calendar-access, addressbook, extended-mkcol"
+
+MIMETYPES: Mapping[str, str] = {
+    ".css": "text/css",
+    ".eot": "application/vnd.ms-fontobject",
+    ".gif": "image/gif",
+    ".html": "text/html",
+    ".js": "application/javascript",
+    ".manifest": "text/cache-manifest",
+    ".png": "image/png",
+    ".svg": "image/svg+xml",
+    ".ttf": "application/font-sfnt",
+    ".txt": "text/plain",
+    ".woff": "application/font-woff",
+    ".woff2": "font/woff2",
+    ".xml": "text/xml"}
+FALLBACK_MIMETYPE: str = "application/octet-stream"
 
 
 def decode_request(configuration: "config.Configuration",
@@ -120,3 +138,38 @@ def redirect(location: str, status: int = client.FOUND) -> types.WSGIResponse:
     return (status,
             {"Location": location, "Content-Type": "text/plain"},
             "Redirected to %s" % location)
+
+
+def serve_folder(folder: str, base_prefix: str, path: str,
+                 path_prefix: str = "/.web", index_file: str = "index.html",
+                 mimetypes: Mapping[str, str] = MIMETYPES,
+                 fallback_mimetype: str = FALLBACK_MIMETYPE,
+                 ) -> types.WSGIResponse:
+    if path != path_prefix and not path.startswith(path_prefix):
+        raise ValueError("path must start with path_prefix: %r --> %r" %
+                         (path_prefix, path))
+    assert pathutils.sanitize_path(path) == path
+    try:
+        filesystem_path = pathutils.path_to_filesystem(
+            folder, path[len(path_prefix):].strip("/"))
+    except ValueError as e:
+        logger.debug("Web content with unsafe path %r requested: %s",
+                     path, e, exc_info=True)
+        return NOT_FOUND
+    if os.path.isdir(filesystem_path) and not path.endswith("/"):
+        return redirect(base_prefix + path + "/")
+    if os.path.isdir(filesystem_path) and index_file:
+        filesystem_path = os.path.join(filesystem_path, index_file)
+    if not os.path.isfile(filesystem_path):
+        return NOT_FOUND
+    content_type = MIMETYPES.get(
+        os.path.splitext(filesystem_path)[1].lower(), FALLBACK_MIMETYPE)
+    with open(filesystem_path, "rb") as f:
+        answer = f.read()
+        last_modified = time.strftime(
+            "%a, %d %b %Y %H:%M:%S GMT",
+            time.gmtime(os.fstat(f.fileno()).st_mtime))
+    headers = {
+        "Content-Type": content_type,
+        "Last-Modified": last_modified}
+    return client.OK, headers, answer
