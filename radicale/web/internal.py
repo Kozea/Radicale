@@ -27,7 +27,6 @@ Features:
 
 
 import os
-import posixpath
 import time
 from http import client
 from typing import Mapping
@@ -75,7 +74,7 @@ class Web(web.BaseWeb):
                          path, e, exc_info=True)
             return httputils.NOT_FOUND
         if os.path.isdir(filesystem_path) and not path.endswith("/"):
-            return httputils.redirect(posixpath.basename(path) + "/")
+            return httputils.redirect(base_prefix + path + "/")
         if os.path.isdir(filesystem_path):
             filesystem_path = os.path.join(filesystem_path, "index.html")
         if not os.path.isfile(filesystem_path):
