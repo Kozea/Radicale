@@ -123,6 +123,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                         ) -> _IntermediateResponse:
         time_begin = datetime.datetime.now()
         request_method = environ["REQUEST_METHOD"].upper()
+        unsafe_path = environ.get("PATH_INFO", "")
 
         """Manage a request."""
         def response(status: int, headers: types.WSGIResponseHeaders,
@@ -157,15 +158,12 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             time_end = datetime.datetime.now()
             status_text = "%d %s" % (
                 status, client.responses.get(status, "Unknown"))
-            logger.info(
-                "%s response status for %r%s in %.3f seconds: %s",
-                environ["REQUEST_METHOD"], environ.get("PATH_INFO", ""),
-                depthinfo, (time_end - time_begin).total_seconds(),
-                status_text)
+            logger.info("%s response status for %r%s in %.3f seconds: %s",
+                        request_method, unsafe_path, depthinfo,
+                        (time_end - time_begin).total_seconds(), status_text)
             # Return response content
             return status_text, list(headers.items()), answers
 
-        unsafe_path = environ.get("PATH_INFO", "")
         remote_host = "unknown"
         if environ.get("REMOTE_HOST"):
             remote_host = repr(environ["REMOTE_HOST"])
