@@ -1,6 +1,6 @@
 # Changelog
 
-## master
+## 3.1.1
 
 * Workaround for contact photo bug in InfCloud
 * Redirect GET and HEAD requests under `/.web` to sanitized path

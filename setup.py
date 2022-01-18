@@ -43,7 +43,7 @@ from setuptools import find_packages, setup
 
 # When the version is updated, a new section in the CHANGELOG.md file must be
 # added too.
-VERSION = "3.1.0"
+VERSION = "3.1.1"
 WEB_FILES = ["web/internal_data/css/icon.png",
              "web/internal_data/css/main.css",
              "web/internal_data/fn.js",
