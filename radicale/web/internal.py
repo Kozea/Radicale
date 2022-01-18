@@ -28,7 +28,9 @@ Features:
 import pkg_resources
 
 from radicale import config, httputils, types, web
-from radicale.httputils import FALLBACK_MIMETYPE, MIMETYPES  # noqa:F401
+
+MIMETYPES = httputils.MIMETYPES  # deprecated
+FALLBACK_MIMETYPE = httputils.FALLBACK_MIMETYPE  # deprecated
 
 
 class Web(web.BaseWeb):
