@@ -114,3 +114,9 @@ def read_request_body(configuration: "config.Configuration",
                              read_raw_request_body(configuration, environ))
     logger.debug("Request content:\n%s", content)
     return content
+
+
+def redirect(location: str, status: int = client.FOUND) -> types.WSGIResponse:
+    return (status,
+            {"Location": location, "Content-Type": "text/plain"},
+            "Redirected to %s" % location)

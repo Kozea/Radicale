@@ -62,10 +62,7 @@ class ApplicationPartGet(ApplicationBase):
         """Manage GET request."""
         # Redirect to .web if the root URL is requested
         if not pathutils.strip_path(path):
-            location = ".web"
-            return (client.FOUND,
-                    {"Location": location, "Content-Type": "text/plain"},
-                    "Redirected to %s" % location)
+            return httputils.redirect(".web")
         # Dispatch .web URL to web module
         if path == "/.web" or path.startswith("/.web/"):
             return self._web.get(environ, base_prefix, path, user)

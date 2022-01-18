@@ -197,10 +197,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             location = base_prefix + path
             logger.info("Redirecting to sanitized path: %r ==> %r",
                         base_prefix + unsafe_path, location)
-            return response(
-                client.MOVED_PERMANENTLY,
-                {"Location": location, "Content-Type": "text/plain"},
-                "Redirected to %s" % location)
+            return response(*httputils.redirect(
+                                location, client.MOVED_PERMANENTLY))
         logger.debug("Sanitized path: %r", path)
 
         # Get function corresponding to method
