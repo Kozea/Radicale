@@ -36,7 +36,7 @@ Want more? Check the [tutorials](#tutorials) and the
 #### What's New?
 
 Read the
-[changelog on GitHub.](https://github.com/Kozea/Radicale/blob/v3/NEWS.md)
+[changelog on GitHub.](https://github.com/Kozea/Radicale/blob/v3/CHANGELOG.md)
 
 ## Tutorials
 
