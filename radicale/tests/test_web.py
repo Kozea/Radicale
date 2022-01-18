@@ -36,7 +36,8 @@ class TestBaseWebRequests(BaseTest):
         self.configure({"web": {"type": "none"}})
         _, answer = self.get("/.web")
         assert answer
-        self.get("/.web/", check=404)
+        _, headers, _ = self.request("GET", "/.web/", check=302)
+        assert headers.get("Location") == "/.web"
         self.post("/.web", check=405)
 
     def test_custom(self) -> None:
