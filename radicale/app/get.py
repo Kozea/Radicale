@@ -60,11 +60,18 @@ class ApplicationPartGet(ApplicationBase):
     def do_GET(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
                user: str) -> types.WSGIResponse:
         """Manage GET request."""
-        # Redirect to .web if the root URL is requested
+        # Redirect to /.web if the root path is requested
         if not pathutils.strip_path(path):
-            return httputils.redirect(".web")
-        # Dispatch .web URL to web module
+            return httputils.redirect(base_prefix + "/.web")
         if path == "/.web" or path.startswith("/.web/"):
+            # Redirect to sanitized path for all subpaths of /.web
+            unsafe_path = environ.get("PATH_INFO", "")
+            if unsafe_path != path:
+                location = base_prefix + path
+                logger.info("Redirecting to sanitized path: %r ==> %r",
+                            base_prefix + unsafe_path, location)
+                return httputils.redirect(location, client.MOVED_PERMANENTLY)
+            # Dispatch /.web path to web module
             return self._web.get(environ, base_prefix, path, user)
         access = Access(self._rights, user, path)
         if not access.check("r") and "i" not in access.permissions:
