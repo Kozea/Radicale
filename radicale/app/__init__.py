@@ -193,12 +193,6 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         # Sanitize request URI (a WSGI server indicates with an empty path,
         # that the URL targets the application root without a trailing slash)
         path = pathutils.sanitize_path(unsafe_path)
-        if unsafe_path != path and request_method in ["GET", "HEAD"]:
-            location = base_prefix + path
-            logger.info("Redirecting to sanitized path: %r ==> %r",
-                        base_prefix + unsafe_path, location)
-            return response(*httputils.redirect(
-                                location, client.MOVED_PERMANENTLY))
         logger.debug("Sanitized path: %r", path)
 
         # Get function corresponding to method
