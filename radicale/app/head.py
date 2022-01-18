@@ -27,4 +27,5 @@ class ApplicationPartHead(ApplicationPartGet, ApplicationBase):
     def do_HEAD(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
                 user: str) -> types.WSGIResponse:
         """Manage HEAD request."""
+        # Body is dropped in `Application._handle_request` for HEAD requests
         return self.do_GET(environ, base_prefix, path, user)
