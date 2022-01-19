@@ -117,6 +117,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 headers = [*raw_headers, ("Content-Length", str(len(answer)))]
                 answers = [answer]
             start_response(status_text, headers)
+        if environ.get("REQUEST_METHOD") == "HEAD":
+            return []
         return answers
 
     def _handle_request(self, environ: types.WSGIEnviron
@@ -148,8 +150,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     headers["Content-Encoding"] = "gzip"
 
                 headers["Content-Length"] = str(len(answer))
-                if request_method != "HEAD":
-                    answers.append(answer)
+                answers.append(answer)
 
             # Add extra headers set in configuration
             headers.update(self._extra_headers)
