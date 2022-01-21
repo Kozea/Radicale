@@ -188,9 +188,10 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         # SCRIPT_NAME is already removed from PATH_INFO, according to the
         # WSGI specification.
         # Reverse proxies can overwrite SCRIPT_NAME with X-SCRIPT-NAME header
-        base_prefix = environ.get("HTTP_X_SCRIPT_NAME",
-                                  environ.get("SCRIPT_NAME", ""))
-        logger.debug("Base prefix: %r", base_prefix)
+        base_prefix_src = ("HTTP_X_SCRIPT_NAME" if "HTTP_X_SCRIPT_NAME" in
+                           environ else "SCRIPT_NAME")
+        base_prefix = environ.get(base_prefix_src, "")
+        logger.debug("Base prefix (from %s): %r", base_prefix_src, base_prefix)
         # Sanitize request URI (a WSGI server indicates with an empty path,
         # that the URL targets the application root without a trailing slash)
         path = pathutils.sanitize_path(unsafe_path)
