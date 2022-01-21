@@ -65,6 +65,13 @@ permissions: RrWw""")
                                          SCRIPT_NAME="/radicale")
             assert headers.get("Location") == "/radicale/.web"
 
+    def test_root_http_x_script_name(self) -> None:
+        """GET request at "/" with HTTP_X_SCRIPT_NAME."""
+        for path in ["", "/", "//"]:
+            _, headers, _ = self.request("GET", path, check=302,
+                                         HTTP_X_SCRIPT_NAME="/radicale")
+            assert headers.get("Location") == "/radicale/.web"
+
     def test_sanitized_path(self) -> None:
         """GET request with unsanitized paths."""
         for path, sane_path in [
@@ -74,6 +81,9 @@ permissions: RrWw""")
             assert headers.get("Location") == sane_path
             _, headers, _ = self.request("GET", path, check=301,
                                          SCRIPT_NAME="/radicale")
+            assert headers.get("Location") == "/radicale%s" % sane_path
+            _, headers, _ = self.request("GET", path, check=301,
+                                         HTTP_X_SCRIPT_NAME="/radicale")
             assert headers.get("Location") == "/radicale%s" % sane_path
 
     def test_add_event(self) -> None:
