@@ -67,7 +67,8 @@ permissions: RrWw""")
 
     def test_root_broken_script_name(self) -> None:
         """GET request at "/" with SCRIPT_NAME ending with "/"."""
-        self.get("/", check=500, SCRIPT_NAME="/radicale/")
+        for script_name in ["/", "/radicale/", "radicale"]:
+            self.get("/", check=500, SCRIPT_NAME=script_name)
 
     def test_root_http_x_script_name(self) -> None:
         """GET request at "/" with HTTP_X_SCRIPT_NAME."""
@@ -78,7 +79,8 @@ permissions: RrWw""")
 
     def test_root_broken_http_x_script_name(self) -> None:
         """GET request at "/" with HTTP_X_SCRIPT_NAME ending with "/"."""
-        self.get("/", check=400, HTTP_X_SCRIPT_NAME="/radicale/")
+        for script_name in ["/", "/radicale/", "radicale"]:
+            self.get("/", check=400, HTTP_X_SCRIPT_NAME=script_name)
 
     def test_sanitized_path(self) -> None:
         """GET request with unsanitized paths."""

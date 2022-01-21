@@ -4,7 +4,7 @@
 
 ## 3.1.2
 
-* Verify that base prefix doesn't end with '/'
+* Verify that base prefix starts with '/' but doesn't end with '/'
 * Improve base prefix log message
 * Never send body for HEAD requests (again)
 

@@ -191,9 +191,10 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         base_prefix_src = ("HTTP_X_SCRIPT_NAME" if "HTTP_X_SCRIPT_NAME" in
                            environ else "SCRIPT_NAME")
         base_prefix = environ.get(base_prefix_src, "")
-        if base_prefix.endswith("/"):
-            logger.error("Base prefix (from %s) must not end with '/': %r",
-                         base_prefix_src, base_prefix)
+        if base_prefix and (base_prefix[0] != "/" or base_prefix[-1] == "/"):
+            logger.error("Base prefix (from %s) must %s with '/': %r",
+                         base_prefix_src, "not end" if base_prefix[-1] == "/"
+                         else "start", base_prefix)
             if base_prefix_src == "HTTP_X_SCRIPT_NAME":
                 return response(*httputils.BAD_REQUEST)
             return response(*httputils.INTERNAL_SERVER_ERROR)
