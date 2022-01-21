@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.2
+
+* Verify that base prefix doesn't end with '/'
+* Improve base prefix log message
+* Never send body for HEAD requests (again)
+
 ## 3.1.1
 
 * Workaround for contact photo bug in InfCloud
