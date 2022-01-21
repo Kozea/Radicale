@@ -1104,9 +1104,11 @@ Delete collections by deleting the corresponding folders.
 
 ## Logging
 
-Radicale logs to `stderr`. The verbosity of the log output can be controlled
-with `--debug` command line argument or the `level` configuration option in
-the `logging` section.
+Radicale logs to `stderr` and syslog's `daemon` facility.
+
+The verbosity of the log output can be controlled with `--debug` or `--logging-level`
+command line arguments or the `level` configuration option in
+the `logging` section. By default logging is silenced.
 
 ## Architecture
 
