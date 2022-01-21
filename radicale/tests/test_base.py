@@ -65,12 +65,20 @@ permissions: RrWw""")
                                          SCRIPT_NAME="/radicale")
             assert headers.get("Location") == "/radicale/.web"
 
+    def test_root_broken_script_name(self) -> None:
+        """GET request at "/" with SCRIPT_NAME ending with "/"."""
+        self.get("/", check=500, SCRIPT_NAME="/radicale/")
+
     def test_root_http_x_script_name(self) -> None:
         """GET request at "/" with HTTP_X_SCRIPT_NAME."""
         for path in ["", "/", "//"]:
             _, headers, _ = self.request("GET", path, check=302,
                                          HTTP_X_SCRIPT_NAME="/radicale")
             assert headers.get("Location") == "/radicale/.web"
+
+    def test_root_broken_http_x_script_name(self) -> None:
+        """GET request at "/" with HTTP_X_SCRIPT_NAME ending with "/"."""
+        self.get("/", check=400, HTTP_X_SCRIPT_NAME="/radicale/")
 
     def test_sanitized_path(self) -> None:
         """GET request with unsanitized paths."""
