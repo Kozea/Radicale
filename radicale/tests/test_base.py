@@ -1615,14 +1615,31 @@ permissions: RrWw""")
         self.delete("/")
         self.propfind("/")
 
+    def test_well_known(self) -> None:
+        for path in ["/.well-known/caldav", "/.well-known/carddav"]:
+            for path in [path, "/foo" + path]:
+                _, headers, _ = self.request("GET", path, check=301)
+                assert headers.get("Location") == "/"
+
+    def test_well_known_script_name(self) -> None:
+        for path in ["/.well-known/caldav", "/.well-known/carddav"]:
+            for path in [path, "/foo" + path]:
+                _, headers, _ = self.request(
+                    "GET", path, check=301,  SCRIPT_NAME="/radicale")
+                assert headers.get("Location") == "/radicale/"
+
+    def test_well_known_not_found(self) -> None:
+        for path in ["/.well-known", "/.well-known/", "/.well-known/foo"]:
+            for path in [path, "/foo" + path]:
+                self.get(path, check=404)
+
     def test_custom_headers(self) -> None:
         self.configure({"headers": {"test": "123"}})
         # Test if header is set on success
         _, headers, _ = self.request("OPTIONS", "/", check=200)
         assert headers.get("test") == "123"
         # Test if header is set on failure
-        _, headers, _ = self.request("GET", "/.well-known/does not exist",
-                                     check=404)
+        _, headers, _ = self.request("GET", "/.well-known/foo", check=404)
         assert headers.get("test") == "123"
 
     @pytest.mark.skipif(sys.version_info < (3, 6),
