@@ -209,8 +209,15 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         if not function:
             return response(*httputils.METHOD_NOT_ALLOWED)
 
-        # If "/.well-known" is not available, clients query "/"
-        if path == "/.well-known" or path.startswith("/.well-known/"):
+        # Redirect all "…/.well-known/{caldav,carddav}" paths to "/".
+        # This shouldn't be necessary but some clients like TbSync require it.
+        # Status must be MOVED PERMANENTLY using FOUND causes problems
+        if (path.rstrip("/").endswith("/.well-known/caldav") or
+                path.rstrip("/").endswith("/.well-known/carddav")):
+            return response(*httputils.redirect(
+                base_prefix + "/", client.MOVED_PERMANENTLY))
+        # Return NOT FOUND for all other paths containing ".well-knwon"
+        if path.endswith("/.well-known") or "/.well-known/" in path:
             return response(*httputils.NOT_FOUND)
 
         # Ask authentication backend to check rights
