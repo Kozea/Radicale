@@ -67,8 +67,14 @@ permissions: RrWw""")
 
     def test_root_broken_script_name(self) -> None:
         """GET request at "/" with SCRIPT_NAME ending with "/"."""
-        for script_name in ["/", "/radicale/", "radicale"]:
-            self.get("/", check=500, SCRIPT_NAME=script_name)
+        for script_name, prefix in [
+                ("/", ""), ("//", ""), ("/radicale/", "/radicale"),
+                ("radicale", None), ("radicale//", None)]:
+            _, headers, _ = self.request(
+                "GET", "/", check=500 if prefix is None else 302,
+                SCRIPT_NAME=script_name)
+            assert (prefix is None or
+                    headers.get("Location") == prefix + "/.web")
 
     def test_root_http_x_script_name(self) -> None:
         """GET request at "/" with HTTP_X_SCRIPT_NAME."""
@@ -79,8 +85,14 @@ permissions: RrWw""")
 
     def test_root_broken_http_x_script_name(self) -> None:
         """GET request at "/" with HTTP_X_SCRIPT_NAME ending with "/"."""
-        for script_name in ["/", "/radicale/", "radicale"]:
-            self.get("/", check=400, HTTP_X_SCRIPT_NAME=script_name)
+        for script_name, prefix in [
+                ("/", ""), ("//", ""), ("/radicale/", "/radicale"),
+                ("radicale", None), ("radicale//", None)]:
+            _, headers, _ = self.request(
+                "GET", "/", check=400 if prefix is None else 302,
+                HTTP_X_SCRIPT_NAME=script_name)
+            assert (prefix is None or
+                    headers.get("Location") == prefix + "/.web")
 
     def test_sanitized_path(self) -> None:
         """GET request with unsanitized paths."""
