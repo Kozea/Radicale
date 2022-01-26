@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.1.3
+
+* Redirect '…/.well-known/caldav' and '…/.well-known/carddav' to base prefix
+* Warning instead of error when base prefix ends with '/'
+
 ## 3.1.2
 
 * Verify that base prefix starts with '/' but doesn't end with '/'
