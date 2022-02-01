@@ -69,7 +69,7 @@ if sys.platform == "win32":
         ctypes.wintypes.DWORD,
         ctypes.POINTER(Overlapped)]
     unlock_file_ex.restype = ctypes.wintypes.BOOL
-elif os.name == "posix":
+else:
     import fcntl
 
 if sys.platform == "linux":
@@ -127,16 +127,13 @@ class RwLock:
                 except OSError as e:
                     raise RuntimeError("Locking the storage failed: %s" % e
                                        ) from e
-            elif os.name == "posix":
+            else:
                 _cmd = fcntl.LOCK_EX if mode == "w" else fcntl.LOCK_SH
                 try:
                     fcntl.flock(lock_file.fileno(), _cmd)
                 except OSError as e:
                     raise RuntimeError("Locking the storage failed: %s" % e
                                        ) from e
-            else:
-                raise RuntimeError("Locking the storage failed: "
-                                   "Unsupported operating system")
             with self._lock:
                 if self._writer or mode == "w" and self._readers != 0:
                     raise RuntimeError("Locking the storage failed: "
@@ -196,7 +193,7 @@ def rename_exchange(src: str, dst: str) -> None:
 
 
 def fsync(fd: int) -> None:
-    if os.name == "posix" and hasattr(fcntl, "F_FULLFSYNC"):
+    if sys.platform != "win32" and hasattr(fcntl, "F_FULLFSYNC"):
         fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
     else:
         os.fsync(fd)

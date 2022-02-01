@@ -68,11 +68,11 @@ class StoragePartLock(StorageBase):
                 # from sending SIGINT etc.
                 preexec_fn = None
                 creationflags = 0
-                if os.name == "posix":
+                if sys.platform == "win32":
+                    creationflags |= subprocess.CREATE_NEW_PROCESS_GROUP
+                else:
                     # Process group is also used to identify child processes
                     preexec_fn = os.setpgrp
-                elif sys.platform == "win32":
-                    creationflags |= subprocess.CREATE_NEW_PROCESS_GROUP
                 command = self._hook % {
                     "user": shlex.quote(user or "Anonymous")}
                 logger.debug("Running storage hook")
@@ -89,7 +89,7 @@ class StoragePartLock(StorageBase):
                     p.wait()
                     raise
                 finally:
-                    if os.name == "posix":
+                    if sys.platform != "win32":
                         # Kill remaining children identified by process group
                         with contextlib.suppress(OSError):
                             os.killpg(p.pid, signal.SIGKILL)

@@ -17,6 +17,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 from tempfile import TemporaryDirectory
 from typing import IO, AnyStr, ClassVar, Iterator, Optional, Type
 
@@ -93,7 +94,7 @@ class StorageBase(storage.BaseStorage):
         """
         if not self._filesystem_fsync:
             return
-        if os.name == "posix":
+        if sys.platform != "win32":
             try:
                 fd = os.open(path, 0)
                 try:

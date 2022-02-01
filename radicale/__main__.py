@@ -39,11 +39,11 @@ from radicale.log import logger
 def run() -> None:
     """Run Radicale as a standalone server."""
     exit_signal_numbers = [signal.SIGTERM, signal.SIGINT]
-    if os.name == "posix":
-        exit_signal_numbers.append(signal.SIGHUP)
-        exit_signal_numbers.append(signal.SIGQUIT)
     if sys.platform == "win32":
         exit_signal_numbers.append(signal.SIGBREAK)
+    else:
+        exit_signal_numbers.append(signal.SIGHUP)
+        exit_signal_numbers.append(signal.SIGQUIT)
 
     # Raise SystemExit when signal arrives to run cleanup code
     # (like destructors, try-finish etc.), otherwise the process exits
