@@ -28,7 +28,6 @@ import contextlib
 import math
 import os
 import re
-import sys
 from datetime import datetime, timedelta
 from hashlib import sha256
 from itertools import chain
@@ -327,13 +326,7 @@ def find_time_range(vobject_item: vobject.base.Component, tag: str
         start = radicale_filter.DATETIME_MIN
     if end is None:
         end = radicale_filter.DATETIME_MAX
-    try:
-        return math.floor(start.timestamp()), math.ceil(end.timestamp())
-    except ValueError as e:
-        if str(e) == ("offset must be a timedelta representing a whole "
-                      "number of minutes") and sys.version_info < (3, 6):
-            raise RuntimeError("Unsupported in Python < 3.6: %s" % e) from e
-        raise
+    return math.floor(start.timestamp()), math.ceil(end.timestamp())
 
 
 class Item:
