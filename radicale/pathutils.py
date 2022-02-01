@@ -72,17 +72,16 @@ if sys.platform == "win32":
 elif os.name == "posix":
     import fcntl
 
-HAVE_RENAMEAT2: bool = False
 if sys.platform == "linux":
     import ctypes
 
     RENAME_EXCHANGE: int = 2
+    renameat2 = None
     try:
         renameat2 = ctypes.CDLL(None, use_errno=True).renameat2
     except AttributeError:
         pass
     else:
-        HAVE_RENAMEAT2 = True
         renameat2.argtypes = [
             ctypes.c_int, ctypes.c_char_p,
             ctypes.c_int, ctypes.c_char_p,
@@ -170,7 +169,7 @@ def rename_exchange(src: str, dst: str) -> None:
     dst_dir = dst_dir or os.curdir
     if not src_base or not dst_base:
         raise ValueError("Invalid arguments: %r -> %r" % (src, dst))
-    if HAVE_RENAMEAT2:
+    if sys.platform == "linux" and renameat2:
         src_base_bytes = os.fsencode(src_base)
         dst_base_bytes = os.fsencode(dst_base)
         src_dir_fd = os.open(src_dir, 0)
