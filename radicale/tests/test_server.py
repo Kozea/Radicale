@@ -219,7 +219,7 @@ class TestBaseServerRequests(BaseTest):
         finally:
             p.terminate()
             p.wait()
-        if os.name == "posix":
+        if sys.platform != "win32":
             assert p.returncode == 0
 
     def test_command_line_interface_with_bool_options(self) -> None:

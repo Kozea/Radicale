@@ -22,7 +22,6 @@ Tests for storage backends.
 
 import os
 import shutil
-import sys
 from typing import ClassVar, cast
 
 import pytest
@@ -100,8 +99,6 @@ class TestMultiFileSystem(BaseTest):
         assert answer1 == answer2
         assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
 
-    @pytest.mark.skipif(os.name != "posix" and sys.platform != "win32",
-                        reason="Only supported on 'posix' and 'win32'")
     def test_put_whole_calendar_uids_used_as_file_names(self) -> None:
         """Test if UIDs are used as file names."""
         _TestBaseRequests.test_put_whole_calendar(
@@ -110,8 +107,6 @@ class TestMultiFileSystem(BaseTest):
             _, answer = self.get("/calendar.ics/%s.ics" % uid)
             assert "\r\nUID:%s\r\n" % uid in answer
 
-    @pytest.mark.skipif(os.name != "posix" and sys.platform != "win32",
-                        reason="Only supported on 'posix' and 'win32'")
     def test_put_whole_calendar_random_uids_used_as_file_names(self) -> None:
         """Test if UIDs are used as file names."""
         _TestBaseRequests.test_put_whole_calendar_without_uids(
@@ -127,8 +122,6 @@ class TestMultiFileSystem(BaseTest):
             assert answer is not None
             assert "\r\nUID:%s\r\n" % uid in answer
 
-    @pytest.mark.skipif(os.name != "posix" and sys.platform != "win32",
-                        reason="Only supported on 'posix' and 'win32'")
     def test_put_whole_addressbook_uids_used_as_file_names(self) -> None:
         """Test if UIDs are used as file names."""
         _TestBaseRequests.test_put_whole_addressbook(
@@ -137,8 +130,6 @@ class TestMultiFileSystem(BaseTest):
             _, answer = self.get("/contacts.vcf/%s.vcf" % uid)
             assert "\r\nUID:%s\r\n" % uid in answer
 
-    @pytest.mark.skipif(os.name != "posix" and sys.platform != "win32",
-                        reason="Only supported on 'posix' and 'win32'")
     def test_put_whole_addressbook_random_uids_used_as_file_names(
             self) -> None:
         """Test if UIDs are used as file names."""
