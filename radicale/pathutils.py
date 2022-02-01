@@ -21,6 +21,7 @@ Helper functions for working with the file system.
 
 """
 
+import errno
 import os
 import posixpath
 import sys
@@ -178,19 +179,21 @@ def rename_exchange(src: str, dst: str) -> None:
             try:
                 if renameat2(src_dir_fd, src_base_bytes,
                              dst_dir_fd, dst_base_bytes,
-                             RENAME_EXCHANGE) != 0:
-                    errno = ctypes.get_errno()
-                    raise OSError(errno, os.strerror(errno))
+                             RENAME_EXCHANGE) == 0:
+                    return
+                errno_ = ctypes.get_errno()
+                # Fallback if RENAME_EXCHANGE not supported by filesystem
+                if errno_ != errno.EINVAL:
+                    raise OSError(errno_, os.strerror(errno_))
             finally:
                 os.close(dst_dir_fd)
         finally:
             os.close(src_dir_fd)
-    else:
-        with TemporaryDirectory(prefix=".Radicale.tmp-", dir=src_dir
-                                ) as tmp_dir:
-            os.rename(dst, os.path.join(tmp_dir, "interim"))
-            os.rename(src, dst)
-            os.rename(os.path.join(tmp_dir, "interim"), src)
+    with TemporaryDirectory(prefix=".Radicale.tmp-", dir=src_dir
+                            ) as tmp_dir:
+        os.rename(dst, os.path.join(tmp_dir, "interim"))
+        os.rename(src, dst)
+        os.rename(os.path.join(tmp_dir, "interim"), src)
 
 
 def fsync(fd: int) -> None:
