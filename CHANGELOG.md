@@ -6,7 +6,6 @@
 
 * Fallback if RENAME_EXCHANGE is not supportd by the filesystem
 * Assume POSIX compatibility if `sys.platform` is not `win32`
-* Assume `F_FULLFSYNC` always exists if `sys.platform` is `darwin`
 
 ## 3.1.3
 
