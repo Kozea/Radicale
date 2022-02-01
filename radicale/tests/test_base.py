@@ -22,11 +22,9 @@ Radicale tests with simple requests.
 
 import os
 import posixpath
-import sys
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
 import defusedxml.ElementTree as DefusedET
-import pytest
 
 from radicale import storage, xmlutils
 from radicale.tests import RESPONSES, BaseTest
@@ -1654,8 +1652,6 @@ permissions: RrWw""")
         _, headers, _ = self.request("GET", "/.well-known/foo", check=404)
         assert headers.get("test") == "123"
 
-    @pytest.mark.skipif(sys.version_info < (3, 6),
-                        reason="Unsupported in Python < 3.6")
     def test_timezone_seconds(self) -> None:
         """Verify that timezones with minutes and seconds work."""
         self.mkcalendar("/calendar.ics/")
