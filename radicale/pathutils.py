@@ -193,7 +193,7 @@ def rename_exchange(src: str, dst: str) -> None:
 
 
 def fsync(fd: int) -> None:
-    if sys.platform == "darwin":
+    if sys.platform != "win32" and hasattr(fcntl, "F_FULLFSYNC"):
         fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
     else:
         os.fsync(fd)
