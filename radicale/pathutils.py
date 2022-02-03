@@ -88,6 +88,10 @@ if sys.platform == "linux":
             ctypes.c_uint]
         renameat2.restype = ctypes.c_int
 
+if sys.platform == "darwin":
+    # Definition missing in PyPy
+    F_FULLFSYNC: int = getattr(fcntl, "F_FULLFSYNC", 51)
+
 
 class RwLock:
     """A readers-Writer lock that locks a file."""
@@ -193,10 +197,15 @@ def rename_exchange(src: str, dst: str) -> None:
 
 
 def fsync(fd: int) -> None:
-    if sys.platform != "win32" and hasattr(fcntl, "F_FULLFSYNC"):
-        fcntl.fcntl(fd, fcntl.F_FULLFSYNC)
-    else:
-        os.fsync(fd)
+    if sys.platform == "darwin":
+        try:
+            fcntl.fcntl(fd, F_FULLFSYNC)
+            return
+        except OSError as e:
+            # Fallback if F_FULLFSYNC not supported by filesystem
+            if e.errno != errno.EINVAL:
+                raise
+    os.fsync(fd)
 
 
 def strip_path(path: str) -> str:
