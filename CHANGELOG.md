@@ -4,7 +4,7 @@
 
 ## 3.1.4
 
-* Fallback if RENAME_EXCHANGE is not supportd by the filesystem
+* Fallback if RENAME_EXCHANGE is not supported by the filesystem
 * Assume POSIX compatibility if `sys.platform` is not `win32`
 
 ## 3.1.3
