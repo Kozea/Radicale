@@ -52,7 +52,7 @@ WEB_FILES = ["web/internal_data/css/icon.png",
 setup_requires = []
 if {"pytest", "test", "ptr"}.intersection(sys.argv):
     setup_requires.append("pytest-runner")
-tests_require = ["pytest-runner", "pytest", "pytest-cov", "pytest-flake8",
+tests_require = ["pytest-runner", "pytest<7", "pytest-cov", "pytest-flake8",
                  "pytest-isort", "typeguard", "waitress"]
 os.environ["PYTEST_ADDOPTS"] = os.environ.get("PYTEST_ADDOPTS", "")
 # Mypy only supports CPython
