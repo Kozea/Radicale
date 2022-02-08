@@ -2,6 +2,8 @@
 
 ## master
 
+## 3.1.5
+
 * Ignore configuration file if access is denied
 * Use F_FULLFSYNC with PyPy on MacOS
 * Fallback if F_FULLFSYNC is not supported by the filesystem
