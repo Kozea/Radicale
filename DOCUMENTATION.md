@@ -667,6 +667,9 @@ Available backends:
   authentication. This can be used to provide the username from a reverse
   proxy.
 
+`ldap`
+: Use a LDAP or AD server to authenticate users.
+
 Default: `none`
 
 ##### htpasswd_filename
@@ -712,6 +715,42 @@ Default: `1`
 Message displayed in the client when a password is needed.
 
 Default: `Radicale - Password Required`
+
+##### ldap_uri
+
+The URI to the ldap server
+
+Default: `ldap://localhost`
+
+##### ldap_base
+
+LDAP base DN of the ldap server. This parameter must be provided if auth type is ldap.
+
+Default:
+
+##### ldap_reader_dn
+
+The DN of a ldap user with read access to get the user accounts. This parameter must be provided if auth type is ldap.
+
+Default:
+
+##### ldap_secret
+
+The password of the ldap_reader_dn. This parameter must be provided if auth type is ldap.
+
+Default:
+
+##### ldap_filter
+
+The search filter to find the user DN to authenticate by the username. User '{0}' as placeholder for the user name.
+
+Default: `(cn={0})`
+
+##### ldap_load_groups
+
+Load the ldap groups of the authenticated user. These groups can be used later on to define rights.
+
+Default: False
 
 #### rights
 

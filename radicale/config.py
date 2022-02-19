@@ -177,7 +177,32 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("delay", {
             "value": "1",
             "help": "incorrect authentication delay",
-            "type": positive_float})])),
+            "type": positive_float}),
+        ("ldap_uri", {
+            "value": "ldap://localhost",
+            "help": "URI to the ldap server",
+            "type": str}),
+        ("ldap_base", {
+            "value": "none",
+            "help": "LDAP base DN of the ldap server",
+            "type": str}),
+        ("ldap_reader_dn", {
+            "value": "none",
+            "help": "the DN of a ldap user with read access to get the user accounts",
+            "type": str}),
+        ("ldap_secret", {
+            "value": "none",
+            "help": "the password of the ldap_reader_dn",
+            "type": str}),
+        ("ldap_filter", {
+            "value": "(cn={0})",
+            "help": "the search filter to find the user DN to authenticate by the username",
+            "type": str}),
+        ("ldap_load_groups", {
+            "value": "False",
+            "help": "load the ldap groups of the authenticated user",
+            "type": bool}),
+        ])),
     ("rights", OrderedDict([
         ("type", {
             "value": "owner_only",
