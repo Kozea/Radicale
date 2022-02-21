@@ -44,6 +44,8 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
 
 class BaseAuth:
 
+    _ldap_groups: set
+
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseAuth.
 

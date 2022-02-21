@@ -35,7 +35,6 @@ class Auth(auth.BaseAuth):
     _ldap_secret: str
     _ldap_filter: str
     _ldap_load_groups: bool
-    _ldap_groups = set
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
@@ -88,5 +87,3 @@ class Auth(auth.BaseAuth):
             return login
         except ldap.INVALID_CREDENTIALS:
             return ""
-
-

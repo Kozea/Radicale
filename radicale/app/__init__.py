@@ -237,6 +237,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     authorization.encode("ascii"))).split(":", 1)
 
         user = self._auth.login(login, password) or "" if login else ""
+        try:
+            logger.debug("Groups %r",",".join(self._auth._ldap_groups))
+            self._rights._user_groups = self._auth._ldap_groups
+        except AttributeError:
+            pass
         if user and login == user:
             logger.info("Successful login: %r", user)
         elif user:
