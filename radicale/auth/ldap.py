@@ -35,7 +35,7 @@ class Auth(auth.BaseAuth):
     _ldap_secret: str
     _ldap_filter: str
     _ldap_load_groups: bool
-    _ldap_groups = []
+    _ldap_groups = set
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
@@ -77,10 +77,12 @@ class Auth(auth.BaseAuth):
             conn.protocol_version = 3
             conn.set_option(ldap.OPT_REFERRALS, 0)
             conn.simple_bind_s(user_dn,password)
+            tmp = []
             if self._ldap_load_groups:
-                self._ldap_groups = []
+                tmp = []
                 for t in res[0][1]['memberOf']:
-                    self._ldap_groups.append(t.decode('utf-8').split(',')[0][3:])
+                    tmp.append(t.decode('utf-8').split(',')[0][3:])
+                self._ldap_groups = set(tmp)
                 logger.debug("LDAP Auth groups of user: %s",",".join(self._ldap_groups))
             conn.unbind()
             return login
