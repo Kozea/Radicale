@@ -25,6 +25,8 @@ from http import client
 from typing import Callable, Iterable, Iterator, Optional, Sequence, Tuple
 from urllib.parse import unquote, urlparse
 
+import vobject
+
 import radicale.item as radicale_item
 from radicale import httputils, pathutils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
@@ -65,7 +67,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                        xmlutils.make_human_tag(root.tag), path)
         return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
     prop_element = root.find(xmlutils.make_clark("D:prop"))
-    props = ([prop.tag for prop in prop_element]
+    props = ([prop for prop in prop_element]
              if prop_element is not None else [])
 
     hreferences: Iterable[str]
@@ -138,18 +140,29 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         found_props = []
         not_found_props = []
 
-        for tag in props:
-            element = ET.Element(tag)
-            if tag == xmlutils.make_clark("D:getetag"):
+        for prop in props:
+            element = ET.Element(prop.tag)
+            if prop.tag == xmlutils.make_clark("D:getetag"):
                 element.text = item.etag
                 found_props.append(element)
-            elif tag == xmlutils.make_clark("D:getcontenttype"):
+            elif prop.tag == xmlutils.make_clark("D:getcontenttype"):
                 element.text = xmlutils.get_content_type(item, encoding)
                 found_props.append(element)
-            elif tag in (
+            elif prop.tag in (
                     xmlutils.make_clark("C:calendar-data"),
                     xmlutils.make_clark("CR:address-data")):
-                element.text = item.serialize()
+                wanted_fields = [p.attrib["name"] for p in prop]
+                if wanted_fields:
+                    filtered_card = vobject.vCard()
+                    for f in wanted_fields:
+                        try:
+                            filtered_card.add(f.lower())
+                            setattr(filtered_card, f.lower(), getattr(item.vobject_item, f.lower()))
+                        except Exception as e:
+                            pass
+                    element.text = filtered_card.serialize()
+                else:
+                    element.text = item.serialize()
                 found_props.append(element)
             else:
                 not_found_props.append(element)
