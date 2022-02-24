@@ -70,10 +70,10 @@ class Rights(rights.BaseRights):
             group_match      = []
             try:
                 collection_pattern = self._rights_config.get(section, "collection")
-                user_pattern = self._rights_config.get(section, "user", fallback = "")
-                groups = self._rights_config.get(section, "groups", fallback = "").split(",")
+                user_pattern   = self._rights_config.get(section, "user", fallback = "")
+                allowed_groups = self._rights_config.get(section, "groups", fallback = "").split(",")
                 try:
-                    group_match = self._user_groups & set(groups)
+                    group_match = self._user_groups.intersection(allowed_groups)
                     logger.debug("Groups %r, %r",",".join(group_match),";".join(groups))
                 except:
                     pass
