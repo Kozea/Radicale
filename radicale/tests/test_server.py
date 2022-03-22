@@ -28,7 +28,8 @@ import sys
 import threading
 import time
 from configparser import RawConfigParser
-from typing import Callable, Dict, NoReturn, Optional, Tuple, cast
+from http.client import HTTPMessage
+from typing import IO, Callable, Dict, Optional, Tuple, cast
 from urllib import request
 from urllib.error import HTTPError, URLError
 
@@ -40,26 +41,10 @@ from radicale.tests.helpers import configuration_to_dict, get_file_path
 
 
 class DisabledRedirectHandler(request.HTTPRedirectHandler):
-
-    # HACK: typeshed annotation are wrong for `fp` and `msg`
-    #       (https://github.com/python/typeshed/pull/5728)
-    #       `headers` is incompatible with `http.client.HTTPMessage`
-    #       (https://github.com/python/typeshed/issues/5729)
-    def http_error_301(self, req: request.Request, fp, code: int,
-                       msg, headers) -> NoReturn:
-        raise HTTPError(req.full_url, code, msg, headers, fp)
-
-    def http_error_302(self, req: request.Request, fp, code: int,
-                       msg, headers) -> NoReturn:
-        raise HTTPError(req.full_url, code, msg, headers, fp)
-
-    def http_error_303(self, req: request.Request, fp, code: int,
-                       msg, headers) -> NoReturn:
-        raise HTTPError(req.full_url, code, msg, headers, fp)
-
-    def http_error_307(self, req: request.Request, fp, code: int,
-                       msg, headers) -> NoReturn:
-        raise HTTPError(req.full_url, code, msg, headers, fp)
+    def redirect_request(
+            self, req: request.Request, fp: IO[bytes], code: int, msg: str,
+            headers: HTTPMessage, newurl: str) -> None:
+        return None
 
 
 class TestBaseServerRequests(BaseTest):
