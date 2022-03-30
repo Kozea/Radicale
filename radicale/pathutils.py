@@ -257,6 +257,7 @@ def is_safe_filesystem_path_component(path: str) -> bool:
     """
     return (
         bool(path) and not os.path.splitdrive(path)[0] and
+        (sys.platform != "win32" or ":" not in path) and  # Block NTFS-ADS
         not os.path.split(path)[0] and path not in (os.curdir, os.pardir) and
         not path.startswith(".") and not path.endswith("~") and
         is_safe_path_component(path))
