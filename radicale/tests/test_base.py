@@ -243,6 +243,13 @@ permissions: RrWw""")
             for uid2 in uids[i + 1:]:
                 assert uid1 != uid2
 
+    def test_put_whole_calendar_case_sensitive_uids(self) -> None:
+        """Create a whole calendar with case-sensitive UIDs."""
+        events = get_file_content("event_multiple_case_sensitive_uids.ics")
+        self.put("/calendar.ics/", events)
+        _, answer = self.get("/calendar.ics/")
+        assert "\r\nUID:event\r\n" in answer and "\r\nUID:EVENT\r\n" in answer
+
     def test_put_whole_addressbook(self) -> None:
         """Create and overwrite a whole addressbook."""
         contacts = get_file_content("contact_multiple.vcf")
