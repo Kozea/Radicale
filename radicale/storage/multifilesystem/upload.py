@@ -97,6 +97,10 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
                         self._filesystem_path, href),
                         "w", newline="", encoding=self._encoding)
                     break
+                except pathutils.CollidingPathError:
+                    if href_candidate_funtions:
+                        continue
+                    raise
                 except OSError as e:
                     if href_candidate_funtions and (
                             sys.platform != "win32" and
