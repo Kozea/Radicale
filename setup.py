@@ -49,6 +49,10 @@ WEB_FILES = ["web/internal_data/css/icon.png",
              "web/internal_data/fn.js",
              "web/internal_data/index.html"]
 
+install_requires = ["defusedxml", "passlib", "vobject>=0.9.6",
+                    "python-dateutil>=2.7.3"]
+if sys.version_info < (3, 9):
+    install_requires.append("setuptools")
 setup_requires = []
 if {"pytest", "test", "ptr"}.intersection(sys.argv):
     setup_requires.append("pytest-runner")
@@ -76,8 +80,7 @@ setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     package_data={"radicale": [*WEB_FILES, "py.typed"]},
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
-    install_requires=["defusedxml", "passlib", "vobject>=0.9.6",
-                      "python-dateutil>=2.7.3", "setuptools"],
+    install_requires=install_requires,
     setup_requires=setup_requires,
     tests_require=tests_require,
     extras_require={"test": tests_require,

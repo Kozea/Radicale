@@ -29,7 +29,6 @@ from hashlib import sha256
 from typing import (Iterable, Iterator, Mapping, Optional, Sequence, Set,
                     Tuple, Union, overload)
 
-import pkg_resources
 import vobject
 
 from radicale import config
@@ -41,7 +40,7 @@ INTERNAL_TYPES: Sequence[str] = ("multifilesystem", "multifilesystem_nolock",)
 
 CACHE_DEPS: Sequence[str] = ("radicale", "vobject", "python-dateutil",)
 CACHE_VERSION: bytes = "".join(
-    "%s=%s;" % (pkg, pkg_resources.get_distribution(pkg).version)
+    "%s=%s;" % (pkg, utils.package_version(pkg))
     for pkg in CACHE_DEPS).encode()
 
 
