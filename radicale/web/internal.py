@@ -25,9 +25,7 @@ Features:
 
 """
 
-import pkg_resources
-
-from radicale import config, httputils, types, web
+from radicale import httputils, types, web
 
 MIMETYPES = httputils.MIMETYPES  # deprecated
 FALLBACK_MIMETYPE = httputils.FALLBACK_MIMETYPE  # deprecated
@@ -35,13 +33,7 @@ FALLBACK_MIMETYPE = httputils.FALLBACK_MIMETYPE  # deprecated
 
 class Web(web.BaseWeb):
 
-    folder: str
-
-    def __init__(self, configuration: config.Configuration) -> None:
-        super().__init__(configuration)
-        self.folder = pkg_resources.resource_filename(
-            __name__, "internal_data")
-
     def get(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
             user: str) -> types.WSGIResponse:
-        return httputils.serve_folder(self.folder, base_prefix, path)
+        return httputils.serve_resource("radicale.web", "internal_data",
+                                        base_prefix, path)

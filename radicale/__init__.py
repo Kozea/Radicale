@@ -29,13 +29,11 @@ import os
 import threading
 from typing import Iterable, Optional, cast
 
-import pkg_resources
-
-from radicale import config, log, types
+from radicale import config, log, types, utils
 from radicale.app import Application
 from radicale.log import logger
 
-VERSION: str = pkg_resources.get_distribution("radicale").version
+VERSION: str = utils.package_version("radicale")
 
 _application_instance: Optional[Application] = None
 _application_config_path: Optional[str] = None
