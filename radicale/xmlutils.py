@@ -33,7 +33,8 @@ from radicale import item, pathutils
 
 MIMETYPES: Mapping[str, str] = {
     "VADDRESSBOOK": "text/vcard",
-    "VCALENDAR": "text/calendar"}
+    "VCALENDAR": "text/calendar",
+    "VSUBSCRIBED": "text/calendar"}
 
 OBJECT_MIMETYPES: Mapping[str, str] = {
     "VCARD": "text/vcard",

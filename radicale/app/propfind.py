@@ -85,7 +85,7 @@ def xml_propfind_response(
 
     if isinstance(item, storage.BaseCollection):
         is_collection = True
-        is_leaf = item.tag in ("VADDRESSBOOK", "VCALENDAR")
+        is_leaf = item.tag in ("VADDRESSBOOK", "VCALENDAR", "VSUBSCRIBED")
         collection = item
         # Some clients expect collections to end with `/`
         uri = pathutils.unstrip_path(item.path, True)
@@ -259,6 +259,10 @@ def xml_propfind_response(
                         child_element = ET.Element(
                             xmlutils.make_clark("C:calendar"))
                         element.append(child_element)
+                    elif collection.tag == "VSUBSCRIBED":
+                        child_element = ET.Element(
+                            xmlutils.make_clark("CS:subscribed"))
+                        element.append(child_element)
                 child_element = ET.Element(xmlutils.make_clark("D:collection"))
                 element.append(child_element)
             elif tag == xmlutils.make_clark("RADICALE:displayname"):
@@ -284,6 +288,13 @@ def xml_propfind_response(
             elif tag == xmlutils.make_clark("D:sync-token"):
                 if is_leaf:
                     element.text, _ = collection.sync()
+                else:
+                    is404 = True
+            elif tag == xmlutils.make_clark("CS:source"):
+                if is_leaf:
+                    child_element = ET.Element(xmlutils.make_clark("D:href"))
+                    child_element.text = collection.get_meta('CS:source')
+                    element.append(child_element)
                 else:
                     is404 = True
             else:
