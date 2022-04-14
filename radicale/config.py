@@ -283,8 +283,8 @@ def load(paths: Optional[Iterable[Tuple[str, bool]]] = None
                 config = {s: {o: parser[s][o] for o in parser.options(s)}
                           for s in parser.sections()}
         except Exception as e:
-            if not (ignore_if_missing and
-                    isinstance(e, (FileNotFoundError, PermissionError))):
+            if not (ignore_if_missing and isinstance(e, (
+                    FileNotFoundError, NotADirectoryError, PermissionError))):
                 raise RuntimeError("Failed to load %s: %s" % (config_source, e)
                                    ) from e
             config = Configuration.SOURCE_MISSING
