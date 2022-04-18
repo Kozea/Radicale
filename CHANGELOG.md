@@ -2,6 +2,14 @@
 
 ## master
 
+## 3.1.6
+
+* Ignore `Not a directory` error for optional config paths
+* Fix upload of whole address book/calendar with UIDs that collide on
+  case-insensitive filesystem
+* Remove runtime dependency on setuptools for Python>=3.9
+* Windows: Block ADS paths
+
 ## 3.1.5
 
 * Ignore configuration file if access is denied
