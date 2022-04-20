@@ -245,8 +245,8 @@ def find_available_uid(exists_fn: Callable[[str], bool], suffix: str = ""
             r[:8], r[8:12], r[12:16], r[16:20], r[20:], suffix)
         if not exists_fn(name):
             return name
-    # something is wrong with the PRNG
-    raise RuntimeError("No unique random sequence found")
+    # Something is wrong with the PRNG or `exists_fn`
+    raise RuntimeError("No available random UID found")
 
 
 def get_etag(text: str) -> str:
