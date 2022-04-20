@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.1.7
+
+* Fix random href fallback
+
 ## 3.1.6
 
 * Ignore `Not a directory` error for optional config paths
