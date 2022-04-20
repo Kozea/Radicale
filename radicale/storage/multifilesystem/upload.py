@@ -71,7 +71,8 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
                          radicale_item.get_etag(uid).strip('"') + suffix]:
                 if is_safe_free_href(href):
                     yield href
-            yield radicale_item.find_available_uid(is_safe_free_href, suffix)
+            yield radicale_item.find_available_uid(
+                lambda href: not is_safe_free_href(href), suffix)
 
         cache_folder = os.path.join(self._filesystem_path,
                                     ".Radicale.cache", "item")
