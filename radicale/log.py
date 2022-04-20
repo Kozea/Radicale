@@ -34,8 +34,7 @@ from typing import Any, Callable, ClassVar, Dict, Iterator, Union
 from radicale import types
 
 LOGGER_NAME: str = "radicale"
-LOGGER_FORMAT: str = "[%(asctime)s] [%(ident)s] [%(levelname)s] %(message)s"
-DATE_FORMAT: str = "%Y-%m-%d %H:%M:%S %z"
+LOGGER_FORMAT: str = "[%(levelname)s] %(message)s"
 
 logger: logging.Logger = logging.getLogger(LOGGER_NAME)
 
@@ -112,8 +111,7 @@ def setup() -> None:
     """Set global logging up."""
     global register_stream
     handler = ThreadedStreamHandler()
-    logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT,
-                        handlers=[handler])
+    logging.basicConfig(format=LOGGER_FORMAT, handlers=[handler])
     register_stream = handler.register_stream
     log_record_factory = IdentLogRecordFactory(logging.getLogRecordFactory())
     logging.setLogRecordFactory(log_record_factory)
