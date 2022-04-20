@@ -25,7 +25,7 @@ Log messages are sent to the first available target of:
 
 """
 
-import logging
+import logging, logging.handlers
 import os
 import sys
 import threading
