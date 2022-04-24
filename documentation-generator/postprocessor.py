@@ -61,7 +61,7 @@ def main():
             checks_failed = True
 
     if checks_failed:
-        exit(1)
+        sys.exit(1)
     sys.stdout.buffer.write(soup.encode(formatter="html5") + b"\n")
 
 
