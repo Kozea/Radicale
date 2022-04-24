@@ -7,7 +7,7 @@
     $styles.html()$
 </style>
 $if(math)$
-    $math$
+$math$
 $endif$
 <link href="assets/default.css" media="all" rel="stylesheet">
 <link href="assets/screen.css" media="screen" rel="stylesheet">
@@ -23,42 +23,42 @@ $endif$
 <script src="assets/navigation-scroll-fix.js"></script>
 
 <header>
-    <div class="logoContainer">
-        <h1>
-            Radicale
-            <span class="documentBranch">
-                <span>$branch$</span>
-                <select style="display: none;">
+<div class="logoContainer">
+<h1>
+Radicale
+<span class="documentBranch">
+<span>$branch$</span>
+<select style="display: none;">
 $for(branches)$
-                    <option value="$it.href$"$if(it.default)$ selected$endif$>$it.name$</option>
+<option value="$it.href$"$if(it.default)$ selected$endif$>$it.name$</option>
 $endfor$
-                </select>
-            </span>
-        </h1>
-        <p>Free and Open-Source CalDAV and CardDAV Server</p>
-    </div>
-    <div class="linkContainer">
-        <ul>
-            <li><a href="https://community.kozea.fr">Made with ❤ by Kozea Community</a></li>
-            <li><a href="https://github.com/Kozea/Radicale">Fork me on GitHub</a></li>
-        </ul>
-    </div>
+</select>
+</span>
+</h1>
+<p>Free and Open-Source CalDAV and CardDAV Server</p>
+</div>
+<div class="linkContainer">
+<ul>
+<li><a href="https://community.kozea.fr">Made with ❤ by Kozea Community</a></li>
+<li><a href="https://github.com/Kozea/Radicale">Fork me on GitHub</a></li>
+</ul>
+</div>
 </header>
 
 <main>
-    <div class="navButtonContainer" style="display: none;">
-        <button data-name="nav-open">Contents</button>
-    </div>
-    <nav>
-        <div class="navContainer">
-            <div class="navButtonContainer" style="display: none;">
-                <button data-name="nav-close">Close</button>
-            </div>
-            <h2>Contents</h2>
-            $table-of-contents$
-        </div>
-    </nav>
-    <div class="documentContainer">
+<div class="navButtonContainer" style="display: none;">
+<button data-name="nav-open">Contents</button>
+</div>
+<nav>
+<div class="navContainer">
+<div class="navButtonContainer" style="display: none;">
+<button data-name="nav-close">Close</button>
+</div>
+<h2>Contents</h2>
+$table-of-contents$
+</div>
+</nav>
+<div class="documentContainer">
 $body$
-    </div>
+</div>
 </main>
