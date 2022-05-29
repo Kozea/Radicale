@@ -458,7 +458,7 @@ key = /path/to/server_key.pem
 certificate_authority = /path/to/client_cert.pem
 ```
 
-If you're using Let's Encrypt's Certbot, the configuration should look similar to this:
+If you're using the Let's Encrypt's Certbot, the configuration should look similar to this:
 
 ```ini
 [server]
