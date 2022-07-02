@@ -50,9 +50,8 @@ WEB_FILES = ["web/internal_data/css/icon.png",
              "web/internal_data/index.html"]
 
 install_requires = ["defusedxml", "passlib", "vobject>=0.9.6",
-                    "python-dateutil>=2.7.3"]
-if sys.version_info < (3, 9):
-    install_requires.append("setuptools")
+                    "python-dateutil>=2.7.3",
+                    "setuptools; python_version<'3.9'"]
 setup_requires = []
 if {"pytest", "test", "ptr"}.intersection(sys.argv):
     setup_requires.append("pytest-runner")
