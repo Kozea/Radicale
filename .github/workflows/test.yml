@@ -21,7 +21,7 @@ jobs:
       - name: Install from source
         run: python -m pip install --editable .[test,bcrypt]
       - name: Run tests
-        run: python setup.py test
+        run: python -m pytest
       - name: Upload coverage to Coveralls
         if: github.event_name == 'push'
         env:
