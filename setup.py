@@ -72,7 +72,6 @@ setup(
     package_data={"radicale": [*WEB_FILES, "py.typed"]},
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
     install_requires=install_requires,
-    tests_require=tests_require,
     extras_require={"test": tests_require,
                     "bcrypt": ["passlib[bcrypt]", "bcrypt"]},
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
