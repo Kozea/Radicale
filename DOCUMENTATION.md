@@ -673,7 +673,7 @@ Default: `none`
 
 Path to the htpasswd file.
 
-Default:
+Default: `/etc/radicale/users`
 
 ##### htpasswd_encryption
 
