@@ -36,9 +36,6 @@ For further information, please visit the `Radicale Website
 
 """
 
-import os
-import sys
-
 from setuptools import find_packages, setup
 
 # When the version is updated, a new section in the CHANGELOG.md file must be
@@ -52,16 +49,10 @@ WEB_FILES = ["web/internal_data/css/icon.png",
 install_requires = ["defusedxml", "passlib", "vobject>=0.9.6",
                     "python-dateutil>=2.7.3",
                     "setuptools; python_version<'3.9'"]
-setup_requires = []
-if {"pytest", "test", "ptr"}.intersection(sys.argv):
-    setup_requires.append("pytest-runner")
-tests_require = ["pytest-runner", "pytest<7", "pytest-cov", "pytest-flake8",
-                 "pytest-isort", "typeguard", "waitress"]
-os.environ["PYTEST_ADDOPTS"] = os.environ.get("PYTEST_ADDOPTS", "")
-# Mypy only supports CPython
-if sys.implementation.name == "cpython":
-    tests_require.extend(["pytest-mypy", "types-setuptools"])
-    os.environ["PYTEST_ADDOPTS"] += " --mypy"
+tests_require = ["pytest", "pytest-cov", "pytest-flake8", "pytest-isort",
+                 "typeguard", "waitress",
+                 "pytest-mypy; implementation_name=='cpython'",
+                 "types-setuptools; implementation_name=='cpython'"]
 
 setup(
     name="Radicale",
@@ -80,7 +71,6 @@ setup(
     package_data={"radicale": [*WEB_FILES, "py.typed"]},
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
     install_requires=install_requires,
-    setup_requires=setup_requires,
     tests_require=tests_require,
     extras_require={"test": tests_require,
                     "bcrypt": ["passlib[bcrypt]", "bcrypt"]},
