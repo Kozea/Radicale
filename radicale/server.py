@@ -206,7 +206,7 @@ class ServerHandler(wsgiref.simple_server.ServerHandler):
     # Don't pollute WSGI environ with OS environment
     os_environ: MutableMapping[str, str] = {}
 
-    def log_exception(self, exc_info: "wsgiref.handlers._exc_info") -> None:
+    def log_exception(self, exc_info) -> None:
         logger.error("An exception occurred during request: %s",
                      exc_info[1], exc_info=exc_info)  # type:ignore[arg-type]
 
