@@ -50,10 +50,7 @@ install_requires = ["defusedxml", "passlib", "vobject>=0.9.6",
                     "python-dateutil>=2.7.3",
                     "setuptools; python_version<'3.9'"]
 # typeguard requires pytest<7
-tests_require = ["pytest<7", "pytest-cov", "pytest-flake8", "pytest-isort",
-                 "typeguard", "waitress",
-                 "pytest-mypy; implementation_name=='cpython'",
-                 "types-setuptools; implementation_name=='cpython'"]
+tests_require = ["pytest<7", "typeguard", "waitress"]
 
 setup(
     name="Radicale",
