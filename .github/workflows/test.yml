@@ -20,11 +20,11 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install test dependencies
+      - name: Install Test dependencies
         run: pip install tox
       - name: Test
         run: tox
-      - name: Install coveralls
+      - name: Install Coveralls
         if: github.event_name == 'push'
         run: pip install coveralls
       - name: Upload coverage to Coveralls
@@ -42,7 +42,7 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.x
-      - name: Install coveralls
+      - name: Install Coveralls
         run: pip install coveralls
       - name: Finish Coveralls parallel builds
         env:
