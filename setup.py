@@ -49,8 +49,9 @@ WEB_FILES = ["web/internal_data/css/icon.png",
 install_requires = ["defusedxml", "passlib", "vobject>=0.9.6",
                     "python-dateutil>=2.7.3",
                     "setuptools; python_version<'3.9'"]
+bcrypt_requires = ["passlib[bcrypt]", "bcrypt"]
 # typeguard requires pytest<7
-tests_require = ["pytest<7", "typeguard", "waitress"]
+test_requires = ["pytest<7", "typeguard", "waitress", *bcrypt_requires]
 
 setup(
     name="Radicale",
@@ -69,8 +70,7 @@ setup(
     package_data={"radicale": [*WEB_FILES, "py.typed"]},
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
     install_requires=install_requires,
-    extras_require={"test": tests_require,
-                    "bcrypt": ["passlib[bcrypt]", "bcrypt"]},
+    extras_require={"test": test_requires, "bcrypt": bcrypt_requires},
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
     python_requires=">=3.6.0",
     classifiers=[

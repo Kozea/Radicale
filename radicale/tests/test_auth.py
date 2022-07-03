@@ -44,16 +44,6 @@ class TestBaseAuthRequests(BaseTest):
         """Test htpasswd authentication with user "tmp" and password "bepo" for
            ``test_matrix`` "ascii" or user "😀" and password "🔑" for
            ``test_matrix`` "unicode"."""
-        if htpasswd_encryption == "bcrypt":
-            try:
-                from passlib.exc import MissingBackendError
-                from passlib.hash import bcrypt
-            except ImportError:
-                pytest.skip("passlib[bcrypt] is not installed")
-            try:
-                bcrypt.hash("test-bcrypt-backend")
-            except MissingBackendError:
-                pytest.skip("bcrypt backend for passlib is not installed")
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
         encoding: str = self.configuration.get("encoding", "stock")
         with open(htpasswd_file_path, "w", encoding=encoding) as f:
