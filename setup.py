@@ -59,8 +59,6 @@ setup(
     author="Guillaume Ayoub",
     author_email="guillaume.ayoub@kozea.fr",
     url="https://radicale.org/",
-    download_url=("https://pypi.python.org/packages/source/R/Radicale/"
-                  "Radicale-%s.tar.gz" % VERSION),
     license="GNU GPL v3",
     platforms="Any",
     packages=find_packages(
