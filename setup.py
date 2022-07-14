@@ -15,31 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Radicale CalDAV and CardDAV server
-==================================
-
-The Radicale Project is a CalDAV (calendar) and CardDAV (contact) server.  It
-aims to be a light solution, easy to use, easy to install, easy to configure.
-As a consequence, it requires few software dependances and is pre-configured to
-work out-of-the-box.
-
-The Radicale Project runs on most of the UNIX-like platforms (Linux, BSD,
-MacOS X) and Windows.  It is known to work with Evolution, Lightning, iPhone
-and Android clients. It is free and open-source software, released under GPL
-version 3.
-
-For further information, please visit the `Radicale Website
-<https://radicale.org/>`_.
-
-"""
-
 from setuptools import find_packages, setup
 
 # When the version is updated, a new section in the CHANGELOG.md file must be
 # added too.
 VERSION = "master"
-WEB_FILES = ["web/internal_data/css/icon.png",
+
+with open("README.md", encoding="utf-8") as f:
+    long_description = f.read()
+web_files = ["web/internal_data/css/icon.png",
              "web/internal_data/css/main.css",
              "web/internal_data/fn.js",
              "web/internal_data/index.html"]
@@ -55,7 +39,8 @@ setup(
     name="Radicale",
     version=VERSION,
     description="CalDAV and CardDAV Server",
-    long_description=__doc__,
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author="Guillaume Ayoub",
     author_email="guillaume.ayoub@kozea.fr",
     url="https://radicale.org/",
@@ -63,7 +48,7 @@ setup(
     platforms="Any",
     packages=find_packages(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
-    package_data={"radicale": [*WEB_FILES, "py.typed"]},
+    package_data={"radicale": [*web_files, "py.typed"]},
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
     install_requires=install_requires,
     extras_require={"test": test_requires, "bcrypt": bcrypt_requires},
