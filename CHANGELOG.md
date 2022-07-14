@@ -2,6 +2,12 @@
 
 ## master
 
+## 3.1.8
+
+* Fix setuptools requirement if installing wheel
+* Tests: Switch from `python setup.py test` to `tox`
+* Small changes to build system configuration and tests
+
 ## 3.1.7
 
 * Fix random href fallback
