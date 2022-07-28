@@ -1,4 +1,4 @@
-window.addEventListener("load", function() {
+window.addEventListener("DOMContentLoaded", function() {
     document.querySelector("button[data-name=nav-open]").addEventListener("click", function() {
         document.documentElement.classList.add("nav-opened");
     });

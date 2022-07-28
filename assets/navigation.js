@@ -1,4 +1,4 @@
-window.addEventListener("load", function() {
+window.addEventListener("DOMContentLoaded", function() {
     function findActiveSection(sections) {
         let result = sections[0];
         for (let [section, link] of sections) {

@@ -1,4 +1,4 @@
-window.addEventListener("load", function() {
+window.addEventListener("DOMContentLoaded", function() {
     function resetSelect(select) {
         for (let option of select.options) {
             option.selected = option.defaultSelected;

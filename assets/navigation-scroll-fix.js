@@ -1,4 +1,4 @@
-window.addEventListener("load", function() {
+window.addEventListener("DOMContentLoaded", function() {
     for (let link of document.querySelectorAll("nav a")) {
         link.addEventListener("click", function() {
             let fragmentIndex = link.href.indexOf("#");
