@@ -14,7 +14,7 @@ header .logoContainer, header .documentBranch select {
 }
 
 header .logoContainer, header ul, main {
-    max-width: initial;
+    max-width: none;
 }
 
 nav {
@@ -23,9 +23,9 @@ nav {
     height: 100vh;
     top: 0;
     left: 0;
-    background-color: #E4E9F6;
+    background: #e4e9f6;
     z-index: 1;
-    max-height: initial !important;
+    max-height: none !important;
     margin: 0;
     transform: translate(-100vw);
     transition: transform ease .2s;
@@ -36,7 +36,7 @@ html.nav-opened {
 }
 
 .nav-opened nav {
-    transform: translate(0);
+    transform: none;
 }
 
 main, .navContainer {

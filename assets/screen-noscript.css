@@ -3,11 +3,11 @@ header .documentBranch::after, header .documentBranch select, .navButtonContaine
 }
 
 header .documentBranch span {
-    display: initial;
+    display: inline;
 }
 
 nav {
-    position: relative;
+    position: static;
     height: auto;
     /* Override changes made by JS to HTMLElement */
     max-height: none !important;
@@ -18,8 +18,8 @@ nav .level2.active > a, nav .level3.active > a {
     border-left-color: transparent;
 }
 
-nav .level4 {
-    display: initial;
+nav li.level4 {
+    display: list-item;
 }
 
 nav .level4 > a::after {

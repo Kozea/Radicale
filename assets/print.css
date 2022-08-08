@@ -1,0 +1,12 @@
+nav, .headerlink {
+    display: none;
+}
+
+a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+a:not([href^="#"])::after {
+    content: " (" attr(href) ")";
+}

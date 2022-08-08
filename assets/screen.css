@@ -1,7 +1,7 @@
 html {
     font-family: sans-serif;
     line-height: 1.4;
-    background-color: #E4E9F6;
+    background: #e4e9f6;
     color: #424247;
 }
 
@@ -18,9 +18,6 @@ body > * {
 
 a {
     color: #a40000;
-}
-
-a:link {
     text-decoration: none;
 }
 
@@ -31,7 +28,7 @@ a:hover {
 header {
     display: flex;
     flex-direction: column;
-    background-color: #050a02;
+    background: #050a02;
     color: #efdddd;
     align-items: center;
 }
@@ -92,7 +89,7 @@ header .documentBranch::after {
 }
 
 header .documentBranch select {
-    display: initial !important;
+    display: inline-block !important;
     background: none;
     color: #efdddd;
     border: none;
@@ -116,13 +113,12 @@ header .documentBranch option {
     color: initial;
     font-size: initial;
     font-weight: initial;
-    font-family: initial;
     cursor: initial;
 }
 
 header .linkContainer {
     order: -1;
-    background-color: #a40000;
+    background: #a40000;
     flex-direction: column;
     display: flex;
     align-items: center;
@@ -193,7 +189,6 @@ h6 {
 p.heading {
     font-size: .75em;
     margin: 1.67em 0;
-    font-weight: bolder;
 }
 
 img, .tableContainer {
@@ -206,9 +201,9 @@ img, .tableContainer {
 
 blockquote {
     border-radius: 3px;
-    background-color: #ECE7D5;
+    background: #ece7d5;
     padding: 10px;
-    border-left: 3px solid #F6E39A;
+    border-left: 3px solid #f6e39a;
     margin-left: 0;
     margin-right: 0;
 }
@@ -223,7 +218,7 @@ blockquote > *:last-child {
 
 div.sourceCode, :not(div) > pre {
     border-radius: 3px;
-    background-color: #D2D7E3;
+    background: #d2d7e3;
     padding: 10px;
     border-left: 3px solid #a40000;
     overflow: auto;
@@ -235,7 +230,7 @@ pre > code {
 
 :not(pre) > code {
     border-radius: 2px;
-    background-color: #D2D7E3;
+    background: #d2d7e3;
     padding: 0 2px;
 }
 
@@ -275,6 +270,7 @@ nav {
 
     nav {
         scrollbar-width: none;
+        scrollbar-color: #424247 #d2d7e3;
     }
 
     nav:hover, nav:focus-within {
@@ -282,16 +278,16 @@ nav {
     }
 
     nav::-webkit-scrollbar {
-        display: none;
-        background-color: #D2D7E3;
+        width: 0;
+        background: #d2d7e3;
     }
 
     nav::-webkit-scrollbar-thumb {
-        background-color: #424247;
+        background: #424247;
     }
 
     nav:hover::-webkit-scrollbar, nav:focus-within::-webkit-scrollbar {
-        display: initial;
+        width: initial;
     }
 }
 
@@ -332,7 +328,7 @@ nav .level4 > a {
 }
 
 nav .level2.active > a, nav .level3.active > a {
-    background: #D2D7E3;
+    background: #d2d7e3;
     border-left-color: #a40000;
 }
 
@@ -340,8 +336,8 @@ nav .level4 {
     display: none;
 }
 
-nav .active > ul > .level4 {
-    display: initial;
+nav .active > ul > li.level4 {
+    display: list-item;
 }
 
 .documentContainer p, .documentContainer ul, .documentContainer ol {
@@ -357,12 +353,11 @@ nav .active > ul > .level4 {
 }
 
 table, tr, td, th, thead {
-    border: 1px solid #424247;
-    border-collapse: collapse;
+    border-color: #424247;
 }
 
 thead {
-    background-color: #D2D7E3;
+    background: #d2d7e3;
 }
 
 td, th {
@@ -373,6 +368,6 @@ td, th {
     display: none;
 }
 
-section > *:first-child:hover .headerlink {
-    display: initial;
+section > *:first-child:hover a.headerlink {
+    display: inline;
 }
