@@ -15,6 +15,10 @@ table, tr, td, th, thead {
     border-collapse: collapse;
 }
 
+.headerlink {
+    display: none;
+}
+
 @media not screen {
     nav {
         /* Override changes made by JS to HTMLElement */

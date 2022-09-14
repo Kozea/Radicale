@@ -365,7 +365,9 @@ td, th {
 }
 
 .headerlink {
-    display: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
 }
 
 section > *:first-child:hover a.headerlink {
