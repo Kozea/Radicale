@@ -5,9 +5,12 @@ FROM python:3-alpine as builder
 # Version of Radicale (e.g. v3)
 ARG VERSION=master
 
+# Optional dependencies (e.g. bcrypt)
+ARG DEPENDENCIES=bcrypt
+
 RUN apk add --no-cache --virtual gcc libffi-dev musl-dev \
     && python -m venv /app/venv \
-    && /app/venv/bin/pip install --no-cache-dir "Radicale[bcrypt] @ https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz"
+    && /app/venv/bin/pip install --no-cache-dir "Radicale[${DEPENDENCIES}] @ https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz"
 
 
 FROM python:3-alpine

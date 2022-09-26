@@ -1,5 +1,7 @@
 FROM python:3-alpine as builder
 
+# Optional dependencies (e.g. bcrypt)
+ARG DEPENDENCIES=bcrypt
 
 COPY . /app
 
@@ -7,7 +9,7 @@ WORKDIR /app
 
 RUN apk add --no-cache --virtual gcc libffi-dev musl-dev \
     && python -m venv /app/venv \
-    && /app/venv/bin/pip install --no-cache-dir .[bcrypt]
+    && /app/venv/bin/pip install --no-cache-dir .[${DEPENDENCIES}]
 
 FROM python:3-alpine
 
