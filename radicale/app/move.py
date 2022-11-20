@@ -33,10 +33,16 @@ class ApplicationPartMove(ApplicationBase):
         """Manage MOVE request."""
         raw_dest = environ.get("HTTP_DESTINATION", "")
         to_url = urlparse(raw_dest)
-        if to_url.netloc != environ["HTTP_HOST"]:
-            logger.info("Unsupported destination address: %r", raw_dest)
-            # Remote destination server, not supported
-            return httputils.REMOTE_DESTINATION
+        if environ.get("HTTP_X_FORWARDED_HOST"):
+            if to_url.netloc != environ["HTTP_X_FORWARDED_HOST"]:
+                logger.info("Unsupported destination address: %r", raw_dest)
+                # Remote destination server, not supported
+                return httputils.REMOTE_DESTINATION
+        else:
+            if to_url.netloc != environ["HTTP_HOST"]:
+                logger.info("Unsupported destination address: %r", raw_dest)
+                # Remote destination server, not supported
+                return httputils.REMOTE_DESTINATION
         access = Access(self._rights, user, path)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
