@@ -973,7 +973,7 @@ An example rights file:
 [root]
 user: .+
 collection:
-permissions: R
+permissions: r
 
 # Allow reading and writing principal collection (same as username)
 [principal]
