@@ -35,6 +35,7 @@ from radicale import types
 
 LOGGER_NAME: str = "radicale"
 LOGGER_FORMAT: str = "[%(asctime)s] [%(ident)s] [%(levelname)s] %(message)s"
+LOGGER_FORMAT_WITHOUT_TIMESTAMP: str = "[%(ident)s] [%(levelname)s] %(message)s"
 DATE_FORMAT: str = "%Y-%m-%d %H:%M:%S %z"
 
 logger: logging.Logger = logging.getLogger(LOGGER_NAME)
@@ -112,7 +113,13 @@ def setup() -> None:
     """Set global logging up."""
     global register_stream
     handler = ThreadedStreamHandler()
-    logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT,
+    logger_format = LOGGER_FORMAT
+    if 'INVOCATION_ID' in os.environ:
+        # started by systemd (supported since v232)
+        # https://stackoverflow.com/questions/39368185/how-can-a-program-detect-if-it-is-running-as-a-systemd-daemon
+        # journald has its own timestamp, no need to log timestamp twice
+        logger_format = LOGGER_FORMAT_WITHOUT_TIMESTAMP
+    logging.basicConfig(format=logger_format, datefmt=DATE_FORMAT,
                         handlers=[handler])
     register_stream = handler.register_stream
     log_record_factory = IdentLogRecordFactory(logging.getLogRecordFactory())
