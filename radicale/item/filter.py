@@ -468,7 +468,15 @@ def text_match(vobject_item: vobject.base.Component,
             match(attrib) for child in children
             for attrib in child.params.get(attrib_name, []))
     else:
-        condition = any(match(child.value) for child in children)
+        res = []
+        for child in children:
+            # Some filters such as CATEGORIES provide a list in child.value
+            if type(child.value) is list:
+                for value in child.value:
+                    res.append(match(value))
+            else:
+                res.append(match(child.value))
+        condition = any(res)
     if filter_.get("negate-condition") == "yes":
         return not condition
     return condition
