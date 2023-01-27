@@ -917,6 +917,22 @@ permissions: RrWw""")
         </C:prop-filter>
     </C:comp-filter>
 </C:comp-filter>"""])
+        assert "/calendar.ics/event1.ics" in self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:prop-filter name="CATEGORIES">
+            <C:text-match>some_category1</C:text-match>
+        </C:prop-filter>
+    </C:comp-filter>
+</C:comp-filter>"""])
+        assert "/calendar.ics/event1.ics" in self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:prop-filter name="CATEGORIES">
+            <C:text-match collation="i;octet">some_category1</C:text-match>
+        </C:prop-filter>
+    </C:comp-filter>
+</C:comp-filter>"""])
         assert "/calendar.ics/event1.ics" not in self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
     <C:comp-filter name="VEVENT">
