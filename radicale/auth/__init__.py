@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
@@ -28,18 +28,23 @@ Take a look at the class ``BaseAuth`` if you want to implement your own.
 
 """
 
-from radicale import utils
+from typing import Sequence, Tuple, Union
 
-INTERNAL_TYPES = ("none", "remote_user", "http_x_remote_user", "htpasswd")
+from radicale import config, types, utils
+
+INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
+                                 "htpasswd")
 
 
-def load(configuration):
+def load(configuration: "config.Configuration") -> "BaseAuth":
     """Load the authentication module chosen in configuration."""
-    return utils.load_plugin(INTERNAL_TYPES, "auth", "Auth", configuration)
+    return utils.load_plugin(INTERNAL_TYPES, "auth", "Auth", BaseAuth,
+                             configuration)
 
 
 class BaseAuth:
-    def __init__(self, configuration):
+
+    def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseAuth.
 
         ``configuration`` see ``radicale.config`` module.
@@ -49,7 +54,8 @@ class BaseAuth:
         """
         self.configuration = configuration
 
-    def get_external_login(self, environ):
+    def get_external_login(self, environ: types.WSGIEnviron) -> Union[
+            Tuple[()], Tuple[str, str]]:
         """Optionally provide the login and password externally.
 
         ``environ`` a dict with the WSGI environment
@@ -61,14 +67,14 @@ class BaseAuth:
         """
         return ()
 
-    def login(self, login, password):
+    def login(self, login: str, password: str) -> str:
         """Check credentials and map login to internal user
 
         ``login`` the login name
 
         ``password`` the password
 
-        Returns the user name or ``""`` for invalid credentials.
+        Returns the username or ``""`` for invalid credentials.
 
         """
 

@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2019 Unrud <unrud@outlook.com>
@@ -20,52 +20,82 @@ import contextlib
 import logging
 import os
 import shlex
+import signal
 import subprocess
+import sys
+from typing import Iterator
 
-from radicale import pathutils
+from radicale import config, pathutils, types
 from radicale.log import logger
+from radicale.storage.multifilesystem.base import CollectionBase, StorageBase
 
 
-class CollectionLockMixin:
-    def _acquire_cache_lock(self, ns=""):
+class CollectionPartLock(CollectionBase):
+
+    @types.contextmanager
+    def _acquire_cache_lock(self, ns: str = "") -> Iterator[None]:
         if self._storage._lock.locked == "w":
-            return contextlib.ExitStack()
+            yield
+            return
         cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache")
         self._storage._makedirs_synced(cache_folder)
         lock_path = os.path.join(cache_folder,
                                  ".Radicale.lock" + (".%s" % ns if ns else ""))
         lock = pathutils.RwLock(lock_path)
-        return lock.acquire("w")
+        with lock.acquire("w"):
+            yield
 
 
-class StorageLockMixin:
+class StoragePartLock(StorageBase):
 
-    def __init__(self, configuration):
+    _lock: pathutils.RwLock
+    _hook: str
+
+    def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
-        folder = self.configuration.get("storage", "filesystem_folder")
-        lock_path = os.path.join(folder, ".Radicale.lock")
+        lock_path = os.path.join(self._filesystem_folder, ".Radicale.lock")
         self._lock = pathutils.RwLock(lock_path)
+        self._hook = configuration.get("storage", "hook")
 
-    @contextlib.contextmanager
-    def acquire_lock(self, mode, user=None):
+    @types.contextmanager
+    def acquire_lock(self, mode: str, user: str = "") -> Iterator[None]:
         with self._lock.acquire(mode):
             yield
             # execute hook
-            hook = self.configuration.get("storage", "hook")
-            if mode == "w" and hook:
-                folder = self.configuration.get("storage", "filesystem_folder")
-                logger.debug("Running hook")
+            if mode == "w" and self._hook:
                 debug = logger.isEnabledFor(logging.DEBUG)
+                # Use new process group for child to prevent terminals
+                # from sending SIGINT etc.
+                preexec_fn = None
+                creationflags = 0
+                if sys.platform == "win32":
+                    creationflags |= subprocess.CREATE_NEW_PROCESS_GROUP
+                else:
+                    # Process group is also used to identify child processes
+                    preexec_fn = os.setpgrp
+                command = self._hook % {
+                    "user": shlex.quote(user or "Anonymous")}
+                logger.debug("Running storage hook")
                 p = subprocess.Popen(
-                    hook % {"user": shlex.quote(user or "Anonymous")},
-                    stdin=subprocess.DEVNULL,
+                    command, stdin=subprocess.DEVNULL,
                     stdout=subprocess.PIPE if debug else subprocess.DEVNULL,
                     stderr=subprocess.PIPE if debug else subprocess.DEVNULL,
-                    shell=True, universal_newlines=True, cwd=folder)
-                stdout_data, stderr_data = p.communicate()
+                    shell=True, universal_newlines=True, preexec_fn=preexec_fn,
+                    cwd=self._filesystem_folder, creationflags=creationflags)
+                try:
+                    stdout_data, stderr_data = p.communicate()
+                except BaseException:  # e.g. KeyboardInterrupt or SystemExit
+                    p.kill()
+                    p.wait()
+                    raise
+                finally:
+                    if sys.platform != "win32":
+                        # Kill remaining children identified by process group
+                        with contextlib.suppress(OSError):
+                            os.killpg(p.pid, signal.SIGKILL)
                 if stdout_data:
-                    logger.debug("Captured stdout hook:\n%s", stdout_data)
+                    logger.debug("Captured stdout from hook:\n%s", stdout_data)
                 if stderr_data:
-                    logger.debug("Captured stderr hook:\n%s", stderr_data)
+                    logger.debug("Captured stderr from hook:\n%s", stderr_data)
                 if p.returncode != 0:
                     raise subprocess.CalledProcessError(p.returncode, p.args)

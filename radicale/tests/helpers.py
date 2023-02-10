@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
@@ -26,22 +26,21 @@ This module offers helpers to use in tests.
 
 import os
 
-EXAMPLES_FOLDER = os.path.join(os.path.dirname(__file__), "static")
+from radicale import config, types
+
+EXAMPLES_FOLDER: str = os.path.join(os.path.dirname(__file__), "static")
 
 
-def get_file_path(file_name):
+def get_file_path(file_name: str) -> str:
     return os.path.join(EXAMPLES_FOLDER, file_name)
 
 
-def get_file_content(file_name):
-    try:
-        with open(get_file_path(file_name), encoding="utf-8") as fd:
-            return fd.read()
-    except IOError:
-        print("Couldn't open the file %s" % file_name)
+def get_file_content(file_name: str) -> str:
+    with open(get_file_path(file_name), encoding="utf-8") as f:
+        return f.read()
 
 
-def configuration_to_dict(configuration):
+def configuration_to_dict(configuration: config.Configuration) -> types.CONFIG:
     """Convert configuration to a dict with raw values."""
     return {section: {option: configuration.get_raw(section, option)
                       for option in configuration.options(section)

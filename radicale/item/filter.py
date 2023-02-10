@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2015 Guillaume Ayoub
@@ -19,35 +19,40 @@
 
 
 import math
+import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
 from itertools import chain
+from typing import (Callable, Iterable, Iterator, List, Optional, Sequence,
+                    Tuple)
 
-from radicale import xmlutils
+import vobject
+
+from radicale import item, xmlutils
 from radicale.log import logger
 
-DAY = timedelta(days=1)
-SECOND = timedelta(seconds=1)
-DATETIME_MIN = datetime.min.replace(tzinfo=timezone.utc)
-DATETIME_MAX = datetime.max.replace(tzinfo=timezone.utc)
-TIMESTAMP_MIN = math.floor(DATETIME_MIN.timestamp())
-TIMESTAMP_MAX = math.ceil(DATETIME_MAX.timestamp())
+DAY: timedelta = timedelta(days=1)
+SECOND: timedelta = timedelta(seconds=1)
+DATETIME_MIN: datetime = datetime.min.replace(tzinfo=timezone.utc)
+DATETIME_MAX: datetime = datetime.max.replace(tzinfo=timezone.utc)
+TIMESTAMP_MIN: int = math.floor(DATETIME_MIN.timestamp())
+TIMESTAMP_MAX: int = math.ceil(DATETIME_MAX.timestamp())
 
 
-def date_to_datetime(date_):
-    """Transform a date to a UTC datetime.
+def date_to_datetime(d: date) -> datetime:
+    """Transform any date to a UTC datetime.
 
-    If date_ is a datetime without timezone, return as UTC datetime. If date_
+    If ``d`` is a datetime without timezone, return as UTC datetime. If ``d``
     is already a datetime with timezone, return as is.
 
     """
-    if not isinstance(date_, datetime):
-        date_ = datetime.combine(date_, datetime.min.time())
-    if not date_.tzinfo:
-        date_ = date_.replace(tzinfo=timezone.utc)
-    return date_
+    if not isinstance(d, datetime):
+        d = datetime.combine(d, datetime.min.time())
+    if not d.tzinfo:
+        d = d.replace(tzinfo=timezone.utc)
+    return d
 
 
-def comp_match(item, filter_, level=0):
+def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
     """Check whether the ``item`` matches the comp ``filter_``.
 
     If ``level`` is ``0``, the filter is applied on the
@@ -70,7 +75,7 @@ def comp_match(item, filter_, level=0):
         return True
     if not tag:
         return False
-    name = filter_.get("name").upper()
+    name = filter_.get("name", "").upper()
     if len(filter_) == 0:
         # Point #1 of rfc4791-9.7.1
         return name == tag
@@ -104,18 +109,19 @@ def comp_match(item, filter_, level=0):
     return True
 
 
-def prop_match(vobject_item, filter_, ns):
+def prop_match(vobject_item: vobject.base.Component,
+               filter_: ET.Element, ns: str) -> bool:
     """Check whether the ``item`` matches the prop ``filter_``.
 
     See rfc4791-9.7.2 and rfc6352-10.5.1.
 
     """
-    name = filter_.get("name").lower()
+    name = filter_.get("name", "").lower()
     if len(filter_) == 0:
         # Point #1 of rfc4791-9.7.2
         return name in vobject_item.contents
     if len(filter_) == 1:
-        if filter_[0].tag == xmlutils.make_clark("C:is-not-defined"):
+        if filter_[0].tag == xmlutils.make_clark("%s:is-not-defined" % ns):
             # Point #2 of rfc4791-9.7.2
             return name not in vobject_item.contents
     if name not in vobject_item.contents:
@@ -136,20 +142,21 @@ def prop_match(vobject_item, filter_, ns):
     return True
 
 
-def time_range_match(vobject_item, filter_, child_name):
+def time_range_match(vobject_item: vobject.base.Component,
+                     filter_: ET.Element, child_name: str) -> bool:
     """Check whether the component/property ``child_name`` of
        ``vobject_item`` matches the time-range ``filter_``."""
 
-    start = filter_.get("start")
-    end = filter_.get("end")
-    if not start and not end:
+    start_text = filter_.get("start")
+    end_text = filter_.get("end")
+    if not start_text and not end_text:
         return False
-    if start:
-        start = datetime.strptime(start, "%Y%m%dT%H%M%SZ")
+    if start_text:
+        start = datetime.strptime(start_text, "%Y%m%dT%H%M%SZ")
     else:
         start = datetime.min
-    if end:
-        end = datetime.strptime(end, "%Y%m%dT%H%M%SZ")
+    if end_text:
+        end = datetime.strptime(end_text, "%Y%m%dT%H%M%SZ")
     else:
         end = datetime.max
     start = start.replace(tzinfo=timezone.utc)
@@ -157,7 +164,8 @@ def time_range_match(vobject_item, filter_, child_name):
 
     matched = False
 
-    def range_fn(range_start, range_end, is_recurrence):
+    def range_fn(range_start: datetime, range_end: datetime,
+                 is_recurrence: bool) -> bool:
         nonlocal matched
         if start < range_end and range_start < end:
             matched = True
@@ -166,14 +174,16 @@ def time_range_match(vobject_item, filter_, child_name):
             return True
         return False
 
-    def infinity_fn(start):
+    def infinity_fn(start: datetime) -> bool:
         return False
 
     visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn)
     return matched
 
 
-def visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
+def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
+                      range_fn: Callable[[datetime, datetime, bool], bool],
+                      infinity_fn: Callable[[datetime], bool]) -> None:
     """Visit all time ranges in the component/property ``child_name`` of
     `vobject_item`` with visitors ``range_fn`` and ``infinity_fn``.
 
@@ -181,7 +191,7 @@ def visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
     datetimes and ``is_recurrence`` as arguments. If the function returns True,
     the operation is cancelled.
 
-    ``infinity_fn`` gets called when an infiite recurrence rule is detected
+    ``infinity_fn`` gets called when an infinite recurrence rule is detected
     with ``start`` datetime as argument. If the function returns True, the
     operation is cancelled.
 
@@ -194,10 +204,15 @@ def visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
     # recurrences too. This is not respected and client don't seem to bother
     # either.
 
-    def getrruleset(child, ignore=()):
-        if (hasattr(child, "rrule") and
-                ";UNTIL=" not in child.rrule.value.upper() and
-                ";COUNT=" not in child.rrule.value.upper()):
+    def getrruleset(child: vobject.base.Component, ignore: Sequence[date]
+                    ) -> Tuple[Iterable[date], bool]:
+        infinite = False
+        for rrule in child.contents.get("rrule", []):
+            if (";UNTIL=" not in rrule.value.upper() and
+                    ";COUNT=" not in rrule.value.upper()):
+                infinite = True
+                break
+        if infinite:
             for dtstart in child.getrruleset(addRDate=True):
                 if dtstart in ignore:
                     continue
@@ -207,7 +222,8 @@ def visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
         return filter(lambda dtstart: dtstart not in ignore,
                       child.getrruleset(addRDate=True)), False
 
-    def get_children(components):
+    def get_children(components: Iterable[vobject.base.Component]) -> Iterator[
+                         Tuple[vobject.base.Component, bool, List[date]]]:
         main = None
         recurrences = []
         for comp in components:
@@ -216,7 +232,7 @@ def visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
                 if comp.rruleset:
                     # Prevent possible infinite loop
                     raise ValueError("Overwritten recurrence with RRULESET")
-                yield comp, True, ()
+                yield comp, True, []
             else:
                 if main is not None:
                     raise ValueError("Multiple main components")
@@ -410,12 +426,17 @@ def visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn):
         # Match a property
         child = getattr(vobject_item, child_name.lower())
         if isinstance(child, date):
-            range_fn(child, child + DAY, False)
-        elif isinstance(child, datetime):
-            range_fn(child, child + SECOND, False)
+            child_is_datetime = isinstance(child, datetime)
+            child = date_to_datetime(child)
+            if child_is_datetime:
+                range_fn(child, child + SECOND, False)
+            else:
+                range_fn(child, child + DAY, False)
 
 
-def text_match(vobject_item, filter_, child_name, ns, attrib_name=None):
+def text_match(vobject_item: vobject.base.Component,
+               filter_: ET.Element, child_name: str, ns: str,
+               attrib_name: Optional[str] = None) -> bool:
     """Check whether the ``item`` matches the text-match ``filter_``.
 
     See rfc4791-9.7.5.
@@ -429,7 +450,7 @@ def text_match(vobject_item, filter_, child_name, ns, attrib_name=None):
     if ns == "CR":
         match_type = filter_.get("match-type", match_type)
 
-    def match(value):
+    def match(value: str) -> bool:
         value = value.lower()
         if match_type == "equals":
             return value == text
@@ -442,7 +463,7 @@ def text_match(vobject_item, filter_, child_name, ns, attrib_name=None):
         raise ValueError("Unexpected text-match match-type: %r" % match_type)
 
     children = getattr(vobject_item, "%s_list" % child_name, [])
-    if attrib_name:
+    if attrib_name is not None:
         condition = any(
             match(attrib) for child in children
             for attrib in child.params.get(attrib_name, []))
@@ -453,13 +474,14 @@ def text_match(vobject_item, filter_, child_name, ns, attrib_name=None):
     return condition
 
 
-def param_filter_match(vobject_item, filter_, parent_name, ns):
+def param_filter_match(vobject_item: vobject.base.Component,
+                       filter_: ET.Element, parent_name: str, ns: str) -> bool:
     """Check whether the ``item`` matches the param-filter ``filter_``.
 
     See rfc4791-9.7.3.
 
     """
-    name = filter_.get("name").upper()
+    name = filter_.get("name", "").upper()
     children = getattr(vobject_item, "%s_list" % parent_name, [])
     condition = any(name in child.params for child in children)
     if len(filter_) > 0:
@@ -471,7 +493,8 @@ def param_filter_match(vobject_item, filter_, parent_name, ns):
     return condition
 
 
-def simplify_prefilters(filters, collection_tag="VCALENDAR"):
+def simplify_prefilters(filters: Iterable[ET.Element], collection_tag: str
+                        ) -> Tuple[Optional[str], int, int, bool]:
     """Creates a simplified condition from ``filters``.
 
     Returns a tuple (``tag``, ``start``, ``end``, ``simple``) where ``tag`` is
@@ -480,14 +503,14 @@ def simplify_prefilters(filters, collection_tag="VCALENDAR"):
     and the simplified condition are identical.
 
     """
-    flat_filters = tuple(chain.from_iterable(filters))
+    flat_filters = list(chain.from_iterable(filters))
     simple = len(flat_filters) <= 1
     for col_filter in flat_filters:
         if collection_tag != "VCALENDAR":
             simple = False
             break
         if (col_filter.tag != xmlutils.make_clark("C:comp-filter") or
-                col_filter.get("name").upper() != "VCALENDAR"):
+                col_filter.get("name", "").upper() != "VCALENDAR"):
             simple = False
             continue
         simple &= len(col_filter) <= 1
@@ -495,7 +518,7 @@ def simplify_prefilters(filters, collection_tag="VCALENDAR"):
             if comp_filter.tag != xmlutils.make_clark("C:comp-filter"):
                 simple = False
                 continue
-            tag = comp_filter.get("name").upper()
+            tag = comp_filter.get("name", "").upper()
             if comp_filter.find(
                     xmlutils.make_clark("C:is-not-defined")) is not None:
                 simple = False
@@ -508,17 +531,17 @@ def simplify_prefilters(filters, collection_tag="VCALENDAR"):
                 if time_filter.tag != xmlutils.make_clark("C:time-range"):
                     simple = False
                     continue
-                start = time_filter.get("start")
-                end = time_filter.get("end")
-                if start:
+                start_text = time_filter.get("start")
+                end_text = time_filter.get("end")
+                if start_text:
                     start = math.floor(datetime.strptime(
-                        start, "%Y%m%dT%H%M%SZ").replace(
+                        start_text, "%Y%m%dT%H%M%SZ").replace(
                             tzinfo=timezone.utc).timestamp())
                 else:
                     start = TIMESTAMP_MIN
-                if end:
+                if end_text:
                     end = math.ceil(datetime.strptime(
-                        end, "%Y%m%dT%H%M%SZ").replace(
+                        end_text, "%Y%m%dT%H%M%SZ").replace(
                             tzinfo=timezone.utc).timestamp())
                 else:
                     end = TIMESTAMP_MAX

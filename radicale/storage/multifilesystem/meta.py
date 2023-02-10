@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
@@ -18,32 +18,49 @@
 
 import json
 import os
+from typing import Mapping, Optional, TextIO, Union, cast, overload
 
-from radicale import item as radicale_item
+import radicale.item as radicale_item
+from radicale.storage import multifilesystem
+from radicale.storage.multifilesystem.base import CollectionBase
 
 
-class CollectionMetaMixin:
-    def __init__(self):
-        super().__init__()
+class CollectionPartMeta(CollectionBase):
+
+    _meta_cache: Optional[Mapping[str, str]]
+    _props_path: str
+
+    def __init__(self, storage_: "multifilesystem.Storage", path: str,
+                 filesystem_path: Optional[str] = None) -> None:
+        super().__init__(storage_, path, filesystem_path)
         self._meta_cache = None
         self._props_path = os.path.join(
             self._filesystem_path, ".Radicale.props")
 
-    def get_meta(self, key=None):
+    @overload
+    def get_meta(self, key: None = None) -> Mapping[str, str]: ...
+
+    @overload
+    def get_meta(self, key: str) -> Optional[str]: ...
+
+    def get_meta(self, key: Optional[str] = None) -> Union[Mapping[str, str],
+                                                           Optional[str]]:
         # reuse cached value if the storage is read-only
         if self._storage._lock.locked == "w" or self._meta_cache is None:
             try:
                 try:
                     with open(self._props_path, encoding=self._encoding) as f:
-                        self._meta_cache = json.load(f)
+                        temp_meta = json.load(f)
                 except FileNotFoundError:
-                    self._meta_cache = {}
-                radicale_item.check_and_sanitize_props(self._meta_cache)
+                    temp_meta = {}
+                self._meta_cache = radicale_item.check_and_sanitize_props(
+                    temp_meta)
             except ValueError as e:
                 raise RuntimeError("Failed to load properties of collection "
                                    "%r: %s" % (self.path, e)) from e
-        return self._meta_cache.get(key) if key else self._meta_cache
+        return self._meta_cache if key is None else self._meta_cache.get(key)
 
-    def set_meta(self, props):
-        with self._atomic_write(self._props_path, "w") as f:
+    def set_meta(self, props: Mapping[str, str]) -> None:
+        with self._atomic_write(self._props_path, "w") as fo:
+            f = cast(TextIO, fo)
             json.dump(props, f, sort_keys=True)

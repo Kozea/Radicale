@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
@@ -18,19 +18,25 @@
 
 import os
 
-from radicale import pathutils
+from radicale import item as radicale_item
+from radicale import pathutils, storage
+from radicale.storage import multifilesystem
+from radicale.storage.multifilesystem.base import StorageBase
 
 
-class StorageMoveMixin:
+class StoragePartMove(StorageBase):
 
-    def move(self, item, to_collection, to_href):
+    def move(self, item: radicale_item.Item,
+             to_collection: storage.BaseCollection, to_href: str) -> None:
         if not pathutils.is_safe_filesystem_path_component(to_href):
             raise pathutils.UnsafePathError(to_href)
-        os.replace(
-            pathutils.path_to_filesystem(
-                item.collection._filesystem_path, item.href),
-            pathutils.path_to_filesystem(
-                to_collection._filesystem_path, to_href))
+        assert isinstance(to_collection, multifilesystem.Collection)
+        assert isinstance(item.collection, multifilesystem.Collection)
+        assert item.href
+        os.replace(pathutils.path_to_filesystem(
+                       item.collection._filesystem_path, item.href),
+                   pathutils.path_to_filesystem(
+                       to_collection._filesystem_path, to_href))
         self._sync_directory(to_collection._filesystem_path)
         if item.collection._filesystem_path != to_collection._filesystem_path:
             self._sync_directory(item.collection._filesystem_path)

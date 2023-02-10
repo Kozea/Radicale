@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
@@ -16,23 +16,27 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-import contextlib
+from typing import Iterator, Optional, Set
 
-from radicale import pathutils, storage
+from radicale import pathutils, storage, types
 from radicale.log import logger
+from radicale.storage.multifilesystem.base import StorageBase
+from radicale.storage.multifilesystem.discover import StoragePartDiscover
 
 
-class StorageVerifyMixin:
-    def verify(self):
+class StoragePartVerify(StoragePartDiscover, StorageBase):
+
+    def verify(self) -> bool:
         item_errors = collection_errors = 0
 
-        @contextlib.contextmanager
-        def exception_cm(sane_path, href=None):
+        @types.contextmanager
+        def exception_cm(sane_path: str, href: Optional[str]
+                         ) -> Iterator[None]:
             nonlocal item_errors, collection_errors
             try:
                 yield
             except Exception as e:
-                if href:
+                if href is not None:
                     item_errors += 1
                     name = "item %r in %r" % (href, sane_path)
                 else:
@@ -45,13 +49,14 @@ class StorageVerifyMixin:
             sane_path = remaining_sane_paths.pop(0)
             path = pathutils.unstrip_path(sane_path, True)
             logger.debug("Verifying collection %r", sane_path)
-            with exception_cm(sane_path):
+            with exception_cm(sane_path, None):
                 saved_item_errors = item_errors
-                collection = None
-                uids = set()
+                collection: Optional[storage.BaseCollection] = None
+                uids: Set[str] = set()
                 has_child_collections = False
                 for item in self.discover(path, "1", exception_cm):
                     if not collection:
+                        assert isinstance(item, storage.BaseCollection)
                         collection = item
                         collection.get_meta()
                         continue
@@ -65,10 +70,11 @@ class StorageVerifyMixin:
                         uids.add(item.uid)
                         logger.debug("Verified item %r in %r",
                                      item.href, sane_path)
+                assert collection
                 if item_errors == saved_item_errors:
                     collection.sync()
-                if has_child_collections and collection.get_meta("tag"):
+                if has_child_collections and collection.tag:
                     logger.error("Invalid collection %r: %r must not have "
                                  "child collections", sane_path,
-                                 collection.get_meta("tag"))
+                                 collection.tag)
         return item_errors == 0 and collection_errors == 0

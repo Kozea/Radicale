@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
@@ -37,25 +37,27 @@ Leading or ending slashes are trimmed from collection's path.
 import configparser
 import re
 
-from radicale import pathutils, rights
+from radicale import config, pathutils, rights
 from radicale.log import logger
 
 
 class Rights(rights.BaseRights):
-    def __init__(self, configuration):
+
+    _filename: str
+
+    def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
         self._filename = configuration.get("rights", "file")
 
-    def authorization(self, user, path):
+    def authorization(self, user: str, path: str) -> str:
         user = user or ""
         sane_path = pathutils.strip_path(path)
         # Prevent "regex injection"
         escaped_user = re.escape(user)
         rights_config = configparser.ConfigParser()
         try:
-            if not rights_config.read(self._filename):
-                raise RuntimeError("No such file: %r" %
-                                   self._filename)
+            with open(self._filename, "r") as f:
+                rights_config.read_file(f)
         except Exception as e:
             raise RuntimeError("Failed to load rights file %r: %s" %
                                (self._filename, e)) from e
@@ -67,7 +69,7 @@ class Rights(rights.BaseRights):
                 user_match = re.fullmatch(user_pattern.format(), user)
                 collection_match = user_match and re.fullmatch(
                     collection_pattern.format(
-                        *map(re.escape, user_match.groups()),
+                        *(re.escape(s) for s in user_match.groups()),
                         user=escaped_user), sane_path)
             except Exception as e:
                 raise RuntimeError("Error in section %r of rights file %r: "

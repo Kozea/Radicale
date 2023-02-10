@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
@@ -21,18 +21,24 @@ Take a look at the class ``BaseWeb`` if you want to implement your own.
 
 """
 
-from radicale import utils
+from typing import Sequence
 
-INTERNAL_TYPES = ("none", "internal")
+from radicale import config, httputils, types, utils
+
+INTERNAL_TYPES: Sequence[str] = ("none", "internal")
 
 
-def load(configuration):
+def load(configuration: "config.Configuration") -> "BaseWeb":
     """Load the web module chosen in configuration."""
-    return utils.load_plugin(INTERNAL_TYPES, "web", "Web", configuration)
+    return utils.load_plugin(INTERNAL_TYPES, "web", "Web", BaseWeb,
+                             configuration)
 
 
 class BaseWeb:
-    def __init__(self, configuration):
+
+    configuration: "config.Configuration"
+
+    def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseWeb.
 
         ``configuration`` see ``radicale.config`` module.
@@ -42,7 +48,8 @@ class BaseWeb:
         """
         self.configuration = configuration
 
-    def get(self, environ, base_prefix, path, user):
+    def get(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
+            user: str) -> types.WSGIResponse:
         """GET request.
 
         ``base_prefix`` is sanitized and never ends with "/".
@@ -52,4 +59,20 @@ class BaseWeb:
         ``user`` is empty for anonymous users.
 
         """
-        raise NotImplementedError
+        return httputils.METHOD_NOT_ALLOWED
+
+    def post(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
+             user: str) -> types.WSGIResponse:
+        """POST request.
+
+        ``base_prefix`` is sanitized and never ends with "/".
+
+        ``path`` is sanitized and always starts with "/.web"
+
+        ``user`` is empty for anonymous users.
+
+        Use ``httputils.read*_request_body(self.configuration, environ)`` to
+        read the body.
+
+        """
+        return httputils.METHOD_NOT_ALLOWED

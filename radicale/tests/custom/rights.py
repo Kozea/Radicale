@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
@@ -23,7 +23,8 @@ from radicale import pathutils, rights
 
 
 class Rights(rights.BaseRights):
-    def authorization(self, user, path):
+
+    def authorization(self, user: str, path: str) -> str:
         sane_path = pathutils.strip_path(path)
         if sane_path not in ("tmp", "other"):
             return ""

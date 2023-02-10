@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
@@ -28,7 +28,8 @@ from radicale import auth
 
 
 class Auth(auth.BaseAuth):
-    def login(self, login, password):
+
+    def login(self, login: str, password: str) -> str:
         if login == "tmp":
             return login
         return ""

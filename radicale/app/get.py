@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
@@ -21,17 +21,17 @@ import posixpath
 from http import client
 from urllib.parse import quote
 
-from radicale import app, httputils, pathutils, storage, xmlutils
+from radicale import httputils, pathutils, storage, types, xmlutils
+from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
 
 
-def propose_filename(collection):
+def propose_filename(collection: storage.BaseCollection) -> str:
     """Propose a filename for a collection."""
-    tag = collection.get_meta("tag")
-    if tag == "VADDRESSBOOK":
+    if collection.tag == "VADDRESSBOOK":
         fallback_title = "Address book"
         suffix = ".vcf"
-    elif tag == "VCALENDAR":
+    elif collection.tag == "VCALENDAR":
         fallback_title = "Calendar"
         suffix = ".ics"
     else:
@@ -43,8 +43,9 @@ def propose_filename(collection):
     return title
 
 
-class ApplicationGetMixin:
-    def _content_disposition_attachement(self, filename):
+class ApplicationPartGet(ApplicationBase):
+
+    def _content_disposition_attachement(self, filename: str) -> str:
         value = "attachement"
         try:
             encoded_filename = quote(filename, encoding=self._encoding)
@@ -56,25 +57,27 @@ class ApplicationGetMixin:
             value += "; filename*=%s''%s" % (self._encoding, encoded_filename)
         return value
 
-    def do_GET(self, environ, base_prefix, path, user):
+    def do_GET(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
+               user: str) -> types.WSGIResponse:
         """Manage GET request."""
-        # Redirect to .web if the root URL is requested
+        # Redirect to /.web if the root path is requested
         if not pathutils.strip_path(path):
-            web_path = ".web"
-            if not environ.get("PATH_INFO"):
-                web_path = posixpath.join(posixpath.basename(base_prefix),
-                                          web_path)
-            return (client.FOUND,
-                    {"Location": web_path, "Content-Type": "text/plain"},
-                    "Redirected to %s" % web_path)
-        # Dispatch .web URL to web module
+            return httputils.redirect(base_prefix + "/.web")
         if path == "/.web" or path.startswith("/.web/"):
+            # Redirect to sanitized path for all subpaths of /.web
+            unsafe_path = environ.get("PATH_INFO", "")
+            if unsafe_path != path:
+                location = base_prefix + path
+                logger.info("Redirecting to sanitized path: %r ==> %r",
+                            base_prefix + unsafe_path, location)
+                return httputils.redirect(location, client.MOVED_PERMANENTLY)
+            # Dispatch /.web path to web module
             return self._web.get(environ, base_prefix, path, user)
-        access = app.Access(self._rights, user, path)
+        access = Access(self._rights, user, path)
         if not access.check("r") and "i" not in access.permissions:
             return httputils.NOT_ALLOWED
         with self._storage.acquire_lock("r", user):
-            item = next(self._storage.discover(path), None)
+            item = next(iter(self._storage.discover(path)), None)
             if not item:
                 return httputils.NOT_FOUND
             if access.check("r", item):
@@ -84,11 +87,10 @@ class ApplicationGetMixin:
             else:
                 return httputils.NOT_ALLOWED
             if isinstance(item, storage.BaseCollection):
-                tag = item.get_meta("tag")
-                if not tag:
+                if not item.tag:
                     return (httputils.NOT_ALLOWED if limited_access else
                             httputils.DIRECTORY_LISTING)
-                content_type = xmlutils.MIMETYPES[tag]
+                content_type = xmlutils.MIMETYPES[item.tag]
                 content_disposition = self._content_disposition_attachement(
                     propose_filename(item))
             elif limited_access:
@@ -96,6 +98,7 @@ class ApplicationGetMixin:
             else:
                 content_type = xmlutils.OBJECT_MIMETYPES[item.name]
                 content_disposition = ""
+            assert item.last_modified
             headers = {
                 "Content-Type": content_type,
                 "Last-Modified": item.last_modified,

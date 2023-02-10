@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2019 Unrud <unrud@outlook.com>
@@ -16,20 +16,27 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import itertools
 import os
 import pickle
 from hashlib import sha256
+from typing import BinaryIO, Iterable, Tuple, cast
 
 from radicale.log import logger
+from radicale.storage.multifilesystem.base import CollectionBase
+from radicale.storage.multifilesystem.cache import CollectionPartCache
+from radicale.storage.multifilesystem.history import CollectionPartHistory
 
 
-class CollectionSyncMixin:
-    def sync(self, old_token=None):
+class CollectionPartSync(CollectionPartCache, CollectionPartHistory,
+                         CollectionBase):
+
+    def sync(self, old_token: str = "") -> Tuple[str, Iterable[str]]:
         # The sync token has the form http://radicale.org/ns/sync/TOKEN_NAME
         # where TOKEN_NAME is the sha256 hash of all history etags of present
         # and past items of the collection.
-        def check_token_name(token_name):
+        def check_token_name(token_name: str) -> bool:
             if len(token_name) != 64:
                 return False
             for c in token_name:
@@ -37,7 +44,7 @@ class CollectionSyncMixin:
                     return False
             return True
 
-        old_token_name = None
+        old_token_name = ""
         if old_token:
             # Extract the token name from the sync token
             if not old_token.startswith("http://radicale.org/ns/sync/"):
@@ -78,10 +85,9 @@ class CollectionSyncMixin:
                         "Failed to load stored sync token %r in %r: %s",
                         old_token_name, self.path, e, exc_info=True)
                     # Delete the damaged file
-                    try:
+                    with contextlib.suppress(FileNotFoundError,
+                                             PermissionError):
                         os.remove(old_token_path)
-                    except (FileNotFoundError, PermissionError):
-                        pass
                 raise ValueError("Token not found: %r" % old_token)
         # write the new token state or update the modification time of
         # existing token state
@@ -89,23 +95,21 @@ class CollectionSyncMixin:
             self._storage._makedirs_synced(token_folder)
             try:
                 # Race: Other processes might have created and locked the file.
-                with self._atomic_write(token_path, "wb") as f:
-                    pickle.dump(state, f)
+                with self._atomic_write(token_path, "wb") as fo:
+                    fb = cast(BinaryIO, fo)
+                    pickle.dump(state, fb)
             except PermissionError:
                 pass
             else:
                 # clean up old sync tokens and item cache
                 self._clean_cache(token_folder, os.listdir(token_folder),
-                                  max_age=self._storage.configuration.get(
-                                      "storage", "max_sync_token_age"))
+                                  max_age=self._max_sync_token_age)
                 self._clean_history()
         else:
             # Try to update the modification time
-            try:
+            with contextlib.suppress(FileNotFoundError):
                 # Race: Another process might have deleted the file.
                 os.utime(token_path)
-            except FileNotFoundError:
-                pass
         changes = []
         # Find all new, changed and deleted (that are still in the item cache)
         # items

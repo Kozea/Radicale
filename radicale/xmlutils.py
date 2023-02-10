@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2015 Guillaume Ayoub
@@ -26,20 +26,21 @@ import copy
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from http import client
+from typing import Dict, Mapping, Optional
 from urllib.parse import quote
 
-from radicale import pathutils
+from radicale import item, pathutils
 
-MIMETYPES = {
+MIMETYPES: Mapping[str, str] = {
     "VADDRESSBOOK": "text/vcard",
     "VCALENDAR": "text/calendar"}
 
-OBJECT_MIMETYPES = {
+OBJECT_MIMETYPES: Mapping[str, str] = {
     "VCARD": "text/vcard",
     "VLIST": "text/x-vlist",
     "VCALENDAR": "text/calendar"}
 
-NAMESPACES = {
+NAMESPACES: Mapping[str, str] = {
     "C": "urn:ietf:params:xml:ns:caldav",
     "CR": "urn:ietf:params:xml:ns:carddav",
     "D": "DAV:",
@@ -48,15 +49,15 @@ NAMESPACES = {
     "ME": "http://me.com/_namespace/",
     "RADICALE": "http://radicale.org/ns/"}
 
-NAMESPACES_REV = {}
+NAMESPACES_REV: Mapping[str, str] = {v: k for k, v in NAMESPACES.items()}
+
 for short, url in NAMESPACES.items():
-    NAMESPACES_REV[url] = short
     ET.register_namespace("" if short == "D" else short, url)
 
 
-def pretty_xml(element):
+def pretty_xml(element: ET.Element) -> str:
     """Indent an ElementTree ``element`` and its children."""
-    def pretty_xml_recursive(element, level):
+    def pretty_xml_recursive(element: ET.Element, level: int) -> None:
         indent = "\n" + level * "  "
         if len(element) > 0:
             if not (element.text or "").strip():
@@ -74,7 +75,7 @@ def pretty_xml(element):
     return '<?xml version="1.0"?>\n%s' % ET.tostring(element, "unicode")
 
 
-def make_clark(human_tag):
+def make_clark(human_tag: str) -> str:
     """Get XML Clark notation from human tag ``human_tag``.
 
     If ``human_tag`` is already in XML Clark notation it is returned as-is.
@@ -88,13 +89,13 @@ def make_clark(human_tag):
     ns_prefix, tag = human_tag.split(":", maxsplit=1)
     if not ns_prefix or not tag:
         raise ValueError("Invalid XML tag: %r" % human_tag)
-    ns = NAMESPACES.get(ns_prefix)
+    ns = NAMESPACES.get(ns_prefix, "")
     if not ns:
         raise ValueError("Unknown XML namespace prefix: %r" % human_tag)
     return "{%s}%s" % (ns, tag)
 
 
-def make_human_tag(clark_tag):
+def make_human_tag(clark_tag: str) -> str:
     """Replace known namespaces in XML Clark notation ``clark_tag`` with
        prefix.
 
@@ -111,31 +112,31 @@ def make_human_tag(clark_tag):
     ns, tag = clark_tag[len("{"):].split("}", maxsplit=1)
     if not ns or not tag:
         raise ValueError("Invalid XML tag: %r" % clark_tag)
-    ns_prefix = NAMESPACES_REV.get(ns)
+    ns_prefix = NAMESPACES_REV.get(ns, "")
     if ns_prefix:
         return "%s:%s" % (ns_prefix, tag)
     return clark_tag
 
 
-def make_response(code):
+def make_response(code: int) -> str:
     """Return full W3C names from HTTP status codes."""
     return "HTTP/1.1 %i %s" % (code, client.responses[code])
 
 
-def make_href(base_prefix, href):
+def make_href(base_prefix: str, href: str) -> str:
     """Return prefixed href."""
     assert href == pathutils.sanitize_path(href)
     return quote("%s%s" % (base_prefix, href))
 
 
-def webdav_error(human_tag):
+def webdav_error(human_tag: str) -> ET.Element:
     """Generate XML error message."""
     root = ET.Element(make_clark("D:error"))
     root.append(ET.Element(make_clark(human_tag)))
     return root
 
 
-def get_content_type(item, encoding):
+def get_content_type(item: "item.Item", encoding: str) -> str:
     """Get the content-type of an item with charset and component parameters.
     """
     mimetype = OBJECT_MIMETYPES[item.name]
@@ -146,36 +147,47 @@ def get_content_type(item, encoding):
     return content_type
 
 
-def props_from_request(xml_request, actions=("set", "remove")):
-    """Return a list of properties as a dictionary."""
-    result = OrderedDict()
+def props_from_request(xml_request: Optional[ET.Element]
+                       ) -> Dict[str, Optional[str]]:
+    """Return a list of properties as a dictionary.
+
+    Properties that should be removed are set to `None`.
+
+    """
+    result: OrderedDict = OrderedDict()
     if xml_request is None:
         return result
 
-    for action in actions:
-        action_element = xml_request.find(make_clark("D:%s" % action))
-        if action_element is not None:
-            break
-    else:
-        action_element = xml_request
-
-    prop_element = action_element.find(make_clark("D:prop"))
-    if prop_element is not None:
-        for prop in prop_element:
-            if prop.tag == make_clark("D:resourcetype"):
+    # Requests can contain multipe <D:set> and <D:remove> elements.
+    # Each of these elements must contain exactly one <D:prop> element which
+    # can contain multpile properties.
+    # The order of the elements in the document must be respected.
+    props = []
+    for element in xml_request:
+        if element.tag in (make_clark("D:set"), make_clark("D:remove")):
+            for prop in element.findall("./%s/*" % make_clark("D:prop")):
+                props.append((element.tag == make_clark("D:set"), prop))
+    for is_set, prop in props:
+        key = make_human_tag(prop.tag)
+        value = None
+        if prop.tag == make_clark("D:resourcetype"):
+            key = "tag"
+            if is_set:
                 for resource_type in prop:
                     if resource_type.tag == make_clark("C:calendar"):
-                        result["tag"] = "VCALENDAR"
+                        value = "VCALENDAR"
                         break
                     if resource_type.tag == make_clark("CR:addressbook"):
-                        result["tag"] = "VADDRESSBOOK"
+                        value = "VADDRESSBOOK"
                         break
-            elif prop.tag == make_clark("C:supported-calendar-component-set"):
-                result[make_human_tag(prop.tag)] = ",".join(
-                    supported_comp.attrib["name"]
-                    for supported_comp in prop
+        elif prop.tag == make_clark("C:supported-calendar-component-set"):
+            if is_set:
+                value = ",".join(
+                    supported_comp.attrib["name"] for supported_comp in prop
                     if supported_comp.tag == make_clark("C:comp"))
-            else:
-                result[make_human_tag(prop.tag)] = prop.text
+        elif is_set:
+            value = prop.text or ""
+        result[key] = value
+        result.move_to_end(key)
 
     return result

@@ -21,15 +21,14 @@
  * @const
  * @type {string}
  */
-const SERVER = (location.protocol + '//' + location.hostname +
-                (location.port ? ':' + location.port : ''));
+const SERVER = location.origin;
 
 /**
  * Path of the root collection on the server (must end with /)
  * @const
  * @type {string}
  */
-const ROOT_PATH = location.pathname.replace(new RegExp("/+[^/]+/*(/index\\.html?)?$"), "") + '/';
+const ROOT_PATH = (new URL("..", location.href)).pathname;
 
 /**
  * Regex to match and normalize color

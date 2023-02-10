@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
 #
@@ -26,7 +26,8 @@ from radicale import pathutils
 
 
 class Rights(authenticated.Rights):
-    def authorization(self, user, path):
+
+    def authorization(self, user: str, path: str) -> str:
         if self._verify_user and not user:
             return ""
         sane_path = pathutils.strip_path(path)

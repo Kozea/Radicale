@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
@@ -27,46 +27,46 @@ Configuration files can be specified in the environment variable
 
 import os
 import threading
+from typing import Iterable, Optional, cast
 
-import pkg_resources
-
-from radicale import config, log
+from radicale import config, log, types, utils
 from radicale.app import Application
 from radicale.log import logger
 
-VERSION = pkg_resources.get_distribution("radicale").version
+VERSION: str = utils.package_version("radicale")
 
-_application = None
-_application_config_path = None
+_application_instance: Optional[Application] = None
+_application_config_path: Optional[str] = None
 _application_lock = threading.Lock()
 
 
-def _init_application(config_path, wsgi_errors):
-    global _application, _application_config_path
+def _get_application_instance(config_path: str, wsgi_errors: types.ErrorStream
+                              ) -> Application:
+    global _application_instance, _application_config_path
     with _application_lock:
-        if _application is not None:
-            return
-        log.setup()
-        with log.register_stream(wsgi_errors):
-            _application_config_path = config_path
-            configuration = config.load(config.parse_compound_paths(
-                config.DEFAULT_CONFIG_PATH,
-                config_path))
-            log.set_level(configuration.get("logging", "level"))
-            # Log configuration after logger is configured
-            for source, miss in configuration.sources():
-                logger.info("%s %s", "Skipped missing" if miss else "Loaded",
-                            source)
-            _application = Application(configuration)
+        if _application_instance is None:
+            log.setup()
+            with log.register_stream(wsgi_errors):
+                _application_config_path = config_path
+                configuration = config.load(config.parse_compound_paths(
+                    config.DEFAULT_CONFIG_PATH,
+                    config_path))
+                log.set_level(cast(str, configuration.get("logging", "level")))
+                # Log configuration after logger is configured
+                for source, miss in configuration.sources():
+                    logger.info("%s %s", "Skipped missing" if miss
+                                else "Loaded", source)
+                _application_instance = Application(configuration)
+    if _application_config_path != config_path:
+        raise ValueError("RADICALE_CONFIG must not change: %r != %r" %
+                         (config_path, _application_config_path))
+    return _application_instance
 
 
-def application(environ, start_response):
+def application(environ: types.WSGIEnviron,
+                start_response: types.WSGIStartResponse) -> Iterable[bytes]:
     """Entry point for external WSGI servers."""
     config_path = environ.get("RADICALE_CONFIG",
                               os.environ.get("RADICALE_CONFIG"))
-    if _application is None:
-        _init_application(config_path, environ["wsgi.errors"])
-    if _application_config_path != config_path:
-        raise ValueError("RADICALE_CONFIG must not change: %s != %s" %
-                         (repr(config_path), repr(_application_config_path)))
-    return _application(environ, start_response)
+    app = _get_application_instance(config_path, environ["wsgi.errors"])
+    return app(environ, start_response)

@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
@@ -16,15 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import errno
 import os
 import pickle
+import sys
+from typing import Iterable, Iterator, TextIO, cast
 
-from radicale import item as radicale_item
+import radicale.item as radicale_item
 from radicale import pathutils
+from radicale.storage.multifilesystem.base import CollectionBase
+from radicale.storage.multifilesystem.cache import CollectionPartCache
+from radicale.storage.multifilesystem.get import CollectionPartGet
+from radicale.storage.multifilesystem.history import CollectionPartHistory
 
 
-class CollectionUploadMixin:
-    def upload(self, href, item):
+class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
+                           CollectionPartHistory, CollectionBase):
+
+    def upload(self, href: str, item: radicale_item.Item
+               ) -> radicale_item.Item:
         if not pathutils.is_safe_filesystem_path_component(href):
             raise pathutils.UnsafePathError(href)
         try:
@@ -33,27 +43,40 @@ class CollectionUploadMixin:
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
         path = pathutils.path_to_filesystem(self._filesystem_path, href)
-        with self._atomic_write(path, newline="") as fd:
-            fd.write(item.serialize())
+        with self._atomic_write(path, newline="") as fo:
+            f = cast(TextIO, fo)
+            f.write(item.serialize())
         # Clean the cache after the actual item is stored, or the cache entry
         # will be removed again.
         self._clean_item_cache()
         # Track the change
         self._update_history_etag(href, item)
         self._clean_history()
-        return self._get(href, verify_href=False)
+        uploaded_item = self._get(href, verify_href=False)
+        if uploaded_item is None:
+            raise RuntimeError("Storage modified externally")
+        return uploaded_item
 
-    def _upload_all_nonatomic(self, items, suffix=""):
-        """Upload a new set of items.
+    def _upload_all_nonatomic(self, items: Iterable[radicale_item.Item],
+                              suffix: str = "") -> None:
+        """Upload a new set of items non-atomic"""
+        def is_safe_free_href(href: str) -> bool:
+            return (pathutils.is_safe_filesystem_path_component(href) and
+                    not os.path.lexists(
+                        os.path.join(self._filesystem_path, href)))
 
-        This takes a list of vobject items and
-        uploads them nonatomic and without existence checks.
+        def get_safe_free_hrefs(uid: str) -> Iterator[str]:
+            for href in [uid if uid.lower().endswith(suffix.lower())
+                         else uid + suffix,
+                         radicale_item.get_etag(uid).strip('"') + suffix]:
+                if is_safe_free_href(href):
+                    yield href
+            yield radicale_item.find_available_uid(
+                lambda href: not is_safe_free_href(href), suffix)
 
-        """
         cache_folder = os.path.join(self._filesystem_path,
                                     ".Radicale.cache", "item")
         self._storage._makedirs_synced(cache_folder)
-        hrefs = set()
         for item in items:
             uid = item.uid
             try:
@@ -62,43 +85,27 @@ class CollectionUploadMixin:
                 raise ValueError(
                     "Failed to store item %r in temporary collection %r: %s" %
                     (uid, self.path, e)) from e
-            href_candidate_funtions = []
-            if os.name in ("nt", "posix"):
-                href_candidate_funtions.append(
-                    lambda: uid if uid.lower().endswith(suffix.lower())
-                    else uid + suffix)
-            href_candidate_funtions.extend((
-                lambda: radicale_item.get_etag(uid).strip('"') + suffix,
-                lambda: radicale_item.find_available_uid(hrefs.__contains__,
-                                                         suffix)))
-            href = f = None
-            while href_candidate_funtions:
-                href = href_candidate_funtions.pop(0)()
-                if href in hrefs:
-                    continue
-                if not pathutils.is_safe_filesystem_path_component(href):
-                    if not href_candidate_funtions:
-                        raise pathutils.UnsafePathError(href)
-                    continue
+            for href in get_safe_free_hrefs(uid):
                 try:
-                    f = open(pathutils.path_to_filesystem(
-                        self._filesystem_path, href),
-                        "w", newline="", encoding=self._encoding)
-                    break
+                    f = open(os.path.join(self._filesystem_path, href),
+                             "w", newline="", encoding=self._encoding)
                 except OSError as e:
-                    if href_candidate_funtions and (
-                            os.name == "posix" and e.errno == 22 or
-                            os.name == "nt" and e.errno == 123):
+                    if (sys.platform != "win32" and e.errno == errno.EINVAL or
+                            sys.platform == "win32" and e.errno == 123):
+                        # not a valid filename
                         continue
                     raise
+                break
+            else:
+                raise RuntimeError("No href found for item %r in temporary "
+                                   "collection %r" % (uid, self.path))
             with f:
                 f.write(item.serialize())
                 f.flush()
                 self._storage._fsync(f)
-            hrefs.add(href)
-            with open(os.path.join(cache_folder, href), "wb") as f:
-                pickle.dump(cache_content, f)
-                f.flush()
-                self._storage._fsync(f)
+            with open(os.path.join(cache_folder, href), "wb") as fb:
+                pickle.dump(cache_content, fb)
+                fb.flush()
+                self._storage._fsync(fb)
         self._storage._sync_directory(cache_folder)
         self._storage._sync_directory(self._filesystem_path)

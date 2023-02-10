@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
@@ -16,13 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 from importlib import import_module
+from typing import Callable, Sequence, Type, TypeVar, Union
 
+from radicale import config
 from radicale.log import logger
 
+if sys.version_info < (3, 8):
+    import pkg_resources
+else:
+    from importlib import metadata
 
-def load_plugin(internal_types, module_name, class_name, configuration):
-    type_ = configuration.get(module_name, "type")
+_T_co = TypeVar("_T_co", covariant=True)
+
+
+def load_plugin(internal_types: Sequence[str], module_name: str,
+                class_name: str, base_class: Type[_T_co],
+                configuration: "config.Configuration") -> _T_co:
+    type_: Union[str, Callable] = configuration.get(module_name, "type")
     if callable(type_):
         logger.info("%s type is %r", module_name, type_)
         return type_(configuration)
@@ -37,3 +49,9 @@ def load_plugin(internal_types, module_name, class_name, configuration):
                            (module_name, module, e)) from e
     logger.info("%s type is %r", module_name, module)
     return class_(configuration)
+
+
+def package_version(name):
+    if sys.version_info < (3, 8):
+        return pkg_resources.get_distribution(name).version
+    return metadata.version(name)

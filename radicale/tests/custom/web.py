@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
@@ -21,9 +21,16 @@ Custom web plugin.
 
 from http import client
 
-from radicale import web
+from radicale import httputils, types, web
 
 
 class Web(web.BaseWeb):
-    def get(self, environ, base_prefix, path, user):
+
+    def get(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
+            user: str) -> types.WSGIResponse:
         return client.OK, {"Content-Type": "text/plain"}, "custom"
+
+    def post(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
+             user: str) -> types.WSGIResponse:
+        content = httputils.read_request_body(self.configuration, environ)
+        return client.OK, {"Content-Type": "text/plain"}, "echo:" + content

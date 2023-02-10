@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
@@ -19,11 +19,14 @@
 
 from http import client
 
-from radicale import httputils
+from radicale import httputils, types
+from radicale.app.base import ApplicationBase
 
 
-class ApplicationOptionsMixin:
-    def do_OPTIONS(self, environ, base_prefix, path, user):
+class ApplicationPartOptions(ApplicationBase):
+
+    def do_OPTIONS(self, environ: types.WSGIEnviron, base_prefix: str,
+                   path: str, user: str) -> types.WSGIResponse:
         """Manage OPTIONS request."""
         headers = {
             "Allow": ", ".join(

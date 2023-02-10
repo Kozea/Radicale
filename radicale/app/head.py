@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
@@ -17,9 +17,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+from radicale import types
+from radicale.app.base import ApplicationBase
+from radicale.app.get import ApplicationPartGet
 
-class ApplicationHeadMixin:
-    def do_HEAD(self, environ, base_prefix, path, user):
+
+class ApplicationPartHead(ApplicationPartGet, ApplicationBase):
+
+    def do_HEAD(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
+                user: str) -> types.WSGIResponse:
         """Manage HEAD request."""
-        status, headers, _ = self.do_GET(environ, base_prefix, path, user)
-        return status, headers, None
+        # Body is dropped in `Application.__call__` for HEAD requests
+        return self.do_GET(environ, base_prefix, path, user)

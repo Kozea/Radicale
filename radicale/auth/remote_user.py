@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
@@ -25,9 +25,14 @@ It's intended for use with an external WSGI server.
 
 """
 
-import radicale.auth.none as none
+from typing import Tuple, Union
+
+from radicale import types
+from radicale.auth import none
 
 
 class Auth(none.Auth):
-    def get_external_login(self, environ):
+
+    def get_external_login(self, environ: types.WSGIEnviron
+                           ) -> Union[Tuple[()], Tuple[str, str]]:
         return environ.get("REMOTE_USER", ""), ""

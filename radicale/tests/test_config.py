@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2019 Unrud <unrud@outlook.com>
 #
 # This library is free software: you can redistribute it and/or modify
@@ -18,23 +18,26 @@ import os
 import shutil
 import tempfile
 from configparser import RawConfigParser
+from typing import List, Tuple
 
 import pytest
 
-from radicale import config
+from radicale import config, types
 from radicale.tests.helpers import configuration_to_dict
 
 
 class TestConfig:
     """Test the configuration."""
 
-    def setup(self):
+    colpath: str
+
+    def setup(self) -> None:
         self.colpath = tempfile.mkdtemp()
 
-    def teardown(self):
+    def teardown(self) -> None:
         shutil.rmtree(self.colpath)
 
-    def _write_config(self, config_dict, name):
+    def _write_config(self, config_dict: types.CONFIG, name: str) -> str:
         parser = RawConfigParser()
         parser.read_dict(config_dict)
         config_path = os.path.join(self.colpath, name)
@@ -42,7 +45,7 @@ class TestConfig:
             parser.write(f)
         return config_path
 
-    def test_parse_compound_paths(self):
+    def test_parse_compound_paths(self) -> None:
         assert len(config.parse_compound_paths()) == 0
         assert len(config.parse_compound_paths("")) == 0
         assert len(config.parse_compound_paths(None, "")) == 0
@@ -62,16 +65,16 @@ class TestConfig:
             assert os.path.basename(paths[i][0]) == name
             assert paths[i][1] is ignore_if_missing
 
-    def test_load_empty(self):
+    def test_load_empty(self) -> None:
         config_path = self._write_config({}, "config")
         config.load([(config_path, False)])
 
-    def test_load_full(self):
+    def test_load_full(self) -> None:
         config_path = self._write_config(
             configuration_to_dict(config.load()), "config")
         config.load([(config_path, False)])
 
-    def test_load_missing(self):
+    def test_load_missing(self) -> None:
         config_path = os.path.join(self.colpath, "does_not_exist")
         config.load([(config_path, True)])
         with pytest.raises(Exception) as exc_info:
@@ -79,18 +82,20 @@ class TestConfig:
         e = exc_info.value
         assert "Failed to load config file %r" % config_path in str(e)
 
-    def test_load_multiple(self):
+    def test_load_multiple(self) -> None:
         config_path1 = self._write_config({
             "server": {"hosts": "192.0.2.1:1111"}}, "config1")
         config_path2 = self._write_config({
             "server": {"max_connections": 1111}}, "config2")
         configuration = config.load([(config_path1, False),
                                      (config_path2, False)])
-        assert len(configuration.get("server", "hosts")) == 1
-        assert configuration.get("server", "hosts")[0] == ("192.0.2.1", 1111)
+        server_hosts: List[Tuple[str, int]] = configuration.get(
+            "server", "hosts")
+        assert len(server_hosts) == 1
+        assert server_hosts[0] == ("192.0.2.1", 1111)
         assert configuration.get("server", "max_connections") == 1111
 
-    def test_copy(self):
+    def test_copy(self) -> None:
         configuration1 = config.load()
         configuration1.update({"server": {"max_connections": "1111"}}, "test")
         configuration2 = configuration1.copy()
@@ -98,14 +103,14 @@ class TestConfig:
         assert configuration1.get("server", "max_connections") == 1111
         assert configuration2.get("server", "max_connections") == 1112
 
-    def test_invalid_section(self):
+    def test_invalid_section(self) -> None:
         configuration = config.load()
         with pytest.raises(Exception) as exc_info:
             configuration.update({"does_not_exist": {"x": "x"}}, "test")
         e = exc_info.value
         assert "Invalid section 'does_not_exist'" in str(e)
 
-    def test_invalid_option(self):
+    def test_invalid_option(self) -> None:
         configuration = config.load()
         with pytest.raises(Exception) as exc_info:
             configuration.update({"server": {"x": "x"}}, "test")
@@ -113,7 +118,7 @@ class TestConfig:
         assert "Invalid option 'x'" in str(e)
         assert "section 'server'" in str(e)
 
-    def test_invalid_option_plugin(self):
+    def test_invalid_option_plugin(self) -> None:
         configuration = config.load()
         with pytest.raises(Exception) as exc_info:
             configuration.update({"auth": {"x": "x"}}, "test")
@@ -121,7 +126,7 @@ class TestConfig:
         assert "Invalid option 'x'" in str(e)
         assert "section 'auth'" in str(e)
 
-    def test_invalid_value(self):
+    def test_invalid_value(self) -> None:
         configuration = config.load()
         with pytest.raises(Exception) as exc_info:
             configuration.update({"server": {"max_connections": "x"}}, "test")
@@ -131,7 +136,7 @@ class TestConfig:
         assert "section 'server" in str(e)
         assert "'x'" in str(e)
 
-    def test_privileged(self):
+    def test_privileged(self) -> None:
         configuration = config.load()
         configuration.update({"server": {"_internal_server": "True"}},
                              "test", privileged=True)
@@ -141,9 +146,9 @@ class TestConfig:
         e = exc_info.value
         assert "Invalid option '_internal_server'" in str(e)
 
-    def test_plugin_schema(self):
-        plugin_schema = {"auth": {"new_option": {"value": "False",
-                                                 "type": bool}}}
+    def test_plugin_schema(self) -> None:
+        plugin_schema: types.CONFIG_SCHEMA = {
+            "auth": {"new_option": {"value": "False", "type": bool}}}
         configuration = config.load()
         configuration.update({"auth": {"type": "new_plugin"}}, "test")
         plugin_configuration = configuration.copy(plugin_schema)
@@ -152,26 +157,26 @@ class TestConfig:
         plugin_configuration = configuration.copy(plugin_schema)
         assert plugin_configuration.get("auth", "new_option") is True
 
-    def test_plugin_schema_duplicate_option(self):
-        plugin_schema = {"auth": {"type": {"value": "False",
-                                           "type": bool}}}
+    def test_plugin_schema_duplicate_option(self) -> None:
+        plugin_schema: types.CONFIG_SCHEMA = {
+            "auth": {"type": {"value": "False", "type": bool}}}
         configuration = config.load()
         with pytest.raises(Exception) as exc_info:
             configuration.copy(plugin_schema)
         e = exc_info.value
         assert "option already exists in 'auth': 'type'" in str(e)
 
-    def test_plugin_schema_invalid(self):
-        plugin_schema = {"server": {"new_option": {"value": "False",
-                                                   "type": bool}}}
+    def test_plugin_schema_invalid(self) -> None:
+        plugin_schema: types.CONFIG_SCHEMA = {
+            "server": {"new_option": {"value": "False", "type": bool}}}
         configuration = config.load()
         with pytest.raises(Exception) as exc_info:
             configuration.copy(plugin_schema)
         e = exc_info.value
         assert "not a plugin section: 'server" in str(e)
 
-    def test_plugin_schema_option_invalid(self):
-        plugin_schema = {"auth": {}}
+    def test_plugin_schema_option_invalid(self) -> None:
+        plugin_schema: types.CONFIG_SCHEMA = {"auth": {}}
         configuration = config.load()
         configuration.update({"auth": {"type": "new_plugin",
                                        "new_option": False}}, "test")

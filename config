@@ -83,7 +83,7 @@
 [storage]
 
 # Storage backend
-# Value: multifilesystem
+# Value: multifilesystem | multifilesystem_nolock
 #type = multifilesystem
 
 # Folder for storing local collections, created if not present
@@ -121,8 +121,8 @@
 
 [hook]
 
-# Hook types
-# Value: none | rabbitmq
-#type = none
-#rabbitmq_endpoint =
-#rabbitmq_topic =
+ # Hook types
+ # Value: none | rabbitmq
+ #type = none
+ #rabbitmq_endpoint =
+ #rabbitmq_topic =

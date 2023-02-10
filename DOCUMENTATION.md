@@ -1,55 +1,59 @@
-# Getting started
-### About Radicale
+# Documentation
+
+## Getting started
+
+#### About Radicale
 
 Radicale is a small but powerful CalDAV (calendars, to-do lists) and CardDAV
 (contacts) server, that:
 
-  * Shares calendars and contact lists through CalDAV, CardDAV and HTTP.
-  * Supports events, todos, journal entries and business cards.
-  * Works out-of-the-box, no complicated setup or configuration required.
-  * Can limit access by authentication.
-  * Can secure connections with TLS.
-  * Works with many
-    [CalDAV and CardDAV clients](#documentation/supported-clients).
-  * Stores all data on the file system in a simple folder structure.
-  * Can be extended with plugins.
-  * Is GPLv3-licensed free software.
+* Shares calendars and contact lists through CalDAV, CardDAV and HTTP.
+* Supports events, todos, journal entries and business cards.
+* Works out-of-the-box, no complicated setup or configuration required.
+* Can limit access by authentication.
+* Can secure connections with TLS.
+* Works with many
+  [CalDAV and CardDAV clients](#supported-clients).
+* Stores all data on the file system in a simple folder structure.
+* Can be extended with plugins.
+* Is GPLv3-licensed free software.
 
-### Installation
+#### Installation
 
 Radicale is really easy to install and works out-of-the-box.
 
 ```bash
-$ python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
-$ python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
+python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
+python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
-When the server is launched, open http://localhost:5232/ in your browser!
+When the server is launched, open <http://localhost:5232> in your browser!
 You can login with any username and password.
 
 Want more? Check the [tutorials](#tutorials) and the
-[documentation](#documentation).
+[documentation](#documentation-1).
 
-### What's New?
+#### What's New?
 
 Read the
-[changelog on GitHub.](https://github.com/Kozea/Radicale/blob/master/NEWS.md)
+[changelog on GitHub.](https://github.com/Kozea/Radicale/blob/master/CHANGELOG.md)
 
-# Tutorials
-## Simple 5-minute setup
+## Tutorials
+
+### Simple 5-minute setup
 
 You want to try Radicale but only have 5 minutes free in your calendar? Let's
 go right now and play a bit with Radicale!
 
-When everything works, you can get a [client](#documentation/supported-clients)
+When everything works, you can get a [client](#supported-clients)
 and start creating calendars and address books. The server **only** binds to
 localhost (is **not** reachable over the network) and you can log in with any
-user name and password. If Radicale fits your needs, it may be time for
-[some basic configuration](#tutorials/basic-configuration).
+username and password. If Radicale fits your needs, it may be time for
+[some basic configuration](#basic-configuration).
 
 Follow one of the chapters below depending on your operating system.
 
-### Linux / \*BSD
+#### Linux / \*BSD
 
 First, make sure that **python** 3.5 or later (**python** ≥ 3.6 is
 recommended) and **pip** are installed. On most distributions it should be
@@ -64,10 +68,10 @@ $ python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/mas
 $ python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
-Victory! Open http://localhost:5232/ in your browser!
+Victory! Open <http://localhost:5232> in your browser!
 You can log in with any username and password.
 
-### Windows
+#### Windows
 
 The first step is to install Python. Go to
 [python.org](https://python.org) and download the latest version of Python 3.
@@ -78,17 +82,17 @@ click on "Install now". Wait a couple of minutes, it's done!
 Launch a command prompt and type:
 
 ```powershell
-C:\Users\User> python -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
-C:\Users\User> python -m radicale --storage-filesystem-folder=~/radicale/collections
+python -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
+python -m radicale --storage-filesystem-folder=~/radicale/collections
 ```
 
-Victory! Open http://localhost:5232/ in your browser!
+Victory! Open <http://localhost:5232> in your browser!
 You can log in with any username and password.
 
-## Basic Configuration
+### Basic Configuration
 
 Installation instructions can be found in the
-[simple 5-minute setup](#tutorials/simple-5-minute-setup) tutorial.
+[simple 5-minute setup](#simple-5-minute-setup) tutorial.
 
 Radicale tries to load configuration files from `/etc/radicale/config` and
 `~/.config/radicale/config`.
@@ -102,17 +106,17 @@ You should create a new configuration file at the desired location.
 passed via command line arguments.)
 
 All configuration options are described in detail in the
-[Configuration](#documentation/configuration) section.
+[Configuration](#configuration) section.
 
-### Authentication
+#### Authentication
 
-In its default configuration Radicale doesn't check user names or passwords.
+In its default configuration Radicale doesn't check usernames or passwords.
 If the server is reachable over a network, you should change this.
 
-First a `users` file with all user names and passwords must be created.
+First a `users` file with all usernames and passwords must be created.
 It can be stored in the same directory as the configuration file.
 
-#### The secure way
+##### The secure way
 
 The `users` file can be created and managed with
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html):
@@ -138,9 +142,9 @@ htpasswd_filename = /path/to/users
 htpasswd_encryption = md5
 ```
 
-#### The simple but insecure way
+##### The simple but insecure way
 
-Create the `users` file by hand with lines containing the user name and
+Create the `users` file by hand with lines containing the username and
 password separated by `:`. Example:
 
 ```htpasswd
@@ -158,7 +162,7 @@ htpasswd_filename = /path/to/users
 htpasswd_encryption = plain
 ```
 
-### Addresses
+#### Addresses
 
 The default configuration binds the server to localhost. It can't be reached
 from other computers. This can be changed with the following configuration
@@ -169,7 +173,7 @@ options (IPv4 and IPv6):
 hosts = 0.0.0.0:5232, [::]:5232
 ```
 
-### Storage
+#### Storage
 
 Data is stored in the folder `/var/lib/radicale/collections`. The path can
 be changed with the following configuration:
@@ -182,9 +186,9 @@ filesystem_folder = /path/to/storage
 > **Security:** The storage folder should not be readable by unauthorized users.
 > Otherwise, they can read the calendar data and lock the storage.
 > You can find OS dependent instructions in the
-> [Running as a service](#tutorials/running-as-a-service) section.
+> [Running as a service](#running-as-a-service) section.
 
-### Limits
+#### Limits
 
 Radicale enforces limits on the maximum number of parallel connections,
 the maximum file size (important for contacts with big photos) and the rate of
@@ -204,16 +208,16 @@ timeout = 30
 delay = 1
 ```
 
-## Running as a service
+### Running as a service
 
 The method to run Radicale as a service depends on your host operating system.
 Follow one of the chapters below depending on your operating system and
 requirements.
 
-### Linux with systemd system-wide
+#### Linux with systemd system-wide
 
-Create the **radicale** user and group for the Radicale service.
-(Run `useradd --system --home-dir / --shell /sbin/nologin radicale` as root.)
+Create the **radicale** user and group for the Radicale service. (Run
+`useradd --system --user-group --home-dir / --shell /sbin/nologin radicale` as root.)
 The storage folder must be writable by **radicale**. (Run
 `mkdir -p /var/lib/radicale/collections && chown -R radicale:radicale /var/lib/radicale/collections`
 as root.)
@@ -249,6 +253,7 @@ ReadWritePaths=/var/lib/radicale/collections
 [Install]
 WantedBy=multi-user.target
 ```
+
 Radicale will load the configuration file from `/etc/radicale/config`.
 
 To enable and manage the service run:
@@ -264,7 +269,7 @@ $ systemctl status radicale
 $ journalctl --unit radicale.service
 ```
 
-### Linux with systemd as a user
+#### Linux with systemd as a user
 
 Create the file `~/.config/systemd/user/radicale.service`:
 
@@ -297,17 +302,17 @@ $ systemctl --user status radicale
 $ journalctl --user --unit radicale.service
 ```
 
-### Windows with "NSSM - the Non-Sucking Service Manager"
+#### Windows with "NSSM - the Non-Sucking Service Manager"
 
 First install [NSSM](https://nssm.cc/) and start `nssm install` in a command
 prompt. Apply the following configuration:
 
-  * Service name: `Radicale`
-  * Application
-      * Path: `C:\Path\To\Python\python.exe`
-      * Arguments: `-m radicale --config C:\Path\To\Config`
-  * I/O redirection
-      * Error: `C:\Path\To\Radicale.log`
+* Service name: `Radicale`
+* Application
+  * Path: `C:\Path\To\Python\python.exe`
+  * Arguments: `-m radicale --config C:\Path\To\Config`
+* I/O redirection
+  * Error: `C:\Path\To\Radicale.log`
 
 > **Security:** Be aware that the service runs in the local system account,
 > you might want to change this. Managing user accounts is beyond the scope of
@@ -321,7 +326,7 @@ The service is configured to start automatically when the computer starts.
 To start the service manually open **Services** in **Computer Management** and
 start the **Radicale** service.
 
-## Reverse Proxy
+### Reverse Proxy
 
 When a reverse proxy is used, the path at which Radicale is available must
 be provided via the `X-Script-Name` header. The proxy must remove the location
@@ -348,19 +353,30 @@ RewriteRule ^/radicale$ /radicale/ [R,L]
 <Location "/radicale/">
     ProxyPass        http://localhost:5232/ retry=0
     ProxyPassReverse http://localhost:5232/
-    RequestHeader    set X-Script-Name /radicale/
+    RequestHeader    set X-Script-Name /radicale
 </Location>
+```
+
+Example **Apache .htaccess** configuration:
+
+```apache
+DirectoryIndex disabled
+RewriteEngine On
+RewriteRule ^(.*)$ http://localhost:5232/$1 [P,L]
+
+# Set to directory of .htaccess file:
+RequestHeader set X-Script-Name /radicale
 ```
 
 Be reminded that Radicale's default configuration enforces limits on the
 maximum number of parallel connections, the maximum file size and the rate of
 incorrect authentication attempts. Connections are terminated after a timeout.
 
-### Manage user accounts with the reverse proxy
+#### Manage user accounts with the reverse proxy
 
 Set the configuration option `type` in the `auth` section to
 `http_x_remote_user`.
-Radicale uses the user name provided in the `X-Remote-User` HTTP header and
+Radicale uses the username provided in the `X-Remote-User` HTTP header and
 disables HTTP authentication.
 
 Example **nginx** configuration:
@@ -384,22 +400,39 @@ RewriteEngine On
 RewriteRule ^/radicale$ /radicale/ [R,L]
 
 <Location "/radicale/">
-    AuthType      Basic
-    AuthName      "Radicale - Password Required"
-    AuthUserFile  "/etc/radicale/htpasswd"
-    Require       valid-user
+    AuthType     Basic
+    AuthName     "Radicale - Password Required"
+    AuthUserFile "/etc/radicale/htpasswd"
+    Require      valid-user
 
     ProxyPass        http://localhost:5232/ retry=0
     ProxyPassReverse http://localhost:5232/
-    RequestHeader    set X-Script-Name /radicale/
+    RequestHeader    set X-Script-Name /radicale
     RequestHeader    set X-Remote-User expr=%{REMOTE_USER}
 </Location>
+```
+
+Example **Apache .htaccess** configuration:
+
+```apache
+DirectoryIndex disabled
+RewriteEngine On
+RewriteRule ^(.*)$ http://localhost:5232/$1 [P,L]
+
+AuthType     Basic
+AuthName     "Radicale - Password Required"
+AuthUserFile "/etc/radicale/htpasswd"
+Require      valid-user
+
+# Set to directory of .htaccess file:
+RequestHeader set X-Script-Name /radicale
+RequestHeader set X-Remote-User expr=%{REMOTE_USER}
 ```
 
 > **Security:** Untrusted clients should not be able to access the Radicale
 > server directly. Otherwise, they can authenticate as any user.
 
-### Secure connection between Radicale and the reverse proxy
+#### Secure connection between Radicale and the reverse proxy
 
 SSL certificates can be used to encrypt and authenticate the connection between
 Radicale and the reverse proxy. First you have to generate a certificate for
@@ -409,8 +442,10 @@ information about the certificate, the values don't matter and you can keep the
 defaults.
 
 ```bash
-$ openssl req -x509 -newkey rsa:4096 -keyout server_key.pem -out server_cert.pem -nodes -days 9999
-$ openssl req -x509 -newkey rsa:4096 -keyout client_key.pem -out client_cert.pem -nodes -days 9999
+openssl req -x509 -newkey rsa:4096 -keyout server_key.pem -out server_cert.pem \
+        -nodes -days 9999
+openssl req -x509 -newkey rsa:4096 -keyout client_key.pem -out client_cert.pem \
+        -nodes -days 9999
 ```
 
 Use the following configuration for Radicale:
@@ -436,7 +471,7 @@ location /radicale/ {
 }
 ```
 
-## WSGI Server
+### WSGI Server
 
 Radicale is compatible with the WSGI specification.
 
@@ -458,16 +493,17 @@ env = RADICALE_CONFIG=/etc/radicale/config
 Example **Gunicorn** configuration:
 
 ```bash
-gunicorn --bind '127.0.0.1:5232' --workers 8 --env 'RADICALE_CONFIG=/etc/radicale/config' radicale
+gunicorn --bind '127.0.0.1:5232' --env 'RADICALE_CONFIG=/etc/radicale/config' \
+         --workers 8 radicale
 ```
 
-### Manage user accounts with the WSGI server
+#### Manage user accounts with the WSGI server
 
 Set the configuration option `type` in the `auth` section to `remote_user`.
-Radicale uses the user name provided by the WSGI server and disables
+Radicale uses the username provided by the WSGI server and disables
 authentication over HTTP.
 
-## Versioning with Git
+### Versioning with Git
 
 This tutorial describes how to keep track of all changes to calendars and
 address books with **git** (or any other version control system).
@@ -476,7 +512,7 @@ The repository must be initialized by running `git init` in the file
 system folder. Internal files of Radicale can be excluded by creating the
 file `.gitignore` with the following content:
 
-```
+```gitignore
 .Radicale.cache
 .Radicale.lock
 .Radicale.tmp-*
@@ -492,8 +528,9 @@ git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
 The command gets executed after every change to the storage and commits
 the changes into the **git** repository.
 
-# Documentation
-## Configuration
+## Documentation
+
+### Configuration
 
 Radicale can be configured with a configuration file or with
 command line arguments.
@@ -524,7 +561,9 @@ Paths that start with `?` are optional.
 The same example configuration via command line arguments looks like:
 
 ```bash
-python3 -m radicale --server-hosts 0.0.0.0:5232,[::]:5232 --auth-type htpasswd --htpasswd-filename ~/.config/radicale/users --htpasswd-encryption md5
+python3 -m radicale --server-hosts 0.0.0.0:5232,[::]:5232 \
+        --auth-type htpasswd --auth-htpasswd-filename ~/.config/radicale/users \
+        --auth-htpasswd-encryption md5
 ```
 
 Add the argument `--config ""` to stop Radicale from loading the default
@@ -532,77 +571,79 @@ configuration files. Run `python3 -m radicale --help` for more information.
 
 In the following, all configuration categories and options are described.
 
-### server
+#### server
 
 The configuration options in this category are only relevant in standalone
 mode. All options are ignored, when Radicale runs via WSGI.
 
-#### hosts
+##### hosts
 
 A comma separated list of addresses that the server will bind to.
 
 Default: `localhost:5232`
 
-#### max_connections
+##### max_connections
 
 The maximum number of parallel connections. Set to `0` to disable the limit.
 
 Default: `8`
 
-#### max_content_length
+##### max_content_length
 
 The maximum size of the request body. (bytes)
 
 Default: `100000000`
 
-#### timeout
+##### timeout
 
 Socket timeout. (seconds)
 
 Default: `30`
 
-#### ssl
+##### ssl
 
 Enable transport layer encryption.
 
 Default: `False`
 
-#### certificate
+##### certificate
 
 Path of the SSL certifcate.
 
 Default: `/etc/ssl/radicale.cert.pem`
 
-#### key
+##### key
 
 Path to the private key for SSL. Only effective if `ssl` is enabled.
 
 Default: `/etc/ssl/radicale.key.pem`
 
-#### certificate_authority
+##### certificate_authority
 
 Path to the CA certificate for validating client certificates. This can be used
 to secure TCP traffic between Radicale and a reverse proxy. If you want to
 authenticate users with client-side certificates, you also have to write an
-authentication plugin that extracts the user name from the certificate.
+authentication plugin that extracts the username from the certificate.
 
 Default:
 
-### encoding
-#### request
+#### encoding
+
+##### request
 
 Encoding for responding requests.
 
 Default: `utf-8`
 
-#### stock
+##### stock
 
 Encoding for storing local collections
 
 Default: `utf-8`
 
-### auth
-#### type
+#### auth
+
+##### type
 
 The method to verify usernames and passwords.
 
@@ -617,24 +658,24 @@ Available backends:
   to store usernames and passwords.
 
 `remote_user`
-: Takes the user name from the `REMOTE_USER` environment variable and disables
-  HTTP authentication. This can be used to provide the user name from a WSGI
+: Takes the username from the `REMOTE_USER` environment variable and disables
+  HTTP authentication. This can be used to provide the username from a WSGI
   server.
 
 `http_x_remote_user`
-: Takes the user name from the `X-Remote-User` HTTP header and disables HTTP
-  authentication. This can be used to provide the user name from a reverse
+: Takes the username from the `X-Remote-User` HTTP header and disables HTTP
+  authentication. This can be used to provide the username from a reverse
   proxy.
 
 Default: `none`
 
-#### htpasswd_filename
+##### htpasswd_filename
 
 Path to the htpasswd file.
 
-Default:
+Default: `/etc/radicale/users`
 
-#### htpasswd_encryption
+##### htpasswd_encryption
 
 The encryption method that is used in the htpasswd file. Use the
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html)
@@ -645,6 +686,7 @@ Available methods:
 `plain`
 : Passwords are stored in plaintext. This is obviously not secure!
   The htpasswd file for this can be created by hand and looks like:
+
   ```htpasswd
   user1:password1
   user2:password2
@@ -659,20 +701,21 @@ Available methods:
 
 Default: `md5`
 
-#### delay
+##### delay
 
 Average delay after failed login attempts in seconds.
 
 Default: `1`
 
-#### realm
+##### realm
 
 Message displayed in the client when a password is needed.
 
 Default: `Radicale - Password Required`
 
-### rights
-#### type
+#### rights
+
+##### type
 
 The backend that is used to check the access rights of collections.
 
@@ -700,13 +743,14 @@ Available backends:
 
 Default: `owner_only`
 
-#### file
+##### file
 
 File for the rights backend `from_file`.  See the
-[Rights](#documentation/authentication-and-rights) section.
+[Rights](#authentication-and-rights) section.
 
-### storage
-#### type
+#### storage
+
+##### type
 
 The backend that is used to store data.
 
@@ -715,29 +759,34 @@ Available backends:
 `multifilesystem`
 : Stores the data in the filesystem.
 
+`multifilesystem_nolock`
+: The `multifilesystem` backend without file-based locking.
+  Must only be used with a single process.
+
 Default: `multifilesystem`
 
-#### filesystem_folder
+##### filesystem_folder
 
 Folder for storing local collections, created if not present.
 
 Default: `/var/lib/radicale/collections`
 
-#### max_sync_token_age
+##### max_sync_token_age
 
 Delete sync-token that are older than the specified time. (seconds)
 
 Default: `2592000`
 
-#### hook
+##### hook
 
 Command that is run after changes to storage. Take a look at the
-[Versioning with Git](#tutorials/versioning-with-git) tutorial for an example.
+[Versioning with Git](#versioning-with-git) tutorial for an example.
 
 Default:
 
-### web
-#### type
+#### web
+
+##### type
 
 The backend that provides the web interface of Radicale.
 
@@ -751,8 +800,9 @@ Available backends:
 
 Default: `internal`
 
-### logging
-#### level
+#### logging
+
+##### level
 
 Set the logging level.
 
@@ -760,13 +810,13 @@ Available levels: **debug**, **info**, **warning**, **error**, **critical**
 
 Default: `warning`
 
-#### mask_passwords
+##### mask_passwords
 
 Don't include passwords in logs.
 
 Default: `True`
 
-### headers
+#### headers
 
 In this section additional HTTP headers that are sent to clients can be
 specified.
@@ -777,8 +827,8 @@ An example to relax the same-origin policy:
 Access-Control-Allow-Origin = *
 ```
 
-### hook
-#### type
+#### hook
+##### type
 
 Hook binding for event changes and deletion notifications.
 
@@ -809,59 +859,56 @@ Default:
 
 Radicale has been tested with:
 
-  * [Android](https://android.com/) with
-    [DAVx⁵](https://www.davx5.com/) (formerly DAVdroid)
-  * [GNOME Calendar](https://wiki.gnome.org/Apps/Calendar),
-    [Contacts](https://wiki.gnome.org/Apps/Contacts) and
-    [Evolution](https://wiki.gnome.org/Apps/Evolution)
-  * [Mozilla Thunderbird](https://www.mozilla.org/thunderbird/) with
-    [CardBook](https://addons.mozilla.org/thunderbird/addon/cardbook/) and
-    [Lightning](https://www.mozilla.org/projects/calendar/)
-  * [InfCloud](https://www.inf-it.com/open-source/clients/infcloud/),
-    [CalDavZAP](https://www.inf-it.com/open-source/clients/caldavzap/) and
-    [CardDavMATE](https://www.inf-it.com/open-source/clients/carddavmate/)
+* [Android](https://android.com/) with
+  [DAVx⁵](https://www.davx5.com/) (formerly DAVdroid)
+* [GNOME Calendar](https://wiki.gnome.org/Apps/Calendar),
+  [Contacts](https://wiki.gnome.org/Apps/Contacts) and
+  [Evolution](https://wiki.gnome.org/Apps/Evolution)
+* [Mozilla Thunderbird](https://www.mozilla.org/thunderbird/) with
+  [CardBook](https://addons.mozilla.org/thunderbird/addon/cardbook/) and
+  [Lightning](https://www.mozilla.org/projects/calendar/)
+* [InfCloud](https://www.inf-it.com/open-source/clients/infcloud/),
+  [CalDavZAP](https://www.inf-it.com/open-source/clients/caldavzap/) and
+  [CardDavMATE](https://www.inf-it.com/open-source/clients/carddavmate/)
 
 Many clients do not support the creation of new calendars and address books.
 You can use Radicale's web interface
-(e.g. http://localhost:5232) to create and manage address books and calendars.
+(e.g. <http://localhost:5232>) to create and manage address books and calendars.
 
 In some clients you can just enter the URL of the Radicale server
-(e.g. `http://localhost:5232`) and your user name. In others, you have to
+(e.g. `http://localhost:5232`) and your username. In others, you have to
 enter the URL of the collection directly
 (e.g. `http://localhost:5232/user/calendar`).
 
-### DAVx⁵
+#### DAVx⁵
 
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
-user name. DAVx⁵ will show all existing calendars and address books and you
+username. DAVx⁵ will show all existing calendars and address books and you
 can create new.
 
-### GNOME Calendar, Contacts and Evolution
+#### GNOME Calendar, Contacts and Evolution
 
 **GNOME Calendar** and **Contacts** do not support adding WebDAV calendars
 and address books directly, but you can add them in **Evolution**.
 
 In **Evolution** add a new calendar and address book respectively with WebDAV.
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
-user name. Clicking on the search button will list the existing calendars and
+username. Clicking on the search button will list the existing calendars and
 address books.
 
-### Thunderbird
-#### CardBook
+#### Thunderbird
 
-Add a new address book on the network with CardDAV. You have to enter the full
-URL of the collection (e.g. `http://localhost:5232/user/addressbook`) and
-your user name.
+Add a new calendar on the network. Enter your username and the URL of the
+Radicale server (e.g. `http://localhost:5232`). After asking for your password,
+it will list the existing calendars.
 
-#### Lightning
+##### Adress books with CardBook add-on
 
-Add a new calendar on the network with `CalDAV`. (Don't use `iCalendar (ICS)`!)
-You have to enter the full URL of the collection (e.g.
-`http://localhost:5232/user/calendar`). If you want to add calendars from
-different users on the same server, you can specify the user name in the URL
-(e.g. `http://user@localhost...`)
+Add a new address book on the network with CardDAV. Enter the URL of the
+Radicale server (e.g. `http://localhost:5232`) and your username and password.
+It will list your existing address books.
 
-### InfCloud, CalDavZAP and CardDavMATE
+#### InfCloud, CalDavZAP and CardDavMATE
 
 You can integrate InfCloud into Radicale's web interface with
 [RadicaleInfCloud](https://github.com/Unrud/RadicaleInfCloud). No additional
@@ -874,7 +921,7 @@ the Radicale server, because of the
 You have to add additional HTTP header in the `headers` section of Radicale's
 configuration. The documentation of **InfCloud** has more details on this.
 
-### Command line
+#### Command line
 
 This is not the recommended way of creating and managing your calendars and
 address books. Use Radicale's web interface or a client with support for it
@@ -932,10 +979,10 @@ children of the path `/USERNAME/`.
 Delete the collections by running something like:
 
 ```bash
-$ curl -u user -X DELETE 'http://localhost:5232/user/calendar'
+curl -u user -X DELETE 'http://localhost:5232/user/calendar'
 ```
 
-## Authentication and Rights
+### Authentication and Rights
 
 This section describes the format of the rights file for the `from_file`
 authentication backend. The configuration option `file` in the `rights`
@@ -956,7 +1003,7 @@ user: .+
 collection:
 permissions: R
 
-# Allow reading and writing principal collection (same as user name)
+# Allow reading and writing principal collection (same as username)
 [principal]
 user: .+
 collection: {user}
@@ -972,10 +1019,10 @@ permissions: rw
 
 The titles of the sections are ignored (but must be unique). The keys `user`
 and `collection` contain regular expressions, that are matched against the
-user name and the path of the collection. Permissions from the first
+username and the path of the collection. Permissions from the first
 matching section are used. If no section matches, access gets denied.
 
-The user name is empty for anonymous users. Therefore, the regex `.+` only
+The username is empty for anonymous users. Therefore, the regex `.+` only
 matches authenticated users and `.*` matches everyone (including anonymous
 users).
 
@@ -990,14 +1037,14 @@ if you want to use regular curly braces in the `user` and `collection` regexes.
 
 The following `permissions` are recognized:
 
-  * **R:** read collections (excluding address books and calendars)
-  * **r:** read address book and calendar collections
-  * **i:** subset of **r** that only allows direct access via HTTP method GET
-    (CalDAV/CardDAV is susceptible to expensive search requests)
-  * **W:** write collections (excluding address books and calendars)
-  * **w:** write address book and calendar collections
+* **R:** read collections (excluding address books and calendars)
+* **r:** read address book and calendar collections
+* **i:** subset of **r** that only allows direct access via HTTP method GET
+  (CalDAV/CardDAV is susceptible to expensive search requests)
+* **W:** write collections (excluding address books and calendars)
+* **w:** write address book and calendar collections
 
-## Storage
+### Storage
 
 This document describes the layout and format of the file system storage
 (`multifilesystem` backend).
@@ -1006,14 +1053,14 @@ It's safe to access and manipulate the data by hand or with scripts.
 Scripts can be invoked manually, periodically (e.g. with
 [cron](https://manpages.debian.org/unstable/cron/cron.8.en.html)) or after each
 change to the storage with the configuration option `hook` in the `storage`
-section (e.g. [Versioning with Git](#tutorials/versioning-with-git)).
+section (e.g. [Versioning with Git](#versioning-with-git)).
 
-### Layout
+#### Layout
 
 The file system contains the following files and folders:
 
-  * `.Radicale.lock`: The lock file for locking the storage.
-  * `collection-root`: This folder contains all collections and items.
+* `.Radicale.lock`: The lock file for locking the storage.
+* `collection-root`: This folder contains all collections and items.
 
 A collection is represented by a folder. This folder may contain the file
 `.Radicale.props` with all WebDAV properties of the collection encoded
@@ -1042,14 +1089,14 @@ They should be deleted after requests are finished but it's possible that
 they are left behind when Radicale or the computer crashes.
 It's safe to delete them.
 
-### Locking
+#### Locking
 
 When the data is accessed by hand or by an externally invoked script,
 the storage must be locked. The storage can be locked for exclusive or
 shared access. It prevents Radicale from reading or writing the file system.
 The storage is locked with exclusive access while the `hook` runs.
 
-#### Linux shell scripts
+##### Linux shell scripts
 
 Use the
 [flock](https://manpages.debian.org/unstable/util-linux/flock.1.en.html)
@@ -1062,14 +1109,14 @@ $ flock --exclusive /path/to/storage/.Radicale.lock COMMAND
 $ flock --shared /path/to/storage/.Radicale.lock COMMAND
 ```
 
-#### Linux and MacOS
+##### Linux and MacOS
 
 Use the
 [flock](https://manpages.debian.org/unstable/manpages-dev/flock.2.en.html)
 syscall. Python provides it in the
 [fcntl](https://docs.python.org/3/library/fcntl.html#fcntl.flock) module.
 
-#### Windows
+##### Windows
 
 Use
 [LockFile](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365202%28v=vs.85%29.aspx)
@@ -1078,7 +1125,7 @@ for exclusive access or
 which also supports shared access. Setting `nNumberOfBytesToLockLow` to `1`
 and `nNumberOfBytesToLockHigh` to `0` works.
 
-### Manually creating collections
+#### Manually creating collections
 
 To create a new collection, you have to create the corresponding folder in the
 file system storage (e.g. `collection-root/user/calendar`).
@@ -1102,65 +1149,38 @@ address books that are direct children of the path `/USERNAME/`.
 
 Delete collections by deleting the corresponding folders.
 
-## Logging
+### Logging
 
 Radicale logs to `stderr`. The verbosity of the log output can be controlled
 with `--debug` command line argument or the `level` configuration option in
 the `logging` section.
 
-## Architecture
+### Architecture
 
 Radicale is a small piece of software, but understanding it is not as
 easy as it seems. But don't worry, reading this short section is enough to
 understand what a CalDAV/CardDAV server is, and how Radicale's code is
 organized.
 
-### Protocol overview
+#### Protocol overview
 
 Here is a simple overview of the global architecture for reaching a calendar or
 an address book through network:
 
-<table>
-  <thead>
-    <tr>
-      <th>Part</th>
-      <th>Layer</th>
-      <th>Protocol or Format</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td rowspan="2">Server</td>
-      <td>Calendar/Contact Storage</td>
-      <td>iCal/vCard</td>
-    </tr>
-    <tr>
-      <td>Calendar/Contact Server</td>
-      <td>CalDAV/CardDAV Server</td>
-    </tr>
-    <tr>
-      <td>Transfer</td>
-      <td>Network</td>
-      <td>CalDAV/CardDAV (HTTP + TLS)</td>
-    </tr>
-    <tr>
-      <td rowspan="2">Client</td>
-      <td>Calendar/Contact Client</td>
-      <td>CalDAV/CardDAV Client</td>
-    </tr>
-    <tr>
-      <td>GUI</td>
-      <td>Terminal, GTK, Web interface, etc.</td>
-    </tr>
-  </tbody>
-</table>
+| Part     | Layer                    | Protocol or Format                 |
+|----------|--------------------------|------------------------------------|
+| Server   | Calendar/Contact Storage | iCal/vCard                         |
+| ''       | Calendar/Contact Server  | CalDAV/CardDAV Server              |
+| Transfer | Network                  | CalDAV/CardDAV (HTTP + TLS)        |
+| Client   | Calendar/Contact Client  | CalDAV/CardDAV Client              |
+| ''       | GUI                      | Terminal, GTK, Web interface, etc. |
 
 Radicale is **only the server part** of this architecture.
 
 Please note that:
 
-  * CalDAV and CardDAV are superset protocols of WebDAV,
-  * WebDAV is a superset protocol of HTTP.
+* CalDAV and CardDAV are superset protocols of WebDAV,
+* WebDAV is a superset protocol of HTTP.
 
 Radicale being a CalDAV/CardDAV server, it also can be seen as a special WebDAV
 and HTTP server.
@@ -1174,7 +1194,7 @@ If you want to see or edit your events and your contacts, you have to use
 another software called a client, that can be a "normal" applications with
 icons and buttons, a terminal or another web application.
 
-### Code Architecture
+#### Code Architecture
 
 The ``radicale`` package offers the following modules.
 
@@ -1233,12 +1253,12 @@ The ``radicale`` package offers the following modules.
 : Helper functions for working with the XML part of CalDAV/CardDAV requests
   and responses. It's based on the ElementTree XML API.
 
-## Plugins
+### Plugins
 
 Radicale can be extended by plugins for authentication, rights management and
 storage. Plugins are **python** modules.
 
-### Getting started
+#### Getting started
 
 To get started we walk through the creation of a simple authentication
 plugin, that accepts login attempts with a static password.
@@ -1308,103 +1328,108 @@ You can uninstall the module with:
 python3 -m pip uninstall radicale_static_password_auth
 ```
 
-### Authentication plugins
+#### Authentication plugins
 
 This plugin type is used to check login credentials.
 The module must contain a class `Auth` that extends
 `radicale.auth.BaseAuth`. Take a look at the file `radicale/auth/__init__.py`
 in Radicale's source code for more information.
 
-### Rights management plugins
+#### Rights management plugins
 
 This plugin type is used to check if a user has access to a path.
 The module must contain a class `Rights` that extends
 `radicale.rights.BaseRights`. Take a look at the file
 `radicale/rights/__init__.py` in Radicale's source code for more information.
 
-### Web plugins
+#### Web plugins
 
 This plugin type is used to provide the web interface for Radicale.
 The module must contain a class `Web` that extends
 `radicale.web.BaseWeb`. Take a look at the file `radicale/web/__init__.py` in
 Radicale's source code for more information.
 
-### Storage plugins
+#### Storage plugins
 
 This plugin is used to store collections and items.
 The module must contain a class `Storage` that extends
 `radicale.storage.BaseStorage`. Take a look at the file
 `radicale/storage/__init__.py` in Radicale's source code for more information.
 
-# Contribute
+## Contribute
 
-### Chat with Us on IRC
+#### Chat with Us on IRC
 
 Want to say something? Join our IRC room: `##kozea` on Freenode.
 
-### Report Bugs
+#### Report Bugs
 
 Found a bug? Want a new feature? Report a new issue on the
 [Radicale bug-tracker](https://github.com/Kozea/Radicale/issues).
 
-### Hack
+#### Hack
 
 Interested in hacking? Feel free to clone the
 [git repository on GitHub](https://github.com/Kozea/Radicale) if you want to
 add new features, fix bugs or update the documentation.
 
-### Documentation
+#### Documentation
 
 To change or complement the documentation create a pull request to
 [DOCUMENTATION.md](https://github.com/Kozea/Radicale/blob/master/DOCUMENTATION.md).
 
-# Download
+## Download
 
-### PyPI
+#### PyPI
 
 Radicale is [available on PyPI](https://pypi.python.org/pypi/Radicale/). To
 install, just type as superuser:
 
-    $ python3 -m pip install --upgrade radicale
+```bash
+python3 -m pip install --upgrade radicale
+```
 
-### Git Repository
+#### Git Repository
 
 If you want the development version of Radicale, take a look at the
 [git repository on GitHub](https://github.com/Kozea/Radicale/), or install it
 directly with:
 
-    $ python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
+```bash
+python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
+```
 
 You can also download the content of the repository as an
 [archive](https://github.com/Kozea/Radicale/tarball/master).
 
-### Source Packages
+#### Source Packages
 
 You can find the source packages of all releases on
 [GitHub](https://github.com/Kozea/Radicale/releases).
 
-### Linux Distribution Packages
+#### Linux Distribution Packages
 
 Radicale has been packaged for:
 
-  * [ArchLinux](https://www.archlinux.org/packages/community/any/radicale/) by
-    David Runge
-  * [Debian](http://packages.debian.org/radicale) by Jonas Smedegaard
-  * [Gentoo](https://packages.gentoo.org/packages/www-apps/radicale)
-    by René Neumann, Maxim Koltsov and Manuel Rüger
-  * [Fedora](https://admin.fedoraproject.org/pkgdb/package/radicale/) by Jorti
-  * [Mageia](http://madb.mageia.org/package/show/application/0/name/radicale)
-    by Jani Välimaa
-  * [OpenBSD](http://openports.se/productivity/radicale) by Sergey Bronnikov,
-    Stuart Henderson and Ian Darwin
-  * [openSUSE](http://software.opensuse.org/package/Radicale?search_term=radicale)
-    by Ákos Szőts and Rueckert
-  * [PyPM](http://code.activestate.com/pypm/radicale/)
-  * [Slackware](http://schoepfer.info/slackware.xhtml#packages-network) by
-    Johannes Schöpfer
-  * [Trisquel](http://packages.trisquel.info/search?searchon=names&keywords=radicale)
-  * [Ubuntu](http://packages.ubuntu.com/radicale) by the MOTU and Jonas
-    Smedegaard
+* [ArchLinux](https://www.archlinux.org/packages/community/any/radicale/) by
+  David Runge
+* [Debian](http://packages.debian.org/radicale) by Jonas Smedegaard
+* [Gentoo](https://packages.gentoo.org/packages/www-apps/radicale)
+  by René Neumann, Maxim Koltsov and Manuel Rüger
+* [Fedora/RHEL/CentOS](https://src.fedoraproject.org/rpms/radicale) by Jorti
+  and Peter Bieringer
+* [Mageia](http://madb.mageia.org/package/show/application/0/name/radicale)
+  by Jani Välimaa
+* [OpenBSD](http://openports.se/productivity/radicale) by Sergey Bronnikov,
+  Stuart Henderson and Ian Darwin
+* [openSUSE](http://software.opensuse.org/package/Radicale?search_term=radicale)
+  by Ákos Szőts and Rueckert
+* [PyPM](http://code.activestate.com/pypm/radicale/)
+* [Slackware](http://schoepfer.info/slackware.xhtml#packages-network) by
+  Johannes Schöpfer
+* [Trisquel](http://packages.trisquel.info/search?searchon=names&keywords=radicale)
+* [Ubuntu](http://packages.ubuntu.com/radicale) by the MOTU and Jonas
+  Smedegaard
 
 Radicale is also
 [available on Cloudron](https://cloudron.io/button.html?app=org.radicale.cloudronapp2)
@@ -1413,9 +1438,9 @@ and has a Dockerfile.
 If you are interested in creating packages for other Linux distributions, read
 the ["Contribute" section](#contribute).
 
-# About
+## About
 
-### Main Goals
+#### Main Goals
 
 Radicale is a complete calendar and contact storing and manipulating
 solution. It can store multiple calendars and multiple address books.
@@ -1430,7 +1455,7 @@ preconfigured to work out-of-the-box.
 Radicale is written in Python. It runs on most of the UNIX-like platforms
 (Linux, \*BSD, macOS) and Windows. It is free and open-source software.
 
-### What Radicale Will Never Be
+#### What Radicale Will Never Be
 
 Radicale is a server, not a client. No interfaces will be created to work with
 the server.
@@ -1443,14 +1468,14 @@ CalDAV and CardDAV are the best open standards available, and they are quite
 widely used by both clients and servers. We decided to use it, and we will not
 use another one.
 
-### Technical Choices
+#### Technical Choices
 
 Important global development choices have been decided before writing
 code. They are very useful to understand why the Radicale Project is different
 from other CalDAV and CardDAV servers, and why features are included or not in
 the code.
 
-#### Oriented to Calendar and Contact User Agents
+##### Oriented to Calendar and Contact User Agents
 
 Calendar and contact servers work with calendar and contact clients, using a
 defined protocol. CalDAV and CardDAV are good protocols, covering lots of
@@ -1468,7 +1493,7 @@ Even if it tries it best to follow the RFCs, Radicale does not and **will not**
 blindly implement the CalDAV and CardDAV standards. It is mainly designed to
 support the CalDAV and CardDAV implementations of different clients.
 
-#### Simple
+##### Simple
 
 Radicale is designed to be simple to install, simple to configure, simple to
 use.
@@ -1481,9 +1506,9 @@ steps to have a simple remote calendar and contact access.
 Contrary to other servers that are often complicated, require high privileges
 or need a strong configuration, the Radicale Server can (sometimes, if not
 often) be launched in a couple of minutes, if you follow the
-[tutorial](#tutorials/simple-5-minute-setup).
+[tutorial](#simple-5-minute-setup).
 
-#### Lazy
+##### Lazy
 
 The CalDAV RFC defines what must be done, what can be done and what cannot be
 done. Many violations of the protocol are totally defined and behaviors are
@@ -1494,7 +1519,7 @@ violations do not exist. That is why most of the errors in client requests have
 undetermined consequences for the lazy server that can reply good answers, bad
 answers, or even no answer.
 
-### History
+#### History
 
 Radicale has been started as a (free topic) stupid school project replacing
 another (assigned topic) even more stupid school project.

@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2019 Unrud <unrud@outlook.com>
 #
@@ -22,52 +22,104 @@ Radicale tests with simple requests.
 
 import os
 import posixpath
-import shutil
-import sys
-import tempfile
+from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
 import defusedxml.ElementTree as DefusedET
-import pytest
 
-import radicale.tests.custom.storage_simple_sync
-from radicale import Application, config, storage, xmlutils
-from radicale.tests import BaseTest
+from radicale import storage, xmlutils
+from radicale.tests import RESPONSES, BaseTest
 from radicale.tests.helpers import get_file_content
 
 
-class BaseRequestsMixIn:
+class TestBaseRequests(BaseTest):
     """Tests with simple requests."""
 
     # Allow skipping sync-token tests, when not fully supported by the backend
-    full_sync_token_support = True
+    full_sync_token_support: ClassVar[bool] = True
 
-    def test_root(self):
+    def setup(self) -> None:
+        BaseTest.setup(self)
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[allow all]
+user: .*
+collection: .*
+permissions: RrWw""")
+        self.configure({"rights": {"file": rights_file_path,
+                                   "type": "from_file"}})
+
+    def test_root(self) -> None:
         """GET request at "/"."""
-        _, answer = self.get("/", check=302)
-        assert answer == "Redirected to .web"
+        for path in ["", "/", "//"]:
+            _, headers, answer = self.request("GET", path, check=302)
+            assert headers.get("Location") == "/.web"
+            assert answer == "Redirected to /.web"
 
-    def test_script_name(self):
+    def test_root_script_name(self) -> None:
         """GET request at "/" with SCRIPT_NAME."""
-        _, answer = self.get("/", check=302, SCRIPT_NAME="/radicale")
-        assert answer == "Redirected to .web"
-        _, answer = self.get("", check=302, SCRIPT_NAME="/radicale")
-        assert answer == "Redirected to radicale/.web"
+        for path in ["", "/", "//"]:
+            _, headers, _ = self.request("GET", path, check=302,
+                                         SCRIPT_NAME="/radicale")
+            assert headers.get("Location") == "/radicale/.web"
 
-    def test_add_event(self):
+    def test_root_broken_script_name(self) -> None:
+        """GET request at "/" with SCRIPT_NAME ending with "/"."""
+        for script_name, prefix in [
+                ("/", ""), ("//", ""), ("/radicale/", "/radicale"),
+                ("radicale", None), ("radicale//", None)]:
+            _, headers, _ = self.request(
+                "GET", "/", check=500 if prefix is None else 302,
+                SCRIPT_NAME=script_name)
+            assert (prefix is None or
+                    headers.get("Location") == prefix + "/.web")
+
+    def test_root_http_x_script_name(self) -> None:
+        """GET request at "/" with HTTP_X_SCRIPT_NAME."""
+        for path in ["", "/", "//"]:
+            _, headers, _ = self.request("GET", path, check=302,
+                                         HTTP_X_SCRIPT_NAME="/radicale")
+            assert headers.get("Location") == "/radicale/.web"
+
+    def test_root_broken_http_x_script_name(self) -> None:
+        """GET request at "/" with HTTP_X_SCRIPT_NAME ending with "/"."""
+        for script_name, prefix in [
+                ("/", ""), ("//", ""), ("/radicale/", "/radicale"),
+                ("radicale", None), ("radicale//", None)]:
+            _, headers, _ = self.request(
+                "GET", "/", check=400 if prefix is None else 302,
+                HTTP_X_SCRIPT_NAME=script_name)
+            assert (prefix is None or
+                    headers.get("Location") == prefix + "/.web")
+
+    def test_sanitized_path(self) -> None:
+        """GET request with unsanitized paths."""
+        for path, sane_path in [
+                ("//.web", "/.web"), ("//.web/", "/.web/"),
+                ("/.web//", "/.web/"), ("/.web/a//b", "/.web/a/b")]:
+            _, headers, _ = self.request("GET", path, check=301)
+            assert headers.get("Location") == sane_path
+            _, headers, _ = self.request("GET", path, check=301,
+                                         SCRIPT_NAME="/radicale")
+            assert headers.get("Location") == "/radicale%s" % sane_path
+            _, headers, _ = self.request("GET", path, check=301,
+                                         HTTP_X_SCRIPT_NAME="/radicale")
+            assert headers.get("Location") == "/radicale%s" % sane_path
+
+    def test_add_event(self) -> None:
         """Add an event."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
         path = "/calendar.ics/event1.ics"
         self.put(path, event)
-        status, headers, answer = self.request("GET", path)
-        assert status == 200
+        _, headers, answer = self.request("GET", path, check=200)
         assert "ETag" in headers
         assert headers["Content-Type"] == "text/calendar; charset=utf-8"
         assert "VEVENT" in answer
         assert "Event" in answer
         assert "UID:event" in answer
 
-    def test_add_event_without_uid(self):
+    def test_add_event_without_uid(self) -> None:
         """Add an event without UID."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics").replace("UID:event1\n", "")
@@ -75,40 +127,44 @@ class BaseRequestsMixIn:
         path = "/calendar.ics/event.ics"
         self.put(path, event, check=400)
 
-    def test_add_event_duplicate_uid(self):
+    def test_add_event_duplicate_uid(self) -> None:
         """Add an event with an existing UID."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
         self.put("/calendar.ics/event1.ics", event)
         status, answer = self.put(
-            "/calendar.ics/event1-duplicate.ics", event, check=False)
+            "/calendar.ics/event1-duplicate.ics", event, check=None)
         assert status in (403, 409)
         xml = DefusedET.fromstring(answer)
         assert xml.tag == xmlutils.make_clark("D:error")
         assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
 
-    def test_add_todo(self):
+    def test_add_event_with_mixed_datetime_and_date(self) -> None:
+        """Test event with DTSTART as DATE-TIME and EXDATE as DATE."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_mixed_datetime_and_date.ics")
+        self.put("/calendar.ics/event.ics", event)
+
+    def test_add_todo(self) -> None:
         """Add a todo."""
         self.mkcalendar("/calendar.ics/")
         todo = get_file_content("todo1.ics")
         path = "/calendar.ics/todo1.ics"
         self.put(path, todo)
-        status, headers, answer = self.request("GET", path)
-        assert status == 200
+        _, headers, answer = self.request("GET", path, check=200)
         assert "ETag" in headers
         assert headers["Content-Type"] == "text/calendar; charset=utf-8"
         assert "VTODO" in answer
         assert "Todo" in answer
         assert "UID:todo" in answer
 
-    def test_add_contact(self):
+    def test_add_contact(self) -> None:
         """Add a contact."""
         self.create_addressbook("/contacts.vcf/")
         contact = get_file_content("contact1.vcf")
         path = "/contacts.vcf/contact.vcf"
         self.put(path, contact)
-        status, headers, answer = self.request("GET", path)
-        assert status == 200
+        _, headers, answer = self.request("GET", path, check=200)
         assert "ETag" in headers
         assert headers["Content-Type"] == "text/vcard; charset=utf-8"
         assert "VCARD" in answer
@@ -116,7 +172,13 @@ class BaseRequestsMixIn:
         _, answer = self.get(path)
         assert "UID:contact1" in answer
 
-    def test_add_contact_without_uid(self):
+    def test_add_contact_photo_with_data_uri(self) -> None:
+        """Test workaround for broken PHOTO data from InfCloud"""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("contact_photo_with_data_uri.vcf")
+        self.put("/contacts.vcf/contact.vcf", contact)
+
+    def test_add_contact_without_uid(self) -> None:
         """Add a contact without UID."""
         self.create_addressbook("/contacts.vcf/")
         contact = get_file_content("contact1.vcf").replace("UID:contact1\n",
@@ -125,7 +187,7 @@ class BaseRequestsMixIn:
         path = "/contacts.vcf/contact.vcf"
         self.put(path, contact, check=400)
 
-    def test_update_event(self):
+    def test_update_event(self) -> None:
         """Update an event."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
@@ -138,20 +200,20 @@ class BaseRequestsMixIn:
         _, answer = self.get(path)
         assert "DTSTAMP:20130902T150159Z" in answer
 
-    def test_update_event_uid_event(self):
+    def test_update_event_uid_event(self) -> None:
         """Update an event with a different UID."""
         self.mkcalendar("/calendar.ics/")
         event1 = get_file_content("event1.ics")
         event2 = get_file_content("event2.ics")
         path = "/calendar.ics/event1.ics"
         self.put(path, event1)
-        status, answer = self.put(path, event2, check=False)
+        status, answer = self.put(path, event2, check=None)
         assert status in (403, 409)
         xml = DefusedET.fromstring(answer)
         assert xml.tag == xmlutils.make_clark("D:error")
         assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
 
-    def test_put_whole_calendar(self):
+    def test_put_whole_calendar(self) -> None:
         """Create and overwrite a whole calendar."""
         self.put("/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
         event1 = get_file_content("event1.ics")
@@ -164,7 +226,7 @@ class BaseRequestsMixIn:
         assert "\r\nUID:event\r\n" in answer and "\r\nUID:todo\r\n" in answer
         assert "\r\nUID:event1\r\n" not in answer
 
-    def test_put_whole_calendar_without_uids(self):
+    def test_put_whole_calendar_without_uids(self) -> None:
         """Create a whole calendar without UID."""
         event = get_file_content("event_multiple.ics")
         event = event.replace("UID:event\n", "").replace("UID:todo\n", "")
@@ -181,15 +243,23 @@ class BaseRequestsMixIn:
             for uid2 in uids[i + 1:]:
                 assert uid1 != uid2
 
-    def test_put_whole_addressbook(self):
+    def test_put_whole_calendar_case_sensitive_uids(self) -> None:
+        """Create a whole calendar with case-sensitive UIDs."""
+        events = get_file_content("event_multiple_case_sensitive_uids.ics")
+        self.put("/calendar.ics/", events)
+        _, answer = self.get("/calendar.ics/")
+        assert "\r\nUID:event\r\n" in answer and "\r\nUID:EVENT\r\n" in answer
+
+    def test_put_whole_addressbook(self) -> None:
         """Create and overwrite a whole addressbook."""
         contacts = get_file_content("contact_multiple.vcf")
         self.put("/contacts.vcf/", contacts)
         _, answer = self.get("/contacts.vcf/")
-        assert ("\r\nUID:contact1\r\n" in answer and
-                "\r\nUID:contact2\r\n" in answer)
+        assert answer is not None
+        assert "\r\nUID:contact1\r\n" in answer
+        assert "\r\nUID:contact2\r\n" in answer
 
-    def test_put_whole_addressbook_without_uids(self):
+    def test_put_whole_addressbook_without_uids(self) -> None:
         """Create a whole addressbook without UID."""
         contacts = get_file_content("contact_multiple.vcf")
         contacts = contacts.replace("UID:contact1\n", "").replace(
@@ -207,7 +277,7 @@ class BaseRequestsMixIn:
             for uid2 in uids[i + 1:]:
                 assert uid1 != uid2
 
-    def test_verify(self):
+    def test_verify(self) -> None:
         """Verify the storage."""
         contacts = get_file_content("contact_multiple.vcf")
         self.put("/contacts.vcf/", contacts)
@@ -216,7 +286,7 @@ class BaseRequestsMixIn:
         s = storage.load(self.configuration)
         assert s.verify()
 
-    def test_delete(self):
+    def test_delete(self) -> None:
         """Delete an event."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
@@ -227,37 +297,69 @@ class BaseRequestsMixIn:
         _, answer = self.get("/calendar.ics/")
         assert "VEVENT" not in answer
 
-    def test_mkcalendar(self):
+    def test_mkcalendar(self) -> None:
         """Make a calendar."""
         self.mkcalendar("/calendar.ics/")
         _, answer = self.get("/calendar.ics/")
         assert "BEGIN:VCALENDAR" in answer
         assert "END:VCALENDAR" in answer
 
-    def test_mkcalendar_overwrite(self):
-        """Make a calendar."""
+    def test_mkcalendar_overwrite(self) -> None:
+        """Try to overwrite an existing calendar."""
         self.mkcalendar("/calendar.ics/")
-        status, answer = self.mkcalendar("/calendar.ics/", check=False)
+        status, answer = self.mkcalendar("/calendar.ics/", check=None)
         assert status in (403, 409)
         xml = DefusedET.fromstring(answer)
         assert xml.tag == xmlutils.make_clark("D:error")
         assert xml.find(xmlutils.make_clark(
             "D:resource-must-be-null")) is not None
 
-    def test_move(self):
+    def test_mkcalendar_intermediate(self) -> None:
+        """Try make a calendar in a unmapped collection."""
+        self.mkcalendar("/unmapped/calendar.ics/", check=409)
+
+    def test_mkcol(self) -> None:
+        """Make a collection."""
+        self.mkcol("/user/")
+
+    def test_mkcol_overwrite(self) -> None:
+        """Try to overwrite an existing collection."""
+        self.mkcol("/user/")
+        self.mkcol("/user/", check=405)
+
+    def test_mkcol_intermediate(self) -> None:
+        """Try make a collection in a unmapped collection."""
+        self.mkcol("/unmapped/user/", check=409)
+
+    def test_mkcol_make_calendar(self) -> None:
+        """Make a calendar with additional props."""
+        mkcol_make_calendar = get_file_content("mkcol_make_calendar.xml")
+        self.mkcol("/calendar.ics/", mkcol_make_calendar)
+        _, answer = self.get("/calendar.ics/")
+        assert answer is not None
+        assert "BEGIN:VCALENDAR" in answer
+        assert "END:VCALENDAR" in answer
+        # Read additional properties
+        propfind = get_file_content("propfind_calendar_color.xml")
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and prop.text == "#BADA55"
+
+    def test_move(self) -> None:
         """Move a item."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
         path1 = "/calendar.ics/event1.ics"
         path2 = "/calendar.ics/event2.ics"
         self.put(path1, event)
-        status, _, _ = self.request(
-            "MOVE", path1, HTTP_DESTINATION=path2, HTTP_HOST="")
-        assert status == 201
+        self.request("MOVE", path1, check=201,
+                     HTTP_DESTINATION=path2, HTTP_HOST="")
         self.get(path1, check=404)
         self.get(path2)
 
-    def test_move_between_colections(self):
+    def test_move_between_colections(self) -> None:
         """Move a item."""
         self.mkcalendar("/calendar1.ics/")
         self.mkcalendar("/calendar2.ics/")
@@ -265,13 +367,12 @@ class BaseRequestsMixIn:
         path1 = "/calendar1.ics/event1.ics"
         path2 = "/calendar2.ics/event2.ics"
         self.put(path1, event)
-        status, _, _ = self.request(
-            "MOVE", path1, HTTP_DESTINATION=path2, HTTP_HOST="")
-        assert status == 201
+        self.request("MOVE", path1, check=201,
+                     HTTP_DESTINATION=path2, HTTP_HOST="")
         self.get(path1, check=404)
         self.get(path2)
 
-    def test_move_between_colections_duplicate_uid(self):
+    def test_move_between_colections_duplicate_uid(self) -> None:
         """Move a item to a collection which already contains the UID."""
         self.mkcalendar("/calendar1.ics/")
         self.mkcalendar("/calendar2.ics/")
@@ -287,7 +388,7 @@ class BaseRequestsMixIn:
         assert xml.tag == xmlutils.make_clark("D:error")
         assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
 
-    def test_move_between_colections_overwrite(self):
+    def test_move_between_colections_overwrite(self) -> None:
         """Move a item to a collection which already contains the item."""
         self.mkcalendar("/calendar1.ics/")
         self.mkcalendar("/calendar2.ics/")
@@ -296,14 +397,12 @@ class BaseRequestsMixIn:
         path2 = "/calendar2.ics/event1.ics"
         self.put(path1, event)
         self.put(path2, event)
-        status, _, _ = self.request(
-            "MOVE", path1, HTTP_DESTINATION=path2, HTTP_HOST="")
-        assert status == 412
-        status, _, _ = self.request("MOVE", path1, HTTP_DESTINATION=path2,
-                                    HTTP_HOST="", HTTP_OVERWRITE="T")
-        assert status == 204
+        self.request("MOVE", path1, check=412,
+                     HTTP_DESTINATION=path2, HTTP_HOST="")
+        self.request("MOVE", path1, check=204,
+                     HTTP_DESTINATION=path2, HTTP_HOST="", HTTP_OVERWRITE="T")
 
-    def test_move_between_colections_overwrite_uid_conflict(self):
+    def test_move_between_colections_overwrite_uid_conflict(self) -> None:
         """Move a item to a collection which already contains the item with
            a different UID."""
         self.mkcalendar("/calendar1.ics/")
@@ -321,16 +420,15 @@ class BaseRequestsMixIn:
         assert xml.tag == xmlutils.make_clark("D:error")
         assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
 
-    def test_head(self):
-        status, _, _ = self.request("HEAD", "/")
-        assert status == 302
+    def test_head(self) -> None:
+        _, headers, answer = self.request("HEAD", "/", check=302)
+        assert int(headers.get("Content-Length", "0")) > 0 and not answer
 
-    def test_options(self):
-        status, headers, _ = self.request("OPTIONS", "/")
-        assert status == 200
+    def test_options(self) -> None:
+        _, headers, _ = self.request("OPTIONS", "/", check=200)
         assert "DAV" in headers
 
-    def test_delete_collection(self):
+    def test_delete_collection(self) -> None:
         """Delete a collection."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
@@ -339,7 +437,7 @@ class BaseRequestsMixIn:
         assert responses["/calendar.ics/"] == 200
         self.get("/calendar.ics/", check=404)
 
-    def test_delete_root_collection(self):
+    def test_delete_root_collection(self) -> None:
         """Delete the root collection."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
@@ -350,72 +448,201 @@ class BaseRequestsMixIn:
         self.get("/calendar.ics/", check=404)
         self.get("/event1.ics", 404)
 
-    def test_propfind(self):
+    def test_propfind(self) -> None:
         calendar_path = "/calendar.ics/"
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
         event_path = posixpath.join(calendar_path, "event.ics")
         self.put(event_path, event)
-        _, responses = self.propfind("/", HTTP_DEPTH=1)
+        _, responses = self.propfind("/", HTTP_DEPTH="1")
         assert len(responses) == 2
         assert "/" in responses and calendar_path in responses
-        _, responses = self.propfind(calendar_path, HTTP_DEPTH=1)
+        _, responses = self.propfind(calendar_path, HTTP_DEPTH="1")
         assert len(responses) == 2
         assert calendar_path in responses and event_path in responses
 
-    def test_propfind_propname(self):
+    def test_propfind_propname(self) -> None:
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
         self.put("/calendar.ics/event.ics", event)
         propfind = get_file_content("propname.xml")
         _, responses = self.propfind("/calendar.ics/", propfind)
-        status, prop = responses["/calendar.ics/"]["D:sync-token"]
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int)
+        status, prop = response["D:sync-token"]
         assert status == 200 and not prop.text
         _, responses = self.propfind("/calendar.ics/event.ics", propfind)
-        status, prop = responses["/calendar.ics/event.ics"]["D:getetag"]
+        response = responses["/calendar.ics/event.ics"]
+        assert not isinstance(response, int)
+        status, prop = response["D:getetag"]
         assert status == 200 and not prop.text
 
-    def test_propfind_allprop(self):
+    def test_propfind_allprop(self) -> None:
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
         self.put("/calendar.ics/event.ics", event)
         propfind = get_file_content("allprop.xml")
         _, responses = self.propfind("/calendar.ics/", propfind)
-        status, prop = responses["/calendar.ics/"]["D:sync-token"]
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int)
+        status, prop = response["D:sync-token"]
         assert status == 200 and prop.text
         _, responses = self.propfind("/calendar.ics/event.ics", propfind)
-        status, prop = responses["/calendar.ics/event.ics"]["D:getetag"]
+        response = responses["/calendar.ics/event.ics"]
+        assert not isinstance(response, int)
+        status, prop = response["D:getetag"]
         assert status == 200 and prop.text
 
-    def test_propfind_nonexistent(self):
+    def test_propfind_nonexistent(self) -> None:
         """Read a property that does not exist."""
         self.mkcalendar("/calendar.ics/")
-        propfind = get_file_content("propfind1.xml")
+        propfind = get_file_content("propfind_calendar_color.xml")
         _, responses = self.propfind("/calendar.ics/", propfind)
-        assert len(responses["/calendar.ics/"]) == 1
-        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["ICAL:calendar-color"]
         assert status == 404 and not prop.text
 
-    def test_proppatch(self):
-        """Write a property and read it back."""
+    def test_proppatch(self) -> None:
+        """Set/Remove a property and read it back."""
         self.mkcalendar("/calendar.ics/")
-        proppatch = get_file_content("proppatch1.xml")
+        proppatch = get_file_content("proppatch_set_calendar_color.xml")
         _, responses = self.proppatch("/calendar.ics/", proppatch)
-        assert len(responses["/calendar.ics/"]) == 1
-        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["ICAL:calendar-color"]
         assert status == 200 and not prop.text
         # Read property back
-        propfind = get_file_content("propfind1.xml")
+        propfind = get_file_content("propfind_calendar_color.xml")
         _, responses = self.propfind("/calendar.ics/", propfind)
-        assert len(responses["/calendar.ics/"]) == 1
-        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["ICAL:calendar-color"]
         assert status == 200 and prop.text == "#BADA55"
         propfind = get_file_content("allprop.xml")
         _, responses = self.propfind("/calendar.ics/", propfind)
-        status, prop = responses["/calendar.ics/"]["ICAL:calendar-color"]
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int)
+        status, prop = response["ICAL:calendar-color"]
         assert status == 200 and prop.text == "#BADA55"
+        # Remove property
+        proppatch = get_file_content("proppatch_remove_calendar_color.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        # Read property back
+        propfind = get_file_content("propfind_calendar_color.xml")
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 404
 
-    def test_put_whole_calendar_multiple_events_with_same_uid(self):
+    def test_proppatch_multiple1(self) -> None:
+        """Set/Remove a multiple properties and read them back."""
+        self.mkcalendar("/calendar.ics/")
+        propfind = get_file_content("propfind_multiple.xml")
+        proppatch = get_file_content("proppatch_set_multiple1.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 2
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        status, prop = response["C:calendar-description"]
+        assert status == 200 and not prop.text
+        # Read properties back
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 2
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and prop.text == "#BADA55"
+        status, prop = response["C:calendar-description"]
+        assert status == 200 and prop.text == "test"
+        # Remove properties
+        proppatch = get_file_content("proppatch_remove_multiple1.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 2
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        status, prop = response["C:calendar-description"]
+        assert status == 200 and not prop.text
+        # Read properties back
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 2
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 404
+        status, prop = response["C:calendar-description"]
+        assert status == 404
+
+    def test_proppatch_multiple2(self) -> None:
+        """Set/Remove a multiple properties and read them back."""
+        self.mkcalendar("/calendar.ics/")
+        propfind = get_file_content("propfind_multiple.xml")
+        proppatch = get_file_content("proppatch_set_multiple2.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 2
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        status, prop = response["C:calendar-description"]
+        assert status == 200 and not prop.text
+        # Read properties back
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 2
+        assert len(response) == 2
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and prop.text == "#BADA55"
+        status, prop = response["C:calendar-description"]
+        assert status == 200 and prop.text == "test"
+        # Remove properties
+        proppatch = get_file_content("proppatch_remove_multiple2.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 2
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        status, prop = response["C:calendar-description"]
+        assert status == 200 and not prop.text
+        # Read properties back
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 2
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 404
+        status, prop = response["C:calendar-description"]
+        assert status == 404
+
+    def test_proppatch_set_and_remove(self) -> None:
+        """Set and remove multiple properties in single request."""
+        self.mkcalendar("/calendar.ics/")
+        propfind = get_file_content("propfind_multiple.xml")
+        # Prepare
+        proppatch = get_file_content("proppatch_set_multiple1.xml")
+        self.proppatch("/calendar.ics/", proppatch)
+        # Remove and set properties in single request
+        proppatch = get_file_content("proppatch_set_and_remove.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 2
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        status, prop = response["C:calendar-description"]
+        assert status == 200 and not prop.text
+        # Read properties back
+        _, responses = self.propfind("/calendar.ics/", propfind)
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int) and len(response) == 2
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 404
+        status, prop = response["C:calendar-description"]
+        assert status == 200 and prop.text == "test2"
+
+    def test_put_whole_calendar_multiple_events_with_same_uid(self) -> None:
         """Add two events with the same UID."""
         self.put("/calendar.ics/", get_file_content("event2.ics"))
         _, responses = self.report("/calendar.ics/", """\
@@ -426,13 +653,18 @@ class BaseRequestsMixIn:
     </D:prop>
 </C:calendar-query>""")
         assert len(responses) == 1
-        status, prop = responses["/calendar.ics/event2.ics"]["D:getetag"]
+        response = responses["/calendar.ics/event2.ics"]
+        assert not isinstance(response, int)
+        status, prop = response["D:getetag"]
         assert status == 200 and prop.text
         _, answer = self.get("/calendar.ics/")
         assert answer.count("BEGIN:VEVENT") == 2
 
-    def _test_filter(self, filters, kind="event", test=None, items=(1,)):
+    def _test_filter(self, filters: Iterable[str], kind: str = "event",
+                     test: Optional[str] = None, items: Iterable[int] = (1,)
+                     ) -> List[str]:
         filter_template = "<C:filter>%s</C:filter>"
+        create_collection_fn: Callable[[str], Any]
         if kind in ("event", "journal", "todo"):
             create_collection_fn = self.mkcalendar
             path = "/calendar.ics/"
@@ -449,7 +681,7 @@ class BaseRequestsMixIn:
             report = "addressbook-query"
         else:
             raise ValueError("Unsupported kind: %r" % kind)
-        status, _, = self.delete(path, check=False)
+        status, _, = self.delete(path, check=None)
         assert status in (200, 404)
         create_collection_fn(path)
         for i in items:
@@ -465,18 +697,19 @@ class BaseRequestsMixIn:
     </D:prop>
     {2}
 </C:{1}>""".format(namespace, report, filters_text))
+        assert responses is not None
         paths = []
         for path, props in responses.items():
-            assert len(props) == 1
+            assert not isinstance(props, int) and len(props) == 1
             status, prop = props["D:getetag"]
             assert status == 200 and prop.text
             paths.append(path)
         return paths
 
-    def test_addressbook_empty_filter(self):
+    def test_addressbook_empty_filter(self) -> None:
         self._test_filter([""], kind="contact")
 
-    def test_addressbook_prop_filter(self):
+    def test_addressbook_prop_filter(self) -> None:
         assert "/contacts.vcf/contact1.vcf" in self._test_filter(["""\
 <C:prop-filter name="NICKNAME">
     <C:text-match collation="i;unicode-casemap" match-type="contains"
@@ -527,7 +760,7 @@ class BaseRequestsMixIn:
         >tes</C:text-match>
 </C:prop-filter>"""], "contact")
 
-    def test_addressbook_prop_filter_any(self):
+    def test_addressbook_prop_filter_any(self) -> None:
         assert "/contacts.vcf/contact1.vcf" in self._test_filter(["""\
 <C:prop-filter name="NICKNAME">
     <C:text-match collation="i;unicode-casemap">test</C:text-match>
@@ -550,7 +783,7 @@ class BaseRequestsMixIn:
     <C:text-match collation="i;unicode-casemap">test</C:text-match>
 </C:prop-filter>"""], "contact")
 
-    def test_addressbook_prop_filter_all(self):
+    def test_addressbook_prop_filter_all(self) -> None:
         assert "/contacts.vcf/contact1.vcf" in self._test_filter(["""\
 <C:prop-filter name="NICKNAME">
     <C:text-match collation="i;unicode-casemap">tes</C:text-match>
@@ -566,15 +799,15 @@ class BaseRequestsMixIn:
     <C:text-match collation="i;unicode-casemap">test</C:text-match>
 </C:prop-filter>"""], "contact", test="allof")
 
-    def test_calendar_empty_filter(self):
+    def test_calendar_empty_filter(self) -> None:
         self._test_filter([""])
 
-    def test_calendar_tag_filter(self):
+    def test_calendar_tag_filter(self) -> None:
         """Report request with tag-based filter on calendar."""
         assert "/calendar.ics/event1.ics" in self._test_filter(["""\
 <C:comp-filter name="VCALENDAR"></C:comp-filter>"""])
 
-    def test_item_tag_filter(self):
+    def test_item_tag_filter(self) -> None:
         """Report request with tag-based filter on an item."""
         assert "/calendar.ics/event1.ics" in self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -585,7 +818,7 @@ class BaseRequestsMixIn:
     <C:comp-filter name="VTODO"></C:comp-filter>
 </C:comp-filter>"""])
 
-    def test_item_not_tag_filter(self):
+    def test_item_not_tag_filter(self) -> None:
         """Report request with tag-based is-not filter on an item."""
         assert "/calendar.ics/event1.ics" not in self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -600,7 +833,7 @@ class BaseRequestsMixIn:
     </C:comp-filter>
 </C:comp-filter>"""])
 
-    def test_item_prop_filter(self):
+    def test_item_prop_filter(self) -> None:
         """Report request with prop-based filter on an item."""
         assert "/calendar.ics/event1.ics" in self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -615,7 +848,7 @@ class BaseRequestsMixIn:
     </C:comp-filter>
 </C:comp-filter>"""])
 
-    def test_item_not_prop_filter(self):
+    def test_item_not_prop_filter(self) -> None:
         """Report request with prop-based is-not filter on an item."""
         assert "/calendar.ics/event1.ics" not in self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -634,7 +867,7 @@ class BaseRequestsMixIn:
     </C:comp-filter>
 </C:comp-filter>"""])
 
-    def test_mutiple_filters(self):
+    def test_mutiple_filters(self) -> None:
         """Report request with multiple filters on an item."""
         assert "/calendar.ics/event1.ics" not in self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -674,7 +907,7 @@ class BaseRequestsMixIn:
     </C:comp-filter>
 </C:comp-filter>"""])
 
-    def test_text_match_filter(self):
+    def test_text_match_filter(self) -> None:
         """Report request with text-match filter on calendar."""
         assert "/calendar.ics/event1.ics" in self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -709,7 +942,7 @@ class BaseRequestsMixIn:
     </C:comp-filter>
 </C:comp-filter>"""])
 
-    def test_param_filter(self):
+    def test_param_filter(self) -> None:
         """Report request with param-filter on calendar."""
         assert "/calendar.ics/event1.ics" in self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -754,7 +987,7 @@ class BaseRequestsMixIn:
     </C:comp-filter>
 </C:comp-filter>"""])
 
-    def test_time_range_filter_events(self):
+    def test_time_range_filter_events(self) -> None:
         """Report request with time-range filter on events."""
         answer = self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -881,7 +1114,7 @@ class BaseRequestsMixIn:
 </C:comp-filter>"""], items=(9,))
         assert "/calendar.ics/event9.ics" not in answer
 
-    def test_time_range_filter_events_rrule(self):
+    def test_time_range_filter_events_rrule(self) -> None:
         """Report request with time-range filter on events with rrules."""
         answer = self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -916,7 +1149,7 @@ class BaseRequestsMixIn:
         assert "/calendar.ics/event1.ics" not in answer
         assert "/calendar.ics/event2.ics" not in answer
 
-    def test_time_range_filter_todos(self):
+    def test_time_range_filter_todos(self) -> None:
         """Report request with time-range filter on todos."""
         answer = self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -975,7 +1208,7 @@ class BaseRequestsMixIn:
 </C:comp-filter>"""], "todo", items=range(1, 9))
         assert "/calendar.ics/todo7.ics" in answer
 
-    def test_time_range_filter_todos_rrule(self):
+    def test_time_range_filter_todos_rrule(self) -> None:
         """Report request with time-range filter on todos with rrules."""
         answer = self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -1019,7 +1252,7 @@ class BaseRequestsMixIn:
 </C:comp-filter>"""], "todo", items=(9,))
         assert "/calendar.ics/todo9.ics" not in answer
 
-    def test_time_range_filter_journals(self):
+    def test_time_range_filter_journals(self) -> None:
         """Report request with time-range filter on journals."""
         answer = self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -1067,7 +1300,7 @@ class BaseRequestsMixIn:
         assert "/calendar.ics/journal2.ics" in answer
         assert "/calendar.ics/journal3.ics" in answer
 
-    def test_time_range_filter_journals_rrule(self):
+    def test_time_range_filter_journals_rrule(self) -> None:
         """Report request with time-range filter on journals with rrules."""
         answer = self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
@@ -1094,7 +1327,7 @@ class BaseRequestsMixIn:
         assert "/calendar.ics/journal1.ics" not in answer
         assert "/calendar.ics/journal2.ics" not in answer
 
-    def test_report_item(self):
+    def test_report_item(self) -> None:
         """Test report request on an item"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
@@ -1109,10 +1342,14 @@ class BaseRequestsMixIn:
     </D:prop>
 </C:calendar-query>""")
         assert len(responses) == 1
-        status, prop = responses[event_path]["D:getetag"]
+        response = responses[event_path]
+        assert not isinstance(response, int)
+        status, prop = response["D:getetag"]
         assert status == 200 and prop.text
 
-    def _report_sync_token(self, calendar_path, sync_token=None):
+    def _report_sync_token(
+            self, calendar_path: str, sync_token: Optional[str] = None
+            ) -> Tuple[str, RESPONSES]:
         sync_token_xml = (
             "<sync-token><![CDATA[%s]]></sync-token>" % sync_token
             if sync_token else "<sync-token />")
@@ -1129,7 +1366,7 @@ class BaseRequestsMixIn:
             assert xml.tag == xmlutils.make_clark("D:error")
             assert sync_token and xml.find(
                 xmlutils.make_clark("D:valid-sync-token")) is not None
-            return None, None
+            return "", {}
         assert status == 207
         assert xml.tag == xmlutils.make_clark("D:multistatus")
         sync_token = xml.find(xmlutils.make_clark("D:sync-token")).text.strip()
@@ -1143,7 +1380,7 @@ class BaseRequestsMixIn:
             assert response in (200, 404)
         return sync_token, responses
 
-    def test_report_sync_collection_no_change(self):
+    def test_report_sync_collection_no_change(self) -> None:
         """Test sync-collection report without modifying the collection"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
@@ -1158,7 +1395,7 @@ class BaseRequestsMixIn:
             return
         assert sync_token == new_sync_token and len(responses) == 0
 
-    def test_report_sync_collection_add(self):
+    def test_report_sync_collection_add(self) -> None:
         """Test sync-collection report with an added item"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
@@ -1173,7 +1410,7 @@ class BaseRequestsMixIn:
             return
         assert len(responses) == 1 and responses[event_path] == 200
 
-    def test_report_sync_collection_delete(self):
+    def test_report_sync_collection_delete(self) -> None:
         """Test sync-collection report with a deleted item"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
@@ -1189,7 +1426,7 @@ class BaseRequestsMixIn:
             return
         assert len(responses) == 1 and responses[event_path] == 404
 
-    def test_report_sync_collection_create_delete(self):
+    def test_report_sync_collection_create_delete(self) -> None:
         """Test sync-collection report with a created and deleted item"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
@@ -1205,7 +1442,7 @@ class BaseRequestsMixIn:
             return
         assert len(responses) == 1 and responses[event_path] == 404
 
-    def test_report_sync_collection_modify_undo(self):
+    def test_report_sync_collection_modify_undo(self) -> None:
         """Test sync-collection report with a modified and changed back item"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
@@ -1223,7 +1460,7 @@ class BaseRequestsMixIn:
             return
         assert len(responses) == 1 and responses[event_path] == 200
 
-    def test_report_sync_collection_move(self):
+    def test_report_sync_collection_move(self) -> None:
         """Test sync-collection report a moved item"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
@@ -1233,9 +1470,8 @@ class BaseRequestsMixIn:
         self.put(event1_path, event)
         sync_token, responses = self._report_sync_token(calendar_path)
         assert len(responses) == 1 and responses[event1_path] == 200
-        status, _, _ = self.request(
-            "MOVE", event1_path, HTTP_DESTINATION=event2_path, HTTP_HOST="")
-        assert status == 201
+        self.request("MOVE", event1_path, check=201,
+                     HTTP_DESTINATION=event2_path, HTTP_HOST="")
         sync_token, responses = self._report_sync_token(
             calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
@@ -1243,7 +1479,7 @@ class BaseRequestsMixIn:
         assert len(responses) == 2 and (responses[event1_path] == 404 and
                                         responses[event2_path] == 200)
 
-    def test_report_sync_collection_move_undo(self):
+    def test_report_sync_collection_move_undo(self) -> None:
         """Test sync-collection report with a moved and moved back item"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
@@ -1253,12 +1489,10 @@ class BaseRequestsMixIn:
         self.put(event1_path, event)
         sync_token, responses = self._report_sync_token(calendar_path)
         assert len(responses) == 1 and responses[event1_path] == 200
-        status, _, _ = self.request(
-            "MOVE", event1_path, HTTP_DESTINATION=event2_path, HTTP_HOST="")
-        assert status == 201
-        status, _, _ = self.request(
-            "MOVE", event2_path, HTTP_DESTINATION=event1_path, HTTP_HOST="")
-        assert status == 201
+        self.request("MOVE", event1_path, check=201,
+                     HTTP_DESTINATION=event2_path, HTTP_HOST="")
+        self.request("MOVE", event2_path, check=201,
+                     HTTP_DESTINATION=event1_path, HTTP_HOST="")
         sync_token, responses = self._report_sync_token(
             calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
@@ -1266,7 +1500,7 @@ class BaseRequestsMixIn:
         assert len(responses) == 2 and (responses[event1_path] == 200 and
                                         responses[event2_path] == 404)
 
-    def test_report_sync_collection_invalid_sync_token(self):
+    def test_report_sync_collection_invalid_sync_token(self) -> None:
         """Test sync-collection report with an invalid sync token"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
@@ -1274,39 +1508,45 @@ class BaseRequestsMixIn:
             calendar_path, "http://radicale.org/ns/sync/INVALID")
         assert not sync_token
 
-    def test_propfind_sync_token(self):
+    def test_propfind_sync_token(self) -> None:
         """Retrieve the sync-token with a propfind request"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
         propfind = get_file_content("allprop.xml")
         _, responses = self.propfind(calendar_path, propfind)
-        status, sync_token = responses[calendar_path]["D:sync-token"]
+        response = responses[calendar_path]
+        assert not isinstance(response, int)
+        status, sync_token = response["D:sync-token"]
         assert status == 200 and sync_token.text
         event = get_file_content("event1.ics")
         event_path = posixpath.join(calendar_path, "event.ics")
         self.put(event_path, event)
         _, responses = self.propfind(calendar_path, propfind)
-        status, new_sync_token = responses[calendar_path]["D:sync-token"]
+        response = responses[calendar_path]
+        assert not isinstance(response, int)
+        status, new_sync_token = response["D:sync-token"]
         assert status == 200 and new_sync_token.text
         assert sync_token.text != new_sync_token.text
 
-    def test_propfind_same_as_sync_collection_sync_token(self):
+    def test_propfind_same_as_sync_collection_sync_token(self) -> None:
         """Compare sync-token property with sync-collection sync-token"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
         propfind = get_file_content("allprop.xml")
         _, responses = self.propfind(calendar_path, propfind)
-        status, sync_token = responses[calendar_path]["D:sync-token"]
+        response = responses[calendar_path]
+        assert not isinstance(response, int)
+        status, sync_token = response["D:sync-token"]
         assert status == 200 and sync_token.text
         report_sync_token, _ = self._report_sync_token(calendar_path)
         assert sync_token.text == report_sync_token
 
-    def test_calendar_getcontenttype(self):
+    def test_calendar_getcontenttype(self) -> None:
         """Test report request on an item"""
         self.mkcalendar("/test/")
         for component in ("event", "todo", "journal"):
             event = get_file_content("%s1.ics" % component)
-            status, _ = self.delete("/test/test.ics", check=False)
+            status, _ = self.delete("/test/test.ics", check=None)
             assert status in (200, 404)
             self.put("/test/test.ics", event)
             _, responses = self.report("/test/", """\
@@ -1316,14 +1556,15 @@ class BaseRequestsMixIn:
         <D:getcontenttype />
     </D:prop>
 </C:calendar-query>""")
-            assert len(responses) == 1 and len(
-                responses["/test/test.ics"]) == 1
-            status, prop = responses["/test/test.ics"]["D:getcontenttype"]
+            assert len(responses) == 1
+            response = responses["/test/test.ics"]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["D:getcontenttype"]
             assert status == 200 and prop.text == (
                 "text/calendar;charset=utf-8;component=V%s" %
                 component.upper())
 
-    def test_addressbook_getcontenttype(self):
+    def test_addressbook_getcontenttype(self) -> None:
         """Test report request on an item"""
         self.create_addressbook("/test/")
         contact = get_file_content("contact1.vcf")
@@ -1335,11 +1576,13 @@ class BaseRequestsMixIn:
         <D:getcontenttype />
     </D:prop>
 </C:calendar-query>""")
-        assert len(responses) == 1 and len(responses["/test/test.vcf"]) == 1
-        status, prop = responses["/test/test.vcf"]["D:getcontenttype"]
+        assert len(responses) == 1
+        response = responses["/test/test.vcf"]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["D:getcontenttype"]
         assert status == 200 and prop.text == "text/vcard;charset=utf-8"
 
-    def test_authorization(self):
+    def test_authorization(self) -> None:
         _, responses = self.propfind("/", """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
@@ -1347,28 +1590,28 @@ class BaseRequestsMixIn:
         <current-user-principal />
     </prop>
 </propfind>""", login="user:")
-        assert len(responses["/"]) == 1
-        status, prop = responses["/"]["D:current-user-principal"]
+        response = responses["/"]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["D:current-user-principal"]
         assert status == 200 and len(prop) == 1
-        assert prop.find(xmlutils.make_clark("D:href")).text == "/user/"
+        element = prop.find(xmlutils.make_clark("D:href"))
+        assert element is not None and element.text == "/user/"
 
-    def test_authentication(self):
+    def test_authentication(self) -> None:
         """Test if server sends authentication request."""
-        self.configuration.update({
-            "auth": {"type": "htpasswd",
-                     "htpasswd_filename": os.devnull,
-                     "htpasswd_encryption": "plain"},
-            "rights": {"type": "owner_only"}}, "test")
-        self.application = Application(self.configuration)
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": os.devnull,
+                                 "htpasswd_encryption": "plain"},
+                        "rights": {"type": "owner_only"}})
         status, headers, _ = self.request("MKCOL", "/user/")
         assert status in (401, 403)
         assert headers.get("WWW-Authenticate")
 
-    def test_principal_collection_creation(self):
+    def test_principal_collection_creation(self) -> None:
         """Verify existence of the principal collection."""
         self.propfind("/user/", login="user:")
 
-    def test_authentication_current_user_principal_workaround(self):
+    def test_authentication_current_user_principal_hack(self) -> None:
         """Test if server sends authentication request when accessing
            current-user-principal prop (workaround for DAVx5)."""
         status, headers, _ = self.request("PROPFIND", "/", """\
@@ -1381,7 +1624,7 @@ class BaseRequestsMixIn:
         assert status in (401, 403)
         assert headers.get("WWW-Authenticate")
 
-    def test_existence_of_root_collections(self):
+    def test_existence_of_root_collections(self) -> None:
         """Verify that the root collection always exists."""
         # Use PROPFIND because GET returns message
         self.propfind("/")
@@ -1389,193 +1632,35 @@ class BaseRequestsMixIn:
         self.delete("/")
         self.propfind("/")
 
-    def test_custom_headers(self):
-        self.configuration.update({"headers": {"test": "123"}}, "test")
-        self.application = Application(self.configuration)
+    def test_well_known(self) -> None:
+        for path in ["/.well-known/caldav", "/.well-known/carddav"]:
+            for path in [path, "/foo" + path]:
+                _, headers, _ = self.request("GET", path, check=301)
+                assert headers.get("Location") == "/"
+
+    def test_well_known_script_name(self) -> None:
+        for path in ["/.well-known/caldav", "/.well-known/carddav"]:
+            for path in [path, "/foo" + path]:
+                _, headers, _ = self.request(
+                    "GET", path, check=301,  SCRIPT_NAME="/radicale")
+                assert headers.get("Location") == "/radicale/"
+
+    def test_well_known_not_found(self) -> None:
+        for path in ["/.well-known", "/.well-known/", "/.well-known/foo"]:
+            for path in [path, "/foo" + path]:
+                self.get(path, check=404)
+
+    def test_custom_headers(self) -> None:
+        self.configure({"headers": {"test": "123"}})
         # Test if header is set on success
-        status, headers, _ = self.request("OPTIONS", "/")
-        assert status == 200
+        _, headers, _ = self.request("OPTIONS", "/", check=200)
         assert headers.get("test") == "123"
         # Test if header is set on failure
-        status, headers, _ = self.request("GET", "/.well-known/does not exist")
-        assert status == 404
+        _, headers, _ = self.request("GET", "/.well-known/foo", check=404)
         assert headers.get("test") == "123"
 
-    @pytest.mark.skipif(sys.version_info < (3, 6),
-                        reason="Unsupported in Python < 3.6")
-    def test_timezone_seconds(self):
+    def test_timezone_seconds(self) -> None:
         """Verify that timezones with minutes and seconds work."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_timezone_seconds.ics")
         self.put("/calendar.ics/event.ics", event)
-
-
-class BaseFileSystemTest(BaseTest):
-    """Base class for filesystem backend tests."""
-    storage_type = None
-
-    def setup(self):
-        self.configuration = config.load()
-        self.colpath = tempfile.mkdtemp()
-        # Allow access to anything for tests
-        rights_file_path = os.path.join(self.colpath, "rights")
-        with open(rights_file_path, "w") as f:
-            f.write("""\
-[allow all]
-user: .*
-collection: .*
-permissions: RrWw""")
-        self.configuration.update({
-            "storage": {"type": self.storage_type,
-                        "filesystem_folder": self.colpath,
-                        # Disable syncing to disk for better performance
-                        "_filesystem_fsync": "False"},
-            "rights": {"file": rights_file_path,
-                       "type": "from_file"}}, "test", privileged=True)
-        self.application = Application(self.configuration)
-
-    def teardown(self):
-        shutil.rmtree(self.colpath)
-
-
-class TestMultiFileSystem(BaseFileSystemTest, BaseRequestsMixIn):
-    """Test BaseRequests on multifilesystem."""
-    storage_type = "multifilesystem"
-
-    def test_folder_creation(self):
-        """Verify that the folder is created."""
-        folder = os.path.join(self.colpath, "subfolder")
-        self.configuration.update(
-            {"storage": {"filesystem_folder": folder}}, "test")
-        self.application = Application(self.configuration)
-        assert os.path.isdir(folder)
-
-    def test_fsync(self):
-        """Create a directory and file with syncing enabled."""
-        self.configuration.update({"storage": {"_filesystem_fsync": "True"}},
-                                  "test", privileged=True)
-        self.application = Application(self.configuration)
-        self.mkcalendar("/calendar.ics/")
-
-    def test_hook(self):
-        """Run hook."""
-        self.configuration.update({"storage": {
-            "hook": ("mkdir %s" % os.path.join(
-                "collection-root", "created_by_hook"))}}, "test")
-        self.application = Application(self.configuration)
-        self.mkcalendar("/calendar.ics/")
-        self.propfind("/created_by_hook/")
-
-    def test_hook_read_access(self):
-        """Verify that hook is not run for read accesses."""
-        self.configuration.update({"storage": {
-            "hook": ("mkdir %s" % os.path.join(
-                "collection-root", "created_by_hook"))}}, "test")
-        self.application = Application(self.configuration)
-        self.propfind("/")
-        self.propfind("/created_by_hook/", check=404)
-
-    @pytest.mark.skipif(not shutil.which("flock"),
-                        reason="flock command not found")
-    def test_hook_storage_locked(self):
-        """Verify that the storage is locked when the hook runs."""
-        self.configuration.update({"storage": {"hook": (
-            "flock -n .Radicale.lock || exit 0; exit 1")}}, "test")
-        self.application = Application(self.configuration)
-        self.mkcalendar("/calendar.ics/")
-
-    def test_hook_principal_collection_creation(self):
-        """Verify that the hooks runs when a new user is created."""
-        self.configuration.update({"storage": {
-            "hook": ("mkdir %s" % os.path.join(
-                "collection-root", "created_by_hook"))}}, "test")
-        self.application = Application(self.configuration)
-        self.propfind("/", login="user:")
-        self.propfind("/created_by_hook/")
-
-    def test_hook_fail(self):
-        """Verify that a request fails if the hook fails."""
-        self.configuration.update({"storage": {"hook": "exit 1"}}, "test")
-        self.application = Application(self.configuration)
-        self.mkcalendar("/calendar.ics/", check=500)
-
-    def test_item_cache_rebuild(self):
-        """Delete the item cache and verify that it is rebuild."""
-        self.mkcalendar("/calendar.ics/")
-        event = get_file_content("event1.ics")
-        path = "/calendar.ics/event1.ics"
-        self.put(path, event)
-        _, answer1 = self.get(path)
-        cache_folder = os.path.join(self.colpath, "collection-root",
-                                    "calendar.ics", ".Radicale.cache", "item")
-        assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
-        shutil.rmtree(cache_folder)
-        _, answer2 = self.get(path)
-        assert answer1 == answer2
-        assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
-
-    @pytest.mark.skipif(os.name not in ("nt", "posix"),
-                        reason="Only supported on 'nt' and 'posix'")
-    def test_put_whole_calendar_uids_used_as_file_names(self):
-        """Test if UIDs are used as file names."""
-        BaseRequestsMixIn.test_put_whole_calendar(self)
-        for uid in ("todo", "event"):
-            _, answer = self.get("/calendar.ics/%s.ics" % uid)
-            assert "\r\nUID:%s\r\n" % uid in answer
-
-    @pytest.mark.skipif(os.name not in ("nt", "posix"),
-                        reason="Only supported on 'nt' and 'posix'")
-    def test_put_whole_calendar_random_uids_used_as_file_names(self):
-        """Test if UIDs are used as file names."""
-        BaseRequestsMixIn.test_put_whole_calendar_without_uids(self)
-        _, answer = self.get("/calendar.ics")
-        uids = []
-        for line in answer.split("\r\n"):
-            if line.startswith("UID:"):
-                uids.append(line[len("UID:"):])
-        for uid in uids:
-            _, answer = self.get("/calendar.ics/%s.ics" % uid)
-            assert "\r\nUID:%s\r\n" % uid in answer
-
-    @pytest.mark.skipif(os.name not in ("nt", "posix"),
-                        reason="Only supported on 'nt' and 'posix'")
-    def test_put_whole_addressbook_uids_used_as_file_names(self):
-        """Test if UIDs are used as file names."""
-        BaseRequestsMixIn.test_put_whole_addressbook(self)
-        for uid in ("contact1", "contact2"):
-            _, answer = self.get("/contacts.vcf/%s.vcf" % uid)
-            assert "\r\nUID:%s\r\n" % uid in answer
-
-    @pytest.mark.skipif(os.name not in ("nt", "posix"),
-                        reason="Only supported on 'nt' and 'posix'")
-    def test_put_whole_addressbook_random_uids_used_as_file_names(self):
-        """Test if UIDs are used as file names."""
-        BaseRequestsMixIn.test_put_whole_addressbook_without_uids(self)
-        _, answer = self.get("/contacts.vcf")
-        uids = []
-        for line in answer.split("\r\n"):
-            if line.startswith("UID:"):
-                uids.append(line[len("UID:"):])
-        for uid in uids:
-            _, answer = self.get("/contacts.vcf/%s.vcf" % uid)
-            assert "\r\nUID:%s\r\n" % uid in answer
-
-
-class TestCustomStorageSystem(BaseFileSystemTest):
-    """Test custom backend loading."""
-    storage_type = "radicale.tests.custom.storage_simple_sync"
-    full_sync_token_support = False
-    test_root = BaseRequestsMixIn.test_root
-    _report_sync_token = BaseRequestsMixIn._report_sync_token
-    # include tests related to sync token
-    s = None
-    for s in dir(BaseRequestsMixIn):
-        if s.startswith("test_") and ("_sync_" in s or s.endswith("_sync")):
-            locals()[s] = getattr(BaseRequestsMixIn, s)
-    del s
-
-
-class TestCustomStorageSystemCallable(BaseFileSystemTest):
-    """Test custom backend loading with ``callable``."""
-    storage_type = radicale.tests.custom.storage_simple_sync.Storage
-    test_add_event = BaseRequestsMixIn.test_add_event
