@@ -21,13 +21,12 @@ import sys
 import xml.etree.ElementTree as ET
 from typing import Optional
 
-# HACK: https://github.com/tiran/defusedxml/issues/54
-import defusedxml.ElementTree as DefusedET  # isort:skip
-
 from radicale import (auth, hook, config, httputils, pathutils, rights, storage,
                       types, web, xmlutils)
 from radicale.log import logger
 
+# HACK: https://github.com/tiran/defusedxml/issues/54
+import defusedxml.ElementTree as DefusedET  # isort:skip
 sys.modules["xml.etree"].ElementTree = ET  # type:ignore[attr-defined]
 
 

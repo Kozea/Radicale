@@ -94,4 +94,4 @@ class ApplicationPartDelete(ApplicationBase):
             for i in hook_notification_item_list:
                 self._hook.notify(i)
             headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
-            return client.OK, headers, self._write_xml_content(xml_answer)
+            return client.OK, headers, self._xml_response(xml_answer)

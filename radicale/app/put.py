@@ -22,6 +22,7 @@ import posixpath
 import socket
 import sys
 from http import client
+from types import TracebackType
 from typing import Iterator, List, Mapping, MutableMapping, Optional, Tuple
 
 import vobject
@@ -31,7 +32,6 @@ from radicale import httputils, pathutils, rights, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
-from types import TracebackType
 
 MIMETYPE_TAGS: Mapping[str, str] = {value: key for key, value in
                                     xmlutils.MIMETYPES.items()}

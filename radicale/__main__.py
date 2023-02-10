@@ -29,11 +29,11 @@ import os
 import signal
 import socket
 import sys
+from types import FrameType
 from typing import List, Optional, cast
 
 from radicale import VERSION, config, log, server, storage, types
 from radicale.log import logger
-from types import FrameType
 
 
 def run() -> None:

@@ -36,8 +36,8 @@ from typing import (Any, Callable, List, MutableMapping, Optional, Sequence,
 
 import vobject
 
-from radicale import pathutils
 from radicale import storage  # noqa:F401
+from radicale import pathutils
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
