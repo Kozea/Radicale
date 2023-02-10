@@ -1,4 +1,4 @@
-# This file is part of Radicale Server - Calendar Server
+# This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
@@ -17,28 +17,31 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import xml.etree.ElementTree as ET
 from http import client
-from xml.etree import ElementTree as ET
+from typing import Optional
 
-from radicale import app, httputils, storage, xmlutils
+from radicale import httputils, storage, types, xmlutils
+from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 
 
-def xml_delete(base_prefix, path, collection, href=None):
+def xml_delete(base_prefix: str, path: str, collection: storage.BaseCollection,
+               item_href: Optional[str] = None) -> ET.Element:
     """Read and answer DELETE requests.
 
     Read rfc4918-9.6 for info.
 
     """
-    collection.delete(href)
+    collection.delete(item_href)
 
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
     response = ET.Element(xmlutils.make_clark("D:response"))
     multistatus.append(response)
 
-    href = ET.Element(xmlutils.make_clark("D:href"))
-    href.text = xmlutils.make_href(base_prefix, path)
-    response.append(href)
+    href_element = ET.Element(xmlutils.make_clark("D:href"))
+    href_element.text = xmlutils.make_href(base_prefix, path)
+    response.append(href_element)
 
     status = ET.Element(xmlutils.make_clark("D:status"))
     status.text = xmlutils.make_response(200)
@@ -47,14 +50,16 @@ def xml_delete(base_prefix, path, collection, href=None):
     return multistatus
 
 
-class ApplicationDeleteMixin:
-    def do_DELETE(self, environ, base_prefix, path, user):
+class ApplicationPartDelete(ApplicationBase):
+
+    def do_DELETE(self, environ: types.WSGIEnviron, base_prefix: str,
+                  path: str, user: str) -> types.WSGIResponse:
         """Manage DELETE request."""
-        access = app.Access(self._rights, user, path)
+        access = Access(self._rights, user, path)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         with self._storage.acquire_lock("w", user):
-            item = next(self._storage.discover(path), None)
+            item = next(iter(self._storage.discover(path)), None)
             if not item:
                 return httputils.NOT_FOUND
             if not access.check("w", item):
@@ -75,6 +80,8 @@ class ApplicationDeleteMixin:
                     )
                 xml_answer = xml_delete(base_prefix, path, item)
             else:
+                assert item.collection is not None
+                assert item.href is not None
                 hook_notification_item_list.append(
                     HookNotificationItem(
                         HookNotificationItemTypes.DELETE,
