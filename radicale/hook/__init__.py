@@ -9,7 +9,7 @@ INTERNAL_TYPES = ("none", "rabbitmq")
 def load(configuration):
     """Load the storage module chosen in configuration."""
     return utils.load_plugin(
-        INTERNAL_TYPES, "hook", "Hook", configuration)
+        INTERNAL_TYPES, "hook", "Hook", BaseHook, configuration)
 
 
 class BaseHook:

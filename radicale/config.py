@@ -123,7 +123,7 @@ DEFAULT_CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "use SSL connection",
             "aliases": ["-s", "--ssl"],
-            "opposite": ["-S", "--no-ssl"],
+            "opposite_aliases": ["-S", "--no-ssl"],
             "type": bool}),
         ("certificate", {
             "value": "/etc/ssl/radicale.cert.pem",

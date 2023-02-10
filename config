@@ -121,8 +121,8 @@
 
 [hook]
 
- # Hook types
- # Value: none | rabbitmq
- #type = none
- #rabbitmq_endpoint =
- #rabbitmq_topic =
+# Hook types
+# Value: none | rabbitmq
+#type = none
+#rabbitmq_endpoint =
+#rabbitmq_topic =
