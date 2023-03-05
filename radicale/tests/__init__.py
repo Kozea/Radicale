@@ -137,8 +137,8 @@ class BaseTest:
         status, _, answer = self.request("GET", path, check=check, **kwargs)
         return status, answer
 
-    def post(self, path: str, data: str = None, check: Optional[int] = 200,
-             **kwargs) -> Tuple[int, str]:
+    def post(self, path: str, data: Optional[str] = None,
+             check: Optional[int] = 200,  **kwargs) -> Tuple[int, str]:
         status, _, answer = self.request("POST", path, data, check=check,
                                          **kwargs)
         return status, answer
