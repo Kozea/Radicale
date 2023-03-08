@@ -28,9 +28,14 @@ from radicale.log import logger
 
 
 def get_server_netloc(environ: types.WSGIEnviron, force_port: bool = False):
-    host = environ.get("HTTP_HOST") or environ["SERVER_NAME"]
-    proto = environ["wsgi.url_scheme"]
-    port = environ["SERVER_PORT"]
+    if environ.get("HTTP_X_FORWARDED_HOST"):
+        host = environ["HTTP_X_FORWARDED_HOST"]
+        proto = environ.get("HTTP_X_FORWARDED_PROTO") or "http"
+        port = "443" if proto == "https" else "80"
+    else:
+        host = environ.get("HTTP_HOST") or environ["SERVER_NAME"]
+        proto = environ["wsgi.url_scheme"]
+        port = environ["SERVER_PORT"]
     if (not force_port and port == ("443" if proto == "https" else "80") or
             re.search(r":\d+$", host)):
         return host
