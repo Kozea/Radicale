@@ -355,7 +355,7 @@ permissions: RrWw""")
         path2 = "/calendar.ics/event2.ics"
         self.put(path1, event)
         self.request("MOVE", path1, check=201,
-                     HTTP_DESTINATION=path2, HTTP_HOST="")
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
         self.get(path1, check=404)
         self.get(path2)
 
@@ -368,7 +368,7 @@ permissions: RrWw""")
         path2 = "/calendar2.ics/event2.ics"
         self.put(path1, event)
         self.request("MOVE", path1, check=201,
-                     HTTP_DESTINATION=path2, HTTP_HOST="")
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
         self.get(path1, check=404)
         self.get(path2)
 
@@ -382,7 +382,7 @@ permissions: RrWw""")
         self.put(path1, event)
         self.put("/calendar2.ics/event1.ics", event)
         status, _, answer = self.request(
-            "MOVE", path1, HTTP_DESTINATION=path2, HTTP_HOST="")
+            "MOVE", path1, HTTP_DESTINATION="http://127.0.0.1/"+path2)
         assert status in (403, 409)
         xml = DefusedET.fromstring(answer)
         assert xml.tag == xmlutils.make_clark("D:error")
@@ -398,9 +398,9 @@ permissions: RrWw""")
         self.put(path1, event)
         self.put(path2, event)
         self.request("MOVE", path1, check=412,
-                     HTTP_DESTINATION=path2, HTTP_HOST="")
-        self.request("MOVE", path1, check=204,
-                     HTTP_DESTINATION=path2, HTTP_HOST="", HTTP_OVERWRITE="T")
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
+        self.request("MOVE", path1, check=204, HTTP_OVERWRITE="T",
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
 
     def test_move_between_colections_overwrite_uid_conflict(self) -> None:
         """Move a item to a collection which already contains the item with
@@ -413,8 +413,9 @@ permissions: RrWw""")
         path2 = "/calendar2.ics/event2.ics"
         self.put(path1, event1)
         self.put(path2, event2)
-        status, _, answer = self.request("MOVE", path1, HTTP_DESTINATION=path2,
-                                         HTTP_HOST="", HTTP_OVERWRITE="T")
+        status, _, answer = self.request(
+            "MOVE", path1, HTTP_OVERWRITE="T",
+            HTTP_DESTINATION="http://127.0.0.1/"+path2)
         assert status in (403, 409)
         xml = DefusedET.fromstring(answer)
         assert xml.tag == xmlutils.make_clark("D:error")
@@ -1487,7 +1488,7 @@ permissions: RrWw""")
         sync_token, responses = self._report_sync_token(calendar_path)
         assert len(responses) == 1 and responses[event1_path] == 200
         self.request("MOVE", event1_path, check=201,
-                     HTTP_DESTINATION=event2_path, HTTP_HOST="")
+                     HTTP_DESTINATION="http://127.0.0.1/"+event2_path)
         sync_token, responses = self._report_sync_token(
             calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
@@ -1506,9 +1507,9 @@ permissions: RrWw""")
         sync_token, responses = self._report_sync_token(calendar_path)
         assert len(responses) == 1 and responses[event1_path] == 200
         self.request("MOVE", event1_path, check=201,
-                     HTTP_DESTINATION=event2_path, HTTP_HOST="")
+                     HTTP_DESTINATION="http://127.0.0.1/"+event2_path)
         self.request("MOVE", event2_path, check=201,
-                     HTTP_DESTINATION=event1_path, HTTP_HOST="")
+                     HTTP_DESTINATION="http://127.0.0.1/"+event1_path)
         sync_token, responses = self._report_sync_token(
             calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:

@@ -25,6 +25,7 @@ import logging
 import shutil
 import sys
 import tempfile
+import wsgiref.util
 import xml.etree.ElementTree as ET
 from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -83,11 +84,12 @@ class BaseTest:
                     login.encode(encoding)).decode()
         environ["REQUEST_METHOD"] = method.upper()
         environ["PATH_INFO"] = path
-        if data:
+        if data is not None:
             data_bytes = data.encode(encoding)
             environ["wsgi.input"] = BytesIO(data_bytes)
             environ["CONTENT_LENGTH"] = str(len(data_bytes))
         environ["wsgi.errors"] = sys.stderr
+        wsgiref.util.setup_testing_defaults(environ)
         status = headers = None
 
         def start_response(status_: str, headers_: List[Tuple[str, str]]

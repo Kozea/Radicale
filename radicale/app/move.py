@@ -18,12 +18,23 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import posixpath
+import re
 from http import client
 from urllib.parse import urlparse
 
 from radicale import httputils, pathutils, storage, types
 from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
+
+
+def get_server_netloc(environ: types.WSGIEnviron, force_port: bool = False):
+    host = environ.get("HTTP_HOST") or environ["SERVER_NAME"]
+    proto = environ["wsgi.url_scheme"]
+    port = environ["SERVER_PORT"]
+    if (not force_port and port == ("443" if proto == "https" else "80") or
+            re.search(r":\d+$", host)):
+        return host
+    return host + ":" + port
 
 
 class ApplicationPartMove(ApplicationBase):
@@ -33,7 +44,11 @@ class ApplicationPartMove(ApplicationBase):
         """Manage MOVE request."""
         raw_dest = environ.get("HTTP_DESTINATION", "")
         to_url = urlparse(raw_dest)
-        if to_url.netloc != environ["HTTP_HOST"]:
+        to_netloc_with_port = to_url.netloc
+        if to_url.port is None:
+            to_netloc_with_port += (":443" if to_url.scheme == "https"
+                                    else ":80")
+        if to_netloc_with_port != get_server_netloc(environ, force_port=True):
             logger.info("Unsupported destination address: %r", raw_dest)
             # Remote destination server, not supported
             return httputils.REMOTE_DESTINATION
