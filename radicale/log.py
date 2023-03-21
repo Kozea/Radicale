@@ -116,7 +116,7 @@ class ThreadedStreamHandler(logging.Handler):
     def _encode_journal(data):
         msg = b""
         for key, value in data.items():
-            if key is None:
+            if value is None:
                 continue
             key = key.encode()
             value = str(value).encode()
