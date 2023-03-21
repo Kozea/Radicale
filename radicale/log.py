@@ -65,15 +65,17 @@ class IdentLogRecordFactory:
 
     def __call__(self, *args: Any, **kwargs: Any) -> logging.LogRecord:
         record = self._upstream_factory(*args, **kwargs)
-        ident = "%d" % os.getpid()
-        main_thread = threading.main_thread()
-        current_thread = threading.current_thread()
-        if current_thread.name and main_thread != current_thread:
-            ident += "/%s" % current_thread.name
+        ident = ("%d" % record.process if record.process is not None
+                 else record.processName or "unknown")
+        tid = None
+        if record.thread is not None:
+            if record.thread != threading.main_thread().ident:
+                ident += "/%s" % (record.threadName or "unknown")
+            if (sys.version_info >= (3, 8) and
+                    record.thread == threading.get_ident()):
+                tid = threading.get_native_id()
         record.ident = ident  # type:ignore[attr-defined]
-        record.tid = None  # type:ignore[attr-defined]
-        if sys.version_info >= (3, 8):
-            record.tid = current_thread.native_id
+        record.tid = tid  # type:ignore[attr-defined]
         return record
 
 
