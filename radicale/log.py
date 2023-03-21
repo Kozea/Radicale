@@ -40,7 +40,10 @@ from typing import (Any, Callable, ClassVar, Dict, Iterator, Mapping, Optional,
 from radicale import types
 
 LOGGER_NAME: str = "radicale"
-LOGGER_FORMAT: str = "[%(asctime)s] [%(ident)s] [%(levelname)s] %(message)s"
+LOGGER_FORMATS: Mapping[str, str] = {
+    "verbose": "[%(asctime)s] [%(ident)s] [%(levelname)s] %(message)s",
+    "journal": "[%(ident)s] [%(levelname)s] %(message)s",
+}
 DATE_FORMAT: str = "%Y-%m-%d %H:%M:%S %z"
 
 logger: logging.Logger = logging.getLogger(LOGGER_NAME)
@@ -89,8 +92,10 @@ class ThreadedStreamHandler(logging.Handler):
     _journal_stream_id: Optional[Tuple[int, int]]
     _journal_socket: Optional[socket.socket]
     _journal_socket_failed: bool
+    _formatters: Mapping[str, logging.Formatter]
+    _formatter: Optional[logging.Formatter]
 
-    def __init__(self) -> None:
+    def __init__(self, format_name: Optional[str] = None) -> None:
         super().__init__()
         self._streams = {}
         self._journal_stream_id = None
@@ -99,6 +104,13 @@ class ThreadedStreamHandler(logging.Handler):
             self._journal_stream_id = (int(dev), int(inode))
         self._journal_socket = None
         self._journal_socket_failed = False
+        self._formatters = {name: logging.Formatter(fmt, DATE_FORMAT)
+                            for name, fmt in LOGGER_FORMATS.items()}
+        self._formatter = (self._formatters[format_name]
+                           if format_name is not None else None)
+
+    def _get_formatter(self, default_format_name: str) -> logging.Formatter:
+        return self._formatter or self._formatters[default_format_name]
 
     def _detect_journal(self, stream: types.ErrorStream) -> bool:
         if not self._journal_stream_id or not isinstance(stream, io.IOBase):
@@ -161,7 +173,7 @@ class ThreadedStreamHandler(logging.Handler):
                 "CODE_FILE": record.pathname,
                 "CODE_LINE": record.lineno,
                 "CODE_FUNC": record.funcName,
-                "MESSAGE": self.format(record)}
+                "MESSAGE": self._get_formatter("journal").format(record)}
         self._journal_socket.sendall(self._encode_journal(data))
         return True
 
@@ -170,7 +182,7 @@ class ThreadedStreamHandler(logging.Handler):
             stream = self._streams.get(threading.get_ident(), sys.stderr)
             if self._detect_journal(stream) and self._try_emit_journal(record):
                 return
-            msg = self.format(record)
+            msg = self._get_formatter("verbose").format(record)
             stream.write(msg + self.terminator)
             stream.flush()
         except Exception:
@@ -196,13 +208,16 @@ def register_stream(stream: types.ErrorStream) -> Iterator[None]:
 def setup() -> None:
     """Set global logging up."""
     global register_stream
-    handler = ThreadedStreamHandler()
-    logging.basicConfig(format=LOGGER_FORMAT, datefmt=DATE_FORMAT,
-                        handlers=[handler])
+    format_name = os.environ.get("RADICALE_LOG_FORMAT") or None
+    sane_format_name = format_name if format_name in LOGGER_FORMATS else None
+    handler = ThreadedStreamHandler(sane_format_name)
+    logging.basicConfig(handlers=[handler])
     register_stream = handler.register_stream
     log_record_factory = IdentLogRecordFactory(logging.getLogRecordFactory())
     logging.setLogRecordFactory(log_record_factory)
     set_level(logging.WARNING)
+    if format_name != sane_format_name:
+        logger.error("Invalid RADICALE_LOG_FORMAT: %r", format_name)
 
 
 def set_level(level: Union[int, str]) -> None:
