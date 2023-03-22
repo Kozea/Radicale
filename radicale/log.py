@@ -133,10 +133,13 @@ class ThreadedStreamHandler(logging.Handler):
                 journal_socket = socket.socket(
                     socket.AF_UNIX, socket.SOCK_DGRAM)
                 journal_socket.connect("/run/systemd/journal/socket")
-            except OSError:
+            except OSError as e:
                 self._journal_socket_failed = True
                 if journal_socket:
                     journal_socket.close()
+                # Log after setting `_journal_socket_failed` to prevent loop!
+                logger.error("Failed to connect to systemd journal: %s",
+                             e, exc_info=True)
                 return False
             self._journal_socket = journal_socket
 
