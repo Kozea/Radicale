@@ -167,8 +167,7 @@ class ThreadedStreamHandler(logging.Handler):
                 return
             msg = self.format(record)
             stream.write(msg + self.terminator)
-            if hasattr(stream, "flush"):
-                stream.flush()
+            stream.flush()
         except Exception:
             self.handleError(record)
 
