@@ -166,8 +166,7 @@ class ThreadedStreamHandler(logging.Handler):
             if self._detect_journal(stream) and self._try_emit_journal(record):
                 return
             msg = self.format(record)
-            stream.write(msg)
-            stream.write(self.terminator)
+            stream.write(msg + self.terminator)
             if hasattr(stream, "flush"):
                 stream.flush()
         except Exception:
