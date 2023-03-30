@@ -23,6 +23,7 @@ import posixpath
 import socket
 import copy
 import xml.etree.ElementTree as ET
+from vobject.base import ContentLine
 from http import client
 from typing import (
     Callable, Iterable, Iterator,
@@ -197,26 +198,72 @@ def _expand(
 ) -> List[ET.Element]:
     expanded = [element]
 
-    for component in item.vobject_item.components():
-        if component.name != 'VEVENT':
-            continue
+    if hasattr(item.vobject_item.vevent, "rrule"):
+        rulleset = item.vobject_item.vevent.getrruleset()
+        recurrences = rulleset.between(start, end)
+        recurring_item = _make_vobject_recurring_item(item)
 
-        if hasattr(component, "rrule"):
-            rulleset = component.getrruleset()
-            recurrences = rulleset.between(start, end)
+        expanded = []
+        for recurrence_dt in recurrences:
+            try:
+                delattr(recurring_item.vobject_item.vevent, 'recurrence-id')
+            except AttributeError:
+                pass
 
-            expanded = []
-            for recurrence_dt in recurrences:
-                try:
-                    delattr(item.vobject_item.vevent, 'recurrence-id')
-                except AttributeError:
-                    pass
+            recurrence_utc = recurrence_dt.astimezone(datetime.timezone.utc)
 
-                item.vobject_item.vevent.add('RECURRENCE-ID').value = recurrence_dt
-                element.text = item.vobject_item.serialize()
-                expanded.append(element)
+            recurring_item.vobject_item.vevent.recurrence_id = ContentLine(
+                name='RECURRENCE-ID',
+                value=recurrence_utc.strftime('%Y%m%dT%H%M%SZ'), params={}
+            )
+
+            element = copy.copy(element)
+            element.text = recurring_item.vobject_item.serialize()
+            expanded.append(element)
 
     return expanded
+
+
+def _make_vobject_recurring_item(
+        item: radicale_item.Item
+) -> radicale_item.Item:
+    # https://www.rfc-editor.org/rfc/rfc4791#section-9.6.5
+    # The returned calendar components MUST NOT use recurrence
+    #       properties (i.e., EXDATE, EXRULE, RDATE, and RRULE) and MUST NOT
+    #       have reference to or include VTIMEZONE components.  Date and local
+    #       time with reference to time zone information MUST be converted
+    #       into date with UTC time.
+
+    item = copy.copy(item)
+    vevent = item.vobject_item.vevent
+
+    start_utc = vevent.dtstart.value.astimezone(datetime.timezone.utc)
+    end_utc = vevent.dtend.value.astimezone(datetime.timezone.utc)
+
+    vevent.dtstart = ContentLine(
+        name='DTSTART',
+        value=start_utc.strftime('%Y%m%dT%H%M%SZ'), params={})
+    vevent.dtend = ContentLine(
+        name='DTEND',
+        value=end_utc.strftime('%Y%m%dT%H%M%SZ'), params={})
+
+    timezones_to_remove = []
+    for component in item.vobject_item.components():
+        if component.name == 'VTIMEZONE':
+            timezones_to_remove.append(component)
+
+    for timezone in timezones_to_remove:
+        item.vobject_item.remove(timezone)
+
+    try:
+        delattr(item.vobject_item.vevent, 'rrule')
+        delattr(item.vobject_item.vevent, 'exdate')
+        delattr(item.vobject_item.vevent, 'exrule')
+        delattr(item.vobject_item.vevent, 'rdate')
+    except AttributeError:
+        pass
+
+    return item
 
 
 def xml_item_response(base_prefix: str, href: str,
