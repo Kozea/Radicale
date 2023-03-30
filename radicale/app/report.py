@@ -18,11 +18,16 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
+import datetime
 import posixpath
 import socket
+import copy
 import xml.etree.ElementTree as ET
 from http import client
-from typing import Callable, Iterable, Iterator, Optional, Sequence, Tuple
+from typing import (
+    Callable, Iterable, Iterator,
+    Optional, Sequence, Tuple, List,
+)
 from urllib.parse import unquote, urlparse
 
 import radicale.item as radicale_item
@@ -64,9 +69,8 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         logger.warning("Invalid REPORT method %r on %r requested",
                        xmlutils.make_human_tag(root.tag), path)
         return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
-    prop_element = root.find(xmlutils.make_clark("D:prop"))
-    props = ([prop.tag for prop in prop_element]
-             if prop_element is not None else [])
+
+    props = root.find(xmlutils.make_clark("D:prop")) or []
 
     hreferences: Iterable[str]
     if root.tag in (
@@ -138,19 +142,40 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         found_props = []
         not_found_props = []
 
-        for tag in props:
-            element = ET.Element(tag)
-            if tag == xmlutils.make_clark("D:getetag"):
+        for prop in props:
+            element = ET.Element(prop.tag)
+            if prop.tag == xmlutils.make_clark("D:getetag"):
                 element.text = item.etag
                 found_props.append(element)
-            elif tag == xmlutils.make_clark("D:getcontenttype"):
+            elif prop.tag == xmlutils.make_clark("D:getcontenttype"):
                 element.text = xmlutils.get_content_type(item, encoding)
                 found_props.append(element)
-            elif tag in (
+            elif prop.tag in (
                     xmlutils.make_clark("C:calendar-data"),
                     xmlutils.make_clark("CR:address-data")):
                 element.text = item.serialize()
-                found_props.append(element)
+
+                expand = prop.find(xmlutils.make_clark("C:expand"))
+                if expand is not None:
+                    start = expand.get('start')
+                    end = expand.get('end')
+
+                    if (start is None) or (end is None):
+                        return client.FORBIDDEN, \
+                            xmlutils.webdav_error("C:expand")
+
+                    start = datetime.datetime.strptime(
+                        start, '%Y%m%dT%H%M%SZ'
+                    ).replace(tzinfo=datetime.timezone.utc)
+                    end = datetime.datetime.strptime(
+                        end, '%Y%m%dT%H%M%SZ'
+                    ).replace(tzinfo=datetime.timezone.utc)
+
+                    expanded_elements = _expand(
+                        element, copy.copy(item), start, end)
+                    found_props.extend(expanded_elements)
+                else:
+                    found_props.append(element)
             else:
                 not_found_props.append(element)
 
@@ -162,6 +187,35 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
             not_found_props=not_found_props, found_item=True))
 
     return client.MULTI_STATUS, multistatus
+
+
+def _expand(
+        element: ET.Element,
+        item: radicale_item.Item,
+        start: datetime.datetime,
+        end: datetime.datetime,
+) -> List[ET.Element]:
+    expanded = [element]
+
+    for component in item.vobject_item.components():
+        if component.name != 'VEVENT':
+            continue
+
+        if hasattr(component, "rrule"):
+            rulleset = component.getrruleset()
+            instances = rulleset.between(start, end)
+
+            for instance in instances:
+                try:
+                    delattr(item.vobject_item.vevent, 'recurrence-id')
+                except AttributeError:
+                    pass
+
+                item.vobject_item.vevent.add('RECURRENCE-ID').value = instance
+                element.text = item.vobject_item.serialize()
+                expanded.append(element)
+
+    return expanded
 
 
 def xml_item_response(base_prefix: str, href: str,
