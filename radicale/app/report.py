@@ -203,15 +203,16 @@ def _expand(
 
         if hasattr(component, "rrule"):
             rulleset = component.getrruleset()
-            instances = rulleset.between(start, end)
+            recurrences = rulleset.between(start, end)
 
-            for instance in instances:
+            expanded = []
+            for recurrence_dt in recurrences:
                 try:
                     delattr(item.vobject_item.vevent, 'recurrence-id')
                 except AttributeError:
                     pass
 
-                item.vobject_item.vevent.add('RECURRENCE-ID').value = instance
+                item.vobject_item.vevent.add('RECURRENCE-ID').value = recurrence_dt
                 element.text = item.vobject_item.serialize()
                 expanded.append(element)
 
