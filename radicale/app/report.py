@@ -196,35 +196,36 @@ def _expand(
         start: datetime.datetime,
         end: datetime.datetime,
 ) -> List[ET.Element]:
+    expanded_item = _make_vobject_expanded_item(item)
+    element.text = expanded_item.vobject_item.serialize()
     expanded = [element]
 
     if hasattr(item.vobject_item.vevent, "rrule"):
         rulleset = item.vobject_item.vevent.getrruleset()
         recurrences = rulleset.between(start, end)
-        recurring_item = _make_vobject_recurring_item(item)
 
         expanded = []
         for recurrence_dt in recurrences:
             try:
-                delattr(recurring_item.vobject_item.vevent, 'recurrence-id')
+                delattr(expanded_item.vobject_item.vevent, 'recurrence-id')
             except AttributeError:
                 pass
 
             recurrence_utc = recurrence_dt.astimezone(datetime.timezone.utc)
 
-            recurring_item.vobject_item.vevent.recurrence_id = ContentLine(
+            expanded_item.vobject_item.vevent.recurrence_id = ContentLine(
                 name='RECURRENCE-ID',
                 value=recurrence_utc.strftime('%Y%m%dT%H%M%SZ'), params={}
             )
 
             element = copy.copy(element)
-            element.text = recurring_item.vobject_item.serialize()
+            element.text = expanded_item.vobject_item.serialize()
             expanded.append(element)
 
     return expanded
 
 
-def _make_vobject_recurring_item(
+def _make_vobject_expanded_item(
         item: radicale_item.Item
 ) -> radicale_item.Item:
     # https://www.rfc-editor.org/rfc/rfc4791#section-9.6.5
