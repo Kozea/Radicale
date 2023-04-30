@@ -355,6 +355,7 @@ RewriteRule ^/radicale$ /radicale/ [R,L]
     ProxyPassReverse http://localhost:5232/
     RequestHeader    set X-Script-Name /radicale
     RequestHeader    set X-Forwarded-Port "%{SERVER_PORT}s"
+    RequestHeader    unset X-Forwarded-Proto
     <If "%{HTTPS} =~ /on/">
     RequestHeader    set X-Forwarded-Proto "https"
     </If>
@@ -371,6 +372,7 @@ RewriteRule ^(.*)$ http://localhost:5232/$1 [P,L]
 # Set to directory of .htaccess file:
 RequestHeader set X-Script-Name /radicale
 RequestHeader set X-Forwarded-Port "%{SERVER_PORT}s"
+RequestHeader unset X-Forwarded-Proto
 <If "%{HTTPS} =~ /on/">
 RequestHeader set X-Forwarded-Proto "https"
 </If>
