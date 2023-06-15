@@ -328,9 +328,13 @@ start the **Radicale** service.
 
 ### Reverse Proxy
 
-When a reverse proxy is used, the path at which Radicale is available must
-be provided via the `X-Script-Name` header. The proxy must remove the location
-from the URL path that is forwarded to Radicale.
+When a reverse proxy is used, and Radicale should be made available at a path
+below the root (such as `/radicale/`), then this path must be provided via
+the `X-Script-Name` header (without a trailing `/`). The proxy must remove
+the location from the URL path that is forwarded to Radicale. If Radicale
+should be made available at the root of the web server (in the nginx case
+using `location /`), then the setting of the `X-Script-Name` header should be
+removed from the example below.
 
 Example **nginx** configuration:
 
