@@ -348,13 +348,13 @@ Example **Caddy** configuration with basicauth from Caddy:
 
 ```Caddy
 handle_path /radicale* {
-		basicauth {
-				user hash
-		}
-		reverse_proxy localhost:5232 {
-				header_up +X-Script-Name "/radicale"
-				header_up +X-remote-user "{http.auth.user.id}"
-		}
+    basicauth {
+        user hash
+    }
+    reverse_proxy localhost:5232 {
+        header_up +X-Script-Name "/radicale"
+        header_up +X-remote-user "{http.auth.user.id}"
+    }
 }
 ```
 
