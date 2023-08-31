@@ -13,6 +13,10 @@ body{
     justify-content: space-around;
 }
 
+main{
+	width: 100%;
+}
+
 .container{
     height: auto;
     min-height: 450px;
@@ -74,7 +78,7 @@ body{
     z-index: 999;
 }
 
-#loadingscene span{
+#loadingscene h2{
     font-size: 2em;
     font-weight: bold;
 }
@@ -142,6 +146,7 @@ body{
     font-size: 1.5em;
     display: block;
     padding: 10px 0;
+	margin: 0;
 }
 
 #collectionsscene article small{
@@ -248,10 +253,6 @@ body{
     font-size: 30px;
     padding: 10px;
     box-shadow: 2px 2px 7px #000000d6;
-}
-
-.hidden{
-    display: none !important;
 }
 
 .title{
