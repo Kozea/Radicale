@@ -28,7 +28,7 @@ const SERVER = location.origin;
  * @const
  * @type {string}
  */
-const ROOT_PATH = (new URL("..", location.href)).pathname;
+const ROOT_PATH = location.pathname.replace(new RegExp("/+[^/]+/*(/index\\.html?)?$"), "") + '/';
 
 /**
  * Regex to match and normalize color
@@ -495,7 +495,12 @@ function LoginScene() {
     function fill_form() {
         user_form.value = user;
         password_form.value = "";
-        error_form.textContent = error ? "Error: " + error : "";
+        if(error){
+            error_form.textContent = "Error: " + error;
+            error_form.classList.remove("hidden");
+        }else{
+            error_form.classList.add("hidden");
+        }
     }
 
     function onlogin() {
@@ -507,7 +512,7 @@ function LoginScene() {
                 // setup logout
                 logout_view.classList.remove("hidden");
                 logout_btn.onclick = onlogout;
-                logout_user_form.textContent = user;
+                logout_user_form.textContent = user + "'s Collections";
                 // Fetch principal
                 let loading_scene = new LoadingScene();
                 push_scene(loading_scene, false);
@@ -683,10 +688,9 @@ function CollectionsScene(user, password, collection, onerror) {
             let color_form = node.querySelector("[data-name=color]");
             let delete_btn = node.querySelector("[data-name=delete]");
             let edit_btn = node.querySelector("[data-name=edit]");
+            let download_btn = node.querySelector("[data-name=download]");
             if (collection.color) {
-                color_form.style.color = collection.color;
-            } else {
-                color_form.classList.add("hidden");
+                color_form.style.background = collection.color;
             }
             let possible_types = [CollectionType.ADDRESSBOOK];
             [CollectionType.CALENDAR, ""].forEach(function(e) {
@@ -704,10 +708,16 @@ function CollectionsScene(user, password, collection, onerror) {
                 }
             });
             title_form.textContent = collection.displayname || collection.href;
+            if(title_form.textContent.length > 30){
+                title_form.classList.add("smalltext");
+            }
             description_form.textContent = collection.description;
+            if(description_form.textContent.length > 150){
+                description_form.classList.add("smalltext");
+            }
             let href = SERVER + collection.href;
-            url_form.href = href;
-            url_form.textContent = href;
+            url_form.value = href;
+            download_btn.href = href;
             delete_btn.onclick = function() {return ondelete(collection);};
             edit_btn.onclick = function() {return onedit(collection);};
             node.classList.remove("hidden");
@@ -945,9 +955,15 @@ function DeleteCollectionScene(user, password, collection) {
         scene_index = scene_stack.length - 1;
         html_scene.classList.remove("hidden");
         title_form.textContent = collection.displayname || collection.href;
-        error_form.textContent = error ? "Error: " + error : "";
         delete_btn.onclick = ondelete;
         cancel_btn.onclick = oncancel;
+        if(error){
+            error_form.textContent = "Error: " + error;
+            error_form.classList.remove("hidden");
+        }else{
+            error_form.classList.add("hidden");
+        }
+
     };
     this.hide = function() {
         html_scene.classList.add("hidden");
@@ -1031,7 +1047,11 @@ function CreateEditCollectionScene(user, password, collection) {
         description_form.value = description;
         type_form.value = type;
         color_form.value = color;
-        error_form.textContent = error ? "Error: " + error : "";
+        if(error){
+            error_form.textContent = "Error: " + error;
+            error_form.classList.remove("hidden");
+        }
+        error_form.classList.add("hidden");
     }
 
     function onsubmit() {

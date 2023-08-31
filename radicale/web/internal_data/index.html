@@ -1,68 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <script src="fn.js"></script>
 <title>Radicale Web Interface</title>
 <link href="css/main.css" media="screen" rel="stylesheet">
-<link href="css/icon.png" type="image/png" rel="icon">
-<style>
-    .hidden {display:none;}
-</style>
-</head>
+<link href="css/icon.png" type="image/png" rel="shortcut icon">
 
-<body>
-<nav>
-    <ul>
-        <li id="logoutview" class="hidden"><a href="" data-name="link">Logout [<span data-name="user" style="word-wrap:break-word;"></span>]</a></li>
-    </ul>
+<nav id="logoutview" class="hidden">
+    <span data-name="user" style="word-wrap:break-word;"></span>
+    <a href="" class="red" data-name="link" title="Logout">Logout</a>
 </nav>
 
-<main>
 <section id="loadingscene">
-    <h1>Loading</h1>
+    <img src="css/loading.svg" />
+    <span>Loading</span>
     <p>Please wait...</p>
     <noscript>JavaScript is required</noscript>
 </section>
 
-<section id="loginscene" class="hidden">
-    <h1>Login</h1>
+<section id="loginscene" class="container hidden">
+    <div class="logocontainer">
+        <img src="css/logo.svg" />
+    </div>
+    <h1>Sign in</h1><br />
     <form data-name="form">
-        <input data-name="user" type="text" placeholder="Username"><br>
-        <input data-name="password" type="password" placeholder="Password"><br>
-        <span style="color: #A40000;" data-name="error"></span><br>
-        <button type="submit">Next</button>
+        <input data-name="user" type="text" placeholder="Username">
+        <input data-name="password" type="password" placeholder="Password">
+        <button class="green" type="submit">Next</button>
+        <span class="error" data-name="error"></span>
     </form>
 </section>
 
 <section id="collectionsscene" class="hidden">
-    <h1>Collections</h1>
-    <ul>
-        <li><a href="" data-name="new">Create new addressbook or calendar</a></li>
-        <li><a href="" data-name="upload">Upload addressbook or calendar</a></li>
-    </ul>
+    <div class="fabcontainer">
+        <a href="" class="green" data-name="new" title="Create a new addressbook or calendar"><img src="css/icons/new.svg" class="icon" alt="➕"></a></a>
+        <a href="" class="blue" data-name="upload" title="Upload an addressbook or calendar"><img src="css/icons/upload.svg" class="icon" alt="⬆️"></a></a>    
+    </div>
+    
     <article data-name="collectiontemplate" class="hidden">
-        <h2><span data-name="color">█ </span><span data-name="title" style="word-wrap:break-word;">Title</span> <small>[<span data-name="ADDRESSBOOK">addressbook</span><span data-name="CALENDAR_JOURNAL_TASKS">calendar, journal and tasks</span><span data-name="CALENDAR_JOURNAL">calendar and journal</span><span data-name="CALENDAR_TASKS">calendar and tasks</span><span data-name="JOURNAL_TASKS">journal and tasks</span><span data-name="CALENDAR">calendar</span><span data-name="JOURNAL">journal</span><span data-name="TASKS">tasks</span>]</small></h2>
-        <span data-name="description" style="word-wrap:break-word;">Description</span>
+        <div class="colorbar" data-name="color"></div>
+        <span class="title" data-name="title">Title</span>
+        </h2>
+        <small>
+            <span data-name="ADDRESSBOOK">Address book</span>
+            <span data-name="CALENDAR_JOURNAL_TASKS">Calendar, journal and tasks</span>
+            <span data-name="CALENDAR_JOURNAL">Calendar and journal</span>
+            <span data-name="CALENDAR_TASKS">Calendar and tasks</span>
+            <span data-name="JOURNAL_TASKS">Journal and tasks</span>
+            <span data-name="CALENDAR">Calendar</span>
+            <span data-name="JOURNAL">Journal</span>
+            <span data-name="TASKS">Tasks</span>
+        </small>
+        <input type="text" data-name="url" value="" readonly="" onfocus="this.setSelectionRange(0, 99999);">
+        <p data-name="description" style="word-wrap:break-word;">Description</p>
         <ul>
-            <li>URL: <a data-name="url" style="word-wrap:break-word;">url</a></li>
-            <li><a href="" data-name="edit">Edit</a></li>
-            <li><a href="" data-name="delete">Delete</a></li>
+            <li><a href="" title="Download" class="green" data-name="download"><img src="css/icons/download.svg" class="icon" alt="🔗"></a></li>
+            <li><a href="" title="Edit" class="blue" data-name="edit"><img src="css/icons/edit.svg" class="icon" alt="✏️"></a></li>
+            <li><a href="" title="Delete" class="red" data-name="delete"><img src="css/icons/delete.svg" class="icon" alt="❌"></a></li>
         </ul>
     </article>
 </section>
 
-<section id="editcollectionscene" class="hidden">
-    <h1>Edit collection</h1>
-    <h2>Edit <span data-name="title" style="word-wrap:break-word;font-weight:bold;">title</span>:</h2>
+<section id="editcollectionscene" class="container hidden">
+    <h1>Edit Collection</h1>
+    <p>Editing collection <span class="title" data-name="title">title</span></p>
     <form>
-        Title:<br>
-        <input data-name="displayname" type="text"><br>
-        Description:<br>
-        <input data-name="description" type="text"><br>
         Type:<br>
         <select data-name="type">
             <option value="ADDRESSBOOK">addressbook</option>
@@ -74,65 +79,67 @@
             <option value="JOURNAL">journal</option>
             <option value="TASKS">tasks</option>
         </select><br>
-        Color:<br>
-        <input data-name="color" type="color"><br>
-        <span style="color: #A40000;" data-name="error"></span><br>
-        <button type="submit" data-name="submit">Save</button>
-        <button type="button" data-name="cancel">Cancel</button>
-    </form>
-</section>
-
-<section id="createcollectionscene" class="hidden">
-    <h1>Create new collection</h1>
-    <form>
         Title:<br>
         <input data-name="displayname" type="text"><br>
         Description:<br>
         <input data-name="description" type="text"><br>
-        Type:<br>
-        <select data-name="type">
-            <option value="ADDRESSBOOK">addressbook</option>
-            <option value="CALENDAR_JOURNAL_TASKS">calendar, journal and tasks</option>
-            <option value="CALENDAR_JOURNAL">calendar and journal</option>
-            <option value="CALENDAR_TASKS">calendar and tasks</option>
-            <option value="JOURNAL_TASKS">journal and tasks</option>
-            <option value="CALENDAR">calendar</option>
-            <option value="JOURNAL">journal</option>
-            <option value="TASKS">tasks</option>
-        </select><br>
         Color:<br>
         <input data-name="color" type="color"><br>
-        <span style="color: #A40000;" data-name="error"></span><br>
-        <button type="submit" data-name="submit">Create</button>
-        <button type="button" data-name="cancel">Cancel</button>
+        <span class="error hidden" data-name="error"></span><br>
+        <button type="submit" class="green" data-name="submit">Save</button>
+        <button type="button" class="red" data-name="cancel">Cancel</button>
     </form>
 </section>
 
-<section id="uploadcollectionscene" class="hidden">
-    <h1>Upload collection</h1>
+<section id="createcollectionscene" class="container hidden">
+    <h1>Create a new Collection</h1>
+    <p>Enter the details of your new collection.</p>
+    <form>
+        Type:<br>
+        <select data-name="type">
+            <option value="ADDRESSBOOK">Address book</option>
+            <option value="CALENDAR_JOURNAL_TASKS">Calendar, journal and tasks</option>
+            <option value="CALENDAR_JOURNAL">Calendar and journal</option>
+            <option value="CALENDAR_TASKS">Calendar and tasks</option>
+            <option value="JOURNAL_TASKS">Journal and tasks</option>
+            <option value="CALENDAR">Calendar</option>
+            <option value="JOURNAL">Journal</option>
+            <option value="TASKS">Tasks</option>
+        </select><br>
+        Title:<br>
+        <input data-name="displayname" type="text"><br>
+        Description:<br>
+        <input data-name="description" type="text"><br>
+        Color:<br>
+        <input data-name="color" type="color"><br>
+        <span class="error" data-name="error"></span><br>
+        <button type="submit" class="green" data-name="submit">Create</button>
+        <button type="button" class="red" data-name="cancel">Cancel</button>
+    </form>
+</section>
+
+<section id="uploadcollectionscene" class="container hidden">
+    <h1>Upload Collection</h1>
     <ul>
         <li data-name="filetemplate" class="hidden">
-                Upload <span data-name="name" style="word-wrap:break-word;font-weight:bold;">name</span>:<br>
-                <span data-name="pending">Please wait...</span>
-                <span style="color: #00A400;" data-name="success">Finished</span>
-                <span style="color: #A40000;" data-name="error"></span>
+                Uploading <span data-name="name">name</span><br>
+                <img data-name="pending" src="css/loading.svg" alt="Please wait..."/>
+                <span clas="successmessage";" data-name="success">Uploaded Successfully!</span>
+                <span class="error" data-name="error"></span>
         </li>
     </ul>
     <form>
-        <button type="button" data-name="close">Close</button>
+        <button type="button" class="red" data-name="close">Close</button>
     </form>
 </section>
 
-<section id="deletecollectionscene" class="hidden">
-    <h1>Delete collection</h1>
-    <h2>Delete <span data-name="title" style="word-wrap:break-word;font-weight:bold;">title</span>?</h2>
-    <span style="color: #A40000;" data-name="error"></span><br>
+<section id="deletecollectionscene" class="container hidden">
+    <h1>Delete Collection</h1>
+    <p>Do you want to delete the collection <span class="title" data-name="title">title</span>?</p>
+    <p class="red">Warning: This action cannot be reversed.</p>
     <form>
-        <button type="button" data-name="delete">Yes</button>
-        <button type="button" data-name="cancel">No</button>
+        <button type="button" class="red" data-name="delete">Delete</button>
+        <button type="button" class="blue" data-name="cancel">Cancel</button>
     </form>
+    <span class="error hidden" data-name="error"></span><br>
 </section>
-</main>
-</body>
-
-</html>
