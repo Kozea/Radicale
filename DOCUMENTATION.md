@@ -371,7 +371,7 @@ RequestHeader set X-Script-Name /radicale
 Example **lighttpd** configuration:
 
 ```lighttpd
-server.modules += ( "mod_proxy" , "mod_setenv" )
+server.modules += ( "mod_proxy" , "mod_setenv", "mod_rewrite" )
 
 $HTTP["url"] =~ "^/radicale/" {
   proxy.server = ( "" => (( "host" => "127.0.0.1", "port" => "5232" )) )
@@ -381,6 +381,7 @@ $HTTP["url"] =~ "^/radicale/" {
     "X-Script-Name" => "/radicale",
     "Script-Name" => "/radicale",
   )
+  url.rewrite-once = ( "^/radicale/radicale/(.*)" => "/radicale/$1" )
 }
 ```
 
