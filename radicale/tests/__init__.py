@@ -27,6 +27,7 @@ import sys
 import tempfile
 import wsgiref.util
 import xml.etree.ElementTree as ET
+import vobject
 from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -35,7 +36,7 @@ import defusedxml.ElementTree as DefusedET
 import radicale
 from radicale import app, config, types, xmlutils
 
-RESPONSES = Dict[str, Union[int, Dict[str, Tuple[int, ET.Element]]]]
+RESPONSES = Dict[str, Union[int, Dict[str, Tuple[int, ET.Element]], vobject.base.Component]]
 
 # Enable debug output
 radicale.log.logger.setLevel(logging.DEBUG)
@@ -107,8 +108,7 @@ class BaseTest:
     def parse_responses(text: str) -> RESPONSES:
         xml = DefusedET.fromstring(text)
         assert xml.tag == xmlutils.make_clark("D:multistatus")
-        path_responses: Dict[str, Union[
-            int, Dict[str, Tuple[int, ET.Element]]]] = {}
+        path_responses: RESPONSES = {}
         for response in xml.findall(xmlutils.make_clark("D:response")):
             href = response.find(xmlutils.make_clark("D:href"))
             assert href.text not in path_responses
@@ -131,6 +131,12 @@ class BaseTest:
                 path_responses[href.text] = status_code
             else:
                 path_responses[href.text] = prop_respones
+        return path_responses
+
+    @staticmethod
+    def parse_free_busy(text: str) -> RESPONSES:
+        path_responses: RESPONSES = {}
+        path_responses[""] = vobject.readOne(text)
         return path_responses
 
     def get(self, path: str, check: Optional[int] = 200, **kwargs
@@ -177,13 +183,18 @@ class BaseTest:
         return status, responses
 
     def report(self, path: str, data: str, check: Optional[int] = 207,
+               is_xml: Optional[bool] = True,
                **kwargs) -> Tuple[int, RESPONSES]:
         status, _, answer = self.request("REPORT", path, data, check=check,
                                          **kwargs)
         if status < 200 or 300 <= status:
             return status, {}
         assert answer is not None
-        return status, self.parse_responses(answer)
+        if is_xml:
+            parsed = self.parse_responses(answer)
+        else:
+            parsed = self.parse_free_busy(answer)
+        return status, parsed
 
     def delete(self, path: str, check: Optional[int] = 200, **kwargs
                ) -> Tuple[int, RESPONSES]:

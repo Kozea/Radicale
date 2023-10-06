@@ -23,6 +23,7 @@ import datetime
 import posixpath
 import socket
 import xml.etree.ElementTree as ET
+import vobject
 from http import client
 from typing import (Any, Callable, Iterable, Iterator, List, Optional,
                     Sequence, Tuple, Union)
@@ -37,12 +38,38 @@ from radicale.app.base import Access, ApplicationBase
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
+def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
+               collection: storage.BaseCollection, encoding: str,
+               unlock_storage_fn: Callable[[], None]
+               ) -> Tuple[int, str]:
+    multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
+    if xml_request is None:
+        return client.MULTI_STATUS, multistatus
+    root = xml_request
+    if (root.tag == xmlutils.make_clark("C:free-busy-query") and
+            collection.tag != "VCALENDAR"):
+        logger.warning("Invalid REPORT method %r on %r requested",
+                       xmlutils.make_human_tag(root.tag), path)
+        return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
+
+    time_range_element = root.find(xmlutils.make_clark("C:time-range"))
+    start,end = radicale_filter.time_range_timestamps(time_range_element)
+    items = list(collection.get_by_time(start, end))
+
+    cal = vobject.iCalendar()
+    for item in items:
+        occurrences = radicale_filter.time_range_fill(item.vobject_item, time_range_element, "VEVENT")
+        for occurrence in occurrences:
+            vfb = cal.add('vfreebusy')
+            vfb.add('dtstamp').value = item.vobject_item.vevent.dtstamp.value
+            vfb.add('dtstart').value, vfb.add('dtend').value = occurrence
+    return (client.OK, cal.serialize())
 
 def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                collection: storage.BaseCollection, encoding: str,
                unlock_storage_fn: Callable[[], None]
                ) -> Tuple[int, ET.Element]:
-    """Read and answer REPORT requests.
+    """Read and answer REPORT requests that return XML.
 
     Read rfc3253-3.6 for info.
 
@@ -426,13 +453,27 @@ class ApplicationPartReport(ApplicationBase):
             else:
                 assert item.collection is not None
                 collection = item.collection
-            try:
-                status, xml_answer = xml_report(
-                    base_prefix, path, xml_content, collection, self._encoding,
-                    lock_stack.close)
-            except ValueError as e:
-                logger.warning(
-                    "Bad REPORT request on %r: %s", path, e, exc_info=True)
-                return httputils.BAD_REQUEST
-        headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
-        return status, headers, self._xml_response(xml_answer)
+
+            if xml_content is not None and \
+               xml_content.tag == xmlutils.make_clark("C:free-busy-query"):
+                try:
+                    status, body = free_busy_report(
+                        base_prefix, path, xml_content, collection, self._encoding,
+                        lock_stack.close)
+                except ValueError as e:
+                    logger.warning(
+                        "Bad REPORT request on %r: %s", path, e, exc_info=True)
+                    return httputils.BAD_REQUEST
+                headers = {"Content-Type": "text/calendar; charset=%s" % self._encoding}
+                return status, headers, body
+            else:
+                try:
+                    status, xml_answer = xml_report(
+                        base_prefix, path, xml_content, collection, self._encoding,
+                        lock_stack.close)
+                except ValueError as e:
+                    logger.warning(
+                        "Bad REPORT request on %r: %s", path, e, exc_info=True)
+                    return httputils.BAD_REQUEST
+                headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
+                return status, headers, self._xml_response(xml_answer)

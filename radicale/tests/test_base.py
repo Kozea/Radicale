@@ -22,6 +22,7 @@ Radicale tests with simple requests.
 
 import os
 import posixpath
+import vobject
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
 import defusedxml.ElementTree as DefusedET
@@ -1360,9 +1361,26 @@ permissions: RrWw""")
 </C:calendar-query>""")
         assert len(responses) == 1
         response = responses[event_path]
-        assert not isinstance(response, int)
+        assert isinstance(response, dict)
         status, prop = response["D:getetag"]
         assert status == 200 and prop.text
+
+    def test_report_free_busy(self) -> None:
+        """Test free busy report on a few items"""
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+        for i in (1,2):
+            filename = "event{}.ics".format(i)
+            event = get_file_content(filename)
+            self.put(posixpath.join(calendar_path, filename), event)
+        code, responses = self.report(calendar_path, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
+</C:free-busy-query>""", 200, is_xml = False)
+        assert len(responses) == 1
+        for response in responses.values():
+            assert isinstance(response, vobject.base.Component)
 
     def _report_sync_token(
             self, calendar_path: str, sync_token: Optional[str] = None
