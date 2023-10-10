@@ -65,6 +65,7 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
             vfb.add('dtstart').value, vfb.add('dtend').value = occurrence
     return (client.OK, cal.serialize())
 
+
 def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                collection: storage.BaseCollection, encoding: str,
                unlock_storage_fn: Callable[[], None]

@@ -48,7 +48,8 @@ def date_to_datetime(d: date) -> datetime:
     if not isinstance(d, datetime):
         d = datetime.combine(d, datetime.min.time())
     if not d.tzinfo:
-        d = d.replace(tzinfo=timezone.utc)
+        # NOTE: using vobject's UTC as it wasn't playing well with datetime's.
+        d = d.replace(tzinfo=vobject.icalendar.utc)
     return d
 
 
