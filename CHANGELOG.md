@@ -53,6 +53,13 @@
 * Dependency: limit typegard version < 3
 * General: code cosmetics
 
+## 3.2.0.a1
+
+* Added free-busy report
+* Using icalendar's tzinfo on created datetime fix issue with icalendar
+* Added 'max_freebusy_occurrences` setting to avoid potential DOS on reports
+* Refactored some date parsing code
+
 ## 3.1.8
 
 * Fix setuptools requirement if installing wheel
