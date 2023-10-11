@@ -1378,9 +1378,13 @@ permissions: RrWw""")
 <C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
     <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
 </C:free-busy-query>""", 200, is_xml = False)
-        assert len(responses) == 1
         for response in responses.values():
             assert isinstance(response, vobject.base.Component)
+        assert len(responses) == 1
+        vcalendar = list(responses.values())[0]
+        assert len(vcalendar.vfreebusy_list) == 2
+        for vfb in vcalendar.vfreebusy_list:
+            assert vfb.fbtype.value == 'BUSY'
 
     def _report_sync_token(
             self, calendar_path: str, sync_token: Optional[str] = None

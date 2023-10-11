@@ -158,24 +158,6 @@ class BaseCollection:
                 continue
             yield item, simple and (start <= istart or iend <= end)
 
-    def get_by_time(self, start: int , end: int
-                    ) -> Iterable["radicale_item.Item"]:
-        """Fetch all items within a start and end time range.
-
-        Returns a iterable of ``item``s.
-
-        """
-        if not self.tag:
-            return
-        for item in self.get_all():
-            # TODO: Any other component_name here?
-            if item.component_name not in ("VEVENT",):
-                continue
-            istart, iend = item.time_range
-            if istart >= end or iend <= start:
-                continue
-            yield item
-
     def has_uid(self, uid: str) -> bool:
         """Check if a UID exists in the collection."""
         for item in self.get_all():

@@ -33,15 +33,16 @@ import vobject.base
 from vobject.base import ContentLine
 
 import radicale.item as radicale_item
-from radicale import httputils, pathutils, storage, types, xmlutils
+from radicale import httputils, pathutils, storage, types, xmlutils, config
 from radicale.app.base import Access, ApplicationBase
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
 def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
-               collection: storage.BaseCollection, encoding: str,
-               unlock_storage_fn: Callable[[], None]
-               ) -> Tuple[int, str]:
+                     collection: storage.BaseCollection, encoding: str,
+                     unlock_storage_fn: Callable[[], None],
+                     max_occurrence: int
+                     ) -> Tuple[int, str]:
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
     if xml_request is None:
         return client.MULTI_STATUS, multistatus
@@ -53,16 +54,73 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
         return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
 
     time_range_element = root.find(xmlutils.make_clark("C:time-range"))
-    start,end = radicale_filter.time_range_timestamps(time_range_element)
-    items = list(collection.get_by_time(start, end))
+
+    # Build a single filter from the free busy query for retrieval
+    # TODO: filter for VFREEBUSY in additional to VEVENT but
+    # test_filter doesn't support that yet.
+    vevent_cf_element = ET.Element(xmlutils.make_clark("C:comp-filter"),
+                                   attrib={'name':'VEVENT'})
+    vevent_cf_element.append(time_range_element)
+    vcalendar_cf_element = ET.Element(xmlutils.make_clark("C:comp-filter"),
+                                   attrib={'name':'VCALENDAR'})
+    vcalendar_cf_element.append(vevent_cf_element)
+    filter_element = ET.Element(xmlutils.make_clark("C:filter"))
+    filter_element.append(vcalendar_cf_element)
+    filters = (filter_element,)
+
+    # First pull from storage
+    retrieved_items = list(collection.get_filtered(filters))
+    # !!! Don't access storage after this !!!
+    unlock_storage_fn()
 
     cal = vobject.iCalendar()
-    for item in items:
-        occurrences = radicale_filter.time_range_fill(item.vobject_item, time_range_element, "VEVENT")
+    collection_tag = collection.tag
+    while retrieved_items:
+        # Second filtering before evaluating occurrences.
+        # ``item.vobject_item`` might be accessed during filtering.
+        # Don't keep reference to ``item``, because VObject requires a lot of
+        # memory.
+        item, filter_matched = retrieved_items.pop(0)
+        if not filter_matched:
+            try:
+                if not test_filter(collection_tag, item, filter_element):
+                    continue
+            except ValueError as e:
+                raise ValueError("Failed to free-busy filter item %r from %r: %s" %
+                                 (item.href, collection.path, e)) from e
+            except Exception as e:
+                raise RuntimeError("Failed to free-busy filter item %r from %r: %s" %
+                                   (item.href, collection.path, e)) from e
+
+        fbtype = None
+        if item.component_name == 'VEVENT':
+            transp = getattr(item.vobject_item, 'transp', None)
+            if transp and transp.value != 'OPAQUE':
+                continue
+
+            status = getattr(item.vobject_item, 'status', None)
+            if not status or status.value == 'CONFIRMED':
+                fbtype = 'BUSY'
+            elif status.value == 'CANCELLED':
+                fbtype = 'FREE'
+            elif status.value == 'TENTATIVE':
+                fbtype = 'BUSY-TENTATIVE'
+            else:
+                # Could do fbtype = status.value for x-name, I prefer this
+                fbtype = 'BUSY'
+
+        # TODO: coalesce overlapping periods
+
+        occurrences = radicale_filter.time_range_fill(item.vobject_item,
+                                                      time_range_element,
+                                                      "VEVENT",
+                                                      n=max_occurrence)
         for occurrence in occurrences:
             vfb = cal.add('vfreebusy')
             vfb.add('dtstamp').value = item.vobject_item.vevent.dtstamp.value
             vfb.add('dtstart').value, vfb.add('dtend').value = occurrence
+            if fbtype:
+                vfb.add('fbtype').value = fbtype
     return (client.OK, cal.serialize())
 
 
@@ -457,10 +515,11 @@ class ApplicationPartReport(ApplicationBase):
 
             if xml_content is not None and \
                xml_content.tag == xmlutils.make_clark("C:free-busy-query"):
+                max_occurrence = self.configuration.get("reporting", "max_freebusy_occurrence")
                 try:
                     status, body = free_busy_report(
                         base_prefix, path, xml_content, collection, self._encoding,
-                        lock_stack.close)
+                        lock_stack.close, max_occurrence)
                 except ValueError as e:
                     logger.warning(
                         "Bad REPORT request on %r: %s", path, e, exc_info=True)
