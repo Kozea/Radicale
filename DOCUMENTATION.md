@@ -528,6 +528,16 @@ git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
 The command gets executed after every change to the storage and commits
 the changes into the **git** repository.
 
+For the hook to not cause errors either **git** user details need to be set and match the owner of the collections directory or the repository needs to be marked as safe.
+
+When using the systemd unit file from the [Running as a service](#running-as-a-service) section this **cannot** be done via a `.gitconfig` file in the users home directory, as Radicale won't have read permissions!
+
+In `/var/lib/radicale/collections` run:
+```bash
+git config user.name "radicale"
+git config user.email "radicale@example.com"
+```
+
 ## Documentation
 
 ### Configuration
