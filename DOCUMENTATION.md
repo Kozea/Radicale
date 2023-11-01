@@ -532,7 +532,7 @@ For the hook to not cause errors either **git** user details need to be set and 
 
 When using the systemd unit file from the [Running as a service](#running-as-a-service) section this **cannot** be done via a `.gitconfig` file in the users home directory, as Radicale won't have read permissions!
 
-In `/var/lib/radicale/collections` run:
+In `/var/lib/radicale/collections/.git` run:
 ```bash
 git config user.name "radicale"
 git config user.email "radicale@example.com"
