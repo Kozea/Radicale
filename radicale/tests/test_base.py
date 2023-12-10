@@ -1369,7 +1369,7 @@ permissions: RrWw""")
         """Test free busy report on a few items"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
-        for i in (1,2):
+        for i in (1,2,10):
             filename = "event{}.ics".format(i)
             event = get_file_content(filename)
             self.put(posixpath.join(calendar_path, filename), event)
@@ -1382,9 +1382,13 @@ permissions: RrWw""")
             assert isinstance(response, vobject.base.Component)
         assert len(responses) == 1
         vcalendar = list(responses.values())[0]
-        assert len(vcalendar.vfreebusy_list) == 2
+        assert len(vcalendar.vfreebusy_list) == 3
+        types = {}
         for vfb in vcalendar.vfreebusy_list:
-            assert vfb.fbtype.value == 'BUSY'
+            if vfb.fbtype.value not in types:
+                types[vfb.fbtype.value] = 0
+            types[vfb.fbtype.value] += 1
+        assert types == {'BUSY':2, 'FREE':1}
 
     def _report_sync_token(
             self, calendar_path: str, sync_token: Optional[str] = None

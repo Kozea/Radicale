@@ -53,6 +53,10 @@
 * Dependency: limit typegard version < 3
 * General: code cosmetics
 
+## 3.2.0.a2
+
+* Fix for free-busy `fbtype` statuses
+
 ## 3.2.0.a1
 
 * Added free-busy report

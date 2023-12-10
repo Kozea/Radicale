@@ -94,11 +94,11 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
 
         fbtype = None
         if item.component_name == 'VEVENT':
-            transp = getattr(item.vobject_item, 'transp', None)
+            transp = getattr(item.vobject_item.vevent, 'transp', None)
             if transp and transp.value != 'OPAQUE':
                 continue
 
-            status = getattr(item.vobject_item, 'status', None)
+            status = getattr(item.vobject_item.vevent, 'status', None)
             if not status or status.value == 'CONFIRMED':
                 fbtype = 'BUSY'
             elif status.value == 'CANCELLED':
