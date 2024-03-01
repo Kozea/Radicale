@@ -60,8 +60,9 @@ class TestBaseServerRequests(BaseTest):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             # Find available port
             sock.bind(("127.0.0.1", 0))
+            self.sockfamily = socket.AF_INET
             self.sockname = sock.getsockname()
-        self.configure({"server": {"hosts": "[%s]:%d" % self.sockname},
+        self.configure({"server": {"hosts": "%s:%d" % self.sockname},
                         # Enable debugging for new processes
                         "logging": {"level": "debug"}})
         self.thread = threading.Thread(target=server.serve, args=(
@@ -105,8 +106,9 @@ class TestBaseServerRequests(BaseTest):
         data_bytes = None
         if data:
             data_bytes = data.encode(encoding)
+        req_host = ("[%s]" % self.sockname[0]) if self.sockfamily == socket.AF_INET6 else self.sockname[0]
         req = request.Request(
-            "%s://[%s]:%d%s" % (scheme, *self.sockname, path),
+            "%s://%s:%d%s" % (scheme, req_host, self.sockname[1], path),
             data=data_bytes, headers=headers, method=method)
         while True:
             assert is_alive_fn()
@@ -161,6 +163,7 @@ class TestBaseServerRequests(BaseTest):
                     server.COMPAT_IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
                 # Find available port
                 sock.bind(("::1", 0))
+                self.sockfamily = socket.AF_INET6
                 self.sockname = sock.getsockname()[:2]
         except OSError as e:
             if e.errno in (errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT,
