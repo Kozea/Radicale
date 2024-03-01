@@ -106,7 +106,10 @@ class TestBaseServerRequests(BaseTest):
         data_bytes = None
         if data:
             data_bytes = data.encode(encoding)
-        req_host = ("[%s]" % self.sockname[0]) if self.sockfamily == socket.AF_INET6 else self.sockname[0]
+        if self.sockfamily == socket.AF_INET6:
+            req_host = ("[%s]" % self.sockname[0])
+        else:
+            req_host = self.sockname[0]
         req = request.Request(
             "%s://%s:%d%s" % (scheme, req_host, self.sockname[1], path),
             data=data_bytes, headers=headers, method=method)
