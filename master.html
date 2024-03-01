@@ -541,10 +541,15 @@ starts. To start the service manually open <strong>Services</strong> in
 </section>
 <section class="level3" id="reverse-proxy">
 <h3>Reverse Proxy <a class="headerlink" href="#reverse-proxy">&para;</a></h3>
-<p>When a reverse proxy is used, the path at which Radicale is available
-must be provided via the <code>X-Script-Name</code> header. The proxy
-must remove the location from the URL path that is forwarded to
-Radicale.</p>
+<p>When a reverse proxy is used, and Radicale should be made available
+at a path below the root (such as <code>/radicale/</code>), then this
+path must be provided via the <code>X-Script-Name</code> header (without
+a trailing <code>/</code>). The proxy must remove the location from the
+URL path that is forwarded to Radicale. If Radicale should be made
+available at the root of the web server (in the nginx case using
+<code>location /</code>), then the setting of the
+<code>X-Script-Name</code> header should be removed from the example
+below.</p>
 <p>Example <strong>nginx</strong> configuration:</p>
 <pre class="nginx"><code>location /radicale/ { # The trailing / is important!
     proxy_pass        http://localhost:5232/; # The / is important!
