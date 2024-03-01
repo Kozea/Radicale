@@ -475,6 +475,15 @@ key = /path/to/server_key.pem
 certificate_authority = /path/to/client_cert.pem
 ```
 
+If you're using the Let's Encrypt's Certbot, the configuration should look similar to this:
+
+```ini
+[server]
+ssl = True
+certificate = /etc/letsencrypt/live/{Your Domain}/fullchain.pem
+key = /etc/letsencrypt/live/{Your Domain}/privkey.pem
+```
+
 Example **nginx** configuration:
 
 ```nginx
