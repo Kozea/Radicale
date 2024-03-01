@@ -368,6 +368,23 @@ RewriteRule ^(.*)$ http://localhost:5232/$1 [P,L]
 RequestHeader set X-Script-Name /radicale
 ```
 
+Example **lighttpd** configuration:
+
+```lighttpd
+server.modules += ( "mod_proxy" , "mod_setenv", "mod_rewrite" )
+
+$HTTP["url"] =~ "^/radicale/" {
+  proxy.server = ( "" => (( "host" => "127.0.0.1", "port" => "5232" )) )
+  proxy.header = ( "map-urlpath" => ( "/radicale/" => "/" ))
+
+  setenv.add-request-header = (
+    "X-Script-Name" => "/radicale",
+    "Script-Name" => "/radicale",
+  )
+  url.rewrite-once = ( "^/radicale/radicale/(.*)" => "/radicale/$1" )
+}
+```
+
 Be reminded that Radicale's default configuration enforces limits on the
 maximum number of parallel connections, the maximum file size and the rate of
 incorrect authentication attempts. Connections are terminated after a timeout.
