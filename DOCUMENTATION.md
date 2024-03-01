@@ -372,6 +372,11 @@ RewriteRule ^/radicale$ /radicale/ [R,L]
     ProxyPass        http://localhost:5232/ retry=0
     ProxyPassReverse http://localhost:5232/
     RequestHeader    set X-Script-Name /radicale
+    RequestHeader    set X-Forwarded-Port "%{SERVER_PORT}s"
+    RequestHeader    unset X-Forwarded-Proto
+    <If "%{HTTPS} =~ /on/">
+    RequestHeader    set X-Forwarded-Proto "https"
+    </If>
 </Location>
 ```
 
@@ -384,6 +389,11 @@ RewriteRule ^(.*)$ http://localhost:5232/$1 [P,L]
 
 # Set to directory of .htaccess file:
 RequestHeader set X-Script-Name /radicale
+RequestHeader set X-Forwarded-Port "%{SERVER_PORT}s"
+RequestHeader unset X-Forwarded-Proto
+<If "%{HTTPS} =~ /on/">
+RequestHeader set X-Forwarded-Proto "https"
+</If>
 ```
 
 Example **lighttpd** configuration:
