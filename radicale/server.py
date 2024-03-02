@@ -58,11 +58,16 @@ elif sys.platform == "win32":
 
 
 # IPv4 (host, port) and IPv6 (host, port, flowinfo, scopeid)
-ADDRESS_TYPE = Union[Tuple[str, int], Tuple[str, int, int, int]]
+ADDRESS_TYPE = Union[Tuple[Union[str, bytes, bytearray], int],
+                     Tuple[str, int, int, int]]
 
 
 def format_address(address: ADDRESS_TYPE) -> str:
-    return "[%s]:%d" % address[:2]
+    host, port, *_ = address
+    if not isinstance(host, str):
+        raise NotImplementedError("Unsupported address format: %r" %
+                                  (address,))
+    return "[%s]:%d" % (host, port)
 
 
 class ParallelHTTPServer(socketserver.ThreadingMixIn,

@@ -1,17 +1,15 @@
-# This file is intended to be used apart from the containing source code tree.
-
 FROM python:3-alpine as builder
-
-# Version of Radicale (e.g. v3)
-ARG VERSION=master
 
 # Optional dependencies (e.g. bcrypt)
 ARG DEPENDENCIES=bcrypt
 
+COPY . /app
+
+WORKDIR /app
+
 RUN apk add --no-cache --virtual gcc libffi-dev musl-dev \
     && python -m venv /app/venv \
-    && /app/venv/bin/pip install --no-cache-dir "Radicale[${DEPENDENCIES}] @ https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz"
-
+    && /app/venv/bin/pip install --no-cache-dir .[${DEPENDENCIES}]
 
 FROM python:3-alpine
 
@@ -28,6 +26,6 @@ VOLUME /var/lib/radicale
 EXPOSE 5232
 # Run Radicale
 ENTRYPOINT [ "/app/bin/python", "/app/bin/radicale"]
-CMD ["--hosts", "0.0.0.0:5232,[::]:5232"]
+CMD ["--hosts", "0.0.0.0:5232"]
 
 USER radicale

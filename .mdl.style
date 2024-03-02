@@ -1,0 +1,4 @@
+all
+rule 'MD026', :punctuation => '.,;:!'
+exclude_rule 'MD001'
+exclude_rule 'MD024'

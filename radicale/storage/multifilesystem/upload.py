@@ -43,7 +43,8 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
         path = pathutils.path_to_filesystem(self._filesystem_path, href)
-        with self._atomic_write(path, newline="") as fo:
+        # TODO: better fix for "mypy"
+        with self._atomic_write(path, newline="") as fo:  # type: ignore
             f = cast(TextIO, fo)
             f.write(item.serialize())
         # Clean the cache after the actual item is stored, or the cache entry

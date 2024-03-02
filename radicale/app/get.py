@@ -45,8 +45,8 @@ def propose_filename(collection: storage.BaseCollection) -> str:
 
 class ApplicationPartGet(ApplicationBase):
 
-    def _content_disposition_attachement(self, filename: str) -> str:
-        value = "attachement"
+    def _content_disposition_attachment(self, filename: str) -> str:
+        value = "attachment"
         try:
             encoded_filename = quote(filename, encoding=self._encoding)
         except UnicodeEncodeError:
@@ -91,7 +91,7 @@ class ApplicationPartGet(ApplicationBase):
                     return (httputils.NOT_ALLOWED if limited_access else
                             httputils.DIRECTORY_LISTING)
                 content_type = xmlutils.MIMETYPES[item.tag]
-                content_disposition = self._content_disposition_attachement(
+                content_disposition = self._content_disposition_attachment(
                     propose_filename(item))
             elif limited_access:
                 return httputils.NOT_ALLOWED

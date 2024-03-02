@@ -225,6 +225,7 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
     def get_children(components: Iterable[vobject.base.Component]) -> Iterator[
                          Tuple[vobject.base.Component, bool, List[date]]]:
         main = None
+        rec_main = None
         recurrences = []
         for comp in components:
             if hasattr(comp, "recurrence_id") and comp.recurrence_id.value:
@@ -232,11 +233,14 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                 if comp.rruleset:
                     # Prevent possible infinite loop
                     raise ValueError("Overwritten recurrence with RRULESET")
+                rec_main = comp
                 yield comp, True, []
             else:
                 if main is not None:
                     raise ValueError("Multiple main components")
                 main = comp
+        if main is None and len(recurrences) == 1:
+            main = rec_main
         if main is None:
             raise ValueError("Main component missing")
         yield main, False, recurrences
@@ -468,7 +472,15 @@ def text_match(vobject_item: vobject.base.Component,
             match(attrib) for child in children
             for attrib in child.params.get(attrib_name, []))
     else:
-        condition = any(match(child.value) for child in children)
+        res = []
+        for child in children:
+            # Some filters such as CATEGORIES provide a list in child.value
+            if type(child.value) is list:
+                for value in child.value:
+                    res.append(match(value))
+            else:
+                res.append(match(child.value))
+        condition = any(res)
     if filter_.get("negate-condition") == "yes":
         return not condition
     return condition

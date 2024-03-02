@@ -328,9 +328,13 @@ start the **Radicale** service.
 
 ### Reverse Proxy
 
-When a reverse proxy is used, the path at which Radicale is available must
-be provided via the `X-Script-Name` header. The proxy must remove the location
-from the URL path that is forwarded to Radicale.
+When a reverse proxy is used, and Radicale should be made available at a path
+below the root (such as `/radicale/`), then this path must be provided via
+the `X-Script-Name` header (without a trailing `/`). The proxy must remove
+the location from the URL path that is forwarded to Radicale. If Radicale
+should be made available at the root of the web server (in the nginx case
+using `location /`), then the setting of the `X-Script-Name` header should be
+removed from the example below.
 
 Example **nginx** configuration:
 
@@ -344,6 +348,20 @@ location /radicale/ { # The trailing / is important!
 }
 ```
 
+Example **Caddy** configuration with basicauth from Caddy:
+
+```Caddy
+handle_path /radicale* {
+    basicauth {
+        user hash
+    }
+    reverse_proxy localhost:5232 {
+        header_up +X-Script-Name "/radicale"
+        header_up +X-remote-user "{http.auth.user.id}"
+    }
+}
+```
+
 Example **Apache** configuration:
 
 ```apache
@@ -354,6 +372,11 @@ RewriteRule ^/radicale$ /radicale/ [R,L]
     ProxyPass        http://localhost:5232/ retry=0
     ProxyPassReverse http://localhost:5232/
     RequestHeader    set X-Script-Name /radicale
+    RequestHeader    set X-Forwarded-Port "%{SERVER_PORT}s"
+    RequestHeader    unset X-Forwarded-Proto
+    <If "%{HTTPS} =~ /on/">
+    RequestHeader    set X-Forwarded-Proto "https"
+    </If>
 </Location>
 ```
 
@@ -366,6 +389,28 @@ RewriteRule ^(.*)$ http://localhost:5232/$1 [P,L]
 
 # Set to directory of .htaccess file:
 RequestHeader set X-Script-Name /radicale
+RequestHeader set X-Forwarded-Port "%{SERVER_PORT}s"
+RequestHeader unset X-Forwarded-Proto
+<If "%{HTTPS} =~ /on/">
+RequestHeader set X-Forwarded-Proto "https"
+</If>
+```
+
+Example **lighttpd** configuration:
+
+```lighttpd
+server.modules += ( "mod_proxy" , "mod_setenv", "mod_rewrite" )
+
+$HTTP["url"] =~ "^/radicale/" {
+  proxy.server = ( "" => (( "host" => "127.0.0.1", "port" => "5232" )) )
+  proxy.header = ( "map-urlpath" => ( "/radicale/" => "/" ))
+
+  setenv.add-request-header = (
+    "X-Script-Name" => "/radicale",
+    "Script-Name" => "/radicale",
+  )
+  url.rewrite-once = ( "^/radicale/radicale/(.*)" => "/radicale/$1" )
+}
 ```
 
 Be reminded that Radicale's default configuration enforces limits on the
@@ -458,6 +503,15 @@ key = /path/to/server_key.pem
 certificate_authority = /path/to/client_cert.pem
 ```
 
+If you're using the Let's Encrypt's Certbot, the configuration should look similar to this:
+
+```ini
+[server]
+ssl = True
+certificate = /etc/letsencrypt/live/{Your Domain}/fullchain.pem
+key = /etc/letsencrypt/live/{Your Domain}/privkey.pem
+```
+
 Example **nginx** configuration:
 
 ```nginx
@@ -527,6 +581,16 @@ git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
 
 The command gets executed after every change to the storage and commits
 the changes into the **git** repository.
+
+For the hook to not cause errors either **git** user details need to be set and match the owner of the collections directory or the repository needs to be marked as safe.
+
+When using the systemd unit file from the [Running as a service](#running-as-a-service) section this **cannot** be done via a `.gitconfig` file in the users home directory, as Radicale won't have read permissions!
+
+In `/var/lib/radicale/collections/.git` run:
+```bash
+git config user.name "radicale"
+git config user.email "radicale@example.com"
+```
 
 ## Documentation
 
@@ -855,7 +919,7 @@ RabbitMQ topic to publish message.
 
 Default:
 
-#### rabbitmq_topic
+#### rabbitmq_queue_type
 
 RabbitMQ queue type for the topic.
 
@@ -1007,7 +1071,7 @@ An example rights file:
 [root]
 user: .+
 collection:
-permissions: R
+permissions: r
 
 # Allow reading and writing principal collection (same as username)
 [principal]

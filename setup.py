@@ -19,7 +19,7 @@ from setuptools import find_packages, setup
 
 # When the version is updated, a new section in the CHANGELOG.md file must be
 # added too.
-VERSION = "master"
+VERSION = "3.dev"
 
 with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
@@ -33,7 +33,7 @@ install_requires = ["defusedxml", "passlib", "vobject>=0.9.6",
                     "setuptools; python_version<'3.9'"]
 bcrypt_requires = ["passlib[bcrypt]", "bcrypt"]
 # typeguard requires pytest<7
-test_requires = ["pytest<7", "typeguard", "waitress", *bcrypt_requires]
+test_requires = ["pytest<7", "typeguard<3", "waitress", *bcrypt_requires]
 
 setup(
     name="Radicale",
@@ -53,7 +53,7 @@ setup(
     install_requires=install_requires,
     extras_require={"test": test_requires, "bcrypt": bcrypt_requires},
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
-    python_requires=">=3.6.0",
+    python_requires=">=3.7.0",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
@@ -63,11 +63,11 @@ setup(
         "License :: OSI Approved :: GNU General Public License (GPL)",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Topic :: Office/Business :: Groupware"])
