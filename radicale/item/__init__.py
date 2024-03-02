@@ -109,19 +109,17 @@ def check_and_sanitize_items(
                 component_uid = get_uid(component)
                 if component_uid:
                     component_uids.add(component_uid)
-        component_name = None
         object_uid = None
         object_uid_set = False
+        component_dict = dict();
         for component in vobject_item.components():
             # https://tools.ietf.org/html/rfc4791#section-4.1
             if component.name == "VTIMEZONE":
                 continue
-            if component_name is None or is_collection:
-                component_name = component.name
-            elif component_name != component.name:
-                raise ValueError("Multiple component types in object: %r, %r" %
-                                 (component_name, component.name))
-            if component_name not in ("VTODO", "VEVENT", "VJOURNAL"):
+            if component.name in component_dict:
+                raise ValueError("Multiple components of same type in object: %r" % (component.name))
+            component_dict[component.name] = True
+            if component.name not in ("VTODO", "VEVENT", "VJOURNAL"):
                 continue
             component_uid = get_uid(component)
             if not object_uid_set or is_collection:
@@ -130,7 +128,7 @@ def check_and_sanitize_items(
                 if not component_uid:
                     if not is_collection:
                         raise ValueError("%s component without UID in object" %
-                                         component_name)
+                                         component.name)
                     component_uid = find_available_uid(
                         component_uids.__contains__)
                     component_uids.add(component_uid)
@@ -140,11 +138,7 @@ def check_and_sanitize_items(
                         component.add("UID").value = component_uid
             elif not object_uid or not component_uid:
                 raise ValueError("Multiple %s components without UID in "
-                                 "object" % component_name)
-            elif object_uid != component_uid:
-                raise ValueError(
-                    "Multiple %s components with different UIDs in object: "
-                    "%r, %r" % (component_name, object_uid, component_uid))
+                                 "object" % component.name)
             # Workaround for bug in Lightning (Thunderbird)
             # Rescheduling a single occurrence from a repeating event creates
             # an event with DTEND and DURATION:PT0S
@@ -152,7 +146,7 @@ def check_and_sanitize_items(
                     hasattr(component, "duration") and
                     component.duration.value == timedelta(0)):
                 logger.debug("Quirks: Removing zero duration from %s in "
-                             "object %r", component_name, component_uid)
+                             "object %r", component.name, component_uid)
                 del component.duration
             # Workaround for Evolution
             # EXDATE has value DATE even if DTSTART/DTEND is DATE-TIME.
