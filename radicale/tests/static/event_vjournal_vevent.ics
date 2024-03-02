@@ -1,0 +1,50 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//mozilla.org/Mozilla Thunderbird//EN
+BEGIN:VTIMEZONE
+TZID:US/Pacific
+BEGIN:STANDARD
+DTSTART:19671029T020000
+RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10
+TZOFFSETFROM:-0700
+TZOFFSETTO:-0800
+TZNAME:PST
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:19870405T020000
+RRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=4
+TZOFFSETFROM:-0800
+TZOFFSETTO:-0700
+TZNAME:PDT
+END:DAYLIGHT
+END:VTIMEZONE
+BEGIN:VEVENT
+SEQUENCE:0
+DTSTART;TZID=US/Pacific:20021028T140000
+RRULE:FREQ=WEEKLY;COUNT=10
+DTSTAMP:20021028T011706Z
+SUMMARY:Coffee with Jason
+UID:EC9439B1-FF65-11D6-9973-003065F99D04
+DTEND;TZID=US/Pacific:20021028T150000
+BEGIN:VALARM
+TRIGGER;VALUE=DURATION:-P1D
+ACTION:DISPLAY
+DESCRIPTION:Event reminder\, with comma\nand line feed
+END:VALARM
+END:VEVENT
+BEGIN:VJOURNAL
+UID:19970901T130000Z-123405@example.com
+DTSTAMP:19970901T130000Z
+DTSTART;VALUE=DATE:19970317
+SUMMARY:Staff meeting minutes
+DESCRIPTION:1. Staff meeting: Participants include Joe\,
+  Lisa\, and Bob. Aurora project plans were reviewed.
+  There is currently no budget reserves for this project.
+  Lisa will escalate to management. Next meeting on Tuesday.\n
+ 2. Telephone Conference: ABC Corp. sales representative
+  called to discuss new printer. Promised to get us a demo by
+  Friday.\n3. Henry Miller (Handsoff Insurance): Car was
+  totaled by tree. Is looking into a loaner car. 555-2323
+  (tel).
+END:VJOURNAL
+END:VCALENDAR
