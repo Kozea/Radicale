@@ -28,6 +28,6 @@ VOLUME /var/lib/radicale
 EXPOSE 5232
 # Run Radicale
 ENTRYPOINT [ "/app/bin/python", "/app/bin/radicale"]
-CMD ["--hosts", "0.0.0.0:5232"]
+CMD ["--hosts", "0.0.0.0:5232,[::]:5232"]
 
 USER radicale
