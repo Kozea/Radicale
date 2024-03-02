@@ -126,3 +126,4 @@
 #type = none
 #rabbitmq_endpoint =
 #rabbitmq_topic =
+#rabbitmq_queue_type = classic

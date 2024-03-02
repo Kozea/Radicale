@@ -12,6 +12,7 @@ class Hook(hook.BaseHook):
         super().__init__(configuration)
         self._endpoint = configuration.get("hook", "rabbitmq_endpoint")
         self._topic = configuration.get("hook", "rabbitmq_topic")
+        self._queue_type = configuration.get("hook", "rabbitmq_queue_type")
         self._encoding = configuration.get("encoding", "stock")
 
         self._make_connection_synced()
@@ -23,7 +24,7 @@ class Hook(hook.BaseHook):
         self._channel = connection.channel()
 
     def _make_declare_queue_synced(self):
-        self._channel.queue_declare(queue=self._topic, durable=True)
+        self._channel.queue_declare(queue=self._topic, durable=True, arguments={"x-queue-type": self._queue_type})
 
     def notify(self, notification_item):
         if isinstance(notification_item, HookNotificationItem):

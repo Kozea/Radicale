@@ -223,6 +223,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("rabbitmq_topic", {
             "value": "",
             "help": "topic to declare queue",
+            "type": str}),
+        ("rabbitmq_queue_type", {
+            "value": "",
+            "help": "queue type for topic declaration",
             "type": str})])),
     ("web", OrderedDict([
         ("type", {

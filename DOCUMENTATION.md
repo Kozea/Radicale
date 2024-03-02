@@ -855,6 +855,12 @@ RabbitMQ topic to publish message.
 
 Default:
 
+#### rabbitmq_topic
+
+RabbitMQ queue type for the topic.
+
+Default: classic
+
 ## Supported Clients
 
 Radicale has been tested with:
