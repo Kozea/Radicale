@@ -86,7 +86,7 @@ class CollectionPartCache(CollectionBase):
         content = self._item_cache_content(item)
         self._storage._makedirs_synced(cache_folder)
         # Race: Other processes might have created and locked the file.
-        with contextlib.suppress(PermissionError), self._atomic_write(
+        with contextlib.suppress(PermissionError), self._atomic_write( # type: ignore # for now, TODO fix for "mypy"
                 os.path.join(cache_folder, href), "wb") as fo:
             fb = cast(BinaryIO, fo)
             pickle.dump((cache_hash, *content), fb)

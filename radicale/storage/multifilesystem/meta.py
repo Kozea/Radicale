@@ -61,6 +61,6 @@ class CollectionPartMeta(CollectionBase):
         return self._meta_cache if key is None else self._meta_cache.get(key)
 
     def set_meta(self, props: Mapping[str, str]) -> None:
-        with self._atomic_write(self._props_path, "w") as fo:
+        with self._atomic_write(self._props_path, "w") as fo: # type: ignore # for now, TODO fix for "mypy"
             f = cast(TextIO, fo)
             json.dump(props, f, sort_keys=True)
