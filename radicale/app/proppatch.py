@@ -28,6 +28,10 @@ from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
 
+# HACK: https://github.com/tiran/defusedxml/issues/54
+import defusedxml.ElementTree as DefusedET  # isort:skip
+sys.modules["xml.etree"].ElementTree = ET  # type:ignore[attr-defined]
+
 
 def xml_proppatch(base_prefix: str, path: str,
                   xml_request: Optional[ET.Element],
