@@ -197,7 +197,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             if base_prefix_src == "HTTP_X_SCRIPT_NAME":
                 return response(*httputils.BAD_REQUEST)
             return response(*httputils.INTERNAL_SERVER_ERROR)
-        if base_prefix.endswith("/"):
+        if base_prefix and base_prefix != "/" and base_prefix.endswith("/"):
             logger.warning("Base prefix (from %s) must not end with '/': %r",
                            base_prefix_src, base_prefix)
             base_prefix = base_prefix.rstrip("/")
