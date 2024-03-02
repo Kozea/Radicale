@@ -22,15 +22,13 @@ import xml.etree.ElementTree as ET
 from http import client
 from typing import Dict, Optional, cast
 
+import defusedxml.ElementTree as DefusedET
+
 import radicale.item as radicale_item
 from radicale import httputils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
-
-# HACK: https://github.com/tiran/defusedxml/issues/54
-import defusedxml.ElementTree as DefusedET  # isort:skip
-sys.modules["xml.etree"].ElementTree = ET  # type:ignore[attr-defined]
 
 
 def xml_proppatch(base_prefix: str, path: str,

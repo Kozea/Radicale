@@ -1,9 +1,10 @@
 import json
 from enum import Enum
+from typing import Sequence
 
 from radicale import pathutils, utils
 
-INTERNAL_TYPES = ("none", "rabbitmq")
+INTERNAL_TYPES: Sequence[str] = ("none", "rabbitmq")
 
 
 def load(configuration):

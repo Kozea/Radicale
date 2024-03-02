@@ -91,7 +91,7 @@ class ApplicationPartDelete(ApplicationBase):
                 )
                 xml_answer = xml_delete(
                     base_prefix, path, item.collection, item.href)
-            for i in hook_notification_item_list:
-                self._hook.notify(i)
+            for notification_item in hook_notification_item_list:
+                self._hook.notify(notification_item)
             headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
             return client.OK, headers, self._xml_response(xml_answer)
