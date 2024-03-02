@@ -44,7 +44,7 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
                              (href, self.path, e)) from e
         path = pathutils.path_to_filesystem(self._filesystem_path, href)
         # TODO: better fix for "mypy"
-        with self._atomic_write(path, newline="") as fo: # type: ignore
+        with self._atomic_write(path, newline="") as fo:  # type: ignore
             f = cast(TextIO, fo)
             f.write(item.serialize())
         # Clean the cache after the actual item is stored, or the cache entry

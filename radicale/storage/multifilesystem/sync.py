@@ -96,7 +96,7 @@ class CollectionPartSync(CollectionPartCache, CollectionPartHistory,
             try:
                 # Race: Other processes might have created and locked the file.
                 # TODO: better fix for "mypy"
-                with self._atomic_write(token_path, "wb") as fo: # type: ignore
+                with self._atomic_write(token_path, "wb") as fo:  # type: ignore
                     fb = cast(BinaryIO, fo)
                     pickle.dump(state, fb)
             except PermissionError:

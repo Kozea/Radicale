@@ -45,7 +45,7 @@ class CollectionBase(storage.BaseCollection):
         self._filesystem_path = filesystem_path
 
     # TODO: better fix for "mypy"
-    @types.contextmanager # type: ignore
+    @types.contextmanager  # type: ignore
     def _atomic_write(self, path: str, mode: str = "w",
                       newline: Optional[str] = None) -> Iterator[IO[AnyStr]]:
         # TODO: Overload with Literal when dropping support for Python < 3.8
