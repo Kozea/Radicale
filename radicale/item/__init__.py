@@ -164,7 +164,7 @@ def check_and_sanitize_items(
                 ref_value_param = component.dtstart.params.get("VALUE")
                 for dates in chain(component.contents.get("exdate", []),
                                    component.contents.get("rdate", [])):
-                    if all(type(d) == type(ref_date) for d in dates.value):
+                    if all(type(d) is type(ref_date) for d in dates.value):
                         continue
                     for i, date in enumerate(dates.value):
                         dates.value[i] = ref_date.replace(
