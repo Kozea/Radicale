@@ -111,7 +111,7 @@ def check_and_sanitize_items(
                     component_uids.add(component_uid)
         object_uid = None
         object_uid_set = False
-        component_dict = dict();
+        component_dict = dict()
         for component in vobject_item.components():
             # https://tools.ietf.org/html/rfc4791#section-4.1
             if component.name == "VTIMEZONE":
