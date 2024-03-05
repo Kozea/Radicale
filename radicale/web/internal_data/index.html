@@ -60,6 +60,7 @@
             <span data-name="CALENDAR">Calendar</span>
             <span data-name="JOURNAL">Journal</span>
             <span data-name="TASKS">Tasks</span>
+            <span data-name="WEBCAL">Webcal</span>
           </small>
           <input type="text" data-name="url" value="" readonly="" onfocus="this.setSelectionRange(0, 99999);">
           <p data-name="description" style="word-wrap:break-word;">Description</p>
@@ -97,12 +98,15 @@
             <option value="CALENDAR">calendar</option>
             <option value="JOURNAL">journal</option>
             <option value="TASKS">tasks</option>
+            <option value="WEBCAL">webcal</option>
           </select>
-          <br> Title: <br>
+          <label for="displayname">Title:</label>
           <input data-name="displayname" type="text">
-          <br> Description: <br>
+          <label for="description">Description:</label>
           <input data-name="description" type="text">
-          <br> Color: <br>
+          <label for="source">Source:</label>
+          <input data-name="source" type="url">
+          <label for="color">Color:</label>
           <input data-name="color" type="color">
           <br>
           <span class="error hidden" data-name="error"></span>
@@ -125,12 +129,15 @@
             <option value="CALENDAR">Calendar</option>
             <option value="JOURNAL">Journal</option>
             <option value="TASKS">Tasks</option>
+            <option value="WEBCAL">Webcal</option>
           </select>
-          <br> Title: <br>
+          <label for="displayname">Title:</label>
           <input data-name="displayname" type="text">
-          <br> Description: <br>
+          <label for="description">Description:</label>
           <input data-name="description" type="text">
-          <br> Color: <br>
+          <label for="source">Source:</label>
+          <input data-name="source" type="url">
+          <label for="color">Color:</label>
           <input data-name="color" type="color">
           <br>
           <span class="error" data-name="error"></span>

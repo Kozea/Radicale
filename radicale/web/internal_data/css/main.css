@@ -302,6 +302,7 @@ button{
     float: right;
     margin-left: 10px;
     background: black;
+    cursor: pointer;
 }
 
 input, select{
