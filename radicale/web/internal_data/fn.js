@@ -203,7 +203,7 @@ function get_collections(user, password, collection, callback) {
                         color = addressbookcolor_element ? addressbookcolor_element.textContent : "";
                         description = addressbookdesc_element ? addressbookdesc_element.textContent : "";
                     } else if (resourcetype_element.querySelector(resourcetype_query + " > *|subscribed")) {
-                        type = CollectionType.union(type, CollectionType.WEBCAL);
+                        type = CollectionType.WEBCAL;
                         source = webcalsource_element ? webcalsource_element.textContent : "";
                         color = calendarcolor_element ? calendarcolor_element.textContent : "";
                         description = calendardesc_element ? calendardesc_element.textContent : "";
@@ -374,7 +374,7 @@ function create_edit_collection(user, password, collection, create, callback) {
     }
     let xml_request = create ? "mkcol" : "propertyupdate";
     request.send('<?xml version="1.0" encoding="UTF-8" ?>' +
-                 '<' + xml_request + ' xmlns="DAV:" xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:I="http://apple.com/ns/ical/" xmlns:INF="http://inf-it.com/ns/ab/">' +
+                 '<' + xml_request + ' xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:I="http://apple.com/ns/ical/" xmlns:INF="http://inf-it.com/ns/ab/">' +
                      '<set>' +
                          '<prop>' +
                              (create ? '<resourcetype><collection />' + resourcetype + '</resourcetype>' : '') +
