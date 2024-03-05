@@ -178,6 +178,9 @@ def props_from_request(xml_request: Optional[ET.Element]
                     if resource_type.tag == make_clark("C:calendar"):
                         value = "VCALENDAR"
                         break
+                    if resource_type.tag == make_clark("CS:subscribed"):
+                        value = "VSUBSCRIBED"
+                        break
                     if resource_type.tag == make_clark("CR:addressbook"):
                         value = "VADDRESSBOOK"
                         break
