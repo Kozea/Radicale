@@ -2,6 +2,19 @@
 
 ## master
 
+* Add: support for Python 3.11 + 3.12
+* Drop: support for Python 3.6
+* Fix: MOVE in case listen on non-standard ports or behind reverse proxy
+* Fix: stricter requirements of Python 3.11
+* Fix: HTML pages
+* Fix: Main Component is missing when only recurrence id exists
+* Enhancement: user-selectable log formats
+* Enhancement: autodetect logging to systemd journal
+* Enhancement: test code
+* Improve: Dockerfiles
+* Update: documentations + examples
+* Dependency: limit typegard version < 3
+
 ## 3.1.8
 
 * Fix setuptools requirement if installing wheel
