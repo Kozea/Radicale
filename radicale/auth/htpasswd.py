@@ -88,7 +88,7 @@ class Auth(auth.BaseAuth):
         return hmac.compare_digest(hash_value.encode(), password.encode())
 
     def _bcrypt(self, bcrypt: Any, hash_value: str, password: str) -> bool:
-        return bcrypt.checkpw(password = password.encode('utf-8'), hashed_password = hash_value.encode())
+        return bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hash_value.encode())
 
     def _md5apr1(self, hash_value: str, password: str) -> bool:
         return apr_md5_crypt.verify(password, hash_value.strip())
