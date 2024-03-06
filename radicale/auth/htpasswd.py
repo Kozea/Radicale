@@ -73,15 +73,11 @@ class Auth(auth.BaseAuth):
             self._verify = self._md5apr1
         elif encryption == "bcrypt":
             try:
-                from passlib.hash import bcrypt
+                import bcrypt
             except ImportError as e:
                 raise RuntimeError(
                     "The htpasswd encryption method 'bcrypt' requires "
-                    "the passlib[bcrypt] module.") from e
-            # A call to `encrypt` raises passlib.exc.MissingBackendError with a
-            # good error message if bcrypt backend is not available. Trigger
-            # this here.
-            bcrypt.hash("test-bcrypt-backend")
+                    "the bcrypt module.") from e
             self._verify = functools.partial(self._bcrypt, bcrypt)
         else:
             raise RuntimeError("The htpasswd encryption method %r is not "
@@ -92,7 +88,7 @@ class Auth(auth.BaseAuth):
         return hmac.compare_digest(hash_value.encode(), password.encode())
 
     def _bcrypt(self, bcrypt: Any, hash_value: str, password: str) -> bool:
-        return bcrypt.verify(password, hash_value.strip())
+        return bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hash_value.encode())
 
     def _md5apr1(self, hash_value: str, password: str) -> bool:
         return apr_md5_crypt.verify(password, hash_value.strip())
