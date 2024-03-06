@@ -60,7 +60,7 @@
 
 # Htpasswd encryption method
 # Value: plain | bcrypt | md5
-# bcrypt requires the installation of radicale[bcrypt].
+# bcrypt requires the installation of 'bcrypt' module.
 #htpasswd_encryption = md5
 
 # Incorrect authentication delay (seconds)
