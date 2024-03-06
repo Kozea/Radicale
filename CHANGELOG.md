@@ -8,6 +8,7 @@
 * Fix: stricter requirements of Python 3.11
 * Fix: HTML pages
 * Fix: Main Component is missing when only recurrence id exists
+* Fix: passlib don't support bcrypt>=4.1
 * Enhancement: user-selectable log formats
 * Enhancement: autodetect logging to systemd journal
 * Enhancement: test code
