@@ -31,7 +31,7 @@ web_files = ["web/internal_data/css/icon.png",
 install_requires = ["defusedxml", "passlib", "vobject>=0.9.6",
                     "python-dateutil>=2.7.3",
                     "setuptools; python_version<'3.9'"]
-bcrypt_requires = ["passlib[bcrypt]", "bcrypt"]
+bcrypt_requires = ["bcrypt"]
 # typeguard requires pytest<7
 test_requires = ["pytest<7", "typeguard<3", "waitress", *bcrypt_requires]
 
