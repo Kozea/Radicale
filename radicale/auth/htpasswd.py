@@ -41,7 +41,7 @@ out-of-the-box:
     - plain-text (created by htpasswd -p...) -- INSECURE
     - MD5-APR1   (htpasswd -m...) -- htpasswd's default method
 
-When passlib[bcrypt] is installed:
+When bcrypt is installed:
 
     - BCRYPT     (htpasswd -B...) -- Requires htpasswd 2.4.x
 
