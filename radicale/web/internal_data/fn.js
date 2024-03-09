@@ -119,7 +119,7 @@ function Collection(href, type, displayname, description, color) {
  */
 function get_principal(user, password, callback) {
     let request = new XMLHttpRequest();
-    request.open("PROPFIND", SERVER + ROOT_PATH, true, user, password);
+    request.open("PROPFIND", SERVER + ROOT_PATH, true, user, encodeURIComponent(password));
     request.onreadystatechange = function() {
         if (request.readyState !== 4) {
             return;
@@ -162,7 +162,7 @@ function get_principal(user, password, callback) {
  */
 function get_collections(user, password, collection, callback) {
     let request = new XMLHttpRequest();
-    request.open("PROPFIND", SERVER + collection.href, true, user, password);
+    request.open("PROPFIND", SERVER + collection.href, true, user, encodeURIComponent(password));
     request.setRequestHeader("depth", "1");
     request.onreadystatechange = function() {
         if (request.readyState !== 4) {
@@ -263,7 +263,7 @@ function get_collections(user, password, collection, callback) {
  */
 function upload_collection(user, password, collection_href, file, callback) {
     let request = new XMLHttpRequest();
-    request.open("PUT", SERVER + collection_href, true, user, password);
+    request.open("PUT", SERVER + collection_href, true, user, encodeURIComponent(password));
     request.onreadystatechange = function() {
         if (request.readyState !== 4) {
             return;
@@ -288,7 +288,7 @@ function upload_collection(user, password, collection_href, file, callback) {
  */
 function delete_collection(user, password, collection, callback) {
     let request = new XMLHttpRequest();
-    request.open("DELETE", SERVER + collection.href, true, user, password);
+    request.open("DELETE", SERVER + collection.href, true, user, encodeURIComponent(password));
     request.onreadystatechange = function() {
         if (request.readyState !== 4) {
             return;
@@ -313,7 +313,7 @@ function delete_collection(user, password, collection, callback) {
  */
 function create_edit_collection(user, password, collection, create, callback) {
     let request = new XMLHttpRequest();
-    request.open(create ? "MKCOL" : "PROPPATCH", SERVER + collection.href, true, user, password);
+    request.open(create ? "MKCOL" : "PROPPATCH", SERVER + collection.href, true, user, encodeURIComponent(password));
     request.onreadystatechange = function() {
         if (request.readyState !== 4) {
             return;
