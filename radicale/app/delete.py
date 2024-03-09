@@ -70,15 +70,18 @@ class ApplicationPartDelete(ApplicationBase):
                 return httputils.PRECONDITION_FAILED
             hook_notification_item_list = []
             if isinstance(item, storage.BaseCollection):
-                for i in item.get_all():
-                    hook_notification_item_list.append(
-                        HookNotificationItem(
-                            HookNotificationItemTypes.DELETE,
-                            access.path,
-                            i.uid
+                if self._permit_delete_collection:
+                    for i in item.get_all():
+                        hook_notification_item_list.append(
+                            HookNotificationItem(
+                                HookNotificationItemTypes.DELETE,
+                                access.path,
+                                i.uid
+                            )
                         )
-                    )
-                xml_answer = xml_delete(base_prefix, path, item)
+                    xml_answer = xml_delete(base_prefix, path, item)
+                else:
+                    return httputils.NOT_ALLOWED
             else:
                 assert item.collection is not None
                 assert item.href is not None

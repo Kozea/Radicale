@@ -184,6 +184,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "rights backend",
             "type": str_or_callable,
             "internal": rights.INTERNAL_TYPES}),
+        ("permit_delete_collection", {
+            "value": "True",
+            "help": "permit delete of a collection",
+            "type": bool}),
         ("file", {
             "value": "/etc/radicale/rights",
             "help": "file for rights management from_file",
