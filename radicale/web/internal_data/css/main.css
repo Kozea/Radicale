@@ -182,7 +182,7 @@ main{
 }
 
 #collectionsscene li{
-    list-style: none;   
+    list-style: none;
     display: block;
 }
 
@@ -382,7 +382,7 @@ button.blue:active, a.blue:active{
         height: auto;
         min-height: 350px;
     }
-    
+
     .container{
         max-width: 280px !important;
     }
@@ -390,8 +390,8 @@ button.blue:active, a.blue:active{
     #collectionsscene ul{
         display: flex !important;
     }
-    
+
     #logoutview span{
         text-align: left;
-    }    
+    }
 }
