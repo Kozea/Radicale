@@ -9,9 +9,11 @@
 * Fix: HTML pages
 * Fix: Main Component is missing when only recurrence id exists
 * Fix: passlib don't support bcrypt>=4.1
+* Fix: web login now proper encodes passwords containing %XX (hexdigits)
 * Enhancement: user-selectable log formats
 * Enhancement: autodetect logging to systemd journal
 * Enhancement: test code
+* Enhancement: option for global permit to delete collection
 * Improve: Dockerfiles
 * Update: documentations + examples
 * Dependency: limit typegard version < 3
