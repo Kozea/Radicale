@@ -68,7 +68,10 @@ class ApplicationPartDelete(ApplicationBase):
                 # ETag precondition not verified, do not delete item
                 return httputils.PRECONDITION_FAILED
             if isinstance(item, storage.BaseCollection):
-                xml_answer = xml_delete(base_prefix, path, item)
+                if self._permit_delete_collection:
+                    xml_answer = xml_delete(base_prefix, path, item)
+                else:
+                    return httputils.NOT_ALLOWED
             else:
                 assert item.collection is not None
                 assert item.href is not None
