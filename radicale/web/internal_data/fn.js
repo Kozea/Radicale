@@ -247,14 +247,14 @@ function get_collections(user, password, collection, callback) {
         }
     };
     request.send('<?xml version="1.0" encoding="utf-8" ?>' +
-                 '<propfind ' + 
-                         'xmlns="DAV:" ' + 
+                 '<propfind ' +
+                         'xmlns="DAV:" ' +
                          'xmlns:C="urn:ietf:params:xml:ns:caldav" ' +
                          'xmlns:CR="urn:ietf:params:xml:ns:carddav" ' +
                          'xmlns:CS="http://calendarserver.org/ns/" ' +
                          'xmlns:I="http://apple.com/ns/ical/" ' +
                          'xmlns:INF="http://inf-it.com/ns/ab/" ' +
-                         'xmlns:RADICALE="http://radicale.org/ns/"' + 
+                         'xmlns:RADICALE="http://radicale.org/ns/"' +
                          '>' +
                      '<prop>' +
                          '<resourcetype />' +
@@ -1086,7 +1086,6 @@ function CreateEditCollectionScene(user, password, collection) {
             error_form.classList.remove("hidden");
         }
         error_form.classList.add("hidden");
-        
         onTypeChange();
         type_form.addEventListener("change", onTypeChange);
     }
