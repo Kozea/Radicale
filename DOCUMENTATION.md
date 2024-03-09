@@ -915,9 +915,9 @@ Default: `none`
 #### rabbitmq_endpoint
 
 End-point address for rabbitmq server.
-Ex: amqp://user:password@localhost:5672/   
+Ex: amqp://user:password@localhost:5672/
 
-Default: 
+Default:
 
 #### rabbitmq_topic
 
