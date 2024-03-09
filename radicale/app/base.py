@@ -38,6 +38,7 @@ class ApplicationBase:
     _rights: rights.BaseRights
     _web: web.BaseWeb
     _encoding: str
+    _permit_delete_collection: bool
 
     def __init__(self, configuration: config.Configuration) -> None:
         self.configuration = configuration
