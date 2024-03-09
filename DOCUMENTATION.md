@@ -812,6 +812,12 @@ Default: `owner_only`
 File for the rights backend `from_file`.  See the
 [Rights](#authentication-and-rights) section.
 
+##### permit_delete_collection
+
+(New since 3.1.9)
+
+Global control of permission to delete complete collection (default: True)
+
 #### storage
 
 ##### type
