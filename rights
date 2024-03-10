@@ -1,5 +1,34 @@
-# -*- mode: conf -*-
-# vim:ft=cfg
+# Allow all rights for the Administrator
+[root]
+user: Administrator
+collection: .*
+permissions: RW
+
+# Allow reading principal collection (same as username)
+[principal]
+user: .+
+collection: {user}
+permissions: R
+
+# Allow reading and writing private collection (same as username)
+[private]
+user: .+
+collection: {user}/private/
+permissions: RW
+
+# Allow reading and writing calendars and address books that are direct
+# children of the principal collection for the member of some groups
+[calendarsWriter]
+groups: sysadmins,teachers,administration,administrators
+collection: {user}/[^/]+
+permissions: rw
+
+# Allow reading calendars and address books that are direct
+# children of the principal collection for other users
+[calendarsReader]
+user: .+
+collection: {user}/[^/]+
+permissions: r
 
 # Rights management file for Radicale - A simple calendar server
 #

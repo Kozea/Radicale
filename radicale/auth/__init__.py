@@ -33,7 +33,7 @@ from typing import Sequence, Tuple, Union
 from radicale import config, types, utils
 
 INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
-                                 "htpasswd")
+                                 "htpasswd", "ldap")
 
 
 def load(configuration: "config.Configuration") -> "BaseAuth":
@@ -43,6 +43,8 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
 
 
 class BaseAuth:
+
+    _ldap_groups: set
 
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseAuth.
