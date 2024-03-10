@@ -1434,10 +1434,6 @@ The module must contain a class `Storage` that extends
 
 ## Contribute
 
-#### Chat with Us on IRC
-
-Want to say something? Join our IRC room: `##kozea` on Freenode.
-
 #### Report Bugs
 
 Found a bug? Want a new feature? Report a new issue on the
