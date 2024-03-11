@@ -742,6 +742,9 @@ function CollectionsScene(user, password, collection, onerror) {
             let href = SERVER + collection.href;
             url_form.value = href;
             download_btn.href = href;
+            if(collection.type == CollectionType.WEBCAL){
+                download_btn.parentElement.classList.add("hidden");
+            }
             delete_btn.onclick = function() {return ondelete(collection);};
             edit_btn.onclick = function() {return onedit(collection);};
             node.classList.remove("hidden");
