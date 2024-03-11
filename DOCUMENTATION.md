@@ -758,7 +758,7 @@ Available methods:
 
 `bcrypt`
 : This uses a modified version of the Blowfish stream cipher. It's very secure.
-  The installation of **radicale[bcrypt]** is required for this.
+  The installation of **bcrypt** is required for this.
 
 `md5`
 : This uses an iterated md5 digest of the password with a salt.
