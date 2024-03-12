@@ -885,8 +885,14 @@ user2:password2</code></pre>
 <p><code>bcrypt</code> : This uses a modified version of the Blowfish
 stream cipher. It's very secure. The installation of
 <strong>bcrypt</strong> is required for this.</p>
-<p><code>md5</code> : This uses an iterated md5 digest of the password
+<p><code>md5</code> : This uses an iterated MD5 digest of the password
 with a salt.</p>
+<p><code>sha256</code> : This uses an iterated SHA-256 digest of the
+password with a salt.</p>
+<p><code>sha512</code> : This uses an iterated SHA-512 digest of the
+password with a salt.</p>
+<p><code>autodetect</code> : This selects autodetection of method per
+entry.</p>
 <p>Default: <code>md5</code></p>
 </section>
 <section class="level5" id="delay">
