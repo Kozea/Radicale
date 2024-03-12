@@ -309,6 +309,10 @@ def serve(configuration: config.Configuration,
                             # macOS: IPv4 address for INET6 address family with
                             #        IPV6_V6ONLY set
                             e.errno == errno.EADDRNOTAVAIL or
+                            # Temporary failure in name resolution
+                            #  can happen if "hosts" is using eg. "localhost"
+                            #  and only resolvable to an IPv4 address
+                            e.errno == -3 or
                             # Address family not supported
                             e.errno == errno.EAFNOSUPPORT or
                             # Protocol not supported
