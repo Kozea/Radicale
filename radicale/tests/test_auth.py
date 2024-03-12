@@ -82,6 +82,12 @@ class TestBaseAuthRequests(BaseTest):
         self._test_htpasswd(
             "md5", "😀:$apr1$w4ev89r1$29xO8EvJmS2HEAadQ5qy11", "unicode")
 
+    def test_htpasswd_sha256(self) -> None:
+        self._test_htpasswd("sha256", "tmp:$5$i4Ni4TQq6L5FKss5$ilpTjkmnxkwZeV35GB9cYSsDXTALBn6KtWRJAzNlCL/")
+
+    def test_htpasswd_sha512(self) -> None:
+        self._test_htpasswd("sha512", "tmp:$6$3Qhl8r6FLagYdHYa$UCH9yXCed4A.J9FQsFPYAOXImzZUMfvLa0lwcWOxWYLOF5sE/lF99auQ4jKvHY2vijxmefl7G6kMqZ8JPdhIJ/")
+
     def test_htpasswd_bcrypt(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3V"
                             "NTRI3w5KDnj8NTUKJNWfVpvRq")
