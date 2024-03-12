@@ -298,6 +298,8 @@ def serve(configuration: config.Configuration,
                             isinstance(e, socket.gaierror) and (
                                 # Hostname does not exist or doesn't have
                                 # address for address family
+                                # Linux: temporary failure in name resolution (-3)
+                                e.errno == socket.EAI_AGAIN or
                                 # macOS: IPv6 address for INET address family
                                 e.errno == socket.EAI_NONAME or
                                 # Address not for address family
@@ -309,10 +311,8 @@ def serve(configuration: config.Configuration,
                             # macOS: IPv4 address for INET6 address family with
                             #        IPV6_V6ONLY set
                             e.errno == errno.EADDRNOTAVAIL or
-                            # Temporary failure in name resolution
-                            #  can happen if "hosts" is using eg. "localhost"
-                            #  and only resolvable to an IPv4 address
-                            e.errno == -3 or
+                            # Device or resource busy (16)
+                            e.errno == errno.EBUSY or
                             # Address family not supported
                             e.errno == errno.EAFNOSUPPORT or
                             # Protocol not supported
