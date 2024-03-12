@@ -59,7 +59,7 @@
 #htpasswd_filename = /etc/radicale/users
 
 # Htpasswd encryption method
-# Value: plain | bcrypt | md5
+# Value: plain | bcrypt | md5 | sha256 | sha512 | autodetect
 # bcrypt requires the installation of 'bcrypt' module.
 #htpasswd_encryption = md5
 
