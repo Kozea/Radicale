@@ -130,7 +130,7 @@ const CollectionType = {
  * @param {string} description
  * @param {string} color
  */
-function Collection(href, type, displayname, description, color, contentcount, source) {
+function Collection(href, type, displayname, description, color, contentcount, size, source) {
     this.href = href;
     this.type = type;
     this.displayname = displayname;
@@ -138,6 +138,7 @@ function Collection(href, type, displayname, description, color, contentcount, s
     this.description = description;
     this.source = source;
     this.contentcount = contentcount;
+    this.size = size;
 }
 
 /**
@@ -215,6 +216,7 @@ function get_collections(user, password, collection, callback) {
                 let calendardesc_element = response.querySelector(response_query + " > *|propstat > *|prop > *|calendar-description");
                 let addressbookdesc_element = response.querySelector(response_query + " > *|propstat > *|prop > *|addressbook-description");
                 let contentcount_element = response.querySelector(response_query + " > *|propstat > *|prop > *|getcontentcount");
+                let contentlength_element = response.querySelector(response_query + " > *|propstat > *|prop > *|getcontentlength");
                 let webcalsource_element = response.querySelector(response_query + " > *|propstat > *|prop > *|source");
                 let components_query = response_query + " > *|propstat > *|prop > *|supported-calendar-component-set";
                 let components_element = response.querySelector(components_query);
@@ -225,12 +227,14 @@ function get_collections(user, password, collection, callback) {
                 let description = "";
                 let source = "";
                 let count = 0;
+                let size = 0;
                 if (resourcetype_element) {
                     if (resourcetype_element.querySelector(resourcetype_query + " > *|addressbook")) {
                         type = CollectionType.ADDRESSBOOK;
                         color = addressbookcolor_element ? addressbookcolor_element.textContent : "";
                         description = addressbookdesc_element ? addressbookdesc_element.textContent : "";
                         count = contentcount_element ? parseInt(contentcount_element.textContent) : 0;
+                        size = contentlength_element ? parseInt(contentlength_element.textContent) : 0;
                     } else if (resourcetype_element.querySelector(resourcetype_query + " > *|subscribed")) {
                         type = CollectionType.WEBCAL;
                         source = webcalsource_element ? webcalsource_element.textContent : "";
@@ -251,6 +255,7 @@ function get_collections(user, password, collection, callback) {
                         color = calendarcolor_element ? calendarcolor_element.textContent : "";
                         description = calendardesc_element ? calendardesc_element.textContent : "";
                         count = contentcount_element ? parseInt(contentcount_element.textContent) : 0;
+                        size = contentlength_element ? parseInt(contentlength_element.textContent) : 0;
                     }
                 }
                 let sane_color = color.trim();
@@ -263,7 +268,7 @@ function get_collections(user, password, collection, callback) {
                     }
                 }
                 if (href.substr(-1) === "/" && href !== collection.href && type) {
-                    collections.push(new Collection(href, type, displayname, description, sane_color, count, source));
+                    collections.push(new Collection(href, type, displayname, description, sane_color, count, size, source));
                 }
             }
             collections.sort(function(a, b) {
@@ -296,6 +301,7 @@ function get_collections(user, password, collection, callback) {
                          '<CR:addressbook-description />' +
                          '<CS:source />' +
                          '<RADICALE:getcontentcount />' +
+                         '<getcontentlength />' +
                      '</prop>' +
                  '</propfind>');
     return request;
@@ -772,7 +778,11 @@ function CollectionsScene(user, password, collection, onerror) {
                 description_form.classList.add("smalltext");
             }
             if(collection.type != CollectionType.WEBCAL){
-                contentcount_form.textContent = (collection.contentcount > 0 ? collection.contentcount : "No") + " item" + (collection.contentcount == 1 ? "" : "s") + " in collection";
+                let contentcount_form_txt = (collection.contentcount > 0 ? Number(collection.contentcount).toLocaleString() : "No") + " item" + (collection.contentcount == 1 ? "" : "s") + " in collection";
+                if(collection.contentcount > 0){
+                    contentcount_form_txt += " (" + bytesToHumanReadable(collection.size) + ")";
+                }
+                contentcount_form.textContent = contentcount_form_txt;
             }
             let href = SERVER + collection.href;
             url_form.value = href;
@@ -1183,7 +1193,7 @@ function CreateEditCollectionScene(user, password, collection) {
             }
             let loading_scene = new LoadingScene();
             push_scene(loading_scene);
-            let collection = new Collection(href, type, displayname, description, sane_color, 0, source);
+            let collection = new Collection(href, type, displayname, description, sane_color, 0, 0, source);
             let callback = function(error1) {
                 if (scene_index === null) {
                     return;
@@ -1278,6 +1288,23 @@ function CreateEditCollectionScene(user, password, collection) {
         }
     };
 }
+
+/**
+ * Format bytes to human-readable text.
+ * 
+ * @param bytes Number of bytes.
+ * 
+ * @return Formatted string.
+ */
+function bytesToHumanReadable(bytes, dp=1) {
+    let isNumber = !isNaN(parseFloat(bytes)) && !isNaN(bytes - 0);
+    if(!isNumber){
+        return "";
+    }
+    var i = bytes == 0 ? 0 : Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(dp) * 1 + ' ' + ['b', 'kb', 'mb', 'gb', 'tb'][i];
+}
+  
 
 function main() {
     // Hide startup loading message
