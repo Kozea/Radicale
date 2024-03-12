@@ -31,10 +31,10 @@ class TestConfig:
 
     colpath: str
 
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         self.colpath = tempfile.mkdtemp()
 
-    def teardown(self) -> None:
+    def teardown_method(self) -> None:
         shutil.rmtree(self.colpath)
 
     def _write_config(self, config_dict: types.CONFIG, name: str) -> str:
