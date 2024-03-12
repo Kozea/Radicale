@@ -761,7 +761,16 @@ Available methods:
   The installation of **bcrypt** is required for this.
 
 `md5`
-: This uses an iterated md5 digest of the password with a salt.
+: This uses an iterated MD5 digest of the password with a salt.
+
+`sha256`
+: This uses an iterated SHA-256 digest of the password with a salt.
+
+`sha512`
+: This uses an iterated SHA-512 digest of the password with a salt.
+
+`autodetect`
+: This selects autodetection of method per entry.
 
 Default: `md5`
 
