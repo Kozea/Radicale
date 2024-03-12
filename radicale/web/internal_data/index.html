@@ -62,6 +62,7 @@
             <span data-name="TASKS">Tasks</span>
             <span data-name="WEBCAL">Webcal</span>
           </small>
+          <small data-name="contentcount"></small>
           <input type="text" data-name="url" value="" readonly="" onfocus="this.setSelectionRange(0, 99999);">
           <p data-name="description" style="word-wrap:break-word;">Description</p>
           <ul>
@@ -131,6 +132,8 @@
             <option value="TASKS">Tasks</option>
             <option value="WEBCAL">Webcal</option>
           </select>
+          <label for="href">HREF:</label>
+          <input data-name="href" type="text">
           <label for="displayname">Title:</label>
           <input data-name="displayname" type="text">
           <label for="description">Description:</label>
@@ -164,7 +167,8 @@
 
       <section id="deletecollectionscene" class="container hidden">
         <h1>Delete Collection</h1>
-        <p>Do you want to delete the collection <span class="title" data-name="title">title</span>? </p>
+        <p>To delete the collection <span class="title" data-name="title">title</span> please enter the phrase <strong data-name="deleteconfirmationtext"></strong> in the box below:</p>
+        <input type="text" class="deleteconfirmationtxt" data-name="confirmationtxt" />
         <p class="red">WARNING: This action cannot be reversed.</p>
         <form>
           <button type="button" class="red" data-name="delete">Delete</button>
