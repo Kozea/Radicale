@@ -74,6 +74,10 @@ class Auth(auth.BaseAuth):
             self._verify = self._plain
         elif encryption == "md5":
             self._verify = self._md5apr1
+        elif encryption == "sha256":
+            self._verify = self._sha256
+        elif encryption == "sha512":
+            self._verify = self._sha512
         elif encryption == "bcrypt" or encryption == "autodetect":
             try:
                 import bcrypt
