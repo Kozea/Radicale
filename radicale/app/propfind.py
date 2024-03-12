@@ -274,7 +274,7 @@ def xml_propfind_response(
                     is404 = True
             elif tag == xmlutils.make_clark("RADICALE:getcontentcount"):
                 # Only for internal use by the web interface
-                if is_collection or is_leaf:
+                if not is_collection or is_leaf:
                     element.text = str(sum(1 for entry in item.get_all()))
                 else:
                     is404 = True
