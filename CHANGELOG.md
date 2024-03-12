@@ -14,6 +14,7 @@
 * Enhancement: autodetect logging to systemd journal
 * Enhancement: test code
 * Enhancement: option for global permit to delete collection
+* Enhancement: auth type 'htpasswd' supports now 'htpasswd_encryption' sha256/sha512 and "autodetect" for smooth transition
 * Improve: Dockerfiles
 * Update: documentations + examples
 * Dependency: limit typegard version < 3
