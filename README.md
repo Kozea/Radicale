@@ -18,3 +18,11 @@ Radicale is a small but powerful CalDAV (calendars, to-do lists) and CardDAV
 
 For the complete documentation, please visit
 [Radicale master Documentation](https://radicale.org/master.html).
+
+Additional hints can be found
+* [Radicale Wiki](https://github.com/Kozea/Radicale/wiki)
+* [Radicale Issues](https://github.com/Kozea/Radicale/issues)
+* [Radicale Discussions](https://github.com/Kozea/Radicale/discussions)
+
+Before reporting an issue, please check
+* [Radicale Wiki / Reporting Issues](https://github.com/Kozea/Radicale/wiki/Reporting-Issues)
