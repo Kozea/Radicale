@@ -272,6 +272,12 @@ def xml_propfind_response(
                     element.text = displayname
                 else:
                     is404 = True
+            elif tag == xmlutils.make_clark("RADICALE:getcontentcount"):
+                # Only for internal use by the web interface
+                if isinstance(item, storage.BaseCollection) and not collection.is_principal:
+                    element.text = str(sum(1 for x in item.get_all()))
+                else:
+                    is404 = True
             elif tag == xmlutils.make_clark("D:displayname"):
                 displayname = collection.get_meta("D:displayname")
                 if not displayname and is_leaf:
