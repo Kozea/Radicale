@@ -198,7 +198,7 @@ def run() -> None:
         server.serve(configuration, shutdown_socket_out)
     except Exception as e:
         logger.critical("An exception occurred during server startup: %s", e,
-                        exc_info=True)
+                        exc_info=False)
         sys.exit(1)
 
 
