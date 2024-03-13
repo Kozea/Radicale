@@ -36,6 +36,13 @@ const ROOT_PATH = location.pathname.replace(new RegExp("/+[^/]+/*(/index\\.html?
  */
 const COLOR_RE = new RegExp("^(#[0-9A-Fa-f]{6})(?:[0-9A-Fa-f]{2})?$");
 
+
+/**
+ * The text needed to confirm deleting a collection
+ * @const
+ */
+const DELETE_CONFIRMATION_TEXT = "DELETE";
+
 /**
  * Escape string for usage in XML
  * @param {string} s
@@ -94,6 +101,23 @@ const CollectionType = {
             union.push(this.WEBCAL);
         }
         return union.join("_");
+    },
+    valid_options_for_type: function(a){
+        a = a.trim().toUpperCase();
+        switch(a){
+            case CollectionType.CALENDAR_JOURNAL_TASKS:
+            case CollectionType.CALENDAR_JOURNAL:
+            case CollectionType.CALENDAR_TASKS:
+            case CollectionType.JOURNAL_TASKS:
+            case CollectionType.CALENDAR:
+            case CollectionType.JOURNAL:
+            case CollectionType.TASKS:
+                return [CollectionType.CALENDAR_JOURNAL_TASKS, CollectionType.CALENDAR_JOURNAL, CollectionType.CALENDAR_TASKS, CollectionType.JOURNAL_TASKS, CollectionType.CALENDAR, CollectionType.JOURNAL, CollectionType.TASKS];
+            case CollectionType.ADDRESSBOOK:
+            case CollectionType.WEBCAL:
+            default:
+                return [a];
+        }
     }
 };
 
@@ -106,13 +130,14 @@ const CollectionType = {
  * @param {string} description
  * @param {string} color
  */
-function Collection(href, type, displayname, description, color, source) {
+function Collection(href, type, displayname, description, color, contentcount, source) {
     this.href = href;
     this.type = type;
     this.displayname = displayname;
     this.color = color;
     this.description = description;
     this.source = source;
+    this.contentcount = contentcount;
 }
 
 /**
@@ -139,6 +164,7 @@ function get_principal(user, password, callback) {
                     CollectionType.PRINCIPAL,
                     displayname_element ? displayname_element.textContent : "",
                     "",
+                    0,
                     ""), null);
             } else {
                 callback(null, "Internal error");
@@ -188,6 +214,7 @@ function get_collections(user, password, collection, callback) {
                 let addressbookcolor_element = response.querySelector(response_query + " > *|propstat > *|prop > *|addressbook-color");
                 let calendardesc_element = response.querySelector(response_query + " > *|propstat > *|prop > *|calendar-description");
                 let addressbookdesc_element = response.querySelector(response_query + " > *|propstat > *|prop > *|addressbook-description");
+                let contentcount_element = response.querySelector(response_query + " > *|propstat > *|prop > *|getcontentcount");
                 let webcalsource_element = response.querySelector(response_query + " > *|propstat > *|prop > *|source");
                 let components_query = response_query + " > *|propstat > *|prop > *|supported-calendar-component-set";
                 let components_element = response.querySelector(components_query);
@@ -197,11 +224,13 @@ function get_collections(user, password, collection, callback) {
                 let color = "";
                 let description = "";
                 let source = "";
+                let count = 0;
                 if (resourcetype_element) {
                     if (resourcetype_element.querySelector(resourcetype_query + " > *|addressbook")) {
                         type = CollectionType.ADDRESSBOOK;
                         color = addressbookcolor_element ? addressbookcolor_element.textContent : "";
                         description = addressbookdesc_element ? addressbookdesc_element.textContent : "";
+                        count = contentcount_element ? parseInt(contentcount_element.textContent) : 0;
                     } else if (resourcetype_element.querySelector(resourcetype_query + " > *|subscribed")) {
                         type = CollectionType.WEBCAL;
                         source = webcalsource_element ? webcalsource_element.textContent : "";
@@ -221,6 +250,7 @@ function get_collections(user, password, collection, callback) {
                         }
                         color = calendarcolor_element ? calendarcolor_element.textContent : "";
                         description = calendardesc_element ? calendardesc_element.textContent : "";
+                        count = contentcount_element ? parseInt(contentcount_element.textContent) : 0;
                     }
                 }
                 let sane_color = color.trim();
@@ -233,7 +263,7 @@ function get_collections(user, password, collection, callback) {
                     }
                 }
                 if (href.substr(-1) === "/" && href !== collection.href && type) {
-                    collections.push(new Collection(href, type, displayname, description, sane_color, source));
+                    collections.push(new Collection(href, type, displayname, description, sane_color, count, source));
                 }
             }
             collections.sort(function(a, b) {
@@ -265,6 +295,7 @@ function get_collections(user, password, collection, callback) {
                          '<C:supported-calendar-component-set />' +
                          '<CR:addressbook-description />' +
                          '<CS:source />' +
+                         '<RADICALE:getcontentcount />' +
                      '</prop>' +
                  '</propfind>');
     return request;
@@ -708,6 +739,7 @@ function CollectionsScene(user, password, collection, onerror) {
             node.classList.remove("hidden");
             let title_form = node.querySelector("[data-name=title]");
             let description_form = node.querySelector("[data-name=description]");
+            let contentcount_form = node.querySelector("[data-name=contentcount]");
             let url_form = node.querySelector("[data-name=url]");
             let color_form = node.querySelector("[data-name=color]");
             let delete_btn = node.querySelector("[data-name=delete]");
@@ -738,6 +770,9 @@ function CollectionsScene(user, password, collection, onerror) {
             description_form.textContent = collection.description;
             if(description_form.textContent.length > 150){
                 description_form.classList.add("smalltext");
+            }
+            if(collection.type != CollectionType.WEBCAL){
+                contentcount_form.textContent = (collection.contentcount > 0 ? collection.contentcount : "No") + " item" + (collection.contentcount == 1 ? "" : "s") + " in collection";
             }
             let href = SERVER + collection.href;
             url_form.value = href;
@@ -939,14 +974,25 @@ function DeleteCollectionScene(user, password, collection) {
     let html_scene = document.getElementById("deletecollectionscene");
     let title_form = html_scene.querySelector("[data-name=title]");
     let error_form = html_scene.querySelector("[data-name=error]");
+    let confirmation_txt = html_scene.querySelector("[data-name=confirmationtxt]");
+    let delete_confirmation_lbl = html_scene.querySelector("[data-name=deleteconfirmationtext]");
     let delete_btn = html_scene.querySelector("[data-name=delete]");
     let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+
+    delete_confirmation_lbl.innerHTML = DELETE_CONFIRMATION_TEXT;
+    confirmation_txt.value = "";
+    confirmation_txt.addEventListener("keydown", onkeydown);
 
     /** @type {?number} */ let scene_index = null;
     /** @type {?XMLHttpRequest} */ let delete_req = null;
     let error = "";
 
     function ondelete() {
+        let confirmation_text_value = confirmation_txt.value;
+        if(confirmation_text_value != DELETE_CONFIRMATION_TEXT){
+            alert("Please type the confirmation text to delete this collection.");
+            return;
+        }
         try {
             let loading_scene = new LoadingScene();
             push_scene(loading_scene);
@@ -975,6 +1021,13 @@ function DeleteCollectionScene(user, password, collection) {
             console.error(err);
         }
         return false;
+    }
+
+    function onkeydown(event){
+        if (event.keyCode !== 13) {
+            return;
+        }
+        ondelete();
     }
 
     this.show = function() {
@@ -1031,6 +1084,8 @@ function CreateEditCollectionScene(user, password, collection) {
     let html_scene = document.getElementById(edit ? "editcollectionscene" : "createcollectionscene");
     let title_form = edit ? html_scene.querySelector("[data-name=title]") : null;
     let error_form = html_scene.querySelector("[data-name=error]");
+    let href_form = html_scene.querySelector("[data-name=href]");
+    let href_label = html_scene.querySelector("label[for=href]");
     let displayname_form = html_scene.querySelector("[data-name=displayname]");
     let displayname_label = html_scene.querySelector("label[for=displayname]");
     let description_form = html_scene.querySelector("[data-name=description]");
@@ -1057,28 +1112,46 @@ function CreateEditCollectionScene(user, password, collection) {
     let type = edit ? collection.type : CollectionType.CALENDAR_JOURNAL_TASKS;
     let color = edit && collection.color ? collection.color : "#" + random_hex(6);
 
+    if(!edit){
+        href_form.addEventListener("keydown", cleanHREFinput);
+    }
+
     function remove_invalid_types() {
         if (!edit) {
             return;
         }
         /** @type {HTMLOptionsCollection} */ let options = type_form.options;
         // remove all options that are not supersets
+        let valid_type_options = CollectionType.valid_options_for_type(type);
         for (let i = options.length - 1; i >= 0; i--) {
-            if (!CollectionType.is_subset(type, options[i].value)) {
+            if (valid_type_options.indexOf(options[i].value) < 0) {
                 options.remove(i);
             }
         }
     }
 
     function read_form() {
+        if(!edit){
+            cleanHREFinput();
+            let newhreftxtvalue = href_form.value.trim().toLowerCase();
+            if(!isValidHREF(newhreftxtvalue)){
+                alert("You must enter a valid HREF");
+                return false;
+            }
+            href = collection.href + "/" + newhreftxtvalue + "/";
+        }
         displayname = displayname_form.value;
         description = description_form.value;
         source = source_form.value;
         type = type_form.value;
         color = color_form.value;
+        return true;
     }
 
     function fill_form() {
+        if(!edit){
+            href_form.value = random_uuid();
+        }
         displayname_form.value = displayname;
         description_form.value = description;
         source_form.value = source;
@@ -1095,7 +1168,9 @@ function CreateEditCollectionScene(user, password, collection) {
 
     function onsubmit() {
         try {
-            read_form();
+            if(!read_form()){
+                return false;
+            }
             let sane_color = color.trim();
             if (sane_color) {
                 let color_match = COLOR_RE.exec(sane_color);
@@ -1108,7 +1183,7 @@ function CreateEditCollectionScene(user, password, collection) {
             }
             let loading_scene = new LoadingScene();
             push_scene(loading_scene);
-            let collection = new Collection(href, type, displayname, description, sane_color, source);
+            let collection = new Collection(href, type, displayname, description, sane_color, 0, source);
             let callback = function(error1) {
                 if (scene_index === null) {
                     return;
@@ -1141,6 +1216,13 @@ function CreateEditCollectionScene(user, password, collection) {
         return false;
     }
 
+    function cleanHREFinput(event){
+        let currentTxtVal = href_form.value.trim().toLowerCase();
+        //Clean the HREF to remove non lowercase letters and dashes
+        currentTxtVal = currentTxtVal.replace(/(?![0-9a-z\-\_])./g, '');
+        href_form.value = currentTxtVal;
+    }
+
     function onTypeChange(e){
         if(type_form.value == CollectionType.WEBCAL){
             source_label.classList.remove("hidden");
@@ -1149,6 +1231,17 @@ function CreateEditCollectionScene(user, password, collection) {
             source_label.classList.add("hidden");
             source_form.classList.add("hidden");
         }
+    }
+
+    function isValidHREF(href){
+        if(href.length < 1){
+            return false;
+        }
+        if(href.indexOf("/") != -1){
+            return false;
+        }
+
+        return true;
     }
 
     this.show = function() {

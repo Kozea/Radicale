@@ -196,6 +196,11 @@ main{
     text-align: center;
 }
 
+#collectionsscene article small[data-name=contentcount]{
+    font-weight: bold;
+    font-style: normal;
+}
+
 #editcollectionscene p span{
     word-wrap:break-word;
     font-weight: bold;
@@ -226,6 +231,12 @@ main{
     text-align: center;
     display: block;
     margin-top: 15px;
+}
+
+.deleteconfirmationtxt{
+    text-align: center;
+    font-size: 1em;
+    font-weight: bold;
 }
 
 .fabcontainer{
