@@ -23,7 +23,6 @@ Built-in WSGI server.
 
 """
 
-import errno
 import http
 import select
 import socket
@@ -287,9 +286,9 @@ def serve(configuration: config.Configuration,
         for AddressPort in hosts:
             # retrieve IPv4/IPv6 address of address
             try:
-                getaddrinfo = socket.getaddrinfo(AddressPort[0], AddressPort[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP);
+                getaddrinfo = socket.getaddrinfo(AddressPort[0], AddressPort[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)
             except OSError as e:
-                logger.warn("cannot retrieve IPv4 or IPv6 address of: %s" % (format_address(AddressPort)))
+                logger.warn("cannot retrieve IPv4 or IPv6 address of '%s': %s" % (format_address(AddressPort), e))
                 continue
             logger.debug("getaddrinfo of '%s': %s" % (format_address(AddressPort), getaddrinfo))
             for (AddressFamily, SocketKind, SocketProto, SocketFlags, SocketAddress) in getaddrinfo:
