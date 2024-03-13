@@ -17,10 +17,11 @@ FROM python:3-alpine
 
 WORKDIR /app
 
-RUN adduser radicale --home /var/lib/radicale --system --uid 1000 --disabled-password \
+RUN addgroup -g 1000 radicale \
+    && adduser radicale --home /var/lib/radicale --system --uid 1000 --disabled-password -G radicale \
     && apk add --no-cache ca-certificates openssl
 
-COPY --chown=radicale --from=builder /app/venv /app
+COPY --chown=radicale:radicale --from=builder /app/venv /app
 
 # Persistent storage for data
 VOLUME /var/lib/radicale
