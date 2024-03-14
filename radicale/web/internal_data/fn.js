@@ -1291,9 +1291,9 @@ function CreateEditCollectionScene(user, password, collection) {
 
 /**
  * Format bytes to human-readable text.
- * 
+ *
  * @param bytes Number of bytes.
- * 
+ *
  * @return Formatted string.
  */
 function bytesToHumanReadable(bytes, dp=1) {
@@ -1304,7 +1304,7 @@ function bytesToHumanReadable(bytes, dp=1) {
     var i = bytes == 0 ? 0 : Math.floor(Math.log(bytes) / Math.log(1024));
     return (bytes / Math.pow(1024, i)).toFixed(dp) * 1 + ' ' + ['b', 'kb', 'mb', 'gb', 'tb'][i];
 }
-  
+
 
 function main() {
     // Hide startup loading message
