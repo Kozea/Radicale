@@ -67,7 +67,10 @@ def format_address(address: ADDRESS_TYPE) -> str:
     if not isinstance(host, str):
         raise NotImplementedError("Unsupported address format: %r" %
                                   (address,))
-    return "[%s]:%d" % (host, port)
+    if host.find(":") == -1:
+        return "%s:%d" % (host, port)
+    else:
+        return "[%s]:%d" % (host, port)
 
 
 class ParallelHTTPServer(socketserver.ThreadingMixIn,
