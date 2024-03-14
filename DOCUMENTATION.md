@@ -576,7 +576,7 @@ The configuration option `hook` in the `storage` section must be set to
 the following command:
 
 ```bash
-git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
+git add -A && (git diff --cached --quiet || git commit -m "Changes by \"%(user)s\"")
 ```
 
 The command gets executed after every change to the storage and commits
