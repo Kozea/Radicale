@@ -738,7 +738,7 @@ content:</p>
 .Radicale.tmp-*</code></pre>
 <p>The configuration option <code>hook</code> in the
 <code>storage</code> section must be set to the following command:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb30-1"><a aria-hidden="true" href="#cb30-1" tabindex="-1"></a><span class="fu">git</span> add <span class="at">-A</span> <span class="kw">&amp;&amp;</span> <span class="kw">(</span><span class="fu">git</span> diff <span class="at">--cached</span> <span class="at">--quiet</span> <span class="kw">||</span> <span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Changes by "</span>%<span class="er">(</span><span class="ex">user</span><span class="kw">)</span><span class="ex">s</span><span class="kw">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb30-1"><a aria-hidden="true" href="#cb30-1" tabindex="-1"></a><span class="fu">git</span> add <span class="at">-A</span> <span class="kw">&amp;&amp;</span> <span class="kw">(</span><span class="fu">git</span> diff <span class="at">--cached</span> <span class="at">--quiet</span> <span class="kw">||</span> <span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Changes by </span><span class="dt">\"</span><span class="st">%(user)s</span><span class="dt">\"</span><span class="st">"</span><span class="kw">)</span></span></code></pre></div>
 <p>The command gets executed after every change to the storage and
 commits the changes into the <strong>git</strong> repository.</p>
 <p>For the hook to not cause errors either <strong>git</strong> user
