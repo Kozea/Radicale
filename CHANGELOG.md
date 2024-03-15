@@ -16,6 +16,7 @@
 * Enhancement: option for global permit to delete collection
 * Enhancement: auth type 'htpasswd' supports now 'htpasswd_encryption' sha256/sha512 and "autodetect" for smooth transition
 * Improve: Dockerfiles
+* Improve: server socket listen code + address format in log
 * Update: documentations + examples
 * Dependency: limit typegard version < 3
 
