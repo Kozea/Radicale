@@ -68,7 +68,7 @@ class Auth(auth.BaseAuth):
         self._encoding = configuration.get("encoding", "stock")
         encryption: str = configuration.get("auth", "htpasswd_encryption")
 
-        logger.info("auth password encryption: %s", encryption)
+        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s'", encryption)
 
         if encryption == "plain":
             self._verify = self._plain
