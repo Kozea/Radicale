@@ -286,20 +286,20 @@ def serve(configuration: config.Configuration,
     servers = {}
     try:
         hosts: List[Tuple[str, int]] = configuration.get("server", "hosts")
-        for AddressPort in hosts:
+        for address_port in hosts:
             # retrieve IPv4/IPv6 address of address
             try:
-                getaddrinfo = socket.getaddrinfo(AddressPort[0], AddressPort[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+                getaddrinfo = socket.getaddrinfo(address_port[0], address_port[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)
             except OSError as e:
-                logger.warn("cannot retrieve IPv4 or IPv6 address of '%s': %s" % (format_address(AddressPort), e))
+                logger.warn("cannot retrieve IPv4 or IPv6 address of '%s': %s" % (format_address(address_port), e))
                 continue
-            logger.debug("getaddrinfo of '%s': %s" % (format_address(AddressPort), getaddrinfo))
-            for (AddressFamily, SocketKind, SocketProto, SocketFlags, SocketAddress) in getaddrinfo:
-                logger.debug("try to create server socket on '%s'" % (format_address(SocketAddress)))
+            logger.debug("getaddrinfo of '%s': %s" % (format_address(address_port), getaddrinfo))
+            for (address_family, socket_kind, socket_proto, socket_flags, socket_address) in getaddrinfo:
+                logger.debug("try to create server socket on '%s'" % (format_address(socket_address)))
                 try:
-                    server = server_class(configuration, AddressFamily, (SocketAddress[0], SocketAddress[1]), RequestHandler)
+                    server = server_class(configuration, address_family, (socket_address[0], socket_address[1]), RequestHandler)
                 except OSError as e:
-                    logger.warn("cannot create server socket on '%s': %s" % (format_address(SocketAddress), e))
+                    logger.warn("cannot create server socket on '%s': %s" % (format_address(socket_address), e))
                     continue
                 servers[server.socket] = server
                 server.set_app(application)
