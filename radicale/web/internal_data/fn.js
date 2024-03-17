@@ -1352,9 +1352,9 @@ function bytesToHumanReadable(bytes, dp=1) {
     return (bytes / Math.pow(1024, i)).toFixed(dp) * 1 + ' ' + ['b', 'kb', 'mb', 'gb', 'tb'][i];
 }
 
-function cleanHREFinput(a){
+function cleanHREFinput(a) {
     let href_form = a;
-    if(a.target){
+    if (a.target) {
         href_form = a.target;
     }
     let currentTxtVal = href_form.value.trim().toLowerCase();
@@ -1363,11 +1363,11 @@ function cleanHREFinput(a){
     href_form.value = currentTxtVal;
 }
 
-function isValidHREF(href){
-    if(href.length < 1){
+function isValidHREF(href) {
+    if (href.length < 1) {
         return false;
     }
-    if(href.indexOf("/") != -1){
+    if (href.indexOf("/") != -1) {
         return false;
     }
 
