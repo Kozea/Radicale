@@ -14,12 +14,13 @@
   <body>
     <nav id="logoutview" class="hidden">
       <span data-name="user" style="word-wrap:break-word;"></span>
-      <a href="" class="red" data-name="link" title="Logout">Logout</a>
+      <a href="#" class="green" data-name="refresh" title="Refresh">Refresh</a>
+      <a href="#" class="red" data-name="logout" title="Logout">Logout</a>
     </nav>
 	
     <main>
       <section id="loadingscene">
-        <img src="css/loading.svg" alt="Loading">
+        <img src="css/loading.svg" alt="Loading..." class="loading">
         <h2>Loading</h2>
         <p>Please wait...</p>
         <noscript>JavaScript is required</noscript>
@@ -155,12 +156,20 @@
         <ul>
           <li data-name="filetemplate" class="hidden"> Uploading <span data-name="name">name</span>
             <br>
-            <img data-name="pending" src="css/loading.svg" alt="Please wait...">
             <span class="successmessage" data-name="success">Uploaded Successfully!</span>
             <span class="error" data-name="error"></span>
           </li>
         </ul>
+        <div data-name="pending" class="hidden">
+          <img src="css/loading.svg" class="loading" alt="Please wait..."/>
+        </div>
         <form>
+          <label for="uploadfile">File:</label>
+          <input data-name="uploadfile" type="file" accept=".ics, .vcf" multiple>
+          <label for="href">HREF:</label>
+          <input data-name="href" type="text">
+          <small data-name="hreflimitmsg" class="hidden">You can only specify the HREF if you upload 1 file.</small>
+          <button type="submit" class="green" data-name="submit">Upload</button>
           <button type="button" class="red" data-name="close">Close</button>
         </form>
       </section>

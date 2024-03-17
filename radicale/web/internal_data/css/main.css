@@ -103,9 +103,18 @@ main{
     color: white;
     text-decoration: none;
     padding: 3px 10px;
-    position: absolute;
-    right: 25px;
+    position: relative;
     border-radius: 4px;
+}
+
+#logoutview a[data-name=logout]{
+    right: 25px;
+    float: right;
+}
+
+#logoutview a[data-name=refresh]{
+    left: 25px;
+    float: left;
 }
 
 #collectionsscene{
@@ -116,11 +125,11 @@ main{
     align-items: center;
     margin-top: 50px;
     width: 100%;
-    height: calc(100vh - 50px);
+    height: 100vh;
 }
 
 #collectionsscene article{
-    width: 250px;
+    width: 275px;
     background: rgb(250, 250, 250);
     border-radius: 8px;
     box-shadow: 2px 2px 3px #0000001a;
@@ -129,7 +138,7 @@ main{
     padding-top: 0;
     margin: 10px;
     float: left;
-    height: 350px;
+    min-height: 375px;
     overflow: hidden;
 }
 
@@ -170,11 +179,12 @@ main{
 }
 
 #collectionsscene article:hover ul{
-    display: flex !important;
+    visibility: visible;
 }
 
 #collectionsscene ul{
-    display: none;
+    visibility: hidden;
+    display: flex;
     justify-content: space-evenly;
     width: 60%;
     margin: 0 20%;
@@ -216,13 +226,18 @@ main{
 #uploadcollectionscene ul{
     margin: 10px -30px;
     max-height: 600px;
-    overflow: overlay;
+    overflow-y: scroll;
 }
 
 #uploadcollectionscene li{
     border-bottom: 1px dashed #d5d5d5;
     margin-bottom: 10px;
     padding-bottom: 10px;
+}
+
+#uploadcollectionscene div[data-name=pending]{
+    width: 100%;
+    text-align: center;
 }
 
 #uploadcollectionscene .successmessage{
@@ -289,6 +304,11 @@ main{
     font-family: sans-serif;
     clear: both;
     padding-top: 15px;
+}
+
+img.loading{
+    width: 150px;
+    height: 150px;
 }
 
 .error::before{
@@ -391,7 +411,7 @@ button.blue:active, a.blue:active{
 
     #collectionsscene article{
         height: auto;
-        min-height: 350px;
+        min-height: 375px;
     }
 
     .container{
@@ -399,10 +419,10 @@ button.blue:active, a.blue:active{
     }
 
     #collectionsscene ul{
-        display: flex !important;
+        visibility: visible !important;
     }
 
     #logoutview span{
-        text-align: left;
+        padding: 0 5px;
     }
 }
