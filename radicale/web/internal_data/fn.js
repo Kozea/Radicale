@@ -1337,22 +1337,6 @@ function CreateEditCollectionScene(user, password, collection) {
 }
 
 /**
- * Format bytes to human-readable text.
- * 
- * @param bytes Number of bytes.
- * 
- * @return Formatted string.
- */
-function bytesToHumanReadable(bytes, dp=1) {
-    let isNumber = !isNaN(parseFloat(bytes)) && !isNaN(bytes - 0);
-    if(!isNumber){
-        return "";
-    }
-    var i = bytes == 0 ? 0 : Math.floor(Math.log(bytes) / Math.log(1024));
-    return (bytes / Math.pow(1024, i)).toFixed(dp) * 1 + ' ' + ['b', 'kb', 'mb', 'gb', 'tb'][i];
-}
-
-/**
  * Removed invalid HREF characters for a collection HREF.
  * 
  * @param a A valid Input element or an onchange Event of an Input element.
@@ -1384,6 +1368,22 @@ function isValidHREF(href) {
     }
 
     return true;
+}
+
+/**
+ * Format bytes to human-readable text.
+ * 
+ * @param bytes Number of bytes.
+ * 
+ * @return Formatted string.
+ */
+function bytesToHumanReadable(bytes, dp=1) {
+    let isNumber = !isNaN(parseFloat(bytes)) && !isNaN(bytes - 0);
+    if(!isNumber){
+        return "";
+    }
+    var i = bytes == 0 ? 0 : Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(dp) * 1 + ' ' + ['b', 'kb', 'mb', 'gb', 'tb'][i];
 }
 
 function main() {
