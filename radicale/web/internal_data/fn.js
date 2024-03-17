@@ -1352,28 +1352,6 @@ function bytesToHumanReadable(bytes, dp=1) {
     return (bytes / Math.pow(1024, i)).toFixed(dp) * 1 + ' ' + ['b', 'kb', 'mb', 'gb', 'tb'][i];
 }
 
-function cleanHREFinput(a) {
-    let href_form = a;
-    if (a.target) {
-        href_form = a.target;
-    }
-    let currentTxtVal = href_form.value.trim().toLowerCase();
-    //Clean the HREF to remove non lowercase letters and dashes
-    currentTxtVal = currentTxtVal.replace(/(?![0-9a-z\-\_])./g, '');
-    href_form.value = currentTxtVal;
-}
-
-function isValidHREF(href) {
-    if (href.length < 1) {
-        return false;
-    }
-    if (href.indexOf("/") != -1) {
-        return false;
-    }
-
-    return true;
-}
-
 function main() {
     // Hide startup loading message
     document.getElementById("loadingscene").classList.add("hidden");
