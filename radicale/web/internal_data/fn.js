@@ -1352,6 +1352,40 @@ function bytesToHumanReadable(bytes, dp=1) {
     return (bytes / Math.pow(1024, i)).toFixed(dp) * 1 + ' ' + ['b', 'kb', 'mb', 'gb', 'tb'][i];
 }
 
+/**
+ * Removed invalid HREF characters for a collection HREF.
+ * 
+ * @param a A valid Input element or an onchange Event of an Input element.
+ */
+function cleanHREFinput(a) {
+    let href_form = a;
+    if (a.target) {
+        href_form = a.target;
+    }
+    let currentTxtVal = href_form.value.trim().toLowerCase();
+    //Clean the HREF to remove non lowercase letters and dashes
+    currentTxtVal = currentTxtVal.replace(/(?![0-9a-z\-\_])./g, '');
+    href_form.value = currentTxtVal;
+}
+
+/**
+ * Checks if a proposed HREF for a collection has a valid format and syntax.
+ * 
+ * @param href String of the porposed HREF.
+ * 
+ * @return Boolean results if the HREF is valid.
+ */
+function isValidHREF(href) {
+    if (href.length < 1) {
+        return false;
+    }
+    if (href.indexOf("/") != -1) {
+        return false;
+    }
+
+    return true;
+}
+
 function main() {
     // Hide startup loading message
     document.getElementById("loadingscene").classList.add("hidden");
