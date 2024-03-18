@@ -1386,6 +1386,7 @@ function bytesToHumanReadable(bytes, dp=1) {
     return (bytes / Math.pow(1024, i)).toFixed(dp) * 1 + ' ' + ['b', 'kb', 'mb', 'gb', 'tb'][i];
 }
 
+
 function main() {
     // Hide startup loading message
     document.getElementById("loadingscene").classList.add("hidden");
