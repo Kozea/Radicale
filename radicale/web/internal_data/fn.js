@@ -542,7 +542,8 @@ function LoginScene() {
     let error_form = html_scene.querySelector("[data-name=error]");
     let logout_view = document.getElementById("logoutview");
     let logout_user_form = logout_view.querySelector("[data-name=user]");
-    let logout_btn = logout_view.querySelector("[data-name=link]");
+    let logout_btn = logout_view.querySelector("[data-name=logout]");
+    let refresh_btn = logout_view.querySelector("[data-name=refresh]");
 
     /** @type {?number} */ let scene_index = null;
     let user = "";
@@ -573,6 +574,7 @@ function LoginScene() {
                 // setup logout
                 logout_view.classList.remove("hidden");
                 logout_btn.onclick = onlogout;
+                refresh_btn.onclick = refresh;
                 logout_user_form.textContent = user + "'s Collections";
                 // Fetch principal
                 let loading_scene = new LoadingScene();
@@ -623,7 +625,15 @@ function LoginScene() {
     function remove_logout() {
         logout_view.classList.add("hidden");
         logout_btn.onclick = null;
+        refresh_btn.onclick = null;
         logout_user_form.textContent = "";
+    }
+
+    function refresh(){
+        //The easiest way to refresh is to push a LoadingScene onto the stack and then pop it
+        //forcing the scene below it, the Collections Scene to refresh itself.
+        push_scene(new LoadingScene(), false);
+        pop_scene(scene_stack.length-2);
     }
 
     this.show = function() {
@@ -684,12 +694,6 @@ function CollectionsScene(user, password, collection, onerror) {
     /** @type {?XMLHttpRequest} */ let collections_req = null;
     /** @type {?Array<Collection>} */ let collections = null;
     /** @type {Array<Node>} */ let nodes = [];
-    let filesInput = document.createElement("input");
-    filesInput.setAttribute("type", "file");
-    filesInput.setAttribute("accept", ".ics, .vcf");
-    filesInput.setAttribute("multiple", "");
-    let filesInputForm = document.createElement("form");
-    filesInputForm.appendChild(filesInput);
 
     function onnew() {
         try {
@@ -702,17 +706,9 @@ function CollectionsScene(user, password, collection, onerror) {
     }
 
     function onupload() {
-        filesInput.click();
-        return false;
-    }
-
-    function onfileschange() {
         try {
-            let files = filesInput.files;
-            if (files.length > 0) {
-                let upload_scene = new UploadCollectionScene(user, password, collection, files);
-                push_scene(upload_scene);
-            }
+            let upload_scene = new UploadCollectionScene(user, password, collection);
+            push_scene(upload_scene);
         } catch(err) {
             console.error(err);
         }
@@ -740,6 +736,9 @@ function CollectionsScene(user, password, collection, onerror) {
     }
 
     function show_collections(collections) {
+        let heightOfNavBar = document.querySelector("#logoutview").offsetHeight + "px";
+        html_scene.style.marginTop = heightOfNavBar;
+        html_scene.style.height = "calc(100vh - " + heightOfNavBar +")";
         collections.forEach(function (collection) {
             let node = template.cloneNode(true);
             node.classList.remove("hidden");
@@ -820,8 +819,6 @@ function CollectionsScene(user, password, collection, onerror) {
         html_scene.classList.remove("hidden");
         new_btn.onclick = onnew;
         upload_btn.onclick = onupload;
-        filesInputForm.reset();
-        filesInput.onchange = onfileschange;
         if (collections === null) {
             update();
         } else {
@@ -834,7 +831,6 @@ function CollectionsScene(user, password, collection, onerror) {
         scene_index = scene_stack.length - 1;
         new_btn.onclick = null;
         upload_btn.onclick = null;
-        filesInput.onchange = null;
         collections = null;
         // remove collection
         nodes.forEach(function(node) {
@@ -849,7 +845,6 @@ function CollectionsScene(user, password, collection, onerror) {
             collections_req = null;
         }
         collections = null;
-        filesInputForm.reset();
     };
 }
 
@@ -861,41 +856,87 @@ function CollectionsScene(user, password, collection, onerror) {
  * @param {Collection} collection parent collection
  * @param {Array<File>} files
  */
-function UploadCollectionScene(user, password, collection, files) {
+function UploadCollectionScene(user, password, collection) {
     let html_scene = document.getElementById("uploadcollectionscene");
     let template = html_scene.querySelector("[data-name=filetemplate]");
+    let upload_btn = html_scene.querySelector("[data-name=submit]");
     let close_btn = html_scene.querySelector("[data-name=close]");
+    let uploadfile_form = html_scene.querySelector("[data-name=uploadfile]");
+    let uploadfile_lbl = html_scene.querySelector("label[for=uploadfile]");
+    let href_form = html_scene.querySelector("[data-name=href]");
+    let href_label = html_scene.querySelector("label[for=href]");
+    let hreflimitmsg_html = html_scene.querySelector("[data-name=hreflimitmsg]");
+    let pending_html = html_scene.querySelector("[data-name=pending]");
+
+    let files = uploadfile_form.files;
+    href_form.addEventListener("keydown", cleanHREFinput);
+    upload_btn.onclick = upload_start;
+    uploadfile_form.onchange = onfileschange;
+
+    let href = random_uuid();
+    href_form.value = href;
 
     /** @type {?number} */ let scene_index = null;
     /** @type {?XMLHttpRequest} */ let upload_req = null;
-    /** @type {Array<string>} */ let errors = [];
+    /** @type {Array<string>} */ let results = [];
     /** @type {?Array<Node>} */ let nodes = null;
 
-    function upload_next() {
+    function upload_start() {
         try {
-            if (files.length === errors.length) {
-                if (errors.every(error => error === null)) {
-                    pop_scene(scene_index - 1);
-                } else {
-                    close_btn.classList.remove("hidden");
-                }
-            } else {
-                let file = files[errors.length];
-                let upload_href = collection.href + random_uuid() + "/";
-                upload_req = upload_collection(user, password, upload_href, file, function(error) {
-                    if (scene_index === null) {
-                        return;
-                    }
-                    upload_req = null;
-                    errors.push(error);
-                    updateFileStatus(errors.length - 1);
-                    upload_next();
-                });
+            if(!read_form()){
+                return false;
             }
+            uploadfile_form.classList.add("hidden");
+            uploadfile_lbl.classList.add("hidden");
+            href_form.classList.add("hidden");
+            href_label.classList.add("hidden");
+            hreflimitmsg_html.classList.add("hidden");
+            upload_btn.classList.add("hidden");
+            close_btn.classList.add("hidden");
+
+            pending_html.classList.remove("hidden");
+
+            nodes = [];
+            for (let i = 0; i < files.length; i++) {
+                let file = files[i];
+                let node = template.cloneNode(true);
+                node.classList.remove("hidden");
+                let name_form = node.querySelector("[data-name=name]");
+                name_form.textContent = file.name;
+                node.classList.remove("hidden");
+                nodes.push(node);
+                updateFileStatus(i);
+                template.parentNode.insertBefore(node, template);
+            }
+            upload_next();
         } catch(err) {
             console.error(err);
         }
         return false;
+    }
+
+    function upload_next(){
+        try{
+            if (files.length === results.length) {
+                pending_html.classList.add("hidden");
+                close_btn.classList.remove("hidden");
+                return;
+            } else {
+                let file = files[results.length];
+                if(files.length > 1 || href.length == 0){
+                    href = random_uuid();
+                }
+                let upload_href = collection.href + "/" + href + "/";
+                upload_req = upload_collection(user, password, upload_href, file, function(result) {
+                    upload_req = null;
+                    results.push(result);
+                    updateFileStatus(results.length - 1);
+                    upload_next();
+                });
+            }
+        }catch(err){
+            console.error(err);
+        }
     }
 
     function onclose() {
@@ -911,54 +952,77 @@ function UploadCollectionScene(user, password, collection, files) {
         if (nodes === null) {
             return;
         }
-        let pending_form = nodes[i].querySelector("[data-name=pending]");
         let success_form = nodes[i].querySelector("[data-name=success]");
         let error_form = nodes[i].querySelector("[data-name=error]");
-        if (errors.length > i) {
-            pending_form.classList.add("hidden");
-            if (errors[i]) {
+        if (results.length > i) {
+            if (results[i]) {
                 success_form.classList.add("hidden");
-                error_form.textContent = "Error: " + errors[i];
+                error_form.textContent = "Error: " + results[i];
                 error_form.classList.remove("hidden");
             } else {
               success_form.classList.remove("hidden");
               error_form.classList.add("hidden");
             }
         } else {
-            pending_form.classList.remove("hidden");
             success_form.classList.add("hidden");
             error_form.classList.add("hidden");
         }
     }
 
+    function read_form() {
+        cleanHREFinput(href_form);
+        let newhreftxtvalue = href_form.value.trim().toLowerCase();
+        if(!isValidHREF(newhreftxtvalue)){
+            alert("You must enter a valid HREF");
+            return false;
+        }
+        href = newhreftxtvalue;
+
+        if(uploadfile_form.files.length == 0){
+            alert("You must select at least one file to upload");
+            return false;
+        }
+        files = uploadfile_form.files;
+        return true;
+    }
+
+    function onfileschange() {
+        files = uploadfile_form.files;
+        if(files.length > 1){
+            hreflimitmsg_html.classList.remove("hidden");
+            href_form.classList.add("hidden");
+            href_label.classList.add("hidden");    
+        }else{
+            hreflimitmsg_html.classList.add("hidden");
+            href_form.classList.remove("hidden");
+            href_label.classList.remove("hidden");    
+        }
+        return false;
+    }
+
     this.show = function() {
+        scene_index = scene_stack.length - 1;
         html_scene.classList.remove("hidden");
-        if (errors.length < files.length) {
-            close_btn.classList.add("hidden");
-        }
         close_btn.onclick = onclose;
-        nodes = [];
-        for (let i = 0; i < files.length; i++) {
-            let file = files[i];
-            let node = template.cloneNode(true);
-            node.classList.remove("hidden");
-            let name_form = node.querySelector("[data-name=name]");
-            name_form.textContent = file.name;
-            node.classList.remove("hidden");
-            nodes.push(node);
-            updateFileStatus(i);
-            template.parentNode.insertBefore(node, template);
-        }
-        if (scene_index === null) {
-            scene_index = scene_stack.length - 1;
-            upload_next();
-        }
     };
 
     this.hide = function() {
         html_scene.classList.add("hidden");
         close_btn.classList.remove("hidden");
+        upload_btn.classList.remove("hidden");
+        uploadfile_form.classList.remove("hidden");
+        uploadfile_lbl.classList.remove("hidden");
+        href_form.classList.remove("hidden");
+        href_label.classList.remove("hidden");
+        hreflimitmsg_html.classList.add("hidden");
+        pending_html.classList.add("hidden");
         close_btn.onclick = null;
+        upload_btn.onclick = null;
+        href_form.value = "";
+        uploadfile_form.value = "";
+        if(nodes == null){
+            return;
+        }
         nodes.forEach(function(node) {
             node.parentNode.removeChild(node);
         });
@@ -1142,7 +1206,7 @@ function CreateEditCollectionScene(user, password, collection) {
 
     function read_form() {
         if(!edit){
-            cleanHREFinput();
+            cleanHREFinput(href_form);
             let newhreftxtvalue = href_form.value.trim().toLowerCase();
             if(!isValidHREF(newhreftxtvalue)){
                 alert("You must enter a valid HREF");
@@ -1226,12 +1290,6 @@ function CreateEditCollectionScene(user, password, collection) {
         return false;
     }
 
-    function cleanHREFinput(event){
-        let currentTxtVal = href_form.value.trim().toLowerCase();
-        //Clean the HREF to remove non lowercase letters and dashes
-        currentTxtVal = currentTxtVal.replace(/(?![0-9a-z\-\_])./g, '');
-        href_form.value = currentTxtVal;
-    }
 
     function onTypeChange(e){
         if(type_form.value == CollectionType.WEBCAL){
@@ -1241,17 +1299,6 @@ function CreateEditCollectionScene(user, password, collection) {
             source_label.classList.add("hidden");
             source_form.classList.add("hidden");
         }
-    }
-
-    function isValidHREF(href){
-        if(href.length < 1){
-            return false;
-        }
-        if(href.indexOf("/") != -1){
-            return false;
-        }
-
-        return true;
     }
 
     this.show = function() {
@@ -1287,6 +1334,40 @@ function CreateEditCollectionScene(user, password, collection) {
             create_edit_req = null;
         }
     };
+}
+
+/**
+ * Removed invalid HREF characters for a collection HREF.
+ * 
+ * @param a A valid Input element or an onchange Event of an Input element.
+ */
+function cleanHREFinput(a) {
+    let href_form = a;
+    if (a.target) {
+        href_form = a.target;
+    }
+    let currentTxtVal = href_form.value.trim().toLowerCase();
+    //Clean the HREF to remove non lowercase letters and dashes
+    currentTxtVal = currentTxtVal.replace(/(?![0-9a-z\-\_])./g, '');
+    href_form.value = currentTxtVal;
+}
+
+/**
+ * Checks if a proposed HREF for a collection has a valid format and syntax.
+ * 
+ * @param href String of the porposed HREF.
+ * 
+ * @return Boolean results if the HREF is valid.
+ */
+function isValidHREF(href) {
+    if (href.length < 1) {
+        return false;
+    }
+    if (href.indexOf("/") != -1) {
+        return false;
+    }
+
+    return true;
 }
 
 /**
