@@ -83,7 +83,7 @@ class Auth(auth.BaseAuth):
                 import bcrypt
             except ImportError as e:
                 raise RuntimeError(
-                    "The htpasswd encryption method 'bcrypt' or 'auto' requires "
+                    "The htpasswd encryption method 'bcrypt' or 'autodetect' requires "
                     "the bcrypt module.") from e
             if encryption == "bcrypt":
                 self._verify = functools.partial(self._bcrypt, bcrypt)
