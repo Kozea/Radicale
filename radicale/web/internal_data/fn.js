@@ -991,11 +991,11 @@ function UploadCollectionScene(user, password, collection) {
         if(files.length > 1){
             hreflimitmsg_html.classList.remove("hidden");
             href_form.classList.add("hidden");
-            href_label.classList.add("hidden");    
+            href_label.classList.add("hidden");
         }else{
             hreflimitmsg_html.classList.add("hidden");
             href_form.classList.remove("hidden");
-            href_label.classList.remove("hidden");    
+            href_label.classList.remove("hidden");
         }
         return false;
     }
@@ -1338,7 +1338,7 @@ function CreateEditCollectionScene(user, password, collection) {
 
 /**
  * Removed invalid HREF characters for a collection HREF.
- * 
+ *
  * @param a A valid Input element or an onchange Event of an Input element.
  */
 function cleanHREFinput(a) {
@@ -1354,9 +1354,9 @@ function cleanHREFinput(a) {
 
 /**
  * Checks if a proposed HREF for a collection has a valid format and syntax.
- * 
+ *
  * @param href String of the porposed HREF.
- * 
+ *
  * @return Boolean results if the HREF is valid.
  */
 function isValidHREF(href) {
