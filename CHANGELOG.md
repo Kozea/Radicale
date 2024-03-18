@@ -1,5 +1,12 @@
 # Changelog
 
+## master
+
+* Enhancement: add hook support for event changes+deletion hooks (initial support: "rabbitmq")
+* Dependency: pika >= 1.1.0
+* Enhancement: add support for webcal subscriptions
+* Enhancement: major update of WebUI (design+features)
+
 ## 3.1.9
 
 * Add: support for Python 3.11 + 3.12
