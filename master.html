@@ -97,6 +97,7 @@ Radicale
 <span>master</span>
 <select style="display: none;">
 <option value="v3.2-devel.html">v3.2-devel</option>
+<option value="v3.1-maintain.html">v3.1-maintain</option>
 <option selected value="master.html">master</option>
 <option value="v3.html">v3</option>
 <option value="v2.html">v2</option>
@@ -276,7 +277,7 @@ structure.</li>
 <h4>Installation <a class="headerlink" href="#installation">&para;</a></h4>
 <p>Radicale is really easy to install and works out-of-the-box.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a aria-hidden="true" href="#cb1-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip install <span class="at">--upgrade</span> https://github.com/Kozea/Radicale/archive/master.tar.gz</span>
-<span id="cb1-2"><a aria-hidden="true" href="#cb1-2" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> radicale <span class="at">--storage-filesystem-folder</span><span class="op">=</span>~/.var/lib/radicale/collections</span></code></pre></div>
+<span id="cb1-2"><a aria-hidden="true" href="#cb1-2" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> radicale <span class="at">--logging-level</span> info <span class="at">--storage-filesystem-folder</span><span class="op">=</span>~/.var/lib/radicale/collections</span></code></pre></div>
 <p>When the server is launched, open <a href="http://localhost:5232">http://localhost:5232</a> in your browser!
 You can login with any username and password.</p>
 <p>Want more? Check the <a href="#tutorials">tutorials</a> and the <a href="#documentation-1">documentation</a>.</p>
