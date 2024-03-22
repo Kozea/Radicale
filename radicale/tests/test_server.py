@@ -54,8 +54,8 @@ class TestBaseServerRequests(BaseTest):
     thread: threading.Thread
     opener: request.OpenerDirector
 
-    def setup(self) -> None:
-        super().setup()
+    def setup_method(self) -> None:
+        super().setup_method()
         self.shutdown_socket, shutdown_socket_out = socket.socketpair()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             # Find available port
@@ -74,13 +74,13 @@ class TestBaseServerRequests(BaseTest):
             request.HTTPSHandler(context=ssl_context),
             DisabledRedirectHandler)
 
-    def teardown(self) -> None:
+    def teardown_method(self) -> None:
         self.shutdown_socket.close()
         try:
             self.thread.join()
         except RuntimeError:  # Thread never started
             pass
-        super().teardown()
+        super().teardown_method()
 
     def request(self, method: str, path: str, data: Optional[str] = None,
                 check: Optional[int] = None, **kwargs

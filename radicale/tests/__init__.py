@@ -48,7 +48,7 @@ class BaseTest:
     configuration: config.Configuration
     application: app.Application
 
-    def setup(self) -> None:
+    def setup_method(self) -> None:
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
         self.configure({
@@ -62,7 +62,7 @@ class BaseTest:
         self.configuration.update(config_, "test", privileged=True)
         self.application = app.Application(self.configuration)
 
-    def teardown(self) -> None:
+    def teardown_method(self) -> None:
         shutil.rmtree(self.colpath)
 
     def request(self, method: str, path: str, data: Optional[str] = None,
