@@ -240,7 +240,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "internal": web.INTERNAL_TYPES})])),
     ("logging", OrderedDict([
         ("level", {
-            "value": "warning",
+            "value": "info",
             "help": "threshold for the logger",
             "type": logging_level}),
         ("mask_passwords", {
