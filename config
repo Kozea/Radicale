@@ -112,7 +112,7 @@
 
 # Threshold for the logger
 # Value: debug | info | warning | error | critical
-#level = warning
+#level = info
 
 # Don't include passwords in logs
 #mask_passwords = True
