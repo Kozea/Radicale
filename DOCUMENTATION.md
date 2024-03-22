@@ -24,7 +24,7 @@ Radicale is really easy to install and works out-of-the-box.
 
 ```bash
 python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
-python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
+python3 -m radicale --logging-level info --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
 When the server is launched, open <http://localhost:5232> in your browser!
