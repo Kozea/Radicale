@@ -1,5 +1,9 @@
 # Changelog
 
+## master
+
+* Adjust: change default loglevel to "info"
+
 ## 3.1.9
 
 * Add: support for Python 3.11 + 3.12
