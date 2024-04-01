@@ -207,30 +207,23 @@ def _expand(
 
         expanded = None
         for recurrence_dt in recurrences:
-            expanded_item_ = copy.copy(expanded_item)
-
-            try:
-                delattr(expanded_item_.vobject_item.vevent, 'recurrence-id')
-            except AttributeError:
-                pass
+            vobject_item = copy.copy(expanded_item.vobject_item)
 
             recurrence_utc = recurrence_dt.astimezone(datetime.timezone.utc)
 
-            vevent = copy.deepcopy(expanded_item_.vobject_item.vevent)
-            recurrence_id = ContentLine(
+            vevent = copy.deepcopy(vobject_item.vevent)
+            vevent.recurrence_id = ContentLine(
                 name='RECURRENCE-ID',
                 value=recurrence_utc.strftime('%Y%m%dT%H%M%SZ'), params={}
             )
-            vevent.add(recurrence_id)
 
             if expanded is None:
-                expanded_item_.vobject_item.vevent.add(recurrence_id)
-                expanded_item_.vobject_item.remove(expanded_item_.vobject_item.vevent)
-                expanded = expanded_item_
+                vobject_item.vevent = vevent
+                expanded = vobject_item
             else:
-                expanded.vobject_item.add(vevent)
+                expanded.add(vevent)
 
-        element.text = expanded.vobject_item.serialize()
+        element.text = expanded.serialize()
     else:
         element.text = expanded_item.vobject_item.serialize()
 
