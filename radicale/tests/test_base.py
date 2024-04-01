@@ -1525,6 +1525,49 @@ permissions: RrWw""")
             calendar_path, "http://radicale.org/ns/sync/INVALID")
         assert not sync_token
 
+    def test_report_with_expand_property(self) -> None:
+        self.put("/calendar.ics/", get_file_content("event_daily_rrule.ics"))
+
+        req_body = \
+            """<?xml version="1.0" encoding="utf-8" ?>
+            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                <D:prop>
+                    <C:calendar-data>
+                        <C:expand start="20060103T000000Z" end="20060105T000000Z"/>
+                    </C:calendar-data>
+                </D:prop>
+                <C:filter>
+                    <C:comp-filter name="VCALENDAR">
+                        <C:comp-filter name="VEVENT">
+                            <C:time-range start="20060103T000000Z" end="20060105T000000Z"/>
+                        </C:comp-filter>
+                    </C:comp-filter>
+                </C:filter>
+            </C:calendar-query>
+            """
+
+        # status, _, answer = self.request("REPORT", "/calendar.ics/", req_body, check=207)
+        # print(status, answer)
+
+        _, responses = self.report("/calendar.ics/", req_body)
+        assert len(responses) == 1
+        response = responses['/calendar.ics/event_daily_rrule.ics']
+        status, element = list(response.values())[0]
+        assert status == 200
+
+        print("resp", status, element, flush=True)
+
+        uids = []
+        for line in element.text.split("\n"):
+            print("line", line, line.startswith("UID:"))
+            if line.startswith("UID:"):
+                uid = line[len("UID:"):]
+                assert uid == "event_daily_rrule"
+                uids.append(uids)
+
+        assert len(uids) == 3
+        assert False
+
     def test_propfind_sync_token(self) -> None:
         """Retrieve the sync-token with a propfind request"""
         calendar_path = "/calendar.ics/"

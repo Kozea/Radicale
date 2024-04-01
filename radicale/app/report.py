@@ -172,9 +172,9 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                         end, '%Y%m%dT%H%M%SZ'
                     ).replace(tzinfo=datetime.timezone.utc)
 
-                    expanded_elements = _expand(
+                    expanded_element = _expand(
                         element, copy.copy(item), start, end)
-                    found_props.extend(expanded_elements)
+                    found_props.append(expanded_element)
                 else:
                     found_props.append(element)
             else:
@@ -195,34 +195,46 @@ def _expand(
         item: radicale_item.Item,
         start: datetime.datetime,
         end: datetime.datetime,
-) -> List[ET.Element]:
+) -> ET.Element:
+    rruleset = None
+    if hasattr(item.vobject_item.vevent, 'rrule'):
+        rruleset = item.vobject_item.vevent.getrruleset()
+
     expanded_item = _make_vobject_expanded_item(item)
-    element.text = expanded_item.vobject_item.serialize()
-    expanded = [element]
 
-    if hasattr(item.vobject_item.vevent, "rrule"):
-        rulleset = item.vobject_item.vevent.getrruleset()
-        recurrences = rulleset.between(start, end)
+    if rruleset:
+        recurrences = rruleset.between(start, end)
 
-        expanded = []
+        expanded = None
         for recurrence_dt in recurrences:
+            expanded_item_ = copy.copy(expanded_item)
+
             try:
-                delattr(expanded_item.vobject_item.vevent, 'recurrence-id')
+                delattr(expanded_item_.vobject_item.vevent, 'recurrence-id')
             except AttributeError:
                 pass
 
             recurrence_utc = recurrence_dt.astimezone(datetime.timezone.utc)
 
-            expanded_item.vobject_item.vevent.recurrence_id = ContentLine(
+            vevent = copy.deepcopy(expanded_item_.vobject_item.vevent)
+            recurrence_id = ContentLine(
                 name='RECURRENCE-ID',
                 value=recurrence_utc.strftime('%Y%m%dT%H%M%SZ'), params={}
             )
+            vevent.add(recurrence_id)
 
-            element = copy.copy(element)
-            element.text = expanded_item.vobject_item.serialize()
-            expanded.append(element)
+            if expanded is None:
+                expanded_item_.vobject_item.vevent.add(recurrence_id)
+                expanded_item_.vobject_item.remove(expanded_item_.vobject_item.vevent)
+                expanded = expanded_item_
+            else:
+                expanded.vobject_item.add(vevent)
 
-    return expanded
+        element.text = expanded.vobject_item.serialize()
+    else:
+        element.text = expanded_item.vobject_item.serialize()
+
+    return element
 
 
 def _make_vobject_expanded_item(
@@ -239,14 +251,16 @@ def _make_vobject_expanded_item(
     vevent = item.vobject_item.vevent
 
     start_utc = vevent.dtstart.value.astimezone(datetime.timezone.utc)
-    end_utc = vevent.dtend.value.astimezone(datetime.timezone.utc)
-
     vevent.dtstart = ContentLine(
         name='DTSTART',
         value=start_utc.strftime('%Y%m%dT%H%M%SZ'), params={})
-    vevent.dtend = ContentLine(
-        name='DTEND',
-        value=end_utc.strftime('%Y%m%dT%H%M%SZ'), params={})
+
+    dt_end = getattr(vevent, 'dtend', None)
+    if dt_end is not None:
+        end_utc = dt_end.value.astimezone(datetime.timezone.utc)
+        vevent.dtend = ContentLine(
+            name='DTEND',
+            value=end_utc.strftime('%Y%m%dT%H%M%SZ'), params={})
 
     timezones_to_remove = []
     for component in item.vobject_item.components():
