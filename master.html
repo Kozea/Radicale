@@ -183,8 +183,13 @@ with the WSGI server</a></li>
 <li class="level4"><a href="#web" id="toc-web">web</a></li>
 <li class="level4"><a href="#logging" id="toc-logging">logging</a></li>
 <li class="level4"><a href="#headers" id="toc-headers">headers</a></li>
+<li class="level4"><a href="#hook-1" id="toc-hook-1">hook</a></li>
+<li class="level4"><a href="#rabbitmq_endpoint" id="toc-rabbitmq_endpoint">rabbitmq_endpoint</a></li>
+<li class="level4"><a href="#rabbitmq_topic" id="toc-rabbitmq_topic">rabbitmq_topic</a></li>
+<li class="level4"><a href="#rabbitmq_queue_type" id="toc-rabbitmq_queue_type">rabbitmq_queue_type</a></li>
 </ul></li>
-<li class="level3"><a href="#supported-clients" id="toc-supported-clients">Supported
+</ul></li>
+<li class="level2"><a href="#supported-clients" id="toc-supported-clients">Supported
 Clients</a>
 <ul>
 <li class="level4"><a href="#davx⁵" id="toc-davx⁵">DAVx⁵</a></li>
@@ -194,7 +199,6 @@ and Evolution</a></li>
 <li class="level4"><a href="#infcloud-caldavzap-and-carddavmate" id="toc-infcloud-caldavzap-and-carddavmate">InfCloud, CalDavZAP and
 CardDavMATE</a></li>
 <li class="level4"><a href="#command-line" id="toc-command-line">Command line</a></li>
-</ul></li>
 <li class="level3"><a href="#authentication-and-rights" id="toc-authentication-and-rights">Authentication and Rights</a></li>
 <li class="level3"><a href="#storage-2" id="toc-storage-2">Storage</a>
 <ul>
@@ -1005,9 +1009,37 @@ be specified.</p>
 <p>An example to relax the same-origin policy:</p>
 <div class="sourceCode" id="cb35"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb35-1"><a aria-hidden="true" href="#cb35-1" tabindex="-1"></a><span class="dt">Access-Control-Allow-Origin </span><span class="ot">=</span><span class="st"> *</span></span></code></pre></div>
 </section>
+<section class="level4" id="hook-1">
+<h4>hook <a class="headerlink" href="#hook-1">&para;</a></h4>
+<section class="level5" id="type-4">
+<h5>type <a class="headerlink" href="#type-4">&para;</a></h5>
+<p>Hook binding for event changes and deletion notifications.</p>
+<p>Available types:</p>
+<p><code>none</code> : Disabled. Nothing will be notified.</p>
+<p><code>rabbitmq</code> : Push the message to the rabbitmq server.</p>
+<p>Default: <code>none</code></p>
 </section>
-<section class="level3" id="supported-clients">
-<h3>Supported Clients <a class="headerlink" href="#supported-clients">&para;</a></h3>
+</section>
+<section class="level4" id="rabbitmq_endpoint">
+<h4>rabbitmq_endpoint <a class="headerlink" href="#rabbitmq_endpoint">&para;</a></h4>
+<p>End-point address for rabbitmq server. Ex:
+amqp://user:password@localhost:5672/</p>
+<p>Default:</p>
+</section>
+<section class="level4" id="rabbitmq_topic">
+<h4>rabbitmq_topic <a class="headerlink" href="#rabbitmq_topic">&para;</a></h4>
+<p>RabbitMQ topic to publish message.</p>
+<p>Default:</p>
+</section>
+<section class="level4" id="rabbitmq_queue_type">
+<h4>rabbitmq_queue_type <a class="headerlink" href="#rabbitmq_queue_type">&para;</a></h4>
+<p>RabbitMQ queue type for the topic.</p>
+<p>Default: classic</p>
+</section>
+</section>
+</section>
+<section class="level2" id="supported-clients">
+<h2>Supported Clients <a class="headerlink" href="#supported-clients">&para;</a></h2>
 <p>Radicale has been tested with:</p>
 <ul>
 <li><a href="https://android.com/">Android</a> with <a href="https://www.davx5.com/">DAVx⁵</a> (formerly DAVdroid)</li>
@@ -1114,7 +1146,6 @@ automatic discovery of collections will only show calendars and address
 books that are direct children of the path <code>/USERNAME/</code>.</p>
 <p>Delete the collections by running something like:</p>
 <div class="sourceCode" id="cb38"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb38-1"><a aria-hidden="true" href="#cb38-1" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-u</span> user <span class="at">-X</span> DELETE <span class="st">'http://localhost:5232/user/calendar'</span></span></code></pre></div>
-</section>
 </section>
 <section class="level3" id="authentication-and-rights">
 <h3>Authentication and Rights <a class="headerlink" href="#authentication-and-rights">&para;</a></h3>
