@@ -27,7 +27,7 @@ from vobject.base import ContentLine
 from http import client
 from typing import (
     Callable, Iterable, Iterator,
-    Optional, Sequence, Tuple, List,
+    Optional, Sequence, Tuple,
 )
 from urllib.parse import unquote, urlparse
 
