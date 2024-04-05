@@ -23,6 +23,7 @@ from typing import Optional
 
 from radicale import httputils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
+from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 
 
 def xml_delete(base_prefix: str, path: str, collection: storage.BaseCollection,
@@ -67,15 +68,33 @@ class ApplicationPartDelete(ApplicationBase):
             if if_match not in ("*", item.etag):
                 # ETag precondition not verified, do not delete item
                 return httputils.PRECONDITION_FAILED
+            hook_notification_item_list = []
             if isinstance(item, storage.BaseCollection):
                 if self._permit_delete_collection:
+                    for i in item.get_all():
+                        hook_notification_item_list.append(
+                            HookNotificationItem(
+                                HookNotificationItemTypes.DELETE,
+                                access.path,
+                                i.uid
+                            )
+                        )
                     xml_answer = xml_delete(base_prefix, path, item)
                 else:
                     return httputils.NOT_ALLOWED
             else:
                 assert item.collection is not None
                 assert item.href is not None
+                hook_notification_item_list.append(
+                    HookNotificationItem(
+                        HookNotificationItemTypes.DELETE,
+                        access.path,
+                        item.uid
+                    )
+                )
                 xml_answer = xml_delete(
                     base_prefix, path, item.collection, item.href)
+            for notification_item in hook_notification_item_list:
+                self._hook.notify(notification_item)
             headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
             return client.OK, headers, self._xml_response(xml_answer)

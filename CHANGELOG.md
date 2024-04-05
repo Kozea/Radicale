@@ -1,6 +1,32 @@
 # Changelog
 
-## master
+## 3.2.0 (upcoming)
+
+* Enhancement: add hook support for event changes+deletion hooks (initial support: "rabbitmq")
+* Dependency: pika >= 1.1.0
+* Enhancement: add support for webcal subscriptions
+* Enhancement: major update of WebUI (design+features)
+
+## 3.1.9
+
+* Add: support for Python 3.11 + 3.12
+* Drop: support for Python 3.6
+* Fix: MOVE in case listen on non-standard ports or behind reverse proxy
+* Fix: stricter requirements of Python 3.11
+* Fix: HTML pages
+* Fix: Main Component is missing when only recurrence id exists
+* Fix: passlib don't support bcrypt>=4.1
+* Fix: web login now proper encodes passwords containing %XX (hexdigits)
+* Enhancement: user-selectable log formats
+* Enhancement: autodetect logging to systemd journal
+* Enhancement: test code
+* Enhancement: option for global permit to delete collection
+* Enhancement: auth type 'htpasswd' supports now 'htpasswd_encryption' sha256/sha512 and "autodetect" for smooth transition
+* Improve: Dockerfiles
+* Improve: server socket listen code + address format in log
+* Update: documentations + examples
+* Dependency: limit typegard version < 3
+* General: code cosmetics
 
 * Adjust: change default loglevel to "info"
 

@@ -35,7 +35,7 @@ from configparser import RawConfigParser
 from typing import (Any, Callable, ClassVar, Iterable, List, Optional,
                     Sequence, Tuple, TypeVar, Union)
 
-from radicale import auth, rights, storage, types, web
+from radicale import auth, hook, rights, storage, types, web
 
 DEFAULT_CONFIG_PATH: str = os.pathsep.join([
     "?/etc/radicale/config",
@@ -214,6 +214,24 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "True",
             "help": "sync all changes to filesystem during requests",
             "type": bool})])),
+    ("hook", OrderedDict([
+        ("type", {
+            "value": "none",
+            "help": "hook backend",
+            "type": str,
+            "internal": hook.INTERNAL_TYPES}),
+        ("rabbitmq_endpoint", {
+            "value": "",
+            "help": "endpoint where rabbitmq server is running",
+            "type": str}),
+        ("rabbitmq_topic", {
+            "value": "",
+            "help": "topic to declare queue",
+            "type": str}),
+        ("rabbitmq_queue_type", {
+            "value": "",
+            "help": "queue type for topic declaration",
+            "type": str})])),
     ("web", OrderedDict([
         ("type", {
             "value": "internal",
