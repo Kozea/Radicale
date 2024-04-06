@@ -1526,6 +1526,7 @@ permissions: RrWw""")
         assert not sync_token
 
     def test_report_with_expand_property(self) -> None:
+        """Test report with expand property"""
         self.put("/calendar.ics/", get_file_content("event_daily_rrule.ics"))
         req_body_without_expand = \
             """<?xml version="1.0" encoding="utf-8" ?>
@@ -1546,21 +1547,22 @@ permissions: RrWw""")
         _, responses = self.report("/calendar.ics/", req_body_without_expand)
         assert len(responses) == 1
 
-        response = responses['/calendar.ics/event_daily_rrule.ics']
-        status, element = list(response.values())[0]
+        response_without_expand = responses['/calendar.ics/event_daily_rrule.ics']
+        assert not isinstance(response_without_expand, int)
+        status, element = response_without_expand["C:calendar-data"]
 
-        assert status == 200
+        assert status == 200 and element.text
 
         assert "RRULE" in element.text
         assert "BEGIN:VTIMEZONE" in element.text
         assert "RECURRENCE-ID" not in element.text
 
-        uids = []
+        uids: List[str] = []
         for line in element.text.split("\n"):
             if line.startswith("UID:"):
                 uid = line[len("UID:"):]
                 assert uid == "event_daily_rrule"
-                uids.append(uids)
+                uids.append(uid)
 
         assert len(uids) == 1
 
@@ -1586,10 +1588,11 @@ permissions: RrWw""")
 
         assert len(responses) == 1
 
-        response = responses['/calendar.ics/event_daily_rrule.ics']
-        status, element = list(response.values())[0]
+        response_with_expand = responses['/calendar.ics/event_daily_rrule.ics']
+        assert not isinstance(response_with_expand, int)
+        status, element = response_with_expand["C:calendar-data"]
 
-        assert status == 200
+        assert status == 200 and element.text
         assert "RRULE" not in element.text
         assert "BEGIN:VTIMEZONE" not in element.text
 
@@ -1598,7 +1601,7 @@ permissions: RrWw""")
         for line in element.text.split("\n"):
             if line.startswith("UID:"):
                 assert line == "UID:event_daily_rrule"
-                uids.append(uids)
+                uids.append(line)
 
             if line.startswith("RECURRENCE-ID:"):
                 recurrence_ids.append(line)
