@@ -24,9 +24,11 @@ import posixpath
 import socket
 import xml.etree.ElementTree as ET
 from http import client
-from typing import Callable, Iterable, Iterator, Optional, Sequence, Tuple
+from typing import (Callable, Iterable, Iterator, List, Optional, Sequence,
+                    Tuple, Union)
 from urllib.parse import unquote, urlparse
 
+import vobject.base
 from vobject.base import ContentLine
 
 import radicale.item as radicale_item
@@ -69,7 +71,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                        xmlutils.make_human_tag(root.tag), path)
         return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
 
-    props = root.find(xmlutils.make_clark("D:prop")) or []
+    props: Union[ET.Element, List] = root.find(xmlutils.make_clark("D:prop")) or []
 
     hreferences: Iterable[str]
     if root.tag in (
@@ -203,21 +205,21 @@ def _expand(
     if rruleset:
         recurrences = rruleset.between(start, end)
 
-        expanded = None
-        for recurrence_dt in recurrences:
-            vobject_item = copy.copy(expanded_item.vobject_item)
+        expanded: vobject.base.Component = copy.copy(expanded_item.vobject_item)
+        is_expanded_filled: bool = False
 
+        for recurrence_dt in recurrences:
             recurrence_utc = recurrence_dt.astimezone(datetime.timezone.utc)
 
-            vevent = copy.deepcopy(vobject_item.vevent)
+            vevent = copy.deepcopy(expanded.vevent)
             vevent.recurrence_id = ContentLine(
                 name='RECURRENCE-ID',
                 value=recurrence_utc.strftime('%Y%m%dT%H%M%SZ'), params={}
             )
 
-            if expanded is None:
-                vobject_item.vevent = vevent
-                expanded = vobject_item
+            if is_expanded_filled is False:
+                expanded.vevent = vevent
+                is_expanded_filled = True
             else:
                 expanded.add(vevent)
 
