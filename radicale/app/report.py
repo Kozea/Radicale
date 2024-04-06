@@ -18,18 +18,16 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
+import copy
 import datetime
 import posixpath
 import socket
-import copy
 import xml.etree.ElementTree as ET
-from vobject.base import ContentLine
 from http import client
-from typing import (
-    Callable, Iterable, Iterator,
-    Optional, Sequence, Tuple,
-)
+from typing import Callable, Iterable, Iterator, Optional, Sequence, Tuple
 from urllib.parse import unquote, urlparse
+
+from vobject.base import ContentLine
 
 import radicale.item as radicale_item
 from radicale import httputils, pathutils, storage, types, xmlutils
