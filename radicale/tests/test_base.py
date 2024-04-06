@@ -1525,6 +1525,87 @@ permissions: RrWw""")
             calendar_path, "http://radicale.org/ns/sync/INVALID")
         assert not sync_token
 
+    def test_report_with_expand_property(self) -> None:
+        self.put("/calendar.ics/", get_file_content("event_daily_rrule.ics"))
+        req_body_without_expand = \
+            """<?xml version="1.0" encoding="utf-8" ?>
+            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                <D:prop>
+                    <C:calendar-data>
+                    </C:calendar-data>
+                </D:prop>
+                <C:filter>
+                    <C:comp-filter name="VCALENDAR">
+                        <C:comp-filter name="VEVENT">
+                            <C:time-range start="20060103T000000Z" end="20060105T000000Z"/>
+                        </C:comp-filter>
+                    </C:comp-filter>
+                </C:filter>
+            </C:calendar-query>
+            """
+        _, responses = self.report("/calendar.ics/", req_body_without_expand)
+        assert len(responses) == 1
+
+        response = responses['/calendar.ics/event_daily_rrule.ics']
+        status, element = list(response.values())[0]
+
+        assert status == 200
+
+        assert "RRULE" in element.text
+        assert "BEGIN:VTIMEZONE" in element.text
+        assert "RECURRENCE-ID" not in element.text
+
+        uids = []
+        for line in element.text.split("\n"):
+            if line.startswith("UID:"):
+                uid = line[len("UID:"):]
+                assert uid == "event_daily_rrule"
+                uids.append(uids)
+
+        assert len(uids) == 1
+
+        req_body_with_expand = \
+            """<?xml version="1.0" encoding="utf-8" ?>
+            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                <D:prop>
+                    <C:calendar-data>
+                        <C:expand start="20060103T000000Z" end="20060105T000000Z"/>
+                    </C:calendar-data>
+                </D:prop>
+                <C:filter>
+                    <C:comp-filter name="VCALENDAR">
+                        <C:comp-filter name="VEVENT">
+                            <C:time-range start="20060103T000000Z" end="20060105T000000Z"/>
+                        </C:comp-filter>
+                    </C:comp-filter>
+                </C:filter>
+            </C:calendar-query>
+            """
+
+        _, responses = self.report("/calendar.ics/", req_body_with_expand)
+
+        assert len(responses) == 1
+
+        response = responses['/calendar.ics/event_daily_rrule.ics']
+        status, element = list(response.values())[0]
+
+        assert status == 200
+        assert "RRULE" not in element.text
+        assert "BEGIN:VTIMEZONE" not in element.text
+
+        uids = []
+        recurrence_ids = []
+        for line in element.text.split("\n"):
+            if line.startswith("UID:"):
+                assert line == "UID:event_daily_rrule"
+                uids.append(uids)
+
+            if line.startswith("RECURRENCE-ID:"):
+                recurrence_ids.append(line)
+
+        assert len(uids) == 2
+        assert len(set(recurrence_ids)) == 2
+
     def test_propfind_sync_token(self) -> None:
         """Retrieve the sync-token with a propfind request"""
         calendar_path = "/calendar.ics/"

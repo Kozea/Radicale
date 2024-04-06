@@ -18,11 +18,17 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
+import datetime
 import posixpath
 import socket
+import copy
 import xml.etree.ElementTree as ET
+from vobject.base import ContentLine
 from http import client
-from typing import Callable, Iterable, Iterator, Optional, Sequence, Tuple
+from typing import (
+    Callable, Iterable, Iterator,
+    Optional, Sequence, Tuple,
+)
 from urllib.parse import unquote, urlparse
 
 import radicale.item as radicale_item
@@ -64,9 +70,8 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         logger.warning("Invalid REPORT method %r on %r requested",
                        xmlutils.make_human_tag(root.tag), path)
         return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
-    prop_element = root.find(xmlutils.make_clark("D:prop"))
-    props = ([prop.tag for prop in prop_element]
-             if prop_element is not None else [])
+
+    props = root.find(xmlutils.make_clark("D:prop")) or []
 
     hreferences: Iterable[str]
     if root.tag in (
@@ -138,19 +143,40 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         found_props = []
         not_found_props = []
 
-        for tag in props:
-            element = ET.Element(tag)
-            if tag == xmlutils.make_clark("D:getetag"):
+        for prop in props:
+            element = ET.Element(prop.tag)
+            if prop.tag == xmlutils.make_clark("D:getetag"):
                 element.text = item.etag
                 found_props.append(element)
-            elif tag == xmlutils.make_clark("D:getcontenttype"):
+            elif prop.tag == xmlutils.make_clark("D:getcontenttype"):
                 element.text = xmlutils.get_content_type(item, encoding)
                 found_props.append(element)
-            elif tag in (
+            elif prop.tag in (
                     xmlutils.make_clark("C:calendar-data"),
                     xmlutils.make_clark("CR:address-data")):
                 element.text = item.serialize()
-                found_props.append(element)
+
+                expand = prop.find(xmlutils.make_clark("C:expand"))
+                if expand is not None:
+                    start = expand.get('start')
+                    end = expand.get('end')
+
+                    if (start is None) or (end is None):
+                        return client.FORBIDDEN, \
+                            xmlutils.webdav_error("C:expand")
+
+                    start = datetime.datetime.strptime(
+                        start, '%Y%m%dT%H%M%SZ'
+                    ).replace(tzinfo=datetime.timezone.utc)
+                    end = datetime.datetime.strptime(
+                        end, '%Y%m%dT%H%M%SZ'
+                    ).replace(tzinfo=datetime.timezone.utc)
+
+                    expanded_element = _expand(
+                        element, copy.copy(item), start, end)
+                    found_props.append(expanded_element)
+                else:
+                    found_props.append(element)
             else:
                 not_found_props.append(element)
 
@@ -162,6 +188,90 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
             not_found_props=not_found_props, found_item=True))
 
     return client.MULTI_STATUS, multistatus
+
+
+def _expand(
+        element: ET.Element,
+        item: radicale_item.Item,
+        start: datetime.datetime,
+        end: datetime.datetime,
+) -> ET.Element:
+    rruleset = None
+    if hasattr(item.vobject_item.vevent, 'rrule'):
+        rruleset = item.vobject_item.vevent.getrruleset()
+
+    expanded_item = _make_vobject_expanded_item(item)
+
+    if rruleset:
+        recurrences = rruleset.between(start, end)
+
+        expanded = None
+        for recurrence_dt in recurrences:
+            vobject_item = copy.copy(expanded_item.vobject_item)
+
+            recurrence_utc = recurrence_dt.astimezone(datetime.timezone.utc)
+
+            vevent = copy.deepcopy(vobject_item.vevent)
+            vevent.recurrence_id = ContentLine(
+                name='RECURRENCE-ID',
+                value=recurrence_utc.strftime('%Y%m%dT%H%M%SZ'), params={}
+            )
+
+            if expanded is None:
+                vobject_item.vevent = vevent
+                expanded = vobject_item
+            else:
+                expanded.add(vevent)
+
+        element.text = expanded.serialize()
+    else:
+        element.text = expanded_item.vobject_item.serialize()
+
+    return element
+
+
+def _make_vobject_expanded_item(
+        item: radicale_item.Item
+) -> radicale_item.Item:
+    # https://www.rfc-editor.org/rfc/rfc4791#section-9.6.5
+    # The returned calendar components MUST NOT use recurrence
+    #       properties (i.e., EXDATE, EXRULE, RDATE, and RRULE) and MUST NOT
+    #       have reference to or include VTIMEZONE components.  Date and local
+    #       time with reference to time zone information MUST be converted
+    #       into date with UTC time.
+
+    item = copy.copy(item)
+    vevent = item.vobject_item.vevent
+
+    start_utc = vevent.dtstart.value.astimezone(datetime.timezone.utc)
+    vevent.dtstart = ContentLine(
+        name='DTSTART',
+        value=start_utc.strftime('%Y%m%dT%H%M%SZ'), params={})
+
+    dt_end = getattr(vevent, 'dtend', None)
+    if dt_end is not None:
+        end_utc = dt_end.value.astimezone(datetime.timezone.utc)
+        vevent.dtend = ContentLine(
+            name='DTEND',
+            value=end_utc.strftime('%Y%m%dT%H%M%SZ'), params={})
+
+    timezones_to_remove = []
+    for component in item.vobject_item.components():
+        if component.name == 'VTIMEZONE':
+            timezones_to_remove.append(component)
+
+    for timezone in timezones_to_remove:
+        item.vobject_item.remove(timezone)
+
+    try:
+        delattr(item.vobject_item.vevent, 'rrule')
+        delattr(item.vobject_item.vevent, 'exdate')
+        delattr(item.vobject_item.vevent, 'exrule')
+        delattr(item.vobject_item.vevent, 'rdate')
+    except AttributeError:
+        pass
+
+    return item
 
 
 def xml_item_response(base_prefix: str, href: str,
