@@ -262,7 +262,12 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
             dtend = getattr(child, "dtend", None)
             if dtend is not None:
                 dtend = dtend.value
-                original_duration = (dtend - dtstart).total_seconds()
+                try:
+                    original_duration = (dtend - dtstart).total_seconds()
+                except TypeError as te:
+                    event_name = getattr(child, "summary", getattr(child, "description", None))
+                    logger.error("skipping import of event: %s\n\nException: %s", event_name, te)
+                    return
                 dtend = date_to_datetime(dtend)
 
             duration = getattr(child, "duration", None)
