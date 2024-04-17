@@ -70,6 +70,9 @@
 # Message displayed in the client when a password is needed
 #realm = Radicale - Password Required
 
+# Сonvert username to lowercase, must be true for case-insensitive auth providers
+#lc_username = False
+
 
 [rights]
 

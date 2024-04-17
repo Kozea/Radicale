@@ -127,7 +127,7 @@ class Auth(auth.BaseAuth):
             # assumed plaintext
             return self._plain(hash_value, password)
 
-    def login(self, login: str, password: str) -> str:
+    def _login(self, login: str, password: str) -> str:
         """Validate credentials.
 
         Iterate through htpasswd credential file until login matches, extract
