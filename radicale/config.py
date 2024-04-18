@@ -177,7 +177,11 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("delay", {
             "value": "1",
             "help": "incorrect authentication delay",
-            "type": positive_float})])),
+            "type": positive_float}),
+        ("lc_username", {
+            "value": "False",
+            "help": "convert username to lowercase, must be true for case-insensitive auth providers",
+            "type": bool})])),
     ("rights", OrderedDict([
         ("type", {
             "value": "owner_only",

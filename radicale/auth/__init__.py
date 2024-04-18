@@ -44,6 +44,8 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
 
 class BaseAuth:
 
+    _lc_username: bool
+
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseAuth.
 
@@ -53,6 +55,7 @@ class BaseAuth:
 
         """
         self.configuration = configuration
+        self._lc_username = configuration.get("auth", "lc_username")
 
     def get_external_login(self, environ: types.WSGIEnviron) -> Union[
             Tuple[()], Tuple[str, str]]:
@@ -67,7 +70,7 @@ class BaseAuth:
         """
         return ()
 
-    def login(self, login: str, password: str) -> str:
+    def _login(self, login: str, password: str) -> str:
         """Check credentials and map login to internal user
 
         ``login`` the login name
@@ -79,3 +82,6 @@ class BaseAuth:
         """
 
         raise NotImplementedError
+
+    def login(self, login: str, password: str) -> str:
+        return self._login(login, password).lower() if self._lc_username else self._login(login, password)

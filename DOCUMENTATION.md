@@ -786,6 +786,13 @@ Message displayed in the client when a password is needed.
 
 Default: `Radicale - Password Required`
 
+##### lc_username
+
+Сonvert username to lowercase, must be true for case-insensitive auth 
+providers like ldap, kerberos
+
+Default: `False`
+
 #### rights
 
 ##### type
