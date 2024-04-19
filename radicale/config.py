@@ -26,6 +26,7 @@ Use ``load()`` to obtain an instance of ``Configuration`` for use with
 """
 
 import contextlib
+import json
 import math
 import os
 import string
@@ -99,6 +100,12 @@ def _convert_to_bool(value: Any) -> bool:
     if value.lower() not in RawConfigParser.BOOLEAN_STATES:
         raise ValueError("not a boolean: %r" % value)
     return RawConfigParser.BOOLEAN_STATES[value.lower()]
+
+
+def json_collection(value: Any) -> dict:
+    if not value:
+        return ""
+    return json.loads(value)
 
 
 INTERNAL_OPTIONS: Sequence[str] = ("_allow_extra",)
@@ -217,7 +224,11 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("_filesystem_fsync", {
             "value": "True",
             "help": "sync all changes to filesystem during requests",
-            "type": bool})])),
+            "type": bool}),
+        ("predefined_collections", {
+            "value": "",
+            "help": "predefined user collections",
+            "type": json_collection})])),
     ("hook", OrderedDict([
         ("type", {
             "value": "none",

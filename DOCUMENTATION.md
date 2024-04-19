@@ -870,6 +870,26 @@ Command that is run after changes to storage. Take a look at the
 
 Default:
 
+##### predefined_collections
+
+Create predefined user collections
+
+ Example:
+ 
+     {
+       "def-addressbook": {
+		   "D:displayname": "Personal Address Book",
+		   "tag": "VADDRESSBOOK"
+  	   },
+	   "def-calendar": {
+		   "C:supported-calendar-component-set": "VEVENT,VJOURNAL,VTODO",
+		   "D:displayname": "Personal Calendar", 
+		   "tag": "VCALENDAR"
+	   }
+     }
+
+Default:
+
 #### web
 
 ##### type
