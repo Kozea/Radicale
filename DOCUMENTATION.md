@@ -870,6 +870,19 @@ Command that is run after changes to storage. Take a look at the
 
 Default:
 
+##### skeleton_dir
+
+A skeleton directory for initial user configuration
+
+	Example:
+		/etc/radicale/skel/
+			def-calendar/
+				.Radicale.props
+			def-addressbook/
+				.Radicale.props
+
+Default: `""`
+
 #### web
 
 ##### type

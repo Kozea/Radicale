@@ -103,6 +103,19 @@
 # Example: ([ -d .git ] || git init) && git add -A && (git diff --cached --quiet || git commit -m "Changes by \"%(user)s\"")
 #hook =
 
+# A skeleton directory for initial user configuration
+#
+# /etc/radicale/skel/
+#		    def-cal
+#		      |
+#		      --- .Radicale.props
+#		      |
+#     		    def-card
+#		      |
+#		      --- .Radicale.props
+#
+#skeleton_dir =
+
 
 [web]
 

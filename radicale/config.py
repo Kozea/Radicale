@@ -217,7 +217,11 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("_filesystem_fsync", {
             "value": "True",
             "help": "sync all changes to filesystem during requests",
-            "type": bool})])),
+            "type": bool}),
+        ("skeleton_dir", {
+            "value": "",
+            "help": "skeleton dir",
+            "type": str})])),
     ("hook", OrderedDict([
         ("type", {
             "value": "none",

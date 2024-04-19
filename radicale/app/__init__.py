@@ -32,6 +32,7 @@ import random
 import time
 import zlib
 from http import client
+from shutil import copytree
 from typing import Iterable, List, Mapping, Tuple, Union
 
 from radicale import config, httputils, log, pathutils, types
@@ -269,6 +270,10 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     with self._storage.acquire_lock("w", user):
                         try:
                             self._storage.create_collection(principal_path)
+                            skel_dir = self.configuration.get("storage", "skeleton_dir")
+                            if skel_dir:
+                                copytree(src=skel_dir, dst=self._storage._get_collection_root_folder() + principal_path,
+                                         dirs_exist_ok=True)
                         except ValueError as e:
                             logger.warning("Failed to create principal "
                                            "collection %r: %s", user, e)
