@@ -103,6 +103,24 @@
 # Example: ([ -d .git ] || git init) && git add -A && (git diff --cached --quiet || git commit -m "Changes by \"%(user)s\"")
 #hook =
 
+# Create predefined user collections
+#
+# json format:
+#
+#  {
+#    "def-addressbook": {
+#       "D:displayname": "Personal Address Book",
+#       "tag": "VADDRESSBOOK"
+#    },
+#    "def-calendar": {
+#       "C:supported-calendar-component-set": "VEVENT,VJOURNAL,VTODO",
+#       "D:displayname": "Personal Calendar",
+#       "tag": "VCALENDAR"
+#    }
+#  }
+#
+#predefined_collections =
+
 
 [web]
 
