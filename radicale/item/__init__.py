@@ -49,7 +49,7 @@ def read_components(s: str) -> List[vobject.base.Component]:
     s = re.sub(r"^(PHOTO(?:;[^:\r\n]*)?;ENCODING=b(?:;[^:\r\n]*)?:)"
                r"data:[^;,\r\n]*;base64,", r"\1", s,
                flags=re.MULTILINE | re.IGNORECASE)
-    return list(vobject.readComponents(s))
+    return list(vobject.readComponents(s, allowQP=True))
 
 
 def predict_tag_of_parent_collection(
