@@ -9,6 +9,7 @@
 * Adjust: change default loglevel to "info"
 * Enhancement: support "expand-property" on REPORT request
 * Drop: support for Python 3.7
+* Fix: allow quoted-printable encoding for vObjects
 
 ## 3.1.9
 
