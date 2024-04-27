@@ -8,6 +8,7 @@
 * Enhancement: major update of WebUI (design+features)
 * Adjust: change default loglevel to "info"
 * Enhancement: support "expand-property" on REPORT request
+* Drop: support for Python 3.7
 
 ## 3.1.9
 
