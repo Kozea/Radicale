@@ -187,6 +187,14 @@ permissions: RrWw""")
         path = "/contacts.vcf/contact.vcf"
         self.put(path, contact, check=400)
 
+    def test_add_contact_with_quoted_printable(self) -> None:
+        """Add a contact that used quoted-printable characters."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("vcard-quoted-printable1.vcf")
+        path = "/contacts.vcf/vcard-quoted-printable1.vcf"
+        self.put(path, contact)
+        _, headers, answer = self.request("GET", path, check=200)
+
     def test_update_event(self) -> None:
         """Update an event."""
         self.mkcalendar("/calendar.ics/")
