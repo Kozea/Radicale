@@ -984,6 +984,15 @@ GNOME 46 added CalDav and CardDav support to _GNOME Online Accounts_.
 
 Open GNOME Settings, navigate to _Online Accounts_ > _Connect an Account_ > _Calendar, Contacts and Files_. Enter the URL (e.g. `https://example.com/radicale`) and your credentials then click _Sign In_. In the pop-up dialog, turn off _Files_. After adding Radicale in _GNOME Online Accounts_, it should be available in GNOME Contacts and GNOME Calendar.
 
+#### Evolution
+
+In **Evolution** add a new calendar and address book respectively with WebDAV.
+Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
+username. Clicking on the search button will list the existing calendars and
+address books.
+
+Adding CalDAV and CardDAV accounts in Evolution will automatically make them available in GNOME Contacts and GNOME Calendar.
+
 #### Thunderbird
 
 Add a new calendar on the network. Enter your username and the URL of the
