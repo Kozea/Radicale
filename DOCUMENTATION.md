@@ -978,15 +978,11 @@ Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
 username. DAVx⁵ will show all existing calendars and address books and you
 can create new.
 
-#### GNOME Calendar, Contacts and Evolution
+#### GNOME Calendar, Contacts
 
-**GNOME Calendar** and **Contacts** do not support adding WebDAV calendars
-and address books directly, but you can add them in **Evolution**.
+GNOME 46 added CalDav and CardDav support to _GNOME Online Accounts_.
 
-In **Evolution** add a new calendar and address book respectively with WebDAV.
-Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
-username. Clicking on the search button will list the existing calendars and
-address books.
+Open GNOME Settings, navigate to _Online Accounts_ > _Connect an Account_ > _Calendar, Contacts and Files_. Enter the URL (e.g. `https://example.com/radicale`) and your credentials then click _Sign In_. In the pop-up dialog, turn off _Files_. After adding Radicale in _GNOME Online Accounts_, it should be available in GNOME Contacts and GNOME Calendar.
 
 #### Thunderbird
 
