@@ -193,8 +193,8 @@ with the WSGI server</a></li>
 Clients</a>
 <ul>
 <li class="level4"><a href="#davx⁵" id="toc-davx⁵">DAVx⁵</a></li>
-<li class="level4"><a href="#gnome-calendar-contacts-and-evolution" id="toc-gnome-calendar-contacts-and-evolution">GNOME Calendar, Contacts
-and Evolution</a></li>
+<li class="level4"><a href="#gnome-calendar-contacts" id="toc-gnome-calendar-contacts">GNOME Calendar, Contacts</a></li>
+<li class="level4"><a href="#evolution" id="toc-evolution">Evolution</a></li>
 <li class="level4"><a href="#thunderbird" id="toc-thunderbird">Thunderbird</a></li>
 <li class="level4"><a href="#infcloud-caldavzap-and-carddavmate" id="toc-infcloud-caldavzap-and-carddavmate">InfCloud, CalDavZAP and
 CardDavMATE</a></li>
@@ -1071,15 +1071,25 @@ you have to enter the URL of the collection directly (e.g.
 <code>http://localhost:5232</code>) and your username. DAVx⁵ will show
 all existing calendars and address books and you can create new.</p>
 </section>
-<section class="level4" id="gnome-calendar-contacts-and-evolution">
-<h4>GNOME Calendar, Contacts and Evolution <a class="headerlink" href="#gnome-calendar-contacts-and-evolution">&para;</a></h4>
-<p><strong>GNOME Calendar</strong> and <strong>Contacts</strong> do not
-support adding WebDAV calendars and address books directly, but you can
-add them in <strong>Evolution</strong>.</p>
+<section class="level4" id="gnome-calendar-contacts">
+<h4>GNOME Calendar, Contacts <a class="headerlink" href="#gnome-calendar-contacts">&para;</a></h4>
+<p>GNOME 46 added CalDAV and CardDAV support to <em>GNOME Online
+Accounts</em>.</p>
+<p>Open GNOME Settings, navigate to <em>Online Accounts</em> &gt;
+<em>Connect an Account</em> &gt; <em>Calendar, Contacts and Files</em>.
+Enter the URL (e.g. <code>https://example.com/radicale</code>) and your
+credentials then click <em>Sign In</em>. In the pop-up dialog, turn off
+<em>Files</em>. After adding Radicale in <em>GNOME Online Accounts</em>,
+it should be available in GNOME Contacts and GNOME Calendar.</p>
+</section>
+<section class="level4" id="evolution">
+<h4>Evolution <a class="headerlink" href="#evolution">&para;</a></h4>
 <p>In <strong>Evolution</strong> add a new calendar and address book
 respectively with WebDAV. Enter the URL of the Radicale server (e.g.
 <code>http://localhost:5232</code>) and your username. Clicking on the
 search button will list the existing calendars and address books.</p>
+<p>Adding CalDAV and CardDAV accounts in Evolution will automatically
+make them available in GNOME Contacts and GNOME Calendar.</p>
 </section>
 <section class="level4" id="thunderbird">
 <h4>Thunderbird <a class="headerlink" href="#thunderbird">&para;</a></h4>
