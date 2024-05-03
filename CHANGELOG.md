@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.dev
+
 ## 3.2.0
 
 * Enhancement: add hook support for event changes+deletion hooks (initial support: "rabbitmq")
