@@ -980,7 +980,7 @@ can create new.
 
 #### GNOME Calendar, Contacts
 
-GNOME 46 added CalDav and CardDav support to _GNOME Online Accounts_.
+GNOME 46 added CalDAV and CardDAV support to _GNOME Online Accounts_.
 
 Open GNOME Settings, navigate to _Online Accounts_ > _Connect an Account_ > _Calendar, Contacts and Files_. Enter the URL (e.g. `https://example.com/radicale`) and your credentials then click _Sign In_. In the pop-up dialog, turn off _Files_. After adding Radicale in _GNOME Online Accounts_, it should be available in GNOME Contacts and GNOME Calendar.
 
