@@ -54,7 +54,7 @@ setup(
     install_requires=install_requires,
     extras_require={"test": test_requires, "bcrypt": bcrypt_requires},
     keywords=["calendar", "addressbook", "CalDAV", "CardDAV"],
-    python_requires=">=3.7.0",
+    python_requires=">=3.8.0",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
@@ -64,7 +64,6 @@ setup(
         "License :: OSI Approved :: GNU General Public License (GPL)",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
