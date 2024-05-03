@@ -37,6 +37,7 @@ from typing import (Any, Callable, ClassVar, Iterable, List, Optional,
                     Sequence, Tuple, TypeVar, Union)
 
 from radicale import auth, hook, rights, storage, types, web
+from radicale.item import check_and_sanitize_props
 
 DEFAULT_CONFIG_PATH: str = os.pathsep.join([
     "?/etc/radicale/config",
@@ -105,7 +106,11 @@ def _convert_to_bool(value: Any) -> bool:
 def json_str(value: Any) -> dict:
     if not value:
         return {}
-    return json.loads(value)
+    ret = json.loads(value)
+    for (name_coll, props) in ret.items():
+        checked_props = check_and_sanitize_props(props)
+        ret[name_coll] = checked_props
+    return ret
 
 
 INTERNAL_OPTIONS: Sequence[str] = ("_allow_extra",)

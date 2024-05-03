@@ -48,7 +48,6 @@ from radicale.app.propfind import ApplicationPartPropfind
 from radicale.app.proppatch import ApplicationPartProppatch
 from radicale.app.put import ApplicationPartPut
 from radicale.app.report import ApplicationPartReport
-from radicale.item import check_and_sanitize_props
 from radicale.log import logger
 
 # Combination of types.WSGIStartResponse and WSGI application return value
@@ -274,8 +273,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                                 jsn_coll = self.configuration.get("storage", "predefined_collections")
                                 for (name_coll, props) in jsn_coll.items():
                                     try:
-                                        checked_props = check_and_sanitize_props(props)
-                                        self._storage.create_collection(principal_path + name_coll, props=checked_props)
+                                        self._storage.create_collection(principal_path + name_coll, props=props)
                                     except ValueError as e:
                                         logger.warning("Failed to create predefined collection %r: %s", name_coll, e)
                         except ValueError as e:
