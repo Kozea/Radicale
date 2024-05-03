@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.2.0 (upcoming)
+## 3.2.0
 
 * Enhancement: add hook support for event changes+deletion hooks (initial support: "rabbitmq")
 * Dependency: pika >= 1.1.0
