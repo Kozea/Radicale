@@ -24,7 +24,14 @@ VERSION = "3.dev"
 with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
 web_files = ["web/internal_data/css/icon.png",
+             "web/internal_data/css/loading.svg",
+             "web/internal_data/css/logo.svg",
              "web/internal_data/css/main.css",
+             "web/internal_data/css/icons/delete.svg",
+             "web/internal_data/css/icons/download.svg",
+             "web/internal_data/css/icons/edit.svg",
+             "web/internal_data/css/icons/new.svg",
+             "web/internal_data/css/icons/upload.svg",
              "web/internal_data/fn.js",
              "web/internal_data/index.html"]
 
