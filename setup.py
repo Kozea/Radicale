@@ -40,8 +40,7 @@ install_requires = ["defusedxml", "passlib", "vobject>=0.9.6",
                     "pika>=1.1.0",
                     "setuptools; python_version<'3.9'"]
 bcrypt_requires = ["bcrypt"]
-# typeguard requires pytest<7
-test_requires = ["pytest<7", "typeguard<3", "waitress", *bcrypt_requires]
+test_requires = ["pytest>=7", "typeguard>=4", "waitress", *bcrypt_requires]
 
 setup(
     name="Radicale",
