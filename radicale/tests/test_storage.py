@@ -35,8 +35,8 @@ from radicale.tests.test_base import TestBaseRequests as _TestBaseRequests
 class TestMultiFileSystem(BaseTest):
     """Tests for multifilesystem."""
 
-    def setup(self) -> None:
-        _TestBaseRequests.setup(cast(_TestBaseRequests, self))
+    def setup_method(self) -> None:
+        _TestBaseRequests.setup_method(cast(_TestBaseRequests, self))
         self.configure({"storage": {"type": "multifilesystem"}})
 
     def test_folder_creation(self) -> None:
@@ -150,8 +150,8 @@ class TestMultiFileSystem(BaseTest):
 class TestMultiFileSystemNoLock(BaseTest):
     """Tests for multifilesystem_nolock."""
 
-    def setup(self) -> None:
-        _TestBaseRequests.setup(cast(_TestBaseRequests, self))
+    def setup_method(self) -> None:
+        _TestBaseRequests.setup_method(cast(_TestBaseRequests, self))
         self.configure({"storage": {"type": "multifilesystem_nolock"}})
 
     test_add_event = _TestBaseRequests.test_add_event
@@ -161,8 +161,8 @@ class TestMultiFileSystemNoLock(BaseTest):
 class TestCustomStorageSystem(BaseTest):
     """Test custom backend loading."""
 
-    def setup(self) -> None:
-        _TestBaseRequests.setup(cast(_TestBaseRequests, self))
+    def setup_method(self) -> None:
+        _TestBaseRequests.setup_method(cast(_TestBaseRequests, self))
         self.configure({"storage": {
             "type": "radicale.tests.custom.storage_simple_sync"}})
 
@@ -181,8 +181,8 @@ class TestCustomStorageSystem(BaseTest):
 class TestCustomStorageSystemCallable(BaseTest):
     """Test custom backend loading with ``callable``."""
 
-    def setup(self) -> None:
-        _TestBaseRequests.setup(cast(_TestBaseRequests, self))
+    def setup_method(self) -> None:
+        _TestBaseRequests.setup_method(cast(_TestBaseRequests, self))
         self.configure({"storage": {
             "type": radicale.tests.custom.storage_simple_sync.Storage}})
 

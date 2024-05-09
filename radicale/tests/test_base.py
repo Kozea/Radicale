@@ -37,8 +37,8 @@ class TestBaseRequests(BaseTest):
     # Allow skipping sync-token tests, when not fully supported by the backend
     full_sync_token_support: ClassVar[bool] = True
 
-    def setup(self) -> None:
-        BaseTest.setup(self)
+    def setup_method(self) -> None:
+        BaseTest.setup_method(self)
         rights_file_path = os.path.join(self.colpath, "rights")
         with open(rights_file_path, "w") as f:
             f.write("""\
