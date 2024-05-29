@@ -24,12 +24,11 @@ import posixpath
 import socket
 import xml.etree.ElementTree as ET
 from http import client
-from typing import (Callable, Iterable, Iterator, List, Optional, Sequence,
-                    Tuple, Union)
+from typing import (Any, Callable, Iterable, Iterator, List, Optional,
+                    Sequence, Tuple, Union)
 from urllib.parse import unquote, urlparse
 
 import vobject.base
-from dateutil import rrule
 from vobject.base import ContentLine
 
 import radicale.item as radicale_item
@@ -229,7 +228,7 @@ def _expand(
 
 def _make_vobject_expanded_item(
         item: radicale_item.Item
-) -> Tuple[radicale_item.Item, Optional[rrule.rruleset]]:
+) -> Tuple[radicale_item.Item, Optional[Any]]:
     # https://www.rfc-editor.org/rfc/rfc4791#section-9.6.5
     # The returned calendar components MUST NOT use recurrence
     #       properties (i.e., EXDATE, EXRULE, RDATE, and RRULE) and MUST NOT
