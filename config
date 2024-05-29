@@ -120,6 +120,9 @@
 # Don't include passwords in logs
 #mask_passwords = True
 
+# Log bad PUT request content
+#bad_put_request_content = False
+
 
 [headers]
 
