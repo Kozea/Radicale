@@ -24,8 +24,8 @@ import posixpath
 import socket
 import xml.etree.ElementTree as ET
 from http import client
-from typing import (Callable, Iterable, Iterator, List, Optional, Sequence,
-                    Tuple, Union)
+from typing import (Any, Callable, Iterable, Iterator, List, Optional,
+                    Sequence, Tuple, Union)
 from urllib.parse import unquote, urlparse
 
 import vobject.base
@@ -196,14 +196,10 @@ def _expand(
         start: datetime.datetime,
         end: datetime.datetime,
 ) -> ET.Element:
-    rruleset = None
-    if hasattr(item.vobject_item.vevent, 'rrule'):
-        rruleset = item.vobject_item.vevent.getrruleset()
-
-    expanded_item = _make_vobject_expanded_item(item)
+    expanded_item, rruleset = _make_vobject_expanded_item(item)
 
     if rruleset:
-        recurrences = rruleset.between(start, end)
+        recurrences = rruleset.between(start, end, inc=True)
 
         expanded: vobject.base.Component = copy.copy(expanded_item.vobject_item)
         is_expanded_filled: bool = False
@@ -232,7 +228,7 @@ def _expand(
 
 def _make_vobject_expanded_item(
         item: radicale_item.Item
-) -> radicale_item.Item:
+) -> Tuple[radicale_item.Item, Optional[Any]]:
     # https://www.rfc-editor.org/rfc/rfc4791#section-9.6.5
     # The returned calendar components MUST NOT use recurrence
     #       properties (i.e., EXDATE, EXRULE, RDATE, and RRULE) and MUST NOT
@@ -243,17 +239,33 @@ def _make_vobject_expanded_item(
     item = copy.copy(item)
     vevent = item.vobject_item.vevent
 
-    start_utc = vevent.dtstart.value.astimezone(datetime.timezone.utc)
-    vevent.dtstart = ContentLine(
-        name='DTSTART',
-        value=start_utc.strftime('%Y%m%dT%H%M%SZ'), params={})
+    if type(vevent.dtstart.value) is datetime.date:
+        start_utc = datetime.datetime.fromordinal(
+            vevent.dtstart.value.toordinal()
+        ).replace(tzinfo=datetime.timezone.utc)
+    else:
+        start_utc = vevent.dtstart.value.astimezone(datetime.timezone.utc)
+
+    vevent.dtstart = ContentLine(name='DTSTART', value=start_utc, params=[])
 
     dt_end = getattr(vevent, 'dtend', None)
     if dt_end is not None:
-        end_utc = dt_end.value.astimezone(datetime.timezone.utc)
-        vevent.dtend = ContentLine(
-            name='DTEND',
-            value=end_utc.strftime('%Y%m%dT%H%M%SZ'), params={})
+        if type(vevent.dtend.value) is datetime.date:
+            end_utc = datetime.datetime.combine(
+                dt_end.value, time=datetime.time(0, 0, 0)).replace(tzinfo=datetime.timezone.utc)
+        else:
+            end_utc = dt_end.value.astimezone(datetime.timezone.utc)
+
+        vevent.dtend = ContentLine(name='DTEND', value=end_utc, params={})
+
+    rruleset = None
+    if hasattr(item.vobject_item.vevent, 'rrule'):
+        rruleset = vevent.getrruleset()
+
+    # There is something strage behavour during serialization native datetime, so converting manualy
+    vevent.dtstart.value = vevent.dtstart.value.strftime('%Y%m%dT%H%M%SZ')
+    if dt_end is not None:
+        vevent.dtend.value = vevent.dtend.value.strftime('%Y%m%dT%H%M%SZ')
 
     timezones_to_remove = []
     for component in item.vobject_item.components():
@@ -271,7 +283,7 @@ def _make_vobject_expanded_item(
     except AttributeError:
         pass
 
-    return item
+    return item, rruleset
 
 
 def xml_item_response(base_prefix: str, href: str,
