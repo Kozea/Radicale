@@ -80,6 +80,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         """
         super().__init__(configuration)
         self._mask_passwords = configuration.get("logging", "mask_passwords")
+        self._bad_put_request_content = configuration.get("logging", "bad_put_request_content")
         self._auth_delay = configuration.get("auth", "delay")
         self._internal_server = configuration.get("server", "_internal_server")
         self._max_content_length = configuration.get(

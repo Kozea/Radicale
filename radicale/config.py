@@ -247,6 +247,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "info",
             "help": "threshold for the logger",
             "type": logging_level}),
+        ("bad_put_request_content", {
+            "value": "False",
+            "help": "log bad PUT request content",
+            "type": bool}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs",
