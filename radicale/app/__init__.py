@@ -3,6 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,6 +81,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         """
         super().__init__(configuration)
         self._mask_passwords = configuration.get("logging", "mask_passwords")
+        self._bad_put_request_content = configuration.get("logging", "bad_put_request_content")
         self._auth_delay = configuration.get("auth", "delay")
         self._internal_server = configuration.get("server", "_internal_server")
         self._max_content_length = configuration.get(
