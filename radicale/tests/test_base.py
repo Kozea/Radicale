@@ -1604,10 +1604,104 @@ permissions: RrWw""")
                 uids.append(line)
 
             if line.startswith("RECURRENCE-ID:"):
+                assert line in ["RECURRENCE-ID:20060103T170000Z", "RECURRENCE-ID:20060104T170000Z"]
                 recurrence_ids.append(line)
+
+            if line.startswith("DTSTART:"):
+                assert line == "DTSTART:20060102T170000Z"
 
         assert len(uids) == 2
         assert len(set(recurrence_ids)) == 2
+
+    def test_report_with_expand_property_all_day_event(self) -> None:
+        """Test report with expand property"""
+        self.put("/calendar.ics/", get_file_content("event_full_day_rrule.ics"))
+        req_body_without_expand = \
+            """<?xml version="1.0" encoding="utf-8" ?>
+            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                <D:prop>
+                    <C:calendar-data>
+                    </C:calendar-data>
+                </D:prop>
+                <C:filter>
+                    <C:comp-filter name="VCALENDAR">
+                        <C:comp-filter name="VEVENT">
+                            <C:time-range start="20060103T000000Z" end="20060105T000000Z"/>
+                        </C:comp-filter>
+                    </C:comp-filter>
+                </C:filter>
+            </C:calendar-query>
+            """
+        _, responses = self.report("/calendar.ics/", req_body_without_expand)
+        assert len(responses) == 1
+
+        response_without_expand = responses['/calendar.ics/event_full_day_rrule.ics']
+        assert not isinstance(response_without_expand, int)
+        status, element = response_without_expand["C:calendar-data"]
+
+        assert status == 200 and element.text
+
+        assert "RRULE" in element.text
+        assert "RECURRENCE-ID" not in element.text
+
+        uids: List[str] = []
+        for line in element.text.split("\n"):
+            if line.startswith("UID:"):
+                uid = line[len("UID:"):]
+                assert uid == "event_full_day_rrule"
+                uids.append(uid)
+
+        assert len(uids) == 1
+
+        req_body_with_expand = \
+            """<?xml version="1.0" encoding="utf-8" ?>
+            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                <D:prop>
+                    <C:calendar-data>
+                        <C:expand start="20060103T000000Z" end="20060105T000000Z"/>
+                    </C:calendar-data>
+                </D:prop>
+                <C:filter>
+                    <C:comp-filter name="VCALENDAR">
+                        <C:comp-filter name="VEVENT">
+                            <C:time-range start="20060103T000000Z" end="20060105T000000Z"/>
+                        </C:comp-filter>
+                    </C:comp-filter>
+                </C:filter>
+            </C:calendar-query>
+            """
+
+        _, responses = self.report("/calendar.ics/", req_body_with_expand)
+
+        assert len(responses) == 1
+
+        response_with_expand = responses['/calendar.ics/event_full_day_rrule.ics']
+        assert not isinstance(response_with_expand, int)
+        status, element = response_with_expand["C:calendar-data"]
+
+        assert status == 200 and element.text
+        assert "RRULE" not in element.text
+        assert "BEGIN:VTIMEZONE" not in element.text
+
+        uids = []
+        recurrence_ids = []
+        for line in element.text.split("\n"):
+            if line.startswith("UID:"):
+                assert line == "UID:event_full_day_rrule"
+                uids.append(line)
+
+            if line.startswith("RECURRENCE-ID:"):
+                assert line in ["RECURRENCE-ID:20060103T000000Z", "RECURRENCE-ID:20060104T000000Z", "RECURRENCE-ID:20060105T000000Z"]
+                recurrence_ids.append(line)
+
+            if line.startswith("DTSTART:"):
+                assert line == "DTSTART:20060102T000000Z"
+
+            if line.startswith("DTEND:"):
+                assert line == "DTEND:20060103T000000Z"
+
+        assert len(uids) == 3
+        assert len(set(recurrence_ids)) == 3
 
     def test_propfind_sync_token(self) -> None:
         """Retrieve the sync-token with a propfind request"""
