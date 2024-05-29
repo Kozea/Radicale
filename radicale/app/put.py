@@ -147,7 +147,7 @@ class ApplicationPartPut(ApplicationBase):
         except Exception as e:
             logger.warning(
                 "Bad PUT request on %r (read_components): %s", path, e, exc_info=True)
-            if self._bad_put_request_content:
+            if self._log_bad_put_request_content:
                 logger.warning("Bad PUT request content of %r:\n%s", path, content)
             return httputils.BAD_REQUEST
         (prepared_items, prepared_tag, prepared_write_whole_collection,
