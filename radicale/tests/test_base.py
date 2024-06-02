@@ -1691,14 +1691,14 @@ permissions: RrWw""")
                 uids.append(line)
 
             if line.startswith("RECURRENCE-ID:"):
-                assert line in ["RECURRENCE-ID:20060103T000000Z", "RECURRENCE-ID:20060104T000000Z", "RECURRENCE-ID:20060105T000000Z"]
+                assert line in ["RECURRENCE-ID:20060103", "RECURRENCE-ID:20060104", "RECURRENCE-ID:20060105"]
                 recurrence_ids.append(line)
 
             if line.startswith("DTSTART:"):
-                assert line == "DTSTART:20060102T000000Z"
+                assert line == "DTSTART:20060102"
 
             if line.startswith("DTEND:"):
-                assert line == "DTEND:20060103T000000Z"
+                assert line == "DTEND:20060103"
 
         assert len(uids) == 3
         assert len(set(recurrence_ids)) == 3
