@@ -196,7 +196,14 @@ def _expand(
         start: datetime.datetime,
         end: datetime.datetime,
 ) -> ET.Element:
-    expanded_item, rruleset = _make_vobject_expanded_item(item)
+    dt_format = '%Y%m%dT%H%M%SZ'
+
+    if type(item.vobject_item.vevent.dtstart.value) is datetime.date:
+        # If an event comes to us with a dt_start specified as a date
+        # then in the response we return the date, not datetime
+        dt_format = '%Y%m%d'
+
+    expanded_item, rruleset = _make_vobject_expanded_item(item, dt_format)
 
     if rruleset:
         recurrences = rruleset.between(start, end, inc=True)
@@ -210,7 +217,7 @@ def _expand(
             vevent = copy.deepcopy(expanded.vevent)
             vevent.recurrence_id = ContentLine(
                 name='RECURRENCE-ID',
-                value=recurrence_utc.strftime('%Y%m%dT%H%M%SZ'), params={}
+                value=recurrence_utc.strftime(dt_format), params={}
             )
 
             if is_expanded_filled is False:
@@ -227,7 +234,8 @@ def _expand(
 
 
 def _make_vobject_expanded_item(
-        item: radicale_item.Item
+        item: radicale_item.Item,
+        dt_format: str,
 ) -> Tuple[radicale_item.Item, Optional[Any]]:
     # https://www.rfc-editor.org/rfc/rfc4791#section-9.6.5
     # The returned calendar components MUST NOT use recurrence
@@ -251,8 +259,9 @@ def _make_vobject_expanded_item(
     dt_end = getattr(vevent, 'dtend', None)
     if dt_end is not None:
         if type(vevent.dtend.value) is datetime.date:
-            end_utc = datetime.datetime.combine(
-                dt_end.value, time=datetime.time(0, 0, 0)).replace(tzinfo=datetime.timezone.utc)
+            end_utc = datetime.datetime.fromordinal(
+                dt_end.value.toordinal()
+            ).replace(tzinfo=datetime.timezone.utc)
         else:
             end_utc = dt_end.value.astimezone(datetime.timezone.utc)
 
@@ -263,9 +272,9 @@ def _make_vobject_expanded_item(
         rruleset = vevent.getrruleset()
 
     # There is something strage behavour during serialization native datetime, so converting manualy
-    vevent.dtstart.value = vevent.dtstart.value.strftime('%Y%m%dT%H%M%SZ')
+    vevent.dtstart.value = vevent.dtstart.value.strftime(dt_format)
     if dt_end is not None:
-        vevent.dtend.value = vevent.dtend.value.strftime('%Y%m%dT%H%M%SZ')
+        vevent.dtend.value = vevent.dtend.value.strftime(dt_format)
 
     timezones_to_remove = []
     for component in item.vobject_item.components():
