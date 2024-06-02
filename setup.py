@@ -19,7 +19,7 @@ from setuptools import find_packages, setup
 
 # When the version is updated, a new section in the CHANGELOG.md file must be
 # added too.
-VERSION = "3.2.1"
+VERSION = "3.dev"
 
 with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
