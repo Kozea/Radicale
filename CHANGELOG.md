@@ -1,6 +1,12 @@
 # Changelog
 
-## 3.dev
+## 3.2.1
+
+* Enhancement: add option for logging bad PUT request content
+* Enhancement: extend logging with step where bad PUT request failed
+* Fix: support for recurrence "full day"
+* Fix: list of web_files related to HTML pages
+* Test: update/adjustments for workflows (pytest>=7, typeguard<4.3)
 
 ## 3.2.0
 
