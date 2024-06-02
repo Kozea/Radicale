@@ -902,6 +902,12 @@ Don't include passwords in logs.
 
 Default: `True`
 
+##### bad_put_request_content
+
+Log bad PUT request content (for further diagnostics)
+
+Default: `False'
+
 #### headers
 
 In this section additional HTTP headers that are sent to clients can be
