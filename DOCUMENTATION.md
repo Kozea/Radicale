@@ -216,6 +216,8 @@ requirements.
 
 #### Linux with systemd system-wide
 
+Recommendation: check support by [Linux Distribution Packages](#linux-distribution-packages) instead of manual setup / initial configuration.
+
 Create the **radicale** user and group for the Radicale service. (Run
 `useradd --system --user-group --home-dir / --shell /sbin/nologin radicale` as root.)
 The storage folder must be writable by **radicale**. (Run
@@ -1515,7 +1517,7 @@ Radicale has been packaged for:
 * [Debian](http://packages.debian.org/radicale) by Jonas Smedegaard
 * [Gentoo](https://packages.gentoo.org/packages/www-apps/radicale)
   by René Neumann, Maxim Koltsov and Manuel Rüger
-* [Fedora/RHEL/CentOS](https://src.fedoraproject.org/rpms/radicale) by Jorti
+* [Fedora/EnterpriseLinux](https://src.fedoraproject.org/rpms/radicale) by Jorti
   and Peter Bieringer
 * [Mageia](http://madb.mageia.org/package/show/application/0/name/radicale)
   by Jani Välimaa
