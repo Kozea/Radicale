@@ -152,3 +152,11 @@ class TestBaseAuthRequests(BaseTest):
         """Custom authentication."""
         self.configure({"auth": {"type": "radicale.tests.custom.auth"}})
         self.propfind("/tmp/", login="tmp:")
+
+    def test_none(self) -> None:
+        self.configure({"auth": {"type": "none"}})
+        self.propfind("/tmp/", login="tmp:")
+
+    def test_denyall(self) -> None:
+        self.configure({"auth": {"type": "denyall"}})
+        self.propfind("/tmp/", login="tmp:", check=401)
