@@ -53,7 +53,7 @@
 [auth]
 
 # Authentication method
-# Value: none | htpasswd | remote_user | http_x_remote_user
+# Value: none | htpasswd | remote_user | http_x_remote_user | denyall
 #type = none
 
 # Htpasswd filename

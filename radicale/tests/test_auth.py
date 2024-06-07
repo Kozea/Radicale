@@ -1,7 +1,8 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2016 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -152,3 +153,11 @@ class TestBaseAuthRequests(BaseTest):
         """Custom authentication."""
         self.configure({"auth": {"type": "radicale.tests.custom.auth"}})
         self.propfind("/tmp/", login="tmp:")
+
+    def test_none(self) -> None:
+        self.configure({"auth": {"type": "none"}})
+        self.propfind("/tmp/", login="tmp:")
+
+    def test_denyall(self) -> None:
+        self.configure({"auth": {"type": "denyall"}})
+        self.propfind("/tmp/", login="tmp:", check=401)

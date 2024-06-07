@@ -2,7 +2,8 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,6 +34,7 @@ from typing import Sequence, Tuple, Union
 from radicale import config, types, utils
 
 INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
+                                 "denyall",
                                  "htpasswd")
 
 

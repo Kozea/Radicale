@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.dev
+* Enhancement: add support for auth.type=denyall (will be default for security reasons in upcoming releases)
 
 ## 3.2.1
 
