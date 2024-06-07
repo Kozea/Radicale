@@ -53,9 +53,14 @@ def _get_application_instance(config_path: str, wsgi_errors: types.ErrorStream
                     config_path))
                 log.set_level(cast(str, configuration.get("logging", "level")))
                 # Log configuration after logger is configured
+                default_config_active = True
                 for source, miss in configuration.sources():
-                    logger.info("%s %s", "Skipped missing" if miss
+                    logger.info("%s %s", "Skipped missing/unreadable" if miss
                                 else "Loaded", source)
+                    if not miss and source != "default config":
+                        default_config_active = False
+                if default_config_active:
+                    logger.warn("%s", "No config file found/readable - only default config is active")
                 _application_instance = Application(configuration)
     if _application_config_path != config_path:
         raise ValueError("RADICALE_CONFIG must not change: %r != %r" %

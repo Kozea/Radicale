@@ -167,8 +167,14 @@ def run() -> None:
     log.set_level(cast(str, configuration.get("logging", "level")))
 
     # Log configuration after logger is configured
+    default_config_active = True
     for source, miss in configuration.sources():
-        logger.info("%s %s", "Skipped missing" if miss else "Loaded", source)
+        logger.info("%s %s", "Skipped missing/unreadable" if miss else "Loaded", source)
+        if not miss and source != "default config":
+            default_config_active = False
+
+    if default_config_active:
+        logger.warn("%s", "No config file found/readable - only default config is active")
 
     if args_ns.verify_storage:
         logger.info("Verifying storage")
