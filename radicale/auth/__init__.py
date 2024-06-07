@@ -32,6 +32,7 @@ Take a look at the class ``BaseAuth`` if you want to implement your own.
 from typing import Sequence, Tuple, Union
 
 from radicale import config, types, utils
+from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
                                  "denyall",
@@ -40,6 +41,10 @@ INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
 
 def load(configuration: "config.Configuration") -> "BaseAuth":
     """Load the authentication module chosen in configuration."""
+    if configuration.get("auth", "type") == "none":
+        logger.warn("No user authentication is selected: '[auth] type=none' (insecure)")
+    if configuration.get("auth", "type") == "denyall":
+        logger.warn("All access is blocked by: '[auth] type=denyall'")
     return utils.load_plugin(INTERNAL_TYPES, "auth", "Auth", BaseAuth,
                              configuration)
 
