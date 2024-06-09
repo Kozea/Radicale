@@ -107,7 +107,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                             return
                         else:
                             raise RuntimeError("Failed to load item %r in %r: %s" %
-                                           (href, self.path, e)) from e
+                                               (href, self.path, e)) from e
                     # Clean cache entries once after the data in the file
                     # system was edited externally.
                     if not self._item_cache_cleaned:
