@@ -212,7 +212,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "delete sync token that are older",
             "type": positive_int}),
         ("skip_broken_item", {
-            "value": False,
+            "value": "False",
             "help": "skip broken item instead of triggering exception",
             "type": bool}),
         ("hook", {
