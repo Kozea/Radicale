@@ -99,6 +99,9 @@
 # Delete sync token that are older (seconds)
 #max_sync_token_age = 2592000
 
+# Skip broken item instead of triggering an exception
+#skip_broken_item = False
+
 # Command that is run after changes to storage
 # Example: ([ -d .git ] || git init) && git add -A && (git diff --cached --quiet || git commit -m "Changes by \"%(user)s\"")
 #hook =

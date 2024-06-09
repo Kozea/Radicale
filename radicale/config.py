@@ -211,6 +211,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "2592000",  # 30 days
             "help": "delete sync token that are older",
             "type": positive_int}),
+        ("skip_broken_item", {
+            "value": "False",
+            "help": "skip broken item instead of triggering exception",
+            "type": bool}),
         ("hook", {
             "value": "",
             "help": "command that is run after changes to storage",
