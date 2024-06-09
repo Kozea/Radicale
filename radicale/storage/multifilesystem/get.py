@@ -101,7 +101,11 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                         cache_content = self._store_item_cache(
                             href, temp_item, cache_hash)
                     except Exception as e:
-                        raise RuntimeError("Failed to load item %r in %r: %s" %
+                        if self._skip_broken_item:
+                            logger.warning("Skip broken item %r in %r: %s", href, self.path, e)
+                            return
+                        else:
+                            raise RuntimeError("Failed to load item %r in %r: %s" %
                                            (href, self.path, e)) from e
                     # Clean cache entries once after the data in the file
                     # system was edited externally.

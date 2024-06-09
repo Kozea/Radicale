@@ -40,6 +40,7 @@ class CollectionBase(storage.BaseCollection):
         # Path should already be sanitized
         self._path = pathutils.strip_path(path)
         self._encoding = storage_.configuration.get("encoding", "stock")
+        self._skip_broken_item = storage_.configuration.get("storage", "skip_broken_item")
         if filesystem_path is None:
             filesystem_path = pathutils.path_to_filesystem(folder, self.path)
         self._filesystem_path = filesystem_path

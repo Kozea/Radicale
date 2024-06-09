@@ -865,6 +865,12 @@ Delete sync-token that are older than the specified time. (seconds)
 
 Default: `2592000`
 
+#### skip_broken_item
+
+Skip broken item instead of triggering an exception
+
+Default: False
+
 ##### hook
 
 Command that is run after changes to storage. Take a look at the
