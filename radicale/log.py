@@ -215,17 +215,23 @@ def setup() -> None:
     register_stream = handler.register_stream
     log_record_factory = IdentLogRecordFactory(logging.getLogRecordFactory())
     logging.setLogRecordFactory(log_record_factory)
-    set_level(logging.WARNING)
+    set_level(logging.WARNING, True)
     if format_name != sane_format_name:
         logger.error("Invalid RADICALE_LOG_FORMAT: %r", format_name)
 
 
-def set_level(level: Union[int, str]) -> None:
+def set_level(level: Union[int, str], backtrace_on_debug: bool) -> None:
     """Set logging level for global logger."""
     if isinstance(level, str):
         level = getattr(logging, level.upper())
         assert isinstance(level, int)
     logger.setLevel(level)
-    logger.removeFilter(REMOVE_TRACEBACK_FILTER)
     if level > logging.DEBUG:
+        logger.info("Logging of backtrace is disabled in this loglevel")
         logger.addFilter(REMOVE_TRACEBACK_FILTER)
+    else:
+        if not backtrace_on_debug:
+            logger.debug("Logging of backtrace is disabled by option in this loglevel")
+            logger.addFilter(REMOVE_TRACEBACK_FILTER)
+        else:
+            logger.removeFilter(REMOVE_TRACEBACK_FILTER)
