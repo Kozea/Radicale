@@ -104,7 +104,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                     except Exception as e:
                         if self._skip_broken_item:
                             logger.warning("Skip broken item %r in %r: %s", href, self.path, e)
-                            return
+                            return None
                         else:
                             raise RuntimeError("Failed to load item %r in %r: %s" %
                                                (href, self.path, e)) from e
