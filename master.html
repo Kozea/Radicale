@@ -180,6 +180,7 @@ with the WSGI server</a></li>
 <li class="level4"><a href="#auth" id="toc-auth">auth</a></li>
 <li class="level4"><a href="#rights" id="toc-rights">rights</a></li>
 <li class="level4"><a href="#storage-1" id="toc-storage-1">storage</a></li>
+<li class="level4"><a href="#skip_broken_item" id="toc-skip_broken_item">skip_broken_item</a></li>
 <li class="level4"><a href="#web" id="toc-web">web</a></li>
 <li class="level4"><a href="#logging" id="toc-logging">logging</a></li>
 <li class="level4"><a href="#headers" id="toc-headers">headers</a></li>
@@ -975,6 +976,11 @@ only be used with a single process.</p>
 (seconds)</p>
 <p>Default: <code>2592000</code></p>
 </section>
+</section>
+<section class="level4" id="skip_broken_item">
+<h4>skip_broken_item <a class="headerlink" href="#skip_broken_item">&para;</a></h4>
+<p>Skip broken item instead of triggering an exception</p>
+<p>Default: False</p>
 <section class="level5" id="hook">
 <h5>hook <a class="headerlink" href="#hook">&para;</a></h5>
 <p>Command that is run after changes to storage. Take a look at the <a href="#versioning-with-git">Versioning with Git</a> tutorial for an
