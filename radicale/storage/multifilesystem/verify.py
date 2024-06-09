@@ -49,7 +49,9 @@ class StoragePartVerify(StoragePartDiscover, StorageBase):
         while remaining_sane_paths:
             sane_path = remaining_sane_paths.pop(0)
             path = pathutils.unstrip_path(sane_path, True)
-            logger.debug("Verifying collection %r", sane_path)
+            logger.info("Verifying   path %r", sane_path)
+            count = 0
+            is_collection = True
             with exception_cm(sane_path, None):
                 saved_item_errors = item_errors
                 collection: Optional[storage.BaseCollection] = None
@@ -60,6 +62,9 @@ class StoragePartVerify(StoragePartDiscover, StorageBase):
                         assert isinstance(item, storage.BaseCollection)
                         collection = item
                         collection.get_meta()
+                        if not collection.tag:
+                            is_collection = False
+                            logger.info("Skip !collection %r", sane_path)
                         continue
                     if isinstance(item, storage.BaseCollection):
                         has_child_collections = True
@@ -69,13 +74,17 @@ class StoragePartVerify(StoragePartDiscover, StorageBase):
                                      item.href, sane_path, item.uid)
                     else:
                         uids.add(item.uid)
-                        logger.debug("Verified item %r in %r",
-                                     item.href, sane_path)
+                        count += 1
+                        logger.debug("Verified in %r item %r",
+                                     sane_path, item.href)
                 assert collection
                 if item_errors == saved_item_errors:
-                    collection.sync()
+                    if is_collection:
+                        collection.sync()
                 if has_child_collections and collection.tag:
                     logger.error("Invalid collection %r: %r must not have "
                                  "child collections", sane_path,
                                  collection.tag)
+            if is_collection:
+                logger.info("Verified collect %r (items: %d)", sane_path, count)
         return item_errors == 0 and collection_errors == 0
