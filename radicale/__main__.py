@@ -142,7 +142,7 @@ def run() -> None:
     # Preliminary configure logging
     with contextlib.suppress(ValueError):
         log.set_level(config.DEFAULT_CONFIG_SCHEMA["logging"]["level"]["type"](
-            vars(args_ns).get("c:logging:level", "")))
+            vars(args_ns).get("c:logging:level", "")), True)
 
     # Update Radicale configuration according to arguments
     arguments_config: types.MUTABLE_CONFIG = {}
@@ -165,7 +165,7 @@ def run() -> None:
         sys.exit(1)
 
     # Configure logging
-    log.set_level(cast(str, configuration.get("logging", "level")))
+    log.set_level(cast(str, configuration.get("logging", "level")), configuration.get("logging", "backtrace_on_debug"))
 
     # Log configuration after logger is configured
     default_config_active = True

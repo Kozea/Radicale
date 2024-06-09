@@ -910,6 +910,12 @@ Log bad PUT request content (for further diagnostics)
 
 Default: `False'
 
+##### backtrace_on_debug
+
+Log backtrace on level=debug
+
+Default: `True'
+
 #### headers
 
 In this section additional HTTP headers that are sent to clients can be

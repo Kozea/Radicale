@@ -252,6 +252,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "log bad PUT request content",
             "type": bool}),
+        ("backtrace_on_debug", {
+            "value": "True",
+            "help": "log backtrace on level=debug",
+            "type": bool}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs",
