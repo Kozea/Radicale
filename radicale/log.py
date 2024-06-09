@@ -215,7 +215,7 @@ def setup() -> None:
     register_stream = handler.register_stream
     log_record_factory = IdentLogRecordFactory(logging.getLogRecordFactory())
     logging.setLogRecordFactory(log_record_factory)
-    set_level(logging.WARNING, True)
+    set_level(logging.INFO, True)
     if format_name != sane_format_name:
         logger.error("Invalid RADICALE_LOG_FORMAT: %r", format_name)
 
