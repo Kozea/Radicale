@@ -4,6 +4,10 @@
 * Enhancement: add support for auth.type=denyall (will be default for security reasons in upcoming releases)
 * Enhancement: display warning in case only default config is active
 * Enhancement: display warning in case no user authentication is active
+* Enhancement: add option to skip broken item to avoid triggering exception
+* Enhancement: add support for predefined collections for new users
+* Enhancement: add options to disable several parts in debug log like backtrace, request_header, request_content, response_content
+* Enhancement: rights/from_file: display resulting permission of a match in debug log
 
 ## 3.2.1
 
