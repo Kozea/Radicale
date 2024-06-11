@@ -142,7 +142,8 @@ def read_request_body(configuration: "config.Configuration",
                       environ: types.WSGIEnviron) -> str:
     content = decode_request(configuration, environ,
                              read_raw_request_body(configuration, environ))
-    logger.debug("Request content:\n%s", content)
+    if configuration.get("logging", "request_content_on_debug"):
+        logger.debug("Request content:\n%s", content)
     return content
 
 
