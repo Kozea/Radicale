@@ -82,6 +82,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         super().__init__(configuration)
         self._mask_passwords = configuration.get("logging", "mask_passwords")
         self._bad_put_request_content = configuration.get("logging", "bad_put_request_content")
+        self._request_header_on_debug = configuration.get("logging", "request_header_on_debug")
+        self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
         self._auth_delay = configuration.get("auth", "delay")
         self._internal_server = configuration.get("server", "_internal_server")
         self._max_content_length = configuration.get(
@@ -141,7 +143,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             answers = []
             if answer is not None:
                 if isinstance(answer, str):
-                    logger.debug("Response content:\n%s", answer)
+                    if self._response_content_on_debug:
+                        logger.debug("Response content:\n%s", answer)
                     headers["Content-Type"] += "; charset=%s" % self._encoding
                     answer = answer.encode(self._encoding)
                 accept_encoding = [
@@ -187,8 +190,9 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         logger.info("%s request for %r%s received from %s%s",
                     request_method, unsafe_path, depthinfo,
                     remote_host, remote_useragent)
-        logger.debug("Request headers:\n%s",
-                     pprint.pformat(self._scrub_headers(environ)))
+        if self._request_header_on_debug:
+            logger.debug("Request headers:\n%s",
+                         pprint.pformat(self._scrub_headers(environ)))
 
         # SCRIPT_NAME is already removed from PATH_INFO, according to the
         # WSGI specification.

@@ -127,7 +127,16 @@
 #bad_put_request_content = False
 
 # Log backtrace on level=debug
-# backtrace_on_debug = True
+#backtrace_on_debug = True
+
+# Log request header on level=debug
+#request_header_on_debug = True
+
+# Log request content on level=debug
+#request_content_on_debug = True
+
+# Log response content on level=debug
+#response_content_on_debug = True
 
 
 [headers]

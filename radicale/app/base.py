@@ -50,6 +50,7 @@ class ApplicationBase:
         self._web = web.load(configuration)
         self._encoding = configuration.get("encoding", "request")
         self._log_bad_put_request_content = configuration.get("logging", "bad_put_request_content")
+        self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
         self._hook = hook.load(configuration)
 
     def _read_xml_request_body(self, environ: types.WSGIEnviron
@@ -71,8 +72,9 @@ class ApplicationBase:
 
     def _xml_response(self, xml_content: ET.Element) -> bytes:
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Response content:\n%s",
-                         xmlutils.pretty_xml(xml_content))
+            if self._response_content_on_debug:
+                logger.debug("Response content:\n%s",
+                             xmlutils.pretty_xml(xml_content))
         f = io.BytesIO()
         ET.ElementTree(xml_content).write(f, encoding=self._encoding,
                                           xml_declaration=True)
