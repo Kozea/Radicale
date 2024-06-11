@@ -274,7 +274,14 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 if "W" in self._rights.authorization(user, principal_path):
                     with self._storage.acquire_lock("w", user):
                         try:
-                            self._storage.create_collection(principal_path)
+                            new_coll = self._storage.create_collection(principal_path)
+                            if new_coll:
+                                jsn_coll = self.configuration.get("storage", "predefined_collections")
+                                for (name_coll, props) in jsn_coll.items():
+                                    try:
+                                        self._storage.create_collection(principal_path + name_coll, props=props)
+                                    except ValueError as e:
+                                        logger.warning("Failed to create predefined collection %r: %s", name_coll, e)
                         except ValueError as e:
                             logger.warning("Failed to create principal "
                                            "collection %r: %s", user, e)

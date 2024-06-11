@@ -27,6 +27,7 @@ Use ``load()`` to obtain an instance of ``Configuration`` for use with
 """
 
 import contextlib
+import json
 import math
 import os
 import string
@@ -37,6 +38,7 @@ from typing import (Any, Callable, ClassVar, Iterable, List, Optional,
                     Sequence, Tuple, TypeVar, Union)
 
 from radicale import auth, hook, rights, storage, types, web
+from radicale.item import check_and_sanitize_props
 
 DEFAULT_CONFIG_PATH: str = os.pathsep.join([
     "?/etc/radicale/config",
@@ -100,6 +102,16 @@ def _convert_to_bool(value: Any) -> bool:
     if value.lower() not in RawConfigParser.BOOLEAN_STATES:
         raise ValueError("not a boolean: %r" % value)
     return RawConfigParser.BOOLEAN_STATES[value.lower()]
+
+
+def json_str(value: Any) -> dict:
+    if not value:
+        return {}
+    ret = json.loads(value)
+    for (name_coll, props) in ret.items():
+        checked_props = check_and_sanitize_props(props)
+        ret[name_coll] = checked_props
+    return ret
 
 
 INTERNAL_OPTIONS: Sequence[str] = ("_allow_extra",)
@@ -222,7 +234,11 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("_filesystem_fsync", {
             "value": "True",
             "help": "sync all changes to filesystem during requests",
-            "type": bool})])),
+            "type": bool}),
+        ("predefined_collections", {
+            "value": "",
+            "help": "predefined user collections",
+            "type": json_str})])),
     ("hook", OrderedDict([
         ("type", {
             "value": "none",
