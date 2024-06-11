@@ -75,10 +75,11 @@ class Rights(rights.BaseRights):
                 raise RuntimeError("Error in section %r of rights file %r: "
                                    "%s" % (section, self._filename, e)) from e
             if user_match and collection_match:
-                logger.debug("Rule %r:%r matches %r:%r from section %r",
+                permission = rights_config.get(section, "permissions")
+                logger.debug("Rule %r:%r matches %r:%r from section %r permission %r",
                              user, sane_path, user_pattern,
-                             collection_pattern, section)
-                return rights_config.get(section, "permissions")
+                             collection_pattern, section, permission)
+                return permission
             logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
                          user, sane_path, user_pattern, collection_pattern,
                          section)
