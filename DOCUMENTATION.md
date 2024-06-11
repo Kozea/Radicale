@@ -922,6 +922,24 @@ Log backtrace on level=debug
 
 Default: `True'
 
+##### request_header_on_debug
+
+Log request on level=debug
+
+Default: `True'
+
+##### request_content_on_debug
+
+Log request on level=debug
+
+Default: `True'
+
+##### response_content_on_debug = True
+
+Log response on level=debug
+
+Default: `True'
+
 #### headers
 
 In this section additional HTTP headers that are sent to clients can be
