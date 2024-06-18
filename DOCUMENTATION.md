@@ -1137,6 +1137,8 @@ Delete the collections by running something like:
 curl -u user -X DELETE 'http://localhost:5232/user/calendar'
 ```
 
+Note: requires config/option `permit_delete_collection = True`
+
 ### Authentication and Rights
 
 This section describes the format of the rights file for the `from_file`
