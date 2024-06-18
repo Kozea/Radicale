@@ -1,6 +1,8 @@
 # Changelog
 
 ## 3.dev
+
+## 3.2.2
 * Enhancement: add support for auth.type=denyall (will be default for security reasons in upcoming releases)
 * Enhancement: display warning in case only default config is active
 * Enhancement: display warning in case no user authentication is active
