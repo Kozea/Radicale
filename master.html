@@ -1212,6 +1212,8 @@ automatic discovery of collections will only show calendars and address
 books that are direct children of the path <code>/USERNAME/</code>.</p>
 <p>Delete the collections by running something like:</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb39-1"><a aria-hidden="true" href="#cb39-1" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-u</span> user <span class="at">-X</span> DELETE <span class="st">'http://localhost:5232/user/calendar'</span></span></code></pre></div>
+<p>Note: requires config/option
+<code>permit_delete_collection = True</code></p>
 </section>
 <section class="level3" id="authentication-and-rights">
 <h3>Authentication and Rights <a class="headerlink" href="#authentication-and-rights">&para;</a></h3>
