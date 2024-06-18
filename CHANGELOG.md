@@ -8,6 +8,8 @@
 * Enhancement: add support for predefined collections for new users
 * Enhancement: add options to enable several parts in debug log like backtrace, request_header, request_content, response_content (default: disabled)
 * Enhancement: rights/from_file: display resulting permission of a match in debug log
+* Enhancement: add Apache config file example (see contrib directory)
+* Fix: "verify-collection" skips non-collection directories, logging improved
 
 ## 3.2.1
 
