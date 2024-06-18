@@ -149,6 +149,8 @@ class ApplicationPartPut(ApplicationBase):
                 "Bad PUT request on %r (read_components): %s", path, e, exc_info=True)
             if self._log_bad_put_request_content:
                 logger.warning("Bad PUT request content of %r:\n%s", path, content)
+            else:
+                logger.debug("Bad PUT request content: suppressed by config/option [auth] bad_put_request_content")
             return httputils.BAD_REQUEST
         (prepared_items, prepared_tag, prepared_write_whole_collection,
          prepared_props, prepared_exc_info) = prepare(

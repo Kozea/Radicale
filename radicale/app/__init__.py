@@ -145,6 +145,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 if isinstance(answer, str):
                     if self._response_content_on_debug:
                         logger.debug("Response content:\n%s", answer)
+                    else:
+                        logger.debug("Response content: suppressed by config/option [auth] response_content_on_debug")
                     headers["Content-Type"] += "; charset=%s" % self._encoding
                     answer = answer.encode(self._encoding)
                 accept_encoding = [
@@ -191,8 +193,10 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     request_method, unsafe_path, depthinfo,
                     remote_host, remote_useragent)
         if self._request_header_on_debug:
-            logger.debug("Request headers:\n%s",
+            logger.debug("Request header:\n%s",
                          pprint.pformat(self._scrub_headers(environ)))
+        else:
+            logger.debug("Request header: suppressed by config/option [auth] request_header_on_debug")
 
         # SCRIPT_NAME is already removed from PATH_INFO, according to the
         # WSGI specification.
