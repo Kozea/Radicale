@@ -869,7 +869,7 @@ Default: `2592000`
 
 Skip broken item instead of triggering an exception
 
-Default: False
+Default: `True`
 
 ##### hook
 
@@ -934,31 +934,31 @@ Default: `True`
 
 Log bad PUT request content (for further diagnostics)
 
-Default: `False'
+Default: `False`
 
 ##### backtrace_on_debug
 
 Log backtrace on level=debug
 
-Default: `True'
+Default: `False`
 
 ##### request_header_on_debug
 
 Log request on level=debug
 
-Default: `True'
+Default: `False`
 
 ##### request_content_on_debug
 
 Log request on level=debug
 
-Default: `True'
+Default: `False`
 
 ##### response_content_on_debug = True
 
 Log response on level=debug
 
-Default: `True'
+Default: `False`
 
 #### headers
 

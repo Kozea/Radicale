@@ -224,7 +224,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "delete sync token that are older",
             "type": positive_int}),
         ("skip_broken_item", {
-            "value": "False",
+            "value": "True",
             "help": "skip broken item instead of triggering exception",
             "type": bool}),
         ("hook", {
@@ -273,19 +273,19 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "log bad PUT request content",
             "type": bool}),
         ("backtrace_on_debug", {
-            "value": "True",
+            "value": "False",
             "help": "log backtrace on level=debug",
             "type": bool}),
         ("request_header_on_debug", {
-            "value": "True",
+            "value": "False",
             "help": "log request header on level=debug",
             "type": bool}),
         ("request_content_on_debug", {
-            "value": "True",
+            "value": "False",
             "help": "log request content on level=debug",
             "type": bool}),
         ("response_content_on_debug", {
-            "value": "True",
+            "value": "False",
             "help": "log response content on level=debug",
             "type": bool}),
         ("mask_passwords", {
