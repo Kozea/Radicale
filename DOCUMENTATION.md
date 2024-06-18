@@ -869,7 +869,7 @@ Default: `2592000`
 
 Skip broken item instead of triggering an exception
 
-Default: False
+Default: `True`
 
 ##### hook
 
