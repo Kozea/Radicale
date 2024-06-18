@@ -145,16 +145,16 @@
 #bad_put_request_content = False
 
 # Log backtrace on level=debug
-#backtrace_on_debug = True
+#backtrace_on_debug = False
 
 # Log request header on level=debug
-#request_header_on_debug = True
+#request_header_on_debug = False
 
 # Log request content on level=debug
-#request_content_on_debug = True
+#request_content_on_debug = False
 
 # Log response content on level=debug
-#response_content_on_debug = True
+#response_content_on_debug = False
 
 
 [headers]
