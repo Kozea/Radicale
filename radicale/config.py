@@ -293,8 +293,13 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "mask passwords in logs",
             "type": bool})])),
     ("headers", OrderedDict([
-        ("_allow_extra", str)]))])
-
+        ("_allow_extra", str)])),
+    ("reporting", OrderedDict([
+        ("max_freebusy_occurrence", {
+            "value": "10000",
+            "help": "number of occurrences per event when reporting",
+            "type": positive_int})]))
+    ])
 
 def parse_compound_paths(*compound_paths: Optional[str]
                          ) -> List[Tuple[str, bool]]:
