@@ -4,6 +4,7 @@
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
 # Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024 koalyorg <info@koaly.org>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +20,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+import os
 import posixpath
 import socket
 import sys
@@ -226,13 +228,15 @@ class ApplicationPartPut(ApplicationBase):
             else:
                 assert not isinstance(item, storage.BaseCollection)
                 prepared_item, = prepared_items
+                href = posixpath.basename(pathutils.strip_path(path))
+                filename, _ = os.path.splitext(href)
+                # ensure filename matches UID
                 if (item and item.uid != prepared_item.uid or
-                        not item and parent_item.has_uid(prepared_item.uid)):
+                        not item and filename != prepared_item.uid):
                     return self._webdav_error_response(
                         client.CONFLICT, "%s:no-uid-conflict" % (
                             "C" if tag == "VCALENDAR" else "CR"))
 
-                href = posixpath.basename(pathutils.strip_path(path))
                 try:
                     etag = parent_item.upload(href, prepared_item).etag
                     hook_notification_item = HookNotificationItem(

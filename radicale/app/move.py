@@ -3,6 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2024 koalyorg <info@koaly.org>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +17,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
-
+import os
 import posixpath
 import re
 from http import client
@@ -98,14 +99,16 @@ class ApplicationPartMove(ApplicationBase):
                 return httputils.FORBIDDEN
             if to_item and environ.get("HTTP_OVERWRITE", "F") != "T":
                 return httputils.PRECONDITION_FAILED
+            to_href = posixpath.basename(pathutils.strip_path(to_path))
+            filename, _ = os.path.splitext(to_path)
+            # ensure to_path matches UID
             if (to_item and item.uid != to_item.uid or
                     not to_item and
                     to_collection.path != item.collection.path and
-                    to_collection.has_uid(item.uid)):
+                    item.uid != filename):
                 return self._webdav_error_response(
                     client.CONFLICT, "%s:no-uid-conflict" % (
                         "C" if collection_tag == "VCALENDAR" else "CR"))
-            to_href = posixpath.basename(pathutils.strip_path(to_path))
             try:
                 self._storage.move(item, to_collection, to_href)
             except ValueError as e:
