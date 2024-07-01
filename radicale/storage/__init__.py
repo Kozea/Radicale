@@ -158,13 +158,6 @@ class BaseCollection:
                 continue
             yield item, simple and (start <= istart or iend <= end)
 
-    def has_uid(self, uid: str) -> bool:
-        """Check if a UID exists in the collection."""
-        for item in self.get_all():
-            if item.uid == uid:
-                return True
-        return False
-
     def upload(self, href: str, item: "radicale_item.Item") -> (
             "radicale_item.Item"):
         """Upload a new or replace an existing item."""
