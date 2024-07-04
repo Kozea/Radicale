@@ -865,7 +865,7 @@ Delete sync-token that are older than the specified time. (seconds)
 
 Default: `2592000`
 
-#### skip_broken_item
+##### skip_broken_item
 
 Skip broken item instead of triggering an exception
 
