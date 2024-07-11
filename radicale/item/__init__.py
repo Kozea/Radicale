@@ -49,6 +49,12 @@ def read_components(s: str) -> List[vobject.base.Component]:
     s = re.sub(r"^(PHOTO(?:;[^:\r\n]*)?;ENCODING=b(?:;[^:\r\n]*)?:)"
                r"data:[^;,\r\n]*;base64,", r"\1", s,
                flags=re.MULTILINE | re.IGNORECASE)
+    # Workaround for bug with malformed ICS files containing control codes
+    # Filter out all control codes except those we expect to find:
+    #  * 0x09 Horizontal Tab
+    #  * 0x0A Line Feed
+    #  * 0x0D Carriage Return
+    s = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F]', '', s)
     return list(vobject.readComponents(s, allowQP=True))
 
 
