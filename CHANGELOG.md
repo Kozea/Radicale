@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.dev
+* Enhancement: remove unexpected control codes from uploaded items
 
 ## 3.2.2
 * Enhancement: add support for auth.type=denyall (will be default for security reasons in upcoming releases)
