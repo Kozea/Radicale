@@ -350,16 +350,13 @@ location /radicale/ { # The trailing / is important!
 }
 ```
 
-Example **Caddy** configuration with basicauth from Caddy:
+Example **Caddy** configuration:
 
-```Caddy
-handle_path /radicale* {
-    basicauth {
-        user hash
-    }
+```
+handle_path /radicale/* {
+    uri strip_prefix /radicale
     reverse_proxy localhost:5232 {
-        header_up +X-Script-Name "/radicale"
-        header_up +X-remote-user "{http.auth.user.id}"
+        header_up X-Script-Name /radicale
     }
 }
 ```
@@ -437,6 +434,21 @@ location /radicale/ {
     proxy_set_header     Host $http_host;
     auth_basic           "Radicale - Password Required";
     auth_basic_user_file /etc/nginx/htpasswd;
+}
+```
+
+Example **Caddy** configuration:
+
+```
+handle_path /radicale/* {
+    uri strip_prefix /radicale
+    basicauth {
+        USER HASH
+    }
+    reverse_proxy localhost:5232 {
+        header_up X-Script-Name /radicale
+        header_up X-remote-user {http.auth.user.id}
+    }
 }
 ```
 
