@@ -52,6 +52,7 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
 class BaseAuth:
 
     _lc_username: bool
+    _strip_domain: bool
 
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseAuth.
@@ -63,6 +64,7 @@ class BaseAuth:
         """
         self.configuration = configuration
         self._lc_username = configuration.get("auth", "lc_username")
+        self._strip_domain = configuration.get("auth", "strip_domain")
 
     def get_external_login(self, environ: types.WSGIEnviron) -> Union[
             Tuple[()], Tuple[str, str]]:
@@ -91,4 +93,8 @@ class BaseAuth:
         raise NotImplementedError
 
     def login(self, login: str, password: str) -> str:
-        return self._login(login, password).lower() if self._lc_username else self._login(login, password)
+        if self._lc_username:
+            login = login.lower()
+        if self._strip_domain:
+            login = login.split('@')[0]
+        return self._login(login, password)
