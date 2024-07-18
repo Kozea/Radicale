@@ -807,6 +807,12 @@ providers like ldap, kerberos
 
 Default: `False`
 
+##### strip_domain
+
+Strip domain from username
+
+Default: `False`
+
 #### rights
 
 ##### type

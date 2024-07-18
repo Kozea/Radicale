@@ -115,6 +115,16 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_comment(self) -> None:
         self._test_htpasswd("plain", "#comment\n #comment\n \ntmp:bepo\n\n")
 
+    def test_htpasswd_lc_username(self) -> None:
+        self.configure({"auth": {"lc_username": "True"}})
+        self._test_htpasswd("plain", "tmp:bepo", (
+            ("tmp", "bepo", True), ("TMP", "bepo", True), ("tmp1", "bepo", False)))
+
+    def test_htpasswd_strip_domain(self) -> None:
+        self.configure({"auth": {"strip_domain": "True"}})
+        self._test_htpasswd("plain", "tmp:bepo", (
+            ("tmp", "bepo", True), ("tmp@domain.example", "bepo", True), ("tmp1", "bepo", False)))
+
     def test_remote_user(self) -> None:
         self.configure({"auth": {"type": "remote_user"}})
         _, responses = self.propfind("/", """\
