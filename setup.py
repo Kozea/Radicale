@@ -38,7 +38,7 @@ web_files = ["web/internal_data/css/icon.png",
 install_requires = ["defusedxml", "passlib", "vobject>=0.9.6",
                     "python-dateutil>=2.7.3",
                     "pika>=1.1.0",
-                    "setuptools; python_version<'3.9'"]
+                    ]
 bcrypt_requires = ["bcrypt"]
 test_requires = ["pytest>=7", "typeguard<4.3", "waitress", *bcrypt_requires]
 
