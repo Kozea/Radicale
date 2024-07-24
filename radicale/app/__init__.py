@@ -232,7 +232,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 path.rstrip("/").endswith("/.well-known/carddav")):
             return response(*httputils.redirect(
                 base_prefix + "/", client.MOVED_PERMANENTLY))
-        # Return NOT FOUND for all other paths containing ".well-knwon"
+        # Return NOT FOUND for all other paths containing ".well-known"
         if path.endswith("/.well-known") or "/.well-known/" in path:
             return response(*httputils.NOT_FOUND)
 

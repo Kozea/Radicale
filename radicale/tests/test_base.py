@@ -359,7 +359,7 @@ permissions: RrWw""")
         self.get(path1, check=404)
         self.get(path2)
 
-    def test_move_between_colections(self) -> None:
+    def test_move_between_collections(self) -> None:
         """Move a item."""
         self.mkcalendar("/calendar1.ics/")
         self.mkcalendar("/calendar2.ics/")
@@ -372,7 +372,7 @@ permissions: RrWw""")
         self.get(path1, check=404)
         self.get(path2)
 
-    def test_move_between_colections_duplicate_uid(self) -> None:
+    def test_move_between_collections_duplicate_uid(self) -> None:
         """Move a item to a collection which already contains the UID."""
         self.mkcalendar("/calendar1.ics/")
         self.mkcalendar("/calendar2.ics/")
@@ -388,7 +388,7 @@ permissions: RrWw""")
         assert xml.tag == xmlutils.make_clark("D:error")
         assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
 
-    def test_move_between_colections_overwrite(self) -> None:
+    def test_move_between_collections_overwrite(self) -> None:
         """Move a item to a collection which already contains the item."""
         self.mkcalendar("/calendar1.ics/")
         self.mkcalendar("/calendar2.ics/")
@@ -402,8 +402,8 @@ permissions: RrWw""")
         self.request("MOVE", path1, check=204, HTTP_OVERWRITE="T",
                      HTTP_DESTINATION="http://127.0.0.1/"+path2)
 
-    def test_move_between_colections_overwrite_uid_conflict(self) -> None:
-        """Move a item to a collection which already contains the item with
+    def test_move_between_collections_overwrite_uid_conflict(self) -> None:
+        """Move an item to a collection which already contains the item with
            a different UID."""
         self.mkcalendar("/calendar1.ics/")
         self.mkcalendar("/calendar2.ics/")

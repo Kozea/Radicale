@@ -199,7 +199,7 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
 
     """
 
-    # HACK: According to rfc5545-3.8.4.4 an recurrance that is resheduled
+    # HACK: According to rfc5545-3.8.4.4 a recurrence that is rescheduled
     # with Recurrence ID affects the recurrence itself and all following
     # recurrences too. This is not respected and client don't seem to bother
     # either.
