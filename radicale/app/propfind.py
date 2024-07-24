@@ -322,13 +322,13 @@ def xml_propfind_response(
 
         responses[404 if is404 else 200].append(element)
 
-    for status_code, childs in responses.items():
-        if not childs:
+    for status_code, children in responses.items():
+        if not children:
             continue
         propstat = ET.Element(xmlutils.make_clark("D:propstat"))
         response.append(propstat)
         prop = ET.Element(xmlutils.make_clark("D:prop"))
-        prop.extend(childs)
+        prop.extend(children)
         propstat.append(prop)
         status = ET.Element(xmlutils.make_clark("D:status"))
         status.text = xmlutils.make_response(status_code)

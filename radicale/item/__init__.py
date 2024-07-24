@@ -304,7 +304,7 @@ def find_time_range(vobject_item: vobject.base.Component, tag: str
     Returns a tuple (``start``, ``end``) where ``start`` and ``end`` are
     POSIX timestamps.
 
-    This is intened to be used for matching against simplified prefilters.
+    This is intended to be used for matching against simplified prefilters.
 
     """
     if not tag:

@@ -183,7 +183,7 @@ def run() -> None:
             storage_ = storage.load(configuration)
             with storage_.acquire_lock("r"):
                 if not storage_.verify():
-                    logger.critical("Storage verifcation failed")
+                    logger.critical("Storage verification failed")
                     sys.exit(1)
         except Exception as e:
             logger.critical("An exception occurred during storage "

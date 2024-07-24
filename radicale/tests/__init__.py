@@ -112,7 +112,7 @@ class BaseTest:
         for response in xml.findall(xmlutils.make_clark("D:response")):
             href = response.find(xmlutils.make_clark("D:href"))
             assert href.text not in path_responses
-            prop_respones: Dict[str, Tuple[int, ET.Element]] = {}
+            prop_responses: Dict[str, Tuple[int, ET.Element]] = {}
             for propstat in response.findall(
                     xmlutils.make_clark("D:propstat")):
                 status = propstat.find(xmlutils.make_clark("D:status"))
@@ -121,16 +121,16 @@ class BaseTest:
                 for element in propstat.findall(
                         "./%s/*" % xmlutils.make_clark("D:prop")):
                     human_tag = xmlutils.make_human_tag(element.tag)
-                    assert human_tag not in prop_respones
-                    prop_respones[human_tag] = (status_code, element)
+                    assert human_tag not in prop_responses
+                    prop_responses[human_tag] = (status_code, element)
             status = response.find(xmlutils.make_clark("D:status"))
             if status is not None:
-                assert not prop_respones
+                assert not prop_responses
                 assert status.text.startswith("HTTP/1.1 ")
                 status_code = int(status.text.split(" ")[1])
                 path_responses[href.text] = status_code
             else:
-                path_responses[href.text] = prop_respones
+                path_responses[href.text] = prop_responses
         return path_responses
 
     def get(self, path: str, check: Optional[int] = 200, **kwargs

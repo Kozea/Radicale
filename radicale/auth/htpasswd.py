@@ -36,7 +36,7 @@ pointed to by the ``htpasswd_filename`` configuration value while assuming
 the password encryption method specified via the ``htpasswd_encryption``
 configuration value.
 
-The following htpasswd password encrpytion methods are supported by Radicale
+The following htpasswd password encryption methods are supported by Radicale
 out-of-the-box:
     - plain-text (created by htpasswd -p ...) -- INSECURE
     - MD5-APR1   (htpasswd -m ...) -- htpasswd's default method, INSECURE

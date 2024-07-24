@@ -271,7 +271,7 @@ def _make_vobject_expanded_item(
     if hasattr(item.vobject_item.vevent, 'rrule'):
         rruleset = vevent.getrruleset()
 
-    # There is something strage behavour during serialization native datetime, so converting manualy
+    # There is something strange behaviour during serialization native datetime, so converting manually
     vevent.dtstart.value = vevent.dtstart.value.strftime(dt_format)
     if dt_end is not None:
         vevent.dtend.value = vevent.dtend.value.strftime(dt_format)
