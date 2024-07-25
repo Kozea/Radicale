@@ -291,7 +291,7 @@ def serve(configuration: config.Configuration,
             try:
                 getaddrinfo = socket.getaddrinfo(address_port[0], address_port[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)
             except OSError as e:
-                logger.warn("cannot retrieve IPv4 or IPv6 address of '%s': %s" % (format_address(address_port), e))
+                logger.warning("cannot retrieve IPv4 or IPv6 address of '%s': %s" % (format_address(address_port), e))
                 continue
             logger.debug("getaddrinfo of '%s': %s" % (format_address(address_port), getaddrinfo))
             for (address_family, socket_kind, socket_proto, socket_flags, socket_address) in getaddrinfo:
@@ -299,7 +299,7 @@ def serve(configuration: config.Configuration,
                 try:
                     server = server_class(configuration, address_family, (socket_address[0], socket_address[1]), RequestHandler)
                 except OSError as e:
-                    logger.warn("cannot create server socket on '%s': %s" % (format_address(socket_address), e))
+                    logger.warning("cannot create server socket on '%s': %s" % (format_address(socket_address), e))
                     continue
                 servers[server.socket] = server
                 server.set_app(application)

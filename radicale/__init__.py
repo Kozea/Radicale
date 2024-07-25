@@ -61,7 +61,7 @@ def _get_application_instance(config_path: str, wsgi_errors: types.ErrorStream
                     if not miss and source != "default config":
                         default_config_active = False
                 if default_config_active:
-                    logger.warn("%s", "No config file found/readable - only default config is active")
+                    logger.warning("%s", "No config file found/readable - only default config is active")
                 _application_instance = Application(configuration)
     if _application_config_path != config_path:
         raise ValueError("RADICALE_CONFIG must not change: %r != %r" %

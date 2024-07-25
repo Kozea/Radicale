@@ -175,7 +175,7 @@ def run() -> None:
             default_config_active = False
 
     if default_config_active:
-        logger.warn("%s", "No config file found/readable - only default config is active")
+        logger.warning("%s", "No config file found/readable - only default config is active")
 
     if args_ns.verify_storage:
         logger.info("Verifying storage")
