@@ -41,6 +41,7 @@ dependencies = [
 [project.optional-dependencies]
 test = ["pytest>=7", "waitress", "bcrypt"]
 bcrypt = ["bcrypt"]
+ldap = ["ldap3"]
 
 [project.scripts]
 radicale = "radicale.__main__:run"

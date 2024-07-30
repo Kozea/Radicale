@@ -824,7 +824,13 @@ Default:
 
 ##### ldap_secret
 
-The password of the ldap_reader_dn. This parameter must be provided if auth type is ldap.
+The password of the ldap_reader_dn. Either this parameter or `ldap_secret_file` must be provided if auth type is ldap.
+
+Default:
+
+##### ldap_secret_file
+
+Path of the file containing the password of the ldap_reader_dn. Either this parameter or `ldap_secret` must be provided if auth type is ldap.
 
 Default:
 
@@ -869,7 +875,7 @@ Default:
 
 ##### lc_username
 
-Сonvert username to lowercase, must be true for case-insensitive auth 
+Сonvert username to lowercase, must be true for case-insensitive auth
 providers like ldap, kerberos
 
 Default: `False`

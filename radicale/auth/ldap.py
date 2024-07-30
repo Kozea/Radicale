@@ -16,11 +16,12 @@
 """
 Authentication backend that checks credentials with a ldap server.
 Following parameters are needed in the configuration:
-   ldap_uri       The ldap url to the server like ldap://localhost
-   ldap_base      The baseDN of the ldap server
-   ldap_reader_dn The DN of a ldap user with read access to get the user accounts
-   ldap_secret    The password of the ldap_reader_dn
-   ldap_filter    The search filter to find the user to authenticate by the username
+   ldap_uri         The ldap url to the server like ldap://localhost
+   ldap_base        The baseDN of the ldap server
+   ldap_reader_dn   The DN of a ldap user with read access to get the user accounts
+   ldap_secret      The password of the ldap_reader_dn
+   ldap_secret_file The path of the file containing the password of the ldap_reader_dn
+   ldap_filter      The search filter to find the user to authenticate by the username
    ldap_load_groups If the groups of the authenticated users need to be loaded
 Following parameters controls SSL connections:
    ldap_use_ssl   If the connection
@@ -64,6 +65,10 @@ class Auth(auth.BaseAuth):
         self._ldap_load_groups = configuration.get("auth", "ldap_load_groups")
         self._ldap_secret = configuration.get("auth", "ldap_secret")
         self._ldap_filter = configuration.get("auth", "ldap_filter")
+        ldap_secret_file_path = configuration.get("auth", "ldap_secret_file")
+        if ldap_secret_file_path:
+            with open(ldap_secret_file_path, 'r') as file:
+                self._ldap_secret = file.read().rstrip('\n')
         if self._ldap_version == 3:
             self._ldap_use_ssl = configuration.get("auth", "ldap_use_ssl")
             if self._ldap_use_ssl:

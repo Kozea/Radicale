@@ -200,16 +200,20 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "URI to the ldap server",
             "type": str}),
         ("ldap_base", {
-            "value": "none",
+            "value": "",
             "help": "LDAP base DN of the ldap server",
             "type": str}),
         ("ldap_reader_dn", {
-            "value": "none",
+            "value": "",
             "help": "the DN of a ldap user with read access to get the user accounts",
             "type": str}),
         ("ldap_secret", {
-            "value": "none",
+            "value": "",
             "help": "the password of the ldap_reader_dn",
+            "type": str}),
+        ("ldap_secret_file", {
+            "value": "",
+            "help": "path of the file containing the password of the ldap_reader_dn",
             "type": str}),
         ("ldap_filter", {
             "value": "(cn={0})",
