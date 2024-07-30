@@ -1,0 +1,128 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Radicale"
+version = "3.dev"
+authors = [{name = "Guillaume Ayoub", email = "guillaume.ayoub@kozea.fr"}]
+license = {text = "GNU GPL v3"}
+description = "CalDAV and CardDAV Server"
+keywords = ["calendar", "addressbook", "CalDAV", "CardDAV"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: GNU General Public License (GPL)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Office/Business :: Groupware",
+]
+urls = {Homepage = "https://radicale.org/"}
+requires-python = ">=3.8.0"
+dependencies = [
+    "defusedxml",
+    "passlib",
+    "vobject>=0.9.6",
+    "python-dateutil>=2.7.3",
+    "pika>=1.1.0",
+]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7",
+    "typeguard<4.3",
+    "waitress",
+    "bcrypt",
+]
+bcrypt = ["bcrypt"]
+
+[project.scripts]
+radicale = "radicale.__main__:run"
+
+[tool]
+
+[tool.setuptools]
+platforms = ["Any"]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+exclude = ["*.tests"] # *.tests.*; tests.*; tests
+namespaces = false
+
+[tool.setuptools.package-data]
+radicale = [
+    "web/internal_data/css/icon.png",
+    "web/internal_data/css/loading.svg",
+    "web/internal_data/css/logo.svg",
+    "web/internal_data/css/main.css",
+    "web/internal_data/css/icons/delete.svg",
+    "web/internal_data/css/icons/download.svg",
+    "web/internal_data/css/icons/edit.svg",
+    "web/internal_data/css/icons/new.svg",
+    "web/internal_data/css/icons/upload.svg",
+    "web/internal_data/fn.js",
+    "web/internal_data/index.html",
+    "py.typed",
+]
+
+[tool.pytest.ini_options]
+addopts = "--typeguard-packages=radicale"
+
+[tool.testenv]
+extras = "test"
+deps = """
+flake8
+isort
+# mypy installation fails with pypy<3.9
+mypy; implementation_name!='pypy' or python_version>='3.9'
+types-setuptools
+pytest-cov"""
+commands = '''
+flake8 .
+isort --check --diff .
+# Run mypy if it's installed
+python -c 'import importlib.util, subprocess, sys; \
+importlib.util.find_spec("mypy") \
+and sys.exit(subprocess.run(["mypy", "."]).returncode) \
+or print("Skipped: mypy is not installed")'
+pytest -r s --cov --cov-report=term --cov-report=xml .'''
+
+[tool.isort]
+known_standard_library = "_dummy_thread,_thread,abc,aifc,argparse,array,ast,asynchat,asyncio,asyncore,atexit,audioop,base64,bdb,binascii,binhex,bisect,builtins,bz2,cProfile,calendar,cgi,cgitb,chunk,cmath,cmd,code,codecs,codeop,collections,colorsys,compileall,concurrent,configparser,contextlib,contextvars,copy,copyreg,crypt,csv,ctypes,curses,dataclasses,datetime,dbm,decimal,difflib,dis,distutils,doctest,dummy_threading,email,encodings,ensurepip,enum,errno,faulthandler,fcntl,filecmp,fileinput,fnmatch,formatter,fpectl,fractions,ftplib,functools,gc,getopt,getpass,gettext,glob,grp,gzip,hashlib,heapq,hmac,html,http,imaplib,imghdr,imp,importlib,inspect,io,ipaddress,itertools,json,keyword,lib2to3,linecache,locale,logging,lzma,macpath,mailbox,mailcap,marshal,math,mimetypes,mmap,modulefinder,msilib,msvcrt,multiprocessing,netrc,nis,nntplib,ntpath,numbers,operator,optparse,os,ossaudiodev,parser,pathlib,pdb,pickle,pickletools,pipes,pkgutil,platform,plistlib,poplib,posix,posixpath,pprint,profile,pstats,pty,pwd,py_compile,pyclbr,pydoc,queue,quopri,random,re,readline,reprlib,resource,rlcompleter,runpy,sched,secrets,select,selectors,shelve,shlex,shutil,signal,site,smtpd,smtplib,sndhdr,socket,socketserver,spwd,sqlite3,sre,sre_compile,sre_constants,sre_parse,ssl,stat,statistics,string,stringprep,struct,subprocess,sunau,symbol,symtable,sys,sysconfig,syslog,tabnanny,tarfile,telnetlib,tempfile,termios,test,textwrap,threading,time,timeit,tkinter,token,tokenize,trace,traceback,tracemalloc,tty,turtle,turtledemo,types,typing,unicodedata,unittest,urllib,uu,uuid,venv,warnings,wave,weakref,webbrowser,winreg,winsound,wsgiref,xdrlib,xml,xmlrpc,zipapp,zipfile,zipimport,zlib"
+known_third_party = "defusedxml,passlib,pkg_resources,pytest,vobject"
+
+[tool.mypy]
+ignore_missing_imports = true
+show_error_codes = true
+exclude = "(^|/)build($|/)"
+
+[tool.coverage.run]
+branch = true
+source = ["radicale"]
+omit = ["tests/*", "*/tests/*"]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+    # Don't complain if non-runnable code isn't run:
+    "if __name__ == .__main__.:",
+]
