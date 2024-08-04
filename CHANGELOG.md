@@ -2,6 +2,7 @@
 
 ## 3.dev
 * Enhancement: remove unexpected control codes from uploaded items
+* Drop: remove unused requirement "typeguard"
 
 ## 3.2.2
 * Enhancement: add support for auth.type=denyall (will be default for security reasons in upcoming releases)
