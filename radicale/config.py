@@ -349,7 +349,7 @@ def load(paths: Optional[Iterable[Tuple[str, bool]]] = None
         config_source = "config file %r" % path
         config: types.CONFIG
         try:
-            with open(path, "r") as f:
+            with open(path) as f:
                 parser.read_file(f)
                 config = {s: {o: parser[s][o] for o in parser.options(s)}
                           for s in parser.sections()}

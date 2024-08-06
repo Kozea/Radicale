@@ -15,9 +15,9 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
-import sys
 from typing import (Any, Callable, ContextManager, Iterator, List, Mapping,
-                    MutableMapping, Sequence, Tuple, TypeVar, Union)
+                    MutableMapping, Protocol, Sequence, Tuple, TypeVar, Union,
+                    runtime_checkable)
 
 WSGIResponseHeaders = Union[Mapping[str, str], Sequence[Tuple[str, str]]]
 WSGIResponse = Tuple[int, WSGIResponseHeaders, Union[None, str, bytes]]
@@ -41,20 +41,17 @@ def contextmanager(func: Callable[..., Iterator[_T]]
     return result
 
 
-if sys.version_info >= (3, 8):
-    from typing import Protocol, runtime_checkable
+@runtime_checkable
+class InputStream(Protocol):
+    def read(self, size: int = ...) -> bytes: ...
 
-    @runtime_checkable
-    class InputStream(Protocol):
-        def read(self, size: int = ...) -> bytes: ...
 
-    @runtime_checkable
-    class ErrorStream(Protocol):
-        def flush(self) -> object: ...
-        def write(self, s: str) -> object: ...
-else:
-    ErrorStream = Any
-    InputStream = Any
+@runtime_checkable
+class ErrorStream(Protocol):
+    def flush(self) -> object: ...
+
+    def write(self, s: str) -> object: ...
+
 
 from radicale import item, storage  # noqa:E402 isort:skip
 
