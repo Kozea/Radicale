@@ -3,14 +3,23 @@ from enum import Enum
 from typing import Sequence
 
 from radicale import pathutils, utils
+from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("none", "rabbitmq")
 
 
 def load(configuration):
     """Load the storage module chosen in configuration."""
-    return utils.load_plugin(
-        INTERNAL_TYPES, "hook", "Hook", BaseHook, configuration)
+    try:
+        return utils.load_plugin(
+            INTERNAL_TYPES, "hook", "Hook", BaseHook, configuration)
+    except Exception as e:
+        logger.warn(e)
+        logger.warn("Hook \"%s\" failed to load, falling back to \"none\"." % configuration.get("hook", "type"))
+        configuration = configuration.copy()
+        configuration.update({"hook": {"type": "none"}}, "hook", privileged=True)
+        return utils.load_plugin(
+            INTERNAL_TYPES, "hook", "Hook", BaseHook, configuration)
 
 
 class BaseHook:
