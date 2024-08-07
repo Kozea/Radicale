@@ -176,7 +176,7 @@ class ParallelHTTPSServer(ParallelHTTPServer):
             if name == "certificate_authority" and not filename:
                 continue
             try:
-                open(filename, "r").close()
+                open(filename).close()
             except OSError as e:
                 raise RuntimeError(
                     "Invalid %s value for option %r in section %r in %s: %r "
