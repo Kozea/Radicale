@@ -22,10 +22,10 @@ Radicale tests with simple requests.
 
 import os
 import posixpath
-import vobject
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
 import defusedxml.ElementTree as DefusedET
+import vobject
 
 from radicale import storage, xmlutils
 from radicale.tests import RESPONSES, BaseTest
@@ -1369,7 +1369,7 @@ permissions: RrWw""")
         """Test free busy report on a few items"""
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
-        for i in (1,2,10):
+        for i in (1, 2, 10):
             filename = "event{}.ics".format(i)
             event = get_file_content(filename)
             self.put(posixpath.join(calendar_path, filename), event)
@@ -1377,18 +1377,20 @@ permissions: RrWw""")
 <?xml version="1.0" encoding="utf-8" ?>
 <C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
     <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
-</C:free-busy-query>""", 200, is_xml = False)
+</C:free-busy-query>""", 200, is_xml=False)
         for response in responses.values():
             assert isinstance(response, vobject.base.Component)
         assert len(responses) == 1
         vcalendar = list(responses.values())[0]
+        assert isinstance(vcalendar, vobject.base.Component)
         assert len(vcalendar.vfreebusy_list) == 3
         types = {}
         for vfb in vcalendar.vfreebusy_list:
-            if vfb.fbtype.value not in types:
-                types[vfb.fbtype.value] = 0
-            types[vfb.fbtype.value] += 1
-        assert types == {'BUSY':2, 'FREE':1}
+            fbtype_val = vfb.fbtype.value
+            if fbtype_val not in types:
+                types[fbtype_val] = 0
+            types[fbtype_val] += 1
+        assert types == {'BUSY': 2, 'FREE': 1}
 
     def _report_sync_token(
             self, calendar_path: str, sync_token: Optional[str] = None

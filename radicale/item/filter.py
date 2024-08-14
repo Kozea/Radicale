@@ -70,9 +70,11 @@ def parse_time_range(time_filter: ET.Element) -> Tuple[datetime, datetime]:
         end = DATETIME_MAX
     return start, end
 
+
 def time_range_timestamps(time_filter: ET.Element) -> Tuple[int, int]:
     start, end = parse_time_range(time_filter)
     return (math.floor(start.timestamp()), math.ceil(end.timestamp()))
+
 
 def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
     """Check whether the ``item`` matches the comp ``filter_``.
@@ -202,6 +204,7 @@ def time_range_fill(vobject_item: vobject.base.Component,
 
     start, end = parse_time_range(filter_)
     ranges: List[Tuple[datetime, datetime]] = []
+
     def range_fn(range_start: datetime, range_end: datetime,
                  is_recurrence: bool) -> bool:
         nonlocal ranges

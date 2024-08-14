@@ -23,26 +23,31 @@ import datetime
 import posixpath
 import socket
 import xml.etree.ElementTree as ET
-import vobject
 from http import client
 from typing import (Any, Callable, Iterable, Iterator, List, Optional,
                     Sequence, Tuple, Union)
 from urllib.parse import unquote, urlparse
 
+import vobject
 import vobject.base
 from vobject.base import ContentLine
 
 import radicale.item as radicale_item
-from radicale import httputils, pathutils, storage, types, xmlutils, config
+from radicale import httputils, pathutils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
+
 
 def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                      collection: storage.BaseCollection, encoding: str,
                      unlock_storage_fn: Callable[[], None],
                      max_occurrence: int
-                     ) -> Tuple[int, str]:
+                     ) -> Tuple[int, Union[ET.Element, str]]:
+    # NOTE: this function returns both an Element and a string because
+    # free-busy reports are an edge-case on the return type according
+    # to the spec.
+
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
     if xml_request is None:
         return client.MULTI_STATUS, multistatus
@@ -54,15 +59,16 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
         return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
 
     time_range_element = root.find(xmlutils.make_clark("C:time-range"))
+    assert isinstance(time_range_element, ET.Element)
 
     # Build a single filter from the free busy query for retrieval
     # TODO: filter for VFREEBUSY in additional to VEVENT but
     # test_filter doesn't support that yet.
     vevent_cf_element = ET.Element(xmlutils.make_clark("C:comp-filter"),
-                                   attrib={'name':'VEVENT'})
+                                   attrib={'name': 'VEVENT'})
     vevent_cf_element.append(time_range_element)
     vcalendar_cf_element = ET.Element(xmlutils.make_clark("C:comp-filter"),
-                                   attrib={'name':'VCALENDAR'})
+                                      attrib={'name': 'VCALENDAR'})
     vcalendar_cf_element.append(vevent_cf_element)
     filter_element = ET.Element(xmlutils.make_clark("C:filter"))
     filter_element.append(vcalendar_cf_element)
@@ -525,7 +531,7 @@ class ApplicationPartReport(ApplicationBase):
                         "Bad REPORT request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
                 headers = {"Content-Type": "text/calendar; charset=%s" % self._encoding}
-                return status, headers, body
+                return status, headers, str(body)
             else:
                 try:
                     status, xml_answer = xml_report(

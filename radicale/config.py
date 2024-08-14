@@ -301,6 +301,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": positive_int})]))
     ])
 
+
 def parse_compound_paths(*compound_paths: Optional[str]
                          ) -> List[Tuple[str, bool]]:
     """Parse a compound path and return the individual paths.

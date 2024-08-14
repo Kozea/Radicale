@@ -27,11 +27,11 @@ import sys
 import tempfile
 import wsgiref.util
 import xml.etree.ElementTree as ET
-import vobject
 from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import defusedxml.ElementTree as DefusedET
+import vobject
 
 import radicale
 from radicale import app, config, types, xmlutils
