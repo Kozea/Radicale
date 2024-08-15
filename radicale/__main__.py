@@ -175,7 +175,7 @@ def run() -> None:
             default_config_active = False
 
     if default_config_active:
-        logger.warn("%s", "No config file found/readable - only default config is active")
+        logger.warning("%s", "No config file found/readable - only default config is active")
 
     if args_ns.verify_storage:
         logger.info("Verifying storage")
@@ -183,7 +183,7 @@ def run() -> None:
             storage_ = storage.load(configuration)
             with storage_.acquire_lock("r"):
                 if not storage_.verify():
-                    logger.critical("Storage verifcation failed")
+                    logger.critical("Storage verification failed")
                     sys.exit(1)
         except Exception as e:
             logger.critical("An exception occurred during storage "

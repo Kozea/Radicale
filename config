@@ -73,6 +73,8 @@
 # Convert username to lowercase, must be true for case-insensitive auth providers
 #lc_username = False
 
+# Strip domain name from username
+#strip_domain = False
 
 [rights]
 

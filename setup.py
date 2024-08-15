@@ -38,9 +38,9 @@ web_files = ["web/internal_data/css/icon.png",
 install_requires = ["defusedxml", "passlib", "vobject>=0.9.6",
                     "python-dateutil>=2.7.3",
                     "pika>=1.1.0",
-                    "setuptools; python_version<'3.9'"]
+                    ]
 bcrypt_requires = ["bcrypt"]
-test_requires = ["pytest>=7", "typeguard<4.3", "waitress", *bcrypt_requires]
+test_requires = ["pytest>=7", "waitress", *bcrypt_requires]
 
 setup(
     name="Radicale",
@@ -75,6 +75,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Topic :: Office/Business :: Groupware"])

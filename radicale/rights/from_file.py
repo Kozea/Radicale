@@ -22,7 +22,7 @@ config (section "rights", key "file").
 The login is matched against the "user" key, and the collection path
 is matched against the "collection" key. In the "collection" regex you can use
 `{user}` and get groups from the "user" regex with `{0}`, `{1}`, etc.
-In consequence of the parameter subsitution you have to write `{{` and `}}`
+In consequence of the parameter substitution you have to write `{{` and `}}`
 if you want to use regular curly braces in the "user" and "collection" regexes.
 
 For example, for the "user" key, ".+" means "authenticated user" and ".*"

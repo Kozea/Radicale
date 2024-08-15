@@ -191,6 +191,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "1",
             "help": "incorrect authentication delay",
             "type": positive_float}),
+        ("strip_domain", {
+            "value": "False",
+            "help": "strip domain from username",
+            "type": bool}),
         ("lc_username", {
             "value": "False",
             "help": "convert username to lowercase, must be true for case-insensitive auth providers",

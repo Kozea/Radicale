@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', pypy-3.8, pypy-3.9]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12.3', '3.13.0-beta.4', pypy-3.8, pypy-3.9]
         exclude:
           - os: windows-latest
             python-version: pypy-3.8
@@ -21,7 +21,7 @@ jobs:
       - name: Install Test dependencies
         run: pip install tox
       - name: Test
-        run: tox
+        run: tox -e py
       - name: Install Coveralls
         if: github.event_name == 'push'
         run: pip install coveralls
@@ -46,3 +46,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: coveralls --service=github --finish
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install tox
+        run: pip install tox
+      - name: Lint
+        run: tox -e flake8,mypy,isort
