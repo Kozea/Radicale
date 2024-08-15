@@ -1,6 +1,10 @@
 # Changelog
 
 ## 3.dev
+* Fix: Using icalendar's tzinfo on created datetime to fix issue with icalendar
+* Enhancement: Added free-busy report
+* Enhancement: Added 'max_freebusy_occurrences` setting to avoid potential DOS on reports
+* Improve: Refactored some date parsing code
 
 ## 3.2.2
 * Enhancement: add support for auth.type=denyall (will be default for security reasons in upcoming releases)
@@ -52,17 +56,6 @@
 * Update: documentations + examples
 * Dependency: limit typegard version < 3
 * General: code cosmetics
-
-## 3.2.0.a2
-
-* Fix for free-busy `fbtype` statuses
-
-## 3.2.0.a1
-
-* Added free-busy report
-* Using icalendar's tzinfo on created datetime fix issue with icalendar
-* Added 'max_freebusy_occurrences` setting to avoid potential DOS on reports
-* Refactored some date parsing code
 
 ## 3.1.8
 
