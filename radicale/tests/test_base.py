@@ -1392,6 +1392,14 @@ permissions: RrWw""")
             types[fbtype_val] += 1
         assert types == {'BUSY': 2, 'FREE': 1}
 
+        # Test max_freebusy_occurrence limit
+        self.configure({"reporting": {"max_freebusy_occurrence": 1}})
+        code, responses = self.report(calendar_path, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
+</C:free-busy-query>""", 400, is_xml=False)
+
     def _report_sync_token(
             self, calendar_path: str, sync_token: Optional[str] = None
             ) -> Tuple[str, RESPONSES]:

@@ -1023,6 +1023,18 @@ RabbitMQ queue type for the topic.
 
 Default: classic
 
+#### reporting
+##### max_freebusy_occurrence
+
+When returning a free-busy report, a list of busy time occurrences are
+generated based on a given time frame. Large time frames could
+generate a lot of occurrences based on the time frame supplied. This
+setting limits the lookup to prevent potential denial of service
+attacks on large time frames. If the limit is reached, an HTTP error
+is thrown instead of returning the results.
+
+Default: 10000
+
 ## Supported Clients
 
 Radicale has been tested with:

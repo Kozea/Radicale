@@ -117,10 +117,18 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
 
         # TODO: coalesce overlapping periods
 
+        if max_occurrence > 0:
+            n_occurrences = max_occurrence+1
+        else:
+            n_occurrences = 0
         occurrences = radicale_filter.time_range_fill(item.vobject_item,
                                                       time_range_element,
                                                       "VEVENT",
-                                                      n=max_occurrence)
+                                                      n=n_occurrences)
+        if len(occurrences) >= max_occurrence:
+            raise ValueError("FREEBUSY occurrences limit of {} hit"
+                             .format(max_occurrence))
+
         for occurrence in occurrences:
             vfb = cal.add('vfreebusy')
             vfb.add('dtstamp').value = item.vobject_item.vevent.dtstamp.value
