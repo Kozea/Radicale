@@ -25,6 +25,7 @@ import posixpath
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
 import defusedxml.ElementTree as DefusedET
+import vobject
 
 from radicale import storage, xmlutils
 from radicale.tests import RESPONSES, BaseTest
@@ -1360,9 +1361,44 @@ permissions: RrWw""")
 </C:calendar-query>""")
         assert len(responses) == 1
         response = responses[event_path]
-        assert not isinstance(response, int)
+        assert isinstance(response, dict)
         status, prop = response["D:getetag"]
         assert status == 200 and prop.text
+
+    def test_report_free_busy(self) -> None:
+        """Test free busy report on a few items"""
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+        for i in (1, 2, 10):
+            filename = "event{}.ics".format(i)
+            event = get_file_content(filename)
+            self.put(posixpath.join(calendar_path, filename), event)
+        code, responses = self.report(calendar_path, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
+</C:free-busy-query>""", 200, is_xml=False)
+        for response in responses.values():
+            assert isinstance(response, vobject.base.Component)
+        assert len(responses) == 1
+        vcalendar = list(responses.values())[0]
+        assert isinstance(vcalendar, vobject.base.Component)
+        assert len(vcalendar.vfreebusy_list) == 3
+        types = {}
+        for vfb in vcalendar.vfreebusy_list:
+            fbtype_val = vfb.fbtype.value
+            if fbtype_val not in types:
+                types[fbtype_val] = 0
+            types[fbtype_val] += 1
+        assert types == {'BUSY': 2, 'FREE': 1}
+
+        # Test max_freebusy_occurrence limit
+        self.configure({"reporting": {"max_freebusy_occurrence": 1}})
+        code, responses = self.report(calendar_path, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
+</C:free-busy-query>""", 400, is_xml=False)
 
     def _report_sync_token(
             self, calendar_path: str, sync_token: Optional[str] = None

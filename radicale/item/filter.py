@@ -48,8 +48,32 @@ def date_to_datetime(d: date) -> datetime:
     if not isinstance(d, datetime):
         d = datetime.combine(d, datetime.min.time())
     if not d.tzinfo:
-        d = d.replace(tzinfo=timezone.utc)
+        # NOTE: using vobject's UTC as it wasn't playing well with datetime's.
+        d = d.replace(tzinfo=vobject.icalendar.utc)
     return d
+
+
+def parse_time_range(time_filter: ET.Element) -> Tuple[datetime, datetime]:
+    start_text = time_filter.get("start")
+    end_text = time_filter.get("end")
+    if start_text:
+        start = datetime.strptime(
+            start_text, "%Y%m%dT%H%M%SZ").replace(
+                tzinfo=timezone.utc)
+    else:
+        start = DATETIME_MIN
+    if end_text:
+        end = datetime.strptime(
+            end_text, "%Y%m%dT%H%M%SZ").replace(
+                tzinfo=timezone.utc)
+    else:
+        end = DATETIME_MAX
+    return start, end
+
+
+def time_range_timestamps(time_filter: ET.Element) -> Tuple[int, int]:
+    start, end = parse_time_range(time_filter)
+    return (math.floor(start.timestamp()), math.ceil(end.timestamp()))
 
 
 def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
@@ -147,21 +171,10 @@ def time_range_match(vobject_item: vobject.base.Component,
     """Check whether the component/property ``child_name`` of
        ``vobject_item`` matches the time-range ``filter_``."""
 
-    start_text = filter_.get("start")
-    end_text = filter_.get("end")
-    if not start_text and not end_text:
+    if not filter_.get("start") and not filter_.get("end"):
         return False
-    if start_text:
-        start = datetime.strptime(start_text, "%Y%m%dT%H%M%SZ")
-    else:
-        start = datetime.min
-    if end_text:
-        end = datetime.strptime(end_text, "%Y%m%dT%H%M%SZ")
-    else:
-        end = datetime.max
-    start = start.replace(tzinfo=timezone.utc)
-    end = end.replace(tzinfo=timezone.utc)
 
+    start, end = parse_time_range(filter_)
     matched = False
 
     def range_fn(range_start: datetime, range_end: datetime,
@@ -179,6 +192,35 @@ def time_range_match(vobject_item: vobject.base.Component,
 
     visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn)
     return matched
+
+
+def time_range_fill(vobject_item: vobject.base.Component,
+                    filter_: ET.Element, child_name: str, n: int = 1
+                    ) -> List[Tuple[datetime, datetime]]:
+    """Create a list of ``n`` occurances from the component/property ``child_name``
+       of ``vobject_item``."""
+    if not filter_.get("start") and not filter_.get("end"):
+        return []
+
+    start, end = parse_time_range(filter_)
+    ranges: List[Tuple[datetime, datetime]] = []
+
+    def range_fn(range_start: datetime, range_end: datetime,
+                 is_recurrence: bool) -> bool:
+        nonlocal ranges
+        if start < range_end and range_start < end:
+            ranges.append((range_start, range_end))
+            if n > 0 and len(ranges) >= n:
+                return True
+        if end < range_start and not is_recurrence:
+            return True
+        return False
+
+    def infinity_fn(range_start: datetime) -> bool:
+        return False
+
+    visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn)
+    return ranges
 
 
 def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
@@ -543,20 +585,7 @@ def simplify_prefilters(filters: Iterable[ET.Element], collection_tag: str
                 if time_filter.tag != xmlutils.make_clark("C:time-range"):
                     simple = False
                     continue
-                start_text = time_filter.get("start")
-                end_text = time_filter.get("end")
-                if start_text:
-                    start = math.floor(datetime.strptime(
-                        start_text, "%Y%m%dT%H%M%SZ").replace(
-                            tzinfo=timezone.utc).timestamp())
-                else:
-                    start = TIMESTAMP_MIN
-                if end_text:
-                    end = math.ceil(datetime.strptime(
-                        end_text, "%Y%m%dT%H%M%SZ").replace(
-                            tzinfo=timezone.utc).timestamp())
-                else:
-                    end = TIMESTAMP_MAX
+                start, end = time_range_timestamps(time_filter)
                 return tag, start, end, simple
             return tag, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
     return None, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
