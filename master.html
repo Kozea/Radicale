@@ -187,6 +187,7 @@ with the WSGI server</a></li>
 <li class="level4"><a href="#rabbitmq_endpoint" id="toc-rabbitmq_endpoint">rabbitmq_endpoint</a></li>
 <li class="level4"><a href="#rabbitmq_topic" id="toc-rabbitmq_topic">rabbitmq_topic</a></li>
 <li class="level4"><a href="#rabbitmq_queue_type" id="toc-rabbitmq_queue_type">rabbitmq_queue_type</a></li>
+<li class="level4"><a href="#reporting" id="toc-reporting">reporting</a></li>
 </ul></li>
 </ul></li>
 <li class="level2"><a href="#supported-clients" id="toc-supported-clients">Supported
@@ -1102,6 +1103,19 @@ amqp://user:password@localhost:5672/</p>
 <h4>rabbitmq_queue_type <a class="headerlink" href="#rabbitmq_queue_type">&para;</a></h4>
 <p>RabbitMQ queue type for the topic.</p>
 <p>Default: classic</p>
+</section>
+<section class="level4" id="reporting">
+<h4>reporting <a class="headerlink" href="#reporting">&para;</a></h4>
+<section class="level5" id="max_freebusy_occurrence">
+<h5>max_freebusy_occurrence <a class="headerlink" href="#max_freebusy_occurrence">&para;</a></h5>
+<p>When returning a free-busy report, a list of busy time occurrences
+are generated based on a given time frame. Large time frames could
+generate a lot of occurrences based on the time frame supplied. This
+setting limits the lookup to prevent potential denial of service attacks
+on large time frames. If the limit is reached, an HTTP error is thrown
+instead of returning the results.</p>
+<p>Default: 10000</p>
+</section>
 </section>
 </section>
 </section>
