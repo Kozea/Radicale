@@ -1,6 +1,81 @@
 # Changelog
 
-## master
+## 3.dev
+* Fix: Using icalendar's tzinfo on created datetime to fix issue with icalendar
+* Enhancement: Added free-busy report
+* Enhancement: Added 'max_freebusy_occurrences` setting to avoid potential DOS on reports
+* Enhancement: remove unexpected control codes from uploaded items
+* Drop: remove unused requirement "typeguard"
+* Improve: Refactored some date parsing code
+
+## 3.2.2
+* Enhancement: add support for auth.type=denyall (will be default for security reasons in upcoming releases)
+* Enhancement: display warning in case only default config is active
+* Enhancement: display warning in case no user authentication is active
+* Enhancement: add option to skip broken item to avoid triggering exception (default: enabled)
+* Enhancement: add support for predefined collections for new users
+* Enhancement: add options to enable several parts in debug log like backtrace, request_header, request_content, response_content (default: disabled)
+* Enhancement: rights/from_file: display resulting permission of a match in debug log
+* Enhancement: add Apache config file example (see contrib directory)
+* Fix: "verify-collection" skips non-collection directories, logging improved
+
+## 3.2.1
+
+* Enhancement: add option for logging bad PUT request content
+* Enhancement: extend logging with step where bad PUT request failed
+* Fix: support for recurrence "full day"
+* Fix: list of web_files related to HTML pages
+* Test: update/adjustments for workflows (pytest>=7, typeguard<4.3)
+
+## 3.2.0
+
+* Enhancement: add hook support for event changes+deletion hooks (initial support: "rabbitmq")
+* Dependency: pika >= 1.1.0
+* Enhancement: add support for webcal subscriptions
+* Enhancement: major update of WebUI (design+features)
+* Adjust: change default loglevel to "info"
+* Enhancement: support "expand-property" on REPORT request
+* Drop: support for Python 3.7 (EOSL, can't be tested anymore)
+* Fix: allow quoted-printable encoding for vObjects
+
+## 3.1.9
+
+* Add: support for Python 3.11 + 3.12
+* Drop: support for Python 3.6
+* Fix: MOVE in case listen on non-standard ports or behind reverse proxy
+* Fix: stricter requirements of Python 3.11
+* Fix: HTML pages
+* Fix: Main Component is missing when only recurrence id exists
+* Fix: passlib don't support bcrypt>=4.1
+* Fix: web login now proper encodes passwords containing %XX (hexdigits)
+* Enhancement: user-selectable log formats
+* Enhancement: autodetect logging to systemd journal
+* Enhancement: test code
+* Enhancement: option for global permit to delete collection
+* Enhancement: auth type 'htpasswd' supports now 'htpasswd_encryption' sha256/sha512 and "autodetect" for smooth transition
+* Improve: Dockerfiles
+* Improve: server socket listen code + address format in log
+* Update: documentations + examples
+* Dependency: limit typegard version < 3
+* General: code cosmetics
+
+## 3.1.8
+
+* Fix setuptools requirement if installing wheel
+* Tests: Switch from `python setup.py test` to `tox`
+* Small changes to build system configuration and tests
+
+## 3.1.7
+
+* Fix random href fallback
+
+## 3.1.6
+
+* Ignore `Not a directory` error for optional config paths
+* Fix upload of whole address book/calendar with UIDs that collide on
+  case-insensitive filesystem
+* Remove runtime dependency on setuptools for Python>=3.9
+* Windows: Block ADS paths
 
 ## 3.1.5
 

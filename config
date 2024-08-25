@@ -16,6 +16,9 @@
 # IPv6 syntax: [address]:port
 # For example: 0.0.0.0:9999, [::]:9999
 hosts = 0.0.0.0:5232
+# Hostname syntax (using "getaddrinfo" to resolve to IPv4/IPv6 adress(es)): hostname:port
+# For example: 0.0.0.0:9999, [::]:9999, localhost:9999
+#hosts = localhost:5232
 
 # Max parallel connections
 #max_connections = 8
@@ -70,12 +73,15 @@ ldap_secret = ossreader
 # If the ldap groups of the user need to be loaded
 ldap_load_groups = True
 
+# Value: none | htpasswd | remote_user | http_x_remote_user | denyall
+#type = none
+
 # Htpasswd filename
 #htpasswd_filename = /etc/radicale/users
 
 # Htpasswd encryption method
-# Value: plain | bcrypt | md5
-# bcrypt requires the installation of radicale[bcrypt].
+# Value: plain | bcrypt | md5 | sha256 | sha512 | autodetect
+# bcrypt requires the installation of 'bcrypt' module.
 #htpasswd_encryption = md5
 
 # Incorrect authentication delay (seconds)
@@ -84,6 +90,11 @@ ldap_load_groups = True
 # Message displayed in the client when a password is needed
 #realm = Radicale - Password Required
 
+# Convert username to lowercase, must be true for case-insensitive auth providers
+#lc_username = False
+
+# Strip domain name from username
+#strip_domain = False
 
 [rights]
 
@@ -93,6 +104,9 @@ ldap_load_groups = True
 
 # File for rights management from_file
 file = /etc/radicale/rights
+
+# Permit delete of a collection (global)
+#permit_delete_collection = True
 
 
 [storage]
@@ -107,9 +121,30 @@ file = /etc/radicale/rights
 # Delete sync token that are older (seconds)
 #max_sync_token_age = 2592000
 
+# Skip broken item instead of triggering an exception
+#skip_broken_item = True
+
 # Command that is run after changes to storage
-# Example: ([ -d .git ] || git init) && git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
+# Example: ([ -d .git ] || git init) && git add -A && (git diff --cached --quiet || git commit -m "Changes by \"%(user)s\"")
 #hook =
+
+# Create predefined user collections
+#
+# json format:
+#
+#  {
+#    "def-addressbook": {
+#       "D:displayname": "Personal Address Book",
+#       "tag": "VADDRESSBOOK"
+#    },
+#    "def-calendar": {
+#       "C:supported-calendar-component-set": "VEVENT,VJOURNAL,VTODO",
+#       "D:displayname": "Personal Calendar",
+#       "tag": "VCALENDAR"
+#    }
+#  }
+#
+#predefined_collections =
 
 
 [web]
@@ -123,13 +158,43 @@ file = /etc/radicale/rights
 
 # Threshold for the logger
 # Value: debug | info | warning | error | critical
-#level = warning
+#level = info
 
 # Don't include passwords in logs
 #mask_passwords = True
+
+# Log bad PUT request content
+#bad_put_request_content = False
+
+# Log backtrace on level=debug
+#backtrace_on_debug = False
+
+# Log request header on level=debug
+#request_header_on_debug = False
+
+# Log request content on level=debug
+#request_content_on_debug = False
+
+# Log response content on level=debug
+#response_content_on_debug = False
 
 
 [headers]
 
 # Additional HTTP headers
 #Access-Control-Allow-Origin = *
+
+[hook]
+
+# Hook types
+# Value: none | rabbitmq
+#type = none
+#rabbitmq_endpoint =
+#rabbitmq_topic =
+#rabbitmq_queue_type = classic
+
+[reporting]
+
+# When returning a free-busy report, limit the number of returned
+# occurences per event to prevent DOS attacks.
+#max_freebusy_occurrence = 10000

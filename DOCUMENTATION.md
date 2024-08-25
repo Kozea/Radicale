@@ -24,7 +24,7 @@ Radicale is really easy to install and works out-of-the-box.
 
 ```bash
 python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
-python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
+python3 -m radicale --logging-level info --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
 When the server is launched, open <http://localhost:5232> in your browser!
@@ -216,6 +216,8 @@ requirements.
 
 #### Linux with systemd system-wide
 
+Recommendation: check support by [Linux Distribution Packages](#linux-distribution-packages) instead of manual setup / initial configuration.
+
 Create the **radicale** user and group for the Radicale service. (Run
 `useradd --system --user-group --home-dir / --shell /sbin/nologin radicale` as root.)
 The storage folder must be writable by **radicale**. (Run
@@ -328,9 +330,13 @@ start the **Radicale** service.
 
 ### Reverse Proxy
 
-When a reverse proxy is used, the path at which Radicale is available must
-be provided via the `X-Script-Name` header. The proxy must remove the location
-from the URL path that is forwarded to Radicale.
+When a reverse proxy is used, and Radicale should be made available at a path
+below the root (such as `/radicale/`), then this path must be provided via
+the `X-Script-Name` header (without a trailing `/`). The proxy must remove
+the location from the URL path that is forwarded to Radicale. If Radicale
+should be made available at the root of the web server (in the nginx case
+using `location /`), then the setting of the `X-Script-Name` header should be
+removed from the example below.
 
 Example **nginx** configuration:
 
@@ -344,6 +350,17 @@ location /radicale/ { # The trailing / is important!
 }
 ```
 
+Example **Caddy** configuration:
+
+```
+handle_path /radicale/* {
+    uri strip_prefix /radicale
+    reverse_proxy localhost:5232 {
+        header_up X-Script-Name /radicale
+    }
+}
+```
+
 Example **Apache** configuration:
 
 ```apache
@@ -354,6 +371,11 @@ RewriteRule ^/radicale$ /radicale/ [R,L]
     ProxyPass        http://localhost:5232/ retry=0
     ProxyPassReverse http://localhost:5232/
     RequestHeader    set X-Script-Name /radicale
+    RequestHeader    set X-Forwarded-Port "%{SERVER_PORT}s"
+    RequestHeader    unset X-Forwarded-Proto
+    <If "%{HTTPS} =~ /on/">
+    RequestHeader    set X-Forwarded-Proto "https"
+    </If>
 </Location>
 ```
 
@@ -366,6 +388,28 @@ RewriteRule ^(.*)$ http://localhost:5232/$1 [P,L]
 
 # Set to directory of .htaccess file:
 RequestHeader set X-Script-Name /radicale
+RequestHeader set X-Forwarded-Port "%{SERVER_PORT}s"
+RequestHeader unset X-Forwarded-Proto
+<If "%{HTTPS} =~ /on/">
+RequestHeader set X-Forwarded-Proto "https"
+</If>
+```
+
+Example **lighttpd** configuration:
+
+```lighttpd
+server.modules += ( "mod_proxy" , "mod_setenv", "mod_rewrite" )
+
+$HTTP["url"] =~ "^/radicale/" {
+  proxy.server = ( "" => (( "host" => "127.0.0.1", "port" => "5232" )) )
+  proxy.header = ( "map-urlpath" => ( "/radicale/" => "/" ))
+
+  setenv.add-request-header = (
+    "X-Script-Name" => "/radicale",
+    "Script-Name" => "/radicale",
+  )
+  url.rewrite-once = ( "^/radicale/radicale/(.*)" => "/radicale/$1" )
+}
 ```
 
 Be reminded that Radicale's default configuration enforces limits on the
@@ -390,6 +434,21 @@ location /radicale/ {
     proxy_set_header     Host $http_host;
     auth_basic           "Radicale - Password Required";
     auth_basic_user_file /etc/nginx/htpasswd;
+}
+```
+
+Example **Caddy** configuration:
+
+```
+handle_path /radicale/* {
+    uri strip_prefix /radicale
+    basicauth {
+        USER HASH
+    }
+    reverse_proxy localhost:5232 {
+        header_up X-Script-Name /radicale
+        header_up X-remote-user {http.auth.user.id}
+    }
 }
 ```
 
@@ -458,6 +517,15 @@ key = /path/to/server_key.pem
 certificate_authority = /path/to/client_cert.pem
 ```
 
+If you're using the Let's Encrypt's Certbot, the configuration should look similar to this:
+
+```ini
+[server]
+ssl = True
+certificate = /etc/letsencrypt/live/{Your Domain}/fullchain.pem
+key = /etc/letsencrypt/live/{Your Domain}/privkey.pem
+```
+
 Example **nginx** configuration:
 
 ```nginx
@@ -522,11 +590,21 @@ The configuration option `hook` in the `storage` section must be set to
 the following command:
 
 ```bash
-git add -A && (git diff --cached --quiet || git commit -m "Changes by "%(user)s)
+git add -A && (git diff --cached --quiet || git commit -m "Changes by \"%(user)s\"")
 ```
 
 The command gets executed after every change to the storage and commits
 the changes into the **git** repository.
+
+For the hook to not cause errors either **git** user details need to be set and match the owner of the collections directory or the repository needs to be marked as safe.
+
+When using the systemd unit file from the [Running as a service](#running-as-a-service) section this **cannot** be done via a `.gitconfig` file in the users home directory, as Radicale won't have read permissions!
+
+In `/var/lib/radicale/collections/.git` run:
+```bash
+git config user.name "radicale"
+git config user.email "radicale@example.com"
+```
 
 ## Documentation
 
@@ -676,7 +754,7 @@ Default: `none`
 
 Path to the htpasswd file.
 
-Default:
+Default: `/etc/radicale/users`
 
 ##### htpasswd_encryption
 
@@ -697,10 +775,19 @@ Available methods:
 
 `bcrypt`
 : This uses a modified version of the Blowfish stream cipher. It's very secure.
-  The installation of **radicale[bcrypt]** is required for this.
+  The installation of **bcrypt** is required for this.
 
 `md5`
-: This uses an iterated md5 digest of the password with a salt.
+: This uses an iterated MD5 digest of the password with a salt.
+
+`sha256`
+: This uses an iterated SHA-256 digest of the password with a salt.
+
+`sha512`
+: This uses an iterated SHA-512 digest of the password with a salt.
+
+`autodetect`
+: This selects autodetection of method per entry.
 
 Default: `md5`
 
@@ -752,6 +839,19 @@ Load the ldap groups of the authenticated user. These groups can be used later o
 
 Default: False
 
+##### lc_username
+
+Сonvert username to lowercase, must be true for case-insensitive auth 
+providers like ldap, kerberos
+
+Default: `False`
+
+##### strip_domain
+
+Strip domain from username
+
+Default: `False`
+
 #### rights
 
 ##### type
@@ -787,6 +887,12 @@ Default: `owner_only`
 File for the rights backend `from_file`.  See the
 [Rights](#authentication-and-rights) section.
 
+##### permit_delete_collection
+
+(New since 3.1.9)
+
+Global control of permission to delete complete collection (default: True)
+
 #### storage
 
 ##### type
@@ -816,10 +922,36 @@ Delete sync-token that are older than the specified time. (seconds)
 
 Default: `2592000`
 
+##### skip_broken_item
+
+Skip broken item instead of triggering an exception
+
+Default: `True`
+
 ##### hook
 
 Command that is run after changes to storage. Take a look at the
 [Versioning with Git](#versioning-with-git) tutorial for an example.
+
+Default:
+
+##### predefined_collections
+
+Create predefined user collections
+
+ Example:
+
+     {
+       "def-addressbook": {
+          "D:displayname": "Personal Address Book",
+          "tag": "VADDRESSBOOK"
+       },
+       "def-calendar": {
+          "C:supported-calendar-component-set": "VEVENT,VJOURNAL,VTODO",
+          "D:displayname": "Personal Calendar",
+          "tag": "VCALENDAR"
+       }
+     }
 
 Default:
 
@@ -855,6 +987,36 @@ Don't include passwords in logs.
 
 Default: `True`
 
+##### bad_put_request_content
+
+Log bad PUT request content (for further diagnostics)
+
+Default: `False`
+
+##### backtrace_on_debug
+
+Log backtrace on level=debug
+
+Default: `False`
+
+##### request_header_on_debug
+
+Log request on level=debug
+
+Default: `False`
+
+##### request_content_on_debug
+
+Log request on level=debug
+
+Default: `False`
+
+##### response_content_on_debug = True
+
+Log response on level=debug
+
+Default: `False`
+
 #### headers
 
 In this section additional HTTP headers that are sent to clients can be
@@ -866,7 +1028,53 @@ An example to relax the same-origin policy:
 Access-Control-Allow-Origin = *
 ```
 
-### Supported Clients
+#### hook
+##### type
+
+Hook binding for event changes and deletion notifications.
+
+Available types:
+
+`none`
+: Disabled. Nothing will be notified.
+
+`rabbitmq`
+: Push the message to the rabbitmq server.
+
+Default: `none`
+
+#### rabbitmq_endpoint
+
+End-point address for rabbitmq server.
+Ex: amqp://user:password@localhost:5672/
+
+Default:
+
+#### rabbitmq_topic
+
+RabbitMQ topic to publish message.
+
+Default:
+
+#### rabbitmq_queue_type
+
+RabbitMQ queue type for the topic.
+
+Default: classic
+
+#### reporting
+##### max_freebusy_occurrence
+
+When returning a free-busy report, a list of busy time occurrences are
+generated based on a given time frame. Large time frames could
+generate a lot of occurrences based on the time frame supplied. This
+setting limits the lookup to prevent potential denial of service
+attacks on large time frames. If the limit is reached, an HTTP error
+is thrown instead of returning the results.
+
+Default: 10000
+
+## Supported Clients
 
 Radicale has been tested with:
 
@@ -897,15 +1105,20 @@ Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
 username. DAVx⁵ will show all existing calendars and address books and you
 can create new.
 
-#### GNOME Calendar, Contacts and Evolution
+#### GNOME Calendar, Contacts
 
-**GNOME Calendar** and **Contacts** do not support adding WebDAV calendars
-and address books directly, but you can add them in **Evolution**.
+GNOME 46 added CalDAV and CardDAV support to _GNOME Online Accounts_.
+
+Open GNOME Settings, navigate to _Online Accounts_ > _Connect an Account_ > _Calendar, Contacts and Files_. Enter the URL (e.g. `https://example.com/radicale`) and your credentials then click _Sign In_. In the pop-up dialog, turn off _Files_. After adding Radicale in _GNOME Online Accounts_, it should be available in GNOME Contacts and GNOME Calendar.
+
+#### Evolution
 
 In **Evolution** add a new calendar and address book respectively with WebDAV.
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
 username. Clicking on the search button will list the existing calendars and
 address books.
+
+Adding CalDAV and CardDAV accounts in Evolution will automatically make them available in GNOME Contacts and GNOME Calendar.
 
 #### Thunderbird
 
@@ -993,6 +1206,8 @@ Delete the collections by running something like:
 curl -u user -X DELETE 'http://localhost:5232/user/calendar'
 ```
 
+Note: requires config/option `permit_delete_collection = True`
+
 ### Authentication and Rights
 
 This section describes the format of the rights file for the `from_file`
@@ -1012,7 +1227,7 @@ An example rights file:
 [root]
 user: .+
 collection:
-permissions: R
+permissions: r
 
 # Allow reading and writing principal collection (same as username)
 [principal]
@@ -1369,10 +1584,6 @@ The module must contain a class `Storage` that extends
 
 ## Contribute
 
-#### Chat with Us on IRC
-
-Want to say something? Join our IRC room: `##kozea` on Freenode.
-
 #### Report Bugs
 
 Found a bug? Want a new feature? Report a new issue on the
@@ -1427,7 +1638,7 @@ Radicale has been packaged for:
 * [Debian](http://packages.debian.org/radicale) by Jonas Smedegaard
 * [Gentoo](https://packages.gentoo.org/packages/www-apps/radicale)
   by René Neumann, Maxim Koltsov and Manuel Rüger
-* [Fedora/RHEL/CentOS](https://src.fedoraproject.org/rpms/radicale) by Jorti
+* [Fedora/EnterpriseLinux](https://src.fedoraproject.org/rpms/radicale) by Jorti
   and Peter Bieringer
 * [Mageia](http://madb.mageia.org/package/show/application/0/name/radicale)
   by Jani Välimaa

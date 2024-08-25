@@ -3,6 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +31,7 @@ import vobject
 import radicale.item as radicale_item
 from radicale import httputils, pathutils, rights, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
+from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
 
 MIMETYPE_TAGS: Mapping[str, str] = {value: key for key, value in
@@ -132,7 +134,7 @@ class ApplicationPartPut(ApplicationBase):
         try:
             content = httputils.read_request_body(self.configuration, environ)
         except RuntimeError as e:
-            logger.warning("Bad PUT request on %r: %s", path, e, exc_info=True)
+            logger.warning("Bad PUT request on %r (read_request_body): %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
         except socket.timeout:
             logger.debug("Client timed out", exc_info=True)
@@ -144,7 +146,11 @@ class ApplicationPartPut(ApplicationBase):
             vobject_items = radicale_item.read_components(content or "")
         except Exception as e:
             logger.warning(
-                "Bad PUT request on %r: %s", path, e, exc_info=True)
+                "Bad PUT request on %r (read_components): %s", path, e, exc_info=True)
+            if self._log_bad_put_request_content:
+                logger.warning("Bad PUT request content of %r:\n%s", path, content)
+            else:
+                logger.debug("Bad PUT request content: suppressed by config/option [auth] bad_put_request_content")
             return httputils.BAD_REQUEST
         (prepared_items, prepared_tag, prepared_write_whole_collection,
          prepared_props, prepared_exc_info) = prepare(
@@ -198,7 +204,7 @@ class ApplicationPartPut(ApplicationBase):
             props = prepared_props
             if prepared_exc_info:
                 logger.warning(
-                    "Bad PUT request on %r: %s", path, prepared_exc_info[1],
+                    "Bad PUT request on %r (prepare): %s", path, prepared_exc_info[1],
                     exc_info=prepared_exc_info)
                 return httputils.BAD_REQUEST
 
@@ -206,9 +212,16 @@ class ApplicationPartPut(ApplicationBase):
                 try:
                     etag = self._storage.create_collection(
                         path, prepared_items, props).etag
+                    for item in prepared_items:
+                        hook_notification_item = HookNotificationItem(
+                            HookNotificationItemTypes.UPSERT,
+                            access.path,
+                            item.serialize()
+                        )
+                        self._hook.notify(hook_notification_item)
                 except ValueError as e:
                     logger.warning(
-                        "Bad PUT request on %r: %s", path, e, exc_info=True)
+                        "Bad PUT request on %r (create_collection): %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
             else:
                 assert not isinstance(item, storage.BaseCollection)
@@ -222,9 +235,15 @@ class ApplicationPartPut(ApplicationBase):
                 href = posixpath.basename(pathutils.strip_path(path))
                 try:
                     etag = parent_item.upload(href, prepared_item).etag
+                    hook_notification_item = HookNotificationItem(
+                        HookNotificationItemTypes.UPSERT,
+                        access.path,
+                        prepared_item.serialize()
+                    )
+                    self._hook.notify(hook_notification_item)
                 except ValueError as e:
                     logger.warning(
-                        "Bad PUT request on %r: %s", path, e, exc_info=True)
+                        "Bad PUT request on %r (upload): %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
 
             headers = {"ETag": etag}

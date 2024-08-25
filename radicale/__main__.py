@@ -1,6 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2011-2017 Guillaume Ayoub
-# Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -141,7 +142,7 @@ def run() -> None:
     # Preliminary configure logging
     with contextlib.suppress(ValueError):
         log.set_level(config.DEFAULT_CONFIG_SCHEMA["logging"]["level"]["type"](
-            vars(args_ns).get("c:logging:level", "")))
+            vars(args_ns).get("c:logging:level", "")), True)
 
     # Update Radicale configuration according to arguments
     arguments_config: types.MUTABLE_CONFIG = {}
@@ -164,11 +165,17 @@ def run() -> None:
         sys.exit(1)
 
     # Configure logging
-    log.set_level(cast(str, configuration.get("logging", "level")))
+    log.set_level(cast(str, configuration.get("logging", "level")), configuration.get("logging", "backtrace_on_debug"))
 
     # Log configuration after logger is configured
+    default_config_active = True
     for source, miss in configuration.sources():
-        logger.info("%s %s", "Skipped missing" if miss else "Loaded", source)
+        logger.info("%s %s", "Skipped missing/unreadable" if miss else "Loaded", source)
+        if not miss and source != "default config":
+            default_config_active = False
+
+    if default_config_active:
+        logger.warning("%s", "No config file found/readable - only default config is active")
 
     if args_ns.verify_storage:
         logger.info("Verifying storage")
@@ -176,7 +183,7 @@ def run() -> None:
             storage_ = storage.load(configuration)
             with storage_.acquire_lock("r"):
                 if not storage_.verify():
-                    logger.critical("Storage verifcation failed")
+                    logger.critical("Storage verification failed")
                     sys.exit(1)
         except Exception as e:
             logger.critical("An exception occurred during storage "
@@ -198,7 +205,7 @@ def run() -> None:
         server.serve(configuration, shutdown_socket_out)
     except Exception as e:
         logger.critical("An exception occurred during server startup: %s", e,
-                        exc_info=True)
+                        exc_info=False)
         sys.exit(1)
 
 

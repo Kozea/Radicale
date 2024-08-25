@@ -3,6 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +23,6 @@ Built-in WSGI server.
 
 """
 
-import errno
 import http
 import select
 import socket
@@ -58,11 +58,19 @@ elif sys.platform == "win32":
 
 
 # IPv4 (host, port) and IPv6 (host, port, flowinfo, scopeid)
-ADDRESS_TYPE = Union[Tuple[str, int], Tuple[str, int, int, int]]
+ADDRESS_TYPE = Union[Tuple[Union[str, bytes, bytearray], int],
+                     Tuple[str, int, int, int]]
 
 
 def format_address(address: ADDRESS_TYPE) -> str:
-    return "[%s]:%d" % address[:2]
+    host, port, *_ = address
+    if not isinstance(host, str):
+        raise NotImplementedError("Unsupported address format: %r" %
+                                  (address,))
+    if host.find(":") == -1:
+        return "%s:%d" % (host, port)
+    else:
+        return "[%s]:%d" % (host, port)
 
 
 class ParallelHTTPServer(socketserver.ThreadingMixIn,
@@ -206,7 +214,7 @@ class ServerHandler(wsgiref.simple_server.ServerHandler):
     # Don't pollute WSGI environ with OS environment
     os_environ: MutableMapping[str, str] = {}
 
-    def log_exception(self, exc_info: "wsgiref.handlers._exc_info") -> None:
+    def log_exception(self, exc_info) -> None:
         logger.error("An exception occurred during request: %s",
                      exc_info[1], exc_info=exc_info)  # type:ignore[arg-type]
 
@@ -278,41 +286,22 @@ def serve(configuration: config.Configuration,
     servers = {}
     try:
         hosts: List[Tuple[str, int]] = configuration.get("server", "hosts")
-        for address in hosts:
-            # Try to bind sockets for IPv4 and IPv6
-            possible_families = (socket.AF_INET, socket.AF_INET6)
-            bind_ok = False
-            for i, family in enumerate(possible_families):
-                is_last = i == len(possible_families) - 1
+        for address_port in hosts:
+            # retrieve IPv4/IPv6 address of address
+            try:
+                getaddrinfo = socket.getaddrinfo(address_port[0], address_port[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+            except OSError as e:
+                logger.warning("cannot retrieve IPv4 or IPv6 address of '%s': %s" % (format_address(address_port), e))
+                continue
+            logger.debug("getaddrinfo of '%s': %s" % (format_address(address_port), getaddrinfo))
+            for (address_family, socket_kind, socket_proto, socket_flags, socket_address) in getaddrinfo:
+                logger.debug("try to create server socket on '%s'" % (format_address(socket_address)))
                 try:
-                    server = server_class(configuration, family, address,
-                                          RequestHandler)
+                    server = server_class(configuration, address_family, (socket_address[0], socket_address[1]), RequestHandler)
                 except OSError as e:
-                    # Ignore unsupported families (only one must work)
-                    if ((bind_ok or not is_last) and (
-                            isinstance(e, socket.gaierror) and (
-                                # Hostname does not exist or doesn't have
-                                # address for address family
-                                # macOS: IPv6 address for INET address family
-                                e.errno == socket.EAI_NONAME or
-                                # Address not for address family
-                                e.errno == COMPAT_EAI_ADDRFAMILY or
-                                e.errno == COMPAT_EAI_NODATA) or
-                            # Workaround for PyPy
-                            str(e) == "address family mismatched" or
-                            # Address family not available (e.g. IPv6 disabled)
-                            # macOS: IPv4 address for INET6 address family with
-                            #        IPV6_V6ONLY set
-                            e.errno == errno.EADDRNOTAVAIL or
-                            # Address family not supported
-                            e.errno == errno.EAFNOSUPPORT or
-                            # Protocol not supported
-                            e.errno == errno.EPROTONOSUPPORT)):
-                        continue
-                    raise RuntimeError("Failed to start server %r: %s" % (
-                                           format_address(address), e)) from e
+                    logger.warning("cannot create server socket on '%s': %s" % (format_address(socket_address), e))
+                    continue
                 servers[server.socket] = server
-                bind_ok = True
                 server.set_app(application)
                 logger.info("Listening on %r%s",
                             format_address(server.server_address),

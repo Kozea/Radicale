@@ -1,5 +1,6 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2020 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +22,8 @@ import sys
 import xml.etree.ElementTree as ET
 from typing import Optional
 
-from radicale import (auth, config, httputils, pathutils, rights, storage,
-                      types, web, xmlutils)
+from radicale import (auth, config, hook, httputils, pathutils, rights,
+                      storage, types, web, xmlutils)
 from radicale.log import logger
 
 # HACK: https://github.com/tiran/defusedxml/issues/54
@@ -38,6 +39,8 @@ class ApplicationBase:
     _rights: rights.BaseRights
     _web: web.BaseWeb
     _encoding: str
+    _permit_delete_collection: bool
+    _hook: hook.BaseHook
 
     def __init__(self, configuration: config.Configuration) -> None:
         self.configuration = configuration
@@ -46,6 +49,9 @@ class ApplicationBase:
         self._rights = rights.load(configuration)
         self._web = web.load(configuration)
         self._encoding = configuration.get("encoding", "request")
+        self._log_bad_put_request_content = configuration.get("logging", "bad_put_request_content")
+        self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
+        self._hook = hook.load(configuration)
 
     def _read_xml_request_body(self, environ: types.WSGIEnviron
                                ) -> Optional[ET.Element]:
@@ -66,8 +72,11 @@ class ApplicationBase:
 
     def _xml_response(self, xml_content: ET.Element) -> bytes:
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Response content:\n%s",
-                         xmlutils.pretty_xml(xml_content))
+            if self._response_content_on_debug:
+                logger.debug("Response content:\n%s",
+                             xmlutils.pretty_xml(xml_content))
+            else:
+                logger.debug("Response content: suppressed by config/option [auth] response_content_on_debug")
         f = io.BytesIO()
         ET.ElementTree(xml_content).write(f, encoding=self._encoding,
                                           xml_declaration=True)

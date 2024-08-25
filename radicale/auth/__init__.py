@@ -2,7 +2,8 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,13 +32,20 @@ Take a look at the class ``BaseAuth`` if you want to implement your own.
 from typing import Sequence, Tuple, Union
 
 from radicale import config, types, utils
+from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
-                                 "htpasswd", "ldap")
+                                 "denyall",
+                                 "htpasswd",
+                                 "ldap")
 
 
 def load(configuration: "config.Configuration") -> "BaseAuth":
     """Load the authentication module chosen in configuration."""
+    if configuration.get("auth", "type") == "none":
+        logger.warning("No user authentication is selected: '[auth] type=none' (insecure)")
+    if configuration.get("auth", "type") == "denyall":
+        logger.warning("All access is blocked by: '[auth] type=denyall'")
     return utils.load_plugin(INTERNAL_TYPES, "auth", "Auth", BaseAuth,
                              configuration)
 
@@ -45,6 +53,8 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
 class BaseAuth:
 
     _ldap_groups: set
+    _lc_username: bool
+    _strip_domain: bool
 
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseAuth.
@@ -55,6 +65,8 @@ class BaseAuth:
 
         """
         self.configuration = configuration
+        self._lc_username = configuration.get("auth", "lc_username")
+        self._strip_domain = configuration.get("auth", "strip_domain")
 
     def get_external_login(self, environ: types.WSGIEnviron) -> Union[
             Tuple[()], Tuple[str, str]]:
@@ -69,7 +81,7 @@ class BaseAuth:
         """
         return ()
 
-    def login(self, login: str, password: str) -> str:
+    def _login(self, login: str, password: str) -> str:
         """Check credentials and map login to internal user
 
         ``login`` the login name
@@ -81,3 +93,10 @@ class BaseAuth:
         """
 
         raise NotImplementedError
+
+    def login(self, login: str, password: str) -> str:
+        if self._lc_username:
+            login = login.lower()
+        if self._strip_domain:
+            login = login.split('@')[0]
+        return self._login(login, password)

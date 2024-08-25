@@ -28,7 +28,8 @@ import sys
 import threading
 import time
 from configparser import RawConfigParser
-from typing import Callable, Dict, NoReturn, Optional, Tuple, cast
+from http.client import HTTPMessage
+from typing import IO, Callable, Dict, Optional, Tuple, cast
 from urllib import request
 from urllib.error import HTTPError, URLError
 
@@ -40,26 +41,10 @@ from radicale.tests.helpers import configuration_to_dict, get_file_path
 
 
 class DisabledRedirectHandler(request.HTTPRedirectHandler):
-
-    # HACK: typeshed annotation are wrong for `fp` and `msg`
-    #       (https://github.com/python/typeshed/pull/5728)
-    #       `headers` is incompatible with `http.client.HTTPMessage`
-    #       (https://github.com/python/typeshed/issues/5729)
-    def http_error_301(self, req: request.Request, fp, code: int,
-                       msg, headers) -> NoReturn:
-        raise HTTPError(req.full_url, code, msg, headers, fp)
-
-    def http_error_302(self, req: request.Request, fp, code: int,
-                       msg, headers) -> NoReturn:
-        raise HTTPError(req.full_url, code, msg, headers, fp)
-
-    def http_error_303(self, req: request.Request, fp, code: int,
-                       msg, headers) -> NoReturn:
-        raise HTTPError(req.full_url, code, msg, headers, fp)
-
-    def http_error_307(self, req: request.Request, fp, code: int,
-                       msg, headers) -> NoReturn:
-        raise HTTPError(req.full_url, code, msg, headers, fp)
+    def redirect_request(
+            self, req: request.Request, fp: IO[bytes], code: int, msg: str,
+            headers: HTTPMessage, newurl: str) -> None:
+        return None
 
 
 class TestBaseServerRequests(BaseTest):
@@ -69,14 +54,15 @@ class TestBaseServerRequests(BaseTest):
     thread: threading.Thread
     opener: request.OpenerDirector
 
-    def setup(self) -> None:
-        super().setup()
+    def setup_method(self) -> None:
+        super().setup_method()
         self.shutdown_socket, shutdown_socket_out = socket.socketpair()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             # Find available port
             sock.bind(("127.0.0.1", 0))
+            self.sockfamily = socket.AF_INET
             self.sockname = sock.getsockname()
-        self.configure({"server": {"hosts": "[%s]:%d" % self.sockname},
+        self.configure({"server": {"hosts": "%s:%d" % self.sockname},
                         # Enable debugging for new processes
                         "logging": {"level": "debug"}})
         self.thread = threading.Thread(target=server.serve, args=(
@@ -88,13 +74,13 @@ class TestBaseServerRequests(BaseTest):
             request.HTTPSHandler(context=ssl_context),
             DisabledRedirectHandler)
 
-    def teardown(self) -> None:
+    def teardown_method(self) -> None:
         self.shutdown_socket.close()
         try:
             self.thread.join()
         except RuntimeError:  # Thread never started
             pass
-        super().teardown()
+        super().teardown_method()
 
     def request(self, method: str, path: str, data: Optional[str] = None,
                 check: Optional[int] = None, **kwargs
@@ -120,8 +106,12 @@ class TestBaseServerRequests(BaseTest):
         data_bytes = None
         if data:
             data_bytes = data.encode(encoding)
+        if self.sockfamily == socket.AF_INET6:
+            req_host = ("[%s]" % self.sockname[0])
+        else:
+            req_host = self.sockname[0]
         req = request.Request(
-            "%s://[%s]:%d%s" % (scheme, *self.sockname, path),
+            "%s://%s:%d%s" % (scheme, req_host, self.sockname[1], path),
             data=data_bytes, headers=headers, method=method)
         while True:
             assert is_alive_fn()
@@ -176,6 +166,7 @@ class TestBaseServerRequests(BaseTest):
                     server.COMPAT_IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
                 # Find available port
                 sock.bind(("::1", 0))
+                self.sockfamily = socket.AF_INET6
                 self.sockname = sock.getsockname()[:2]
         except OSError as e:
             if e.errno in (errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT,

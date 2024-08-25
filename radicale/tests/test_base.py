@@ -25,6 +25,7 @@ import posixpath
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
 import defusedxml.ElementTree as DefusedET
+import vobject
 
 from radicale import storage, xmlutils
 from radicale.tests import RESPONSES, BaseTest
@@ -37,8 +38,8 @@ class TestBaseRequests(BaseTest):
     # Allow skipping sync-token tests, when not fully supported by the backend
     full_sync_token_support: ClassVar[bool] = True
 
-    def setup(self) -> None:
-        BaseTest.setup(self)
+    def setup_method(self) -> None:
+        BaseTest.setup_method(self)
         rights_file_path = os.path.join(self.colpath, "rights")
         with open(rights_file_path, "w") as f:
             f.write("""\
@@ -243,6 +244,13 @@ permissions: RrWw""")
             for uid2 in uids[i + 1:]:
                 assert uid1 != uid2
 
+    def test_put_whole_calendar_case_sensitive_uids(self) -> None:
+        """Create a whole calendar with case-sensitive UIDs."""
+        events = get_file_content("event_multiple_case_sensitive_uids.ics")
+        self.put("/calendar.ics/", events)
+        _, answer = self.get("/calendar.ics/")
+        assert "\r\nUID:event\r\n" in answer and "\r\nUID:EVENT\r\n" in answer
+
     def test_put_whole_addressbook(self) -> None:
         """Create and overwrite a whole addressbook."""
         contacts = get_file_content("contact_multiple.vcf")
@@ -348,11 +356,11 @@ permissions: RrWw""")
         path2 = "/calendar.ics/event2.ics"
         self.put(path1, event)
         self.request("MOVE", path1, check=201,
-                     HTTP_DESTINATION=path2, HTTP_HOST="")
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
         self.get(path1, check=404)
         self.get(path2)
 
-    def test_move_between_colections(self) -> None:
+    def test_move_between_collections(self) -> None:
         """Move a item."""
         self.mkcalendar("/calendar1.ics/")
         self.mkcalendar("/calendar2.ics/")
@@ -361,11 +369,11 @@ permissions: RrWw""")
         path2 = "/calendar2.ics/event2.ics"
         self.put(path1, event)
         self.request("MOVE", path1, check=201,
-                     HTTP_DESTINATION=path2, HTTP_HOST="")
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
         self.get(path1, check=404)
         self.get(path2)
 
-    def test_move_between_colections_duplicate_uid(self) -> None:
+    def test_move_between_collections_duplicate_uid(self) -> None:
         """Move a item to a collection which already contains the UID."""
         self.mkcalendar("/calendar1.ics/")
         self.mkcalendar("/calendar2.ics/")
@@ -375,13 +383,13 @@ permissions: RrWw""")
         self.put(path1, event)
         self.put("/calendar2.ics/event1.ics", event)
         status, _, answer = self.request(
-            "MOVE", path1, HTTP_DESTINATION=path2, HTTP_HOST="")
+            "MOVE", path1, HTTP_DESTINATION="http://127.0.0.1/"+path2)
         assert status in (403, 409)
         xml = DefusedET.fromstring(answer)
         assert xml.tag == xmlutils.make_clark("D:error")
         assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
 
-    def test_move_between_colections_overwrite(self) -> None:
+    def test_move_between_collections_overwrite(self) -> None:
         """Move a item to a collection which already contains the item."""
         self.mkcalendar("/calendar1.ics/")
         self.mkcalendar("/calendar2.ics/")
@@ -391,12 +399,12 @@ permissions: RrWw""")
         self.put(path1, event)
         self.put(path2, event)
         self.request("MOVE", path1, check=412,
-                     HTTP_DESTINATION=path2, HTTP_HOST="")
-        self.request("MOVE", path1, check=204,
-                     HTTP_DESTINATION=path2, HTTP_HOST="", HTTP_OVERWRITE="T")
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
+        self.request("MOVE", path1, check=204, HTTP_OVERWRITE="T",
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
 
-    def test_move_between_colections_overwrite_uid_conflict(self) -> None:
-        """Move a item to a collection which already contains the item with
+    def test_move_between_collections_overwrite_uid_conflict(self) -> None:
+        """Move an item to a collection which already contains the item with
            a different UID."""
         self.mkcalendar("/calendar1.ics/")
         self.mkcalendar("/calendar2.ics/")
@@ -406,8 +414,9 @@ permissions: RrWw""")
         path2 = "/calendar2.ics/event2.ics"
         self.put(path1, event1)
         self.put(path2, event2)
-        status, _, answer = self.request("MOVE", path1, HTTP_DESTINATION=path2,
-                                         HTTP_HOST="", HTTP_OVERWRITE="T")
+        status, _, answer = self.request(
+            "MOVE", path1, HTTP_OVERWRITE="T",
+            HTTP_DESTINATION="http://127.0.0.1/"+path2)
         assert status in (403, 409)
         xml = DefusedET.fromstring(answer)
         assert xml.tag == xmlutils.make_clark("D:error")
@@ -910,6 +919,22 @@ permissions: RrWw""")
         </C:prop-filter>
     </C:comp-filter>
 </C:comp-filter>"""])
+        assert "/calendar.ics/event1.ics" in self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:prop-filter name="CATEGORIES">
+            <C:text-match>some_category1</C:text-match>
+        </C:prop-filter>
+    </C:comp-filter>
+</C:comp-filter>"""])
+        assert "/calendar.ics/event1.ics" in self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:prop-filter name="CATEGORIES">
+            <C:text-match collation="i;octet">some_category1</C:text-match>
+        </C:prop-filter>
+    </C:comp-filter>
+</C:comp-filter>"""])
         assert "/calendar.ics/event1.ics" not in self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
     <C:comp-filter name="VEVENT">
@@ -1336,9 +1361,44 @@ permissions: RrWw""")
 </C:calendar-query>""")
         assert len(responses) == 1
         response = responses[event_path]
-        assert not isinstance(response, int)
+        assert isinstance(response, dict)
         status, prop = response["D:getetag"]
         assert status == 200 and prop.text
+
+    def test_report_free_busy(self) -> None:
+        """Test free busy report on a few items"""
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+        for i in (1, 2, 10):
+            filename = "event{}.ics".format(i)
+            event = get_file_content(filename)
+            self.put(posixpath.join(calendar_path, filename), event)
+        code, responses = self.report(calendar_path, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
+</C:free-busy-query>""", 200, is_xml=False)
+        for response in responses.values():
+            assert isinstance(response, vobject.base.Component)
+        assert len(responses) == 1
+        vcalendar = list(responses.values())[0]
+        assert isinstance(vcalendar, vobject.base.Component)
+        assert len(vcalendar.vfreebusy_list) == 3
+        types = {}
+        for vfb in vcalendar.vfreebusy_list:
+            fbtype_val = vfb.fbtype.value
+            if fbtype_val not in types:
+                types[fbtype_val] = 0
+            types[fbtype_val] += 1
+        assert types == {'BUSY': 2, 'FREE': 1}
+
+        # Test max_freebusy_occurrence limit
+        self.configure({"reporting": {"max_freebusy_occurrence": 1}})
+        code, responses = self.report(calendar_path, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
+</C:free-busy-query>""", 400, is_xml=False)
 
     def _report_sync_token(
             self, calendar_path: str, sync_token: Optional[str] = None
@@ -1464,7 +1524,7 @@ permissions: RrWw""")
         sync_token, responses = self._report_sync_token(calendar_path)
         assert len(responses) == 1 and responses[event1_path] == 200
         self.request("MOVE", event1_path, check=201,
-                     HTTP_DESTINATION=event2_path, HTTP_HOST="")
+                     HTTP_DESTINATION="http://127.0.0.1/"+event2_path)
         sync_token, responses = self._report_sync_token(
             calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
@@ -1483,9 +1543,9 @@ permissions: RrWw""")
         sync_token, responses = self._report_sync_token(calendar_path)
         assert len(responses) == 1 and responses[event1_path] == 200
         self.request("MOVE", event1_path, check=201,
-                     HTTP_DESTINATION=event2_path, HTTP_HOST="")
+                     HTTP_DESTINATION="http://127.0.0.1/"+event2_path)
         self.request("MOVE", event2_path, check=201,
-                     HTTP_DESTINATION=event1_path, HTTP_HOST="")
+                     HTTP_DESTINATION="http://127.0.0.1/"+event1_path)
         sync_token, responses = self._report_sync_token(
             calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
@@ -1500,6 +1560,184 @@ permissions: RrWw""")
         sync_token, _ = self._report_sync_token(
             calendar_path, "http://radicale.org/ns/sync/INVALID")
         assert not sync_token
+
+    def test_report_with_expand_property(self) -> None:
+        """Test report with expand property"""
+        self.put("/calendar.ics/", get_file_content("event_daily_rrule.ics"))
+        req_body_without_expand = \
+            """<?xml version="1.0" encoding="utf-8" ?>
+            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                <D:prop>
+                    <C:calendar-data>
+                    </C:calendar-data>
+                </D:prop>
+                <C:filter>
+                    <C:comp-filter name="VCALENDAR">
+                        <C:comp-filter name="VEVENT">
+                            <C:time-range start="20060103T000000Z" end="20060105T000000Z"/>
+                        </C:comp-filter>
+                    </C:comp-filter>
+                </C:filter>
+            </C:calendar-query>
+            """
+        _, responses = self.report("/calendar.ics/", req_body_without_expand)
+        assert len(responses) == 1
+
+        response_without_expand = responses['/calendar.ics/event_daily_rrule.ics']
+        assert not isinstance(response_without_expand, int)
+        status, element = response_without_expand["C:calendar-data"]
+
+        assert status == 200 and element.text
+
+        assert "RRULE" in element.text
+        assert "BEGIN:VTIMEZONE" in element.text
+        assert "RECURRENCE-ID" not in element.text
+
+        uids: List[str] = []
+        for line in element.text.split("\n"):
+            if line.startswith("UID:"):
+                uid = line[len("UID:"):]
+                assert uid == "event_daily_rrule"
+                uids.append(uid)
+
+        assert len(uids) == 1
+
+        req_body_with_expand = \
+            """<?xml version="1.0" encoding="utf-8" ?>
+            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                <D:prop>
+                    <C:calendar-data>
+                        <C:expand start="20060103T000000Z" end="20060105T000000Z"/>
+                    </C:calendar-data>
+                </D:prop>
+                <C:filter>
+                    <C:comp-filter name="VCALENDAR">
+                        <C:comp-filter name="VEVENT">
+                            <C:time-range start="20060103T000000Z" end="20060105T000000Z"/>
+                        </C:comp-filter>
+                    </C:comp-filter>
+                </C:filter>
+            </C:calendar-query>
+            """
+
+        _, responses = self.report("/calendar.ics/", req_body_with_expand)
+
+        assert len(responses) == 1
+
+        response_with_expand = responses['/calendar.ics/event_daily_rrule.ics']
+        assert not isinstance(response_with_expand, int)
+        status, element = response_with_expand["C:calendar-data"]
+
+        assert status == 200 and element.text
+        assert "RRULE" not in element.text
+        assert "BEGIN:VTIMEZONE" not in element.text
+
+        uids = []
+        recurrence_ids = []
+        for line in element.text.split("\n"):
+            if line.startswith("UID:"):
+                assert line == "UID:event_daily_rrule"
+                uids.append(line)
+
+            if line.startswith("RECURRENCE-ID:"):
+                assert line in ["RECURRENCE-ID:20060103T170000Z", "RECURRENCE-ID:20060104T170000Z"]
+                recurrence_ids.append(line)
+
+            if line.startswith("DTSTART:"):
+                assert line == "DTSTART:20060102T170000Z"
+
+        assert len(uids) == 2
+        assert len(set(recurrence_ids)) == 2
+
+    def test_report_with_expand_property_all_day_event(self) -> None:
+        """Test report with expand property"""
+        self.put("/calendar.ics/", get_file_content("event_full_day_rrule.ics"))
+        req_body_without_expand = \
+            """<?xml version="1.0" encoding="utf-8" ?>
+            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                <D:prop>
+                    <C:calendar-data>
+                    </C:calendar-data>
+                </D:prop>
+                <C:filter>
+                    <C:comp-filter name="VCALENDAR">
+                        <C:comp-filter name="VEVENT">
+                            <C:time-range start="20060103T000000Z" end="20060105T000000Z"/>
+                        </C:comp-filter>
+                    </C:comp-filter>
+                </C:filter>
+            </C:calendar-query>
+            """
+        _, responses = self.report("/calendar.ics/", req_body_without_expand)
+        assert len(responses) == 1
+
+        response_without_expand = responses['/calendar.ics/event_full_day_rrule.ics']
+        assert not isinstance(response_without_expand, int)
+        status, element = response_without_expand["C:calendar-data"]
+
+        assert status == 200 and element.text
+
+        assert "RRULE" in element.text
+        assert "RECURRENCE-ID" not in element.text
+
+        uids: List[str] = []
+        for line in element.text.split("\n"):
+            if line.startswith("UID:"):
+                uid = line[len("UID:"):]
+                assert uid == "event_full_day_rrule"
+                uids.append(uid)
+
+        assert len(uids) == 1
+
+        req_body_with_expand = \
+            """<?xml version="1.0" encoding="utf-8" ?>
+            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                <D:prop>
+                    <C:calendar-data>
+                        <C:expand start="20060103T000000Z" end="20060105T000000Z"/>
+                    </C:calendar-data>
+                </D:prop>
+                <C:filter>
+                    <C:comp-filter name="VCALENDAR">
+                        <C:comp-filter name="VEVENT">
+                            <C:time-range start="20060103T000000Z" end="20060105T000000Z"/>
+                        </C:comp-filter>
+                    </C:comp-filter>
+                </C:filter>
+            </C:calendar-query>
+            """
+
+        _, responses = self.report("/calendar.ics/", req_body_with_expand)
+
+        assert len(responses) == 1
+
+        response_with_expand = responses['/calendar.ics/event_full_day_rrule.ics']
+        assert not isinstance(response_with_expand, int)
+        status, element = response_with_expand["C:calendar-data"]
+
+        assert status == 200 and element.text
+        assert "RRULE" not in element.text
+        assert "BEGIN:VTIMEZONE" not in element.text
+
+        uids = []
+        recurrence_ids = []
+        for line in element.text.split("\n"):
+            if line.startswith("UID:"):
+                assert line == "UID:event_full_day_rrule"
+                uids.append(line)
+
+            if line.startswith("RECURRENCE-ID:"):
+                assert line in ["RECURRENCE-ID:20060103", "RECURRENCE-ID:20060104", "RECURRENCE-ID:20060105"]
+                recurrence_ids.append(line)
+
+            if line.startswith("DTSTART:"):
+                assert line == "DTSTART:20060102"
+
+            if line.startswith("DTEND:"):
+                assert line == "DTEND:20060103"
+
+        assert len(uids) == 3
+        assert len(set(recurrence_ids)) == 3
 
     def test_propfind_sync_token(self) -> None:
         """Retrieve the sync-token with a propfind request"""

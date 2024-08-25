@@ -18,12 +18,19 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
+import copy
+import datetime
 import posixpath
 import socket
 import xml.etree.ElementTree as ET
 from http import client
-from typing import Callable, Iterable, Iterator, Optional, Sequence, Tuple
+from typing import (Any, Callable, Iterable, Iterator, List, Optional,
+                    Sequence, Tuple, Union)
 from urllib.parse import unquote, urlparse
+
+import vobject
+import vobject.base
+from vobject.base import ContentLine
 
 import radicale.item as radicale_item
 from radicale import httputils, pathutils, storage, types, xmlutils
@@ -32,11 +39,110 @@ from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
 
+def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
+                     collection: storage.BaseCollection, encoding: str,
+                     unlock_storage_fn: Callable[[], None],
+                     max_occurrence: int
+                     ) -> Tuple[int, Union[ET.Element, str]]:
+    # NOTE: this function returns both an Element and a string because
+    # free-busy reports are an edge-case on the return type according
+    # to the spec.
+
+    multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
+    if xml_request is None:
+        return client.MULTI_STATUS, multistatus
+    root = xml_request
+    if (root.tag == xmlutils.make_clark("C:free-busy-query") and
+            collection.tag != "VCALENDAR"):
+        logger.warning("Invalid REPORT method %r on %r requested",
+                       xmlutils.make_human_tag(root.tag), path)
+        return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
+
+    time_range_element = root.find(xmlutils.make_clark("C:time-range"))
+    assert isinstance(time_range_element, ET.Element)
+
+    # Build a single filter from the free busy query for retrieval
+    # TODO: filter for VFREEBUSY in additional to VEVENT but
+    # test_filter doesn't support that yet.
+    vevent_cf_element = ET.Element(xmlutils.make_clark("C:comp-filter"),
+                                   attrib={'name': 'VEVENT'})
+    vevent_cf_element.append(time_range_element)
+    vcalendar_cf_element = ET.Element(xmlutils.make_clark("C:comp-filter"),
+                                      attrib={'name': 'VCALENDAR'})
+    vcalendar_cf_element.append(vevent_cf_element)
+    filter_element = ET.Element(xmlutils.make_clark("C:filter"))
+    filter_element.append(vcalendar_cf_element)
+    filters = (filter_element,)
+
+    # First pull from storage
+    retrieved_items = list(collection.get_filtered(filters))
+    # !!! Don't access storage after this !!!
+    unlock_storage_fn()
+
+    cal = vobject.iCalendar()
+    collection_tag = collection.tag
+    while retrieved_items:
+        # Second filtering before evaluating occurrences.
+        # ``item.vobject_item`` might be accessed during filtering.
+        # Don't keep reference to ``item``, because VObject requires a lot of
+        # memory.
+        item, filter_matched = retrieved_items.pop(0)
+        if not filter_matched:
+            try:
+                if not test_filter(collection_tag, item, filter_element):
+                    continue
+            except ValueError as e:
+                raise ValueError("Failed to free-busy filter item %r from %r: %s" %
+                                 (item.href, collection.path, e)) from e
+            except Exception as e:
+                raise RuntimeError("Failed to free-busy filter item %r from %r: %s" %
+                                   (item.href, collection.path, e)) from e
+
+        fbtype = None
+        if item.component_name == 'VEVENT':
+            transp = getattr(item.vobject_item.vevent, 'transp', None)
+            if transp and transp.value != 'OPAQUE':
+                continue
+
+            status = getattr(item.vobject_item.vevent, 'status', None)
+            if not status or status.value == 'CONFIRMED':
+                fbtype = 'BUSY'
+            elif status.value == 'CANCELLED':
+                fbtype = 'FREE'
+            elif status.value == 'TENTATIVE':
+                fbtype = 'BUSY-TENTATIVE'
+            else:
+                # Could do fbtype = status.value for x-name, I prefer this
+                fbtype = 'BUSY'
+
+        # TODO: coalesce overlapping periods
+
+        if max_occurrence > 0:
+            n_occurrences = max_occurrence+1
+        else:
+            n_occurrences = 0
+        occurrences = radicale_filter.time_range_fill(item.vobject_item,
+                                                      time_range_element,
+                                                      "VEVENT",
+                                                      n=n_occurrences)
+        if len(occurrences) >= max_occurrence:
+            raise ValueError("FREEBUSY occurrences limit of {} hit"
+                             .format(max_occurrence))
+
+        for occurrence in occurrences:
+            vfb = cal.add('vfreebusy')
+            vfb.add('dtstamp').value = item.vobject_item.vevent.dtstamp.value
+            vfb.add('dtstart').value, vfb.add('dtend').value = occurrence
+            if fbtype:
+                vfb.add('fbtype').value = fbtype
+    return (client.OK, cal.serialize())
+
+
 def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                collection: storage.BaseCollection, encoding: str,
                unlock_storage_fn: Callable[[], None]
                ) -> Tuple[int, ET.Element]:
-    """Read and answer REPORT requests.
+    """Read and answer REPORT requests that return XML.
 
     Read rfc3253-3.6 for info.
 
@@ -64,9 +170,8 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         logger.warning("Invalid REPORT method %r on %r requested",
                        xmlutils.make_human_tag(root.tag), path)
         return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
-    prop_element = root.find(xmlutils.make_clark("D:prop"))
-    props = ([prop.tag for prop in prop_element]
-             if prop_element is not None else [])
+
+    props: Union[ET.Element, List] = root.find(xmlutils.make_clark("D:prop")) or []
 
     hreferences: Iterable[str]
     if root.tag in (
@@ -138,19 +243,40 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         found_props = []
         not_found_props = []
 
-        for tag in props:
-            element = ET.Element(tag)
-            if tag == xmlutils.make_clark("D:getetag"):
+        for prop in props:
+            element = ET.Element(prop.tag)
+            if prop.tag == xmlutils.make_clark("D:getetag"):
                 element.text = item.etag
                 found_props.append(element)
-            elif tag == xmlutils.make_clark("D:getcontenttype"):
+            elif prop.tag == xmlutils.make_clark("D:getcontenttype"):
                 element.text = xmlutils.get_content_type(item, encoding)
                 found_props.append(element)
-            elif tag in (
+            elif prop.tag in (
                     xmlutils.make_clark("C:calendar-data"),
                     xmlutils.make_clark("CR:address-data")):
                 element.text = item.serialize()
-                found_props.append(element)
+
+                expand = prop.find(xmlutils.make_clark("C:expand"))
+                if expand is not None:
+                    start = expand.get('start')
+                    end = expand.get('end')
+
+                    if (start is None) or (end is None):
+                        return client.FORBIDDEN, \
+                            xmlutils.webdav_error("C:expand")
+
+                    start = datetime.datetime.strptime(
+                        start, '%Y%m%dT%H%M%SZ'
+                    ).replace(tzinfo=datetime.timezone.utc)
+                    end = datetime.datetime.strptime(
+                        end, '%Y%m%dT%H%M%SZ'
+                    ).replace(tzinfo=datetime.timezone.utc)
+
+                    expanded_element = _expand(
+                        element, copy.copy(item), start, end)
+                    found_props.append(expanded_element)
+                else:
+                    found_props.append(element)
             else:
                 not_found_props.append(element)
 
@@ -162,6 +288,111 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
             not_found_props=not_found_props, found_item=True))
 
     return client.MULTI_STATUS, multistatus
+
+
+def _expand(
+        element: ET.Element,
+        item: radicale_item.Item,
+        start: datetime.datetime,
+        end: datetime.datetime,
+) -> ET.Element:
+    dt_format = '%Y%m%dT%H%M%SZ'
+
+    if type(item.vobject_item.vevent.dtstart.value) is datetime.date:
+        # If an event comes to us with a dt_start specified as a date
+        # then in the response we return the date, not datetime
+        dt_format = '%Y%m%d'
+
+    expanded_item, rruleset = _make_vobject_expanded_item(item, dt_format)
+
+    if rruleset:
+        recurrences = rruleset.between(start, end, inc=True)
+
+        expanded: vobject.base.Component = copy.copy(expanded_item.vobject_item)
+        is_expanded_filled: bool = False
+
+        for recurrence_dt in recurrences:
+            recurrence_utc = recurrence_dt.astimezone(datetime.timezone.utc)
+
+            vevent = copy.deepcopy(expanded.vevent)
+            vevent.recurrence_id = ContentLine(
+                name='RECURRENCE-ID',
+                value=recurrence_utc.strftime(dt_format), params={}
+            )
+
+            if is_expanded_filled is False:
+                expanded.vevent = vevent
+                is_expanded_filled = True
+            else:
+                expanded.add(vevent)
+
+        element.text = expanded.serialize()
+    else:
+        element.text = expanded_item.vobject_item.serialize()
+
+    return element
+
+
+def _make_vobject_expanded_item(
+        item: radicale_item.Item,
+        dt_format: str,
+) -> Tuple[radicale_item.Item, Optional[Any]]:
+    # https://www.rfc-editor.org/rfc/rfc4791#section-9.6.5
+    # The returned calendar components MUST NOT use recurrence
+    #       properties (i.e., EXDATE, EXRULE, RDATE, and RRULE) and MUST NOT
+    #       have reference to or include VTIMEZONE components.  Date and local
+    #       time with reference to time zone information MUST be converted
+    #       into date with UTC time.
+
+    item = copy.copy(item)
+    vevent = item.vobject_item.vevent
+
+    if type(vevent.dtstart.value) is datetime.date:
+        start_utc = datetime.datetime.fromordinal(
+            vevent.dtstart.value.toordinal()
+        ).replace(tzinfo=datetime.timezone.utc)
+    else:
+        start_utc = vevent.dtstart.value.astimezone(datetime.timezone.utc)
+
+    vevent.dtstart = ContentLine(name='DTSTART', value=start_utc, params=[])
+
+    dt_end = getattr(vevent, 'dtend', None)
+    if dt_end is not None:
+        if type(vevent.dtend.value) is datetime.date:
+            end_utc = datetime.datetime.fromordinal(
+                dt_end.value.toordinal()
+            ).replace(tzinfo=datetime.timezone.utc)
+        else:
+            end_utc = dt_end.value.astimezone(datetime.timezone.utc)
+
+        vevent.dtend = ContentLine(name='DTEND', value=end_utc, params={})
+
+    rruleset = None
+    if hasattr(item.vobject_item.vevent, 'rrule'):
+        rruleset = vevent.getrruleset()
+
+    # There is something strange behaviour during serialization native datetime, so converting manually
+    vevent.dtstart.value = vevent.dtstart.value.strftime(dt_format)
+    if dt_end is not None:
+        vevent.dtend.value = vevent.dtend.value.strftime(dt_format)
+
+    timezones_to_remove = []
+    for component in item.vobject_item.components():
+        if component.name == 'VTIMEZONE':
+            timezones_to_remove.append(component)
+
+    for timezone in timezones_to_remove:
+        item.vobject_item.remove(timezone)
+
+    try:
+        delattr(item.vobject_item.vevent, 'rrule')
+        delattr(item.vobject_item.vevent, 'exdate')
+        delattr(item.vobject_item.vevent, 'exrule')
+        delattr(item.vobject_item.vevent, 'rdate')
+    except AttributeError:
+        pass
+
+    return item, rruleset
 
 
 def xml_item_response(base_prefix: str, href: str,
@@ -295,13 +526,28 @@ class ApplicationPartReport(ApplicationBase):
             else:
                 assert item.collection is not None
                 collection = item.collection
-            try:
-                status, xml_answer = xml_report(
-                    base_prefix, path, xml_content, collection, self._encoding,
-                    lock_stack.close)
-            except ValueError as e:
-                logger.warning(
-                    "Bad REPORT request on %r: %s", path, e, exc_info=True)
-                return httputils.BAD_REQUEST
-        headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
-        return status, headers, self._xml_response(xml_answer)
+
+            if xml_content is not None and \
+               xml_content.tag == xmlutils.make_clark("C:free-busy-query"):
+                max_occurrence = self.configuration.get("reporting", "max_freebusy_occurrence")
+                try:
+                    status, body = free_busy_report(
+                        base_prefix, path, xml_content, collection, self._encoding,
+                        lock_stack.close, max_occurrence)
+                except ValueError as e:
+                    logger.warning(
+                        "Bad REPORT request on %r: %s", path, e, exc_info=True)
+                    return httputils.BAD_REQUEST
+                headers = {"Content-Type": "text/calendar; charset=%s" % self._encoding}
+                return status, headers, str(body)
+            else:
+                try:
+                    status, xml_answer = xml_report(
+                        base_prefix, path, xml_content, collection, self._encoding,
+                        lock_stack.close)
+                except ValueError as e:
+                    logger.warning(
+                        "Bad REPORT request on %r: %s", path, e, exc_info=True)
+                    return httputils.BAD_REQUEST
+                headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
+                return status, headers, self._xml_response(xml_answer)

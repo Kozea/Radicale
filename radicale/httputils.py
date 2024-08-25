@@ -2,7 +2,8 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,12 +25,24 @@ Helper functions for HTTP.
 
 import contextlib
 import os
+import pathlib
+import sys
 import time
 from http import client
-from typing import List, Mapping, cast
+from typing import List, Mapping, Union, cast
 
 from radicale import config, pathutils, types
 from radicale.log import logger
+
+if sys.version_info < (3, 9):
+    import pkg_resources
+
+    _TRAVERSABLE_LIKE_TYPE = pathlib.Path
+else:
+    import importlib.abc
+    from importlib import resources
+
+    _TRAVERSABLE_LIKE_TYPE = Union[importlib.abc.Traversable, pathlib.Path]
 
 NOT_ALLOWED: types.WSGIResponse = (
     client.FORBIDDEN, (("Content-Type", "text/plain"),),
@@ -130,7 +143,10 @@ def read_request_body(configuration: "config.Configuration",
                       environ: types.WSGIEnviron) -> str:
     content = decode_request(configuration, environ,
                              read_raw_request_body(configuration, environ))
-    logger.debug("Request content:\n%s", content)
+    if configuration.get("logging", "request_content_on_debug"):
+        logger.debug("Request content:\n%s", content)
+    else:
+        logger.debug("Request content: suppressed by config/option [auth] request_content_on_debug")
     return content
 
 
@@ -140,36 +156,63 @@ def redirect(location: str, status: int = client.FOUND) -> types.WSGIResponse:
             "Redirected to %s" % location)
 
 
-def serve_folder(folder: str, base_prefix: str, path: str,
-                 path_prefix: str = "/.web", index_file: str = "index.html",
-                 mimetypes: Mapping[str, str] = MIMETYPES,
-                 fallback_mimetype: str = FALLBACK_MIMETYPE,
-                 ) -> types.WSGIResponse:
+def _serve_traversable(
+        traversable: _TRAVERSABLE_LIKE_TYPE, base_prefix: str, path: str,
+        path_prefix: str, index_file: str, mimetypes: Mapping[str, str],
+        fallback_mimetype: str) -> types.WSGIResponse:
     if path != path_prefix and not path.startswith(path_prefix):
         raise ValueError("path must start with path_prefix: %r --> %r" %
                          (path_prefix, path))
     assert pathutils.sanitize_path(path) == path
-    try:
-        filesystem_path = pathutils.path_to_filesystem(
-            folder, path[len(path_prefix):].strip("/"))
-    except ValueError as e:
-        logger.debug("Web content with unsafe path %r requested: %s",
-                     path, e, exc_info=True)
-        return NOT_FOUND
-    if os.path.isdir(filesystem_path) and not path.endswith("/"):
-        return redirect(base_prefix + path + "/")
-    if os.path.isdir(filesystem_path) and index_file:
-        filesystem_path = os.path.join(filesystem_path, index_file)
-    if not os.path.isfile(filesystem_path):
+    parts_path = path[len(path_prefix):].strip('/')
+    parts = parts_path.split("/") if parts_path else []
+    for part in parts:
+        if not pathutils.is_safe_filesystem_path_component(part):
+            logger.debug("Web content with unsafe path %r requested", path)
+            return NOT_FOUND
+        if (not traversable.is_dir() or
+                all(part != entry.name for entry in traversable.iterdir())):
+            return NOT_FOUND
+        traversable = traversable.joinpath(part)
+    if traversable.is_dir():
+        if not path.endswith("/"):
+            return redirect(base_prefix + path + "/")
+        if not index_file:
+            return NOT_FOUND
+        traversable = traversable.joinpath(index_file)
+    if not traversable.is_file():
         return NOT_FOUND
     content_type = MIMETYPES.get(
-        os.path.splitext(filesystem_path)[1].lower(), FALLBACK_MIMETYPE)
-    with open(filesystem_path, "rb") as f:
-        answer = f.read()
-        last_modified = time.strftime(
+        os.path.splitext(traversable.name)[1].lower(), FALLBACK_MIMETYPE)
+    headers = {"Content-Type": content_type}
+    if isinstance(traversable, pathlib.Path):
+        headers["Last-Modified"] = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
-            time.gmtime(os.fstat(f.fileno()).st_mtime))
-    headers = {
-        "Content-Type": content_type,
-        "Last-Modified": last_modified}
+            time.gmtime(traversable.stat().st_mtime))
+    answer = traversable.read_bytes()
     return client.OK, headers, answer
+
+
+def serve_resource(
+        package: str, resource: str, base_prefix: str, path: str,
+        path_prefix: str = "/.web", index_file: str = "index.html",
+        mimetypes: Mapping[str, str] = MIMETYPES,
+        fallback_mimetype: str = FALLBACK_MIMETYPE) -> types.WSGIResponse:
+    if sys.version_info < (3, 9):
+        traversable = pathlib.Path(
+            pkg_resources.resource_filename(package, resource))
+    else:
+        traversable = resources.files(package).joinpath(resource)
+    return _serve_traversable(traversable, base_prefix, path, path_prefix,
+                              index_file, mimetypes, fallback_mimetype)
+
+
+def serve_folder(
+        folder: str, base_prefix: str, path: str,
+        path_prefix: str = "/.web", index_file: str = "index.html",
+        mimetypes: Mapping[str, str] = MIMETYPES,
+        fallback_mimetype: str = FALLBACK_MIMETYPE) -> types.WSGIResponse:
+    # deprecated: use `serve_resource` instead
+    traversable = pathlib.Path(folder)
+    return _serve_traversable(traversable, base_prefix, path, path_prefix,
+                              index_file, mimetypes, fallback_mimetype)

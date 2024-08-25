@@ -22,7 +22,7 @@ config (section "rights", key "file").
 The login is matched against the "user" key, and the collection path
 is matched against the "collection" key. In the "collection" regex you can use
 `{user}` and get groups from the "user" regex with `{0}`, `{1}`, etc.
-In consequence of the parameter subsitution you have to write `{{` and `}}`
+In consequence of the parameter substitution you have to write `{{` and `}}`
 if you want to use regular curly braces in the "user" and "collection" regexes.
 
 For example, for the "user" key, ".+" means "authenticated user" and ".*"
@@ -98,6 +98,12 @@ class Rights(rights.BaseRights):
                              group_match, sane_path,
                              collection_pattern, section)
                 return self._rights_config.get(section, "permissions")
+#if user_match and collection_match:
+#    permission = rights_config.get(section, "permissions")
+#    logger.debug("Rule %r:%r matches %r:%r from section %r permission %r",
+#                 user, sane_path, user_pattern,
+#                 collection_pattern, section, permission)
+#    return permission
             logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
                          user, sane_path, user_pattern, collection_pattern,
                          section)

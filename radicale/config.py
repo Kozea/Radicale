@@ -2,7 +2,8 @@
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
-# Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2017-2020 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +27,7 @@ Use ``load()`` to obtain an instance of ``Configuration`` for use with
 """
 
 import contextlib
+import json
 import math
 import os
 import string
@@ -35,7 +37,8 @@ from configparser import RawConfigParser
 from typing import (Any, Callable, ClassVar, Iterable, List, Optional,
                     Sequence, Tuple, TypeVar, Union)
 
-from radicale import auth, rights, storage, types, web
+from radicale import auth, hook, rights, storage, types, web
+from radicale.item import check_and_sanitize_props
 
 DEFAULT_CONFIG_PATH: str = os.pathsep.join([
     "?/etc/radicale/config",
@@ -99,6 +102,16 @@ def _convert_to_bool(value: Any) -> bool:
     if value.lower() not in RawConfigParser.BOOLEAN_STATES:
         raise ValueError("not a boolean: %r" % value)
     return RawConfigParser.BOOLEAN_STATES[value.lower()]
+
+
+def json_str(value: Any) -> dict:
+    if not value:
+        return {}
+    ret = json.loads(value)
+    for (name_coll, props) in ret.items():
+        checked_props = check_and_sanitize_props(props)
+        ret[name_coll] = checked_props
+    return ret
 
 
 INTERNAL_OPTIONS: Sequence[str] = ("_allow_extra",)
@@ -202,13 +215,24 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "load the ldap groups of the authenticated user",
             "type": bool}),
-        ])),
+        ("strip_domain", {
+            "value": "False",
+            "help": "strip domain from username",
+            "type": bool}),
+        ("lc_username", {
+            "value": "False",
+            "help": "convert username to lowercase, must be true for case-insensitive auth providers",
+            "type": bool})])),
     ("rights", OrderedDict([
         ("type", {
             "value": "owner_only",
             "help": "rights backend",
             "type": str_or_callable,
             "internal": rights.INTERNAL_TYPES}),
+        ("permit_delete_collection", {
+            "value": "True",
+            "help": "permit delete of a collection",
+            "type": bool}),
         ("file", {
             "value": "/etc/radicale/rights",
             "help": "file for rights management from_file",
@@ -227,6 +251,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "2592000",  # 30 days
             "help": "delete sync token that are older",
             "type": positive_int}),
+        ("skip_broken_item", {
+            "value": "True",
+            "help": "skip broken item instead of triggering exception",
+            "type": bool}),
         ("hook", {
             "value": "",
             "help": "command that is run after changes to storage",
@@ -234,7 +262,29 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("_filesystem_fsync", {
             "value": "True",
             "help": "sync all changes to filesystem during requests",
-            "type": bool})])),
+            "type": bool}),
+        ("predefined_collections", {
+            "value": "",
+            "help": "predefined user collections",
+            "type": json_str})])),
+    ("hook", OrderedDict([
+        ("type", {
+            "value": "none",
+            "help": "hook backend",
+            "type": str,
+            "internal": hook.INTERNAL_TYPES}),
+        ("rabbitmq_endpoint", {
+            "value": "",
+            "help": "endpoint where rabbitmq server is running",
+            "type": str}),
+        ("rabbitmq_topic", {
+            "value": "",
+            "help": "topic to declare queue",
+            "type": str}),
+        ("rabbitmq_queue_type", {
+            "value": "",
+            "help": "queue type for topic declaration",
+            "type": str})])),
     ("web", OrderedDict([
         ("type", {
             "value": "internal",
@@ -243,15 +293,41 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "internal": web.INTERNAL_TYPES})])),
     ("logging", OrderedDict([
         ("level", {
-            "value": "warning",
+            "value": "info",
             "help": "threshold for the logger",
             "type": logging_level}),
+        ("bad_put_request_content", {
+            "value": "False",
+            "help": "log bad PUT request content",
+            "type": bool}),
+        ("backtrace_on_debug", {
+            "value": "False",
+            "help": "log backtrace on level=debug",
+            "type": bool}),
+        ("request_header_on_debug", {
+            "value": "False",
+            "help": "log request header on level=debug",
+            "type": bool}),
+        ("request_content_on_debug", {
+            "value": "False",
+            "help": "log request content on level=debug",
+            "type": bool}),
+        ("response_content_on_debug", {
+            "value": "False",
+            "help": "log response content on level=debug",
+            "type": bool}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs",
             "type": bool})])),
     ("headers", OrderedDict([
-        ("_allow_extra", str)]))])
+        ("_allow_extra", str)])),
+    ("reporting", OrderedDict([
+        ("max_freebusy_occurrence", {
+            "value": "10000",
+            "help": "number of occurrences per event when reporting",
+            "type": positive_int})]))
+    ])
 
 
 def parse_compound_paths(*compound_paths: Optional[str]
@@ -308,8 +384,8 @@ def load(paths: Optional[Iterable[Tuple[str, bool]]] = None
                 config = {s: {o: parser[s][o] for o in parser.options(s)}
                           for s in parser.sections()}
         except Exception as e:
-            if not (ignore_if_missing and
-                    isinstance(e, (FileNotFoundError, PermissionError))):
+            if not (ignore_if_missing and isinstance(e, (
+                    FileNotFoundError, NotADirectoryError, PermissionError))):
                 raise RuntimeError("Failed to load %s: %s" % (config_source, e)
                                    ) from e
             config = Configuration.SOURCE_MISSING

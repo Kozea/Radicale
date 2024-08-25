@@ -49,7 +49,13 @@ def read_components(s: str) -> List[vobject.base.Component]:
     s = re.sub(r"^(PHOTO(?:;[^:\r\n]*)?;ENCODING=b(?:;[^:\r\n]*)?:)"
                r"data:[^;,\r\n]*;base64,", r"\1", s,
                flags=re.MULTILINE | re.IGNORECASE)
-    return list(vobject.readComponents(s))
+    # Workaround for bug with malformed ICS files containing control codes
+    # Filter out all control codes except those we expect to find:
+    #  * 0x09 Horizontal Tab
+    #  * 0x0A Line Feed
+    #  * 0x0D Carriage Return
+    s = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F]', '', s)
+    return list(vobject.readComponents(s, allowQP=True))
 
 
 def predict_tag_of_parent_collection(
@@ -91,7 +97,7 @@ def check_and_sanitize_items(
     The ``tag`` of the collection.
 
     """
-    if tag and tag not in ("VCALENDAR", "VADDRESSBOOK"):
+    if tag and tag not in ("VCALENDAR", "VADDRESSBOOK", "VSUBSCRIBED"):
         raise ValueError("Unsupported collection tag: %r" % tag)
     if not is_collection and len(vobject_items) != 1:
         raise ValueError("Item contains %d components" % len(vobject_items))
@@ -164,7 +170,7 @@ def check_and_sanitize_items(
                 ref_value_param = component.dtstart.params.get("VALUE")
                 for dates in chain(component.contents.get("exdate", []),
                                    component.contents.get("rdate", [])):
-                    if all(type(d) == type(ref_date) for d in dates.value):
+                    if all(type(d) is type(ref_date) for d in dates.value):
                         continue
                     for i, date in enumerate(dates.value):
                         dates.value[i] = ref_date.replace(
@@ -230,7 +236,7 @@ def check_and_sanitize_props(props: MutableMapping[Any, Any]
             raise ValueError("Value of %r must be %r not %r: %r" % (
                 k, str.__name__, type(v).__name__, v))
         if k == "tag":
-            if v not in ("", "VCALENDAR", "VADDRESSBOOK"):
+            if v not in ("", "VCALENDAR", "VADDRESSBOOK", "VSUBSCRIBED"):
                 raise ValueError("Unsupported collection tag: %r" % v)
     return props
 
@@ -245,8 +251,8 @@ def find_available_uid(exists_fn: Callable[[str], bool], suffix: str = ""
             r[:8], r[8:12], r[12:16], r[16:20], r[20:], suffix)
         if not exists_fn(name):
             return name
-    # something is wrong with the PRNG
-    raise RuntimeError("No unique random sequence found")
+    # Something is wrong with the PRNG or `exists_fn`
+    raise RuntimeError("No available random UID found")
 
 
 def get_etag(text: str) -> str:
@@ -298,7 +304,7 @@ def find_time_range(vobject_item: vobject.base.Component, tag: str
     Returns a tuple (``start``, ``end``) where ``start`` and ``end`` are
     POSIX timestamps.
 
-    This is intened to be used for matching against simplified prefilters.
+    This is intended to be used for matching against simplified prefilters.
 
     """
     if not tag:

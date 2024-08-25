@@ -1,7 +1,8 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -83,7 +84,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
         cache_content = self._load_item_cache(href, cache_hash)
         if cache_content is None:
             with self._acquire_cache_lock("item"):
-                # Lock the item cache to prevent multpile processes from
+                # Lock the item cache to prevent multiple processes from
                 # generating the same data in parallel.
                 # This improves the performance for multiple requests.
                 if self._storage._lock.locked == "r":
@@ -101,8 +102,12 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                         cache_content = self._store_item_cache(
                             href, temp_item, cache_hash)
                     except Exception as e:
-                        raise RuntimeError("Failed to load item %r in %r: %s" %
-                                           (href, self.path, e)) from e
+                        if self._skip_broken_item:
+                            logger.warning("Skip broken item %r in %r: %s", href, self.path, e)
+                            return None
+                        else:
+                            raise RuntimeError("Failed to load item %r in %r: %s" %
+                                               (href, self.path, e)) from e
                     # Clean cache entries once after the data in the file
                     # system was edited externally.
                     if not self._item_cache_cleaned:
@@ -122,7 +127,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
 
     def get_multi(self, hrefs: Iterable[str]
                   ) -> Iterator[Tuple[str, Optional[radicale_item.Item]]]:
-        # It's faster to check for file name collissions here, because
+        # It's faster to check for file name collisions here, because
         # we only need to call os.listdir once.
         files = None
         for href in hrefs:
@@ -141,7 +146,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
 
     def get_all(self) -> Iterator[radicale_item.Item]:
         for href in self._list():
-            # We don't need to check for collissions, because the file names
+            # We don't need to check for collisions, because the file names
             # are from os.listdir.
             item = self._get(href, verify_href=False)
             if item is not None:

@@ -1,7 +1,8 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2016 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,16 +45,6 @@ class TestBaseAuthRequests(BaseTest):
         """Test htpasswd authentication with user "tmp" and password "bepo" for
            ``test_matrix`` "ascii" or user "😀" and password "🔑" for
            ``test_matrix`` "unicode"."""
-        if htpasswd_encryption == "bcrypt":
-            try:
-                from passlib.exc import MissingBackendError
-                from passlib.hash import bcrypt
-            except ImportError:
-                pytest.skip("passlib[bcrypt] is not installed")
-            try:
-                bcrypt.hash("test-bcrypt-backend")
-            except MissingBackendError:
-                pytest.skip("bcrypt backend for passlib is not installed")
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
         encoding: str = self.configuration.get("encoding", "stock")
         with open(htpasswd_file_path, "w", encoding=encoding) as f:
@@ -92,6 +83,12 @@ class TestBaseAuthRequests(BaseTest):
         self._test_htpasswd(
             "md5", "😀:$apr1$w4ev89r1$29xO8EvJmS2HEAadQ5qy11", "unicode")
 
+    def test_htpasswd_sha256(self) -> None:
+        self._test_htpasswd("sha256", "tmp:$5$i4Ni4TQq6L5FKss5$ilpTjkmnxkwZeV35GB9cYSsDXTALBn6KtWRJAzNlCL/")
+
+    def test_htpasswd_sha512(self) -> None:
+        self._test_htpasswd("sha512", "tmp:$6$3Qhl8r6FLagYdHYa$UCH9yXCed4A.J9FQsFPYAOXImzZUMfvLa0lwcWOxWYLOF5sE/lF99auQ4jKvHY2vijxmefl7G6kMqZ8JPdhIJ/")
+
     def test_htpasswd_bcrypt(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3V"
                             "NTRI3w5KDnj8NTUKJNWfVpvRq")
@@ -117,6 +114,16 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_htpasswd_comment(self) -> None:
         self._test_htpasswd("plain", "#comment\n #comment\n \ntmp:bepo\n\n")
+
+    def test_htpasswd_lc_username(self) -> None:
+        self.configure({"auth": {"lc_username": "True"}})
+        self._test_htpasswd("plain", "tmp:bepo", (
+            ("tmp", "bepo", True), ("TMP", "bepo", True), ("tmp1", "bepo", False)))
+
+    def test_htpasswd_strip_domain(self) -> None:
+        self.configure({"auth": {"strip_domain": "True"}})
+        self._test_htpasswd("plain", "tmp:bepo", (
+            ("tmp", "bepo", True), ("tmp@domain.example", "bepo", True), ("tmp1", "bepo", False)))
 
     def test_remote_user(self) -> None:
         self.configure({"auth": {"type": "remote_user"}})
@@ -156,3 +163,11 @@ class TestBaseAuthRequests(BaseTest):
         """Custom authentication."""
         self.configure({"auth": {"type": "radicale.tests.custom.auth"}})
         self.propfind("/tmp/", login="tmp:")
+
+    def test_none(self) -> None:
+        self.configure({"auth": {"type": "none"}})
+        self.propfind("/tmp/", login="tmp:")
+
+    def test_denyall(self) -> None:
+        self.configure({"auth": {"type": "denyall"}})
+        self.propfind("/tmp/", login="tmp:", check=401)

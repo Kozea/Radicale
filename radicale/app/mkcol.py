@@ -52,8 +52,12 @@ class ApplicationPartMkcol(ApplicationBase):
             logger.warning(
                 "Bad MKCOL request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
-        if (props.get("tag") and "w" not in permissions or
-                not props.get("tag") and "W" not in permissions):
+        collection_type = props.get("tag") or "UNKNOWN"
+        if props.get("tag") and "w" not in permissions:
+            logger.warning("MKCOL request %r (type:%s): %s", path, collection_type, "rejected because of missing rights 'w'")
+            return httputils.NOT_ALLOWED
+        if not props.get("tag") and "W" not in permissions:
+            logger.warning("MKCOL request %r (type:%s): %s", path, collection_type, "rejected because of missing rights 'W'")
             return httputils.NOT_ALLOWED
         with self._storage.acquire_lock("w", user):
             item = next(iter(self._storage.discover(path)), None)
@@ -71,6 +75,7 @@ class ApplicationPartMkcol(ApplicationBase):
                 self._storage.create_collection(path, props=props)
             except ValueError as e:
                 logger.warning(
-                    "Bad MKCOL request on %r: %s", path, e, exc_info=True)
+                    "Bad MKCOL request on %r (type:%s): %s", path, collection_type, e, exc_info=True)
                 return httputils.BAD_REQUEST
+            logger.info("MKCOL request %r (type:%s): %s", path, collection_type, "successful")
             return client.CREATED, {}, None
