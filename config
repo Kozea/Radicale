@@ -14,8 +14,6 @@
 # CalDAV server hostnames separated by a comma
 # IPv4 syntax: address:port
 # IPv6 syntax: [address]:port
-# For example: 0.0.0.0:9999, [::]:9999
-hosts = 0.0.0.0:5232
 # Hostname syntax (using "getaddrinfo" to resolve to IPv4/IPv6 adress(es)): hostname:port
 # For example: 0.0.0.0:9999, [::]:9999, localhost:9999
 #hosts = localhost:5232
@@ -55,23 +53,23 @@ hosts = 0.0.0.0:5232
 [auth]
 
 # Authentication method
-# Value: none | htpasswd | remote_user | http_x_remote_user
-type = ldap
+# Value: none | htpasswd | remote_user | http_x_remote_user | ldap
+#type = ldap
 
 # URI to the LDAP server
-ldap_uri = ldap://localhost
+#ldap_uri = ldap://localhost
 
 # The base DN of the LDAP server
-ldap_base = ##BASE_DN##
+#ldap_base = ##BASE_DN##
 
 # The reader DN of the LDAP server
-ldap_reader_dn = CN=ossreader,CN=Users,##BASE_DN##
+#ldap_reader_dn = CN=ldapreader,CN=Users,##BASE_DN##
 
 # Password of the reader DN
-ldap_secret = ossreader
+#ldap_secret = ldapreader-secret
 
 # If the ldap groups of the user need to be loaded
-ldap_load_groups = True
+#ldap_load_groups = True
 
 # Value: none | htpasswd | remote_user | http_x_remote_user | denyall
 #type = none
@@ -103,7 +101,7 @@ ldap_load_groups = True
 #type = owner_only
 
 # File for rights management from_file
-file = /etc/radicale/rights
+#file = /etc/radicale/rights
 
 # Permit delete of a collection (global)
 #permit_delete_collection = True
