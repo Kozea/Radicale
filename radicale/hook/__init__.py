@@ -14,8 +14,8 @@ def load(configuration):
         return utils.load_plugin(
             INTERNAL_TYPES, "hook", "Hook", BaseHook, configuration)
     except Exception as e:
-        logger.warn(e)
-        logger.warn("Hook \"%s\" failed to load, falling back to \"none\"." % configuration.get("hook", "type"))
+        logger.warning(e)
+        logger.warning("Hook \"%s\" failed to load, falling back to \"none\"." % configuration.get("hook", "type"))
         configuration = configuration.copy()
         configuration.update({"hook": {"type": "none"}}, "hook", privileged=True)
         return utils.load_plugin(
