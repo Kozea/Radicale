@@ -1,10 +1,13 @@
 # Changelog
 
 ## 3.dev
+* Add: support for Python 3.13
 * Fix: Using icalendar's tzinfo on created datetime to fix issue with icalendar
+* Fix: typos in code
 * Enhancement: Added free-busy report
 * Enhancement: Added 'max_freebusy_occurrences` setting to avoid potential DOS on reports
 * Enhancement: remove unexpected control codes from uploaded items
+* Enhancement: add 'strip_domain' setting for username handling
 * Drop: remove unused requirement "typeguard"
 * Improve: Refactored some date parsing code
 
