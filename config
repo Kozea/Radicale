@@ -196,3 +196,4 @@
 # When returning a free-busy report, limit the number of returned
 # occurences per event to prevent DOS attacks.
 #max_freebusy_occurrence = 10000
+
