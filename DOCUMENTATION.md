@@ -978,6 +978,12 @@ Log response on level=debug
 
 Default: `False`
 
+##### rights_rule_doesnt_match_on_debug = True
+
+Log rights rule which doesn't match on level=debug
+
+Default: `False`
+
 #### headers
 
 In this section additional HTTP headers that are sent to clients can be
