@@ -48,7 +48,7 @@ class Rights(rights.BaseRights):
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
         self._filename = configuration.get("rights", "file")
-        self._log_right_doesnt_match = configuration.get("logging", "right_doesnt_match")
+        self._log_rights_rule_doesnt_match_on_debug = configuration.get("logging", "rights_rule_doesnt_match_on_debug")
 
     def authorization(self, user: str, path: str) -> str:
         user = user or ""
@@ -62,6 +62,8 @@ class Rights(rights.BaseRights):
         except Exception as e:
             raise RuntimeError("Failed to load rights file %r: %s" %
                                (self._filename, e)) from e
+        if not self._log_rights_rule_doesnt_match_on_debug:
+            logger.debug("logging of rules which doesn't match suppressed by config/option [logging] rights_rule_doesnt_match_on_debug")
         for section in rights_config.sections():
             try:
                 user_pattern = rights_config.get(section, "user")
@@ -81,9 +83,9 @@ class Rights(rights.BaseRights):
                              user, sane_path, user_pattern,
                              collection_pattern, section, permission)
                 return permission
-            if self._log_right_doesnt_match:
+            if self._log_rights_rule_doesnt_match_on_debug:
                 logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
-                         user, sane_path, user_pattern, collection_pattern,
-                         section)
+                             user, sane_path, user_pattern, collection_pattern,
+                             section)
         logger.info("Rights: %r:%r doesn't match any section", user, sane_path)
         return ""

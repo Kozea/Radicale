@@ -978,9 +978,9 @@ Log response on level=debug
 
 Default: `False`
 
-##### right_doesnt_match = True
+##### rights_rule_doesnt_match_on_debug = True
 
-Log right which doesn't match on level=debug
+Log rights rule which doesn't match on level=debug
 
 Default: `False`
 
