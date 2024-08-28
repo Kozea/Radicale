@@ -146,7 +146,7 @@ def read_request_body(configuration: "config.Configuration",
     if configuration.get("logging", "request_content_on_debug"):
         logger.debug("Request content:\n%s", content)
     else:
-        logger.debug("Request content: suppressed by config/option [auth] request_content_on_debug")
+        logger.debug("Request content: suppressed by config/option [logging] request_content_on_debug")
     return content
 
 

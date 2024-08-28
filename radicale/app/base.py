@@ -76,7 +76,7 @@ class ApplicationBase:
                 logger.debug("Response content:\n%s",
                              xmlutils.pretty_xml(xml_content))
             else:
-                logger.debug("Response content: suppressed by config/option [auth] response_content_on_debug")
+                logger.debug("Response content: suppressed by config/option [logging] response_content_on_debug")
         f = io.BytesIO()
         ET.ElementTree(xml_content).write(f, encoding=self._encoding,
                                           xml_declaration=True)
