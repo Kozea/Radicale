@@ -292,6 +292,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "log response content on level=debug",
             "type": bool}),
+        ("right_doesnt_match", {
+            "value": "False",
+            "help": "log rights which doesn't match on level=debug",
+            "type": bool}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs",

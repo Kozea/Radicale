@@ -48,6 +48,7 @@ class Rights(rights.BaseRights):
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
         self._filename = configuration.get("rights", "file")
+        self._log_right_doesnt_match = configuration.get("logging", "right_doesnt_match")
 
     def authorization(self, user: str, path: str) -> str:
         user = user or ""
@@ -80,7 +81,8 @@ class Rights(rights.BaseRights):
                              user, sane_path, user_pattern,
                              collection_pattern, section, permission)
                 return permission
-            logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
+            if self._log_right_doesnt_match:
+                logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
                          user, sane_path, user_pattern, collection_pattern,
                          section)
         logger.info("Rights: %r:%r doesn't match any section", user, sane_path)

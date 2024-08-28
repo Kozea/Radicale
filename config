@@ -158,6 +158,8 @@
 # Log response content on level=debug
 #response_content_on_debug = False
 
+# Log right which doesn't match
+#right_doesnt_match = False
 
 [headers]
 

@@ -978,6 +978,12 @@ Log response on level=debug
 
 Default: `False`
 
+##### right_doesnt_match = True
+
+Log right which doesn't match on level=debug
+
+Default: `False`
+
 #### headers
 
 In this section additional HTTP headers that are sent to clients can be
