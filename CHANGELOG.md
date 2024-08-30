@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.dev
+## 3.2.3
 * Add: support for Python 3.13
 * Fix: Using icalendar's tzinfo on created datetime to fix issue with icalendar
 * Fix: typos in code
