@@ -2,6 +2,8 @@
 
 ## 3.dev
 
+* Adjustment: option [auth] htpasswd_encryption change default from "md5" to "autodetect"
+
 ## 3.2.3
 * Add: support for Python 3.13
 * Fix: Using icalendar's tzinfo on created datetime to fix issue with icalendar
