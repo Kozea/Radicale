@@ -359,20 +359,19 @@ file.</p>
 <section class="level5" id="the-secure-way">
 <h5>The secure way <a class="headerlink" href="#the-secure-way">&para;</a></h5>
 <p>The <code>users</code> file can be created and managed with <a href="https://httpd.apache.org/docs/current/programs/htpasswd.html">htpasswd</a>:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a aria-hidden="true" href="#cb4-1" tabindex="-1"></a><span class="co"># Create a new htpasswd file with the user "user1"</span></span>
-<span id="cb4-2"><a aria-hidden="true" href="#cb4-2" tabindex="-1"></a><span class="ex">$</span> htpasswd <span class="at">-c</span> /path/to/users user1</span>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a aria-hidden="true" href="#cb4-1" tabindex="-1"></a><span class="co"># Create a new htpasswd file with the user "user1" using SHA-512 as hash method</span></span>
+<span id="cb4-2"><a aria-hidden="true" href="#cb4-2" tabindex="-1"></a><span class="ex">$</span> htpasswd <span class="at">-5</span> <span class="at">-c</span> /path/to/users user1</span>
 <span id="cb4-3"><a aria-hidden="true" href="#cb4-3" tabindex="-1"></a><span class="ex">New</span> password:</span>
 <span id="cb4-4"><a aria-hidden="true" href="#cb4-4" tabindex="-1"></a><span class="ex">Re-type</span> new password:</span>
 <span id="cb4-5"><a aria-hidden="true" href="#cb4-5" tabindex="-1"></a><span class="co"># Add another user</span></span>
-<span id="cb4-6"><a aria-hidden="true" href="#cb4-6" tabindex="-1"></a><span class="ex">$</span> htpasswd /path/to/users user2</span>
+<span id="cb4-6"><a aria-hidden="true" href="#cb4-6" tabindex="-1"></a><span class="ex">$</span> htpasswd <span class="at">-5</span> /path/to/users user2</span>
 <span id="cb4-7"><a aria-hidden="true" href="#cb4-7" tabindex="-1"></a><span class="ex">New</span> password:</span>
 <span id="cb4-8"><a aria-hidden="true" href="#cb4-8" tabindex="-1"></a><span class="ex">Re-type</span> new password:</span></code></pre></div>
 <p>Authentication can be enabled with the following configuration:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb5-1"><a aria-hidden="true" href="#cb5-1" tabindex="-1"></a><span class="kw">[auth]</span></span>
 <span id="cb5-2"><a aria-hidden="true" href="#cb5-2" tabindex="-1"></a><span class="dt">type </span><span class="ot">=</span><span class="st"> htpasswd</span></span>
 <span id="cb5-3"><a aria-hidden="true" href="#cb5-3" tabindex="-1"></a><span class="dt">htpasswd_filename </span><span class="ot">=</span><span class="st"> /path/to/users</span></span>
-<span id="cb5-4"><a aria-hidden="true" href="#cb5-4" tabindex="-1"></a><span class="co"># encryption method used in the htpasswd file</span></span>
-<span id="cb5-5"><a aria-hidden="true" href="#cb5-5" tabindex="-1"></a><span class="dt">htpasswd_encryption </span><span class="ot">=</span><span class="st"> md5</span></span></code></pre></div>
+<span id="cb5-4"><a aria-hidden="true" href="#cb5-4" tabindex="-1"></a><span class="dt">htpasswd_encryption </span><span class="ot">=</span><span class="st"> autodetect</span></span></code></pre></div>
 </section>
 <section class="level5" id="the-simple-but-insecure-way">
 <h5>The simple but insecure way <a class="headerlink" href="#the-simple-but-insecure-way">&para;</a></h5>
@@ -777,7 +776,7 @@ line arguments.</p>
 <span id="cb33-5"><a aria-hidden="true" href="#cb33-5" tabindex="-1"></a><span class="kw">[auth]</span></span>
 <span id="cb33-6"><a aria-hidden="true" href="#cb33-6" tabindex="-1"></a><span class="dt">type </span><span class="ot">=</span><span class="st"> htpasswd</span></span>
 <span id="cb33-7"><a aria-hidden="true" href="#cb33-7" tabindex="-1"></a><span class="dt">htpasswd_filename </span><span class="ot">=</span><span class="st"> ~/.config/radicale/users</span></span>
-<span id="cb33-8"><a aria-hidden="true" href="#cb33-8" tabindex="-1"></a><span class="dt">htpasswd_encryption </span><span class="ot">=</span><span class="st"> md5</span></span>
+<span id="cb33-8"><a aria-hidden="true" href="#cb33-8" tabindex="-1"></a><span class="dt">htpasswd_encryption </span><span class="ot">=</span><span class="st"> autodetect</span></span>
 <span id="cb33-9"><a aria-hidden="true" href="#cb33-9" tabindex="-1"></a></span>
 <span id="cb33-10"><a aria-hidden="true" href="#cb33-10" tabindex="-1"></a><span class="kw">[storage]</span></span>
 <span id="cb33-11"><a aria-hidden="true" href="#cb33-11" tabindex="-1"></a><span class="dt">filesystem_folder </span><span class="ot">=</span><span class="st"> ~/.var/lib/radicale/collections</span></span></code></pre></div>
@@ -793,7 +792,7 @@ optional.</p>
 like:</p>
 <div class="sourceCode" id="cb34"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb34-1"><a aria-hidden="true" href="#cb34-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> radicale <span class="at">--server-hosts</span> 0.0.0.0:5232,[::]:5232 <span class="dt">\</span></span>
 <span id="cb34-2"><a aria-hidden="true" href="#cb34-2" tabindex="-1"></a>        <span class="at">--auth-type</span> htpasswd <span class="at">--auth-htpasswd-filename</span> ~/.config/radicale/users <span class="dt">\</span></span>
-<span id="cb34-3"><a aria-hidden="true" href="#cb34-3" tabindex="-1"></a>        <span class="at">--auth-htpasswd-encryption</span> md5</span></code></pre></div>
+<span id="cb34-3"><a aria-hidden="true" href="#cb34-3" tabindex="-1"></a>        <span class="at">--auth-htpasswd-encryption</span> autodetect</span></code></pre></div>
 <p>Add the argument <code>--config ""</code> to stop Radicale from
 loading the default configuration files. Run
 <code>python3 -m radicale --help</code> for more information.</p>
@@ -901,14 +900,14 @@ user2:password2</code></pre>
 stream cipher. It's very secure. The installation of
 <strong>bcrypt</strong> is required for this.</p>
 <p><code>md5</code> : This uses an iterated MD5 digest of the password
-with a salt.</p>
+with a salt (nowadays insecure).</p>
 <p><code>sha256</code> : This uses an iterated SHA-256 digest of the
 password with a salt.</p>
 <p><code>sha512</code> : This uses an iterated SHA-512 digest of the
 password with a salt.</p>
 <p><code>autodetect</code> : This selects autodetection of method per
 entry.</p>
-<p>Default: <code>md5</code></p>
+<p>Default: <code>autodetect</code></p>
 </section>
 <section class="level5" id="delay">
 <h5>delay <a class="headerlink" href="#delay">&para;</a></h5>
