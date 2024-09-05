@@ -122,12 +122,12 @@ The `users` file can be created and managed with
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html):
 
 ```bash
-# Create a new htpasswd file with the user "user1"
-$ htpasswd -c /path/to/users user1
+# Create a new htpasswd file with the user "user1" using SHA-512 as hash method
+$ htpasswd -5 -c /path/to/users user1
 New password:
 Re-type new password:
 # Add another user
-$ htpasswd /path/to/users user2
+$ htpasswd -5 /path/to/users user2
 New password:
 Re-type new password:
 ```
@@ -138,8 +138,7 @@ Authentication can be enabled with the following configuration:
 [auth]
 type = htpasswd
 htpasswd_filename = /path/to/users
-# encryption method used in the htpasswd file
-htpasswd_encryption = md5
+htpasswd_encryption = autodetect
 ```
 
 ##### The simple but insecure way
@@ -623,7 +622,7 @@ hosts = 0.0.0.0:5232, [::]:5232
 [auth]
 type = htpasswd
 htpasswd_filename = ~/.config/radicale/users
-htpasswd_encryption = md5
+htpasswd_encryption = autodetect
 
 [storage]
 filesystem_folder = ~/.var/lib/radicale/collections
@@ -641,7 +640,7 @@ The same example configuration via command line arguments looks like:
 ```bash
 python3 -m radicale --server-hosts 0.0.0.0:5232,[::]:5232 \
         --auth-type htpasswd --auth-htpasswd-filename ~/.config/radicale/users \
-        --auth-htpasswd-encryption md5
+        --auth-htpasswd-encryption autodetect
 ```
 
 Add the argument `--config ""` to stop Radicale from loading the default
@@ -778,7 +777,7 @@ Available methods:
   The installation of **bcrypt** is required for this.
 
 `md5`
-: This uses an iterated MD5 digest of the password with a salt.
+: This uses an iterated MD5 digest of the password with a salt (nowadays insecure).
 
 `sha256`
 : This uses an iterated SHA-256 digest of the password with a salt.
@@ -789,7 +788,7 @@ Available methods:
 `autodetect`
 : This selects autodetection of method per entry.
 
-Default: `md5`
+Default: `autodetect`
 
 ##### delay
 
@@ -1014,6 +1013,12 @@ Default: `False`
 ##### response_content_on_debug = True
 
 Log response on level=debug
+
+Default: `False`
+
+##### rights_rule_doesnt_match_on_debug = True
+
+Log rights rule which doesn't match on level=debug
 
 Default: `False`
 

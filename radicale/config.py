@@ -180,7 +180,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "htpasswd filename",
             "type": filepath}),
         ("htpasswd_encryption", {
-            "value": "md5",
+            "value": "autodetect",
             "help": "htpasswd encryption method",
             "type": str}),
         ("realm", {
@@ -315,6 +315,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("response_content_on_debug", {
             "value": "False",
             "help": "log response content on level=debug",
+            "type": bool}),
+        ("rights_rule_doesnt_match_on_debug", {
+            "value": "False",
+            "help": "log rights rules which doesn't match on level=debug",
             "type": bool}),
         ("mask_passwords", {
             "value": "True",
