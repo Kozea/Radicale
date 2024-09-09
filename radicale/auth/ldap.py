@@ -106,7 +106,7 @@ class Auth(auth.BaseAuth):
         """Search the user dn"""
         conn.search(
             search_base = self._ldap_base,
-            search_filter = self._ldap_filter.format(login)
+            search_filter = self._ldap_filter.format(login),
             search_scope = 'SUBTREE',
             attributes = ['memberOf']
         )
