@@ -69,10 +69,10 @@ class Rights(rights.BaseRights):
             try:
                 user_pattern = rights_config.get(section, "user")
                 collection_pattern = rights_config.get(section, "collection")
-                allowed_groups = rights_config.get(section, "groups", fallback = "").split(",")
+                allowed_groups = rights_config.get(section, "groups", fallback="").split(",")
                 try:
                     group_match = self._user_groups.intersection(allowed_groups) > 0
-                except:
+                except Exception:
                     pass
                 # Use empty format() for harmonized handling of curly braces
                 user_match = re.fullmatch(user_pattern.format(), user)
