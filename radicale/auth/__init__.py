@@ -33,6 +33,7 @@ from typing import Sequence, Tuple, Union
 
 from radicale import config, types, utils
 from radicale.log import logger
+from typing import Set
 
 INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
                                  "denyall",
@@ -52,7 +53,7 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
 
 class BaseAuth:
 
-    _ldap_groups: set[str] = set([])
+    _ldap_groups: Set[str] = set([])
     _lc_username: bool
     _strip_domain: bool
 
