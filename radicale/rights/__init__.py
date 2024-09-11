@@ -36,6 +36,9 @@ from typing import Sequence
 
 from radicale import config, utils
 
+from typing import Set
+
+
 INTERNAL_TYPES: Sequence[str] = ("authenticated", "owner_write", "owner_only",
                                  "from_file")
 
@@ -57,7 +60,7 @@ def intersect(a: str, b: str) -> str:
 
 class BaseRights:
 
-    _user_groups: set[str] = set([])
+    _user_groups: Set[str] = set([])
 
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseRights.
