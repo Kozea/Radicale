@@ -52,7 +52,7 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
 
 class BaseAuth:
 
-    _ldap_groups: set
+    _ldap_groups: set[str] = set([])
     _lc_username: bool
     _strip_domain: bool
 

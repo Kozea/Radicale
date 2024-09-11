@@ -57,6 +57,8 @@ def intersect(a: str, b: str) -> str:
 
 class BaseRights:
 
+    _user_groups: set[str] = set([])
+
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseRights.
 

@@ -35,7 +35,7 @@ class Auth(auth.BaseAuth):
     _ldap_secret: str
     _ldap_filter: str
     _ldap_load_groups: bool
-    _ldap_version: 3
+    _ldap_version: int = 3
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
@@ -81,7 +81,7 @@ class Auth(auth.BaseAuth):
             conn.protocol_version = 3
             conn.set_option(self.ldap.OPT_REFERRALS, 0)
             conn.simple_bind_s(user_dn, password)
-            tmp = []
+            tmp: list[str] = []
             if self._ldap_load_groups:
                 tmp = []
                 for t in res[0][1]['memberOf']:
@@ -143,5 +143,5 @@ class Auth(auth.BaseAuth):
         In the last step the authentication of the user will be proceeded.
         """
         if self._ldap_version == 2:
-            return self._login2(self, login, password)
-        return self._login3(self, login, password)
+            return self._login2(login, password)
+        return self._login3(login, password)
