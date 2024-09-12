@@ -32,12 +32,9 @@ Take a look at the class ``BaseRights`` if you want to implement your own.
 
 """
 
-from typing import Sequence
+from typing import Sequence, Set
 
 from radicale import config, utils
-
-from typing import Set
-
 
 INTERNAL_TYPES: Sequence[str] = ("authenticated", "owner_write", "owner_only",
                                  "from_file")

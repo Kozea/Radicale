@@ -29,11 +29,10 @@ Take a look at the class ``BaseAuth`` if you want to implement your own.
 
 """
 
-from typing import Sequence, Tuple, Union
+from typing import Sequence, Set, Tuple, Union
 
 from radicale import config, types, utils
 from radicale.log import logger
-from typing import Set
 
 INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
                                  "denyall",
