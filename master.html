@@ -879,6 +879,8 @@ server.</p>
 <p><code>http_x_remote_user</code> : Takes the username from the
 <code>X-Remote-User</code> HTTP header and disables HTTP authentication.
 This can be used to provide the username from a reverse proxy.</p>
+<p><code>ldap</code> : Use a LDAP or AD server to authenticate
+users.</p>
 <p>Default: <code>none</code></p>
 </section>
 <section class="level5" id="htpasswd_filename">
@@ -918,6 +920,41 @@ entry.</p>
 <h5>realm <a class="headerlink" href="#realm">&para;</a></h5>
 <p>Message displayed in the client when a password is needed.</p>
 <p>Default: <code>Radicale - Password Required</code></p>
+</section>
+<section class="level5" id="ldap_uri">
+<h5>ldap_uri <a class="headerlink" href="#ldap_uri">&para;</a></h5>
+<p>The URI to the ldap server</p>
+<p>Default: <code>ldap://localhost</code></p>
+</section>
+<section class="level5" id="ldap_base">
+<h5>ldap_base <a class="headerlink" href="#ldap_base">&para;</a></h5>
+<p>LDAP base DN of the ldap server. This parameter must be provided if
+auth type is ldap.</p>
+<p>Default:</p>
+</section>
+<section class="level5" id="ldap_reader_dn">
+<h5>ldap_reader_dn <a class="headerlink" href="#ldap_reader_dn">&para;</a></h5>
+<p>The DN of a ldap user with read access to get the user accounts. This
+parameter must be provided if auth type is ldap.</p>
+<p>Default:</p>
+</section>
+<section class="level5" id="ldap_secret">
+<h5>ldap_secret <a class="headerlink" href="#ldap_secret">&para;</a></h5>
+<p>The password of the ldap_reader_dn. This parameter must be provided
+if auth type is ldap.</p>
+<p>Default:</p>
+</section>
+<section class="level5" id="ldap_filter">
+<h5>ldap_filter <a class="headerlink" href="#ldap_filter">&para;</a></h5>
+<p>The search filter to find the user DN to authenticate by the
+username. User '{0}' as placeholder for the user name.</p>
+<p>Default: <code>(cn={0})</code></p>
+</section>
+<section class="level5" id="ldap_load_groups">
+<h5>ldap_load_groups <a class="headerlink" href="#ldap_load_groups">&para;</a></h5>
+<p>Load the ldap groups of the authenticated user. These groups can be
+used later on to define rights.</p>
+<p>Default: False</p>
 </section>
 <section class="level5" id="lc_username">
 <h5>lc_username <a class="headerlink" href="#lc_username">&para;</a></h5>
