@@ -53,6 +53,24 @@
 [auth]
 
 # Authentication method
+# Value: none | htpasswd | remote_user | http_x_remote_user | ldap
+#type = none
+
+# URI to the LDAP server
+#ldap_uri = ldap://localhost
+
+# The base DN of the LDAP server
+#ldap_base = ##BASE_DN##
+
+# The reader DN of the LDAP server
+#ldap_reader_dn = CN=ldapreader,CN=Users,##BASE_DN##
+
+# Password of the reader DN
+#ldap_secret = ldapreader-secret
+
+# If the ldap groups of the user need to be loaded
+#ldap_load_groups = True
+
 # Value: none | htpasswd | remote_user | http_x_remote_user | denyall
 #type = none
 

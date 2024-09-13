@@ -32,7 +32,7 @@ Take a look at the class ``BaseRights`` if you want to implement your own.
 
 """
 
-from typing import Sequence
+from typing import Sequence, Set
 
 from radicale import config, utils
 
@@ -56,6 +56,8 @@ def intersect(a: str, b: str) -> str:
 
 
 class BaseRights:
+
+    _user_groups: Set[str] = set([])
 
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseRights.

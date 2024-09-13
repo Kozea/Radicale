@@ -29,14 +29,15 @@ Take a look at the class ``BaseAuth`` if you want to implement your own.
 
 """
 
-from typing import Sequence, Tuple, Union
+from typing import Sequence, Set, Tuple, Union
 
 from radicale import config, types, utils
 from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
                                  "denyall",
-                                 "htpasswd")
+                                 "htpasswd",
+                                 "ldap")
 
 
 def load(configuration: "config.Configuration") -> "BaseAuth":
@@ -51,6 +52,7 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
 
 class BaseAuth:
 
+    _ldap_groups: Set[str] = set([])
     _lc_username: bool
     _strip_domain: bool
 

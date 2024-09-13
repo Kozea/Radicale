@@ -65,24 +65,40 @@ class Rights(rights.BaseRights):
         if not self._log_rights_rule_doesnt_match_on_debug:
             logger.debug("logging of rules which doesn't match suppressed by config/option [logging] rights_rule_doesnt_match_on_debug")
         for section in rights_config.sections():
+            group_match = False
             try:
                 user_pattern = rights_config.get(section, "user")
                 collection_pattern = rights_config.get(section, "collection")
+                allowed_groups = rights_config.get(section, "groups", fallback="").split(",")
+                try:
+                    group_match = len(self._user_groups.intersection(allowed_groups)) > 0
+                except Exception:
+                    pass
                 # Use empty format() for harmonized handling of curly braces
                 user_match = re.fullmatch(user_pattern.format(), user)
-                collection_match = user_match and re.fullmatch(
+                user_collection_match = user_match and re.fullmatch(
                     collection_pattern.format(
                         *(re.escape(s) for s in user_match.groups()),
                         user=escaped_user), sane_path)
+                group_collection_match = re.fullmatch(collection_pattern.format(user=escaped_user), sane_path)
             except Exception as e:
                 raise RuntimeError("Error in section %r of rights file %r: "
                                    "%s" % (section, self._filename, e)) from e
-            if user_match and collection_match:
+            if user_match and user_collection_match:
                 permission = rights_config.get(section, "permissions")
                 logger.debug("Rule %r:%r matches %r:%r from section %r permission %r",
                              user, sane_path, user_pattern,
                              collection_pattern, section, permission)
                 return permission
+            if group_match and group_collection_match:
+                permission = rights_config.get(section, "permissions")
+                logger.debug("Rule %r:%r matches %r:%r from section %r permission %r by group membership",
+                             user, sane_path, user_pattern,
+                             collection_pattern, section, permission)
+                return permission
+            logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
+                         user, sane_path, user_pattern, collection_pattern,
+                         section)
             if self._log_rights_rule_doesnt_match_on_debug:
                 logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
                              user, sane_path, user_pattern, collection_pattern,
