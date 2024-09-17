@@ -107,7 +107,7 @@ class Auth(auth.BaseAuth):
             pass
 
         if not conn.bind():
-            logger.debug(f"_login3 can not bind")
+            logger.debug("_login3 can not bind")
             raise RuntimeError("Unable to read from ldap server")
 
         logger.debug(f"_login3 bind as {self._ldap_reader_dn}")
@@ -119,7 +119,7 @@ class Auth(auth.BaseAuth):
             attributes=['memberOf']
         )
         if len(conn.entries) == 0:
-            logger.debug(f"_login3 user can not be find")
+            logger.debug(f"_login3 user '{login}' can not be find")
             """User could not be find"""
             return ""
 
@@ -131,7 +131,7 @@ class Auth(auth.BaseAuth):
             """Try to bind as the user itself"""
             conn = self.ldap3.Connection(server, user_dn, password=password)
             if not conn.bind():
-                logger.debug(f"_login3 user can not be find")
+                logger.debug(f"_login3 user '{login}' can not be find")
                 return ""
             if self._ldap_load_groups:
                 tmp = []
