@@ -49,33 +49,36 @@ class Rights(rights.BaseRights):
         super().__init__(configuration)
         self._filename = configuration.get("rights", "file")
         self._log_rights_rule_doesnt_match_on_debug = configuration.get("logging", "rights_rule_doesnt_match_on_debug")
+        self._rights_config = configparser.ConfigParser()
+        try:
+            with open(self._filename, "r") as f:
+                self._rights_config.read_file(f)
+            logger.debug("Read rights file")
+        except Exception as e:
+            raise RuntimeError("Failed to load rights file %r: %s" %
+                               (self._filename, e)) from e
 
     def authorization(self, user: str, path: str) -> str:
         user = user or ""
         sane_path = pathutils.strip_path(path)
         # Prevent "regex injection"
         escaped_user = re.escape(user)
-        rights_config = configparser.ConfigParser()
-        try:
-            with open(self._filename, "r") as f:
-                rights_config.read_file(f)
-        except Exception as e:
-            raise RuntimeError("Failed to load rights file %r: %s" %
-                               (self._filename, e)) from e
         if not self._log_rights_rule_doesnt_match_on_debug:
             logger.debug("logging of rules which doesn't match suppressed by config/option [logging] rights_rule_doesnt_match_on_debug")
-        for section in rights_config.sections():
+        for section in self._rights_config.sections():
             group_match = False
+            user_match = False
             try:
-                user_pattern = rights_config.get(section, "user")
-                collection_pattern = rights_config.get(section, "collection")
-                allowed_groups = rights_config.get(section, "groups", fallback="").split(",")
+                user_pattern = self._rights_config.get(section, "user", fallback="")
+                collection_pattern = self._rights_config.get(section, "collection")
+                allowed_groups = self._rights_config.get(section, "groups", fallback="").split(",")
                 try:
                     group_match = len(self._user_groups.intersection(allowed_groups)) > 0
                 except Exception:
                     pass
                 # Use empty format() for harmonized handling of curly braces
-                user_match = re.fullmatch(user_pattern.format(), user)
+                if user_pattern != "":
+                    user_match = re.fullmatch(user_pattern.format(), user)
                 user_collection_match = user_match and re.fullmatch(
                     collection_pattern.format(
                         *(re.escape(s) for s in user_match.groups()),
@@ -85,13 +88,13 @@ class Rights(rights.BaseRights):
                 raise RuntimeError("Error in section %r of rights file %r: "
                                    "%s" % (section, self._filename, e)) from e
             if user_match and user_collection_match:
-                permission = rights_config.get(section, "permissions")
+                permission = self._rights_config.get(section, "permissions")
                 logger.debug("Rule %r:%r matches %r:%r from section %r permission %r",
                              user, sane_path, user_pattern,
                              collection_pattern, section, permission)
                 return permission
             if group_match and group_collection_match:
-                permission = rights_config.get(section, "permissions")
+                permission = self._rights_config.get(section, "permissions")
                 logger.debug("Rule %r:%r matches %r:%r from section %r permission %r by group membership",
                              user, sane_path, user_pattern,
                              collection_pattern, section, permission)
