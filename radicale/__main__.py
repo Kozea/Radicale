@@ -144,7 +144,15 @@ def run() -> None:
         log.set_level(config.DEFAULT_CONFIG_SCHEMA["logging"]["level"]["type"](
             vars(args_ns).get("c:logging:level", "")), True)
 
-    # Update Radicale configuration according to arguments
+    # Update Radicale configuration according to environment variables
+    env_var_config: types.MUTABLE_CONFIG = {}
+    for key, value in os.environ.items():
+        if key.startswith("RADICALE_OPTION_"):
+            section, option = key.removeprefix("RADICALE_OPTION_").split('_')
+            env_var_config[section] = env_var_config.get(section, {})
+            env_var_config[section][option] = value
+
+    # Update Radicale configuration according to command line arguments
     arguments_config: types.MUTABLE_CONFIG = {}
     for key, value in vars(args_ns).items():
         if key.startswith("c:"):
@@ -158,6 +166,8 @@ def run() -> None:
             os.environ.get("RADICALE_CONFIG"),
             os.pathsep.join(args_ns.config) if args_ns.config is not None
             else None))
+        if env_var_config:
+            configuration.update(env_var_config, "environment variables")
         if arguments_config:
             configuration.update(arguments_config, "command line arguments")
     except Exception as e:
