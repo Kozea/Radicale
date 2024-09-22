@@ -59,7 +59,7 @@
 # URI to the LDAP server
 #ldap_uri = ldap://localhost
 
-# The base DN of the LDAP server
+# The base DN where the user accounts have to be searched
 #ldap_base = ##BASE_DN##
 
 # The reader DN of the LDAP server
@@ -71,8 +71,8 @@
 # If the ldap groups of the user need to be loaded
 #ldap_load_groups = True
 
-# Value: none | htpasswd | remote_user | http_x_remote_user | denyall
-#type = none
+# The filter to find the DN of the user. This filter must contain a python-style placeholder for the login
+#ldap_filter = (&(objectClass=person)(cn={0}))
 
 # Htpasswd filename
 #htpasswd_filename = /etc/radicale/users

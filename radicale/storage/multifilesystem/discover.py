@@ -16,9 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import base64
 import os
 import posixpath
-from typing import Callable, ContextManager, Iterator, Optional, cast
+from typing import Callable, ContextManager, Iterator, Optional, Set, cast
 
 from radicale import pathutils, types
 from radicale.log import logger
@@ -35,8 +36,10 @@ def _null_child_context_manager(path: str,
 class StoragePartDiscover(StorageBase):
 
     def discover(
-            self, path: str, depth: str = "0", child_context_manager: Optional[
-                Callable[[str, Optional[str]], ContextManager[None]]] = None
+            self, path: str, depth: str = "0",
+            child_context_manager: Optional[
+            Callable[[str, Optional[str]], ContextManager[None]]] = None,
+            user_groups: Set[str] = set([])
             ) -> Iterator[types.CollectionOrItem]:
         # assert isinstance(self, multifilesystem.Storage)
         if child_context_manager is None:
@@ -99,6 +102,16 @@ class StoragePartDiscover(StorageBase):
                 continue
             sane_child_path = posixpath.join(sane_path, href)
             child_path = pathutils.unstrip_path(sane_child_path, True)
+            with child_context_manager(sane_child_path, None):
+                yield self._collection_class(
+                    cast(multifilesystem.Storage, self), child_path)
+        for group in user_groups:
+            href = base64.b64encode(group.encode('utf-8')).decode('ascii')
+            logger.debug(f"searching for group calendar {group} {href}")
+            sane_child_path = f"GROUPS/{href}"
+            if not os.path.isdir(pathutils.path_to_filesystem(folder, sane_child_path)):
+                continue
+            child_path = f"/GROUPS/{href}/"
             with child_context_manager(sane_child_path, None):
                 yield self._collection_class(
                     cast(multifilesystem.Storage, self), child_path)
