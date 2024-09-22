@@ -392,7 +392,8 @@ class ApplicationPartPropfind(ApplicationBase):
             return httputils.REQUEST_TIMEOUT
         with self._storage.acquire_lock("r", user):
             items_iter = iter(self._storage.discover(
-                path, environ.get("HTTP_DEPTH", "0")))
+                path, environ.get("HTTP_DEPTH", "0"),
+                None, self._rights._user_groups))
             # take root item for rights checking
             item = next(items_iter, None)
             if not item:
