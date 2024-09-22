@@ -18,6 +18,7 @@
 
 import os
 import posixpath
+import base64
 from typing import Callable, ContextManager, Iterator, Optional, cast
 
 from radicale import pathutils, types
@@ -36,7 +37,8 @@ class StoragePartDiscover(StorageBase):
 
     def discover(
             self, path: str, depth: str = "0", child_context_manager: Optional[
-                Callable[[str, Optional[str]], ContextManager[None]]] = None
+                Callable[[str, Optional[str]], ContextManager[None]]] = None,
+                user_groups: Set[str] = set([])
             ) -> Iterator[types.CollectionOrItem]:
         # assert isinstance(self, multifilesystem.Storage)
         if child_context_manager is None:
@@ -99,6 +101,16 @@ class StoragePartDiscover(StorageBase):
                 continue
             sane_child_path = posixpath.join(sane_path, href)
             child_path = pathutils.unstrip_path(sane_child_path, True)
+            with child_context_manager(sane_child_path, None):
+                yield self._collection_class(
+                    cast(multifilesystem.Storage, self), child_path)
+        for group in user_groups:
+            href = base64.b64encode(group.encode('utf-8')).decode('ascii')
+            logger.debug(f"searching for group calendar {group} {href}")
+            sane_child_path = f"GROUPS/{href}"
+            if not os.path.isdir(pathutils.path_to_filesystem(folder, sane_child_path)):
+                continue
+            child_path = f"/GROUPS/{href}/"
             with child_context_manager(sane_child_path, None):
                 yield self._collection_class(
                     cast(multifilesystem.Storage, self), child_path)
