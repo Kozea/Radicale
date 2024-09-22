@@ -30,6 +30,7 @@ import os
 import signal
 import socket
 import sys
+from collections import defaultdict
 from types import FrameType
 from typing import List, Optional, cast
 
@@ -145,12 +146,12 @@ def run() -> None:
             vars(args_ns).get("c:logging:level", "")), True)
 
     # Update Radicale configuration according to environment variables
-    env_var_config: types.MUTABLE_CONFIG = {}
+    env_var_config: types.MUTABLE_CONFIG = defaultdict(dict)
     for key, value in os.environ.items():
         if key.startswith("RADICALE_OPTION_"):
-            section, option = key.removeprefix("RADICALE_OPTION_").split('_')
-            env_var_config[section] = env_var_config.get(section, {})
-            env_var_config[section][option] = value
+            # Split only on the first instance of _
+            section, option = key.removeprefix("RADICALE_OPTION_").split('_', 1)
+            env_var_config[section.lower()][option.lower()] = value
 
     # Update Radicale configuration according to command line arguments
     arguments_config: types.MUTABLE_CONFIG = {}
