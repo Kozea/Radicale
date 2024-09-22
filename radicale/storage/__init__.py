@@ -24,6 +24,7 @@ Take a look at the class ``BaseCollection`` if you want to implement your own.
 """
 
 import json
+from typing import Callable, ContextManager, Iterator, Optional, Set, cast
 import xml.etree.ElementTree as ET
 from hashlib import sha256
 from typing import (Iterable, Iterator, Mapping, Optional, Sequence, Set,
@@ -282,8 +283,11 @@ class BaseStorage:
         """
         self.configuration = configuration
 
-    def discover(self, path: str, depth: str = "0") -> Iterable[
-            "types.CollectionOrItem"]:
+    def discover(
+            self, path: str, depth: str = "0", 
+            child_context_manager: Optional[
+            Callable[[str, Optional[str]], ContextManager[None]]] = None, 
+            user_groups: Set[str] = set([])) -> Iterable["types.CollectionOrItem"]:
         """Discover a list of collections under the given ``path``.
 
         ``path`` is sanitized.

@@ -19,7 +19,7 @@
 import os
 import posixpath
 import base64
-from typing import Callable, ContextManager, Iterator, Optional, cast
+from typing import Callable, ContextManager, Iterator, Optional, Set, cast
 
 from radicale import pathutils, types
 from radicale.log import logger
@@ -36,9 +36,10 @@ def _null_child_context_manager(path: str,
 class StoragePartDiscover(StorageBase):
 
     def discover(
-            self, path: str, depth: str = "0", child_context_manager: Optional[
-                Callable[[str, Optional[str]], ContextManager[None]]] = None,
-                user_groups: Set[str] = set([])
+            self, path: str, depth: str = "0", 
+            child_context_manager: Optional[
+            Callable[[str, Optional[str]], ContextManager[None]]] = None, 
+            user_groups: Set[str] = set([])
             ) -> Iterator[types.CollectionOrItem]:
         # assert isinstance(self, multifilesystem.Storage)
         if child_context_manager is None:

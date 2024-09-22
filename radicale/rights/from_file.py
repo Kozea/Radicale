@@ -66,8 +66,8 @@ class Rights(rights.BaseRights):
         if not self._log_rights_rule_doesnt_match_on_debug:
             logger.debug("logging of rules which doesn't match suppressed by config/option [logging] rights_rule_doesnt_match_on_debug")
         for section in self._rights_config.sections():
-            group_match = False
-            user_match = False
+            group_match = None
+            user_match = None
             try:
                 user_pattern = self._rights_config.get(section, "user", fallback="")
                 collection_pattern = self._rights_config.get(section, "collection")
