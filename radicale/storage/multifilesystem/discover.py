@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import base64
 import os
 import posixpath
-import base64
 from typing import Callable, ContextManager, Iterator, Optional, Set, cast
 
 from radicale import pathutils, types

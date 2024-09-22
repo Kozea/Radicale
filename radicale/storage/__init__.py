@@ -24,11 +24,10 @@ Take a look at the class ``BaseCollection`` if you want to implement your own.
 """
 
 import json
-from typing import Callable, ContextManager, Iterator, Optional, Set, cast
 import xml.etree.ElementTree as ET
 from hashlib import sha256
-from typing import (Iterable, Iterator, Mapping, Optional, Sequence, Set,
-                    Tuple, Union, overload)
+from typing import (Callable, ContextManager, Iterable, Iterator, Mapping,
+                    Optional, Sequence, Set, Tuple, Union, cast, overload)
 
 import vobject
 
