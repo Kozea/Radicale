@@ -105,6 +105,18 @@ You should create a new configuration file at the desired location.
 (If the use of a configuration file is inconvenient, all options can be
 passed via command line arguments.)
 
+Configuration options can also be passed through environment variables in the form of:
+
+```bash
+RADICALE_OPTION_<SECTION>_<OPTION>=<value>
+```
+
+For example:
+
+```bash
+RADICALE_OPTION_SERVER_HOSTS="0.0.0.0:5232, [::]:5232"
+```
+
 All configuration options are described in detail in the
 [Configuration](#configuration) section.
 
