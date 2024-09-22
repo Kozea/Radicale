@@ -59,6 +59,7 @@ class Auth(auth.BaseAuth):
     def _login2(self, login: str, password: str) -> str:
         try:
             """Bind as reader dn"""
+            logger.debug(f"_login2 {self._ldap_uri}, {self._ldap_reader_dn}")
             conn = self.ldap.initialize(self._ldap_uri)
             conn.protocol_version = 3
             conn.set_option(self.ldap.OPT_REFERRALS, 0)
@@ -72,8 +73,8 @@ class Auth(auth.BaseAuth):
             logger.debug("LDAP Auth user: %s", user_dn)
             """Close ldap connection"""
             conn.unbind()
-        except Exception:
-            raise RuntimeError("Invalide ldap configuration")
+        except Exception as e:
+            raise RuntimeError(f"Invalid ldap configuration:{e}")
 
         try:
             """Bind as user to authenticate"""
@@ -96,43 +97,52 @@ class Auth(auth.BaseAuth):
     def _login3(self, login: str, password: str) -> str:
         """Connect the server"""
         try:
+            logger.debug(f"_login3 {self._ldap_uri}, {self._ldap_reader_dn}")
             server = self.ldap3.Server(self._ldap_uri)
             conn = self.ldap3.Connection(server, self._ldap_reader_dn, password=self._ldap_secret)
         except self.ldap3.core.exceptions.LDAPSocketOpenError:
             raise RuntimeError("Unable to reach ldap server")
-        except Exception:
+        except Exception as e:
+            logger.debug(f"_login3 error 1 {e}")
             pass
 
         if not conn.bind():
+            logger.debug("_login3 can not bind")
             raise RuntimeError("Unable to read from ldap server")
 
+        logger.debug(f"_login3 bind as {self._ldap_reader_dn}")
         """Search the user dn"""
         conn.search(
             search_base=self._ldap_base,
             search_filter=self._ldap_filter.format(login),
-            search_scope='SUBTREE',
+            search_scope=self.ldap3.SUBTREE,
             attributes=['memberOf']
         )
         if len(conn.entries) == 0:
+            logger.debug(f"_login3 user '{login}' can not be find")
             """User could not be find"""
             return ""
 
-        user_entry = conn.entries[0].entry_to_json()
+        user_entry = conn.response[0]
         conn.unbind()
         user_dn = user_entry['dn']
+        logger.debug(f"_login3 found user_dn {user_dn}")
         try:
             """Try to bind as the user itself"""
             conn = self.ldap3.Connection(server, user_dn, password=password)
             if not conn.bind():
+                logger.debug(f"_login3 user '{login}' can not be find")
                 return ""
             if self._ldap_load_groups:
                 tmp = []
                 for g in user_entry['attributes']['memberOf']:
-                    tmp.append(g)
+                    tmp.append(g.split(',')[0][3:])
                 self._ldap_groups = set(tmp)
             conn.unbind()
+            logger.debug(f"_login3 {login} successfully authorized")
             return login
-        except Exception:
+        except Exception as e:
+            logger.debug(f"_login3 error 2 {e}")
             pass
         return ""
 
