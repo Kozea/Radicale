@@ -27,7 +27,7 @@ import json
 import xml.etree.ElementTree as ET
 from hashlib import sha256
 from typing import (Callable, ContextManager, Iterable, Iterator, Mapping,
-                    Optional, Sequence, Set, Tuple, Union, cast, overload)
+                    Optional, Sequence, Set, Tuple, Union, overload)
 
 import vobject
 
@@ -283,9 +283,9 @@ class BaseStorage:
         self.configuration = configuration
 
     def discover(
-            self, path: str, depth: str = "0", 
+            self, path: str, depth: str = "0",
             child_context_manager: Optional[
-            Callable[[str, Optional[str]], ContextManager[None]]] = None, 
+            Callable[[str, Optional[str]], ContextManager[None]]] = None,
             user_groups: Set[str] = set([])) -> Iterable["types.CollectionOrItem"]:
         """Discover a list of collections under the given ``path``.
 

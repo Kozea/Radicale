@@ -36,9 +36,9 @@ def _null_child_context_manager(path: str,
 class StoragePartDiscover(StorageBase):
 
     def discover(
-            self, path: str, depth: str = "0", 
+            self, path: str, depth: str = "0",
             child_context_manager: Optional[
-            Callable[[str, Optional[str]], ContextManager[None]]] = None, 
+            Callable[[str, Optional[str]], ContextManager[None]]] = None,
             user_groups: Set[str] = set([])
             ) -> Iterator[types.CollectionOrItem]:
         # assert isinstance(self, multifilesystem.Storage)
