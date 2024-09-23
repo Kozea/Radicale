@@ -25,7 +25,7 @@ Following parameters are needed in the configuration:
 Following parameters controls SSL connections:
    ldap_use_ssl   If the connection
    ldap_ssl_verify_mode The certifikat verification mode. NONE, OPTIONAL, default is REQUIRED
-   ldap_ssl_ca_file 
+   ldap_ssl_ca_file
 
 """
 import ssl
@@ -42,11 +42,9 @@ class Auth(auth.BaseAuth):
     _ldap_filter: str
     _ldap_load_groups: bool
     _ldap_version: int = 3
-    #SSL stuff
     _ldap_use_ssl: bool = False
     _ldap_ssl_verify_mode: int = ssl.CERT_REQUIRED
     _ldap_ssl_ca_file: str = ""
-
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
