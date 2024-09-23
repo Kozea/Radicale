@@ -834,9 +834,30 @@ Default: `(cn={0})`
 
 ##### ldap_load_groups
 
-Load the ldap groups of the authenticated user. These groups can be used later on to define rights.
+Load the ldap groups of the authenticated user. These groups can be used later on to define rights. This also gives you access to the group calendars, if they exist.
+* The group calendar will be placed under collection_root_folder/GROUPS
+* The name of the calendar directory is the base64 encoded group name.
+* The group calneder folders will not be created automaticaly. This must be created manualy. [Here](https://github.com/Kozea/Radicale/wiki/LDAP-authentication) you can find a script to create group calneder folders https://github.com/Kozea/Radicale/wiki/LDAP-authentication
 
 Default: False
+
+##### ldap_use_ssl
+
+Use ssl on the ldap connection
+
+Default: False
+
+##### ldap_ssl_verify_mode
+
+The certifikat verification mode. NONE, OPTIONAL or REQUIRED
+
+Default: REQUIRED
+
+##### ldap_ssl_ca_file
+
+The path to the CA file in pem format which is used to certificate the server certificate
+
+Default:
 
 ##### lc_username
 
