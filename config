@@ -72,7 +72,16 @@
 #ldap_load_groups = True
 
 # The filter to find the DN of the user. This filter must contain a python-style placeholder for the login
-#ldap_filter = (&(objectClass=person)(cn={0}))
+#ldap_filter = (&(objectClass=person)(uid={0}))
+
+# Use ssl on the ldap connection
+#ldap_use_ssl = False
+
+# The certifikat verification mode. NONE, OPTIONAL, default is REQUIRED
+#ldap_ssl_verify_mode = REQUIRED
+
+# The path to the CA file in pem format which is used to certificate the server certificate
+#ldap_ssl_ca_file =
 
 # Htpasswd filename
 #htpasswd_filename = /etc/radicale/users

@@ -15,15 +15,20 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 """
 Authentication backend that checks credentials with a ldap server.
-Following parameters are needed in the configuration
+Following parameters are needed in the configuration:
    ldap_uri       The ldap url to the server like ldap://localhost
    ldap_base      The baseDN of the ldap server
    ldap_reader_dn The DN of a ldap user with read access to get the user accounts
    ldap_secret    The password of the ldap_reader_dn
    ldap_filter    The search filter to find the user to authenticate by the username
    ldap_load_groups If the groups of the authenticated users need to be loaded
-"""
+Following parameters controls SSL connections:
+   ldap_use_ssl   If the connection
+   ldap_ssl_verify_mode The certifikat verification mode. NONE, OPTIONAL, default is REQUIRED
+   ldap_ssl_ca_file 
 
+"""
+import ssl
 from radicale import auth, config
 from radicale.log import logger
 
@@ -36,6 +41,11 @@ class Auth(auth.BaseAuth):
     _ldap_filter: str
     _ldap_load_groups: bool
     _ldap_version: int = 3
+    #SSL stuff
+    _ldap_use_ssl: bool = False
+    _ldap_ssl_verify_mode: int = ssl.CERT_REQUIRED
+    _ldap_ssl_ca_file: str = ""
+
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
@@ -55,6 +65,15 @@ class Auth(auth.BaseAuth):
         self._ldap_load_groups = configuration.get("auth", "ldap_load_groups")
         self._ldap_secret = configuration.get("auth", "ldap_secret")
         self._ldap_filter = configuration.get("auth", "ldap_filter")
+        if self._ldap_version == 3:
+            self._ldap_use_ssl = configuration.get("auth", "ldap_use_ssl")
+            if self._ldap_use_ssl:
+                self._ldap_ssl_ca_file = configuration.get("auth", "ldap_ssl_ca_file")
+                tmp = configuration.get("auth", "ldap_ssl_verify_mode")
+                if tmp == "NONE":
+                    self._ldap_ssl_verify_mode = ssl.CERT_NONE
+                elif tmp == "OPTIONAL":
+                    self._ldap_ssl_verify_mode = ssl.CERT_OPTIONAL
 
     def _login2(self, login: str, password: str) -> str:
         try:
@@ -98,7 +117,16 @@ class Auth(auth.BaseAuth):
         """Connect the server"""
         try:
             logger.debug(f"_login3 {self._ldap_uri}, {self._ldap_reader_dn}")
-            server = self.ldap3.Server(self._ldap_uri)
+            if self._ldap_use_ssl:
+                tls = self.ldap3.Tls(validate=self._ldap_ssl_verify_mode)
+                if self._ldap_ssl_ca_file != "":
+                    tls = self.ldap3.Tls(
+                        validate=self._ldap_ssl_verify_mode,
+                        ca_certs_file=self._ldap_ssl_ca_file
+                        )
+                server = self.ldap3.Server(self._ldap_uri, use_ssl=True, tls=tls)
+            else:
+                server = self.ldap3.Server(self._ldap_uri)
             conn = self.ldap3.Connection(server, self._ldap_reader_dn, password=self._ldap_secret)
         except self.ldap3.core.exceptions.LDAPSocketOpenError:
             raise RuntimeError("Unable to reach ldap server")

@@ -215,6 +215,18 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "load the ldap groups of the authenticated user",
             "type": bool}),
+        ("ldap_use_ssl", {
+            "value": "False",
+            "help": "Use ssl on the ldap connection",
+            "type": bool}),
+        ("ldap_ssl_verify_mode", {
+            "value": "REQUIRED",
+            "help": "The certifikat verification mode. NONE, OPTIONAL, default is REQUIRED",
+            "type": str}),
+        ("ldap_ssl_ca_file", {
+            "value": "",
+            "help": "The path to the CA file in pem format which is used to certificate the server certificate",
+            "type": str}),
         ("strip_domain", {
             "value": "False",
             "help": "strip domain from username",
