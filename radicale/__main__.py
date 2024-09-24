@@ -149,9 +149,13 @@ def run() -> None:
     env_var_config: types.MUTABLE_CONFIG = defaultdict(dict)
     for key, value in os.environ.items():
         if key.startswith("RADICALE_OPTION_"):
-            # Split only on the first instance of _
-            section, option = key.removeprefix("RADICALE_OPTION_").split('_', maxsplit=1)
-            env_var_config[section.lower()][option.lower()] = value
+            try:
+                # Split only on the first instance of _
+                section, option = key.removeprefix("RADICALE_OPTION_").split('_', maxsplit=1)
+                env_var_config[section.lower()][option.lower()] = value
+            except ValueError as e:
+                logger.critical(f"Invalid environment variable format (Proper format is `RADICALE_OPTION_<SECTION>_<OPTION>): {e}")
+                sys.exit(1)
 
     # Update Radicale configuration according to command line arguments
     arguments_config: types.MUTABLE_CONFIG = defaultdict(dict)

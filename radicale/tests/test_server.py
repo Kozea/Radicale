@@ -217,7 +217,7 @@ class TestBaseServerRequests(BaseTest):
         self.test_command_line_interface(with_bool_options=True)
 
     def test_reading_from_environment_variables(self) -> None:
-        os.environ["RADICALE_OPTION_HEADERS"] = '{"Test-Server": "test"}'
+        os.environ["RADICALE_OPTION_HEADERS_TEST-SERVER"] = "test"
         p = subprocess.Popen(
             [sys.executable, "-m", "radicale"],
             env={**os.environ, "PYTHONPATH": os.pathsep.join(sys.path)}
