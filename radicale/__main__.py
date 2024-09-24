@@ -150,15 +150,14 @@ def run() -> None:
     for key, value in os.environ.items():
         if key.startswith("RADICALE_OPTION_"):
             # Split only on the first instance of _
-            section, option = key.removeprefix("RADICALE_OPTION_").split('_', 1)
+            section, option = key.removeprefix("RADICALE_OPTION_").split('_', maxsplit=1)
             env_var_config[section.lower()][option.lower()] = value
 
     # Update Radicale configuration according to command line arguments
-    arguments_config: types.MUTABLE_CONFIG = {}
+    arguments_config: types.MUTABLE_CONFIG = defaultdict(dict)
     for key, value in vars(args_ns).items():
         if key.startswith("c:"):
             _, section, option = key.split(":", maxsplit=2)
-            arguments_config[section] = arguments_config.get(section, {})
             arguments_config[section][option] = value
 
     try:
