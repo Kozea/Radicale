@@ -218,22 +218,32 @@ class TestBaseServerRequests(BaseTest):
 
     def test_reading_from_environment_variables(self) -> None:
         os.environ["RADICALE_OPTION_HEADERS_TEST-SERVER"] = "test"
+
+        config_path = os.path.join(self.colpath, "config")
+        parser = RawConfigParser()
+        parser.read_dict(configuration_to_dict(self.configuration))
+        with open(config_path, "w") as f:
+            parser.write(f)
+
         p = subprocess.Popen(
             [sys.executable, "-m", "radicale"],
-            env={**os.environ, "PYTHONPATH": os.pathsep.join(sys.path)}
+            env={
+                **os.environ,
+                "PYTHONPATH": os.pathsep.join(sys.path),
+                "RADICALE_CONFIG": config_path
+            },
         )
+
         try:
             _, headers, _ = self.request(
                 "GET", "/", check=302, is_alive_fn=lambda: p.poll() is None)
             for key in self.configuration.options("headers"):
-                assert headers.get(key) == self.configuration.get(
-                    "headers", key)
+                assert headers.get(key) == self.configuration.get("headers", key)
         finally:
             p.terminate()
             p.wait()
         if sys.platform != "win32":
             assert p.returncode == 0
-
 
     def test_wsgi_server(self) -> None:
         config_path = os.path.join(self.colpath, "config")
