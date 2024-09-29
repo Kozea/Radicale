@@ -25,6 +25,7 @@ from typing import Optional
 from radicale import httputils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
+from radicale.log import logger
 
 
 def xml_delete(base_prefix: str, path: str, collection: storage.BaseCollection,
@@ -82,6 +83,7 @@ class ApplicationPartDelete(ApplicationBase):
                         )
                     xml_answer = xml_delete(base_prefix, path, item)
                 else:
+                    logger.info("delete of collection is prevented by config/option [rights] permit_delete_collection: %s", path)
                     return httputils.NOT_ALLOWED
             else:
                 assert item.collection is not None
