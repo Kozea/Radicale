@@ -73,18 +73,22 @@ class ApplicationPartDelete(ApplicationBase):
             hook_notification_item_list = []
             if isinstance(item, storage.BaseCollection):
                 if self._permit_delete_collection:
-                    for i in item.get_all():
-                        hook_notification_item_list.append(
-                            HookNotificationItem(
-                                HookNotificationItemTypes.DELETE,
-                                access.path,
-                                i.uid
-                            )
-                        )
-                    xml_answer = xml_delete(base_prefix, path, item)
+                    if access.check("d", item):
+                        logger.info("delete of collection is permitted by config/option [rights] permit_delete_collection but explicit forbidden by permission 'd': %s", path)
+                        return httputils.NOT_ALLOWED
                 else:
-                    logger.info("delete of collection is prevented by config/option [rights] permit_delete_collection: %s", path)
-                    return httputils.NOT_ALLOWED
+                    if not access.check("D", item):
+                        logger.info("delete of collection is prevented by config/option [rights] permit_delete_collection and not explicit allowed by permission 'D': %s", path)
+                        return httputils.NOT_ALLOWED
+                for i in item.get_all():
+                    hook_notification_item_list.append(
+                        HookNotificationItem(
+                            HookNotificationItemTypes.DELETE,
+                            access.path,
+                            i.uid
+                        )
+                    )
+                xml_answer = xml_delete(base_prefix, path, item)
             else:
                 assert item.collection is not None
                 assert item.href is not None
