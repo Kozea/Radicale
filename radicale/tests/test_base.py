@@ -41,6 +41,7 @@ class TestBaseRequests(BaseTest):
     def setup_method(self) -> None:
         BaseTest.setup_method(self)
         rights_file_path = os.path.join(self.colpath, "rights")
+        self.configure({"rights": {"permit_delete_collection": True}})
         with open(rights_file_path, "w") as f:
             f.write("""\
 [allow all]
