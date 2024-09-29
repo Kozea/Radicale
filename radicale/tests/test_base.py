@@ -450,8 +450,8 @@ permissions: RrWw""")
         assert responses["/calendar.ics/"] == 200
         self.get("/calendar.ics/", check=404)
 
-    def test_delete_collection_not_permitted(self) -> None:
-        """Delete a collection (try if not permitted)."""
+    def test_delete_collection_global_forbid(self) -> None:
+        """Delete a collection (expect forbidden)."""
         self.configure({"rights": {"permit_delete_collection": False}})
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
