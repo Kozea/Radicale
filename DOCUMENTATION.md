@@ -909,9 +909,9 @@ File for the rights backend `from_file`.  See the
 
 ##### permit_delete_collection
 
-(New since 3.1.9)
+(New since 3.1.9, default changed from True to False since 3.3.0)
 
-Global control of permission to delete complete collection (default: True)
+Global control of permission to delete complete collection (default: False)
 
 #### storage
 
