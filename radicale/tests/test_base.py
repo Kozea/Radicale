@@ -44,6 +44,16 @@ class TestBaseRequests(BaseTest):
         self.configure({"rights": {"permit_delete_collection": True}})
         with open(rights_file_path, "w") as f:
             f.write("""\
+[permit delete collection]
+user: .*
+collection: test-permit-delete
+permissions: RrWwD
+
+[forbid delete collection]
+user: .*
+collection: test-forbid-delete
+permissions: RrWwd
+
 [allow all]
 user: .*
 collection: .*
@@ -448,6 +458,24 @@ permissions: RrWw""")
         self.put("/calendar.ics/event1.ics", event)
         _, responses = self.delete("/calendar.ics/", check=401)
         self.get("/calendar.ics/", check=200)
+
+    def test_delete_collection_global_forbid_explicit_permit(self) -> None:
+        """Delete a collection with permitted path (expect permit)."""
+        self.configure({"rights": {"permit_delete_collection": False}})
+        self.mkcalendar("/test-permit-delete/")
+        event = get_file_content("event1.ics")
+        self.put("/test-permit-delete/event1.ics", event)
+        _, responses = self.delete("/test-permit-delete/", check=200)
+        self.get("/test-permit-delete/", check=404)
+
+    def test_delete_collection_global_permit_explicit_forbid(self) -> None:
+        """Delete a collection with permitted path (expect forbid)."""
+        self.configure({"rights": {"permit_delete_collection": True}})
+        self.mkcalendar("/test-forbid-delete/")
+        event = get_file_content("event1.ics")
+        self.put("/test-forbid-delete/event1.ics", event)
+        _, responses = self.delete("/test-forbid-delete/", check=401)
+        self.get("/test-forbid-delete/", check=200)
 
     def test_delete_root_collection(self) -> None:
         """Delete the root collection."""
