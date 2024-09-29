@@ -4,6 +4,7 @@
 
 * Adjustment: option [auth] htpasswd_encryption change default from "md5" to "autodetect"
 * Add: option [auth] type=ldap with (group) rights management via LDAP/LDAPS
+* Adjustment: option [rights] 'permit_delete_collection' change default from "True" to "False" (failsafe)
 
 ## 3.2.3
 * Add: support for Python 3.13
