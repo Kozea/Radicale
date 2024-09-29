@@ -115,6 +115,8 @@
 # Permit delete of a collection (global)
 #permit_delete_collection = True
 
+# Permit overwrite of a collection (global)
+#permit_overwrite_collection = False
 
 [storage]
 

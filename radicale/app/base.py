@@ -40,6 +40,7 @@ class ApplicationBase:
     _web: web.BaseWeb
     _encoding: str
     _permit_delete_collection: bool
+    _permit_overwrite_collection: bool
     _hook: hook.BaseHook
 
     def __init__(self, configuration: config.Configuration) -> None:

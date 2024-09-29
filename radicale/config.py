@@ -245,6 +245,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "True",
             "help": "permit delete of a collection",
             "type": bool}),
+        ("permit_overwrite_collection", {
+            "value": "False",
+            "help": "permit overwrite of a collection",
+            "type": bool}),
         ("file", {
             "value": "/etc/radicale/rights",
             "help": "file for rights management from_file",
