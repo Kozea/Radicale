@@ -1309,6 +1309,8 @@ The following `permissions` are recognized:
 * **w:** write address book and calendar collections
 * **D:** permit delete of collection in case permit_delete_collection=False
 * **d:** forbid delete of collection in case permit_delete_collection=True
+* **O:** permit overwrite of collection in case permit_overwrite_collection=False
+* **o:** forbid overwrite of collection in case permit_overwrite_collection=True
 
 ### Storage
 
