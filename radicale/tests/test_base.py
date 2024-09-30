@@ -54,6 +54,16 @@ user: .*
 collection: test-forbid-delete
 permissions: RrWwd
 
+[permit overwrite collection]
+user: .*
+collection: test-permit-overwrite
+permissions: RrWwO
+
+[forbid overwrite collection]
+user: .*
+collection: test-forbid-overwrite
+permissions: RrWwo
+
 [allow all]
 user: .*
 collection: .*
