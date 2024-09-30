@@ -242,7 +242,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": str_or_callable,
             "internal": rights.INTERNAL_TYPES}),
         ("permit_delete_collection", {
-            "value": "False",
+            "value": "True",
             "help": "permit delete of a collection",
             "type": bool}),
         ("file", {
