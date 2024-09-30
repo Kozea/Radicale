@@ -246,7 +246,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "permit delete of a collection",
             "type": bool}),
         ("permit_overwrite_collection", {
-            "value": "False",
+            "value": "True",
             "help": "permit overwrite of a collection",
             "type": bool}),
         ("file", {
