@@ -41,7 +41,6 @@ class TestBaseRequests(BaseTest):
     def setup_method(self) -> None:
         BaseTest.setup_method(self)
         rights_file_path = os.path.join(self.colpath, "rights")
-        self.configure({"rights": {"permit_delete_collection": True}})
         with open(rights_file_path, "w") as f:
             f.write("""\
 [permit delete collection]
@@ -53,6 +52,16 @@ permissions: RrWwD
 user: .*
 collection: test-forbid-delete
 permissions: RrWwd
+
+[permit overwrite collection]
+user: .*
+collection: test-permit-overwrite
+permissions: RrWwO
+
+[forbid overwrite collection]
+user: .*
+collection: test-forbid-overwrite
+permissions: RrWwo
 
 [allow all]
 user: .*
@@ -450,8 +459,8 @@ permissions: RrWw""")
         assert responses["/calendar.ics/"] == 200
         self.get("/calendar.ics/", check=404)
 
-    def test_delete_collection_not_permitted(self) -> None:
-        """Delete a collection (try if not permitted)."""
+    def test_delete_collection_global_forbid(self) -> None:
+        """Delete a collection (expect forbidden)."""
         self.configure({"rights": {"permit_delete_collection": False}})
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
@@ -487,6 +496,30 @@ permissions: RrWw""")
         assert len(responses) == 1 and responses["/"] == 200
         self.get("/calendar.ics/", check=404)
         self.get("/event1.ics", 404)
+
+    def test_overwrite_collection_global_forbid(self) -> None:
+        """Overwrite a collection (expect forbid)."""
+        self.configure({"rights": {"permit_overwrite_collection": False}})
+        event = get_file_content("event1.ics")
+        self.put("/calender.ics/", event, check=401)
+
+    def test_overwrite_collection_global_forbid_explict_permit(self) -> None:
+        """Overwrite a collection with permitted path (expect permit)."""
+        self.configure({"rights": {"permit_overwrite_collection": False}})
+        event = get_file_content("event1.ics")
+        self.put("/test-permit-overwrite/", event, check=201)
+
+    def test_overwrite_collection_global_permit(self) -> None:
+        """Overwrite a collection (expect permit)."""
+        self.configure({"rights": {"permit_overwrite_collection": True}})
+        event = get_file_content("event1.ics")
+        self.put("/calender.ics/", event, check=201)
+
+    def test_overwrite_collection_global_permit_explict_forbid(self) -> None:
+        """Overwrite a collection with forbidden path (expect forbid)."""
+        self.configure({"rights": {"permit_overwrite_collection": True}})
+        event = get_file_content("event1.ics")
+        self.put("/test-forbid-overwrite/", event, check=401)
 
     def test_propfind(self) -> None:
         calendar_path = "/calendar.ics/"

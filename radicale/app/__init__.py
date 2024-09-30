@@ -70,6 +70,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _auth_realm: str
     _extra_headers: Mapping[str, str]
     _permit_delete_collection: bool
+    _permit_overwrite_collection: bool
 
     def __init__(self, configuration: config.Configuration) -> None:
         """Initialize Application.
@@ -91,6 +92,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         self._auth_realm = configuration.get("auth", "realm")
         self._permit_delete_collection = configuration.get("rights", "permit_delete_collection")
         logger.info("permit delete of collection: %s", self._permit_delete_collection)
+        self._permit_overwrite_collection = configuration.get("rights", "permit_overwrite_collection")
+        logger.info("permit overwrite of collection: %s", self._permit_overwrite_collection)
         self._extra_headers = dict()
         for key in self.configuration.options("headers"):
             self._extra_headers[key] = configuration.get("headers", key)

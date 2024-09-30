@@ -40,6 +40,7 @@ class ApplicationBase:
     _web: web.BaseWeb
     _encoding: str
     _permit_delete_collection: bool
+    _permit_overwrite_collection: bool
     _hook: hook.BaseHook
 
     def __init__(self, configuration: config.Configuration) -> None:
@@ -125,7 +126,7 @@ class Access:
 
     def check(self, permission: str,
               item: Optional[types.CollectionOrItem] = None) -> bool:
-        if permission not in "rwdD":
+        if permission not in "rwdDoO":
             raise ValueError("Invalid permission argument: %r" % permission)
         if not item:
             permissions = permission + permission.upper()

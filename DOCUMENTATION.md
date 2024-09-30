@@ -916,6 +916,15 @@ Global control of permission to delete complete collection (default: True)
 If False it can be permitted by permissions per section with: D
 If True it can be forbidden by permissions per section with: d
 
+##### permit_overwrite_collection
+
+(New since 3.3.0)
+
+Global control of permission to overwrite complete collection (default: True)
+
+If False it can be permitted by permissions per section with: O
+If True it can be forbidden by permissions per section with: o
+
 #### storage
 
 ##### type
@@ -1300,6 +1309,8 @@ The following `permissions` are recognized:
 * **w:** write address book and calendar collections
 * **D:** permit delete of collection in case permit_delete_collection=False
 * **d:** forbid delete of collection in case permit_delete_collection=True
+* **O:** permit overwrite of collection in case permit_overwrite_collection=False
+* **o:** forbid overwrite of collection in case permit_overwrite_collection=True
 
 ### Storage
 
