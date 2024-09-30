@@ -125,7 +125,7 @@ class Access:
 
     def check(self, permission: str,
               item: Optional[types.CollectionOrItem] = None) -> bool:
-        if permission not in "rw":
+        if permission not in "rwdD":
             raise ValueError("Invalid permission argument: %r" % permission)
         if not item:
             permissions = permission + permission.upper()

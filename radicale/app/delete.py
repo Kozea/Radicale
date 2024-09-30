@@ -3,6 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +25,7 @@ from typing import Optional
 from radicale import httputils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
+from radicale.log import logger
 
 
 def xml_delete(base_prefix: str, path: str, collection: storage.BaseCollection,
@@ -71,17 +73,22 @@ class ApplicationPartDelete(ApplicationBase):
             hook_notification_item_list = []
             if isinstance(item, storage.BaseCollection):
                 if self._permit_delete_collection:
-                    for i in item.get_all():
-                        hook_notification_item_list.append(
-                            HookNotificationItem(
-                                HookNotificationItemTypes.DELETE,
-                                access.path,
-                                i.uid
-                            )
-                        )
-                    xml_answer = xml_delete(base_prefix, path, item)
+                    if access.check("d", item):
+                        logger.info("delete of collection is permitted by config/option [rights] permit_delete_collection but explicit forbidden by permission 'd': %s", path)
+                        return httputils.NOT_ALLOWED
                 else:
-                    return httputils.NOT_ALLOWED
+                    if not access.check("D", item):
+                        logger.info("delete of collection is prevented by config/option [rights] permit_delete_collection and not explicit allowed by permission 'D': %s", path)
+                        return httputils.NOT_ALLOWED
+                for i in item.get_all():
+                    hook_notification_item_list.append(
+                        HookNotificationItem(
+                            HookNotificationItemTypes.DELETE,
+                            access.path,
+                            i.uid
+                        )
+                    )
+                xml_answer = xml_delete(base_prefix, path, item)
             else:
                 assert item.collection is not None
                 assert item.href is not None
