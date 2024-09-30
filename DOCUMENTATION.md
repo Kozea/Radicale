@@ -909,9 +909,12 @@ File for the rights backend `from_file`.  See the
 
 ##### permit_delete_collection
 
-(New since 3.1.9, default changed from True to False since 3.3.0)
+(New since 3.1.9)
 
-Global control of permission to delete complete collection (default: False)
+Global control of permission to delete complete collection (default: True)
+
+If False it can be permitted by permissions per section with: D
+If True it can be forbidden by permissions per section with: d
 
 #### storage
 
@@ -1295,6 +1298,8 @@ The following `permissions` are recognized:
   (CalDAV/CardDAV is susceptible to expensive search requests)
 * **W:** write collections (excluding address books and calendars)
 * **w:** write address book and calendar collections
+* **D:** permit delete of collection in case permit_delete_collection=False
+* **d:** forbid delete of collection in case permit_delete_collection=True
 
 ### Storage
 
