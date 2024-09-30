@@ -488,6 +488,30 @@ permissions: RrWw""")
         self.get("/calendar.ics/", check=404)
         self.get("/event1.ics", 404)
 
+    def test_overwrite_collection_global_forbid(self) -> None:
+        """Overwrite a collection (expect forbid)."""
+        self.configure({"rights": {"permit_overwrite_collection": False}})
+        event = get_file_content("event1.ics")
+        self.put("/calender.ics/", event, check=401)
+
+    def test_overwrite_collection_global_forbid_explict_permit(self) -> None:
+        """Overwrite a collection with permitted path (expect permit)."""
+        self.configure({"rights": {"permit_overwrite_collection": False}})
+        event = get_file_content("event1.ics")
+        self.put("/test-permit-overwrite/", event, check=201)
+
+    def test_overwrite_collection_global_permit(self) -> None:
+        """Overwrite a collection (expect permit)."""
+        self.configure({"rights": {"permit_overwrite_collection": True}})
+        event = get_file_content("event1.ics")
+        self.put("/calender.ics/", event, check=201)
+
+    def test_overwrite_collection_global_permit_explict_forbid(self) -> None:
+        """Overwrite a collection with forbidden path (expect forbid)."""
+        self.configure({"rights": {"permit_overwrite_collection": True}})
+        event = get_file_content("event1.ics")
+        self.put("/test-forbid-overwrite/", event, check=401)
+
     def test_propfind(self) -> None:
         calendar_path = "/calendar.ics/"
         self.mkcalendar("/calendar.ics/")
