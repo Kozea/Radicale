@@ -50,34 +50,31 @@ requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
 
 [tool.tox]
-legacy_tox_ini = """
-[tox:tox]
-min_version = 4.0
-envlist = py, flake8, isort, mypy
+min_version = "4.0"
+envlist = ["py", "flake8", "isort", "mypy"]
 
-[testenv]
-extras =
-    test
-deps =
-    pytest
-    pytest-cov
-commands = pytest -r s --cov --cov-report=term --cov-report=xml .
+[tool.tox.env.py]
+extras = ["test"]
+deps = [
+    "pytest",
+    "pytest-cov"
+]
+commands = [["pytest", "-r", "s", "--cov", "--cov-report=term", "--cov-report=xml", "."]]
 
-[testenv:flake8]
-deps = flake8==7.1.0
-commands = flake8 .
-skip_install = True
+[tool.tox.env.flake8]
+deps = ["flake8==7.1.0"]
+commands = [["flake8", "."]]
+skip_install = true
 
-[testenv:isort]
-deps = isort==5.13.2
-commands = isort --check --diff .
-skip_install = True
+[tool.tox.env.isort]
+deps = ["isort==5.13.2"]
+commands = [["isort", "--check", "--diff", "."]]
+skip_install = true
 
-[testenv:mypy]
-deps = mypy==1.11.0
-commands = mypy .
-skip_install = True
-"""
+[tool.tox.env.mypy]
+deps = ["mypy==1.11.0"]
+commands = [["mypy", "."]]
+skip_install = true
 
 
 [tool.setuptools]
