@@ -1,6 +1,7 @@
 /**
  * This file is part of Radicale Server - Calendar Server
  * Copyright © 2017-2024 Unrud <unrud@outlook.com>
+ * Copyright © 2023-2024 Matthew Hana <matthew.hana@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
