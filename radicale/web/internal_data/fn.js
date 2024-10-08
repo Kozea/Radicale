@@ -1,6 +1,7 @@
 /**
  * This file is part of Radicale Server - Calendar Server
  * Copyright © 2017-2024 Unrud <unrud@outlook.com>
+ * Copyright © 2023-2024 Matthew Hana <matthew.hana@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -394,7 +395,7 @@ function create_edit_collection(user, password, collection, create, callback) {
         calendar_color = escape_xml(collection.color + (collection.color ? "ff" : ""));
         calendar_description = escape_xml(collection.description);
         resourcetype = '<CS:subscribed />';
-        calendar_source = collection.source;
+        calendar_source = escape_xml(collection.source);
     } else {
         calendar_color = escape_xml(collection.color + (collection.color ? "ff" : ""));
         calendar_description = escape_xml(collection.description);
