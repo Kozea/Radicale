@@ -395,7 +395,7 @@ function create_edit_collection(user, password, collection, create, callback) {
         calendar_color = escape_xml(collection.color + (collection.color ? "ff" : ""));
         calendar_description = escape_xml(collection.description);
         resourcetype = '<CS:subscribed />';
-        calendar_source = collection.source;
+        calendar_source = escape_xml(collection.source);
     } else {
         calendar_color = escape_xml(collection.color + (collection.color ? "ff" : ""));
         calendar_description = escape_xml(collection.description);
