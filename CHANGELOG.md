@@ -6,6 +6,7 @@
 * Add: option [auth] type=ldap with (group) rights management via LDAP/LDAPS
 * Enhancement: permit_delete_collection can be now controlled also per collection by rights 'D' or 'd'
 * Add: option [rights] permit_overwrite_collection (default=True) which can be also controlled per collection by rights 'O' or 'o'
+* Fix: only expand VEVENT on REPORT request containing 'expand'
 
 ## 3.2.3
 * Add: support for Python 3.13

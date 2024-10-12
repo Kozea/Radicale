@@ -257,7 +257,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                 element.text = item.serialize()
 
                 expand = prop.find(xmlutils.make_clark("C:expand"))
-                if expand is not None:
+                if expand is not None and item.component_name == 'VEVENT':
                     start = expand.get('start')
                     end = expand.get('end')
 
