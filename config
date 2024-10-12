@@ -53,7 +53,7 @@
 [auth]
 
 # Authentication method
-# Value: none | htpasswd | remote_user | http_x_remote_user | ldap
+# Value: none | htpasswd | remote_user | http_x_remote_user | ldap | denyall
 #type = none
 
 # URI to the LDAP server
