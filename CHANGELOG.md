@@ -7,6 +7,9 @@
 * Enhancement: permit_delete_collection can be now controlled also per collection by rights 'D' or 'd'
 * Add: option [rights] permit_overwrite_collection (default=True) which can be also controlled per collection by rights 'O' or 'o'
 * Fix: only expand VEVENT on REPORT request containing 'expand'
+* Adjustment: switch from setup.py to pyproject.toml
+* Adjustment: 'rights' file is now read only during startup
+* Cleanup: Python 3.7 leftovers
 
 ## 3.2.3
 * Add: support for Python 3.13
