@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.dev
+## 3.3.0
 
 * Adjustment: option [auth] htpasswd_encryption change default from "md5" to "autodetect"
 * Add: option [auth] type=ldap with (group) rights management via LDAP/LDAPS
