@@ -1,6 +1,6 @@
 # This file is intended to be used apart from the containing source code tree.
 
-FROM python:3-alpine as builder
+FROM python:3-alpine AS builder
 
 # Version of Radicale (e.g. v3)
 ARG VERSION=master
