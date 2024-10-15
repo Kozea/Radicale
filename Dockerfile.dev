@@ -1,4 +1,4 @@
-FROM python:3-alpine as builder
+FROM python:3-alpine AS builder
 
 # Optional dependencies (e.g. bcrypt)
 ARG DEPENDENCIES=bcrypt
