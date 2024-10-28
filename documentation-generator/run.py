@@ -74,7 +74,7 @@ def convert_doc(src_path, to_path, branch, branches):
 
 
 def install_dependencies():
-    subprocess.run([sys.executable, "-m", "pip", "install", "beautifulsoup4"],
+    subprocess.run([sys.executable, "-m", "pip", "install", "--break-system-packages", "beautifulsoup4"],
                    check=True)
     with TemporaryDirectory() as temp:
         subprocess.run(["curl", "--location", "--output", "pandoc.deb",
