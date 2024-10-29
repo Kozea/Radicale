@@ -1,5 +1,7 @@
 # Changelog
 
+* Enhancement: log content in case of multiple main components error
+
 ## 3.3.0
 
 * Adjustment: option [auth] htpasswd_encryption change default from "md5" to "autodetect"

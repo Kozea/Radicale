@@ -279,7 +279,7 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                 yield comp, True, []
             else:
                 if main is not None:
-                    raise ValueError("Multiple main components")
+                    raise ValueError("Multiple main components. Got comp: {}".format(comp))
                 main = comp
         if main is None and len(recurrences) == 1:
             main = rec_main
