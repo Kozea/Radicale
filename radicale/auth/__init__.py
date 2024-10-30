@@ -37,7 +37,8 @@ from radicale.log import logger
 INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
                                  "denyall",
                                  "htpasswd",
-                                 "ldap")
+                                 "ldap",
+                                 "dovecot")
 
 
 def load(configuration: "config.Configuration") -> "BaseAuth":
