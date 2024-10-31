@@ -208,39 +208,50 @@ class TestBaseAuthRequests(BaseTest):
                     ("%s:%s" % (user, password)).encode()).decode())
             assert status == expected_status
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_no_user(self):
         self._test_dovecot("", "", 401)
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_no_password(self):
         self._test_dovecot("user", "", 401)
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_broken_handshake_no_version(self):
         self._test_dovecot("user", "password", 401, broken=["version"])
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_broken_handshake_incompatible(self):
         self._test_dovecot("user", "password", 401, broken=["incompatible"])
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_broken_handshake_duplicate(self):
         self._test_dovecot(
                 "user", "password", 207, response=b'OK\t1',
                 broken=["duplicate"]
         )
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_broken_handshake_no_mech(self):
         self._test_dovecot("user", "password", 401, broken=["mech"])
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_broken_handshake_unsupported_mech(self):
         self._test_dovecot("user", "password", 401, mech=[b'ONE', b'TWO'])
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_broken_handshake_no_done(self):
         self._test_dovecot("user", "password", 401, broken=["done"])
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_broken_socket(self):
         self._test_dovecot("user", "password", 401, broken=["socket"])
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_auth_good1(self):
         self._test_dovecot("user", "password", 207, response=b'OK\t1')
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_auth_good2(self):
         self._test_dovecot(
                 "user", "password", 207, response=b'OK\t1',
@@ -249,12 +260,15 @@ class TestBaseAuthRequests(BaseTest):
 
         self._test_dovecot("user", "password", 207, response=b'OK\t1')
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_auth_bad1(self):
         self._test_dovecot("user", "password", 401, response=b'FAIL\t1')
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_auth_bad2(self):
         self._test_dovecot("user", "password", 401, response=b'CONT\t1')
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_auth_id_mismatch(self):
         self._test_dovecot("user", "password", 401, response=b'OK\t2')
 
