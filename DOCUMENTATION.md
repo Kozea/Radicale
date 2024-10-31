@@ -746,6 +746,9 @@ Available backends:
 `ldap`
 : Use a LDAP or AD server to authenticate users.
 
+`dovecot`
+: Use a local Dovecot server to authenticate users.
+
 Default: `none`
 
 ##### htpasswd_filename
@@ -855,6 +858,12 @@ Default: REQUIRED
 ##### ldap_ssl_ca_file
 
 The path to the CA file in pem format which is used to certificate the server certificate
+
+Default:
+
+##### dovecot_socket
+
+The path to the Dovecot client authentication socket (eg. /run/dovecot/auth-client on Fedora). Radicale must have read / write access to the socket.
 
 Default:
 
