@@ -160,6 +160,7 @@ class TestBaseAuthRequests(BaseTest):
         href_element = prop.find(xmlutils.make_clark("D:href"))
         assert href_element is not None and href_element.text == "/test/"
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def _test_dovecot(
             self, user, password, expected_status,
             response=b'FAIL\n1\n', mech=[b'PLAIN'], broken=None):
