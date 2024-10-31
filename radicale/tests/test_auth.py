@@ -22,6 +22,7 @@ Radicale tests with simple requests and authentication.
 
 """
 
+import base64
 import os
 import sys
 from typing import Iterable, Tuple, Union
@@ -158,6 +159,118 @@ class TestBaseAuthRequests(BaseTest):
         assert status == 200
         href_element = prop.find(xmlutils.make_clark("D:href"))
         assert href_element is not None and href_element.text == "/test/"
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def _test_dovecot(
+            self, user, password, expected_status,
+            response=b'FAIL\n1\n', mech=[b'PLAIN'], broken=None):
+        import socket
+        from unittest.mock import DEFAULT, patch
+
+        self.configure({"auth": {"type": "dovecot",
+                                 "dovecot_socket": "./dovecot.sock"}})
+
+        if broken is None:
+            broken = []
+
+        handshake = b''
+        if "version" not in broken:
+            handshake += b'VERSION\t'
+            if "incompatible" in broken:
+                handshake += b'2'
+            else:
+                handshake += b'1'
+            handshake += b'\t2\n'
+
+        if "mech" not in broken:
+            handshake += b'MECH\t%b\n' % b' '.join(mech)
+
+        if "duplicate" in broken:
+            handshake += b'VERSION\t1\t2\n'
+
+        if "done" not in broken:
+            handshake += b'DONE\n'
+
+        with patch.multiple(
+                'socket.socket',
+                connect=DEFAULT,
+                send=DEFAULT,
+                recv=DEFAULT
+                ) as mock_socket:
+            if "socket" in broken:
+                mock_socket["connect"].side_effect = socket.error(
+                        "Testing error with the socket"
+                )
+            mock_socket["recv"].side_effect = [handshake, response]
+            status, _, answer = self.request(
+                "PROPFIND", "/",
+                HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
+                    ("%s:%s" % (user, password)).encode()).decode())
+            assert status == expected_status
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_no_user(self):
+        self._test_dovecot("", "", 401)
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_no_password(self):
+        self._test_dovecot("user", "", 401)
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_broken_handshake_no_version(self):
+        self._test_dovecot("user", "password", 401, broken=["version"])
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_broken_handshake_incompatible(self):
+        self._test_dovecot("user", "password", 401, broken=["incompatible"])
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_broken_handshake_duplicate(self):
+        self._test_dovecot(
+                "user", "password", 207, response=b'OK\t1',
+                broken=["duplicate"]
+        )
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_broken_handshake_no_mech(self):
+        self._test_dovecot("user", "password", 401, broken=["mech"])
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_broken_handshake_unsupported_mech(self):
+        self._test_dovecot("user", "password", 401, mech=[b'ONE', b'TWO'])
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_broken_handshake_no_done(self):
+        self._test_dovecot("user", "password", 401, broken=["done"])
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_broken_socket(self):
+        self._test_dovecot("user", "password", 401, broken=["socket"])
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_auth_good1(self):
+        self._test_dovecot("user", "password", 207, response=b'OK\t1')
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_auth_good2(self):
+        self._test_dovecot(
+                "user", "password", 207, response=b'OK\t1',
+                mech=[b'PLAIN\nEXTRA\tTERM']
+        )
+
+        self._test_dovecot("user", "password", 207, response=b'OK\t1')
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_auth_bad1(self):
+        self._test_dovecot("user", "password", 401, response=b'FAIL\t1')
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_auth_bad2(self):
+        self._test_dovecot("user", "password", 401, response=b'CONT\t1')
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_auth_id_mismatch(self):
+        self._test_dovecot("user", "password", 401, response=b'OK\t2')
 
     def test_custom(self) -> None:
         """Custom authentication."""
