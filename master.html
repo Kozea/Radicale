@@ -880,6 +880,8 @@ server.</p>
 This can be used to provide the username from a reverse proxy.</p>
 <p><code>ldap</code> : Use a LDAP or AD server to authenticate
 users.</p>
+<p><code>dovecot</code> : Use a local Dovecot server to authenticate
+users.</p>
 <p>Default: <code>none</code></p>
 </section>
 <section class="level5" id="htpasswd_filename">
@@ -979,6 +981,13 @@ you can find a script to create group calneder folders <a href="https://github.c
 <h5>ldap_ssl_ca_file <a class="headerlink" href="#ldap_ssl_ca_file">&para;</a></h5>
 <p>The path to the CA file in pem format which is used to certificate
 the server certificate</p>
+<p>Default:</p>
+</section>
+<section class="level5" id="dovecot_socket">
+<h5>dovecot_socket <a class="headerlink" href="#dovecot_socket">&para;</a></h5>
+<p>The path to the Dovecot client authentication socket (eg.
+/run/dovecot/auth-client on Fedora). Radicale must have read / write
+access to the socket.</p>
 <p>Default:</p>
 </section>
 <section class="level5" id="lc_username">
