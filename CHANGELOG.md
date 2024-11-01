@@ -1,5 +1,6 @@
 # Changelog
 
+* Add: option [auth] type=dovecot
 * Enhancement: log content in case of multiple main components error
 
 ## 3.3.0
