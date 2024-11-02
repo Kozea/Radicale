@@ -24,7 +24,7 @@ Following parameters are needed in the configuration:
    ldap_load_groups If the groups of the authenticated users need to be loaded
 Following parameters controls SSL connections:
    ldap_use_ssl   If the connection
-   ldap_ssl_verify_mode The certifikat verification mode. NONE, OPTIONAL, default is REQUIRED
+   ldap_ssl_verify_mode The certificate verification mode. NONE, OPTIONAL, default is REQUIRED
    ldap_ssl_ca_file
 
 """

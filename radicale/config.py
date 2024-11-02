@@ -225,7 +225,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": bool}),
         ("ldap_ssl_verify_mode", {
             "value": "REQUIRED",
-            "help": "The certifikat verification mode. NONE, OPTIONAL, default is REQUIRED",
+            "help": "The certificate verification mode. NONE, OPTIONAL, default is REQUIRED",
             "type": str}),
         ("ldap_ssl_ca_file", {
             "value": "",

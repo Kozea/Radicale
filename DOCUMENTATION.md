@@ -851,7 +851,7 @@ Default: False
 
 ##### ldap_ssl_verify_mode
 
-The certifikat verification mode. NONE, OPTIONAL or REQUIRED
+The certificate verification mode. NONE, OPTIONAL or REQUIRED
 
 Default: REQUIRED
 

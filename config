@@ -77,7 +77,7 @@
 # Use ssl on the ldap connection
 #ldap_use_ssl = False
 
-# The certifikat verification mode. NONE, OPTIONAL, default is REQUIRED
+# The certificate verification mode. NONE, OPTIONAL, default is REQUIRED
 #ldap_ssl_verify_mode = REQUIRED
 
 # The path to the CA file in pem format which is used to certificate the server certificate
