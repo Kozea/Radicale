@@ -303,6 +303,10 @@ def _expand(
         # then in the response we return the date, not datetime
         dt_format = '%Y%m%d'
 
+    duration = None
+    if hasattr(item.vobject_item.vevent, "dtend"):
+        duration = item.vobject_item.vevent.dtend.value - item.vobject_item.vevent.dtstart.value
+
     expanded_item, rruleset = _make_vobject_expanded_item(item, dt_format)
 
     if rruleset:
@@ -319,6 +323,15 @@ def _expand(
                 name='RECURRENCE-ID',
                 value=recurrence_utc.strftime(dt_format), params={}
             )
+            vevent.dtstart = ContentLine(
+                name='DTSTART',
+                value=recurrence_utc.strftime(dt_format), params={}
+            )
+            if duration:
+                vevent.dtend = ContentLine(
+                    name='DTEND',
+                    value=(recurrence_utc + duration).strftime(dt_format), params={}
+                )
 
             if is_expanded_filled is False:
                 expanded.vevent = vevent
