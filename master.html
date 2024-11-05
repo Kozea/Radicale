@@ -941,8 +941,15 @@ parameter must be provided if auth type is ldap.</p>
 </section>
 <section class="level5" id="ldap_secret">
 <h5>ldap_secret <a class="headerlink" href="#ldap_secret">&para;</a></h5>
-<p>The password of the ldap_reader_dn. This parameter must be provided
-if auth type is ldap.</p>
+<p>The password of the ldap_reader_dn. Either this parameter or
+<code>ldap_secret_file</code> must be provided if auth type is ldap.</p>
+<p>Default:</p>
+</section>
+<section class="level5" id="ldap_secret_file">
+<h5>ldap_secret_file <a class="headerlink" href="#ldap_secret_file">&para;</a></h5>
+<p>Path of the file containing the password of the ldap_reader_dn.
+Either this parameter or <code>ldap_secret</code> must be provided if
+auth type is ldap.</p>
 <p>Default:</p>
 </section>
 <section class="level5" id="ldap_filter">
