@@ -68,6 +68,9 @@
 # Password of the reader DN
 #ldap_secret = ldapreader-secret
 
+# Path of the file containing password of the reader DN
+#ldap_secret_file = /run/secrets/ldap_password
+
 # If the ldap groups of the user need to be loaded
 #ldap_load_groups = True
 

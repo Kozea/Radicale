@@ -1,6 +1,6 @@
 FROM python:3-alpine AS builder
 
-# Optional dependencies (e.g. bcrypt)
+# Optional dependencies (e.g. bcrypt or ldap)
 ARG DEPENDENCIES=bcrypt
 
 COPY . /app

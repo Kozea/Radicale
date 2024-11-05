@@ -5,7 +5,7 @@ FROM python:3-alpine AS builder
 # Version of Radicale (e.g. v3)
 ARG VERSION=master
 
-# Optional dependencies (e.g. bcrypt)
+# Optional dependencies (e.g. bcrypt or ldap)
 ARG DEPENDENCIES=bcrypt
 
 RUN apk add --no-cache --virtual gcc libffi-dev musl-dev \
