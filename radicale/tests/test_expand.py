@@ -70,6 +70,8 @@ permissions: RrWw""")
 
     def _test_expand(self,
                      expected_uid: str,
+                     start: str,
+                     end: str,
                      expected_recurrence_ids: List[str],
                      expected_start_times: List[str],
                      expected_end_times: List[str],
@@ -77,7 +79,7 @@ permissions: RrWw""")
                      nr_uids: int) -> None:
         self.put("/calendar.ics/", get_file_content(f"{expected_uid}.ics"))
         req_body_without_expand = \
-            """<?xml version="1.0" encoding="utf-8" ?>
+            f"""<?xml version="1.0" encoding="utf-8" ?>
             <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
                 <D:prop>
                     <C:calendar-data>
@@ -86,7 +88,7 @@ permissions: RrWw""")
                 <C:filter>
                     <C:comp-filter name="VCALENDAR">
                         <C:comp-filter name="VEVENT">
-                            <C:time-range start="20060103T000000Z" end="20060105T000000Z"/>
+                            <C:time-range start="{start}" end="{end}"/>
                         </C:comp-filter>
                     </C:comp-filter>
                 </C:filter>
@@ -117,17 +119,17 @@ permissions: RrWw""")
         assert len(uids) == nr_uids
 
         req_body_with_expand = \
-            """<?xml version="1.0" encoding="utf-8" ?>
+            f"""<?xml version="1.0" encoding="utf-8" ?>
             <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
                 <D:prop>
                     <C:calendar-data>
-                        <C:expand start="20060103T000000Z" end="20060105T000000Z"/>
+                        <C:expand start="{start}" end="{end}"/>
                     </C:calendar-data>
                 </D:prop>
                 <C:filter>
                     <C:comp-filter name="VCALENDAR">
                         <C:comp-filter name="VEVENT">
-                            <C:time-range start="20060103T000000Z" end="20060105T000000Z"/>
+                            <C:time-range start="{start}" end="{end}"/>
                         </C:comp-filter>
                     </C:comp-filter>
                 </C:filter>
@@ -170,6 +172,8 @@ permissions: RrWw""")
         """Test report with expand property"""
         self._test_expand(
             "event_daily_rrule",
+            "20060103T000000Z",
+            "20060105T000000Z",
             ["RECURRENCE-ID:20060103T170000Z", "RECURRENCE-ID:20060104T170000Z"],
             ["DTSTART:20060103T170000Z", "DTSTART:20060104T170000Z"],
             [],
@@ -181,6 +185,8 @@ permissions: RrWw""")
         """Test report with expand property for all day events"""
         self._test_expand(
             "event_full_day_rrule",
+            "20060103T000000Z",
+            "20060105T000000Z",
             ["RECURRENCE-ID:20060103", "RECURRENCE-ID:20060104", "RECURRENCE-ID:20060105"],
             ["DTSTART:20060103", "DTSTART:20060104", "DTSTART:20060105"],
             ["DTEND:20060104", "DTEND:20060105", "DTEND:20060106"],
@@ -192,9 +198,33 @@ permissions: RrWw""")
         """Test report with expand property with overridden events"""
         self._test_expand(
             "event_daily_rrule_overridden",
+            "20060103T000000Z",
+            "20060105T000000Z",
             ["RECURRENCE-ID:20060103T170000Z", "RECURRENCE-ID:20060104T170000Z"],
             ["DTSTART:20060103T170000Z", "DTSTART:20060104T190000Z"],
             [],
             CONTAINS_TIMES,
             2
+        )
+
+    def test_report_with_expand_property_timezone(self):
+        self._test_expand(
+            "event_weekly_rrule",
+            "20060320T000000Z",
+            "20060414T000000Z",
+            [
+                "RECURRENCE-ID:20060321T200000Z",
+                "RECURRENCE-ID:20060328T200000Z",
+                "RECURRENCE-ID:20060404T190000Z",
+                "RECURRENCE-ID:20060411T190000Z",
+            ],
+            [
+                "DTSTART:20060321T200000Z",
+                "DTSTART:20060328T200000Z",
+                "DTSTART:20060404T190000Z",
+                "DTSTART:20060411T190000Z",
+            ],
+            [],
+            CONTAINS_TIMES,
+            1
         )

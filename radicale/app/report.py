@@ -24,8 +24,8 @@ import posixpath
 import socket
 import xml.etree.ElementTree as ET
 from http import client
-from typing import (Any, Callable, Iterable, Iterator, List, Optional,
-                    Sequence, Tuple, Union)
+from typing import (Callable, Iterable, Iterator, List, Optional, Sequence,
+                    Tuple, Union)
 from urllib.parse import unquote, urlparse
 
 import vobject
@@ -296,26 +296,45 @@ def _expand(
         start: datetime.datetime,
         end: datetime.datetime,
 ) -> ET.Element:
-    dt_format = '%Y%m%dT%H%M%SZ'
+    vevent_component: vobject.base.Component = copy.copy(item.vobject_item)
 
-    if type(item.vobject_item.vevent.dtstart.value) is datetime.date:
-        # If an event comes to us with a dt_start specified as a date
+    # Split the vevents included in the component into one that contains the
+    # recurrence information and others that contain a recurrence id to
+    # override instances.
+    vevent_recurrence, vevents_overridden = _split_overridden_vevents(vevent_component)
+
+    dt_format = '%Y%m%dT%H%M%SZ'
+    all_day_event = False
+
+    if type(vevent_recurrence.dtstart.value) is datetime.date:
+        # If an event comes to us with a dtstart specified as a date
         # then in the response we return the date, not datetime
         dt_format = '%Y%m%d'
+        all_day_event = True
+        # In case of dates, we need to remove timezone information since
+        # rruleset.between computes with datetimes without timezone information
+        start = start.replace(tzinfo=None)
+        end = end.replace(tzinfo=None)
+
+    for vevent in vevents_overridden:
+        _strip_single_event(vevent, dt_format)
 
     duration = None
-    if hasattr(item.vobject_item.vevent, "dtend"):
-        duration = item.vobject_item.vevent.dtend.value - item.vobject_item.vevent.dtstart.value
+    if hasattr(vevent_recurrence, "dtend"):
+        duration = vevent_recurrence.dtend.value - vevent_recurrence.dtstart.value
 
-    expanded_item, rruleset = _make_vobject_expanded_item(item, dt_format)
+    rruleset = None
+    if hasattr(vevent_recurrence, 'rrule'):
+        rruleset = vevent_recurrence.getrruleset()
 
     if rruleset:
+        # This function uses datetimes internally without timezone info for dates
         recurrences = rruleset.between(start, end, inc=True)
 
-        expanded: vobject.base.Component = copy.copy(expanded_item.vobject_item)
-        vevent_recurrence, vevents_overridden = _split_overridden_vevents(expanded, dt_format)
+        _strip_component(vevent_component)
+        _strip_single_event(vevent_recurrence, dt_format)
 
-        is_expanded_filled: bool = False
+        is_component_filled: bool = False
         i_overridden = 0
 
         for recurrence_dt in recurrences:
@@ -323,30 +342,34 @@ def _expand(
             i_overridden, vevent = _find_overridden(i_overridden, vevents_overridden, recurrence_utc, dt_format)
 
             if not vevent:
+                # We did not find an overridden instance, so create a new one
                 vevent = copy.deepcopy(vevent_recurrence)
+
+                # For all day events, the system timezone may influence the
+                # results, so use recurrence_dt
+                recurrence_id = recurrence_dt if all_day_event else recurrence_utc
                 vevent.recurrence_id = ContentLine(
                     name='RECURRENCE-ID',
-                    value=recurrence_utc.strftime(dt_format), params={}
+                    value=recurrence_id, params={}
                 )
+                _convert_to_utc(vevent, 'recurrence_id', dt_format)
                 vevent.dtstart = ContentLine(
                     name='DTSTART',
-                    value=recurrence_utc.strftime(dt_format), params={}
+                    value=recurrence_id.strftime(dt_format), params={}
                 )
                 if duration:
                     vevent.dtend = ContentLine(
                         name='DTEND',
-                        value=(recurrence_utc + duration).strftime(dt_format), params={}
+                        value=(recurrence_id + duration).strftime(dt_format), params={}
                     )
 
-            if is_expanded_filled is False:
-                expanded.vevent = vevent
-                is_expanded_filled = True
+            if not is_component_filled:
+                vevent_component.vevent = vevent
+                is_component_filled = True
             else:
-                expanded.add(vevent)
+                vevent_component.add(vevent)
 
-        element.text = expanded.serialize()
-    else:
-        element.text = expanded_item.vobject_item.serialize()
+    element.text = vevent_component.serialize()
 
     return element
 
@@ -374,76 +397,37 @@ def _convert_to_utc(vevent: vobject.icalendar.RecurringComponent,
         setattr(vevent, name_prop, ContentLine(name=prop.name, value=prop.value.strftime(dt_format), params=[]))
 
 
-def _make_vobject_expanded_item(
-        item: radicale_item.Item,
-        dt_format: str,
-) -> Tuple[radicale_item.Item, Optional[Any]]:
-    # https://www.rfc-editor.org/rfc/rfc4791#section-9.6.5
-    # The returned calendar components MUST NOT use recurrence
-    #       properties (i.e., EXDATE, EXRULE, RDATE, and RRULE) and MUST NOT
-    #       have reference to or include VTIMEZONE components.  Date and local
-    #       time with reference to time zone information MUST be converted
-    #       into date with UTC time.
+def _strip_single_event(vevent: vobject.icalendar.RecurringComponent, dt_format: str) -> None:
+    _convert_timezone(vevent, 'dtstart', 'DTSTART')
+    _convert_timezone(vevent, 'dtend', 'DTEND')
+    _convert_timezone(vevent, 'recurrence_id', 'RECURRENCE-ID')
 
-    item = copy.copy(item)
-    vevent = item.vobject_item.vevent
+    # There is something strange behaviour during serialization native datetime, so converting manually
+    _convert_to_utc(vevent, 'dtstart', dt_format)
+    _convert_to_utc(vevent, 'dtend', dt_format)
+    _convert_to_utc(vevent, 'recurrence_id', dt_format)
 
-    if type(vevent.dtstart.value) is datetime.date:
-        start_utc = datetime.datetime.fromordinal(
-            vevent.dtstart.value.toordinal()
-        ).replace(tzinfo=datetime.timezone.utc)
-    else:
-        start_utc = vevent.dtstart.value.astimezone(datetime.timezone.utc)
+    try:
+        delattr(vevent, 'rrule')
+        delattr(vevent, 'exdate')
+        delattr(vevent, 'exrule')
+        delattr(vevent, 'rdate')
+    except AttributeError:
+        pass
 
-    vevent.dtstart = ContentLine(name='DTSTART', value=start_utc, params=[])
 
-    dt_end = getattr(vevent, 'dtend', None)
-    if dt_end is not None:
-        if type(vevent.dtend.value) is datetime.date:
-            end_utc = datetime.datetime.fromordinal(
-                dt_end.value.toordinal()
-            ).replace(tzinfo=datetime.timezone.utc)
-        else:
-            end_utc = dt_end.value.astimezone(datetime.timezone.utc)
+def _strip_component(vevent: vobject.base.Component) -> None:
+    timezones_to_remove = []
+    for component in vevent.components():
+        if component.name == 'VTIMEZONE':
+            timezones_to_remove.append(component)
 
-        vevent.dtend = ContentLine(name='DTEND', value=end_utc, params={})
-
-    rruleset = None
-    for i, vevent in enumerate(item.vobject_item.vevent_list):
-        _convert_timezone(vevent, 'dtstart', 'DTSTART')
-        _convert_timezone(vevent, 'dtend', 'DTEND')
-        _convert_timezone(vevent, 'recurrence_id', 'RECURRENCE-ID')
-
-        if hasattr(vevent, 'rrule'):
-            rruleset = vevent.getrruleset()
-
-        # There is something strange behaviour during serialization native datetime, so converting manually
-        _convert_to_utc(vevent, 'dtstart', dt_format)
-        _convert_to_utc(vevent, 'dtend', dt_format)
-        _convert_to_utc(vevent, 'recurrence_id', dt_format)
-
-        timezones_to_remove = []
-        for component in item.vobject_item.components():
-            if component.name == 'VTIMEZONE':
-                timezones_to_remove.append(component)
-
-        for timezone in timezones_to_remove:
-            item.vobject_item.remove(timezone)
-
-        try:
-            delattr(item.vobject_item.vevent_list[i], 'rrule')
-            delattr(item.vobject_item.vevent_list[i], 'exdate')
-            delattr(item.vobject_item.vevent_list[i], 'exrule')
-            delattr(item.vobject_item.vevent_list[i], 'rdate')
-        except AttributeError:
-            pass
-
-    return item, rruleset
+    for timezone in timezones_to_remove:
+        vevent.remove(timezone)
 
 
 def _split_overridden_vevents(
         component: vobject.base.Component,
-        dt_format: str
 ) -> Tuple[
     vobject.icalendar.RecurringComponent,
     List[vobject.icalendar.RecurringComponent]
@@ -457,7 +441,7 @@ def _split_overridden_vevents(
         elif vevent_recurrence:
             raise ValueError(
                 f"component with UID {vevent.uid} "
-                f"has more than one vevent without a recurrence_id"
+                f"has more than one vevent with recurrence information"
             )
         else:
             vevent_recurrence = vevent
@@ -466,7 +450,7 @@ def _split_overridden_vevents(
         return (
             vevent_recurrence, sorted(
                 vevents_overridden,
-                key=lambda vevent: datetime.datetime.strptime(vevent.recurrence_id.value, dt_format)
+                key=lambda vevent: vevent.recurrence_id.value
             )
         )
     else:
