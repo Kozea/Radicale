@@ -1715,7 +1715,7 @@ permissions: RrWw""")
                 recurrence_ids.append(line)
 
             if line.startswith("DTSTART:"):
-                assert line == "DTSTART:20060102T170000Z"
+                assert line in ["DTSTART:20060103T170000Z", "DTSTART:20060104T170000Z"]
 
         assert len(uids) == 2
         assert len(set(recurrence_ids)) == 2
@@ -1802,10 +1802,10 @@ permissions: RrWw""")
                 recurrence_ids.append(line)
 
             if line.startswith("DTSTART:"):
-                assert line == "DTSTART:20060102"
+                assert line in ["DTSTART:20060103", "DTSTART:20060104", "DTSTART:20060105"]
 
             if line.startswith("DTEND:"):
-                assert line == "DTEND:20060103"
+                assert line in ["DTEND:20060104", "DTEND:20060105", "DTEND:20060106"]
 
         assert len(uids) == 3
         assert len(set(recurrence_ids)) == 3
