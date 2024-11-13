@@ -185,6 +185,7 @@ class ParallelHTTPSServer(ParallelHTTPServer):
                     "(%s)" % (type_name, name, "server", source, filename,
                               e)) from e
         context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        logger.info("SSL load files certificate='%s' key='%s'", certfile, keyfile)
         context.load_cert_chain(certfile=certfile, keyfile=keyfile)
         if protocol:
             logger.info("SSL set explicit protocol: '%s'", protocol)
@@ -204,6 +205,7 @@ class ParallelHTTPSServer(ParallelHTTPServer):
             cipherlist.append(entry["name"])
         logger.info("SSL accepted ciphers: %s", ' '.join(cipherlist))
         if cafile:
+            logger.info("SSL enable mandatory client certificate verification using CA file='%s'", cafile)
             context.load_verify_locations(cafile=cafile)
             context.verify_mode = ssl.CERT_REQUIRED
         self.socket = context.wrap_socket(
