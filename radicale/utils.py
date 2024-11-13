@@ -17,9 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import ssl
 from importlib import import_module, metadata
 from typing import Callable, Sequence, Type, TypeVar, Union
-import ssl
 
 from radicale import config
 from radicale.log import logger
