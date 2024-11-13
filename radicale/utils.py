@@ -72,7 +72,7 @@ def ssl_context_options_by_protocol(protocol: str, ssl_context_options):
             ssl_context_options &= ~ssl.OP_NO_TLSv1_2
             ssl_context_options &= ~ssl.OP_NO_TLSv1_3
         elif entry == "SSLv2":
-            logger.notice("SSL context options, ignore SSLv2 (totally insecure)")
+            logger.warning("SSL context options, ignore SSLv2 (totally insecure)")
         elif entry == "SSLv3":
             ssl_context_options &= ~ssl.OP_NO_SSLv3
             logger.debug("SSL context options, enable SSLv3 (maybe not supported by underlying OpenSSL)")
