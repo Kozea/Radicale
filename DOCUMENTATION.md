@@ -703,6 +703,22 @@ authentication plugin that extracts the username from the certificate.
 
 Default:
 
+##### protocol
+
+Accepted SSL protocol
+Example for secure configuration: ALL -SSLv3 -TLSv1 -TLSv1.1
+Format: Apache SSLProtocol list (from "mod_ssl")
+
+Default: (system default)
+
+##### ciphersuite
+
+Accepted SSL ciphersuite
+Example for secure configuration: DHE:ECDHE:-NULL:-SHA
+Format: OpenSSL cipher list (see also "man openssl-ciphers")
+
+Default: (system-default)
+
 #### encoding
 
 ##### request
