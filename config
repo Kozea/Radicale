@@ -40,6 +40,12 @@
 # TCP traffic between Radicale and a reverse proxy
 #certificate_authority =
 
+# SSL protocol, secure configuration: ALL -SSLv3 -TLSv1 -TLSv1.1
+#protocol = (default)
+
+# SSL ciphersuite, secure configuration: DHE:ECDHE:-NULL:-SHA (see also "man openssl-ciphers")
+#ciphersuite = (default)
+
 
 [encoding]
 

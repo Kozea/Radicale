@@ -141,6 +141,14 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "aliases": ("-s", "--ssl",),
             "opposite_aliases": ("-S", "--no-ssl",),
             "type": bool}),
+        ("protocol", {
+            "value": "",
+            "help": "SSL/TLS protocol (Apache SSLProtocol format)",
+            "type": str}),
+        ("ciphersuite", {
+            "value": "",
+            "help": "SSL/TLS Cipher Suite (OpenSSL cipher list format)",
+            "type": str}),
         ("certificate", {
             "value": "/etc/ssl/radicale.cert.pem",
             "help": "set certificate file",
