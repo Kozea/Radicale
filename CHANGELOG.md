@@ -5,6 +5,7 @@
 * Fix: expand does not take timezones into account 
 * Fix: expand does not support overridden recurring events
 * Fix: expand does not honor start and end times
+* Add: option [server] protocol + ciphersuite for optional restrictions on SSL socket
 
 ## 3.3.0
 

@@ -34,7 +34,7 @@ from typing import (Any, Callable, Dict, List, MutableMapping, Optional, Set,
                     Tuple, Union)
 from urllib.parse import unquote
 
-from radicale import Application, config
+from radicale import Application, config, utils
 from radicale.log import logger
 
 COMPAT_EAI_ADDRFAMILY: int
@@ -167,6 +167,8 @@ class ParallelHTTPSServer(ParallelHTTPServer):
         certfile: str = self.configuration.get("server", "certificate")
         keyfile: str = self.configuration.get("server", "key")
         cafile: str = self.configuration.get("server", "certificate_authority")
+        protocol: str = self.configuration.get("server", "protocol")
+        ciphersuite: str = self.configuration.get("server", "ciphersuite")
         # Test if the files can be read
         for name, filename in [("certificate", certfile), ("key", keyfile),
                                ("certificate_authority", cafile)]:
@@ -183,8 +185,33 @@ class ParallelHTTPSServer(ParallelHTTPServer):
                     "(%s)" % (type_name, name, "server", source, filename,
                               e)) from e
         context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        logger.info("SSL load files certificate='%s' key='%s'", certfile, keyfile)
         context.load_cert_chain(certfile=certfile, keyfile=keyfile)
+        if protocol:
+            logger.info("SSL set explicit protocols (maybe not all supported by underlying OpenSSL): '%s'", protocol)
+            context.options = utils.ssl_context_options_by_protocol(protocol, context.options)
+            context.minimum_version = utils.ssl_context_minimum_version_by_options(context.options)
+            if (context.minimum_version == 0):
+                raise RuntimeError("No SSL minimum protocol active")
+            context.maximum_version = utils.ssl_context_maximum_version_by_options(context.options)
+            if (context.maximum_version == 0):
+                raise RuntimeError("No SSL maximum protocol active")
+        else:
+            logger.info("SSL active protocols: (system-default)")
+        logger.debug("SSL minimum acceptable protocol: %s", context.minimum_version)
+        logger.debug("SSL maximum acceptable protocol: %s", context.maximum_version)
+        logger.info("SSL accepted protocols: %s", ' '.join(utils.ssl_get_protocols(context)))
+        if ciphersuite:
+            logger.info("SSL set explicit ciphersuite (maybe not all supported by underlying OpenSSL): '%s'", ciphersuite)
+            context.set_ciphers(ciphersuite)
+        else:
+            logger.info("SSL active ciphersuite: (system-default)")
+        cipherlist = []
+        for entry in context.get_ciphers():
+            cipherlist.append(entry["name"])
+        logger.info("SSL accepted ciphers: %s", ' '.join(cipherlist))
         if cafile:
+            logger.info("SSL enable mandatory client certificate verification using CA file='%s'", cafile)
             context.load_verify_locations(cafile=cafile)
             context.verify_mode = ssl.CERT_REQUIRED
         self.socket = context.wrap_socket(
