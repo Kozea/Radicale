@@ -115,7 +115,7 @@ def ssl_context_options_by_protocol(protocol: str, ssl_context_options):
             logger.debug("SSL context options, disable TLSv1.3")
             ssl_context_options |= ssl.OP_NO_TLSv1_3
         else:
-            logger.error("SSL protocol string: '%s' contain unsupported entry: '%s'", protocol, entry)
+            raise RuntimeError("SSL protocol config contains unsupported entry '%s'" % (entry))
 
     logger.debug("SSL resulting context options: '0x%x'", ssl_context_options)
     return ssl_context_options
@@ -123,8 +123,8 @@ def ssl_context_options_by_protocol(protocol: str, ssl_context_options):
 
 def ssl_context_minimum_version_by_options(ssl_context_options):
     logger.debug("SSL calculate minimum version by context options: '0x%x'", ssl_context_options)
-    ssl_context_minimum_version = 0 # default
-    if ((ssl_context_options & ssl.OP_NO_SSLv3) and (ssl_context_minimum_version == 0)):
+    ssl_context_minimum_version = ssl.TLSVersion.SSLv3 # default
+    if ((ssl_context_options & ssl.OP_NO_SSLv3) and (ssl_context_minimum_version == ssl.TLSVersion.SSLv3)):
         ssl_context_minimum_version = ssl.TLSVersion.TLSv1
     if ((ssl_context_options & ssl.OP_NO_TLSv1) and (ssl_context_minimum_version == ssl.TLSVersion.TLSv1)):
         ssl_context_minimum_version = ssl.TLSVersion.TLSv1_1
@@ -132,11 +132,29 @@ def ssl_context_minimum_version_by_options(ssl_context_options):
         ssl_context_minimum_version = ssl.TLSVersion.TLSv1_2
     if ((ssl_context_options & ssl.OP_NO_TLSv1_2) and (ssl_context_minimum_version == ssl.TLSVersion.TLSv1_2)):
         ssl_context_minimum_version = ssl.TLSVersion.TLSv1_3
-    if (ssl_context_minimum_version == 0):
-        ssl_context_minimum_version = ssl.TLSVersion.SSLv3 # default
+    if ((ssl_context_options & ssl.OP_NO_TLSv1_3) and (ssl_context_minimum_version == ssl.TLSVersion.TLSv1_3)):
+        ssl_context_minimum_version = 0 # all disabled
 
     logger.debug("SSL context options: '0x%x' results in minimum version: %s", ssl_context_options, ssl_context_minimum_version)
     return ssl_context_minimum_version
+
+
+def ssl_context_maximum_version_by_options(ssl_context_options):
+    logger.debug("SSL calculate maximum version by context options: '0x%x'", ssl_context_options)
+    ssl_context_maximum_version = ssl.TLSVersion.TLSv1_3 # default
+    if ((ssl_context_options & ssl.OP_NO_TLSv1_3) and (ssl_context_maximum_version == ssl.TLSVersion.TLSv1_3)):
+        ssl_context_maximum_version = ssl.TLSVersion.TLSv1_2
+    if ((ssl_context_options & ssl.OP_NO_TLSv1_2) and (ssl_context_maximum_version == ssl.TLSVersion.TLSv1_2)):
+        ssl_context_maximum_version = ssl.TLSVersion.TLSv1_1
+    if ((ssl_context_options & ssl.OP_NO_TLSv1_1) and (ssl_context_maximum_version == ssl.TLSVersion.TLSv1_1)):
+        ssl_context_maximum_version = ssl.TLSVersion.TLSv1
+    if ((ssl_context_options & ssl.OP_NO_TLSv1) and (ssl_context_maximum_version == ssl.TLSVersion.TLSv1)):
+        ssl_context_maximum_version = ssl.TLSVersion.SSLv3
+    if ((ssl_context_options & ssl.OP_NO_SSLv3) and (ssl_context_maximum_version == ssl.TLSVersion.SSLv3)):
+        ssl_context_maximum_version = 0
+
+    logger.debug("SSL context options: '0x%x' results in maximum version: %s", ssl_context_options, ssl_context_maximum_version)
+    return ssl_context_maximum_version
 
 
 def ssl_get_protocols(context):
@@ -145,14 +163,15 @@ def ssl_get_protocols(context):
         if (context.minimum_version < ssl.TLSVersion.TLSv1):
             protocols.append("SSLv3")
     if not (context.options & ssl.OP_NO_TLSv1):
-        if (context.minimum_version < ssl.TLSVersion.TLSv1_1):
+        if (context.minimum_version < ssl.TLSVersion.TLSv1_1) and (context.maximum_version >= ssl.TLSVersion.TLSv1):
             protocols.append("TLSv1")
     if not (context.options & ssl.OP_NO_TLSv1_1):
-        if (context.minimum_version < ssl.TLSVersion.TLSv1_2):
+        if (context.minimum_version < ssl.TLSVersion.TLSv1_2) and (context.maximum_version >= ssl.TLSVersion.TLSv1_1):
             protocols.append("TLSv1.1")
     if not (context.options & ssl.OP_NO_TLSv1_2):
-        if (context.minimum_version < ssl.TLSVersion.TLSv1_3):
+        if (context.minimum_version <= ssl.TLSVersion.TLSv1_2) and (context.maximum_version >= ssl.TLSVersion.TLSv1_2):
             protocols.append("TLSv1.2")
     if not (context.options & ssl.OP_NO_TLSv1_3):
-        protocols.append("TLSv1.3")
+        if (context.minimum_version <= ssl.TLSVersion.TLSv1_3) and (context.maximum_version >= ssl.TLSVersion.TLSv1_3):
+            protocols.append("TLSv1.3")
     return protocols
