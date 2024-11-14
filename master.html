@@ -848,6 +848,20 @@ also have to write an authentication plugin that extracts the username
 from the certificate.</p>
 <p>Default:</p>
 </section>
+<section class="level5" id="protocol">
+<h5>protocol <a class="headerlink" href="#protocol">&para;</a></h5>
+<p>Accepted SSL protocol (maybe not all supported by underlying OpenSSL
+version) Example for secure configuration: ALL -SSLv3 -TLSv1 -TLSv1.1
+Format: Apache SSLProtocol list (from "mod_ssl")</p>
+<p>Default: (system default)</p>
+</section>
+<section class="level5" id="ciphersuite">
+<h5>ciphersuite <a class="headerlink" href="#ciphersuite">&para;</a></h5>
+<p>Accepted SSL ciphersuite (maybe not all supported by underlying
+OpenSSL version) Example for secure configuration: DHE:ECDHE:-NULL:-SHA
+Format: OpenSSL cipher list (see also "man openssl-ciphers")</p>
+<p>Default: (system-default)</p>
+</section>
 </section>
 <section class="level4" id="encoding">
 <h4>encoding <a class="headerlink" href="#encoding">&para;</a></h4>
