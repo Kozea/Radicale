@@ -2,6 +2,9 @@
 
 * Add: option [auth] type=dovecot
 * Enhancement: log content in case of multiple main components error
+* Fix: expand does not take timezones into account 
+* Fix: expand does not support overridden recurring events
+* Fix: expand does not honor start and end times
 
 ## 3.3.0
 
