@@ -556,10 +556,14 @@ available at the root of the web server (in the nginx case using
 <code>X-Script-Name</code> header should be removed from the example
 below.</p>
 <p>Example <strong>nginx</strong> configuration:</p>
+<p>See for latest examples: <a href="https://github.com/Kozea/Radicale/tree/master/contrib/nginx/">https://github.com/Kozea/Radicale/tree/master/contrib/nginx/</a></p>
 <pre class="nginx"><code>location /radicale/ { # The trailing / is important!
     proxy_pass        http://localhost:5232/; # The / is important!
     proxy_set_header  X-Script-Name /radicale;
     proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header  X-Forwarded-Host $host;
+    proxy_set_header  X-Forwarded-Port $server_port;
+    proxy_set_header  X-Forwarded-Proto $scheme;
     proxy_set_header  Host $http_host;
     proxy_pass_header Authorization;
 }</code></pre>
@@ -571,6 +575,7 @@ below.</p>
     }
 }</code></pre>
 <p>Example <strong>Apache</strong> configuration:</p>
+<p>See for latest examples: <a href="https://github.com/Kozea/Radicale/tree/master/contrib/apache/">https://github.com/Kozea/Radicale/tree/master/contrib/apache/</a></p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode apache"><code class="sourceCode apache"><span id="cb17-1"><a aria-hidden="true" href="#cb17-1" tabindex="-1"></a><span class="ex">RewriteEngine</span><span class="ch"> </span><span class="kw">On</span></span>
 <span id="cb17-2"><a aria-hidden="true" href="#cb17-2" tabindex="-1"></a>RewriteRule<span class="st"> ^/radicale$ /radicale/ [R,L]</span></span>
 <span id="cb17-3"><a aria-hidden="true" href="#cb17-3" tabindex="-1"></a></span>
@@ -579,11 +584,8 @@ below.</p>
 <span id="cb17-6"><a aria-hidden="true" href="#cb17-6" tabindex="-1"></a>    ProxyPassReverse<span class="st"> http://localhost:5232/</span></span>
 <span id="cb17-7"><a aria-hidden="true" href="#cb17-7" tabindex="-1"></a>    RequestHeader<span class="st">    set X-Script-Name /radicale</span></span>
 <span id="cb17-8"><a aria-hidden="true" href="#cb17-8" tabindex="-1"></a>    RequestHeader<span class="st">    set X-Forwarded-Port "%{SERVER_PORT}s"</span></span>
-<span id="cb17-9"><a aria-hidden="true" href="#cb17-9" tabindex="-1"></a>    RequestHeader<span class="st">    unset X-Forwarded-Proto</span></span>
-<span id="cb17-10"><a aria-hidden="true" href="#cb17-10" tabindex="-1"></a>    <span class="fu">&lt;If</span><span class="at"> "%{HTTPS} =~ /on/"</span><span class="fu">&gt;</span></span>
-<span id="cb17-11"><a aria-hidden="true" href="#cb17-11" tabindex="-1"></a>    RequestHeader<span class="st">    set X-Forwarded-Proto "https"</span></span>
-<span id="cb17-12"><a aria-hidden="true" href="#cb17-12" tabindex="-1"></a>    <span class="fu">&lt;/If&gt;</span></span>
-<span id="cb17-13"><a aria-hidden="true" href="#cb17-13" tabindex="-1"></a><span class="fu">&lt;/Location&gt;</span></span></code></pre></div>
+<span id="cb17-9"><a aria-hidden="true" href="#cb17-9" tabindex="-1"></a>    RequestHeader<span class="st">    set X-Forwarded-Proto expr=%{REQUEST_SCHEME}</span></span>
+<span id="cb17-10"><a aria-hidden="true" href="#cb17-10" tabindex="-1"></a><span class="fu">&lt;/Location&gt;</span></span></code></pre></div>
 <p>Example <strong>Apache .htaccess</strong> configuration:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode apache"><code class="sourceCode apache"><span id="cb18-1"><a aria-hidden="true" href="#cb18-1" tabindex="-1"></a>DirectoryIndex<span class="st"> disabled</span></span>
 <span id="cb18-2"><a aria-hidden="true" href="#cb18-2" tabindex="-1"></a><span class="ex">RewriteEngine</span><span class="ch"> </span><span class="kw">On</span></span>
