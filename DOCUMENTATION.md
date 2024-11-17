@@ -1171,6 +1171,11 @@ In some clients you can just enter the URL of the Radicale server
 enter the URL of the collection directly
 (e.g. `http://localhost:5232/user/calendar`).
 
+Some clients (notably macOS's Calendar.app) may silently refuse to include
+account credentials over unsecured HTTP, leading to unexpected authentication
+failures. In these cases, you want to make sure the Radicale server is
+[accessible over HTTPS](#ssl).
+
 #### DAVx⁵
 
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
