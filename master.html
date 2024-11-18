@@ -1248,6 +1248,10 @@ manage address books and calendars.</p>
 (e.g. <code>http://localhost:5232</code>) and your username. In others,
 you have to enter the URL of the collection directly (e.g.
 <code>http://localhost:5232/user/calendar</code>).</p>
+<p>Some clients (notably macOS's Calendar.app) may silently refuse to
+include account credentials over unsecured HTTP, leading to unexpected
+authentication failures. In these cases, you want to make sure the
+Radicale server is <a href="#ssl">accessible over HTTPS</a>.</p>
 <section class="level4" id="davx⁵">
 <h4>DAVx⁵ <a class="headerlink" href="#davx⁵">&para;</a></h4>
 <p>Enter the URL of the Radicale server (e.g.
