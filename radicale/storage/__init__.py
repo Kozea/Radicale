@@ -38,7 +38,7 @@ from radicale.item import filter as radicale_filter
 
 INTERNAL_TYPES: Sequence[str] = ("multifilesystem", "multifilesystem_nolock",)
 
-CACHE_DEPS: Sequence[str] = ("radicale", "vobject", "python-dateutil",)
+CACHE_DEPS: Sequence[str] = ("radicale", "vobject")
 CACHE_VERSION: bytes = "".join(
     "%s=%s;" % (pkg, utils.package_version(pkg))
     for pkg in CACHE_DEPS).encode()
