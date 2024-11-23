@@ -75,27 +75,35 @@ class StoragePartLock(StorageBase):
                     preexec_fn = os.setpgrp
                 command = self._hook % {
                     "user": shlex.quote(user or "Anonymous")}
-                logger.debug("Running storage hook")
-                p = subprocess.Popen(
-                    command, stdin=subprocess.DEVNULL,
-                    stdout=subprocess.PIPE if debug else subprocess.DEVNULL,
-                    stderr=subprocess.PIPE if debug else subprocess.DEVNULL,
-                    shell=True, universal_newlines=True, preexec_fn=preexec_fn,
-                    cwd=self._filesystem_folder, creationflags=creationflags)
+                logger.debug("Executing storage hook: '%s'" % command)
+                try:
+                    p = subprocess.Popen(
+                        command, stdin=subprocess.DEVNULL,
+                        stdout=subprocess.PIPE if debug else subprocess.DEVNULL,
+                        stderr=subprocess.PIPE if debug else subprocess.DEVNULL,
+                        shell=True, universal_newlines=True, preexec_fn=preexec_fn,
+                        cwd=self._filesystem_folder, creationflags=creationflags)
+                except Exception as e:
+                    logger.error("Execution of storage hook not successful on 'Popen': %s" % e)
+                    return
+                logger.debug("Executing storage hook started 'Popen'")
                 try:
                     stdout_data, stderr_data = p.communicate()
-                except BaseException:  # e.g. KeyboardInterrupt or SystemExit
+                except BaseException as e:  # e.g. KeyboardInterrupt or SystemExit
+                    logger.error("Execution of storage hook not successful on 'communicate': %s" % e)
                     p.kill()
                     p.wait()
-                    raise
+                    return
                 finally:
                     if sys.platform != "win32":
                         # Kill remaining children identified by process group
                         with contextlib.suppress(OSError):
                             os.killpg(p.pid, signal.SIGKILL)
+                logger.debug("Executing storage hook finished")
                 if stdout_data:
-                    logger.debug("Captured stdout from hook:\n%s", stdout_data)
+                    logger.debug("Captured stdout from storage hook:\n%s", stdout_data)
                 if stderr_data:
-                    logger.debug("Captured stderr from hook:\n%s", stderr_data)
+                    logger.debug("Captured stderr from storage hook:\n%s", stderr_data)
                 if p.returncode != 0:
-                    raise subprocess.CalledProcessError(p.returncode, p.args)
+                    logger.error("Execution of storage hook not successful: %s" % subprocess.CalledProcessError(p.returncode, p.args))
+                    return
