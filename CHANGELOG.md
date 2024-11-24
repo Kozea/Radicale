@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.3.1
+
 * Add: option [auth] type=dovecot
 * Enhancement: log content in case of multiple main components error
 * Fix: expand does not take timezones into account 
