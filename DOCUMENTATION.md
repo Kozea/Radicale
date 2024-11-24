@@ -578,14 +578,31 @@ authentication over HTTP.
 This tutorial describes how to keep track of all changes to calendars and
 address books with **git** (or any other version control system).
 
-The repository must be initialized by running `git init` in the file
-system folder. Internal files of Radicale can be excluded by creating the
-file `.gitignore` with the following content:
+The repository must be initialized in the collection base directory
+of the user running `radicale` daemon.
 
-```gitignore
+```bash
+## assuming "radicale" user is starting "radicale" service
+# change to user "radicale"
+su -l -s /bin/bash radicale
+
+# change to collection base directory defined in [storage] -> filesystem_folder
+#  assumed here /var/lib/radicale/collections
+cd /var/lib/radicale/collections
+
+# initialize git repository
+git init
+
+# set user and e-mail, here minimum example
+git config user.name "$USER"
+git config user.email "$USER@$HOSTNAME"
+
+# define ignore of cache/lock/tmp files
+cat <<'END' >.gitignore
 .Radicale.cache
 .Radicale.lock
 .Radicale.tmp-*
+END
 ```
 
 The configuration option `hook` in the `storage` section must be set to
@@ -598,15 +615,22 @@ git add -A && (git diff --cached --quiet || git commit -m "Changes by \"%(user)s
 The command gets executed after every change to the storage and commits
 the changes into the **git** repository.
 
-For the hook to not cause errors either **git** user details need to be set and match the owner of the collections directory or the repository needs to be marked as safe.
+Log of `git` can be investigated using
 
-When using the systemd unit file from the [Running as a service](#running-as-a-service) section this **cannot** be done via a `.gitconfig` file in the users home directory, as Radicale won't have read permissions!
-
-In `/var/lib/radicale/collections/.git` run:
 ```bash
-git config user.name "radicale"
-git config user.email "radicale@example.com"
+su -l -s /bin/bash radicale
+cd /var/lib/radicale/collections
+git log
 ```
+
+In case of problems, make sure you run radicale with ``--debug`` switch and
+inspect the log output. For more information, please visit
+[section on logging.]({{ site.baseurl }}/logging/) .
+
+Reason for problems can be
+ - SELinux status -> check related audit log
+ - problematic file/directory permissions
+ - command is not fond or cannot be executed or argument problem
 
 ## Documentation
 
@@ -1000,6 +1024,11 @@ Command that is run after changes to storage. Take a look at the
 [Versioning with Git](#versioning-with-git) tutorial for an example.
 
 Default:
+
+Supported placeholders:
+ - `%(user)`: logged-in user
+
+Command will be executed with base directory defined in `filesystem_folder` (see above)
 
 ##### predefined_collections
 
@@ -1528,7 +1557,7 @@ The ``radicale`` package offers the following modules.
 
 `ìtem`
 : Internal representation of address book and calendar entries. Based on
-  [VObject](https://eventable.github.io/vobject/).
+  [VObject](https://github.com/py-vobject/vobject/).
 
 `log`
 : The logger for Radicale based on the default Python logging module.

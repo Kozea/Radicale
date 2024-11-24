@@ -144,8 +144,12 @@
 # Skip broken item instead of triggering an exception
 #skip_broken_item = True
 
-# Command that is run after changes to storage
-# Example: ([ -d .git ] || git init) && git add -A && (git diff --cached --quiet || git commit -m "Changes by \"%(user)s\"")
+# Command that is run after changes to storage, default is emtpy
+#  Supported placeholders:
+#   %(user): logged-in user
+#  Command will be executed with base directory defined in filesystem_folder
+#  For "git" check DOCUMENTATION.md for bootstrap instructions
+# Example: git add -A && (git diff --cached --quiet || git commit -m "Changes by \"%(user)s\"")
 #hook =
 
 # Create predefined user collections

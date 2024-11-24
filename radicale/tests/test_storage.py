@@ -80,9 +80,9 @@ class TestMultiFileSystem(BaseTest):
         self.propfind("/created_by_hook/")
 
     def test_hook_fail(self) -> None:
-        """Verify that a request fails if the hook fails."""
+        """Verify that a request succeeded if the hook still fails (anyhow no rollback implemented)."""
         self.configure({"storage": {"hook": "exit 1"}})
-        self.mkcalendar("/calendar.ics/", check=500)
+        self.mkcalendar("/calendar.ics/", check=201)
 
     def test_item_cache_rebuild(self) -> None:
         """Delete the item cache and verify that it is rebuild."""
