@@ -96,8 +96,6 @@ Radicale
 <span class="documentBranch">
 <span>v3</span>
 <select style="display: none;">
-<option value="v3.1.8-old.html">v3.1.8-old</option>
-<option value="v3.1-maintain.html">v3.1-maintain</option>
 <option value="master.html">master</option>
 <option selected value="v3.html">v3</option>
 <option value="v2.html">v2</option>
@@ -208,7 +206,8 @@ CardDavMATE</a></li>
 <li class="level4"><a href="#manually-creating-collections" id="toc-manually-creating-collections">Manually creating
 collections</a></li>
 </ul></li>
-<li class="level3"><a href="#logging-1" id="toc-logging-1">Logging</a></li>
+<li class="level3"><a href="#logging-overview" id="toc-logging-overview">Logging
+overview</a></li>
 <li class="level3"><a href="#architecture" id="toc-architecture">Architecture</a>
 <ul>
 <li class="level4"><a href="#protocol-overview" id="toc-protocol-overview">Protocol
@@ -308,10 +307,9 @@ for <a href="#basic-configuration">some basic configuration</a>.</p>
 system.</p>
 <section class="level4" id="linux--bsd">
 <h4>Linux / *BSD <a class="headerlink" href="#linux--bsd">&para;</a></h4>
-<p>First, make sure that <strong>python</strong> 3.5 or later
-(<strong>python</strong> &ge; 3.6 is recommended) and <strong>pip</strong>
-are installed. On most distributions it should be enough to install the
-package <code>python3-pip</code>.</p>
+<p>First, make sure that <strong>python</strong> 3.8 or later and
+<strong>pip</strong> are installed. On most distributions it should be
+enough to install the package <code>python3-pip</code>.</p>
 <p>Then open a console and type:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a aria-hidden="true" href="#cb2-1" tabindex="-1"></a><span class="co"># Run the following command as root or</span></span>
 <span id="cb2-2"><a aria-hidden="true" href="#cb2-2" tabindex="-1"></a><span class="co"># add the --user argument to only install for the current user</span></span>
@@ -557,10 +555,14 @@ available at the root of the web server (in the nginx case using
 <code>X-Script-Name</code> header should be removed from the example
 below.</p>
 <p>Example <strong>nginx</strong> configuration:</p>
+<p>See for latest examples: <a href="https://github.com/Kozea/Radicale/tree/master/contrib/nginx/">https://github.com/Kozea/Radicale/tree/master/contrib/nginx/</a></p>
 <pre class="nginx"><code>location /radicale/ { # The trailing / is important!
     proxy_pass        http://localhost:5232/; # The / is important!
     proxy_set_header  X-Script-Name /radicale;
     proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header  X-Forwarded-Host $host;
+    proxy_set_header  X-Forwarded-Port $server_port;
+    proxy_set_header  X-Forwarded-Proto $scheme;
     proxy_set_header  Host $http_host;
     proxy_pass_header Authorization;
 }</code></pre>
@@ -572,6 +574,7 @@ below.</p>
     }
 }</code></pre>
 <p>Example <strong>Apache</strong> configuration:</p>
+<p>See for latest examples: <a href="https://github.com/Kozea/Radicale/tree/master/contrib/apache/">https://github.com/Kozea/Radicale/tree/master/contrib/apache/</a></p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode apache"><code class="sourceCode apache"><span id="cb17-1"><a aria-hidden="true" href="#cb17-1" tabindex="-1"></a><span class="ex">RewriteEngine</span><span class="ch"> </span><span class="kw">On</span></span>
 <span id="cb17-2"><a aria-hidden="true" href="#cb17-2" tabindex="-1"></a>RewriteRule<span class="st"> ^/radicale$ /radicale/ [R,L]</span></span>
 <span id="cb17-3"><a aria-hidden="true" href="#cb17-3" tabindex="-1"></a></span>
@@ -580,11 +583,8 @@ below.</p>
 <span id="cb17-6"><a aria-hidden="true" href="#cb17-6" tabindex="-1"></a>    ProxyPassReverse<span class="st"> http://localhost:5232/</span></span>
 <span id="cb17-7"><a aria-hidden="true" href="#cb17-7" tabindex="-1"></a>    RequestHeader<span class="st">    set X-Script-Name /radicale</span></span>
 <span id="cb17-8"><a aria-hidden="true" href="#cb17-8" tabindex="-1"></a>    RequestHeader<span class="st">    set X-Forwarded-Port "%{SERVER_PORT}s"</span></span>
-<span id="cb17-9"><a aria-hidden="true" href="#cb17-9" tabindex="-1"></a>    RequestHeader<span class="st">    unset X-Forwarded-Proto</span></span>
-<span id="cb17-10"><a aria-hidden="true" href="#cb17-10" tabindex="-1"></a>    <span class="fu">&lt;If</span><span class="at"> "%{HTTPS} =~ /on/"</span><span class="fu">&gt;</span></span>
-<span id="cb17-11"><a aria-hidden="true" href="#cb17-11" tabindex="-1"></a>    RequestHeader<span class="st">    set X-Forwarded-Proto "https"</span></span>
-<span id="cb17-12"><a aria-hidden="true" href="#cb17-12" tabindex="-1"></a>    <span class="fu">&lt;/If&gt;</span></span>
-<span id="cb17-13"><a aria-hidden="true" href="#cb17-13" tabindex="-1"></a><span class="fu">&lt;/Location&gt;</span></span></code></pre></div>
+<span id="cb17-9"><a aria-hidden="true" href="#cb17-9" tabindex="-1"></a>    RequestHeader<span class="st">    set X-Forwarded-Proto expr=%{REQUEST_SCHEME}</span></span>
+<span id="cb17-10"><a aria-hidden="true" href="#cb17-10" tabindex="-1"></a><span class="fu">&lt;/Location&gt;</span></span></code></pre></div>
 <p>Example <strong>Apache .htaccess</strong> configuration:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode apache"><code class="sourceCode apache"><span id="cb18-1"><a aria-hidden="true" href="#cb18-1" tabindex="-1"></a>DirectoryIndex<span class="st"> disabled</span></span>
 <span id="cb18-2"><a aria-hidden="true" href="#cb18-2" tabindex="-1"></a><span class="ex">RewriteEngine</span><span class="ch"> </span><span class="kw">On</span></span>
@@ -739,27 +739,48 @@ HTTP.</p>
 <p>This tutorial describes how to keep track of all changes to calendars
 and address books with <strong>git</strong> (or any other version
 control system).</p>
-<p>The repository must be initialized by running <code>git init</code>
-in the file system folder. Internal files of Radicale can be excluded by
-creating the file <code>.gitignore</code> with the following
-content:</p>
-<pre class="gitignore"><code>.Radicale.cache
-.Radicale.lock
-.Radicale.tmp-*</code></pre>
+<p>The repository must be initialized in the collection base directory
+of the user running <code>radicale</code> daemon.</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb30-1"><a aria-hidden="true" href="#cb30-1" tabindex="-1"></a><span class="co">## assuming "radicale" user is starting "radicale" service</span></span>
+<span id="cb30-2"><a aria-hidden="true" href="#cb30-2" tabindex="-1"></a><span class="co"># change to user "radicale"</span></span>
+<span id="cb30-3"><a aria-hidden="true" href="#cb30-3" tabindex="-1"></a><span class="fu">su</span> <span class="at">-l</span> <span class="at">-s</span> /bin/bash radicale</span>
+<span id="cb30-4"><a aria-hidden="true" href="#cb30-4" tabindex="-1"></a></span>
+<span id="cb30-5"><a aria-hidden="true" href="#cb30-5" tabindex="-1"></a><span class="co"># change to collection base directory defined in [storage] -&gt; filesystem_folder</span></span>
+<span id="cb30-6"><a aria-hidden="true" href="#cb30-6" tabindex="-1"></a><span class="co">#  assumed here /var/lib/radicale/collections</span></span>
+<span id="cb30-7"><a aria-hidden="true" href="#cb30-7" tabindex="-1"></a><span class="bu">cd</span> /var/lib/radicale/collections</span>
+<span id="cb30-8"><a aria-hidden="true" href="#cb30-8" tabindex="-1"></a></span>
+<span id="cb30-9"><a aria-hidden="true" href="#cb30-9" tabindex="-1"></a><span class="co"># initialize git repository</span></span>
+<span id="cb30-10"><a aria-hidden="true" href="#cb30-10" tabindex="-1"></a><span class="fu">git</span> init</span>
+<span id="cb30-11"><a aria-hidden="true" href="#cb30-11" tabindex="-1"></a></span>
+<span id="cb30-12"><a aria-hidden="true" href="#cb30-12" tabindex="-1"></a><span class="co"># set user and e-mail, here minimum example</span></span>
+<span id="cb30-13"><a aria-hidden="true" href="#cb30-13" tabindex="-1"></a><span class="fu">git</span> config user.name <span class="st">"</span><span class="va">$USER</span><span class="st">"</span></span>
+<span id="cb30-14"><a aria-hidden="true" href="#cb30-14" tabindex="-1"></a><span class="fu">git</span> config user.email <span class="st">"</span><span class="va">$USER</span><span class="st">@</span><span class="va">$HOSTNAME</span><span class="st">"</span></span>
+<span id="cb30-15"><a aria-hidden="true" href="#cb30-15" tabindex="-1"></a></span>
+<span id="cb30-16"><a aria-hidden="true" href="#cb30-16" tabindex="-1"></a><span class="co"># define ignore of cache/lock/tmp files</span></span>
+<span id="cb30-17"><a aria-hidden="true" href="#cb30-17" tabindex="-1"></a><span class="fu">cat</span> <span class="op">&lt;&lt;'END'</span> <span class="op">&gt;</span>.gitignore</span>
+<span id="cb30-18"><a aria-hidden="true" href="#cb30-18" tabindex="-1"></a><span class="st">.Radicale.cache</span></span>
+<span id="cb30-19"><a aria-hidden="true" href="#cb30-19" tabindex="-1"></a><span class="st">.Radicale.lock</span></span>
+<span id="cb30-20"><a aria-hidden="true" href="#cb30-20" tabindex="-1"></a><span class="st">.Radicale.tmp-*</span></span>
+<span id="cb30-21"><a aria-hidden="true" href="#cb30-21" tabindex="-1"></a><span class="op">END</span></span></code></pre></div>
 <p>The configuration option <code>hook</code> in the
 <code>storage</code> section must be set to the following command:</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb31-1"><a aria-hidden="true" href="#cb31-1" tabindex="-1"></a><span class="fu">git</span> add <span class="at">-A</span> <span class="kw">&amp;&amp;</span> <span class="kw">(</span><span class="fu">git</span> diff <span class="at">--cached</span> <span class="at">--quiet</span> <span class="kw">||</span> <span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Changes by </span><span class="dt">\"</span><span class="st">%(user)s</span><span class="dt">\"</span><span class="st">"</span><span class="kw">)</span></span></code></pre></div>
 <p>The command gets executed after every change to the storage and
 commits the changes into the <strong>git</strong> repository.</p>
-<p>For the hook to not cause errors either <strong>git</strong> user
-details need to be set and match the owner of the collections directory
-or the repository needs to be marked as safe.</p>
-<p>When using the systemd unit file from the <a href="#running-as-a-service">Running as a service</a> section this
-<strong>cannot</strong> be done via a <code>.gitconfig</code> file in
-the users home directory, as Radicale won't have read permissions!</p>
-<p>In <code>/var/lib/radicale/collections/.git</code> run:</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a aria-hidden="true" href="#cb32-1" tabindex="-1"></a><span class="fu">git</span> config user.name <span class="st">"radicale"</span></span>
-<span id="cb32-2"><a aria-hidden="true" href="#cb32-2" tabindex="-1"></a><span class="fu">git</span> config user.email <span class="st">"radicale@example.com"</span></span></code></pre></div>
+<p>Log of <code>git</code> can be investigated using</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a aria-hidden="true" href="#cb32-1" tabindex="-1"></a><span class="fu">su</span> <span class="at">-l</span> <span class="at">-s</span> /bin/bash radicale</span>
+<span id="cb32-2"><a aria-hidden="true" href="#cb32-2" tabindex="-1"></a><span class="bu">cd</span> /var/lib/radicale/collections</span>
+<span id="cb32-3"><a aria-hidden="true" href="#cb32-3" tabindex="-1"></a><span class="fu">git</span> log</span></code></pre></div>
+<p>In case of problems, make sure you run radicale with
+<code>--debug</code> switch and inspect the log output. For more
+information, please visit <a href="#logging-overview">section on
+logging</a>.</p>
+<p>Reason for problems can be</p>
+<ul>
+<li>SELinux status -&gt; check related audit log</li>
+<li>problematic file/directory permissions</li>
+<li>command is not fond or cannot be executed or argument problem</li>
+</ul>
 </section>
 </section>
 <section class="level2" id="documentation-1">
@@ -849,6 +870,20 @@ also have to write an authentication plugin that extracts the username
 from the certificate.</p>
 <p>Default:</p>
 </section>
+<section class="level5" id="protocol">
+<h5>protocol <a class="headerlink" href="#protocol">&para;</a></h5>
+<p>Accepted SSL protocol (maybe not all supported by underlying OpenSSL
+version) Example for secure configuration: ALL -SSLv3 -TLSv1 -TLSv1.1
+Format: Apache SSLProtocol list (from "mod_ssl")</p>
+<p>Default: (system default)</p>
+</section>
+<section class="level5" id="ciphersuite">
+<h5>ciphersuite <a class="headerlink" href="#ciphersuite">&para;</a></h5>
+<p>Accepted SSL ciphersuite (maybe not all supported by underlying
+OpenSSL version) Example for secure configuration: DHE:ECDHE:-NULL:-SHA
+Format: OpenSSL cipher list (see also "man openssl-ciphers")</p>
+<p>Default: (system-default)</p>
+</section>
 </section>
 <section class="level4" id="encoding">
 <h4>encoding <a class="headerlink" href="#encoding">&para;</a></h4>
@@ -880,6 +915,8 @@ server.</p>
 <code>X-Remote-User</code> HTTP header and disables HTTP authentication.
 This can be used to provide the username from a reverse proxy.</p>
 <p><code>ldap</code> : Use a LDAP or AD server to authenticate
+users.</p>
+<p><code>dovecot</code> : Use a local Dovecot server to authenticate
 users.</p>
 <p>Default: <code>none</code></p>
 </section>
@@ -940,8 +977,15 @@ parameter must be provided if auth type is ldap.</p>
 </section>
 <section class="level5" id="ldap_secret">
 <h5>ldap_secret <a class="headerlink" href="#ldap_secret">&para;</a></h5>
-<p>The password of the ldap_reader_dn. This parameter must be provided
-if auth type is ldap.</p>
+<p>The password of the ldap_reader_dn. Either this parameter or
+<code>ldap_secret_file</code> must be provided if auth type is ldap.</p>
+<p>Default:</p>
+</section>
+<section class="level5" id="ldap_secret_file">
+<h5>ldap_secret_file <a class="headerlink" href="#ldap_secret_file">&para;</a></h5>
+<p>Path of the file containing the password of the ldap_reader_dn.
+Either this parameter or <code>ldap_secret</code> must be provided if
+auth type is ldap.</p>
 <p>Default:</p>
 </section>
 <section class="level5" id="ldap_filter">
@@ -973,13 +1017,20 @@ you can find a script to create group calneder folders <a href="https://github.c
 </section>
 <section class="level5" id="ldap_ssl_verify_mode">
 <h5>ldap_ssl_verify_mode <a class="headerlink" href="#ldap_ssl_verify_mode">&para;</a></h5>
-<p>The certifikat verification mode. NONE, OPTIONAL or REQUIRED</p>
+<p>The certificate verification mode. NONE, OPTIONAL or REQUIRED</p>
 <p>Default: REQUIRED</p>
 </section>
 <section class="level5" id="ldap_ssl_ca_file">
 <h5>ldap_ssl_ca_file <a class="headerlink" href="#ldap_ssl_ca_file">&para;</a></h5>
 <p>The path to the CA file in pem format which is used to certificate
 the server certificate</p>
+<p>Default:</p>
+</section>
+<section class="level5" id="dovecot_socket">
+<h5>dovecot_socket <a class="headerlink" href="#dovecot_socket">&para;</a></h5>
+<p>The path to the Dovecot client authentication socket (eg.
+/run/dovecot/auth-client on Fedora). Radicale must have read / write
+access to the socket.</p>
 <p>Default:</p>
 </section>
 <section class="level5" id="lc_username">
@@ -1070,6 +1121,12 @@ only be used with a single process.</p>
 <p>Command that is run after changes to storage. Take a look at the <a href="#versioning-with-git">Versioning with Git</a> tutorial for an
 example.</p>
 <p>Default:</p>
+<p>Supported placeholders:</p>
+<ul>
+<li><code>%(user)</code>: logged-in user</li>
+</ul>
+<p>Command will be executed with base directory defined in
+<code>filesystem_folder</code> (see above)</p>
 </section>
 <section class="level5" id="predefined_collections">
 <h5>predefined_collections <a class="headerlink" href="#predefined_collections">&para;</a></h5>
@@ -1217,6 +1274,10 @@ manage address books and calendars.</p>
 (e.g. <code>http://localhost:5232</code>) and your username. In others,
 you have to enter the URL of the collection directly (e.g.
 <code>http://localhost:5232/user/calendar</code>).</p>
+<p>Some clients (notably macOS's Calendar.app) may silently refuse to
+include account credentials over unsecured HTTP, leading to unexpected
+authentication failures. In these cases, you want to make sure the
+Radicale server is <a href="#ssl">accessible over HTTPS</a>.</p>
 <section class="level4" id="davx⁵">
 <h4>DAVx⁵ <a class="headerlink" href="#davx⁵">&para;</a></h4>
 <p>Enter the URL of the Radicale server (e.g.
@@ -1473,12 +1534,11 @@ show calendars and address books that are direct children of the path
 <p>Delete collections by deleting the corresponding folders.</p>
 </section>
 </section>
-<section class="level3" id="logging-1">
-<h3>Logging <a class="headerlink" href="#logging-1">&para;</a></h3>
+<section class="level3" id="logging-overview">
+<h3>Logging overview <a class="headerlink" href="#logging-overview">&para;</a></h3>
 <p>Radicale logs to <code>stderr</code>. The verbosity of the log output
 can be controlled with <code>--debug</code> command line argument or the
-<code>level</code> configuration option in the <code>logging</code>
-section.</p>
+<code>level</code> configuration option in the <a href="#logging">logging</a> section.</p>
 </section>
 <section class="level3" id="architecture">
 <h3>Architecture <a class="headerlink" href="#architecture">&para;</a></h3>
@@ -1562,7 +1622,7 @@ retrieving credentials from the environment.</p>
 <p><code>config</code> : Contains the code for managing configuration
 and loading settings from files.</p>
 <p><code>&igrave;tem</code> : Internal representation of address book and
-calendar entries. Based on <a href="https://eventable.github.io/vobject/">VObject</a>.</p>
+calendar entries. Based on <a href="https://github.com/py-vobject/vobject/">VObject</a>.</p>
 <p><code>log</code> : The logger for Radicale based on the default
 Python logging module.</p>
 <p><code>rights</code> : This module is used by Radicale to manage
