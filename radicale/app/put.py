@@ -179,11 +179,11 @@ class ApplicationPartPut(ApplicationBase):
                     return httputils.NOT_ALLOWED
                 if not self._permit_overwrite_collection:
                     if ("O") not in access.permissions:
-                        logger.info("overwrite of collection is prevented by config/option [rights] permit_overwrite_collection and not explicit allowed by permssion 'O': %s", path)
+                        logger.info("overwrite of collection is prevented by config/option [rights] permit_overwrite_collection and not explicit allowed by permssion 'O': %r", path)
                         return httputils.NOT_ALLOWED
                 else:
                     if ("o") in access.permissions:
-                        logger.info("overwrite of collection is allowed by config/option [rights] permit_overwrite_collection but explicit forbidden by permission 'o': %s", path)
+                        logger.info("overwrite of collection is allowed by config/option [rights] permit_overwrite_collection but explicit forbidden by permission 'o': %r", path)
                         return httputils.NOT_ALLOWED
             elif "w" not in access.parent_permissions:
                 return httputils.NOT_ALLOWED
