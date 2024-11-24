@@ -176,6 +176,8 @@ class ApplicationPartPut(ApplicationBase):
 
             if write_whole_collection:
                 if ("w" if tag else "W") not in access.permissions:
+                    if not parent_item.tag:
+                        logger.warning("Not a collection (check .Radicale.props): %r", parent_item.path)
                     return httputils.NOT_ALLOWED
                 if not self._permit_overwrite_collection:
                     if ("O") not in access.permissions:
