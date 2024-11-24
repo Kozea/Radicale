@@ -208,7 +208,8 @@ CardDavMATE</a></li>
 <li class="level4"><a href="#manually-creating-collections" id="toc-manually-creating-collections">Manually creating
 collections</a></li>
 </ul></li>
-<li class="level3"><a href="#logging-1" id="toc-logging-1">Logging</a></li>
+<li class="level3"><a href="#logging-overview" id="toc-logging-overview">Logging
+overview</a></li>
 <li class="level3"><a href="#architecture" id="toc-architecture">Architecture</a>
 <ul>
 <li class="level4"><a href="#protocol-overview" id="toc-protocol-overview">Protocol
@@ -774,8 +775,8 @@ commits the changes into the <strong>git</strong> repository.</p>
 <span id="cb32-3"><a aria-hidden="true" href="#cb32-3" tabindex="-1"></a><span class="fu">git</span> log</span></code></pre></div>
 <p>In case of problems, make sure you run radicale with
 <code>--debug</code> switch and inspect the log output. For more
-information, please visit [section on logging.]({{ site.baseurl
-}}/logging/) .</p>
+information, please visit <a href="#logging-overview">section on
+logging</a>.</p>
 <p>Reason for problems can be</p>
 <ul>
 <li>SELinux status -&gt; check related audit log</li>
@@ -1535,12 +1536,11 @@ show calendars and address books that are direct children of the path
 <p>Delete collections by deleting the corresponding folders.</p>
 </section>
 </section>
-<section class="level3" id="logging-1">
-<h3>Logging <a class="headerlink" href="#logging-1">&para;</a></h3>
+<section class="level3" id="logging-overview">
+<h3>Logging overview <a class="headerlink" href="#logging-overview">&para;</a></h3>
 <p>Radicale logs to <code>stderr</code>. The verbosity of the log output
 can be controlled with <code>--debug</code> command line argument or the
-<code>level</code> configuration option in the <code>logging</code>
-section.</p>
+<code>level</code> configuration option in the <a href="#logging">logging</a> section.</p>
 </section>
 <section class="level3" id="architecture">
 <h3>Architecture <a class="headerlink" href="#architecture">&para;</a></h3>
