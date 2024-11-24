@@ -1557,7 +1557,7 @@ The ``radicale`` package offers the following modules.
 
 `ìtem`
 : Internal representation of address book and calendar entries. Based on
-  [VObject](https://eventable.github.io/vobject/).
+  [VObject](https://github.com/py-vobject/vobject/).
 
 `log`
 : The logger for Radicale based on the default Python logging module.
