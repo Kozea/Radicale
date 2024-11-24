@@ -586,7 +586,8 @@ of the user running `radicale` daemon.
 # change to user "radicale"
 su -l -s /bin/bash radicale
 
-# change to collection base directory, assumed /var/lib/radicale/collections
+# change to collection base directory defined in [storage] -> filesystem_folder
+#  assumed here /var/lib/radicale/collections
 cd /var/lib/radicale/collections
 
 # initialize git repository
@@ -622,7 +623,14 @@ cd /var/lib/radicale/collections
 git log
 ```
 
-In case of error messages in log, check SELinux status and related audit log and file/directory permissions.
+In case of problems, make sure you run radicale with ``--debug`` switch and
+inspect the log output. For more information, please visit
+[section on logging.]({{ site.baseurl }}/logging/) .
+
+Reason for problems can be
+ - SELinux status -> check related audit log
+ - problematic file/directory permissions
+ - command is not fond or cannot be executed or argument problem
 
 ## Documentation
 
