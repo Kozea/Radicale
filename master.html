@@ -740,27 +740,48 @@ HTTP.</p>
 <p>This tutorial describes how to keep track of all changes to calendars
 and address books with <strong>git</strong> (or any other version
 control system).</p>
-<p>The repository must be initialized by running <code>git init</code>
-in the file system folder. Internal files of Radicale can be excluded by
-creating the file <code>.gitignore</code> with the following
-content:</p>
-<pre class="gitignore"><code>.Radicale.cache
-.Radicale.lock
-.Radicale.tmp-*</code></pre>
+<p>The repository must be initialized in the collection base directory
+of the user running <code>radicale</code> daemon.</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb30-1"><a aria-hidden="true" href="#cb30-1" tabindex="-1"></a><span class="co">## assuming "radicale" user is starting "radicale" service</span></span>
+<span id="cb30-2"><a aria-hidden="true" href="#cb30-2" tabindex="-1"></a><span class="co"># change to user "radicale"</span></span>
+<span id="cb30-3"><a aria-hidden="true" href="#cb30-3" tabindex="-1"></a><span class="fu">su</span> <span class="at">-l</span> <span class="at">-s</span> /bin/bash radicale</span>
+<span id="cb30-4"><a aria-hidden="true" href="#cb30-4" tabindex="-1"></a></span>
+<span id="cb30-5"><a aria-hidden="true" href="#cb30-5" tabindex="-1"></a><span class="co"># change to collection base directory defined in [storage] -&gt; filesystem_folder</span></span>
+<span id="cb30-6"><a aria-hidden="true" href="#cb30-6" tabindex="-1"></a><span class="co">#  assumed here /var/lib/radicale/collections</span></span>
+<span id="cb30-7"><a aria-hidden="true" href="#cb30-7" tabindex="-1"></a><span class="bu">cd</span> /var/lib/radicale/collections</span>
+<span id="cb30-8"><a aria-hidden="true" href="#cb30-8" tabindex="-1"></a></span>
+<span id="cb30-9"><a aria-hidden="true" href="#cb30-9" tabindex="-1"></a><span class="co"># initialize git repository</span></span>
+<span id="cb30-10"><a aria-hidden="true" href="#cb30-10" tabindex="-1"></a><span class="fu">git</span> init</span>
+<span id="cb30-11"><a aria-hidden="true" href="#cb30-11" tabindex="-1"></a></span>
+<span id="cb30-12"><a aria-hidden="true" href="#cb30-12" tabindex="-1"></a><span class="co"># set user and e-mail, here minimum example</span></span>
+<span id="cb30-13"><a aria-hidden="true" href="#cb30-13" tabindex="-1"></a><span class="fu">git</span> config user.name <span class="st">"</span><span class="va">$USER</span><span class="st">"</span></span>
+<span id="cb30-14"><a aria-hidden="true" href="#cb30-14" tabindex="-1"></a><span class="fu">git</span> config user.email <span class="st">"</span><span class="va">$USER</span><span class="st">@</span><span class="va">$HOSTNAME</span><span class="st">"</span></span>
+<span id="cb30-15"><a aria-hidden="true" href="#cb30-15" tabindex="-1"></a></span>
+<span id="cb30-16"><a aria-hidden="true" href="#cb30-16" tabindex="-1"></a><span class="co"># define ignore of cache/lock/tmp files</span></span>
+<span id="cb30-17"><a aria-hidden="true" href="#cb30-17" tabindex="-1"></a><span class="fu">cat</span> <span class="op">&lt;&lt;'END'</span> <span class="op">&gt;</span>.gitignore</span>
+<span id="cb30-18"><a aria-hidden="true" href="#cb30-18" tabindex="-1"></a><span class="st">.Radicale.cache</span></span>
+<span id="cb30-19"><a aria-hidden="true" href="#cb30-19" tabindex="-1"></a><span class="st">.Radicale.lock</span></span>
+<span id="cb30-20"><a aria-hidden="true" href="#cb30-20" tabindex="-1"></a><span class="st">.Radicale.tmp-*</span></span>
+<span id="cb30-21"><a aria-hidden="true" href="#cb30-21" tabindex="-1"></a><span class="op">END</span></span></code></pre></div>
 <p>The configuration option <code>hook</code> in the
 <code>storage</code> section must be set to the following command:</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb31-1"><a aria-hidden="true" href="#cb31-1" tabindex="-1"></a><span class="fu">git</span> add <span class="at">-A</span> <span class="kw">&amp;&amp;</span> <span class="kw">(</span><span class="fu">git</span> diff <span class="at">--cached</span> <span class="at">--quiet</span> <span class="kw">||</span> <span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Changes by </span><span class="dt">\"</span><span class="st">%(user)s</span><span class="dt">\"</span><span class="st">"</span><span class="kw">)</span></span></code></pre></div>
 <p>The command gets executed after every change to the storage and
 commits the changes into the <strong>git</strong> repository.</p>
-<p>For the hook to not cause errors either <strong>git</strong> user
-details need to be set and match the owner of the collections directory
-or the repository needs to be marked as safe.</p>
-<p>When using the systemd unit file from the <a href="#running-as-a-service">Running as a service</a> section this
-<strong>cannot</strong> be done via a <code>.gitconfig</code> file in
-the users home directory, as Radicale won't have read permissions!</p>
-<p>In <code>/var/lib/radicale/collections/.git</code> run:</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a aria-hidden="true" href="#cb32-1" tabindex="-1"></a><span class="fu">git</span> config user.name <span class="st">"radicale"</span></span>
-<span id="cb32-2"><a aria-hidden="true" href="#cb32-2" tabindex="-1"></a><span class="fu">git</span> config user.email <span class="st">"radicale@example.com"</span></span></code></pre></div>
+<p>Log of <code>git</code> can be investigated using</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a aria-hidden="true" href="#cb32-1" tabindex="-1"></a><span class="fu">su</span> <span class="at">-l</span> <span class="at">-s</span> /bin/bash radicale</span>
+<span id="cb32-2"><a aria-hidden="true" href="#cb32-2" tabindex="-1"></a><span class="bu">cd</span> /var/lib/radicale/collections</span>
+<span id="cb32-3"><a aria-hidden="true" href="#cb32-3" tabindex="-1"></a><span class="fu">git</span> log</span></code></pre></div>
+<p>In case of problems, make sure you run radicale with
+<code>--debug</code> switch and inspect the log output. For more
+information, please visit [section on logging.]({{ site.baseurl
+}}/logging/) .</p>
+<p>Reason for problems can be</p>
+<ul>
+<li>SELinux status -&gt; check related audit log</li>
+<li>problematic file/directory permissions</li>
+<li>command is not fond or cannot be executed or argument problem</li>
+</ul>
 </section>
 </section>
 <section class="level2" id="documentation-1">
@@ -1101,6 +1122,12 @@ only be used with a single process.</p>
 <p>Command that is run after changes to storage. Take a look at the <a href="#versioning-with-git">Versioning with Git</a> tutorial for an
 example.</p>
 <p>Default:</p>
+<p>Supported placeholders:</p>
+<ul>
+<li><code>%(user)</code>: logged-in user</li>
+</ul>
+<p>Command will be executed with base directory defined in
+<code>filesystem_folder</code> (see above)</p>
 </section>
 <section class="level5" id="predefined_collections">
 <h5>predefined_collections <a class="headerlink" href="#predefined_collections">&para;</a></h5>
@@ -1597,7 +1624,7 @@ retrieving credentials from the environment.</p>
 <p><code>config</code> : Contains the code for managing configuration
 and loading settings from files.</p>
 <p><code>&igrave;tem</code> : Internal representation of address book and
-calendar entries. Based on <a href="https://eventable.github.io/vobject/">VObject</a>.</p>
+calendar entries. Based on <a href="https://github.com/py-vobject/vobject/">VObject</a>.</p>
 <p><code>log</code> : The logger for Radicale based on the default
 Python logging module.</p>
 <p><code>rights</code> : This module is used by Radicale to manage
