@@ -1017,6 +1017,11 @@ Command that is run after changes to storage. Take a look at the
 
 Default:
 
+Supported placeholders:
+ - `%(user)`: logged-in user
+
+Command will be executed with base directory defined in `filesystem_folder` (see above)
+
 ##### predefined_collections
 
 Create predefined user collections
