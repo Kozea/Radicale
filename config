@@ -116,7 +116,7 @@
 [rights]
 
 # Rights backend
-# Value: none | authenticated | owner_only | owner_write | from_file
+# Value: authenticated | owner_only | owner_write | from_file
 #type = owner_only
 
 # File for rights management from_file
