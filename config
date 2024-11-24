@@ -144,7 +144,7 @@
 # Skip broken item instead of triggering an exception
 #skip_broken_item = True
 
-# Command that is run after changes to storage
+# Command that is run after changes to storage, default is emtpy
 #  Supported placeholders:
 #   %(user): logged-in user
 #  Command will be executed with base directory defined in filesystem_folder
