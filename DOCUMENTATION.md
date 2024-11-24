@@ -625,7 +625,7 @@ git log
 
 In case of problems, make sure you run radicale with ``--debug`` switch and
 inspect the log output. For more information, please visit
-[section on logging.]({{ site.baseurl }}/logging/) .
+[section on logging](#logging-overview).
 
 Reason for problems can be
  - SELinux status -> check related audit log
@@ -1485,11 +1485,11 @@ address books that are direct children of the path `/USERNAME/`.
 
 Delete collections by deleting the corresponding folders.
 
-### Logging
+### Logging overview
 
 Radicale logs to `stderr`. The verbosity of the log output can be controlled
 with `--debug` command line argument or the `level` configuration option in
-the `logging` section.
+the [logging](#logging) section.
 
 ### Architecture
 
