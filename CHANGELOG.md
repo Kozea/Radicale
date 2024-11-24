@@ -6,6 +6,7 @@
 * Fix: expand does not support overridden recurring events
 * Fix: expand does not honor start and end times
 * Add: option [server] protocol + ciphersuite for optional restrictions on SSL socket
+* Enhancement: [storage] hook documentation, logging, error behavior (no longer throwing an exception)
 
 ## 3.3.0
 
