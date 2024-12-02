@@ -537,7 +537,6 @@ location /radicale/ {
     # Place the files somewhere nginx is allowed to access (e.g. /etc/nginx/...).
     proxy_ssl_certificate         /path/to/client_cert.pem;
     proxy_ssl_certificate_key     /path/to/client_key.pem;
-    proxy_ssl_trusted_certificate /path/to/server_cert.pem;
 }
 ```
 
