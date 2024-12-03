@@ -70,6 +70,7 @@ class StorageBase(storage.BaseStorage):
 
     _filesystem_folder: str
     _filesystem_fsync: bool
+    _use_cache_subfolder_for_item: bool
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
@@ -77,9 +78,16 @@ class StorageBase(storage.BaseStorage):
             "storage", "filesystem_folder")
         self._filesystem_fsync = configuration.get(
             "storage", "_filesystem_fsync")
+        self._use_cache_subfolder_for_item = configuration.get(
+            "storage", "use_cache_subfolder_for_item")
 
     def _get_collection_root_folder(self) -> str:
         return os.path.join(self._filesystem_folder, "collection-root")
+
+    def _get_collection_cache_folder(self, path, folder, subfolder) -> str:
+        if self._use_cache_subfolder_for_item == True and subfolder == "item":
+            path = path.replace(os.path.join(self._filesystem_folder, "collection-root"), os.path.join(self._filesystem_folder, "collection-cache"))
+        return os.path.join(path, folder, subfolder)
 
     def _fsync(self, f: IO[AnyStr]) -> None:
         if self._filesystem_fsync:

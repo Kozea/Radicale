@@ -28,6 +28,7 @@ import time
 from typing import ClassVar, Iterator, Optional, Type
 
 from radicale import config
+from radicale.log import logger
 from radicale.storage.multifilesystem.base import CollectionBase, StorageBase
 from radicale.storage.multifilesystem.cache import CollectionPartCache
 from radicale.storage.multifilesystem.create_collection import \
@@ -89,3 +90,5 @@ class Storage(
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
         self._makedirs_synced(self._filesystem_folder)
+        logger.info("storage location: %r", self._filesystem_folder);
+        logger.info("storage cache subfolder usage for item: %s", self._use_cache_subfolder_for_item);

@@ -81,7 +81,7 @@ class CollectionPartCache(CollectionBase):
         if not cache_hash:
             cache_hash = self._item_cache_hash(
                 item.serialize().encode(self._encoding))
-        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
+        cache_folder = self._storage._get_collection_cache_folder(self._filesystem_path, ".Radicale.cache",
                                     "item")
         content = self._item_cache_content(item)
         self._storage._makedirs_synced(cache_folder)
@@ -95,7 +95,7 @@ class CollectionPartCache(CollectionBase):
 
     def _load_item_cache(self, href: str, cache_hash: str
                          ) -> Optional[CacheContent]:
-        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
+        cache_folder = self._storage._get_collection_cache_folder(self._filesystem_path, ".Radicale.cache",
                                     "item")
         try:
             with open(os.path.join(cache_folder, href), "rb") as f:
@@ -110,7 +110,7 @@ class CollectionPartCache(CollectionBase):
         return None
 
     def _clean_item_cache(self) -> None:
-        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache",
+        cache_folder = self._storage._get_collection_cache_folder(self._filesystem_path, ".Radicale.cache",
                                     "item")
         self._clean_cache(cache_folder, (
             e.name for e in os.scandir(cache_folder) if not

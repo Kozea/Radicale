@@ -75,7 +75,7 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
             yield radicale_item.find_available_uid(
                 lambda href: not is_safe_free_href(href), suffix)
 
-        cache_folder = os.path.join(self._filesystem_path,
+        cache_folder = self._storage._get_collection_cache_folder(self._filesystem_path,
                                     ".Radicale.cache", "item")
         self._storage._makedirs_synced(cache_folder)
         for item in items:
