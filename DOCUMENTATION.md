@@ -1005,6 +1005,12 @@ Folder for storing local collections, created if not present.
 
 Default: `/var/lib/radicale/collections`
 
+##### use_cache_subfolder_for_item
+
+Use subfolder `collections-cache' for cache file structure of item instead of inside collection folders, created if not present
+
+Default: `False`
+
 ##### max_sync_token_age
 
 Delete sync-token that are older than the specified time. (seconds)

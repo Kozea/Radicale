@@ -1,7 +1,8 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,8 +76,7 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
             yield radicale_item.find_available_uid(
                 lambda href: not is_safe_free_href(href), suffix)
 
-        cache_folder = os.path.join(self._filesystem_path,
-                                    ".Radicale.cache", "item")
+        cache_folder = self._storage._get_collection_cache_folder(self._filesystem_path, ".Radicale.cache", "item")
         self._storage._makedirs_synced(cache_folder)
         for item in items:
             uid = item.uid

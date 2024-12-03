@@ -1,6 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,6 +93,22 @@ class TestMultiFileSystem(BaseTest):
         self.put(path, event)
         _, answer1 = self.get(path)
         cache_folder = os.path.join(self.colpath, "collection-root",
+                                    "calendar.ics", ".Radicale.cache", "item")
+        assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
+        shutil.rmtree(cache_folder)
+        _, answer2 = self.get(path)
+        assert answer1 == answer2
+        assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
+
+    def test_item_cache_rebuild_subfolder(self) -> None:
+        """Delete the item cache and verify that it is rebuild."""
+        self.configure({"storage": {"use_cache_subfolder_for_item": "True"}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event)
+        _, answer1 = self.get(path)
+        cache_folder = os.path.join(self.colpath, "collection-cache",
                                     "calendar.ics", ".Radicale.cache", "item")
         assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
         shutil.rmtree(cache_folder)

@@ -1,6 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2017-2021 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -99,12 +100,9 @@ class Rights(rights.BaseRights):
                              user, sane_path, user_pattern,
                              collection_pattern, section, permission)
                 return permission
-            logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
-                         user, sane_path, user_pattern, collection_pattern,
-                         section)
             if self._log_rights_rule_doesnt_match_on_debug:
                 logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
                              user, sane_path, user_pattern, collection_pattern,
                              section)
-        logger.info("Rights: %r:%r doesn't match any section", user, sane_path)
+        logger.debug("Rights: %r:%r doesn't match any section", user, sane_path)
         return ""

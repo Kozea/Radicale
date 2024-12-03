@@ -1,7 +1,8 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2017-2021 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +29,7 @@ import time
 from typing import ClassVar, Iterator, Optional, Type
 
 from radicale import config
+from radicale.log import logger
 from radicale.storage.multifilesystem.base import CollectionBase, StorageBase
 from radicale.storage.multifilesystem.cache import CollectionPartCache
 from radicale.storage.multifilesystem.create_collection import \
@@ -89,3 +91,5 @@ class Storage(
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
         self._makedirs_synced(self._filesystem_folder)
+        logger.info("storage location: %r", self._filesystem_folder)
+        logger.info("storage cache subfolder usage for item: %s", self._use_cache_subfolder_for_item)
