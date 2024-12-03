@@ -85,7 +85,7 @@ class StorageBase(storage.BaseStorage):
         return os.path.join(self._filesystem_folder, "collection-root")
 
     def _get_collection_cache_folder(self, path, folder, subfolder) -> str:
-        if self._use_cache_subfolder_for_item == True and subfolder == "item":
+        if (self._use_cache_subfolder_for_item is True) and (subfolder == "item"):
             path = path.replace(os.path.join(self._filesystem_folder, "collection-root"), os.path.join(self._filesystem_folder, "collection-cache"))
         return os.path.join(path, folder, subfolder)
 
