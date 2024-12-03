@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.3.2.dev
+* Fix: debug logging in rights/from_file
+
 ## 3.3.1
 
 * Add: option [auth] type=dovecot

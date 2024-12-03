@@ -99,12 +99,9 @@ class Rights(rights.BaseRights):
                              user, sane_path, user_pattern,
                              collection_pattern, section, permission)
                 return permission
-            logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
-                         user, sane_path, user_pattern, collection_pattern,
-                         section)
             if self._log_rights_rule_doesnt_match_on_debug:
                 logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
                              user, sane_path, user_pattern, collection_pattern,
                              section)
-        logger.info("Rights: %r:%r doesn't match any section", user, sane_path)
+        logger.debug("Rights: %r:%r doesn't match any section", user, sane_path)
         return ""
