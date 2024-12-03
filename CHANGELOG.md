@@ -2,6 +2,7 @@
 
 ## 3.3.2.dev
 * Fix: debug logging in rights/from_file
+* Add: option [storage] use_cache_subfolder_for_item for storing item cache outside collection-root
 
 ## 3.3.1
 
