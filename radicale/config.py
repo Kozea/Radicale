@@ -279,6 +279,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "/var/lib/radicale/collections",
             "help": "path where collections are stored",
             "type": filepath}),
+        ("use_cache_subfolder_for_item", {
+            "value": "False",
+            "help": "use subfolder `collections-cache' for item cache file structure instead of inside collection folder",
+            "type": bool}),
         ("max_sync_token_age", {
             "value": "2592000",  # 30 days
             "help": "delete sync token that are older",
