@@ -138,6 +138,9 @@
 # Folder for storing local collections, created if not present
 #filesystem_folder = /var/lib/radicale/collections
 
+# Use subfolder `collections-cache' for item cache file structure instead of inside collection folder
+#use_cache_subfolder_for_item = False
+
 # Delete sync token that are older (seconds)
 #max_sync_token_age = 2592000
 
