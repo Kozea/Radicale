@@ -2,7 +2,8 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2015 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2021 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -273,8 +274,11 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
             if hasattr(comp, "recurrence_id") and comp.recurrence_id.value:
                 recurrences.append(comp.recurrence_id.value)
                 if comp.rruleset:
-                    # Prevent possible infinite loop
-                    raise ValueError("Overwritten recurrence with RRULESET")
+                    if comp.rruleset._len is None:
+                        logger.warning("Ignore empty RRULESET in item at RECURRENCE-ID with value '%s' and UID '%s'", comp.recurrence_id.value, comp.uid.value)
+                    else:
+                        # Prevent possible infinite loop
+                        raise ValueError("Overwritten recurrence with RRULESET")
                 rec_main = comp
                 yield comp, True, []
             else:

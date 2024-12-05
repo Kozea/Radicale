@@ -1,6 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -164,6 +165,12 @@ permissions: RrWw""")
         """Test event with DTSTART as DATE-TIME and EXDATE as DATE."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_mixed_datetime_and_date.ics")
+        self.put("/calendar.ics/event.ics", event)
+
+    def test_add_event_with_exdate_without_rrule(self) -> None:
+        """Test event with EXDATE but not having RRULE."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_exdate_without_rrule.ics")
         self.put("/calendar.ics/event.ics", event)
 
     def test_add_todo(self) -> None:
