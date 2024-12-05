@@ -274,8 +274,11 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
             if hasattr(comp, "recurrence_id") and comp.recurrence_id.value:
                 recurrences.append(comp.recurrence_id.value)
                 if comp.rruleset:
-                    # Prevent possible infinite loop
-                    raise ValueError("Overwritten recurrence with RRULESET")
+                    if comp.rruleset._len == None:
+                        logger.warning("Ignore empty RRULESET in item at RECURRENCE-ID with value '%s' and UID '%s'", comp.recurrence_id.value, comp.uid.value)
+                    else:
+                        # Prevent possible infinite loop
+                        raise ValueError("Overwritten recurrence with RRULESET")
                 rec_main = comp
                 yield comp, True, []
             else:
