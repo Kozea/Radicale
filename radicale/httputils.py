@@ -42,7 +42,10 @@ else:
     import importlib.abc
     from importlib import resources
 
-    _TRAVERSABLE_LIKE_TYPE = Union[importlib.abc.Traversable, pathlib.Path]
+    if sys.version_info < (3, 13):
+        _TRAVERSABLE_LIKE_TYPE = Union[importlib.abc.Traversable, pathlib.Path]
+    else:
+        _TRAVERSABLE_LIKE_TYPE = Union[importlib.resources.abc.Traversable, pathlib.Path]
 
 NOT_ALLOWED: types.WSGIResponse = (
     client.FORBIDDEN, (("Content-Type", "text/plain"),),
