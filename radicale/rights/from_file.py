@@ -84,7 +84,8 @@ class Rights(rights.BaseRights):
                     collection_pattern.format(
                         *(re.escape(s) for s in user_match.groups()),
                         user=escaped_user), sane_path)
-                group_collection_match = re.fullmatch(collection_pattern.format(user=escaped_user), sane_path)
+                group_collection_match = group_match and re.fullmatch(
+                    collection_pattern.format(user=escaped_user), sane_path)
             except Exception as e:
                 raise RuntimeError("Error in section %r of rights file %r: "
                                    "%s" % (section, self._filename, e)) from e

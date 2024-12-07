@@ -30,10 +30,10 @@ class TestBaseRightsRequests(BaseTest):
     def _test_rights(self, rights_type: str, user: str, path: str, mode: str,
                      expected_status: int, with_auth: bool = True) -> None:
         assert mode in ("r", "w")
-        assert user in ("", "tmp")
+        assert user in ("", "tmp", "user@domain.test")
         htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
         with open(htpasswd_file_path, "w") as f:
-            f.write("tmp:bepo\nother:bepo")
+            f.write("tmp:bepo\nother:bepo\nuser@domain.test:bepo")
         self.configure({
             "rights": {"type": rights_type},
             "auth": {"type": "htpasswd" if with_auth else "none",
@@ -42,8 +42,9 @@ class TestBaseRightsRequests(BaseTest):
         for u in ("tmp", "other"):
             # Indirect creation of principal collection
             self.propfind("/%s/" % u, login="%s:bepo" % u)
+        os.makedirs(os.path.join(self.colpath, "collection-root", "domain.test"), exist_ok=True)
         (self.propfind if mode == "r" else self.proppatch)(
-            path, check=expected_status, login="tmp:bepo" if user else None)
+            path, check=expected_status, login="%s:bepo" % user if user else None)
 
     def test_owner_only(self) -> None:
         self._test_rights("owner_only", "", "/", "r", 401)
@@ -110,14 +111,23 @@ permissions: RrWw
 [custom]
 user: .*
 collection: custom(/.*)?
-permissions: Rr""")
+permissions: Rr
+[read-domain-principal]
+user: .+@([^@]+)
+collection: {0}
+permissions: R""")
         self.configure({"rights": {"file": rights_file_path}})
         self._test_rights("from_file", "", "/other/", "r", 401)
+        self._test_rights("from_file", "tmp", "/tmp/", "r", 207)
         self._test_rights("from_file", "tmp", "/other/", "r", 403)
         self._test_rights("from_file", "", "/custom/sub", "r", 404)
         self._test_rights("from_file", "tmp", "/custom/sub", "r", 404)
         self._test_rights("from_file", "", "/custom/sub", "w", 401)
         self._test_rights("from_file", "tmp", "/custom/sub", "w", 403)
+        self._test_rights("from_file", "tmp", "/custom/sub", "w", 403)
+        self._test_rights("from_file", "user@domain.test", "/domain.test/", "r", 207)
+        self._test_rights("from_file", "user@domain.test", "/tmp/", "r", 403)
+        self._test_rights("from_file", "user@domain.test", "/other/", "r", 403)
 
     def test_from_file_limited_get(self):
         rights_file_path = os.path.join(self.colpath, "rights")
