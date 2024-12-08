@@ -29,6 +29,7 @@ import wsgiref.util
 import xml.etree.ElementTree as ET
 from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple, Union
+from urllib.parse import quote
 
 import defusedxml.ElementTree as DefusedET
 import vobject
@@ -167,7 +168,7 @@ class BaseTest:
         assert answer is not None
         responses = self.parse_responses(answer)
         if kwargs.get("HTTP_DEPTH", "0") == "0":
-            assert len(responses) == 1 and path in responses
+            assert len(responses) == 1 and quote(path) in responses
         return status, responses
 
     def proppatch(self, path: str, data: Optional[str] = None,

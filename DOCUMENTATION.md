@@ -888,7 +888,7 @@ Default: `(cn={0})`
 Load the ldap groups of the authenticated user. These groups can be used later on to define rights. This also gives you access to the group calendars, if they exist.
 * The group calendar will be placed under collection_root_folder/GROUPS
 * The name of the calendar directory is the base64 encoded group name.
-* The group calneder folders will not be created automaticaly. This must be created manualy. [Here](https://github.com/Kozea/Radicale/wiki/LDAP-authentication) you can find a script to create group calneder folders https://github.com/Kozea/Radicale/wiki/LDAP-authentication
+* The group calendar folders will not be created automaticaly. This must be created manually. [Here](https://github.com/Kozea/Radicale/wiki/LDAP-authentication) you can find a script to create group calendar folders https://github.com/Kozea/Radicale/wiki/LDAP-authentication
 
 Default: False
 
