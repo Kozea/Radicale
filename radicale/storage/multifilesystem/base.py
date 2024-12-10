@@ -145,6 +145,8 @@ class StorageBase(storage.BaseStorage):
         if os.path.isdir(filesystem_path):
             return
         parent_filesystem_path = os.path.dirname(filesystem_path)
+        if sys.platform != "win32" and self._folder_umask:
+            oldmask = os.umask(self._config_umask)
         # Prevent infinite loop
         if filesystem_path != parent_filesystem_path:
             # Create parent dirs recursively
@@ -152,3 +154,5 @@ class StorageBase(storage.BaseStorage):
         # Possible race!
         os.makedirs(filesystem_path, exist_ok=True)
         self._sync_directory(parent_filesystem_path)
+        if sys.platform != "win32" and self._folder_umask:
+            os.umask(oldmask)
