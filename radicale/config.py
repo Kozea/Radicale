@@ -279,10 +279,26 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "/var/lib/radicale/collections",
             "help": "path where collections are stored",
             "type": filepath}),
+        ("filesystem_cache_folder", {
+            "value": "/var/lib/radicale/collections",
+            "help": "path where cache of collections is stored in case of use_cache_subfolder_* options are active",
+            "type": filepath}),
         ("use_cache_subfolder_for_item", {
             "value": "False",
-            "help": "use subfolder 'collection-cache' for item cache file structure instead of inside collection folder",
+            "help": "use subfolder 'collection-cache' for 'item' cache file structure instead of inside collection folder",
             "type": bool}),
+        ("use_cache_subfolder_for_history", {
+            "value": "False",
+            "help": "use subfolder 'collection-cache' for 'history' cache file structure instead of inside collection folder",
+            "type": bool}),
+        ("use_cache_subfolder_for_synctoken", {
+            "value": "False",
+            "help": "use subfolder 'collection-cache' for 'sync-token' cache file structure instead of inside collection folder",
+            "type": bool}),
+        ("folder_umask", {
+            "value": "",
+            "help": "umask for folder creation (empty: system default)",
+            "type": str}),
         ("max_sync_token_age", {
             "value": "2592000",  # 30 days
             "help": "delete sync token that are older",

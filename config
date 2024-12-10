@@ -138,8 +138,26 @@
 # Folder for storing local collections, created if not present
 #filesystem_folder = /var/lib/radicale/collections
 
-# Use subfolder 'collection-cache' for item cache file structure instead of inside collection folder
+# Folder for storing cache of local collections, created if not present
+# Note: only used in case of use_cache_subfolder_* options are active
+# Note: can be used on multi-instance setup to cache files on local node (see below)
+#filesystem_cache_folder = /var/lib/radicale/collections
+
+# Use subfolder 'collection-cache' for 'item' cache file structure instead of inside collection folder
+# Note: can be used on multi-instance setup to cache 'item' on local node
 #use_cache_subfolder_for_item = False
+
+# Use subfolder 'collection-cache' for 'history' cache file structure instead of inside collection folder
+# Note: use only on single-instance setup, will break consistency with client in multi-instance setup
+#use_cache_subfolder_for_history = False
+
+# Use subfolder 'collection-cache' for 'sync-token' cache file structure instead of inside collection folder
+# Note: use only on single-instance setup, will break consistency with client in multi-instance setup
+#use_cache_subfolder_for_synctoken = False
+
+# Use configured umask for folder creation (not applicable for OS Windows)
+# Useful value: 0077 | 0027 | 0007 | 0022
+#folder_umask = (system default, usual 0022)
 
 # Delete sync token that are older (seconds)
 #max_sync_token_age = 2592000

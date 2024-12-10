@@ -1005,11 +1005,47 @@ Folder for storing local collections, created if not present.
 
 Default: `/var/lib/radicale/collections`
 
+##### filesystem_cache_folder
+
+Folder for storing cache of local collections, created if not present
+
+Default_ `/var/lib/radicale/collections`
+
+Note: only used in case of use_cache_subfolder_* options are active
+
+Note: can be used on multi-instance setup to cache files on local node (see below)
+
 ##### use_cache_subfolder_for_item
 
-Use subfolder `collection-cache` for cache file structure of item instead of inside collection folders, created if not present
+Use subfolder `collection-cache` for cache file structure of 'item' instead of inside collection folders, created if not present
 
 Default: `False`
+
+Note: can be used on multi-instance setup to cache 'item' on local node
+
+##### use_cache_subfolder_for_history
+
+Use subfolder `collection-cache` for cache file structure of 'history' instead of inside collection folders, created if not present
+
+Default: `False`
+
+Note: use only on single-instance setup, will break consistency with client in multi-instance setup
+
+##### use_cache_subfolder_for_synctoken
+
+Use subfolder `collection-cache` for cache file structure of 'sync-token' instead of inside collection folders, created if not present
+
+Default: `False`
+
+Note: use only on single-instance setup, will break consistency with client in multi-instance setup
+
+##### folder_umask
+
+Use configured umask for folder creation (not applicable for OS Windows)
+
+Default: (system-default, usual `0022`)
+
+Useful value: `0077` (user:rw group:- other:-) or `0027` (user:rw group:r other:-) or `0007` (user:rw group:rw other:-) or `0022` (user:rw group:r other:r)
 
 ##### max_sync_token_age
 
