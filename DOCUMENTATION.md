@@ -1009,7 +1009,7 @@ Default: `/var/lib/radicale/collections`
 
 Folder for storing cache of local collections, created if not present
 
-Default_ `/var/lib/radicale/collections`
+Default: (filesystem_folder)
 
 Note: only used in case of use_cache_subfolder_* options are active
 

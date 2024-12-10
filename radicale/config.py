@@ -280,7 +280,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "path where collections are stored",
             "type": filepath}),
         ("filesystem_cache_folder", {
-            "value": "/var/lib/radicale/collections",
+            "value": "",
             "help": "path where cache of collections is stored in case of use_cache_subfolder_* options are active",
             "type": filepath}),
         ("use_cache_subfolder_for_item", {

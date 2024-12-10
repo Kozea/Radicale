@@ -141,7 +141,7 @@
 # Folder for storing cache of local collections, created if not present
 # Note: only used in case of use_cache_subfolder_* options are active
 # Note: can be used on multi-instance setup to cache files on local node (see below)
-#filesystem_cache_folder = /var/lib/radicale/collections
+#filesystem_cache_folder = (filesystem_folder)
 
 # Use subfolder 'collection-cache' for 'item' cache file structure instead of inside collection folder
 # Note: can be used on multi-instance setup to cache 'item' on local node
