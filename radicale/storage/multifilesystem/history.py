@@ -47,8 +47,7 @@ class CollectionPartHistory(CollectionBase):
         string for deleted items) and a history etag, which is a hash over
         the previous history etag and the etag separated by "/".
         """
-        history_folder = os.path.join(self._filesystem_path,
-                                      ".Radicale.cache", "history")
+        history_folder = self._storage._get_collection_cache_subfolder(self._filesystem_path, ".Radicale.cache", "history")
         try:
             with open(os.path.join(history_folder, href), "rb") as f:
                 cache_etag, history_etag = pickle.load(f)
@@ -76,8 +75,7 @@ class CollectionPartHistory(CollectionBase):
     def _get_deleted_history_hrefs(self):
         """Returns the hrefs of all deleted items that are still in the
         history cache."""
-        history_folder = os.path.join(self._filesystem_path,
-                                      ".Radicale.cache", "history")
+        history_folder = self._storage._get_collection_cache_subfolder(self._filesystem_path, ".Radicale.cache", "history")
         with contextlib.suppress(FileNotFoundError):
             for entry in os.scandir(history_folder):
                 href = entry.name
@@ -89,7 +87,6 @@ class CollectionPartHistory(CollectionBase):
 
     def _clean_history(self):
         # Delete all expired history entries of deleted items.
-        history_folder = os.path.join(self._filesystem_path,
-                                      ".Radicale.cache", "history")
+        history_folder = self._storage._get_collection_cache_subfolder(self._filesystem_path, ".Radicale.cache", "history")
         self._clean_cache(history_folder, self._get_deleted_history_hrefs(),
                           max_age=self._max_sync_token_age)

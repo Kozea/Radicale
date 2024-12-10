@@ -67,8 +67,7 @@ class CollectionPartSync(CollectionPartCache, CollectionPartHistory,
         if token_name == old_token_name:
             # Nothing changed
             return token, ()
-        token_folder = os.path.join(self._filesystem_path,
-                                    ".Radicale.cache", "sync-token")
+        token_folder = self._storage._get_collection_cache_subfolder(self._filesystem_path, ".Radicale.cache", "sync-token")
         token_path = os.path.join(token_folder, token_name)
         old_state = {}
         if old_token_name:

@@ -42,8 +42,8 @@ class StoragePartMove(StorageBase):
         if item.collection._filesystem_path != to_collection._filesystem_path:
             self._sync_directory(item.collection._filesystem_path)
         # Move the item cache entry
-        cache_folder = self._get_collection_cache_folder(item.collection._filesystem_path, ".Radicale.cache", "item")
-        to_cache_folder = self._get_collection_cache_folder(to_collection._filesystem_path, ".Radicale.cache", "item")
+        cache_folder = self._get_collection_cache_subfolder(item.collection._filesystem_path, ".Radicale.cache", "item")
+        to_cache_folder = self._get_collection_cache_subfolder(to_collection._filesystem_path, ".Radicale.cache", "item")
         self._makedirs_synced(to_cache_folder)
         try:
             os.replace(os.path.join(cache_folder, item.href),
