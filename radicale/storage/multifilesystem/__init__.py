@@ -110,7 +110,7 @@ class Storage(
             else:
                 try:
                     config_umask = int(self._folder_umask, 8)
-                except:
+                except Exception:
                     logger.critical("storage folder umask defined but invalid: '%s'", self._folder_umask)
                     raise
                 logger.info("storage folder umask defined: '%04o'", config_umask)
