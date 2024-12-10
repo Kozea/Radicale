@@ -8,6 +8,7 @@
 * Add: option [storage] use_cache_subfolder_for_history for storing 'history' cache outside collection-root
 * Add: option [storage] use_cache_subfolder_for_synctoken for storing 'sync-token' cache outside collection-root
 * Add: option [storage] folder_umask for configuration of umask (overwrite system-default)
+* Fix: also remove 'item' from cache on delete
 
 ## 3.3.1
 
