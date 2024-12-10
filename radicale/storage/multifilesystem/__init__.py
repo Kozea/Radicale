@@ -25,6 +25,7 @@ Uses one folder per collection and one file per collection entry.
 """
 
 import os
+import sys
 import time
 from typing import ClassVar, Iterator, Optional, Type
 
@@ -90,6 +91,27 @@ class Storage(
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
-        self._makedirs_synced(self._filesystem_folder)
         logger.info("storage location: %r", self._filesystem_folder)
-        logger.info("storage cache subfolder usage for item: %s", self._use_cache_subfolder_for_item)
+        self._makedirs_synced(self._filesystem_folder)
+        logger.info("storage location subfolder: %r", self._get_collection_root_folder())
+        logger.info("storage cache subfolder usage for 'item': %s", self._use_cache_subfolder_for_item)
+        logger.info("storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
+        logger.info("storage cache subfolder usage for 'sync-token': %s", self._use_cache_subfolder_for_synctoken)
+        if self._use_cache_subfolder_for_item is True or self._use_cache_subfolder_for_history is True or self._use_cache_subfolder_for_synctoken is True:
+            logger.info("storage cache subfolder: %r", self._get_collection_cache_folder())
+            self._makedirs_synced(self._get_collection_cache_folder())
+        if sys.platform != "win32":
+            if not self._folder_umask:
+                # retrieve current umask by setting a dummy umask
+                current_umask = os.umask(0o0022)
+                logger.info("storage folder umask (from system): '%04o'", current_umask)
+                # reset to original
+                os.umask(current_umask)
+            else:
+                try:
+                    config_umask = int(self._folder_umask, 8)
+                except Exception:
+                    logger.critical("storage folder umask defined but invalid: '%s'", self._folder_umask)
+                    raise
+                logger.info("storage folder umask defined: '%04o'", config_umask)
+                self._config_umask = config_umask

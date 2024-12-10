@@ -2,8 +2,13 @@
 
 ## 3.3.2.dev
 * Fix: debug logging in rights/from_file
-* Add: option [storage] use_cache_subfolder_for_item for storing item cache outside collection-root
+* Add: option [storage] use_cache_subfolder_for_item for storing 'item' cache outside collection-root
 * Fix: ignore empty RRULESET in item
+* Add: option [storage] filesystem_cache_folder for defining location of cache outside collection-root
+* Add: option [storage] use_cache_subfolder_for_history for storing 'history' cache outside collection-root
+* Add: option [storage] use_cache_subfolder_for_synctoken for storing 'sync-token' cache outside collection-root
+* Add: option [storage] folder_umask for configuration of umask (overwrite system-default)
+* Fix: also remove 'item' from cache on delete
 
 ## 3.3.1
 

@@ -69,8 +69,13 @@ class StorageBase(storage.BaseStorage):
     _collection_class: ClassVar[Type["multifilesystem.Collection"]]
 
     _filesystem_folder: str
+    _filesystem_cache_folder: str
     _filesystem_fsync: bool
     _use_cache_subfolder_for_item: bool
+    _use_cache_subfolder_for_history: bool
+    _use_cache_subfolder_for_synctoken: bool
+    _folder_umask: str
+    _config_umask: int
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
@@ -78,15 +83,33 @@ class StorageBase(storage.BaseStorage):
             "storage", "filesystem_folder")
         self._filesystem_fsync = configuration.get(
             "storage", "_filesystem_fsync")
+        self._filesystem_cache_folder = configuration.get(
+            "storage", "filesystem_cache_folder")
         self._use_cache_subfolder_for_item = configuration.get(
             "storage", "use_cache_subfolder_for_item")
+        self._use_cache_subfolder_for_history = configuration.get(
+            "storage", "use_cache_subfolder_for_history")
+        self._use_cache_subfolder_for_synctoken = configuration.get(
+            "storage", "use_cache_subfolder_for_synctoken")
+        self._folder_umask = configuration.get(
+            "storage", "folder_umask")
 
     def _get_collection_root_folder(self) -> str:
         return os.path.join(self._filesystem_folder, "collection-root")
 
-    def _get_collection_cache_folder(self, path, folder, subfolder) -> str:
+    def _get_collection_cache_folder(self) -> str:
+        if self._filesystem_cache_folder:
+            return os.path.join(self._filesystem_cache_folder, "collection-cache")
+        else:
+            return os.path.join(self._filesystem_folder, "collection-cache")
+
+    def _get_collection_cache_subfolder(self, path, folder, subfolder) -> str:
         if (self._use_cache_subfolder_for_item is True) and (subfolder == "item"):
-            path = path.replace(os.path.join(self._filesystem_folder, "collection-root"), os.path.join(self._filesystem_folder, "collection-cache"))
+            path = path.replace(self._get_collection_root_folder(), self._get_collection_cache_folder())
+        elif (self._use_cache_subfolder_for_history is True) and (subfolder == "history"):
+            path = path.replace(self._get_collection_root_folder(), self._get_collection_cache_folder())
+        elif (self._use_cache_subfolder_for_synctoken is True) and (subfolder == "sync-token"):
+            path = path.replace(self._get_collection_root_folder(), self._get_collection_cache_folder())
         return os.path.join(path, folder, subfolder)
 
     def _fsync(self, f: IO[AnyStr]) -> None:
@@ -125,6 +148,8 @@ class StorageBase(storage.BaseStorage):
         if os.path.isdir(filesystem_path):
             return
         parent_filesystem_path = os.path.dirname(filesystem_path)
+        if sys.platform != "win32" and self._folder_umask:
+            oldmask = os.umask(self._config_umask)
         # Prevent infinite loop
         if filesystem_path != parent_filesystem_path:
             # Create parent dirs recursively
@@ -132,3 +157,5 @@ class StorageBase(storage.BaseStorage):
         # Possible race!
         os.makedirs(filesystem_path, exist_ok=True)
         self._sync_directory(parent_filesystem_path)
+        if sys.platform != "win32" and self._folder_umask:
+            os.umask(oldmask)

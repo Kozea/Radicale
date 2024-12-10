@@ -2,6 +2,7 @@
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,3 +54,9 @@ class CollectionPartDelete(CollectionPartHistory, CollectionBase):
             # Track the change
             self._update_history_etag(href, None)
             self._clean_history()
+            # Remove item from cache
+            cache_folder = self._storage._get_collection_cache_subfolder(os.path.dirname(path), ".Radicale.cache", "item")
+            cache_file = os.path.join(cache_folder, os.path.basename(path))
+            if os.path.isfile(cache_file):
+                os.remove(cache_file)
+                self._storage._sync_directory(cache_folder)
