@@ -1104,11 +1104,52 @@ only be used with a single process.</p>
 <p>Folder for storing local collections, created if not present.</p>
 <p>Default: <code>/var/lib/radicale/collections</code></p>
 </section>
+<section class="level5" id="filesystem_cache_folder">
+<h5>filesystem_cache_folder <a class="headerlink" href="#filesystem_cache_folder">&para;</a></h5>
+<p>Folder for storing cache of local collections, created if not
+present</p>
+<p>Default: (filesystem_folder)</p>
+<p>Note: only used in case of use_cache_subfolder_* options are
+active</p>
+<p>Note: can be used on multi-instance setup to cache files on local
+node (see below)</p>
+</section>
 <section class="level5" id="use_cache_subfolder_for_item">
 <h5>use_cache_subfolder_for_item <a class="headerlink" href="#use_cache_subfolder_for_item">&para;</a></h5>
 <p>Use subfolder <code>collection-cache</code> for cache file structure
-of item instead of inside collection folders, created if not present</p>
+of 'item' instead of inside collection folders, created if not
+present</p>
 <p>Default: <code>False</code></p>
+<p>Note: can be used on multi-instance setup to cache 'item' on local
+node</p>
+</section>
+<section class="level5" id="use_cache_subfolder_for_history">
+<h5>use_cache_subfolder_for_history <a class="headerlink" href="#use_cache_subfolder_for_history">&para;</a></h5>
+<p>Use subfolder <code>collection-cache</code> for cache file structure
+of 'history' instead of inside collection folders, created if not
+present</p>
+<p>Default: <code>False</code></p>
+<p>Note: use only on single-instance setup, will break consistency with
+client in multi-instance setup</p>
+</section>
+<section class="level5" id="use_cache_subfolder_for_synctoken">
+<h5>use_cache_subfolder_for_synctoken <a class="headerlink" href="#use_cache_subfolder_for_synctoken">&para;</a></h5>
+<p>Use subfolder <code>collection-cache</code> for cache file structure
+of 'sync-token' instead of inside collection folders, created if not
+present</p>
+<p>Default: <code>False</code></p>
+<p>Note: use only on single-instance setup, will break consistency with
+client in multi-instance setup</p>
+</section>
+<section class="level5" id="folder_umask">
+<h5>folder_umask <a class="headerlink" href="#folder_umask">&para;</a></h5>
+<p>Use configured umask for folder creation (not applicable for OS
+Windows)</p>
+<p>Default: (system-default, usual <code>0022</code>)</p>
+<p>Useful value: <code>0077</code> (user:rw group:- other:-) or
+<code>0027</code> (user:rw group:r other:-) or <code>0007</code>
+(user:rw group:rw other:-) or <code>0022</code> (user:rw group:r
+other:r)</p>
 </section>
 <section class="level5" id="max_sync_token_age">
 <h5>max_sync_token_age <a class="headerlink" href="#max_sync_token_age">&para;</a></h5>
