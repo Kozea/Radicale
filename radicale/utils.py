@@ -28,6 +28,7 @@ _T_co = TypeVar("_T_co", covariant=True)
 
 RADICALE_MODULES: Sequence[str] = ("radicale", "vobject", "passlib", "defusedxml")
 
+
 def load_plugin(internal_types: Sequence[str], module_name: str,
                 class_name: str, base_class: Type[_T_co],
                 configuration: "config.Configuration") -> _T_co:
@@ -51,11 +52,13 @@ def load_plugin(internal_types: Sequence[str], module_name: str,
 def package_version(name):
     return metadata.version(name)
 
+
 def packages_version():
     versions = []
     for pkg in RADICALE_MODULES:
         versions.append("%s=%s" % (pkg, package_version(pkg)))
     return " ".join(versions)
+
 
 def ssl_context_options_by_protocol(protocol: str, ssl_context_options):
     logger.debug("SSL protocol string: '%s' and current SSL context options: '0x%x'", protocol, ssl_context_options)

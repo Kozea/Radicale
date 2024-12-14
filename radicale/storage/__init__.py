@@ -2,6 +2,7 @@
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,10 +33,10 @@ from typing import (Callable, ContextManager, Iterable, Iterator, Mapping,
 import vobject
 
 from radicale import config
-from radicale.log import logger
 from radicale import item as radicale_item
 from radicale import types, utils
 from radicale.item import filter as radicale_filter
+from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("multifilesystem", "multifilesystem_nolock",)
 
