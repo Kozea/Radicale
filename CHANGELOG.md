@@ -11,6 +11,7 @@
 * Fix: also remove 'item' from cache on delete
 * Improve: avoid automatically invalid cache on upgrade in case no change on cache structure
 * Improve: log important module versions on startup
+* Improve: auth.ldap config shown on startup, terminate in case no password is supplied for bind user
 
 ## 3.3.1
 

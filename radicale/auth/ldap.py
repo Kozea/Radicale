@@ -1,5 +1,6 @@
 # This file is part of Radicale - CalDAV and CardDAV server
-# Copyright 2022 Peter Varkoly
+# Copyright © 2022-2024 Peter Varkoly
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -78,6 +79,29 @@ class Auth(auth.BaseAuth):
                     self._ldap_ssl_verify_mode = ssl.CERT_NONE
                 elif tmp == "OPTIONAL":
                     self._ldap_ssl_verify_mode = ssl.CERT_OPTIONAL
+        logger.info("auth.ldap_uri             : %r" % self._ldap_uri)
+        logger.info("auth.ldap_base            : %r" % self._ldap_base)
+        logger.info("auth.ldap_reader_dn       : %r" % self._ldap_reader_dn)
+        logger.info("auth.ldap_load_groups     : %s" % self._ldap_load_groups)
+        logger.info("auth.ldap_filter          : %r" % self._ldap_filter)
+        if ldap_secret_file_path:
+            logger.info("auth.ldap_secret_file_path: %r" % ldap_secret_file_path)
+            if self._ldap_secret:
+                logger.info("auth.ldap_secret          : (from file)")
+        else:
+            logger.info("auth.ldap_secret_file_path: (not provided)")
+            if self._ldap_secret:
+                logger.info("auth.ldap_secret          : (from config)")
+        if self._ldap_reader_dn and not self._ldap_secret:
+            logger.error("auth.ldap_secret         : (not provided)")
+            raise RuntimeError("LDAP authentication requires ldap_secret for reader_dn")
+        logger.info("auth.ldap_use_ssl         : %s" % self._ldap_use_ssl)
+        if self._ldap_use_ssl is True:
+            logger.info("auth.ldap_ssl_verify_mode : %s" % self._ldap_ssl_verify_mode)
+            if self._ldap_ssl_ca_file:
+                logger.info("auth.ldap_ssl_ca_file     : %r" % self._ldap_ssl_ca_file)
+            else:
+                logger.info("auth.ldap_ssl_ca_file     : (not provided)")
 
     def _login2(self, login: str, password: str) -> str:
         try:
