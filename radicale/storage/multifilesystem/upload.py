@@ -25,11 +25,11 @@ from typing import Iterable, Iterator, TextIO, cast
 
 import radicale.item as radicale_item
 from radicale import pathutils
+from radicale.log import logger
 from radicale.storage.multifilesystem.base import CollectionBase
 from radicale.storage.multifilesystem.cache import CollectionPartCache
 from radicale.storage.multifilesystem.get import CollectionPartGet
 from radicale.storage.multifilesystem.history import CollectionPartHistory
-from radicale.log import logger
 
 
 class CollectionPartUpload(CollectionPartGet, CollectionPartCache,

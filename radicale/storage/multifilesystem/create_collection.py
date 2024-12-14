@@ -23,9 +23,9 @@ from typing import Iterable, Optional, cast
 
 import radicale.item as radicale_item
 from radicale import pathutils
+from radicale.log import logger
 from radicale.storage import multifilesystem
 from radicale.storage.multifilesystem.base import StorageBase
-from radicale.log import logger
 
 
 class StoragePartCreateCollection(StorageBase):
