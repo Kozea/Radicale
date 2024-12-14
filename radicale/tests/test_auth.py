@@ -121,6 +121,11 @@ class TestBaseAuthRequests(BaseTest):
         self._test_htpasswd("plain", "tmp:bepo", (
             ("tmp", "bepo", True), ("TMP", "bepo", True), ("tmp1", "bepo", False)))
 
+    def test_htpasswd_uc_username(self) -> None:
+        self.configure({"auth": {"uc_username": "True"}})
+        self._test_htpasswd("plain", "TMP:bepo", (
+            ("tmp", "bepo", True), ("TMP", "bepo", True), ("TMP1", "bepo", False)))
+
     def test_htpasswd_strip_domain(self) -> None:
         self.configure({"auth": {"strip_domain": "True"}})
         self._test_htpasswd("plain", "tmp:bepo", (

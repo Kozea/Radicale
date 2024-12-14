@@ -55,6 +55,7 @@ class BaseAuth:
 
     _ldap_groups: Set[str] = set([])
     _lc_username: bool
+    _uc_username: bool
     _strip_domain: bool
 
     def __init__(self, configuration: "config.Configuration") -> None:
@@ -67,7 +68,13 @@ class BaseAuth:
         """
         self.configuration = configuration
         self._lc_username = configuration.get("auth", "lc_username")
+        self._uc_username = configuration.get("auth", "uc_username")
         self._strip_domain = configuration.get("auth", "strip_domain")
+        logger.info("auth.strip_domain: %s", self._strip_domain)
+        logger.info("auth.lc_username: %s", self._lc_username)
+        logger.info("auth.uc_username: %s", self._uc_username)
+        if self._lc_username is True and self._uc_username is True:
+            raise RuntimeError("auth.lc_username and auth.uc_username cannot be enabled together")
 
     def get_external_login(self, environ: types.WSGIEnviron) -> Union[
             Tuple[()], Tuple[str, str]]:
@@ -98,6 +105,8 @@ class BaseAuth:
     def login(self, login: str, password: str) -> str:
         if self._lc_username:
             login = login.lower()
+        if self._uc_username:
+            login = login.upper()
         if self._strip_domain:
             login = login.split('@')[0]
         return self._login(login, password)

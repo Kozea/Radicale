@@ -247,6 +247,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "strip domain from username",
             "type": bool}),
+        ("uc_username", {
+            "value": "False",
+            "help": "convert username to uppercase, must be true for case-insensitive auth providers",
+            "type": bool}),
         ("lc_username", {
             "value": "False",
             "help": "convert username to lowercase, must be true for case-insensitive auth providers",
