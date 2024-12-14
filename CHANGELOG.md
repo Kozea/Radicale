@@ -9,6 +9,8 @@
 * Add: option [storage] use_cache_subfolder_for_synctoken for storing 'sync-token' cache outside collection-root
 * Add: option [storage] folder_umask for configuration of umask (overwrite system-default)
 * Fix: also remove 'item' from cache on delete
+* Improve: avoid automatically invalid cache on upgrade in case no change on cache structure
+* Improve: log important module versions on startup
 
 ## 3.3.1
 

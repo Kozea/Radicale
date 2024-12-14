@@ -2,6 +2,7 @@
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,17 +36,19 @@ from radicale import config
 from radicale import item as radicale_item
 from radicale import types, utils
 from radicale.item import filter as radicale_filter
+from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("multifilesystem", "multifilesystem_nolock",)
 
-CACHE_DEPS: Sequence[str] = ("radicale", "vobject")
-CACHE_VERSION: bytes = "".join(
-    "%s=%s;" % (pkg, utils.package_version(pkg))
-    for pkg in CACHE_DEPS).encode()
+# NOTE: change only if cache structure is modified to avoid cache invalidation on update
+CACHE_VERSION_RADICALE = "3.3.1"
+
+CACHE_VERSION: bytes = ("%s=%s;%s=%s;" % ("radicale", CACHE_VERSION_RADICALE, "vobject", utils.package_version("vobject"))).encode()
 
 
 def load(configuration: "config.Configuration") -> "BaseStorage":
     """Load the storage module chosen in configuration."""
+    logger.debug("storage cache version: %r", str(CACHE_VERSION))
     return utils.load_plugin(INTERNAL_TYPES, "storage", "Storage", BaseStorage,
                              configuration)
 
