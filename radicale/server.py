@@ -301,7 +301,7 @@ def serve(configuration: config.Configuration,
 
     """
 
-    logger.info("Starting Radicale")
+    logger.info("Starting Radicale (%s)", utils.packages_version())
     # Copy configuration before modifying
     configuration = configuration.copy()
     configuration.update({"server": {"_internal_server": "True"}}, "server",
