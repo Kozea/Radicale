@@ -81,6 +81,8 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
         # The hash of the component in the file system. This is used to check,
         # if the entry in the cache is still valid.
         cache_hash = self._item_cache_hash(raw_text)
+        if self._storage._debug_cache_actions is True:
+            logger.debug("Check cache for: %r with hash %r", path, cache_hash)
         cache_content = self._load_item_cache(href, cache_hash)
         if cache_content is None:
             with self._acquire_cache_lock("item"):

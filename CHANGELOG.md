@@ -13,6 +13,7 @@
 * Improve: log important module versions on startup
 * Improve: auth.ldap config shown on startup, terminate in case no password is supplied for bind user
 * Add: option [auth] uc_username for uppercase conversion (similar to existing lc_username)
+* Add: option [debug] storage_cache_action for conditional logging
 
 ## 3.3.1
 

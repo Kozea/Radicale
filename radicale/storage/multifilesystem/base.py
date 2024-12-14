@@ -74,6 +74,7 @@ class StorageBase(storage.BaseStorage):
     _use_cache_subfolder_for_item: bool
     _use_cache_subfolder_for_history: bool
     _use_cache_subfolder_for_synctoken: bool
+    _debug_cache_actions: bool
     _folder_umask: str
     _config_umask: int
 
@@ -93,6 +94,8 @@ class StorageBase(storage.BaseStorage):
             "storage", "use_cache_subfolder_for_synctoken")
         self._folder_umask = configuration.get(
             "storage", "folder_umask")
+        self._debug_cache_actions = configuration.get(
+            "logging", "storage_cache_actions")
 
     def _get_collection_root_folder(self) -> str:
         return os.path.join(self._filesystem_folder, "collection-root")
