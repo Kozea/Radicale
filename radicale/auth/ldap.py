@@ -103,7 +103,6 @@ class Auth(auth.BaseAuth):
             else:
                 logger.info("auth.ldap_ssl_ca_file     : (not provided)")
 
-
     def _login2(self, login: str, password: str) -> str:
         try:
             """Bind as reader dn"""
