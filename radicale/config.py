@@ -376,6 +376,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "log rights rules which doesn't match on level=debug",
             "type": bool}),
+        ("storage_cache_actions", {
+            "value": "False",
+            "help": "log storage cache action on level=debug",
+            "type": bool}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs",

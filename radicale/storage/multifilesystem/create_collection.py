@@ -1,7 +1,8 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2021 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +23,7 @@ from typing import Iterable, Optional, cast
 
 import radicale.item as radicale_item
 from radicale import pathutils
+from radicale.log import logger
 from radicale.storage import multifilesystem
 from radicale.storage.multifilesystem.base import StorageBase
 
@@ -36,6 +38,7 @@ class StoragePartCreateCollection(StorageBase):
         # Path should already be sanitized
         sane_path = pathutils.strip_path(href)
         filesystem_path = pathutils.path_to_filesystem(folder, sane_path)
+        logger.debug("Create collection: %r" % filesystem_path)
 
         if not props:
             self._makedirs_synced(filesystem_path)

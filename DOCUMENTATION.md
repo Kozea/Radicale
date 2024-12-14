@@ -1158,15 +1158,21 @@ Log request on level=debug
 
 Default: `False`
 
-##### response_content_on_debug = True
+##### response_content_on_debug
 
 Log response on level=debug
 
 Default: `False`
 
-##### rights_rule_doesnt_match_on_debug = True
+##### rights_rule_doesnt_match_on_debug
 
 Log rights rule which doesn't match on level=debug
+
+Default: `False`
+
+##### #storage_cache_actions
+
+Log storage cache actions
 
 Default: `False`
 

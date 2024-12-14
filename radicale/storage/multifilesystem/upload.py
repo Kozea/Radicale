@@ -25,6 +25,7 @@ from typing import Iterable, Iterator, TextIO, cast
 
 import radicale.item as radicale_item
 from radicale import pathutils
+from radicale.log import logger
 from radicale.storage.multifilesystem.base import CollectionBase
 from radicale.storage.multifilesystem.cache import CollectionPartCache
 from radicale.storage.multifilesystem.get import CollectionPartGet
@@ -38,12 +39,14 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
                ) -> radicale_item.Item:
         if not pathutils.is_safe_filesystem_path_component(href):
             raise pathutils.UnsafePathError(href)
+        path = pathutils.path_to_filesystem(self._filesystem_path, href)
         try:
-            self._store_item_cache(href, item)
+            cache_hash = self._item_cache_hash(item.serialize().encode(self._encoding))
+            logger.debug("Store cache for: %r with hash %r", path, cache_hash)
+            self._store_item_cache(href, item, cache_hash)
         except Exception as e:
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
-        path = pathutils.path_to_filesystem(self._filesystem_path, href)
         # TODO: better fix for "mypy"
         with self._atomic_write(path, newline="") as fo:  # type: ignore
             f = cast(TextIO, fo)
@@ -80,6 +83,7 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
         self._storage._makedirs_synced(cache_folder)
         for item in items:
             uid = item.uid
+            logger.debug("Store item from list with uid: '%s'" % uid)
             try:
                 cache_content = self._item_cache_content(item)
             except Exception as e:
@@ -105,6 +109,8 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
                 f.flush()
                 self._storage._fsync(f)
             with open(os.path.join(cache_folder, href), "wb") as fb:
+                cache_hash = self._item_cache_hash(item.serialize().encode(self._encoding))
+                logger.debug("Store cache for: %r with hash %r", fb.name, cache_hash)
                 pickle.dump(cache_content, fb)
                 fb.flush()
                 self._storage._fsync(fb)
