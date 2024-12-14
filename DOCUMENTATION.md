@@ -923,6 +923,17 @@ providers like ldap, kerberos
 
 Default: `False`
 
+Note: cannot be enabled together with `uc_username`
+
+##### uc_username
+
+Сonvert username to uppercase, must be true for case-insensitive auth
+providers like ldap, kerberos
+
+Default: `False`
+
+Note: cannot be enabled together with `lc_username`
+
 ##### strip_domain
 
 Strip domain from username
