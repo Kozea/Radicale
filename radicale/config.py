@@ -380,7 +380,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "log rights rules which doesn't match on level=debug",
             "type": bool}),
-        ("storage_cache_actions", {
+        ("storage_cache_actions_on_debug", {
             "value": "False",
             "help": "log storage cache action on level=debug",
             "type": bool}),

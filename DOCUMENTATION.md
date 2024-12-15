@@ -1180,9 +1180,9 @@ Log rights rule which doesn't match on level=debug
 
 Default: `False`
 
-##### #storage_cache_actions
+##### storage_cache_actions_on_debug
 
-Log storage cache actions
+Log storage cache actions on level=debug
 
 Default: `False`
 

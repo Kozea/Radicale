@@ -98,7 +98,7 @@ class StorageBase(storage.BaseStorage):
         self._folder_umask = configuration.get(
             "storage", "folder_umask")
         self._debug_cache_actions = configuration.get(
-            "logging", "storage_cache_actions")
+            "logging", "storage_cache_actions_on_debug")
 
     def _get_collection_root_folder(self) -> str:
         return os.path.join(self._filesystem_folder, "collection-root")
