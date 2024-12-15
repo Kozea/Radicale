@@ -116,6 +116,22 @@ class TestMultiFileSystem(BaseTest):
         assert answer1 == answer2
         assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
 
+    def test_item_cache_rebuild_mtime_and_size(self) -> None:
+        """Delete the item cache and verify that it is rebuild."""
+        self.configure({"storage": {"use_mtime_and_size_for_item_cache": "True"}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event)
+        _, answer1 = self.get(path)
+        cache_folder = os.path.join(self.colpath, "collection-root",
+                                    "calendar.ics", ".Radicale.cache", "item")
+        assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
+        shutil.rmtree(cache_folder)
+        _, answer2 = self.get(path)
+        assert answer1 == answer2
+        assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
+
     def test_put_whole_calendar_uids_used_as_file_names(self) -> None:
         """Test if UIDs are used as file names."""
         _TestBaseRequests.test_put_whole_calendar(
