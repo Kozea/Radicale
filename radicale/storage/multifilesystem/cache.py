@@ -74,7 +74,7 @@ class CollectionPartCache(CollectionBase):
         return _hash.hexdigest()
 
     @staticmethod
-    def _item_cache_mtime_and_size(size: bytes, raw_text: bytes) -> str:
+    def _item_cache_mtime_and_size(size: int, raw_text: int) -> str:
         return str(storage.CACHE_VERSION.decode()) + "size=" + str(size) + ";mtime=" + str(raw_text)
 
     def _item_cache_content(self, item: radicale_item.Item) -> CacheContent:
