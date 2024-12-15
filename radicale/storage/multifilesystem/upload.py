@@ -41,19 +41,26 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
             raise pathutils.UnsafePathError(href)
         path = pathutils.path_to_filesystem(self._filesystem_path, href)
         try:
-            cache_hash = self._item_cache_hash(item.serialize().encode(self._encoding))
-            logger.debug("Store cache for: %r with hash %r", path, cache_hash)
-            self._store_item_cache(href, item, cache_hash)
+            with self._atomic_write(path, newline="") as fo:  # type: ignore
+                f = cast(TextIO, fo)
+                f.write(item.serialize())
         except Exception as e:
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
-        # TODO: better fix for "mypy"
-        with self._atomic_write(path, newline="") as fo:  # type: ignore
-            f = cast(TextIO, fo)
-            f.write(item.serialize())
-        # Clean the cache after the actual item is stored, or the cache entry
-        # will be removed again.
-        self._clean_item_cache()
+        # store cache file
+        if self._storage._use_mtime_and_size_for_item_cache is True:
+            cache_hash = self._item_cache_mtime_and_size(os.stat(path).st_size, os.stat(path).st_mtime_ns)
+            if self._storage._debug_cache_actions is True:
+                logger.debug("Item cache store  for: %r with mtime and size %r", path, cache_hash)
+        else:
+            cache_hash = self._item_cache_hash(item.serialize().encode(self._encoding))
+            if self._storage._debug_cache_actions is True:
+                logger.debug("Item cache store  for: %r with hash %r", path, cache_hash)
+        try:
+            self._store_item_cache(href, item, cache_hash)
+        except Exception as e:
+            raise ValueError("Failed to store item cache of %r in collection %r: %s" %
+                             (href, self.path, e)) from e
         # Track the change
         self._update_history_etag(href, item)
         self._clean_history()
@@ -84,15 +91,11 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
         for item in items:
             uid = item.uid
             logger.debug("Store item from list with uid: '%s'" % uid)
-            try:
-                cache_content = self._item_cache_content(item)
-            except Exception as e:
-                raise ValueError(
-                    "Failed to store item %r in temporary collection %r: %s" %
-                    (uid, self.path, e)) from e
+            cache_content = self._item_cache_content(item)
             for href in get_safe_free_hrefs(uid):
+                path = os.path.join(self._filesystem_path, href)
                 try:
-                    f = open(os.path.join(self._filesystem_path, href),
+                    f = open(path,
                              "w", newline="", encoding=self._encoding)
                 except OSError as e:
                     if (sys.platform != "win32" and e.errno == errno.EINVAL or
@@ -104,14 +107,31 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
             else:
                 raise RuntimeError("No href found for item %r in temporary "
                                    "collection %r" % (uid, self.path))
-            with f:
-                f.write(item.serialize())
-                f.flush()
-                self._storage._fsync(f)
-            with open(os.path.join(cache_folder, href), "wb") as fb:
+
+            try:
+                with f:
+                    f.write(item.serialize())
+                    f.flush()
+                    self._storage._fsync(f)
+            except Exception as e:
+                raise ValueError(
+                    "Failed to store item %r in temporary collection %r: %s" %
+                    (uid, self.path, e)) from e
+
+            # store cache file
+            if self._storage._use_mtime_and_size_for_item_cache is True:
+                cache_hash = self._item_cache_mtime_and_size(os.stat(path).st_size, os.stat(path).st_mtime_ns)
+                if self._storage._debug_cache_actions is True:
+                    logger.debug("Item cache store  for: %r with mtime and size %r", path, cache_hash)
+            else:
                 cache_hash = self._item_cache_hash(item.serialize().encode(self._encoding))
-                logger.debug("Store cache for: %r with hash %r", fb.name, cache_hash)
-                pickle.dump(cache_content, fb)
+                if self._storage._debug_cache_actions is True:
+                    logger.debug("Item cache store  for: %r with hash %r", path, cache_hash)
+            path_cache = os.path.join(cache_folder, href)
+            if self._storage._debug_cache_actions is True:
+                logger.debug("Item cache store into: %r", path_cache)
+            with open(os.path.join(cache_folder, href), "wb") as fb:
+                pickle.dump((cache_hash, *cache_content), fb)
                 fb.flush()
                 self._storage._fsync(fb)
         self._storage._sync_directory(cache_folder)
