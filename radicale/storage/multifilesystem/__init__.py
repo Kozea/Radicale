@@ -97,6 +97,7 @@ class Storage(
         logger.info("storage cache subfolder usage for 'item': %s", self._use_cache_subfolder_for_item)
         logger.info("storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
         logger.info("storage cache subfolder usage for 'sync-token': %s", self._use_cache_subfolder_for_synctoken)
+        logger.info("storage cache use mtime and size for 'item': %s", self._use_mtime_and_size_for_item_cache)
         logger.debug("storage cache action logging: %s", self._debug_cache_actions)
         if self._use_cache_subfolder_for_item is True or self._use_cache_subfolder_for_history is True or self._use_cache_subfolder_for_synctoken is True:
             logger.info("storage cache subfolder: %r", self._get_collection_cache_folder())

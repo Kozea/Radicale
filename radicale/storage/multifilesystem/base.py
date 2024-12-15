@@ -74,6 +74,7 @@ class StorageBase(storage.BaseStorage):
     _use_cache_subfolder_for_item: bool
     _use_cache_subfolder_for_history: bool
     _use_cache_subfolder_for_synctoken: bool
+    _use_mtime_and_size_for_item_cache: bool
     _debug_cache_actions: bool
     _folder_umask: str
     _config_umask: int
@@ -92,6 +93,8 @@ class StorageBase(storage.BaseStorage):
             "storage", "use_cache_subfolder_for_history")
         self._use_cache_subfolder_for_synctoken = configuration.get(
             "storage", "use_cache_subfolder_for_synctoken")
+        self._use_mtime_and_size_for_item_cache = configuration.get(
+            "storage", "use_mtime_and_size_for_item_cache")
         self._folder_umask = configuration.get(
             "storage", "folder_umask")
         self._debug_cache_actions = configuration.get(
