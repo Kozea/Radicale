@@ -1058,6 +1058,8 @@ Default: `False`
 
 Note: check used filesystem mtime precision before enabling
 
+Note: conversion is done on access, bulk conversion can be done offline using storage verification option `radicale --verify-storage`
+
 ##### folder_umask
 
 Use configured umask for folder creation (not applicable for OS Windows)
