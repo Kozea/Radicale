@@ -80,11 +80,18 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
             raise
         # The hash of the component in the file system. This is used to check,
         # if the entry in the cache is still valid.
-        cache_hash = self._item_cache_hash(raw_text)
-        if self._storage._debug_cache_actions is True:
-            logger.debug("Check cache for: %r with hash %r", path, cache_hash)
+        if self._storage._use_mtime_and_size_for_item_cache is True:
+            cache_hash = self._item_cache_mtime_and_size(os.stat(path).st_size, os.stat(path).st_mtime_ns)
+            if self._storage._debug_cache_actions is True:
+                logger.debug("Item cache check  for: %r with mtime and size %r", path, cache_hash)
+        else:
+            cache_hash = self._item_cache_hash(raw_text)
+            if self._storage._debug_cache_actions is True:
+                logger.debug("Item cache check  for: %r with hash %r", path, cache_hash)
         cache_content = self._load_item_cache(href, cache_hash)
         if cache_content is None:
+            if self._storage._debug_cache_actions is True:
+                logger.debug("Item cache miss   for: %r", path)
             with self._acquire_cache_lock("item"):
                 # Lock the item cache to prevent multiple processes from
                 # generating the same data in parallel.
@@ -101,6 +108,8 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                         vobject_item, = vobject_items
                         temp_item = radicale_item.Item(
                             collection=self, vobject_item=vobject_item)
+                        if self._storage._debug_cache_actions is True:
+                            logger.debug("Item cache store  for: %r", path)
                         cache_content = self._store_item_cache(
                             href, temp_item, cache_hash)
                     except Exception as e:
@@ -115,6 +124,9 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                     if not self._item_cache_cleaned:
                         self._item_cache_cleaned = True
                         self._clean_item_cache()
+        else:
+            if self._storage._debug_cache_actions is True:
+                logger.debug("Item cache hit    for: %r", path)
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(os.path.getmtime(path)))

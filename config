@@ -155,6 +155,11 @@
 # Note: use only on single-instance setup, will break consistency with client in multi-instance setup
 #use_cache_subfolder_for_synctoken = False
 
+# Use last modifiction time (nanoseconds) and size (bytes) for 'item' cache instead of SHA256 (improves speed)
+# Note: check used filesystem mtime precision before enabling
+# Note: conversion is done on access, bulk conversion can be done offline using storage verification option: radicale --verify-storage
+#use_mtime_and_size_for_item_cache=False
+
 # Use configured umask for folder creation (not applicable for OS Windows)
 # Useful value: 0077 | 0027 | 0007 | 0022
 #folder_umask = (system default, usual 0022)
@@ -226,8 +231,8 @@
 # Log rights rule which doesn't match on level=debug
 #rights_rule_doesnt_match_on_debug = False
 
-# Log storage cache actions
-#storage_cache_actions = False
+# Log storage cache actions on level=debug
+#storage_cache_actions_on_debug = False
 
 [headers]
 

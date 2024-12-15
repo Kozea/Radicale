@@ -299,6 +299,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "use subfolder 'collection-cache' for 'sync-token' cache file structure instead of inside collection folder",
             "type": bool}),
+        ("use_mtime_and_size_for_item_cache", {
+            "value": "False",
+            "help": "use mtime and file size instead of SHA256 for 'item' cache (improves speed)",
+            "type": bool}),
         ("folder_umask", {
             "value": "",
             "help": "umask for folder creation (empty: system default)",
@@ -376,7 +380,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "log rights rules which doesn't match on level=debug",
             "type": bool}),
-        ("storage_cache_actions", {
+        ("storage_cache_actions_on_debug", {
             "value": "False",
             "help": "log storage cache action on level=debug",
             "type": bool}),
