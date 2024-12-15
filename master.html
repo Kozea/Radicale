@@ -1149,6 +1149,16 @@ present</p>
 <p>Note: use only on single-instance setup, will break consistency with
 client in multi-instance setup</p>
 </section>
+<section class="level5" id="use_mtime_and_size_for_item_cache">
+<h5>use_mtime_and_size_for_item_cache <a class="headerlink" href="#use_mtime_and_size_for_item_cache">&para;</a></h5>
+<p>Use last modifiction time (nanoseconds) and size (bytes) for 'item'
+cache instead of SHA256 (improves speed)</p>
+<p>Default: <code>False</code></p>
+<p>Note: check used filesystem mtime precision before enabling</p>
+<p>Note: conversion is done on access, bulk conversion can be done
+offline using storage verification option
+<code>radicale --verify-storage</code></p>
+</section>
 <section class="level5" id="folder_umask">
 <h5>folder_umask <a class="headerlink" href="#folder_umask">&para;</a></h5>
 <p>Use configured umask for folder creation (not applicable for OS
@@ -1257,9 +1267,9 @@ books and calendars.</p>
 <p>Log rights rule which doesn't match on level=debug</p>
 <p>Default: <code>False</code></p>
 </section>
-<section class="level5" id="storage_cache_actions">
-<h5>#storage_cache_actions <a class="headerlink" href="#storage_cache_actions">&para;</a></h5>
-<p>Log storage cache actions</p>
+<section class="level5" id="storage_cache_actions_on_debug">
+<h5>storage_cache_actions_on_debug <a class="headerlink" href="#storage_cache_actions_on_debug">&para;</a></h5>
+<p>Log storage cache actions on level=debug</p>
 <p>Default: <code>False</code></p>
 </section>
 </section>
