@@ -15,6 +15,8 @@
 * Add: option [auth] uc_username for uppercase conversion (similar to existing lc_username)
 * Add: option [debug] storage_cache_action for conditional logging
 * Fix: set PRODID on collection upload (instead of vobject is inserting default one)
+* Add: option [storage] use_mtime_and_size_for_item_cache for changing cache lookup from SHA256 to mtime_ns + size
+* Fix: buggy cache file content creation on collection upload
 
 ## 3.3.1
 
