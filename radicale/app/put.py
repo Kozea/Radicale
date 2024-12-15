@@ -29,13 +29,15 @@ from typing import Iterator, List, Mapping, MutableMapping, Optional, Tuple
 import vobject
 
 import radicale.item as radicale_item
-from radicale import httputils, pathutils, rights, storage, types, xmlutils
+from radicale import httputils, pathutils, rights, storage, types, xmlutils, utils
 from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
 
 MIMETYPE_TAGS: Mapping[str, str] = {value: key for key, value in
                                     xmlutils.MIMETYPES.items()}
+
+PRODID = u"-//Radicale//NONSGML Version " + utils.package_version("radicale") + "//EN"
 
 
 def prepare(vobject_items: List[vobject.base.Component], path: str,
@@ -80,6 +82,7 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
                     vobject_collection = vobject.iCalendar()
                     for component in components:
                         vobject_collection.add(component)
+                    vobject_collection.add(vobject.base.ContentLine("PRODID", [], PRODID))
                     item = radicale_item.Item(collection_path=collection_path,
                                               vobject_item=vobject_collection)
                     item.prepare()
