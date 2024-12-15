@@ -2,7 +2,8 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2020 Unrud <unrud@outlook.com>
+# Copyright © 2020-2023 Tuna Celik <tuna@jakpark.com>
 # Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
@@ -29,13 +30,16 @@ from typing import Iterator, List, Mapping, MutableMapping, Optional, Tuple
 import vobject
 
 import radicale.item as radicale_item
-from radicale import httputils, pathutils, rights, storage, types, xmlutils
+from radicale import (httputils, pathutils, rights, storage, types, utils,
+                      xmlutils)
 from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
 
 MIMETYPE_TAGS: Mapping[str, str] = {value: key for key, value in
                                     xmlutils.MIMETYPES.items()}
+
+PRODID = u"-//Radicale//NONSGML Version " + utils.package_version("radicale") + "//EN"
 
 
 def prepare(vobject_items: List[vobject.base.Component], path: str,
@@ -80,6 +84,7 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
                     vobject_collection = vobject.iCalendar()
                     for component in components:
                         vobject_collection.add(component)
+                    vobject_collection.add(vobject.base.ContentLine("PRODID", [], PRODID))
                     item = radicale_item.Item(collection_path=collection_path,
                                               vobject_item=vobject_collection)
                     item.prepare()
