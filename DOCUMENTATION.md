@@ -1050,6 +1050,14 @@ Default: `False`
 
 Note: use only on single-instance setup, will break consistency with client in multi-instance setup
 
+##### use_mtime_and_size_for_item_cache
+
+Use last modifiction time (nanoseconds) and size (bytes) for 'item' cache instead of SHA256 (improves speed)
+
+Default: `False`
+
+Note: check used filesystem mtime precision before enabling
+
 ##### folder_umask
 
 Use configured umask for folder creation (not applicable for OS Windows)
