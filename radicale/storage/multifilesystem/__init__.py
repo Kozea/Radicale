@@ -153,7 +153,6 @@ class Storage(
                 logger.warning("Storage item mtime resolution test result: %d %s (RISKY ON PRODUCTION SYSTEMS)" % (precision_log, unit))
             else:
                 logger.info("Storage item mtime resolution test result: %d %s" % (precision_log, unit))
-        raise
         logger.debug("Storage cache action logging: %s", self._debug_cache_actions)
         if self._use_cache_subfolder_for_item is True or self._use_cache_subfolder_for_history is True or self._use_cache_subfolder_for_synctoken is True:
             logger.info("Storage cache subfolder: %r", self._get_collection_cache_folder())
