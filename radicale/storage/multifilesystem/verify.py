@@ -29,6 +29,8 @@ class StoragePartVerify(StoragePartDiscover, StorageBase):
 
     def verify(self) -> bool:
         item_errors = collection_errors = 0
+        logger.info("Disable fsync during storage verification")
+        self._filesystem_fsync = False
 
         @types.contextmanager
         def exception_cm(sane_path: str, href: Optional[str]

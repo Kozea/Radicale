@@ -47,6 +47,9 @@ from radicale.storage.multifilesystem.sync import CollectionPartSync
 from radicale.storage.multifilesystem.upload import CollectionPartUpload
 from radicale.storage.multifilesystem.verify import StoragePartVerify
 
+# 999 second, 999 ms, 999 us, 999 ns
+MTIME_NS_TEST: int = 999999999999
+
 
 class Collection(
         CollectionPartDelete, CollectionPartMeta, CollectionPartSync,
@@ -91,22 +94,74 @@ class Storage(
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
-        logger.info("storage location: %r", self._filesystem_folder)
+        logger.info("Storage location: %r", self._filesystem_folder)
         self._makedirs_synced(self._filesystem_folder)
-        logger.info("storage location subfolder: %r", self._get_collection_root_folder())
-        logger.info("storage cache subfolder usage for 'item': %s", self._use_cache_subfolder_for_item)
-        logger.info("storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
-        logger.info("storage cache subfolder usage for 'sync-token': %s", self._use_cache_subfolder_for_synctoken)
-        logger.info("storage cache use mtime and size for 'item': %s", self._use_mtime_and_size_for_item_cache)
-        logger.debug("storage cache action logging: %s", self._debug_cache_actions)
+        logger.info("Storage location subfolder: %r", self._get_collection_root_folder())
+        logger.info("Storage cache subfolder usage for 'item': %s", self._use_cache_subfolder_for_item)
+        logger.info("Storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
+        logger.info("Storage cache subfolder usage for 'sync-token': %s", self._use_cache_subfolder_for_synctoken)
+        logger.info("Storage cache use mtime and size for 'item': %s", self._use_mtime_and_size_for_item_cache)
+        if self._use_mtime_and_size_for_item_cache is True:
+            # calculate and display mtime resolution
+            path = os.path.join(self._filesystem_folder, ".Radicale.mtime_test")
+            try:
+                with open(path, "w") as f:
+                    f.write("mtime_test")
+                    f.close
+            except Exception as e:
+                logger.error("Storage item mtime resolution test not possible, cannot write file: %r (%s)", path, e)
+                raise
+            # set mtime_ns for tests
+            os.utime(path, times=None, ns=(MTIME_NS_TEST, MTIME_NS_TEST))
+            logger.debug("Storage item mtime resoultion test set: %d" % MTIME_NS_TEST)
+            mtime_ns = os.stat(path).st_mtime_ns
+            logger.debug("Storage item mtime resoultion test get: %d" % mtime_ns)
+            # start analysis
+            precision = 1
+            mtime_ns_test = MTIME_NS_TEST
+            while mtime_ns > 0:
+                if mtime_ns == mtime_ns_test:
+                    break
+                factor = 2
+                if int(mtime_ns / factor) == int(mtime_ns_test / factor):
+                    precision = precision * factor
+                    break
+                factor = 5
+                if int(mtime_ns / factor) == int(mtime_ns_test / factor):
+                    precision = precision * factor
+                    break
+                precision = precision * 10
+                mtime_ns = int(mtime_ns / 10)
+                mtime_ns_test = int(mtime_ns_test / 10)
+            unit = "ns"
+            precision_log = precision
+            if precision >= 1000000000:
+                precision_log = int(precision / 1000000000)
+                unit = "s"
+            elif precision >= 1000000:
+                precision_log = int(precision / 1000000)
+                unit = "ms"
+            elif precision >= 1000:
+                precision_log = int(precision / 1000)
+                unit = "us"
+            os.remove(path)
+            if precision >= 100000000:
+                # >= 100 ms
+                logger.warning("Storage item mtime resolution test result: %d %s (VERY RISKY ON PRODUCTION SYSTEMS)" % (precision_log, unit))
+            elif precision >= 10000000:
+                # >= 10 ms
+                logger.warning("Storage item mtime resolution test result: %d %s (RISKY ON PRODUCTION SYSTEMS)" % (precision_log, unit))
+            else:
+                logger.info("Storage item mtime resolution test result: %d %s" % (precision_log, unit))
+        logger.debug("Storage cache action logging: %s", self._debug_cache_actions)
         if self._use_cache_subfolder_for_item is True or self._use_cache_subfolder_for_history is True or self._use_cache_subfolder_for_synctoken is True:
-            logger.info("storage cache subfolder: %r", self._get_collection_cache_folder())
+            logger.info("Storage cache subfolder: %r", self._get_collection_cache_folder())
             self._makedirs_synced(self._get_collection_cache_folder())
         if sys.platform != "win32":
             if not self._folder_umask:
                 # retrieve current umask by setting a dummy umask
                 current_umask = os.umask(0o0022)
-                logger.info("storage folder umask (from system): '%04o'", current_umask)
+                logger.info("Storage folder umask (from system): '%04o'", current_umask)
                 # reset to original
                 os.umask(current_umask)
             else:
