@@ -50,6 +50,7 @@ from radicale.storage.multifilesystem.verify import StoragePartVerify
 # 999 second, 999 ms, 999 us, 999 ns
 MTIME_NS_TEST: int = 999999999999
 
+
 class Collection(
         CollectionPartDelete, CollectionPartMeta, CollectionPartSync,
         CollectionPartUpload, CollectionPartGet, CollectionPartCache,
@@ -102,13 +103,13 @@ class Storage(
         logger.info("Storage cache use mtime and size for 'item': %s", self._use_mtime_and_size_for_item_cache)
         if self._use_mtime_and_size_for_item_cache is True:
             # calculate and display mtime resolution
-            path = os.path.join(self._get_collection_root_folder(), ".Radicale.mtime_test")
+            path = os.path.join(self._filesystem_folder, ".Radicale.mtime_test")
             try:
                 with open(path, "w") as f:
                     f.write("mtime_test")
                     f.close
-            except Exception:
-                logger.error("Storage item mtime resolution test not possible")
+            except Exception as e:
+                logger.error("Storage item mtime resolution test not possible, cannot write file: %r (%s)", path, e)
                 raise
             # set mtime_ns for tests
             os.utime(path, times=None, ns=(MTIME_NS_TEST, MTIME_NS_TEST))
@@ -135,13 +136,13 @@ class Storage(
             unit = "ns"
             precision_log = precision
             if precision >= 1000000000:
-                precision_log = precision / 1000000000
+                precision_log = int(precision / 1000000000)
                 unit = "s"
             elif precision >= 1000000:
-                precision_log = precision / 1000000
+                precision_log = int(precision / 1000000)
                 unit = "ms"
             elif precision >= 1000:
-                precision_log = precision / 1000
+                precision_log = int(precision / 1000)
                 unit = "us"
             os.remove(path)
             if precision >= 100000000:
