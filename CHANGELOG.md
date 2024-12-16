@@ -2,6 +2,7 @@
 
 ## 3.3.3.dev
 * Add: display mtime_ns precision of storage folder with condition warning if too less
+* Improve: disable fsync during storage verification
 
 ## 3.3.2
 * Fix: debug logging in rights/from_file
