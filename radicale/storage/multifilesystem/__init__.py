@@ -114,7 +114,6 @@ class Storage(
             os.utime(path, times=None, ns=(MTIME_NS_TEST, MTIME_NS_TEST))
             logger.debug("Storage item mtime resoultion test set: %d" % MTIME_NS_TEST)
             mtime_ns = os.stat(path).st_mtime_ns
-            mtime_ns = int(MTIME_NS_TEST / 100000000) * 100000000
             logger.debug("Storage item mtime resoultion test get: %d" % mtime_ns)
             # start analysis
             precision = 1
