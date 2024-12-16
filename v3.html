@@ -706,7 +706,6 @@ look similar to this:</p>
     # Place the files somewhere nginx is allowed to access (e.g. /etc/nginx/...).
     proxy_ssl_certificate         /path/to/client_cert.pem;
     proxy_ssl_certificate_key     /path/to/client_key.pem;
-    proxy_ssl_trusted_certificate /path/to/server_cert.pem;
 }</code></pre>
 </section>
 </section>
@@ -1004,9 +1003,9 @@ calendars, if they exist.</p>
 collection_root_folder/GROUPS</li>
 <li>The name of the calendar directory is the base64 encoded group
 name.</li>
-<li>The group calneder folders will not be created automaticaly. This
-must be created manualy. <a href="https://github.com/Kozea/Radicale/wiki/LDAP-authentication">Here</a>
-you can find a script to create group calneder folders <a href="https://github.com/Kozea/Radicale/wiki/LDAP-authentication">https://github.com/Kozea/Radicale/wiki/LDAP-authentication</a></li>
+<li>The group calendar folders will not be created automaticaly. This
+must be created manually. <a href="https://github.com/Kozea/Radicale/wiki/LDAP-authentication">Here</a>
+you can find a script to create group calendar folders <a href="https://github.com/Kozea/Radicale/wiki/LDAP-authentication">https://github.com/Kozea/Radicale/wiki/LDAP-authentication</a></li>
 </ul>
 <p>Default: False</p>
 </section>
@@ -1038,6 +1037,14 @@ access to the socket.</p>
 <p>&Scy;onvert username to lowercase, must be true for case-insensitive auth
 providers like ldap, kerberos</p>
 <p>Default: <code>False</code></p>
+<p>Note: cannot be enabled together with <code>uc_username</code></p>
+</section>
+<section class="level5" id="uc_username">
+<h5>uc_username <a class="headerlink" href="#uc_username">&para;</a></h5>
+<p>&Scy;onvert username to uppercase, must be true for case-insensitive auth
+providers like ldap, kerberos</p>
+<p>Default: <code>False</code></p>
+<p>Note: cannot be enabled together with <code>lc_username</code></p>
 </section>
 <section class="level5" id="strip_domain">
 <h5>strip_domain <a class="headerlink" href="#strip_domain">&para;</a></h5>
@@ -1104,6 +1111,63 @@ only be used with a single process.</p>
 <h5>filesystem_folder <a class="headerlink" href="#filesystem_folder">&para;</a></h5>
 <p>Folder for storing local collections, created if not present.</p>
 <p>Default: <code>/var/lib/radicale/collections</code></p>
+</section>
+<section class="level5" id="filesystem_cache_folder">
+<h5>filesystem_cache_folder <a class="headerlink" href="#filesystem_cache_folder">&para;</a></h5>
+<p>Folder for storing cache of local collections, created if not
+present</p>
+<p>Default: (filesystem_folder)</p>
+<p>Note: only used in case of use_cache_subfolder_* options are
+active</p>
+<p>Note: can be used on multi-instance setup to cache files on local
+node (see below)</p>
+</section>
+<section class="level5" id="use_cache_subfolder_for_item">
+<h5>use_cache_subfolder_for_item <a class="headerlink" href="#use_cache_subfolder_for_item">&para;</a></h5>
+<p>Use subfolder <code>collection-cache</code> for cache file structure
+of 'item' instead of inside collection folders, created if not
+present</p>
+<p>Default: <code>False</code></p>
+<p>Note: can be used on multi-instance setup to cache 'item' on local
+node</p>
+</section>
+<section class="level5" id="use_cache_subfolder_for_history">
+<h5>use_cache_subfolder_for_history <a class="headerlink" href="#use_cache_subfolder_for_history">&para;</a></h5>
+<p>Use subfolder <code>collection-cache</code> for cache file structure
+of 'history' instead of inside collection folders, created if not
+present</p>
+<p>Default: <code>False</code></p>
+<p>Note: use only on single-instance setup, will break consistency with
+client in multi-instance setup</p>
+</section>
+<section class="level5" id="use_cache_subfolder_for_synctoken">
+<h5>use_cache_subfolder_for_synctoken <a class="headerlink" href="#use_cache_subfolder_for_synctoken">&para;</a></h5>
+<p>Use subfolder <code>collection-cache</code> for cache file structure
+of 'sync-token' instead of inside collection folders, created if not
+present</p>
+<p>Default: <code>False</code></p>
+<p>Note: use only on single-instance setup, will break consistency with
+client in multi-instance setup</p>
+</section>
+<section class="level5" id="use_mtime_and_size_for_item_cache">
+<h5>use_mtime_and_size_for_item_cache <a class="headerlink" href="#use_mtime_and_size_for_item_cache">&para;</a></h5>
+<p>Use last modifiction time (nanoseconds) and size (bytes) for 'item'
+cache instead of SHA256 (improves speed)</p>
+<p>Default: <code>False</code></p>
+<p>Note: check used filesystem mtime precision before enabling</p>
+<p>Note: conversion is done on access, bulk conversion can be done
+offline using storage verification option
+<code>radicale --verify-storage</code></p>
+</section>
+<section class="level5" id="folder_umask">
+<h5>folder_umask <a class="headerlink" href="#folder_umask">&para;</a></h5>
+<p>Use configured umask for folder creation (not applicable for OS
+Windows)</p>
+<p>Default: (system-default, usual <code>0022</code>)</p>
+<p>Useful value: <code>0077</code> (user:rw group:- other:-) or
+<code>0027</code> (user:rw group:r other:-) or <code>0007</code>
+(user:rw group:rw other:-) or <code>0022</code> (user:rw group:r
+other:r)</p>
 </section>
 <section class="level5" id="max_sync_token_age">
 <h5>max_sync_token_age <a class="headerlink" href="#max_sync_token_age">&para;</a></h5>
@@ -1193,14 +1257,19 @@ books and calendars.</p>
 <p>Log request on level=debug</p>
 <p>Default: <code>False</code></p>
 </section>
-<section class="level5" id="response_content_on_debug--true">
-<h5>response_content_on_debug = True <a class="headerlink" href="#response_content_on_debug--true">&para;</a></h5>
+<section class="level5" id="response_content_on_debug">
+<h5>response_content_on_debug <a class="headerlink" href="#response_content_on_debug">&para;</a></h5>
 <p>Log response on level=debug</p>
 <p>Default: <code>False</code></p>
 </section>
-<section class="level5" id="rights_rule_doesnt_match_on_debug--true">
-<h5>rights_rule_doesnt_match_on_debug = True <a class="headerlink" href="#rights_rule_doesnt_match_on_debug--true">&para;</a></h5>
+<section class="level5" id="rights_rule_doesnt_match_on_debug">
+<h5>rights_rule_doesnt_match_on_debug <a class="headerlink" href="#rights_rule_doesnt_match_on_debug">&para;</a></h5>
 <p>Log rights rule which doesn't match on level=debug</p>
+<p>Default: <code>False</code></p>
+</section>
+<section class="level5" id="storage_cache_actions_on_debug">
+<h5>storage_cache_actions_on_debug <a class="headerlink" href="#storage_cache_actions_on_debug">&para;</a></h5>
+<p>Log storage cache actions on level=debug</p>
 <p>Default: <code>False</code></p>
 </section>
 </section>
