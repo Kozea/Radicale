@@ -221,18 +221,31 @@ def setup() -> None:
         logger.error("Invalid RADICALE_LOG_FORMAT: %r", format_name)
 
 
+logger_display_backtrace_disabled: bool = False
+logger_display_backtrace_enabled: bool = False
+
+
 def set_level(level: Union[int, str], backtrace_on_debug: bool) -> None:
     """Set logging level for global logger."""
+    global logger_display_backtrace_disabled
+    global logger_display_backtrace_enabled
     if isinstance(level, str):
         level = getattr(logging, level.upper())
         assert isinstance(level, int)
     logger.setLevel(level)
     if level > logging.DEBUG:
-        logger.info("Logging of backtrace is disabled in this loglevel")
+        if logger_display_backtrace_disabled is False:
+            logger.info("Logging of backtrace is disabled in this loglevel")
+            logger_display_backtrace_disabled = True
         logger.addFilter(REMOVE_TRACEBACK_FILTER)
     else:
         if not backtrace_on_debug:
-            logger.debug("Logging of backtrace is disabled by option in this loglevel")
+            if logger_display_backtrace_disabled is False:
+                logger.debug("Logging of backtrace is disabled by option in this loglevel")
+                logger_display_backtrace_disabled = True
             logger.addFilter(REMOVE_TRACEBACK_FILTER)
         else:
+            if logger_display_backtrace_enabled is False:
+                logger.debug("Logging of backtrace is enabled by option in this loglevel")
+                logger_display_backtrace_enabled = True
             logger.removeFilter(REMOVE_TRACEBACK_FILTER)
