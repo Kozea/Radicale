@@ -92,51 +92,51 @@ class Storage(
 
     _collection_class: ClassVar[Type[Collection]] = Collection
 
-    def _analyse_mtime(self) -> None:
-            # calculate and display mtime resolution
-            path = os.path.join(self._filesystem_folder, ".Radicale.mtime_test")
-            try:
-                with open(path, "w") as f:
-                    f.write("mtime_test")
-                    f.close
-            except Exception as e:
-                logger.error("Storage item mtime resolution test not possible, cannot write file: %r (%s)", path, e)
-                raise
-            # set mtime_ns for tests
-            os.utime(path, times=None, ns=(MTIME_NS_TEST, MTIME_NS_TEST))
-            logger.debug("Storage item mtime resoultion test set: %d" % MTIME_NS_TEST)
-            mtime_ns = os.stat(path).st_mtime_ns
-            logger.debug("Storage item mtime resoultion test get: %d" % mtime_ns)
-            # start analysis
-            precision = 1
-            mtime_ns_test = MTIME_NS_TEST
-            while mtime_ns > 0:
-                if mtime_ns == mtime_ns_test:
-                    break
-                factor = 2
-                if int(mtime_ns / factor) == int(mtime_ns_test / factor):
-                    precision = precision * factor
-                    break
-                factor = 5
-                if int(mtime_ns / factor) == int(mtime_ns_test / factor):
-                    precision = precision * factor
-                    break
-                precision = precision * 10
-                mtime_ns = int(mtime_ns / 10)
-                mtime_ns_test = int(mtime_ns_test / 10)
-            unit = "ns"
-            precision_unit = precision
-            if precision >= 1000000000:
-                precision_unit = int(precision / 1000000000)
-                unit = "s"
-            elif precision >= 1000000:
-                precision_unit = int(precision / 1000000)
-                unit = "ms"
-            elif precision >= 1000:
-                precision_unit = int(precision / 1000)
-                unit = "us"
-            os.remove(path)
-            return (precision, precision_unit, unit)
+    def _analyse_mtime(self):
+        # calculate and display mtime resolution
+        path = os.path.join(self._filesystem_folder, ".Radicale.mtime_test")
+        try:
+            with open(path, "w") as f:
+                f.write("mtime_test")
+                f.close
+        except Exception as e:
+            logger.error("Storage item mtime resolution test not possible, cannot write file: %r (%s)", path, e)
+            raise
+        # set mtime_ns for tests
+        os.utime(path, times=None, ns=(MTIME_NS_TEST, MTIME_NS_TEST))
+        logger.debug("Storage item mtime resoultion test set: %d" % MTIME_NS_TEST)
+        mtime_ns = os.stat(path).st_mtime_ns
+        logger.debug("Storage item mtime resoultion test get: %d" % mtime_ns)
+        # start analysis
+        precision = 1
+        mtime_ns_test = MTIME_NS_TEST
+        while mtime_ns > 0:
+            if mtime_ns == mtime_ns_test:
+                break
+            factor = 2
+            if int(mtime_ns / factor) == int(mtime_ns_test / factor):
+                precision = precision * factor
+                break
+            factor = 5
+            if int(mtime_ns / factor) == int(mtime_ns_test / factor):
+                precision = precision * factor
+                break
+            precision = precision * 10
+            mtime_ns = int(mtime_ns / 10)
+            mtime_ns_test = int(mtime_ns_test / 10)
+        unit = "ns"
+        precision_unit = precision
+        if precision >= 1000000000:
+            precision_unit = int(precision / 1000000000)
+            unit = "s"
+        elif precision >= 1000000:
+            precision_unit = int(precision / 1000000)
+            unit = "ms"
+        elif precision >= 1000:
+            precision_unit = int(precision / 1000)
+            unit = "us"
+        os.remove(path)
+        return (precision, precision_unit, unit)
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
