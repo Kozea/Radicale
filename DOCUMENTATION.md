@@ -1401,7 +1401,7 @@ An example rights file:
 [root]
 user: .+
 collection:
-permissions: r
+permissions: R
 
 # Allow reading and writing principal collection (same as username)
 [principal]
