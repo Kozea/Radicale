@@ -204,7 +204,7 @@ class ApplicationPartPut(ApplicationBase):
                 # Etag asked but item not matching: item has changed
                 logger.warning("Precondition failed on PUT request for %r (HTTP_IF_MATCH: %s, item has different etag: %s)", path, etag, item.etag)
                 return httputils.PRECONDITION_FAILED
-            if etag:
+            if item and etag:
                 logger.debug("Precondition passed on PUT request for %r (HTTP_IF_MATCH: %s, item has etag: %s)", path, etag, item.etag)
 
             match = environ.get("HTTP_IF_NONE_MATCH", "") == "*"
