@@ -198,15 +198,22 @@ class ApplicationPartPut(ApplicationBase):
             etag = environ.get("HTTP_IF_MATCH", "")
             if not item and etag:
                 # Etag asked but no item found: item has been removed
+                logger.warning("Precondition failed on PUT request for %r (HTTP_IF_MATCH: %s, item not existing)", path, etag)
                 return httputils.PRECONDITION_FAILED
             if item and etag and item.etag != etag:
                 # Etag asked but item not matching: item has changed
+                logger.warning("Precondition failed on PUT request for %r (HTTP_IF_MATCH: %s, item has different etag: %s)", path, etag, item.etag)
                 return httputils.PRECONDITION_FAILED
+            if etag:
+                logger.debug("Precondition passed on PUT request for %r (HTTP_IF_MATCH: %s, item has etag: %s)", path, etag, item.etag)
 
             match = environ.get("HTTP_IF_NONE_MATCH", "") == "*"
             if item and match:
                 # Creation asked but item found: item can't be replaced
+                logger.warning("Precondition failed on PUT request for %r (HTTP_IF_NONE_MATCH: *, creation requested but item found with etag: %s)", path, item.etag)
                 return httputils.PRECONDITION_FAILED
+            if match:
+                logger.debug("Precondition passed on PUT request for %r (HTTP_IF_NONE_MATCH: *)", path)
 
             if (tag != prepared_tag or
                     prepared_write_whole_collection != write_whole_collection):
