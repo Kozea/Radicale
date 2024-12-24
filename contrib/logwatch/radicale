@@ -1,0 +1,135 @@
+# This file is related to Radicale - CalDAV and CardDAV server
+#  for logwatch (script)
+# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+
+$Detail = $ENV{'LOGWATCH_DETAIL_LEVEL'} || 0;
+
+my %ResponseTimes;
+my %Requests;
+my %Logins;
+my %Loglevel;
+my %OtherEvents;
+
+sub ResponseTimesMinMaxAvg($$) {
+   my $req = $_[0];
+   my $time = $_[1];
+
+   $ResponseTimes{$req}->{'cnt'}++;
+
+   if (! defined $ResponseTimes{$req}->{'min'}) {
+      $ResponseTimes{$req}->{'min'} = $time;
+   } elsif ($ResponseTimes->{$req}->{'min'} > $time) {
+      $ResponseTimes{$req}->{'min'} = $time;
+   }
+
+   if (! defined $ResponseTimes{$req}->{'max'}) {
+      $ResponseTimes{$req}{'max'} = $time;
+   } elsif ($ResponseTimes{$req}->{'max'} < $time) {
+      $ResponseTimes{$req}{'max'} = $time;
+   }
+
+   if (! defined $ResponseTimes{$req}->{'avg'}) {
+      $ResponseTimes{$req}->{'avg'} = $time;
+   } else {
+      $ResponseTimes{$req}->{'avg'} =  ($ResponseTimes{$req}->{'avg'} * ($ResponseTimes{$req}->{'cnt'} - 1) + $time) / $ResponseTimes{$req}->{'cnt'}; 
+   }
+}
+
+while (defined($ThisLine = <STDIN>)) {
+   # count loglevel
+   if ( $ThisLine =~ /\[(DEBUG|INFO|WARNING|ERROR|CRITICAL)\] /o ) {
+      $Loglevel{$1}++
+   }       
+  
+   # parse log for events
+   if ( $ThisLine =~ /Radicale server ready/o ) {
+      $OtherEvents{"Radicale server started"}++;
+   }
+   elsif ( $ThisLine =~ /Stopping Radicale/o ) {
+      $OtherEvents{"Radicale server stopped"}++;
+   }
+   elsif ( $ThisLine =~ / (\S+ response status)/o ) {
+      if ( $ThisLine =~ / (\S+) response status for .* with depth '(\d)' in ([0-9.]+) seconds: (\d+)/o ) {
+         ResponseTimesMinMaxAvg($1 . "|R=" . $4 . "|D=" . $2, $3);
+      } elsif ( $ThisLine =~ / (\S+) response status for .* in ([0-9.]+) seconds: (\d+)/ ) {
+         ResponseTimesMinMaxAvg($1 . "|R=" . $3, $2);
+      }
+   }
+   elsif ( $ThisLine =~ / (\S+) request for/o ) {
+      $Requests{$1}++;
+   }
+   elsif ( $ThisLine =~ / Successful login: '([^']+)'/o ) {
+      $Logins{$1}++;
+   }
+   elsif ( $ThisLine =~ / (Failed login attempt) /o ) {
+      $OtherEvents{$1}++;
+   }
+   elsif ( $ThisLine =~ /\[(DEBUG|INFO)\] /o ) {
+      # skip if DEBUG+INFO
+   }
+   else {
+      # Report any unmatched entries...
+      $ThisLine =~ s/^\[\d+(\/Thread-\d+)?\] //; # remove process/Thread ID
+      chomp($ThisLine);
+      $OtherList{$ThisLine}++;
+   }
+}
+
+if ($Started) {
+   print "\nStatistics:\n";
+   print "   Radicale started: $Started Time(s)\n";
+}
+
+if (keys %Loglevel) {
+   print "\n**Loglevel counters**\n";
+   printf "%-18s | %7s |\n", "Loglevel", "cnt";
+   print "-" x30 . "\n";
+   foreach my $level (sort keys %Loglevel) {
+      printf "%-18s | %7d |\n", $level, $Loglevel{$level};
+   }
+}
+
+if (keys %Requests) {
+   print "\n**Request counters**\n";
+   printf "%-18s | %7s |\n", "Request", "cnt";
+   print "-" x30 . "\n";
+   foreach my $req (sort keys %Requests) {
+      printf "%-18s | %7d |\n", $req, $Requests{$req};
+   }
+}
+
+if ($Details >= 5 && keys %Requests) {
+   print "\n**Successful login counters**\n";
+   printf "%-25s | %7s |\n", "Login", "cnt";
+   print "-" x37 . "\n";
+   foreach my $login (sort keys %Logins) {
+      printf "%-25s | %7d |\n", $login, $Logins{$login};
+   }
+}
+
+if ($Detail >= 5 && keys %ResponseTimes) {
+   print "\n**Response timings (counts, seconds) (R=<result> D=<depth>)**\n";
+   printf "%-18s | %7s | %7s | %7s | %7s |\n", "Response", "cnt", "min", "max", "avg";
+   print "-" x60 . "\n";
+   foreach my $req (sort keys %ResponseTimes) {
+      printf "%-18s | %7d | %7.3f | %7.3f | %7.3f |\n", $req, $ResponseTimes{$req}->{'cnt'}, $ResponseTimes{$req}->{'min'}, $ResponseTimes{$req}->{'max'}, $ResponseTimes{$req}->{'avg'};
+   }
+}
+
+if (keys %OtherEvents) {
+   print "\n**Other Events**\n";
+   foreach $ThisOne (sort keys %OtherEvents) {
+      print "$ThisOne: $OtherEvents{$ThisOne} Time(s)\n";
+   }
+}
+
+if (keys %OtherList) {
+   print "\n**Unmatched Entries**\n";
+   foreach $ThisOne (sort keys %OtherList) {
+      print "$ThisOne: $OtherList{$ThisOne} Time(s)\n";
+   }
+}
+
+exit(0);
+
+# vim: shiftwidth=3 tabstop=3 syntax=perl et smartindent
