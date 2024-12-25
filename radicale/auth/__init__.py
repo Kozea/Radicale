@@ -29,7 +29,7 @@ Take a look at the class ``BaseAuth`` if you want to implement your own.
 
 """
 
-from typing import Sequence, Set, Tuple, Union
+from typing import Sequence, Set, Tuple, Union, final
 
 from radicale import config, types, utils
 from radicale.log import logger
@@ -49,7 +49,6 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
         logger.warning("All access is blocked by: '[auth] type=denyall'")
     return utils.load_plugin(INTERNAL_TYPES, "auth", "Auth", BaseAuth,
                              configuration)
-
 
 class BaseAuth:
 
@@ -102,6 +101,7 @@ class BaseAuth:
 
         raise NotImplementedError
 
+    @final
     def login(self, login: str, password: str) -> str:
         if self._lc_username:
             login = login.lower()

@@ -32,7 +32,7 @@ class Auth(auth.BaseAuth):
         self.timeout = 5
         self.request_id_gen = itertools.count(1)
 
-    def login(self, login, password):
+    def _login(self, login, password):
         """Validate credentials.
 
         Check if the ``login``/``password`` pair is valid according to Dovecot.
