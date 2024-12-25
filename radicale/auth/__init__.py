@@ -50,6 +50,7 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
     return utils.load_plugin(INTERNAL_TYPES, "auth", "Auth", BaseAuth,
                              configuration)
 
+
 class BaseAuth:
 
     _ldap_groups: Set[str] = set([])
