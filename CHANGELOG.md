@@ -5,6 +5,7 @@
 * Improve: disable fsync during storage verification
 * Improve: suppress duplicate log lines on startup
 * Contrib: logwatch config and script
+* Improve: log precondition result on PUT request
 
 ## 3.3.2
 * Fix: debug logging in rights/from_file
