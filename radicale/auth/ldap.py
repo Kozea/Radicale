@@ -202,7 +202,7 @@ class Auth(auth.BaseAuth):
             pass
         return ""
 
-    def login(self, login: str, password: str) -> str:
+    def _login(self, login: str, password: str) -> str:
         """Validate credentials.
         In first step we make a connection to the ldap server with the ldap_reader_dn credential.
         In next step the DN of the user to authenticate will be searched.
