@@ -672,6 +672,24 @@ python3 -m radicale --server-hosts 0.0.0.0:5232,[::]:5232 \
 Add the argument `--config ""` to stop Radicale from loading the default
 configuration files. Run `python3 -m radicale --help` for more information.
 
+One can also use command line options in startup scripts using following examples:
+
+```bash
+## simple variable containing multiple options
+RADICALE_OPTIONS="--logging-level=debug --config=/etc/radicale/config --logging-request-header-on-debug --logging-rights-rule-doesnt-match-on-debug"
+/usr/bin/radicale $RADICALE_OPTIONS
+
+## variable as array method #1
+RADICALE_OPTIONS=("--logging-level=debug" "--config=/etc/radicale/config" "--logging-request-header-on-debug" "--logging-rights-rule-doesnt-match-on-debug")
+/usr/bin/radicale ${RADICALE_OPTIONS[@]}
+
+## variable as array method #2
+RADICALE_OPTIONS=()
+RADICALE_OPTIONS+=("--logging-level=debug")
+RADICALE_OPTIONS+=("--config=/etc/radicale/config")
+/usr/bin/radicale ${RADICALE_OPTIONS[@]}
+```
+
 In the following, all configuration categories and options are described.
 
 #### server
