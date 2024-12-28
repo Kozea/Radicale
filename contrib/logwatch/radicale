@@ -3,17 +3,22 @@
 # Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
 #
 # Detail levels
-# >= 5: Logins, ResponseTimes
+# >= 5: Logins
+# >= 10: ResponseTimes
 
 $Detail = $ENV{'LOGWATCH_DETAIL_LEVEL'} || 0;
 
 my %ResponseTimes;
+my %Responses;
 my %Requests;
 my %Logins;
 my %Loglevel;
 my %OtherEvents;
 
-sub ResponseTimesMinMaxAvg($$) {
+my $sum;
+my $length;
+
+sub ResponseTimesMinMaxSum($$) {
    my $req = $_[0];
    my $time = $_[1];
 
@@ -31,11 +36,25 @@ sub ResponseTimesMinMaxAvg($$) {
       $ResponseTimes{$req}{'max'} = $time;
    }
 
-   if (! defined $ResponseTimes{$req}->{'avg'}) {
-      $ResponseTimes{$req}->{'avg'} = $time;
-   } else {
-      $ResponseTimes{$req}->{'avg'} =  ($ResponseTimes{$req}->{'avg'} * ($ResponseTimes{$req}->{'cnt'} - 1) + $time) / $ResponseTimes{$req}->{'cnt'}; 
+   $ResponseTimes{$req}->{'sum'} += $time;
+}
+
+sub Sum($) {
+   my $phash = $_[0];
+   my $sum = 0;
+   foreach my $entry (keys %$phash) {
+      $sum += $phash->{$entry};
    }
+   return $sum;
+}
+
+sub MaxLength($) {
+   my $phash = $_[0];
+   my $length = 0;
+   foreach my $entry (keys %$phash) {
+      $length = length($entry) if (length($entry) > $length);
+   }
+   return $length;
 }
 
 while (defined($ThisLine = <STDIN>)) {
@@ -51,18 +70,27 @@ while (defined($ThisLine = <STDIN>)) {
    elsif ( $ThisLine =~ /Stopping Radicale/o ) {
       $OtherEvents{"Radicale server stopped"}++;
    }
-   elsif ( $ThisLine =~ / (\S+ response status)/o ) {
-      if ( $ThisLine =~ / (\S+) response status for .* with depth '(\d)' in ([0-9.]+) seconds: (\d+)/o ) {
-         ResponseTimesMinMaxAvg($1 . "|R=" . $4 . "|D=" . $2, $3);
-      } elsif ( $ThisLine =~ / (\S+) response status for .* in ([0-9.]+) seconds: (\d+)/ ) {
-         ResponseTimesMinMaxAvg($1 . "|R=" . $3, $2);
+   elsif ( $ThisLine =~ / (\S+) response status/o ) {
+      my $req = $1;
+      if ( $ThisLine =~ / \S+ response status for .* with depth '(\d)' in ([0-9.]+) seconds: (\d+)/o ) {
+         $req .= ":D=" . $1 . ":R=" . $3;
+         ResponseTimesMinMaxSum($req, $2) if ($Detail >= 10);
+      } elsif ( $ThisLine =~ / \S+ response status for .* in ([0-9.]+) seconds: (\d+)/ ) {
+         $req .= ":R=" . $2;
+         ResponseTimesMinMaxSum($req, $1) if ($Detail >= 10);
       }
+      $Responses{$req}++;
    }
    elsif ( $ThisLine =~ / (\S+) request for/o ) {
-      $Requests{$1}++;
+      my $req = $1;
+      if ( $ThisLine =~ / \S+ request for .* with depth '(\d)' received/o ) {
+         $req .= ":D=" . $1;
+      }
+      $Requests{$req}++;
    }
-   elsif ( $ThisLine =~ / Successful login: '([^']+)'/o ) {
-      $Logins{$1}++;
+   elsif ( $ThisLine =~ / (Successful login): '([^']+)'/o ) {
+      $Logins{$2}++ if ($Detail >= 5);
+      $OtherEvents{$1}++;
    }
    elsif ( $ThisLine =~ / (Failed login attempt) /o ) {
       $OtherEvents{$1}++;
@@ -84,39 +112,66 @@ if ($Started) {
 }
 
 if (keys %Loglevel) {
+   $sum = Sum(\%Loglevel);
    print "\n**Loglevel counters**\n";
-   printf "%-18s | %7s |\n", "Loglevel", "cnt";
-   print "-" x30 . "\n";
+   printf "%-18s | %7s | %5s |\n", "Loglevel", "cnt", "ratio";
+   print "-" x38 . "\n";
    foreach my $level (sort keys %Loglevel) {
-      printf "%-18s | %7d |\n", $level, $Loglevel{$level};
+      printf "%-18s | %7d |  %3d%% |\n", $level, $Loglevel{$level}, int(($Loglevel{$level} * 100) / $sum);
    }
+   print "-" x38 . "\n";
+   printf "%-18s | %7d |  %3d%% |\n", "", $sum, 100;
 }
 
 if (keys %Requests) {
-   print "\n**Request counters**\n";
-   printf "%-18s | %7s |\n", "Request", "cnt";
-   print "-" x30 . "\n";
+   $sum = Sum(\%Requests);
+   print "\n**Request counters (D=<depth>)**\n";
+   printf "%-18s | %7s | %5s |\n", "Request", "cnt", "ratio";
+   print "-" x38 . "\n";
    foreach my $req (sort keys %Requests) {
-      printf "%-18s | %7d |\n", $req, $Requests{$req};
+      printf "%-18s | %7d |  %3d%% |\n", $req, $Requests{$req}, int(($Requests{$req} * 100) / $sum);
    }
+   print "-" x38 . "\n";
+   printf "%-18s | %7d |  %3d%% |\n", "", $sum, 100;
 }
 
-if ($Detail >= 5 && keys %Requests) {
+if (keys %Responses) {
+   $sum = Sum(\%Responses);
+   print "\n**Response result counters ((D=<depth> R=<result>)**\n";
+   printf "%-18s | %7s | %5s |\n", "Response", "cnt", "ratio";
+   print "-" x38 . "\n";
+   foreach my $req (sort keys %Responses) {
+      printf "%-18s | %7d |  %3d%% |\n", $req, $Responses{$req}, int(($Responses{$req} * 100) / $sum);
+   }
+   print "-" x38 . "\n";
+   printf "%-18s | %7d |  %3d%% |\n", "", $sum, 100;
+}
+
+if (keys %Logins) {
+   $sum = Sum(\%Logins);
+   $length = MaxLength(\%Logins);
    print "\n**Successful login counters**\n";
-   printf "%-25s | %7s |\n", "Login", "cnt";
-   print "-" x37 . "\n";
+   printf "%-" . $length . "s | %7s | %5s |\n", "Login", "cnt", "ratio";
+   print "-" x($length + 20) . "\n";
    foreach my $login (sort keys %Logins) {
-      printf "%-25s | %7d |\n", $login, $Logins{$login};
+      printf "%-" . $length . "s | %7d |  %3d%% |\n", $login, $Logins{$login}, int(($Logins{$login} * 100) / $sum);
    }
+   print "-" x($length + 20) . "\n";
+   printf "%-" . $length . "s | %7d |  %3d%% |\n", "", $sum, 100;
 }
 
-if ($Detail >= 5 && keys %ResponseTimes) {
-   print "\n**Response timings (counts, seconds) (R=<result> D=<depth>)**\n";
+if (keys %ResponseTimes) {
+   print "\n**Response timings (counts, seconds) (D=<depth> R=<result>)**\n";
    printf "%-18s | %7s | %7s | %7s | %7s |\n", "Response", "cnt", "min", "max", "avg";
    print "-" x60 . "\n";
    foreach my $req (sort keys %ResponseTimes) {
-      printf "%-18s | %7d | %7.3f | %7.3f | %7.3f |\n", $req, $ResponseTimes{$req}->{'cnt'}, $ResponseTimes{$req}->{'min'}, $ResponseTimes{$req}->{'max'}, $ResponseTimes{$req}->{'avg'};
+      printf "%-18s | %7d | %7.3f | %7.3f | %7.3f |\n", $req
+         , $ResponseTimes{$req}->{'cnt'}
+         , $ResponseTimes{$req}->{'min'}
+         , $ResponseTimes{$req}->{'max'}
+         , $ResponseTimes{$req}->{'sum'} / $ResponseTimes{$req}->{'cnt'};
    }
+   print "-" x60 . "\n";
 }
 
 if (keys %OtherEvents) {
