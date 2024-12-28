@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.3.3.dev
+## 3.3.3
 * Add: display mtime_ns precision of storage folder with condition warning if too less
 * Improve: disable fsync during storage verification
 * Improve: suppress duplicate log lines on startup
