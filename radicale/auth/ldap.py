@@ -112,10 +112,12 @@ class Auth(auth.BaseAuth):
             conn.set_option(self.ldap.OPT_REFERRALS, 0)
             conn.simple_bind_s(self._ldap_reader_dn, self._ldap_secret)
             """Search for the dn of user to authenticate"""
+            escaped_login = self.ldap.filter.escape_filter_chars(login)
+            logger.debug(f"_login2 login escaped for LDAP filters: {escaped_login}")
             res = conn.search_s(
                 self._ldap_base,
                 self.ldap.SCOPE_SUBTREE,
-                filterstr=self._ldap_filter.format(login),
+                filterstr=self._ldap_filter.format(escaped_login),
                 attrlist=['memberOf']
             )
             if len(res) != 1:
@@ -176,9 +178,11 @@ class Auth(auth.BaseAuth):
 
         logger.debug(f"_login3 bind as {self._ldap_reader_dn}")
         """Search the user dn"""
+        escaped_login = self.ldap3.utils.conv.escape_filter_chars(login)
+        logger.debug(f"_login3 login escaped for LDAP filters: {escaped_login}")
         conn.search(
             search_base=self._ldap_base,
-            search_filter=self._ldap_filter.format(login),
+            search_filter=self._ldap_filter.format(escaped_login),
             search_scope=self.ldap3.SUBTREE,
             attributes=['memberOf']
         )
