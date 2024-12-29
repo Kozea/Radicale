@@ -112,12 +112,18 @@ class Auth(auth.BaseAuth):
             conn.set_option(self.ldap.OPT_REFERRALS, 0)
             conn.simple_bind_s(self._ldap_reader_dn, self._ldap_secret)
             """Search for the dn of user to authenticate"""
-            res = conn.search_s(self._ldap_base, self.ldap.SCOPE_SUBTREE, filterstr=self._ldap_filter.format(login), attrlist=['memberOf'])
+            res = conn.search_s(
+                self._ldap_base,
+                self.ldap.SCOPE_SUBTREE,
+                filterstr=self._ldap_filter.format(login),
+                attrlist=['memberOf']
+            )
             if len(res) == 0:
                 """User could not be found"""
                 return ""
-            user_dn = res[0][0]
-            logger.debug("LDAP Auth user: %s", user_dn)
+            user_entry = res[0]
+            user_dn = user_entry[0]
+            logger.debug(f"_login2 found LDAP user DN {user_dn}")
             """Close LDAP connection"""
             conn.unbind()
         except Exception as e:
@@ -132,11 +138,12 @@ class Auth(auth.BaseAuth):
             tmp: list[str] = []
             if self._ldap_load_groups:
                 tmp = []
-                for t in res[0][1]['memberOf']:
-                    tmp.append(t.decode('utf-8').split(',')[0][3:])
+                for g in user_entry[1]['memberOf']:
+                    tmp.append(g.decode('utf-8').split(',')[0][3:])
                 self._ldap_groups = set(tmp)
-                logger.debug("LDAP Auth groups of user: %s", ",".join(self._ldap_groups))
+                logger.debug("_login2 LDAP groups of user: %s", ",".join(self._ldap_groups))
             conn.unbind()
+            logger.debug(f"_login2 {login} successfully authenticated")
             return login
         except self.ldap.INVALID_CREDENTIALS:
             return ""
@@ -182,18 +189,20 @@ class Auth(auth.BaseAuth):
         user_entry = conn.response[0]
         conn.unbind()
         user_dn = user_entry['dn']
-        logger.debug(f"_login3 found user_dn {user_dn}")
+        logger.debug(f"_login3 found LDAP user DN {user_dn}")
         try:
             """Try to bind as the user itself"""
             conn = self.ldap3.Connection(server, user_dn, password=password)
             if not conn.bind():
                 logger.debug(f"_login3 user '{login}' cannot be found")
                 return ""
+            tmp: list[str] = []
             if self._ldap_load_groups:
                 tmp = []
                 for g in user_entry['attributes']['memberOf']:
                     tmp.append(g.split(',')[0][3:])
                 self._ldap_groups = set(tmp)
+                logger.debug("_login3 LDAP groups of user: %s", ",".join(self._ldap_groups))
             conn.unbind()
             logger.debug(f"_login3 {login} successfully authenticated")
             return login
