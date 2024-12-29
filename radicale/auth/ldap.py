@@ -43,7 +43,7 @@ class Auth(auth.BaseAuth):
     _ldap_reader_dn: str
     _ldap_secret: str
     _ldap_filter: str
-    _ldap_attributes: list[str] = ['memberOf']
+    _ldap_attributes: list[str] = []
     _ldap_user_attr: str
     _ldap_load_groups: bool
     _ldap_module_version: int = 3
@@ -111,6 +111,8 @@ class Auth(auth.BaseAuth):
             else:
                 logger.info("auth.ldap_ssl_ca_file     : (not provided)")
         """Extend attributes to to be returned in the user query"""
+        if self._ldap_load_groups:
+            self._ldap_attributes.append('memberOf')
         if self._ldap_user_attr:
             self._ldap_attributes.append(self._ldap_user_attr)
         logger.info("ldap_attributes           : %r" % self._ldap_attributes)
