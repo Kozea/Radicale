@@ -142,7 +142,9 @@ class Auth(auth.BaseAuth):
             if self._ldap_load_groups:
                 tmp = []
                 for g in user_entry[1]['memberOf']:
-                    tmp.append(g.decode('utf-8').split(',')[0][3:])
+                    """Get group g's RDN's attribute value"""
+                    g = g.decode('utf-8').split(',')[0]
+                    tmp.append(g.partition('=')[2])
                 self._ldap_groups = set(tmp)
                 logger.debug("_login2 LDAP groups of user: %s", ",".join(self._ldap_groups))
             conn.unbind()
@@ -205,7 +207,9 @@ class Auth(auth.BaseAuth):
             if self._ldap_load_groups:
                 tmp = []
                 for g in user_entry['attributes']['memberOf']:
-                    tmp.append(g.split(',')[0][3:])
+                    """Get group g's RDN's attribute value"""
+                    g = g.split(',')[0]
+                    tmp.append(g.partition('=')[2])
                 self._ldap_groups = set(tmp)
                 logger.debug("_login3 LDAP groups of user: %s", ",".join(self._ldap_groups))
             conn.unbind()
