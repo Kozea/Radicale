@@ -227,6 +227,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "(cn={0})",
             "help": "the search filter to find the user DN to authenticate by the username",
             "type": str}),
+        ("ldap_user_attribute", {
+            "value": "",
+            "help": "the attribute to be used as username after authentication",
+            "type": str}),
         ("ldap_load_groups", {
             "value": "False",
             "help": "load the ldap groups of the authenticated user",

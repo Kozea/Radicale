@@ -17,13 +17,14 @@
 """
 Authentication backend that checks credentials with a LDAP server.
 Following parameters are needed in the configuration:
-   ldap_uri         The LDAP URL to the server like ldap://localhost
-   ldap_base        The baseDN of the LDAP server
-   ldap_reader_dn   The DN of a LDAP user with read access to get the user accounts
-   ldap_secret      The password of the ldap_reader_dn
-   ldap_secret_file The path of the file containing the password of the ldap_reader_dn
-   ldap_filter      The search filter to find the user to authenticate by the username
-   ldap_load_groups If the groups of the authenticated users need to be loaded
+   ldap_uri            The LDAP URL to the server like ldap://localhost
+   ldap_base           The baseDN of the LDAP server
+   ldap_reader_dn      The DN of a LDAP user with read access to get the user accounts
+   ldap_secret         The password of the ldap_reader_dn
+   ldap_secret_file    The path of the file containing the password of the ldap_reader_dn
+   ldap_filter         The search filter to find the user to authenticate by the username
+   ldap_user_attribute The attribute to be used as username after authentication
+   ldap_load_groups    If the groups of the authenticated users need to be loaded
 Following parameters controls SSL connections:
    ldap_use_ssl   If the connection
    ldap_ssl_verify_mode The certificate verification mode. NONE, OPTIONAL, default is REQUIRED
@@ -42,6 +43,7 @@ class Auth(auth.BaseAuth):
     _ldap_reader_dn: str
     _ldap_secret: str
     _ldap_filter: str
+    _ldap_user_attr: str
     _ldap_load_groups: bool
     _ldap_module_version: int = 3
     _ldap_use_ssl: bool = False
@@ -66,6 +68,7 @@ class Auth(auth.BaseAuth):
         self._ldap_load_groups = configuration.get("auth", "ldap_load_groups")
         self._ldap_secret = configuration.get("auth", "ldap_secret")
         self._ldap_filter = configuration.get("auth", "ldap_filter")
+        self._ldap_user_attr = configuration.get("auth", "ldap_user_attribute")
         ldap_secret_file_path = configuration.get("auth", "ldap_secret_file")
         if ldap_secret_file_path:
             with open(ldap_secret_file_path, 'r') as file:
@@ -84,6 +87,10 @@ class Auth(auth.BaseAuth):
         logger.info("auth.ldap_reader_dn       : %r" % self._ldap_reader_dn)
         logger.info("auth.ldap_load_groups     : %s" % self._ldap_load_groups)
         logger.info("auth.ldap_filter          : %r" % self._ldap_filter)
+        if self._ldap_user_attr:
+            logger.info("auth.ldap_user_attribute  : %r" % self._ldap_user_attr)
+        else:
+            logger.info("auth.ldap_user_attribute  : (not provided)")
         if ldap_secret_file_path:
             logger.info("auth.ldap_secret_file_path: %r" % ldap_secret_file_path)
             if self._ldap_secret:
@@ -114,11 +121,15 @@ class Auth(auth.BaseAuth):
             """Search for the dn of user to authenticate"""
             escaped_login = self.ldap.filter.escape_filter_chars(login)
             logger.debug(f"_login2 login escaped for LDAP filters: {escaped_login}")
+            attrs = ['memberof']
+            if self._ldap_user_attr:
+                attrs = ['memberOf', self._ldap_user_attr]
+            logger.debug(f"_login2 attrs: {attrs}")
             res = conn.search_s(
                 self._ldap_base,
                 self.ldap.SCOPE_SUBTREE,
                 filterstr=self._ldap_filter.format(escaped_login),
-                attrlist=['memberOf']
+                attrlist=attrs
             )
             if len(res) != 1:
                 """User could not be found unambiguously"""
@@ -147,6 +158,11 @@ class Auth(auth.BaseAuth):
                     tmp.append(g.partition('=')[2])
                 self._ldap_groups = set(tmp)
                 logger.debug("_login2 LDAP groups of user: %s", ",".join(self._ldap_groups))
+            if self._ldap_user_attr:
+                if user_entry[1][self._ldap_user_attr]:
+                    tmplogin = user_entry[1][self._ldap_user_attr][0]
+                    login = tmplogin.decode('utf-8')
+                    logger.debug(f"_login2 user set to: '{login}'")
             conn.unbind()
             logger.debug(f"_login2 {login} successfully authenticated")
             return login
@@ -182,11 +198,15 @@ class Auth(auth.BaseAuth):
         """Search the user dn"""
         escaped_login = self.ldap3.utils.conv.escape_filter_chars(login)
         logger.debug(f"_login3 login escaped for LDAP filters: {escaped_login}")
+        attrs = ['memberof']
+        if self._ldap_user_attr:
+            attrs = ['memberOf', self._ldap_user_attr]
+        logger.debug(f"_login3 attrs: {attrs}")
         conn.search(
             search_base=self._ldap_base,
             search_filter=self._ldap_filter.format(escaped_login),
             search_scope=self.ldap3.SUBTREE,
-            attributes=['memberOf']
+            attributes=attrs
         )
         if len(conn.entries) != 1:
             """User could not be found unambiguously"""
@@ -212,6 +232,10 @@ class Auth(auth.BaseAuth):
                     tmp.append(g.partition('=')[2])
                 self._ldap_groups = set(tmp)
                 logger.debug("_login3 LDAP groups of user: %s", ",".join(self._ldap_groups))
+            if self._ldap_user_attr:
+                if user_entry['attributes'][self._ldap_user_attr]:
+                    login = user_entry['attributes'][self._ldap_user_attr][0]
+                    logger.debug(f"_login3 user set to: '{login}'")
             conn.unbind()
             logger.debug(f"_login3 {login} successfully authenticated")
             return login
