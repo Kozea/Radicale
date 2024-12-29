@@ -15,11 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 """
-Authentication backend that checks credentials with a ldap server.
+Authentication backend that checks credentials with a LDAP server.
 Following parameters are needed in the configuration:
-   ldap_uri         The ldap url to the server like ldap://localhost
-   ldap_base        The baseDN of the ldap server
-   ldap_reader_dn   The DN of a ldap user with read access to get the user accounts
+   ldap_uri         The LDAP URL to the server like ldap://localhost
+   ldap_base        The baseDN of the LDAP server
+   ldap_reader_dn   The DN of a LDAP user with read access to get the user accounts
    ldap_secret      The password of the ldap_reader_dn
    ldap_secret_file The path of the file containing the password of the ldap_reader_dn
    ldap_filter      The search filter to find the user to authenticate by the username
@@ -43,7 +43,7 @@ class Auth(auth.BaseAuth):
     _ldap_secret: str
     _ldap_filter: str
     _ldap_load_groups: bool
-    _ldap_version: int = 3
+    _ldap_module_version: int = 3
     _ldap_use_ssl: bool = False
     _ldap_ssl_verify_mode: int = ssl.CERT_REQUIRED
     _ldap_ssl_ca_file: str = ""
@@ -56,7 +56,7 @@ class Auth(auth.BaseAuth):
         except ImportError:
             try:
                 import ldap
-                self._ldap_version = 2
+                self._ldap_module_version = 2
                 self.ldap = ldap
             except ImportError as e:
                 raise RuntimeError("LDAP authentication requires the ldap3 module") from e
@@ -70,7 +70,7 @@ class Auth(auth.BaseAuth):
         if ldap_secret_file_path:
             with open(ldap_secret_file_path, 'r') as file:
                 self._ldap_secret = file.read().rstrip('\n')
-        if self._ldap_version == 3:
+        if self._ldap_module_version == 3:
             self._ldap_use_ssl = configuration.get("auth", "ldap_use_ssl")
             if self._ldap_use_ssl:
                 self._ldap_ssl_ca_file = configuration.get("auth", "ldap_ssl_ca_file")
@@ -94,7 +94,7 @@ class Auth(auth.BaseAuth):
                 logger.info("auth.ldap_secret          : (from config)")
         if self._ldap_reader_dn and not self._ldap_secret:
             logger.error("auth.ldap_secret         : (not provided)")
-            raise RuntimeError("LDAP authentication requires ldap_secret for reader_dn")
+            raise RuntimeError("LDAP authentication requires ldap_secret for ldap_reader_dn")
         logger.info("auth.ldap_use_ssl         : %s" % self._ldap_use_ssl)
         if self._ldap_use_ssl is True:
             logger.info("auth.ldap_ssl_verify_mode : %s" % self._ldap_ssl_verify_mode)
@@ -114,14 +114,14 @@ class Auth(auth.BaseAuth):
             """Search for the dn of user to authenticate"""
             res = conn.search_s(self._ldap_base, self.ldap.SCOPE_SUBTREE, filterstr=self._ldap_filter.format(login), attrlist=['memberOf'])
             if len(res) == 0:
-                """User could not be find"""
+                """User could not be found"""
                 return ""
             user_dn = res[0][0]
             logger.debug("LDAP Auth user: %s", user_dn)
-            """Close ldap connection"""
+            """Close LDAP connection"""
             conn.unbind()
         except Exception as e:
-            raise RuntimeError(f"Invalid ldap configuration:{e}")
+            raise RuntimeError(f"Invalid LDAP configuration:{e}")
 
         try:
             """Bind as user to authenticate"""
@@ -157,14 +157,14 @@ class Auth(auth.BaseAuth):
                 server = self.ldap3.Server(self._ldap_uri)
             conn = self.ldap3.Connection(server, self._ldap_reader_dn, password=self._ldap_secret)
         except self.ldap3.core.exceptions.LDAPSocketOpenError:
-            raise RuntimeError("Unable to reach ldap server")
+            raise RuntimeError("Unable to reach LDAP server")
         except Exception as e:
             logger.debug(f"_login3 error 1 {e}")
             pass
 
         if not conn.bind():
-            logger.debug("_login3 can not bind")
-            raise RuntimeError("Unable to read from ldap server")
+            logger.debug("_login3 cannot bind")
+            raise RuntimeError("Unable to read from LDAP server")
 
         logger.debug(f"_login3 bind as {self._ldap_reader_dn}")
         """Search the user dn"""
@@ -175,8 +175,8 @@ class Auth(auth.BaseAuth):
             attributes=['memberOf']
         )
         if len(conn.entries) == 0:
-            logger.debug(f"_login3 user '{login}' can not be find")
-            """User could not be find"""
+            """User could not be found"""
+            logger.debug(f"_login3 user '{login}' cannot be found")
             return ""
 
         user_entry = conn.response[0]
@@ -187,7 +187,7 @@ class Auth(auth.BaseAuth):
             """Try to bind as the user itself"""
             conn = self.ldap3.Connection(server, user_dn, password=password)
             if not conn.bind():
-                logger.debug(f"_login3 user '{login}' can not be find")
+                logger.debug(f"_login3 user '{login}' cannot be found")
                 return ""
             if self._ldap_load_groups:
                 tmp = []
@@ -195,7 +195,7 @@ class Auth(auth.BaseAuth):
                     tmp.append(g.split(',')[0][3:])
                 self._ldap_groups = set(tmp)
             conn.unbind()
-            logger.debug(f"_login3 {login} successfully authorized")
+            logger.debug(f"_login3 {login} successfully authenticated")
             return login
         except Exception as e:
             logger.debug(f"_login3 error 2 {e}")
@@ -204,10 +204,10 @@ class Auth(auth.BaseAuth):
 
     def _login(self, login: str, password: str) -> str:
         """Validate credentials.
-        In first step we make a connection to the ldap server with the ldap_reader_dn credential.
+        In first step we make a connection to the LDAP server with the ldap_reader_dn credential.
         In next step the DN of the user to authenticate will be searched.
         In the last step the authentication of the user will be proceeded.
         """
-        if self._ldap_version == 2:
+        if self._ldap_module_version == 2:
             return self._login2(login, password)
         return self._login3(login, password)
