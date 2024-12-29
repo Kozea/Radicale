@@ -118,8 +118,9 @@ class Auth(auth.BaseAuth):
                 filterstr=self._ldap_filter.format(login),
                 attrlist=['memberOf']
             )
-            if len(res) == 0:
-                """User could not be found"""
+            if len(res) != 1:
+                """User could not be found unambiguously"""
+                logger.debug(f"_login2 no unique DN found for '{login}'")
                 return ""
             user_entry = res[0]
             user_dn = user_entry[0]
@@ -181,9 +182,9 @@ class Auth(auth.BaseAuth):
             search_scope=self.ldap3.SUBTREE,
             attributes=['memberOf']
         )
-        if len(conn.entries) == 0:
-            """User could not be found"""
-            logger.debug(f"_login3 user '{login}' cannot be found")
+        if len(conn.entries) != 1:
+            """User could not be found unambiguously"""
+            logger.debug(f"_login3 no unique DN found for '{login}'")
             return ""
 
         user_entry = conn.response[0]
