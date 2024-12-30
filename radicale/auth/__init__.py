@@ -96,7 +96,7 @@ class BaseAuth:
         h.update(salt.encode())
         h.update(login.encode())
         h.update(password.encode())
-        return h.digest()
+        return str(h.digest())
 
     def get_external_login(self, environ: types.WSGIEnviron) -> Union[
             Tuple[()], Tuple[str, str]]:
@@ -155,8 +155,8 @@ class BaseAuth:
                 digest = self._cache_digest(login, password, str(time_ns))
             if result == "":
                 result = self._login(login, password)
-                if result is not "":
-                    if digest is "":
+                if result != "":
+                    if digest == "":
                         # successful login, but expired, digest must be recalculated
                         digest = self._cache_digest(login, password, str(time_ns))
                     # store successful login in cache

@@ -94,23 +94,23 @@ class Auth(auth.BaseAuth):
             raise RuntimeError("The htpasswd encryption method %r is not "
                                "supported." % encryption)
 
-    def _plain(self, hash_value: str, password: str) -> bool:
+    def _plain(self, hash_value: str, password: str) -> tuple[str, bool]:
         """Check if ``hash_value`` and ``password`` match, plain method."""
         return ("PLAIN", hmac.compare_digest(hash_value.encode(), password.encode()))
 
-    def _bcrypt(self, bcrypt: Any, hash_value: str, password: str) -> bool:
+    def _bcrypt(self, bcrypt: Any, hash_value: str, password: str) -> tuple[str, bool]:
         return ("BCRYPT", bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hash_value.encode()))
 
-    def _md5apr1(self, hash_value: str, password: str) -> bool:
+    def _md5apr1(self, hash_value: str, password: str) -> tuple[str, bool]:
         return ("MD5-APR1", apr_md5_crypt.verify(password, hash_value.strip()))
 
-    def _sha256(self, hash_value: str, password: str) -> bool:
+    def _sha256(self, hash_value: str, password: str) -> tuple[str, bool]:
         return ("SHA-256", sha256_crypt.verify(password, hash_value.strip()))
 
-    def _sha512(self, hash_value: str, password: str) -> bool:
+    def _sha512(self, hash_value: str, password: str) -> tuple[str, bool]:
         return ("SHA-512", sha512_crypt.verify(password, hash_value.strip()))
 
-    def _autodetect(self, hash_value: str, password: str) -> bool:
+    def _autodetect(self, hash_value: str, password: str) -> tuple[str, bool]:
         if hash_value.startswith("$apr1$", 0, 6) and len(hash_value) == 37:
             # MD5-APR1
             return self._md5apr1(hash_value, password)
