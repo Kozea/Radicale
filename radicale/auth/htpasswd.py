@@ -96,19 +96,19 @@ class Auth(auth.BaseAuth):
 
     def _plain(self, hash_value: str, password: str) -> bool:
         """Check if ``hash_value`` and ``password`` match, plain method."""
-        return hmac.compare_digest(hash_value.encode(), password.encode())
+        return ("PLAIN", hmac.compare_digest(hash_value.encode(), password.encode()))
 
     def _bcrypt(self, bcrypt: Any, hash_value: str, password: str) -> bool:
-        return bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hash_value.encode())
+        return ("BCRYPT", bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hash_value.encode()))
 
     def _md5apr1(self, hash_value: str, password: str) -> bool:
-        return apr_md5_crypt.verify(password, hash_value.strip())
+        return ("MD5-APR1", apr_md5_crypt.verify(password, hash_value.strip()))
 
     def _sha256(self, hash_value: str, password: str) -> bool:
-        return sha256_crypt.verify(password, hash_value.strip())
+        return ("SHA-256", sha256_crypt.verify(password, hash_value.strip()))
 
     def _sha512(self, hash_value: str, password: str) -> bool:
-        return sha512_crypt.verify(password, hash_value.strip())
+        return ("SHA-512", sha512_crypt.verify(password, hash_value.strip()))
 
     def _autodetect(self, hash_value: str, password: str) -> bool:
         if hash_value.startswith("$apr1$", 0, 6) and len(hash_value) == 37:
@@ -151,8 +151,9 @@ class Auth(auth.BaseAuth):
                             # timing attacks, see #591.
                             login_ok = hmac.compare_digest(
                                 hash_login.encode(), login.encode())
-                            password_ok = self._verify(hash_value, password)
+                            (method, password_ok) = self._verify(hash_value, password)
                             if login_ok and password_ok:
+                                logger.debug("Password verification for user '%s' with method '%s': password_ok=%s", login, method, password_ok)
                                 return login
                         except ValueError as e:
                             raise RuntimeError("Invalid htpasswd file %r: %s" %
