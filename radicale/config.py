@@ -183,6 +183,14 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "authentication method",
             "type": str_or_callable,
             "internal": auth.INTERNAL_TYPES}),
+        ("cache_logins", {
+            "value": "false",
+            "help": "cache successful logins for until expiration time",
+            "type": bool}),
+        ("cache_logins_expiry", {
+            "value": "5",
+            "help": "expiration time for caching successful logins in seconds",
+            "type": int}),
         ("htpasswd_filename", {
             "value": "/etc/radicale/users",
             "help": "htpasswd filename",

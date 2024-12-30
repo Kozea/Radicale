@@ -812,6 +812,18 @@ Available backends:
 
 Default: `none`
 
+##### cache_logins
+
+Cache successful logins until expiration time
+
+Default: `false`
+
+##### cache_logins_expiry
+
+Expiration time of caching successful logins in seconds
+
+Default: `5`
+
 ##### htpasswd_filename
 
 Path to the htpasswd file.
