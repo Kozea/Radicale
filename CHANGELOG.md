@@ -2,8 +2,9 @@
 
 ## 3.3.4.dev
 * Add: option [auth] cache_logins/cache_successful_logins_expiry/cache_failed_logins for caching logins
-* Improve: log used hash method and result on debug for htpasswd authentication
-* Improve: htpasswd file now read and verified on start, automatic re-read triggered on change (mtime or size)
+* Improve: [auth] log used hash method and result on debug for htpasswd authentication
+* Improve: [auth] htpasswd file now read and verified on start, automatic re-read triggered on change (mtime or size)
+* Improve: [auth] htpasswd: module 'bcrypt' is no longer mandatory in case digest method not used in file
 
 ## 3.3.3
 * Add: display mtime_ns precision of storage folder with condition warning if too less
