@@ -188,11 +188,11 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "cache successful/failed logins for until expiration time",
             "type": bool}),
         ("cache_successful_logins_expiry", {
-            "value": "5",
+            "value": "15",
             "help": "expiration time for caching successful logins in seconds",
             "type": int}),
         ("cache_failed_logins_expiry", {
-            "value": "60",
+            "value": "90",
             "help": "expiration time for caching failed logins in seconds",
             "type": int}),
         ("htpasswd_filename", {

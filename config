@@ -62,11 +62,14 @@
 # Value: none | htpasswd | remote_user | http_x_remote_user | ldap | denyall
 #type = none
 
-# Cache successful logins for until expiration time
+# Cache logins for until expiration time
 #cache_logins = false
 
 # Expiration time for caching successful logins in seconds
-#cache_logins_expiry = 5
+#cache_successful_logins_expiry = 15
+
+## Expiration time of caching failed logins in seconds
+#cache_failed_logins_expiry = 90
 
 # URI to the LDAP server
 #ldap_uri = ldap://localhost

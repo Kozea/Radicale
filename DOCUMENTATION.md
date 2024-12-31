@@ -814,7 +814,8 @@ Default: `none`
 
 ##### cache_logins
 
-Cache successful/failed logins until expiration time
+Cache successful/failed logins until expiration time. Enable this to avoid
+overload of authentication backends.
 
 Default: `false`
 
@@ -822,13 +823,13 @@ Default: `false`
 
 Expiration time of caching successful logins in seconds
 
-Default: `5`
+Default: `15`
 
 ##### cache_failed_logins_expiry
 
 Expiration time of caching failed logins in seconds
 
-Default: `60`
+Default: `90`
 
 ##### htpasswd_filename
 
