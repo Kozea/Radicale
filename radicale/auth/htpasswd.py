@@ -155,6 +155,8 @@ class Auth(auth.BaseAuth):
                             if login_ok and password_ok:
                                 logger.debug("Password verification for user '%s' with method '%s': password_ok=%s", login, method, password_ok)
                                 return login
+                            elif login_ok:
+                                logger.debug("Password verification for user '%s' with method '%s': password_ok=%s", login, method, password_ok)
                         except ValueError as e:
                             raise RuntimeError("Invalid htpasswd file %r: %s" %
                                                (self._filename, e)) from e
