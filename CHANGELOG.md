@@ -1,8 +1,8 @@
 # Changelog
 
 ## 3.3.4.dev
-* Add: option [auth] cache_logins/cache_logins_expiry for caching successful logins
-* Improve: log used hash method on debug for htpasswd authentication
+* Add: option [auth] cache_logins/cache_successful_logins_expiry/cache_failed_logins for caching logins
+* Improve: log used hash method and result on debug for htpasswd authentication
 
 ## 3.3.3
 * Add: display mtime_ns precision of storage folder with condition warning if too less
