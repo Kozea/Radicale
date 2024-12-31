@@ -814,15 +814,21 @@ Default: `none`
 
 ##### cache_logins
 
-Cache successful logins until expiration time
+Cache successful/failed logins until expiration time
 
 Default: `false`
 
-##### cache_logins_expiry
+##### cache_successful_logins_expiry
 
 Expiration time of caching successful logins in seconds
 
 Default: `5`
+
+##### cache_failed_logins_expiry
+
+Expiration time of caching failed logins in seconds
+
+Default: `60`
 
 ##### htpasswd_filename
 

@@ -59,10 +59,12 @@ class BaseAuth:
     _lc_username: bool
     _uc_username: bool
     _strip_domain: bool
-    _cache: dict
     _cache_logins: bool
-    _cache_logins_expiry: int
-    _cache_logins_expiry_ns: int
+    _cache_successful: dict                 # login -> (digest, time_ns)
+    _cache_successful_logins_expiry: int
+    _cache_failed: dict                     # digest_failed -> (time_ns)
+    _cache_failed_logins_expiry: int
+    _cache_failed_logins_salt_ns: int       # persistent over runtime
 
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseAuth.
@@ -77,19 +79,25 @@ class BaseAuth:
         self._uc_username = configuration.get("auth", "uc_username")
         self._strip_domain = configuration.get("auth", "strip_domain")
         self._cache_logins = configuration.get("auth", "cache_logins")
-        self._cache_logins_expiry = configuration.get("auth", "cache_logins_expiry")
-        if self._cache_logins_expiry < 0:
-            raise RuntimeError("self._cache_logins_expiry cannot be < 0")
+        self._cache_successful_logins_expiry = configuration.get("auth", "cache_successful_logins_expiry")
+        if self._cache_successful_logins_expiry < 0:
+            raise RuntimeError("self._cache_successful_logins_expiry cannot be < 0")
+        self._cache_failed_logins_expiry = configuration.get("auth", "cache_failed_logins_expiry")
+        if self._cache_failed_logins_expiry < 0:
+            raise RuntimeError("self._cache_failed_logins_expiry cannot be < 0")
         logger.info("auth.strip_domain: %s", self._strip_domain)
         logger.info("auth.lc_username: %s", self._lc_username)
         logger.info("auth.uc_username: %s", self._uc_username)
         if self._lc_username is True and self._uc_username is True:
             raise RuntimeError("auth.lc_username and auth.uc_username cannot be enabled together")
+        # cache_successful_logins
         logger.info("auth.cache_logins: %s", self._cache_logins)
+        self._cache_successful = dict()
+        self._cache_failed = dict()
+        self._cache_failed_logins_salt_ns = time.time_ns()
         if self._cache_logins is True:
-            logger.info("auth.cache_logins_expiry: %s seconds", self._cache_logins_expiry)
-            self._cache_logins_expiry_ns = self._cache_logins_expiry * 1000 * 1000 * 1000
-        self._cache = dict()
+            logger.info("auth.cache_successful_logins_expiry: %s seconds", self._cache_successful_logins_expiry)
+            logger.info("auth.cache_failed_logins_expiry: %s seconds", self._cache_failed_logins_expiry)
 
     def _cache_digest(self, login: str, password: str, salt: str) -> str:
         h = hashlib.sha3_512()
@@ -137,31 +145,57 @@ class BaseAuth:
             result = ""
             digest = ""
             time_ns = time.time_ns()
-            if self._cache.get(login):
-                # entry found in cache
-                (digest_cache, time_ns_cache) = self._cache[login]
+            digest_failed = login + ":" + self._cache_digest(login, password, str(self._cache_failed_logins_salt_ns))
+            if self._cache_failed.get(digest_failed):
+                # login+password found in cache "failed"
+                time_ns_cache = self._cache_failed[digest_failed]
+                age_failed = int((time_ns - time_ns_cache) / 1000 / 1000 / 1000)
+                if age_failed > self._cache_failed_logins_expiry:
+                    logger.debug("Login failed cache entry for user+password found but expired: '%s' (age: %d > %d sec)", login, age_failed, self._cache_failed_logins_expiry)
+                    # delete expired failed from cache
+                    del self._cache_failed[digest_failed]
+                else:
+                    # shortcut return
+                    logger.debug("Login failed cache entry for user+password found: '%s' (age: %d sec)", login, age_failed)
+                    return ""
+            if self._cache_successful.get(login):
+                # login found in cache "successful"
+                (digest_cache, time_ns_cache) = self._cache_successful[login]
                 digest = self._cache_digest(login, password, str(time_ns_cache))
                 if digest == digest_cache:
-                    if (time_ns - time_ns_cache) > self._cache_logins_expiry_ns:
-                        logger.debug("Login cache entry for user found but expired: '%s'", login)
+                    age_success = int((time_ns - time_ns_cache) / 1000 / 1000 / 1000)
+                    if age_success > self._cache_successful_logins_expiry:
+                        logger.debug("Login successful cache entry for user+password found but expired: '%s' (age: %d > %d sec)", login, age_success, self._cache_successful_logins_expiry)
+                        # delete expired success from cache
+                        del self._cache_successful[login]
                         digest = ""
                     else:
-                        logger.debug("Login cache entry for user found: '%s'", login)
+                        logger.debug("Login successful cache entry for user+password found: '%s' (age: %d sec)", login, age_success)
                         result = login
                 else:
-                    logger.debug("Login cache entry for user not matching: '%s'", login)
+                    logger.debug("Login successful cache entry for user+password not matching: '%s'", login)
             else:
-                # entry not found in cache, caculate always to avoid timing attacks
+                # login not found in cache, caculate always to avoid timing attacks
                 digest = self._cache_digest(login, password, str(time_ns))
             if result == "":
+                # verify login+password via configured backend
+                logger.debug("Login verification for user+password via backend: '%s'", login)
                 result = self._login(login, password)
                 if result != "":
+                    logger.debug("Login successful for user+password via backend: '%s'", login)
                     if digest == "":
                         # successful login, but expired, digest must be recalculated
                         digest = self._cache_digest(login, password, str(time_ns))
                     # store successful login in cache
-                    self._cache[login] = (digest, time_ns)
-                    logger.debug("Login cache for user set: '%s'", login)
+                    self._cache_successful[login] = (digest, time_ns)
+                    logger.debug("Login successful cache for user set: '%s'", login)
+                    if self._cache_failed.get(digest_failed):
+                        logger.debug("Login failed cache for user cleared: '%s'", login)
+                        del self._cache_failed[digest_failed]
+                else:
+                    logger.debug("Login failed for user+password via backend: '%s'", login)
+                    self._cache_failed[digest_failed] = time_ns
+                    logger.debug("Login failed cache for user set: '%s'", login)
             return result
         else:
             return self._login(login, password)
