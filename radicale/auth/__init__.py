@@ -30,8 +30,8 @@ Take a look at the class ``BaseAuth`` if you want to implement your own.
 """
 
 import hashlib
-import time
 import threading
+import time
 from typing import Sequence, Set, Tuple, Union, final
 
 from radicale import config, types, utils
@@ -89,7 +89,7 @@ class BaseAuth:
         # cache_successful_logins
         self._cache_logins = configuration.get("auth", "cache_logins")
         self._type = configuration.get("auth", "type")
-        if (self._type in [ "dovecot", "ldap", "htpasswd" ]) or (self._cache_logins is False):
+        if (self._type in ["dovecot", "ldap", "htpasswd"]) or (self._cache_logins is False):
             logger.info("auth.cache_logins: %s", self._cache_logins)
         else:
             logger.info("auth.cache_logins: %s (but not required for type '%s' and disabled therefore)", self._cache_logins, self._type)

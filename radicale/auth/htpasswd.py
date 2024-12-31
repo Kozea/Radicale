@@ -48,12 +48,12 @@ When bcrypt is installed:
 
 """
 
-import os
-import time
 import functools
 import hmac
+import os
 import threading
-from typing import Any
+import time
+from typing import Any, Tuple
 
 from passlib.hash import apr_md5_crypt, sha256_crypt, sha512_crypt
 
@@ -66,9 +66,9 @@ class Auth(auth.BaseAuth):
     _encoding: str
     _htpasswd: dict             # login -> digest
     _htpasswd_mtime_ns: int
-    _htpasswd_size: bytes
+    _htpasswd_size: int
     _htpasswd_ok: bool
-    _htpasswd_not_ok_seconds: int
+    _htpasswd_not_ok_time: float
     _htpasswd_not_ok_reminder_seconds: int
     _htpasswd_bcrypt_use: int
     _has_bcrypt: bool
@@ -154,7 +154,7 @@ class Auth(auth.BaseAuth):
             # assumed plaintext
             return self._plain(hash_value, password)
 
-    def _read_htpasswd(self, init: bool) -> (bool, int):
+    def _read_htpasswd(self, init: bool) -> Tuple[bool, int]:
         """Read htpasswd file
 
         init == True: stop on error
@@ -168,6 +168,7 @@ class Auth(auth.BaseAuth):
         else:
             info = "Re-read"
         logger.info("%s content of htpasswd file start: %r", info, self._filename)
+        htpasswd: dict[str, str]
         htpasswd = dict()
         try:
             with open(self._filename, encoding=self._encoding) as f:
@@ -179,7 +180,7 @@ class Auth(auth.BaseAuth):
                     line = line.rstrip("\n")
                     if line.lstrip() and not line.lstrip().startswith("#"):
                         try:
-                            login, digest = line.split( ":", maxsplit=1)
+                            login, digest = line.split(":", maxsplit=1)
                             skip = False
                             if login == "" or digest == "":
                                 if init is True:
@@ -216,7 +217,7 @@ class Auth(auth.BaseAuth):
             if init is True:
                 raise RuntimeError("Failed to load htpasswd file %r: %s" % (self._filename, e)) from e
             else:
-                logger.warning("Failed to load htpasswd file on re-read: %r" % (self._filename, e))
+                logger.warning("Failed to load htpasswd file on re-read: %r" % self._filename)
                 htpasswd_ok = False
         else:
             self._htpasswd_size = os.stat(self._filename).st_size
