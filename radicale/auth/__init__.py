@@ -59,6 +59,7 @@ class BaseAuth:
     _lc_username: bool
     _uc_username: bool
     _strip_domain: bool
+    _type: str
     _cache_logins: bool
     _cache_successful: dict                 # login -> (digest, time_ns)
     _cache_successful_logins_expiry: int
@@ -78,26 +79,32 @@ class BaseAuth:
         self._lc_username = configuration.get("auth", "lc_username")
         self._uc_username = configuration.get("auth", "uc_username")
         self._strip_domain = configuration.get("auth", "strip_domain")
-        self._cache_logins = configuration.get("auth", "cache_logins")
-        self._cache_successful_logins_expiry = configuration.get("auth", "cache_successful_logins_expiry")
-        if self._cache_successful_logins_expiry < 0:
-            raise RuntimeError("self._cache_successful_logins_expiry cannot be < 0")
-        self._cache_failed_logins_expiry = configuration.get("auth", "cache_failed_logins_expiry")
-        if self._cache_failed_logins_expiry < 0:
-            raise RuntimeError("self._cache_failed_logins_expiry cannot be < 0")
         logger.info("auth.strip_domain: %s", self._strip_domain)
         logger.info("auth.lc_username: %s", self._lc_username)
         logger.info("auth.uc_username: %s", self._uc_username)
         if self._lc_username is True and self._uc_username is True:
             raise RuntimeError("auth.lc_username and auth.uc_username cannot be enabled together")
         # cache_successful_logins
-        logger.info("auth.cache_logins: %s", self._cache_logins)
-        self._cache_successful = dict()
-        self._cache_failed = dict()
-        self._cache_failed_logins_salt_ns = time.time_ns()
+        self._cache_logins = configuration.get("auth", "cache_logins")
+        self._type = configuration.get("auth", "type")
+        if (self._type in [ "dovecot", "ldap", "htpasswd" ]) or (self._cache_logins is False):
+            logger.info("auth.cache_logins: %s", self._cache_logins)
+        else:
+            logger.info("auth.cache_logins: %s (but not required for type '%s' and disabled therefore)", self._cache_logins, self._type)
+            self._cache_logins = False
         if self._cache_logins is True:
+            self._cache_successful_logins_expiry = configuration.get("auth", "cache_successful_logins_expiry")
+            if self._cache_successful_logins_expiry < 0:
+                raise RuntimeError("self._cache_successful_logins_expiry cannot be < 0")
+            self._cache_failed_logins_expiry = configuration.get("auth", "cache_failed_logins_expiry")
+            if self._cache_failed_logins_expiry < 0:
+                raise RuntimeError("self._cache_failed_logins_expiry cannot be < 0")
             logger.info("auth.cache_successful_logins_expiry: %s seconds", self._cache_successful_logins_expiry)
             logger.info("auth.cache_failed_logins_expiry: %s seconds", self._cache_failed_logins_expiry)
+            # cache init
+            self._cache_successful = dict()
+            self._cache_failed = dict()
+            self._cache_failed_logins_salt_ns = time.time_ns()
 
     def _cache_digest(self, login: str, password: str, salt: str) -> str:
         h = hashlib.sha3_512()
