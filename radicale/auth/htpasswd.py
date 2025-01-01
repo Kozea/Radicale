@@ -78,7 +78,9 @@ class Auth(auth.BaseAuth):
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
         self._filename = configuration.get("auth", "htpasswd_filename")
+        logger.info("auth htpasswd file: %r", self._filename)
         self._encoding = configuration.get("encoding", "stock")
+        logger.info("auth htpasswd file encoding: %r", self._encoding)
         self._htpasswd_cache = configuration.get("auth", "htpasswd_cache")
         logger.info("auth htpasswd cache: %s", self._htpasswd_cache)
         encryption: str = configuration.get("auth", "htpasswd_encryption")
