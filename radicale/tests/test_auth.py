@@ -23,12 +23,12 @@ Radicale tests with simple requests and authentication.
 """
 
 import base64
+import logging
 import os
 import sys
 from typing import Iterable, Tuple, Union
 
 import pytest
-import logging
 
 from radicale import xmlutils
 from radicale.tests import BaseTest
@@ -139,7 +139,7 @@ class TestBaseAuthRequests(BaseTest):
 
     # detection of broken htpasswd file entries
     def test_htpasswd_broken(self) -> None:
-        for userpass in ["tmp:", ":tmp" ]:
+        for userpass in ["tmp:", ":tmp"]:
             try:
                 self._test_htpasswd("plain", userpass)
             except RuntimeError:
