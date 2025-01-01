@@ -71,6 +71,7 @@ class Auth(auth.BaseAuth):
     _htpasswd_not_ok_time: float
     _htpasswd_not_ok_reminder_seconds: int
     _htpasswd_bcrypt_use: int
+    _htpasswd_cache: bool
     _has_bcrypt: bool
     _lock: threading.Lock
 
@@ -78,13 +79,15 @@ class Auth(auth.BaseAuth):
         super().__init__(configuration)
         self._filename = configuration.get("auth", "htpasswd_filename")
         self._encoding = configuration.get("encoding", "stock")
+        self._htpasswd_cache = configuration.get("auth", "htpasswd_cache")
+        logger.info("auth htpasswd cache: %s", self._htpasswd_cache)
         encryption: str = configuration.get("auth", "htpasswd_encryption")
         logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s'", encryption)
 
         self._has_bcrypt = False
         self._htpasswd_ok = False
         self._htpasswd_not_ok_reminder_seconds = 60 # currently hardcoded
-        (self._htpasswd_ok, self._htpasswd_bcrypt_use) = self._read_htpasswd(True)
+        (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(True, False)
         self._lock = threading.Lock()
 
         if encryption == "plain":
@@ -154,27 +157,32 @@ class Auth(auth.BaseAuth):
             # assumed plaintext
             return self._plain(hash_value, password)
 
-    def _read_htpasswd(self, init: bool) -> Tuple[bool, int]:
+    def _read_htpasswd(self, init: bool, suppress: bool) -> Tuple[bool, int, dict]:
         """Read htpasswd file
 
         init == True: stop on error
         init == False: warn/skip on error and set mark to log reminder every interval
+        suppress == True: suppress warnings, change info to debug (used in non-caching mode)
+        suppress == False: do not suppress warnings (used in caching mode)
 
         """
         htpasswd_ok = True
         bcrypt_use = 0
-        if init is True:
+        if (init is True) or (suppress is True):
             info = "Read"
         else:
             info = "Re-read"
-        logger.info("%s content of htpasswd file start: %r", info, self._filename)
-        htpasswd: dict[str, str]
-        htpasswd = dict()
+        if suppress is False:
+            logger.info("%s content of htpasswd file start: %r", info, self._filename)
+        else:
+            logger.debug("%s content of htpasswd file start: %r", info, self._filename)
+        htpasswd: dict[str, str] = dict()
+        entries = 0
+        duplicates = 0
+        errors = 0
         try:
             with open(self._filename, encoding=self._encoding) as f:
                 line_num = 0
-                entries = 0
-                duplicates = 0
                 for line in f:
                     line_num += 1
                     line = line.rstrip("\n")
@@ -186,6 +194,7 @@ class Auth(auth.BaseAuth):
                                 if init is True:
                                     raise ValueError("htpasswd file contains problematic line not matching <login>:<digest> in line: %d" % line_num)
                                 else:
+                                    errors += 1
                                     logger.warning("htpasswd file contains problematic line not matching <login>:<digest> in line: %d (ignored)", line_num)
                                     htpasswd_ok = False
                                     skip = True
@@ -219,16 +228,17 @@ class Auth(auth.BaseAuth):
             else:
                 logger.warning("Failed to load htpasswd file on re-read: %r" % self._filename)
                 htpasswd_ok = False
+        htpasswd_size = os.stat(self._filename).st_size
+        htpasswd_mtime_ns = os.stat(self._filename).st_mtime_ns
+        if suppress is False:
+            logger.info("%s content of htpasswd file done: %r (entries: %d, duplicates: %d, errors: %d)", info, self._filename, entries, duplicates, errors)
         else:
-            self._htpasswd_size = os.stat(self._filename).st_size
-            self._htpasswd_time_ns = os.stat(self._filename).st_mtime_ns
-            self._htpasswd = htpasswd
-            logger.info("%s content of htpasswd file done: %r (entries: %d, duplicates: %d)", info, self._filename, entries, duplicates)
+            logger.debug("%s content of htpasswd file done: %r (entries: %d, duplicates: %d, errors: %d)", info, self._filename, entries, duplicates, errors)
         if htpasswd_ok is True:
             self._htpasswd_not_ok_time = 0
         else:
             self._htpasswd_not_ok_time = time.time()
-        return (htpasswd_ok, bcrypt_use)
+        return (htpasswd_ok, bcrypt_use, htpasswd, htpasswd_size, htpasswd_mtime_ns)
 
     def _login(self, login: str, password: str) -> str:
         """Validate credentials.
@@ -241,19 +251,28 @@ class Auth(auth.BaseAuth):
         comparing mtime_ns and size
 
         """
-        # check and re-read file if required
-        htpasswd_size = os.stat(self._filename).st_size
-        htpasswd_time_ns = os.stat(self._filename).st_mtime_ns
-        if (htpasswd_size != self._htpasswd_size) or (htpasswd_time_ns != self._htpasswd_time_ns):
+        if self._htpasswd_cache is True:
+            # check and re-read file if required
             with self._lock:
-                (self._htpasswd_ok, self._htpasswd_bcrypt_use) = self._read_htpasswd(False)
+                htpasswd_size = os.stat(self._filename).st_size
+                htpasswd_mtime_ns = os.stat(self._filename).st_mtime_ns
+                if (htpasswd_size != self._htpasswd_size) or (htpasswd_mtime_ns != self._htpasswd_mtime_ns):
+                    (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(False, False)
+                    self._htpasswd_not_ok_time = 0
         else:
-            # log reminder of problemantic file every interval
-            if (self._htpasswd_ok is False) and (self._htpasswd_not_ok_time > 0):
-                current_time = time.time()
+            # read file on every request
+            (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(False, True)
+
+        # log reminder of problemantic file every interval
+        current_time = time.time()
+        if (self._htpasswd_ok is False):
+            if (self._htpasswd_not_ok_time > 0):
                 if (current_time - self._htpasswd_not_ok_time) > self._htpasswd_not_ok_reminder_seconds:
                     logger.warning("htpasswd file still contains issues (REMINDER, check warnings in the past): %r" % self._filename)
                     self._htpasswd_not_ok_time = current_time
+            else:
+                self._htpasswd_not_ok_time = current_time
+
         if self._htpasswd.get(login):
             digest = self._htpasswd[login]
             (method, password_ok) = self._verify(digest, password)

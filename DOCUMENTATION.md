@@ -872,6 +872,12 @@ Available methods:
 
 Default: `autodetect`
 
+##### htpasswd_cache
+
+Enable caching of htpasswd file based on size and mtime_ns
+
+Default: `False`
+
 ##### delay
 
 Average delay after failed login attempts in seconds.

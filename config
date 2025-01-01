@@ -109,6 +109,9 @@
 # bcrypt requires the installation of 'bcrypt' module.
 #htpasswd_encryption = autodetect
 
+# Enable caching of htpasswd file based on size and mtime_ns
+#htpasswd_cache = False
+
 # Incorrect authentication delay (seconds)
 #delay = 1
 

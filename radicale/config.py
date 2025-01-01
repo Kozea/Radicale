@@ -203,6 +203,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "autodetect",
             "help": "htpasswd encryption method",
             "type": str}),
+        ("htpasswd_cache", {
+            "value": "False",
+            "help": "enable caching of htpasswd file",
+            "type": bool}),
         ("dovecot_socket", {
             "value": "/var/run/dovecot/auth-client",
             "help": "dovecot auth socket",
