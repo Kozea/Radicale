@@ -143,7 +143,8 @@ class BaseAuth:
         raise NotImplementedError
 
     @final
-    def login(self, login: str, password: str) -> str:
+    def login(self, login: str, password: str) -> Tuple[str, str]:
+        result_from_cache = False
         if self._lc_username:
             login = login.lower()
         if self._uc_username:
@@ -182,7 +183,7 @@ class BaseAuth:
                 (time_ns_cache, login_cache) = self._cache_failed[digest]
                 age_failed = int((time_ns - time_ns_cache) / 1000 / 1000 / 1000)
                 logger.debug("Login failed cache entry for user+password found: '%s' (age: %d sec)", login_cache, age_failed)
-                return ""
+                return ("", self._type + " / cached")
             if self._cache_successful.get(login):
                 # login found in cache "successful"
                 (digest_cache, time_ns_cache) = self._cache_successful[login]
@@ -197,6 +198,7 @@ class BaseAuth:
                     else:
                         logger.debug("Login successful cache entry for user+password found: '%s' (age: %d sec)", login, age_success)
                         result = login
+                        result_from_cache = True
                 else:
                     logger.debug("Login successful cache entry for user+password not matching: '%s'", login)
             else:
@@ -225,6 +227,9 @@ class BaseAuth:
                     self._cache_failed[digest_failed] = (time_ns, login)
                     self._lock.release()
                     logger.debug("Login failed cache for user set: '%s'", login)
-            return result
+            if result_from_cache is True:
+                return (result, self._type + " / cached")
+            else:
+                return (result, self._type)
         else:
-            return self._login(login, password)
+            return (self._login(login, password), self._type)

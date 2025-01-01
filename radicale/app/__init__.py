@@ -252,7 +252,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 self.configuration, environ, base64.b64decode(
                     authorization.encode("ascii"))).split(":", 1)
 
-        user = self._auth.login(login, password) or "" if login else ""
+        (user, info) = self._auth.login(login, password) or ("", "") if login else ("", "")
         if self.configuration.get("auth", "type") == "ldap":
             try:
                 logger.debug("Groups %r", ",".join(self._auth._ldap_groups))
@@ -260,12 +260,12 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             except AttributeError:
                 pass
         if user and login == user:
-            logger.info("Successful login: %r", user)
+            logger.info("Successful login: %r (%s)", user, info)
         elif user:
-            logger.info("Successful login: %r -> %r", login, user)
+            logger.info("Successful login: %r -> %r (%s)", login, user, info)
         elif login:
-            logger.warning("Failed login attempt from %s: %r",
-                           remote_host, login)
+            logger.warning("Failed login attempt from %s: %r (%s)",
+                           remote_host, login, info)
             # Random delay to avoid timing oracles and bruteforce attacks
             if self._auth_delay > 0:
                 random_delay = self._auth_delay * (0.5 + random.random())
