@@ -24,6 +24,7 @@ Following parameters are needed in the configuration:
    ldap_secret_file    The path of the file containing the password of the ldap_reader_dn
    ldap_filter         The search filter to find the user to authenticate by the username
    ldap_user_attribute The attribute to be used as username after authentication
+   ldap_groups_attribute The attribute containing group memberships in the LDAP user entry
    ldap_load_groups    If the groups of the authenticated users need to be loaded
 Following parameters controls SSL connections:
    ldap_use_ssl   If the connection
@@ -46,6 +47,7 @@ class Auth(auth.BaseAuth):
     _ldap_attributes: list[str] = []
     _ldap_user_attr: str
     _ldap_load_groups: bool
+    _ldap_groups_attr: str = "memberOf"
     _ldap_module_version: int = 3
     _ldap_use_ssl: bool = False
     _ldap_ssl_verify_mode: int = ssl.CERT_REQUIRED
@@ -70,6 +72,7 @@ class Auth(auth.BaseAuth):
         self._ldap_secret = configuration.get("auth", "ldap_secret")
         self._ldap_filter = configuration.get("auth", "ldap_filter")
         self._ldap_user_attr = configuration.get("auth", "ldap_user_attribute")
+        self._ldap_groups_attr = configuration.get("auth", "ldap_groups_attribute")
         ldap_secret_file_path = configuration.get("auth", "ldap_secret_file")
         if ldap_secret_file_path:
             with open(ldap_secret_file_path, 'r') as file:
@@ -92,6 +95,7 @@ class Auth(auth.BaseAuth):
             logger.info("auth.ldap_user_attribute  : %r" % self._ldap_user_attr)
         else:
             logger.info("auth.ldap_user_attribute  : (not provided)")
+        logger.info("auth.ldap_groups_attribute: %r" % self._ldap_groups_attr)
         if ldap_secret_file_path:
             logger.info("auth.ldap_secret_file_path: %r" % ldap_secret_file_path)
             if self._ldap_secret:
@@ -112,7 +116,7 @@ class Auth(auth.BaseAuth):
                 logger.info("auth.ldap_ssl_ca_file     : (not provided)")
         """Extend attributes to to be returned in the user query"""
         if self._ldap_load_groups:
-            self._ldap_attributes.append('memberOf')
+            self._ldap_attributes.append(self._ldap_groups_attr)
         if self._ldap_user_attr:
             self._ldap_attributes.append(self._ldap_user_attr)
         logger.info("ldap_attributes           : %r" % self._ldap_attributes)
@@ -155,7 +159,7 @@ class Auth(auth.BaseAuth):
             tmp: list[str] = []
             if self._ldap_load_groups:
                 tmp = []
-                for g in user_entry[1]['memberOf']:
+                for g in user_entry[1][self._ldap_groups_attr]:
                     """Get group g's RDN's attribute value"""
                     g = g.decode('utf-8').split(',')[0]
                     tmp.append(g.partition('=')[2])
@@ -225,7 +229,7 @@ class Auth(auth.BaseAuth):
             tmp: list[str] = []
             if self._ldap_load_groups:
                 tmp = []
-                for g in user_entry['attributes']['memberOf']:
+                for g in user_entry['attributes'][self._ldap_groups_attr]:
                     """Get group g's RDN's attribute value"""
                     g = g.split(',')[0]
                     tmp.append(g.partition('=')[2])

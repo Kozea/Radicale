@@ -941,6 +941,12 @@ Load the ldap groups of the authenticated user. These groups can be used later o
 
 Default: False
 
+##### ldap_groups_attribute
+
+The LDAP attribute to read the group memberships from in the user's LDAP entry if `ldap_load_groups` is True.
+
+Default: `memberOf`
+
 ##### ldap_use_ssl
 
 Use ssl on the ldap connection

@@ -251,6 +251,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "load the ldap groups of the authenticated user",
             "type": bool}),
+        ("ldap_groups_attribute", {
+            "value": "memberOf",
+            "help": "attribute to read the group memberships from",
+            "type": str}),
         ("ldap_use_ssl", {
             "value": "False",
             "help": "Use ssl on the ldap connection",

@@ -89,6 +89,9 @@
 # If the ldap groups of the user need to be loaded
 #ldap_load_groups = True
 
+# the attribute to read the group memberships from in the user's LDAP entry if ldap_load_groups is True.
+#ldap_groups_attribute = memberOf
+
 # The filter to find the DN of the user. This filter must contain a python-style placeholder for the login
 #ldap_filter = (&(objectClass=person)(uid={0}))
 
