@@ -2,7 +2,7 @@
 # Copyright © 2012-2016 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ import sys
 from typing import Iterable, Tuple, Union
 
 import pytest
+import logging
 
 from radicale import xmlutils
 from radicale.tests import BaseTest
@@ -100,6 +101,51 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_htpasswd_multi(self) -> None:
         self._test_htpasswd("plain", "ign:ign\ntmp:bepo")
+
+    # login cache successful
+    def test_htpasswd_login_cache_successful_plain(self, caplog) -> None:
+        caplog.set_level(logging.INFO)
+        self.configure({"auth": {"cache_logins": "True"}})
+        self._test_htpasswd("plain", "tmp:bepo", (("tmp", "bepo", True), ("tmp", "bepo", True)))
+        htpasswd_found = False
+        htpasswd_cached_found = False
+        for line in caplog.messages:
+            if line == "Successful login: 'tmp' (htpasswd)":
+                htpasswd_found = True
+            elif line == "Successful login: 'tmp' (htpasswd / cached)":
+                htpasswd_cached_found = True
+        if (htpasswd_found is False) or (htpasswd_cached_found is False):
+            raise ValueError("Logging misses expected log lines")
+
+    # login cache failed
+    def test_htpasswd_login_cache_failed_plain(self, caplog) -> None:
+        caplog.set_level(logging.INFO)
+        self.configure({"auth": {"cache_logins": "True"}})
+        self._test_htpasswd("plain", "tmp:bepo", (("tmp", "bepo1", False), ("tmp", "bepo1", False)))
+        htpasswd_found = False
+        htpasswd_cached_found = False
+        for line in caplog.messages:
+            if line == "Failed login attempt from unknown: 'tmp' (htpasswd)":
+                htpasswd_found = True
+            elif line == "Failed login attempt from unknown: 'tmp' (htpasswd / cached)":
+                htpasswd_cached_found = True
+        if (htpasswd_found is False) or (htpasswd_cached_found is False):
+            raise ValueError("Logging misses expected log lines")
+
+    # htpasswd file cache
+    def test_htpasswd_file_cache(self, caplog) -> None:
+        self.configure({"auth": {"htpasswd_cache": "True"}})
+        self._test_htpasswd("plain", "tmp:bepo")
+
+    # detection of broken htpasswd file entries
+    def test_htpasswd_broken(self) -> None:
+        for userpass in ["tmp:", ":tmp" ]:
+            try:
+                self._test_htpasswd("plain", userpass)
+            except RuntimeError:
+                pass
+            else:
+                raise
 
     @pytest.mark.skipif(sys.platform == "win32", reason="leading and trailing "
                         "whitespaces not allowed in file names")
