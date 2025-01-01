@@ -282,5 +282,7 @@ class Auth(auth.BaseAuth):
             else:
                 logger.debug("Login verification failed for user: '%s' ( method '%s')", login, method)
         else:
+            # dummy delay
+            (method, password_ok) = self._plain(str(htpasswd_mtime_ns), password)
             logger.debug("Login verification user not found: '%s'", login)
         return ""
