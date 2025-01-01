@@ -43,6 +43,7 @@ class Auth(auth.BaseAuth):
     _ldap_reader_dn: str
     _ldap_secret: str
     _ldap_filter: str
+    _ldap_attributes: list[str] = ['memberOf']
     _ldap_user_attr: str
     _ldap_load_groups: bool
     _ldap_module_version: int = 3
@@ -109,6 +110,10 @@ class Auth(auth.BaseAuth):
                 logger.info("auth.ldap_ssl_ca_file     : %r" % self._ldap_ssl_ca_file)
             else:
                 logger.info("auth.ldap_ssl_ca_file     : (not provided)")
+        """Extend attributes to to be returned in the user query"""
+        if self._ldap_user_attr:
+            self._ldap_attributes.append(self._ldap_user_attr)
+        logger.info("ldap_attributes           : %r" % self._ldap_attributes)
 
     def _login2(self, login: str, password: str) -> str:
         try:
@@ -121,15 +126,11 @@ class Auth(auth.BaseAuth):
             """Search for the dn of user to authenticate"""
             escaped_login = self.ldap.filter.escape_filter_chars(login)
             logger.debug(f"_login2 login escaped for LDAP filters: {escaped_login}")
-            attrs = ['memberof']
-            if self._ldap_user_attr:
-                attrs = ['memberOf', self._ldap_user_attr]
-            logger.debug(f"_login2 attrs: {attrs}")
             res = conn.search_s(
                 self._ldap_base,
                 self.ldap.SCOPE_SUBTREE,
                 filterstr=self._ldap_filter.format(escaped_login),
-                attrlist=attrs
+                attrlist=self._ldap_attributes
             )
             if len(res) != 1:
                 """User could not be found unambiguously"""
@@ -198,15 +199,11 @@ class Auth(auth.BaseAuth):
         """Search the user dn"""
         escaped_login = self.ldap3.utils.conv.escape_filter_chars(login)
         logger.debug(f"_login3 login escaped for LDAP filters: {escaped_login}")
-        attrs = ['memberof']
-        if self._ldap_user_attr:
-            attrs = ['memberOf', self._ldap_user_attr]
-        logger.debug(f"_login3 attrs: {attrs}")
         conn.search(
             search_base=self._ldap_base,
             search_filter=self._ldap_filter.format(escaped_login),
             search_scope=self.ldap3.SUBTREE,
-            attributes=attrs
+            attributes=self._ldap_attributes
         )
         if len(conn.entries) != 1:
             """User could not be found unambiguously"""
