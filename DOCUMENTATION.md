@@ -926,26 +926,26 @@ The search filter to find the user DN to authenticate by the username. User '{0}
 
 Default: `(cn={0})`
 
-#### ldap_user_attribute
+##### ldap_user_attribute
 
 The LDAP attribute whose value shall be used as the user name after successful authentication
 
 Default: not set, i.e. the login name given is used directly.
 
-##### ldap_load_groups
-
-Load the ldap groups of the authenticated user. These groups can be used later on to define rights. This also gives you access to the group calendars, if they exist.
-* The group calendar will be placed under collection_root_folder/GROUPS
-* The name of the calendar directory is the base64 encoded group name.
-* The group calendar folders will not be created automaticaly. This must be created manually. [Here](https://github.com/Kozea/Radicale/wiki/LDAP-authentication) you can find a script to create group calendar folders https://github.com/Kozea/Radicale/wiki/LDAP-authentication
-
-Default: False
-
 ##### ldap_groups_attribute
 
-The LDAP attribute to read the group memberships from in the user's LDAP entry if `ldap_load_groups` is True.
+The LDAP attribute to read the group memberships from in the authenticated user's LDAP entry.
 
-Default: `memberOf`
+If set, load the LDAP group memberships from the attribute given
+These memberships can be used later on to define rights.
+This also gives you access to the group calendars, if they exist.
+* The group calendar will be placed under collection_root_folder/GROUPS
+* The name of the calendar directory is the base64 encoded group name.
+* The group calendar folders will not be created automatically. This must be done manually. In the [LDAP-authentication section of Radicale's wiki](https://github.com/Kozea/Radicale/wiki/LDAP-authentication) you can find a script to create a group calendar.
+
+Use 'memberOf' if you want to load groups on Active Directory and alikes, 'groupMembership' on Novell eDirectory, ...
+
+Default: unset
 
 ##### ldap_use_ssl
 
