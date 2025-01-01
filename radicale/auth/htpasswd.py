@@ -157,7 +157,7 @@ class Auth(auth.BaseAuth):
             # assumed plaintext
             return self._plain(hash_value, password)
 
-    def _read_htpasswd(self, init: bool, suppress: bool) -> Tuple[bool, int, dict]:
+    def _read_htpasswd(self, init: bool, suppress: bool) -> Tuple[bool, int, dict, int, int]:
         """Read htpasswd file
 
         init == True: stop on error
