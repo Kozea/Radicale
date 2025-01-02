@@ -249,10 +249,19 @@ class Auth(auth.BaseAuth):
         hash (encrypted password) and check hash against password,
         using the method specified in the Radicale config.
 
-        The content of the file is cached and live updates will be detected by
+        Optional: the content of the file is cached and live updates will be detected by
         comparing mtime_ns and size
 
+        TODO: improve against timing attacks
+            see also issue 591
+        but also do not delay that much
+            see also issue 1466
+
+        As several hash methods are supported which have different speed a time based gap would be required
+
         """
+        login_ok = False
+        digest: str
         if self._htpasswd_cache is True:
             # check and re-read file if required
             with self._lock:
@@ -261,22 +270,28 @@ class Auth(auth.BaseAuth):
                 if (htpasswd_size != self._htpasswd_size) or (htpasswd_mtime_ns != self._htpasswd_mtime_ns):
                     (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(False, False)
                     self._htpasswd_not_ok_time = 0
+
+            # log reminder of problemantic file every interval
+            current_time = time.time()
+            if (self._htpasswd_ok is False):
+                if (self._htpasswd_not_ok_time > 0):
+                    if (current_time - self._htpasswd_not_ok_time) > self._htpasswd_not_ok_reminder_seconds:
+                        logger.warning("htpasswd file still contains issues (REMINDER, check warnings in the past): %r" % self._filename)
+                        self._htpasswd_not_ok_time = current_time
+                else:
+                    self._htpasswd_not_ok_time = current_time
+
+            if self._htpasswd.get(login):
+                digest = self._htpasswd[login]
+                login_ok = True
         else:
             # read file on every request
-            (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(False, True)
+            (htpasswd_ok, htpasswd_bcrypt_use, htpasswd, htpasswd_size, htpasswd_mtime_ns) = self._read_htpasswd(False, True)
+            if htpasswd.get(login):
+                digest = htpasswd[login]
+                login_ok = True
 
-        # log reminder of problemantic file every interval
-        current_time = time.time()
-        if (self._htpasswd_ok is False):
-            if (self._htpasswd_not_ok_time > 0):
-                if (current_time - self._htpasswd_not_ok_time) > self._htpasswd_not_ok_reminder_seconds:
-                    logger.warning("htpasswd file still contains issues (REMINDER, check warnings in the past): %r" % self._filename)
-                    self._htpasswd_not_ok_time = current_time
-            else:
-                self._htpasswd_not_ok_time = current_time
-
-        if self._htpasswd.get(login):
-            digest = self._htpasswd[login]
+        if login_ok is True:
             (method, password_ok) = self._verify(digest, password)
             logger.debug("Login verification successful for user: '%s' (method '%s')", login, method)
             if password_ok:
