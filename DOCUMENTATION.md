@@ -55,7 +55,7 @@ Follow one of the chapters below depending on your operating system.
 
 #### Linux / \*BSD
 
-First, make sure that **python** 3.8 or later and **pip** are installed. On most distributions it should be
+First, make sure that **python** 3.9 or later and **pip** are installed. On most distributions it should be
 enough to install the package ``python3-pip``.
 
 Then open a console and type:
