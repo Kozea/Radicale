@@ -160,8 +160,11 @@ class Auth(auth.BaseAuth):
                 tmp = []
                 for g in user_entry[1][self._ldap_groups_attr]:
                     """Get group g's RDN's attribute value"""
-                    g = g.decode('utf-8').split(',')[0]
-                    tmp.append(g.partition('=')[2])
+                    try:
+                        rdns = self.ldap.dn.explode_dn(g, notypes=True)
+                        tmp.append(rdns[0])
+                    except Exception:
+                        tmp.append(g.decode('utf8'))
                 self._ldap_groups = set(tmp)
                 logger.debug("_login2 LDAP groups of user: %s", ",".join(self._ldap_groups))
             if self._ldap_user_attr:
@@ -230,8 +233,11 @@ class Auth(auth.BaseAuth):
                 tmp = []
                 for g in user_entry['attributes'][self._ldap_groups_attr]:
                     """Get group g's RDN's attribute value"""
-                    g = g.split(',')[0]
-                    tmp.append(g.partition('=')[2])
+                    try:
+                        rdns = self.ldap3.utils.dn.parse_dn(g)
+                        tmp.append(rdns[0][1])
+                    except Exception:
+                        tmp.append(g)
                 self._ldap_groups = set(tmp)
                 logger.debug("_login3 LDAP groups of user: %s", ",".join(self._ldap_groups))
             if self._ldap_user_attr:
