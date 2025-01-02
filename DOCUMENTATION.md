@@ -901,6 +901,12 @@ The search filter to find the user DN to authenticate by the username. User '{0}
 
 Default: `(cn={0})`
 
+#### ldap_user_attribute
+
+The LDAP attribute whose value shall be used as the user name after successful authentication
+
+Default: not set, i.e. the login name given is used directly.
+
 ##### ldap_load_groups
 
 Load the ldap groups of the authenticated user. These groups can be used later on to define rights. This also gives you access to the group calendars, if they exist.

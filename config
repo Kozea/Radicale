@@ -83,6 +83,9 @@
 # The filter to find the DN of the user. This filter must contain a python-style placeholder for the login
 #ldap_filter = (&(objectClass=person)(uid={0}))
 
+# the attribute holding the value to be used as username after authentication
+#ldap_user_attribute = cn
+
 # Use ssl on the ldap connection
 #ldap_use_ssl = False
 
