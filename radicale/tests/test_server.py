@@ -141,13 +141,19 @@ class TestBaseServerRequests(BaseTest):
     def test_bind_fail(self) -> None:
         for address_family, address in [(socket.AF_INET, "::1"),
                                         (socket.AF_INET6, "127.0.0.1")]:
-            with socket.socket(address_family, socket.SOCK_STREAM) as sock:
-                if address_family == socket.AF_INET6:
-                    # Only allow IPv6 connections to the IPv6 socket
-                    sock.setsockopt(server.COMPAT_IPPROTO_IPV6,
-                                    socket.IPV6_V6ONLY, 1)
-                with pytest.raises(OSError) as exc_info:
-                    sock.bind((address, 0))
+            try:
+                with socket.socket(address_family, socket.SOCK_STREAM) as sock:
+                    if address_family == socket.AF_INET6:
+                        # Only allow IPv6 connections to the IPv6 socket
+                        sock.setsockopt(server.COMPAT_IPPROTO_IPV6,
+                                        socket.IPV6_V6ONLY, 1)
+                    with pytest.raises(OSError) as exc_info:
+                        sock.bind((address, 0))
+            except OSError as e:
+                if e.errno in (errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT,
+                               errno.EPROTONOSUPPORT):
+                    continue
+                raise
             # See ``radicale.server.serve``
             assert (isinstance(exc_info.value, socket.gaierror) and
                     exc_info.value.errno in (
