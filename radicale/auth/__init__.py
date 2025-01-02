@@ -91,6 +91,7 @@ class BaseAuth:
         self._auth_delay = configuration.get("auth", "delay")
         logger.info("auth.delay: %f", self._auth_delay)
         self._failed_auth_delay = 0
+        self._lock = threading.Lock()
         # cache_successful_logins
         self._cache_logins = configuration.get("auth", "cache_logins")
         self._type = configuration.get("auth", "type")
@@ -112,7 +113,6 @@ class BaseAuth:
             self._cache_successful = dict()
             self._cache_failed = dict()
             self._cache_failed_logins_salt_ns = time.time_ns()
-            self._lock = threading.Lock()
 
     def _cache_digest(self, login: str, password: str, salt: str) -> str:
         h = hashlib.sha3_512()
@@ -147,7 +147,7 @@ class BaseAuth:
 
         raise NotImplementedError
 
-    def _sleep_for_constant_exec_time(self, time_ns_begin):
+    def _sleep_for_constant_exec_time(self, time_ns_begin: int):
         """Sleep some time to reach a constant execution time for failed logins
 
         Independent of time required by external backend or used digest methods
