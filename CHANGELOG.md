@@ -7,6 +7,7 @@
 * Add: option [auth] htpasswd_cache to automatic re-read triggered on change (mtime or size) instead reading on each request
 * Improve: [auth] htpasswd: module 'bcrypt' is no longer mandatory in case digest method not used in file
 * Improve: [auth] successful/failed login logs now type and whether result was taken from cache
+* Improve: [auth] constant execution time for failed logins independent of external backend or by htpasswd used digest method
 
 ## 3.3.3
 * Add: display mtime_ns precision of storage folder with condition warning if too less
