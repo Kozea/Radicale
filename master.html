@@ -176,6 +176,7 @@ with the WSGI server</a></li>
 <li class="level4"><a href="#server" id="toc-server">server</a></li>
 <li class="level4"><a href="#encoding" id="toc-encoding">encoding</a></li>
 <li class="level4"><a href="#auth" id="toc-auth">auth</a></li>
+<li class="level4"><a href="#ldap_user_attribute" id="toc-ldap_user_attribute">ldap_user_attribute</a></li>
 <li class="level4"><a href="#rights" id="toc-rights">rights</a></li>
 <li class="level4"><a href="#storage-1" id="toc-storage-1">storage</a></li>
 <li class="level4"><a href="#web" id="toc-web">web</a></li>
@@ -1008,6 +1009,12 @@ auth type is ldap.</p>
 username. User '{0}' as placeholder for the user name.</p>
 <p>Default: <code>(cn={0})</code></p>
 </section>
+</section>
+<section class="level4" id="ldap_user_attribute">
+<h4>ldap_user_attribute <a class="headerlink" href="#ldap_user_attribute">&para;</a></h4>
+<p>The LDAP attribute whose value shall be used as the user name after
+successful authentication</p>
+<p>Default: not set, i.e. the login name given is used directly.</p>
 <section class="level5" id="ldap_load_groups">
 <h5>ldap_load_groups <a class="headerlink" href="#ldap_load_groups">&para;</a></h5>
 <p>Load the ldap groups of the authenticated user. These groups can be
