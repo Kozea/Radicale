@@ -252,13 +252,6 @@ class Auth(auth.BaseAuth):
         Optional: the content of the file is cached and live updates will be detected by
         comparing mtime_ns and size
 
-        TODO: improve against timing attacks
-            see also issue 591
-        but also do not delay that much
-            see also issue 1466
-
-        As several hash methods are supported which have different speed a time based gap would be required
-
         """
         login_ok = False
         digest: str
@@ -299,7 +292,5 @@ class Auth(auth.BaseAuth):
             else:
                 logger.debug("Login verification failed for user: '%s' ( method '%s')", login, method)
         else:
-            # dummy delay
-            (method, password_ok) = self._plain(str(time.time_ns()), password)
             logger.debug("Login verification user not found: '%s'", login)
         return ""
