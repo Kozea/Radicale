@@ -9,6 +9,7 @@
 * Improve: [auth] successful/failed login logs now type and whether result was taken from cache
 * Improve: [auth] constant execution time for failed logins independent of external backend or by htpasswd used digest method
 * Drop: support for Python 3.8
+* Add: option [auth] ldap_user_attribute
 
 ## 3.3.3
 * Add: display mtime_ns precision of storage folder with condition warning if too less
