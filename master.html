@@ -309,7 +309,7 @@ for <a href="#basic-configuration">some basic configuration</a>.</p>
 system.</p>
 <section class="level4" id="linux--bsd">
 <h4>Linux / *BSD <a class="headerlink" href="#linux--bsd">&para;</a></h4>
-<p>First, make sure that <strong>python</strong> 3.8 or later and
+<p>First, make sure that <strong>python</strong> 3.9 or later and
 <strong>pip</strong> are installed. On most distributions it should be
 enough to install the package <code>python3-pip</code>.</p>
 <p>Then open a console and type:</p>
@@ -936,6 +936,22 @@ users.</p>
 users.</p>
 <p>Default: <code>none</code></p>
 </section>
+<section class="level5" id="cache_logins">
+<h5>cache_logins <a class="headerlink" href="#cache_logins">&para;</a></h5>
+<p>Cache successful/failed logins until expiration time. Enable this to
+avoid overload of authentication backends.</p>
+<p>Default: <code>false</code></p>
+</section>
+<section class="level5" id="cache_successful_logins_expiry">
+<h5>cache_successful_logins_expiry <a class="headerlink" href="#cache_successful_logins_expiry">&para;</a></h5>
+<p>Expiration time of caching successful logins in seconds</p>
+<p>Default: <code>15</code></p>
+</section>
+<section class="level5" id="cache_failed_logins_expiry">
+<h5>cache_failed_logins_expiry <a class="headerlink" href="#cache_failed_logins_expiry">&para;</a></h5>
+<p>Expiration time of caching failed logins in seconds</p>
+<p>Default: <code>90</code></p>
+</section>
 <section class="level5" id="htpasswd_filename">
 <h5>htpasswd_filename <a class="headerlink" href="#htpasswd_filename">&para;</a></h5>
 <p>Path to the htpasswd file.</p>
@@ -963,6 +979,11 @@ password with a salt.</p>
 <p><code>autodetect</code> : This selects autodetection of method per
 entry.</p>
 <p>Default: <code>autodetect</code></p>
+</section>
+<section class="level5" id="htpasswd_cache">
+<h5>htpasswd_cache <a class="headerlink" href="#htpasswd_cache">&para;</a></h5>
+<p>Enable caching of htpasswd file based on size and mtime_ns</p>
+<p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="delay">
 <h5>delay <a class="headerlink" href="#delay">&para;</a></h5>
