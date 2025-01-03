@@ -1,6 +1,14 @@
 # Changelog
 
 ## 3.3.4.dev
+* Add: option [auth] cache_logins/cache_successful_logins_expiry/cache_failed_logins for caching logins
+* Improve: [auth] log used hash method and result on debug for htpasswd authentication
+* Improve: [auth] htpasswd file now read and verified on start
+* Add: option [auth] htpasswd_cache to automatic re-read triggered on change (mtime or size) instead reading on each request
+* Improve: [auth] htpasswd: module 'bcrypt' is no longer mandatory in case digest method not used in file
+* Improve: [auth] successful/failed login logs now type and whether result was taken from cache
+* Improve: [auth] constant execution time for failed logins independent of external backend or by htpasswd used digest method
+* Drop: support for Python 3.8
 
 ## 3.3.3
 * Add: display mtime_ns precision of storage folder with condition warning if too less

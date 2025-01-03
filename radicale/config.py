@@ -183,6 +183,18 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "authentication method",
             "type": str_or_callable,
             "internal": auth.INTERNAL_TYPES}),
+        ("cache_logins", {
+            "value": "false",
+            "help": "cache successful/failed logins for until expiration time",
+            "type": bool}),
+        ("cache_successful_logins_expiry", {
+            "value": "15",
+            "help": "expiration time for caching successful logins in seconds",
+            "type": int}),
+        ("cache_failed_logins_expiry", {
+            "value": "90",
+            "help": "expiration time for caching failed logins in seconds",
+            "type": int}),
         ("htpasswd_filename", {
             "value": "/etc/radicale/users",
             "help": "htpasswd filename",
@@ -191,6 +203,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "autodetect",
             "help": "htpasswd encryption method",
             "type": str}),
+        ("htpasswd_cache", {
+            "value": "False",
+            "help": "enable caching of htpasswd file",
+            "type": bool}),
         ("dovecot_socket", {
             "value": "/var/run/dovecot/auth-client",
             "help": "dovecot auth socket",

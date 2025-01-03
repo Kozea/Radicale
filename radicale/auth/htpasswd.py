@@ -3,7 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2019 Unrud <unrud@outlook.com>
-# Copyright © 2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,7 +50,10 @@ When bcrypt is installed:
 
 import functools
 import hmac
-from typing import Any
+import os
+import threading
+import time
+from typing import Any, Tuple
 
 from passlib.hash import apr_md5_crypt, sha256_crypt, sha512_crypt
 
@@ -61,14 +64,33 @@ class Auth(auth.BaseAuth):
 
     _filename: str
     _encoding: str
+    _htpasswd: dict             # login -> digest
+    _htpasswd_mtime_ns: int
+    _htpasswd_size: int
+    _htpasswd_ok: bool
+    _htpasswd_not_ok_time: float
+    _htpasswd_not_ok_reminder_seconds: int
+    _htpasswd_bcrypt_use: int
+    _htpasswd_cache: bool
+    _has_bcrypt: bool
+    _lock: threading.Lock
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
         self._filename = configuration.get("auth", "htpasswd_filename")
+        logger.info("auth htpasswd file: %r", self._filename)
         self._encoding = configuration.get("encoding", "stock")
+        logger.info("auth htpasswd file encoding: %r", self._encoding)
+        self._htpasswd_cache = configuration.get("auth", "htpasswd_cache")
+        logger.info("auth htpasswd cache: %s", self._htpasswd_cache)
         encryption: str = configuration.get("auth", "htpasswd_encryption")
-
         logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s'", encryption)
+
+        self._has_bcrypt = False
+        self._htpasswd_ok = False
+        self._htpasswd_not_ok_reminder_seconds = 60 # currently hardcoded
+        (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(True, False)
+        self._lock = threading.Lock()
 
         if encryption == "plain":
             self._verify = self._plain
@@ -82,35 +104,45 @@ class Auth(auth.BaseAuth):
             try:
                 import bcrypt
             except ImportError as e:
-                raise RuntimeError(
-                    "The htpasswd encryption method 'bcrypt' or 'autodetect' requires "
-                    "the bcrypt module.") from e
+                if (encryption == "autodetect") and (self._htpasswd_bcrypt_use == 0):
+                    logger.warning("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' which can require bycrypt module, but currently no entries found", encryption)
+                else:
+                    raise RuntimeError(
+                        "The htpasswd encryption method 'bcrypt' or 'autodetect' requires "
+                        "the bcrypt module (entries found: %d)." % self._htpasswd_bcrypt_use) from e
+            else:
+                if encryption == "autodetect":
+                    if self._htpasswd_bcrypt_use == 0:
+                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bycrypt module found, but currently not required", encryption)
+                    else:
+                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bycrypt module found (bcrypt entries found: %d)", encryption, self._htpasswd_bcrypt_use)
             if encryption == "bcrypt":
                 self._verify = functools.partial(self._bcrypt, bcrypt)
             else:
                 self._verify = self._autodetect
                 self._verify_bcrypt = functools.partial(self._bcrypt, bcrypt)
+            self._has_bcrypt = True
         else:
             raise RuntimeError("The htpasswd encryption method %r is not "
                                "supported." % encryption)
 
-    def _plain(self, hash_value: str, password: str) -> bool:
+    def _plain(self, hash_value: str, password: str) -> tuple[str, bool]:
         """Check if ``hash_value`` and ``password`` match, plain method."""
-        return hmac.compare_digest(hash_value.encode(), password.encode())
+        return ("PLAIN", hmac.compare_digest(hash_value.encode(), password.encode()))
 
-    def _bcrypt(self, bcrypt: Any, hash_value: str, password: str) -> bool:
-        return bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hash_value.encode())
+    def _bcrypt(self, bcrypt: Any, hash_value: str, password: str) -> tuple[str, bool]:
+        return ("BCRYPT", bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hash_value.encode()))
 
-    def _md5apr1(self, hash_value: str, password: str) -> bool:
-        return apr_md5_crypt.verify(password, hash_value.strip())
+    def _md5apr1(self, hash_value: str, password: str) -> tuple[str, bool]:
+        return ("MD5-APR1", apr_md5_crypt.verify(password, hash_value.strip()))
 
-    def _sha256(self, hash_value: str, password: str) -> bool:
-        return sha256_crypt.verify(password, hash_value.strip())
+    def _sha256(self, hash_value: str, password: str) -> tuple[str, bool]:
+        return ("SHA-256", sha256_crypt.verify(password, hash_value.strip()))
 
-    def _sha512(self, hash_value: str, password: str) -> bool:
-        return sha512_crypt.verify(password, hash_value.strip())
+    def _sha512(self, hash_value: str, password: str) -> tuple[str, bool]:
+        return ("SHA-512", sha512_crypt.verify(password, hash_value.strip()))
 
-    def _autodetect(self, hash_value: str, password: str) -> bool:
+    def _autodetect(self, hash_value: str, password: str) -> tuple[str, bool]:
         if hash_value.startswith("$apr1$", 0, 6) and len(hash_value) == 37:
             # MD5-APR1
             return self._md5apr1(hash_value, password)
@@ -127,6 +159,89 @@ class Auth(auth.BaseAuth):
             # assumed plaintext
             return self._plain(hash_value, password)
 
+    def _read_htpasswd(self, init: bool, suppress: bool) -> Tuple[bool, int, dict, int, int]:
+        """Read htpasswd file
+
+        init == True: stop on error
+        init == False: warn/skip on error and set mark to log reminder every interval
+        suppress == True: suppress warnings, change info to debug (used in non-caching mode)
+        suppress == False: do not suppress warnings (used in caching mode)
+
+        """
+        htpasswd_ok = True
+        bcrypt_use = 0
+        if (init is True) or (suppress is True):
+            info = "Read"
+        else:
+            info = "Re-read"
+        if suppress is False:
+            logger.info("%s content of htpasswd file start: %r", info, self._filename)
+        else:
+            logger.debug("%s content of htpasswd file start: %r", info, self._filename)
+        htpasswd: dict[str, str] = dict()
+        entries = 0
+        duplicates = 0
+        errors = 0
+        try:
+            with open(self._filename, encoding=self._encoding) as f:
+                line_num = 0
+                for line in f:
+                    line_num += 1
+                    line = line.rstrip("\n")
+                    if line.lstrip() and not line.lstrip().startswith("#"):
+                        try:
+                            login, digest = line.split(":", maxsplit=1)
+                            skip = False
+                            if login == "" or digest == "":
+                                if init is True:
+                                    raise ValueError("htpasswd file contains problematic line not matching <login>:<digest> in line: %d" % line_num)
+                                else:
+                                    errors += 1
+                                    logger.warning("htpasswd file contains problematic line not matching <login>:<digest> in line: %d (ignored)", line_num)
+                                    htpasswd_ok = False
+                                    skip = True
+                            else:
+                                if htpasswd.get(login):
+                                    duplicates += 1
+                                    if init is True:
+                                        raise ValueError("htpasswd file contains duplicate login: '%s'", login, line_num)
+                                    else:
+                                        logger.warning("htpasswd file contains duplicate login: '%s' (line: %d / ignored)", login, line_num)
+                                        htpasswd_ok = False
+                                        skip = True
+                                else:
+                                    if digest.startswith("$2y$", 0, 4) and len(digest) == 60:
+                                        if init is True:
+                                            bcrypt_use += 1
+                                        else:
+                                            if self._has_bcrypt is False:
+                                                logger.warning("htpasswd file contains bcrypt digest login: '%s' (line: %d / ignored because module is not loaded)", login, line_num)
+                                                skip = True
+                                                htpasswd_ok = False
+                            if skip is False:
+                                htpasswd[login] = digest
+                                entries += 1
+                        except ValueError as e:
+                            if init is True:
+                                raise RuntimeError("Invalid htpasswd file %r: %s" % (self._filename, e)) from e
+        except OSError as e:
+            if init is True:
+                raise RuntimeError("Failed to load htpasswd file %r: %s" % (self._filename, e)) from e
+            else:
+                logger.warning("Failed to load htpasswd file on re-read: %r" % self._filename)
+                htpasswd_ok = False
+        htpasswd_size = os.stat(self._filename).st_size
+        htpasswd_mtime_ns = os.stat(self._filename).st_mtime_ns
+        if suppress is False:
+            logger.info("%s content of htpasswd file done: %r (entries: %d, duplicates: %d, errors: %d)", info, self._filename, entries, duplicates, errors)
+        else:
+            logger.debug("%s content of htpasswd file done: %r (entries: %d, duplicates: %d, errors: %d)", info, self._filename, entries, duplicates, errors)
+        if htpasswd_ok is True:
+            self._htpasswd_not_ok_time = 0
+        else:
+            self._htpasswd_not_ok_time = time.time()
+        return (htpasswd_ok, bcrypt_use, htpasswd, htpasswd_size, htpasswd_mtime_ns)
+
     def _login(self, login: str, password: str) -> str:
         """Validate credentials.
 
@@ -134,30 +249,48 @@ class Auth(auth.BaseAuth):
         hash (encrypted password) and check hash against password,
         using the method specified in the Radicale config.
 
-        The content of the file is not cached because reading is generally a
-        very cheap operation, and it's useful to get live updates of the
-        htpasswd file.
+        Optional: the content of the file is cached and live updates will be detected by
+        comparing mtime_ns and size
 
         """
-        try:
-            with open(self._filename, encoding=self._encoding) as f:
-                for line in f:
-                    line = line.rstrip("\n")
-                    if line.lstrip() and not line.lstrip().startswith("#"):
-                        try:
-                            hash_login, hash_value = line.split(
-                                ":", maxsplit=1)
-                            # Always compare both login and password to avoid
-                            # timing attacks, see #591.
-                            login_ok = hmac.compare_digest(
-                                hash_login.encode(), login.encode())
-                            password_ok = self._verify(hash_value, password)
-                            if login_ok and password_ok:
-                                return login
-                        except ValueError as e:
-                            raise RuntimeError("Invalid htpasswd file %r: %s" %
-                                               (self._filename, e)) from e
-        except OSError as e:
-            raise RuntimeError("Failed to load htpasswd file %r: %s" %
-                               (self._filename, e)) from e
+        login_ok = False
+        digest: str
+        if self._htpasswd_cache is True:
+            # check and re-read file if required
+            with self._lock:
+                htpasswd_size = os.stat(self._filename).st_size
+                htpasswd_mtime_ns = os.stat(self._filename).st_mtime_ns
+                if (htpasswd_size != self._htpasswd_size) or (htpasswd_mtime_ns != self._htpasswd_mtime_ns):
+                    (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(False, False)
+                    self._htpasswd_not_ok_time = 0
+
+            # log reminder of problemantic file every interval
+            current_time = time.time()
+            if (self._htpasswd_ok is False):
+                if (self._htpasswd_not_ok_time > 0):
+                    if (current_time - self._htpasswd_not_ok_time) > self._htpasswd_not_ok_reminder_seconds:
+                        logger.warning("htpasswd file still contains issues (REMINDER, check warnings in the past): %r" % self._filename)
+                        self._htpasswd_not_ok_time = current_time
+                else:
+                    self._htpasswd_not_ok_time = current_time
+
+            if self._htpasswd.get(login):
+                digest = self._htpasswd[login]
+                login_ok = True
+        else:
+            # read file on every request
+            (htpasswd_ok, htpasswd_bcrypt_use, htpasswd, htpasswd_size, htpasswd_mtime_ns) = self._read_htpasswd(False, True)
+            if htpasswd.get(login):
+                digest = htpasswd[login]
+                login_ok = True
+
+        if login_ok is True:
+            (method, password_ok) = self._verify(digest, password)
+            logger.debug("Login verification successful for user: '%s' (method '%s')", login, method)
+            if password_ok:
+                return login
+            else:
+                logger.debug("Login verification failed for user: '%s' ( method '%s')", login, method)
+        else:
+            logger.debug("Login verification user not found: '%s'", login)
         return ""

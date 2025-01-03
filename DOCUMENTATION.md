@@ -55,7 +55,7 @@ Follow one of the chapters below depending on your operating system.
 
 #### Linux / \*BSD
 
-First, make sure that **python** 3.8 or later and **pip** are installed. On most distributions it should be
+First, make sure that **python** 3.9 or later and **pip** are installed. On most distributions it should be
 enough to install the package ``python3-pip``.
 
 Then open a console and type:
@@ -812,6 +812,25 @@ Available backends:
 
 Default: `none`
 
+##### cache_logins
+
+Cache successful/failed logins until expiration time. Enable this to avoid
+overload of authentication backends.
+
+Default: `false`
+
+##### cache_successful_logins_expiry
+
+Expiration time of caching successful logins in seconds
+
+Default: `15`
+
+##### cache_failed_logins_expiry
+
+Expiration time of caching failed logins in seconds
+
+Default: `90`
+
 ##### htpasswd_filename
 
 Path to the htpasswd file.
@@ -852,6 +871,12 @@ Available methods:
 : This selects autodetection of method per entry.
 
 Default: `autodetect`
+
+##### htpasswd_cache
+
+Enable caching of htpasswd file based on size and mtime_ns
+
+Default: `False`
 
 ##### delay
 
