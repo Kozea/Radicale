@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.3.4.dev
+## 3.4.0.dev
 * Add: option [auth] cache_logins/cache_successful_logins_expiry/cache_failed_logins for caching logins
 * Improve: [auth] log used hash method and result on debug for htpasswd authentication
 * Improve: [auth] htpasswd file now read and verified on start
