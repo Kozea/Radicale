@@ -10,6 +10,7 @@
 * Improve: [auth] constant execution time for failed logins independent of external backend or by htpasswd used digest method
 * Drop: support for Python 3.8
 * Add: option [auth] ldap_user_attribute
+* Add: option [auth] ldap_groups_attribute as a more flexible replacement of removed ldap_load_groups
 
 ## 3.3.3
 * Add: display mtime_ns precision of storage folder with condition warning if too less
