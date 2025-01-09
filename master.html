@@ -182,9 +182,6 @@ with the WSGI server</a></li>
 <li class="level4"><a href="#logging" id="toc-logging">logging</a></li>
 <li class="level4"><a href="#headers" id="toc-headers">headers</a></li>
 <li class="level4"><a href="#hook-1" id="toc-hook-1">hook</a></li>
-<li class="level4"><a href="#rabbitmq_endpoint" id="toc-rabbitmq_endpoint">rabbitmq_endpoint</a></li>
-<li class="level4"><a href="#rabbitmq_topic" id="toc-rabbitmq_topic">rabbitmq_topic</a></li>
-<li class="level4"><a href="#rabbitmq_queue_type" id="toc-rabbitmq_queue_type">rabbitmq_queue_type</a></li>
 <li class="level4"><a href="#reporting" id="toc-reporting">reporting</a></li>
 </ul></li>
 </ul></li>
@@ -1338,22 +1335,22 @@ be specified.</p>
 <p><code>rabbitmq</code> : Push the message to the rabbitmq server.</p>
 <p>Default: <code>none</code></p>
 </section>
-</section>
-<section class="level4" id="rabbitmq_endpoint">
-<h4>rabbitmq_endpoint <a class="headerlink" href="#rabbitmq_endpoint">&para;</a></h4>
+<section class="level5" id="rabbitmq_endpoint">
+<h5>rabbitmq_endpoint <a class="headerlink" href="#rabbitmq_endpoint">&para;</a></h5>
 <p>End-point address for rabbitmq server. Ex:
 amqp://user:password@localhost:5672/</p>
 <p>Default:</p>
 </section>
-<section class="level4" id="rabbitmq_topic">
-<h4>rabbitmq_topic <a class="headerlink" href="#rabbitmq_topic">&para;</a></h4>
+<section class="level5" id="rabbitmq_topic">
+<h5>rabbitmq_topic <a class="headerlink" href="#rabbitmq_topic">&para;</a></h5>
 <p>RabbitMQ topic to publish message.</p>
 <p>Default:</p>
 </section>
-<section class="level4" id="rabbitmq_queue_type">
-<h4>rabbitmq_queue_type <a class="headerlink" href="#rabbitmq_queue_type">&para;</a></h4>
+<section class="level5" id="rabbitmq_queue_type">
+<h5>rabbitmq_queue_type <a class="headerlink" href="#rabbitmq_queue_type">&para;</a></h5>
 <p>RabbitMQ queue type for the topic.</p>
 <p>Default: classic</p>
+</section>
 </section>
 <section class="level4" id="reporting">
 <h4>reporting <a class="headerlink" href="#reporting">&para;</a></h4>
