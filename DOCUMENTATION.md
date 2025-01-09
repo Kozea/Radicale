@@ -20,7 +20,7 @@ Radicale is a small but powerful CalDAV (calendars, to-do lists) and CardDAV
 
 #### Installation
 
-Radicale is really easy to install and works out-of-the-box.
+Radicale is really easy to install (for testing purposes) and works out-of-the-box.
 
 ```bash
 python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
@@ -32,6 +32,8 @@ You can login with any username and password.
 
 Want more? Check the [tutorials](#tutorials) and the
 [documentation](#documentation-1).
+
+Instead of downloading from PyPI look for packages provided by used distribution (#linux-distribution-packages), they contain also startup scripts to run daemonized.
 
 #### What's New?
 
