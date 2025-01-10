@@ -33,7 +33,7 @@ You can login with any username and password.
 Want more? Check the [tutorials](#tutorials) and the
 [documentation](#documentation-1).
 
-Instead of downloading from PyPI look for packages provided by used distribution (#linux-distribution-packages), they contain also startup scripts to run daemonized.
+Instead of downloading from PyPI look for packages provided by used [distribution](#linux-distribution-packages), they contain also startup scripts to run daemonized.
 
 #### What's New?
 
