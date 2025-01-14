@@ -967,11 +967,31 @@ The path to the CA file in pem format which is used to certificate the server ce
 
 Default:
 
+##### dovecot_connection_type = AF_UNIX
+
+Connection type for dovecot authentication (AF_UNIX|AF_INET|AF_INET6)
+
+Note: credentials are transmitted in cleartext
+
+Default: `AF_UNIX`
+
 ##### dovecot_socket
 
 The path to the Dovecot client authentication socket (eg. /run/dovecot/auth-client on Fedora). Radicale must have read / write access to the socket.
 
-Default:
+Default: `/var/run/dovecot/auth-client`
+
+##### dovecot_host
+
+Host of via network exposed dovecot socket
+
+Default: `localhost`
+
+##### dovecot_port
+
+Port of via network exposed dovecot socket
+
+Default: `12345`
 
 ##### lc_username
 

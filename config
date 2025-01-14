@@ -104,6 +104,19 @@
 # The path to the CA file in pem format which is used to certificate the server certificate
 #ldap_ssl_ca_file =
 
+# Connection type for dovecot authentication (AF_UNIX|AF_INET|AF_INET6)
+# Note: credentials are transmitted in cleartext
+#dovecot_connection_type = AF_UNIX
+
+# The path to the Dovecot client authentication socket (eg. /run/dovecot/auth-client on Fedora). Radicale must have read / write access to the socket.
+#dovecot_socket = /var/run/dovecot/auth-client
+
+# Host of via network exposed dovecot socket
+#dovecot_host = localhost
+
+# Port of via network exposed dovecot socket
+#dovecot_port = 12345
+
 # Htpasswd filename
 #htpasswd_filename = /etc/radicale/users
 

@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.4.1.dev
+* Add: option [auth] dovecot_connection_type / dovecot_host / dovecot_port
 
 ## 3.4.0
 * Add: option [auth] cache_logins/cache_successful_logins_expiry/cache_failed_logins for caching logins
