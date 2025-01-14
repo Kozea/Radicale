@@ -28,9 +28,20 @@ from radicale.log import logger
 class Auth(auth.BaseAuth):
     def __init__(self, configuration):
         super().__init__(configuration)
-        self.socket = configuration.get("auth", "dovecot_socket")
         self.timeout = 5
         self.request_id_gen = itertools.count(1)
+
+        config_family = configuration.get("auth", "dovecot_connection_type")
+        if config_family == "AF_UNIX":
+            self.family = socket.AF_UNIX
+            self.address = configuration.get("auth", "dovecot_socket")
+            return
+
+        self.address = configuration.get("auth", "dovecot_host"), configuration.get("auth", "dovecot_port")
+        if config_family == "AF_INET":
+            self.family = socket.AF_INET
+        else:
+            self.family = socket.AF_INET6
 
     def _login(self, login, password):
         """Validate credentials.
@@ -49,12 +60,12 @@ class Auth(auth.BaseAuth):
             return ""
 
         with closing(socket.socket(
-                socket.AF_UNIX,
+                self.family,
                 socket.SOCK_STREAM)
         ) as sock:
             try:
                 sock.settimeout(self.timeout)
-                sock.connect(self.socket)
+                sock.connect(self.address)
 
                 buf = bytes()
                 supported_mechs = []
@@ -171,8 +182,8 @@ class Auth(auth.BaseAuth):
 
             except socket.error as e:
                 logger.fatal(
-                        "Failed to communicate with Dovecot socket %r: %s" %
-                        (self.socket, e)
+                        "Failed to communicate with Dovecot: %s" %
+                        (e)
                 )
 
         return ""

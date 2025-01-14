@@ -207,10 +207,23 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "enable caching of htpasswd file",
             "type": bool}),
+        ("dovecot_connection_type", {
+            "value": "AF_UNIX",
+            "help": "Connection type for dovecot authentication",
+            "type": str_or_callable,
+            "internal": auth.AUTH_SOCKET_FAMILY}),
         ("dovecot_socket", {
             "value": "/var/run/dovecot/auth-client",
-            "help": "dovecot auth socket",
+            "help": "dovecot auth AF_UNIX socket",
             "type": str}),
+        ("dovecot_host", {
+            "value": "",
+            "help": "dovecot auth AF_INET or AF_INET6 host",
+            "type": str}),
+        ("dovecot_port", {
+            "value": "12345",
+            "help": "dovecot auth port",
+            "type": int}),
         ("realm", {
             "value": "Radicale - Password Required",
             "help": "message displayed when a password is needed",
