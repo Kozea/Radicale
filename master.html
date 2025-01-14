@@ -1074,12 +1074,29 @@ alikes, 'groupMembership' on Novell eDirectory, ...</p>
 the server certificate</p>
 <p>Default:</p>
 </section>
+<section class="level5" id="dovecot_connection_type--af_unix">
+<h5>dovecot_connection_type = AF_UNIX <a class="headerlink" href="#dovecot_connection_type--af_unix">&para;</a></h5>
+<p>Connection type for dovecot authentication
+(AF_UNIX|AF_INET|AF_INET6)</p>
+<p>Note: credentials are transmitted in cleartext</p>
+<p>Default: <code>AF_UNIX</code></p>
+</section>
 <section class="level5" id="dovecot_socket">
 <h5>dovecot_socket <a class="headerlink" href="#dovecot_socket">&para;</a></h5>
 <p>The path to the Dovecot client authentication socket (eg.
 /run/dovecot/auth-client on Fedora). Radicale must have read / write
 access to the socket.</p>
-<p>Default:</p>
+<p>Default: <code>/var/run/dovecot/auth-client</code></p>
+</section>
+<section class="level5" id="dovecot_host">
+<h5>dovecot_host <a class="headerlink" href="#dovecot_host">&para;</a></h5>
+<p>Host of via network exposed dovecot socket</p>
+<p>Default: <code>localhost</code></p>
+</section>
+<section class="level5" id="dovecot_port">
+<h5>dovecot_port <a class="headerlink" href="#dovecot_port">&para;</a></h5>
+<p>Port of via network exposed dovecot socket</p>
+<p>Default: <code>12345</code></p>
 </section>
 <section class="level5" id="lc_username">
 <h5>lc_username <a class="headerlink" href="#lc_username">&para;</a></h5>
