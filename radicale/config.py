@@ -3,7 +3,7 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2017-2020 Unrud <unrud@outlook.com>
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -217,7 +217,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "dovecot auth AF_UNIX socket",
             "type": str}),
         ("dovecot_host", {
-            "value": "",
+            "value": "localhost",
             "help": "dovecot auth AF_INET or AF_INET6 host",
             "type": str}),
         ("dovecot_port", {
