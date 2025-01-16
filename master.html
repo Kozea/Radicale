@@ -932,8 +932,9 @@ server.</p>
 This can be used to provide the username from a reverse proxy.</p>
 <p><code>ldap</code> : Use a LDAP or AD server to authenticate
 users.</p>
-<p><code>dovecot</code> : Use a local Dovecot server to authenticate
+<p><code>dovecot</code> : Use a Dovecot server to authenticate
 users.</p>
+<p><code>imap</code> : Use a IMAP server to authenticate users.</p>
 <p>Default: <code>none</code></p>
 </section>
 <section class="level5" id="cache_logins">
@@ -1097,6 +1098,17 @@ access to the socket.</p>
 <h5>dovecot_port <a class="headerlink" href="#dovecot_port">&para;</a></h5>
 <p>Port of via network exposed dovecot socket</p>
 <p>Default: <code>12345</code></p>
+</section>
+<section class="level5" id="imap_host">
+<h5>imap_host <a class="headerlink" href="#imap_host">&para;</a></h5>
+<p>IMAP server hostname: address | address:port | [address]:port |
+imap.server.tld</p>
+<p>Default: <code>localhost</code></p>
+</section>
+<section class="level5" id="imap_security">
+<h5>imap_security <a class="headerlink" href="#imap_security">&para;</a></h5>
+<p>Secure the IMAP connection: tls | starttls | none</p>
+<p>Default: <code>tls</code></p>
 </section>
 <section class="level5" id="lc_username">
 <h5>lc_username <a class="headerlink" href="#lc_username">&para;</a></h5>
