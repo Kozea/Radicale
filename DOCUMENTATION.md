@@ -810,7 +810,7 @@ Available backends:
 : Use a LDAP or AD server to authenticate users.
 
 `dovecot`
-: Use a local Dovecot server to authenticate users.
+: Use a Dovecot server to authenticate users.
 
 `imap`
 : Use a IMAP server to authenticate users.
