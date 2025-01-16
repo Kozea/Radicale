@@ -104,6 +104,29 @@ def _convert_to_bool(value: Any) -> bool:
     return RawConfigParser.BOOLEAN_STATES[value.lower()]
 
 
+def imap_address(value):
+    if "]" in value:
+        pre_address, pre_address_port = value.rsplit("]", 1)
+    else:
+        pre_address, pre_address_port = "", value
+    if ":" in pre_address_port:
+        pre_address2, port = pre_address_port.rsplit(":", 1)
+        address = pre_address + pre_address2
+    else:
+        address, port = pre_address + pre_address_port, None
+    try:
+        return (address.strip(string.whitespace + "[]"),
+                None if port is None else int(port))
+    except ValueError:
+        raise ValueError("malformed IMAP address: %r" % value)
+
+
+def imap_security(value):
+    if value not in ("tls", "starttls", "none"):
+        raise ValueError("unsupported IMAP security: %r" % value)
+    return value
+
+
 def json_str(value: Any) -> dict:
     if not value:
         return {}
@@ -276,6 +299,14 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "The path to the CA file in pem format which is used to certificate the server certificate",
             "type": str}),
+        ("imap_host", {
+            "value": "localhost",
+            "help": "IMAP server hostname: address|address:port|[address]:port|*localhost*",
+            "type": imap_address}),
+        ("imap_security", {
+            "value": "tls",
+            "help": "Secure the IMAP connection: *tls*|starttls|none",
+            "type": imap_security}),
         ("strip_domain", {
             "value": "False",
             "help": "strip domain from username",

@@ -810,7 +810,10 @@ Available backends:
 : Use a LDAP or AD server to authenticate users.
 
 `dovecot`
-: Use a local Dovecot server to authenticate users.
+: Use a Dovecot server to authenticate users.
+
+`imap`
+: Use a IMAP server to authenticate users.
 
 Default: `none`
 
@@ -992,6 +995,18 @@ Default: `localhost`
 Port of via network exposed dovecot socket
 
 Default: `12345`
+
+##### imap_host
+
+IMAP server hostname: address | address:port | [address]:port | imap.server.tld
+
+Default: `localhost`
+
+##### imap_security
+
+Secure the IMAP connection: tls | starttls | none
+
+Default: `tls`
 
 ##### lc_username
 

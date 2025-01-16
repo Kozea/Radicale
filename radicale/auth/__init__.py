@@ -41,7 +41,15 @@ INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
                                  "denyall",
                                  "htpasswd",
                                  "ldap",
+                                 "imap",
                                  "dovecot")
+
+CACHE_LOGIN_TYPES: Sequence[str] = (
+                                    "dovecot",
+                                    "ldap",
+                                    "htpasswd",
+                                    "imap",
+                                   )
 
 AUTH_SOCKET_FAMILY: Sequence[str] = ("AF_UNIX", "AF_INET", "AF_INET6")
 
@@ -97,7 +105,7 @@ class BaseAuth:
         # cache_successful_logins
         self._cache_logins = configuration.get("auth", "cache_logins")
         self._type = configuration.get("auth", "type")
-        if (self._type in ["dovecot", "ldap", "htpasswd"]) or (self._cache_logins is False):
+        if (self._type in CACHE_LOGIN_TYPES) or (self._cache_logins is False):
             logger.info("auth.cache_logins: %s", self._cache_logins)
         else:
             logger.info("auth.cache_logins: %s (but not required for type '%s' and disabled therefore)", self._cache_logins, self._type)
