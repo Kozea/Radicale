@@ -117,6 +117,14 @@
 # Port of via network exposed dovecot socket
 #dovecot_port = 12345
 
+# IMAP server hostname
+# Syntax: address | address:port | [address]:port | imap.server.tld
+#imap_host = localhost
+
+# Secure the IMAP connection
+# Value: tls | starttls | none
+#imap_security = tls
+
 # Htpasswd filename
 #htpasswd_filename = /etc/radicale/users
 
