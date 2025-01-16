@@ -49,6 +49,7 @@ class Auth(auth.BaseAuth):
 
     def _login(self, login, password) -> str:
         try:
+            connection: imaplib.IMAP4 | imaplib.IMAP4_SSL
             if self._security == "tls":
                 connection = imaplib.IMAP4_SSL(
                     host=self._host, port=self._port,
