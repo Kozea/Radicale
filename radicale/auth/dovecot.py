@@ -1,6 +1,7 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2014 Giel van Schijndel
 # Copyright © 2019 (GalaxyMaster)
+# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,9 +36,11 @@ class Auth(auth.BaseAuth):
         if config_family == "AF_UNIX":
             self.family = socket.AF_UNIX
             self.address = configuration.get("auth", "dovecot_socket")
+            logger.info("auth dovecot socket: %r", self.address)
             return
 
         self.address = configuration.get("auth", "dovecot_host"), configuration.get("auth", "dovecot_port")
+        logger.warning("auth dovecot address: %r (INSECURE, credentials are transmitted in clear text)", self.address)
         if config_family == "AF_INET":
             self.family = socket.AF_INET
         else:
