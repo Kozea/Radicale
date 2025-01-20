@@ -31,7 +31,7 @@ class Auth(auth.BaseAuth):
         logger.info("auth imap host: %r", self._host)
         self._security = self.configuration.get("auth", "imap_security")
         if self._security == "none":
-            logger.info("auth imap security: %s (INSECURE, credentials are transmitted in clear text)", self._security)
+            logger.warning("auth imap security: %s (INSECURE, credentials are transmitted in clear text)", self._security)
         else:
             logger.info("auth imap security: %s", self._security)
         if self._security == "tls":
