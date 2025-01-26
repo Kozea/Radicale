@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.4.1.dev
+## 3.4.1
 * Add: option [auth] dovecot_connection_type / dovecot_host / dovecot_port
 * Add: option [auth] type imap by code migration from https://github.com/Unrud/RadicaleIMAP/
 
