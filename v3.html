@@ -183,9 +183,6 @@ with the WSGI server</a></li>
 <li class="level4"><a href="#logging" id="toc-logging">logging</a></li>
 <li class="level4"><a href="#headers" id="toc-headers">headers</a></li>
 <li class="level4"><a href="#hook-1" id="toc-hook-1">hook</a></li>
-<li class="level4"><a href="#rabbitmq_endpoint" id="toc-rabbitmq_endpoint">rabbitmq_endpoint</a></li>
-<li class="level4"><a href="#rabbitmq_topic" id="toc-rabbitmq_topic">rabbitmq_topic</a></li>
-<li class="level4"><a href="#rabbitmq_queue_type" id="toc-rabbitmq_queue_type">rabbitmq_queue_type</a></li>
 <li class="level4"><a href="#reporting" id="toc-reporting">reporting</a></li>
 </ul></li>
 </ul></li>
@@ -281,12 +278,16 @@ structure.</li>
 </section>
 <section class="level4" id="installation">
 <h4>Installation <a class="headerlink" href="#installation">&para;</a></h4>
-<p>Radicale is really easy to install and works out-of-the-box.</p>
+<p>Radicale is really easy to install (for testing purposes) and works
+out-of-the-box.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a aria-hidden="true" href="#cb1-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip install <span class="at">--upgrade</span> https://github.com/Kozea/Radicale/archive/master.tar.gz</span>
 <span id="cb1-2"><a aria-hidden="true" href="#cb1-2" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> radicale <span class="at">--logging-level</span> info <span class="at">--storage-filesystem-folder</span><span class="op">=</span>~/.var/lib/radicale/collections</span></code></pre></div>
 <p>When the server is launched, open <a href="http://localhost:5232">http://localhost:5232</a> in your browser!
 You can login with any username and password.</p>
 <p>Want more? Check the <a href="#tutorials">tutorials</a> and the <a href="#documentation-1">documentation</a>.</p>
+<p>Instead of downloading from PyPI look for packages provided by used
+<a href="#linux-distribution-packages">distribution</a>, they contain
+also startup scripts to run daemonized.</p>
 </section>
 <section class="level4" id="whats-new">
 <h4>What's New? <a class="headerlink" href="#whats-new">&para;</a></h4>
@@ -932,8 +933,9 @@ server.</p>
 This can be used to provide the username from a reverse proxy.</p>
 <p><code>ldap</code> : Use a LDAP or AD server to authenticate
 users.</p>
-<p><code>dovecot</code> : Use a local Dovecot server to authenticate
+<p><code>dovecot</code> : Use a Dovecot server to authenticate
 users.</p>
+<p><code>imap</code> : Use a IMAP server to authenticate users.</p>
 <p>Default: <code>none</code></p>
 </section>
 <section class="level5" id="cache_logins">
@@ -1074,12 +1076,40 @@ alikes, 'groupMembership' on Novell eDirectory, ...</p>
 the server certificate</p>
 <p>Default:</p>
 </section>
+<section class="level5" id="dovecot_connection_type--af_unix">
+<h5>dovecot_connection_type = AF_UNIX <a class="headerlink" href="#dovecot_connection_type--af_unix">&para;</a></h5>
+<p>Connection type for dovecot authentication
+(AF_UNIX|AF_INET|AF_INET6)</p>
+<p>Note: credentials are transmitted in cleartext</p>
+<p>Default: <code>AF_UNIX</code></p>
+</section>
 <section class="level5" id="dovecot_socket">
 <h5>dovecot_socket <a class="headerlink" href="#dovecot_socket">&para;</a></h5>
 <p>The path to the Dovecot client authentication socket (eg.
 /run/dovecot/auth-client on Fedora). Radicale must have read / write
 access to the socket.</p>
-<p>Default:</p>
+<p>Default: <code>/var/run/dovecot/auth-client</code></p>
+</section>
+<section class="level5" id="dovecot_host">
+<h5>dovecot_host <a class="headerlink" href="#dovecot_host">&para;</a></h5>
+<p>Host of via network exposed dovecot socket</p>
+<p>Default: <code>localhost</code></p>
+</section>
+<section class="level5" id="dovecot_port">
+<h5>dovecot_port <a class="headerlink" href="#dovecot_port">&para;</a></h5>
+<p>Port of via network exposed dovecot socket</p>
+<p>Default: <code>12345</code></p>
+</section>
+<section class="level5" id="imap_host">
+<h5>imap_host <a class="headerlink" href="#imap_host">&para;</a></h5>
+<p>IMAP server hostname: address | address:port | [address]:port |
+imap.server.tld</p>
+<p>Default: <code>localhost</code></p>
+</section>
+<section class="level5" id="imap_security">
+<h5>imap_security <a class="headerlink" href="#imap_security">&para;</a></h5>
+<p>Secure the IMAP connection: tls | starttls | none</p>
+<p>Default: <code>tls</code></p>
 </section>
 <section class="level5" id="lc_username">
 <h5>lc_username <a class="headerlink" href="#lc_username">&para;</a></h5>
@@ -1339,22 +1369,22 @@ be specified.</p>
 <p><code>rabbitmq</code> : Push the message to the rabbitmq server.</p>
 <p>Default: <code>none</code></p>
 </section>
-</section>
-<section class="level4" id="rabbitmq_endpoint">
-<h4>rabbitmq_endpoint <a class="headerlink" href="#rabbitmq_endpoint">&para;</a></h4>
+<section class="level5" id="rabbitmq_endpoint">
+<h5>rabbitmq_endpoint <a class="headerlink" href="#rabbitmq_endpoint">&para;</a></h5>
 <p>End-point address for rabbitmq server. Ex:
 amqp://user:password@localhost:5672/</p>
 <p>Default:</p>
 </section>
-<section class="level4" id="rabbitmq_topic">
-<h4>rabbitmq_topic <a class="headerlink" href="#rabbitmq_topic">&para;</a></h4>
+<section class="level5" id="rabbitmq_topic">
+<h5>rabbitmq_topic <a class="headerlink" href="#rabbitmq_topic">&para;</a></h5>
 <p>RabbitMQ topic to publish message.</p>
 <p>Default:</p>
 </section>
-<section class="level4" id="rabbitmq_queue_type">
-<h4>rabbitmq_queue_type <a class="headerlink" href="#rabbitmq_queue_type">&para;</a></h4>
+<section class="level5" id="rabbitmq_queue_type">
+<h5>rabbitmq_queue_type <a class="headerlink" href="#rabbitmq_queue_type">&para;</a></h5>
 <p>RabbitMQ queue type for the topic.</p>
 <p>Default: classic</p>
+</section>
 </section>
 <section class="level4" id="reporting">
 <h4>reporting <a class="headerlink" href="#reporting">&para;</a></h4>
