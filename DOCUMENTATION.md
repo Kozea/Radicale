@@ -23,7 +23,8 @@ Radicale is a small but powerful CalDAV (calendars, to-do lists) and CardDAV
 Radicale is really easy to install (for testing purposes) and works out-of-the-box.
 
 ```bash
-python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
+# Run as normal user
+python3 -m pip install --user --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
 python3 -m radicale --logging-level info --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
@@ -63,10 +64,20 @@ enough to install the package ``python3-pip``.
 Then open a console and type:
 
 ```bash
-# Run the following command as root or
-# add the --user argument to only install for the current user
-$ python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
-$ python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
+# Run the following command to only install for the current user
+#  data is also stored for the current user only
+python3 -m pip install --user --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
+python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
+```
+
+Alternative one can install as root or system user
+
+```bash
+# Run the following command as root
+# or non-root system user (can require --user in case of dependencies are not available system-wide)
+#  requires existence of and write permissions to /var/lib/radicale/collections
+python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
+python3 -m radicale --storage-filesystem-folder=/var/lib/radicale/collections
 ```
 
 Victory! Open <http://localhost:5232> in your browser!
