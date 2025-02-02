@@ -942,7 +942,8 @@ This can be used to provide the username from a reverse proxy.</p>
 users.</p>
 <p><code>dovecot</code> : Use a Dovecot server to authenticate
 users.</p>
-<p><code>imap</code> : Use a IMAP server to authenticate users.</p>
+<p><code>imap</code> : Use an IMAP server to authenticate users.</p>
+<p><code>oauth2</code> : Use an OAuth2 server to authenticate users.</p>
 <p>Default: <code>none</code></p>
 </section>
 <section class="level5" id="cache_logins">
@@ -1117,6 +1118,11 @@ imap.server.tld</p>
 <h5>imap_security <a class="headerlink" href="#imap_security">&para;</a></h5>
 <p>Secure the IMAP connection: tls | starttls | none</p>
 <p>Default: <code>tls</code></p>
+</section>
+<section class="level5" id="oauth2_token_endpoint">
+<h5>oauth2_token_endpoint <a class="headerlink" href="#oauth2_token_endpoint">&para;</a></h5>
+<p>OAuth2 token endpoint URL</p>
+<p>Default:</p>
 </section>
 <section class="level5" id="lc_username">
 <h5>lc_username <a class="headerlink" href="#lc_username">&para;</a></h5>
