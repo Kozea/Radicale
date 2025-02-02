@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.4.2.dev
+
+* Add: option [auth] type oauth2 by code migration from https://gitlab.mim-libre.fr/alphabet/radicale_oauth/-/blob/dev/oauth2/
+
 ## 3.4.1
 * Add: option [auth] dovecot_connection_type / dovecot_host / dovecot_port
 * Add: option [auth] type imap by code migration from https://github.com/Unrud/RadicaleIMAP/

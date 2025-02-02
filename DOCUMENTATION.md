@@ -824,7 +824,10 @@ Available backends:
 : Use a Dovecot server to authenticate users.
 
 `imap`
-: Use a IMAP server to authenticate users.
+: Use an IMAP server to authenticate users.
+
+`oauth2`
+: Use an OAuth2 server to authenticate users.
 
 Default: `none`
 
@@ -1018,6 +1021,12 @@ Default: `localhost`
 Secure the IMAP connection: tls | starttls | none
 
 Default: `tls`
+
+##### oauth2_token_endpoint
+
+OAuth2 token endpoint URL
+
+Default:
 
 ##### lc_username
 
