@@ -39,9 +39,9 @@ class Auth(auth.BaseAuth):
             raise RuntimeError("OAuth2 token endpoint URL is required")
         logger.info("auth OAuth2 token endpoint: %s" % (self._endpoint))
 
-    def login(self, login, password):
+    def _login(self, login, password):
         """Validate credentials.
-        Sends login credentials to oauth auth endpoint and checks that a token is returned
+        Sends login credentials to oauth token endpoint and checks that a token is returned
         """
         try:
             # authenticate to authentication endpoint and return login if ok, else ""
