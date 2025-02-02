@@ -61,9 +61,6 @@ class Auth(auth.BaseAuth):
             ):
                 return login
         except OSError as e:
-            raise RuntimeError(
-                "Failed to authenticate against oauth server %r: %s"
-                % (self._endpoint, e)
-            ) from e
-        logger.warning("User %s failed to authenticate" % (str(login)))
+            logger.critical("Failed to authenticate against OAuth2 server %s: %s" % (self._endpoint, e))
+        logger.warning("User failed to authenticate using OAuth2: %r" % login)
         return ""
