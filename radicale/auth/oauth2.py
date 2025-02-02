@@ -24,10 +24,11 @@
 Authentication backend that checks credentials against an oauth2 server auth endpoint
 """
 
+import requests
+
 from radicale import auth
 from radicale.log import logger
-import requests
-from requests.utils import quote
+
 
 class Auth(auth.BaseAuth):
     def __init__(self, configuration):
