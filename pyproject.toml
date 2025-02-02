@@ -72,7 +72,7 @@ skip_install = true
 
 [tool.tox.env.mypy]
 deps = ["mypy==1.11.0"]
-commands = [["mypy", "."]]
+commands = [["mypy", "--install-types", "--non-interactive", "."]]
 skip_install = true
 
 

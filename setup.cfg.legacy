@@ -24,7 +24,7 @@ skip_install = True
 
 [testenv:mypy]
 deps = mypy==1.11.0
-commands = mypy .
+commands = mypy --install-types --non-interactive .
 skip_install = True
 
 [tool:isort]
