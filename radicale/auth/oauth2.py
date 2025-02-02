@@ -29,12 +29,14 @@ from radicale.log import logger
 import requests
 from requests.utils import quote
 
-
 class Auth(auth.BaseAuth):
     def __init__(self, configuration):
         super().__init__(configuration)
         self._endpoint = configuration.get("auth", "oauth2_token_endpoint")
-        logger.warning("Using oauth2 token endpoint: %s" % (self._endpoint))
+        if not self._endpoint:
+            logger.error("auth.oauth2_token_endpoint URL missing")
+            raise RuntimeError("OAuth2 token endpoint URL is required")
+        logger.info("auth OAuth2 token endpoint: %s" % (self._endpoint))
 
     def login(self, login, password):
         """Validate credentials.
