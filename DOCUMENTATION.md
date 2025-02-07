@@ -1819,7 +1819,7 @@ class Auth(BaseAuth):
     def __init__(self, configuration):
         super().__init__(configuration.copy(PLUGIN_CONFIG_SCHEMA))
 
-    def login(self, login, password):
+    def _login(self, login, password):
         # Get password from configuration option
         static_password = self.configuration.get("auth", "password")
         # Check authentication
