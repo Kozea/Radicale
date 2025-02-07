@@ -560,7 +560,7 @@ books with Git.</a></li>
 to make it fit your needs.</p>
 <ul>
 <li><a href="#configuration-1">What can I configure?</a></li>
-<li><a href="#authentication-and-rights">Authentication &amp;
+<li><a href="#authentication-and-rights">Authentication &
 Rights.</a></li>
 <li><a href="#storage-2">Storage.</a></li>
 <li><a href="#logging-1">Logging.</a></li>
@@ -760,7 +760,7 @@ service. (Run
 <code>useradd --system --home-dir / --shell /sbin/nologin radicale</code>
 as root.) The storage folder must be writable by
 <strong>radicale</strong>. (Run
-<code>mkdir -p /var/lib/radicale/collections &amp;&amp; chown -R radicale:radicale /var/lib/radicale/collections</code>
+<code>mkdir -p /var/lib/radicale/collections && chown -R radicale:radicale /var/lib/radicale/collections</code>
 as root.)</p>
 <p><strong>Security:</strong> The storage should not be readable by
 others. (Run <code>chmod -R o= /var/lib/radicale/collections</code> as
@@ -980,7 +980,7 @@ content:</p>
 .Radicale.tmp-*</code></pre>
 <p>The configuration option <code>hook</code> in the
 <code>storage</code> section must be set to the following command:</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb26-1"><a aria-hidden="true" href="#cb26-1" tabindex="-1"></a><span class="fu">git</span> add <span class="at">-A</span> <span class="kw">&amp;&amp;</span> <span class="kw">(</span><span class="fu">git</span> diff <span class="at">--cached</span> <span class="at">--quiet</span> <span class="kw">||</span> <span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Changes by "</span>%<span class="er">(</span><span class="ex">user</span><span class="kw">)</span><span class="ex">s</span><span class="kw">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb26-1"><a aria-hidden="true" href="#cb26-1" tabindex="-1"></a><span class="fu">git</span> add <span class="at">-A</span> <span class="kw">&&</span> <span class="kw">(</span><span class="fu">git</span> diff <span class="at">--cached</span> <span class="at">--quiet</span> <span class="kw">||</span> <span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Changes by "</span>%<span class="er">(</span><span class="ex">user</span><span class="kw">)</span><span class="ex">s</span><span class="kw">)</span></span></code></pre></div>
 <p>The command gets executed after every change to the storage and
 commits the changes into the <strong>git</strong> repository.</p>
 </section>
@@ -1869,7 +1869,7 @@ creating or using <a href="#plugins">plugins</a>.</p>
 on the login of the authenticated user and the URL of the resource.
 Default configurations are built in for common cases, you'll find more
 about this on the <a href="#authentication-and-rights">Authentication
-&amp; Rights</a> page.</p>
+& Rights</a> page.</p>
 <p>Other rights managers can be added by creating <a href="#plugins">plugins</a>.</p>
 </section>
 <section class="level4" id="versioning-1">
@@ -1995,7 +1995,7 @@ by &Aacute;kos Sz&odblac;ts and Rueckert</li>
 <li><a href="http://code.activestate.com/pypm/radicale/">PyPM</a></li>
 <li><a href="http://schoepfer.info/slackware.xhtml#packages-network">Slackware</a>
 by Johannes Sch&ouml;pfer</li>
-<li><a href="http://packages.trisquel.info/search?searchon=names&amp;keywords=radicale">Trisquel</a></li>
+<li><a href="http://packages.trisquel.info/search?searchon=names&keywords=radicale">Trisquel</a></li>
 <li><a href="http://packages.ubuntu.com/radicale">Ubuntu</a> by the MOTU
 and Jonas Smedegaard</li>
 </ul>
