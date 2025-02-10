@@ -79,6 +79,9 @@ REMOTE_DESTINATION: types.WSGIResponse = (
 DIRECTORY_LISTING: types.WSGIResponse = (
     client.FORBIDDEN, (("Content-Type", "text/plain"),),
     "Directory listings are not supported.")
+INSUFFICIENT_STORAGE: types.WSGIResponse = (
+    client.INSUFFICIENT_STORAGE, (("Content-Type", "text/plain"),),
+    "Insufficient Storage.  Please contact the administrator.")
 INTERNAL_SERVER_ERROR: types.WSGIResponse = (
     client.INTERNAL_SERVER_ERROR, (("Content-Type", "text/plain"),),
     "A server error occurred.  Please contact the administrator.")
