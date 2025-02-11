@@ -4,7 +4,7 @@
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2020 Unrud <unrud@outlook.com>
 # Copyright © 2020-2023 Tuna Celik <tuna@jakpark.com>
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,8 +19,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import errno
 import itertools
 import posixpath
+import re
 import socket
 import sys
 from http import client
@@ -264,9 +266,22 @@ class ApplicationPartPut(ApplicationBase):
                     )
                     self._hook.notify(hook_notification_item)
                 except ValueError as e:
-                    logger.warning(
-                        "Bad PUT request on %r (upload): %s", path, e, exc_info=True)
-                    return httputils.BAD_REQUEST
+                    # return better matching HTTP result in case errno is provided and catched
+                    errno_match = re.search("\\[Errno ([0-9]+)\\]", str(e))
+                    if errno_match:
+                        logger.error(
+                            "Failed PUT request on %r (upload): %s", path, e, exc_info=True)
+                        errno_e = int(errno_match.group(1))
+                        if errno_e == errno.ENOSPC:
+                            return httputils.INSUFFICIENT_STORAGE
+                        elif errno_e in [errno.EPERM, errno.EACCES]:
+                            return httputils.FORBIDDEN
+                        else:
+                            return httputils.INTERNAL_SERVER_ERROR
+                    else:
+                        logger.warning(
+                            "Bad PUT request on %r (upload): %s", path, e, exc_info=True)
+                        return httputils.BAD_REQUEST
 
             headers = {"ETag": etag}
             return client.CREATED, headers, None

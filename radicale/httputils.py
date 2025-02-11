@@ -3,7 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,6 +79,9 @@ REMOTE_DESTINATION: types.WSGIResponse = (
 DIRECTORY_LISTING: types.WSGIResponse = (
     client.FORBIDDEN, (("Content-Type", "text/plain"),),
     "Directory listings are not supported.")
+INSUFFICIENT_STORAGE: types.WSGIResponse = (
+    client.INSUFFICIENT_STORAGE, (("Content-Type", "text/plain"),),
+    "Insufficient Storage.  Please contact the administrator.")
 INTERNAL_SERVER_ERROR: types.WSGIResponse = (
     client.INTERNAL_SERVER_ERROR, (("Content-Type", "text/plain"),),
     "A server error occurred.  Please contact the administrator.")
