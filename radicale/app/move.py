@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import errno
 import posixpath
 import re
 from http import client
@@ -110,7 +111,20 @@ class ApplicationPartMove(ApplicationBase):
             try:
                 self._storage.move(item, to_collection, to_href)
             except ValueError as e:
-                logger.warning(
-                    "Bad MOVE request on %r: %s", path, e, exc_info=True)
-                return httputils.BAD_REQUEST
+                # return better matching HTTP result in case errno is provided and catched
+                errno_match = re.search("\\[Errno ([0-9]+)\\]", str(e))
+                if errno_match:
+                    logger.error(
+                        "Failed MOVE request on %r: %s", path, e, exc_info=True)
+                    errno_e = int(errno_match.group(1))
+                    if errno_e == errno.ENOSPC:
+                        return httputils.INSUFFICIENT_STORAGE
+                    elif errno_e in [errno.EPERM, errno.EACCES]:
+                        return httputils.FORBIDDEN
+                    else:
+                        return httputils.INTERNAL_SERVER_ERROR
+                else:
+                    logger.warning(
+                        "Bad MOVE request on %r: %s", path, e, exc_info=True)
+                    return httputils.BAD_REQUEST
             return client.NO_CONTENT if to_item else client.CREATED, {}, None
