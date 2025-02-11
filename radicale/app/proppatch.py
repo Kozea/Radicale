@@ -19,6 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import errno
+import re
 import socket
 import xml.etree.ElementTree as ET
 from http import client
@@ -109,7 +111,20 @@ class ApplicationPartProppatch(ApplicationBase):
                     )
                     self._hook.notify(hook_notification_item)
             except ValueError as e:
-                logger.warning(
-                    "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
-                return httputils.BAD_REQUEST
+                # return better matching HTTP result in case errno is provided and catched
+                errno_match = re.search("\\[Errno ([0-9]+)\\]", str(e))
+                if errno_match:
+                    logger.warning(
+                        "Failed PROPPATCH request on %r: %s", path, e, exc_info=True)
+                    errno_e = int(errno_match.group(1))
+                    if errno_e == errno.ENOSPC:
+                        return httputils.INSUFFICIENT_STORAGE
+                    elif errno_e in [errno.EPERM, errno.EACCES]:
+                        return httputils.FORBIDDEN
+                    else:
+                        return httputils.INTERNAL_SERVER_ERROR
+                else:
+                    logger.warning(
+                        "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
+                    return httputils.BAD_REQUEST
             return client.MULTI_STATUS, headers, self._xml_response(xml_answer)
