@@ -3,6 +3,7 @@
 ## 3.4.2.dev
 
 * Add: option [auth] type oauth2 by code migration from https://gitlab.mim-libre.fr/alphabet/radicale_oauth/-/blob/dev/oauth2/
+* Fix: catch OS errors on PUT MKCOL MKCALENDAR MOVE PROPPATCH (insufficient storage, access denied, internal server error)
 
 ## 3.4.1
 * Add: option [auth] dovecot_connection_type / dovecot_host / dovecot_port
