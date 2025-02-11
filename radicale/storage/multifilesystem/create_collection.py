@@ -50,27 +50,31 @@ class StoragePartCreateCollection(StorageBase):
         self._makedirs_synced(parent_dir)
 
         # Create a temporary directory with an unsafe name
-        with TemporaryDirectory(prefix=".Radicale.tmp-", dir=parent_dir
-                                ) as tmp_dir:
-            # The temporary directory itself can't be renamed
-            tmp_filesystem_path = os.path.join(tmp_dir, "collection")
-            os.makedirs(tmp_filesystem_path)
-            col = self._collection_class(
-                cast(multifilesystem.Storage, self),
-                pathutils.unstrip_path(sane_path, True),
-                filesystem_path=tmp_filesystem_path)
-            col.set_meta(props)
-            if items is not None:
-                if props.get("tag") == "VCALENDAR":
-                    col._upload_all_nonatomic(items, suffix=".ics")
-                elif props.get("tag") == "VADDRESSBOOK":
-                    col._upload_all_nonatomic(items, suffix=".vcf")
+        try:
+            with TemporaryDirectory(prefix=".Radicale.tmp-", dir=parent_dir
+                                    ) as tmp_dir:
+                # The temporary directory itself can't be renamed
+                tmp_filesystem_path = os.path.join(tmp_dir, "collection")
+                os.makedirs(tmp_filesystem_path)
+                col = self._collection_class(
+                    cast(multifilesystem.Storage, self),
+                    pathutils.unstrip_path(sane_path, True),
+                    filesystem_path=tmp_filesystem_path)
+                col.set_meta(props)
+                if items is not None:
+                    if props.get("tag") == "VCALENDAR":
+                        col._upload_all_nonatomic(items, suffix=".ics")
+                    elif props.get("tag") == "VADDRESSBOOK":
+                        col._upload_all_nonatomic(items, suffix=".vcf")
 
-            if os.path.lexists(filesystem_path):
-                pathutils.rename_exchange(tmp_filesystem_path, filesystem_path)
-            else:
-                os.rename(tmp_filesystem_path, filesystem_path)
-            self._sync_directory(parent_dir)
+                if os.path.lexists(filesystem_path):
+                    pathutils.rename_exchange(tmp_filesystem_path, filesystem_path)
+                else:
+                    os.rename(tmp_filesystem_path, filesystem_path)
+                self._sync_directory(parent_dir)
+        except Exception as e:
+            raise ValueError("Failed to create collection %r as %r %s" %
+                             (href, filesystem_path, e)) from e
 
         return self._collection_class(
             cast(multifilesystem.Storage, self),
