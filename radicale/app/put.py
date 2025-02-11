@@ -269,7 +269,7 @@ class ApplicationPartPut(ApplicationBase):
                     # return better matching HTTP result in case errno is provided and catched
                     errno_match = re.search("\\[Errno ([0-9]+)\\]", str(e))
                     if errno_match:
-                        logger.warning(
+                        logger.error(
                             "Failed PUT request on %r (upload): %s", path, e, exc_info=True)
                         errno_e = int(errno_match.group(1))
                         if errno_e == errno.ENOSPC:
