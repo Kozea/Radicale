@@ -18,7 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import errno
 import posixpath
+import re
 import socket
 from http import client
 
@@ -75,8 +77,21 @@ class ApplicationPartMkcol(ApplicationBase):
             try:
                 self._storage.create_collection(path, props=props)
             except ValueError as e:
-                logger.warning(
-                    "Bad MKCOL request on %r (type:%s): %s", path, collection_type, e, exc_info=True)
-                return httputils.BAD_REQUEST
+                # return better matching HTTP result in case errno is provided and catched
+                errno_match = re.search("\\[Errno ([0-9]+)\\]", str(e))
+                if errno_match:
+                    logger.error(
+                        "Failed MKCOL request on %r (type:%s): %s", path, collection_type, e, exc_info=True)
+                    errno_e = int(errno_match.group(1))
+                    if errno_e == errno.ENOSPC:
+                        return httputils.INSUFFICIENT_STORAGE
+                    elif errno_e in [errno.EPERM, errno.EACCES]:
+                        return httputils.FORBIDDEN
+                    else:
+                        return httputils.INTERNAL_SERVER_ERROR
+                else:
+                    logger.warning(
+                        "Bad MKCOL request on %r (type:%s): %s", path, collection_type, e, exc_info=True)
+                    return httputils.BAD_REQUEST
             logger.info("MKCOL request %r (type:%s): %s", path, collection_type, "successful")
             return client.CREATED, {}, None
