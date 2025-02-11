@@ -274,7 +274,7 @@ class ApplicationPartPut(ApplicationBase):
                         errno_e = int(errno_match.group(1))
                         if errno_e == errno.ENOSPC:
                             return httputils.INSUFFICIENT_STORAGE
-                        elif (errno_e == errno.EPERM) or (errno_e == errno.EACCES):
+                        elif errno_e in [errno.EPERM, errno.EACCES]:
                             return httputils.FORBIDDEN
                         else:
                             return httputils.INTERNAL_SERVER_ERROR
