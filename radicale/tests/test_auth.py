@@ -44,7 +44,7 @@ class TestBaseAuthRequests(BaseTest):
     # test for available bcrypt module
     try:
         import bcrypt
-    except ImportError as e:
+    except ImportError:
         has_bcrypt = 0
     else:
         has_bcrypt = 1
