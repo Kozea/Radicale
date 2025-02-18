@@ -41,6 +41,14 @@ class TestBaseAuthRequests(BaseTest):
 
     """
 
+    # test for available bcrypt module
+    try:
+        import bcrypt
+    except ImportError as e:
+        has_bcrypt = 0
+    else:
+        has_bcrypt = 1
+
     def _test_htpasswd(self, htpasswd_encryption: str, htpasswd_content: str,
                        test_matrix: Union[str, Iterable[Tuple[str, str, bool]]]
                        = "ascii") -> None:
