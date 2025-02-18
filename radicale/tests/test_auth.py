@@ -41,6 +41,14 @@ class TestBaseAuthRequests(BaseTest):
 
     """
 
+    # test for available bcrypt module
+    try:
+        import bcrypt
+    except ImportError:
+        has_bcrypt = 0
+    else:
+        has_bcrypt = 1
+
     def _test_htpasswd(self, htpasswd_encryption: str, htpasswd_content: str,
                        test_matrix: Union[str, Iterable[Tuple[str, str, bool]]]
                        = "ascii") -> None:
@@ -91,10 +99,12 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_sha512(self) -> None:
         self._test_htpasswd("sha512", "tmp:$6$3Qhl8r6FLagYdHYa$UCH9yXCed4A.J9FQsFPYAOXImzZUMfvLa0lwcWOxWYLOF5sE/lF99auQ4jKvHY2vijxmefl7G6kMqZ8JPdhIJ/")
 
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
     def test_htpasswd_bcrypt(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3V"
                             "NTRI3w5KDnj8NTUKJNWfVpvRq")
 
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
     def test_htpasswd_bcrypt_unicode(self) -> None:
         self._test_htpasswd("bcrypt", "😀:$2y$10$Oyz5aHV4MD9eQJbk6GPemOs4T6edK"
                             "6U9Sqlzr.W1mMVCS8wJUftnW", "unicode")
