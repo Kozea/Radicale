@@ -95,15 +95,21 @@ class Storage(
     def _analyse_mtime(self):
         # calculate and display mtime resolution
         path = os.path.join(self._filesystem_folder, ".Radicale.mtime_test")
+        logger.debug("Storage item mtime resolution test with file: %r", path)
         try:
             with open(path, "w") as f:
                 f.write("mtime_test")
                 f.close
         except Exception as e:
-            logger.error("Storage item mtime resolution test not possible, cannot write file: %r (%s)", path, e)
+            logger.warning("Storage item mtime resolution test not possible, cannot write file: %r (%s)", path, e)
             raise
         # set mtime_ns for tests
-        os.utime(path, times=None, ns=(MTIME_NS_TEST, MTIME_NS_TEST))
+        try:
+            os.utime(path, times=None, ns=(MTIME_NS_TEST, MTIME_NS_TEST))
+        except Exception as e:
+            logger.warning("Storage item mtime resolution test not possible, cannot set utime on file: %r (%s)", path, e)
+            os.remove(path)
+            raise
         logger.debug("Storage item mtime resoultion test set: %d" % MTIME_NS_TEST)
         mtime_ns = os.stat(path).st_mtime_ns
         logger.debug("Storage item mtime resoultion test get: %d" % mtime_ns)
@@ -147,17 +153,20 @@ class Storage(
         logger.info("Storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
         logger.info("Storage cache subfolder usage for 'sync-token': %s", self._use_cache_subfolder_for_synctoken)
         logger.info("Storage cache use mtime and size for 'item': %s", self._use_mtime_and_size_for_item_cache)
-        (precision, precision_unit, unit) = self._analyse_mtime()
-        if precision >= 100000000:
-            # >= 100 ms
-            logger.warning("Storage item mtime resolution test result: %d %s (VERY RISKY ON PRODUCTION SYSTEMS)" % (precision_unit, unit))
-        elif precision >= 10000000:
-            # >= 10 ms
-            logger.warning("Storage item mtime resolution test result: %d %s (RISKY ON PRODUCTION SYSTEMS)" % (precision_unit, unit))
-        else:
-            logger.info("Storage item mtime resolution test result: %d %s" % (precision_unit, unit))
-            if self._use_mtime_and_size_for_item_cache is False:
-                logger.info("Storage cache using mtime and size for 'item' may be an option in case of performance issues")
+        try:
+            (precision, precision_unit, unit) = self._analyse_mtime()
+            if precision >= 100000000:
+                # >= 100 ms
+                logger.warning("Storage item mtime resolution test result: %d %s (VERY RISKY ON PRODUCTION SYSTEMS)" % (precision_unit, unit))
+            elif precision >= 10000000:
+                # >= 10 ms
+                logger.warning("Storage item mtime resolution test result: %d %s (RISKY ON PRODUCTION SYSTEMS)" % (precision_unit, unit))
+            else:
+                logger.info("Storage item mtime resolution test result: %d %s" % (precision_unit, unit))
+                if self._use_mtime_and_size_for_item_cache is False:
+                    logger.info("Storage cache using mtime and size for 'item' may be an option in case of performance issues")
+        except:
+            logger.warning("Storage item mtime resolution test result not successful")
         logger.debug("Storage cache action logging: %s", self._debug_cache_actions)
         if self._use_cache_subfolder_for_item is True or self._use_cache_subfolder_for_history is True or self._use_cache_subfolder_for_synctoken is True:
             logger.info("Storage cache subfolder: %r", self._get_collection_cache_folder())
