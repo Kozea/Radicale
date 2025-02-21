@@ -94,7 +94,7 @@ class Storage(
 
     def _analyse_mtime(self):
         # calculate and display mtime resolution
-        path = os.path.join(self._filesystem_folder, ".Radicale.mtime_test")
+        path = os.path.join(self._get_collection_root_folder(), ".Radicale.mtime_test")
         logger.debug("Storage item mtime resolution test with file: %r", path)
         try:
             with open(path, "w") as f:
