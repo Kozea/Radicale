@@ -1032,6 +1032,18 @@ OAuth2 token endpoint URL
 
 Default:
 
+##### pam_service
+
+PAM service
+
+Default: radicale
+
+##### pam_group_membership
+
+PAM group user should be member of
+
+Default:
+
 ##### lc_username
 
 Сonvert username to lowercase, must be true for case-insensitive auth
