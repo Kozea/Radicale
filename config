@@ -59,7 +59,7 @@
 [auth]
 
 # Authentication method
-# Value: none | htpasswd | remote_user | http_x_remote_user | dovecot | ldap | denyall
+# Value: none | htpasswd | remote_user | http_x_remote_user | dovecot | ldap | oauth2 | denyall
 #type = none
 
 # Cache logins for until expiration time
