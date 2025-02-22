@@ -829,6 +829,10 @@ Available backends:
 `oauth2`
 : Use an OAuth2 server to authenticate users.
 
+`pam`
+: Use local PAM to authenticate users.
+
+
 Default: `none`
 
 ##### cache_logins
