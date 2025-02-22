@@ -944,6 +944,7 @@ users.</p>
 users.</p>
 <p><code>imap</code> : Use an IMAP server to authenticate users.</p>
 <p><code>oauth2</code> : Use an OAuth2 server to authenticate users.</p>
+<p><code>pam</code> : Use local PAM to authenticate users.</p>
 <p>Default: <code>none</code></p>
 </section>
 <section class="level5" id="cache_logins">
@@ -1122,6 +1123,16 @@ imap.server.tld</p>
 <section class="level5" id="oauth2_token_endpoint">
 <h5>oauth2_token_endpoint <a class="headerlink" href="#oauth2_token_endpoint">&para;</a></h5>
 <p>OAuth2 token endpoint URL</p>
+<p>Default:</p>
+</section>
+<section class="level5" id="pam_service">
+<h5>pam_service <a class="headerlink" href="#pam_service">&para;</a></h5>
+<p>PAM service</p>
+<p>Default: radicale</p>
+</section>
+<section class="level5" id="pam_group_membership">
+<h5>pam_group_membership <a class="headerlink" href="#pam_group_membership">&para;</a></h5>
+<p>PAM group user should be member of</p>
 <p>Default:</p>
 </section>
 <section class="level5" id="lc_username">
