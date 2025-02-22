@@ -59,7 +59,7 @@
 [auth]
 
 # Authentication method
-# Value: none | htpasswd | remote_user | http_x_remote_user | dovecot | ldap | oauth2 | denyall
+# Value: none | htpasswd | remote_user | http_x_remote_user | dovecot | ldap | oauth2 | pam | denyall
 #type = none
 
 # Cache logins for until expiration time
@@ -127,6 +127,12 @@
 
 # OAuth2 token endpoint URL
 #oauth2_token_endpoint = <URL>
+
+# PAM service
+#pam_serivce = radicale
+
+# PAM group user should be member of
+#pam_group_membership =
 
 # Htpasswd filename
 #htpasswd_filename = /etc/radicale/users

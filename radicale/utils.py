@@ -18,6 +18,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import ssl
+import sys
 from importlib import import_module, metadata
 from typing import Callable, Sequence, Type, TypeVar, Union
 
@@ -55,6 +56,7 @@ def package_version(name):
 
 def packages_version():
     versions = []
+    versions.append("python=%s.%s.%s" % (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
     for pkg in RADICALE_MODULES:
         versions.append("%s=%s" % (pkg, package_version(pkg)))
     return " ".join(versions)

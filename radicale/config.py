@@ -311,6 +311,14 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "OAuth2 token endpoint URL",
             "type": str}),
+        ("pam_group_membership", {
+            "value": "",
+            "help": "PAM group user should be member of",
+            "type": str}),
+        ("pam_service", {
+            "value": "radicale",
+            "help": "PAM service",
+            "type": str}),
         ("strip_domain", {
             "value": "False",
             "help": "strip domain from username",

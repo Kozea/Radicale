@@ -829,6 +829,10 @@ Available backends:
 `oauth2`
 : Use an OAuth2 server to authenticate users.
 
+`pam`
+: Use local PAM to authenticate users.
+
+
 Default: `none`
 
 ##### cache_logins
@@ -1025,6 +1029,18 @@ Default: `tls`
 ##### oauth2_token_endpoint
 
 OAuth2 token endpoint URL
+
+Default:
+
+##### pam_service
+
+PAM service
+
+Default: radicale
+
+##### pam_group_membership
+
+PAM group user should be member of
 
 Default:
 

@@ -43,6 +43,7 @@ INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
                                  "ldap",
                                  "imap",
                                  "oauth2",
+                                 "pam",
                                  "dovecot")
 
 CACHE_LOGIN_TYPES: Sequence[str] = (
@@ -51,6 +52,7 @@ CACHE_LOGIN_TYPES: Sequence[str] = (
                                     "htpasswd",
                                     "imap",
                                     "oauth2",
+                                    "pam",
                                    )
 
 AUTH_SOCKET_FAMILY: Sequence[str] = ("AF_UNIX", "AF_INET", "AF_INET6")
