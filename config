@@ -128,6 +128,12 @@
 # OAuth2 token endpoint URL
 #oauth2_token_endpoint = <URL>
 
+# PAM service
+#pam_serivce = radicale
+
+# PAM group user should be member of
+#pam_group_membership =
+
 # Htpasswd filename
 #htpasswd_filename = /etc/radicale/users
 
