@@ -49,10 +49,8 @@ You want to try Radicale but only have 5 minutes free in your calendar? Let's
 go right now and play a bit with Radicale!
 
 When everything works, you can get a [client](#supported-clients)
-and start creating calendars and address books. The server **only** binds to
-localhost (is **not** reachable over the network) and you can log in with any
-username and password. If Radicale fits your needs, it may be time for
-[some basic configuration](#basic-configuration).
+and start creating calendars and address books. By default, the server only binds to localhost (is not reachable over the network)
+and you can log in with any user name and password. When everything works, you may get a local client and start creating calendars and address books. If Radicale fits your needs, it may be time for some [basic configuration](#basic-configuration) to support remote clients.
 
 Follow one of the chapters below depending on your operating system.
 
