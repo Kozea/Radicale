@@ -49,7 +49,7 @@ class Auth(auth.BaseAuth):
         if (self._group_membership):
             logger.info("auth.pam_group_membership: %s" % self._group_membership)
         else:
-            logger.info("auth.pam_group_membership: (empty, nothing to check / INSECURE)")
+            logger.warning("auth.pam_group_membership: (empty, nothing to check / INSECURE)")
 
     def pam_authenticate(self, *args, **kwargs):
         return self.pam.authenticate(*args, **kwargs)
