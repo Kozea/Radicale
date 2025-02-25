@@ -27,7 +27,13 @@ from radicale.log import logger
 
 _T_co = TypeVar("_T_co", covariant=True)
 
-RADICALE_MODULES: Sequence[str] = ("radicale", "vobject", "passlib", "defusedxml")
+RADICALE_MODULES: Sequence[str] = ("radicale", "vobject", "passlib", "defusedxml",
+                                   "dateutil",
+                                   "bcrypt",
+                                   "pika",
+                                   "ldap",
+                                   "ldap3",
+                                   "pam")
 
 
 def load_plugin(internal_types: Sequence[str], module_name: str,
@@ -58,7 +64,13 @@ def packages_version():
     versions = []
     versions.append("python=%s.%s.%s" % (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
     for pkg in RADICALE_MODULES:
-        versions.append("%s=%s" % (pkg, package_version(pkg)))
+        try:
+            versions.append("%s=%s" % (pkg, package_version(pkg)))
+        except Exception:
+            try:
+                versions.append("%s=%s" % (pkg, package_version("python-" + pkg)))
+            except Exception:
+                versions.append("%s=%s" % (pkg, "n/a"))
     return " ".join(versions)
 
 
