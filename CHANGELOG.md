@@ -8,6 +8,7 @@
 * Improve: relax mtime check on storage filesystem, change test file location to "collection-root" directory
 * Add: option [auth] type pam by code migration from v1, add new option pam_serivce
 * Cosmetics: extend list of used modules with their version on startup
+* Improve: WebUI
 
 ## 3.4.1
 * Add: option [auth] dovecot_connection_type / dovecot_host / dovecot_port
