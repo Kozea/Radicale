@@ -2,6 +2,7 @@
  * This file is part of Radicale Server - Calendar Server
  * Copyright © 2017-2024 Unrud <unrud@outlook.com>
  * Copyright © 2023-2024 Matthew Hana <matthew.hana@gmail.com>
+ * Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1006,6 +1007,12 @@ function UploadCollectionScene(user, password, collection) {
         scene_index = scene_stack.length - 1;
         html_scene.classList.remove("hidden");
         close_btn.onclick = onclose;
+        if(error){
+            error_form.textContent = "Error: " + error;
+            error_form.classList.remove("hidden");
+        }else{
+            error_form.classList.add("hidden");
+        }
     };
 
     this.hide = function() {
@@ -1318,6 +1325,12 @@ function CreateEditCollectionScene(user, password, collection) {
         fill_form();
         submit_btn.onclick = onsubmit;
         cancel_btn.onclick = oncancel;
+        if(error){
+            error_form.textContent = "Error: " + error;
+            error_form.classList.remove("hidden");
+        }else{
+            error_form.classList.add("hidden");
+        }
     };
     this.hide = function() {
         read_form();
