@@ -1007,6 +1007,12 @@ function UploadCollectionScene(user, password, collection) {
         scene_index = scene_stack.length - 1;
         html_scene.classList.remove("hidden");
         close_btn.onclick = onclose;
+        if(error){
+            error_form.textContent = "Error: " + error;
+            error_form.classList.remove("hidden");
+        }else{
+            error_form.classList.add("hidden");
+        }
     };
 
     this.hide = function() {
@@ -1319,6 +1325,12 @@ function CreateEditCollectionScene(user, password, collection) {
         fill_form();
         submit_btn.onclick = onsubmit;
         cancel_btn.onclick = oncancel;
+        if(error){
+            error_form.textContent = "Error: " + error;
+            error_form.classList.remove("hidden");
+        }else{
+            error_form.classList.add("hidden");
+        }
     };
     this.hide = function() {
         read_form();
