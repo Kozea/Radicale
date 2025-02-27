@@ -62,6 +62,9 @@ class CollectionPartMeta(CollectionBase):
 
     def set_meta(self, props: Mapping[str, str]) -> None:
         # TODO: better fix for "mypy"
-        with self._atomic_write(self._props_path, "w") as fo:  # type: ignore
-            f = cast(TextIO, fo)
-            json.dump(props, f, sort_keys=True)
+        try:
+            with self._atomic_write(self._props_path, "w") as fo:  # type: ignore
+                f = cast(TextIO, fo)
+                json.dump(props, f, sort_keys=True)
+        except OSError as e:
+            raise ValueError("Failed to write meta data %r %s" % (self._props_path, e)) from e
