@@ -927,7 +927,7 @@ function UploadCollectionScene(user, password, collection) {
                 if(files.length > 1 || href.length == 0){
                     href = random_uuid();
                 }
-                let upload_href = collection.href + "/" + href + "/";
+                let upload_href = collection.href + href + "/";
                 upload_req = upload_collection(user, password, upload_href, file, function(result) {
                     upload_req = null;
                     results.push(result);
