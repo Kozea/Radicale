@@ -1213,7 +1213,7 @@ function CreateEditCollectionScene(user, password, collection) {
                 alert("You must enter a valid HREF");
                 return false;
             }
-            href = collection.href + "/" + newhreftxtvalue + "/";
+            href = collection.href + newhreftxtvalue + "/";
         }
         displayname = displayname_form.value;
         description = description_form.value;
