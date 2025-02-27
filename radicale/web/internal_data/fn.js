@@ -874,8 +874,7 @@ function UploadCollectionScene(user, password, collection) {
     upload_btn.onclick = upload_start;
     uploadfile_form.onchange = onfileschange;
 
-    let href = random_uuid();
-    href_form.value = href;
+    href_form.value = "";
 
     /** @type {?number} */ let scene_index = null;
     /** @type {?XMLHttpRequest} */ let upload_req = null;
@@ -993,10 +992,12 @@ function UploadCollectionScene(user, password, collection) {
             hreflimitmsg_html.classList.remove("hidden");
             href_form.classList.add("hidden");
             href_label.classList.add("hidden");
+            href_form.value = random_uuid(); // dummy, will be replaced on upload
         }else{
             hreflimitmsg_html.classList.add("hidden");
             href_form.classList.remove("hidden");
             href_label.classList.remove("hidden");
+            href_form.value = files[0].name.replace(/\.(ics|vcf)$/, '');
         }
         return false;
     }
