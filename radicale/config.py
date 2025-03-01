@@ -203,7 +203,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
     ("auth", OrderedDict([
         ("type", {
             "value": "none",
-            "help": "authentication method",
+            "help": "authentication method (" + "|".join(auth.INTERNAL_TYPES) + ")",
             "type": str_or_callable,
             "internal": auth.INTERNAL_TYPES}),
         ("cache_logins", {
