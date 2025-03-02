@@ -187,6 +187,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "set CA certificate for validating clients",
             "aliases": ("--certificate-authority",),
             "type": filepath}),
+        ("script_name", {
+            "value": "",
+            "help": "script name to strip from URI if called by reverse proxy (default taken from HTTP_X_SCRIPT_NAME or SCRIPT_NAME)",
+            "type": str}),
         ("_internal_server", {
             "value": "False",
             "help": "the internal server is used",
@@ -203,7 +207,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
     ("auth", OrderedDict([
         ("type", {
             "value": "none",
-            "help": "authentication method",
+            "help": "authentication method (" + "|".join(auth.INTERNAL_TYPES) + ")",
             "type": str_or_callable,
             "internal": auth.INTERNAL_TYPES}),
         ("cache_logins", {

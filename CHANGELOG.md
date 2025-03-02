@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.4.2.dev
+## 3.5.0.dev
 
 * Add: option [auth] type oauth2 by code migration from https://gitlab.mim-libre.fr/alphabet/radicale_oauth/-/blob/dev/oauth2/
 * Fix: catch OS errors on PUT MKCOL MKCALENDAR MOVE PROPPATCH (insufficient storage, access denied, internal server error)
@@ -9,6 +9,9 @@
 * Add: option [auth] type pam by code migration from v1, add new option pam_serivce
 * Cosmetics: extend list of used modules with their version on startup
 * Improve: WebUI
+* Add: option [server] script_name for reverse proxy base_prefix handling
+* Fix: proper base_prefix stripping if running behind reverse proxy
+* Review: Apache reverse proxy config example
 
 ## 3.4.1
 * Add: option [auth] dovecot_connection_type / dovecot_host / dovecot_port

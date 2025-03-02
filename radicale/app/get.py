@@ -66,6 +66,8 @@ class ApplicationPartGet(ApplicationBase):
         if path == "/.web" or path.startswith("/.web/"):
             # Redirect to sanitized path for all subpaths of /.web
             unsafe_path = environ.get("PATH_INFO", "")
+            if len(base_prefix) > 0:
+                unsafe_path = unsafe_path.removeprefix(base_prefix)
             if unsafe_path != path:
                 location = base_prefix + path
                 logger.info("Redirecting to sanitized path: %r ==> %r",
