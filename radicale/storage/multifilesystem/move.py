@@ -35,10 +35,12 @@ class StoragePartMove(StorageBase):
         assert isinstance(to_collection, multifilesystem.Collection)
         assert isinstance(item.collection, multifilesystem.Collection)
         assert item.href
-        os.replace(pathutils.path_to_filesystem(
-                       item.collection._filesystem_path, item.href),
-                   pathutils.path_to_filesystem(
-                       to_collection._filesystem_path, to_href))
+        move_from = pathutils.path_to_filesystem(item.collection._filesystem_path, item.href)
+        move_to = pathutils.path_to_filesystem(to_collection._filesystem_path, to_href)
+        try:
+            os.replace(move_from, move_to)
+        except OSError as e:
+            raise ValueError("Failed to move file %r => %r %s" % (move_from, move_to, e)) from e
         self._sync_directory(to_collection._filesystem_path)
         if item.collection._filesystem_path != to_collection._filesystem_path:
             self._sync_directory(item.collection._filesystem_path)
