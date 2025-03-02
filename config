@@ -46,6 +46,9 @@
 # SSL ciphersuite, secure configuration: DHE:ECDHE:-NULL:-SHA (see also "man openssl-ciphers")
 #ciphersuite = (default)
 
+# script name to strip from URI if called by reverse proxy
+#script_name = (default taken from HTTP_X_SCRIPT_NAME or SCRIPT_NAME)
+
 
 [encoding]
 
