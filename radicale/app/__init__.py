@@ -192,14 +192,18 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             # Return response content
             return status_text, list(headers.items()), answers
 
+        reverse_proxy = False
         remote_host = "unknown"
         if environ.get("REMOTE_HOST"):
             remote_host = repr(environ["REMOTE_HOST"])
         elif environ.get("REMOTE_ADDR"):
             remote_host = environ["REMOTE_ADDR"]
         if environ.get("HTTP_X_FORWARDED_FOR"):
+            reverse_proxy = True
             remote_host = "%s (forwarded for %r)" % (
                 remote_host, environ["HTTP_X_FORWARDED_FOR"])
+        if environ.get("HTTP_X_FORWARDED_HOST") or environ.get("HTTP_X_FORWARDED_PROTO") or environ.get("HTTP_X_FORWARDED_SERVER"):
+            reverse_proxy = True
         remote_useragent = ""
         if environ.get("HTTP_USER_AGENT"):
             remote_useragent = " using %r" % environ["HTTP_USER_AGENT"]
