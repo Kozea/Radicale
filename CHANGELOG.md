@@ -9,6 +9,8 @@
 * Add: option [auth] type pam by code migration from v1, add new option pam_serivce
 * Cosmetics: extend list of used modules with their version on startup
 * Improve: WebUI
+* Add: option [server] script_name for reverse proxy base_prefix handling
+* Fix: proper base_prefix strpping if running behind reverse proxy
 
 ## 3.4.1
 * Add: option [auth] dovecot_connection_type / dovecot_host / dovecot_port
