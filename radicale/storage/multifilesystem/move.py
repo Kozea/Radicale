@@ -21,6 +21,7 @@ import os
 
 from radicale import item as radicale_item
 from radicale import pathutils, storage
+from radicale.log import logger
 from radicale.storage import multifilesystem
 from radicale.storage.multifilesystem.base import StorageBase
 
@@ -45,10 +46,14 @@ class StoragePartMove(StorageBase):
         cache_folder = self._get_collection_cache_subfolder(item.collection._filesystem_path, ".Radicale.cache", "item")
         to_cache_folder = self._get_collection_cache_subfolder(to_collection._filesystem_path, ".Radicale.cache", "item")
         self._makedirs_synced(to_cache_folder)
+        move_from = os.path.join(cache_folder, item.href)
+        move_to = os.path.join(to_cache_folder, to_href)
         try:
-            os.replace(os.path.join(cache_folder, item.href),
-                       os.path.join(to_cache_folder, to_href))
+            os.replace(move_from, move_to)
         except FileNotFoundError:
+            pass
+        except OSError as e:
+            logger.error("Failed to move cache file %r => %r %s" % (move_from, move_to, e))
             pass
         else:
             self._makedirs_synced(to_cache_folder)
