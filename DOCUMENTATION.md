@@ -775,6 +775,12 @@ Format: OpenSSL cipher list (see also "man openssl-ciphers")
 
 Default: (system-default)
 
+##### script_name
+
+Strip script name from URI if called by reverse proxy
+
+Default: (taken from HTTP_X_SCRIPT_NAME or SCRIPT_NAME)
+
 #### encoding
 
 ##### request
