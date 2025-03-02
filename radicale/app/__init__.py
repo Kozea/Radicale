@@ -222,24 +222,37 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         # SCRIPT_NAME is already removed from PATH_INFO, according to the
         # WSGI specification.
         # Reverse proxies can overwrite SCRIPT_NAME with X-SCRIPT-NAME header
-        base_prefix_src = ("HTTP_X_SCRIPT_NAME" if "HTTP_X_SCRIPT_NAME" in
-                           environ else "SCRIPT_NAME")
-        base_prefix = environ.get(base_prefix_src, "")
-        if base_prefix and base_prefix[0] != "/":
-            logger.error("Base prefix (from %s) must start with '/': %r",
-                         base_prefix_src, base_prefix)
-            if base_prefix_src == "HTTP_X_SCRIPT_NAME":
-                return response(*httputils.BAD_REQUEST)
-            return response(*httputils.INTERNAL_SERVER_ERROR)
-        if base_prefix.endswith("/"):
-            logger.warning("Base prefix (from %s) must not end with '/': %r",
-                           base_prefix_src, base_prefix)
-            base_prefix = base_prefix.rstrip("/")
-        logger.debug("Base prefix (from %s): %r", base_prefix_src, base_prefix)
+        if self._script_name and (reverse_proxy is True):
+            base_prefix_src = "config"
+            base_prefix = self._script_name
+        else:
+            base_prefix_src = ("HTTP_X_SCRIPT_NAME" if "HTTP_X_SCRIPT_NAME" in
+                               environ else "SCRIPT_NAME")
+            base_prefix = environ.get(base_prefix_src, "")
+            if base_prefix and base_prefix[0] != "/":
+                logger.error("Base prefix (from %s) must start with '/': %r",
+                             base_prefix_src, base_prefix)
+                if base_prefix_src == "HTTP_X_SCRIPT_NAME":
+                    return response(*httputils.BAD_REQUEST)
+                return response(*httputils.INTERNAL_SERVER_ERROR)
+            if base_prefix.endswith("/"):
+                logger.warning("Base prefix (from %s) must not end with '/': %r",
+                               base_prefix_src, base_prefix)
+                base_prefix = base_prefix.rstrip("/")
+        if base_prefix:
+            logger.debug("Base prefix (from %s): %r", base_prefix_src, base_prefix)
+
         # Sanitize request URI (a WSGI server indicates with an empty path,
         # that the URL targets the application root without a trailing slash)
         path = pathutils.sanitize_path(unsafe_path)
         logger.debug("Sanitized path: %r", path)
+        if (reverse_proxy is True) and (len(base_prefix) > 0):
+            if path.startswith(base_prefix):
+                path_new = path.removeprefix(base_prefix)
+                logger.debug("Called by reverse proxy, remove base prefix %r from path: %r => %r", base_prefix, path, path_new)
+                path = path_new
+            else:
+                logger.warning("Called by reverse proxy, cannot removed base prefix %r from path: %r as not matching", base_prefix, path)
 
         # Get function corresponding to method
         function = getattr(self, "do_%s" % request_method, None)
