@@ -68,6 +68,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _internal_server: bool
     _max_content_length: int
     _auth_realm: str
+    _script_name: str
     _extra_headers: Mapping[str, str]
     _permit_delete_collection: bool
     _permit_overwrite_collection: bool
@@ -87,6 +88,19 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
         self._auth_delay = configuration.get("auth", "delay")
         self._internal_server = configuration.get("server", "_internal_server")
+        self._script_name = configuration.get("server", "script_name")
+        if self._script_name:
+            if self._script_name[0] != "/":
+                logger.error("server.script_name must start with '/': %r", self._script_name)
+                raise RuntimeError("server.script_name option has to start with '/'")
+            else:
+                if self._script_name.endswith("/"):
+                    logger.error("server.script_name must not end with '/': %r", self._script_name)
+                    raise RuntimeError("server.script_name option must not end with '/'")
+                else:
+                    logger.info("Provided script name to strip from URI if called by reverse proxy: %r", self._script_name)
+        else:
+            logger.info("Default script name to strip from URI if called by reverse proxy is taken from HTTP_X_SCRIPT_NAME or SCRIPT_NAME")
         self._max_content_length = configuration.get(
             "server", "max_content_length")
         self._auth_realm = configuration.get("auth", "realm")
