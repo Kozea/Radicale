@@ -10,7 +10,7 @@
 * Cosmetics: extend list of used modules with their version on startup
 * Improve: WebUI
 * Add: option [server] script_name for reverse proxy base_prefix handling
-* Fix: proper base_prefix strpping if running behind reverse proxy
+* Fix: proper base_prefix stripping if running behind reverse proxy
 * Review: Apache reverse proxy config example
 
 ## 3.4.1
