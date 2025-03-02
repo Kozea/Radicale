@@ -11,6 +11,7 @@
 * Improve: WebUI
 * Add: option [server] script_name for reverse proxy base_prefix handling
 * Fix: proper base_prefix strpping if running behind reverse proxy
+* Review: Apache reverse proxy config example
 
 ## 3.4.1
 * Add: option [auth] dovecot_connection_type / dovecot_host / dovecot_port
