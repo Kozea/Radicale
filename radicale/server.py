@@ -226,7 +226,7 @@ class ParallelHTTPSServer(ParallelHTTPServer):
             except socket.timeout:
                 raise
             except Exception as e:
-                raise RuntimeError("SSL handshake failed: %s" % e) from e
+                raise RuntimeError("SSL handshake failed: %s client %s" % (e, client_address[0])) from e
         except Exception:
             try:
                 self.handle_error(request, client_address)
