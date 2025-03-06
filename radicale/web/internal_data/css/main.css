@@ -39,6 +39,17 @@ main{
     color: #484848;
 }
 
+#loginscene .infcloudlink{
+    margin: 0;
+    width: 100%;
+    text-align: center;
+    color: #484848;
+}
+
+#loginscene .infcloudlink-hidden{
+    visibility: hidden;
+}
+
 #loginscene input{
 }
 
