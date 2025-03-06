@@ -196,6 +196,24 @@ def _serve_traversable(
             "%a, %d %b %Y %H:%M:%S GMT",
             time.gmtime(traversable.stat().st_mtime))
     answer = traversable.read_bytes()
+    if path == "/.web/index.html" or path == "/.web/":
+        # enable link on the fly in index.html if InfCloud index.html is existing
+        # class="infcloudlink-hidden" -> class="infcloudlink"
+        path_posix = traversable.as_posix()
+        path_posix_infcloud = path_posix.replace("/internal_data/index.html", "/internal_data/infcloud/index.html")
+        if os.path.isfile(path_posix_infcloud):
+            # logger.debug("Enable InfCloud link in served page: %r", path)
+            answer = answer.replace(b"infcloudlink-hidden", b"infcloud")
+    elif path == "/.web/infcloud/config.js":
+        # adjust on the fly default config.js of InfCloud installation
+        # logger.debug("Adjust on-the-fly default InfCloud config.js in served page: %r", path)
+        answer = answer.replace(b"location.pathname.replace(RegExp('/+[^/]+/*(index\.html)?$'),'')+", b"location.pathname.replace(RegExp('/\.web\.infcloud/(index\.html)?$'),'')+")
+        answer = answer.replace(b"'/caldav.php/',", b"'/',")
+        answer = answer.replace(b"settingsAccount: true,", b"settingsAccount: false,")
+    elif path == "/.web/infcloud/main.js":
+        # adjust on the fly default main.js of InfCloud installation
+        logger.debug("Adjust on-the-fly default InfCloud main.js in served page: %r", path)
+        answer = answer.replace(b"'InfCloud - the open source CalDAV/CardDAV web client'", b"'InfCloud - the open source CalDAV/CardDAV web client - served through Radicale CalDAV/CardDAV server'")
     return client.OK, headers, answer
 
 
