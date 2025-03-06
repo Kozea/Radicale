@@ -207,7 +207,7 @@ def _serve_traversable(
     elif path == "/.web/infcloud/config.js":
         # adjust on the fly default config.js of InfCloud installation
         # logger.debug("Adjust on-the-fly default InfCloud config.js in served page: %r", path)
-        answer = answer.replace(b"location.pathname.replace(RegExp('/+[^/]+/*(index\.html)?$'),'')+", b"location.pathname.replace(RegExp('/\.web\.infcloud/(index\.html)?$'),'')+")
+        answer = answer.replace(b"location.pathname.replace(RegExp('/+[^/]+/*(index\\.html)?$'),'')+", b"location.pathname.replace(RegExp('/\\.web\\.infcloud/(index\\.html)?$'),'')+")
         answer = answer.replace(b"'/caldav.php/',", b"'/',")
         answer = answer.replace(b"settingsAccount: true,", b"settingsAccount: false,")
     elif path == "/.web/infcloud/main.js":
