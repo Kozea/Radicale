@@ -199,7 +199,7 @@ def _serve_traversable(
     if path == "/.web/index.html" or path == "/.web/":
         # enable link on the fly in index.html if InfCloud index.html is existing
         # class="infcloudlink-hidden" -> class="infcloudlink"
-        path_posix = traversable.as_posix()
+        path_posix = str(traversable)
         path_posix_infcloud = path_posix.replace("/internal_data/index.html", "/internal_data/infcloud/index.html")
         if os.path.isfile(path_posix_infcloud):
             # logger.debug("Enable InfCloud link in served page: %r", path)
