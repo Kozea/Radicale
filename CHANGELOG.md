@@ -12,6 +12,7 @@
 * Add: option [server] script_name for reverse proxy base_prefix handling
 * Fix: proper base_prefix stripping if running behind reverse proxy
 * Review: Apache reverse proxy config example
+* Add: on-the-fly link activation and default content adjustment in case of bundled InfCloud
 
 ## 3.4.1
 * Add: option [auth] dovecot_connection_type / dovecot_host / dovecot_port
