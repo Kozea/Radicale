@@ -1448,16 +1448,13 @@ It will list your existing address books.
 
 #### InfCloud, CalDavZAP and CardDavMATE
 
-You can integrate InfCloud into Radicale's web interface with
-[RadicaleInfCloud](https://github.com/Unrud/RadicaleInfCloud). No additional
-configuration is required.
+You can integrate InfCloud into Radicale's web interface with by simply
+download latest package from [InfCloud](https://www.inf-it.com/open-source/clients/infcloud/)
+and extract content to new folder `infcloud` in `radicale/web/internal_data/`.
 
-Set the URL of the Radicale server in ``config.js``. If **InfCloud** is not
-hosted on the same server and port as Radicale, the browser will deny access to
-the Radicale server, because of the
-[same-origin policy](https://en.wikipedia.org/wiki/Same-origin_policy).
-You have to add additional HTTP header in the `headers` section of Radicale's
-configuration. The documentation of **InfCloud** has more details on this.
+No further adjustments are required as content is adjusted on the fly (tested with 0.13.1).
+
+See also [Wiki/Client InfCloud](https://github.com/Kozea/Radicale/wiki/Client-InfCloud).
 
 #### Command line
 
