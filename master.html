@@ -1507,15 +1507,14 @@ username and password. It will list your existing address books.</p>
 </section>
 <section class="level4" id="infcloud-caldavzap-and-carddavmate">
 <h4>InfCloud, CalDavZAP and CardDavMATE <a class="headerlink" href="#infcloud-caldavzap-and-carddavmate">&para;</a></h4>
-<p>You can integrate InfCloud into Radicale's web interface with <a href="https://github.com/Unrud/RadicaleInfCloud">RadicaleInfCloud</a>.
-No additional configuration is required.</p>
-<p>Set the URL of the Radicale server in <code>config.js</code>. If
-<strong>InfCloud</strong> is not hosted on the same server and port as
-Radicale, the browser will deny access to the Radicale server, because
-of the <a href="https://en.wikipedia.org/wiki/Same-origin_policy">same-origin
-policy</a>. You have to add additional HTTP header in the
-<code>headers</code> section of Radicale's configuration. The
-documentation of <strong>InfCloud</strong> has more details on this.</p>
+<p>You can integrate InfCloud into Radicale's web interface with by
+simply download latest package from <a href="https://www.inf-it.com/open-source/clients/infcloud/">InfCloud</a>
+and extract content to new folder <code>infcloud</code> in
+<code>radicale/web/internal_data/</code>.</p>
+<p>No further adjustments are required as content is adjusted on the fly
+(tested with 0.13.1).</p>
+<p>See also <a href="https://github.com/Kozea/Radicale/wiki/Client-InfCloud">Wiki/Client
+InfCloud</a>.</p>
 </section>
 <section class="level4" id="command-line">
 <h4>Command line <a class="headerlink" href="#command-line">&para;</a></h4>
