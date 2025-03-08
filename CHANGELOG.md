@@ -14,6 +14,7 @@
 * Review: Apache reverse proxy config example
 * Add: on-the-fly link activation and default content adjustment in case of bundled InfCloud (tested with 0.13.1)
 * Adjust: [auth] imap: use AUTHENTICATE PLAIN instead of LOGIN towards remote IMAP server
+* Improve: log client IP on SSL error and SSL protocol+cipher if successful
 
 ## 3.4.1
 * Add: option [auth] dovecot_connection_type / dovecot_host / dovecot_port
