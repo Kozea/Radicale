@@ -150,6 +150,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         time_begin = datetime.datetime.now()
         request_method = environ["REQUEST_METHOD"].upper()
         unsafe_path = environ.get("PATH_INFO", "")
+        https = environ.get("HTTPS", "")
 
         """Manage a request."""
         def response(status: int, headers: types.WSGIResponseHeaders,
@@ -210,9 +211,13 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         depthinfo = ""
         if environ.get("HTTP_DEPTH"):
             depthinfo = " with depth %r" % environ["HTTP_DEPTH"]
-        logger.info("%s request for %r%s received from %s%s",
+        if https:
+            https_info = " " + environ.get("SSL_PROTOCOL", "") + " " + environ.get("SSL_CIPHER", "")
+        else:
+            https_info = ""
+        logger.info("%s request for %r%s received from %s%s%s",
                     request_method, unsafe_path, depthinfo,
-                    remote_host, remote_useragent)
+                    remote_host, remote_useragent, https_info)
         if self._request_header_on_debug:
             logger.debug("Request header:\n%s",
                          pprint.pformat(self._scrub_headers(environ)))
