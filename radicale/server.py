@@ -262,6 +262,9 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     def get_environ(self) -> Dict[str, Any]:
         env = super().get_environ()
         if isinstance(self.connection, ssl.SSLSocket):
+            env["HTTPS"] = "on"
+            env["SSL_CIPHER"] = self.request.cipher()[0]
+            env["SSL_PROTOCOL"] = self.request.version()
             # The certificate can be evaluated by the auth module
             env["REMOTE_CERTIFICATE"] = self.connection.getpeercert()
         # Parent class only tries latin1 encoding
