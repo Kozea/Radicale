@@ -73,6 +73,7 @@ class Auth(auth.BaseAuth):
     _htpasswd_bcrypt_use: int
     _htpasswd_cache: bool
     _has_bcrypt: bool
+    _encryption: str
     _lock: threading.Lock
 
     def __init__(self, configuration: config.Configuration) -> None:
@@ -83,8 +84,8 @@ class Auth(auth.BaseAuth):
         logger.info("auth htpasswd file encoding: %r", self._encoding)
         self._htpasswd_cache = configuration.get("auth", "htpasswd_cache")
         logger.info("auth htpasswd cache: %s", self._htpasswd_cache)
-        encryption: str = configuration.get("auth", "htpasswd_encryption")
-        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s'", encryption)
+        self._encryption: str = configuration.get("auth", "htpasswd_encryption")
+        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s'", self._encryption)
 
         self._has_bcrypt = False
         self._htpasswd_ok = False
@@ -92,31 +93,31 @@ class Auth(auth.BaseAuth):
         (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(True, False)
         self._lock = threading.Lock()
 
-        if encryption == "plain":
+        if self._encryption == "plain":
             self._verify = self._plain
-        elif encryption == "md5":
+        elif self._encryption == "md5":
             self._verify = self._md5apr1
-        elif encryption == "sha256":
+        elif self._encryption == "sha256":
             self._verify = self._sha256
-        elif encryption == "sha512":
+        elif self._encryption == "sha512":
             self._verify = self._sha512
-        elif encryption == "bcrypt" or encryption == "autodetect":
+        elif self._encryption == "bcrypt" or self._encryption == "autodetect":
             try:
                 import bcrypt
             except ImportError as e:
-                if (encryption == "autodetect") and (self._htpasswd_bcrypt_use == 0):
-                    logger.warning("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' which can require bycrypt module, but currently no entries found", encryption)
+                if (self._encryption == "autodetect") and (self._htpasswd_bcrypt_use == 0):
+                    logger.warning("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' which can require bycrypt module, but currently no entries found", self._encryption)
                 else:
                     raise RuntimeError(
                         "The htpasswd encryption method 'bcrypt' or 'autodetect' requires "
                         "the bcrypt module (entries found: %d)." % self._htpasswd_bcrypt_use) from e
             else:
-                if encryption == "autodetect":
+                if self._encryption == "autodetect":
                     if self._htpasswd_bcrypt_use == 0:
-                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bycrypt module found, but currently not required", encryption)
+                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bycrypt module found, but currently not required", self._encryption)
                     else:
-                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bycrypt module found (bcrypt entries found: %d)", encryption, self._htpasswd_bcrypt_use)
-            if encryption == "bcrypt":
+                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bycrypt module found (bcrypt entries found: %d)", self._encryption, self._htpasswd_bcrypt_use)
+            if self._encryption == "bcrypt":
                 self._verify = functools.partial(self._bcrypt, bcrypt)
             else:
                 self._verify = self._autodetect
@@ -124,7 +125,7 @@ class Auth(auth.BaseAuth):
             self._has_bcrypt = True
         else:
             raise RuntimeError("The htpasswd encryption method %r is not "
-                               "supported." % encryption)
+                               "supported." % self._encryption)
 
     def _plain(self, hash_value: str, password: str) -> tuple[str, bool]:
         """Check if ``hash_value`` and ``password`` match, plain method."""
@@ -285,12 +286,16 @@ class Auth(auth.BaseAuth):
                 login_ok = True
 
         if login_ok is True:
-            (method, password_ok) = self._verify(digest, password)
+            try:
+                (method, password_ok) = self._verify(digest, password)
+            except ValueError as e:
+                logger.warning("Login verification failed for user: '%s' (method '%s') '%s'", login, self._encryption, e)
+                return ""
             logger.debug("Login verification successful for user: '%s' (method '%s')", login, method)
             if password_ok:
                 return login
             else:
-                logger.debug("Login verification failed for user: '%s' ( method '%s')", login, method)
+                logger.warning("Login verification failed for user: '%s' (method '%s')", login, method)
         else:
-            logger.debug("Login verification user not found: '%s'", login)
+            logger.warning("Login verification user not found: '%s'", login)
         return ""
