@@ -51,6 +51,7 @@ When bcrypt is installed:
 import functools
 import hmac
 import os
+import re
 import threading
 import time
 from typing import Any, Tuple
@@ -131,33 +132,49 @@ class Auth(auth.BaseAuth):
         """Check if ``hash_value`` and ``password`` match, plain method."""
         return ("PLAIN", hmac.compare_digest(hash_value.encode(), password.encode()))
 
+    def _plain_fallback(self, method_orig, hash_value: str, password: str) -> tuple[str, bool]:
+        """Check if ``hash_value`` and ``password`` match, plain method / fallback in case of hash length is not matching on autodetection."""
+        info = "PLAIN/fallback as hash length not matching for " + method_orig + ": " + str(len(hash_value))
+        return (info, hmac.compare_digest(hash_value.encode(), password.encode()))
+
     def _bcrypt(self, bcrypt: Any, hash_value: str, password: str) -> tuple[str, bool]:
-        return ("BCRYPT", bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hash_value.encode()))
+        if self._encryption == "autodetect" and len(hash_value) != 60:
+            return self._plain_fallback("BCRYPT", hash_value, password)
+        else:
+            return ("BCRYPT", bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hash_value.encode()))
 
     def _md5apr1(self, hash_value: str, password: str) -> tuple[str, bool]:
-        return ("MD5-APR1", apr_md5_crypt.verify(password, hash_value.strip()))
+        if self._encryption == "autodetect" and len(hash_value) != 37:
+            return self._plain_fallback("MD5-APR1", hash_value, password)
+        else:
+            return ("MD5-APR1", apr_md5_crypt.verify(password, hash_value.strip()))
 
     def _sha256(self, hash_value: str, password: str) -> tuple[str, bool]:
-        return ("SHA-256", sha256_crypt.verify(password, hash_value.strip()))
+        if self._encryption == "autodetect" and len(hash_value) != 63:
+            return self._plain_fallback("SHA-256", hash_value, password)
+        else:
+            return ("SHA-256", sha256_crypt.verify(password, hash_value.strip()))
 
     def _sha512(self, hash_value: str, password: str) -> tuple[str, bool]:
-        return ("SHA-512", sha512_crypt.verify(password, hash_value.strip()))
+        if self._encryption == "autodetect" and len(hash_value) != 106:
+            return self._plain_fallback("SHA-512", hash_value, password)
+        else:
+            return ("SHA-512", sha512_crypt.verify(password, hash_value.strip()))
 
     def _autodetect(self, hash_value: str, password: str) -> tuple[str, bool]:
-        if hash_value.startswith("$apr1$", 0, 6) and len(hash_value) == 37:
+        if hash_value.startswith("$apr1$", 0, 6):
             # MD5-APR1
             return self._md5apr1(hash_value, password)
-        elif hash_value.startswith("$2y$", 0, 4) and len(hash_value) == 60:
+        elif re.match(r"^\$2(a|b|x|y)?\$", hash_value):
             # BCRYPT
             return self._verify_bcrypt(hash_value, password)
-        elif hash_value.startswith("$5$", 0, 3) and len(hash_value) == 63:
+        elif hash_value.startswith("$5$", 0, 3):
             # SHA-256
             return self._sha256(hash_value, password)
-        elif hash_value.startswith("$6$", 0, 3) and len(hash_value) == 106:
+        elif hash_value.startswith("$6$", 0, 3):
             # SHA-512
             return self._sha512(hash_value, password)
         else:
-            # assumed plaintext
             return self._plain(hash_value, password)
 
     def _read_htpasswd(self, init: bool, suppress: bool) -> Tuple[bool, int, dict, int, int]:
@@ -289,13 +306,13 @@ class Auth(auth.BaseAuth):
             try:
                 (method, password_ok) = self._verify(digest, password)
             except ValueError as e:
-                logger.warning("Login verification failed for user: '%s' (method '%s') '%s'", login, self._encryption, e)
+                logger.error("Login verification failed for user: '%s' (htpasswd/%s) with errror '%s'", login, self._encryption, e)
                 return ""
-            logger.debug("Login verification successful for user: '%s' (method '%s')", login, method)
             if password_ok:
+                logger.debug("Login verification successful for user: '%s' (htpasswd/%s/%s)", login, self._encryption, method)
                 return login
             else:
-                logger.warning("Login verification failed for user: '%s' (method '%s')", login, method)
+                logger.warning("Login verification failed for user: '%s' (htpasswd/%s/%s)", login, self._encryption, method)
         else:
-            logger.warning("Login verification user not found: '%s'", login)
+            logger.warning("Login verification user not found (htpasswd): '%s'", login)
         return ""
