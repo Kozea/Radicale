@@ -306,13 +306,13 @@ class Auth(auth.BaseAuth):
             try:
                 (method, password_ok) = self._verify(digest, password)
             except ValueError as e:
-                logger.warning("Login verification failed for user: '%s' (method '%s') '%s'", login, self._encryption, e)
+                logger.error("Login verification failed for user: '%s' (htpasswd/%s) with errror '%s'", login, self._encryption, e)
                 return ""
-            logger.debug("Login verification successful for user: '%s' (method '%s')", login, method)
             if password_ok:
+                logger.debug("Login verification successful for user: '%s' (htpasswd/%s/%s)", login, self._encryption, method)
                 return login
             else:
-                logger.warning("Login verification failed for user: '%s' (method '%s')", login, method)
+                logger.warning("Login verification failed for user: '%s' (htpasswd/%s/%s)", login, self._encryption, method)
         else:
-            logger.warning("Login verification user not found: '%s'", login)
+            logger.warning("Login verification user not found (htpasswd): '%s'", login)
         return ""
