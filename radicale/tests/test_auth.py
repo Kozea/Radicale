@@ -79,6 +79,9 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_plain(self) -> None:
         self._test_htpasswd("plain", "tmp:bepo")
 
+    def test_htpasswd_plain_autodetect(self) -> None:
+        self._test_htpasswd("autodetect", "tmp:bepo")
+
     def test_htpasswd_plain_password_split(self) -> None:
         self._test_htpasswd("plain", "tmp:be:po", (
             ("tmp", "be:po", True), ("tmp", "bepo", False)))
@@ -89,6 +92,9 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_md5(self) -> None:
         self._test_htpasswd("md5", "tmp:$apr1$BI7VKCZh$GKW4vq2hqDINMr8uv7lDY/")
 
+    def test_htpasswd_md5_autodetect(self) -> None:
+        self._test_htpasswd("autodetect", "tmp:$apr1$BI7VKCZh$GKW4vq2hqDINMr8uv7lDY/")
+
     def test_htpasswd_md5_unicode(self):
         self._test_htpasswd(
             "md5", "😀:$apr1$w4ev89r1$29xO8EvJmS2HEAadQ5qy11", "unicode")
@@ -96,18 +102,50 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_sha256(self) -> None:
         self._test_htpasswd("sha256", "tmp:$5$i4Ni4TQq6L5FKss5$ilpTjkmnxkwZeV35GB9cYSsDXTALBn6KtWRJAzNlCL/")
 
+    def test_htpasswd_sha256_autodetect(self) -> None:
+        self._test_htpasswd("autodetect", "tmp:$5$i4Ni4TQq6L5FKss5$ilpTjkmnxkwZeV35GB9cYSsDXTALBn6KtWRJAzNlCL/")
+
     def test_htpasswd_sha512(self) -> None:
         self._test_htpasswd("sha512", "tmp:$6$3Qhl8r6FLagYdHYa$UCH9yXCed4A.J9FQsFPYAOXImzZUMfvLa0lwcWOxWYLOF5sE/lF99auQ4jKvHY2vijxmefl7G6kMqZ8JPdhIJ/")
 
+    def test_htpasswd_sha512_autodetect(self) -> None:
+        self._test_htpasswd("autodetect", "tmp:$6$3Qhl8r6FLagYdHYa$UCH9yXCed4A.J9FQsFPYAOXImzZUMfvLa0lwcWOxWYLOF5sE/lF99auQ4jKvHY2vijxmefl7G6kMqZ8JPdhIJ/")
+
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    def test_htpasswd_bcrypt(self) -> None:
-        self._test_htpasswd("bcrypt", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3V"
-                            "NTRI3w5KDnj8NTUKJNWfVpvRq")
+    def test_htpasswd_bcrypt_2a(self) -> None:
+        self._test_htpasswd("bcrypt", "tmp:$2a$10$Mj4A9vMecAp/K7.0fMKoVOk1SjgR.RBhl06a52nvzXhxlT3HB7Reu")
+
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    def test_htpasswd_bcrypt_2a_autodetect(self) -> None:
+        self._test_htpasswd("autodetect", "tmp:$2a$10$Mj4A9vMecAp/K7.0fMKoVOk1SjgR.RBhl06a52nvzXhxlT3HB7Reu")
+
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    def test_htpasswd_bcrypt_2b(self) -> None:
+        self._test_htpasswd("bcrypt", "tmp:$2b$12$7a4z/fdmXlBIfkz0smvzW.1Nds8wpgC/bo2DVOb4OSQKWCDL1A1wu")
+
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    def test_htpasswd_bcrypt_2b_autodetect(self) -> None:
+        self._test_htpasswd("autodetect", "tmp:$2b$12$7a4z/fdmXlBIfkz0smvzW.1Nds8wpgC/bo2DVOb4OSQKWCDL1A1wu")
+
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    def test_htpasswd_bcrypt_2y(self) -> None:
+        self._test_htpasswd("bcrypt", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
+
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    def test_htpasswd_bcrypt_2y_autodetect(self) -> None:
+        self._test_htpasswd("autodetect", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
+
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    def test_htpasswd_bcrypt_C10(self) -> None:
+        self._test_htpasswd("bcrypt", "tmp:$2y$10$bZsWq06ECzxqi7RmulQvC.T1YHUnLW2E3jn.MU2pvVTGn1dfORt2a")
+
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    def test_htpasswd_bcrypt_C10_autodetect(self) -> None:
+        self._test_htpasswd("bcrypt", "tmp:$2y$10$bZsWq06ECzxqi7RmulQvC.T1YHUnLW2E3jn.MU2pvVTGn1dfORt2a")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
     def test_htpasswd_bcrypt_unicode(self) -> None:
-        self._test_htpasswd("bcrypt", "😀:$2y$10$Oyz5aHV4MD9eQJbk6GPemOs4T6edK"
-                            "6U9Sqlzr.W1mMVCS8wJUftnW", "unicode")
+        self._test_htpasswd("bcrypt", "😀:$2y$10$Oyz5aHV4MD9eQJbk6GPemOs4T6edK6U9Sqlzr.W1mMVCS8wJUftnW", "unicode")
 
     def test_htpasswd_multi(self) -> None:
         self._test_htpasswd("plain", "ign:ign\ntmp:bepo")
