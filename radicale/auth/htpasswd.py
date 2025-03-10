@@ -228,7 +228,7 @@ class Auth(auth.BaseAuth):
                                         htpasswd_ok = False
                                         skip = True
                                 else:
-                                    if digest.startswith("$2y$", 0, 4) and len(digest) == 60:
+                                    if re.match(r"^\$2(a|b|x|y)?\$", digest) and len(digest) == 60:
                                         if init is True:
                                             bcrypt_use += 1
                                         else:
