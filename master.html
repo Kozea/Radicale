@@ -369,6 +369,10 @@ file.</p>
 <section class="level5" id="the-secure-way">
 <h5>The secure way <a class="headerlink" href="#the-secure-way">&para;</a></h5>
 <p>The <code>users</code> file can be created and managed with <a href="https://httpd.apache.org/docs/current/programs/htpasswd.html">htpasswd</a>:</p>
+<p>Note: some OS contain unpatched <code>htpasswd</code> (&lt; 2.4.59)
+without supporting SHA-256 or SHA-512 (e.g. Ubuntu LTS 22), in this case
+use '-B' for "bcrypt" hash method or stay with insecure MD5 (default) or
+SHA-1 ('-s').</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a aria-hidden="true" href="#cb5-1" tabindex="-1"></a><span class="co"># Create a new htpasswd file with the user "user1" using SHA-512 as hash method</span></span>
 <span id="cb5-2"><a aria-hidden="true" href="#cb5-2" tabindex="-1"></a><span class="ex">$</span> htpasswd <span class="at">-5</span> <span class="at">-c</span> /path/to/users user1</span>
 <span id="cb5-3"><a aria-hidden="true" href="#cb5-3" tabindex="-1"></a><span class="ex">New</span> password:</span>
