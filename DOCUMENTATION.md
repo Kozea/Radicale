@@ -131,6 +131,10 @@ It can be stored in the same directory as the configuration file.
 The `users` file can be created and managed with
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html):
 
+Note: some OS contain unpatched `htpasswd` (< 2.4.59) without supporting SHA-256 or SHA-512
+(e.g. Ubuntu LTS 22), in this case use '-B' for "bcrypt" hash method or stay with
+insecure MD5 (default) or SHA-1 ('-s').
+
 ```bash
 # Create a new htpasswd file with the user "user1" using SHA-512 as hash method
 $ htpasswd -5 -c /path/to/users user1
