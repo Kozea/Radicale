@@ -55,15 +55,34 @@ CACHE_LOGIN_TYPES: Sequence[str] = (
                                     "pam",
                                    )
 
+INSECURE_IF_NO_LOOPBACK_TYPES: Sequence[str] = (
+                                    "remote_user",
+                                    "http_x_remote_user",
+                                   )
+
 AUTH_SOCKET_FAMILY: Sequence[str] = ("AF_UNIX", "AF_INET", "AF_INET6")
 
 
 def load(configuration: "config.Configuration") -> "BaseAuth":
     """Load the authentication module chosen in configuration."""
-    if configuration.get("auth", "type") == "none":
-        logger.warning("No user authentication is selected: '[auth] type=none' (insecure)")
-    if configuration.get("auth", "type") == "denyall":
-        logger.warning("All access is blocked by: '[auth] type=denyall'")
+    _type = configuration.get("auth", "type")
+    if _type == "none":
+        logger.warning("No user authentication is selected: '[auth] type=none' (INSECURE)")
+    elif _type == "denyall":
+        logger.warning("All user authentication is blocked by: '[auth] type=denyall'")
+    elif _type in INSECURE_IF_NO_LOOPBACK_TYPES:
+        hosts: List[Tuple[str, int]] = configuration.get("server", "hosts")
+        localhost_only = True
+        address_lo = []
+        address = []
+        for address_port in hosts:
+            if address_port[0] in [ "localhost", "localhost6", "127.0.0.1", "::1" ]:
+                address_lo.append(utils.format_address(address_port))
+            else:
+                address.append(utils.format_address(address_port))
+                localhost_only = False
+        if localhost_only is False:
+            logger.warning("User authentication '[auth] type=%s' is selected but server is not only listen on loopback address (potentially INSECURE): %s", _type, " ".join(address))
     return utils.load_plugin(INTERNAL_TYPES, "auth", "Auth", BaseAuth,
                              configuration)
 
