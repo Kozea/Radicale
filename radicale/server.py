@@ -58,19 +58,7 @@ elif sys.platform == "win32":
 
 
 # IPv4 (host, port) and IPv6 (host, port, flowinfo, scopeid)
-ADDRESS_TYPE = Union[Tuple[Union[str, bytes, bytearray], int],
-                     Tuple[str, int, int, int]]
-
-
-def format_address(address: ADDRESS_TYPE) -> str:
-    host, port, *_ = address
-    if not isinstance(host, str):
-        raise NotImplementedError("Unsupported address format: %r" %
-                                  (address,))
-    if host.find(":") == -1:
-        return "%s:%d" % (host, port)
-    else:
-        return "[%s]:%d" % (host, port)
+ADDRESS_TYPE = utils.ADDRESS_TYPE
 
 
 class ParallelHTTPServer(socketserver.ThreadingMixIn,
@@ -321,20 +309,20 @@ def serve(configuration: config.Configuration,
             try:
                 getaddrinfo = socket.getaddrinfo(address_port[0], address_port[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)
             except OSError as e:
-                logger.warning("cannot retrieve IPv4 or IPv6 address of '%s': %s" % (format_address(address_port), e))
+                logger.warning("cannot retrieve IPv4 or IPv6 address of '%s': %s" % (utils.format_address(address_port), e))
                 continue
-            logger.debug("getaddrinfo of '%s': %s" % (format_address(address_port), getaddrinfo))
+            logger.debug("getaddrinfo of '%s': %s" % (utils.format_address(address_port), getaddrinfo))
             for (address_family, socket_kind, socket_proto, socket_flags, socket_address) in getaddrinfo:
-                logger.debug("try to create server socket on '%s'" % (format_address(socket_address)))
+                logger.debug("try to create server socket on '%s'" % (utils.format_address(socket_address)))
                 try:
                     server = server_class(configuration, address_family, (socket_address[0], socket_address[1]), RequestHandler)
                 except OSError as e:
-                    logger.warning("cannot create server socket on '%s': %s" % (format_address(socket_address), e))
+                    logger.warning("cannot create server socket on '%s': %s" % (utils.format_address(socket_address), e))
                     continue
                 servers[server.socket] = server
                 server.set_app(application)
                 logger.info("Listening on %r%s",
-                            format_address(server.server_address),
+                            utils.format_address(server.server_address),
                             " with SSL" if use_ssl else "")
         if not servers:
             raise RuntimeError("No servers started")

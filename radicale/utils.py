@@ -20,7 +20,7 @@
 import ssl
 import sys
 from importlib import import_module, metadata
-from typing import Callable, Sequence, Type, TypeVar, Union
+from typing import Callable, Sequence, Tuple, Type, TypeVar, Union
 
 from radicale import config
 from radicale.log import logger
@@ -34,6 +34,11 @@ RADICALE_MODULES: Sequence[str] = ("radicale", "vobject", "passlib", "defusedxml
                                    "ldap",
                                    "ldap3",
                                    "pam")
+
+
+# IPv4 (host, port) and IPv6 (host, port, flowinfo, scopeid)
+ADDRESS_TYPE = Union[Tuple[Union[str, bytes, bytearray], int],
+                     Tuple[str, int, int, int]]
 
 
 def load_plugin(internal_types: Sequence[str], module_name: str,
@@ -72,6 +77,17 @@ def packages_version():
             except Exception:
                 versions.append("%s=%s" % (pkg, "n/a"))
     return " ".join(versions)
+
+
+def format_address(address: ADDRESS_TYPE) -> str:
+    host, port, *_ = address
+    if not isinstance(host, str):
+        raise NotImplementedError("Unsupported address format: %r" %
+                                  (address,))
+    if host.find(":") == -1:
+        return "%s:%d" % (host, port)
+    else:
+        return "[%s]:%d" % (host, port)
 
 
 def ssl_context_options_by_protocol(protocol: str, ssl_context_options):
