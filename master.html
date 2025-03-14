@@ -688,7 +688,9 @@ and disables HTTP authentication.</p>
 <blockquote>
 <p><strong>Security:</strong> Untrusted clients should not be able to
 access the Radicale server directly. Otherwise, they can authenticate as
-any user.</p>
+any user by simply setting related HTTP header. This can be prevented by
+restrict listen to loopback interface only or at least a local firewall
+rule.</p>
 </blockquote>
 </section>
 <section class="level4" id="secure-connection-between-radicale-and-the-reverse-proxy">
