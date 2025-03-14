@@ -30,9 +30,10 @@ Take a look at the class ``BaseAuth`` if you want to implement your own.
 """
 
 import hashlib
+import os
 import threading
 import time
-from typing import Sequence, Set, Tuple, Union, final
+from typing import List, Sequence, Set, Tuple, Union, final
 
 from radicale import config, types, utils
 from radicale.log import logger
@@ -71,18 +72,20 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
     elif _type == "denyall":
         logger.warning("All user authentication is blocked by: '[auth] type=denyall'")
     elif _type in INSECURE_IF_NO_LOOPBACK_TYPES:
-        hosts: List[Tuple[str, int]] = configuration.get("server", "hosts")
-        localhost_only = True
-        address_lo = []
-        address = []
-        for address_port in hosts:
-            if address_port[0] in [ "localhost", "localhost6", "127.0.0.1", "::1" ]:
-                address_lo.append(utils.format_address(address_port))
-            else:
-                address.append(utils.format_address(address_port))
-                localhost_only = False
-        if localhost_only is False:
-            logger.warning("User authentication '[auth] type=%s' is selected but server is not only listen on loopback address (potentially INSECURE): %s", _type, " ".join(address))
+        sgi = os.environ.get('SERVER_GATEWAY_INTERFACE') or None
+        if not sgi:
+            hosts: List[Tuple[str, int]] = configuration.get("server", "hosts")
+            localhost_only = True
+            address_lo = []
+            address = []
+            for address_port in hosts:
+                if address_port[0] in ["localhost", "localhost6", "127.0.0.1", "::1"]:
+                    address_lo.append(utils.format_address(address_port))
+                else:
+                    address.append(utils.format_address(address_port))
+                    localhost_only = False
+            if localhost_only is False:
+                logger.warning("User authentication '[auth] type=%s' is selected but server is not only listen on loopback address (potentially INSECURE): %s", _type, " ".join(address))
     return utils.load_plugin(INTERNAL_TYPES, "auth", "Auth", BaseAuth,
                              configuration)
 
