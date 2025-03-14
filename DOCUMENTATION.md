@@ -506,7 +506,9 @@ RequestHeader set X-Remote-User expr=%{REMOTE_USER}
 ```
 
 > **Security:** Untrusted clients should not be able to access the Radicale
-> server directly. Otherwise, they can authenticate as any user.
+> server directly. Otherwise, they can authenticate as any user by simply
+> setting related HTTP header. This can be prevented by restrict listen to
+> loopback interface only or at least a local firewall rule.
 
 #### Secure connection between Radicale and the reverse proxy
 
