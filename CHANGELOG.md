@@ -18,6 +18,7 @@
 * Improve: catch htpasswd hash verification errors
 * Improve: add support for more bcrypt algos on autodetection, extend logging for autodetection fallback to PLAIN in case of hash length is not matching
 * Add: warning in case of started standalone and not listen on loopback interface but trusting external authentication
+* Adjust: Change default [auth] type from "none" to "denyall" for secure-by-default
 
 ## 3.4.1
 * Add: option [auth] dovecot_connection_type / dovecot_host / dovecot_port
