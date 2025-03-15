@@ -135,6 +135,8 @@ Note: some OS contain unpatched `htpasswd` (< 2.4.59) without supporting SHA-256
 (e.g. Ubuntu LTS 22), in this case use '-B' for "bcrypt" hash method or stay with
 insecure MD5 (default) or SHA-1 ('-s').
 
+Note that support of SHA-256 or SHA-512 was introduced with 3.1.9
+
 ```bash
 # Create a new htpasswd file with the user "user1" using SHA-512 as hash method
 $ htpasswd -5 -c /path/to/users user1
