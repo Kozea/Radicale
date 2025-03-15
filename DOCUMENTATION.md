@@ -135,6 +135,8 @@ Note: some OS contain unpatched `htpasswd` (< 2.4.59) without supporting SHA-256
 (e.g. Ubuntu LTS 22), in this case use '-B' for "bcrypt" hash method or stay with
 insecure MD5 (default) or SHA-1 ('-s').
 
+Note that support of SHA-256 or SHA-512 was introduced with 3.1.9
+
 ```bash
 # Create a new htpasswd file with the user "user1" using SHA-512 as hash method
 $ htpasswd -5 -c /path/to/users user1
@@ -763,9 +765,11 @@ to secure TCP traffic between Radicale and a reverse proxy. If you want to
 authenticate users with client-side certificates, you also have to write an
 authentication plugin that extracts the username from the certificate.
 
-Default:
+Default: (unset)
 
 ##### protocol
+
+_(>= 3.3.1)_
 
 Accepted SSL protocol (maybe not all supported by underlying OpenSSL version)
 Example for secure configuration: ALL -SSLv3 -TLSv1 -TLSv1.1
@@ -775,6 +779,8 @@ Default: (system default)
 
 ##### ciphersuite
 
+_(>= 3.3.1)_
+
 Accepted SSL ciphersuite (maybe not all supported by underlying OpenSSL version)
 Example for secure configuration: DHE:ECDHE:-NULL:-SHA
 Format: OpenSSL cipher list (see also "man openssl-ciphers")
@@ -782,6 +788,8 @@ Format: OpenSSL cipher list (see also "man openssl-ciphers")
 Default: (system-default)
 
 ##### script_name
+
+_(>= 3.5.0)_
 
 Strip script name from URI if called by reverse proxy
 
@@ -812,6 +820,9 @@ Available backends:
 `none`
 : Just allows all usernames and passwords.
 
+`denyall`  _(>= 3.2.2)_
+: Just denies all usernames and passwords.
+
 `htpasswd`
 : Use an
   [Apache htpasswd file](https://httpd.apache.org/docs/current/programs/htpasswd.html)
@@ -827,25 +838,26 @@ Available backends:
   authentication. This can be used to provide the username from a reverse
   proxy.
 
-`ldap`
+`ldap` _(>= 3.3.0)_
 : Use a LDAP or AD server to authenticate users.
 
-`dovecot`
+`dovecot` _(>= 3.3.1)_
 : Use a Dovecot server to authenticate users.
 
-`imap`
+`imap` _(>= 3.4.1)_
 : Use an IMAP server to authenticate users.
 
-`oauth2`
+`oauth2` _(>= 3.5.0)_
 : Use an OAuth2 server to authenticate users.
 
-`pam`
+`pam` _(>= 3.5.0)_
 : Use local PAM to authenticate users.
 
-
-Default: `none`
+Default: `none` _(< 3.5.0)_ `denyall` _(>= 3.5.0)_
 
 ##### cache_logins
+
+_(>= 3.4.0)_
 
 Cache successful/failed logins until expiration time. Enable this to avoid
 overload of authentication backends.
@@ -854,11 +866,15 @@ Default: `false`
 
 ##### cache_successful_logins_expiry
 
+_(>= 3.4.0)_
+
 Expiration time of caching successful logins in seconds
 
 Default: `15`
 
 ##### cache_failed_logins_expiry
+
+_(>= 3.4.0)_
 
 Expiration time of caching failed logins in seconds
 
@@ -894,18 +910,20 @@ Available methods:
 `md5`
 : This uses an iterated MD5 digest of the password with a salt (nowadays insecure).
 
-`sha256`
+`sha256` _(>= 3.1.9)_
 : This uses an iterated SHA-256 digest of the password with a salt.
 
-`sha512`
+`sha512` _(>= 3.1.9)_
 : This uses an iterated SHA-512 digest of the password with a salt.
 
-`autodetect`
+`autodetect` _(>= 3.1.9)_
 : This selects autodetection of method per entry.
 
-Default: `autodetect`
+Default: `md5` _(< 3.3.0)_ `autodetect` _(>= 3.3.0)_
 
 ##### htpasswd_cache
+
+_(>= 3.4.0)_
 
 Enable caching of htpasswd file based on size and mtime_ns
 
@@ -925,11 +943,15 @@ Default: `Radicale - Password Required`
 
 ##### ldap_uri
 
+_(>= 3.3.0)_
+
 The URI to the ldap server
 
 Default: `ldap://localhost`
 
 ##### ldap_base
+
+_(>= 3.3.0)_
 
 LDAP base DN of the ldap server. This parameter must be provided if auth type is ldap.
 
@@ -937,11 +959,15 @@ Default:
 
 ##### ldap_reader_dn
 
+_(>= 3.3.0)_
+
 The DN of a ldap user with read access to get the user accounts. This parameter must be provided if auth type is ldap.
 
 Default:
 
 ##### ldap_secret
+
+_(>= 3.3.0)_
 
 The password of the ldap_reader_dn. Either this parameter or `ldap_secret_file` must be provided if auth type is ldap.
 
@@ -949,11 +975,15 @@ Default:
 
 ##### ldap_secret_file
 
+_(>= 3.3.0)_
+
 Path of the file containing the password of the ldap_reader_dn. Either this parameter or `ldap_secret` must be provided if auth type is ldap.
 
 Default:
 
 ##### ldap_filter
+
+_(>= 3.3.0)_
 
 The search filter to find the user DN to authenticate by the username. User '{0}' as placeholder for the user name.
 
@@ -961,11 +991,15 @@ Default: `(cn={0})`
 
 ##### ldap_user_attribute
 
+_(>= 3.4.0)_
+
 The LDAP attribute whose value shall be used as the user name after successful authentication
 
 Default: not set, i.e. the login name given is used directly.
 
 ##### ldap_groups_attribute
+
+_(>= 3.4.0)_
 
 The LDAP attribute to read the group memberships from in the authenticated user's LDAP entry.
 
@@ -978,9 +1012,11 @@ This also gives you access to the group calendars, if they exist.
 
 Use 'memberOf' if you want to load groups on Active Directory and alikes, 'groupMembership' on Novell eDirectory, ...
 
-Default: unset
+Default: (unset)
 
 ##### ldap_use_ssl
+
+_(>= 3.3.0)_
 
 Use ssl on the ldap connection
 
@@ -988,17 +1024,23 @@ Default: False
 
 ##### ldap_ssl_verify_mode
 
+_(>= 3.3.0)_
+
 The certificate verification mode. NONE, OPTIONAL or REQUIRED
 
 Default: REQUIRED
 
 ##### ldap_ssl_ca_file
 
+_(>= 3.3.0)_
+
 The path to the CA file in pem format which is used to certificate the server certificate
 
 Default:
 
 ##### dovecot_connection_type = AF_UNIX
+
+_(>= 3.4.1)_
 
 Connection type for dovecot authentication (AF_UNIX|AF_INET|AF_INET6)
 
@@ -1008,11 +1050,15 @@ Default: `AF_UNIX`
 
 ##### dovecot_socket
 
+_(>= 3.3.1)_
+
 The path to the Dovecot client authentication socket (eg. /run/dovecot/auth-client on Fedora). Radicale must have read / write access to the socket.
 
 Default: `/var/run/dovecot/auth-client`
 
 ##### dovecot_host
+
+_(>= 3.4.1)_
 
 Host of via network exposed dovecot socket
 
@@ -1020,11 +1066,15 @@ Default: `localhost`
 
 ##### dovecot_port
 
+_(>= 3.4.1)_
+
 Port of via network exposed dovecot socket
 
 Default: `12345`
 
 ##### imap_host
+
+_(>= 3.4.1)_
 
 IMAP server hostname: address | address:port | [address]:port | imap.server.tld
 
@@ -1032,11 +1082,15 @@ Default: `localhost`
 
 ##### imap_security
 
+_(>= 3.4.1)_
+
 Secure the IMAP connection: tls | starttls | none
 
 Default: `tls`
 
 ##### oauth2_token_endpoint
+
+_(>= 3.5.0)_
 
 OAuth2 token endpoint URL
 
@@ -1044,11 +1098,15 @@ Default:
 
 ##### pam_service
 
+_(>= 3.5.0)_
+
 PAM service
 
 Default: radicale
 
 ##### pam_group_membership
+
+_(>= 3.5.0)_
 
 PAM group user should be member of
 
@@ -1065,6 +1123,8 @@ Note: cannot be enabled together with `uc_username`
 
 ##### uc_username
 
+_(>= 3.3.2)_
+
 Сonvert username to uppercase, must be true for case-insensitive auth
 providers like ldap, kerberos
 
@@ -1073,6 +1133,8 @@ Default: `False`
 Note: cannot be enabled together with `lc_username`
 
 ##### strip_domain
+
+_(>= 3.2.3)_
 
 Strip domain from username
 
@@ -1115,7 +1177,7 @@ File for the rights backend `from_file`.  See the
 
 ##### permit_delete_collection
 
-(New since 3.1.9)
+_(>= 3.1.9)_
 
 Global control of permission to delete complete collection (default: True)
 
@@ -1124,7 +1186,7 @@ If True it can be forbidden by permissions per section with: d
 
 ##### permit_overwrite_collection
 
-(New since 3.3.0)
+_(>= 3.3.0)_
 
 Global control of permission to overwrite complete collection (default: True)
 
@@ -1156,6 +1218,8 @@ Default: `/var/lib/radicale/collections`
 
 ##### filesystem_cache_folder
 
+_(>= 3.3.2)_
+
 Folder for storing cache of local collections, created if not present
 
 Default: (filesystem_folder)
@@ -1166,6 +1230,8 @@ Note: can be used on multi-instance setup to cache files on local node (see belo
 
 ##### use_cache_subfolder_for_item
 
+_(>= 3.3.2)_
+
 Use subfolder `collection-cache` for cache file structure of 'item' instead of inside collection folders, created if not present
 
 Default: `False`
@@ -1173,6 +1239,8 @@ Default: `False`
 Note: can be used on multi-instance setup to cache 'item' on local node
 
 ##### use_cache_subfolder_for_history
+
+_(>= 3.3.2)_
 
 Use subfolder `collection-cache` for cache file structure of 'history' instead of inside collection folders, created if not present
 
@@ -1182,6 +1250,8 @@ Note: use only on single-instance setup, will break consistency with client in m
 
 ##### use_cache_subfolder_for_synctoken
 
+_(>= 3.3.2)_
+
 Use subfolder `collection-cache` for cache file structure of 'sync-token' instead of inside collection folders, created if not present
 
 Default: `False`
@@ -1189,6 +1259,8 @@ Default: `False`
 Note: use only on single-instance setup, will break consistency with client in multi-instance setup
 
 ##### use_mtime_and_size_for_item_cache
+
+_(>= 3.3.2)_
 
 Use last modifiction time (nanoseconds) and size (bytes) for 'item' cache instead of SHA256 (improves speed)
 
@@ -1199,6 +1271,8 @@ Note: check used filesystem mtime precision before enabling
 Note: conversion is done on access, bulk conversion can be done offline using storage verification option `radicale --verify-storage`
 
 ##### folder_umask
+
+_(>= 3.3.2)_
 
 Use configured umask for folder creation (not applicable for OS Windows)
 
@@ -1213,6 +1287,8 @@ Delete sync-token that are older than the specified time. (seconds)
 Default: `2592000`
 
 ##### skip_broken_item
+
+_(>= 3.2.2)_
 
 Skip broken item instead of triggering an exception
 
@@ -1274,7 +1350,7 @@ Set the logging level.
 
 Available levels: **debug**, **info**, **warning**, **error**, **critical**
 
-Default: `warning`
+Default: `warning` _(< 3.2.0)_ `info` _(>= 3.2.0)_
 
 ##### mask_passwords
 
@@ -1284,11 +1360,15 @@ Default: `True`
 
 ##### bad_put_request_content
 
+_(>= 3.2.1)_
+
 Log bad PUT request content (for further diagnostics)
 
 Default: `False`
 
 ##### backtrace_on_debug
+
+_(>= 3.2.2)_
 
 Log backtrace on level=debug
 
@@ -1296,17 +1376,23 @@ Default: `False`
 
 ##### request_header_on_debug
 
+_(>= 3.2.2)_
+
 Log request on level=debug
 
 Default: `False`
 
 ##### request_content_on_debug
 
+_(>= 3.2.2)_
+
 Log request on level=debug
 
 Default: `False`
 
 ##### response_content_on_debug
+
+_(>= 3.2.2)_
 
 Log response on level=debug
 
@@ -1319,6 +1405,8 @@ Log rights rule which doesn't match on level=debug
 Default: `False`
 
 ##### storage_cache_actions_on_debug
+
+_(>= 3.3.2)_
 
 Log storage cache actions on level=debug
 
@@ -1345,12 +1433,14 @@ Available types:
 `none`
 : Disabled. Nothing will be notified.
 
-`rabbitmq`
+`rabbitmq` _(>= 3.2.0)_
 : Push the message to the rabbitmq server.
 
 Default: `none`
 
 ##### rabbitmq_endpoint
+
+_(>= 3.2.0)_
 
 End-point address for rabbitmq server.
 Ex: amqp://user:password@localhost:5672/
@@ -1359,18 +1449,25 @@ Default:
 
 ##### rabbitmq_topic
 
+_(>= 3.2.0)_
+
 RabbitMQ topic to publish message.
 
 Default:
 
 ##### rabbitmq_queue_type
 
+_(>= 3.2.0)_
+
 RabbitMQ queue type for the topic.
 
 Default: classic
 
 #### reporting
+
 ##### max_freebusy_occurrence
+
+_(>= 3.2.3)_
 
 When returning a free-busy report, a list of busy time occurrences are
 generated based on a given time frame. Large time frames could
@@ -1586,8 +1683,8 @@ The following `permissions` are recognized:
   (CalDAV/CardDAV is susceptible to expensive search requests)
 * **W:** write collections (excluding address books and calendars)
 * **w:** write address book and calendar collections
-* **D:** permit delete of collection in case permit_delete_collection=False
-* **d:** forbid delete of collection in case permit_delete_collection=True
+* **D:** permit delete of collection in case permit_delete_collection=False _(>= 3.3.0)_
+* **d:** forbid delete of collection in case permit_delete_collection=True _(>= 3.3.0)_
 * **O:** permit overwrite of collection in case permit_overwrite_collection=False
 * **o:** forbid overwrite of collection in case permit_overwrite_collection=True
 

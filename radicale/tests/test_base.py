@@ -1714,6 +1714,7 @@ permissions: RrWw""")
         assert status == 200 and prop.text == "text/vcard;charset=utf-8"
 
     def test_authorization(self) -> None:
+        self.configure({"auth": {"type": "none"}})
         _, responses = self.propfind("/", """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
@@ -1740,6 +1741,7 @@ permissions: RrWw""")
 
     def test_principal_collection_creation(self) -> None:
         """Verify existence of the principal collection."""
+        self.configure({"auth": {"type": "none"}})
         self.propfind("/user/", login="user:")
 
     def test_authentication_current_user_principal_hack(self) -> None:

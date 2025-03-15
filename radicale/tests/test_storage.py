@@ -77,6 +77,7 @@ class TestMultiFileSystem(BaseTest):
         """Verify that the hooks runs when a new user is created."""
         self.configure({"storage": {"hook": "mkdir %s" % os.path.join(
             "collection-root", "created_by_hook")}})
+        self.configure({"auth": {"type": "none"}})
         self.propfind("/", login="user:")
         self.propfind("/created_by_hook/")
 
