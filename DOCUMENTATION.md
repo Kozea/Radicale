@@ -812,6 +812,9 @@ Available backends:
 `none`
 : Just allows all usernames and passwords.
 
+`denyall`  _(>= 3.2.2)_
+: Just denies all usernames and passwords.
+
 `htpasswd`
 : Use an
   [Apache htpasswd file](https://httpd.apache.org/docs/current/programs/htpasswd.html)
