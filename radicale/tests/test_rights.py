@@ -143,6 +143,7 @@ collection: public/[^/]*
 permissions: i""")
         self.configure({"rights": {"type": "from_file",
                                    "file": rights_file_path}})
+        self.configure({"auth": {"type": "none"}})
         self.mkcalendar("/tmp/calendar", login="tmp:bepo")
         self.mkcol("/public", login="tmp:bepo")
         self.mkcalendar("/public/calendar", login="tmp:bepo")
@@ -165,6 +166,7 @@ permissions: i""")
         Items are allowed at "/.../.../...".
 
         """
+        self.configure({"auth": {"type": "none"}})
         self.mkcalendar("/", check=401)
         self.mkcalendar("/user/", check=401)
         self.mkcol("/user/")
@@ -175,6 +177,7 @@ permissions: i""")
 
     def test_put_collections_and_items(self) -> None:
         """Test rights for creation of calendars and items with PUT."""
+        self.configure({"auth": {"type": "none"}})
         self.put("/user/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR", check=401)
         self.mkcol("/user/")
         self.put("/user/calendar/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")

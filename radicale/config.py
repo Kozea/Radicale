@@ -206,7 +206,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": str})])),
     ("auth", OrderedDict([
         ("type", {
-            "value": "none",
+            "value": "denyall",
             "help": "authentication method (" + "|".join(auth.INTERNAL_TYPES) + ")",
             "type": str_or_callable,
             "internal": auth.INTERNAL_TYPES}),
