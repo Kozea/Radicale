@@ -373,6 +373,7 @@ file.</p>
 without supporting SHA-256 or SHA-512 (e.g. Ubuntu LTS 22), in this case
 use '-B' for "bcrypt" hash method or stay with insecure MD5 (default) or
 SHA-1 ('-s').</p>
+<p>Note that support of SHA-256 or SHA-512 was introduced with 3.1.9</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a aria-hidden="true" href="#cb5-1" tabindex="-1"></a><span class="co"># Create a new htpasswd file with the user "user1" using SHA-512 as hash method</span></span>
 <span id="cb5-2"><a aria-hidden="true" href="#cb5-2" tabindex="-1"></a><span class="ex">$</span> htpasswd <span class="at">-5</span> <span class="at">-c</span> /path/to/users user1</span>
 <span id="cb5-3"><a aria-hidden="true" href="#cb5-3" tabindex="-1"></a><span class="ex">New</span> password:</span>
@@ -900,10 +901,11 @@ can be used to secure TCP traffic between Radicale and a reverse proxy.
 If you want to authenticate users with client-side certificates, you
 also have to write an authentication plugin that extracts the username
 from the certificate.</p>
-<p>Default:</p>
+<p>Default: (unset)</p>
 </section>
 <section class="level5" id="protocol">
 <h5>protocol <a class="headerlink" href="#protocol">&para;</a></h5>
+<p><em>(&gt;= 3.3.1)</em></p>
 <p>Accepted SSL protocol (maybe not all supported by underlying OpenSSL
 version) Example for secure configuration: ALL -SSLv3 -TLSv1 -TLSv1.1
 Format: Apache SSLProtocol list (from "mod_ssl")</p>
@@ -911,6 +913,7 @@ Format: Apache SSLProtocol list (from "mod_ssl")</p>
 </section>
 <section class="level5" id="ciphersuite">
 <h5>ciphersuite <a class="headerlink" href="#ciphersuite">&para;</a></h5>
+<p><em>(&gt;= 3.3.1)</em></p>
 <p>Accepted SSL ciphersuite (maybe not all supported by underlying
 OpenSSL version) Example for secure configuration: DHE:ECDHE:-NULL:-SHA
 Format: OpenSSL cipher list (see also "man openssl-ciphers")</p>
@@ -918,6 +921,7 @@ Format: OpenSSL cipher list (see also "man openssl-ciphers")</p>
 </section>
 <section class="level5" id="script_name">
 <h5>script_name <a class="headerlink" href="#script_name">&para;</a></h5>
+<p><em>(&gt;= 3.5.0)</em></p>
 <p>Strip script name from URI if called by reverse proxy</p>
 <p>Default: (taken from HTTP_X_SCRIPT_NAME or SCRIPT_NAME)</p>
 </section>
@@ -942,6 +946,8 @@ Format: OpenSSL cipher list (see also "man openssl-ciphers")</p>
 <p>The method to verify usernames and passwords.</p>
 <p>Available backends:</p>
 <p><code>none</code> : Just allows all usernames and passwords.</p>
+<p><code>denyall</code> <em>(&gt;= 3.2.2)</em> : Just denies all
+usernames and passwords.</p>
 <p><code>htpasswd</code> : Use an <a href="https://httpd.apache.org/docs/current/programs/htpasswd.html">Apache
 htpasswd file</a> to store usernames and passwords.</p>
 <p><code>remote_user</code> : Takes the username from the
@@ -951,28 +957,35 @@ server.</p>
 <p><code>http_x_remote_user</code> : Takes the username from the
 <code>X-Remote-User</code> HTTP header and disables HTTP authentication.
 This can be used to provide the username from a reverse proxy.</p>
-<p><code>ldap</code> : Use a LDAP or AD server to authenticate
-users.</p>
-<p><code>dovecot</code> : Use a Dovecot server to authenticate
-users.</p>
-<p><code>imap</code> : Use an IMAP server to authenticate users.</p>
-<p><code>oauth2</code> : Use an OAuth2 server to authenticate users.</p>
-<p><code>pam</code> : Use local PAM to authenticate users.</p>
-<p>Default: <code>none</code></p>
+<p><code>ldap</code> <em>(&gt;= 3.3.0)</em> : Use a LDAP or AD server to
+authenticate users.</p>
+<p><code>dovecot</code> <em>(&gt;= 3.3.1)</em> : Use a Dovecot server to
+authenticate users.</p>
+<p><code>imap</code> <em>(&gt;= 3.4.1)</em> : Use an IMAP server to
+authenticate users.</p>
+<p><code>oauth2</code> <em>(&gt;= 3.5.0)</em> : Use an OAuth2 server to
+authenticate users.</p>
+<p><code>pam</code> <em>(&gt;= 3.5.0)</em> : Use local PAM to
+authenticate users.</p>
+<p>Default: <code>none</code> <em>(&lt; 3.5.0)</em> <code>denyall</code>
+<em>(&gt;= 3.5.0)</em></p>
 </section>
 <section class="level5" id="cache_logins">
 <h5>cache_logins <a class="headerlink" href="#cache_logins">&para;</a></h5>
+<p><em>(&gt;= 3.4.0)</em></p>
 <p>Cache successful/failed logins until expiration time. Enable this to
 avoid overload of authentication backends.</p>
 <p>Default: <code>false</code></p>
 </section>
 <section class="level5" id="cache_successful_logins_expiry">
 <h5>cache_successful_logins_expiry <a class="headerlink" href="#cache_successful_logins_expiry">&para;</a></h5>
+<p><em>(&gt;= 3.4.0)</em></p>
 <p>Expiration time of caching successful logins in seconds</p>
 <p>Default: <code>15</code></p>
 </section>
 <section class="level5" id="cache_failed_logins_expiry">
 <h5>cache_failed_logins_expiry <a class="headerlink" href="#cache_failed_logins_expiry">&para;</a></h5>
+<p><em>(&gt;= 3.4.0)</em></p>
 <p>Expiration time of caching failed logins in seconds</p>
 <p>Default: <code>90</code></p>
 </section>
@@ -996,16 +1009,18 @@ stream cipher. It's very secure. The installation of
 <strong>bcrypt</strong> is required for this.</p>
 <p><code>md5</code> : This uses an iterated MD5 digest of the password
 with a salt (nowadays insecure).</p>
-<p><code>sha256</code> : This uses an iterated SHA-256 digest of the
-password with a salt.</p>
-<p><code>sha512</code> : This uses an iterated SHA-512 digest of the
-password with a salt.</p>
-<p><code>autodetect</code> : This selects autodetection of method per
-entry.</p>
-<p>Default: <code>autodetect</code></p>
+<p><code>sha256</code> <em>(&gt;= 3.1.9)</em> : This uses an iterated
+SHA-256 digest of the password with a salt.</p>
+<p><code>sha512</code> <em>(&gt;= 3.1.9)</em> : This uses an iterated
+SHA-512 digest of the password with a salt.</p>
+<p><code>autodetect</code> <em>(&gt;= 3.1.9)</em> : This selects
+autodetection of method per entry.</p>
+<p>Default: <code>md5</code> <em>(&lt; 3.3.0)</em>
+<code>autodetect</code> <em>(&gt;= 3.3.0)</em></p>
 </section>
 <section class="level5" id="htpasswd_cache">
 <h5>htpasswd_cache <a class="headerlink" href="#htpasswd_cache">&para;</a></h5>
+<p><em>(&gt;= 3.4.0)</em></p>
 <p>Enable caching of htpasswd file based on size and mtime_ns</p>
 <p>Default: <code>False</code></p>
 </section>
@@ -1021,29 +1036,34 @@ entry.</p>
 </section>
 <section class="level5" id="ldap_uri">
 <h5>ldap_uri <a class="headerlink" href="#ldap_uri">&para;</a></h5>
+<p><em>(&gt;= 3.3.0)</em></p>
 <p>The URI to the ldap server</p>
 <p>Default: <code>ldap://localhost</code></p>
 </section>
 <section class="level5" id="ldap_base">
 <h5>ldap_base <a class="headerlink" href="#ldap_base">&para;</a></h5>
+<p><em>(&gt;= 3.3.0)</em></p>
 <p>LDAP base DN of the ldap server. This parameter must be provided if
 auth type is ldap.</p>
 <p>Default:</p>
 </section>
 <section class="level5" id="ldap_reader_dn">
 <h5>ldap_reader_dn <a class="headerlink" href="#ldap_reader_dn">&para;</a></h5>
+<p><em>(&gt;= 3.3.0)</em></p>
 <p>The DN of a ldap user with read access to get the user accounts. This
 parameter must be provided if auth type is ldap.</p>
 <p>Default:</p>
 </section>
 <section class="level5" id="ldap_secret">
 <h5>ldap_secret <a class="headerlink" href="#ldap_secret">&para;</a></h5>
+<p><em>(&gt;= 3.3.0)</em></p>
 <p>The password of the ldap_reader_dn. Either this parameter or
 <code>ldap_secret_file</code> must be provided if auth type is ldap.</p>
 <p>Default:</p>
 </section>
 <section class="level5" id="ldap_secret_file">
 <h5>ldap_secret_file <a class="headerlink" href="#ldap_secret_file">&para;</a></h5>
+<p><em>(&gt;= 3.3.0)</em></p>
 <p>Path of the file containing the password of the ldap_reader_dn.
 Either this parameter or <code>ldap_secret</code> must be provided if
 auth type is ldap.</p>
@@ -1051,18 +1071,21 @@ auth type is ldap.</p>
 </section>
 <section class="level5" id="ldap_filter">
 <h5>ldap_filter <a class="headerlink" href="#ldap_filter">&para;</a></h5>
+<p><em>(&gt;= 3.3.0)</em></p>
 <p>The search filter to find the user DN to authenticate by the
 username. User '{0}' as placeholder for the user name.</p>
 <p>Default: <code>(cn={0})</code></p>
 </section>
 <section class="level5" id="ldap_user_attribute">
 <h5>ldap_user_attribute <a class="headerlink" href="#ldap_user_attribute">&para;</a></h5>
+<p><em>(&gt;= 3.4.0)</em></p>
 <p>The LDAP attribute whose value shall be used as the user name after
 successful authentication</p>
 <p>Default: not set, i.e. the login name given is used directly.</p>
 </section>
 <section class="level5" id="ldap_groups_attribute">
 <h5>ldap_groups_attribute <a class="headerlink" href="#ldap_groups_attribute">&para;</a></h5>
+<p><em>(&gt;= 3.4.0)</em></p>
 <p>The LDAP attribute to read the group memberships from in the
 authenticated user's LDAP entry.</p>
 <p>If set, load the LDAP group memberships from the attribute given
@@ -1080,26 +1103,30 @@ calendar.</li>
 </ul>
 <p>Use 'memberOf' if you want to load groups on Active Directory and
 alikes, 'groupMembership' on Novell eDirectory, ...</p>
-<p>Default: unset</p>
+<p>Default: (unset)</p>
 </section>
 <section class="level5" id="ldap_use_ssl">
 <h5>ldap_use_ssl <a class="headerlink" href="#ldap_use_ssl">&para;</a></h5>
+<p><em>(&gt;= 3.3.0)</em></p>
 <p>Use ssl on the ldap connection</p>
 <p>Default: False</p>
 </section>
 <section class="level5" id="ldap_ssl_verify_mode">
 <h5>ldap_ssl_verify_mode <a class="headerlink" href="#ldap_ssl_verify_mode">&para;</a></h5>
+<p><em>(&gt;= 3.3.0)</em></p>
 <p>The certificate verification mode. NONE, OPTIONAL or REQUIRED</p>
 <p>Default: REQUIRED</p>
 </section>
 <section class="level5" id="ldap_ssl_ca_file">
 <h5>ldap_ssl_ca_file <a class="headerlink" href="#ldap_ssl_ca_file">&para;</a></h5>
+<p><em>(&gt;= 3.3.0)</em></p>
 <p>The path to the CA file in pem format which is used to certificate
 the server certificate</p>
 <p>Default:</p>
 </section>
 <section class="level5" id="dovecot_connection_type--af_unix">
 <h5>dovecot_connection_type = AF_UNIX <a class="headerlink" href="#dovecot_connection_type--af_unix">&para;</a></h5>
+<p><em>(&gt;= 3.4.1)</em></p>
 <p>Connection type for dovecot authentication
 (AF_UNIX|AF_INET|AF_INET6)</p>
 <p>Note: credentials are transmitted in cleartext</p>
@@ -1107,6 +1134,7 @@ the server certificate</p>
 </section>
 <section class="level5" id="dovecot_socket">
 <h5>dovecot_socket <a class="headerlink" href="#dovecot_socket">&para;</a></h5>
+<p><em>(&gt;= 3.3.1)</em></p>
 <p>The path to the Dovecot client authentication socket (eg.
 /run/dovecot/auth-client on Fedora). Radicale must have read / write
 access to the socket.</p>
@@ -1114,37 +1142,44 @@ access to the socket.</p>
 </section>
 <section class="level5" id="dovecot_host">
 <h5>dovecot_host <a class="headerlink" href="#dovecot_host">&para;</a></h5>
+<p><em>(&gt;= 3.4.1)</em></p>
 <p>Host of via network exposed dovecot socket</p>
 <p>Default: <code>localhost</code></p>
 </section>
 <section class="level5" id="dovecot_port">
 <h5>dovecot_port <a class="headerlink" href="#dovecot_port">&para;</a></h5>
+<p><em>(&gt;= 3.4.1)</em></p>
 <p>Port of via network exposed dovecot socket</p>
 <p>Default: <code>12345</code></p>
 </section>
 <section class="level5" id="imap_host">
 <h5>imap_host <a class="headerlink" href="#imap_host">&para;</a></h5>
+<p><em>(&gt;= 3.4.1)</em></p>
 <p>IMAP server hostname: address | address:port | [address]:port |
 imap.server.tld</p>
 <p>Default: <code>localhost</code></p>
 </section>
 <section class="level5" id="imap_security">
 <h5>imap_security <a class="headerlink" href="#imap_security">&para;</a></h5>
+<p><em>(&gt;= 3.4.1)</em></p>
 <p>Secure the IMAP connection: tls | starttls | none</p>
 <p>Default: <code>tls</code></p>
 </section>
 <section class="level5" id="oauth2_token_endpoint">
 <h5>oauth2_token_endpoint <a class="headerlink" href="#oauth2_token_endpoint">&para;</a></h5>
+<p><em>(&gt;= 3.5.0)</em></p>
 <p>OAuth2 token endpoint URL</p>
 <p>Default:</p>
 </section>
 <section class="level5" id="pam_service">
 <h5>pam_service <a class="headerlink" href="#pam_service">&para;</a></h5>
+<p><em>(&gt;= 3.5.0)</em></p>
 <p>PAM service</p>
 <p>Default: radicale</p>
 </section>
 <section class="level5" id="pam_group_membership">
 <h5>pam_group_membership <a class="headerlink" href="#pam_group_membership">&para;</a></h5>
+<p><em>(&gt;= 3.5.0)</em></p>
 <p>PAM group user should be member of</p>
 <p>Default:</p>
 </section>
@@ -1157,6 +1192,7 @@ providers like ldap, kerberos</p>
 </section>
 <section class="level5" id="uc_username">
 <h5>uc_username <a class="headerlink" href="#uc_username">&para;</a></h5>
+<p><em>(&gt;= 3.3.2)</em></p>
 <p>&Scy;onvert username to uppercase, must be true for case-insensitive auth
 providers like ldap, kerberos</p>
 <p>Default: <code>False</code></p>
@@ -1164,6 +1200,7 @@ providers like ldap, kerberos</p>
 </section>
 <section class="level5" id="strip_domain">
 <h5>strip_domain <a class="headerlink" href="#strip_domain">&para;</a></h5>
+<p><em>(&gt;= 3.2.3)</em></p>
 <p>Strip domain from username</p>
 <p>Default: <code>False</code></p>
 </section>
@@ -1196,7 +1233,7 @@ and write their own collections under the path <em>/USERNAME/</em>.</p>
 </section>
 <section class="level5" id="permit_delete_collection">
 <h5>permit_delete_collection <a class="headerlink" href="#permit_delete_collection">&para;</a></h5>
-<p>(New since 3.1.9)</p>
+<p><em>(&gt;= 3.1.9)</em></p>
 <p>Global control of permission to delete complete collection (default:
 True)</p>
 <p>If False it can be permitted by permissions per section with: D If
@@ -1204,7 +1241,7 @@ True it can be forbidden by permissions per section with: d</p>
 </section>
 <section class="level5" id="permit_overwrite_collection">
 <h5>permit_overwrite_collection <a class="headerlink" href="#permit_overwrite_collection">&para;</a></h5>
-<p>(New since 3.3.0)</p>
+<p><em>(&gt;= 3.3.0)</em></p>
 <p>Global control of permission to overwrite complete collection
 (default: True)</p>
 <p>If False it can be permitted by permissions per section with: O If
@@ -1230,6 +1267,7 @@ only be used with a single process.</p>
 </section>
 <section class="level5" id="filesystem_cache_folder">
 <h5>filesystem_cache_folder <a class="headerlink" href="#filesystem_cache_folder">&para;</a></h5>
+<p><em>(&gt;= 3.3.2)</em></p>
 <p>Folder for storing cache of local collections, created if not
 present</p>
 <p>Default: (filesystem_folder)</p>
@@ -1240,6 +1278,7 @@ node (see below)</p>
 </section>
 <section class="level5" id="use_cache_subfolder_for_item">
 <h5>use_cache_subfolder_for_item <a class="headerlink" href="#use_cache_subfolder_for_item">&para;</a></h5>
+<p><em>(&gt;= 3.3.2)</em></p>
 <p>Use subfolder <code>collection-cache</code> for cache file structure
 of 'item' instead of inside collection folders, created if not
 present</p>
@@ -1249,6 +1288,7 @@ node</p>
 </section>
 <section class="level5" id="use_cache_subfolder_for_history">
 <h5>use_cache_subfolder_for_history <a class="headerlink" href="#use_cache_subfolder_for_history">&para;</a></h5>
+<p><em>(&gt;= 3.3.2)</em></p>
 <p>Use subfolder <code>collection-cache</code> for cache file structure
 of 'history' instead of inside collection folders, created if not
 present</p>
@@ -1258,6 +1298,7 @@ client in multi-instance setup</p>
 </section>
 <section class="level5" id="use_cache_subfolder_for_synctoken">
 <h5>use_cache_subfolder_for_synctoken <a class="headerlink" href="#use_cache_subfolder_for_synctoken">&para;</a></h5>
+<p><em>(&gt;= 3.3.2)</em></p>
 <p>Use subfolder <code>collection-cache</code> for cache file structure
 of 'sync-token' instead of inside collection folders, created if not
 present</p>
@@ -1267,6 +1308,7 @@ client in multi-instance setup</p>
 </section>
 <section class="level5" id="use_mtime_and_size_for_item_cache">
 <h5>use_mtime_and_size_for_item_cache <a class="headerlink" href="#use_mtime_and_size_for_item_cache">&para;</a></h5>
+<p><em>(&gt;= 3.3.2)</em></p>
 <p>Use last modifiction time (nanoseconds) and size (bytes) for 'item'
 cache instead of SHA256 (improves speed)</p>
 <p>Default: <code>False</code></p>
@@ -1277,6 +1319,7 @@ offline using storage verification option
 </section>
 <section class="level5" id="folder_umask">
 <h5>folder_umask <a class="headerlink" href="#folder_umask">&para;</a></h5>
+<p><em>(&gt;= 3.3.2)</em></p>
 <p>Use configured umask for folder creation (not applicable for OS
 Windows)</p>
 <p>Default: (system-default, usual <code>0022</code>)</p>
@@ -1293,6 +1336,7 @@ other:r)</p>
 </section>
 <section class="level5" id="skip_broken_item">
 <h5>skip_broken_item <a class="headerlink" href="#skip_broken_item">&para;</a></h5>
+<p><em>(&gt;= 3.2.2)</em></p>
 <p>Skip broken item instead of triggering an exception</p>
 <p>Default: <code>True</code></p>
 </section>
@@ -1346,7 +1390,8 @@ books and calendars.</p>
 <p>Available levels: <strong>debug</strong>, <strong>info</strong>,
 <strong>warning</strong>, <strong>error</strong>,
 <strong>critical</strong></p>
-<p>Default: <code>warning</code></p>
+<p>Default: <code>warning</code> <em>(&lt; 3.2.0)</em> <code>info</code>
+<em>(&gt;= 3.2.0)</em></p>
 </section>
 <section class="level5" id="mask_passwords">
 <h5>mask_passwords <a class="headerlink" href="#mask_passwords">&para;</a></h5>
@@ -1355,26 +1400,31 @@ books and calendars.</p>
 </section>
 <section class="level5" id="bad_put_request_content">
 <h5>bad_put_request_content <a class="headerlink" href="#bad_put_request_content">&para;</a></h5>
+<p><em>(&gt;= 3.2.1)</em></p>
 <p>Log bad PUT request content (for further diagnostics)</p>
 <p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="backtrace_on_debug">
 <h5>backtrace_on_debug <a class="headerlink" href="#backtrace_on_debug">&para;</a></h5>
+<p><em>(&gt;= 3.2.2)</em></p>
 <p>Log backtrace on level=debug</p>
 <p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="request_header_on_debug">
 <h5>request_header_on_debug <a class="headerlink" href="#request_header_on_debug">&para;</a></h5>
+<p><em>(&gt;= 3.2.2)</em></p>
 <p>Log request on level=debug</p>
 <p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="request_content_on_debug">
 <h5>request_content_on_debug <a class="headerlink" href="#request_content_on_debug">&para;</a></h5>
+<p><em>(&gt;= 3.2.2)</em></p>
 <p>Log request on level=debug</p>
 <p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="response_content_on_debug">
 <h5>response_content_on_debug <a class="headerlink" href="#response_content_on_debug">&para;</a></h5>
+<p><em>(&gt;= 3.2.2)</em></p>
 <p>Log response on level=debug</p>
 <p>Default: <code>False</code></p>
 </section>
@@ -1385,6 +1435,7 @@ books and calendars.</p>
 </section>
 <section class="level5" id="storage_cache_actions_on_debug">
 <h5>storage_cache_actions_on_debug <a class="headerlink" href="#storage_cache_actions_on_debug">&para;</a></h5>
+<p><em>(&gt;= 3.3.2)</em></p>
 <p>Log storage cache actions on level=debug</p>
 <p>Default: <code>False</code></p>
 </section>
@@ -1403,22 +1454,26 @@ be specified.</p>
 <p>Hook binding for event changes and deletion notifications.</p>
 <p>Available types:</p>
 <p><code>none</code> : Disabled. Nothing will be notified.</p>
-<p><code>rabbitmq</code> : Push the message to the rabbitmq server.</p>
+<p><code>rabbitmq</code> <em>(&gt;= 3.2.0)</em> : Push the message to
+the rabbitmq server.</p>
 <p>Default: <code>none</code></p>
 </section>
 <section class="level5" id="rabbitmq_endpoint">
 <h5>rabbitmq_endpoint <a class="headerlink" href="#rabbitmq_endpoint">&para;</a></h5>
+<p><em>(&gt;= 3.2.0)</em></p>
 <p>End-point address for rabbitmq server. Ex:
 amqp://user:password@localhost:5672/</p>
 <p>Default:</p>
 </section>
 <section class="level5" id="rabbitmq_topic">
 <h5>rabbitmq_topic <a class="headerlink" href="#rabbitmq_topic">&para;</a></h5>
+<p><em>(&gt;= 3.2.0)</em></p>
 <p>RabbitMQ topic to publish message.</p>
 <p>Default:</p>
 </section>
 <section class="level5" id="rabbitmq_queue_type">
 <h5>rabbitmq_queue_type <a class="headerlink" href="#rabbitmq_queue_type">&para;</a></h5>
+<p><em>(&gt;= 3.2.0)</em></p>
 <p>RabbitMQ queue type for the topic.</p>
 <p>Default: classic</p>
 </section>
@@ -1427,6 +1482,7 @@ amqp://user:password@localhost:5672/</p>
 <h4>reporting <a class="headerlink" href="#reporting">&para;</a></h4>
 <section class="level5" id="max_freebusy_occurrence">
 <h5>max_freebusy_occurrence <a class="headerlink" href="#max_freebusy_occurrence">&para;</a></h5>
+<p><em>(&gt;= 3.2.3)</em></p>
 <p>When returning a free-busy report, a list of busy time occurrences
 are generated based on a given time frame. Large time frames could
 generate a lot of occurrences based on the time frame supplied. This
@@ -1631,9 +1687,9 @@ expensive search requests)</li>
 calendars)</li>
 <li><strong>w:</strong> write address book and calendar collections</li>
 <li><strong>D:</strong> permit delete of collection in case
-permit_delete_collection=False</li>
+permit_delete_collection=False <em>(&gt;= 3.3.0)</em></li>
 <li><strong>d:</strong> forbid delete of collection in case
-permit_delete_collection=True</li>
+permit_delete_collection=True <em>(&gt;= 3.3.0)</em></li>
 <li><strong>O:</strong> permit overwrite of collection in case
 permit_overwrite_collection=False</li>
 <li><strong>o:</strong> forbid overwrite of collection in case
