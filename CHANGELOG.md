@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.5.0.dev
+## 3.5.0
 
 * Add: option [auth] type oauth2 by code migration from https://gitlab.mim-libre.fr/alphabet/radicale_oauth/-/blob/dev/oauth2/
 * Fix: catch OS errors on PUT MKCOL MKCALENDAR MOVE PROPPATCH (insufficient storage, access denied, internal server error)
