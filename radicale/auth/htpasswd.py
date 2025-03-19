@@ -113,6 +113,7 @@ class Auth(auth.BaseAuth):
                         "The htpasswd encryption method 'bcrypt' or 'autodetect' requires "
                         "the bcrypt module (entries found: %d)." % self._htpasswd_bcrypt_use) from e
             else:
+                self._has_bcrypt = True
                 if self._encryption == "autodetect":
                     if self._htpasswd_bcrypt_use == 0:
                         logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bycrypt module found, but currently not required", self._encryption)
@@ -122,8 +123,8 @@ class Auth(auth.BaseAuth):
                 self._verify = functools.partial(self._bcrypt, bcrypt)
             else:
                 self._verify = self._autodetect
-                self._verify_bcrypt = functools.partial(self._bcrypt, bcrypt)
-            self._has_bcrypt = True
+                if self._htpasswd_bcrypt_use:
+                    self._verify_bcrypt = functools.partial(self._bcrypt, bcrypt)
         else:
             raise RuntimeError("The htpasswd encryption method %r is not "
                                "supported." % self._encryption)
