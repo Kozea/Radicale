@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.5.1.dev
+
+* Fix: auth/htpasswd related to detection and use of bcrypt
+
 ## 3.5.0
 
 * Add: option [auth] type oauth2 by code migration from https://gitlab.mim-libre.fr/alphabet/radicale_oauth/-/blob/dev/oauth2/
