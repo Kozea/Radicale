@@ -20,26 +20,17 @@ Radicale is a small but powerful CalDAV (calendars, to-do lists) and CardDAV
 
 #### Installation
 
-Radicale is really easy to install (for testing purposes) and works out-of-the-box.
+Check the
 
-```bash
-# Run as normal user
-python3 -m pip install --user --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
-python3 -m radicale --logging-level info --storage-filesystem-folder=~/.var/lib/radicale/collections
-```
+* [Tutorials](#tutorials)
+* [Documentation](#documentation-1)
+* [Wiki on GitHub](https://github.com/Kozea/Radicale/wiki)
 
-When the server is launched, open <http://localhost:5232> in your browser!
-You can login with any username and password.
-
-Want more? Check the [tutorials](#tutorials) and the
-[documentation](#documentation-1).
-
-Instead of downloading from PyPI look for packages provided by used [distribution](#linux-distribution-packages), they contain also startup scripts to run daemonized.
+Hint: instead of downloading from PyPI look for packages provided by used [distribution](#linux-distribution-packages), they contain also startup scripts to run daemonized.
 
 #### What's New?
 
-Read the
-[changelog on GitHub.](https://github.com/Kozea/Radicale/blob/master/CHANGELOG.md)
+Read the [Changelog on GitHub](https://github.com/Kozea/Radicale/blob/master/CHANGELOG.md).
 
 ## Tutorials
 
@@ -59,24 +50,53 @@ Follow one of the chapters below depending on your operating system.
 First, make sure that **python** 3.9 or later and **pip** are installed. On most distributions it should be
 enough to install the package ``python3-pip``.
 
-Then open a console and type:
+##### as normal user
+
+Recommended only for testing - open a console and type:
 
 ```bash
 # Run the following command to only install for the current user
-#  data is also stored for the current user only
 python3 -m pip install --user --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
+```
+
+If _install_ is not working and instead `error: externally-managed-environment` is displayed, create and activate a virtual environment in advance
+
+```bash
+python3 -m venv ~/venv
+source venv/bin/activate
+```
+
+and try to install with
+
+```bash
+python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
+```
+
+Start the service manually, data is stored only for the current user
+
+```bash
+# Start, data is stored for the current user only
 python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
 ```
 
-Alternative one can install as root or system user
+##### as system user (or as root)
+
+Alternative one can install and run as system user or as root (not recommended)
 
 ```bash
-# Run the following command as root
-# or non-root system user (can require --user in case of dependencies are not available system-wide)
-#  requires existence of and write permissions to /var/lib/radicale/collections
+# Run the following command as root (not required)
+# or non-root system user (can require --user in case of dependencies are not available system-wide and/or virtual environment)
 python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
+```
+
+Start the service manually, data is stored in a system folder
+
+```bash
+# Start, data is stored in a system folder (requires write permissions to /var/lib/radicale/collections)
 python3 -m radicale --storage-filesystem-folder=/var/lib/radicale/collections
 ```
+
+##### common
 
 Victory! Open <http://localhost:5232> in your browser!
 You can log in with any username and password.
