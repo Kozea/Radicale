@@ -93,13 +93,13 @@ Start the service manually, data is stored in a system folder
 
 ```bash
 # Start, data is stored in a system folder (requires write permissions to /var/lib/radicale/collections)
-python3 -m radicale --storage-filesystem-folder=/var/lib/radicale/collections
+python3 -m radicale --storage-filesystem-folder=/var/lib/radicale/collections --auth-type none
 ```
 
 ##### common
 
 Victory! Open <http://localhost:5232> in your browser!
-You can log in with any username and password.
+You can log in with any username and password (no authentication is required as long as not proper configured - INSECURE).
 
 #### Windows
 
@@ -113,11 +113,11 @@ Launch a command prompt and type:
 
 ```powershell
 python -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
-python -m radicale --storage-filesystem-folder=~/radicale/collections
+python -m radicale --storage-filesystem-folder=~/radicale/collections --auth-type none
 ```
 
 Victory! Open <http://localhost:5232> in your browser!
-You can log in with any username and password.
+You can log in with any username and password (no authentication is required as long as not proper configured - INSECURE).
 
 ### Basic Configuration
 
