@@ -65,7 +65,7 @@ If _install_ is not working and instead `error: externally-managed-environment` 
 
 ```bash
 python3 -m venv ~/venv
-source venv/bin/activate
+source ~/venv/bin/activate
 ```
 
 and try to install with
