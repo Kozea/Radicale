@@ -213,7 +213,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("cache_logins", {
             "value": "false",
             "help": "cache successful/failed logins for until expiration time",
-            "type": bool}),
+            "type": bool}),      
         ("cache_successful_logins_expiry", {
             "value": "15",
             "help": "expiration time for caching successful logins in seconds",
@@ -259,6 +259,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "1",
             "help": "incorrect authentication delay",
             "type": positive_float}),
+        ("ldap_authentik_timestamp_hack", {
+            "value": "false",
+            "help": "Ignore modifyTimestamp and createTimestamp attributes. Need if Authentik LDAP server is used",
+            "type": bool}),
         ("ldap_uri", {
             "value": "ldap://localhost",
             "help": "URI to the ldap server",
