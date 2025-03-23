@@ -56,6 +56,7 @@ class Auth(auth.BaseAuth):
         try:
             import ldap3
             self.ldap3 = ldap3
+ 
         except ImportError:
             try:
                 import ldap
@@ -63,6 +64,12 @@ class Auth(auth.BaseAuth):
                 self.ldap = ldap
             except ImportError as e:
                 raise RuntimeError("LDAP authentication requires the ldap3 module") from e
+       
+        self._ldap_authentik_timestamp_hack = configuration.get("auth", "ldap_authentik_timestamp_hack")
+        if self._ldap_authentik_timestamp_hack:
+           self.ldap3.utils.config._ATTRIBUTES_EXCLUDED_FROM_CHECK.extend(['createTimestamp','modifyTimestamp'])
+           logger.info("auth.ldap_authentik_timestamp_hack applied")
+
         self._ldap_uri = configuration.get("auth", "ldap_uri")
         self._ldap_base = configuration.get("auth", "ldap_base")
         self._ldap_reader_dn = configuration.get("auth", "ldap_reader_dn")
