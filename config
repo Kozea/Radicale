@@ -75,7 +75,7 @@
 #cache_failed_logins_expiry = 90
 
 # Ignore modifyTimestamp and createTimestamp attributes. Needed if Authentik LDAP server is used. Uncomment then.
-#ldap_authentik_timestamp_hack = true  
+#ldap_ignore_attribute_create_modify_timestamp = true  
 
 # URI to the LDAP server
 #ldap_uri = ldap://localhost
