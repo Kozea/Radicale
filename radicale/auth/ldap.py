@@ -68,7 +68,7 @@ class Auth(auth.BaseAuth):
         self._ldap_ignore_attribute_create_modify_timestamp = configuration.get("auth", "ldap_ignore_attribute_create_modify_timestamp")
         if self._ldap_ignore_attribute_create_modify_timestamp:
            self.ldap3.utils.config._ATTRIBUTES_EXCLUDED_FROM_CHECK.extend(['createTimestamp','modifyTimestamp'])
-           logger.info("auth.ldap_authentik_timestamp_hack applied")
+           logger.info("auth.ldap_ignore_attribute_create_modify_timestamp applied")
 
         self._ldap_uri = configuration.get("auth", "ldap_uri")
         self._ldap_base = configuration.get("auth", "ldap_base")
