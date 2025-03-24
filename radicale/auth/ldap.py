@@ -56,7 +56,6 @@ class Auth(auth.BaseAuth):
         try:
             import ldap3
             self.ldap3 = ldap3
- 
         except ImportError:
             try:
                 import ldap
