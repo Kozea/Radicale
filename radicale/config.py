@@ -213,7 +213,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("cache_logins", {
             "value": "false",
             "help": "cache successful/failed logins for until expiration time",
-            "type": bool}),      
+            "type": bool}),
         ("cache_successful_logins_expiry", {
             "value": "15",
             "help": "expiration time for caching successful logins in seconds",
