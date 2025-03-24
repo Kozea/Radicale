@@ -65,8 +65,8 @@ class Auth(auth.BaseAuth):
             except ImportError as e:
                 raise RuntimeError("LDAP authentication requires the ldap3 module") from e
        
-        self._ldap_authentik_timestamp_hack = configuration.get("auth", "ldap_authentik_timestamp_hack")
-        if self._ldap_authentik_timestamp_hack:
+        self._ldap_ignore_attribute_create_modify_timestamp = configuration.get("auth", "ldap_ignore_attribute_create_modify_timestamp")
+        if self._ldap_ignore_attribute_create_modify_timestamp:
            self.ldap3.utils.config._ATTRIBUTES_EXCLUDED_FROM_CHECK.extend(['createTimestamp','modifyTimestamp'])
            logger.info("auth.ldap_authentik_timestamp_hack applied")
 
