@@ -1062,7 +1062,7 @@ Default:
 
 ##### ldap_ignore_attribute_create_modify_timestamp
 
-_(>= 3.6.0)_
+_(>= 3.5.1)_
 
 Add modifyTimestamp and createTimestamp to the exclusion list of internal ldap3 client
 so that these schema attributes are not checked. This is needed for Authentik since
