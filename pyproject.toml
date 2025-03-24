@@ -33,6 +33,7 @@ dependencies = [
     "passlib",
     "vobject>=0.9.6",
     "pika>=1.1.0",
+    "requests",
 ]
 
 
