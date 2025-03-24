@@ -38,6 +38,7 @@ web_files = ["web/internal_data/css/icon.png",
 
 install_requires = ["defusedxml", "passlib", "vobject>=0.9.6",
                     "pika>=1.1.0",
+                    "requests",
                     ]
 bcrypt_requires = ["bcrypt"]
 ldap_requires = ["ldap3"]
