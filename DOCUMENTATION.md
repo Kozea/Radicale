@@ -1060,6 +1060,16 @@ The path to the CA file in pem format which is used to certificate the server ce
 
 Default:
 
+##### ldap_ignore_attribute_create_modify_timestamp
+
+_(>= 3.5.1)_
+
+Add modifyTimestamp and createTimestamp to the exclusion list of internal ldap3 client
+so that these schema attributes are not checked. This is needed for Authentik since
+Authentik does not provide these both attributes.
+
+Default: false
+
 ##### dovecot_connection_type = AF_UNIX
 
 _(>= 3.4.1)_

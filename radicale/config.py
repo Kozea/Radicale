@@ -259,6 +259,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "1",
             "help": "incorrect authentication delay",
             "type": positive_float}),
+        ("ldap_ignore_attribute_create_modify_timestamp", {
+            "value": "false",
+            "help": "Ignore modifyTimestamp and createTimestamp attributes. Need if Authentik LDAP server is used.",
+            "type": bool}),
         ("ldap_uri", {
             "value": "ldap://localhost",
             "help": "URI to the ldap server",
