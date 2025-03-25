@@ -1149,6 +1149,15 @@ alikes, 'groupMembership' on Novell eDirectory, ...</p>
 the server certificate</p>
 <p>Default:</p>
 </section>
+<section class="level5" id="ldap_ignore_attribute_create_modify_timestamp">
+<h5>ldap_ignore_attribute_create_modify_timestamp <a class="headerlink" href="#ldap_ignore_attribute_create_modify_timestamp">&para;</a></h5>
+<p><em>(&gt;= 3.5.1)</em></p>
+<p>Add modifyTimestamp and createTimestamp to the exclusion list of
+internal ldap3 client so that these schema attributes are not checked.
+This is needed for Authentik since Authentik does not provide these both
+attributes.</p>
+<p>Default: false</p>
+</section>
 <section class="level5" id="dovecot_connection_type--af_unix">
 <h5>dovecot_connection_type = AF_UNIX <a class="headerlink" href="#dovecot_connection_type--af_unix">&para;</a></h5>
 <p><em>(&gt;= 3.4.1)</em></p>
