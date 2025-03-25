@@ -1154,8 +1154,8 @@ the server certificate</p>
 <p><em>(&gt;= 3.5.1)</em></p>
 <p>Add modifyTimestamp and createTimestamp to the exclusion list of
 internal ldap3 client so that these schema attributes are not checked.
-This is needed for Authentik since Authentik does not provide these both
-attributes.</p>
+This is needed at least for Authentik LDAP server as not providing these
+both attributes.</p>
 <p>Default: false</p>
 </section>
 <section class="level5" id="dovecot_connection_type--af_unix">
