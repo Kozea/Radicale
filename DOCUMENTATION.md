@@ -1334,7 +1334,9 @@ Command that is run after changes to storage. Take a look at the
 Default:
 
 Supported placeholders:
- - `%(user)`: logged-in user
+ - `%(user)s`: logged-in user
+ - `%(cwd)s`: current working directory _(>= 3.5.1)_
+ - `%(path)s`: full path of item _(>= 3.5.1)_
 
 Command will be executed with base directory defined in `filesystem_folder` (see above)
 
