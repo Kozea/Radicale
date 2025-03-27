@@ -4,6 +4,7 @@
 
 * Fix: auth/htpasswd related to detection and use of bcrypt
 * Add: option [auth] ldap_ignore_attribute_create_modify_timestamp for support of Authentik LDAP server
+* Extend: [storage] hook supports now placeholder for "cwd" and "path"
 
 ## 3.5.0
 
