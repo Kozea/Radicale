@@ -59,7 +59,7 @@ class StoragePartLock(StorageBase):
         self._hook = configuration.get("storage", "hook")
 
     @types.contextmanager
-    def acquire_lock(self, mode: str, user: str = "") -> Iterator[None]:
+    def acquire_lock(self, mode: str, user: str = "", *args, **kwargs) -> Iterator[None]:
         with self._lock.acquire(mode):
             yield
             # execute hook
