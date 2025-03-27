@@ -74,8 +74,12 @@ class StoragePartLock(StorageBase):
                 else:
                     # Process group is also used to identify child processes
                     preexec_fn = os.setpgrp
+                # optional argument
+                path = kwargs.get('path', "")
                 try:
                     command = self._hook % {
+                        "path": shlex.quote(self._get_collection_root_folder() + path),
+                        "cwd": shlex.quote(self._filesystem_folder),
                         "user": shlex.quote(user or "Anonymous")}
                 except KeyError as e:
                     logger.error("Storage hook contains not supported placeholder %s (skip execution of: %r)" % (e, self._hook))
