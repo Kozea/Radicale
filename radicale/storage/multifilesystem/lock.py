@@ -1,7 +1,8 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2023-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +59,7 @@ class StoragePartLock(StorageBase):
         self._hook = configuration.get("storage", "hook")
 
     @types.contextmanager
-    def acquire_lock(self, mode: str, user: str = "") -> Iterator[None]:
+    def acquire_lock(self, mode: str, user: str = "", *args, **kwargs) -> Iterator[None]:
         with self._lock.acquire(mode):
             yield
             # execute hook
@@ -73,8 +74,17 @@ class StoragePartLock(StorageBase):
                 else:
                     # Process group is also used to identify child processes
                     preexec_fn = os.setpgrp
-                command = self._hook % {
-                    "user": shlex.quote(user or "Anonymous")}
+                # optional argument
+                path = kwargs.get('path', "")
+                try:
+                    command = self._hook % {
+                        "path": shlex.quote(self._get_collection_root_folder() + path),
+                        "cwd": shlex.quote(self._filesystem_folder),
+                        "user": shlex.quote(user or "Anonymous")}
+                except KeyError as e:
+                    logger.error("Storage hook contains not supported placeholder %s (skip execution of: %r)" % (e, self._hook))
+                    return
+
                 logger.debug("Executing storage hook: '%s'" % command)
                 try:
                     p = subprocess.Popen(
