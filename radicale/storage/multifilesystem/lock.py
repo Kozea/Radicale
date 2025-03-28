@@ -55,7 +55,8 @@ class StoragePartLock(StorageBase):
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
-        lock_path = os.path.join(self._filesystem_folder, ".Radicale.lock")
+        lock_path = os.path.join(self._get_collection_root_folder(), ".Radicale.lock")
+        logger.debug("Lock file (StoragePartLock): %r" % lock_path)
         self._lock = pathutils.RwLock(lock_path)
         self._hook = configuration.get("storage", "hook")
 
