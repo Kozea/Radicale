@@ -978,20 +978,31 @@ htpasswd file</a> to store usernames and passwords.</p>
 <p><code>remote_user</code> : Takes the username from the
 <code>REMOTE_USER</code> environment variable and disables HTTP
 authentication. This can be used to provide the username from a WSGI
-server.</p>
+server which authenticated the client upfront. Required to validate,
+otherwise client can supply the header itself which is unconditionally
+trusted then.</p>
 <p><code>http_x_remote_user</code> : Takes the username from the
 <code>X-Remote-User</code> HTTP header and disables HTTP authentication.
-This can be used to provide the username from a reverse proxy.</p>
+This can be used to provide the username from a reverse proxy which
+authenticated the client upfront. Required to validate, otherwise client
+can supply the header itself which is unconditionally trusted then.</p>
 <p><code>ldap</code> <em>(&gt;= 3.3.0)</em> : Use a LDAP or AD server to
-authenticate users.</p>
+authenticate users by relaying credentials from client and handle
+result.</p>
 <p><code>dovecot</code> <em>(&gt;= 3.3.1)</em> : Use a Dovecot server to
-authenticate users.</p>
+authenticate users by relaying credentials from client and handle
+result.</p>
 <p><code>imap</code> <em>(&gt;= 3.4.1)</em> : Use an IMAP server to
-authenticate users.</p>
+authenticate users by relaying credentials from client and handle
+result.</p>
 <p><code>oauth2</code> <em>(&gt;= 3.5.0)</em> : Use an OAuth2 server to
-authenticate users.</p>
+authenticate users by relaying credentials from client and handle
+result. Oauth2 authentication (SSO) directly on client is not supported.
+Use herefore <code>http_x_remote_user</code> in combination with SSO
+support in reverse proxy (e.g. Apache+mod_auth_openidc).</p>
 <p><code>pam</code> <em>(&gt;= 3.5.0)</em> : Use local PAM to
-authenticate users.</p>
+authenticate users by relaying credentials from client and handle
+result..</p>
 <p>Default: <code>none</code> <em>(&lt; 3.5.0)</em> <code>denyall</code>
 <em>(&gt;= 3.5.0)</em></p>
 </section>
