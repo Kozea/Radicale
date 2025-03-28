@@ -853,27 +853,31 @@ Available backends:
 `remote_user`
 : Takes the username from the `REMOTE_USER` environment variable and disables
   HTTP authentication. This can be used to provide the username from a WSGI
-  server.
+  server which authenticated the client upfront. Required to validate, otherwise
+  client can supply the header itself which is unconditionally trusted then.
 
 `http_x_remote_user`
 : Takes the username from the `X-Remote-User` HTTP header and disables HTTP
   authentication. This can be used to provide the username from a reverse
-  proxy.
+  proxy which authenticated the client upfront. Required to validate, otherwise
+  client can supply the header itself which is unconditionally trusted then.
 
 `ldap` _(>= 3.3.0)_
-: Use a LDAP or AD server to authenticate users.
+: Use a LDAP or AD server to authenticate users by relaying credentials from client and handle result.
 
 `dovecot` _(>= 3.3.1)_
-: Use a Dovecot server to authenticate users.
+: Use a Dovecot server to authenticate users by relaying credentials from client and handle result.
 
 `imap` _(>= 3.4.1)_
-: Use an IMAP server to authenticate users.
+: Use an IMAP server to authenticate users by relaying credentials from client and handle result.
 
 `oauth2` _(>= 3.5.0)_
-: Use an OAuth2 server to authenticate users.
+: Use an OAuth2 server to authenticate users by relaying credentials from client and handle result.
+  Oauth2 authentication (SSO) directly on client is not supported. Use herefore `http_x_remote_user`
+  in combination with SSO support in reverse proxy (e.g. Apache+mod_auth_openidc).
 
 `pam` _(>= 3.5.0)_
-: Use local PAM to authenticate users.
+: Use local PAM to authenticate users by relaying credentials from client and handle result..
 
 Default: `none` _(< 3.5.0)_ `denyall` _(>= 3.5.0)_
 
