@@ -2,7 +2,11 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2021 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Pieter Hijma <pieterhijma@users.noreply.github.com>
+# Copyright © 2024-2024 Ray <ray@react0r.com>
+# Copyright © 2024-2024 Georgiy <metallerok@gmail.com>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -171,7 +175,11 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                        xmlutils.make_human_tag(root.tag), path)
         return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
 
-    props: Union[ET.Element, List] = root.find(xmlutils.make_clark("D:prop")) or []
+    props: Union[ET.Element, List]
+    if root.find(xmlutils.make_clark("D:prop")) is not None:
+        props = root.find(xmlutils.make_clark("D:prop")) # type: ignore[assignment]
+    else:
+        props = []
 
     hreferences: Iterable[str]
     if root.tag in (
