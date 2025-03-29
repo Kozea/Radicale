@@ -38,10 +38,11 @@ class CollectionPartLock(CollectionBase):
         if self._storage._lock.locked == "w":
             yield
             return
-        cache_folder = os.path.join(self._filesystem_path, ".Radicale.cache")
+        cache_folder = self._storage._get_collection_cache_subfolder(self._filesystem_path, ".Radicale.cache", ns)
         self._storage._makedirs_synced(cache_folder)
         lock_path = os.path.join(cache_folder,
                                  ".Radicale.lock" + (".%s" % ns if ns else ""))
+        logger.debug("Lock file (CollectionPartLock): %r" % lock_path)
         lock = pathutils.RwLock(lock_path)
         with lock.acquire("w"):
             yield
@@ -55,6 +56,7 @@ class StoragePartLock(StorageBase):
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
         lock_path = os.path.join(self._filesystem_folder, ".Radicale.lock")
+        logger.debug("Lock file (StoragePartLock): %r" % lock_path)
         self._lock = pathutils.RwLock(lock_path)
         self._hook = configuration.get("storage", "hook")
 
