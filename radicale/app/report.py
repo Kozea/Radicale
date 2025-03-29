@@ -2,7 +2,11 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2021 Unrud <unrud@outlook.com>
+# Copyright © 2024-2024 Pieter Hijma <pieterhijma@users.noreply.github.com>
+# Copyright © 2024-2024 Ray <ray@react0r.com>
+# Copyright © 2024-2024 Georgiy <metallerok@gmail.com>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
