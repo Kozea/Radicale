@@ -6,6 +6,7 @@
 * Add: option [auth] ldap_ignore_attribute_create_modify_timestamp for support of Authentik LDAP server
 * Extend: [storage] hook supports now placeholder for "cwd" and "path" (and catches unsupported placeholders)
 * Fix: location of lock file for in case of dedicated cache folder is activated
+* Extend: log and create base folders if not existing during startup
 
 ## 3.5.0
 
