@@ -175,7 +175,11 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                        xmlutils.make_human_tag(root.tag), path)
         return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
 
-    props: Union[ET.Element, List] = root.find(xmlutils.make_clark("D:prop")) or []
+    props: Union[ET.Element, List]
+    if root.find(xmlutils.make_clark("D:prop")) is not None:
+        props = root.find(xmlutils.make_clark("D:prop")) # type: ignore[assignment]
+    else:
+        props = []
 
     hreferences: Iterable[str]
     if root.tag in (
