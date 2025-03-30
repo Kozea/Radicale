@@ -36,6 +36,7 @@ BRANCH_ORDERING = [  # Format: (REGEX, ORDER, DEFAULT)
     (r"v?\d+(?:\.\d+)*(?:\.x)*", 0, True),
     (r".*", 1, False)]
 PROG = "documentation-generator"
+VENV_EXECUTABLE = "venv/bin/python3"
 
 
 def convert_doc(src_path, to_path, branch, branches):
@@ -63,15 +64,17 @@ def convert_doc(src_path, to_path, branch, branches):
             "--filter=%s" % os.path.abspath(FILTER_EXE)],
             cwd=os.path.dirname(TEMPLATE_PATH),
             stdout=subprocess.PIPE, check=True).stdout
-    raw_html = subprocess.run([POSTPROCESSOR_EXE], input=raw_html,
+    raw_html = subprocess.run([VENV_EXECUTABLE, POSTPROCESSOR_EXE], input=raw_html,
                               stdout=subprocess.PIPE, check=True).stdout
     with open(to_path, "wb") as f:
         f.write(raw_html)
 
 
 def install_dependencies():
-    subprocess.run([sys.executable, "-m", "pip", "install", "beautifulsoup4"],
-                   check=True)
+    subprocess.run(["sudo", "apt", "install", "--assume-yes", "python3-pip"], check=True)
+    subprocess.run(["sudo", "apt", "install", "--assume-yes", "python3-venv"], check=True)
+    subprocess.run([sys.executable, "-m", "venv", "venv"], check=True),
+    subprocess.run([VENV_EXECUTABLE, "-m", "pip", "install", "beautifulsoup4"], check=True)
     subprocess.run(["sudo", "apt", "install", "--assume-yes", "pandoc"], check=True)
 
 
