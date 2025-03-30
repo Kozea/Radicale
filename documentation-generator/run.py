@@ -32,10 +32,6 @@ TEMPLATE_PATH = os.path.join(TOOLS_PATH, "template.html")
 FILTER_EXE = os.path.join(TOOLS_PATH, "filter.py")
 POSTPROCESSOR_EXE = os.path.join(TOOLS_PATH, "postprocessor.py")
 PANDOC_EXE = "pandoc"
-PANDOC_DOWNLOAD = ("https://github.com/jgm/pandoc/releases/download/"
-                   "2.18/pandoc-2.18-1-amd64.deb")
-PANDOC_SHA256 = ("bc6e8e401720d7cec28c230a0cb6f8bc"
-                 "f3ffb502155e7c9372ca15fbf9509aed")
 BRANCH_ORDERING = [  # Format: (REGEX, ORDER, DEFAULT)
     (r"v?\d+(?:\.\d+)*(?:\.x)*", 0, True),
     (r".*", 1, False)]
@@ -76,14 +72,7 @@ def convert_doc(src_path, to_path, branch, branches):
 def install_dependencies():
     subprocess.run([sys.executable, "-m", "pip", "install", "beautifulsoup4"],
                    check=True)
-    with TemporaryDirectory() as temp:
-        subprocess.run(["curl", "--location", "--output", "pandoc.deb",
-                        PANDOC_DOWNLOAD], check=True, cwd=temp)
-        subprocess.run(["sha256sum", "--check", "--strict", "--quiet"],
-                       input="%s *pandoc.deb" % PANDOC_SHA256, text=True,
-                       check=True, cwd=temp)
-        subprocess.run(["sudo", "apt", "install", "--assume-yes",
-                        "./pandoc.deb"], check=True, cwd=temp)
+    subprocess.run(["sudo", "apt", "install", "--assume-yes", "pandoc"], check=True)
 
 
 def natural_sort_key(s):
