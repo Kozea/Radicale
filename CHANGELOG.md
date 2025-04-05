@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.5.1.dev
+## 3.5.1
 
 * Fix: auth/htpasswd related to detection and use of bcrypt
 * Add: option [auth] ldap_ignore_attribute_create_modify_timestamp for support of Authentik LDAP server
