@@ -257,7 +257,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 logger.debug("Called by reverse proxy, remove base prefix %r from path: %r => %r", base_prefix, path, path_new)
                 path = path_new
             else:
-                logger.warning("Called by reverse proxy, cannot removed base prefix %r from path: %r as not matching", base_prefix, path)
+                logger.warning("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching", base_prefix, path)
 
         # Get function corresponding to method
         function = getattr(self, "do_%s" % request_method, None)
