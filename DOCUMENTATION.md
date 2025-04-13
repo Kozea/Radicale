@@ -42,8 +42,9 @@ You want to try Radicale but only have 5 minutes free in your calendar? Let's
 go right now and play a bit with Radicale!
 
 When everything works, you can get a [client](#supported-clients)
-and start creating calendars and address books. By default, the server only binds to localhost (is not reachable over the network)
-and you can log in with any user name and password. When everything works, you may get a local client and start creating calendars and address books. If Radicale fits your needs, it may be time for some [basic configuration](#basic-configuration) to support remote clients.
+and start creating calendars and address books. The server, configured with settings from this section, only binds to localhost (is not reachable over the network)
+and you can log in with any user name and password. When everything works, you may get a local client and start creating calendars and address books.
+If Radicale fits your needs, it may be time for some [basic configuration](#basic-configuration) to support remote clients and desired authentication type.
 
 Follow one of the chapters below depending on your operating system.
 
@@ -78,7 +79,7 @@ Start the service manually, data is stored only for the current user
 
 ```bash
 # Start, data is stored for the current user only
-python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections
+python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections --auth-type none
 ```
 
 ##### as system user (or as root)
