@@ -136,6 +136,7 @@ def main():
     run_git_fetch_and_restart_if_changed(remote_commits, target_branch)
     branches = [ref[len("refs/remotes/%s/" % REMOTE):] for ref in run_git(
         "rev-parse", "--symbolic-full-name", "--remotes=%s" % REMOTE)]
+    branches = list(set(branches))
     with TemporaryDirectory(prefix="%s-" % PROG) as temp:
         branch_docs = {}
         for branch in branches[:]:
