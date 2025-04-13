@@ -314,12 +314,12 @@ on GitHub</a>.</p>
 <p>You want to try Radicale but only have 5 minutes free in your
 calendar? Let's go right now and play a bit with Radicale!</p>
 <p>When everything works, you can get a <a href="#supported-clients">client</a> and start creating calendars and
-address books. By default, the server only binds to localhost (is not
-reachable over the network) and you can log in with any user name and
-password. When everything works, you may get a local client and start
-creating calendars and address books. If Radicale fits your needs, it
-may be time for some <a href="#basic-configuration">basic
-configuration</a> to support remote clients.</p>
+address books. The server, configured with settings from this section,
+only binds to localhost (is not reachable over the network) and you can
+log in with any user name and password. When everything works, you may
+get a local client and start creating calendars and address books. If
+Radicale fits your needs, it may be time for some <a href="#basic-configuration">basic configuration</a> to support remote
+clients and desired authentication type.</p>
 <p>Follow one of the chapters below depending on your operating
 system.</p>
 <section class="level4" id="linux--bsd">
@@ -342,7 +342,7 @@ and activate a virtual environment in advance</p>
 <p>Start the service manually, data is stored only for the current
 user</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a aria-hidden="true" href="#cb4-1" tabindex="-1"></a><span class="co"># Start, data is stored for the current user only</span></span>
-<span id="cb4-2"><a aria-hidden="true" href="#cb4-2" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> radicale <span class="at">--storage-filesystem-folder</span><span class="op">=</span>~/.var/lib/radicale/collections</span></code></pre></div>
+<span id="cb4-2"><a aria-hidden="true" href="#cb4-2" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> radicale <span class="at">--storage-filesystem-folder</span><span class="op">=</span>~/.var/lib/radicale/collections <span class="at">--auth-type</span> none</span></code></pre></div>
 </section>
 <section class="level5" id="as-system-user-or-as-root">
 <h5>as system user (or as root) <a class="headerlink" href="#as-system-user-or-as-root">&para;</a></h5>
