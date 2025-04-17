@@ -248,7 +248,10 @@ class Auth(auth.BaseAuth):
                 logger.debug("_login3 LDAP groups of user: %s", ",".join(self._ldap_groups))
             if self._ldap_user_attr:
                 if user_entry['attributes'][self._ldap_user_attr]:
-                    login = user_entry['attributes'][self._ldap_user_attr]
+                    if isinstance(user_entry['attributes'][self._ldap_user_attr], list):
+                        login = user_entry['attributes'][self._ldap_user_attr][0]
+                    else:
+                        login = user_entry['attributes'][self._ldap_user_attr]
                     logger.debug(f"_login3 user set to: '{login}'")
             conn.unbind()
             logger.debug(f"_login3 {login} successfully authenticated")
