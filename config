@@ -108,7 +108,7 @@
 # the encryption mode to be used: ssl, start_tls, default is none
 #ldap_encryption = none
 
-# The certificate verification mode. NONE, OPTIONAL, default is REQUIRED
+# The certificate verification mode. Works for ssl and start_tls. NONE, OPTIONAL, default is REQUIRED
 #ldap_ssl_verify_mode = REQUIRED
 
 # The path to the CA file in pem format which is used to certificate the server certificate
