@@ -297,11 +297,15 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": str}),
         ("ldap_use_ssl", {
             "value": "False",
-            "help": "Use ssl on the ldap connection",
+            "help": "Use ssl on the ldap connection. Soon to be deprecated, use ldap_encryption instead",
             "type": bool}),
+        ("ldap_encryption", {
+            "value": "none",
+            "help": "the encryption mode to be used: *none*|ssl|start_tls",
+            "type": str}),
         ("ldap_ssl_verify_mode", {
             "value": "REQUIRED",
-            "help": "The certificate verification mode. NONE, OPTIONAL, default is REQUIRED",
+            "help": "The certificate verification mode. Works for ssl and start_tls. NONE, OPTIONAL, default is REQUIRED",
             "type": str}),
         ("ldap_ssl_ca_file", {
             "value": "",
