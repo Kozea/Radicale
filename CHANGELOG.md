@@ -1,7 +1,8 @@
 # Changelog
 
 ## 3.5.2.dev
-* Adjust: [auth] ldap: use _ldap_user_attr either first element of list or directly 
+* Adjust: [auth] ldap: use ldap_user_attr either first element of list or directly 
+* Fix: use value of property for time range filter
 
 ## 3.5.1
 
@@ -10,7 +11,7 @@
 * Extend: [storage] hook supports now placeholder for "cwd" and "path" (and catches unsupported placeholders)
 * Fix: location of lock file for in case of dedicated cache folder is activated
 * Extend: log and create base folders if not existing during startup
-* Adjust: [auth] ldap: use _ldap_user_attr as string
+* Adjust: [auth] ldap: use ldap_user_attr as string
 
 ## 3.5.0
 

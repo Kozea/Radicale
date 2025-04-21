@@ -3,7 +3,8 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2015 Guillaume Ayoub
 # Copyright © 2017-2021 Unrud <unrud@outlook.com>
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2023-2024 Ray <ray@react0r.com>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -475,9 +476,9 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
     else:
         # Match a property
         child = getattr(vobject_item, child_name.lower())
-        if isinstance(child, date):
-            child_is_datetime = isinstance(child, datetime)
-            child = date_to_datetime(child)
+        if isinstance(child.value, date):
+            child_is_datetime = isinstance(child.value, datetime)
+            child = date_to_datetime(child.value)
             if child_is_datetime:
                 range_fn(child, child + SECOND, False)
             else:
