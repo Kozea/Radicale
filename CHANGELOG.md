@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.5.2.dev
+
 ## 3.5.1
 
 * Fix: auth/htpasswd related to detection and use of bcrypt
