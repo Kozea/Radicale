@@ -2,6 +2,7 @@
 
 ## 3.5.2.dev
 * Adjust: [auth] ldap: use ldap_user_attr either first element of list or directly 
+* Fix: use value of property for time range filter
 
 ## 3.5.1
 
