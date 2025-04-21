@@ -26,8 +26,9 @@ Following parameters are needed in the configuration:
    ldap_user_attribute The attribute to be used as username after authentication
    ldap_groups_attribute The attribute containing group memberships in the LDAP user entry
 Following parameters controls SSL connections:
-   ldap_use_ssl   If the connection
-   ldap_ssl_verify_mode The certificate verification mode. NONE, OPTIONAL, default is REQUIRED
+   ldap_use_ssl        If ssl encryption should be used (to be deprecated)
+   ldap_security    The encryption mode to be used: *none*|tls|starttls
+   ldap_ssl_verify_mode The certificate verification mode. Works for tls and starttls. NONE, OPTIONAL, default is REQUIRED
    ldap_ssl_ca_file
 
 """
@@ -48,6 +49,7 @@ class Auth(auth.BaseAuth):
     _ldap_groups_attr: str
     _ldap_module_version: int = 3
     _ldap_use_ssl: bool = False
+    _ldap_security: str = "none"
     _ldap_ssl_verify_mode: int = ssl.CERT_REQUIRED
     _ldap_ssl_ca_file: str = ""
 
@@ -82,13 +84,20 @@ class Auth(auth.BaseAuth):
                 self._ldap_secret = file.read().rstrip('\n')
         if self._ldap_module_version == 3:
             self._ldap_use_ssl = configuration.get("auth", "ldap_use_ssl")
+            self._ldap_security = configuration.get("auth", "ldap_security")
+            self._use_encryption = self._ldap_use_ssl or self._ldap_security in ("tls", "starttls")
+            if self._ldap_use_ssl and self._ldap_security == "starttls":
+                raise RuntimeError("Cannot set both 'ldap_use_ssl = True' and 'ldap_security' = 'starttls'")
             if self._ldap_use_ssl:
+                logger.warning("Configuration uses soon to be deprecated 'ldap_use_ssl', use 'ldap_security' ('none', 'tls', 'starttls') instead.")
+            if self._use_encryption:
                 self._ldap_ssl_ca_file = configuration.get("auth", "ldap_ssl_ca_file")
                 tmp = configuration.get("auth", "ldap_ssl_verify_mode")
                 if tmp == "NONE":
                     self._ldap_ssl_verify_mode = ssl.CERT_NONE
                 elif tmp == "OPTIONAL":
                     self._ldap_ssl_verify_mode = ssl.CERT_OPTIONAL
+
         logger.info("auth.ldap_uri             : %r" % self._ldap_uri)
         logger.info("auth.ldap_base            : %r" % self._ldap_base)
         logger.info("auth.ldap_reader_dn       : %r" % self._ldap_reader_dn)
@@ -113,7 +122,8 @@ class Auth(auth.BaseAuth):
             logger.error("auth.ldap_secret         : (not provided)")
             raise RuntimeError("LDAP authentication requires ldap_secret for ldap_reader_dn")
         logger.info("auth.ldap_use_ssl         : %s" % self._ldap_use_ssl)
-        if self._ldap_use_ssl is True:
+        logger.info("auth.ldap_security      : %s" % self._ldap_security)
+        if self._use_encryption:
             logger.info("auth.ldap_ssl_verify_mode : %s" % self._ldap_ssl_verify_mode)
             if self._ldap_ssl_ca_file:
                 logger.info("auth.ldap_ssl_ca_file     : %r" % self._ldap_ssl_ca_file)
@@ -188,27 +198,37 @@ class Auth(auth.BaseAuth):
         """Connect the server"""
         try:
             logger.debug(f"_login3 {self._ldap_uri}, {self._ldap_reader_dn}")
-            if self._ldap_use_ssl:
+            if self._use_encryption:
+                logger.debug("_login3 using encryption (reader)")
                 tls = self.ldap3.Tls(validate=self._ldap_ssl_verify_mode)
                 if self._ldap_ssl_ca_file != "":
                     tls = self.ldap3.Tls(
                         validate=self._ldap_ssl_verify_mode,
                         ca_certs_file=self._ldap_ssl_ca_file
                         )
-                server = self.ldap3.Server(self._ldap_uri, use_ssl=True, tls=tls)
+                if self._ldap_use_ssl or self._ldap_security == "tls":
+                    logger.debug("_login3 using ssl (reader)")
+                    server = self.ldap3.Server(self._ldap_uri, use_ssl=True, tls=tls)
+                else:
+                    server = self.ldap3.Server(self._ldap_uri, use_ssl=False, tls=tls)
             else:
+                logger.debug("_login3 not using encryption (reader)")
                 server = self.ldap3.Server(self._ldap_uri)
-            conn = self.ldap3.Connection(server, self._ldap_reader_dn, password=self._ldap_secret)
+            try:
+                conn = self.ldap3.Connection(server, self._ldap_reader_dn, password=self._ldap_secret, auto_bind=False, raise_exceptions=True)
+                if self._ldap_security == "starttls":
+                    logger.debug("_login3 using starttls (reader)")
+                    conn.start_tls()
+            except self.ldap3.core.exceptions.LDAPStartTLSError as e:
+                raise RuntimeError(f"_login3 StartTLS Error: {e}")
         except self.ldap3.core.exceptions.LDAPSocketOpenError:
             raise RuntimeError("Unable to reach LDAP server")
         except Exception as e:
-            logger.debug(f"_login3 error 1 {e}")
+            logger.debug(f"_login3 error 1 {e} (reader)")
             pass
-
         if not conn.bind():
-            logger.debug("_login3 cannot bind")
+            logger.debug("_login3 cannot bind (reader)")
             raise RuntimeError("Unable to read from LDAP server")
-
         logger.debug(f"_login3 bind as {self._ldap_reader_dn}")
         """Search the user dn"""
         escaped_login = self.ldap3.utils.conv.escape_filter_chars(login)
@@ -230,7 +250,13 @@ class Auth(auth.BaseAuth):
         logger.debug(f"_login3 found LDAP user DN {user_dn}")
         try:
             """Try to bind as the user itself"""
-            conn = self.ldap3.Connection(server, user_dn, password=password)
+            try:
+                conn = self.ldap3.Connection(server, user_dn, password=password, auto_bind=False)
+                if self._ldap_security == "starttls":
+                    logger.debug("_login3 using starttls (user)")
+                    conn.start_tls()
+            except self.ldap3.core.exceptions.LDAPStartTLSError as e:
+                raise RuntimeError(f"_login3 StartTLS Error: {e}")
             if not conn.bind():
                 logger.debug(f"_login3 user '{login}' cannot be found")
                 return ""

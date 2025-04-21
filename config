@@ -102,9 +102,13 @@
 #ldap_user_attribute = cn
 
 # Use ssl on the ldap connection
+# Soon to be deprecated, use ldap_security instead
 #ldap_use_ssl = False
 
-# The certificate verification mode. NONE, OPTIONAL, default is REQUIRED
+# the encryption mode to be used: tls, starttls, default is none
+#ldap_security = none
+
+# The certificate verification mode. Works for ssl and starttls. NONE, OPTIONAL, default is REQUIRED
 #ldap_ssl_verify_mode = REQUIRED
 
 # The path to the CA file in pem format which is used to certificate the server certificate
