@@ -1304,6 +1304,17 @@ permissions: RrWw""")
 </C:comp-filter>"""], "todo", items=range(1, 9))
         assert "/calendar.ics/todo7.ics" in answer
 
+    def test_time_range_filter_todos_completed(self) -> None:
+        answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+  <C:comp-filter name="VTODO">
+    <C:prop-filter name="COMPLETED">
+      <C:time-range start="20130918T000000Z" end="20130922T000000Z"/>
+    </C:prop-filter>
+  </C:comp-filter>
+</C:comp-filter>"""], "todo", items=range(1, 9))
+        assert "/calendar.ics/todo6.ics" in answer
+
     def test_time_range_filter_todos_rrule(self) -> None:
         """Report request with time-range filter on todos with rrules."""
         answer = self._test_filter(["""\
