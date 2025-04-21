@@ -1045,13 +1045,13 @@ Default: (unset)
 
 _(>= 3.3.0)_
 
-Use ssl on the ldap connection (soon to be deprecated, use ldap_encryption instead)
+Use ssl on the ldap connection (soon to be deprecated, use ldap_security instead)
 
-##### ldap_encryption
+##### ldap_security
 
 _(>= 3.5.2)_
 
-Use encryption on the ldap connection. none, ssl, start_tls
+Use encryption on the ldap connection. none, tls, starttls
 
 Default: none
 
@@ -1059,7 +1059,7 @@ Default: none
 
 _(>= 3.3.0)_
 
-The certificate verification mode. Works for ssl and start_tls. NONE, OPTIONAL or REQUIRED
+The certificate verification mode. Works for tls and starttls. NONE, OPTIONAL or REQUIRED
 
 Default: REQUIRED
 
