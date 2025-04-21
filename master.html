@@ -1152,13 +1152,20 @@ alikes, 'groupMembership' on Novell eDirectory, ...</p>
 <section class="level5" id="ldap_use_ssl">
 <h5>ldap_use_ssl <a class="headerlink" href="#ldap_use_ssl">&para;</a></h5>
 <p><em>(&gt;= 3.3.0)</em></p>
-<p>Use ssl on the ldap connection</p>
-<p>Default: False</p>
+<p>Use ssl on the ldap connection (soon to be deprecated, use
+ldap_security instead)</p>
+</section>
+<section class="level5" id="ldap_security">
+<h5>ldap_security <a class="headerlink" href="#ldap_security">&para;</a></h5>
+<p><em>(&gt;= 3.5.2)</em></p>
+<p>Use encryption on the ldap connection. none, tls, starttls</p>
+<p>Default: none</p>
 </section>
 <section class="level5" id="ldap_ssl_verify_mode">
 <h5>ldap_ssl_verify_mode <a class="headerlink" href="#ldap_ssl_verify_mode">&para;</a></h5>
 <p><em>(&gt;= 3.3.0)</em></p>
-<p>The certificate verification mode. NONE, OPTIONAL or REQUIRED</p>
+<p>The certificate verification mode. Works for tls and starttls. NONE,
+OPTIONAL or REQUIRED</p>
 <p>Default: REQUIRED</p>
 </section>
 <section class="level5" id="ldap_ssl_ca_file">
