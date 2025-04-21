@@ -475,9 +475,9 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
     else:
         # Match a property
         child = getattr(vobject_item, child_name.lower())
-        if isinstance(child, date):
-            child_is_datetime = isinstance(child, datetime)
-            child = date_to_datetime(child)
+        if isinstance(child.value, date):
+            child_is_datetime = isinstance(child.value, datetime)
+            child = date_to_datetime(child.value)
             if child_is_datetime:
                 range_fn(child, child + SECOND, False)
             else:
