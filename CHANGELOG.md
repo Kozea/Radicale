@@ -5,6 +5,7 @@
 * Fix: use value of property for time range filter
 * Add: [auth] ldap: option ldap_security (none, startls, tls) for additional support of STARTTLS, deprecate ldap_use_ssl
 * Fix: return 204 instead of 201 in case PUT updates an item
+* Extend: log PYTHONPATH on startup if found in environment
 
 ## 3.5.1
 
