@@ -4,6 +4,7 @@
 * Adjust: [auth] ldap: use ldap_user_attr either first element of list or directly 
 * Fix: use value of property for time range filter
 * Add: [auth] ldap: option ldap_security (none, startls, tls) for additional support of STARTTLS, deprecate ldap_use_ssl
+* Fix: return 204 instead of 201 in case PUT updates an item
 
 ## 3.5.1
 
