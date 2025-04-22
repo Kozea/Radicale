@@ -1,7 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -222,7 +222,7 @@ permissions: RrWw""")
         event_modified = get_file_content("event1_modified.ics")
         path = "/calendar.ics/event1.ics"
         self.put(path, event)
-        self.put(path, event_modified)
+        self.put(path, event_modified, check=204)
         _, answer = self.get("/calendar.ics/")
         assert answer.count("BEGIN:VEVENT") == 1
         _, answer = self.get(path)
@@ -1594,8 +1594,8 @@ permissions: RrWw""")
         self.put(event_path, event1)
         sync_token, responses = self._report_sync_token(calendar_path)
         assert len(responses) == 1 and responses[event_path] == 200
-        self.put(event_path, event2)
-        self.put(event_path, event1)
+        self.put(event_path, event2, check=204)
+        self.put(event_path, event1, check=204)
         sync_token, responses = self._report_sync_token(
             calendar_path, sync_token)
         if not self.full_sync_token_support and not sync_token:
