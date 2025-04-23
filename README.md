@@ -25,4 +25,4 @@ Additional hints can be found
 * [Radicale Discussions](https://github.com/Kozea/Radicale/discussions)
 
 Before reporting an issue, please check
-* [Radicale Wiki / Reporting Issues](https://github.com/Kozea/Radicale/wiki/Reporting-Issues)
+* [Radicale Wiki / Reporting Issues](https://github.com/Kozea/Radicale/wiki/01-‐-Reporting-Issues)
