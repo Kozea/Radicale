@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.5.2.dev
+## 3.5.2
 * Adjust: [auth] ldap: use ldap_user_attr either first element of list or directly 
 * Fix: use value of property for time range filter
 * Add: [auth] ldap: option ldap_security (none, startls, tls) for additional support of STARTTLS, deprecate ldap_use_ssl
