@@ -28,7 +28,6 @@ from radicale.log import logger
 _T_co = TypeVar("_T_co", covariant=True)
 
 RADICALE_MODULES: Sequence[str] = ("radicale", "vobject", "passlib", "defusedxml",
-                                   "dateutil",
                                    "bcrypt",
                                    "pika",
                                    "ldap",
