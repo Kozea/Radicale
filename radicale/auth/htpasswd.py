@@ -47,7 +47,7 @@ When bcrypt is installed:
     - BCRYPT     (htpasswd -B ...) -- Requires htpasswd 2.4.x
 
 When argon2 is installed:
-    - ARGON2     (python -c 'from passlib.hash import argon2; print(argon2.using(type="ID").hash("password"))'
+    - ARGON2     (python -c 'from passlib.hash import argon2; print(argon2.using(type="ID").hash("password"))')
 
 """
 
