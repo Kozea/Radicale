@@ -29,6 +29,7 @@ _T_co = TypeVar("_T_co", covariant=True)
 
 RADICALE_MODULES: Sequence[str] = ("radicale", "vobject", "passlib", "defusedxml",
                                    "bcrypt",
+                                   "argon2-cffi",
                                    "pika",
                                    "ldap",
                                    "ldap3",

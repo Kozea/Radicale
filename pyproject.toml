@@ -38,8 +38,9 @@ dependencies = [
 
 
 [project.optional-dependencies]
-test = ["pytest>=7", "waitress", "bcrypt"]
+test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi"]
 bcrypt = ["bcrypt"]
+argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
 
 [project.scripts]
