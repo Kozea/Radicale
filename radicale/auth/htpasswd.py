@@ -93,7 +93,6 @@ class Auth(auth.BaseAuth):
         self._encryption: str = configuration.get("auth", "htpasswd_encryption")
         logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s'", self._encryption)
 
-        self._verify = None
         self._has_bcrypt = False
         self._has_argon2 = False
         self._htpasswd_ok = False
@@ -159,7 +158,7 @@ class Auth(auth.BaseAuth):
                 if self._htpasswd_argon2_use:
                     self._verify_argon2 = functools.partial(self._argon2, argon2)
 
-        if not self._verify:
+        if not hasattr(self, '_verify'):
             raise RuntimeError("The htpasswd encryption method %r is not "
                                "supported." % self._encryption)
 
