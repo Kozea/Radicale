@@ -75,8 +75,10 @@ class Auth(auth.BaseAuth):
     _htpasswd_not_ok_time: float
     _htpasswd_not_ok_reminder_seconds: int
     _htpasswd_bcrypt_use: int
+    _htpasswd_argon2_use: int
     _htpasswd_cache: bool
     _has_bcrypt: bool
+    _has_argon2: bool
     _encryption: str
     _lock: threading.Lock
 
@@ -92,9 +94,10 @@ class Auth(auth.BaseAuth):
         logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s'", self._encryption)
 
         self._has_bcrypt = False
+        self._has_argon2 = False
         self._htpasswd_ok = False
         self._htpasswd_not_ok_reminder_seconds = 60 # currently hardcoded
-        (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(True, False)
+        (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd_argon2_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(True, False)
         self._lock = threading.Lock()
 
         if self._encryption == "plain":
@@ -192,6 +195,7 @@ class Auth(auth.BaseAuth):
         """
         htpasswd_ok = True
         bcrypt_use = 0
+        argon2_use = 0
         if (init is True) or (suppress is True):
             info = "Read"
         else:
@@ -262,7 +266,7 @@ class Auth(auth.BaseAuth):
             self._htpasswd_not_ok_time = 0
         else:
             self._htpasswd_not_ok_time = time.time()
-        return (htpasswd_ok, bcrypt_use, htpasswd, htpasswd_size, htpasswd_mtime_ns)
+        return (htpasswd_ok, bcrypt_use, argon2_use, htpasswd, htpasswd_size, htpasswd_mtime_ns)
 
     def _login(self, login: str, password: str) -> str:
         """Validate credentials.
@@ -283,7 +287,7 @@ class Auth(auth.BaseAuth):
                 htpasswd_size = os.stat(self._filename).st_size
                 htpasswd_mtime_ns = os.stat(self._filename).st_mtime_ns
                 if (htpasswd_size != self._htpasswd_size) or (htpasswd_mtime_ns != self._htpasswd_mtime_ns):
-                    (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(False, False)
+                    (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd_argon2_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(False, False)
                     self._htpasswd_not_ok_time = 0
 
             # log reminder of problemantic file every interval
@@ -301,7 +305,7 @@ class Auth(auth.BaseAuth):
                 login_ok = True
         else:
             # read file on every request
-            (htpasswd_ok, htpasswd_bcrypt_use, htpasswd, htpasswd_size, htpasswd_mtime_ns) = self._read_htpasswd(False, True)
+            (htpasswd_ok, htpasswd_bcrypt_use, htpasswd_argon2_use, htpasswd, htpasswd_size, htpasswd_mtime_ns) = self._read_htpasswd(False, True)
             if htpasswd.get(login):
                 digest = htpasswd[login]
                 login_ok = True
