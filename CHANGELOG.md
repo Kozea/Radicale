@@ -8,7 +8,6 @@
 * Extend: log PYTHONPATH on startup if found in environment
 
 ## 3.5.1
-
 * Fix: auth/htpasswd related to detection and use of bcrypt
 * Add: option [auth] ldap_ignore_attribute_create_modify_timestamp for support of Authentik LDAP server
 * Extend: [storage] hook supports now placeholder for "cwd" and "path" (and catches unsupported placeholders)
