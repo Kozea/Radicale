@@ -93,6 +93,7 @@ class Auth(auth.BaseAuth):
         self._encryption: str = configuration.get("auth", "htpasswd_encryption")
         logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s'", self._encryption)
 
+        self._verify = None
         self._has_bcrypt = False
         self._has_argon2 = False
         self._htpasswd_ok = False
@@ -108,7 +109,8 @@ class Auth(auth.BaseAuth):
             self._verify = self._sha256
         elif self._encryption == "sha512":
             self._verify = self._sha512
-        elif self._encryption == "bcrypt" or self._encryption == "autodetect":
+
+        if self._encryption == "bcrypt" or self._encryption == "autodetect":
             try:
                 import bcrypt
             except ImportError as e:
@@ -131,7 +133,33 @@ class Auth(auth.BaseAuth):
                 self._verify = self._autodetect
                 if self._htpasswd_bcrypt_use:
                     self._verify_bcrypt = functools.partial(self._bcrypt, bcrypt)
-        else:
+
+        if self._encryption == "argon2" or self._encryption == "autodetect":
+            try:
+                import argon2
+                from passlib.hash import argon2
+            except ImportError as e:
+                if (self._encryption == "autodetect") and (self._htpasswd_argon2_use == 0):
+                    logger.warning("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' which can require argon2 module, but currently no entries found", self._encryption)
+                else:
+                    raise RuntimeError(
+                        "The htpasswd encryption method 'argon2' or 'autodetect' requires "
+                        "the argon2 module (entries found: %d)." % self._htpasswd_argon2_use) from e
+            else:
+                self._has_argon2 = True
+                if self._encryption == "autodetect":
+                    if self._htpasswd_argon2_use == 0:
+                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and argon2 module found, but currently not required", self._encryption)
+                    else:
+                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and argon2 module found (argon2 entries found: %d)", self._encryption, self._htpasswd_argon2_use)
+            if self._encryption == "argon2":
+                self._verify = functools.partial(self._argon2, argon2)
+            else:
+                self._verify = self._autodetect
+                if self._htpasswd_argon2_use:
+                    self._verify_argon2 = functools.partial(self._argon2, argon2)
+
+        if not self._verify:
             raise RuntimeError("The htpasswd encryption method %r is not "
                                "supported." % self._encryption)
 
@@ -149,6 +177,9 @@ class Auth(auth.BaseAuth):
             return self._plain_fallback("BCRYPT", hash_value, password)
         else:
             return ("BCRYPT", bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hash_value.encode()))
+
+    def _argon2(self, argon2: Any, hash_value: str, password: str) -> tuple[str, bool]:
+        return ("ARGON2", argon2.verify(password, hash_value.strip()))
 
     def _md5apr1(self, hash_value: str, password: str) -> tuple[str, bool]:
         if self._encryption == "autodetect" and len(hash_value) != 37:
@@ -175,6 +206,9 @@ class Auth(auth.BaseAuth):
         elif re.match(r"^\$2(a|b|x|y)?\$", hash_value):
             # BCRYPT
             return self._verify_bcrypt(hash_value, password)
+        elif re.match(r"^\$argon2(i|d|id)\$", hash_value):
+            # ARGON2
+            return self._verify_argon2(hash_value, password)
         elif hash_value.startswith("$5$", 0, 3):
             # SHA-256
             return self._sha256(hash_value, password)
@@ -242,6 +276,14 @@ class Auth(auth.BaseAuth):
                                         else:
                                             if self._has_bcrypt is False:
                                                 logger.warning("htpasswd file contains bcrypt digest login: '%s' (line: %d / ignored because module is not loaded)", login, line_num)
+                                                skip = True
+                                                htpasswd_ok = False
+                                    if re.match(r"^\$argon2(i|d|id)\$", digest):
+                                        if init is True:
+                                            argon2_use += 1
+                                        else:
+                                            if self._has_argon2 is False:
+                                                logger.warning("htpasswd file contains argon2 digest login: '%s' (line: %d / ignored because module is not loaded)", login, line_num)
                                                 skip = True
                                                 htpasswd_ok = False
                             if skip is False:
