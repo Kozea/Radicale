@@ -21,6 +21,7 @@
 
 import errno
 import itertools
+import logging
 import posixpath
 import re
 import socket
@@ -89,7 +90,15 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
                     vobject_collection.add(vobject.base.ContentLine("PRODID", [], PRODID))
                     item = radicale_item.Item(collection_path=collection_path,
                                               vobject_item=vobject_collection)
-                    item.prepare()
+                    logger.debug("Prepare item with UID '%s'", item.uid)
+                    try:
+                        item.prepare()
+                    except ValueError as e:
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.warning("Problem during prepare item with UID '%s' (content below): %s\n%s", item.uid, e, item._text)
+                        else:
+                            logger.warning("Problem during prepare item with UID '%s' (content suppressed in this loglevel): %s", item.uid, e)
+                        raise
                     items.append(item)
             elif write_whole_collection and tag == "VADDRESSBOOK":
                 for vobject_item in vobject_items:
