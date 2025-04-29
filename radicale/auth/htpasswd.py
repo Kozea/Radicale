@@ -356,7 +356,7 @@ class Auth(auth.BaseAuth):
             try:
                 (method, password_ok) = self._verify(digest, password)
             except ValueError as e:
-                logger.error("Login verification failed for user: '%s' (htpasswd/%s) with errror '%s'", login, self._encryption, e)
+                logger.error("Login verification failed for user: '%s' (htpasswd/%s) with error '%s'", login, self._encryption, e)
                 return ""
             if password_ok:
                 logger.debug("Login verification successful for user: '%s' (htpasswd/%s/%s)", login, self._encryption, method)
