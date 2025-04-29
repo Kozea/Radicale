@@ -49,6 +49,15 @@ class TestBaseAuthRequests(BaseTest):
     else:
         has_bcrypt = 1
 
+    # test for available argon2 module
+    try:
+        import argon2
+        from passlib.hash import argon2
+    except ImportError:
+        has_argon2 = 0
+    else:
+        has_argon2 = 1
+
     def _test_htpasswd(self, htpasswd_encryption: str, htpasswd_content: str,
                        test_matrix: Union[str, Iterable[Tuple[str, str, bool]]]
                        = "ascii") -> None:
@@ -146,6 +155,18 @@ class TestBaseAuthRequests(BaseTest):
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
     def test_htpasswd_bcrypt_unicode(self) -> None:
         self._test_htpasswd("bcrypt", "😀:$2y$10$Oyz5aHV4MD9eQJbk6GPemOs4T6edK6U9Sqlzr.W1mMVCS8wJUftnW", "unicode")
+
+    @pytest.mark.skipif(has_argon2 == 0, reason="No argon2 module installed")
+    def test_htpasswd_argon2_i(self) -> None:
+        self._test_htpasswd("argon2", "tmp:$argon2i$v=19$m=65536,t=3,p=4$NgZg7F1rzRkDoNSaMwag9A$qmsvMKEn5zOXHm8e3O5fKzzcRo0UESwaDr/cETe5YPI")
+
+    @pytest.mark.skipif(has_argon2 == 0, reason="No argon2 module installed")
+    def test_htpasswd_argon2_d(self) -> None:
+        self._test_htpasswd("argon2", "tmp:$argon2d$v=19$m=65536,t=3,p=4$ufe+txYiJKR0zlkLwVirVQ$MjGqRyVLes38hA6CEOkloMcTYCuLjxCKgIjtfYZ3iSM")
+
+    @pytest.mark.skipif(has_argon2 == 0, reason="No argon2 module installed")
+    def test_htpasswd_argon2_id(self) -> None:
+        self._test_htpasswd("argon2", "tmp:$argon2id$v=19$m=65536,t=3,p=4$t7bWuneOkdIa45xTqjXGmA$ORnRJyz9kHogJs6bDgZrTBPlzi4+p023PSEABb3xX1g")
 
     def test_htpasswd_multi(self) -> None:
         self._test_htpasswd("plain", "ign:ign\ntmp:bepo")
