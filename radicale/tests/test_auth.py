@@ -52,7 +52,7 @@ class TestBaseAuthRequests(BaseTest):
     # test for available argon2 module
     try:
         import argon2
-        from passlib.hash import argon2 # noqa: F811 (required to detect missing argon2-cffi)
+        from passlib.hash import argon2  # noqa: F811
     except ImportError:
         has_argon2 = 0
     else:
