@@ -1057,6 +1057,9 @@ with a salt (nowadays insecure).</p>
 SHA-256 digest of the password with a salt.</p>
 <p><code>sha512</code> <em>(&gt;= 3.1.9)</em> : This uses an iterated
 SHA-512 digest of the password with a salt.</p>
+<p><code>argon2</code> <em>(&gt;= 3.5.3)</em> : This uses an iterated
+ARGON2 digest of the password with a salt. The installation of
+<strong>argon2-cffi</strong> is required for this.</p>
 <p><code>autodetect</code> <em>(&gt;= 3.1.9)</em> : This selects
 autodetection of method per entry.</p>
 <p>Default: <code>md5</code> <em>(&lt; 3.3.0)</em>
