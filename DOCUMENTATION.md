@@ -943,6 +943,10 @@ Available methods:
 `sha512` _(>= 3.1.9)_
 : This uses an iterated SHA-512 digest of the password with a salt.
 
+`argon2` _(>= 3.5.3)_
+: This uses an iterated ARGON2 digest of the password with a salt.
+  The installation of **argon2-cffi** is required for this.
+
 `autodetect` _(>= 3.1.9)_
 : This selects autodetection of method per entry.
 
