@@ -37,6 +37,7 @@ from typing import List, Sequence, Set, Tuple, Union, final
 
 from radicale import config, types, utils
 from radicale.log import logger
+from urllib.parse import unquote
 
 INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
                                  "denyall",
@@ -93,6 +94,7 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
 class BaseAuth:
 
     _ldap_groups: Set[str] = set([])
+    _urldecode_username: bool
     _lc_username: bool
     _uc_username: bool
     _strip_domain: bool
@@ -119,9 +121,11 @@ class BaseAuth:
         self._lc_username = configuration.get("auth", "lc_username")
         self._uc_username = configuration.get("auth", "uc_username")
         self._strip_domain = configuration.get("auth", "strip_domain")
+        self._urldecode_username = configuration.get("auth", "urldecode_username")
         logger.info("auth.strip_domain: %s", self._strip_domain)
         logger.info("auth.lc_username: %s", self._lc_username)
         logger.info("auth.uc_username: %s", self._uc_username)
+        logger.info("auth.urldecode_username: %s", self._urldecode_username)
         if self._lc_username is True and self._uc_username is True:
             raise RuntimeError("auth.lc_username and auth.uc_username cannot be enabled together")
         self._auth_delay = configuration.get("auth", "delay")
@@ -219,6 +223,8 @@ class BaseAuth:
             login = login.lower()
         if self._uc_username:
             login = login.upper()
+        if self._urldecode_username:
+            login = unquote(login)
         if self._strip_domain:
             login = login.split('@')[0]
         if self._cache_logins is True:
