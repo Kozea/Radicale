@@ -148,11 +148,11 @@ class Storage(
         super().__init__(configuration)
         logger.info("Storage location: %r", self._filesystem_folder)
         if not os.path.exists(self._filesystem_folder):
-            logger.warning("Storage location: %r not existing, create now", self._filesystem_folder)
+            logger.warning("Storage location: %r does not exist, creating now", self._filesystem_folder)
             self._makedirs_synced(self._filesystem_folder)
         logger.info("Storage location subfolder: %r", self._get_collection_root_folder())
         if not os.path.exists(self._get_collection_root_folder()):
-            logger.warning("Storage location subfolder: %r not existing, create now", self._get_collection_root_folder())
+            logger.warning("Storage location subfolder: %r does not exist, creating now", self._get_collection_root_folder())
             self._makedirs_synced(self._get_collection_root_folder())
         logger.info("Storage cache subfolder usage for 'item': %s", self._use_cache_subfolder_for_item)
         logger.info("Storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
@@ -176,7 +176,7 @@ class Storage(
         if self._use_cache_subfolder_for_item is True or self._use_cache_subfolder_for_history is True or self._use_cache_subfolder_for_synctoken is True:
             logger.info("Storage cache subfolder: %r", self._get_collection_cache_folder())
             if not os.path.exists(self._get_collection_cache_folder()):
-                logger.warning("Storage cache subfolder: %r not existing, create now", self._get_collection_cache_folder())
+                logger.warning("Storage cache subfolder: %r does not exist, creating now", self._get_collection_cache_folder())
                 self._makedirs_synced(self._get_collection_cache_folder())
         if sys.platform != "win32":
             if not self._folder_umask:
