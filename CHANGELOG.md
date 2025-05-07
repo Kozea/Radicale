@@ -3,6 +3,7 @@
 ## 3.5.3.dev
 * Add: [auth] htpasswd: support for Argon2 hashes
 * Improve: catch error on calendar collection upload and display problematic item on debug level
+* Add: [auth] urldecode_username: optional decode provided username (e.g. encoded email address)
 
 ## 3.5.2
 * Adjust: [auth] ldap: use ldap_user_attr either first element of list or directly 
