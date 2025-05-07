@@ -34,10 +34,11 @@ import os
 import threading
 import time
 from typing import List, Sequence, Set, Tuple, Union, final
+from urllib.parse import unquote
 
 from radicale import config, types, utils
 from radicale.log import logger
-from urllib.parse import unquote
+
 
 INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
                                  "denyall",
