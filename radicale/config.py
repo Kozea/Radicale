@@ -342,6 +342,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("lc_username", {
             "value": "False",
             "help": "convert username to lowercase, must be true for case-insensitive auth providers",
+            "type": bool}),
+        ("urldecode_username", {
+            "value": "False",
+            "help": "url-decode the username, set to True when clients send url-encoded email address as username",
             "type": bool})])),
     ("rights", OrderedDict([
         ("type", {

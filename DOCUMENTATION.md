@@ -1187,6 +1187,16 @@ Strip domain from username
 
 Default: `False`
 
+##### urldecode_username
+
+_(>= 3.5.3)_
+
+URL Decode the username.  When the username is an email, some clients send the username URL-encoded (notably iOS devices)
+breaking the authentication process (user@example.com becomes user%40example.com).  This setting will force decoding the username.
+
+Default: `False`
+
+
 #### rights
 
 ##### type
