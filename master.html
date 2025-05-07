@@ -1267,6 +1267,15 @@ providers like ldap, kerberos</p>
 <p>Strip domain from username</p>
 <p>Default: <code>False</code></p>
 </section>
+<section class="level5" id="urldecode_username">
+<h5>urldecode_username <a class="headerlink" href="#urldecode_username">&para;</a></h5>
+<p><em>(&gt;= 3.5.3)</em></p>
+<p>URL Decode the username. When the username is an email, some clients
+send the username URL-encoded (notably iOS devices) breaking the
+authentication process (<a href="mailto:user@example.com">user@example.com</a> becomes
+user%40example.com). This setting will force decoding the username.</p>
+<p>Default: <code>False</code></p>
+</section>
 </section>
 <section class="level4" id="rights">
 <h4>rights <a class="headerlink" href="#rights">&para;</a></h4>
