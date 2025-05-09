@@ -355,12 +355,6 @@ recommended)</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a aria-hidden="true" href="#cb6-1" tabindex="-1"></a><span class="co"># Start, data is stored in a system folder (requires write permissions to /var/lib/radicale/collections)</span></span>
 <span id="cb6-2"><a aria-hidden="true" href="#cb6-2" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> radicale <span class="at">--storage-filesystem-folder</span><span class="op">=</span>/var/lib/radicale/collections <span class="at">--auth-type</span> none</span></code></pre></div>
 </section>
-<section class="level5" id="common">
-<h5>common <a class="headerlink" href="#common">&para;</a></h5>
-<p>Victory! Open <a href="http://localhost:5232">http://localhost:5232</a> in your browser!
-You can log in with any username and password (no authentication is
-required as long as not proper configured - INSECURE).</p>
-</section>
 </section>
 <section class="level4" id="windows">
 <h4>Windows <a class="headerlink" href="#windows">&para;</a></h4>
@@ -371,9 +365,15 @@ now". Wait a couple of minutes, it's done!</p>
 <p>Launch a command prompt and type:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb7-1"><a aria-hidden="true" href="#cb7-1" tabindex="-1"></a>python <span class="op">-</span>m pip install <span class="op">--</span>upgrade https<span class="op">://</span>github<span class="op">.</span><span class="fu">com</span><span class="op">/</span>Kozea<span class="op">/</span>Radicale<span class="op">/</span>archive<span class="op">/</span>master<span class="op">.</span><span class="fu">tar</span><span class="op">.</span><span class="fu">gz</span></span>
 <span id="cb7-2"><a aria-hidden="true" href="#cb7-2" tabindex="-1"></a>python <span class="op">-</span>m radicale <span class="op">--</span>storage<span class="op">-</span>filesystem<span class="op">-</span>folder<span class="op">=~/</span>radicale<span class="op">/</span>collections <span class="op">--</span>auth<span class="op">-</span>type none</span></code></pre></div>
+<section class="level5" id="common">
+<h5>Common <a class="headerlink" href="#common">&para;</a></h5>
 <p>Victory! Open <a href="http://localhost:5232">http://localhost:5232</a> in your browser!
 You can log in with any username and password (no authentication is
 required as long as not proper configured - INSECURE).</p>
+<p>Just note that default configuration for security reason binds the
+server to <code>localhost</code> (IPv4: <code>127.0.0.1</code>, IPv6:
+<code>::1</code>). See <a href="#addresses">Addresses</a> and <a href="#server">Configuration/Server</a> for more.</p>
+</section>
 </section>
 </section>
 <section class="level3" id="basic-configuration">
