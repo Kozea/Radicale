@@ -99,11 +99,6 @@ Start the service manually, data is stored in a system folder
 python3 -m radicale --storage-filesystem-folder=/var/lib/radicale/collections --auth-type none
 ```
 
-##### common
-
-Victory! Open <http://localhost:5232> in your browser!
-You can log in with any username and password (no authentication is required as long as not proper configured - INSECURE).
-
 #### Windows
 
 The first step is to install Python. Go to
@@ -119,8 +114,13 @@ python -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master
 python -m radicale --storage-filesystem-folder=~/radicale/collections --auth-type none
 ```
 
+##### Common
+
 Victory! Open <http://localhost:5232> in your browser!
 You can log in with any username and password (no authentication is required as long as not proper configured - INSECURE).
+
+Just note that default configuration for security reason binds the server to `localhost` (IPv4: `127.0.0.1`, IPv6: `::1`).
+See [Addresses](#addresses) and [Configuration/Server](#server) for more.
 
 ### Basic Configuration
 
