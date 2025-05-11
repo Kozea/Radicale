@@ -3,6 +3,9 @@ name: Build and publish Docker image
 on:
   release:
     types: [published]
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -31,8 +34,11 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: latest=true
           tags: |
             type=semver,pattern={{version}}
+            type=schedule,prefix=nightly-,pattern={{date 'YYYYMMDD'}}
+            type=raw,enable=${{ github.event_name == 'workflow_dispatch' }},value=workflow_dispatch-{{branch}}-{{sha}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
