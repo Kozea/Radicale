@@ -350,7 +350,7 @@ prompt. Apply the following configuration:
 * Service name: `Radicale`
 * Application
   * Path: `C:\Path\To\Python\python.exe`
-  * Arguments: `-m radicale --config C:\Path\To\Config`
+  * Arguments: `--config C:\Path\To\Config`
 * I/O redirection
   * Error: `C:\Path\To\Radicale.log`
 
