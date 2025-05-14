@@ -1,0 +1,13 @@
+[logging]
+# Set logging level to debug to see the VCF content
+level = debug
+
+# Don't include passwords in logs
+mask_passwords = True
+
+# Enable other useful debug options
+backtrace_on_debug = True
+request_header_on_debug = True
+request_content_on_debug = True
+response_content_on_debug = True
+storage_cache_actions_on_debug = True 
