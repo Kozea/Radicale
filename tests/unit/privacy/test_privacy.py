@@ -1,10 +1,8 @@
 """Unit tests for privacy modules."""
 
 import os
-import json
 import tempfile
 import unittest
-from unittest.mock import patch, MagicMock
 
 from radicale.config import Configuration
 from radicale.privacy.storage import PrivacyStorage
@@ -42,14 +40,37 @@ class TestPrivacyHash(unittest.TestCase):
         self.assertTrue(verify_identifier(identifier, hashed))
         self.assertFalse(verify_identifier("wrong@example.com", hashed))
 
+    def test_hash_edge_cases(self):
+        """Test edge cases for hashing."""
+        # Test empty identifier
+        with self.assertRaises(ValueError):
+            hash_identifier("")
+            
+        # Test very long identifier
+        long_id = "a" * 1000
+        hashed = hash_identifier(long_id)
+        self.assertTrue(verify_identifier(long_id, hashed))
+        
+        # Test special characters
+        special_id = "test+special@example.com"
+        hashed = hash_identifier(special_id)
+        self.assertTrue(verify_identifier(special_id, hashed))
+
 class TestPrivacyStorage(unittest.TestCase):
     """Test the privacy storage."""
 
     def setUp(self):
         """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
-        self.config = Configuration()
-        self.config.set('storage', 'filesystem_folder', self.temp_dir)
+        schema = {
+            'storage': {
+                'filesystem_folder': {
+                    'value': self.temp_dir,
+                    'type': str
+                }
+            }
+        }
+        self.config = Configuration(schema)
         self.storage = PrivacyStorage(self.config)
         
         # Create test settings
@@ -109,14 +130,51 @@ class TestPrivacyStorage(unittest.TestCase):
         for settings in all_settings.values():
             self.assertEqual(settings, self.test_settings)
 
+    def test_storage_edge_cases(self):
+        """Test edge cases for storage."""
+        identifier = "test@example.com"
+        
+        # Test file permission issues
+        settings_file = self.storage._get_settings_file(hash_identifier(identifier))
+        self.storage.save_settings(identifier, self.test_settings)
+        os.chmod(settings_file, 0o444)  # Read-only
+        self.assertFalse(self.storage.save_settings(identifier, self.test_settings))
+        os.chmod(settings_file, 0o666)  # Restore permissions
+        
+        # Test corrupted JSON file
+        with open(settings_file, 'w') as f:
+            f.write("invalid json")
+        self.assertIsNone(self.storage.get_settings(identifier))
+        
+        # Test very large settings file
+        large_settings = {
+            'private_fields': ['photo'] * 1000,
+            'allowed_fields': ['name'] * 1000
+        }
+        self.assertTrue(self.storage.save_settings(identifier, large_settings))
+        retrieved = self.storage.get_settings(identifier)
+        self.assertEqual(retrieved, large_settings)
+        
+        # Test invalid JSON content
+        with open(settings_file, 'w') as f:
+            f.write('{"invalid": "json"')  # Missing closing brace
+        self.assertIsNone(self.storage.get_settings(identifier))
+
 class TestPrivacySettings(unittest.TestCase):
     """Test the privacy settings manager."""
 
     def setUp(self):
         """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
-        self.config = Configuration()
-        self.config.set('storage', 'filesystem_folder', self.temp_dir)
+        schema = {
+            'storage': {
+                'filesystem_folder': {
+                    'value': self.temp_dir,
+                    'type': str
+                }
+            }
+        }
+        self.config = Configuration(schema)
         self.storage = PrivacyStorage(self.config)
         self.settings = PrivacySettings(self.storage)
 
@@ -192,4 +250,34 @@ class TestPrivacySettings(unittest.TestCase):
         self.assertEqual(
             self.settings.get_allowed_fields("nonexistent@example.com"),
             self.settings.ALL_FIELDS
-        ) 
+        )
+
+    def test_settings_edge_cases(self):
+        """Test edge cases for settings."""
+        identifier = "test@example.com"
+        
+        # Test empty field lists
+        self.settings.set_settings(identifier, [], [])
+        self.assertEqual(self.settings.get_private_fields(identifier), set())
+        self.assertEqual(self.settings.get_allowed_fields(identifier), set())
+        
+        # Test all fields private
+        all_fields = list(self.settings.ALL_FIELDS)
+        self.settings.set_settings(identifier, all_fields)
+        self.assertEqual(self.settings.get_private_fields(identifier), set(all_fields))
+        self.assertEqual(self.settings.get_allowed_fields(identifier), set())
+        
+        # Test all fields allowed
+        self.settings.set_settings(identifier, [], all_fields)
+        self.assertEqual(self.settings.get_private_fields(identifier), set())
+        self.assertEqual(self.settings.get_allowed_fields(identifier), set(all_fields))
+        
+        # Test duplicate fields
+        self.settings.set_settings(identifier, ['photo', 'photo'], ['name', 'name'])
+        self.assertEqual(self.settings.get_private_fields(identifier), {'photo'})
+        self.assertEqual(self.settings.get_allowed_fields(identifier), {'name'})
+        
+        # Test case sensitivity in field names
+        self.settings.set_settings(identifier, ['photo'], ['name'])
+        self.assertTrue(self.settings.is_field_private(identifier, 'photo'))
+        self.assertTrue(self.settings.is_field_allowed(identifier, 'name')) 

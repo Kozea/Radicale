@@ -3,7 +3,7 @@
 import os
 import json
 import logging
-from typing import Dict, List, Optional, Set
+from typing import Dict, Optional
 from ..config import Configuration
 from .hash import hash_identifier
 
