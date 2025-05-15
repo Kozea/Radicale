@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import os
 import json
-import vobject
+import os
 import unittest
+
+import vobject
 
 
 class TestPrivacyDataset(unittest.TestCase):
