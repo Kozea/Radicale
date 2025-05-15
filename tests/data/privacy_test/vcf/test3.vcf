@@ -1,0 +1,10 @@
+BEGIN:VCARD
+VERSION:3.0
+UID:test3
+EMAIL;TYPE=INTERNET:john.doe.personal@example.com
+FN:John Doe (Personal)
+N:Doe;John;;;
+ORG:Personal Business
+TEL;TYPE=CELL:+1234567890
+TITLE:Freelancer
+END:VCARD

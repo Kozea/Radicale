@@ -1,0 +1,95 @@
+BEGIN:VCARD
+VERSION:3.0
+UID:test1
+EMAIL;TYPE=INTERNET:john.doe@example.com
+FN:John Doe
+N:Doe;John;;;
+ORG:Test Company
+TEL;TYPE=CELL:+1234567890
+TITLE:Software Engineer
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+UID:test2
+EMAIL;TYPE=INTERNET:john.doe@example.com
+FN:John Doe (Work)
+N:Doe;John;;;
+ORG:Another Company
+TEL;TYPE=CELL:+1987654321
+TITLE:Senior Developer
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+UID:test3
+EMAIL;TYPE=INTERNET:john.doe.personal@example.com
+FN:John Doe (Personal)
+N:Doe;John;;;
+ORG:Personal Business
+TEL;TYPE=CELL:+1234567890
+TITLE:Freelancer
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+UID:test4
+BDAY:1990-01-01
+EMAIL;TYPE=INTERNET:jane.smith@example.com
+FN:Jane Smith
+N:Smith;Jane;;;
+ORG:Photo Company
+PHOTO;TYPE=PNG:data:image/png\;base64\,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAD0lEQVQIHQEEAPv/AP///wX+Av4DfRnGAAAAAElFTkSuQmCC
+TEL;TYPE=CELL:+1122334455
+TITLE:Photographer
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+UID:test5
+ADR:;;123 Main St;Springfield;IL;62701;USA
+EMAIL;TYPE=INTERNET:bob.wilson@example.com
+FN:Bob Wilson
+N:Wilson;Bob;;;
+ORG:Address Company
+TEL;TYPE=CELL:+1555666777
+TITLE:Manager
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+UID:test6
+EMAIL;TYPE=INTERNET:alice@personal.com
+EMAIL:
+FN:Alice Brown
+N:Brown;Alice;;;
+ORG:Multi Email Corp
+TEL;TYPE=CELL:+1666777888
+TITLE:Marketing Manager
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+UID:test7
+EMAIL;TYPE=INTERNET:charlie.davis@example.com
+FN:Charlie Davis
+N:Davis;Charlie;;;
+ORG:Multi Phone Inc
+TEL;TYPE=CELL:+1888999000
+TEL:
+TITLE:Sales Director
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+UID:test8
+EMAIL;TYPE=INTERNET:minimal@example.com
+FN:Minimal Contact
+N:Contact;Minimal;;;
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+UID:test9
+ADR:;;456 Business Ave;Metropolis;NY;10001;USA
+BDAY:1985-06-15
+EMAIL;TYPE=INTERNET:full.contact@example.com
+FN:Full Contact
+N:Contact;Full;;;
+ORG:Full Details Ltd
+PHOTO;TYPE=PNG:data:image/png\;base64\,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAD0lEQVQIHQEEAPv/AP///wX+Av4DfRnGAAAAAElFTkSuQmCC
+TEL;TYPE=CELL:+1999000111
+TITLE:CEO
+END:VCARD

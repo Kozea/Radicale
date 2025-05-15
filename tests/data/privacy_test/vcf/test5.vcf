@@ -1,0 +1,11 @@
+BEGIN:VCARD
+VERSION:3.0
+UID:test5
+ADR:;;123 Main St;Springfield;IL;62701;USA
+EMAIL;TYPE=INTERNET:bob.wilson@example.com
+FN:Bob Wilson
+N:Wilson;Bob;;;
+ORG:Address Company
+TEL;TYPE=CELL:+1555666777
+TITLE:Manager
+END:VCARD

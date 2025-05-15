@@ -1,0 +1,7 @@
+BEGIN:VCARD
+VERSION:3.0
+UID:test8
+EMAIL;TYPE=INTERNET:minimal@example.com
+FN:Minimal Contact
+N:Contact;Minimal;;;
+END:VCARD

@@ -1,0 +1,10 @@
+BEGIN:VCARD
+VERSION:3.0
+UID:test1
+EMAIL;TYPE=INTERNET:john.doe@example.com
+FN:John Doe
+N:Doe;John;;;
+ORG:Test Company
+TEL;TYPE=CELL:+1234567890
+TITLE:Software Engineer
+END:VCARD
