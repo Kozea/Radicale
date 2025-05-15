@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.5.4.dev
+
 ## 3.5.3
 * Add: [auth] htpasswd: support for Argon2 hashes
 * Improve: catch error on calendar collection upload and display problematic item content on debug level
