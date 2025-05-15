@@ -88,20 +88,24 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
 
     """
 
-    # TODO: Filtering VALARM and VFREEBUSY is not implemented
+    # TODO: Improve filtering for VALARM and VFREEBUSY
+    #       so far only filtering based on existence of such component is implemented
     # HACK: the filters are tested separately against all components
+
+    name = filter_.get("name", "").upper()
 
     if level == 0:
         tag = item.name
     elif level == 1:
         tag = item.component_name
+    elif level == 2:
+        tag = item.component_name
     else:
         logger.warning(
-            "Filters with three levels of comp-filter are not supported")
+            "Filters with %d levels of comp-filter are not supported", level)
         return True
     if not tag:
         return False
-    name = filter_.get("name", "").upper()
     if len(filter_) == 0:
         # Point #1 of rfc4791-9.7.1
         return name == tag
@@ -109,16 +113,23 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
         if filter_[0].tag == xmlutils.make_clark("C:is-not-defined"):
             # Point #2 of rfc4791-9.7.1
             return name != tag
-    if name != tag:
+    if (level < 2) and (name != tag):
         return False
-    if (level == 0 and name != "VCALENDAR" or
-            level == 1 and name not in ("VTODO", "VEVENT", "VJOURNAL")):
+    if ((level == 0 and name != "VCALENDAR") or
+            (level == 1 and name not in ("VTODO", "VEVENT", "VJOURNAL")) or
+            (level == 2 and name not in ("VALARM", "VFREEBUSY"))):
         logger.warning("Filtering %s is not supported", name)
         return True
     # Point #3 and #4 of rfc4791-9.7.1
-    components = ([item.vobject_item] if level == 0
-                  else list(getattr(item.vobject_item,
-                                    "%s_list" % tag.lower())))
+    if level == 0:
+        components = [item.vobject_item]
+    elif level == 1:
+        components = list(getattr(item.vobject_item, "%s_list" % tag.lower()))
+    elif level == 2:
+        components = list(getattr(item.vobject_item, "%s_list" % tag.lower()))
+        for comp in components:
+            if not hasattr(comp, name.lower()):
+                return False
     for child in filter_:
         if child.tag == xmlutils.make_clark("C:prop-filter"):
             if not any(prop_match(comp, child, "C")
