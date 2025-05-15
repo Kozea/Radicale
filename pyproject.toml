@@ -127,3 +127,8 @@ exclude_lines = [
     # Don't complain if non-runnable code isn't run:
     "if __name__ == .__main__.:",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11.9",
+]
