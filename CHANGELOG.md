@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.5.4.dev
+* Improve: item filter enhanced for 3rd level supporting VALARM and VFREEBUSY (only component existence so far)
 
 ## 3.5.3
 * Add: [auth] htpasswd: support for Argon2 hashes
