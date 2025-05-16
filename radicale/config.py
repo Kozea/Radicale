@@ -424,7 +424,46 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("predefined_collections", {
             "value": "",
             "help": "predefined user collections",
-            "type": json_str})])),
+            "type": json_str})
+        ])),
+    ("privacy", OrderedDict([
+        ("database_path", {
+            "value": "/var/lib/radicale/privacy.db",
+            "help": "path where the privacy settings database is stored",
+            "type": filepath}),
+        ("default_allow_name", {
+            "value": "True",
+            "help": "default value for allowing name in privacy settings",
+            "type": bool}),
+        ("default_allow_email", {
+            "value": "True",
+            "help": "default value for allowing email in privacy settings",
+            "type": bool}),
+        ("default_allow_phone", {
+            "value": "True",
+            "help": "default value for allowing phone in privacy settings",
+            "type": bool}),
+        ("default_allow_company", {
+            "value": "True",
+            "help": "default value for allowing company in privacy settings",
+            "type": bool}),
+        ("default_allow_title", {
+            "value": "True",
+            "help": "default value for allowing title in privacy settings",
+            "type": bool}),
+        ("default_allow_photo", {
+            "value": "True",
+            "help": "default value for allowing photo in privacy settings",
+            "type": bool}),
+        ("default_allow_birthday", {
+            "value": "True",
+            "help": "default value for allowing birthday in privacy settings",
+            "type": bool}),
+        ("default_allow_address", {
+            "value": "True",
+            "help": "default value for allowing address in privacy settings",
+            "type": bool})
+        ])),
     ("hook", OrderedDict([
         ("type", {
             "value": "none",
