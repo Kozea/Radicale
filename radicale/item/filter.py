@@ -21,11 +21,12 @@
 
 
 import math
+import sys
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
 from itertools import chain
 from typing import (Callable, Iterable, Iterator, List, Optional, Sequence,
-                    Tuple)
+                    Tuple, Union)
 
 import vobject
 
@@ -38,6 +39,11 @@ DATETIME_MIN: datetime = datetime.min.replace(tzinfo=timezone.utc)
 DATETIME_MAX: datetime = datetime.max.replace(tzinfo=timezone.utc)
 TIMESTAMP_MIN: int = math.floor(DATETIME_MIN.timestamp())
 TIMESTAMP_MAX: int = math.ceil(DATETIME_MAX.timestamp())
+
+if sys.version_info < (3, 10):
+    TRIGGER = Union[datetime, None]
+else:
+    TRIGGER = datetime | None
 
 
 def date_to_datetime(d: date) -> datetime:
@@ -184,7 +190,7 @@ def prop_match(vobject_item: vobject.base.Component,
 
 
 def time_range_match(vobject_item: vobject.base.Component,
-                     filter_: ET.Element, child_name: str, trigger: datetime | None) -> bool:
+                     filter_: ET.Element, child_name: str, trigger: TRIGGER) -> bool:
     """Check whether the component/property ``child_name`` of
        ``vobject_item`` matches the time-range ``filter_``."""
     # supporting since 3.5.4 now optional trigger (either absolute or relative offset)
