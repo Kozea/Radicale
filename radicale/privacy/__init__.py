@@ -1,7 +1,6 @@
-"""Privacy settings management for Radicale."""
+"""Privacy module initialization."""
 
-from .hash import hash_identifier
 from .settings import PrivacySettings
 from .storage import PrivacyStorage
 
-__all__ = ["PrivacyStorage", "hash_identifier", "PrivacySettings"]
+__all__ = ["PrivacySettings", "PrivacyStorage"]

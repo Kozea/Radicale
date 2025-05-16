@@ -24,6 +24,7 @@ class PrivacyStorage:
         self.settings_dir = os.path.join(
             configuration.get("storage", "filesystem_folder"), ".Radicale.privacy"
         )
+        self.salt = configuration.get("privacy", "salt")
         os.makedirs(self.settings_dir, exist_ok=True)
 
     def _get_settings_file(self, hashed_id: str) -> str:
@@ -46,7 +47,7 @@ class PrivacyStorage:
         Returns:
             The privacy settings dictionary or None if not found.
         """
-        hashed_id = hash_identifier(identifier)
+        hashed_id = hash_identifier(identifier, self.salt)
         settings_file = self._get_settings_file(hashed_id)
 
         if not os.path.exists(settings_file):
@@ -71,7 +72,7 @@ class PrivacyStorage:
         Returns:
             True if successful, False otherwise.
         """
-        hashed_id = hash_identifier(identifier)
+        hashed_id = hash_identifier(identifier, self.salt)
         settings_file = self._get_settings_file(hashed_id)
 
         try:
@@ -93,7 +94,7 @@ class PrivacyStorage:
         Returns:
             True if successful, False otherwise.
         """
-        hashed_id = hash_identifier(identifier)
+        hashed_id = hash_identifier(identifier, self.salt)
         settings_file = self._get_settings_file(hashed_id)
 
         if not os.path.exists(settings_file):

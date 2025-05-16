@@ -1,11 +1,7 @@
 """Hashing functions for privacy identifiers."""
 
 import hashlib
-import os
 import re
-
-# Get salt from environment variable or use a default
-SALT = os.environ.get("RADICALE_PRIVACY_SALT", "default_salt_change_me")
 
 
 def normalize_phone(phone: str) -> str:
@@ -25,11 +21,12 @@ def normalize_phone(phone: str) -> str:
     return "+" + digits if has_plus else digits
 
 
-def hash_identifier(identifier: str) -> str:
+def hash_identifier(identifier: str, salt: str) -> str:
     """Hash an identifier (email or phone) for privacy.
 
     Args:
         identifier: The email address or phone number to hash.
+        salt: The salt to use for hashing.
 
     Returns:
         The hashed identifier.
@@ -48,21 +45,22 @@ def hash_identifier(identifier: str) -> str:
         normalized = normalize_phone(normalized)
 
     # Create a salted hash
-    salted = f"{normalized}:{SALT}"
+    salted = f"{normalized}:{salt}"
     return hashlib.sha256(salted.encode()).hexdigest()
 
 
-def verify_identifier(identifier: str, hashed_id: str) -> bool:
+def verify_identifier(identifier: str, hashed_id: str, salt: str) -> bool:
     """Verify if an identifier matches a hashed value.
 
     Args:
         identifier: The email address or phone number to verify.
         hashed_id: The hashed identifier to check against.
+        salt: The salt used for hashing.
 
     Returns:
         True if the identifier matches the hash, False otherwise.
     """
     try:
-        return hash_identifier(identifier) == hashed_id
+        return hash_identifier(identifier, salt) == hashed_id
     except ValueError:
         return False
