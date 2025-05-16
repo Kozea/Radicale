@@ -14,6 +14,7 @@ __all__ = ["PrivacySettings", "PrivacyStorage"]
 
 INTERNAL_TYPES: Sequence[str] = ("filesystem")
 
+
 def load(configuration: config.Configuration) -> PrivacySettings:
     """Load the privacy module."""
     logger.debug("Loading privacy module")
