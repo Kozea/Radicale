@@ -493,8 +493,8 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "salt used for hashing privacy identifiers",
             "type": str}),
         ("privacy_folder", {
-            "value": "/var/lib/radicale/privacy",
-            "help": "folder for storing privacy settings (absolute path)",
+            "value": "privacy",
+            "help": "folder for storing privacy settings (relative to filesystem_folder)",
             "type": str})]))
     ])
 
