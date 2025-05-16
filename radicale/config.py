@@ -44,6 +44,8 @@ DEFAULT_CONFIG_PATH: str = os.pathsep.join([
     "?/etc/radicale/config",
     "?~/.config/radicale/config"])
 
+DATABASE_PATH = "radicale.db"  # Default path for the SQLite database
+
 
 def positive_int(value: Any) -> int:
     value = int(value)
