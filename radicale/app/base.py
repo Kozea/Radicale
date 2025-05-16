@@ -22,8 +22,8 @@ import sys
 import xml.etree.ElementTree as ET
 from typing import Optional
 
-from radicale import (auth, config, hook, httputils, pathutils, privacy, rights,
-                      storage, types, web, xmlutils)
+from radicale import (auth, config, hook, httputils, pathutils, privacy,
+                      rights, storage, types, web, xmlutils)
 from radicale.log import logger
 
 # HACK: https://github.com/tiran/defusedxml/issues/54

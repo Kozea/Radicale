@@ -4,6 +4,7 @@ import logging
 from typing import Sequence
 
 from radicale import config
+
 from .settings import PrivacySettings
 from .storage import PrivacyStorage
 
