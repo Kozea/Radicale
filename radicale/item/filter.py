@@ -88,8 +88,7 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
 
     """
 
-    # TODO: Improve filtering for VALARM and VFREEBUSY
-    #       so far only filtering based on existence of such component is implemented
+    # TODO: Filtering VFREEBUSY is not implemented
     # HACK: the filters are tested separately against all components
 
     name = filter_.get("name", "").upper()
@@ -117,7 +116,7 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
         return False
     if ((level == 0 and name != "VCALENDAR") or
             (level == 1 and name not in ("VTODO", "VEVENT", "VJOURNAL")) or
-            (level == 2 and name not in ("VALARM", "VFREEBUSY"))):
+            (level == 2 and name not in ("VALARM"))):
         logger.warning("Filtering %s is not supported", name)
         return True
     # Point #3 and #4 of rfc4791-9.7.1
@@ -133,6 +132,7 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
             if not subcomp:
                 return False
             if hasattr(subcomp, "trigger"):
+                # rfc4791-7.8.5:
                 trigger = subcomp.trigger.value
     for child in filter_:
         if child.tag == xmlutils.make_clark("C:prop-filter"):
