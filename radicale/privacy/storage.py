@@ -22,7 +22,8 @@ class PrivacyStorage:
         """
         self.configuration = configuration
         self.settings_dir = os.path.join(
-            configuration.get("storage", "filesystem_folder"), ".Radicale.privacy"
+            configuration.get("storage", "filesystem_folder"),
+            configuration.get("privacy", "folder")
         )
         self.salt = configuration.get("privacy", "salt")
         os.makedirs(self.settings_dir, exist_ok=True)
