@@ -27,7 +27,13 @@ class PrivacyStorage:
             configuration._values["privacy"]["privacy_folder"]
         )
         self.salt = configuration._values["privacy"]["salt"]
-        os.makedirs(self.settings_dir, exist_ok=True)
+
+        # Create the privacy folder and its parent directories if they don't exist
+        try:
+            os.makedirs(self.settings_dir, exist_ok=True)
+        except OSError as e:
+            logger.error("Failed to create privacy folder %s: %s", self.settings_dir, str(e))
+            raise
 
     def _get_settings_file(self, hashed_id: str) -> str:
         """Get the path to the settings file for a hashed identifier.
