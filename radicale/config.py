@@ -486,16 +486,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("max_freebusy_occurrence", {
             "value": "10000",
             "help": "number of occurrences per event when reporting",
-            "type": positive_int})])),
-    ("privacy", OrderedDict([
-        ("salt", {
-            "value": "default_salt_change_me",
-            "help": "salt used for hashing privacy identifiers",
-            "type": str}),
-        ("privacy_folder", {
-            "value": "privacy",
-            "help": "folder for storing privacy settings (relative to filesystem_folder)",
-            "type": str})]))
+            "type": positive_int})]))
     ])
 
 
