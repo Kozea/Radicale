@@ -3,6 +3,7 @@
 import os
 import tempfile
 import unittest
+from collections import OrderedDict
 
 from radicale.config import Configuration
 from radicale.privacy.hash import hash_identifier, verify_identifier
@@ -69,11 +70,25 @@ class TestPrivacyStorage(unittest.TestCase):
         """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
         schema = {
-            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
-            "privacy": {
-                "salt": {"value": "test_salt", "type": str},
-                "privacy_folder": {"value": ".Radicale.privacy", "type": str}
-            }
+            "storage": OrderedDict([
+                ("filesystem_folder", {
+                    "value": self.temp_dir,
+                    "type": str,
+                    "help": "path where collections are stored"
+                })
+            ]),
+            "privacy": OrderedDict([
+                ("salt", {
+                    "value": "test_salt",
+                    "type": str,
+                    "help": "salt used for hashing privacy identifiers"
+                }),
+                ("privacy_folder", {
+                    "value": os.path.join(self.temp_dir, "..", "privacy"),
+                    "type": str,
+                    "help": "folder for storing privacy settings"
+                })
+            ])
         }
         self.config = Configuration(schema)
         self.storage = PrivacyStorage(self.config)
@@ -175,11 +190,25 @@ class TestPrivacySettings(unittest.TestCase):
         """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
         schema = {
-            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
-            "privacy": {
-                "salt": {"value": "test_salt", "type": str},
-                "privacy_folder": {"value": ".Radicale.privacy", "type": str}
-            }
+            "storage": OrderedDict([
+                ("filesystem_folder", {
+                    "value": self.temp_dir,
+                    "type": str,
+                    "help": "path where collections are stored"
+                })
+            ]),
+            "privacy": OrderedDict([
+                ("salt", {
+                    "value": "test_salt",
+                    "type": str,
+                    "help": "salt used for hashing privacy identifiers"
+                }),
+                ("privacy_folder", {
+                    "value": os.path.join(self.temp_dir, "..", "privacy"),
+                    "type": str,
+                    "help": "folder for storing privacy settings"
+                })
+            ])
         }
         self.config = Configuration(schema)
         self.storage = PrivacyStorage(self.config)
@@ -293,11 +322,25 @@ class TestPrivacyConfig(unittest.TestCase):
         """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
         self.schema = {
-            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
-            "privacy": {
-                "salt": {"value": "test_salt", "type": str},
-                "privacy_folder": {"value": ".Radicale.privacy", "type": str}
-            }
+            "storage": OrderedDict([
+                ("filesystem_folder", {
+                    "value": self.temp_dir,
+                    "type": str,
+                    "help": "path where collections are stored"
+                })
+            ]),
+            "privacy": OrderedDict([
+                ("salt", {
+                    "value": "test_salt",
+                    "type": str,
+                    "help": "salt used for hashing privacy identifiers"
+                }),
+                ("privacy_folder", {
+                    "value": os.path.join(self.temp_dir, "..", "privacy"),
+                    "type": str,
+                    "help": "folder for storing privacy settings"
+                })
+            ])
         }
 
     def tearDown(self):
@@ -314,48 +357,82 @@ class TestPrivacyConfig(unittest.TestCase):
         config = Configuration(self.schema)
 
         # Test salt parameter
-        self.assertEqual(config.get("privacy", "salt"), "test_salt")
+        self.assertEqual(config._values["privacy"]["salt"], "test_salt")
 
         # Test privacy_folder parameter
-        self.assertEqual(config.get("privacy", "privacy_folder"), ".Radicale.privacy")
+        self.assertEqual(config._values["privacy"]["privacy_folder"], os.path.join(self.temp_dir, "..", "privacy"))
 
     def test_custom_values(self):
         """Test that custom values can be set."""
         custom_schema = {
-            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
-            "privacy": {
-                "salt": {"value": "custom_salt", "type": str},
-                "privacy_folder": {"value": "custom.privacy", "type": str}
-            }
+            "storage": OrderedDict([
+                ("filesystem_folder", {
+                    "value": self.temp_dir,
+                    "type": str,
+                    "help": "path where collections are stored"
+                })
+            ]),
+            "privacy": OrderedDict([
+                ("salt", {
+                    "value": "custom_salt",
+                    "type": str,
+                    "help": "salt used for hashing privacy identifiers"
+                }),
+                ("privacy_folder", {
+                    "value": "/custom/path/privacy",
+                    "type": str,
+                    "help": "folder for storing privacy settings"
+                })
+            ])
         }
         config = Configuration(custom_schema)
 
         # Test custom salt
-        self.assertEqual(config.get("privacy", "salt"), "custom_salt")
+        self.assertEqual(config._values["privacy"]["salt"], "custom_salt")
 
         # Test custom privacy folder
-        self.assertEqual(config.get("privacy", "privacy_folder"), "custom.privacy")
+        self.assertEqual(config._values["privacy"]["privacy_folder"], "/custom/path/privacy")
 
     def test_missing_values(self):
         """Test that missing values are handled correctly."""
         # Test missing salt
         missing_salt_schema = {
-            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
-            "privacy": {
-                "privacy_folder": {"value": ".Radicale.privacy", "type": str}
-            }
+            "storage": OrderedDict([
+                ("filesystem_folder", {
+                    "value": self.temp_dir,
+                    "type": str,
+                    "help": "path where collections are stored"
+                })
+            ]),
+            "privacy": OrderedDict([
+                ("privacy_folder", {
+                    "value": "/var/lib/radicale/privacy",
+                    "type": str,
+                    "help": "folder for storing privacy settings"
+                })
+            ])
         }
         config = Configuration(missing_salt_schema)
         with self.assertRaises(KeyError):
-            config.get("privacy", "salt")
+            config._values["privacy"]["salt"]
 
         # Test missing privacy_folder
         missing_folder_schema = {
-            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
-            "privacy": {
-                "salt": {"value": "test_salt", "type": str}
-            }
+            "storage": OrderedDict([
+                ("filesystem_folder", {
+                    "value": self.temp_dir,
+                    "type": str,
+                    "help": "path where collections are stored"
+                })
+            ]),
+            "privacy": OrderedDict([
+                ("salt", {
+                    "value": "test_salt",
+                    "type": str,
+                    "help": "salt used for hashing privacy identifiers"
+                })
+            ])
         }
         config = Configuration(missing_folder_schema)
         with self.assertRaises(KeyError):
-            config.get("privacy", "privacy_folder")
+            config._values["privacy"]["privacy_folder"]
