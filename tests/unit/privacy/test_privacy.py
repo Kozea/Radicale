@@ -13,46 +13,53 @@ from radicale.privacy.storage import PrivacyStorage
 class TestPrivacyHash(unittest.TestCase):
     """Test the hashing functions."""
 
+    def setUp(self):
+        """Set up test environment."""
+        self.salt = "test_salt"
+
     def test_hash_identifier_normalization(self):
         """Test that identifiers are normalized before hashing."""
         # Test case insensitivity
         self.assertEqual(
-            hash_identifier("Test@example.com"), hash_identifier("test@example.com")
+            hash_identifier("Test@example.com", self.salt),
+            hash_identifier("test@example.com", self.salt)
         )
 
         # Test whitespace removal
         self.assertEqual(
-            hash_identifier(" test@example.com "), hash_identifier("test@example.com")
+            hash_identifier(" test@example.com ", self.salt),
+            hash_identifier("test@example.com", self.salt)
         )
 
         # Test phone number normalization
         self.assertEqual(
-            hash_identifier(" +1 234 567 8900 "), hash_identifier("+12345678900")
+            hash_identifier(" +1 234 567 8900 ", self.salt),
+            hash_identifier("+12345678900", self.salt)
         )
 
     def test_verify_identifier(self):
         """Test identifier verification."""
         identifier = "test@example.com"
-        hashed = hash_identifier(identifier)
+        hashed = hash_identifier(identifier, self.salt)
 
-        self.assertTrue(verify_identifier(identifier, hashed))
-        self.assertFalse(verify_identifier("wrong@example.com", hashed))
+        self.assertTrue(verify_identifier(identifier, hashed, self.salt))
+        self.assertFalse(verify_identifier("wrong@example.com", hashed, self.salt))
 
     def test_hash_edge_cases(self):
         """Test edge cases for hashing."""
         # Test empty identifier
         with self.assertRaises(ValueError):
-            hash_identifier("")
+            hash_identifier("", self.salt)
 
         # Test very long identifier
         long_id = "a" * 1000
-        hashed = hash_identifier(long_id)
-        self.assertTrue(verify_identifier(long_id, hashed))
+        hashed = hash_identifier(long_id, self.salt)
+        self.assertTrue(verify_identifier(long_id, hashed, self.salt))
 
         # Test special characters
         special_id = "test+special@example.com"
-        hashed = hash_identifier(special_id)
-        self.assertTrue(verify_identifier(special_id, hashed))
+        hashed = hash_identifier(special_id, self.salt)
+        self.assertTrue(verify_identifier(special_id, hashed, self.salt))
 
 
 class TestPrivacyStorage(unittest.TestCase):
@@ -62,7 +69,8 @@ class TestPrivacyStorage(unittest.TestCase):
         """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
         schema = {
-            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}}
+            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
+            "privacy": {"salt": {"value": "test_salt", "type": str}}
         }
         self.config = Configuration(schema)
         self.storage = PrivacyStorage(self.config)
@@ -129,7 +137,9 @@ class TestPrivacyStorage(unittest.TestCase):
         identifier = "test@example.com"
 
         # Test file permission issues
-        settings_file = self.storage._get_settings_file(hash_identifier(identifier))
+        settings_file = self.storage._get_settings_file(
+            hash_identifier(identifier, self.storage.salt)
+        )
         self.storage.save_settings(identifier, self.test_settings)
         os.chmod(settings_file, 0o444)  # Read-only
         self.assertFalse(self.storage.save_settings(identifier, self.test_settings))
@@ -162,7 +172,8 @@ class TestPrivacySettings(unittest.TestCase):
         """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
         schema = {
-            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}}
+            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
+            "privacy": {"salt": {"value": "test_salt", "type": str}}
         }
         self.config = Configuration(schema)
         self.storage = PrivacyStorage(self.config)
