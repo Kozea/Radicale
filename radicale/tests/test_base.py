@@ -26,6 +26,7 @@ import posixpath
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
 import defusedxml.ElementTree as DefusedET
+import logging
 import vobject
 
 from radicale import storage, xmlutils
@@ -764,10 +765,13 @@ permissions: RrWw""")
         status, _, = self.delete(path, check=None)
         assert status in (200, 404)
         create_collection_fn(path)
+        logging.warning("Upload items %r", items)
         for i in items:
+            logging.warning("Upload %d", i)
             filename = filename_template % (kind, i)
             event = get_file_content(filename)
             self.put(posixpath.join(path, filename), event)
+        logging.warning("Upload items finished")
         filters_text = "".join(filter_template % f for f in filters)
         _, responses = self.report(path, """\
 <?xml version="1.0" encoding="utf-8" ?>
