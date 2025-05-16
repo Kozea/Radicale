@@ -70,7 +70,10 @@ class TestPrivacyStorage(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         schema = {
             "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
-            "privacy": {"salt": {"value": "test_salt", "type": str}}
+            "privacy": {
+                "salt": {"value": "test_salt", "type": str},
+                "folder": {"value": ".Radicale.privacy", "type": str}
+            }
         }
         self.config = Configuration(schema)
         self.storage = PrivacyStorage(self.config)
@@ -173,7 +176,10 @@ class TestPrivacySettings(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         schema = {
             "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
-            "privacy": {"salt": {"value": "test_salt", "type": str}}
+            "privacy": {
+                "salt": {"value": "test_salt", "type": str},
+                "folder": {"value": ".Radicale.privacy", "type": str}
+            }
         }
         self.config = Configuration(schema)
         self.storage = PrivacyStorage(self.config)
