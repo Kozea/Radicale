@@ -1319,7 +1319,7 @@ permissions: RrWw""")
     </C:comp-filter>
 </C:comp-filter>"""], "valarm", items=[1, 2])
         assert "/calendar.ics/valarm1.ics" not in answer
-        assert "/calendar.ics/valarm2.ics" in answer # absolute date
+        assert "/calendar.ics/valarm2.ics" in answer  # absolute date
         answer = self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
     <C:comp-filter name="VEVENT">
@@ -1348,7 +1348,7 @@ permissions: RrWw""")
         </C:comp-filter>
     </C:comp-filter>
 </C:comp-filter>"""], "valarm", items=[1, 2])
-        assert "/calendar.ics/valarm1.ics" in answer # -15 min offset
+        assert "/calendar.ics/valarm1.ics" in answer  # -15 min offset
         assert "/calendar.ics/valarm2.ics" not in answer
 
     def test_time_range_filter_todos_completed(self) -> None:

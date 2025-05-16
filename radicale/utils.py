@@ -102,7 +102,7 @@ def ssl_context_options_by_protocol(protocol: str, ssl_context_options):
     ssl_context_options |= ssl.OP_NO_TLSv1_3
     logger.debug("SSL cleared SSL context options: '0x%x'", ssl_context_options)
     for entry in protocol.split():
-        entry = entry.strip('+') # remove trailing '+'
+        entry = entry.strip('+')  # remove trailing '+'
         if entry == "ALL":
             logger.debug("SSL context options, enable ALL (some maybe not supported by underlying OpenSSL, SSLv2 not enabled at all)")
             ssl_context_options &= ~ssl.OP_NO_SSLv3
@@ -162,7 +162,7 @@ def ssl_context_options_by_protocol(protocol: str, ssl_context_options):
 
 def ssl_context_minimum_version_by_options(ssl_context_options):
     logger.debug("SSL calculate minimum version by context options: '0x%x'", ssl_context_options)
-    ssl_context_minimum_version = ssl.TLSVersion.SSLv3 # default
+    ssl_context_minimum_version = ssl.TLSVersion.SSLv3  # default
     if ((ssl_context_options & ssl.OP_NO_SSLv3) and (ssl_context_minimum_version == ssl.TLSVersion.SSLv3)):
         ssl_context_minimum_version = ssl.TLSVersion.TLSv1
     if ((ssl_context_options & ssl.OP_NO_TLSv1) and (ssl_context_minimum_version == ssl.TLSVersion.TLSv1)):
@@ -172,7 +172,7 @@ def ssl_context_minimum_version_by_options(ssl_context_options):
     if ((ssl_context_options & ssl.OP_NO_TLSv1_2) and (ssl_context_minimum_version == ssl.TLSVersion.TLSv1_2)):
         ssl_context_minimum_version = ssl.TLSVersion.TLSv1_3
     if ((ssl_context_options & ssl.OP_NO_TLSv1_3) and (ssl_context_minimum_version == ssl.TLSVersion.TLSv1_3)):
-        ssl_context_minimum_version = 0 # all disabled
+        ssl_context_minimum_version = 0  # all disabled
 
     logger.debug("SSL context options: '0x%x' results in minimum version: %s", ssl_context_options, ssl_context_minimum_version)
     return ssl_context_minimum_version
@@ -180,7 +180,7 @@ def ssl_context_minimum_version_by_options(ssl_context_options):
 
 def ssl_context_maximum_version_by_options(ssl_context_options):
     logger.debug("SSL calculate maximum version by context options: '0x%x'", ssl_context_options)
-    ssl_context_maximum_version = ssl.TLSVersion.TLSv1_3 # default
+    ssl_context_maximum_version = ssl.TLSVersion.TLSv1_3  # default
     if ((ssl_context_options & ssl.OP_NO_TLSv1_3) and (ssl_context_maximum_version == ssl.TLSVersion.TLSv1_3)):
         ssl_context_maximum_version = ssl.TLSVersion.TLSv1_2
     if ((ssl_context_options & ssl.OP_NO_TLSv1_2) and (ssl_context_maximum_version == ssl.TLSVersion.TLSv1_2)):

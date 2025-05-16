@@ -96,7 +96,7 @@ class Auth(auth.BaseAuth):
         self._has_bcrypt = False
         self._has_argon2 = False
         self._htpasswd_ok = False
-        self._htpasswd_not_ok_reminder_seconds = 60 # currently hardcoded
+        self._htpasswd_not_ok_reminder_seconds = 60  # currently hardcoded
         (self._htpasswd_ok, self._htpasswd_bcrypt_use, self._htpasswd_argon2_use, self._htpasswd, self._htpasswd_size, self._htpasswd_mtime_ns) = self._read_htpasswd(True, False)
         self._lock = threading.Lock()
 

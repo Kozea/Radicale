@@ -177,7 +177,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
 
     props: Union[ET.Element, List]
     if root.find(xmlutils.make_clark("D:prop")) is not None:
-        props = root.find(xmlutils.make_clark("D:prop")) # type: ignore[assignment]
+        props = root.find(xmlutils.make_clark("D:prop"))  # type: ignore[assignment]
     else:
         props = []
 
