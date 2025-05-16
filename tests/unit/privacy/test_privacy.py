@@ -72,7 +72,7 @@ class TestPrivacyStorage(unittest.TestCase):
             "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
             "privacy": {
                 "salt": {"value": "test_salt", "type": str},
-                "folder": {"value": ".Radicale.privacy", "type": str}
+                "privacy_folder": {"value": ".Radicale.privacy", "type": str}
             }
         }
         self.config = Configuration(schema)
@@ -178,7 +178,7 @@ class TestPrivacySettings(unittest.TestCase):
             "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
             "privacy": {
                 "salt": {"value": "test_salt", "type": str},
-                "folder": {"value": ".Radicale.privacy", "type": str}
+                "privacy_folder": {"value": ".Radicale.privacy", "type": str}
             }
         }
         self.config = Configuration(schema)

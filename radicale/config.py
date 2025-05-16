@@ -492,7 +492,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "default_salt_change_me",
             "help": "salt used for hashing privacy identifiers",
             "type": str}),
-        ("folder", {
+        ("privacy_folder", {
             "value": ".Radicale.privacy",
             "help": "folder name for storing privacy settings",
             "type": str})]))
