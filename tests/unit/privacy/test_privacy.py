@@ -84,7 +84,7 @@ class TestPrivacyStorage(unittest.TestCase):
                     "help": "salt used for hashing privacy identifiers"
                 }),
                 ("privacy_folder", {
-                    "value": os.path.join(self.temp_dir, "..", "privacy"),
+                    "value": "privacy",  # Relative path inside temp_dir
                     "type": str,
                     "help": "folder for storing privacy settings"
                 })
@@ -204,7 +204,7 @@ class TestPrivacySettings(unittest.TestCase):
                     "help": "salt used for hashing privacy identifiers"
                 }),
                 ("privacy_folder", {
-                    "value": os.path.join(self.temp_dir, "..", "privacy"),
+                    "value": "privacy",  # Relative path inside temp_dir
                     "type": str,
                     "help": "folder for storing privacy settings"
                 })
@@ -336,7 +336,7 @@ class TestPrivacyConfig(unittest.TestCase):
                     "help": "salt used for hashing privacy identifiers"
                 }),
                 ("privacy_folder", {
-                    "value": os.path.join(self.temp_dir, "..", "privacy"),
+                    "value": "privacy",  # Relative path inside temp_dir
                     "type": str,
                     "help": "folder for storing privacy settings"
                 })
@@ -359,8 +359,8 @@ class TestPrivacyConfig(unittest.TestCase):
         # Test salt parameter
         self.assertEqual(config._values["privacy"]["salt"], "test_salt")
 
-        # Test privacy_folder parameter
-        self.assertEqual(config._values["privacy"]["privacy_folder"], os.path.join(self.temp_dir, "..", "privacy"))
+        # Test privacy_folder parameter - should be relative path
+        self.assertEqual(config._values["privacy"]["privacy_folder"], "privacy")
 
     def test_custom_values(self):
         """Test that custom values can be set."""
@@ -379,7 +379,7 @@ class TestPrivacyConfig(unittest.TestCase):
                     "help": "salt used for hashing privacy identifiers"
                 }),
                 ("privacy_folder", {
-                    "value": "/custom/path/privacy",
+                    "value": "custom_privacy",
                     "type": str,
                     "help": "folder for storing privacy settings"
                 })
@@ -390,8 +390,8 @@ class TestPrivacyConfig(unittest.TestCase):
         # Test custom salt
         self.assertEqual(config._values["privacy"]["salt"], "custom_salt")
 
-        # Test custom privacy folder
-        self.assertEqual(config._values["privacy"]["privacy_folder"], "/custom/path/privacy")
+        # Test custom privacy folder - should be relative path
+        self.assertEqual(config._values["privacy"]["privacy_folder"], "custom_privacy")
 
     def test_missing_values(self):
         """Test that missing values are handled correctly."""
@@ -406,7 +406,7 @@ class TestPrivacyConfig(unittest.TestCase):
             ]),
             "privacy": OrderedDict([
                 ("privacy_folder", {
-                    "value": "/var/lib/radicale/privacy",
+                    "value": "privacy",
                     "type": str,
                     "help": "folder for storing privacy settings"
                 })
