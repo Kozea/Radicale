@@ -21,12 +21,12 @@ Radicale tests with simple requests.
 
 """
 
+import logging
 import os
 import posixpath
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
 import defusedxml.ElementTree as DefusedET
-import logging
 import vobject
 
 from radicale import storage, xmlutils
