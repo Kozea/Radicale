@@ -14,18 +14,19 @@ logger = logging.getLogger(__name__)
 class PrivacyStorage:
     """Storage for privacy settings."""
 
-    def __init__(self, configuration: Configuration):
-        """Initialize the privacy storage.
+    def __init__(self, configuration: Configuration) -> None:
+        """Initialize the storage.
 
         Args:
-            configuration: The Radicale configuration object.
+            configuration: The configuration to use.
+
         """
         self.configuration = configuration
         self.settings_dir = os.path.join(
-            configuration.get("storage", "filesystem_folder"),
-            configuration.get("privacy", "privacy_folder")
+            configuration._values["storage"]["filesystem_folder"],
+            configuration._values["privacy"]["privacy_folder"]
         )
-        self.salt = configuration.get("privacy", "salt")
+        self.salt = configuration._values["privacy"]["salt"]
         os.makedirs(self.settings_dir, exist_ok=True)
 
     def _get_settings_file(self, hashed_id: str) -> str:
