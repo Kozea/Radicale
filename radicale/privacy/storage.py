@@ -21,19 +21,27 @@ class PrivacyStorage:
             configuration: The configuration to use.
 
         """
-        self.configuration = configuration
-        self.settings_dir = os.path.join(
-            configuration._values["storage"]["filesystem_folder"],
-            configuration._values["privacy"]["privacy_folder"]
-        )
-        self.salt = configuration._values["privacy"]["salt"]
+        # Get configuration values
+        self.privacy_folder = configuration.get("privacy", "privacy_folder")
+        self.salt = configuration.get("privacy", "salt")
 
-        # Create the privacy folder and its parent directories if they don't exist
-        try:
+        # Handle privacy folder path
+        if self.privacy_folder.startswith("~"):
+            self.settings_dir = os.path.expanduser(self.privacy_folder)
+        else:
+            self.settings_dir = os.path.join(
+                configuration.get("storage", "filesystem_folder"),
+                self.privacy_folder
+            )
+
+        # Create privacy folder if it doesn't exist
+        if not os.path.exists(self.settings_dir):
+            logger.warning("Privacy settings location: %r does not exist, creating now", self.settings_dir)
             os.makedirs(self.settings_dir, exist_ok=True)
-        except OSError as e:
-            logger.error("Failed to create privacy folder %s: %s", self.settings_dir, str(e))
-            raise
+
+        # Log privacy settings
+        logger.info("Privacy settings location: %r", self.settings_dir)
+        logger.info("Privacy salt: %r", self.salt)
 
     def _get_settings_file(self, hashed_id: str) -> str:
         """Get the path to the settings file for a hashed identifier.
