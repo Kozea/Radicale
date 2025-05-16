@@ -284,3 +284,78 @@ class TestPrivacySettings(unittest.TestCase):
         self.settings.set_settings(identifier, ["photo"], ["name"])
         self.assertTrue(self.settings.is_field_private(identifier, "photo"))
         self.assertTrue(self.settings.is_field_allowed(identifier, "name"))
+
+
+class TestPrivacyConfig(unittest.TestCase):
+    """Test the privacy configuration parameters."""
+
+    def setUp(self):
+        """Set up test environment."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.schema = {
+            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
+            "privacy": {
+                "salt": {"value": "test_salt", "type": str},
+                "privacy_folder": {"value": ".Radicale.privacy", "type": str}
+            }
+        }
+
+    def tearDown(self):
+        """Clean up test environment."""
+        for root, dirs, files in os.walk(self.temp_dir, topdown=False):
+            for name in files:
+                os.remove(os.path.join(root, name))
+            for name in dirs:
+                os.rmdir(os.path.join(root, name))
+        os.rmdir(self.temp_dir)
+
+    def test_default_values(self):
+        """Test that default values are set correctly."""
+        config = Configuration(self.schema)
+
+        # Test salt parameter
+        self.assertEqual(config.get("privacy", "salt"), "test_salt")
+
+        # Test privacy_folder parameter
+        self.assertEqual(config.get("privacy", "privacy_folder"), ".Radicale.privacy")
+
+    def test_custom_values(self):
+        """Test that custom values can be set."""
+        custom_schema = {
+            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
+            "privacy": {
+                "salt": {"value": "custom_salt", "type": str},
+                "privacy_folder": {"value": "custom.privacy", "type": str}
+            }
+        }
+        config = Configuration(custom_schema)
+
+        # Test custom salt
+        self.assertEqual(config.get("privacy", "salt"), "custom_salt")
+
+        # Test custom privacy folder
+        self.assertEqual(config.get("privacy", "privacy_folder"), "custom.privacy")
+
+    def test_missing_values(self):
+        """Test that missing values are handled correctly."""
+        # Test missing salt
+        missing_salt_schema = {
+            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
+            "privacy": {
+                "privacy_folder": {"value": ".Radicale.privacy", "type": str}
+            }
+        }
+        config = Configuration(missing_salt_schema)
+        with self.assertRaises(KeyError):
+            config.get("privacy", "salt")
+
+        # Test missing privacy_folder
+        missing_folder_schema = {
+            "storage": {"filesystem_folder": {"value": self.temp_dir, "type": str}},
+            "privacy": {
+                "salt": {"value": "test_salt", "type": str}
+            }
+        }
+        config = Configuration(missing_folder_schema)
+        with self.assertRaises(KeyError):
+            config.get("privacy", "privacy_folder")
