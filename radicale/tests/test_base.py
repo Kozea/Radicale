@@ -21,6 +21,7 @@ Radicale tests with simple requests.
 
 """
 
+import logging
 import os
 import posixpath
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
@@ -745,7 +746,7 @@ permissions: RrWw""")
                      ) -> List[str]:
         filter_template = "<C:filter>%s</C:filter>"
         create_collection_fn: Callable[[str], Any]
-        if kind in ("event", "journal", "todo"):
+        if kind in ("event", "journal", "todo", "valarm"):
             create_collection_fn = self.mkcalendar
             path = "/calendar.ics/"
             filename_template = "%s%d.ics"
@@ -764,10 +765,13 @@ permissions: RrWw""")
         status, _, = self.delete(path, check=None)
         assert status in (200, 404)
         create_collection_fn(path)
+        logging.warning("Upload items %r", items)
         for i in items:
+            logging.warning("Upload %d", i)
             filename = filename_template % (kind, i)
             event = get_file_content(filename)
             self.put(posixpath.join(path, filename), event)
+        logging.warning("Upload items finished")
         filters_text = "".join(filter_template % f for f in filters)
         _, responses = self.report(path, """\
 <?xml version="1.0" encoding="utf-8" ?>
@@ -1303,6 +1307,49 @@ permissions: RrWw""")
     </C:comp-filter>
 </C:comp-filter>"""], "todo", items=range(1, 9))
         assert "/calendar.ics/todo7.ics" in answer
+
+    def test_time_range_filter_events_valarm(self) -> None:
+        """Report request with time-range filter on events having absolute VALARM."""
+        answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:comp-filter name="VALARM">
+            <C:time-range start="20151010T030000Z" end="20151010T040000Z"/>
+        </C:comp-filter>
+    </C:comp-filter>
+</C:comp-filter>"""], "valarm", items=[1, 2])
+        assert "/calendar.ics/valarm1.ics" not in answer
+        assert "/calendar.ics/valarm2.ics" in answer  # absolute date
+        answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:comp-filter name="VALARM">
+            <C:time-range start="20151010T010000Z" end="20151010T020000Z"/>
+        </C:comp-filter>
+    </C:comp-filter>
+</C:comp-filter>"""], "valarm", items=[1, 2])
+        assert "/calendar.ics/valarm1.ics" not in answer
+        assert "/calendar.ics/valarm2.ics" not in answer
+        answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:comp-filter name="VALARM">
+            <C:time-range start="20151010T080000Z" end="20151010T090000Z"/>
+        </C:comp-filter>
+    </C:comp-filter>
+</C:comp-filter>"""], "valarm", items=[1, 2])
+        assert "/calendar.ics/valarm1.ics" not in answer
+        assert "/calendar.ics/valarm2.ics" not in answer
+        answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:comp-filter name="VALARM">
+            <C:time-range start="20151010T053000Z" end="20151010T055000Z"/>
+        </C:comp-filter>
+    </C:comp-filter>
+</C:comp-filter>"""], "valarm", items=[1, 2])
+        assert "/calendar.ics/valarm1.ics" in answer  # -15 min offset
+        assert "/calendar.ics/valarm2.ics" not in answer
 
     def test_time_range_filter_todos_completed(self) -> None:
         answer = self._test_filter(["""\

@@ -17,6 +17,8 @@
 
 import imaplib
 import ssl
+import sys
+from typing import Union
 
 from radicale import auth
 from radicale.log import logger
@@ -49,7 +51,10 @@ class Auth(auth.BaseAuth):
 
     def _login(self, login, password) -> str:
         try:
-            connection: imaplib.IMAP4 | imaplib.IMAP4_SSL
+            if sys.version_info < (3, 10):
+                connection: Union[imaplib.IMAP4, imaplib.IMAP4_SSL]
+            else:
+                connection: imaplib.IMAP4 | imaplib.IMAP4_SSL
             if self._security == "tls":
                 connection = imaplib.IMAP4_SSL(
                     host=self._host, port=self._port,

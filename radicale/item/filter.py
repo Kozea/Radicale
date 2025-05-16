@@ -21,11 +21,12 @@
 
 
 import math
+import sys
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
 from itertools import chain
 from typing import (Callable, Iterable, Iterator, List, Optional, Sequence,
-                    Tuple)
+                    Tuple, Union)
 
 import vobject
 
@@ -38,6 +39,11 @@ DATETIME_MIN: datetime = datetime.min.replace(tzinfo=timezone.utc)
 DATETIME_MAX: datetime = datetime.max.replace(tzinfo=timezone.utc)
 TIMESTAMP_MIN: int = math.floor(DATETIME_MIN.timestamp())
 TIMESTAMP_MAX: int = math.ceil(DATETIME_MAX.timestamp())
+
+if sys.version_info < (3, 10):
+    TRIGGER = Union[datetime, None]
+else:
+    TRIGGER = datetime | None
 
 
 def date_to_datetime(d: date) -> datetime:
@@ -88,8 +94,7 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
 
     """
 
-    # TODO: Improve filtering for VALARM and VFREEBUSY
-    #       so far only filtering based on existence of such component is implemented
+    # TODO: Filtering VFREEBUSY is not implemented
     # HACK: the filters are tested separately against all components
 
     name = filter_.get("name", "").upper()
@@ -117,10 +122,11 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
         return False
     if ((level == 0 and name != "VCALENDAR") or
             (level == 1 and name not in ("VTODO", "VEVENT", "VJOURNAL")) or
-            (level == 2 and name not in ("VALARM", "VFREEBUSY"))):
+            (level == 2 and name not in ("VALARM"))):
         logger.warning("Filtering %s is not supported", name)
         return True
     # Point #3 and #4 of rfc4791-9.7.1
+    trigger = None
     if level == 0:
         components = [item.vobject_item]
     elif level == 1:
@@ -128,15 +134,19 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
     elif level == 2:
         components = list(getattr(item.vobject_item, "%s_list" % tag.lower()))
         for comp in components:
-            if not hasattr(comp, name.lower()):
+            subcomp = getattr(comp, name.lower(), None)
+            if not subcomp:
                 return False
+            if hasattr(subcomp, "trigger"):
+                # rfc4791-7.8.5:
+                trigger = subcomp.trigger.value
     for child in filter_:
         if child.tag == xmlutils.make_clark("C:prop-filter"):
             if not any(prop_match(comp, child, "C")
                        for comp in components):
                 return False
         elif child.tag == xmlutils.make_clark("C:time-range"):
-            if not time_range_match(item.vobject_item, filter_[0], tag):
+            if not time_range_match(item.vobject_item, filter_[0], tag, trigger):
                 return False
         elif child.tag == xmlutils.make_clark("C:comp-filter"):
             if not comp_match(item, child, level=level + 1):
@@ -166,7 +176,7 @@ def prop_match(vobject_item: vobject.base.Component,
     # Point #3 and #4 of rfc4791-9.7.2
     for child in filter_:
         if ns == "C" and child.tag == xmlutils.make_clark("C:time-range"):
-            if not time_range_match(vobject_item, child, name):
+            if not time_range_match(vobject_item, child, name, None):
                 return False
         elif child.tag == xmlutils.make_clark("%s:text-match" % ns):
             if not text_match(vobject_item, child, name, ns):
@@ -180,9 +190,10 @@ def prop_match(vobject_item: vobject.base.Component,
 
 
 def time_range_match(vobject_item: vobject.base.Component,
-                     filter_: ET.Element, child_name: str) -> bool:
+                     filter_: ET.Element, child_name: str, trigger: TRIGGER) -> bool:
     """Check whether the component/property ``child_name`` of
        ``vobject_item`` matches the time-range ``filter_``."""
+    # supporting since 3.5.4 now optional trigger (either absolute or relative offset)
 
     if not filter_.get("start") and not filter_.get("end"):
         return False
@@ -193,6 +204,25 @@ def time_range_match(vobject_item: vobject.base.Component,
     def range_fn(range_start: datetime, range_end: datetime,
                  is_recurrence: bool) -> bool:
         nonlocal matched
+        if trigger:
+            # if trigger is given, only check range_start
+            if isinstance(trigger, timedelta):
+                # trigger is a offset, apply to range_start
+                if start < range_start + trigger and range_start + trigger < end:
+                    matched = True
+                    return True
+                else:
+                    return False
+            elif isinstance(trigger, datetime):
+                # trigger is absolute, use instead of range_start
+                if start < trigger and trigger < end:
+                    matched = True
+                    return True
+                else:
+                    return False
+            else:
+                logger.warning("item/filter/time_range_match/range_fn: unsupported data format of provided trigger=%r", trigger)
+                return True
         if start < range_end and range_start < end:
             matched = True
             return True
