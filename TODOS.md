@@ -22,19 +22,23 @@
   - The server will send me a one-time password (OTP)
   - I will enter the OTP in a form
   - I will then be authenticated
-  - My email or phone number should be hashed by the server to prevent identification based on my external user account
+  - ~~My email or phone number should be hashed by the server to prevent identification based on my external user account~~
 
 ### Privacy Settings Management
 
 - As an authenticated external user, I want to manage my privacy settings:
   - I want to control which personal information others can store about me (e.g., pronouns, company, job title, photo, birthday, address)
   - Radicale needs an API to save privacy settings for authenticated external users
-  - Privacy settings should be stored on the filesystem in a simple format
-  - The hashed email or phone number should serve as the key to identify my user settings
+  - ~~Privacy settings should be stored on the filesystem in a simple format~~
+  - Privacy settings should be stored in a database to ease statistics. A single SQLite on the filesystem can be used (see SQLAlchemy ORM).
+  - ~~The hashed email or phone number should serve as the key to identify my user settings~~
+    - The identifier (email or phone number) does not need to be hashed for the user settings. Privacy is not a critical point here.
+    - Using a salt is not necessary either. We are more concerned about losing the salt and thus losing all data.
   - **Question**: Should we support multiple identifiers per user?
     - One identity linked to one settings profile
     - Multiple identities (email/phone) linked to one settings profile
     - Enable users to associate additional emails and phone numbers to their existing settings
+    **Answer**: We will use a 1:1 relation between identity and settings. When we have multiple policies for many cards, the most restrictive should be applied. The policies are applied field by field.
 
 ### Personal Information Disclosure
 
@@ -47,6 +51,7 @@
 
 - As an authenticated external user, I want to clean or modify cards containing my information based on my privacy settings:
   - This feature requires scanning and modifying all vCard files stored on the Radicale server that contain my information
+  - Scanning should also be done when syncronizing the client data with the server data (uploading of data).
 
 ### Privacy Enforcement
 
