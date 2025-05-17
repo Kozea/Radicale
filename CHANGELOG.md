@@ -2,6 +2,7 @@
 
 ## 3.5.4.dev
 * Improve: item filter enhanced for 3rd level supporting VALARM and honoring TRIGGER (offset or absolute)
+* Enhancement: add Caddy config file example (see contrib directory)
 
 ## 3.5.3
 * Add: [auth] htpasswd: support for Argon2 hashes
