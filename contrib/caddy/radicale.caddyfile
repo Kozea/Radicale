@@ -1,0 +1,26 @@
+## example for a dedidcated FQDN and radicale is served on / there
+## if you are serving on /radicale/ this needs to be prepended at the obvious places
+# taken from https://github.com/Kozea/Radicale/discussions/1753
+
+caldav.example.com {
+    # Append / if GETting /.web
+    @get-root {
+        method GET
+        path /.web
+    }
+
+    redir @get-root /.web/
+
+    # Do not auth on /.web/* 
+    @not-webui {
+        not path /.web/*
+    }
+
+    basic_auth @not-webui {
+        USER HASH
+    }
+
+    reverse_proxy localhost:5232 {
+        header_up X-Remote-User {http.auth.user.id}
+    }
+}
