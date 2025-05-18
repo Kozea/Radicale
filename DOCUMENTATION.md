@@ -1459,6 +1459,8 @@ Default: `False`
 
 ##### rights_rule_doesnt_match_on_debug
 
+_(>= 3.2.3)_
+
 Log rights rule which doesn't match on level=debug
 
 Default: `False`
