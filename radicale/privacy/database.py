@@ -106,3 +106,16 @@ class PrivacyDatabase:
             return None
         finally:
             session.close()
+
+    def delete_user_settings(self, identifier: str) -> bool:
+        """Delete user settings by identifier."""
+        session = self.Session()
+        try:
+            user_settings = session.query(UserSettings).filter_by(identifier=identifier).first()
+            if user_settings:
+                session.delete(user_settings)
+                session.commit()
+                return True
+            return False
+        finally:
+            session.close()

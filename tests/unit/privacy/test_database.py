@@ -139,3 +139,51 @@ def test_invalid_settings_field(db_manager):
     settings = {"invalid_field": True}
     with pytest.raises(Exception):  # SQLAlchemy will raise an error
         db_manager.create_user_settings("test@example.com", settings)
+
+
+def test_delete_user_settings_success(db_manager):
+    """Test successfully deleting user settings."""
+    # First create settings
+    settings = {
+        "allow_name": True,
+        "allow_email": False,
+        "allow_phone": True,
+        "allow_company": False,
+        "allow_title": True,
+        "allow_photo": False,
+        "allow_birthday": True,
+        "allow_address": False
+    }
+    db_manager.create_user_settings("test@example.com", settings)
+
+    # Delete settings
+    deleted = db_manager.delete_user_settings("test@example.com")
+    assert deleted is True
+
+    # Verify settings were deleted
+    user_settings = db_manager.get_user_settings("test@example.com")
+    assert user_settings is None
+
+
+def test_delete_nonexistent_user_settings(db_manager):
+    """Test deleting settings for a non-existent user."""
+    deleted = db_manager.delete_user_settings("nonexistent@example.com")
+    assert deleted is False
+
+
+def test_delete_and_recreate_user_settings(db_manager):
+    """Test that a user can be recreated after deletion."""
+    # Create initial settings
+    initial_settings = {"allow_name": True}
+    db_manager.create_user_settings("test@example.com", initial_settings)
+
+    # Delete settings
+    deleted = db_manager.delete_user_settings("test@example.com")
+    assert deleted is True
+
+    # Create new settings
+    new_settings = {"allow_name": False}
+    user_settings = db_manager.create_user_settings("test@example.com", new_settings)
+    assert user_settings is not None
+    assert user_settings.identifier == "test@example.com"
+    assert user_settings.allow_name is False
