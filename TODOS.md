@@ -80,10 +80,15 @@
    - Store temporary authentication tokens in a simple file-based system
 
 2. **Basic Privacy Settings Storage**
-   - Create a simple JSON file structure to store privacy settings
-   - Implement a basic hashing function for email identifiers
-   - Store settings in `.Radicale.privacy/{hashed_email}.json` format
-   - Support a fixed set of vCard fields that can be marked as private
+   - Set up SQLite database with SQLAlchemy ORM
+   - Create UserSettings model with all privacy fields
+   - Add configuration options in `radicale/config.py` for database path and default settings
+   - Implement DatabaseManager class with CRUD operations
+   - Write unit tests for database operations
+   - Support a fixed set of vCard fields that can be marked as private:
+     - name, email, phone, company, title, photo, birthday, address
+   - Use 1:1 relation between identity and settings
+   - Apply most restrictive policy when multiple cards exist
 
 ### Phase 2: VCF Processing & Privacy Enforcement
 
