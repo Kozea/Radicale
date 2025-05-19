@@ -1,4 +1,9 @@
-import logging
+"""
+Database handling for privacy settings.
+
+This module provides the database interface for storing and retrieving privacy settings.
+"""
+
 import os
 from datetime import datetime, timezone
 from typing import Dict, Optional
@@ -7,7 +12,7 @@ from sqlalchemy import (Boolean, Column, DateTime, Integer, String,
                         create_engine)
 from sqlalchemy.orm import DeclarativeBase, scoped_session, sessionmaker
 
-logger = logging.getLogger("radicale.privacy.database")
+from radicale import config
 
 
 class Base(DeclarativeBase):
@@ -15,7 +20,9 @@ class Base(DeclarativeBase):
 
 
 class UserSettings(Base):
-    __tablename__ = 'user_settings'
+    """User privacy settings model."""
+
+    __tablename__ = "user_settings"
 
     id = Column(Integer, primary_key=True)
     identifier = Column(String, unique=True)  # email or phone
@@ -33,17 +40,24 @@ class UserSettings(Base):
     allow_address = Column(Boolean, default=True)
 
 
-class DatabaseManager:
-    def __init__(self, db_path: str):
-        """Initialize the database manager with the given database path."""
-        # Ensure the directory exists
-        os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
+class PrivacyDatabase:
+    """Class to handle privacy settings database operations."""
 
-        # Log database path
-        logger.info("Using privacy database at %r", db_path)
+    def __init__(self, configuration: "config.Configuration") -> None:
+        """Initialize the database connection.
+
+        Args:
+            configuration: The Radicale configuration object
+        """
+        self._configuration = configuration
+        self._database_path = os.path.expanduser(
+            configuration.get("privacy", "database_path"))
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(os.path.abspath(self._database_path)), exist_ok=True)
 
         # Create engine with SQLite
-        self.engine = create_engine(f'sqlite:///{db_path}')
+        self.engine = create_engine(f'sqlite:///{self._database_path}')
         self.Session = scoped_session(sessionmaker(bind=self.engine))
 
     def close(self):

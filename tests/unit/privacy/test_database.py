@@ -2,14 +2,14 @@ import os
 import unittest
 from datetime import datetime
 
-from radicale.privacy.database import DatabaseManager
+from radicale.privacy.database import PrivacyDatabase
 
 
-class TestDatabaseManager(unittest.TestCase):
+class TestPrivacyDatabase(unittest.TestCase):
     def setUp(self):
         """Set up test environment before each test."""
         self.test_db_path = "test.db"
-        self.db_manager = DatabaseManager(self.test_db_path)
+        self.db_manager = PrivacyDatabase(self.test_db_path)
         self.db_manager.init_db()
 
     def tearDown(self):

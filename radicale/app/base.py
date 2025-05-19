@@ -22,8 +22,8 @@ import sys
 import xml.etree.ElementTree as ET
 from typing import Optional
 
-from radicale import (auth, config, hook, httputils, pathutils, rights,
-                      storage, types, web, xmlutils)
+from radicale import (auth, config, hook, httputils, pathutils, privacy,
+                      rights, storage, types, web, xmlutils)
 from radicale.log import logger
 
 # HACK: https://github.com/tiran/defusedxml/issues/54
@@ -42,6 +42,7 @@ class ApplicationBase:
     _permit_delete_collection: bool
     _permit_overwrite_collection: bool
     _hook: hook.BaseHook
+    _privacy: Optional[privacy.PrivacyDatabase]
 
     def __init__(self, configuration: config.Configuration) -> None:
         self.configuration = configuration
@@ -54,6 +55,7 @@ class ApplicationBase:
         self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
         self._request_content_on_debug = configuration.get("logging", "request_content_on_debug")
         self._hook = hook.load(configuration)
+        self._privacy = privacy.load(configuration)
 
     def _read_xml_request_body(self, environ: types.WSGIEnviron
                                ) -> Optional[ET.Element]:
