@@ -2,7 +2,7 @@ import os
 import unittest
 from datetime import datetime
 
-from radicale.storage.database import DatabaseManager
+from radicale.privacy.database import DatabaseManager
 
 
 class TestDatabaseManager(unittest.TestCase):

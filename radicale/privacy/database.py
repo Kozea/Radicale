@@ -7,7 +7,8 @@ from sqlalchemy import (Boolean, Column, DateTime, Integer, String,
                         create_engine)
 from sqlalchemy.orm import DeclarativeBase, scoped_session, sessionmaker
 
-logger = logging.getLogger("radicale.storage.database")
+logger = logging.getLogger("radicale.privacy.database")
+
 
 class Base(DeclarativeBase):
     pass
