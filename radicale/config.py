@@ -429,7 +429,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": str_or_callable,
             "internal": storage.INTERNAL_TYPES}),
         ("database_path", {
-            "value": "/var/lib/radicale/privacy.db",
+            "value": "~/.local/share/radicale/privacy.db",
             "help": "path where the privacy settings database is stored",
             "type": filepath}),
         ("default_allow_name", {
