@@ -39,7 +39,10 @@ def test_get_settings_not_found(api):
 def test_get_settings_unauthorized(api):
     """Test getting settings without a user."""
     status, headers, response = api.get_settings("")
-    assert status == client.UNAUTHORIZED
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "User identifier is required" in response_data["error"]
 
 
 def test_create_settings_success(api):
@@ -159,7 +162,10 @@ def test_update_settings_unauthorized(api):
     """Test updating settings without a user."""
     settings = {"allow_name": False}
     status, headers, response = api.update_settings("", settings)
-    assert status == client.UNAUTHORIZED
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "User identifier is required" in response_data["error"]
 
 
 def test_delete_settings_success(api):
@@ -196,4 +202,103 @@ def test_delete_settings_not_found(api):
 def test_delete_settings_unauthorized(api):
     """Test deleting settings without a user."""
     status, headers, response = api.delete_settings("")
-    assert status == client.UNAUTHORIZED
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "User identifier is required" in response_data["error"]
+
+
+def test_validate_user_identifier_email(api):
+    """Test email validation."""
+    # Valid emails
+    status, headers, response = api.get_settings("test@example.com")
+    assert status == client.NOT_FOUND  # Not found is OK, we're just testing validation
+
+    status, headers, response = api.get_settings("user.name@domain.co.uk")
+    assert status == client.NOT_FOUND
+
+    # Invalid emails
+    status, headers, response = api.get_settings("invalid.email")
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "Invalid identifier format" in response_data["error"]
+
+    status, headers, response = api.get_settings("@domain.com")
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "Invalid email format" in response_data["error"]
+
+    status, headers, response = api.get_settings("user@")
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "Invalid email format" in response_data["error"]
+
+
+def test_validate_user_identifier_phone(api):
+    """Test phone number validation."""
+    # Valid phone numbers - these should pass validation but return NOT_FOUND
+    # since they don't exist in the database
+    status, headers, response = api.get_settings("+1234567890")
+    assert status == client.NOT_FOUND
+
+    status, headers, response = api.get_settings("+1-234-567-8900")
+    assert status == client.NOT_FOUND
+
+    status, headers, response = api.get_settings("+(123) 456-7890")
+    assert status == client.NOT_FOUND
+
+    # Invalid phone numbers - these should fail validation
+    status, headers, response = api.get_settings("(123) 456-7890") # Missing +
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "Invalid identifier format" in response_data["error"]
+
+    status, headers, response = api.get_settings("1234567890")  # Missing +
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "Invalid identifier format" in response_data["error"]
+
+    status, headers, response = api.get_settings("+123")  # Too short
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "Invalid identifier format" in response_data["error"]
+
+    status, headers, response = api.get_settings("+1234567890123456")  # Too long
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "Invalid identifier format" in response_data["error"]
+
+    # Invalid identifiers (not email and not phone)
+    status, headers, response = api.get_settings("justtext")
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "Invalid identifier format" in response_data["error"]
+
+    status, headers, response = api.get_settings("user.name")
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "Invalid identifier format" in response_data["error"]
+
+    status, headers, response = api.get_settings("123-456")  # Not a valid phone format
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "Invalid identifier format" in response_data["error"]
+
+
+def test_validate_user_identifier_empty(api):
+    """Test empty user identifier validation."""
+    status, headers, response = api.get_settings("")
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "User identifier is required" in response_data["error"]

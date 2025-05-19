@@ -5,8 +5,9 @@ This module provides RESTful endpoints for managing user privacy settings.
 """
 
 import json
+import re
 from http import client
-from typing import Dict
+from typing import Dict, Tuple
 
 from radicale import config, httputils, types
 from radicale.privacy.database import PrivacyDatabase
@@ -24,6 +25,33 @@ class PrivacyAPI:
         self.configuration = configuration
         self._privacy_db = PrivacyDatabase(configuration)
 
+    def _validate_user_identifier(self, user: str) -> Tuple[bool, str]:
+        """Validate user identifier format.
+
+        Args:
+            user: The user identifier to validate (email or phone)
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        if not user:
+            return False, "User identifier is required"
+
+        # Check if it's an email
+        if '@' in user:
+            # Basic email validation
+            if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', user):
+                return False, "Invalid email format"
+            return True, ""
+
+        # If not an email, must be a phone number
+        # Remove any spaces, dashes, or parentheses
+        phone = re.sub(r'[\s\-\(\)]', '', user)
+        # Check if it's a valid phone number (E.164 format)
+        if not re.match(r'^\+[1-9]\d{6,14}$', phone):
+            return False, "Invalid identifier format. Must be a valid email or phone number in E.164 format (e.g., +1234567890)"
+        return True, ""
+
     def get_settings(self, user: str) -> types.WSGIResponse:
         """Get privacy settings for a user.
 
@@ -33,8 +61,11 @@ class PrivacyAPI:
         Returns:
             WSGI response with the user's privacy settings
         """
-        if not user:
-            return httputils.UNAUTHORIZED
+        is_valid, error_msg = self._validate_user_identifier(user)
+        if not is_valid:
+            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
+                "error": error_msg
+            })
 
         settings = self._privacy_db.get_user_settings(user)
         if not settings:
@@ -64,8 +95,11 @@ class PrivacyAPI:
         Returns:
             WSGI response indicating success or failure
         """
-        if not user:
-            return httputils.NOT_ALLOWED
+        is_valid, error_msg = self._validate_user_identifier(user)
+        if not is_valid:
+            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
+                "error": error_msg
+            })
 
         # Validate settings
         required_fields = {
@@ -99,8 +133,11 @@ class PrivacyAPI:
         Returns:
             WSGI response indicating success or failure
         """
-        if not user:
-            return httputils.UNAUTHORIZED
+        is_valid, error_msg = self._validate_user_identifier(user)
+        if not is_valid:
+            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
+                "error": error_msg
+            })
 
         # Validate settings
         if not settings:
@@ -140,8 +177,11 @@ class PrivacyAPI:
         Returns:
             WSGI response indicating success or failure
         """
-        if not user:
-            return httputils.UNAUTHORIZED
+        is_valid, error_msg = self._validate_user_identifier(user)
+        if not is_valid:
+            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
+                "error": error_msg
+            })
 
         try:
             deleted = self._privacy_db.delete_user_settings(user)
