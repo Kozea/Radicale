@@ -40,6 +40,11 @@ class DatabaseManager:
         self.engine = create_engine(f'sqlite:///{db_path}')
         self.Session = scoped_session(sessionmaker(bind=self.engine))
 
+    def close(self):
+        """Close all database connections and cleanup resources."""
+        self.Session.remove()
+        self.engine.dispose()
+
     def init_db(self):
         """Initialize the database by creating all tables."""
         Base.metadata.create_all(self.engine)
