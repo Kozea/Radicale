@@ -1,11 +1,15 @@
-from datetime import datetime, timezone
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, scoped_session
-from typing import Optional, Dict
 import os
+from datetime import datetime, timezone
+from typing import Dict, Optional
 
-Base = declarative_base()
+from sqlalchemy import (Boolean, Column, DateTime, Integer, String,
+                        create_engine)
+from sqlalchemy.orm import DeclarativeBase, scoped_session, sessionmaker
+
+
+class Base(DeclarativeBase):
+    pass
+
 
 class UserSettings(Base):
     __tablename__ = 'user_settings'
@@ -24,6 +28,7 @@ class UserSettings(Base):
     allow_photo = Column(Boolean, default=True)
     allow_birthday = Column(Boolean, default=True)
     allow_address = Column(Boolean, default=True)
+
 
 class DatabaseManager:
     def __init__(self, db_path: str):

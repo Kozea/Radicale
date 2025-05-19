@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
-import os
 import json
-import vobject
+import os
 import unittest
+
+import vobject
+
 
 class TestPrivacyDataset(unittest.TestCase):
     """Test cases for the privacy test dataset."""
@@ -48,7 +50,7 @@ class TestPrivacyDataset(unittest.TestCase):
         with open(filepath, 'r') as f:
             content = f.read()
             vcard = vobject.readOne(content)
-            
+
             # Check required fields
             self.assertEqual(vcard.uid.value, 'test1')
             self.assertEqual(vcard.fn.value, 'John Doe')
@@ -72,7 +74,7 @@ class TestPrivacyDataset(unittest.TestCase):
         with open(filepath, 'r') as f:
             content = f.read()
             vcard = vobject.readOne(content)
-            
+
             # Get all phone values
             phones = [tel.value for tel in vcard.contents.get('tel', [])]
             self.assertEqual(len(phones), 2)
@@ -85,12 +87,12 @@ class TestPrivacyDataset(unittest.TestCase):
         with open(filepath, 'r') as f:
             content = f.read()
             vcard = vobject.readOne(content)
-            
+
             # Check required fields
             self.assertEqual(vcard.uid.value, 'test8')
             self.assertEqual(vcard.fn.value, 'Minimal Contact')
             self.assertEqual(vcard.email.value, 'minimal@example.com')
-            
+
             # Check that no other fields exist
             expected_fields = {'uid', 'fn', 'n', 'email', 'version'}
             actual_fields = set(vcard.contents.keys())
@@ -102,7 +104,7 @@ class TestPrivacyDataset(unittest.TestCase):
         with open(filepath, 'r') as f:
             content = f.read()
             vcard = vobject.readOne(content)
-            
+
             # Check all fields
             self.assertEqual(vcard.uid.value, 'test9')
             self.assertEqual(vcard.fn.value, 'Full Contact')
@@ -118,7 +120,7 @@ class TestPrivacyDataset(unittest.TestCase):
         """Test that the privacy settings file exists and is valid JSON."""
         settings_file = os.path.join(self.settings_dir, 'sample_settings.json')
         self.assertTrue(os.path.exists(settings_file), "Privacy settings file does not exist")
-        
+
         with open(settings_file, 'r') as f:
             try:
                 settings = json.load(f)
@@ -131,7 +133,7 @@ class TestPrivacyDataset(unittest.TestCase):
         settings_file = os.path.join(self.settings_dir, 'sample_settings.json')
         with open(settings_file, 'r') as f:
             settings = json.load(f)
-            
+
             # Check structure for each user
             for email, user_settings in settings.items():
                 self.assertIsInstance(user_settings, dict)
@@ -139,12 +141,12 @@ class TestPrivacyDataset(unittest.TestCase):
                 self.assertIn('allowed_fields', user_settings)
                 self.assertIsInstance(user_settings['private_fields'], list)
                 self.assertIsInstance(user_settings['allowed_fields'], list)
-                
+
                 # Check that fields are not in both lists
                 private = set(user_settings['private_fields'])
                 allowed = set(user_settings['allowed_fields'])
                 self.assertEqual(private.intersection(allowed), set(),
-                              f"Fields cannot be both private and allowed for {email}")
+                                 f"Fields cannot be both private and allowed for {email}")
 
     def test_all_contacts_file(self):
         """Test that all_contacts.vcf contains all test contacts."""
@@ -152,14 +154,15 @@ class TestPrivacyDataset(unittest.TestCase):
         with open(filepath, 'r') as f:
             content = f.read()
             vcards = list(vobject.readComponents(content))
-            
+
             # Should have 9 contacts
             self.assertEqual(len(vcards), 9)
-            
+
             # Check that all UIDs are present
             uids = {vcard.uid.value for vcard in vcards}
             expected_uids = {f'test{i}' for i in range(1, 10)}
             self.assertEqual(uids, expected_uids)
 
+
 if __name__ == '__main__':
-    unittest.main() 
+    unittest.main()

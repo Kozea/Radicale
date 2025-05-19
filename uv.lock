@@ -510,7 +510,7 @@ requires-dist = [
     { name = "pika", specifier = ">=1.1.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7" },
     { name = "requests" },
-    { name = "sqlalchemy", specifier = ">=1.4.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.41" },
     { name = "vobject", specifier = ">=0.9.6" },
     { name = "waitress", marker = "extra == 'test'" },
 ]
