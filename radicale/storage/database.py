@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime, timezone
 from typing import Dict, Optional
@@ -6,6 +7,7 @@ from sqlalchemy import (Boolean, Column, DateTime, Integer, String,
                         create_engine)
 from sqlalchemy.orm import DeclarativeBase, scoped_session, sessionmaker
 
+logger = logging.getLogger("radicale.storage.database")
 
 class Base(DeclarativeBase):
     pass
@@ -35,6 +37,9 @@ class DatabaseManager:
         """Initialize the database manager with the given database path."""
         # Ensure the directory exists
         os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
+
+        # Log database path
+        logger.info("Using privacy database at %r", db_path)
 
         # Create engine with SQLite
         self.engine = create_engine(f'sqlite:///{db_path}')
