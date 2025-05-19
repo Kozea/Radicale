@@ -1,4 +1,5 @@
 import os
+import time
 import unittest
 
 from radicale.storage.database import DatabaseManager
@@ -13,8 +14,18 @@ class TestDatabaseManager(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after each test."""
+        # Close the database connection first
+        if hasattr(self.db_manager, 'close'):
+            self.db_manager.close()
+        # Give Windows a moment to release the file handle
+        time.sleep(0.1)
         if os.path.exists(self.test_db_path):
-            os.remove(self.test_db_path)
+            try:
+                os.remove(self.test_db_path)
+            except PermissionError:
+                # If we still can't delete, try one more time after a longer delay
+                time.sleep(1)
+                os.remove(self.test_db_path)
 
     def test_create_user_settings(self):
         """Test creating new user settings."""
