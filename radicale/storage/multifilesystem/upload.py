@@ -27,6 +27,7 @@ import radicale.item as radicale_item
 from radicale import pathutils
 from radicale.log import logger
 from radicale.privacy.database import PrivacyDatabase
+from radicale.privacy.enforcement import PrivacyEnforcement
 from radicale.storage.multifilesystem.base import CollectionBase
 from radicale.storage.multifilesystem.cache import CollectionPartCache
 from radicale.storage.multifilesystem.get import CollectionPartGet
@@ -37,6 +38,7 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
                            CollectionPartHistory, CollectionBase):
 
     _privacy_db: Optional[PrivacyDatabase] = None
+    _privacy_enforcement: Optional[PrivacyEnforcement] = None
 
     def upload(self, href: str, item: radicale_item.Item
                ) -> radicale_item.Item:
@@ -49,57 +51,24 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
         logger.debug("Item name: %r", item.name)
         logger.debug("Item type: %r", type(item))
 
-        # Check for privacy settings if this is a VCF file
-        if item.component_name == "VCARD" or item.name == "VCARD":
-            logger.info("Intercepted vCard upload:")
-            logger.info("vCard content:\n%s", item.serialize())
-
-            # Lazy init privacy db
-            if not hasattr(self, '_privacy_db') or self._privacy_db is None:
-                self._privacy_db = PrivacyDatabase(self._storage.configuration)
-                self._privacy_db.init_db()
-
-            # Get email from vCard
-            email = None
-            vcard = item.vobject_item
-            if hasattr(vcard, "email_list"):
-                for email_prop in vcard.email_list:
-                    email = email_prop.value
-                    logger.info("Found email in vCard: %r", email)
-                    break
-            if email:
-                # Get privacy settings for this email
-                privacy_settings = self._privacy_db.get_user_settings(email)
-                logger.info("Privacy settings for %r: %r", email, privacy_settings)
-                if privacy_settings:
-                    # Log all privacy settings
-                    logger.info("Privacy settings details:")
-                    logger.info("  Name disallowed: %r", privacy_settings.disallow_name)
-                    logger.info("  Email disallowed: %r", privacy_settings.disallow_email)
-                    logger.info("  Phone disallowed: %r", privacy_settings.disallow_phone)
-                    logger.info("  Company disallowed: %r", privacy_settings.disallow_company)
-                    logger.info("  Title disallowed: %r", privacy_settings.disallow_title)
-                    logger.info("  Photo disallowed: %r", privacy_settings.disallow_photo)
-                    logger.info("  Birthday disallowed: %r", privacy_settings.disallow_birthday)
-                    logger.info("  Address disallowed: %r", privacy_settings.disallow_address)
-
-                    # TODO: Apply privacy settings to vCard
-                    # For each field in the vCard, check if it's allowed
-                    # and modify/remove if not allowed
-                else:
-                    logger.info("No privacy settings found for %r", email)
-            else:
-                logger.info("No email found in vCard")
-        else:
-            logger.debug("Not a VCF file")
-
         try:
+            # Get privacy enforcement instance
+            privacy_enforcement = PrivacyEnforcement.get_instance(self._storage.configuration)
+
+            # Apply privacy enforcement
+            item = privacy_enforcement.enforce_privacy(item)
+
+            # Write the modified item to disk
             with self._atomic_write(path, newline="") as fo:  # type: ignore
                 f = cast(TextIO, fo)
                 f.write(item.serialize())
         except Exception as e:
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
+        finally:
+            # Always close the privacy enforcement connection
+            PrivacyEnforcement.close_all()
+
         # store cache file
         if self._storage._use_mtime_and_size_for_item_cache is True:
             cache_hash = self._item_cache_mtime_and_size(os.stat(path).st_size, os.stat(path).st_mtime_ns)
@@ -189,8 +158,3 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
                 self._storage._fsync(fb)
         self._storage._sync_directory(cache_folder)
         self._storage._sync_directory(self._filesystem_path)
-
-    def close_privacy_db(self):
-        if hasattr(self, '_privacy_db') and self._privacy_db:
-            self._privacy_db.close()
-            self._privacy_db = None
