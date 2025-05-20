@@ -42,8 +42,14 @@ class PrivacyEnforcement:
 
     def __init__(self, configuration):
         """Initialize the privacy enforcement with configuration."""
-        self._privacy_db = PrivacyDatabase(configuration)
-        self._privacy_db.init_db()
+        self._privacy_db = None
+        self._configuration = configuration
+
+    def _ensure_db_connection(self):
+        """Ensure the database connection is established."""
+        if self._privacy_db is None:
+            self._privacy_db = PrivacyDatabase(self._configuration)
+            self._privacy_db.init_db()
 
     def enforce_privacy(self, item: radicale_item.Item) -> radicale_item.Item:
         """Enforce privacy settings on a vCard item by removing disallowed fields.
@@ -73,6 +79,9 @@ class PrivacyEnforcement:
         if not email:
             logger.info("No email found in vCard")
             return item
+
+        # Ensure database connection is established
+        self._ensure_db_connection()
 
         # Get privacy settings for this email
         privacy_settings = self._privacy_db.get_user_settings(email)

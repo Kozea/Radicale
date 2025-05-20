@@ -37,6 +37,7 @@ from urllib.parse import unquote
 
 from radicale import Application, config, utils
 from radicale.log import logger
+from radicale.privacy.enforcement import PrivacyEnforcement
 
 COMPAT_EAI_ADDRFAMILY: int
 if hasattr(socket, "EAI_ADDRFAMILY"):
@@ -374,3 +375,6 @@ def serve(configuration: config.Configuration,
                 s.recv(1)
                 s.close()
             server.server_close()
+        # Close privacy enforcement connections
+        logger.info("Closing privacy enforcement connections")
+        PrivacyEnforcement.close_all()

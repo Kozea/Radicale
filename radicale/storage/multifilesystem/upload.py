@@ -65,9 +65,6 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
         except Exception as e:
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
-        finally:
-            # Always close the privacy enforcement connection
-            PrivacyEnforcement.close_all()
 
         # store cache file
         if self._storage._use_mtime_and_size_for_item_cache is True:
