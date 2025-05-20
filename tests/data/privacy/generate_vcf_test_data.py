@@ -213,24 +213,6 @@ def main():
             f.write(card.serialize())
     print(f"Created {combined_filename}")
 
-    # Create a sample privacy settings file
-    sample_settings = {
-        "john.doe@example.com": {
-            "private_fields": ["photo", "birthday", "address"],
-            "allowed_fields": ["name", "email", "phone", "company", "title"]
-        },
-        "jane.smith@example.com": {
-            "private_fields": ["phone", "address"],
-            "allowed_fields": ["name", "email", "company", "title", "photo", "birthday"]
-        }
-    }
-
-    settings_file = os.path.join(settings_dir, "sample_settings.json")
-    import json
-    with open(settings_file, 'w') as f:
-        json.dump(sample_settings, f, indent=2)
-    print(f"Created {settings_file}")
-
 
 if __name__ == '__main__':
     main()

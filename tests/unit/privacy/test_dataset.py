@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import json
 import os
 import unittest
 
@@ -15,7 +14,7 @@ class TestPrivacyDataset(unittest.TestCase):
         """Set up test data paths."""
         # Get the base directory (tests/data/privacy_test)
         cls.base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        cls.data_dir = os.path.join(cls.base_dir, 'data', 'privacy_test')
+        cls.data_dir = os.path.join(cls.base_dir, 'data', 'privacy')
         cls.vcf_dir = os.path.join(cls.data_dir, 'vcf')
         cls.settings_dir = os.path.join(cls.data_dir, 'settings')
 
@@ -115,38 +114,6 @@ class TestPrivacyDataset(unittest.TestCase):
             self.assertTrue(hasattr(vcard, 'photo'))
             self.assertEqual(vcard.bday.value, '1985-06-15')
             self.assertTrue(hasattr(vcard, 'adr'))
-
-    def test_privacy_settings_exist(self):
-        """Test that the privacy settings file exists and is valid JSON."""
-        settings_file = os.path.join(self.settings_dir, 'sample_settings.json')
-        self.assertTrue(os.path.exists(settings_file), "Privacy settings file does not exist")
-
-        with open(settings_file, 'r') as f:
-            try:
-                settings = json.load(f)
-                self.assertIsInstance(settings, dict)
-            except json.JSONDecodeError as e:
-                self.fail(f"Invalid JSON in privacy settings file: {str(e)}")
-
-    def test_privacy_settings_structure(self):
-        """Test that the privacy settings have the expected structure."""
-        settings_file = os.path.join(self.settings_dir, 'sample_settings.json')
-        with open(settings_file, 'r') as f:
-            settings = json.load(f)
-
-            # Check structure for each user
-            for email, user_settings in settings.items():
-                self.assertIsInstance(user_settings, dict)
-                self.assertIn('private_fields', user_settings)
-                self.assertIn('allowed_fields', user_settings)
-                self.assertIsInstance(user_settings['private_fields'], list)
-                self.assertIsInstance(user_settings['allowed_fields'], list)
-
-                # Check that fields are not in both lists
-                private = set(user_settings['private_fields'])
-                allowed = set(user_settings['allowed_fields'])
-                self.assertEqual(private.intersection(allowed), set(),
-                                 f"Fields cannot be both private and allowed for {email}")
 
     def test_all_contacts_file(self):
         """Test that all_contacts.vcf contains all test contacts."""
