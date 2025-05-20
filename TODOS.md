@@ -83,12 +83,11 @@
    - Set up SQLite database with SQLAlchemy ORM
    - Create UserSettings model with all privacy fields
    - Add configuration options in `radicale/config.py` for database path and default settings
-   - Implement DatabaseManager class with CRUD operations
+   - Implement PrivacyDatabase class with CRUD operations
    - Write unit tests for database operations
    - Support a fixed set of vCard fields that can be marked as private:
      - name, email, phone, company, title, photo, birthday, address
    - Use 1:1 relation between identity and settings
-   - Apply most restrictive policy when multiple cards exist
 
 ### Phase 2: VCF Processing & Privacy Enforcement
 
@@ -97,6 +96,7 @@
    - Add a pre-processing step that checks vCards against privacy rules
    - For the MVP, focus on the most common vCard fields (name, email, phone, company, etc.)
    - Implement simple field validation based on privacy settings
+   - Apply most restrictive policy when multiple cards exist
 
 2. **Simple Query Functionality**
    - Create a basic function to scan vCards for a given identity
