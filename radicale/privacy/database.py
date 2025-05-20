@@ -81,6 +81,19 @@ class PrivacyDatabase:
         """Create new user settings."""
         session = self.Session()
         try:
+            # If no settings provided, use configuration defaults
+            if not settings:
+                settings = {
+                    "allow_name": self._configuration.get("privacy", "default_allow_name"),
+                    "allow_email": self._configuration.get("privacy", "default_allow_email"),
+                    "allow_phone": self._configuration.get("privacy", "default_allow_phone"),
+                    "allow_company": self._configuration.get("privacy", "default_allow_company"),
+                    "allow_title": self._configuration.get("privacy", "default_allow_title"),
+                    "allow_photo": self._configuration.get("privacy", "default_allow_photo"),
+                    "allow_birthday": self._configuration.get("privacy", "default_allow_birthday"),
+                    "allow_address": self._configuration.get("privacy", "default_allow_address")
+                }
+
             user_settings = UserSettings(
                 identifier=identifier,
                 **settings

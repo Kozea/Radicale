@@ -187,3 +187,48 @@ def test_delete_and_recreate_user_settings(db_manager):
     assert user_settings is not None
     assert user_settings.identifier == "test@example.com"
     assert user_settings.allow_name is False
+
+
+def test_default_settings_from_config(db_manager):
+    """Test that default settings from config are properly applied."""
+    # Create settings with no fields specified
+    user_settings = db_manager.create_user_settings("test@example.com", {})
+
+    # Verify each field matches the config default
+    config = db_manager._configuration
+    assert user_settings.allow_name == config.get("privacy", "default_allow_name")
+    assert user_settings.allow_email == config.get("privacy", "default_allow_email")
+    assert user_settings.allow_phone == config.get("privacy", "default_allow_phone")
+    assert user_settings.allow_company == config.get("privacy", "default_allow_company")
+    assert user_settings.allow_title == config.get("privacy", "default_allow_title")
+    assert user_settings.allow_photo == config.get("privacy", "default_allow_photo")
+    assert user_settings.allow_birthday == config.get("privacy", "default_allow_birthday")
+    assert user_settings.allow_address == config.get("privacy", "default_allow_address")
+
+
+def test_config_changes_affect_new_users(db_manager):
+    """Test that changes to config defaults affect new users."""
+    # Create initial user with current defaults
+    db_manager.create_user_settings("user1@example.com", {})
+
+    # Change config defaults
+    db_manager._configuration.update({
+        "privacy": {
+            "default_allow_name": False,
+            "default_allow_email": False
+        }
+    }, "test")
+
+    # Create new user, should get new defaults
+    user2 = db_manager.create_user_settings("user2@example.com", {})
+    assert user2.allow_name is False
+    assert user2.allow_email is False
+
+    # Verify other fields still have their original defaults
+    config = db_manager._configuration
+    assert user2.allow_phone == config.get("privacy", "default_allow_phone")
+    assert user2.allow_company == config.get("privacy", "default_allow_company")
+    assert user2.allow_title == config.get("privacy", "default_allow_title")
+    assert user2.allow_photo == config.get("privacy", "default_allow_photo")
+    assert user2.allow_birthday == config.get("privacy", "default_allow_birthday")
+    assert user2.allow_address == config.get("privacy", "default_allow_address")
