@@ -73,14 +73,14 @@ class PrivacyAPI:
 
         # Convert settings to dict
         settings_dict = {
-            "allow_name": settings.allow_name,
-            "allow_email": settings.allow_email,
-            "allow_phone": settings.allow_phone,
-            "allow_company": settings.allow_company,
-            "allow_title": settings.allow_title,
-            "allow_photo": settings.allow_photo,
-            "allow_birthday": settings.allow_birthday,
-            "allow_address": settings.allow_address
+            "disallow_name": settings.disallow_name,
+            "disallow_email": settings.disallow_email,
+            "disallow_phone": settings.disallow_phone,
+            "disallow_company": settings.disallow_company,
+            "disallow_title": settings.disallow_title,
+            "disallow_photo": settings.disallow_photo,
+            "disallow_birthday": settings.disallow_birthday,
+            "disallow_address": settings.disallow_address
         }
 
         return client.OK, {"Content-Type": "application/json"}, json.dumps(settings_dict)
@@ -103,8 +103,8 @@ class PrivacyAPI:
 
         # Validate settings
         required_fields = {
-            "allow_name", "allow_email", "allow_phone", "allow_company",
-            "allow_title", "allow_photo", "allow_birthday", "allow_address"
+            "disallow_name", "disallow_email", "disallow_phone", "disallow_company",
+            "disallow_title", "disallow_photo", "disallow_birthday", "disallow_address"
         }
         if not all(field in settings for field in required_fields):
             return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
@@ -146,8 +146,8 @@ class PrivacyAPI:
             })
 
         valid_fields = {
-            "allow_name", "allow_email", "allow_phone", "allow_company",
-            "allow_title", "allow_photo", "allow_birthday", "allow_address"
+            "disallow_name", "disallow_email", "disallow_phone", "disallow_company",
+            "disallow_title", "disallow_photo", "disallow_birthday", "disallow_address"
         }
         if not all(field in valid_fields for field in settings):
             return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({

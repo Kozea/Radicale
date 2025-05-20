@@ -48,14 +48,14 @@ def test_get_settings_unauthorized(api):
 def test_create_settings_success(api):
     """Test creating settings successfully."""
     settings = {
-        "allow_name": True,
-        "allow_email": False,
-        "allow_phone": True,
-        "allow_company": False,
-        "allow_title": True,
-        "allow_photo": False,
-        "allow_birthday": True,
-        "allow_address": False
+        "disallow_name": False,
+        "disallow_email": True,
+        "disallow_phone": False,
+        "disallow_company": True,
+        "disallow_title": False,
+        "disallow_photo": True,
+        "disallow_birthday": False,
+        "disallow_address": True
     }
     status, headers, response = api.create_settings("test@example.com", settings)
     assert status == client.CREATED
@@ -70,8 +70,8 @@ def test_create_settings_success(api):
 def test_create_settings_missing_fields(api):
     """Test creating settings with missing fields."""
     settings = {
-        "allow_name": True,
-        "allow_email": False
+        "disallow_name": False,
+        "disallow_email": True
     }
     status, headers, response = api.create_settings("test@example.com", settings)
     assert status == client.BAD_REQUEST
@@ -83,14 +83,14 @@ def test_create_settings_missing_fields(api):
 def test_create_settings_invalid_types(api):
     """Test creating settings with invalid field types."""
     settings = {
-        "allow_name": "true",  # Should be boolean
-        "allow_email": False,
-        "allow_phone": True,
-        "allow_company": False,
-        "allow_title": True,
-        "allow_photo": False,
-        "allow_birthday": True,
-        "allow_address": False
+        "disallow_name": "false",  # Should be boolean
+        "disallow_email": True,
+        "disallow_phone": False,
+        "disallow_company": True,
+        "disallow_title": False,
+        "disallow_photo": True,
+        "disallow_birthday": False,
+        "disallow_address": True
     }
     status, headers, response = api.create_settings("test@example.com", settings)
     assert status == client.BAD_REQUEST
@@ -103,21 +103,21 @@ def test_update_settings_success(api):
     """Test updating settings successfully."""
     # First create settings
     initial_settings = {
-        "allow_name": True,
-        "allow_email": True,
-        "allow_phone": True,
-        "allow_company": True,
-        "allow_title": True,
-        "allow_photo": True,
-        "allow_birthday": True,
-        "allow_address": True
+        "disallow_name": False,
+        "disallow_email": False,
+        "disallow_phone": False,
+        "disallow_company": False,
+        "disallow_title": False,
+        "disallow_photo": False,
+        "disallow_birthday": False,
+        "disallow_address": False
     }
     api.create_settings("test@example.com", initial_settings)
 
     # Then update some settings
     update_settings = {
-        "allow_email": False,
-        "allow_photo": False
+        "disallow_email": True,
+        "disallow_photo": True
     }
     status, headers, response = api.update_settings("test@example.com", update_settings)
     assert status == client.OK
@@ -127,14 +127,14 @@ def test_update_settings_success(api):
     status, headers, response = api.get_settings("test@example.com")
     assert status == client.OK
     updated_settings = json.loads(response)
-    assert updated_settings["allow_email"] is False
-    assert updated_settings["allow_photo"] is False
-    assert updated_settings["allow_name"] is True  # Unchanged
+    assert updated_settings["disallow_email"] is True
+    assert updated_settings["disallow_photo"] is True
+    assert updated_settings["disallow_name"] is False  # Unchanged
 
 
 def test_update_settings_not_found(api):
     """Test updating settings for a non-existent user."""
-    settings = {"allow_name": False}
+    settings = {"disallow_name": True}
     status, headers, response = api.update_settings("nonexistent@example.com", settings)
     assert status == client.NOT_FOUND
 
@@ -160,7 +160,7 @@ def test_update_settings_empty(api):
 
 def test_update_settings_unauthorized(api):
     """Test updating settings without a user."""
-    settings = {"allow_name": False}
+    settings = {"disallow_name": True}
     status, headers, response = api.update_settings("", settings)
     assert status == client.BAD_REQUEST
     response_data = json.loads(response)
@@ -172,14 +172,14 @@ def test_delete_settings_success(api):
     """Test deleting settings successfully."""
     # First create settings
     settings = {
-        "allow_name": True,
-        "allow_email": False,
-        "allow_phone": True,
-        "allow_company": False,
-        "allow_title": True,
-        "allow_photo": False,
-        "allow_birthday": True,
-        "allow_address": False
+        "disallow_name": False,
+        "disallow_email": True,
+        "disallow_phone": False,
+        "disallow_company": True,
+        "disallow_title": False,
+        "disallow_photo": True,
+        "disallow_birthday": False,
+        "disallow_address": True
     }
     api.create_settings("test@example.com", settings)
 

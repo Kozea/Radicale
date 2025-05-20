@@ -30,14 +30,14 @@ class UserSettings(Base):
     updated_at = Column(DateTime, onupdate=datetime.now(timezone.utc))
 
     # Privacy settings fields
-    allow_name = Column(Boolean, default=True)
-    allow_email = Column(Boolean, default=True)
-    allow_phone = Column(Boolean, default=True)
-    allow_company = Column(Boolean, default=True)
-    allow_title = Column(Boolean, default=True)
-    allow_photo = Column(Boolean, default=True)
-    allow_birthday = Column(Boolean, default=True)
-    allow_address = Column(Boolean, default=True)
+    disallow_name = Column(Boolean, default=False)
+    disallow_email = Column(Boolean, default=False)
+    disallow_phone = Column(Boolean, default=False)
+    disallow_company = Column(Boolean, default=False)
+    disallow_title = Column(Boolean, default=False)
+    disallow_photo = Column(Boolean, default=False)
+    disallow_birthday = Column(Boolean, default=False)
+    disallow_address = Column(Boolean, default=False)
 
 
 class PrivacyDatabase:
@@ -84,14 +84,14 @@ class PrivacyDatabase:
             # If no settings provided, use configuration defaults
             if not settings:
                 settings = {
-                    "allow_name": self._configuration.get("privacy", "default_allow_name"),
-                    "allow_email": self._configuration.get("privacy", "default_allow_email"),
-                    "allow_phone": self._configuration.get("privacy", "default_allow_phone"),
-                    "allow_company": self._configuration.get("privacy", "default_allow_company"),
-                    "allow_title": self._configuration.get("privacy", "default_allow_title"),
-                    "allow_photo": self._configuration.get("privacy", "default_allow_photo"),
-                    "allow_birthday": self._configuration.get("privacy", "default_allow_birthday"),
-                    "allow_address": self._configuration.get("privacy", "default_allow_address")
+                    "disallow_name": self._configuration.get("privacy", "default_disallow_name"),
+                    "disallow_email": self._configuration.get("privacy", "default_disallow_email"),
+                    "disallow_phone": self._configuration.get("privacy", "default_disallow_phone"),
+                    "disallow_company": self._configuration.get("privacy", "default_disallow_company"),
+                    "disallow_title": self._configuration.get("privacy", "default_disallow_title"),
+                    "disallow_photo": self._configuration.get("privacy", "default_disallow_photo"),
+                    "disallow_birthday": self._configuration.get("privacy", "default_disallow_birthday"),
+                    "disallow_address": self._configuration.get("privacy", "default_disallow_address")
                 }
 
             user_settings = UserSettings(
