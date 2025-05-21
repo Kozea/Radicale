@@ -39,7 +39,7 @@ dependencies = [
 
 
 [project.optional-dependencies]
-test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi"]
+test = ["pytest>=7", "pytest-mock", "waitress", "bcrypt", "argon2-cffi"]
 bcrypt = ["bcrypt"]
 argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
