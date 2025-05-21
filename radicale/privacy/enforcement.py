@@ -8,6 +8,8 @@ from typing import Dict
 
 import radicale.item as radicale_item
 from radicale.privacy.database import PrivacyDatabase
+from radicale.privacy.vcard_properties import (PRIVACY_TO_VCARD_MAP,
+                                               VCARD_NAME_TO_ENUM)
 
 logger = logging.getLogger(__name__)
 
@@ -132,28 +134,21 @@ class PrivacyEnforcement:
         # Get all properties of the vCard from contents
         # Create a copy of the keys to safely iterate while modifying
         for property_name in list(vcard.contents.keys()):
-            logger.debug("Prop name to check: %s", property_name)
+            logger.debug("Property name to check: %s", property_name)
+
+            # Get the corresponding enum value for this property
+            vcard_property = VCARD_NAME_TO_ENUM.get(property_name.lower())
+            if vcard_property is None:
+                logger.debug("Unknown vCard property: %s", property_name)
+                continue
 
             # Check if this property should be removed based on privacy settings
             should_remove = False
-
-            # Map vCard properties to privacy settings
-            if property_name in ('n', 'fn'):
-                should_remove = privacy_settings.disallow_name
-            elif property_name == 'email':
-                should_remove = privacy_settings.disallow_email
-            elif property_name == 'tel':
-                should_remove = privacy_settings.disallow_phone
-            elif property_name == 'org':
-                should_remove = privacy_settings.disallow_company
-            elif property_name == 'title':
-                should_remove = privacy_settings.disallow_title
-            elif property_name == 'photo':
-                should_remove = privacy_settings.disallow_photo
-            elif property_name == 'bday':
-                should_remove = privacy_settings.disallow_birthday
-            elif property_name == 'adr':
-                should_remove = privacy_settings.disallow_address
+            for privacy_field, vcard_properties in PRIVACY_TO_VCARD_MAP.items():
+                if vcard_property in vcard_properties and getattr(privacy_settings, privacy_field):
+                    should_remove = True
+                    logger.debug("Property %s matches privacy field %s", property_name, privacy_field)
+                    break
 
             if should_remove:
                 logger.debug("Removing disallowed field: %s", property_name)
