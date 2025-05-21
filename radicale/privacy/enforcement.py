@@ -135,6 +135,9 @@ class PrivacyEnforcement:
                 logger.debug("Removing disallowed field: %s", property_name)
                 del vcard.contents[property_name]
 
+        # Invalidate the item's text cache since we modified the vCard
+        item._text = None
+
         logger.info("vCard after privacy enforcement:\n%s", item.serialize())
         return item
 
