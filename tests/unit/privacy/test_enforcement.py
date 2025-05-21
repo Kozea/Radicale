@@ -124,8 +124,11 @@ def test_basic_property_removal(privacy_enforcement, create_vcard, create_item, 
 
     # Verify properties were removed
     assert 'n' not in modified_vcard.contents
-    assert 'fn' not in modified_vcard.contents
     assert 'email' not in modified_vcard.contents
+
+    # Verify FN property exists but with placeholder value
+    assert 'fn' in modified_vcard.contents
+    assert modified_vcard.fn.value == "Unknown"
 
     # Verify other properties remain
     assert 'tel' in modified_vcard.contents
@@ -161,9 +164,12 @@ def test_multiple_identifiers(privacy_enforcement, create_vcard, create_item, mo
 
     # Verify properties were removed based on both identifiers
     assert 'n' not in modified_vcard.contents
-    assert 'fn' not in modified_vcard.contents
     assert 'email' not in modified_vcard.contents
     assert 'tel' not in modified_vcard.contents
+
+    # Verify FN property exists but with placeholder value
+    assert 'fn' in modified_vcard.contents
+    assert modified_vcard.fn.value == "Unknown"
 
 
 def test_most_restrictive_settings(privacy_enforcement, create_vcard, create_item, mocker):
@@ -199,9 +205,12 @@ def test_most_restrictive_settings(privacy_enforcement, create_vcard, create_ite
 
     # Verify that the most restrictive settings were applied
     assert 'n' not in modified_vcard.contents  # Disallowed by email settings
-    assert 'fn' not in modified_vcard.contents  # Disallowed by email settings
     assert 'email' not in modified_vcard.contents  # Disallowed by email settings
     assert 'tel' not in modified_vcard.contents  # Disallowed by phone settings
+
+    # Verify FN property exists but with placeholder value
+    assert 'fn' in modified_vcard.contents
+    assert modified_vcard.fn.value == "Unknown"
 
 
 def test_edge_cases(privacy_enforcement, create_vcard, create_item, mocker):
@@ -212,23 +221,41 @@ def test_edge_cases(privacy_enforcement, create_vcard, create_item, mocker):
     privacy_enforcement._privacy_db.get_user_settings.return_value = None
     modified_item = privacy_enforcement.enforce_privacy(empty_item)
     assert len(modified_item.vobject_item.contents) == 2  # VERSION and FN
+    assert modified_item.vobject_item.fn.value == "Unknown"
 
     # Test vCard with only required properties
-    minimal_vcard = create_vcard(name="John Doe")
+    minimal_vcard = create_vcard(name="John Doe", email="john@example.com")
     minimal_item = create_item(minimal_vcard)
     privacy_enforcement._privacy_db.get_user_settings.return_value = mocker.Mock(
         disallow_name=True
     )
+
+    # Debug: Print vCard contents before enforcement
+    print("\nBefore enforcement:")
+    print("vCard contents:", minimal_item.vobject_item.contents)
+    print("Property names:", list(minimal_item.vobject_item.contents.keys()))
+
     modified_item = privacy_enforcement.enforce_privacy(minimal_item)
-    assert 'fn' not in modified_item.vobject_item.contents
+
+    # Debug: Print vCard contents after enforcement
+    print("\nAfter enforcement:")
+    print("vCard contents:", modified_item.vobject_item.contents)
+    print("Property names:", list(modified_item.vobject_item.contents.keys()))
+
+    assert 'n' not in modified_item.vobject_item.contents
+    assert 'fn' in modified_item.vobject_item.contents
+    assert modified_item.vobject_item.fn.value == "Unknown"
 
     # Test vCard with unknown properties
     unknown_vcard = create_vcard()
-    unknown_vcard['x-custom'].value = "Custom Value"
+    unknown_vcard.add('x-custom')
+    unknown_vcard.x_custom.value = "Custom Value"
     unknown_item = create_item(unknown_vcard)
     privacy_enforcement._privacy_db.get_user_settings.return_value = None
     modified_item = privacy_enforcement.enforce_privacy(unknown_item)
     assert 'x-custom' in modified_item.vobject_item.contents
+    assert 'fn' in modified_item.vobject_item.contents
+    assert modified_item.vobject_item.fn.value == "Unknown"
 
 
 def test_non_vcard_item(privacy_enforcement, mocker):

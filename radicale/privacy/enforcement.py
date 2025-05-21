@@ -131,6 +131,9 @@ class PrivacyEnforcement:
         # Process the vCard
         logger.info("Processing vCard for privacy enforcement")
 
+        # Track if we need to add back FN property
+        name_removed = False
+
         # Get all properties of the vCard from contents
         # Create a copy of the keys to safely iterate while modifying
         for property_name in list(vcard.contents.keys()):
@@ -148,11 +151,19 @@ class PrivacyEnforcement:
                 if vcard_property in vcard_properties and getattr(privacy_settings, privacy_field):
                     should_remove = True
                     logger.debug("Property %s matches privacy field %s", property_name, privacy_field)
+                    if privacy_field == "disallow_name":
+                        name_removed = True
                     break
 
             if should_remove:
                 logger.debug("Removing disallowed field: %s", property_name)
                 del vcard.contents[property_name]
+
+        # If name properties were removed, ensure we have a minimal FN property
+        if name_removed and 'fn' not in vcard.contents:
+            logger.debug("Adding minimal FN property after name removal")
+            vcard.add('fn')
+            vcard.fn.value = "Unknown"
 
         # Invalidate the item's text cache since we modified the vCard
         item._text = None
