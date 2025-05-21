@@ -65,6 +65,11 @@ def create_vcard():
                 country='Country'
             )
 
+        # Always add FN if not present (required by vCard spec)
+        if 'fn' not in vcard.contents:
+            vcard.add('fn')
+            vcard.fn.value = "Unknown"
+
         return vcard
     return _create_vcard
 
@@ -73,14 +78,15 @@ def create_vcard():
 def create_item():
     """Fixture to create Radicale items from vCards."""
     def _create_item(vcard):
-        collection_path = pathutils.sanitize_path("/test/collection")
+        # Create a properly sanitized collection path
+        collection_path = pathutils.strip_path(pathutils.sanitize_path("/test/collection"))
         item = radicale_item.Item(
             collection_path=collection_path,
             vobject_item=vcard,
-            text=vcard.serialize()
+            text=vcard.serialize(),
+            component_name="VCARD",
+            name="VCARD"
         )
-        item.component_name = "VCARD"
-        item.name = "VCARD"
         return item
     return _create_item
 
@@ -200,17 +206,15 @@ def test_most_restrictive_settings(privacy_enforcement, create_vcard, create_ite
 
 def test_edge_cases(privacy_enforcement, create_vcard, create_item, mocker):
     """Test edge cases in privacy enforcement."""
-    # Test empty vCard
-    empty_vcard = vobject.vCard()
+    # Test empty vCard (with required FN property)
+    empty_vcard = create_vcard()  # This will add the required FN property
     empty_item = create_item(empty_vcard)
     privacy_enforcement._privacy_db.get_user_settings.return_value = None
     modified_item = privacy_enforcement.enforce_privacy(empty_item)
-    assert modified_item.vobject_item.contents == {}
+    assert len(modified_item.vobject_item.contents) == 2  # VERSION and FN
 
     # Test vCard with only required properties
-    minimal_vcard = vobject.vCard()
-    minimal_vcard.add('fn')
-    minimal_vcard.fn.value = "John Doe"
+    minimal_vcard = create_vcard(name="John Doe")
     minimal_item = create_item(minimal_vcard)
     privacy_enforcement._privacy_db.get_user_settings.return_value = mocker.Mock(
         disallow_name=True
@@ -219,8 +223,7 @@ def test_edge_cases(privacy_enforcement, create_vcard, create_item, mocker):
     assert 'fn' not in modified_item.vobject_item.contents
 
     # Test vCard with unknown properties
-    unknown_vcard = vobject.vCard()
-    unknown_vcard.add('x-custom')
+    unknown_vcard = create_vcard()
     unknown_vcard['x-custom'].value = "Custom Value"
     unknown_item = create_item(unknown_vcard)
     privacy_enforcement._privacy_db.get_user_settings.return_value = None
@@ -230,10 +233,13 @@ def test_edge_cases(privacy_enforcement, create_vcard, create_item, mocker):
 
 def test_non_vcard_item(privacy_enforcement, mocker):
     """Test that non-vCard items are returned unchanged."""
-    # Create a non-vCard item
-    item = radicale_item.Item()
-    item.component_name = "VCALENDAR"
-    item.name = "VCALENDAR"
+    # Create a non-vCard item with required properties
+    item = radicale_item.Item(
+        collection_path=pathutils.strip_path(pathutils.sanitize_path("/test/collection")),
+        text="BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n",
+        component_name="VCALENDAR",
+        name="VCALENDAR"
+    )
 
     # Apply privacy enforcement
     modified_item = privacy_enforcement.enforce_privacy(item)
