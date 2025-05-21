@@ -67,28 +67,52 @@ class PrivacyEnforcement:
         logger.info("Intercepted vCard for privacy enforcement:")
         logger.debug("vCard content:\n%s", item.serialize())
 
-        # Get email from vCard
-        email = None
+        # Get identifiers (email and phone) from vCard
+        identifiers = []
         vcard = item.vobject_item
+
+        # Check for email
         if hasattr(vcard, "email_list"):
             for email_prop in vcard.email_list:
-                email = email_prop.value
-                logger.info("Found email in vCard: %r", email)
-                break
+                if email_prop.value:
+                    identifiers.append(("email", email_prop.value))
+                    logger.info("Found email in vCard: %r", email_prop.value)
 
-        if not email:
-            logger.info("No email found in vCard")
+        # Check for phone
+        if hasattr(vcard, "tel_list"):
+            for tel_prop in vcard.tel_list:
+                if tel_prop.value:
+                    identifiers.append(("phone", tel_prop.value))
+                    logger.info("Found phone in vCard: %r", tel_prop.value)
+
+        if not identifiers:
+            logger.info("No email or phone found in vCard")
             return item
 
         # Ensure database connection is established
         self._ensure_db_connection()
 
-        # Get privacy settings for this email
-        privacy_settings = self._privacy_db.get_user_settings(email)
-        logger.info("Privacy settings for %r: %r", email, privacy_settings)
+        # Get privacy settings for each identifier
+        privacy_settings = None
+        for id_type, id_value in identifiers:
+            settings = self._privacy_db.get_user_settings(id_value)
+            if settings:
+                logger.info("Found privacy settings for %s %r", id_type, id_value)
+                if privacy_settings is None:
+                    privacy_settings = settings
+                else:
+                    # Apply most restrictive settings when multiple matches found
+                    privacy_settings.disallow_name = privacy_settings.disallow_name or settings.disallow_name
+                    privacy_settings.disallow_email = privacy_settings.disallow_email or settings.disallow_email
+                    privacy_settings.disallow_phone = privacy_settings.disallow_phone or settings.disallow_phone
+                    privacy_settings.disallow_company = privacy_settings.disallow_company or settings.disallow_company
+                    privacy_settings.disallow_title = privacy_settings.disallow_title or settings.disallow_title
+                    privacy_settings.disallow_photo = privacy_settings.disallow_photo or settings.disallow_photo
+                    privacy_settings.disallow_birthday = privacy_settings.disallow_birthday or settings.disallow_birthday
+                    privacy_settings.disallow_address = privacy_settings.disallow_address or settings.disallow_address
 
         if not privacy_settings:
-            logger.info("No privacy settings found for %r", email)
+            logger.info("No privacy settings found for any identifier")
             return item
 
         # Log all privacy settings
