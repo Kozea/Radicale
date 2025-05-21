@@ -65,7 +65,7 @@ class PrivacyEnforcement:
             return item
 
         logger.info("Intercepted vCard for privacy enforcement:")
-        logger.info("vCard content:\n%s", item.serialize())
+        logger.debug("vCard content:\n%s", item.serialize())
 
         # Get email from vCard
         email = None
@@ -92,49 +92,48 @@ class PrivacyEnforcement:
             return item
 
         # Log all privacy settings
-        logger.info("Privacy settings details:")
-        logger.info("  Name disallowed: %r", privacy_settings.disallow_name)
-        logger.info("  Email disallowed: %r", privacy_settings.disallow_email)
-        logger.info("  Phone disallowed: %r", privacy_settings.disallow_phone)
-        logger.info("  Company disallowed: %r", privacy_settings.disallow_company)
-        logger.info("  Title disallowed: %r", privacy_settings.disallow_title)
-        logger.info("  Photo disallowed: %r", privacy_settings.disallow_photo)
-        logger.info("  Birthday disallowed: %r", privacy_settings.disallow_birthday)
-        logger.info("  Address disallowed: %r", privacy_settings.disallow_address)
+        logger.debug("Privacy settings details:")
+        logger.debug("  Name disallowed: %r", privacy_settings.disallow_name)
+        logger.debug("  Email disallowed: %r", privacy_settings.disallow_email)
+        logger.debug("  Phone disallowed: %r", privacy_settings.disallow_phone)
+        logger.debug("  Company disallowed: %r", privacy_settings.disallow_company)
+        logger.debug("  Title disallowed: %r", privacy_settings.disallow_title)
+        logger.debug("  Photo disallowed: %r", privacy_settings.disallow_photo)
+        logger.debug("  Birthday disallowed: %r", privacy_settings.disallow_birthday)
+        logger.debug("  Address disallowed: %r", privacy_settings.disallow_address)
 
         # Process the vCard
-        logger.debug("Processing vCard for privacy enforcement")
+        logger.info("Processing vCard for privacy enforcement")
 
-        # Get all properties of the vCard
-        for prop_name in dir(vcard):
-            # Skip internal properties and methods
-            if prop_name.startswith('_') or callable(getattr(vcard, prop_name)):
-                continue
+        # Get all properties of the vCard from contents
+        # Create a copy of the keys to safely iterate while modifying
+        for property_name in list(vcard.contents.keys()):
+            logger.debug("Prop name to check: %s", property_name)
 
             # Check if this property should be removed based on privacy settings
             should_remove = False
 
             # Map vCard properties to privacy settings
-            if prop_name == 'n' or prop_name == 'fn':
+            if property_name in ('n', 'fn'):
                 should_remove = privacy_settings.disallow_name
-            elif prop_name == 'email_list':
+            elif property_name == 'email':
                 should_remove = privacy_settings.disallow_email
-            elif prop_name == 'tel_list':
+            elif property_name == 'tel':
                 should_remove = privacy_settings.disallow_phone
-            elif prop_name == 'org':
+            elif property_name == 'org':
                 should_remove = privacy_settings.disallow_company
-            elif prop_name == 'title':
+            elif property_name == 'title':
                 should_remove = privacy_settings.disallow_title
-            elif prop_name == 'photo':
+            elif property_name == 'photo':
                 should_remove = privacy_settings.disallow_photo
-            elif prop_name == 'bday':
+            elif property_name == 'bday':
                 should_remove = privacy_settings.disallow_birthday
-            elif prop_name == 'adr_list':
+            elif property_name == 'adr':
                 should_remove = privacy_settings.disallow_address
 
             if should_remove:
-                logger.debug("Removing disallowed field: %s", prop_name)
-                delattr(vcard, prop_name)
+                logger.debug("Removing disallowed field: %s", property_name)
+                del vcard.contents[property_name]
 
         logger.info("vCard after privacy enforcement:\n%s", item.serialize())
         return item
