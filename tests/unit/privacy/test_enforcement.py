@@ -5,7 +5,8 @@ import vobject
 
 import radicale.item as radicale_item
 from radicale import config, pathutils
-from radicale.privacy.enforcement import PrivacyEnforcement
+from radicale.privacy.enforcement import (PrivacyEnforcement,
+                                          PrivacyViolationError)
 
 
 @pytest.fixture
@@ -274,3 +275,87 @@ def test_non_vcard_item(privacy_enforcement, mocker):
     # Verify the item was returned unchanged
     assert modified_item.component_name == "VCALENDAR"
     assert modified_item.name == "VCALENDAR"
+
+
+def test_privacy_violation_rejection(privacy_enforcement, create_vcard, create_item, mocker):
+    """Test that vCards violating privacy settings are rejected."""
+    vcard = create_vcard(
+        name="John Doe",
+        email="john@example.com",
+        phone="+1234567890",
+        company="ACME Corp",
+        title="Developer",
+        photo="base64photo",
+        birthday="1990-01-01",
+        address="123 Main St"
+    )
+    item = create_item(vcard)
+
+    # Mock privacy settings to disallow name and email
+    privacy_enforcement._privacy_db.get_user_settings.return_value = mocker.Mock(
+        disallow_name=True,
+        disallow_email=True,
+        disallow_phone=False,
+        disallow_company=False,
+        disallow_title=False,
+        disallow_photo=False,
+        disallow_birthday=False,
+        disallow_address=False
+    )
+
+    # Verify that privacy enforcement raises an exception
+    with pytest.raises(PrivacyViolationError) as exc_info:
+        privacy_enforcement.enforce_privacy(item)
+
+    # Verify the error message contains the violated fields
+    error_msg = str(exc_info.value)
+    assert "Privacy violation" in error_msg
+    assert "n" in error_msg  # vCard property name for name
+    assert "email" in error_msg
+
+    # Verify that the vCard was not modified
+    assert 'n' in vcard.contents
+    assert 'email' in vcard.contents
+    assert vcard.n.value.family == "Doe"
+    assert vcard.email.value == "john@example.com"
+
+
+def test_multiple_privacy_violations(privacy_enforcement, create_vcard, create_item, mocker):
+    """Test that multiple privacy violations are reported correctly."""
+    vcard = create_vcard(
+        name="John Doe",
+        email="john@example.com",
+        phone="+1234567890",
+        company="ACME Corp"
+    )
+    item = create_item(vcard)
+
+    # Mock privacy settings to disallow multiple fields
+    privacy_enforcement._privacy_db.get_user_settings.return_value = mocker.Mock(
+        disallow_name=True,
+        disallow_email=True,
+        disallow_phone=True,
+        disallow_company=True,
+        disallow_title=False,
+        disallow_photo=False,
+        disallow_birthday=False,
+        disallow_address=False
+    )
+
+    # Verify that privacy enforcement raises an exception
+    with pytest.raises(PrivacyViolationError) as exc_info:
+        privacy_enforcement.enforce_privacy(item)
+
+    # Verify the error message contains all violated fields
+    error_msg = str(exc_info.value)
+    assert "Privacy violation" in error_msg
+    assert "n" in error_msg
+    assert "email" in error_msg
+    assert "tel" in error_msg
+    assert "org" in error_msg
+
+    # Verify that the vCard was not modified
+    assert 'n' in vcard.contents
+    assert 'email' in vcard.contents
+    assert 'tel' in vcard.contents
+    assert 'org' in vcard.contents

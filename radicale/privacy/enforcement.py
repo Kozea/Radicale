@@ -14,6 +14,14 @@ from radicale.privacy.vcard_properties import (PRIVACY_TO_VCARD_MAP,
 logger = logging.getLogger(__name__)
 
 
+class PrivacyViolationError(Exception):
+    """Exception raised when a vCard violates privacy settings."""
+    def __init__(self, message: str, status_code: int = 400):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
+
+
 class PrivacyEnforcement:
     """Class to handle privacy enforcement on vCard items."""
 
@@ -54,13 +62,16 @@ class PrivacyEnforcement:
             self._privacy_db.init_db()
 
     def enforce_privacy(self, item: radicale_item.Item) -> radicale_item.Item:
-        """Enforce privacy settings on a vCard item by removing disallowed fields.
+        """Enforce privacy settings on a vCard item by rejecting if it contains disallowed fields.
 
         Args:
             item: The vCard item to process
 
         Returns:
-            The modified vCard item with disallowed fields removed
+            The vCard item if no privacy violations are found
+
+        Raises:
+            PrivacyViolationError: If the vCard contains fields that violate privacy settings
         """
         if not item.component_name == "VCARD" and not item.name == "VCARD":
             logger.debug("Not a VCF file")
@@ -128,15 +139,11 @@ class PrivacyEnforcement:
         logger.debug("  Birthday disallowed: %r", privacy_settings.disallow_birthday)
         logger.debug("  Address disallowed: %r", privacy_settings.disallow_address)
 
-        # Process the vCard
-        logger.info("Processing vCard for privacy enforcement")
+        # Check for violations
+        violations = []
 
-        # Track if we need to add back FN property
-        name_removed = False
-
-        # Get all properties of the vCard from contents
-        # Create a copy of the keys to safely iterate while modifying
-        for property_name in list(vcard.contents.keys()):
+        # Check each property against privacy settings
+        for property_name in vcard.contents.keys():
             logger.debug("Property name to check: %s", property_name)
 
             # Get the corresponding enum value for this property
@@ -146,29 +153,18 @@ class PrivacyEnforcement:
                 continue
 
             # Check if this property should be removed based on privacy settings
-            should_remove = False
             for privacy_field, vcard_properties in PRIVACY_TO_VCARD_MAP.items():
                 if vcard_property in vcard_properties and getattr(privacy_settings, privacy_field):
-                    should_remove = True
+                    violations.append(property_name)
                     logger.debug("Property %s matches privacy field %s", property_name, privacy_field)
-                    if privacy_field == "disallow_name":
-                        name_removed = True
                     break
 
-            if should_remove:
-                logger.debug("Removing disallowed field: %s", property_name)
-                del vcard.contents[property_name]
+        if violations:
+            error_msg = f"Privacy violation: Cannot save vCard containing private fields: {', '.join(violations)}"
+            logger.warning(error_msg)
+            raise PrivacyViolationError(error_msg)
 
-        # If name properties were removed, ensure we have a minimal FN property
-        if name_removed and 'fn' not in vcard.contents:
-            logger.debug("Adding minimal FN property after name removal")
-            vcard.add('fn')
-            vcard.fn.value = "Unknown"
-
-        # Invalidate the item's text cache since we modified the vCard
-        item._text = None
-
-        logger.info("vCard after privacy enforcement:\n%s", item.serialize())
+        logger.info("No privacy violations found in vCard")
         return item
 
     def close(self):
