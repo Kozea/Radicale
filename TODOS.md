@@ -69,17 +69,17 @@
 
 ## MVP Implementation Plan
 
-### Phase 0: Create a dataset of cards for testing and validation
+### Phase 0: Create a dataset of cards for testing and validation ✅
 
 ### Phase 1: Basic Authentication & Privacy Settings
 
-1. **Simple Email Authentication**
+1. **Simple Email Authentication** ❌
    - Create a basic email-based authentication in `radicale/auth/email_auth.py`
    - Implement a simple OTP generation and validation mechanism
    - Use email for OTP delivery (skip SMS for MVP)
    - Store temporary authentication tokens in a simple file-based system
 
-2. **Basic Privacy Settings Storage**
+2. **Basic Privacy Settings Storage** ✅
    - Set up SQLite database with SQLAlchemy ORM
    - Create UserSettings model with all privacy fields
    - Add configuration options in `radicale/config.py` for database path and default settings
@@ -91,43 +91,43 @@
 
 ### Phase 2: VCF Processing & Privacy Enforcement
 
-1. **VCF Interception**
+1. **VCF Interception** ✅
    - Modify `radicale/storage/multifilesystem/upload.py` to intercept vCard uploads
    - Add a pre-processing step that checks vCards against privacy rules
    - For the MVP, focus on the most common vCard fields (name, email, phone, company, etc.)
    - Implement simple field validation based on privacy settings
    - Apply most restrictive policy when multiple cards exist
 
-2. **Simple Query Functionality**
+2. **Simple Query Functionality** ❌
    - Create a basic function to scan vCards for a given identity
    - For MVP, focus on exact matches rather than fuzzy matching
    - Implement minimal indexing based on email/phone properties
 
-3. **Basic Privacy Enforcement**
+3. **Basic Privacy Enforcement** ❌
    - Implement rejection of vCard uploads that violate privacy settings
    - Return appropriate error messages to the client
    - For MVP, use HTTP 400 (Bad Request) for all privacy violations
 
 ### Phase 3: Information Disclosure
 
-1. **Basic Disclosure API**
+1. **Basic Disclosure API** ❌
    - Create a simple endpoint to retrieve information about the authenticated user
    - Return a list of vCards and fields that match the user's identity
    - Use basic authentication to protect the API
 
-2. **Simple Privacy Dashboard**
+2. **Simple Privacy Dashboard** ❌
    - Create a minimal dashboard showing what information is stored about the user
    - Implement a basic interface to view cards containing user's information
    - Add simple controls to modify privacy settings
 
 ### Phase 4: Testing with Real Clients
 
-1. **Thunderbird Compatibility**
+1. **Thunderbird Compatibility** ❌
    - Test the MVP with Thunderbird to ensure basic compatibility
    - Document any issues or limitations
    - Focus on ensuring core functionality works rather than perfect integration
 
-2. **Basic Documentation**
+2. **Basic Documentation** (WIP)
    - Create minimal documentation explaining how to use the privacy features
    - Document API endpoints and expected responses
    - Include setup instructions for testing purposes
