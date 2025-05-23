@@ -57,19 +57,20 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
             privacy_enforcement = PrivacyEnforcement.get_instance(self._storage.configuration)
 
             # Apply privacy enforcement
-            try:
-                item = privacy_enforcement.enforce_privacy(item)
-            except PrivacyViolationError as e:
-                # Log the violation
-                logger.warning("Privacy violation when uploading %r: %s", href, e.message)
-                # Re-raise with appropriate HTTP status code
-                raise ValueError(f"Privacy violation: {e.message}") from e
+            item = privacy_enforcement.enforce_privacy(item)
+        except PrivacyViolationError as e:
+            # Log the violation at info level since this is an expected case
+            logger.info("Privacy violation when uploading %r: %s", href, e.message)
+            # Re-raise the error to be handled by the caller
+            raise
 
+        try:
             # Write the modified item to disk
             with self._atomic_write(path, newline="") as fo:  # type: ignore
                 f = cast(TextIO, fo)
                 f.write(item.serialize())
         except Exception as e:
+            logger.error("Failed to store item %r in collection %r: %s", href, self.path, str(e))
             raise ValueError("Failed to store item %r in collection %r: %s" %
                              (href, self.path, e)) from e
 
