@@ -76,7 +76,7 @@ class PrivacyScanner:
         logger.info("Building identity index...")
         try:
             # Get all collections
-            collections = self._storage.discover("")
+            collections = self._storage.discover("/")
             for collection in collections:
                 if not isinstance(collection, CollectionPartGet):
                     continue
@@ -109,21 +109,32 @@ class PrivacyScanner:
         """
         matches: List[Dict[str, Any]] = []
         user_id = collection.path.split("/")[0]  # First part of path is user ID
+        logger.debug("Scanning collection %r for user %r", collection.path, user_id)
 
         try:
             # Get all items in the collection
-            for item in collection.get_all():
-                if not isinstance(item, Item) or not item.component_name == "VCARD":
+            items = list(collection.get_all())
+            logger.debug("Found %d items in collection %r", len(items), collection.path)
+
+            for item in items:
+                if not isinstance(item, Item):
+                    logger.debug("Skipping non-Item: %r", item)
+                    continue
+                if not item.component_name == "VCARD":
+                    logger.debug("Skipping non-VCARD item: %r", item.component_name)
                     continue
 
+                logger.debug("Processing vCard in %r", collection.path)
                 # Extract identifiers from the vCard
                 identifiers = self._extract_identifiers(item.vobject_item)
+                logger.debug("Found identifiers: %r", identifiers)
                 matching_fields: List[str] = []
 
                 # Check each identifier against the search identity
                 for id_type, id_value in identifiers:
                     if identity is None or id_value == identity:
                         matching_fields.append(id_type)
+                        logger.debug("Found matching %s: %r", id_type, id_value)
                         if identity is None:
                             # When indexing, store the actual value
                             matches.append({
@@ -144,8 +155,9 @@ class PrivacyScanner:
                     logger.info("Found match in collection %r: %r", collection.path, matching_fields)
 
         except Exception as e:
-            logger.error("Error scanning collection %r: %s", collection.path, e)
+            logger.error("Error scanning collection %r: %s", collection.path, str(e))
 
+        logger.debug("Scan complete for %r. Found %d matches", collection.path, len(matches))
         return matches
 
     def find_identity_occurrences(self, identity: str) -> List[Dict[str, Any]]:
@@ -157,7 +169,7 @@ class PrivacyScanner:
         Returns:
             List of dictionaries containing:
             {
-                'user_id': str,  # The user who owns the collection
+                'user_id': str,    # The user who owns the collection
                 'vcard_uid': str,  # The UID of the matching vCard
                 'matching_fields': List[str],  # Which fields matched (email/phone)
                 'collection_path': str  # Path to the collection
@@ -167,6 +179,7 @@ class PrivacyScanner:
 
         # Build index if not initialized
         if not self._index_initialized:
+            logger.debug("Index not initialized, building index...")
             self._build_index()
 
         # Try to use the index first
@@ -179,22 +192,99 @@ class PrivacyScanner:
         all_matches: List[Dict[str, Any]] = []
 
         try:
-            # Get all collections
-            collections = self._storage.discover("")
-            for collection in collections:
+            # Get root collections
+            root_collections = list(self._storage.discover("/", depth="1"))
+
+            # Try to get paths from collection objects
+            root_paths = []
+            for collection in root_collections:
+                # Try to get path from href first, then path attribute
+                collection_path = getattr(collection, 'href', None)
+                if collection_path is None:
+                    collection_path = getattr(collection, 'path', None)
+                if collection_path is not None:
+                    # Remove leading slash if present
+                    if collection_path.startswith('/'):
+                        collection_path = collection_path[1:]
+                    root_paths.append(collection_path)
+
+            logger.debug("Found root collections: %r", root_paths)
+
+            for collection in root_collections:
                 if not isinstance(collection, CollectionPartGet):
+                    logger.debug("Skipping non-CollectionPartGet: %r", collection)
                     continue
 
-                # Scan each collection
+                # Get collection path from path attribute
+                collection_path = getattr(collection, 'path', None)
+
+                # Remove leading slash if present
+                if collection_path is not None and collection_path.startswith('/'):
+                    collection_path = collection_path[1:]
+
+                # Skip root collection
+                if collection_path == '':
+                    logger.debug("Skipping root collection")
+                    continue
+
+                # Scan each root collection
+                logger.debug("Scanning root collection: %r", collection_path)
                 matches = self._scan_collection(collection, identity)
+                logger.debug("Found %d matches in root collection %r", len(matches), collection_path)
                 all_matches.extend(matches)
+
+                # Discover and scan sub-collections
+                try:
+                    # Ensure path starts with a slash for discover()
+                    discover_path = "/" + collection_path if collection_path else "/"
+                    sub_collections = list(self._storage.discover(discover_path, depth="1"))
+                except Exception as e:
+                    logger.info("Error discovering sub-collections: %r", e)
+                    raise
+
+                # Try to get paths from sub-collection objects
+                sub_paths = []
+                for sub_collection in sub_collections:
+                    # Try to get path from href first, then path attribute
+                    sub_collection_path = getattr(sub_collection, 'href', None)
+                    if sub_collection_path is None:
+                        sub_collection_path = getattr(sub_collection, 'path', None)
+                    if sub_collection_path is not None:
+                        # Remove leading slash if present
+                        if sub_collection_path.startswith('/'):
+                            sub_collection_path = sub_collection_path[1:]
+                        sub_paths.append(sub_collection_path)
+
+                logger.debug("Found sub-collections: %r", sub_paths)
+
+                for sub_collection in sub_collections:
+                    if not isinstance(sub_collection, CollectionPartGet):
+                        logger.debug("Skipping non-CollectionPartGet sub-collection: %r", sub_collection)
+                        continue
+
+                    # Get sub-collection path from href or path attribute
+                    sub_collection_path = getattr(sub_collection, 'href', None)
+                    if sub_collection_path is None:
+                        sub_collection_path = getattr(sub_collection, 'path', None)
+                    if sub_collection_path is None:
+                        continue
+
+                    # Remove leading slash if present
+                    if sub_collection_path.startswith('/'):
+                        sub_collection_path = sub_collection_path[1:]
+
+                    logger.debug("Scanning sub-collection: %r", sub_collection_path)
+                    sub_matches = self._scan_collection(sub_collection, identity)
+                    logger.debug("Found %d matches in sub-collection %r", len(sub_matches), sub_collection_path)
+                    all_matches.extend(sub_matches)
 
             # Update the index with the new matches
             if all_matches:
+                logger.debug("Updating index with %d new matches", len(all_matches))
                 self._index[identity] = all_matches
 
         except Exception as e:
-            logger.error("Error during identity scan: %s", e)
+            logger.error("Error during identity scan: %s", str(e), exc_info=True)
             raise
 
         logger.info("Scan complete. Found %d matches", len(all_matches))

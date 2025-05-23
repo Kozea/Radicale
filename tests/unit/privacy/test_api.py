@@ -6,28 +6,60 @@ import json
 import os
 import tempfile
 from http import client
+from unittest.mock import patch
 
 import pytest
+import vobject
 
-from radicale import config
-from radicale.privacy.api import PrivacyAPI
+from radicale import config, storage
+from radicale.item import Item
+from radicale.privacy.api import PrivacyAPI, PrivacyScanner
 
 
 @pytest.fixture
-def api():
+def mock_time_ranges():
+    """Mock the time ranges function to avoid AttributeError: value."""
+    with patch('radicale.item.filter.visit_time_ranges') as mock:
+        mock.return_value = (None, None)  # Return no time range
+        yield mock
+
+
+@pytest.fixture
+def api(mock_time_ranges):
     """Fixture to provide a privacy API instance with a temp database file."""
     with tempfile.TemporaryDirectory() as tmpdir:
+
         test_db_path = os.path.join(tmpdir, "test.db")
+
+        # Create collection-root directory
+        collection_root = os.path.join(tmpdir, "collection-root")
+        os.makedirs(collection_root, exist_ok=True)
+
         configuration = config.load()
         configuration.update({
             "privacy": {
                 "database_path": test_db_path
+            },
+            "storage": {
+                "type": "multifilesystem",
+                "filesystem_folder": tmpdir  # Use tmpdir as base, let storage add collection-root
             }
         }, "test")
+
+        # Initialize storage
+        storage_instance = storage.load(configuration)
+
+        # Create API with storage instance
         api = PrivacyAPI(configuration)
         api._privacy_db.init_db()  # Initialize the database
+
+        # Reset scanner singleton and create new instance
+        PrivacyScanner.reset()
+        api._scanner = PrivacyScanner(storage_instance)  # Initialize scanner with storage instance
+
         yield api
         api._privacy_db.close()  # Clean up database connections
+        # Removed storage_instance.close() as Storage has no close method
 
 
 def test_get_settings_not_found(api):
@@ -302,3 +334,168 @@ def test_validate_user_identifier_empty(api):
     response_data = json.loads(response)
     assert "error" in response_data
     assert "User identifier is required" in response_data["error"]
+
+
+def test_get_matching_cards_not_found(api):
+    """Test getting matching cards for a non-existent user."""
+    status, headers, response = api.get_matching_cards("nonexistent@example.com")
+    assert status == client.NOT_FOUND
+
+
+def test_get_matching_cards_unauthorized(api):
+    """Test getting matching cards without a user."""
+    status, headers, response = api.get_matching_cards("")
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "User identifier is required" in response_data["error"]
+
+
+def test_get_matching_cards_no_matches(api):
+    """Test getting matching cards when no matches exist."""
+    # First create settings for the user
+    settings = {
+        "disallow_name": False,
+        "disallow_email": False,
+        "disallow_phone": False,
+        "disallow_company": False,
+        "disallow_title": False,
+        "disallow_photo": False,
+        "disallow_birthday": False,
+        "disallow_address": False
+    }
+    api.create_settings("test@example.com", settings)
+
+    # Create a collection using the storage API
+    collection = api._scanner._storage.create_collection("/testuser/contacts/")
+    assert collection is not None
+
+    # Upload a minimal vCard to ensure the collection is recognized
+    minimal_vcard = (
+        "BEGIN:VCARD\r\n"
+        "VERSION:3.0\r\n"
+        "UID:dummy-card\r\n"
+        "FN:Dummy User\r\n"
+        "EMAIL:dummy@example.com\r\n"
+        "END:VCARD\r\n"
+    )
+    vobj = vobject.readOne(minimal_vcard)
+    # Monkeypatch vobject to add a .vcard property for Radicale's filter logic, avoiding recursion
+    if not hasattr(vobj.__class__, "vcard"):
+        vobj.__class__.vcard = property(lambda self: self)
+    item = Item(collection=collection, vobject_item=vobj, component_name="VCARD")
+    collection.upload("dummy-card.vcf", item)
+
+    # Then try to get matches
+    status, headers, response = api.get_matching_cards("test@example.com")
+    assert status == client.OK
+    response_data = json.loads(response)
+    assert "matches" in response_data
+    assert response_data["matches"] == []
+
+
+def test_get_matching_cards_recursive_discovery(api):
+    """Test that get_matching_cards can discover and search nested collections."""
+    # Create test vCard in a nested collection
+    vcard = vobject.vCard()
+    vcard.add('uid')
+    vcard.uid.value = "nested-card"
+    vcard.add('fn')
+    vcard.fn.value = "Nested Contact"
+    vcard.add('email')
+    vcard.email.value = "test@example.com"
+    vcard.email.type_param = 'INTERNET'
+
+    # Create a nested collection structure: user1/contacts/personal
+    collection = api._scanner._storage.create_collection("/user1/contacts")
+
+    # Upload the vCard
+    item = Item(vobject_item=vcard, collection_path="user1/contacts", component_name="VCARD")
+    collection.upload("nested-card.vcf", item)
+
+    # Create privacy settings for the test user
+    settings = {
+        "disallow_name": False,
+        "disallow_email": False,
+        "disallow_phone": False,
+        "disallow_company": False,
+        "disallow_title": False,
+        "disallow_photo": False,
+        "disallow_birthday": False,
+        "disallow_address": False
+    }
+    api.create_settings("test@example.com", settings)
+
+    # Get matching cards
+    status, headers, response = api.get_matching_cards("test@example.com")
+
+    assert status == client.OK
+    response_data = json.loads(response)
+    assert "matches" in response_data
+    matches = response_data["matches"]
+    assert len(matches) == 1  # Should find the nested card
+
+    # Verify the match details
+    match = matches[0]
+    assert match["vcard_uid"] == "nested-card"
+    assert "email" in match["matching_fields"]
+    assert match["collection_path"] == "user1/contacts"
+
+
+def test_get_matching_cards_in_different_collections(api):
+    """Test finding cards matching a user's identity in different collections."""
+    # Create test vCards in different collections
+    vcard1 = vobject.vCard()
+    vcard1.add('uid')
+    vcard1.uid.value = "card1"
+    vcard1.add('fn')
+    vcard1.fn.value = "Test Contact 1"
+    vcard1.add('email')
+    vcard1.email.value = "test@example.com"
+    vcard1.email.type_param = 'INTERNET'
+
+    vcard2 = vobject.vCard()
+    vcard2.add('uid')
+    vcard2.uid.value = "card2"
+    vcard2.add('fn')
+    vcard2.fn.value = "Test Contact 2"
+    vcard2.add('email')
+    vcard2.email.value = "test@example.com"
+    vcard2.email.type_param = 'INTERNET'
+    vcard2.add('tel')
+    vcard2.tel.value = "+1234567890"
+    vcard2.tel.type_param = 'CELL'
+
+    # Create collections and add vCards
+    collection1 = api._scanner._storage.create_collection("/user1/contacts")
+    collection2 = api._scanner._storage.create_collection("/user2/contacts")
+
+    item1 = Item(vobject_item=vcard1, collection_path="user1/contacts", component_name="VCARD")
+    item2 = Item(vobject_item=vcard2, collection_path="user2/contacts", component_name="VCARD")
+
+    # Upload cards
+    collection1.upload("test-card1.vcf", item1)
+    collection2.upload("test-card2.vcf", item2)
+
+    # Create privacy settings for the test user
+    settings = {
+        "disallow_name": False,
+        "disallow_email": False,  # Allow email to be stored
+        "disallow_phone": False,
+        "disallow_company": False,
+        "disallow_title": False,
+        "disallow_photo": False,
+        "disallow_birthday": False,
+        "disallow_address": False
+    }
+    api.create_settings("test@example.com", settings)
+
+    # Get matching cards
+    status, headers, response = api.get_matching_cards("test@example.com")
+    assert status == client.OK
+    response_data = json.loads(response)
+
+    # Verify response structure
+    assert "matches" in response_data
+    matches = response_data["matches"]
+    assert len(matches) == 2  # Should find both cards
