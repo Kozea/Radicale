@@ -19,6 +19,8 @@ def storage(mocker):
 @pytest.fixture
 def scanner(storage):
     """Fixture providing a PrivacyScanner instance."""
+    # Reset the singleton before each test
+    PrivacyScanner.reset()
     return PrivacyScanner(storage)
 
 
@@ -242,3 +244,25 @@ def test_index_initialization(scanner, create_test_vcard, storage, mocker):
     assert len(email_matches) == 2
     assert all(m["matching_fields"] == ["email"] for m in email_matches)
     assert {m["vcard_uid"] for m in email_matches} == {"test1", "test3"}
+
+
+def test_singleton_pattern(storage, mocker):
+    """Test that PrivacyScanner follows the singleton pattern."""
+    # Create first instance
+    scanner1 = PrivacyScanner(storage)
+    # Save the storage actually used
+    first_storage = scanner1._storage
+
+    # Create second instance with different storage
+    different_storage = mocker.MagicMock()
+    scanner2 = PrivacyScanner(different_storage)
+
+    # Verify both instances are the same
+    assert scanner1 is scanner2
+
+    # Verify initialization only happened once
+    assert scanner1._initialized
+    assert scanner2._initialized
+    # The storage should not change after the first initialization
+    assert scanner1._storage is first_storage
+    assert scanner1._storage is not different_storage

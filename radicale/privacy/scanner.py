@@ -10,24 +10,36 @@ from typing import Any, Dict, List, Optional, Tuple
 import vobject
 
 from radicale.item import Item
-from radicale.storage import BaseStorage
 from radicale.storage.multifilesystem.get import CollectionPartGet
 
 logger = logging.getLogger(__name__)
 
 
 class PrivacyScanner:
-    """Class to scan vCards for identity occurrences."""
+    """Scanner for finding identity occurrences in vCards."""
 
-    def __init__(self, storage: BaseStorage) -> None:
-        """Initialize the privacy scanner.
+    _instance = None
+    _initialized = False
 
-        Args:
-            storage: The Radicale storage instance
-        """
-        self._storage = storage
-        self._index: Dict[str, List[Dict[str, Any]]] = {}  # Maps identity to list of matches
-        self._index_initialized = False
+    def __new__(cls, storage=None):
+        """Create or return the singleton instance."""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._storage = storage
+        return cls._instance
+
+    def __init__(self, storage=None):
+        """Initialize the scanner if not already initialized."""
+        if not self._initialized:
+            self._index = {}  # Maps identity to list of matches
+            self._index_initialized = False
+            self._initialized = True
+            logging.info("PrivacyScanner initialized with storage %s", storage)
+
+    @property
+    def _storage(self):
+        """Get the storage instance."""
+        return self.__class__._storage
 
     def _extract_identifiers(self, vcard: vobject.vCard) -> List[Tuple[str, str]]:
         """Extract all identifiers (email and phone) from a vCard.
@@ -193,3 +205,10 @@ class PrivacyScanner:
         self._index.clear()
         self._index_initialized = False
         self._build_index()
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance for testing."""
+        cls._instance = None
+        cls._initialized = False
+        cls._storage = None
