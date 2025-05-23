@@ -5,11 +5,12 @@ to find occurrences of specific identities (email/phone).
 """
 
 import logging
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import vobject
 
 from radicale.item import Item
+from radicale.storage import BaseStorage
 from radicale.storage.multifilesystem.get import CollectionPartGet
 
 logger = logging.getLogger(__name__)
@@ -18,13 +19,15 @@ logger = logging.getLogger(__name__)
 class PrivacyScanner:
     """Class to scan vCards for identity occurrences."""
 
-    def __init__(self, storage):
+    def __init__(self, storage: BaseStorage) -> None:
         """Initialize the privacy scanner.
 
         Args:
             storage: The Radicale storage instance
         """
         self._storage = storage
+        self._index: Dict[str, List[Dict[str, Any]]] = {}  # Maps identity to list of matches
+        self._index_initialized = False
 
     def _extract_identifiers(self, vcard: vobject.vCard) -> List[Tuple[str, str]]:
         """Extract all identifiers (email and phone) from a vCard.
@@ -35,7 +38,7 @@ class PrivacyScanner:
         Returns:
             List of tuples (type, value) for each identifier found
         """
-        identifiers = []
+        identifiers: List[Tuple[str, str]] = []
 
         # Extract emails
         if hasattr(vcard, "email_list"):
@@ -53,17 +56,46 @@ class PrivacyScanner:
 
         return identifiers
 
-    def _scan_collection(self, collection: CollectionPartGet, identity: str) -> List[Dict]:
+    def _build_index(self) -> None:
+        """Build an index of all identities across all collections."""
+        if self._index_initialized:
+            return
+
+        logger.info("Building identity index...")
+        try:
+            # Get all collections
+            collections = self._storage.discover("")
+            for collection in collections:
+                if not isinstance(collection, CollectionPartGet):
+                    continue
+
+                # Scan each collection
+                matches = self._scan_collection(collection, None)  # None means index all identities
+                for match in matches:
+                    for field in match["matching_fields"]:
+                        identity = match.get(field)
+                        if identity:
+                            if identity not in self._index:
+                                self._index[identity] = []
+                            self._index[identity].append(match)
+
+            self._index_initialized = True
+            logger.info("Identity index built successfully")
+        except Exception as e:
+            logger.error("Error building identity index: %s", e)
+            raise
+
+    def _scan_collection(self, collection: CollectionPartGet, identity: Optional[str] = None) -> List[Dict[str, Any]]:
         """Scan a single collection for identity occurrences.
 
         Args:
             collection: The collection to scan (must support get_all())
-            identity: The identity to search for
+            identity: The identity to search for. If None, index all identities.
 
         Returns:
             List of dictionaries containing match information
         """
-        matches = []
+        matches: List[Dict[str, Any]] = []
         user_id = collection.path.split("/")[0]  # First part of path is user ID
 
         try:
@@ -74,14 +106,23 @@ class PrivacyScanner:
 
                 # Extract identifiers from the vCard
                 identifiers = self._extract_identifiers(item.vobject_item)
-                matching_fields = []
+                matching_fields: List[str] = []
 
                 # Check each identifier against the search identity
                 for id_type, id_value in identifiers:
-                    if id_value == identity:
+                    if identity is None or id_value == identity:
                         matching_fields.append(id_type)
+                        if identity is None:
+                            # When indexing, store the actual value
+                            matches.append({
+                                'user_id': user_id,
+                                'vcard_uid': item.vobject_item.uid.value if hasattr(item.vobject_item, 'uid') else None,
+                                'matching_fields': [id_type],
+                                'collection_path': collection.path,
+                                id_type: id_value  # Store the actual value for indexing
+                            })
 
-                if matching_fields:
+                if identity is not None and matching_fields:
                     matches.append({
                         'user_id': user_id,
                         'vcard_uid': item.vobject_item.uid.value if hasattr(item.vobject_item, 'uid') else None,
@@ -95,7 +136,7 @@ class PrivacyScanner:
 
         return matches
 
-    def find_identity_occurrences(self, identity: str) -> List[Dict]:
+    def find_identity_occurrences(self, identity: str) -> List[Dict[str, Any]]:
         """Find all occurrences of an identity (email/phone) across all vCards.
 
         Args:
@@ -111,7 +152,19 @@ class PrivacyScanner:
             }
         """
         logger.info("Starting scan for identity: %r", identity)
-        all_matches = []
+
+        # Build index if not initialized
+        if not self._index_initialized:
+            self._build_index()
+
+        # Try to use the index first
+        if identity in self._index:
+            logger.info("Found identity in index")
+            return self._index[identity]
+
+        # If not in index, do a full scan
+        logger.info("Identity not found in index, performing full scan")
+        all_matches: List[Dict[str, Any]] = []
 
         try:
             # Get all collections
@@ -124,9 +177,19 @@ class PrivacyScanner:
                 matches = self._scan_collection(collection, identity)
                 all_matches.extend(matches)
 
+            # Update the index with the new matches
+            if all_matches:
+                self._index[identity] = all_matches
+
         except Exception as e:
             logger.error("Error during identity scan: %s", e)
             raise
 
         logger.info("Scan complete. Found %d matches", len(all_matches))
         return all_matches
+
+    def refresh_index(self) -> None:
+        """Force a refresh of the identity index."""
+        self._index.clear()
+        self._index_initialized = False
+        self._build_index()

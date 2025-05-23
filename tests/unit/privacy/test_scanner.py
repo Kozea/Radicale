@@ -104,6 +104,19 @@ def test_scan_collection(scanner, create_test_vcard, mocker):
     assert matches[1]["vcard_uid"] == "test3"
     assert matches[1]["matching_fields"] == ["phone"]
 
+    # Test indexing mode (identity=None)
+    matches = scanner._scan_collection(collection, None)
+    assert len(matches) == 4  # All identifiers should be indexed
+    # Verify email matches
+    email_matches = [m for m in matches if "email" in m["matching_fields"]]
+    assert len(email_matches) == 2
+    assert any(m["email"] == "test@example.com" for m in email_matches)
+    assert any(m["email"] == "other@example.com" for m in email_matches)
+    # Verify phone matches
+    phone_matches = [m for m in matches if "phone" in m["matching_fields"]]
+    assert len(phone_matches) == 2
+    assert all(m["phone"] == "+1234567890" for m in phone_matches)
+
 
 def test_find_identity_occurrences(scanner, create_test_vcard, storage, mocker):
     """Test finding identity occurrences across all collections."""
@@ -122,7 +135,7 @@ def test_find_identity_occurrences(scanner, create_test_vcard, storage, mocker):
 
     storage.discover.return_value = [collection1, collection2]
 
-    # Test finding all occurrences
+    # Test finding all occurrences (should build index)
     matches = scanner.find_identity_occurrences("test@example.com")
     assert len(matches) == 2
 
@@ -135,6 +148,15 @@ def test_find_identity_occurrences(scanner, create_test_vcard, storage, mocker):
     assert matches[1]["user_id"] == "user2"
     assert matches[1]["vcard_uid"] == "test2"
     assert matches[1]["matching_fields"] == ["email"]
+
+    # Test that subsequent lookups use the index
+    collection1.get_all.reset_mock()
+    collection2.get_all.reset_mock()
+    matches = scanner.find_identity_occurrences("test@example.com")
+    assert len(matches) == 2
+    # Verify that get_all was not called (using index)
+    collection1.get_all.assert_not_called()
+    collection2.get_all.assert_not_called()
 
 
 def test_error_handling(scanner, storage, mocker):
@@ -149,3 +171,74 @@ def test_error_handling(scanner, storage, mocker):
     # Test that errors are logged but don't crash the scan
     matches = scanner.find_identity_occurrences("test@example.com")
     assert len(matches) == 0
+
+
+def test_index_refresh(scanner, create_test_vcard, storage, mocker):
+    """Test index refresh functionality."""
+    # Create initial mock collection
+    collection1 = mocker.MagicMock(spec=CollectionPartGet)
+    collection1.path = "user1/contacts"
+    collection1.get_all.return_value = [
+        create_test_vcard("test1", "test@example.com")
+    ]
+    storage.discover.return_value = [collection1]
+
+    # Build initial index
+    matches = scanner.find_identity_occurrences("test@example.com")
+    assert len(matches) == 1
+    assert matches[0]["vcard_uid"] == "test1"
+
+    # Update collection with new data
+    collection1.get_all.return_value = [
+        create_test_vcard("test2", "test@example.com")
+    ]
+
+    # Test that old index is used
+    matches = scanner.find_identity_occurrences("test@example.com")
+    assert len(matches) == 1
+    assert matches[0]["vcard_uid"] == "test1"
+
+    # Refresh index
+    scanner.refresh_index()
+
+    # Test that new data is found
+    matches = scanner.find_identity_occurrences("test@example.com")
+    assert len(matches) == 1
+    assert matches[0]["vcard_uid"] == "test2"
+
+
+def test_index_initialization(scanner, create_test_vcard, storage, mocker):
+    """Test index initialization and building."""
+    # Create mock collections
+    collection1 = mocker.MagicMock(spec=CollectionPartGet)
+    collection1.path = "user1/contacts"
+    collection1.get_all.return_value = [
+        create_test_vcard("test1", "test@example.com", "+1234567890"),
+        create_test_vcard("test2", "other@example.com")
+    ]
+
+    collection2 = mocker.MagicMock(spec=CollectionPartGet)
+    collection2.path = "user2/contacts"
+    collection2.get_all.return_value = [
+        create_test_vcard("test3", "test@example.com", "+1987654321")
+    ]
+
+    storage.discover.return_value = [collection1, collection2]
+
+    # Test that index is built on first use
+    assert not scanner._index_initialized
+    matches = scanner.find_identity_occurrences("test@example.com")
+    assert scanner._index_initialized
+    assert len(matches) == 2
+
+    # Verify index contents
+    assert "test@example.com" in scanner._index
+    assert "+1234567890" in scanner._index
+    assert "+1987654321" in scanner._index
+    assert "other@example.com" in scanner._index
+
+    # Verify index structure
+    email_matches = scanner._index["test@example.com"]
+    assert len(email_matches) == 2
+    assert all(m["matching_fields"] == ["email"] for m in email_matches)
+    assert {m["vcard_uid"] for m in email_matches} == {"test1", "test3"}
