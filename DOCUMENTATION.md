@@ -262,6 +262,10 @@ The storage folder must be writable by **radicale**. (Run
 `mkdir -p /var/lib/radicale/collections && chown -R radicale:radicale /var/lib/radicale/collections`
 as root.)
 
+If a dedicated cache folder is configured (see option 'storage' -> 'filesystem_cache_folder'), it also must be also writable by **radicale**. (Run
+`mkdir -p /var/cache/radicale && chown -R radicale:radicale /var/cache/radicale`
+as root.)
+
 > **Security:** The storage should not be readable by others.
 > (Run `chmod -R o= /var/lib/radicale/collections` as root.)
 
@@ -288,7 +292,9 @@ ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
 NoNewPrivileges=true
-ReadWritePaths=/var/lib/radicale/ /var/cache/radicale/
+ReadWritePaths=/var/lib/radicale/
+# Replace with following in case of dedicated cache folder should be used
+#ReadWritePaths=/var/lib/radicale/ /var/cache/radicale/
 
 [Install]
 WantedBy=multi-user.target
