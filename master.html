@@ -491,6 +491,11 @@ as root.) The storage folder must be writable by
 <strong>radicale</strong>. (Run
 <code>mkdir -p /var/lib/radicale/collections && chown -R radicale:radicale /var/lib/radicale/collections</code>
 as root.)</p>
+<p>If a dedicated cache folder is configured (see option 'storage' -&gt;
+'filesystem_cache_folder'), it also must be also writable by
+<strong>radicale</strong>. (Run
+<code>mkdir -p /var/cache/radicale && chown -R radicale:radicale /var/cache/radicale</code>
+as root.)</p>
 <blockquote>
 <p><strong>Security:</strong> The storage should not be readable by
 others. (Run <code>chmod -R o= /var/lib/radicale/collections</code> as
@@ -518,10 +523,12 @@ root.)</p>
 <span id="cb15-18"><a aria-hidden="true" href="#cb15-18" tabindex="-1"></a><span class="dt">ProtectKernelModules</span><span class="ot">=</span><span class="kw">true</span></span>
 <span id="cb15-19"><a aria-hidden="true" href="#cb15-19" tabindex="-1"></a><span class="dt">ProtectControlGroups</span><span class="ot">=</span><span class="kw">true</span></span>
 <span id="cb15-20"><a aria-hidden="true" href="#cb15-20" tabindex="-1"></a><span class="dt">NoNewPrivileges</span><span class="ot">=</span><span class="kw">true</span></span>
-<span id="cb15-21"><a aria-hidden="true" href="#cb15-21" tabindex="-1"></a><span class="dt">ReadWritePaths</span><span class="ot">=</span><span class="st">/var/lib/radicale/ /var/cache/radicale/</span></span>
-<span id="cb15-22"><a aria-hidden="true" href="#cb15-22" tabindex="-1"></a></span>
-<span id="cb15-23"><a aria-hidden="true" href="#cb15-23" tabindex="-1"></a><span class="kw">[Install]</span></span>
-<span id="cb15-24"><a aria-hidden="true" href="#cb15-24" tabindex="-1"></a><span class="dt">WantedBy</span><span class="ot">=</span><span class="st">multi-user.target</span></span></code></pre></div>
+<span id="cb15-21"><a aria-hidden="true" href="#cb15-21" tabindex="-1"></a><span class="dt">ReadWritePaths</span><span class="ot">=</span><span class="st">/var/lib/radicale/</span></span>
+<span id="cb15-22"><a aria-hidden="true" href="#cb15-22" tabindex="-1"></a><span class="co"># Replace with following in case of dedicated cache folder should be used</span></span>
+<span id="cb15-23"><a aria-hidden="true" href="#cb15-23" tabindex="-1"></a><span class="co">#ReadWritePaths=/var/lib/radicale/ /var/cache/radicale/</span></span>
+<span id="cb15-24"><a aria-hidden="true" href="#cb15-24" tabindex="-1"></a></span>
+<span id="cb15-25"><a aria-hidden="true" href="#cb15-25" tabindex="-1"></a><span class="kw">[Install]</span></span>
+<span id="cb15-26"><a aria-hidden="true" href="#cb15-26" tabindex="-1"></a><span class="dt">WantedBy</span><span class="ot">=</span><span class="st">multi-user.target</span></span></code></pre></div>
 <p>Radicale will load the configuration file from
 <code>/etc/radicale/config</code>.</p>
 <p>To enable and manage the service run:</p>
