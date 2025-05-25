@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.5.4.dev
+## 3.5.4
 * Improve: item filter enhanced for 3rd level supporting VALARM and honoring TRIGGER (offset or absolute)
 * Enhancement: add Caddy config file example (see contrib directory)
 
