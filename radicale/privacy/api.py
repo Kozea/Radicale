@@ -205,7 +205,7 @@ class PrivacyAPI:
             user: The user identifier (email or phone)
 
         Returns:
-            WSGI response with matching vCards, filtered by privacy settings
+            WSGI response with matching vCards
         """
         # Validate user identifier
         is_valid, error_msg = self._validate_user_identifier(user)
@@ -227,8 +227,8 @@ class PrivacyAPI:
                     "matches": []
                 })
 
-            # Get the vCards and filter based on privacy settings
-            filtered_matches = []
+            # Get the vCards
+            vcard_matches = []
             for match in matches:
                 try:
                     logger.debug("Attempting to discover collection: %r", match["collection_path"])
@@ -259,48 +259,40 @@ class PrivacyAPI:
                 if not vcard:
                     continue
 
-                # Create a filtered version of the vCard based on privacy settings
-                filtered_vcard = {
+                # Create a simplified version of the vCard
+                vcard_match = {
                     "vcard_uid": match["vcard_uid"],
                     "collection_path": match["collection_path"],
                     "matching_fields": match["matching_fields"],
                     "fields": {}
                 }
 
-                # Add fields based on privacy settings
-                if not settings.disallow_name:
-                    if hasattr(vcard, "fn"):
-                        filtered_vcard["fields"]["fn"] = vcard.fn.value
-                    if hasattr(vcard, "n"):
-                        filtered_vcard["fields"]["n"] = vcard.n.value
-                    if hasattr(vcard, "nickname"):
-                        filtered_vcard["fields"]["nickname"] = vcard.nickname.value
+                # Add all available fields
+                if hasattr(vcard, "fn"):
+                    vcard_match["fields"]["fn"] = vcard.fn.value
+                if hasattr(vcard, "n"):
+                    vcard_match["fields"]["n"] = vcard.n.value
+                if hasattr(vcard, "nickname"):
+                    vcard_match["fields"]["nickname"] = vcard.nickname.value
+                if hasattr(vcard, "email_list"):
+                    vcard_match["fields"]["email"] = [e.value for e in vcard.email_list if e.value]
+                if hasattr(vcard, "tel_list"):
+                    vcard_match["fields"]["tel"] = [t.value for t in vcard.tel_list if t.value]
+                if hasattr(vcard, "org"):
+                    vcard_match["fields"]["org"] = vcard.org.value
+                if hasattr(vcard, "title"):
+                    vcard_match["fields"]["title"] = vcard.title.value
+                if hasattr(vcard, "photo"):
+                    vcard_match["fields"]["photo"] = True  # Just indicate presence, don't include data
+                if hasattr(vcard, "bday"):
+                    vcard_match["fields"]["bday"] = vcard.bday.value
+                if hasattr(vcard, "adr"):
+                    vcard_match["fields"]["adr"] = vcard.adr.value
 
-                if not settings.disallow_email and hasattr(vcard, "email_list"):
-                    filtered_vcard["fields"]["email"] = [e.value for e in vcard.email_list if e.value]
-
-                if not settings.disallow_phone and hasattr(vcard, "tel_list"):
-                    filtered_vcard["fields"]["tel"] = [t.value for t in vcard.tel_list if t.value]
-
-                if not settings.disallow_company and hasattr(vcard, "org"):
-                    filtered_vcard["fields"]["org"] = vcard.org.value
-
-                if not settings.disallow_title and hasattr(vcard, "title"):
-                    filtered_vcard["fields"]["title"] = vcard.title.value
-
-                if not settings.disallow_photo and hasattr(vcard, "photo"):
-                    filtered_vcard["fields"]["photo"] = True  # Just indicate presence, don't include data
-
-                if not settings.disallow_birthday and hasattr(vcard, "bday"):
-                    filtered_vcard["fields"]["bday"] = vcard.bday.value
-
-                if not settings.disallow_address and hasattr(vcard, "adr"):
-                    filtered_vcard["fields"]["adr"] = vcard.adr.value
-
-                filtered_matches.append(filtered_vcard)
+                vcard_matches.append(vcard_match)
 
             return client.OK, {"Content-Type": "application/json"}, json.dumps({
-                "matches": filtered_matches
+                "matches": vcard_matches
             })
 
         except Exception as e:
