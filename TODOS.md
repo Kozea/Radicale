@@ -110,7 +110,7 @@
 
 ### Phase 3: Information Disclosure
 
-1. **Basic Disclosure API** ❌
+1. **Basic Disclosure API** ✅
    - Create a simple endpoint to retrieve information about the authenticated user
    - Return a list of vCards and fields that match the user's identity
    - Use basic authentication to protect the API
