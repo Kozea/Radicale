@@ -28,7 +28,6 @@ def mock_time_ranges():
 def api(mock_time_ranges):
     """Fixture to provide a privacy API instance with a temp database file."""
     with tempfile.TemporaryDirectory() as tmpdir:
-
         test_db_path = os.path.join(tmpdir, "test.db")
 
         # Create collection-root directory
@@ -57,9 +56,38 @@ def api(mock_time_ranges):
         PrivacyScanner.reset()
         api._scanner = PrivacyScanner(storage_instance)  # Initialize scanner with storage instance
 
-        yield api
-        api._privacy_db.close()  # Clean up database connections
-        # Removed storage_instance.close() as Storage has no close method
+        try:
+            yield api
+        finally:
+            # Properly clean up SQLAlchemy resources
+            if hasattr(api, '_privacy_db'):
+                # Close all sessions
+                api._privacy_db.Session.remove()
+                # Dispose of the engine
+                api._privacy_db.engine.dispose()
+                # Close the database
+                api._privacy_db.close()
+
+            # On Windows, we need to be extra careful about file handles
+            if os.name == 'nt':
+                import gc
+                import time
+
+                # Force garbage collection to help release file handles
+                gc.collect()
+                # Give Windows time to release file handles
+                time.sleep(0.5)
+
+                # Try to explicitly close any remaining file handles
+                try:
+                    if hasattr(api, '_privacy_db') and hasattr(api._privacy_db, 'engine'):
+                        api._privacy_db.engine.dispose()
+                except Exception:
+                    pass
+
+                # Force another garbage collection
+                gc.collect()
+                time.sleep(0.5)
 
 
 def test_get_settings_not_found(api):
