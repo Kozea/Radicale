@@ -379,6 +379,7 @@ def test_get_matching_cards_unauthorized(api):
     assert "User identifier is required" in response_data["error"]
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_get_matching_cards_no_matches(api):
     """Test getting matching cards when no matches exist."""
     # First create settings for the user
@@ -422,6 +423,7 @@ def test_get_matching_cards_no_matches(api):
     assert response_data["matches"] == []
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_get_matching_cards_recursive_discovery(api):
     """Test that get_matching_cards can discover and search nested collections."""
     # Create test vCard in a nested collection
@@ -470,6 +472,7 @@ def test_get_matching_cards_recursive_discovery(api):
     assert match["collection_path"] == "user1/contacts"
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_get_matching_cards_in_different_collections(api):
     """Test finding cards matching a user's identity in different collections."""
     # Create test vCards in different collections
