@@ -70,9 +70,9 @@ PRIVACY_TO_VCARD_MAP = {
     'disallow_name': [VCardProperty.FN, VCardProperty.N, VCardProperty.NICKNAME],
     'disallow_email': [VCardProperty.EMAIL],
     'disallow_phone': [VCardProperty.TEL],
-    'disallow_company': [VCardProperty.ORG],
+    'disallow_company': [VCardProperty.ORG, VCardProperty.LOGO],
     'disallow_title': [VCardProperty.TITLE, VCardProperty.ROLE],
-    'disallow_photo': [VCardProperty.PHOTO, VCardProperty.LOGO],
+    'disallow_photo': [VCardProperty.PHOTO],
     'disallow_birthday': [VCardProperty.BDAY, VCardProperty.ANNIVERSARY],
     'disallow_address': [VCardProperty.ADR, VCardProperty.LABEL],
 }
