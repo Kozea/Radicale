@@ -63,12 +63,14 @@ class PrivacyReprocessor:
                     # Get all items in the collection
                     items = list(collection.get_all())
                     item = None
+                    original_href = None
                     for i in items:
                         if (isinstance(i, Item) and
                                 i.component_name == "VCARD" and
                                 hasattr(i.vobject_item, "uid") and
                                 i.vobject_item.uid.value == vcard_uid):
                             item = i
+                            original_href = i.href
                             break
 
                     if not item:
@@ -78,9 +80,9 @@ class PrivacyReprocessor:
                     # Apply privacy enforcement
                     modified_item = self._enforcement.enforce_privacy(item)
 
-                    # Save the modified vCard - we always want to save after settings update
+                    # Save the modified vCard using the original filename
                     try:
-                        collection.upload(vcard_uid, modified_item)
+                        collection.upload(original_href, modified_item)
                         logger.info("Successfully updated vCard %r", vcard_uid)
                         reprocessed_cards.append(vcard_uid)
                     except Exception as e:
