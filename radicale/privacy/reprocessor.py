@@ -78,12 +78,7 @@ class PrivacyReprocessor:
                     # Apply privacy enforcement
                     modified_item = self._enforcement.enforce_privacy(item)
 
-                    # Check if any changes were made
-                    if modified_item.serialize() == item.serialize():
-                        logger.debug("No changes needed for vCard %r", vcard_uid)
-                        continue
-
-                    # Save the modified vCard
+                    # Save the modified vCard - we always want to save after settings update
                     try:
                         collection.upload(vcard_uid, modified_item)
                         logger.info("Successfully updated vCard %r", vcard_uid)

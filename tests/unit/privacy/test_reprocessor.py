@@ -289,9 +289,10 @@ def test_reprocess_vcards_no_changes(privacy_reprocessor, create_vcard, create_i
     # Reprocess vCards
     reprocessed = privacy_reprocessor.reprocess_vcards("john@example.com")
 
-    # Verify results
-    assert len(reprocessed) == 0
-    assert collection.upload.call_count == 0
+    # Verify results - vCard should be saved even when no changes are needed
+    assert len(reprocessed) == 1
+    assert "vcard1" in reprocessed
+    assert collection.upload.call_count == 1
 
 
 def test_reprocess_vcards_with_errors(privacy_reprocessor, create_vcard, create_item, mocker):
