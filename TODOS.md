@@ -22,18 +22,15 @@
   - The server will send me a one-time password (OTP)
   - I will enter the OTP in a form
   - I will then be authenticated
-  - ~~My email or phone number should be hashed by the server to prevent identification based on my external user account~~
 
 ### Privacy Settings Management
 
 - As an authenticated external user, I want to manage my privacy settings:
-  - I want to control which personal information others can store about me (e.g., pronouns, company, job title, photo, birthday, address)
+  - I want to control which personal information others can store about me (e.g., company, job title, photo, birthday, address)
+  - Note: Name, email, and phone number are considered public information and cannot be restricted
   - Radicale needs an API to save privacy settings for authenticated external users
-  - ~~Privacy settings should be stored on the filesystem in a simple format~~
   - Privacy settings should be stored in a database to ease statistics. A single SQLite on the filesystem can be used (see SQLAlchemy ORM).
-  - ~~The hashed email or phone number should serve as the key to identify my user settings~~
-    - The identifier (email or phone number) does not need to be hashed for the user settings. Privacy is not a critical point here.
-    - Using a salt is not necessary either. We are more concerned about losing the salt and thus losing all data.
+  - The identifier (email or phone number) does not need to be hashed nor salted for the user settings. Privacy is not a critical for these fields and we care about not losing data.
   - **Question**: Should we support multiple identifiers per user?
     - One identity linked to one settings profile
     - Multiple identities (email/phone) linked to one settings profile
@@ -104,9 +101,17 @@
    - Implement minimal indexing based on email/phone properties
 
 3. **Basic Privacy Enforcement** ✅
-   - Implement rejection of vCard uploads that violate privacy settings
-   - Return appropriate error messages to the client
-   - For MVP, use HTTP 400 (Bad Request) for all privacy violations
+   - Implement filtering of vCard fields based on privacy settings
+   - Remove or mask private fields before saving to storage
+   - Return filtered vCard to the client
+   - For MVP, use HTTP 200 (OK) with filtered content
+   - Add logging for privacy filtering actions
+
+4. **Privacy Settings Update Handling** ❌
+   - Add functionality to reprocess all existing vCards when user privacy settings change
+   - Add logging for bulk update operations
+   - Add an API endpoint to trigger the privacy settings update process
+
 
 ### Phase 3: Information Disclosure
 
