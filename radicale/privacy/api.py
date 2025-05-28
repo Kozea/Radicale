@@ -1,7 +1,8 @@
 """
 Privacy API for Radicale.
 
-This module provides the core business logic for managing user privacy settings.
+This module provides the core business logic for managing user privacy
+settings and processing vCards according to those settings.
 """
 
 import logging
@@ -13,6 +14,8 @@ from radicale.item import Item
 from radicale.privacy.database import PrivacyDatabase
 from radicale.privacy.reprocessor import PrivacyReprocessor
 from radicale.privacy.scanner import PrivacyScanner
+from radicale.privacy.vcard_properties import (PRIVACY_TO_VCARD_MAP,
+                                               VCARD_NAME_TO_ENUM)
 
 logger = logging.getLogger(__name__)
 
@@ -79,11 +82,8 @@ class PrivacyAPI:
 
         # Convert settings to dict
         settings_dict = {
-            "disallow_company": settings.disallow_company,
-            "disallow_title": settings.disallow_title,
-            "disallow_photo": settings.disallow_photo,
-            "disallow_birthday": settings.disallow_birthday,
-            "disallow_address": settings.disallow_address
+            setting: getattr(settings, setting)
+            for setting in PRIVACY_TO_VCARD_MAP.keys()
         }
 
         return True, settings_dict
@@ -105,10 +105,7 @@ class PrivacyAPI:
             return False, error_msg
 
         # Validate settings
-        required_fields = {
-            "disallow_company", "disallow_title", "disallow_photo",
-            "disallow_birthday", "disallow_address"
-        }
+        required_fields = set(PRIVACY_TO_VCARD_MAP.keys())
         if not all(field in settings for field in required_fields):
             return False, {
                 "error": "Missing required fields",
@@ -156,10 +153,7 @@ class PrivacyAPI:
         if not settings:
             return False, "No settings provided"
 
-        valid_fields = {
-            "disallow_company", "disallow_title", "disallow_photo",
-            "disallow_birthday", "disallow_address"
-        }
+        valid_fields = set(PRIVACY_TO_VCARD_MAP.keys())
         if not all(field in valid_fields for field in settings):
             return False, {
                 "error": "Invalid field names",
@@ -281,26 +275,20 @@ class PrivacyAPI:
                 }
 
                 # Add all available fields
-                if hasattr(vcard, "fn"):
-                    vcard_match["fields"]["fn"] = vcard.fn.value
-                if hasattr(vcard, "n"):
-                    vcard_match["fields"]["n"] = vcard.n.value
-                if hasattr(vcard, "nickname"):
-                    vcard_match["fields"]["nickname"] = vcard.nickname.value
-                if hasattr(vcard, "email_list"):
-                    vcard_match["fields"]["email"] = [e.value for e in vcard.email_list if e.value]
-                if hasattr(vcard, "tel_list"):
-                    vcard_match["fields"]["tel"] = [t.value for t in vcard.tel_list if t.value]
-                if hasattr(vcard, "org"):
-                    vcard_match["fields"]["org"] = vcard.org.value
-                if hasattr(vcard, "title"):
-                    vcard_match["fields"]["title"] = vcard.title.value
+                for prop_name in VCARD_NAME_TO_ENUM:
+                    if prop_name in ['email', 'tel']:
+                        # Handle list properties
+                        list_attr = f"{prop_name}_list"
+                        if hasattr(vcard, list_attr):
+                            vcard_match["fields"][prop_name] = [e.value for e in getattr(vcard, list_attr) if e.value]
+                    else:
+                        # Handle single value properties
+                        if hasattr(vcard, prop_name):
+                            vcard_match["fields"][prop_name] = getattr(vcard, prop_name).value
+
+                # Add photo field if present (special case as we only indicate presence)
                 if hasattr(vcard, "photo"):
-                    vcard_match["fields"]["photo"] = True  # Just indicate presence, don't include data
-                if hasattr(vcard, "bday"):
-                    vcard_match["fields"]["bday"] = vcard.bday.value
-                if hasattr(vcard, "adr"):
-                    vcard_match["fields"]["adr"] = vcard.adr.value
+                    vcard_match["fields"]["photo"] = True
 
                 vcard_matches.append(vcard_match)
 
