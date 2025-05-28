@@ -30,9 +30,6 @@ class UserSettings(Base):
     updated_at = Column(DateTime, onupdate=datetime.now(timezone.utc))
 
     # Privacy settings fields
-    disallow_name = Column(Boolean, default=False)
-    disallow_email = Column(Boolean, default=False)
-    disallow_phone = Column(Boolean, default=False)
     disallow_company = Column(Boolean, default=False)
     disallow_title = Column(Boolean, default=False)
     disallow_photo = Column(Boolean, default=False)
@@ -84,9 +81,6 @@ class PrivacyDatabase:
             # If no settings provided, use configuration defaults
             if not settings:
                 settings = {
-                    "disallow_name": self._configuration.get("privacy", "default_disallow_name"),
-                    "disallow_email": self._configuration.get("privacy", "default_disallow_email"),
-                    "disallow_phone": self._configuration.get("privacy", "default_disallow_phone"),
                     "disallow_company": self._configuration.get("privacy", "default_disallow_company"),
                     "disallow_title": self._configuration.get("privacy", "default_disallow_title"),
                     "disallow_photo": self._configuration.get("privacy", "default_disallow_photo"),

@@ -20,9 +20,6 @@ def generate_privacy_settings(card_data: dict) -> dict:
     """Generate privacy settings based on the card data."""
     # Default settings - start with everything allowed
     settings = {
-        "disallow_name": False,
-        "disallow_email": False,
-        "disallow_phone": False,
         "disallow_company": False,
         "disallow_title": False,
         "disallow_photo": False,
@@ -70,7 +67,6 @@ def generate_privacy_settings(card_data: dict) -> dict:
     elif card_data['uid'] == 'test6':
         # Multiple emails - allow only email and basic info
         settings.update({
-            "disallow_phone": True,
             "disallow_company": True,
             "disallow_title": True,
             "disallow_photo": True,
@@ -89,7 +85,6 @@ def generate_privacy_settings(card_data: dict) -> dict:
     elif card_data['uid'] == 'test8':
         # Minimal contact - allow only name and email
         settings.update({
-            "disallow_phone": True,
             "disallow_company": True,
             "disallow_title": True,
             "disallow_photo": True,
@@ -151,9 +146,6 @@ def main():
             if status == 200:
                 current_settings = json.loads(body)
                 print(f"\nCurrent settings for {email}:")
-                print(f"  Name allowed: {current_settings['disallow_name']}")
-                print(f"  Email allowed: {current_settings['disallow_email']}")
-                print(f"  Phone allowed: {current_settings['disallow_phone']}")
                 print(f"  Company allowed: {current_settings['disallow_company']}")
                 print(f"  Title allowed: {current_settings['disallow_title']}")
                 print(f"  Photo allowed: {current_settings['disallow_photo']}")

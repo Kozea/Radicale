@@ -80,9 +80,6 @@ class PrivacyAPI:
 
         # Convert settings to dict
         settings_dict = {
-            "disallow_name": settings.disallow_name,
-            "disallow_email": settings.disallow_email,
-            "disallow_phone": settings.disallow_phone,
             "disallow_company": settings.disallow_company,
             "disallow_title": settings.disallow_title,
             "disallow_photo": settings.disallow_photo,
@@ -110,8 +107,8 @@ class PrivacyAPI:
 
         # Validate settings
         required_fields = {
-            "disallow_name", "disallow_email", "disallow_phone", "disallow_company",
-            "disallow_title", "disallow_photo", "disallow_birthday", "disallow_address"
+            "disallow_company", "disallow_title", "disallow_photo",
+            "disallow_birthday", "disallow_address"
         }
         if not all(field in settings for field in required_fields):
             return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
@@ -153,8 +150,8 @@ class PrivacyAPI:
             })
 
         valid_fields = {
-            "disallow_name", "disallow_email", "disallow_phone", "disallow_company",
-            "disallow_title", "disallow_photo", "disallow_birthday", "disallow_address"
+            "disallow_company", "disallow_title", "disallow_photo",
+            "disallow_birthday", "disallow_address"
         }
         if not all(field in valid_fields for field in settings):
             return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({

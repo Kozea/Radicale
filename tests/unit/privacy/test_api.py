@@ -108,9 +108,6 @@ def test_get_settings_unauthorized(api):
 def test_create_settings_success(api):
     """Test creating settings successfully."""
     settings = {
-        "disallow_name": False,
-        "disallow_email": True,
-        "disallow_phone": False,
         "disallow_company": True,
         "disallow_title": False,
         "disallow_photo": True,
@@ -130,8 +127,8 @@ def test_create_settings_success(api):
 def test_create_settings_missing_fields(api):
     """Test creating settings with missing fields."""
     settings = {
-        "disallow_name": False,
-        "disallow_email": True
+        "disallow_company": False,
+        "disallow_title": True
     }
     status, headers, response = api.create_settings("test@example.com", settings)
     assert status == client.BAD_REQUEST
@@ -143,11 +140,8 @@ def test_create_settings_missing_fields(api):
 def test_create_settings_invalid_types(api):
     """Test creating settings with invalid field types."""
     settings = {
-        "disallow_name": "false",  # Should be boolean
-        "disallow_email": True,
-        "disallow_phone": False,
         "disallow_company": True,
-        "disallow_title": False,
+        "disallow_title": "false",  # Should be boolean
         "disallow_photo": True,
         "disallow_birthday": False,
         "disallow_address": True
@@ -163,9 +157,6 @@ def test_update_settings_success(api):
     """Test updating settings successfully."""
     # First create settings
     initial_settings = {
-        "disallow_name": False,
-        "disallow_email": False,
-        "disallow_phone": False,
         "disallow_company": False,
         "disallow_title": False,
         "disallow_photo": False,
@@ -176,8 +167,8 @@ def test_update_settings_success(api):
 
     # Then update some settings
     update_settings = {
-        "disallow_email": True,
-        "disallow_photo": True
+        "disallow_photo": True,
+        "disallow_birthday": True
     }
     status, headers, response = api.update_settings("test@example.com", update_settings)
     assert status == client.OK
@@ -187,14 +178,16 @@ def test_update_settings_success(api):
     status, headers, response = api.get_settings("test@example.com")
     assert status == client.OK
     updated_settings = json.loads(response)
-    assert updated_settings["disallow_email"] is True
+    assert updated_settings["disallow_company"] is False  # Unchanged
+    assert updated_settings["disallow_title"] is False  # Unchanged
     assert updated_settings["disallow_photo"] is True
-    assert updated_settings["disallow_name"] is False  # Unchanged
+    assert updated_settings["disallow_birthday"] is True
+    assert updated_settings["disallow_address"] is False  # Unchanged
 
 
 def test_update_settings_not_found(api):
     """Test updating settings for a non-existent user."""
-    settings = {"disallow_name": True}
+    settings = {"disallow_photo": True}
     status, headers, response = api.update_settings("nonexistent@example.com", settings)
     assert status == client.NOT_FOUND
 
@@ -220,7 +213,7 @@ def test_update_settings_empty(api):
 
 def test_update_settings_unauthorized(api):
     """Test updating settings without a user."""
-    settings = {"disallow_name": True}
+    settings = {"disallow_photo": True}
     status, headers, response = api.update_settings("", settings)
     assert status == client.BAD_REQUEST
     response_data = json.loads(response)
@@ -232,9 +225,6 @@ def test_delete_settings_success(api):
     """Test deleting settings successfully."""
     # First create settings
     settings = {
-        "disallow_name": False,
-        "disallow_email": True,
-        "disallow_phone": False,
         "disallow_company": True,
         "disallow_title": False,
         "disallow_photo": True,
@@ -384,9 +374,6 @@ def test_get_matching_cards_no_matches(api):
     """Test getting matching cards when no matches exist."""
     # First create settings for the user
     settings = {
-        "disallow_name": False,
-        "disallow_email": False,
-        "disallow_phone": False,
         "disallow_company": False,
         "disallow_title": False,
         "disallow_photo": False,
@@ -445,9 +432,6 @@ def test_get_matching_cards_recursive_discovery(api):
 
     # Create privacy settings for the test user
     settings = {
-        "disallow_name": False,
-        "disallow_email": False,
-        "disallow_phone": False,
         "disallow_company": False,
         "disallow_title": False,
         "disallow_photo": False,
@@ -510,9 +494,6 @@ def test_get_matching_cards_in_different_collections(api):
 
     # Create privacy settings for the test user
     settings = {
-        "disallow_name": False,
-        "disallow_email": False,  # Allow email to be stored
-        "disallow_phone": False,
         "disallow_company": False,
         "disallow_title": False,
         "disallow_photo": False,

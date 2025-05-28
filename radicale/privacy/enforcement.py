@@ -130,9 +130,6 @@ class PrivacyEnforcement:
 
         # Log all privacy settings
         logger.debug("Privacy settings details:")
-        logger.debug("  Name disallowed: %r", privacy_settings.disallow_name)
-        logger.debug("  Email disallowed: %r", privacy_settings.disallow_email)
-        logger.debug("  Phone disallowed: %r", privacy_settings.disallow_phone)
         logger.debug("  Company disallowed: %r", privacy_settings.disallow_company)
         logger.debug("  Title disallowed: %r", privacy_settings.disallow_title)
         logger.debug("  Photo disallowed: %r", privacy_settings.disallow_photo)
