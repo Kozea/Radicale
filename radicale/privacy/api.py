@@ -13,6 +13,7 @@ from typing import Dict, Tuple
 from radicale import config, httputils, storage, types
 from radicale.item import Item
 from radicale.privacy.database import PrivacyDatabase
+from radicale.privacy.reprocessor import PrivacyReprocessor
 from radicale.privacy.scanner import PrivacyScanner
 
 logger = logging.getLogger(__name__)
@@ -123,7 +124,19 @@ class PrivacyAPI:
 
         try:
             self._privacy_db.create_user_settings(user, settings)
-            return client.CREATED, {"Content-Type": "application/json"}, json.dumps({"status": "created"})
+
+            # After creating settings, reprocess all vCards for this user
+            try:
+                reprocessor = PrivacyReprocessor(self.configuration, self._scanner._storage)
+                reprocessor.reprocess_vcards(user)
+                return client.CREATED, {"Content-Type": "application/json"}, json.dumps({"status": "created"})
+            except Exception as e:
+                logger.error("Error reprocessing cards: %s", str(e))
+                # Still return success for settings creation, but include reprocessing error
+                return client.CREATED, {"Content-Type": "application/json"}, json.dumps({
+                    "status": "created",
+                    "reprocessing_error": str(e)
+                })
         except Exception as e:
             return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({"error": str(e)})
 
@@ -168,7 +181,20 @@ class PrivacyAPI:
             updated = self._privacy_db.update_user_settings(user, settings)
             if not updated:
                 return httputils.NOT_FOUND
-            return client.OK, {"Content-Type": "application/json"}, json.dumps({"status": "updated"})
+
+            # After updating settings, reprocess all vCards for this user
+            try:
+                reprocessor = PrivacyReprocessor(self.configuration, self._scanner._storage)
+                reprocessor.reprocess_vcards(user)
+                return client.OK, {"Content-Type": "application/json"}, json.dumps({"status": "updated"})
+            except Exception as e:
+                logger.error("Error reprocessing cards: %s", str(e))
+                # Still return success for settings update, but include reprocessing error
+                return client.OK, {"Content-Type": "application/json"}, json.dumps({
+                    "status": "updated",
+                    "reprocessing_error": str(e)
+                })
+
         except Exception as e:
             return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({"error": str(e)})
 
@@ -295,4 +321,37 @@ class PrivacyAPI:
         except Exception as e:
             return client.INTERNAL_SERVER_ERROR, {"Content-Type": "application/json"}, json.dumps({
                 "error": f"Error finding matching cards: {str(e)}"
+            })
+
+    def reprocess_cards(self, user: str) -> types.WSGIResponse:
+        """Trigger reprocessing of all vCards for a user.
+
+        Args:
+            user: The user identifier (email or phone)
+
+        Returns:
+            WSGI response with reprocessing results
+        """
+        is_valid, error_msg = self._validate_user_identifier(user)
+        if not is_valid:
+            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
+                "error": error_msg
+            })
+
+        # Verify user has privacy settings
+        settings = self._privacy_db.get_user_settings(user)
+        if not settings:
+            return httputils.NOT_FOUND
+
+        try:
+            reprocessor = PrivacyReprocessor(self.configuration, self._scanner._storage)
+            reprocessed_cards = reprocessor.reprocess_vcards(user)
+            return client.OK, {"Content-Type": "application/json"}, json.dumps({
+                "status": "success",
+                "reprocessed_cards": len(reprocessed_cards),
+                "reprocessed_card_uids": reprocessed_cards
+            })
+        except Exception as e:
+            return client.INTERNAL_SERVER_ERROR, {"Content-Type": "application/json"}, json.dumps({
+                "error": f"Error reprocessing cards: {str(e)}"
             })

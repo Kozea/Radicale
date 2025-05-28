@@ -511,3 +511,185 @@ def test_get_matching_cards_in_different_collections(api):
     assert "matches" in response_data
     matches = response_data["matches"]
     assert len(matches) == 2  # Should find both cards
+
+
+def test_reprocess_cards_not_found(api):
+    """Test reprocessing cards for a non-existent user."""
+    status, headers, response = api.reprocess_cards("nonexistent@example.com")
+    assert status == client.NOT_FOUND
+
+
+def test_reprocess_cards_unauthorized(api):
+    """Test reprocessing cards without a user."""
+    status, headers, response = api.reprocess_cards("")
+    assert status == client.BAD_REQUEST
+    response_data = json.loads(response)
+    assert "error" in response_data
+    assert "User identifier is required" in response_data["error"]
+
+
+@pytest.mark.skipif(os.name == 'nt', reason="Problematic on Windows due to file locking")
+def test_reprocess_cards_success(api):
+    """Test successful reprocessing of cards."""
+    # First create settings for the user
+    settings = {
+        "disallow_company": True,
+        "disallow_title": False,
+        "disallow_photo": True,
+        "disallow_birthday": False,
+        "disallow_address": True
+    }
+    api.create_settings("test@example.com", settings)
+
+    # Create a test vCard
+    vcard = vobject.vCard()
+    vcard.add('uid')
+    vcard.uid.value = "test-card"
+    vcard.add('fn')
+    vcard.fn.value = "Test Contact"
+    vcard.add('email')
+    vcard.email.value = "test@example.com"
+    vcard.email.type_param = 'INTERNET'
+    vcard.add('org')
+    vcard.org.value = "Test Company"
+    vcard.add('title')
+    vcard.title.value = "Test Title"
+
+    # Create collection and upload vCard
+    collection = api._scanner._storage.create_collection("/testuser/contacts")
+    item = Item(vobject_item=vcard, collection_path="testuser/contacts", component_name="VCARD")
+    collection.upload("test-card.vcf", item)
+
+    # Trigger reprocessing
+    status, headers, response = api.reprocess_cards("test@example.com")
+    assert status == client.OK
+    response_data = json.loads(response)
+    assert response_data["status"] == "success"
+
+    # Verify the vCard was updated according to privacy settings
+    items = list(collection.get_all())
+    assert len(items) == 1
+    updated_vcard = items[0].vobject_item
+
+    # Company and photo should be removed (disallowed)
+    assert 'org' not in updated_vcard.contents
+    assert 'photo' not in updated_vcard.contents
+
+    # Title should remain (allowed)
+    assert 'title' in updated_vcard.contents
+    assert updated_vcard.title.value == "Test Title"
+
+
+@pytest.mark.skipif(os.name == 'nt', reason="Problematic on Windows due to file locking")
+def test_reprocess_cards_multiple_collections(api):
+    """Test reprocessing cards across multiple collections."""
+    # Create settings for the user
+    settings = {
+        "disallow_company": True,
+        "disallow_title": False,
+        "disallow_photo": True,
+        "disallow_birthday": False,
+        "disallow_address": True
+    }
+    api.create_settings("test@example.com", settings)
+
+    # Create test vCards in different collections
+    vcard1 = vobject.vCard()
+    vcard1.add('uid')
+    vcard1.uid.value = "card1"
+    vcard1.add('fn')
+    vcard1.fn.value = "Test Contact 1"
+    vcard1.add('email')
+    vcard1.email.value = "test@example.com"
+    vcard1.email.type_param = 'INTERNET'
+    vcard1.add('org')
+    vcard1.org.value = "Company 1"
+
+    vcard2 = vobject.vCard()
+    vcard2.add('uid')
+    vcard2.uid.value = "card2"
+    vcard2.add('fn')
+    vcard2.fn.value = "Test Contact 2"
+    vcard2.add('email')
+    vcard2.email.value = "test@example.com"
+    vcard2.email.type_param = 'INTERNET'
+    vcard2.add('org')
+    vcard2.org.value = "Company 2"
+
+    # Create collections and upload vCards
+    collection1 = api._scanner._storage.create_collection("/user1/contacts")
+    collection2 = api._scanner._storage.create_collection("/user2/contacts")
+
+    item1 = Item(vobject_item=vcard1, collection_path="user1/contacts", component_name="VCARD")
+    item2 = Item(vobject_item=vcard2, collection_path="user2/contacts", component_name="VCARD")
+
+    collection1.upload("test-card1.vcf", item1)
+    collection2.upload("test-card2.vcf", item2)
+
+    # Trigger reprocessing
+    status, headers, response = api.reprocess_cards("test@example.com")
+    assert status == client.OK
+    response_data = json.loads(response)
+    assert response_data["status"] == "success"
+
+    # Verify both vCards were updated
+    items1 = list(collection1.get_all())
+    items2 = list(collection2.get_all())
+
+    assert len(items1) == 1
+    assert len(items2) == 1
+
+    assert 'org' not in items1[0].vobject_item.contents
+    assert 'org' not in items2[0].vobject_item.contents
+
+
+@pytest.mark.skipif(os.name == 'nt', reason="Problematic on Windows due to file locking")
+def test_reprocess_cards_after_settings_update(api):
+    """Test that cards are reprocessed after settings update."""
+    # First create initial settings
+    initial_settings = {
+        "disallow_company": False,
+        "disallow_title": False,
+        "disallow_photo": False,
+        "disallow_birthday": False,
+        "disallow_address": False
+    }
+    api.create_settings("test@example.com", initial_settings)
+
+    # Create a test vCard
+    vcard = vobject.vCard()
+    vcard.add('uid')
+    vcard.uid.value = "test-card"
+    vcard.add('fn')
+    vcard.fn.value = "Test Contact"
+    vcard.add('email')
+    vcard.email.value = "test@example.com"
+    vcard.email.type_param = 'INTERNET'
+    vcard.add('org')
+    vcard.org.value = "Test Company"
+    vcard.add('title')
+    vcard.title.value = "Test Title"
+
+    # Create collection and upload vCard
+    collection = api._scanner._storage.create_collection("/testuser/contacts")
+    item = Item(vobject_item=vcard, collection_path="testuser/contacts", component_name="VCARD")
+    collection.upload("test-card.vcf", item)
+
+    # Update settings to disallow company
+    update_settings = {
+        "disallow_company": True
+    }
+    status, headers, response = api.update_settings("test@example.com", update_settings)
+    assert status == client.OK
+
+    # Verify the vCard was updated according to new privacy settings
+    items = list(collection.get_all())
+    assert len(items) == 1
+    updated_vcard = items[0].vobject_item
+
+    # Company should be removed (now disallowed)
+    assert 'org' not in updated_vcard.contents
+
+    # Title should remain (still allowed)
+    assert 'title' in updated_vcard.contents
+    assert updated_vcard.title.value == "Test Title"
