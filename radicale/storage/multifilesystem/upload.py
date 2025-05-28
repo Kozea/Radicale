@@ -27,8 +27,7 @@ import radicale.item as radicale_item
 from radicale import pathutils
 from radicale.log import logger
 from radicale.privacy.database import PrivacyDatabase
-from radicale.privacy.enforcement import (PrivacyEnforcement,
-                                          PrivacyViolationError)
+from radicale.privacy.enforcement import PrivacyEnforcement
 from radicale.storage.multifilesystem.base import CollectionBase
 from radicale.storage.multifilesystem.cache import CollectionPartCache
 from radicale.storage.multifilesystem.get import CollectionPartGet
@@ -58,11 +57,10 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
 
             # Apply privacy enforcement
             item = privacy_enforcement.enforce_privacy(item)
-        except PrivacyViolationError as e:
-            # Log the violation at info level since this is an expected case
-            logger.info("Privacy violation when uploading %r: %s", href, e.message)
-            # Re-raise the error to be handled by the caller
-            raise
+        except Exception as e:
+            logger.error("Privacy enforcement error when uploading %r: %s", href, str(e))
+            raise ValueError("Privacy enforcement error when uploading %r: %s" %
+                             (href, e)) from e
 
         try:
             # Write the modified item to disk

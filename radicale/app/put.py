@@ -38,7 +38,6 @@ from radicale import (httputils, pathutils, rights, storage, types, utils,
 from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
-from radicale.privacy.enforcement import PrivacyViolationError
 
 MIMETYPE_TAGS: Mapping[str, str] = {value: key for key, value in
                                     xmlutils.MIMETYPES.items()}
@@ -275,10 +274,6 @@ class ApplicationPartPut(ApplicationBase):
                         prepared_item.serialize()
                     )
                     self._hook.notify(hook_notification_item)
-                except PrivacyViolationError as e:
-                    # Privacy violations are expected and should be logged at info level
-                    logger.info("Privacy violation in PUT request on %r: %s", path, e.message)
-                    return httputils.BAD_REQUEST
                 except ValueError as e:
                     # return better matching HTTP result in case errno is provided and catched
                     errno_match = re.search("\\[Errno ([0-9]+)\\]", str(e))
