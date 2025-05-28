@@ -115,14 +115,10 @@ class PrivacyEnforcement:
                     privacy_settings = settings
                 else:
                     # Apply most restrictive settings when multiple matches found
-                    privacy_settings.disallow_name = privacy_settings.disallow_name or settings.disallow_name
-                    privacy_settings.disallow_email = privacy_settings.disallow_email or settings.disallow_email
-                    privacy_settings.disallow_phone = privacy_settings.disallow_phone or settings.disallow_phone
-                    privacy_settings.disallow_company = privacy_settings.disallow_company or settings.disallow_company
-                    privacy_settings.disallow_title = privacy_settings.disallow_title or settings.disallow_title
-                    privacy_settings.disallow_photo = privacy_settings.disallow_photo or settings.disallow_photo
-                    privacy_settings.disallow_birthday = privacy_settings.disallow_birthday or settings.disallow_birthday
-                    privacy_settings.disallow_address = privacy_settings.disallow_address or settings.disallow_address
+                    for privacy_field in PRIVACY_TO_VCARD_MAP.keys():
+                        current_value = getattr(privacy_settings, privacy_field)
+                        new_value = getattr(settings, privacy_field)
+                        setattr(privacy_settings, privacy_field, current_value or new_value)
 
         if not privacy_settings:
             logger.info("No privacy settings found for any identifier")
@@ -130,11 +126,9 @@ class PrivacyEnforcement:
 
         # Log all privacy settings
         logger.debug("Privacy settings details:")
-        logger.debug("  Company disallowed: %r", privacy_settings.disallow_company)
-        logger.debug("  Title disallowed: %r", privacy_settings.disallow_title)
-        logger.debug("  Photo disallowed: %r", privacy_settings.disallow_photo)
-        logger.debug("  Birthday disallowed: %r", privacy_settings.disallow_birthday)
-        logger.debug("  Address disallowed: %r", privacy_settings.disallow_address)
+        for privacy_field in PRIVACY_TO_VCARD_MAP.keys():
+            logger.debug("  %s disallowed: %r", privacy_field.replace('disallow_', '').title(),
+                         getattr(privacy_settings, privacy_field))
 
         # Check for violations
         violations = []
