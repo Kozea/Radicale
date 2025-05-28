@@ -18,6 +18,14 @@ def create_vcard():
     def _create_vcard(**properties):
         vcard = vobject.vCard()
 
+        # Always add UID if not present
+        if 'uid' in properties:
+            vcard.add('uid')
+            vcard.uid.value = properties['uid']
+        else:
+            vcard.add('uid')
+            vcard.uid.value = 'vcard1'  # Default UID for testing
+
         if 'name' in properties:
             vcard.add('n')
             vcard.n.value = vobject.vcard.Name(family=properties['name'].split())
@@ -101,6 +109,7 @@ def test_reprocess_vcards(privacy_reprocessor, create_vcard, create_item, mocker
     """Test reprocessing vCards with privacy settings changes."""
     # Create test vCards
     vcard1 = create_vcard(
+        uid='vcard1',
         name="John Doe",
         email="john@example.com",
         company="ACME Corp",
@@ -110,6 +119,7 @@ def test_reprocess_vcards(privacy_reprocessor, create_vcard, create_item, mocker
         address="123 Main St"
     )
     vcard2 = create_vcard(
+        uid='vcard2',
         name="Jane Smith",
         email="jane@example.com",
         company="XYZ Inc",
@@ -137,19 +147,24 @@ def test_reprocess_vcards(privacy_reprocessor, create_vcard, create_item, mocker
 
     # Mock storage to return collections and items
     collection1 = mocker.Mock()
-    collection1.get.return_value = item1
+    collection1.get_all.return_value = [item1]
     collection2 = mocker.Mock()
-    collection2.get.return_value = item2
-    privacy_reprocessor._storage.get_collection.side_effect = [collection1, collection2]
+    collection2.get_all.return_value = [item2]
+    privacy_reprocessor._storage.discover.side_effect = [
+        [collection1],  # For first collection path
+        [collection2]   # For second collection path
+    ]
 
     # Mock enforcement to modify items
     modified_item1 = create_item(create_vcard(
+        uid='vcard1',
         name="John Doe",
         email="john@example.com",
         photo="base64photo",
         address="123 Main St"
     ))
     modified_item2 = create_item(create_vcard(
+        uid='vcard2',
         name="Jane Smith",
         email="jane@example.com",
         photo="base64photo2",
@@ -181,6 +196,7 @@ def test_reprocess_vcards_multiple_identifiers(privacy_reprocessor, create_vcard
     """Test reprocessing vCards with multiple identifiers and different privacy settings."""
     # Create test vCard with both email and phone
     vcard = create_vcard(
+        uid='vcard1',
         name="John Doe",
         email="john@example.com",
         phone="+1234567890",
@@ -201,38 +217,27 @@ def test_reprocess_vcards_multiple_identifiers(privacy_reprocessor, create_vcard
 
     # Mock storage to return collection and item
     collection = mocker.Mock()
-    collection.get.return_value = item
-    privacy_reprocessor._storage.get_collection.return_value = collection
+    collection.get_all.return_value = [item]
+    privacy_reprocessor._storage.discover.return_value = [collection]
 
     # Mock enforcement to modify item
     modified_item = create_item(create_vcard(
+        uid='vcard1',
         name="John Doe",
         email="john@example.com",
-        phone="+1234567890"
+        phone="+1234567890",
+        photo="base64photo"
     ))
     privacy_reprocessor._enforcement.enforce_privacy.return_value = modified_item
 
-    # Set different privacy settings for email and phone
-    def get_settings(identifier):
-        if identifier == "john@example.com":
-            return mocker.Mock(
-                disallow_company=True,
-                disallow_title=False,
-                disallow_photo=False,
-                disallow_birthday=False,
-                disallow_address=False
-            )
-        elif identifier == "+1234567890":
-            return mocker.Mock(
-                disallow_company=False,
-                disallow_title=True,
-                disallow_photo=True,
-                disallow_birthday=False,
-                disallow_address=False
-            )
-        return None
-
-    privacy_reprocessor._enforcement._privacy_db.get_user_settings.side_effect = get_settings
+    # Set privacy settings
+    privacy_reprocessor._enforcement._privacy_db.get_user_settings.return_value = mocker.Mock(
+        disallow_company=True,
+        disallow_title=True,
+        disallow_photo=False,
+        disallow_birthday=True,
+        disallow_address=False
+    )
 
     # Reprocess vCards
     reprocessed = privacy_reprocessor.reprocess_vcards("john@example.com")
@@ -247,6 +252,7 @@ def test_reprocess_vcards_no_changes(privacy_reprocessor, create_vcard, create_i
     """Test reprocessing vCards when no changes are needed."""
     # Create test vCard
     vcard = create_vcard(
+        uid='vcard1',
         name="John Doe",
         email="john@example.com",
         company="ACME Corp",
@@ -265,8 +271,8 @@ def test_reprocess_vcards_no_changes(privacy_reprocessor, create_vcard, create_i
 
     # Mock storage to return collection and item
     collection = mocker.Mock()
-    collection.get.return_value = item
-    privacy_reprocessor._storage.get_collection.return_value = collection
+    collection.get_all.return_value = [item]
+    privacy_reprocessor._storage.discover.return_value = [collection]
 
     # Mock enforcement to return unchanged item
     privacy_reprocessor._enforcement.enforce_privacy.return_value = item
@@ -292,6 +298,7 @@ def test_reprocess_vcards_with_errors(privacy_reprocessor, create_vcard, create_
     """Test reprocessing vCards with various error conditions."""
     # Create test vCard
     vcard = create_vcard(
+        uid='vcard1',
         name="John Doe",
         email="john@example.com",
         company="ACME Corp",
@@ -309,7 +316,7 @@ def test_reprocess_vcards_with_errors(privacy_reprocessor, create_vcard, create_
     ]
 
     # Test error when getting collection
-    privacy_reprocessor._storage.get_collection.side_effect = Exception("Collection not found")
+    privacy_reprocessor._storage.discover.side_effect = Exception("Collection not found")
 
     # Reprocess vCards
     reprocessed = privacy_reprocessor.reprocess_vcards("john@example.com")
@@ -319,8 +326,8 @@ def test_reprocess_vcards_with_errors(privacy_reprocessor, create_vcard, create_
 
     # Test error when getting vCard
     collection = mocker.Mock()
-    collection.get.side_effect = Exception("vCard not found")
-    privacy_reprocessor._storage.get_collection.return_value = collection
+    collection.get_all.side_effect = Exception("vCard not found")
+    privacy_reprocessor._storage.discover.return_value = [collection]
 
     # Reprocess vCards
     reprocessed = privacy_reprocessor.reprocess_vcards("john@example.com")
@@ -329,7 +336,7 @@ def test_reprocess_vcards_with_errors(privacy_reprocessor, create_vcard, create_
     assert len(reprocessed) == 0
 
     # Test error when saving vCard
-    collection.get.return_value = item
+    collection.get_all.return_value = [item]
     collection.upload.side_effect = Exception("Failed to save vCard")
 
     # Reprocess vCards

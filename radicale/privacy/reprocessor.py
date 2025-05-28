@@ -6,6 +6,7 @@ This module provides functionality to reprocess vCards when privacy settings cha
 import logging
 from typing import List
 
+from radicale.item import Item
 from radicale.privacy.enforcement import PrivacyEnforcement
 from radicale.privacy.scanner import PrivacyScanner
 
@@ -52,17 +53,26 @@ class PrivacyReprocessor:
 
                     logger.debug("Processing vCard %r in collection %r", vcard_uid, collection_path)
 
-                    # Get the collection
-                    collection = self._storage.get_collection(collection_path)
-                    if not collection:
+                    # Get the collection using discover
+                    collections = list(self._storage.discover("/" + collection_path))
+                    if not collections:
                         logger.error("Collection not found: %r", collection_path)
                         continue
+                    collection = collections[0]
 
-                    # Get the vCard
-                    try:
-                        item = collection.get(vcard_uid)
-                    except Exception as e:
-                        logger.error("Failed to get vCard %r: %s", vcard_uid, str(e))
+                    # Get all items in the collection
+                    items = list(collection.get_all())
+                    item = None
+                    for i in items:
+                        if (isinstance(i, Item) and
+                                i.component_name == "VCARD" and
+                                hasattr(i.vobject_item, "uid") and
+                                i.vobject_item.uid.value == vcard_uid):
+                            item = i
+                            break
+
+                    if not item:
+                        logger.error("vCard %r not found in collection", vcard_uid)
                         continue
 
                     # Apply privacy enforcement
