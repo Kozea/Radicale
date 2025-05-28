@@ -67,13 +67,15 @@ class VCardProperty(Enum):
 
 # Mapping of privacy settings to vCard properties
 PRIVACY_TO_VCARD_MAP = {
-    'disallow_company': [VCardProperty.ORG, VCardProperty.LOGO],
-    'disallow_title': [VCardProperty.TITLE, VCardProperty.ROLE],
-    'disallow_photo': [VCardProperty.PHOTO],
-    'disallow_birthday': [VCardProperty.BDAY, VCardProperty.ANNIVERSARY],
-    'disallow_address': [VCardProperty.ADR, VCardProperty.LABEL],
+    'disallow_company': ['org', 'logo'],
+    'disallow_title': ['title', 'role'],
+    'disallow_photo': ['photo'],
+    'disallow_birthday': ['bday', 'anniversary'],
+    'disallow_address': ['adr', 'label'],
 }
 
+# List of public vCard properties that should never be filtered
+PUBLIC_VCARD_PROPERTIES = ['fn', 'n', 'email', 'tel']
 
 # Mapping of vCard property names to enum values
 VCARD_NAME_TO_ENUM = {
