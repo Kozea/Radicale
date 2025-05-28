@@ -2,10 +2,8 @@
 Tests for the privacy API endpoints.
 """
 
-import json
 import os
 import tempfile
-from http import client
 from unittest.mock import patch
 
 import pytest
@@ -92,17 +90,16 @@ def api(mock_time_ranges):
 
 def test_get_settings_not_found(api):
     """Test getting settings for a non-existent user."""
-    status, headers, response = api.get_settings("nonexistent@example.com")
-    assert status == client.NOT_FOUND
+    success, result = api.get_settings("nonexistent@example.com")
+    assert not success
+    assert result == "User settings not found"
 
 
 def test_get_settings_unauthorized(api):
     """Test getting settings without a user."""
-    status, headers, response = api.get_settings("")
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "User identifier is required" in response_data["error"]
+    success, result = api.get_settings("")
+    assert not success
+    assert "User identifier is required" in result
 
 
 def test_create_settings_success(api):
@@ -114,14 +111,14 @@ def test_create_settings_success(api):
         "disallow_birthday": False,
         "disallow_address": True
     }
-    status, headers, response = api.create_settings("test@example.com", settings)
-    assert status == client.CREATED
-    assert json.loads(response) == {"status": "created"}
+    success, result = api.create_settings("test@example.com", settings)
+    assert success
+    assert result == {"status": "created"}
 
     # Verify settings were created
-    status, headers, response = api.get_settings("test@example.com")
-    assert status == client.OK
-    assert json.loads(response) == settings
+    success, result = api.get_settings("test@example.com")
+    assert success
+    assert result == settings
 
 
 def test_create_settings_missing_fields(api):
@@ -130,11 +127,14 @@ def test_create_settings_missing_fields(api):
         "disallow_company": False,
         "disallow_title": True
     }
-    status, headers, response = api.create_settings("test@example.com", settings)
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "required_fields" in response_data
+    success, result = api.create_settings("test@example.com", settings)
+    assert not success
+    assert isinstance(result, dict)
+    assert "error" in result
+    assert result["error"] == "Missing required fields"
+    assert "required_fields" in result
+    assert isinstance(result["required_fields"], list)
+    assert all(field in result["required_fields"] for field in ["disallow_photo", "disallow_birthday", "disallow_address"])
 
 
 def test_create_settings_invalid_types(api):
@@ -146,11 +146,9 @@ def test_create_settings_invalid_types(api):
         "disallow_birthday": False,
         "disallow_address": True
     }
-    status, headers, response = api.create_settings("test@example.com", settings)
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "boolean values" in response_data["error"]
+    success, result = api.create_settings("test@example.com", settings)
+    assert not success
+    assert "boolean values" in result
 
 
 def test_update_settings_success(api):
@@ -170,14 +168,14 @@ def test_update_settings_success(api):
         "disallow_photo": True,
         "disallow_birthday": True
     }
-    status, headers, response = api.update_settings("test@example.com", update_settings)
-    assert status == client.OK
-    assert json.loads(response) == {"status": "updated"}
+    success, result = api.update_settings("test@example.com", update_settings)
+    assert success
+    assert result == {"status": "updated"}
 
     # Verify settings were updated
-    status, headers, response = api.get_settings("test@example.com")
-    assert status == client.OK
-    updated_settings = json.loads(response)
+    success, result = api.get_settings("test@example.com")
+    assert success
+    updated_settings = result
     assert updated_settings["disallow_company"] is False  # Unchanged
     assert updated_settings["disallow_title"] is False  # Unchanged
     assert updated_settings["disallow_photo"] is True
@@ -188,37 +186,37 @@ def test_update_settings_success(api):
 def test_update_settings_not_found(api):
     """Test updating settings for a non-existent user."""
     settings = {"disallow_photo": True}
-    status, headers, response = api.update_settings("nonexistent@example.com", settings)
-    assert status == client.NOT_FOUND
+    success, result = api.update_settings("nonexistent@example.com", settings)
+    assert not success
+    assert "User settings not found" in result
 
 
 def test_update_settings_invalid_fields(api):
     """Test updating settings with invalid field names."""
     settings = {"invalid_field": True}
-    status, headers, response = api.update_settings("test@example.com", settings)
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "valid_fields" in response_data
+    success, result = api.update_settings("test@example.com", settings)
+    assert not success
+    assert isinstance(result, dict)
+    assert "error" in result
+    assert result["error"] == "Invalid field names"
+    assert "valid_fields" in result
+    assert isinstance(result["valid_fields"], list)
+    assert all(field in result["valid_fields"] for field in ["disallow_company", "disallow_title", "disallow_photo", "disallow_birthday", "disallow_address"])
 
 
 def test_update_settings_empty(api):
     """Test updating settings with an empty dictionary."""
-    status, headers, response = api.update_settings("test@example.com", {})
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "No settings provided" in response_data["error"]
+    success, result = api.update_settings("test@example.com", {})
+    assert not success
+    assert "No settings provided" in result
 
 
 def test_update_settings_unauthorized(api):
     """Test updating settings without a user."""
     settings = {"disallow_photo": True}
-    status, headers, response = api.update_settings("", settings)
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "User identifier is required" in response_data["error"]
+    success, result = api.update_settings("", settings)
+    assert not success
+    assert "User identifier is required" in result
 
 
 def test_delete_settings_success(api):
@@ -234,139 +232,116 @@ def test_delete_settings_success(api):
     api.create_settings("test@example.com", settings)
 
     # Delete settings
-    status, headers, response = api.delete_settings("test@example.com")
-    assert status == client.OK
-    assert json.loads(response) == {"status": "deleted"}
+    success, result = api.delete_settings("test@example.com")
+    assert success
+    assert result == {"status": "deleted"}
 
     # Verify settings were deleted
-    status, headers, response = api.get_settings("test@example.com")
-    assert status == client.NOT_FOUND
+    success, result = api.get_settings("test@example.com")
+    assert not success
+    assert result == "User settings not found"
 
 
 def test_delete_settings_not_found(api):
     """Test deleting settings for a non-existent user."""
-    status, headers, response = api.delete_settings("nonexistent@example.com")
-    assert status == client.NOT_FOUND
+    success, result = api.delete_settings("nonexistent@example.com")
+    assert not success
+    assert "User settings not found" in result
 
 
 def test_delete_settings_unauthorized(api):
     """Test deleting settings without a user."""
-    status, headers, response = api.delete_settings("")
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "User identifier is required" in response_data["error"]
+    success, result = api.delete_settings("")
+    assert not success
+    assert "User identifier is required" in result
 
 
 def test_validate_user_identifier_email(api):
     """Test email validation."""
     # Valid emails
-    status, headers, response = api.get_settings("test@example.com")
-    assert status == client.NOT_FOUND  # Not found is OK, we're just testing validation
+    success, result = api.get_settings("test@example.com")
+    assert not success  # Not found is OK, we're just testing validation
 
-    status, headers, response = api.get_settings("user.name@domain.co.uk")
-    assert status == client.NOT_FOUND
+    success, result = api.get_settings("user.name@domain.co.uk")
+    assert not success
 
     # Invalid emails
-    status, headers, response = api.get_settings("invalid.email")
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "Invalid identifier format" in response_data["error"]
+    success, result = api.get_settings("invalid.email")
+    assert not success
+    assert "Invalid identifier format" in result
 
-    status, headers, response = api.get_settings("@domain.com")
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "Invalid email format" in response_data["error"]
+    success, result = api.get_settings("@domain.com")
+    assert not success
+    assert "Invalid email format" in result
 
-    status, headers, response = api.get_settings("user@")
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "Invalid email format" in response_data["error"]
+    success, result = api.get_settings("user@")
+    assert not success
+    assert "Invalid email format" in result
 
 
 def test_validate_user_identifier_phone(api):
     """Test phone number validation."""
     # Valid phone numbers - these should pass validation but return NOT_FOUND
     # since they don't exist in the database
-    status, headers, response = api.get_settings("+1234567890")
-    assert status == client.NOT_FOUND
+    success, result = api.get_settings("+1234567890")
+    assert not success
 
-    status, headers, response = api.get_settings("+1-234-567-8900")
-    assert status == client.NOT_FOUND
+    success, result = api.get_settings("+1-234-567-8900")
+    assert not success
 
-    status, headers, response = api.get_settings("+(123) 456-7890")
-    assert status == client.NOT_FOUND
+    success, result = api.get_settings("+(123) 456-7890")
+    assert not success
 
     # Invalid phone numbers - these should fail validation
-    status, headers, response = api.get_settings("(123) 456-7890") # Missing +
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "Invalid identifier format" in response_data["error"]
+    success, result = api.get_settings("(123) 456-7890")  # Missing +
+    assert not success
+    assert "Invalid identifier format" in result
 
-    status, headers, response = api.get_settings("1234567890")  # Missing +
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "Invalid identifier format" in response_data["error"]
+    success, result = api.get_settings("1234567890")  # Missing +
+    assert not success
+    assert "Invalid identifier format" in result
 
-    status, headers, response = api.get_settings("+123")  # Too short
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "Invalid identifier format" in response_data["error"]
+    success, result = api.get_settings("+123")  # Too short
+    assert not success
+    assert "Invalid identifier format" in result
 
-    status, headers, response = api.get_settings("+1234567890123456")  # Too long
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "Invalid identifier format" in response_data["error"]
+    success, result = api.get_settings("+1234567890123456")  # Too long
+    assert not success
+    assert "Invalid identifier format" in result
 
     # Invalid identifiers (not email and not phone)
-    status, headers, response = api.get_settings("justtext")
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "Invalid identifier format" in response_data["error"]
+    success, result = api.get_settings("justtext")
+    assert not success
+    assert "Invalid identifier format" in result
 
-    status, headers, response = api.get_settings("user.name")
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "Invalid identifier format" in response_data["error"]
+    success, result = api.get_settings("user.name")
+    assert not success
+    assert "Invalid identifier format" in result
 
-    status, headers, response = api.get_settings("123-456")  # Not a valid phone format
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "Invalid identifier format" in response_data["error"]
+    success, result = api.get_settings("123-456")  # Not a valid phone format
+    assert not success
+    assert "Invalid identifier format" in result
 
 
 def test_validate_user_identifier_empty(api):
     """Test empty user identifier validation."""
-    status, headers, response = api.get_settings("")
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "User identifier is required" in response_data["error"]
+    success, result = api.get_settings("")
+    assert not success
+    assert "User identifier is required" in result
 
 
 def test_get_matching_cards_not_found(api):
     """Test getting matching cards for a non-existent user."""
-    status, headers, response = api.get_matching_cards("nonexistent@example.com")
-    assert status == client.NOT_FOUND
+    success, result = api.get_matching_cards("nonexistent@example.com")
+    assert not success
+    assert "User settings not found" in result
 
 
 def test_get_matching_cards_unauthorized(api):
     """Test getting matching cards without a user."""
-    status, headers, response = api.get_matching_cards("")
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "User identifier is required" in response_data["error"]
+    success, result = api.get_matching_cards("")
+    assert not success
+    assert "User identifier is required" in result
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
@@ -403,11 +378,10 @@ def test_get_matching_cards_no_matches(api):
     collection.upload("dummy-card.vcf", item)
 
     # Then try to get matches
-    status, headers, response = api.get_matching_cards("test@example.com")
-    assert status == client.OK
-    response_data = json.loads(response)
-    assert "matches" in response_data
-    assert response_data["matches"] == []
+    success, result = api.get_matching_cards("test@example.com")
+    assert success
+    assert "matches" in result
+    assert result["matches"] == []
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
@@ -438,15 +412,16 @@ def test_get_matching_cards_recursive_discovery(api):
         "disallow_birthday": False,
         "disallow_address": False
     }
-    api.create_settings("test@example.com", settings)
+    success, result = api.create_settings("test@example.com", settings)
+    assert success
+    assert result == {"status": "created"}
 
     # Get matching cards
-    status, headers, response = api.get_matching_cards("test@example.com")
-
-    assert status == client.OK
-    response_data = json.loads(response)
-    assert "matches" in response_data
-    matches = response_data["matches"]
+    success, result = api.get_matching_cards("test@example.com")
+    assert success
+    assert "matches" in result
+    assert "reprocessing_error" not in result
+    matches = result["matches"]
     assert len(matches) == 1  # Should find the nested card
 
     # Verify the match details
@@ -500,32 +475,31 @@ def test_get_matching_cards_in_different_collections(api):
         "disallow_birthday": False,
         "disallow_address": False
     }
-    api.create_settings("test@example.com", settings)
+    success, result = api.create_settings("test@example.com", settings)
+    assert success
+    assert result == {"status": "created"}
 
     # Get matching cards
-    status, headers, response = api.get_matching_cards("test@example.com")
-    assert status == client.OK
-    response_data = json.loads(response)
-
-    # Verify response structure
-    assert "matches" in response_data
-    matches = response_data["matches"]
+    success, result = api.get_matching_cards("test@example.com")
+    assert success
+    assert "matches" in result
+    assert "reprocessing_error" not in result
+    matches = result["matches"]
     assert len(matches) == 2  # Should find both cards
 
 
 def test_reprocess_cards_not_found(api):
     """Test reprocessing cards for a non-existent user."""
-    status, headers, response = api.reprocess_cards("nonexistent@example.com")
-    assert status == client.NOT_FOUND
+    success, result = api.reprocess_cards("nonexistent@example.com")
+    assert not success
+    assert "User settings not found" in result
 
 
 def test_reprocess_cards_unauthorized(api):
     """Test reprocessing cards without a user."""
-    status, headers, response = api.reprocess_cards("")
-    assert status == client.BAD_REQUEST
-    response_data = json.loads(response)
-    assert "error" in response_data
-    assert "User identifier is required" in response_data["error"]
+    success, result = api.reprocess_cards("")
+    assert not success
+    assert "User identifier is required" in result
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Problematic on Windows due to file locking")
@@ -561,10 +535,9 @@ def test_reprocess_cards_success(api):
     collection.upload("test-card.vcf", item)
 
     # Trigger reprocessing
-    status, headers, response = api.reprocess_cards("test@example.com")
-    assert status == client.OK
-    response_data = json.loads(response)
-    assert response_data["status"] == "success"
+    success, result = api.reprocess_cards("test@example.com")
+    assert success
+    assert result["status"] == "success"
 
     # Verify the vCard was updated according to privacy settings
     items = list(collection.get_all())
@@ -627,10 +600,9 @@ def test_reprocess_cards_multiple_collections(api):
     collection2.upload("test-card2.vcf", item2)
 
     # Trigger reprocessing
-    status, headers, response = api.reprocess_cards("test@example.com")
-    assert status == client.OK
-    response_data = json.loads(response)
-    assert response_data["status"] == "success"
+    success, result = api.reprocess_cards("test@example.com")
+    assert success
+    assert result["status"] == "success"
 
     # Verify both vCards were updated
     items1 = list(collection1.get_all())
@@ -679,8 +651,9 @@ def test_reprocess_cards_after_settings_update(api):
     update_settings = {
         "disallow_company": True
     }
-    status, headers, response = api.update_settings("test@example.com", update_settings)
-    assert status == client.OK
+    success, result = api.update_settings("test@example.com", update_settings)
+    assert success
+    assert result["status"] == "updated"
 
     # Verify the vCard was updated according to new privacy settings
     items = list(collection.get_all())

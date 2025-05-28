@@ -1,16 +1,14 @@
 """
-Privacy API endpoints for Radicale.
+Privacy API for Radicale.
 
-This module provides RESTful endpoints for managing user privacy settings.
+This module provides the core business logic for managing user privacy settings.
 """
 
-import json
 import logging
 import re
-from http import client
-from typing import Dict, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
-from radicale import config, httputils, storage, types
+from radicale import config, storage
 from radicale.item import Item
 from radicale.privacy.database import PrivacyDatabase
 from radicale.privacy.reprocessor import PrivacyReprocessor
@@ -20,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class PrivacyAPI:
-    """Privacy API endpoints."""
+    """Privacy API for managing user privacy settings."""
 
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize the privacy API.
@@ -60,24 +58,24 @@ class PrivacyAPI:
             return False, "Invalid identifier format. Must be a valid email or phone number in E.164 format (e.g., +1234567890)"
         return True, ""
 
-    def get_settings(self, user: str) -> types.WSGIResponse:
+    def get_settings(self, user: str) -> Tuple[bool, Union[Dict[str, bool], str]]:
         """Get privacy settings for a user.
 
         Args:
             user: The user identifier (email or phone)
 
         Returns:
-            WSGI response with the user's privacy settings
+            Tuple of (success, result)
+            If success is True, result contains the settings dictionary
+            If success is False, result contains the error message
         """
         is_valid, error_msg = self._validate_user_identifier(user)
         if not is_valid:
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
-                "error": error_msg
-            })
+            return False, error_msg
 
         settings = self._privacy_db.get_user_settings(user)
         if not settings:
-            return httputils.NOT_FOUND
+            return False, "User settings not found"
 
         # Convert settings to dict
         settings_dict = {
@@ -88,9 +86,9 @@ class PrivacyAPI:
             "disallow_address": settings.disallow_address
         }
 
-        return client.OK, {"Content-Type": "application/json"}, json.dumps(settings_dict)
+        return True, settings_dict
 
-    def create_settings(self, user: str, settings: Dict[str, bool]) -> types.WSGIResponse:
+    def create_settings(self, user: str, settings: Dict[str, bool]) -> Tuple[bool, Union[Dict[str, Any], str]]:
         """Create privacy settings for a user.
 
         Args:
@@ -98,13 +96,13 @@ class PrivacyAPI:
             settings: Dictionary of privacy settings
 
         Returns:
-            WSGI response indicating success or failure
+            Tuple of (success, result)
+            If success is True, result contains the success message
+            If success is False, result contains the error message
         """
         is_valid, error_msg = self._validate_user_identifier(user)
         if not is_valid:
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
-                "error": error_msg
-            })
+            return False, error_msg
 
         # Validate settings
         required_fields = {
@@ -112,15 +110,13 @@ class PrivacyAPI:
             "disallow_birthday", "disallow_address"
         }
         if not all(field in settings for field in required_fields):
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
+            return False, {
                 "error": "Missing required fields",
                 "required_fields": list(required_fields)
-            })
+            }
 
         if not all(isinstance(settings[field], bool) for field in required_fields):
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
-                "error": "All settings must be boolean values"
-            })
+            return False, "All settings must be boolean values"
 
         try:
             self._privacy_db.create_user_settings(user, settings)
@@ -129,18 +125,18 @@ class PrivacyAPI:
             try:
                 reprocessor = PrivacyReprocessor(self.configuration, self._scanner._storage)
                 reprocessor.reprocess_vcards(user)
-                return client.CREATED, {"Content-Type": "application/json"}, json.dumps({"status": "created"})
+                return True, {"status": "created"}
             except Exception as e:
                 logger.error("Error reprocessing cards: %s", str(e))
                 # Still return success for settings creation, but include reprocessing error
-                return client.CREATED, {"Content-Type": "application/json"}, json.dumps({
+                return True, {
                     "status": "created",
                     "reprocessing_error": str(e)
-                })
+                }
         except Exception as e:
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({"error": str(e)})
+            return False, str(e)
 
-    def update_settings(self, user: str, settings: Dict[str, bool]) -> types.WSGIResponse:
+    def update_settings(self, user: str, settings: Dict[str, bool]) -> Tuple[bool, Union[Dict[str, Any], str]]:
         """Update privacy settings for a user.
 
         Args:
@@ -148,107 +144,101 @@ class PrivacyAPI:
             settings: Dictionary of privacy settings to update
 
         Returns:
-            WSGI response indicating success or failure
+            Tuple of (success, result)
+            If success is True, result contains the success message
+            If success is False, result contains the error message
         """
         is_valid, error_msg = self._validate_user_identifier(user)
         if not is_valid:
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
-                "error": error_msg
-            })
+            return False, error_msg
 
         # Validate settings
         if not settings:
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
-                "error": "No settings provided"
-            })
+            return False, "No settings provided"
 
         valid_fields = {
             "disallow_company", "disallow_title", "disallow_photo",
             "disallow_birthday", "disallow_address"
         }
         if not all(field in valid_fields for field in settings):
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
+            return False, {
                 "error": "Invalid field names",
                 "valid_fields": list(valid_fields)
-            })
+            }
 
         if not all(isinstance(settings[field], bool) for field in settings):
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
-                "error": "All settings must be boolean values"
-            })
+            return False, "All settings must be boolean values"
 
         try:
             updated = self._privacy_db.update_user_settings(user, settings)
             if not updated:
-                return httputils.NOT_FOUND
+                return False, "User settings not found"
 
             # After updating settings, reprocess all vCards for this user
             try:
                 reprocessor = PrivacyReprocessor(self.configuration, self._scanner._storage)
                 reprocessor.reprocess_vcards(user)
-                return client.OK, {"Content-Type": "application/json"}, json.dumps({"status": "updated"})
+                return True, {"status": "updated"}
             except Exception as e:
                 logger.error("Error reprocessing cards: %s", str(e))
                 # Still return success for settings update, but include reprocessing error
-                return client.OK, {"Content-Type": "application/json"}, json.dumps({
+                return True, {
                     "status": "updated",
                     "reprocessing_error": str(e)
-                })
+                }
 
         except Exception as e:
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({"error": str(e)})
+            return False, str(e)
 
-    def delete_settings(self, user: str) -> types.WSGIResponse:
+    def delete_settings(self, user: str) -> Tuple[bool, Union[Dict[str, str], str]]:
         """Delete privacy settings for a user.
 
         Args:
             user: The user identifier (email or phone)
 
         Returns:
-            WSGI response indicating success or failure
+            Tuple of (success, result)
+            If success is True, result contains the success message
+            If success is False, result contains the error message
         """
         is_valid, error_msg = self._validate_user_identifier(user)
         if not is_valid:
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
-                "error": error_msg
-            })
+            return False, error_msg
 
         try:
             deleted = self._privacy_db.delete_user_settings(user)
             if not deleted:
-                return httputils.NOT_FOUND
-            return client.OK, {"Content-Type": "application/json"}, json.dumps({"status": "deleted"})
+                return False, "User settings not found"
+            return True, {"status": "deleted"}
         except Exception as e:
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({"error": str(e)})
+            return False, str(e)
 
-    def get_matching_cards(self, user: str) -> types.WSGIResponse:
+    def get_matching_cards(self, user: str) -> Tuple[bool, Union[Dict[str, List[Dict[str, Any]]], str]]:
         """Get all vCards that match a user's identity.
 
         Args:
             user: The user identifier (email or phone)
 
         Returns:
-            WSGI response with matching vCards
+            Tuple of (success, result)
+            If success is True, result contains the matching cards
+            If success is False, result contains the error message
         """
         # Validate user identifier
         is_valid, error_msg = self._validate_user_identifier(user)
         if not is_valid:
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
-                "error": error_msg
-            })
+            return False, error_msg
 
         # Get user's privacy settings
         settings = self._privacy_db.get_user_settings(user)
         if not settings:
-            return httputils.NOT_FOUND
+            return False, "User settings not found"
 
         # Find matching vCards
         try:
             matches = self._scanner.find_identity_occurrences(user)
             if not matches:
-                return client.OK, {"Content-Type": "application/json"}, json.dumps({
-                    "matches": []
-                })
+                return True, {"matches": []}
 
             # Get the vCards
             vcard_matches = []
@@ -314,44 +304,38 @@ class PrivacyAPI:
 
                 vcard_matches.append(vcard_match)
 
-            return client.OK, {"Content-Type": "application/json"}, json.dumps({
-                "matches": vcard_matches
-            })
+            return True, {"matches": vcard_matches}
 
         except Exception as e:
-            return client.INTERNAL_SERVER_ERROR, {"Content-Type": "application/json"}, json.dumps({
-                "error": f"Error finding matching cards: {str(e)}"
-            })
+            return False, f"Error finding matching cards: {str(e)}"
 
-    def reprocess_cards(self, user: str) -> types.WSGIResponse:
+    def reprocess_cards(self, user: str) -> Tuple[bool, Union[Dict[str, Union[str, int, List[str]]], str]]:
         """Trigger reprocessing of all vCards for a user.
 
         Args:
             user: The user identifier (email or phone)
 
         Returns:
-            WSGI response with reprocessing results
+            Tuple of (success, result)
+            If success is True, result contains the reprocessing results
+            If success is False, result contains the error message
         """
         is_valid, error_msg = self._validate_user_identifier(user)
         if not is_valid:
-            return client.BAD_REQUEST, {"Content-Type": "application/json"}, json.dumps({
-                "error": error_msg
-            })
+            return False, error_msg
 
         # Verify user has privacy settings
         settings = self._privacy_db.get_user_settings(user)
         if not settings:
-            return httputils.NOT_FOUND
+            return False, "User settings not found"
 
         try:
             reprocessor = PrivacyReprocessor(self.configuration, self._scanner._storage)
             reprocessed_cards = reprocessor.reprocess_vcards(user)
-            return client.OK, {"Content-Type": "application/json"}, json.dumps({
+            return True, {
                 "status": "success",
                 "reprocessed_cards": len(reprocessed_cards),
                 "reprocessed_card_uids": reprocessed_cards
-            })
+            }
         except Exception as e:
-            return client.INTERNAL_SERVER_ERROR, {"Content-Type": "application/json"}, json.dumps({
-                "error": f"Error reprocessing cards: {str(e)}"
-            })
+            return False, f"Error reprocessing cards: {str(e)}"

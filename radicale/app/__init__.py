@@ -45,6 +45,7 @@ from radicale.app.mkcol import ApplicationPartMkcol
 from radicale.app.move import ApplicationPartMove
 from radicale.app.options import ApplicationPartOptions
 from radicale.app.post import ApplicationPartPost
+from radicale.app.privacy import ApplicationPartPrivacy
 from radicale.app.propfind import ApplicationPartPropfind
 from radicale.app.proppatch import ApplicationPartProppatch
 from radicale.app.put import ApplicationPartPut
@@ -60,7 +61,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                   ApplicationPartMkcol, ApplicationPartMove,
                   ApplicationPartOptions, ApplicationPartPropfind,
                   ApplicationPartProppatch, ApplicationPartPost,
-                  ApplicationPartPut, ApplicationPartReport, ApplicationBase):
+                  ApplicationPartPut, ApplicationPartReport,
+                  ApplicationPartPrivacy, ApplicationBase):
     """WSGI application."""
 
     _mask_passwords: bool

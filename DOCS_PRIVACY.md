@@ -67,6 +67,174 @@ This configuration:
 - Allows storing names, emails, company, and title by default (disallow = false)
 - Restricts storing phone numbers, photos, birthdays, and addresses by default (disallow = true)
 
+## HTTP API Endpoints
+
+The privacy management API is available at the `/privacy/` path prefix. All endpoints require authentication and return JSON responses.
+
+### Privacy Settings Management
+
+#### Get User Settings
+```http
+GET /privacy/settings/{user}
+```
+
+Returns the privacy settings for a specific user.
+
+**Response:**
+```json
+{
+    "disallow_company": false,
+    "disallow_title": false,
+    "disallow_photo": true,
+    "disallow_birthday": true,
+    "disallow_address": true
+}
+```
+
+#### Create User Settings
+```http
+POST /privacy/settings/{user}
+```
+
+Creates new privacy settings for a user. All fields are required.
+
+**Request Body:**
+```json
+{
+    "disallow_company": false,
+    "disallow_title": false,
+    "disallow_photo": true,
+    "disallow_birthday": true,
+    "disallow_address": true
+}
+```
+
+**Response:**
+```json
+{
+    "disallow_company": false,
+    "disallow_title": false,
+    "disallow_photo": true,
+    "disallow_birthday": true,
+    "disallow_address": true
+}
+```
+
+#### Update User Settings
+```http
+PUT /privacy/settings/{user}
+```
+
+Updates existing privacy settings for a user. Only include the fields you want to update.
+
+**Request Body:**
+```json
+{
+    "disallow_photo": false,
+    "disallow_birthday": false
+}
+```
+
+**Response:**
+```json
+{
+    "disallow_company": false,
+    "disallow_title": false,
+    "disallow_photo": false,
+    "disallow_birthday": false,
+    "disallow_address": true
+}
+```
+
+#### Delete User Settings
+```http
+DELETE /privacy/settings/{user}
+```
+
+Deletes privacy settings for a user.
+
+**Response:**
+```json
+{
+    "status": "deleted"
+}
+```
+
+### Card Management
+
+#### Get Matching Cards
+```http
+GET /privacy/cards/{user}
+```
+
+Returns all vCards that contain the user's information.
+
+**Response:**
+```json
+{
+    "matches": [
+        {
+            "vcard_uid": "123456",
+            "collection_path": "/user/contacts/",
+            "matching_fields": ["email", "tel"],
+            "fields": {
+                "fn": "John Doe",
+                "email": ["john@example.com"],
+                "tel": ["+1234567890"],
+                "org": "Example Corp",
+                "title": "Developer",
+                "photo": true,
+                "bday": "1990-01-01",
+                "adr": "123 Main St"
+            }
+        }
+    ]
+}
+```
+
+#### Reprocess Cards
+```http
+POST /privacy/cards/{user}/reprocess
+```
+
+Triggers reprocessing of all vCards for a user based on their current privacy settings.
+
+**Response:**
+```json
+{
+    "status": "success",
+    "reprocessed_cards": 5
+}
+```
+
+### Error Responses
+
+All endpoints may return the following error responses:
+
+- `400 Bad Request`: Invalid request format or missing required fields
+- `401 Unauthorized`: Authentication required
+- `403 Forbidden`: Insufficient permissions
+- `404 Not Found`: User or resource not found
+- `500 Internal Server Error`: Server-side error
+
+Example error response:
+```json
+{
+    "error": "Invalid request format"
+}
+```
+
+### CORS Support
+
+The API includes CORS headers to support web browser access:
+
+```http
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Max-Age: 86400
+```
+
 ### Best Practices
 
 1. **Security**: Keep the database file secure and restrict access to authorized users only.
@@ -78,6 +246,6 @@ This configuration:
 
 ### Related Components
 
-- `PrivacyDatabase`: Handles storage and retrieval of privacy settings
-- `UserSettings`: Database model for storing user privacy preferences
+- `PrivacyAPI`: Core business logic for managing privacy settings and card processing
+- `PrivacyHTTP`: HTTP endpoints for privacy management
 - VCF Processing: Enforces privacy settings when processing contact information
