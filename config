@@ -92,8 +92,11 @@
 # Path of the file containing password of the reader DN
 #ldap_secret_file = /run/secrets/ldap_password
 
-# the attribute to read the group memberships from in the user's LDAP entry (default: not set)
-#ldap_groups_attribute = memberOf
+# The attribute to read the group memberships. This can be memberOf from the user's LDAP entry. member or uniqueMember can also be used. In this case an additional ldap search will be executed to find the groups where the user is member of.
+#ldap_groups_attribute =
+
+# The base dn to find the groups. Will be used only if ldap_groups_attribute is member or uniqueMember. If not given ldap_base will be used.
+#ldap_groups_base =
 
 # The filter to find the DN of the user. This filter must contain a python-style placeholder for the login
 #ldap_filter = (&(objectClass=person)(uid={0}))

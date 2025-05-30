@@ -269,31 +269,35 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": str}),
         ("ldap_base", {
             "value": "",
-            "help": "LDAP base DN of the ldap server",
+            "help": "The base DN of the ldap server where the user can be find.",
             "type": str}),
         ("ldap_reader_dn", {
             "value": "",
-            "help": "the DN of a ldap user with read access to get the user accounts",
+            "help": "The DN of a ldap user with read access to get the user accounts",
             "type": str}),
         ("ldap_secret", {
             "value": "",
-            "help": "the password of the ldap_reader_dn",
+            "help": "The password of the ldap_reader_dn",
             "type": str}),
         ("ldap_secret_file", {
             "value": "",
-            "help": "path of the file containing the password of the ldap_reader_dn",
+            "help": "Path of the file containing the password of the ldap_reader_dn",
             "type": str}),
         ("ldap_filter", {
             "value": "(cn={0})",
-            "help": "the search filter to find the user DN to authenticate by the username",
+            "help": "The search filter to find the user DN to authenticate by the username",
             "type": str}),
         ("ldap_user_attribute", {
             "value": "",
-            "help": "the attribute to be used as username after authentication",
+            "help": "The attribute to be used as username after authentication",
             "type": str}),
         ("ldap_groups_attribute", {
             "value": "",
-            "help": "attribute to read the group memberships from",
+            "help": "Attribute to read the group memberships from. Valid values are memberOf, member or uniqueMember. If no value is given group memebership will be ignored.",
+            "type": str}),
+        ("ldap_groups_base_dn", {
+            "value": "",
+            "help": "The base dn to find the groups. Necessary only if ldap_groups attribute is member or uniqueMember. If not given ldap_base will be used.",
             "type": str}),
         ("ldap_use_ssl", {
             "value": "False",
