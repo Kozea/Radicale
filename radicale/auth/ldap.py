@@ -79,6 +79,7 @@ class Auth(auth.BaseAuth):
         self._ldap_filter = configuration.get("auth", "ldap_filter")
         self._ldap_user_attr = configuration.get("auth", "ldap_user_attribute")
         self._ldap_groups_attr = configuration.get("auth", "ldap_groups_attribute")
+        self._ldap_group_members_attr = configuration.get("auth", "ldap_group_members_attribute")
         self._ldap_groups_base = configuration.get("auth", "ldap_groups_base")
         if self._ldap_groups_base == "":
             self._ldap_groups_base = self._ldap_base
@@ -134,8 +135,8 @@ class Auth(auth.BaseAuth):
             else:
                 logger.info("auth.ldap_ssl_ca_file     : (not provided)")
         """Extend attributes to to be returned in the user query"""
-        if self._ldap_groups_attr == "memberOf":
-            self._ldap_attributes.append("memberOf")
+        if self._ldap_groups_attr:
+            self._ldap_attributes.append(self._ldap_groups_attr)
         if self._ldap_user_attr:
             self._ldap_attributes.append(self._ldap_user_attr)
         logger.info("ldap_attributes           : %r" % self._ldap_attributes)
@@ -177,13 +178,13 @@ class Auth(auth.BaseAuth):
             conn.simple_bind_s(user_dn, password)
             tmp: list[str] = []
             gdns: list[str] = []
-            if self._ldap_groups_attr == "memberOf":
+            if self._ldap_groups_attr:
                 gdns = user_entry[1][self._ldap_groups_attr]
-            elif self._ldap_groups_attr == "member" or self._ldap_groups_attr == "uniqueMember":
+            elif self._ldap_group_members_attr:
                 res = conn.search_s(
                     self._ldap_groups_base,
                     self.ldap.SCOPE_SUBTREE,
-                    filterstr="({0}={1})".format(self._ldap_groups_attr,user_dn),
+                    filterstr="({0}={1})".format(self._ldap_group_members_attr,user_dn),
                     attrlist=self._ldap_attributes
                 )
             for g in gdns:
@@ -275,12 +276,12 @@ class Auth(auth.BaseAuth):
             tmp: list[str] = []
             gdns: list[str] = []
             """Let's collect the groups of the user."""
-            if self._ldap_groups_attr == "memberOf":
-                gdns = user_entry['attributes']['memberOf']
-            elif self._ldap_groups_attr == "member" or self._ldap_groups_attr == "uniqueMember":
+            if self._ldap_groups_attr:
+                gdns = user_entry['attributes'][self._ldap_groups_attr]
+            elif self._ldap_group_members_attr:
                 conn.search(
                     search_base=self._ldap_groups_base,
-                    search_filter="({0}={1})".format(self._ldap_groups_attr,user_dn),
+                    search_filter="({0}={1})".format(self._ldap_group_members_attr,user_dn),
                     search_scope=self.ldap3.SUBTREE,
                     attributes="dn"
                 )
@@ -293,8 +294,8 @@ class Auth(auth.BaseAuth):
                     tmp.append(rdns[0][1])
                 except Exception:
                     tmp.append(g)
-                self._ldap_groups = set(tmp)
-                logger.debug("_login3 LDAP groups of user: %s", ",".join(self._ldap_groups))
+            self._ldap_groups = set(tmp)
+            logger.debug("_login3 LDAP groups of user: %s", ",".join(self._ldap_groups))
             if self._ldap_user_attr:
                 if user_entry['attributes'][self._ldap_user_attr]:
                     if isinstance(user_entry['attributes'][self._ldap_user_attr], list):

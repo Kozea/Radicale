@@ -26,7 +26,6 @@ import shutil
 from typing import ClassVar, cast
 
 import pytest
-
 import radicale.tests.custom.storage_simple_sync
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content

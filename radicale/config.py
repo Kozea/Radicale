@@ -293,11 +293,15 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": str}),
         ("ldap_groups_attribute", {
             "value": "",
-            "help": "Attribute to read the group memberships from. Valid values are memberOf, member or uniqueMember. If no value is given group memebership will be ignored.",
+            "help": "Attribute in the user entry to read the group memberships from.",
+            "type": str}),
+        ("ldap_group_members_attribute", {
+            "value": "",
+            "help": "Attribute in the group entries to read the group memberships from.",
             "type": str}),
         ("ldap_groups_base_dn", {
             "value": "",
-            "help": "The base dn to find the groups. Necessary only if ldap_groups attribute is member or uniqueMember. If not given ldap_base will be used.",
+            "help": "The base dn to find the groups. Necessary only if ldap_group_members_attribute is defined and other then ldap_base.",
             "type": str}),
         ("ldap_use_ssl", {
             "value": "False",

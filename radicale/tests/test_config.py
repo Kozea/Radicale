@@ -21,7 +21,6 @@ from configparser import RawConfigParser
 from typing import List, Tuple
 
 import pytest
-
 from radicale import config, types
 from radicale.tests.helpers import configuration_to_dict
 

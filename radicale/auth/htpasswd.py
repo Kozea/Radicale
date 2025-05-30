@@ -60,7 +60,6 @@ import time
 from typing import Any, Tuple
 
 from passlib.hash import apr_md5_crypt, sha256_crypt, sha512_crypt
-
 from radicale import auth, config, logger
 
 
