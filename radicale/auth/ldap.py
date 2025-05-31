@@ -84,9 +84,9 @@ class Auth(auth.BaseAuth):
         self._ldap_groups_attr = configuration.get("auth", "ldap_groups_attribute")
         self._ldap_group_members_attr = configuration.get("auth", "ldap_group_members_attribute")
         self._ldap_groups_base = configuration.get("auth", "ldap_groups_base")
-        self._ldap_groups_filter = configuration.get("auth", "ldap_groups_filter")
         if self._ldap_groups_base == "":
             self._ldap_groups_base = self._ldap_base
+        self._ldap_groups_filter = configuration.get("auth", "ldap_groups_filter")
         ldap_secret_file_path = configuration.get("auth", "ldap_secret_file")
         if ldap_secret_file_path:
             with open(ldap_secret_file_path, 'r') as file:
@@ -111,6 +111,7 @@ class Auth(auth.BaseAuth):
         logger.info("auth.ldap_base            : %r" % self._ldap_base)
         logger.info("auth.ldap_reader_dn       : %r" % self._ldap_reader_dn)
         logger.info("auth.ldap_filter          : %r" % self._ldap_filter)
+        logger.info("auth.ldap_groups_base     : %r" % self._ldap_groups_base)
         if self._ldap_user_attr:
             logger.info("auth.ldap_user_attribute  : %r" % self._ldap_user_attr)
         else:
@@ -119,6 +120,14 @@ class Auth(auth.BaseAuth):
             logger.info("auth.ldap_groups_attribute: %r" % self._ldap_groups_attr)
         else:
             logger.info("auth.ldap_groups_attribute: (not provided)")
+        if self._ldap_group_members_attr:
+            logger.info("auth.ldap_group_members_attr: %r" % self._ldap_group_members_attr)
+        else:
+            logger.info("auth.ldap_group_members_attr: (not provided)")
+        if self._ldap_groups_filter:
+            logger.info("auth.ldap_groups_filter: %r" % self._ldap_groups_filter)
+        else:
+            logger.info("auth.ldap_groups_filter: (not provided)")
         if ldap_secret_file_path:
             logger.info("auth.ldap_secret_file_path: %r" % ldap_secret_file_path)
             if self._ldap_secret:
@@ -189,7 +198,7 @@ class Auth(auth.BaseAuth):
                     self._ldap_groups_base,
                     self.ldap.SCOPE_SUBTREE,
                     filterstr="(&{0}({1}={2}))".format(
-                        self._ldap_groups_filter
+                        self._ldap_groups_filter,
                         self._ldap_group_members_attr,
                         self.ldap.filter.escape_filter_chars(user_dn)),
                     attrlist=self._ldap_attributes
