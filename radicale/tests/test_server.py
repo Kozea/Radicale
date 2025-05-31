@@ -34,7 +34,6 @@ from urllib import request
 from urllib.error import HTTPError, URLError
 
 import pytest
-
 from radicale import config, server
 from radicale.tests import BaseTest
 from radicale.tests.helpers import configuration_to_dict, get_file_path

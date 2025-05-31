@@ -29,7 +29,6 @@ import sys
 from typing import Iterable, Tuple, Union
 
 import pytest
-
 from radicale import xmlutils
 from radicale.tests import BaseTest
 

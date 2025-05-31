@@ -31,9 +31,9 @@ from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import quote
 
-import defusedxml.ElementTree as DefusedET
 import vobject
 
+import defusedxml.ElementTree as DefusedET
 import radicale
 from radicale import app, config, types, xmlutils
 
