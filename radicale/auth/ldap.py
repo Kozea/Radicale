@@ -18,13 +18,14 @@
 Authentication backend that checks credentials with a LDAP server.
 Following parameters are needed in the configuration:
    ldap_uri            The LDAP URL to the server like ldap://localhost
-   ldap_base           The baseDN of the LDAP server
+   ldap_base           The baseDN of the LDAP server searching for users.
    ldap_reader_dn      The DN of a LDAP user with read access to get the user accounts
    ldap_secret         The password of the ldap_reader_dn
    ldap_secret_file    The path of the file containing the password of the ldap_reader_dn
    ldap_filter         The search filter to find the user to authenticate by the username
    ldap_user_attribute The attribute to be used as username after authentication
    ldap_groups_attribute The attribute containing group memberships in the LDAP user entry
+   ldap_groups_base    The baseDN of the LDAP server searching for groups.
 Following parameters controls SSL connections:
    ldap_use_ssl        If ssl encryption should be used (to be deprecated)
    ldap_security    The encryption mode to be used: *none*|tls|starttls
@@ -47,6 +48,9 @@ class Auth(auth.BaseAuth):
     _ldap_attributes: list[str] = []
     _ldap_user_attr: str
     _ldap_groups_attr: str
+    _ldap_group_members_attr: str
+    _ldap_groups_base: str
+    _ldap_groups_filter: str
     _ldap_module_version: int = 3
     _ldap_use_ssl: bool = False
     _ldap_security: str = "none"
@@ -78,6 +82,11 @@ class Auth(auth.BaseAuth):
         self._ldap_filter = configuration.get("auth", "ldap_filter")
         self._ldap_user_attr = configuration.get("auth", "ldap_user_attribute")
         self._ldap_groups_attr = configuration.get("auth", "ldap_groups_attribute")
+        self._ldap_group_members_attr = configuration.get("auth", "ldap_group_members_attribute")
+        self._ldap_groups_base = configuration.get("auth", "ldap_groups_base")
+        self._ldap_groups_filter = configuration.get("auth", "ldap_groups_filter")
+        if self._ldap_groups_base == "":
+            self._ldap_groups_base = self._ldap_base
         ldap_secret_file_path = configuration.get("auth", "ldap_secret_file")
         if ldap_secret_file_path:
             with open(ldap_secret_file_path, 'r') as file:
@@ -172,17 +181,28 @@ class Auth(auth.BaseAuth):
             conn.set_option(self.ldap.OPT_REFERRALS, 0)
             conn.simple_bind_s(user_dn, password)
             tmp: list[str] = []
+            gdns: list[str] = []
             if self._ldap_groups_attr:
-                tmp = []
-                for g in user_entry[1][self._ldap_groups_attr]:
-                    """Get group g's RDN's attribute value"""
-                    try:
-                        rdns = self.ldap.dn.explode_dn(g, notypes=True)
-                        tmp.append(rdns[0])
-                    except Exception:
-                        tmp.append(g.decode('utf8'))
-                self._ldap_groups = set(tmp)
-                logger.debug("_login2 LDAP groups of user: %s", ",".join(self._ldap_groups))
+                gdns = user_entry[1][self._ldap_groups_attr]
+            elif self._ldap_group_members_attr:
+                res = conn.search_s(
+                    self._ldap_groups_base,
+                    self.ldap.SCOPE_SUBTREE,
+                    filterstr="(&{0}({1}={2}))".format(
+                        self._ldap_groups_filter
+                        self._ldap_group_members_attr,
+                        self.ldap.filter.escape_filter_chars(user_dn)),
+                    attrlist=self._ldap_attributes
+                )
+            for g in gdns:
+                """Get group g's RDN's attribute value"""
+                try:
+                    rdns = self.ldap.dn.explode_dn(g, notypes=True)
+                    tmp.append(rdns[0])
+                except Exception:
+                    tmp.append(g.decode('utf8'))
+            self._ldap_groups = set(tmp)
+            logger.debug("_login2 LDAP groups of user: %s", ",".join(self._ldap_groups))
             if self._ldap_user_attr:
                 if user_entry[1][self._ldap_user_attr]:
                     tmplogin = user_entry[1][self._ldap_user_attr][0]
@@ -261,17 +281,31 @@ class Auth(auth.BaseAuth):
                 logger.debug(f"_login3 user '{login}' cannot be found")
                 return ""
             tmp: list[str] = []
+            gdns: list[str] = []
+            """Let's collect the groups of the user."""
             if self._ldap_groups_attr:
-                tmp = []
-                for g in user_entry['attributes'][self._ldap_groups_attr]:
-                    """Get group g's RDN's attribute value"""
-                    try:
-                        rdns = self.ldap3.utils.dn.parse_dn(g)
-                        tmp.append(rdns[0][1])
-                    except Exception:
-                        tmp.append(g)
-                self._ldap_groups = set(tmp)
-                logger.debug("_login3 LDAP groups of user: %s", ",".join(self._ldap_groups))
+                gdns = user_entry['attributes'][self._ldap_groups_attr]
+            elif self._ldap_group_members_attr:
+                conn.search(
+                    search_base=self._ldap_groups_base,
+                    search_filter="(&{0}({1}={2}))".format(
+                        self._ldap_groups_filter,
+                        self._ldap_group_members_attr,
+                        self.ldap3.utils.conv.escape_filter_chars(user_dn)),
+                    search_scope=self.ldap3.SUBTREE,
+                    attributes="dn"
+                )
+                for group in conn.response:
+                    gdns.append(group['dn'])
+            for g in gdns:
+                """Get group g's RDN's attribute value"""
+                try:
+                    rdns = self.ldap3.utils.dn.parse_dn(g)
+                    tmp.append(rdns[0][1])
+                except Exception:
+                    tmp.append(g)
+            self._ldap_groups = set(tmp)
+            logger.debug("_login3 LDAP groups of user: %s", ",".join(self._ldap_groups))
             if self._ldap_user_attr:
                 if user_entry['attributes'][self._ldap_user_attr]:
                     if isinstance(user_entry['attributes'][self._ldap_user_attr], list):
