@@ -85,6 +85,8 @@ class ApplicationPartGet(ApplicationBase):
 
             if resource_type == "settings":
                 success, result = self._privacy_api.get_settings(user_identifier)
+                if not success and isinstance(result, str) and "not found" in result.lower():
+                    return httputils.NOT_FOUND
             elif resource_type == "cards":
                 success, result = self._privacy_api.get_matching_cards(user_identifier)
             else:
