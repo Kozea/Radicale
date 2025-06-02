@@ -67,11 +67,11 @@ class ApplicationPartPrivacy(ApplicationBase):
         Returns:
             WSGI response
         """
-        if not path.startswith("/.privacy/"):
+        if not path.startswith("/privacy/"):
             return httputils.METHOD_NOT_ALLOWED
 
         # Extract user identifier from path
-        # Path format: /.privacy/settings/{user} or /.privacy/cards/{user}
+        # Path format: /privacy/settings/{user} or /privacy/cards/{user}
         parts = path.strip("/").split("/")
         if len(parts) < 3:
             return httputils.BAD_REQUEST
@@ -104,7 +104,7 @@ class ApplicationPartPrivacy(ApplicationBase):
         Returns:
             WSGI response
         """
-        if not path.startswith("/.privacy/"):
+        if not path.startswith("/privacy/"):
             return httputils.METHOD_NOT_ALLOWED
 
         # Extract user identifier and action from path
@@ -153,7 +153,7 @@ class ApplicationPartPrivacy(ApplicationBase):
         Returns:
             WSGI response
         """
-        if not path.startswith("/.privacy/"):
+        if not path.startswith("/privacy/"):
             return httputils.METHOD_NOT_ALLOWED
 
         # Extract user identifier from path
@@ -192,7 +192,7 @@ class ApplicationPartPrivacy(ApplicationBase):
         Returns:
             WSGI response
         """
-        if not path.startswith("/.privacy/"):
+        if not path.startswith("/privacy/"):
             return httputils.METHOD_NOT_ALLOWED
 
         # Extract user identifier from path
@@ -219,7 +219,7 @@ class ApplicationPartPrivacy(ApplicationBase):
         Returns:
             WSGI response with CORS headers
         """
-        if not path.startswith("/.privacy/"):
+        if not path.startswith("/privacy/"):
             return httputils.METHOD_NOT_ALLOWED
 
         headers: Dict[str, str] = {
