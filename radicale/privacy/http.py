@@ -76,6 +76,10 @@ class PrivacyHTTP(ApplicationBase):
         resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
 
+        # Check if authenticated user matches the requested resource
+        if user != user_identifier:
+            return httputils.FORBIDDEN
+
         success: bool
         result: APIResult
 
@@ -108,6 +112,10 @@ class PrivacyHTTP(ApplicationBase):
 
         resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
+
+        # Check if authenticated user matches the requested resource
+        if user != user_identifier:
+            return httputils.FORBIDDEN
 
         # Read request body
         try:
@@ -154,6 +162,10 @@ class PrivacyHTTP(ApplicationBase):
 
         user_identifier = parts[2]
 
+        # Check if authenticated user matches the requested resource
+        if user != user_identifier:
+            return httputils.FORBIDDEN
+
         # Read request body
         try:
             content_length = int(environ.get("CONTENT_LENGTH", 0))
@@ -189,6 +201,11 @@ class PrivacyHTTP(ApplicationBase):
             return httputils.BAD_REQUEST
 
         user_identifier = parts[2]
+
+        # Check if authenticated user matches the requested resource
+        if user != user_identifier:
+            return httputils.FORBIDDEN
+
         success: bool
         result: APIResult
         success, result = self._privacy_core.delete_settings(user_identifier)
