@@ -16,19 +16,28 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import io
+import json
 import logging
 import posixpath
 import sys
 import xml.etree.ElementTree as ET
-from typing import Optional
+from http import client
+from typing import Any, Dict, List, Optional, Union
 
 from radicale import (auth, config, hook, httputils, pathutils, privacy,
                       rights, storage, types, web, xmlutils)
 from radicale.log import logger
+from radicale.privacy.core import PrivacyCore
 
 # HACK: https://github.com/tiran/defusedxml/issues/54
 import defusedxml.ElementTree as DefusedET  # isort:skip
 sys.modules["xml.etree"].ElementTree = ET  # type:ignore[attr-defined]
+
+# Define the possible result types
+SettingsResult = Union[Dict[str, bool], Dict[str, str]]
+CardsResult = Dict[str, List[Dict[str, Any]]]
+StatusResult = Dict[str, Union[str, int, List[str]]]
+APIResult = Union[SettingsResult, CardsResult, StatusResult, str]
 
 
 class ApplicationBase:
@@ -43,6 +52,7 @@ class ApplicationBase:
     _permit_overwrite_collection: bool
     _hook: hook.BaseHook
     _privacy: Optional[privacy.PrivacyDatabase]
+    _privacy_api: PrivacyCore
 
     def __init__(self, configuration: config.Configuration) -> None:
         self.configuration = configuration
@@ -56,6 +66,7 @@ class ApplicationBase:
         self._request_content_on_debug = configuration.get("logging", "request_content_on_debug")
         self._hook = hook.load(configuration)
         self._privacy = privacy.load(configuration)
+        self._privacy_api = PrivacyCore(configuration)
 
     def _read_xml_request_body(self, environ: types.WSGIEnviron
                                ) -> Optional[ET.Element]:
@@ -95,6 +106,26 @@ class ApplicationBase:
         headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
         content = self._xml_response(xmlutils.webdav_error(human_tag))
         return status, headers, content
+
+    def _to_wsgi_response(self, success: bool, result: APIResult) -> types.WSGIResponse:
+        """Convert API response to WSGI response.
+
+        Args:
+            success: Whether the API call was successful
+            result: The API response data. Can be:
+                - A string (error message)
+                - A dictionary with boolean values (settings)
+                - A dictionary with list of dictionaries (matching cards)
+                - A dictionary with mixed values (status messages)
+
+        Returns:
+            WSGI response tuple (status, headers, body)
+        """
+        headers = {"Content-Type": "application/json"}
+        if isinstance(result, str):
+            # Error message
+            return client.BAD_REQUEST, headers, json.dumps({"error": result}).encode()
+        return client.OK, headers, json.dumps(result).encode()
 
 
 class Access:

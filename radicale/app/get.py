@@ -19,11 +19,18 @@
 
 import posixpath
 from http import client
+from typing import Any, Dict, List, Union
 from urllib.parse import quote
 
 from radicale import httputils, pathutils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
+
+# Define the possible result types
+SettingsResult = Union[Dict[str, bool], Dict[str, str]]
+CardsResult = Dict[str, List[Dict[str, Any]]]
+StatusResult = Dict[str, Union[str, int, List[str]]]
+APIResult = Union[SettingsResult, CardsResult, StatusResult, str]
 
 
 def propose_filename(collection: storage.BaseCollection) -> str:
@@ -60,6 +67,31 @@ class ApplicationPartGet(ApplicationBase):
     def do_GET(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
                user: str) -> types.WSGIResponse:
         """Manage GET request."""
+        # Handle privacy-specific paths first
+        if path.startswith("/privacy/"):
+            parts = path.strip("/").split("/")
+            if len(parts) < 3:
+                return httputils.BAD_REQUEST
+
+            resource_type = parts[1]  # 'settings' or 'cards'
+            user_identifier = parts[2]
+
+            # Check if authenticated user matches the requested resource
+            if user != user_identifier:
+                return httputils.FORBIDDEN
+
+            success: bool
+            result: APIResult
+
+            if resource_type == "settings":
+                success, result = self._privacy_api.get_settings(user_identifier)
+            elif resource_type == "cards":
+                success, result = self._privacy_api.get_matching_cards(user_identifier)
+            else:
+                return httputils.BAD_REQUEST
+
+            return self._to_wsgi_response(success, result)
+
         # Redirect to /.web if the root path is requested
         if not pathutils.strip_path(path):
             return httputils.redirect(base_prefix + "/.web")
