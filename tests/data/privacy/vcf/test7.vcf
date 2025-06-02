@@ -5,7 +5,7 @@ EMAIL;TYPE=INTERNET:charlie.davis@example.com
 FN:Charlie Davis
 N:Davis;Charlie;;;
 ORG:Multi Phone Inc
+TEL;TYPE=CELL:+1777888999
 TEL;TYPE=CELL:+1888999000
-TEL:+1777888999
 TITLE:Sales Director
 END:VCARD

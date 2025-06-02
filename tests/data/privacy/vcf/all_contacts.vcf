@@ -34,6 +34,7 @@ UID:test4
 BDAY:1990-01-01
 EMAIL;TYPE=INTERNET:jane.smith@example.com
 FN:Jane Smith
+GENDER:F
 N:Smith;Jane;;;
 ORG:Photo Company
 PHOTO;TYPE=PNG:data:image/png\;base64\,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAD0lEQVQIHQEEAPv/AP///wX+Av4DfRnGAAAAAElFTkSuQmCC
@@ -54,8 +55,8 @@ END:VCARD
 BEGIN:VCARD
 VERSION:3.0
 UID:test6
+EMAIL;TYPE=INTERNET:alice.brown@example.com
 EMAIL;TYPE=INTERNET:alice@personal.com
-EMAIL:
 FN:Alice Brown
 N:Brown;Alice;;;
 ORG:Multi Email Corp
@@ -69,8 +70,8 @@ EMAIL;TYPE=INTERNET:charlie.davis@example.com
 FN:Charlie Davis
 N:Davis;Charlie;;;
 ORG:Multi Phone Inc
+TEL;TYPE=CELL:+1777888999
 TEL;TYPE=CELL:+1888999000
-TEL:
 TITLE:Sales Director
 END:VCARD
 BEGIN:VCARD
@@ -87,6 +88,7 @@ ADR:;;456 Business Ave;Metropolis;NY;10001;USA
 BDAY:1985-06-15
 EMAIL;TYPE=INTERNET:full.contact@example.com
 FN:Full Contact
+GENDER:F
 N:Contact;Full;;;
 ORG:Full Details Ltd
 PHOTO;TYPE=PNG:data:image/png\;base64\,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAD0lEQVQIHQEEAPv/AP///wX+Av4DfRnGAAAAAElFTkSuQmCC

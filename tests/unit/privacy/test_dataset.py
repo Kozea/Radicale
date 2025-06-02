@@ -62,14 +62,97 @@ class TestPrivacyDataset(unittest.TestCase):
             self.assertEqual(vcard.org.value, ['Test Company'])
             self.assertEqual(vcard.title.value, 'Software Engineer')
 
+            # Check that no gender field exists
+            self.assertFalse(hasattr(vcard, 'gender'))
+
+    def test_test2_has_same_email(self):
+        """Test that test2.vcf has the same email as test1 but different phone."""
+        filepath = os.path.join(self.vcf_dir, 'test2.vcf')
+        with open(filepath, 'r') as f:
+            content = f.read()
+            vcard = vobject.readOne(content)
+
+            # Check fields
+            self.assertEqual(vcard.uid.value, 'test2')
+            self.assertEqual(vcard.fn.value, 'John Doe (Work)')
+            self.assertEqual(vcard.email.value, 'john.doe@example.com')  # Same as test1
+            self.assertEqual(vcard.tel.value, '+1987654321')  # Different from test1
+            self.assertEqual(vcard.org.value, ['Another Company'])
+            self.assertEqual(vcard.title.value, 'Senior Developer')
+
+    def test_test3_has_same_phone(self):
+        """Test that test3.vcf has the same phone as test1 but different email."""
+        filepath = os.path.join(self.vcf_dir, 'test3.vcf')
+        with open(filepath, 'r') as f:
+            content = f.read()
+            vcard = vobject.readOne(content)
+
+            # Check fields
+            self.assertEqual(vcard.uid.value, 'test3')
+            self.assertEqual(vcard.fn.value, 'John Doe (Personal)')
+            self.assertEqual(vcard.email.value, 'john.doe.personal@example.com')  # Different from test1
+            self.assertEqual(vcard.tel.value, '+1234567890')  # Same as test1
+            self.assertEqual(vcard.org.value, ['Personal Business'])
+            self.assertEqual(vcard.title.value, 'Freelancer')
+
+    def test_test4_has_photo_and_gender(self):
+        """Test that test4.vcf contains photo and gender fields."""
+        filepath = os.path.join(self.vcf_dir, 'test4.vcf')
+        with open(filepath, 'r') as f:
+            content = f.read()
+            vcard = vobject.readOne(content)
+
+            # Check fields
+            self.assertEqual(vcard.uid.value, 'test4')
+            self.assertEqual(vcard.fn.value, 'Jane Smith')
+            self.assertEqual(vcard.email.value, 'jane.smith@example.com')
+            self.assertEqual(vcard.tel.value, '+1122334455')
+            self.assertTrue(hasattr(vcard, 'photo'))
+            self.assertEqual(vcard.gender.value, 'F')
+            self.assertEqual(vcard.bday.value, '1990-01-01')
+            self.assertEqual(vcard.org.value, ['Photo Company'])
+            self.assertEqual(vcard.title.value, 'Photographer')
+
+    def test_test5_has_address(self):
+        """Test that test5.vcf contains a full address."""
+        filepath = os.path.join(self.vcf_dir, 'test5.vcf')
+        with open(filepath, 'r') as f:
+            content = f.read()
+            vcard = vobject.readOne(content)
+
+            # Check fields
+            self.assertEqual(vcard.uid.value, 'test5')
+            self.assertEqual(vcard.fn.value, 'Bob Wilson')
+            self.assertEqual(vcard.email.value, 'bob.wilson@example.com')
+            self.assertEqual(vcard.tel.value, '+1555666777')
+            self.assertTrue(hasattr(vcard, 'adr'))
+            self.assertEqual(vcard.adr.value.street, '123 Main St')
+            self.assertEqual(vcard.adr.value.city, 'Springfield')
+            self.assertEqual(vcard.adr.value.region, 'IL')
+            self.assertEqual(vcard.adr.value.code, '62701')
+            self.assertEqual(vcard.adr.value.country, 'USA')
+            self.assertEqual(vcard.org.value, ['Address Company'])
+            self.assertEqual(vcard.title.value, 'Manager')
+
     def test_test6_has_multiple_emails(self):
         """Test that test6.vcf contains multiple email addresses."""
         filepath = os.path.join(self.vcf_dir, 'test6.vcf')
         with open(filepath, 'r') as f:
             content = f.read()
             vcard = vobject.readOne(content)
+
+            # Get all email values
             emails = [email.value for email in vcard.email_list]
+            self.assertEqual(len(emails), 2)
+            self.assertIn('alice.brown@example.com', emails)
             self.assertIn('alice@personal.com', emails)
+
+            # Check other fields
+            self.assertEqual(vcard.uid.value, 'test6')
+            self.assertEqual(vcard.fn.value, 'Alice Brown')
+            self.assertEqual(vcard.tel.value, '+1666777888')
+            self.assertEqual(vcard.org.value, ['Multi Email Corp'])
+            self.assertEqual(vcard.title.value, 'Marketing Manager')
 
     def test_test7_has_multiple_phones(self):
         """Test that test7.vcf contains multiple phone numbers."""
@@ -83,6 +166,13 @@ class TestPrivacyDataset(unittest.TestCase):
             self.assertEqual(len(phones), 2)
             self.assertIn('+1777888999', phones)
             self.assertIn('+1888999000', phones)
+
+            # Check other fields
+            self.assertEqual(vcard.uid.value, 'test7')
+            self.assertEqual(vcard.fn.value, 'Charlie Davis')
+            self.assertEqual(vcard.email.value, 'charlie.davis@example.com')
+            self.assertEqual(vcard.org.value, ['Multi Phone Inc'])
+            self.assertEqual(vcard.title.value, 'Sales Director')
 
     def test_test8_is_minimal(self):
         """Test that test8.vcf contains only name and email."""
@@ -116,8 +206,14 @@ class TestPrivacyDataset(unittest.TestCase):
             self.assertEqual(vcard.org.value, ['Full Details Ltd'])
             self.assertEqual(vcard.title.value, 'CEO')
             self.assertTrue(hasattr(vcard, 'photo'))
+            self.assertEqual(vcard.gender.value, 'F')
             self.assertEqual(vcard.bday.value, '1985-06-15')
             self.assertTrue(hasattr(vcard, 'adr'))
+            self.assertEqual(vcard.adr.value.street, '456 Business Ave')
+            self.assertEqual(vcard.adr.value.city, 'Metropolis')
+            self.assertEqual(vcard.adr.value.region, 'NY')
+            self.assertEqual(vcard.adr.value.code, '10001')
+            self.assertEqual(vcard.adr.value.country, 'USA')
 
     def test_all_contacts_file(self):
         """Test that all_contacts.vcf contains all test contacts."""
@@ -133,6 +229,39 @@ class TestPrivacyDataset(unittest.TestCase):
             uids = {vcard.uid.value for vcard in vcards}
             expected_uids = {f'test{i}' for i in range(1, 10)}
             self.assertEqual(uids, expected_uids)
+
+            # Verify each vCard has the correct fields
+            for vcard in vcards:
+                uid = vcard.uid.value
+                if uid == 'test1':
+                    self.assertEqual(vcard.fn.value, 'John Doe')
+                    self.assertEqual(vcard.email.value, 'john.doe@example.com')
+                elif uid == 'test2':
+                    self.assertEqual(vcard.fn.value, 'John Doe (Work)')
+                    self.assertEqual(vcard.email.value, 'john.doe@example.com')
+                elif uid == 'test3':
+                    self.assertEqual(vcard.fn.value, 'John Doe (Personal)')
+                    self.assertEqual(vcard.email.value, 'john.doe.personal@example.com')
+                elif uid == 'test4':
+                    self.assertEqual(vcard.fn.value, 'Jane Smith')
+                    self.assertEqual(vcard.gender.value, 'F')
+                elif uid == 'test5':
+                    self.assertEqual(vcard.fn.value, 'Bob Wilson')
+                    self.assertTrue(hasattr(vcard, 'adr'))
+                elif uid == 'test6':
+                    self.assertEqual(vcard.fn.value, 'Alice Brown')
+                    self.assertEqual(len(vcard.email_list), 2)
+                elif uid == 'test7':
+                    self.assertEqual(vcard.fn.value, 'Charlie Davis')
+                    self.assertEqual(len(vcard.contents.get('tel', [])), 2)
+                elif uid == 'test8':
+                    self.assertEqual(vcard.fn.value, 'Minimal Contact')
+                    self.assertEqual(len(vcard.contents), 5)  # uid, fn, n, email, version
+                elif uid == 'test9':
+                    self.assertEqual(vcard.fn.value, 'Full Contact')
+                    self.assertTrue(hasattr(vcard, 'photo'))
+                    self.assertTrue(hasattr(vcard, 'gender'))
+                    self.assertTrue(hasattr(vcard, 'adr'))
 
 
 if __name__ == '__main__':

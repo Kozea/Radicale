@@ -1,8 +1,8 @@
 BEGIN:VCARD
 VERSION:3.0
 UID:test6
+EMAIL;TYPE=INTERNET:alice.brown@example.com
 EMAIL;TYPE=INTERNET:alice@personal.com
-EMAIL:
 FN:Alice Brown
 N:Brown;Alice;;;
 ORG:Multi Email Corp

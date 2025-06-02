@@ -5,6 +5,7 @@ ADR:;;456 Business Ave;Metropolis;NY;10001;USA
 BDAY:1985-06-15
 EMAIL;TYPE=INTERNET:full.contact@example.com
 FN:Full Contact
+GENDER:F
 N:Contact;Full;;;
 ORG:Full Details Ltd
 PHOTO;TYPE=PNG:data:image/png\;base64\,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAD0lEQVQIHQEEAPv/AP///wX+Av4DfRnGAAAAAElFTkSuQmCC

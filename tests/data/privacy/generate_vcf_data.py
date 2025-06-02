@@ -26,33 +26,28 @@ def create_vcard(data: Dict) -> vobject.vCard:
     if 'email' in data:
         emails = data['email'] if isinstance(data['email'], list) else [data['email']]
         for email in emails:
-            card.add('email')
-            card.email.value = email
-            card.email.type_param = 'INTERNET'
+            mail = card.add('email')
+            mail.value = email
+            mail.type_param = 'INTERNET'
 
     # Add phone(s)
     if 'phone' in data:
         phones = data['phone'] if isinstance(data['phone'], list) else [data['phone']]
         for phone in phones:
-            card.add('tel')
-            card.tel.value = phone
-            card.tel.type_param = 'CELL'
-
-    # Add company
-    if 'company' in data:
-        card.add('org')
-        card.org.value = [data['company']]
-
-    # Add title
-    if 'title' in data:
-        card.add('title')
-        card.title.value = data['title']
+            tel = card.add('tel')
+            tel.value = phone
+            tel.type_param = 'CELL'
 
     # Add photo
     if 'photo' in data:
         card.add('photo')
         card.photo.value = data['photo']
         card.photo.type_param = 'PNG'
+
+    # Add gender
+    if 'gender' in data:
+        card.add('gender')
+        card.gender.value = data['gender']
 
     # Add birthday
     if 'birthday' in data:
@@ -69,6 +64,16 @@ def create_vcard(data: Dict) -> vobject.vCard:
             code=data['address'].get('code', ''),
             country=data['address'].get('country', '')
         )
+
+    # Add company
+    if 'company' in data:
+        card.add('org')
+        card.org.value = [data['company']]
+
+    # Add title
+    if 'title' in data:
+        card.add('title')
+        card.title.value = data['title']
 
     return card
 
@@ -106,16 +111,17 @@ def generate_test_cards() -> List[Dict]:
             'title': 'Freelancer'
         },
 
-        # Test case 4: Contact with photo and birthday
+        # Test case 4: Contact with photo, gender and birthday
         {
             'uid': 'test4',
             'name': 'Jane Smith',
             'email': 'jane.smith@example.com',
             'phone': '+1122334455',
-            'company': 'Photo Company',
-            'title': 'Photographer',
             'photo': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAD0lEQVQIHQEEAPv/AP///wX+Av4DfRnGAAAAAElFTkSuQmCC',
-            'birthday': '1990-01-01'
+            'gender': 'F',
+            'birthday': '1990-01-01',
+            'company': 'Photo Company',
+            'title': 'Photographer'
         },
 
         # Test case 5: Contact with full address
@@ -124,15 +130,15 @@ def generate_test_cards() -> List[Dict]:
             'name': 'Bob Wilson',
             'email': 'bob.wilson@example.com',
             'phone': '+1555666777',
-            'company': 'Address Company',
-            'title': 'Manager',
             'address': {
                 'street': '123 Main St',
                 'city': 'Springfield',
                 'region': 'IL',
                 'code': '62701',
                 'country': 'USA'
-            }
+            },
+            'company': 'Address Company',
+            'title': 'Manager'
         },
 
         # Test case 6: Contact with multiple emails
@@ -168,9 +174,8 @@ def generate_test_cards() -> List[Dict]:
             'name': 'Full Contact',
             'email': 'full.contact@example.com',
             'phone': '+1999000111',
-            'company': 'Full Details Ltd',
-            'title': 'CEO',
             'photo': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAD0lEQVQIHQEEAPv/AP///wX+Av4DfRnGAAAAAElFTkSuQmCC',
+            'gender': 'F',
             'birthday': '1985-06-15',
             'address': {
                 'street': '456 Business Ave',
@@ -178,7 +183,9 @@ def generate_test_cards() -> List[Dict]:
                 'region': 'NY',
                 'code': '10001',
                 'country': 'USA'
-            }
+            },
+            'company': 'Full Details Ltd',
+            'title': 'CEO'
         }
     ]
 
