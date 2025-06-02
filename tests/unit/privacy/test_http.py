@@ -39,6 +39,7 @@ def http_app():
         return PrivacyHTTP(configuration)
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_get_settings_success(http_app):
     """Test successful GET request for settings."""
     # Mock the API response
@@ -71,6 +72,7 @@ def test_get_settings_success(http_app):
         assert data["disallow_address"] is True
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_get_settings_error(http_app):
     """Test GET request for settings with error."""
     # Mock the API response
@@ -93,6 +95,7 @@ def test_get_settings_error(http_app):
         assert data["error"] == "User settings not found"
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_get_matching_cards_success(http_app):
     """Test successful GET request for matching cards."""
     # Mock the API response
@@ -128,6 +131,7 @@ def test_get_matching_cards_success(http_app):
         assert data["matches"][0]["vcard_uid"] == "card1"
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_create_settings_success(http_app):
     """Test successful POST request for creating settings."""
     # Mock the API response
@@ -160,6 +164,7 @@ def test_create_settings_success(http_app):
         assert data["status"] == "created"
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_update_settings_success(http_app):
     """Test successful PUT request for updating settings."""
     # Mock the API response
@@ -189,6 +194,7 @@ def test_update_settings_success(http_app):
         assert data["status"] == "updated"
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_delete_settings_success(http_app):
     """Test successful DELETE request for settings."""
     # Mock the API response
@@ -211,6 +217,7 @@ def test_delete_settings_success(http_app):
         assert data["status"] == "deleted"
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_reprocess_cards_success(http_app):
     """Test successful POST request for reprocessing cards."""
     # Mock the API response
@@ -239,6 +246,7 @@ def test_reprocess_cards_success(http_app):
         assert len(data["reprocessed_card_uids"]) == 2
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_options_request(http_app):
     """Test OPTIONS request for CORS preflight."""
     # Create mock WSGI environment
@@ -259,6 +267,7 @@ def test_options_request(http_app):
     assert body == b""
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_invalid_path(http_app):
     """Test request with invalid path."""
     # Create mock WSGI environment with invalid path
@@ -274,6 +283,7 @@ def test_invalid_path(http_app):
     assert status == client.BAD_REQUEST
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_missing_content_length(http_app):
     """Test POST request with missing content length."""
     # Create mock WSGI environment without content length
@@ -291,6 +301,7 @@ def test_missing_content_length(http_app):
     assert ("Content-Type", "text/plain") in headers
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_invalid_json(http_app):
     """Test POST request with invalid JSON."""
     # Create mock WSGI environment with invalid JSON
