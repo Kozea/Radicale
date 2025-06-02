@@ -22,6 +22,11 @@ def http_app():
         collection_root = os.path.join(tmpdir, "collection-root")
         os.makedirs(collection_root, exist_ok=True)
 
+        # Create htpasswd file for authentication
+        # htpasswd_file = os.path.join(tmpdir, ".htpasswd")
+        # with open(htpasswd_file, "w") as f:
+        #     f.write("test@example.com:password\n")
+
         test_db_path = os.path.join(tmpdir, "test.db")
         configuration = config.load()
         configuration.update({
@@ -34,6 +39,14 @@ def http_app():
             },
             "auth": {
                 "type": "none"  # Disable authentication for tests
+            },
+            # "auth": {
+            #     "type": "htpasswd",
+            #     "htpasswd_filename": htpasswd_file,
+            #     "htpasswd_encryption": "plain"
+            # },
+            "rights": {
+                "type": "authenticated"
             }
         }, "test")
         return PrivacyHTTP(configuration)
@@ -59,8 +72,8 @@ def test_get_settings_success(http_app):
             "PATH_INFO": "/privacy/settings/test@example.com"
         }
 
-        # Call the handler
-        status, headers, body = http_app.do_GET(environ, "/", "/privacy/settings/test@example.com", "testuser")
+        # Call the handler with matching user
+        status, headers, body = http_app.do_GET(environ, "/", "/privacy/settings/test@example.com", "test@example.com")
 
         # Verify response
         assert status == client.OK
@@ -87,8 +100,8 @@ def test_get_settings_error(http_app):
             "PATH_INFO": "/privacy/settings/nonexistent@example.com"
         }
 
-        # Call the handler
-        status, headers, body = http_app.do_GET(environ, "/", "/privacy/settings/nonexistent@example.com", "testuser")
+        # Call the handler with matching user
+        status, headers, body = http_app.do_GET(environ, "/", "/privacy/settings/nonexistent@example.com", "nonexistent@example.com")
 
         # Verify response
         assert status == client.BAD_REQUEST
@@ -121,8 +134,8 @@ def test_get_matching_cards_success(http_app):
             "PATH_INFO": "/privacy/cards/test@example.com"
         }
 
-        # Call the handler
-        status, headers, body = http_app.do_GET(environ, "/", "/privacy/cards/test@example.com", "testuser")
+        # Call the handler with matching user
+        status, headers, body = http_app.do_GET(environ, "/", "/privacy/cards/test@example.com", "test@example.com")
 
         # Verify response
         assert status == client.OK
@@ -157,8 +170,8 @@ def test_create_settings_success(http_app):
             "wsgi.input": MagicMock(read=lambda size: settings_json)
         }
 
-        # Call the handler
-        status, headers, body = http_app.do_POST(environ, "/", "/privacy/settings/test@example.com", "testuser")
+        # Call the handler with matching user
+        status, headers, body = http_app.do_POST(environ, "/", "/privacy/settings/test@example.com", "test@example.com")
 
         # Verify response
         assert status == client.CREATED
@@ -187,8 +200,8 @@ def test_update_settings_success(http_app):
             "wsgi.input": MagicMock(read=lambda size: settings_json)
         }
 
-        # Call the handler
-        status, headers, body = http_app.do_PUT(environ, "/", "/privacy/settings/test@example.com", "testuser")
+        # Call the handler with matching user
+        status, headers, body = http_app.do_PUT(environ, "/", "/privacy/settings/test@example.com", "test@example.com")
 
         # Verify response
         assert status == client.OK
@@ -210,8 +223,8 @@ def test_delete_settings_success(http_app):
             "PATH_INFO": "/privacy/settings/test@example.com"
         }
 
-        # Call the handler
-        status, headers, body = http_app.do_DELETE(environ, "/", "/privacy/settings/test@example.com", "testuser")
+        # Call the handler with matching user
+        status, headers, body = http_app.do_DELETE(environ, "/", "/privacy/settings/test@example.com", "test@example.com")
 
         # Verify response
         assert status == client.OK
@@ -237,8 +250,8 @@ def test_reprocess_cards_success(http_app):
             "PATH_INFO": "/privacy/cards/test@example.com/reprocess"
         }
 
-        # Call the handler
-        status, headers, body = http_app.do_POST(environ, "/", "/privacy/cards/test@example.com/reprocess", "testuser")
+        # Call the handler with matching user
+        status, headers, body = http_app.do_POST(environ, "/", "/privacy/cards/test@example.com/reprocess", "test@example.com")
 
         # Verify response
         assert status == client.OK
@@ -258,8 +271,8 @@ def test_options_request(http_app):
         "PATH_INFO": "/privacy/settings/test@example.com"
     }
 
-    # Call the handler
-    status, headers, body = http_app.do_OPTIONS(environ, "/", "/privacy/settings/test@example.com", "testuser")
+    # Call the handler with matching user
+    status, headers, body = http_app.do_OPTIONS(environ, "/", "/privacy/settings/test@example.com", "test@example.com")
 
     # Verify response
     assert status == client.OK
@@ -279,8 +292,8 @@ def test_invalid_path(http_app):
         "PATH_INFO": "/privacy/invalid/test@example.com"
     }
 
-    # Call the handler
-    status, headers, body = http_app.do_GET(environ, "/", "/privacy/invalid/test@example.com", "testuser")
+    # Call the handler with matching user
+    status, headers, body = http_app.do_GET(environ, "/", "/privacy/invalid/test@example.com", "test@example.com")
 
     # Verify response
     assert status == client.BAD_REQUEST
@@ -296,8 +309,8 @@ def test_missing_content_length(http_app):
         "CONTENT_LENGTH": ""  # Empty content length
     }
 
-    # Call the handler
-    status, headers, body = http_app.do_POST(environ, "/", "/privacy/settings/test@example.com", "testuser")
+    # Call the handler with matching user
+    status, headers, body = http_app.do_POST(environ, "/", "/privacy/settings/test@example.com", "test@example.com")
 
     # Verify response
     assert status == client.BAD_REQUEST
@@ -316,9 +329,27 @@ def test_invalid_json(http_app):
         "wsgi.input": MagicMock(read=lambda size: invalid_json)
     }
 
-    # Call the handler
-    status, headers, body = http_app.do_POST(environ, "/", "/privacy/settings/test@example.com", "testuser")
+    # Call the handler with matching user
+    status, headers, body = http_app.do_POST(environ, "/", "/privacy/settings/test@example.com", "test@example.com")
 
     # Verify response
     assert status == client.BAD_REQUEST
     assert ("Content-Type", "text/plain") in headers
+
+
+@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
+def test_unauthorized_access(http_app):
+    """Test unauthorized access to settings."""
+    # Create mock WSGI environment
+    environ = {
+        "REQUEST_METHOD": "GET",
+        "PATH_INFO": "/privacy/settings/test@example.com"
+    }
+
+    # Call the handler with different user than the one in the path
+    status, headers, body = http_app.do_GET(environ, "/", "/privacy/settings/test@example.com", "other@example.com")
+
+    # Verify response
+    assert status == client.FORBIDDEN
+    assert ("Content-Type", "text/plain") in headers
+    assert "Action on the requested resource refused." in body
