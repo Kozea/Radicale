@@ -246,6 +246,6 @@ Access-Control-Max-Age: 86400
 
 ### Related Components
 
-- `PrivacyAPI`: Core business logic for managing privacy settings and card processing
+- `PrivacyCore`: Core business logic for managing privacy settings and card processing
 - `PrivacyHTTP`: HTTP endpoints for privacy management
 - VCF Processing: Enforces privacy settings when processing contact information

@@ -1,5 +1,5 @@
 """
-Privacy API for Radicale.
+Core business logic for privacy management in Radicale.
 
 This module provides the core business logic for managing user privacy
 settings and processing vCards according to those settings.
@@ -20,11 +20,11 @@ from radicale.privacy.vcard_properties import (PRIVACY_TO_VCARD_MAP,
 logger = logging.getLogger(__name__)
 
 
-class PrivacyAPI:
-    """Privacy API for managing user privacy settings."""
+class PrivacyCore:
+    """Core business logic for privacy management."""
 
     def __init__(self, configuration: "config.Configuration") -> None:
-        """Initialize the privacy API.
+        """Initialize the privacy core.
 
         Args:
             configuration: The Radicale configuration object

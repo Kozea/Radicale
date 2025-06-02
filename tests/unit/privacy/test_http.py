@@ -43,7 +43,7 @@ def http_app():
 def test_get_settings_success(http_app):
     """Test successful GET request for settings."""
     # Mock the API response
-    with patch.object(http_app._privacy_api, 'get_settings') as mock_get:
+    with patch.object(http_app._privacy_core, 'get_settings') as mock_get:
         mock_get.return_value = (True, {
             "disallow_company": True,
             "disallow_title": False,
@@ -76,7 +76,7 @@ def test_get_settings_success(http_app):
 def test_get_settings_error(http_app):
     """Test GET request for settings with error."""
     # Mock the API response
-    with patch.object(http_app._privacy_api, 'get_settings') as mock_get:
+    with patch.object(http_app._privacy_core, 'get_settings') as mock_get:
         mock_get.return_value = (False, "User settings not found")
 
         # Create mock WSGI environment
@@ -99,7 +99,7 @@ def test_get_settings_error(http_app):
 def test_get_matching_cards_success(http_app):
     """Test successful GET request for matching cards."""
     # Mock the API response
-    with patch.object(http_app._privacy_api, 'get_matching_cards') as mock_get:
+    with patch.object(http_app._privacy_core, 'get_matching_cards') as mock_get:
         mock_get.return_value = (True, {
             "matches": [
                 {
@@ -135,7 +135,7 @@ def test_get_matching_cards_success(http_app):
 def test_create_settings_success(http_app):
     """Test successful POST request for creating settings."""
     # Mock the API response
-    with patch.object(http_app._privacy_api, 'create_settings') as mock_create:
+    with patch.object(http_app._privacy_core, 'create_settings') as mock_create:
         mock_create.return_value = (True, {"status": "created"})
 
         # Create mock WSGI environment with request body
@@ -168,7 +168,7 @@ def test_create_settings_success(http_app):
 def test_update_settings_success(http_app):
     """Test successful PUT request for updating settings."""
     # Mock the API response
-    with patch.object(http_app._privacy_api, 'update_settings') as mock_update:
+    with patch.object(http_app._privacy_core, 'update_settings') as mock_update:
         mock_update.return_value = (True, {"status": "updated"})
 
         # Create mock WSGI environment with request body
@@ -198,7 +198,7 @@ def test_update_settings_success(http_app):
 def test_delete_settings_success(http_app):
     """Test successful DELETE request for settings."""
     # Mock the API response
-    with patch.object(http_app._privacy_api, 'delete_settings') as mock_delete:
+    with patch.object(http_app._privacy_core, 'delete_settings') as mock_delete:
         mock_delete.return_value = (True, {"status": "deleted"})
 
         # Create mock WSGI environment
@@ -221,7 +221,7 @@ def test_delete_settings_success(http_app):
 def test_reprocess_cards_success(http_app):
     """Test successful POST request for reprocessing cards."""
     # Mock the API response
-    with patch.object(http_app._privacy_api, 'reprocess_cards') as mock_reprocess:
+    with patch.object(http_app._privacy_core, 'reprocess_cards') as mock_reprocess:
         mock_reprocess.return_value = (True, {
             "status": "success",
             "reprocessed_cards": 2,

@@ -9,7 +9,7 @@ from pathlib import Path
 from generate_vcf_data import generate_test_cards
 
 from radicale.config import load
-from radicale.privacy.api import PrivacyAPI
+from radicale.privacy.core import PrivacyCore
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent
@@ -107,8 +107,8 @@ def main():
     db_path = os.path.expanduser(config.get("privacy", "database_path"))
     print(f"Using privacy database at: {db_path}\n")
 
-    # Initialize the privacy API
-    privacy_api = PrivacyAPI(config)
+    # Initialize the privacy core
+    privacy_core = PrivacyCore(config)
 
     # Get test cards
     test_cards = generate_test_cards()
@@ -120,12 +120,12 @@ def main():
 
         try:
             # First check if settings exist
-            status, headers, body = privacy_api.get_settings(email)
+            status, headers, body = privacy_core.get_settings(email)
 
             if status == 200:
                 # Settings exist, update them
                 print(f"Settings for {email} already exist, updating...")
-                status, headers, body = privacy_api.update_settings(email, settings)
+                status, headers, body = privacy_core.update_settings(email, settings)
                 if status != 200:
                     error = json.loads(body)
                     print(f"Error updating privacy settings: {error.get('error', 'Unknown error')}")
@@ -134,7 +134,7 @@ def main():
             else:
                 # Settings don't exist, create them
                 print(f"Creating new settings for {email}...")
-                status, headers, body = privacy_api.create_settings(email, settings)
+                status, headers, body = privacy_core.create_settings(email, settings)
                 if status != 201:
                     error = json.loads(body)
                     print(f"Error creating privacy settings: {error.get('error', 'Unknown error')}")
@@ -142,7 +142,7 @@ def main():
                 print("Settings created successfully")
 
             # Get the settings to verify
-            status, headers, body = privacy_api.get_settings(email)
+            status, headers, body = privacy_core.get_settings(email)
             if status == 200:
                 current_settings = json.loads(body)
                 print(f"\nCurrent settings for {email}:")

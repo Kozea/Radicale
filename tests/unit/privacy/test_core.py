@@ -1,5 +1,5 @@
 """
-Tests for the privacy API endpoints.
+Tests for the privacy Core functionality.
 """
 
 import os
@@ -11,7 +11,7 @@ import vobject
 
 from radicale import config, storage
 from radicale.item import Item
-from radicale.privacy.api import PrivacyAPI, PrivacyScanner
+from radicale.privacy.core import PrivacyCore, PrivacyScanner
 
 
 @pytest.fixture
@@ -23,8 +23,8 @@ def mock_time_ranges():
 
 
 @pytest.fixture
-def api(mock_time_ranges):
-    """Fixture to provide a privacy API instance with a temp database file."""
+def core(mock_time_ranges):
+    """Fixture to provide a privacy core instance with a temp database file."""
     with tempfile.TemporaryDirectory() as tmpdir:
         test_db_path = os.path.join(tmpdir, "test.db")
 
@@ -46,25 +46,25 @@ def api(mock_time_ranges):
         # Initialize storage
         storage_instance = storage.load(configuration)
 
-        # Create API with storage instance
-        api = PrivacyAPI(configuration)
-        api._privacy_db.init_db()  # Initialize the database
+        # Create core with storage instance
+        core = PrivacyCore(configuration)
+        core._privacy_db.init_db()  # Initialize the database
 
         # Reset scanner singleton and create new instance
         PrivacyScanner.reset()
-        api._scanner = PrivacyScanner(storage_instance)  # Initialize scanner with storage instance
+        core._scanner = PrivacyScanner(storage_instance)  # Initialize scanner with storage instance
 
         try:
-            yield api
+            yield core
         finally:
             # Properly clean up SQLAlchemy resources
-            if hasattr(api, '_privacy_db'):
+            if hasattr(core, '_privacy_db'):
                 # Close all sessions
-                api._privacy_db.Session.remove()
+                core._privacy_db.Session.remove()
                 # Dispose of the engine
-                api._privacy_db.engine.dispose()
+                core._privacy_db.engine.dispose()
                 # Close the database
-                api._privacy_db.close()
+                core._privacy_db.close()
 
             # On Windows, we need to be extra careful about file handles
             if os.name == 'nt':
@@ -78,8 +78,8 @@ def api(mock_time_ranges):
 
                 # Try to explicitly close any remaining file handles
                 try:
-                    if hasattr(api, '_privacy_db') and hasattr(api._privacy_db, 'engine'):
-                        api._privacy_db.engine.dispose()
+                    if hasattr(core, '_privacy_db') and hasattr(core._privacy_db, 'engine'):
+                        core._privacy_db.engine.dispose()
                 except Exception:
                     pass
 
@@ -88,21 +88,21 @@ def api(mock_time_ranges):
                 time.sleep(0.5)
 
 
-def test_get_settings_not_found(api):
+def test_get_settings_not_found(core):
     """Test getting settings for a non-existent user."""
-    success, result = api.get_settings("nonexistent@example.com")
+    success, result = core.get_settings("nonexistent@example.com")
     assert not success
     assert result == "User settings not found"
 
 
-def test_get_settings_unauthorized(api):
+def test_get_settings_unauthorized(core):
     """Test getting settings without a user."""
-    success, result = api.get_settings("")
+    success, result = core.get_settings("")
     assert not success
     assert "User identifier is required" in result
 
 
-def test_create_settings_success(api):
+def test_create_settings_success(core):
     """Test creating settings successfully."""
     settings = {
         "disallow_company": True,
@@ -111,23 +111,23 @@ def test_create_settings_success(api):
         "disallow_birthday": False,
         "disallow_address": True
     }
-    success, result = api.create_settings("test@example.com", settings)
+    success, result = core.create_settings("test@example.com", settings)
     assert success
     assert result == {"status": "created"}
 
     # Verify settings were created
-    success, result = api.get_settings("test@example.com")
+    success, result = core.get_settings("test@example.com")
     assert success
     assert result == settings
 
 
-def test_create_settings_missing_fields(api):
+def test_create_settings_missing_fields(core):
     """Test creating settings with missing fields."""
     settings = {
         "disallow_company": False,
         "disallow_title": True
     }
-    success, result = api.create_settings("test@example.com", settings)
+    success, result = core.create_settings("test@example.com", settings)
     assert not success
     assert isinstance(result, dict)
     assert "error" in result
@@ -137,7 +137,7 @@ def test_create_settings_missing_fields(api):
     assert all(field in result["required_fields"] for field in ["disallow_photo", "disallow_birthday", "disallow_address"])
 
 
-def test_create_settings_invalid_types(api):
+def test_create_settings_invalid_types(core):
     """Test creating settings with invalid field types."""
     settings = {
         "disallow_company": True,
@@ -146,12 +146,12 @@ def test_create_settings_invalid_types(api):
         "disallow_birthday": False,
         "disallow_address": True
     }
-    success, result = api.create_settings("test@example.com", settings)
+    success, result = core.create_settings("test@example.com", settings)
     assert not success
     assert "boolean values" in result
 
 
-def test_update_settings_success(api):
+def test_update_settings_success(core):
     """Test updating settings successfully."""
     # First create settings
     initial_settings = {
@@ -161,19 +161,19 @@ def test_update_settings_success(api):
         "disallow_birthday": False,
         "disallow_address": False
     }
-    api.create_settings("test@example.com", initial_settings)
+    core.create_settings("test@example.com", initial_settings)
 
     # Then update some settings
     update_settings = {
         "disallow_photo": True,
         "disallow_birthday": True
     }
-    success, result = api.update_settings("test@example.com", update_settings)
+    success, result = core.update_settings("test@example.com", update_settings)
     assert success
     assert result == {"status": "updated"}
 
     # Verify settings were updated
-    success, result = api.get_settings("test@example.com")
+    success, result = core.get_settings("test@example.com")
     assert success
     updated_settings = result
     assert updated_settings["disallow_company"] is False  # Unchanged
@@ -183,18 +183,18 @@ def test_update_settings_success(api):
     assert updated_settings["disallow_address"] is False  # Unchanged
 
 
-def test_update_settings_not_found(api):
+def test_update_settings_not_found(core):
     """Test updating settings for a non-existent user."""
     settings = {"disallow_photo": True}
-    success, result = api.update_settings("nonexistent@example.com", settings)
+    success, result = core.update_settings("nonexistent@example.com", settings)
     assert not success
     assert "User settings not found" in result
 
 
-def test_update_settings_invalid_fields(api):
+def test_update_settings_invalid_fields(core):
     """Test updating settings with invalid field names."""
     settings = {"invalid_field": True}
-    success, result = api.update_settings("test@example.com", settings)
+    success, result = core.update_settings("test@example.com", settings)
     assert not success
     assert isinstance(result, dict)
     assert "error" in result
@@ -204,22 +204,22 @@ def test_update_settings_invalid_fields(api):
     assert all(field in result["valid_fields"] for field in ["disallow_company", "disallow_title", "disallow_photo", "disallow_birthday", "disallow_address"])
 
 
-def test_update_settings_empty(api):
+def test_update_settings_empty(core):
     """Test updating settings with an empty dictionary."""
-    success, result = api.update_settings("test@example.com", {})
+    success, result = core.update_settings("test@example.com", {})
     assert not success
     assert "No settings provided" in result
 
 
-def test_update_settings_unauthorized(api):
+def test_update_settings_unauthorized(core):
     """Test updating settings without a user."""
     settings = {"disallow_photo": True}
-    success, result = api.update_settings("", settings)
+    success, result = core.update_settings("", settings)
     assert not success
     assert "User identifier is required" in result
 
 
-def test_delete_settings_success(api):
+def test_delete_settings_success(core):
     """Test deleting settings successfully."""
     # First create settings
     settings = {
@@ -229,123 +229,123 @@ def test_delete_settings_success(api):
         "disallow_birthday": False,
         "disallow_address": True
     }
-    api.create_settings("test@example.com", settings)
+    core.create_settings("test@example.com", settings)
 
     # Delete settings
-    success, result = api.delete_settings("test@example.com")
+    success, result = core.delete_settings("test@example.com")
     assert success
     assert result == {"status": "deleted"}
 
     # Verify settings were deleted
-    success, result = api.get_settings("test@example.com")
+    success, result = core.get_settings("test@example.com")
     assert not success
     assert result == "User settings not found"
 
 
-def test_delete_settings_not_found(api):
+def test_delete_settings_not_found(core):
     """Test deleting settings for a non-existent user."""
-    success, result = api.delete_settings("nonexistent@example.com")
+    success, result = core.delete_settings("nonexistent@example.com")
     assert not success
     assert "User settings not found" in result
 
 
-def test_delete_settings_unauthorized(api):
+def test_delete_settings_unauthorized(core):
     """Test deleting settings without a user."""
-    success, result = api.delete_settings("")
+    success, result = core.delete_settings("")
     assert not success
     assert "User identifier is required" in result
 
 
-def test_validate_user_identifier_email(api):
+def test_validate_user_identifier_email(core):
     """Test email validation."""
     # Valid emails
-    success, result = api.get_settings("test@example.com")
+    success, result = core.get_settings("test@example.com")
     assert not success  # Not found is OK, we're just testing validation
 
-    success, result = api.get_settings("user.name@domain.co.uk")
+    success, result = core.get_settings("user.name@domain.co.uk")
     assert not success
 
     # Invalid emails
-    success, result = api.get_settings("invalid.email")
+    success, result = core.get_settings("invalid.email")
     assert not success
     assert "Invalid identifier format" in result
 
-    success, result = api.get_settings("@domain.com")
+    success, result = core.get_settings("@domain.com")
     assert not success
     assert "Invalid email format" in result
 
-    success, result = api.get_settings("user@")
+    success, result = core.get_settings("user@")
     assert not success
     assert "Invalid email format" in result
 
 
-def test_validate_user_identifier_phone(api):
+def test_validate_user_identifier_phone(core):
     """Test phone number validation."""
     # Valid phone numbers - these should pass validation but return NOT_FOUND
     # since they don't exist in the database
-    success, result = api.get_settings("+1234567890")
+    success, result = core.get_settings("+1234567890")
     assert not success
 
-    success, result = api.get_settings("+1-234-567-8900")
+    success, result = core.get_settings("+1-234-567-8900")
     assert not success
 
-    success, result = api.get_settings("+(123) 456-7890")
+    success, result = core.get_settings("+(123) 456-7890")
     assert not success
 
     # Invalid phone numbers - these should fail validation
-    success, result = api.get_settings("(123) 456-7890")  # Missing +
+    success, result = core.get_settings("(123) 456-7890")  # Missing +
     assert not success
     assert "Invalid identifier format" in result
 
-    success, result = api.get_settings("1234567890")  # Missing +
+    success, result = core.get_settings("1234567890")  # Missing +
     assert not success
     assert "Invalid identifier format" in result
 
-    success, result = api.get_settings("+123")  # Too short
+    success, result = core.get_settings("+123")  # Too short
     assert not success
     assert "Invalid identifier format" in result
 
-    success, result = api.get_settings("+1234567890123456")  # Too long
+    success, result = core.get_settings("+1234567890123456")  # Too long
     assert not success
     assert "Invalid identifier format" in result
 
     # Invalid identifiers (not email and not phone)
-    success, result = api.get_settings("justtext")
+    success, result = core.get_settings("justtext")
     assert not success
     assert "Invalid identifier format" in result
 
-    success, result = api.get_settings("user.name")
+    success, result = core.get_settings("user.name")
     assert not success
     assert "Invalid identifier format" in result
 
-    success, result = api.get_settings("123-456")  # Not a valid phone format
+    success, result = core.get_settings("123-456")  # Not a valid phone format
     assert not success
     assert "Invalid identifier format" in result
 
 
-def test_validate_user_identifier_empty(api):
+def test_validate_user_identifier_empty(core):
     """Test empty user identifier validation."""
-    success, result = api.get_settings("")
+    success, result = core.get_settings("")
     assert not success
     assert "User identifier is required" in result
 
 
-def test_get_matching_cards_not_found(api):
+def test_get_matching_cards_not_found(core):
     """Test getting matching cards for a non-existent user."""
-    success, result = api.get_matching_cards("nonexistent@example.com")
+    success, result = core.get_matching_cards("nonexistent@example.com")
     assert not success
     assert "User settings not found" in result
 
 
-def test_get_matching_cards_unauthorized(api):
+def test_get_matching_cards_unauthorized(core):
     """Test getting matching cards without a user."""
-    success, result = api.get_matching_cards("")
+    success, result = core.get_matching_cards("")
     assert not success
     assert "User identifier is required" in result
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
-def test_get_matching_cards_no_matches(api):
+def test_get_matching_cards_no_matches(core):
     """Test getting matching cards when no matches exist."""
     # First create settings for the user
     settings = {
@@ -355,10 +355,10 @@ def test_get_matching_cards_no_matches(api):
         "disallow_birthday": False,
         "disallow_address": False
     }
-    api.create_settings("test@example.com", settings)
+    core.create_settings("test@example.com", settings)
 
-    # Create a collection using the storage API
-    collection = api._scanner._storage.create_collection("/testuser/contacts/")
+    # Create a collection using the storage core
+    collection = core._scanner._storage.create_collection("/testuser/contacts/")
     assert collection is not None
 
     # Upload a minimal vCard to ensure the collection is recognized
@@ -378,14 +378,14 @@ def test_get_matching_cards_no_matches(api):
     collection.upload("dummy-card.vcf", item)
 
     # Then try to get matches
-    success, result = api.get_matching_cards("test@example.com")
+    success, result = core.get_matching_cards("test@example.com")
     assert success
     assert "matches" in result
     assert result["matches"] == []
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
-def test_get_matching_cards_recursive_discovery(api):
+def test_get_matching_cards_recursive_discovery(core):
     """Test that get_matching_cards can discover and search nested collections."""
     # Create test vCard in a nested collection
     vcard = vobject.vCard()
@@ -398,7 +398,7 @@ def test_get_matching_cards_recursive_discovery(api):
     vcard.email.type_param = 'INTERNET'
 
     # Create a nested collection structure: user1/contacts/personal
-    collection = api._scanner._storage.create_collection("/user1/contacts")
+    collection = core._scanner._storage.create_collection("/user1/contacts")
 
     # Upload the vCard
     item = Item(vobject_item=vcard, collection_path="user1/contacts", component_name="VCARD")
@@ -412,12 +412,12 @@ def test_get_matching_cards_recursive_discovery(api):
         "disallow_birthday": False,
         "disallow_address": False
     }
-    success, result = api.create_settings("test@example.com", settings)
+    success, result = core.create_settings("test@example.com", settings)
     assert success
     assert result == {"status": "created"}
 
     # Get matching cards
-    success, result = api.get_matching_cards("test@example.com")
+    success, result = core.get_matching_cards("test@example.com")
     assert success
     assert "matches" in result
     assert "reprocessing_error" not in result
@@ -432,7 +432,7 @@ def test_get_matching_cards_recursive_discovery(api):
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
-def test_get_matching_cards_in_different_collections(api):
+def test_get_matching_cards_in_different_collections(core):
     """Test finding cards matching a user's identity in different collections."""
     # Create test vCards in different collections
     vcard1 = vobject.vCard()
@@ -457,8 +457,8 @@ def test_get_matching_cards_in_different_collections(api):
     vcard2.tel.type_param = 'CELL'
 
     # Create collections and add vCards
-    collection1 = api._scanner._storage.create_collection("/user1/contacts")
-    collection2 = api._scanner._storage.create_collection("/user2/contacts")
+    collection1 = core._scanner._storage.create_collection("/user1/contacts")
+    collection2 = core._scanner._storage.create_collection("/user2/contacts")
 
     item1 = Item(vobject_item=vcard1, collection_path="user1/contacts", component_name="VCARD")
     item2 = Item(vobject_item=vcard2, collection_path="user2/contacts", component_name="VCARD")
@@ -475,12 +475,12 @@ def test_get_matching_cards_in_different_collections(api):
         "disallow_birthday": False,
         "disallow_address": False
     }
-    success, result = api.create_settings("test@example.com", settings)
+    success, result = core.create_settings("test@example.com", settings)
     assert success
     assert result == {"status": "created"}
 
     # Get matching cards
-    success, result = api.get_matching_cards("test@example.com")
+    success, result = core.get_matching_cards("test@example.com")
     assert success
     assert "matches" in result
     assert "reprocessing_error" not in result
@@ -488,22 +488,22 @@ def test_get_matching_cards_in_different_collections(api):
     assert len(matches) == 2  # Should find both cards
 
 
-def test_reprocess_cards_not_found(api):
+def test_reprocess_cards_not_found(core):
     """Test reprocessing cards for a non-existent user."""
-    success, result = api.reprocess_cards("nonexistent@example.com")
+    success, result = core.reprocess_cards("nonexistent@example.com")
     assert not success
     assert "User settings not found" in result
 
 
-def test_reprocess_cards_unauthorized(api):
+def test_reprocess_cards_unauthorized(core):
     """Test reprocessing cards without a user."""
-    success, result = api.reprocess_cards("")
+    success, result = core.reprocess_cards("")
     assert not success
     assert "User identifier is required" in result
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Problematic on Windows due to file locking")
-def test_reprocess_cards_success(api):
+def test_reprocess_cards_success(core):
     """Test successful reprocessing of cards."""
     # First create settings for the user
     settings = {
@@ -513,7 +513,7 @@ def test_reprocess_cards_success(api):
         "disallow_birthday": False,
         "disallow_address": True
     }
-    api.create_settings("test@example.com", settings)
+    core.create_settings("test@example.com", settings)
 
     # Create a test vCard
     vcard = vobject.vCard()
@@ -530,12 +530,12 @@ def test_reprocess_cards_success(api):
     vcard.title.value = "Test Title"
 
     # Create collection and upload vCard
-    collection = api._scanner._storage.create_collection("/testuser/contacts")
+    collection = core._scanner._storage.create_collection("/testuser/contacts")
     item = Item(vobject_item=vcard, collection_path="testuser/contacts", component_name="VCARD")
     collection.upload("test-card.vcf", item)
 
     # Trigger reprocessing
-    success, result = api.reprocess_cards("test@example.com")
+    success, result = core.reprocess_cards("test@example.com")
     assert success
     assert result["status"] == "success"
 
@@ -554,7 +554,7 @@ def test_reprocess_cards_success(api):
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Problematic on Windows due to file locking")
-def test_reprocess_cards_multiple_collections(api):
+def test_reprocess_cards_multiple_collections(core):
     """Test reprocessing cards across multiple collections."""
     # Create settings for the user
     settings = {
@@ -564,7 +564,7 @@ def test_reprocess_cards_multiple_collections(api):
         "disallow_birthday": False,
         "disallow_address": True
     }
-    api.create_settings("test@example.com", settings)
+    core.create_settings("test@example.com", settings)
 
     # Create test vCards in different collections
     vcard1 = vobject.vCard()
@@ -590,8 +590,8 @@ def test_reprocess_cards_multiple_collections(api):
     vcard2.org.value = "Company 2"
 
     # Create collections and upload vCards
-    collection1 = api._scanner._storage.create_collection("/user1/contacts")
-    collection2 = api._scanner._storage.create_collection("/user2/contacts")
+    collection1 = core._scanner._storage.create_collection("/user1/contacts")
+    collection2 = core._scanner._storage.create_collection("/user2/contacts")
 
     item1 = Item(vobject_item=vcard1, collection_path="user1/contacts", component_name="VCARD")
     item2 = Item(vobject_item=vcard2, collection_path="user2/contacts", component_name="VCARD")
@@ -600,7 +600,7 @@ def test_reprocess_cards_multiple_collections(api):
     collection2.upload("test-card2.vcf", item2)
 
     # Trigger reprocessing
-    success, result = api.reprocess_cards("test@example.com")
+    success, result = core.reprocess_cards("test@example.com")
     assert success
     assert result["status"] == "success"
 
@@ -616,7 +616,7 @@ def test_reprocess_cards_multiple_collections(api):
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Problematic on Windows due to file locking")
-def test_reprocess_cards_after_settings_update(api):
+def test_reprocess_cards_after_settings_update(core):
     """Test that cards are reprocessed after settings update."""
     # First create initial settings
     initial_settings = {
@@ -626,7 +626,7 @@ def test_reprocess_cards_after_settings_update(api):
         "disallow_birthday": False,
         "disallow_address": False
     }
-    api.create_settings("test@example.com", initial_settings)
+    core.create_settings("test@example.com", initial_settings)
 
     # Create a test vCard
     vcard = vobject.vCard()
@@ -643,7 +643,7 @@ def test_reprocess_cards_after_settings_update(api):
     vcard.title.value = "Test Title"
 
     # Create collection and upload vCard
-    collection = api._scanner._storage.create_collection("/testuser/contacts")
+    collection = core._scanner._storage.create_collection("/testuser/contacts")
     item = Item(vobject_item=vcard, collection_path="testuser/contacts", component_name="VCARD")
     collection.upload("test-card.vcf", item)
 
@@ -651,7 +651,7 @@ def test_reprocess_cards_after_settings_update(api):
     update_settings = {
         "disallow_company": True
     }
-    success, result = api.update_settings("test@example.com", update_settings)
+    success, result = core.update_settings("test@example.com", update_settings)
     assert success
     assert result["status"] == "updated"
 

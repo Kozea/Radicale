@@ -1,7 +1,7 @@
 """
-HTTP endpoints for privacy management in Radicale.
+HTTP API endpoints for privacy management in Radicale.
 
-This module provides HTTP endpoints for managing user privacy settings and card processing.
+This module provides HTTP API endpoints for managing user privacy settings and card processing.
 """
 
 import json
@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Union
 
 from radicale import config, httputils, types
 from radicale.app.base import ApplicationBase
-from radicale.privacy.api import PrivacyAPI
+from radicale.privacy.core import PrivacyCore
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class PrivacyHTTP(ApplicationBase):
             configuration: The Radicale configuration object
         """
         super().__init__(configuration)
-        self._privacy_api = PrivacyAPI(configuration)
+        self._privacy_core = PrivacyCore(configuration)
 
     def _to_wsgi_response(self, success: bool, result: APIResult) -> types.WSGIResponse:
         """Convert API response to WSGI response.
@@ -80,9 +80,9 @@ class PrivacyHTTP(ApplicationBase):
         result: APIResult
 
         if resource_type == "settings":
-            success, result = self._privacy_api.get_settings(user_identifier)
+            success, result = self._privacy_core.get_settings(user_identifier)
         elif resource_type == "cards":
-            success, result = self._privacy_api.get_matching_cards(user_identifier)
+            success, result = self._privacy_core.get_matching_cards(user_identifier)
         else:
             return httputils.BAD_REQUEST
 
@@ -124,11 +124,11 @@ class PrivacyHTTP(ApplicationBase):
         result: APIResult
 
         if resource_type == "settings":
-            success, result = self._privacy_api.create_settings(user_identifier, data)
+            success, result = self._privacy_core.create_settings(user_identifier, data)
             if success:
                 return client.CREATED, {"Content-Type": "application/json"}, json.dumps(result)
         elif resource_type == "cards" and len(parts) > 3 and parts[3] == "reprocess":
-            success, result = self._privacy_api.reprocess_cards(user_identifier)
+            success, result = self._privacy_core.reprocess_cards(user_identifier)
         else:
             return httputils.BAD_REQUEST
 
@@ -167,7 +167,7 @@ class PrivacyHTTP(ApplicationBase):
 
         success: bool
         result: APIResult
-        success, result = self._privacy_api.update_settings(user_identifier, data)
+        success, result = self._privacy_core.update_settings(user_identifier, data)
         return self._to_wsgi_response(success, result)
 
     def do_DELETE(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
@@ -191,7 +191,7 @@ class PrivacyHTTP(ApplicationBase):
         user_identifier = parts[2]
         success: bool
         result: APIResult
-        success, result = self._privacy_api.delete_settings(user_identifier)
+        success, result = self._privacy_core.delete_settings(user_identifier)
         return self._to_wsgi_response(success, result)
 
     def do_OPTIONS(self, environ: types.WSGIEnviron, base_prefix: str, path: str,

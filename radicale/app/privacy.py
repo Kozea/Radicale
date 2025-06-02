@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Union
 
 from radicale import config, httputils, types
 from radicale.app.base import ApplicationBase
-from radicale.privacy.api import PrivacyAPI
+from radicale.privacy.core import PrivacyCore
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class ApplicationPartPrivacy(ApplicationBase):
             configuration: The Radicale configuration object
         """
         super().__init__(configuration)
-        self._privacy_api = PrivacyAPI(configuration)
+        self._privacy_api = PrivacyCore(configuration)
 
     def _to_wsgi_response(self, success: bool, result: APIResult) -> types.WSGIResponse:
         """Convert API response to WSGI response.
