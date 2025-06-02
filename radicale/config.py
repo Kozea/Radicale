@@ -444,17 +444,13 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "default value for disallowing phone in privacy settings",
             "type": bool}),
-        ("default_disallow_company", {
-            "value": "False",
-            "help": "default value for disallowing company in privacy settings",
-            "type": bool}),
-        ("default_disallow_title", {
-            "value": "False",
-            "help": "default value for disallowing title in privacy settings",
-            "type": bool}),
         ("default_disallow_photo", {
             "value": "False",
             "help": "default value for disallowing photo in privacy settings",
+            "type": bool}),
+        ("default_disallow_gender", {
+            "value": "False",
+            "help": "default value for disallowing gender in privacy settings",
             "type": bool}),
         ("default_disallow_birthday", {
             "value": "False",
@@ -463,6 +459,14 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("default_disallow_address", {
             "value": "False",
             "help": "default value for disallowing address in privacy settings",
+            "type": bool}),
+        ("default_disallow_company", {
+            "value": "False",
+            "help": "default value for disallowing company in privacy settings",
+            "type": bool}),
+        ("default_disallow_title", {
+            "value": "False",
+            "help": "default value for disallowing title in privacy settings",
             "type": bool})
         ])),
     ("hook", OrderedDict([

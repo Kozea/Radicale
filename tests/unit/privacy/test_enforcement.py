@@ -43,17 +43,13 @@ def create_vcard():
             vcard.tel.value = properties['phone']
             vcard.tel.type_param = 'CELL'
 
-        if 'company' in properties:
-            vcard.add('org')
-            vcard.org.value = [properties['company']]
-
-        if 'title' in properties:
-            vcard.add('title')
-            vcard.title.value = properties['title']
-
         if 'photo' in properties:
             vcard.add('photo')
             vcard.photo.value = properties['photo']
+
+        if 'gender' in properties:
+            vcard.add('gender')
+            vcard.gender.value = properties['gender']
 
         if 'birthday' in properties:
             vcard.add('bday')
@@ -68,6 +64,14 @@ def create_vcard():
                 code='12345',
                 country='Country'
             )
+
+        if 'company' in properties:
+            vcard.add('org')
+            vcard.org.value = [properties['company']]
+
+        if 'title' in properties:
+            vcard.add('title')
+            vcard.title.value = properties['title']
 
         # Always add FN if not present (required by vCard spec)
         if 'fn' not in vcard.contents:
@@ -102,21 +106,23 @@ def test_basic_property_enforcement(privacy_enforcement, create_vcard, create_it
         name="John Doe",
         email="john@example.com",
         phone="+1234567890",
+        photo="base64photo",
+        gender="M",
+        birthday="1990-01-01",
+        address="123 Main St",
         company="ACME Corp",
         title="Developer",
-        photo="base64photo",
-        birthday="1990-01-01",
-        address="123 Main St"
     )
     item = create_item(vcard)
 
     # Mock privacy settings to disallow company and title
     privacy_enforcement._privacy_db.get_user_settings.return_value = mocker.Mock(
+        disallow_photo=False,
+        disallow_gender=True,
+        disallow_birthday=False,
+        disallow_address=False,
         disallow_company=True,
         disallow_title=True,
-        disallow_photo=False,
-        disallow_birthday=False,
-        disallow_address=False
     )
 
     # Apply privacy enforcement
@@ -126,6 +132,7 @@ def test_basic_property_enforcement(privacy_enforcement, create_vcard, create_it
     # Verify properties were removed
     assert 'org' not in vcard.contents
     assert 'title' not in vcard.contents
+    assert 'gender' not in vcard.contents
 
     # Verify other properties remain
     assert 'n' in modified_vcard.contents
@@ -137,47 +144,18 @@ def test_basic_property_enforcement(privacy_enforcement, create_vcard, create_it
     assert 'adr' in modified_vcard.contents
 
 
-def test_multiple_identifiers(privacy_enforcement, create_vcard, create_item, mocker):
-    """Test privacy enforcement with multiple identifiers (email and phone)."""
-    vcard = create_vcard(
-        name="John Doe",
-        email="john@example.com",
-        phone="+1234567890",
-        company="ACME Corp",
-        title="Developer",
-    )
-    item = create_item(vcard)
-
-    # Mock privacy settings for both identifiers
-    def get_settings(identifier):
-        return mocker.Mock(disallow_company=True, disallow_title=True)
-
-    privacy_enforcement._privacy_db.get_user_settings.side_effect = get_settings
-
-    # Apply privacy enforcement
-    modified_item = privacy_enforcement.enforce_privacy(item)
-    modified_vcard = modified_item.vobject_item
-
-    # Verify properties were removed based on both identifiers
-    assert 'org' not in modified_vcard.contents
-    assert 'title' not in modified_vcard.contents
-
-    # Verify other properties remain
-    assert 'n' in modified_vcard.contents
-    assert 'fn' in modified_vcard.contents
-    assert 'email' in modified_vcard.contents
-    assert 'tel' in modified_vcard.contents
-
-
 def test_most_restrictive_settings(privacy_enforcement, create_vcard, create_item, mocker):
     """Test that the most restrictive settings are applied when multiple matches exist."""
     vcard = create_vcard(
         name="John Doe",
         email="john@example.com",
         phone="+1234567890",
+        photo="base64photo",
+        gender="M",
+        birthday="1990-01-01",
+        address="123 Main St",
         company="ACME Corp",
         title="Developer",
-        photo="base64photo"
     )
     item = create_item(vcard)
 
@@ -185,15 +163,21 @@ def test_most_restrictive_settings(privacy_enforcement, create_vcard, create_ite
     def get_settings(identifier):
         if identifier == "john@example.com":
             return mocker.Mock(
+                disallow_photo=False,
+                disallow_gender=False,
                 disallow_company=True,
                 disallow_title=True,
-                disallow_photo=False,
+                disallow_birthday=False,
+                disallow_address=False,
             )
         elif identifier == "+1234567890":
             return mocker.Mock(
+                disallow_photo=True,
+                disallow_gender=True,
                 disallow_company=False,
                 disallow_title=False,
-                disallow_photo=True,
+                disallow_birthday=False,
+                disallow_address=False,
             )
         return None
 
@@ -207,12 +191,15 @@ def test_most_restrictive_settings(privacy_enforcement, create_vcard, create_ite
     assert 'org' not in modified_vcard.contents
     assert 'title' not in modified_vcard.contents
     assert 'photo' not in modified_vcard.contents
+    assert 'gender' not in modified_vcard.contents
 
     # Verify other properties remain
     assert 'n' in modified_vcard.contents
     assert 'fn' in modified_vcard.contents
     assert 'email' in modified_vcard.contents
     assert 'tel' in modified_vcard.contents
+    assert 'bday' in modified_vcard.contents
+    assert 'adr' in modified_vcard.contents
 
 
 def test_non_vcard_item(privacy_enforcement, mocker):
@@ -239,21 +226,23 @@ def test_privacy_violation_enforcement(privacy_enforcement, create_vcard, create
         name="John Doe",
         email="john@example.com",
         phone="+1234567890",
-        company="ACME Corp",
-        title="Developer",
         photo="base64photo",
         birthday="1990-01-01",
-        address="123 Main St"
+        address="123 Main St",
+        gender="M",
+        company="ACME Corp",
+        title="Developer",
     )
     item = create_item(vcard)
 
     # Mock privacy settings to disallow company and title
     privacy_enforcement._privacy_db.get_user_settings.return_value = mocker.Mock(
+        disallow_photo=False,
+        disallow_gender=True,
+        disallow_birthday=False,
+        disallow_address=False,
         disallow_company=True,
         disallow_title=True,
-        disallow_photo=False,
-        disallow_birthday=False,
-        disallow_address=False
     )
 
     # Apply privacy enforcement
@@ -263,6 +252,7 @@ def test_privacy_violation_enforcement(privacy_enforcement, create_vcard, create
     # Verify properties were removed
     assert 'org' not in modified_vcard.contents
     assert 'title' not in modified_vcard.contents
+    assert 'gender' not in modified_vcard.contents
 
     # Verify other properties remain
     assert 'n' in modified_vcard.contents

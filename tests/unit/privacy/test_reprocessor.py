@@ -42,17 +42,13 @@ def create_vcard():
             vcard.tel.value = properties['phone']
             vcard.tel.type_param = 'CELL'
 
-        if 'company' in properties:
-            vcard.add('org')
-            vcard.org.value = [properties['company']]
-
-        if 'title' in properties:
-            vcard.add('title')
-            vcard.title.value = properties['title']
-
         if 'photo' in properties:
             vcard.add('photo')
             vcard.photo.value = properties['photo']
+
+        if 'gender' in properties:
+            vcard.add('gender')
+            vcard.gender.value = properties['gender']
 
         if 'birthday' in properties:
             vcard.add('bday')
@@ -67,6 +63,14 @@ def create_vcard():
                 code='12345',
                 country='Country'
             )
+
+        if 'company' in properties:
+            vcard.add('org')
+            vcard.org.value = [properties['company']]
+
+        if 'title' in properties:
+            vcard.add('title')
+            vcard.title.value = properties['title']
 
         # Always add FN if not present (required by vCard spec)
         if 'fn' not in vcard.contents:
@@ -112,21 +116,23 @@ def test_reprocess_vcards(privacy_reprocessor, create_vcard, create_item, mocker
         uid='vcard1',
         name="John Doe",
         email="john@example.com",
+        photo="base64photo",
+        gender="M",
+        birthday="1990-01-01",
+        address="123 Main St",
         company="ACME Corp",
         title="Developer",
-        photo="base64photo",
-        birthday="1990-01-01",
-        address="123 Main St"
     )
     vcard2 = create_vcard(
         uid='vcard2',
         name="Jane Smith",
         email="jane@example.com",
+        photo="base64photo2",
+        gender="F",
+        birthday="1991-02-02",
+        address="456 Oak St",
         company="XYZ Inc",
         title="Manager",
-        photo="base64photo2",
-        birthday="1991-02-02",
-        address="456 Oak St"
     )
     item1 = create_item(vcard1)
     item2 = create_item(vcard2)
@@ -174,11 +180,12 @@ def test_reprocess_vcards(privacy_reprocessor, create_vcard, create_item, mocker
 
     # Set privacy settings
     privacy_reprocessor._enforcement._privacy_db.get_user_settings.return_value = mocker.Mock(
-        disallow_company=True,
-        disallow_title=True,
         disallow_photo=False,
+        disallow_gender=True,
         disallow_birthday=True,
-        disallow_address=False
+        disallow_address=False,
+        disallow_title=True,
+        disallow_company=True,
     )
 
     # Reprocess vCards
@@ -200,9 +207,10 @@ def test_reprocess_vcards_multiple_identifiers(privacy_reprocessor, create_vcard
         name="John Doe",
         email="john@example.com",
         phone="+1234567890",
+        photo="base64photo",
+        gender="M",
         company="ACME Corp",
         title="Developer",
-        photo="base64photo"
     )
     item = create_item(vcard)
 
@@ -232,11 +240,12 @@ def test_reprocess_vcards_multiple_identifiers(privacy_reprocessor, create_vcard
 
     # Set privacy settings
     privacy_reprocessor._enforcement._privacy_db.get_user_settings.return_value = mocker.Mock(
+        disallow_photo=False,
+        disallow_gender=True,
+        disallow_birthday=True,
+        disallow_address=False,
         disallow_company=True,
         disallow_title=True,
-        disallow_photo=False,
-        disallow_birthday=True,
-        disallow_address=False
     )
 
     # Reprocess vCards
@@ -255,8 +264,9 @@ def test_reprocess_vcards_no_changes(privacy_reprocessor, create_vcard, create_i
         uid='vcard1',
         name="John Doe",
         email="john@example.com",
+        gender="M",
         company="ACME Corp",
-        title="Developer"
+        title="Developer",
     )
     item = create_item(vcard)
 
@@ -282,8 +292,9 @@ def test_reprocess_vcards_no_changes(privacy_reprocessor, create_vcard, create_i
         disallow_company=False,
         disallow_title=False,
         disallow_photo=False,
+        disallow_gender=False,
         disallow_birthday=False,
-        disallow_address=False
+        disallow_address=False,
     )
 
     # Reprocess vCards
@@ -303,7 +314,7 @@ def test_reprocess_vcards_with_errors(privacy_reprocessor, create_vcard, create_
         name="John Doe",
         email="john@example.com",
         company="ACME Corp",
-        title="Developer"
+        title="Developer",
     )
     item = create_item(vcard)
 

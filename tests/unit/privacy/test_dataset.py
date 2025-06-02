@@ -40,6 +40,10 @@ class TestPrivacyDataset(unittest.TestCase):
                         vcards = vobject.readComponents(content)
                         # Verify we can read at least one vCard
                         self.assertTrue(any(True for _ in vcards), f"No valid vCard found in {filename}")
+                        # Verify gender field if present
+                        for vcard in vobject.readComponents(content):
+                            if hasattr(vcard, 'gender'):
+                                self.assertIsInstance(vcard.gender.value, str)
                     except Exception as e:
                         self.fail(f"Failed to parse {filename}: {str(e)}")
 

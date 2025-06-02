@@ -45,11 +45,12 @@ def test_get_settings_success(http_app):
     # Mock the API response
     with patch.object(http_app._privacy_core, 'get_settings') as mock_get:
         mock_get.return_value = (True, {
+            "disallow_photo": True,
+            "disallow_gender": True,
+            "disallow_birthday": False,
+            "disallow_address": True,
             "disallow_company": True,
             "disallow_title": False,
-            "disallow_photo": True,
-            "disallow_birthday": False,
-            "disallow_address": True
         })
 
         # Create mock WSGI environment
@@ -65,11 +66,12 @@ def test_get_settings_success(http_app):
         assert status == client.OK
         assert headers["Content-Type"] == "application/json"
         data = json.loads(body)
-        assert data["disallow_company"] is True
-        assert data["disallow_title"] is False
         assert data["disallow_photo"] is True
+        assert data["disallow_gender"] is True
         assert data["disallow_birthday"] is False
         assert data["disallow_address"] is True
+        assert data["disallow_company"] is True
+        assert data["disallow_title"] is False
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
@@ -140,11 +142,12 @@ def test_create_settings_success(http_app):
 
         # Create mock WSGI environment with request body
         settings = {
+            "disallow_photo": True,
+            "disallow_gender": True,
+            "disallow_birthday": False,
+            "disallow_address": True,
             "disallow_company": True,
             "disallow_title": False,
-            "disallow_photo": True,
-            "disallow_birthday": False,
-            "disallow_address": True
         }
         settings_json = json.dumps(settings).encode()
         environ = {

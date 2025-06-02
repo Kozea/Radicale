@@ -28,20 +28,22 @@ def db_manager():
 def test_create_user_settings(db_manager):
     """Test creating new user settings with all fields."""
     settings = {
+        "disallow_photo": True,
+        "disallow_gender": True,
+        "disallow_birthday": False,
+        "disallow_address": True,
         "disallow_company": True,
         "disallow_title": False,
-        "disallow_photo": True,
-        "disallow_birthday": False,
-        "disallow_address": True
     }
     user_settings = db_manager.create_user_settings("test@example.com", settings)
     assert user_settings is not None
     assert user_settings.identifier == "test@example.com"
-    assert user_settings.disallow_company is True
-    assert user_settings.disallow_title is False
     assert user_settings.disallow_photo is True
+    assert user_settings.disallow_gender is True
     assert user_settings.disallow_birthday is False
     assert user_settings.disallow_address is True
+    assert user_settings.disallow_company is True
+    assert user_settings.disallow_title is False
     assert isinstance(user_settings.created_at, datetime)
     assert user_settings.updated_at is None  # No update yet
 
@@ -54,10 +56,11 @@ def test_create_user_settings_with_defaults(db_manager):
     assert user_settings.identifier == "test@example.com"
     assert user_settings.disallow_photo is True
     # All other fields should have default values (False)
-    assert user_settings.disallow_company is False
-    assert user_settings.disallow_title is False
     assert user_settings.disallow_birthday is False
     assert user_settings.disallow_address is False
+    assert user_settings.disallow_gender is False
+    assert user_settings.disallow_company is False
+    assert user_settings.disallow_title is False
 
 
 def test_get_user_settings(db_manager):
@@ -86,10 +89,11 @@ def test_update_user_settings(db_manager):
     db_manager.create_user_settings("test@example.com", initial_settings)
 
     # Update settings
-    new_settings = {"disallow_photo": True, "disallow_address": True}
+    new_settings = {"disallow_photo": True, "disallow_gender": True, "disallow_address": True}
     updated = db_manager.update_user_settings("test@example.com", new_settings)
     assert updated is not None
     assert updated.disallow_photo is True
+    assert updated.disallow_gender is True
     assert updated.disallow_address is True
     assert updated.updated_at is not None  # Should have update timestamp
 
@@ -136,11 +140,12 @@ def test_delete_user_settings_success(db_manager):
     """Test successfully deleting user settings."""
     # First create settings
     settings = {
+        "disallow_photo": True,
+        "disallow_gender": True,
+        "disallow_birthday": False,
+        "disallow_address": True,
         "disallow_company": True,
         "disallow_title": False,
-        "disallow_photo": True,
-        "disallow_birthday": False,
-        "disallow_address": True
     }
     db_manager.create_user_settings("test@example.com", settings)
 
@@ -184,11 +189,12 @@ def test_default_settings_from_config(db_manager):
 
     # Verify each field matches the config default
     config = db_manager._configuration
-    assert user_settings.disallow_company == config.get("privacy", "default_disallow_company")
-    assert user_settings.disallow_title == config.get("privacy", "default_disallow_title")
     assert user_settings.disallow_photo == config.get("privacy", "default_disallow_photo")
+    assert user_settings.disallow_gender == config.get("privacy", "default_disallow_gender")
     assert user_settings.disallow_birthday == config.get("privacy", "default_disallow_birthday")
     assert user_settings.disallow_address == config.get("privacy", "default_disallow_address")
+    assert user_settings.disallow_company == config.get("privacy", "default_disallow_company")
+    assert user_settings.disallow_title == config.get("privacy", "default_disallow_title")
 
 
 def test_config_changes_affect_new_users(db_manager):
@@ -216,5 +222,6 @@ def test_config_changes_affect_new_users(db_manager):
     # Verify other fields still have their original defaults
     config = db_manager._configuration
     assert user2.disallow_photo == config.get("privacy", "default_disallow_photo")
+    assert user2.disallow_gender == config.get("privacy", "default_disallow_gender")
     assert user2.disallow_birthday == config.get("privacy", "default_disallow_birthday")
     assert user2.disallow_address == config.get("privacy", "default_disallow_address")

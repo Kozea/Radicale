@@ -105,11 +105,12 @@ def test_get_settings_unauthorized(core):
 def test_create_settings_success(core):
     """Test creating settings successfully."""
     settings = {
+        "disallow_photo": True,
+        "disallow_gender": True,
+        "disallow_birthday": False,
+        "disallow_address": True,
         "disallow_company": True,
         "disallow_title": False,
-        "disallow_photo": True,
-        "disallow_birthday": False,
-        "disallow_address": True
     }
     success, result = core.create_settings("test@example.com", settings)
     assert success
@@ -134,17 +135,18 @@ def test_create_settings_missing_fields(core):
     assert result["error"] == "Missing required fields"
     assert "required_fields" in result
     assert isinstance(result["required_fields"], list)
-    assert all(field in result["required_fields"] for field in ["disallow_photo", "disallow_birthday", "disallow_address"])
+    assert all(field in result["required_fields"] for field in ["disallow_photo", "disallow_gender", "disallow_birthday", "disallow_address"])
 
 
 def test_create_settings_invalid_types(core):
     """Test creating settings with invalid field types."""
     settings = {
+        "disallow_photo": True,
+        "disallow_gender": True,
+        "disallow_birthday": False,
+        "disallow_address": True,
         "disallow_company": True,
         "disallow_title": "false",  # Should be boolean
-        "disallow_photo": True,
-        "disallow_birthday": False,
-        "disallow_address": True
     }
     success, result = core.create_settings("test@example.com", settings)
     assert not success
@@ -155,18 +157,20 @@ def test_update_settings_success(core):
     """Test updating settings successfully."""
     # First create settings
     initial_settings = {
+        "disallow_photo": False,
+        "disallow_gender": False,
+        "disallow_address": False,
+        "disallow_birthday": False,
         "disallow_company": False,
         "disallow_title": False,
-        "disallow_photo": False,
-        "disallow_birthday": False,
-        "disallow_address": False
     }
     core.create_settings("test@example.com", initial_settings)
 
     # Then update some settings
     update_settings = {
         "disallow_photo": True,
-        "disallow_birthday": True
+        "disallow_gender": True,
+        "disallow_birthday": True,
     }
     success, result = core.update_settings("test@example.com", update_settings)
     assert success
@@ -176,11 +180,12 @@ def test_update_settings_success(core):
     success, result = core.get_settings("test@example.com")
     assert success
     updated_settings = result
-    assert updated_settings["disallow_company"] is False  # Unchanged
-    assert updated_settings["disallow_title"] is False  # Unchanged
     assert updated_settings["disallow_photo"] is True
+    assert updated_settings["disallow_gender"] is True
     assert updated_settings["disallow_birthday"] is True
     assert updated_settings["disallow_address"] is False  # Unchanged
+    assert updated_settings["disallow_company"] is False  # Unchanged
+    assert updated_settings["disallow_title"] is False  # Unchanged
 
 
 def test_update_settings_not_found(core):
@@ -201,7 +206,7 @@ def test_update_settings_invalid_fields(core):
     assert result["error"] == "Invalid field names"
     assert "valid_fields" in result
     assert isinstance(result["valid_fields"], list)
-    assert all(field in result["valid_fields"] for field in ["disallow_company", "disallow_title", "disallow_photo", "disallow_birthday", "disallow_address"])
+    assert all(field in result["valid_fields"] for field in ["disallow_photo", "disallow_gender", "disallow_birthday", "disallow_address", "disallow_company", "disallow_title"])
 
 
 def test_update_settings_empty(core):
@@ -223,11 +228,12 @@ def test_delete_settings_success(core):
     """Test deleting settings successfully."""
     # First create settings
     settings = {
+        "disallow_photo": True,
+        "disallow_gender": True,
+        "disallow_birthday": False,
+        "disallow_address": True,
         "disallow_company": True,
         "disallow_title": False,
-        "disallow_photo": True,
-        "disallow_birthday": False,
-        "disallow_address": True
     }
     core.create_settings("test@example.com", settings)
 
@@ -349,11 +355,12 @@ def test_get_matching_cards_no_matches(core):
     """Test getting matching cards when no matches exist."""
     # First create settings for the user
     settings = {
+        "disallow_photo": False,
+        "disallow_gender": False,
+        "disallow_birthday": False,
+        "disallow_address": False,
         "disallow_company": False,
         "disallow_title": False,
-        "disallow_photo": False,
-        "disallow_birthday": False,
-        "disallow_address": False
     }
     core.create_settings("test@example.com", settings)
 
@@ -406,11 +413,12 @@ def test_get_matching_cards_recursive_discovery(core):
 
     # Create privacy settings for the test user
     settings = {
+        "disallow_photo": False,
+        "disallow_gender": False,
+        "disallow_birthday": False,
+        "disallow_address": False,
         "disallow_company": False,
         "disallow_title": False,
-        "disallow_photo": False,
-        "disallow_birthday": False,
-        "disallow_address": False
     }
     success, result = core.create_settings("test@example.com", settings)
     assert success
@@ -469,11 +477,12 @@ def test_get_matching_cards_in_different_collections(core):
 
     # Create privacy settings for the test user
     settings = {
+        "disallow_photo": False,
+        "disallow_gender": False,
+        "disallow_birthday": False,
+        "disallow_address": False,
         "disallow_company": False,
         "disallow_title": False,
-        "disallow_photo": False,
-        "disallow_birthday": False,
-        "disallow_address": False
     }
     success, result = core.create_settings("test@example.com", settings)
     assert success
@@ -507,11 +516,12 @@ def test_reprocess_cards_success(core):
     """Test successful reprocessing of cards."""
     # First create settings for the user
     settings = {
+        "disallow_photo": True,
+        "disallow_gender": True,
+        "disallow_birthday": False,
+        "disallow_address": True,
         "disallow_company": True,
         "disallow_title": False,
-        "disallow_photo": True,
-        "disallow_birthday": False,
-        "disallow_address": True
     }
     core.create_settings("test@example.com", settings)
 
@@ -558,11 +568,12 @@ def test_reprocess_cards_multiple_collections(core):
     """Test reprocessing cards across multiple collections."""
     # Create settings for the user
     settings = {
+        "disallow_photo": True,
+        "disallow_gender": True,
+        "disallow_birthday": False,
+        "disallow_address": True,
         "disallow_company": True,
         "disallow_title": False,
-        "disallow_photo": True,
-        "disallow_birthday": False,
-        "disallow_address": True
     }
     core.create_settings("test@example.com", settings)
 
@@ -620,11 +631,12 @@ def test_reprocess_cards_after_settings_update(core):
     """Test that cards are reprocessed after settings update."""
     # First create initial settings
     initial_settings = {
+        "disallow_photo": False,
+        "disallow_gender": False,
+        "disallow_birthday": False,
+        "disallow_address": False,
         "disallow_company": False,
         "disallow_title": False,
-        "disallow_photo": False,
-        "disallow_birthday": False,
-        "disallow_address": False
     }
     core.create_settings("test@example.com", initial_settings)
 

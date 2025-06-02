@@ -22,21 +22,23 @@ The following settings control the default privacy preferences for new users. Ea
 default_disallow_name = false
 default_disallow_email = false
 default_disallow_phone = false
-default_disallow_company = false
-default_disallow_title = false
 default_disallow_photo = false
+default_dissalow_gender = false
 default_disallow_birthday = false
 default_disallow_address = false
+default_disallow_company = false
+default_disallow_title = false
 ```
 
 - `default_disallow_name`: Whether users' names are disallowed by default
 - `default_disallow_email`: Whether users' email addresses are disallowed by default
 - `default_disallow_phone`: Whether users' phone numbers are disallowed by default
-- `default_disallow_company`: Whether users' company information is disallowed by default
-- `default_disallow_title`: Whether users' job titles are disallowed by default
 - `default_disallow_photo`: Whether users' photos are disallowed by default
+- `default_disallow_gender`: Whether users' gender information is disallowed by default
 - `default_disallow_birthday`: Whether users' birthdays are disallowed by default
 - `default_disallow_address`: Whether users' addresses are disallowed by default
+- `default_disallow_company`: Whether users' company information is disallowed by default
+- `default_disallow_title`: Whether users' job titles are disallowed by default
 
 ### How Default Settings Work
 
@@ -55,11 +57,12 @@ database_path = /var/lib/radicale/privacy.db
 default_disallow_name = false
 default_disallow_email = false
 default_disallow_phone = true
-default_disallow_company = false
-default_disallow_title = false
 default_disallow_photo = true
+default_disallow_gender = true
 default_disallow_birthday = true
 default_disallow_address = true
+default_disallow_company = false
+default_disallow_title = false
 ```
 
 This configuration:
@@ -83,11 +86,12 @@ Returns the privacy settings for a specific user.
 **Response:**
 ```json
 {
-    "disallow_company": false,
-    "disallow_title": false,
     "disallow_photo": true,
+    "disallow_gender": true,
     "disallow_birthday": true,
-    "disallow_address": true
+    "disallow_address": true,
+    "disallow_company": false,
+    "disallow_title": false
 }
 ```
 
@@ -101,22 +105,24 @@ Creates new privacy settings for a user. All fields are required.
 **Request Body:**
 ```json
 {
-    "disallow_company": false,
-    "disallow_title": false,
     "disallow_photo": true,
+    "disallow_gender": true,
     "disallow_birthday": true,
-    "disallow_address": true
+    "disallow_address": true,
+    "disallow_company": false,
+    "disallow_title": false
 }
 ```
 
 **Response:**
 ```json
 {
-    "disallow_company": false,
-    "disallow_title": false,
     "disallow_photo": true,
+    "disallow_gender": true,
     "disallow_birthday": true,
-    "disallow_address": true
+    "disallow_address": true,
+    "disallow_company": false,
+    "disallow_title": false
 }
 ```
 
@@ -141,6 +147,7 @@ Updates existing privacy settings for a user. Only include the fields you want t
     "disallow_company": false,
     "disallow_title": false,
     "disallow_photo": false,
+    "disallow_gender": true,
     "disallow_birthday": false,
     "disallow_address": true
 }
@@ -181,11 +188,12 @@ Returns all vCards that contain the user's information.
                 "fn": "John Doe",
                 "email": ["john@example.com"],
                 "tel": ["+1234567890"],
-                "org": "Example Corp",
-                "title": "Developer",
                 "photo": true,
+                "gender": "M",
                 "bday": "1990-01-01",
-                "adr": "123 Main St"
+                "adr": "123 Main St",
+                "org": "Example Corp",
+                "title": "Developer"
             }
         }
     ]
