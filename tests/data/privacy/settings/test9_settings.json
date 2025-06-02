@@ -1,0 +1,8 @@
+{
+    "disallow_photo": false,
+    "disallow_gender": false,
+    "disallow_birthday": false,
+    "disallow_address": false,
+    "disallow_title": false,
+    "disallow_company": false
+}
