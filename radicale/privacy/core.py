@@ -15,7 +15,9 @@ from radicale.privacy.database import PrivacyDatabase
 from radicale.privacy.reprocessor import PrivacyReprocessor
 from radicale.privacy.scanner import PrivacyScanner
 from radicale.privacy.vcard_properties import (PRIVACY_TO_VCARD_MAP,
-                                               VCARD_NAME_TO_ENUM)
+                                               VCARD_NAME_TO_ENUM,
+                                               VCARD_PROPERTY_TYPES,
+                                               VCardPropertyType)
 
 logger = logging.getLogger(__name__)
 
@@ -276,11 +278,17 @@ class PrivacyCore:
 
                 # Add all available fields
                 for prop_name in VCARD_NAME_TO_ENUM:
-                    if prop_name in ['email', 'tel']:
+                    prop_type = VCARD_PROPERTY_TYPES.get(prop_name, VCardPropertyType.SINGLE)
+
+                    if prop_type == VCardPropertyType.LIST:
                         # Handle list properties
                         list_attr = f"{prop_name}_list"
                         if hasattr(vcard, list_attr):
                             vcard_match["fields"][prop_name] = [e.value for e in getattr(vcard, list_attr) if e.value]
+                    elif prop_type == VCardPropertyType.PRESENCE:
+                        # Handle presence-only properties
+                        if hasattr(vcard, prop_name):
+                            vcard_match["fields"][prop_name] = True
                     else:
                         # Handle single value properties
                         if hasattr(vcard, prop_name):
