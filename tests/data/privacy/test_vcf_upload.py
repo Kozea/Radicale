@@ -148,6 +148,60 @@ def verify_upload(user: str) -> Tuple[bool, str]:
         return False, f"Request failed: {str(e)}"
 
 
+def verify_filtered_content(user: str, settings: Dict[str, bool]) -> Tuple[bool, str]:
+    """Verify that the VCF cards are filtered according to privacy settings.
+
+    Args:
+        user: The user identifier (email)
+        settings: The privacy settings to verify against
+
+    Returns:
+        Tuple of (success, message)
+    """
+    try:
+        # Get the filtered cards
+        cards_url: str = f"{API_BASE_URL}/privacy/cards/{user}"
+        response: requests.Response = requests.get(cards_url, auth=(user, ""))
+
+        if response.status_code != 200:
+            return False, f"Failed to get filtered cards: {response.text}"
+
+        cards: List[Dict[str, Any]] = response.json()
+        if not cards:
+            return False, "No cards found after filtering"
+
+        # Verify each card's content against settings
+        for card in cards:
+            # Check photo
+            if settings["disallow_photo"] and "PHOTO" in card:
+                return False, "Photo found in card when disallowed"
+
+            # Check gender
+            if settings["disallow_gender"] and "GENDER" in card:
+                return False, "Gender found in card when disallowed"
+
+            # Check birthday
+            if settings["disallow_birthday"] and "BDAY" in card:
+                return False, "Birthday found in card when disallowed"
+
+            # Check address
+            if settings["disallow_address"] and "ADR" in card:
+                return False, "Address found in card when disallowed"
+
+            # Check company
+            if settings["disallow_company"] and "ORG" in card:
+                return False, "Company found in card when disallowed"
+
+            # Check title
+            if settings["disallow_title"] and "TITLE" in card:
+                return False, "Title found in card when disallowed"
+
+        return True, f"All {len(cards)} cards properly filtered according to settings"
+
+    except requests.exceptions.RequestException as e:
+        return False, f"Request failed: {str(e)}"
+
+
 def process_vcf_file(vcf_file: str) -> Tuple[bool, str]:
     """Process a single VCF file: read content, extract user, upload settings and VCF.
 
@@ -193,6 +247,12 @@ def process_vcf_file(vcf_file: str) -> Tuple[bool, str]:
     if not success:
         return False, f"Verification failed: {message}"
     print(f"Verification: {message}")
+
+    # Verify filtered content
+    success, message = verify_filtered_content(user, settings)
+    if not success:
+        return False, f"Filter verification failed: {message}"
+    print(f"Filter verification: {message}")
 
     return True, "Processing completed successfully"
 
