@@ -36,7 +36,6 @@ twilio_from_number = +1234567890  # Your Twilio phone number
 twilio_from_email = your@email.com  # Your Twilio verified email
 otp_length = 6
 otp_expiry = 300  # 5 minutes in seconds
-otp_method = sms  # or 'email'
 
 # Required by BaseAuth
 lc_username = false
@@ -70,7 +69,9 @@ The server will be available at [http://127.0.0.1:5232/](http://127.0.0.1:5232/)
 
 - `otp_length`: Length of the OTP code (default: 6)
 - `otp_expiry`: Time in seconds before the OTP expires (default: 300)
-- `otp_method`: Delivery method, either "sms" or "email" (default: "sms")
+- **Delivery method is determined automatically:**
+  - If the user identifier contains an `@`, the OTP is sent via email.
+  - Otherwise, the OTP is sent via SMS.
 
 ### Base Authentication Settings
 
@@ -92,12 +93,19 @@ These settings are inherited from the base authentication class:
    - System generates a random OTP code
    - Code is sent via SMS or email using Twilio
    - User receives the code
+   - System returns empty string (authentication fails)
 
 2. **OTP Verification**:
    - User enters the received OTP code
    - System validates the code against the stored value
-   - If valid and not expired, access is granted
-   - If invalid or expired, user must request a new code
+   - If valid and not expired:
+     - OTP is invalidated (removed from store)
+     - User is authenticated
+     - System returns the user's identifier
+   - If invalid or expired:
+     - System generates and sends a new OTP
+     - Authentication fails
+     - System returns empty string
 
 ## Security Considerations
 
@@ -187,6 +195,116 @@ The Twilio OTP authentication can be integrated with other systems through Radic
 3. OTP is sent to the user
 4. Client must provide the OTP code
 5. Upon successful verification, access is granted
+
+## Detailed Authentication Flow
+
+### 1. Initial Authentication Request
+
+When a client makes an initial request to a protected endpoint:
+
+1. The server responds with a 401 Unauthorized status
+2. The client must provide the user's phone number or email address as the username
+3. The password field should be empty
+4. The server will:
+   - Generate a random OTP code
+   - Send it via Twilio (SMS or email)
+   - Store the OTP with an expiration time
+   - Return 401 Unauthorized
+
+Example HTTP request:
+```http
+GET / HTTP/1.1
+Host: example.com
+Authorization: Basic dXNlckBleGFtcGxlLmNvbTo=
+```
+
+### 2. OTP Generation and Delivery
+
+Upon receiving the initial request:
+
+1. The server generates a random OTP code (default: 6 digits)
+2. The code is stored in memory with an expiration time (default: 5 minutes)
+3. The code is sent to the user via:
+   - SMS: Using the configured Twilio phone number
+   - Email: Using the configured Twilio email address
+4. The server responds with 401 Unauthorized
+
+### 3. OTP Verification
+
+The client must then make a second request with the OTP code:
+
+1. Use the same username (phone/email) as before
+2. Use the received OTP code as the password
+3. The server validates:
+   - The OTP code matches the stored value
+   - The OTP has not expired
+   - If valid:
+     - The OTP is invalidated (removed from store)
+     - The server responds with 200 OK
+   - If invalid or expired:
+     - A new OTP is generated and sent
+     - The server responds with 401 Unauthorized
+
+Example HTTP request with OTP:
+```http
+GET / HTTP/1.1
+Host: example.com
+Authorization: Basic dXNlckBleGFtcGxlLmNvbToxMjM0NTY=
+```
+
+### 4. Successful Authentication
+
+Upon successful verification:
+
+1. The OTP is invalidated (single-use)
+2. The server responds with 200 OK
+3. The client can now access protected resources
+
+### 5. Failed Authentication
+
+If authentication fails:
+
+1. The server responds with 401 Unauthorized
+2. If the OTP is expired or invalid:
+   - A new OTP is automatically generated and sent
+   - The client must use the new OTP
+3. Previous OTPs are invalidated
+
+## HTTP API Integration Requirements
+
+To ensure proper integration with the Twilio OTP authentication:
+
+1. **Client Implementation**:
+   - Must handle 401 responses appropriately
+   - Should implement proper retry logic
+   - Must store and manage session tokens
+   - Should handle OTP expiration gracefully
+
+2. **Server Configuration**:
+   - Enable HTTPS for secure communication
+   - Configure proper CORS headers if needed
+   - Set appropriate timeouts for OTP expiration
+   - Configure rate limiting to prevent abuse
+
+3. **Error Handling**:
+   - Handle network failures gracefully
+   - Implement proper timeout handling
+   - Provide clear error messages to users
+   - Log authentication failures for monitoring
+
+4. **Security Considerations**:
+   - Use HTTPS for all communications
+   - Implement proper session management
+   - Monitor failed authentication attempts
+   - Regularly rotate Twilio credentials
+   - Implement proper rate limiting
+
+5. **Testing Requirements**:
+   - Test both SMS and email delivery methods
+   - Verify OTP expiration handling
+   - Test rate limiting functionality
+   - Validate error handling
+   - Test session management
 
 ## Best Practices
 
