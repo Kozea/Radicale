@@ -70,10 +70,10 @@
 
 ### Phase 1: Basic Authentication & Privacy Settings
 
-1. **Simple Email Authentication** ❌
-   - Create a basic email-based authentication in `radicale/auth/email_auth.py`
+1. **Simple OTP Authentication** (WIP)
+   - Create a basic OTP-based authentication using Twilio in `radicale/auth/otp_twilio.py`
    - Implement a simple OTP generation and validation mechanism
-   - Use email for OTP delivery (skip SMS for MVP)
+   - Use email and SMS for OTP delivery
    - Store temporary authentication tokens in a simple file-based system
 
 2. **Basic Privacy Settings Storage** ✅
@@ -132,7 +132,7 @@
    - Document any issues or limitations
    - Focus on ensuring core functionality works rather than perfect integration
 
-2. **Basic Documentation** (WIP)
+2. **Basic Documentation** ✅
    - Create minimal documentation explaining how to use the privacy features
    - Document API endpoints and expected responses
    - Include setup instructions for testing purposes
