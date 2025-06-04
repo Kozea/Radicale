@@ -70,7 +70,7 @@
 
 ### Phase 1: Basic Authentication & Privacy Settings
 
-1. **Simple OTP Authentication** (WIP)
+1. **Simple OTP Authentication** ✅
    - Create a basic OTP-based authentication using Twilio in `radicale/auth/otp_twilio.py`
    - Implement a simple OTP generation and validation mechanism
    - Use email and SMS for OTP delivery
