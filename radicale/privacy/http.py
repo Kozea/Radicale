@@ -131,6 +131,15 @@ class PrivacyHTTP(ApplicationBase):
         Returns:
             WSGI response
         """
+        # Add logout endpoint
+        if path.strip("/") == "logout":
+            auth_header = environ.get("HTTP_AUTHORIZATION", "")
+            if auth_header.startswith("Bearer "):
+                token = auth_header.split(" ", 1)[1]
+                self._otp_auth.invalidate_session(token)
+                return client.OK, {"Content-Type": "application/json"}, b'{"logout": "success"}'
+            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, b'{"error": "No session token"}'
+
         # Check if authenticated user matches the requested user
         authenticated_user = self._get_authenticated_user(environ)
         if authenticated_user != user:

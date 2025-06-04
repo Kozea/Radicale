@@ -137,6 +137,32 @@ After successful OTP authentication, the backend issues a session token (random 
    - Session tokens expire after a set time (default: 1 hour)
    - After expiry, the client must re-authenticate using the OTP flow
 
+## Logout Endpoint
+
+To log out and invalidate a session token, the client should send a POST request to the `/logout` endpoint with the session token in the `Authorization: Bearer <token>` header.
+
+### Example Request
+
+```http
+POST /logout HTTP/1.1
+Host: example.com
+Authorization: Bearer <session_token>
+Content-Type: application/json
+```
+
+### Example Response (Success)
+```json
+{ "logout": "success" }
+```
+
+### Example Response (No Token)
+```json
+{ "error": "No session token" }
+```
+
+- After logout, the session token is invalidated and cannot be used for further requests.
+- If the token is missing or invalid, the server responds with 401 Unauthorized.
+
 ## Security Considerations
 
 1. **OTP Expiration**:

@@ -229,6 +229,18 @@ class TestOTPTwilioAuth(unittest.TestCase):
         self.auth.invalidate_session(token)
         self.assertNotIn(token, self.auth._session_store)
 
+    def test_logout_invalidate_session_token(self):
+        """Test that logging out invalidates the session token."""
+        self.auth._otp_store["user@example.com"] = ("123456", time.time() + 300)
+        user, session_token = self.auth.login_with_session("user@example.com", "123456")
+        self.assertEqual(user, "user@example.com")
+        self.assertIsInstance(session_token, str)
+        self.assertTrue(session_token in self.auth._session_store)
+        # Invalidate (logout)
+        self.auth.invalidate_session(session_token)
+        self.assertIsNone(self.auth.validate_session(session_token))
+        self.assertNotIn(session_token, self.auth._session_store)
+
 
 if __name__ == "__main__":
     unittest.main()
