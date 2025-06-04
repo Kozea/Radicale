@@ -117,12 +117,15 @@ After successful OTP authentication, the backend issues a session token (random 
    - User provides their phone number or email address
    - System generates and sends an OTP
    - User receives the code
+   - System returns 401 Unauthorized with no response body
 
 2. **OTP Verification**:
    - User enters the received OTP code
-   - If valid, the backend responds with a JSON body:
+   - If valid, the backend responds with 200 OK and JSON body:
      ```json
-     { "session_token": "..." }
+     {
+       "session_token": "random_token_string"
+     }
      ```
    - The client stores this token
 
@@ -152,12 +155,26 @@ Content-Type: application/json
 
 ### Example Response (Success)
 ```json
-{ "logout": "success" }
+{
+  "logout": "success"
+}
 ```
 
 ### Example Response (No Token)
 ```json
-{ "error": "No session token" }
+{
+  "error": "No session token"
+}
+```
+
+### Example Response (Invalid Token)
+```http
+HTTP/1.1 401 Unauthorized
+Content-Type: application/json
+
+{
+  "error": "Invalid session token"
+}
 ```
 
 - After logout, the session token is invalidated and cannot be used for further requests.

@@ -19,6 +19,8 @@ uv pip install -U .  # or use 'pip install -U .' if you prefer
 
 Create or edit your configuration file at `~/.config/radicale/config`:
 
+#### Basic Configuration
+
 ```ini
 [auth]
 type = none
@@ -32,7 +34,19 @@ database_path = ~/.local/share/radicale/privacy.db
 
 [rights]
 type = authenticated
+```
 
+> [!NOTE]
+> The `rights` section with `type = authenticated` is required for the privacy features to work properly. This setting enables users to:
+> - Access and modify their own privacy settings
+> - Modify vCards that contain their information, even if they don't own those cards
+> - Enforce their privacy preferences across all vCards that reference them
+
+#### Debug Configuration
+
+For detailed logging during development or troubleshooting, add:
+
+```ini
 [logging]
 level = debug
 mask_passwords = True
@@ -42,6 +56,34 @@ request_content_on_debug = False
 response_content_on_debug = False
 storage_cache_actions_on_debug = False
 ```
+
+#### Authentication Configuration
+
+For testing purposes, you can use the basic configuration with `type = none`. However, for production use, it's recommended to use proper authentication like Twilio OTP:
+
+```ini
+[auth]
+type = otp_twilio
+twilio_account_sid = your_account_sid
+twilio_auth_token = your_auth_token
+twilio_from_number = +1234567890  # Your Twilio phone number
+twilio_from_email = your@email.com  # Your Twilio verified email
+otp_length = 6
+otp_expiry = 300  # 5 minutes in seconds
+
+# Required by BaseAuth
+lc_username = false
+uc_username = false
+strip_domain = false
+urldecode_username = false
+delay = 1
+cache_logins = false
+cache_successful_logins_expiry = 15
+cache_failed_logins_expiry = 90
+```
+
+> [!NOTE]
+> When running integration tests, make sure to use `type = none` in the `[auth]` section to disable authentication. For production environments, always use proper authentication like Twilio OTP.
 
 ### 3. Launch the Radicale Server
 
@@ -210,6 +252,9 @@ python3 tests/data/privacy/generate_privacy_settings_json.py
 
 ### 3. Run the VCF Upload and Privacy Test
 
+> [!NOTE]
+> When running tests, make sure to use `type = none` in the `[auth]` section to disable authentication. For production environments, always use proper authentication like Twilio OTP.
+
 Use the `test_vcf_upload.py` script to automatically upload the generated VCF files and privacy settings to the running Radicale server, and verify privacy enforcement:
 
 ```bash
@@ -375,16 +420,68 @@ Triggers reprocessing of all vCards for a user based on their current privacy se
 
 All endpoints may return the following error responses:
 
-- `400 Bad Request`: Invalid request format or missing required fields
-- `401 Unauthorized`: Authentication required
-- `403 Forbidden`: Insufficient permissions
-- `404 Not Found`: User or resource not found
-- `500 Internal Server Error`: Server-side error
+#### 400 Bad Request
+Returned when:
+- Invalid request format
+- Missing required fields
+- Invalid JSON in request body
+- Invalid path format
 
-Example error response:
+Example:
 ```json
 {
-    "error": "Invalid request format"
+  "error": "Invalid request format"
+}
+```
+
+#### 401 Unauthorized
+Returned when:
+- No authentication credentials provided
+- Invalid session token
+- Session token expired
+
+Example:
+```json
+{
+  "error": "Authentication required"
+}
+```
+
+#### 403 Forbidden
+Returned when:
+- Authenticated user does not match the requested user
+- User attempts to access another user's settings
+
+Example:
+```http
+HTTP/1.1 403 Forbidden
+Content-Type: text/plain
+
+Action on the requested resource refused.
+```
+
+#### 404 Not Found
+Returned when:
+- User settings not found
+- Requested resource does not exist
+
+Example:
+```json
+{
+  "error": "User settings not found"
+}
+```
+
+#### 500 Internal Server Error
+Returned when:
+- Server-side error occurs
+- Database operation fails
+- Unexpected error during processing
+
+Example:
+```json
+{
+  "error": "Internal server error"
 }
 ```
 
