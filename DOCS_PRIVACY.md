@@ -83,6 +83,9 @@ cache_failed_logins_expiry = 90
 ```
 
 > [!NOTE]
+> OTP codes are sent automatically when you attempt to authenticate to any protected endpoint with your identifier (email or phone) and an empty password. See [DOCS_AUTH_TWILIO.md](DOCS_AUTH_TWILIO.md) for a detailed description of the authentication flow.
+
+> [!NOTE]
 > When running integration tests, make sure to use `type = none` in the `[auth]` section to disable authentication. For production environments, always use proper authentication like Twilio OTP.
 
 ### 3. Launch the Radicale Server
@@ -412,9 +415,62 @@ Triggers reprocessing of all vCards for a user based on their current privacy se
 ```json
 {
     "status": "success",
-    "reprocessed_cards": 5
+    "reprocessed_cards": 5,
+    "reprocessed_card_uids": [
+        "123456",
+        "abcdef",
+        "789xyz",
+        "..."
+    ]
 }
 ```
+- `status`: Always "success" if the operation completed successfully.
+- `reprocessed_cards`: The number of vCards that were reprocessed.
+- `reprocessed_card_uids`: A list of the UIDs of the vCards that were reprocessed.
+
+### Logout Session
+
+#### Logout
+```http
+POST /logout
+```
+
+Logs out the current user and invalidates the session token. The session token must be provided in the `Authorization: Bearer <token>` header.
+
+**Request Example:**
+```http
+POST /logout HTTP/1.1
+Host: example.com
+Authorization: Bearer <session_token>
+Content-Type: application/json
+```
+
+**Response (Success):**
+```json
+{
+  "logout": "success"
+}
+```
+
+**Response (No Token):**
+```json
+{
+  "error": "No session token"
+}
+```
+
+**Response (Invalid Token):**
+```http
+HTTP/1.1 401 Unauthorized
+Content-Type: application/json
+
+{
+  "error": "Invalid session token"
+}
+```
+
+- After logout, the session token is invalidated and cannot be used for further requests.
+- If the token is missing or invalid, the server responds with 401 Unauthorized.
 
 ### Error Responses
 
