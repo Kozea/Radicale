@@ -70,6 +70,7 @@ twilio_from_number = +1234567890  # Your Twilio phone number
 twilio_from_email = your@email.com  # Your Twilio verified email
 otp_length = 6
 otp_expiry = 300  # 5 minutes in seconds
+session_expiry = 3600  # Session token expiry in seconds (default: 1 hour)
 
 # Required by BaseAuth
 lc_username = false

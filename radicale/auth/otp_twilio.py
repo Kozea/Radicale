@@ -58,7 +58,7 @@ class Auth(auth.BaseAuth):
         self._twilio_client: Client = Client(self._account_sid, self._auth_token)
 
         # Session configuration
-        self._session_expiry: int = 3600  # 1 hour session expiry (can be made configurable)
+        self._session_expiry: int = configuration.get("auth", "session_expiry")
         self._session_store: Dict[str, Tuple[str, float]] = {}  # token -> (user, expiry)
 
         logger.info("OTP authentication initialized")

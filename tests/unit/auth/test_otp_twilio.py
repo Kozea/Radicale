@@ -24,6 +24,7 @@ class TestOTPTwilioAuth(unittest.TestCase):
                 "twilio_from_email": "test@example.com",
                 "otp_length": 6,
                 "otp_expiry": 300,  # 5 minutes
+                "session_expiry": 1234,  # Custom session expiry for testing
                 # Required by BaseAuth
                 "lc_username": False,
                 "uc_username": False,
@@ -240,6 +241,10 @@ class TestOTPTwilioAuth(unittest.TestCase):
         self.auth.invalidate_session(session_token)
         self.assertIsNone(self.auth.validate_session(session_token))
         self.assertNotIn(session_token, self.auth._session_store)
+
+    def test_session_expiry_config(self):
+        """Test that session_expiry is set from config."""
+        self.assertEqual(self.auth._session_expiry, 1234)
 
 
 if __name__ == "__main__":

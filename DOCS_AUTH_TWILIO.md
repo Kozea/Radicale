@@ -36,6 +36,7 @@ twilio_from_number = +1234567890  # Your Twilio phone number
 twilio_from_email = your@email.com  # Your Twilio verified email
 otp_length = 6
 otp_expiry = 300  # 5 minutes in seconds
+session_expiry = 3600  # Session token expiry in seconds (default: 1 hour)
 
 # Required by BaseAuth
 lc_username = false
@@ -69,6 +70,7 @@ The server will be available at [http://127.0.0.1:5232/](http://127.0.0.1:5232/)
 
 - `otp_length`: Length of the OTP code (default: 6)
 - `otp_expiry`: Time in seconds before the OTP expires (default: 300)
+- `session_expiry`: Session token expiry time in seconds (default: 3600, i.e., 1 hour). Determines how long a session token remains valid after successful OTP authentication.
 - **Delivery method is determined automatically:**
   - If the user identifier contains an `@`, the OTP is sent via email.
   - Otherwise, the OTP is sent via SMS.

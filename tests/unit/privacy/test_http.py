@@ -44,7 +44,8 @@ def http_app():
                 "twilio_from_number": "+1234567890",
                 "twilio_from_email": "test@example.com",
                 "otp_length": 6,
-                "otp_expiry": 300
+                "otp_expiry": 300,
+                "session_expiry": 1234
             },
             # "auth": {
             #     "type": "htpasswd",

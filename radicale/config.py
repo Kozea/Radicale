@@ -248,6 +248,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "300",
             "help": "OTP code expiry time in seconds (default: 5 minutes)",
             "type": positive_int}),
+        ("session_expiry", {
+            "value": "3600",
+            "help": "Session token expiry time in seconds (default: 1 hour)",
+            "type": positive_int}),
         ("htpasswd_filename", {
             "value": "/etc/radicale/users",
             "help": "htpasswd filename",
