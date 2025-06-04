@@ -19,6 +19,7 @@ using Twilio for sending OTP codes via SMS or email.
 """
 
 import random
+import secrets
 import string
 import time
 from typing import Dict, Optional, Tuple
@@ -55,6 +56,10 @@ class Auth(auth.BaseAuth):
 
         # Initialize Twilio client
         self._twilio_client: Client = Client(self._account_sid, self._auth_token)
+
+        # Session configuration
+        self._session_expiry: int = 3600  # 1 hour session expiry (can be made configurable)
+        self._session_store: Dict[str, Tuple[str, float]] = {}  # token -> (user, expiry)
 
         logger.info("OTP authentication initialized")
 
@@ -116,7 +121,10 @@ class Auth(auth.BaseAuth):
 
         return stored_otp, expiry_time
 
-    def _login(self, login: str, password: str) -> str:
+    def _generate_session_token(self) -> str:
+        return secrets.token_urlsafe(32)
+
+    def login_with_session(self, login: str, password: str) -> Tuple[str, Optional[str]]:
         """Validate credentials using OTP.
 
         Args:
@@ -124,7 +132,7 @@ class Auth(auth.BaseAuth):
             password: The OTP code to validate.
 
         Returns:
-            The login string if authentication is successful, empty string otherwise.
+            Tuple of (login, session_token) if authentication is successful, empty strings otherwise.
         """
         # If password is empty, this is the initial request - generate and send OTP
         if not password:
@@ -132,28 +140,45 @@ class Auth(auth.BaseAuth):
             if self._send_otp(login, otp):
                 self._otp_store[login] = (otp, time.time() + self._otp_expiry)
                 logger.info("New OTP sent to user: %s", login)
-            return ""
+            return "", None
 
         # If password is provided, validate it against stored OTP
         stored_otp_data = self._get_stored_otp(login)
         if not stored_otp_data:
-            # No valid OTP found, generate and send a new one
             otp = self._generate_otp()
             if self._send_otp(login, otp):
                 self._otp_store[login] = (otp, time.time() + self._otp_expiry)
                 logger.info("New OTP sent to user: %s", login)
-            return ""
+            return "", None
 
         stored_otp, _ = stored_otp_data
         if password == stored_otp:
-            # Valid OTP, remove it from store and authenticate user
             del self._otp_store[login]
             logger.info("User authenticated successfully: %s", login)
-            return login
+            session_token = self._generate_session_token()
+            self._session_store[session_token] = (login, time.time() + self._session_expiry)
+            return login, session_token
 
-        # Invalid OTP
         logger.warning("Invalid OTP provided for user: %s", login)
-        return ""
+        return "", None
+
+    def _login(self, login: str, password: str) -> str:
+        user, _ = self.login_with_session(login, password)
+        return user
+
+    def validate_session(self, token: str) -> Optional[str]:
+        data = self._session_store.get(token)
+        if not data:
+            return None
+        user, expiry = data
+        if time.time() > expiry:
+            del self._session_store[token]
+            return None
+        return user
+
+    def invalidate_session(self, token: str) -> None:
+        if token in self._session_store:
+            del self._session_store[token]
 
     def is_authenticated(self, user: str, password: str) -> bool:
         """Check if the user is authenticated.
@@ -165,4 +190,5 @@ class Auth(auth.BaseAuth):
         Returns:
             True if the user is authenticated, False otherwise.
         """
-        return bool(self._login(user, password))
+        result, _ = self.login_with_session(user, password)
+        return bool(result)

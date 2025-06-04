@@ -107,6 +107,36 @@ These settings are inherited from the base authentication class:
      - Authentication fails
      - System returns empty string
 
+## Session Token Authentication
+
+After successful OTP authentication, the backend issues a session token (random string) to the client in the JSON response. The client must include this token in the `Authorization: Bearer <token>` header for all subsequent API requests. Session tokens are stored temporarily in memory on the backend and expire after a set time (default: 1 hour).
+
+### Example Flow
+
+1. **Initial Login Attempt**:
+   - User provides their phone number or email address
+   - System generates and sends an OTP
+   - User receives the code
+
+2. **OTP Verification**:
+   - User enters the received OTP code
+   - If valid, the backend responds with a JSON body:
+     ```json
+     { "session_token": "..." }
+     ```
+   - The client stores this token
+
+3. **Authenticated Requests**:
+   - For all subsequent requests, the client sends:
+     ```http
+     Authorization: Bearer <session_token>
+     ```
+   - The backend validates the session token and grants access if valid
+
+4. **Session Expiry**:
+   - Session tokens expire after a set time (default: 1 hour)
+   - After expiry, the client must re-authenticate using the OTP flow
+
 ## Security Considerations
 
 1. **OTP Expiration**:

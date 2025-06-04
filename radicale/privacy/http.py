@@ -4,13 +4,15 @@ HTTP API endpoints for privacy management in Radicale.
 This module provides HTTP API endpoints for managing user privacy settings and card processing.
 """
 
+import base64
 import json
 import logging
 from http import client
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from radicale import config, httputils, types
 from radicale.app.base import ApplicationBase
+from radicale.auth.otp_twilio import Auth as OTPAuth
 from radicale.privacy.core import PrivacyCore
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,29 @@ class PrivacyHTTP(ApplicationBase):
         """
         super().__init__(configuration)
         self._privacy_core = PrivacyCore(configuration)
+        self._otp_auth = OTPAuth(configuration)
+
+    def _get_authenticated_user(self, environ) -> Optional[str]:
+        # Check for Bearer token
+        auth_header = environ.get("HTTP_AUTHORIZATION", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ", 1)[1]
+            user = self._otp_auth.validate_session(token)
+            if user:
+                return user
+
+        # Fallback to Basic Auth
+        if auth_header.startswith("Basic "):
+            try:
+                credentials = base64.b64decode(auth_header.split(" ", 1)[1]).decode()
+                login, password = credentials.split(":", 1)
+                user, session_token = self._otp_auth.login_with_session(login, password)
+                # If session_token is returned, send it in the response header
+                environ["radicale.session_token"] = session_token
+                return user
+            except Exception:
+                return None
+        return None
 
     def _to_wsgi_response(self, success: bool, result: APIResult) -> types.WSGIResponse:
         """Convert API response to WSGI response.
@@ -67,6 +92,11 @@ class PrivacyHTTP(ApplicationBase):
         Returns:
             WSGI response
         """
+        # Check if authenticated user matches the requested user
+        authenticated_user = self._get_authenticated_user(environ)
+        if authenticated_user != user:
+            return httputils.FORBIDDEN
+
         # Extract user identifier from path
         # Path format: /privacy/settings/{user} or /privacy/cards/{user}
         parts = path.strip("/").split("/")
@@ -75,10 +105,6 @@ class PrivacyHTTP(ApplicationBase):
 
         resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
-
-        # Check if authenticated user matches the requested resource
-        if user != user_identifier:
-            return httputils.FORBIDDEN
 
         success: bool
         result: APIResult
@@ -105,6 +131,11 @@ class PrivacyHTTP(ApplicationBase):
         Returns:
             WSGI response
         """
+        # Check if authenticated user matches the requested user
+        authenticated_user = self._get_authenticated_user(environ)
+        if authenticated_user != user:
+            return httputils.FORBIDDEN
+
         # Extract user identifier and action from path
         parts = path.strip("/").split("/")
         if len(parts) < 3:
@@ -112,10 +143,6 @@ class PrivacyHTTP(ApplicationBase):
 
         resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
-
-        # Check if authenticated user matches the requested resource
-        if user != user_identifier:
-            return httputils.FORBIDDEN
 
         # Read request body
         try:
@@ -155,16 +182,17 @@ class PrivacyHTTP(ApplicationBase):
         Returns:
             WSGI response
         """
+        # Check if authenticated user matches the requested user
+        authenticated_user = self._get_authenticated_user(environ)
+        if authenticated_user != user:
+            return httputils.FORBIDDEN
+
         # Extract user identifier from path
         parts = path.strip("/").split("/")
         if len(parts) != 3 or parts[1] != "settings":
             return httputils.BAD_REQUEST
 
         user_identifier = parts[2]
-
-        # Check if authenticated user matches the requested resource
-        if user != user_identifier:
-            return httputils.FORBIDDEN
 
         # Read request body
         try:
@@ -195,16 +223,17 @@ class PrivacyHTTP(ApplicationBase):
         Returns:
             WSGI response
         """
+        # Check if authenticated user matches the requested user
+        authenticated_user = self._get_authenticated_user(environ)
+        if authenticated_user != user:
+            return httputils.FORBIDDEN
+
         # Extract user identifier from path
         parts = path.strip("/").split("/")
         if len(parts) != 3 or parts[1] != "settings":
             return httputils.BAD_REQUEST
 
         user_identifier = parts[2]
-
-        # Check if authenticated user matches the requested resource
-        if user != user_identifier:
-            return httputils.FORBIDDEN
 
         success: bool
         result: APIResult

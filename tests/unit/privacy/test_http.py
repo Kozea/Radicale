@@ -38,7 +38,13 @@ def http_app():
                 "filesystem_folder": tmpdir  # Use tmpdir as base, let storage add collection-root
             },
             "auth": {
-                "type": "none"  # Disable authentication for tests
+                "type": "otp_twilio",
+                "twilio_account_sid": "test_sid",
+                "twilio_auth_token": "test_token",
+                "twilio_from_number": "+1234567890",
+                "twilio_from_email": "test@example.com",
+                "otp_length": 6,
+                "otp_expiry": 300
             },
             # "auth": {
             #     "type": "htpasswd",
@@ -49,7 +55,11 @@ def http_app():
                 "type": "authenticated"
             }
         }, "test")
-        return PrivacyHTTP(configuration)
+        with patch("radicale.auth.otp_twilio.Client"):
+            app = PrivacyHTTP(configuration)
+            # Patch authentication for all tests
+            app._get_authenticated_user = lambda environ: "test@example.com"
+            yield app
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
@@ -97,17 +107,20 @@ def test_get_settings_error(http_app):
         # Create mock WSGI environment
         environ = {
             "REQUEST_METHOD": "GET",
-            "PATH_INFO": "/privacy/settings/nonexistent@example.com"
+            "PATH_INFO": "/privacy/settings/nonexistent@example.com",
+            "HTTP_AUTHORIZATION": "Bearer test_token"  # Add authorization header
         }
 
-        # Call the handler with matching user
-        status, headers, body = http_app.do_GET(environ, "/", "/privacy/settings/nonexistent@example.com", "nonexistent@example.com")
+        # Mock the authentication to return the same user as in the path
+        with patch.object(http_app, '_get_authenticated_user', return_value="nonexistent@example.com"):
+            # Call the handler with matching user
+            status, headers, body = http_app.do_GET(environ, "/", "/privacy/settings/nonexistent@example.com", "nonexistent@example.com")
 
-        # Verify response
-        assert status == client.BAD_REQUEST
-        assert headers["Content-Type"] == "application/json"
-        data = json.loads(body)
-        assert data["error"] == "User settings not found"
+            # Verify response
+            assert status == client.BAD_REQUEST
+            assert headers["Content-Type"] == "application/json"
+            data = json.loads(body)
+            assert data["error"] == "User settings not found"
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")

@@ -135,8 +135,9 @@ class TestOTPTwilioAuth(unittest.TestCase):
 
     def test_login_initial_request(self):
         """Test initial login request (empty password)."""
-        result = self.auth._login("user@example.com", "")
-        self.assertEqual(result, "")
+        user, session_token = self.auth.login_with_session("user@example.com", "")
+        self.assertEqual(user, "")
+        self.assertIsNone(session_token)
         self.assertIn("user@example.com", self.auth._otp_store)
         self.mock_twilio.messages.create.assert_called_once()
 
@@ -144,30 +145,30 @@ class TestOTPTwilioAuth(unittest.TestCase):
         """Test login with valid OTP."""
         # Store an OTP
         self.auth._otp_store["user@example.com"] = ("123456", time.time() + 300)
-
         # Test valid OTP
-        result = self.auth._login("user@example.com", "123456")
-        self.assertEqual(result, "user@example.com")
+        user, session_token = self.auth.login_with_session("user@example.com", "123456")
+        self.assertEqual(user, "user@example.com")
+        self.assertIsInstance(session_token, str)
         self.assertNotIn("user@example.com", self.auth._otp_store)
 
     def test_login_invalid_otp(self):
         """Test login with invalid OTP."""
         # Store an OTP
         self.auth._otp_store["user@example.com"] = ("123456", time.time() + 300)
-
         # Test invalid OTP
-        result = self.auth._login("user@example.com", "654321")
-        self.assertEqual(result, "")
+        user, session_token = self.auth.login_with_session("user@example.com", "654321")
+        self.assertEqual(user, "")
+        self.assertIsNone(session_token)
         self.assertIn("user@example.com", self.auth._otp_store)
 
     def test_login_expired_otp(self):
         """Test login with expired OTP."""
         # Store an expired OTP
         self.auth._otp_store["user@example.com"] = ("123456", time.time() - 1)
-
         # Test expired OTP
-        result = self.auth._login("user@example.com", "123456")
-        self.assertEqual(result, "")
+        user, session_token = self.auth.login_with_session("user@example.com", "123456")
+        self.assertEqual(user, "")
+        self.assertIsNone(session_token)
         self.assertIn("user@example.com", self.auth._otp_store)
         self.mock_twilio.messages.create.assert_called_once()
 
@@ -184,6 +185,49 @@ class TestOTPTwilioAuth(unittest.TestCase):
 
         # Test empty password
         self.assertFalse(self.auth.is_authenticated("user@example.com", ""))
+
+    def test_login_valid_otp_returns_session_token(self):
+        """Test login with valid OTP returns a session token."""
+        self.auth._otp_store["user@example.com"] = ("123456", time.time() + 300)
+        user, session_token = self.auth.login_with_session("user@example.com", "123456")
+        self.assertEqual(user, "user@example.com")
+        self.assertIsInstance(session_token, str)
+        self.assertTrue(session_token in self.auth._session_store)
+
+    def test_login_initial_request_no_session_token(self):
+        """Test initial login request does not return a session token."""
+        user, session_token = self.auth.login_with_session("user@example.com", "")
+        self.assertEqual(user, "")
+        self.assertIsNone(session_token)
+
+    def test_login_invalid_otp_no_session_token(self):
+        """Test login with invalid OTP does not return a session token."""
+        self.auth._otp_store["user@example.com"] = ("123456", time.time() + 300)
+        user, session_token = self.auth.login_with_session("user@example.com", "654321")
+        self.assertEqual(user, "")
+        self.assertIsNone(session_token)
+
+    def test_validate_session_token(self):
+        """Test validating a session token after successful login."""
+        self.auth._otp_store["user@example.com"] = ("123456", time.time() + 300)
+        user, session_token = self.auth.login_with_session("user@example.com", "123456")
+        validated_user = self.auth.validate_session(session_token)
+        self.assertEqual(validated_user, "user@example.com")
+
+    def test_session_token_expiry(self):
+        """Test that session tokens expire after the set time."""
+        token = self.auth._generate_session_token()
+        self.auth._session_store[token] = ("user@example.com", time.time() - 1)  # expired
+        validated_user = self.auth.validate_session(token)
+        self.assertIsNone(validated_user)
+        self.assertNotIn(token, self.auth._session_store)
+
+    def test_invalidate_session_token(self):
+        """Test that session tokens can be invalidated manually."""
+        token = self.auth._generate_session_token()
+        self.auth._session_store[token] = ("user@example.com", time.time() + 300)
+        self.auth.invalidate_session(token)
+        self.assertNotIn(token, self.auth._session_store)
 
 
 if __name__ == "__main__":
