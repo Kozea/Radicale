@@ -240,10 +240,6 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "Twilio email address to send OTP from",
             "type": str}),
-        ("otp_method", {
-            "value": "sms",
-            "help": "OTP delivery method: sms or email",
-            "type": str}),
         ("otp_length", {
             "value": "6",
             "help": "Length of the OTP code",

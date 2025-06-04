@@ -24,7 +24,6 @@ class TestOTPTwilioAuth(unittest.TestCase):
                 "twilio_from_email": "test@example.com",
                 "otp_length": 6,
                 "otp_expiry": 300,  # 5 minutes
-                "otp_method": "sms",
                 # Required by BaseAuth
                 "lc_username": False,
                 "uc_username": False,
@@ -53,7 +52,6 @@ class TestOTPTwilioAuth(unittest.TestCase):
         self.assertEqual(self.auth._from_email, "test@example.com")
         self.assertEqual(self.auth._otp_length, 6)
         self.assertEqual(self.auth._otp_expiry, 300)
-        self.assertEqual(self.auth._otp_method, "sms")
 
     def test_init_missing_credentials(self):
         """Test initialization with missing Twilio credentials."""
@@ -66,7 +64,6 @@ class TestOTPTwilioAuth(unittest.TestCase):
                 "twilio_from_email": "test@example.com",
                 "otp_length": 6,
                 "otp_expiry": 300,
-                "otp_method": "sms",
                 # Required by BaseAuth
                 "lc_username": False,
                 "uc_username": False,

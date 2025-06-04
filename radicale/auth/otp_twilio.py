@@ -23,7 +23,6 @@ import string
 import time
 from typing import Dict, Optional, Tuple
 
-from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 
 from radicale import auth, config
@@ -50,7 +49,6 @@ class Auth(auth.BaseAuth):
         # OTP configuration
         self._otp_length: int = configuration.get("auth", "otp_length")
         self._otp_expiry: int = configuration.get("auth", "otp_expiry")
-        self._otp_method: str = configuration.get("auth", "otp_method")
 
         # Store OTP codes and their expiry times
         self._otp_store: Dict[str, Tuple[str, float]] = {}
@@ -58,7 +56,7 @@ class Auth(auth.BaseAuth):
         # Initialize Twilio client
         self._twilio_client: Client = Client(self._account_sid, self._auth_token)
 
-        logger.info("OTP authentication initialized with method: %s", self._otp_method)
+        logger.info("OTP authentication initialized")
 
     def _generate_otp(self) -> str:
         """Generate a random OTP code.
@@ -79,20 +77,21 @@ class Auth(auth.BaseAuth):
             True if the OTP was sent successfully, False otherwise.
         """
         try:
-            if self._otp_method == "sms":
-                message = self._twilio_client.messages.create(
-                    body=f"Your Radicale authentication code is: {otp}",
-                    from_=self._from_number,
-                    to=login
-                )
-                return bool(message.sid)
-            else:  # email
+            if "@" in login:
+                # Treat as email
                 message = self._twilio_client.messages.create(
                     body=f"Your Radicale authentication code is: {otp}",
                     from_=f"Radicale <{self._from_email}>",
                     to=login
                 )
-                return bool(message.sid)
+            else:
+                # Treat as phone number
+                message = self._twilio_client.messages.create(
+                    body=f"Your Radicale authentication code is: {otp}",
+                    from_=self._from_number,
+                    to=login
+                )
+            return bool(message.sid)
         except Exception as e:
             logger.error("Failed to send OTP via Twilio: %s", str(e))
             return False
