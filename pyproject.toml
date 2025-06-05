@@ -36,6 +36,7 @@ dependencies = [
     "requests",
     "sqlalchemy>=2.0.41",
     "twilio>=9.6.2",
+    "phonenumbers>=9.0.6",
 ]
 
 

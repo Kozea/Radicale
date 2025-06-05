@@ -769,6 +769,15 @@ wheels = [
 ]
 
 [[package]]
+name = "phonenumbers"
+version = "9.0.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/40/57/2923088eb7fe397a544dcf31f31705ddd3d2d6f965d68c8d7ce2afe70856/phonenumbers-9.0.6.tar.gz", hash = "sha256:bfb228cfc4a5644f7c1a32ded1bd2ee6f8e3749e422fbdabd57661e86ad8872d", size = 2297098, upload-time = "2025-05-28T05:45:48.251Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1a/65/b760522ce1b080e1d8af50d63e537beb5642ff043d789e4d7f5e3b4c3b30/phonenumbers-9.0.6-py2.py3-none-any.whl", hash = "sha256:b4a0f5a0dc30235b273d06acfe9afc2160cce4f1c8220067985ed81d72bb29a9", size = 2582823, upload-time = "2025-05-28T05:45:44.078Z" },
+]
+
+[[package]]
 name = "pika"
 version = "1.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -975,6 +984,7 @@ source = { editable = "." }
 dependencies = [
     { name = "defusedxml" },
     { name = "passlib" },
+    { name = "phonenumbers" },
     { name = "pika" },
     { name = "requests" },
     { name = "sqlalchemy" },
@@ -1014,6 +1024,7 @@ requires-dist = [
     { name = "defusedxml" },
     { name = "ldap3", marker = "extra == 'ldap'" },
     { name = "passlib" },
+    { name = "phonenumbers", specifier = ">=9.0.6" },
     { name = "pika", specifier = ">=1.1.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7" },
     { name = "pytest-mock", marker = "extra == 'test'" },
