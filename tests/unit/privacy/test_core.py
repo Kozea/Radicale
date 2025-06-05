@@ -678,3 +678,75 @@ def test_reprocess_cards_after_settings_update(core):
     # Title should remain (still allowed)
     assert 'title' in updated_vcard.contents
     assert updated_vcard.title.value == "Test Title"
+
+
+@pytest.mark.skipif(os.name == 'nt', reason="Problematic on Windows due to file locking")
+def test_get_matching_cards_phone_formats(core):
+    """Test matching cards with phone numbers in various formats."""
+
+    # E.164 phone number for settings
+    phone_e164 = "+14155552671"
+    settings = {
+        "disallow_photo": False,
+        "disallow_gender": False,
+        "disallow_birthday": False,
+        "disallow_address": False,
+        "disallow_company": False,
+        "disallow_title": False,
+    }
+    # Create privacy settings for the E.164 phone
+    success, result = core.create_settings(phone_e164, settings)
+    assert success
+    assert result == {"status": "created"}
+
+    # Create a collection
+    collection = core._scanner._storage.create_collection("/testuser/contacts/")
+    assert collection is not None
+
+    # List of phone number formats that should all normalize to +14155552671
+    phone_variants = [
+        "+1 415-555-2671",
+        "+1 (415) 555-2671",
+        "(415) 555-2671",  # Should match, missing country code is assumed to be +1 (US)
+        "+14155552671",
+        "+1-415-555-2671",
+        "+1 415 555 2671",
+        "+1.415.555.2671",
+    ]
+    # Upload vCards with these phone numbers
+    for idx, phone in enumerate(phone_variants):
+        vcard = vobject.vCard()
+        vcard.add('uid')
+        vcard.uid.value = f"card{idx}"
+        vcard.add('fn')
+        vcard.fn.value = f"Test Contact {idx}"
+        vcard.add('tel')
+        vcard.tel.value = phone
+        vcard.tel.type_param = 'CELL'
+        item = Item(vobject_item=vcard, collection_path="testuser/contacts", component_name="VCARD")
+        collection.upload(f"test-card{idx}.vcf", item)
+
+    # Should match all vCards with normalizable numbers
+    success, result = core.get_matching_cards(phone_e164)
+    assert success
+    assert "matches" in result
+    # Only those with a valid country code should match
+    expected_matches = [
+        "+1 415-555-2671",
+        "+1 (415) 555-2671",
+        "(415) 555-2671",
+        "+14155552671",
+        "+1-415-555-2671",
+        "+1 415 555 2671",
+        "+1.415.555.2671",
+    ]
+    found_uids = {m["vcard_uid"] for m in result["matches"]}
+    # The third variant (index 2) is missing country code, so should not match
+    assert found_uids == {f"card{idx}" for idx in range(len(phone_variants))}
+
+    # Also test that searching with a variant format finds the same cards
+    for variant in expected_matches:
+        success, result = core.get_matching_cards(variant)
+        assert success
+        found_uids_variant = {m["vcard_uid"] for m in result["matches"]}
+        assert found_uids_variant == found_uids

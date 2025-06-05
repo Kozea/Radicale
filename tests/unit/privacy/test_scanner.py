@@ -266,3 +266,39 @@ def test_singleton_pattern(storage, mocker):
     # The storage should not change after the first initialization
     assert scanner1._storage is first_storage
     assert scanner1._storage is not different_storage
+
+
+def test_scan_collection_phone_normalization(scanner, create_test_vcard, mocker):
+    """Test that phone numbers in various formats are normalized and matched."""
+    collection = mocker.MagicMock(spec=CollectionPartGet)
+    collection.path = "user1/contacts"
+
+    # List of phone number formats that should all normalize to +14155552671
+    phone_variants = [
+        "+1 415-555-2671",
+        "+1 (415) 555-2671",
+        "(415) 555-2671",  # Should match, default region assumed US
+        "+14155552671",
+        "+1-415-555-2671",
+        "+1 415 555 2671",
+        "+1.415.555.2671",
+    ]
+    items = [
+        create_test_vcard(f"test{idx}", phone=phone, collection_path="user1/contacts")
+        for idx, phone in enumerate(phone_variants)
+    ]
+    collection.get_all.return_value = items
+
+    # The normalized E.164 number to search for
+    search_number = "+14155552671"
+    matches = scanner._scan_collection(collection, search_number)
+    # All variants should match
+    assert len(matches) == len(phone_variants)
+    found_uids = {m["vcard_uid"] for m in matches}
+    assert found_uids == {f"test{idx}" for idx in range(len(phone_variants))}
+
+    # Also test that searching with a variant format finds the same cards
+    for variant in phone_variants:
+        matches_variant = scanner._scan_collection(collection, variant)
+        found_uids_variant = {m["vcard_uid"] for m in matches_variant}
+        assert found_uids_variant == found_uids

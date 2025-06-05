@@ -11,6 +11,7 @@ from radicale.privacy.database import PrivacyDatabase
 from radicale.privacy.vcard_properties import (PRIVACY_TO_VCARD_MAP,
                                                PUBLIC_VCARD_PROPERTIES,
                                                VCARD_NAME_TO_ENUM)
+from radicale.utils import normalize_phone_e164
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,11 @@ class PrivacyEnforcement:
         if hasattr(vcard, "tel_list"):
             for tel_prop in vcard.tel_list:
                 if tel_prop.value:
-                    identifiers.append(("phone", tel_prop.value))
+                    try:
+                        normalized = normalize_phone_e164(tel_prop.value)
+                        identifiers.append(("phone", normalized))
+                    except Exception:
+                        identifiers.append(("phone", tel_prop.value))
                     logger.debug("Found phone in vCard: %r", tel_prop.value)
 
         return identifiers

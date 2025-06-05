@@ -18,6 +18,7 @@ from radicale.privacy.vcard_properties import (PRIVACY_TO_VCARD_MAP,
                                                VCARD_NAME_TO_ENUM,
                                                VCARD_PROPERTY_TYPES,
                                                VCardPropertyType)
+from radicale.utils import normalize_phone_e164
 
 logger = logging.getLogger(__name__)
 
@@ -56,12 +57,11 @@ class PrivacyCore:
             return True, ""
 
         # If not an email, must be a phone number
-        # Remove any spaces, dashes, or parentheses
-        phone = re.sub(r'[\s\-\(\)]', '', user)
-        # Check if it's a valid phone number (E.164 format)
-        if not re.match(r'^\+[1-9]\d{6,14}$', phone):
-            return False, "Invalid identifier format. Must be a valid email or phone number in E.164 format (e.g., +1234567890)"
-        return True, ""
+        try:
+            _ = normalize_phone_e164(user)
+            return True, ""
+        except Exception as e:
+            return False, f"Invalid identifier format. Must be a valid email or phone number in E.164 format (e.g., +1234567890): {e}"
 
     def get_settings(self, user: str) -> Tuple[bool, Union[Dict[str, bool], str]]:
         """Get privacy settings for a user.
@@ -78,7 +78,15 @@ class PrivacyCore:
         if not is_valid:
             return False, error_msg
 
-        settings = self._privacy_db.get_user_settings(user)
+        if '@' in user:
+            lookup_id = user
+        else:
+            try:
+                lookup_id = normalize_phone_e164(user)
+            except Exception as e:
+                return False, str(e)
+
+        settings = self._privacy_db.get_user_settings(lookup_id)
         if not settings:
             return False, "User settings not found"
 
@@ -117,13 +125,21 @@ class PrivacyCore:
         if not all(isinstance(settings[field], bool) for field in required_fields):
             return False, "All settings must be boolean values"
 
+        if '@' in user:
+            store_id = user
+        else:
+            try:
+                store_id = normalize_phone_e164(user)
+            except Exception as e:
+                return False, str(e)
+
         try:
-            self._privacy_db.create_user_settings(user, settings)
+            self._privacy_db.create_user_settings(store_id, settings)
 
             # After creating settings, reprocess all vCards for this user
             try:
                 reprocessor = PrivacyReprocessor(self.configuration, self._scanner._storage)
-                reprocessor.reprocess_vcards(user)
+                reprocessor.reprocess_vcards(store_id)
                 return True, {"status": "created"}
             except Exception as e:
                 logger.error("Error reprocessing cards: %s", str(e))
@@ -165,15 +181,23 @@ class PrivacyCore:
         if not all(isinstance(settings[field], bool) for field in settings):
             return False, "All settings must be boolean values"
 
+        if '@' in user:
+            store_id = user
+        else:
+            try:
+                store_id = normalize_phone_e164(user)
+            except Exception as e:
+                return False, str(e)
+
         try:
-            updated = self._privacy_db.update_user_settings(user, settings)
+            updated = self._privacy_db.update_user_settings(store_id, settings)
             if not updated:
                 return False, "User settings not found"
 
             # After updating settings, reprocess all vCards for this user
             try:
                 reprocessor = PrivacyReprocessor(self.configuration, self._scanner._storage)
-                reprocessor.reprocess_vcards(user)
+                reprocessor.reprocess_vcards(store_id)
                 return True, {"status": "updated"}
             except Exception as e:
                 logger.error("Error reprocessing cards: %s", str(e))
@@ -201,8 +225,16 @@ class PrivacyCore:
         if not is_valid:
             return False, error_msg
 
+        if '@' in user:
+            store_id = user
+        else:
+            try:
+                store_id = normalize_phone_e164(user)
+            except Exception as e:
+                return False, str(e)
+
         try:
-            deleted = self._privacy_db.delete_user_settings(user)
+            deleted = self._privacy_db.delete_user_settings(store_id)
             if not deleted:
                 return False, "User settings not found"
             return True, {"status": "deleted"}
@@ -225,14 +257,22 @@ class PrivacyCore:
         if not is_valid:
             return False, error_msg
 
+        if '@' in user:
+            lookup_id = user
+        else:
+            try:
+                lookup_id = normalize_phone_e164(user)
+            except Exception as e:
+                return False, str(e)
+
         # Get user's privacy settings
-        settings = self._privacy_db.get_user_settings(user)
+        settings = self._privacy_db.get_user_settings(lookup_id)
         if not settings:
             return False, "User settings not found"
 
         # Find matching vCards
         try:
-            matches = self._scanner.find_identity_occurrences(user)
+            matches = self._scanner.find_identity_occurrences(lookup_id)
             if not matches:
                 return True, {"matches": []}
 

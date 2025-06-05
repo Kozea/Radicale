@@ -22,6 +22,8 @@ import sys
 from importlib import import_module, metadata
 from typing import Callable, Sequence, Tuple, Type, TypeVar, Union
 
+import phonenumbers
+
 from radicale import config
 from radicale.log import logger
 
@@ -214,3 +216,20 @@ def ssl_get_protocols(context):
         if (context.minimum_version <= ssl.TLSVersion.TLSv1_3) and (context.maximum_version >= ssl.TLSVersion.TLSv1_3):
             protocols.append("TLSv1.3")
     return protocols
+
+
+def normalize_phone_e164(phone: str, default_region: str = "US") -> str:
+    """
+    Normalize a phone number to E.164 format. Returns the normalized number as a string,
+    or raises ValueError if the number is invalid or cannot be parsed.
+    By default, assumes US if no country code is present.
+    """
+    try:
+        # Remove common formatting characters
+        phone = phone.strip().replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+        parsed = phonenumbers.parse(phone, default_region)
+        if not phonenumbers.is_valid_number(parsed):
+            raise ValueError(f"Invalid phone number: {phone}")
+        return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+    except Exception as e:
+        raise ValueError(f"Could not normalize phone number '{phone}': {e}")

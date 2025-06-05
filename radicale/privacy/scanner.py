@@ -11,6 +11,7 @@ import vobject
 
 from radicale.item import Item
 from radicale.storage.multifilesystem.get import CollectionPartGet
+from radicale.utils import normalize_phone_e164
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,14 @@ class PrivacyScanner:
         if hasattr(vcard, "tel_list"):
             for tel_prop in vcard.tel_list:
                 if tel_prop.value:
-                    identifiers.append(("phone", tel_prop.value))
+                    try:
+                        normalized = normalize_phone_e164(tel_prop.value)
+                        identifiers.append(("phone", normalized))
+                    except Exception:
+                        # If normalization fails, still append the original value to ensure
+                        # all phone numbers present in the vCard are captured, even if not valid E.164.
+                        # This preserves visibility of malformed or non-normalizable numbers for diagnostics.
+                        identifiers.append(("phone", tel_prop.value))
                     logger.debug("Found phone in vCard: %r", tel_prop.value)
 
         return identifiers
@@ -132,18 +140,15 @@ class PrivacyScanner:
 
                 # Check each identifier against the search identity
                 for id_type, id_value in identifiers:
-                    if identity is None or id_value == identity:
+                    if identity is not None and id_type == "phone":
+                        try:
+                            normalized_identity = normalize_phone_e164(identity)
+                        except Exception:
+                            normalized_identity = identity
+                        if id_value == normalized_identity:
+                            matching_fields.append(id_type)
+                    elif identity is None or id_value == identity:
                         matching_fields.append(id_type)
-                        logger.debug("Found matching %s: %r", id_type, id_value)
-                        if identity is None:
-                            # When indexing, store the actual value
-                            matches.append({
-                                'user_id': user_id,
-                                'vcard_uid': item.vobject_item.uid.value if hasattr(item.vobject_item, 'uid') else None,
-                                'matching_fields': [id_type],
-                                'collection_path': collection.path,
-                                id_type: id_value  # Store the actual value for indexing
-                            })
 
                 if identity is not None and matching_fields:
                     matches.append({
@@ -153,6 +158,15 @@ class PrivacyScanner:
                         'collection_path': collection.path
                     })
                     logger.info("Found match in collection %r: %r", collection.path, matching_fields)
+                elif identity is None and matching_fields:
+                    for id_type, id_value in identifiers:
+                        matches.append({
+                            'user_id': user_id,
+                            'vcard_uid': item.vobject_item.uid.value if hasattr(item.vobject_item, 'uid') else None,
+                            'matching_fields': [id_type],
+                            'collection_path': collection.path,
+                            id_type: id_value
+                        })
 
         except Exception as e:
             logger.error("Error scanning collection %r: %s", collection.path, str(e))
