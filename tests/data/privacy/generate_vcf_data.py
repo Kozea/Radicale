@@ -95,7 +95,7 @@ def generate_test_cards() -> List[Dict]:
         {
             'uid': 'test2',
             'name': 'John Doe (Work)',
-            'email': 'john.doe@example.com',
+            'email': 'john.doe.work@example.com',
             'phone': '+1987654321',
             'company': 'Another Company',
             'title': 'Senior Developer'

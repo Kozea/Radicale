@@ -1,7 +1,7 @@
 BEGIN:VCARD
 VERSION:3.0
 UID:test2
-EMAIL;TYPE=INTERNET:john.doe@example.com
+EMAIL;TYPE=INTERNET:john.doe.work@example.com
 FN:John Doe (Work)
 N:Doe;John;;;
 ORG:Another Company

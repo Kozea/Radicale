@@ -75,7 +75,7 @@ class TestPrivacyDataset(unittest.TestCase):
             # Check fields
             self.assertEqual(vcard.uid.value, 'test2')
             self.assertEqual(vcard.fn.value, 'John Doe (Work)')
-            self.assertEqual(vcard.email.value, 'john.doe@example.com')  # Same as test1
+            self.assertEqual(vcard.email.value, 'john.doe.work@example.com')  # Same as test1
             self.assertEqual(vcard.tel.value, '+1987654321')  # Different from test1
             self.assertEqual(vcard.org.value, ['Another Company'])
             self.assertEqual(vcard.title.value, 'Senior Developer')
