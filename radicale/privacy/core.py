@@ -282,7 +282,7 @@ class PrivacyCore:
                 try:
                     logger.debug("Attempting to discover collection: %r", match["collection_path"])
                     # Ensure path starts with a slash for discover()
-                    discover_path = "/" + match["collection_path"] if match["collection_path"] else "/"
+                    discover_path = "/" + match["collection_path"].lstrip("/")
                     logger.debug("Using discover path: %r", discover_path)
                     collections = list(self._scanner._storage.discover(discover_path))
                     logger.debug("Discover returned %d collections", len(collections))
@@ -299,7 +299,7 @@ class PrivacyCore:
                 vcard = None
                 for item in collection.get_all():
                     if (isinstance(item, Item) and
-                        item.component_name == "VCARD" and
+                        (item.component_name == "VCARD" or item.name == "VCARD") and
                             hasattr(item.vobject_item, "uid") and
                             item.vobject_item.uid.value == match["vcard_uid"]):
                         vcard = item.vobject_item
@@ -343,6 +343,7 @@ class PrivacyCore:
             return True, {"matches": vcard_matches}
 
         except Exception as e:
+            logger.error("Error finding matching cards: %s", str(e), exc_info=True)
             return False, f"Error finding matching cards: {str(e)}"
 
     def reprocess_cards(self, user: str) -> Tuple[bool, Union[Dict[str, Union[str, int, List[str]]], str]]:

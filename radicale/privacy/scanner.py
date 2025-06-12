@@ -128,7 +128,7 @@ class PrivacyScanner:
                 if not isinstance(item, Item):
                     logger.debug("Skipping non-Item: %r", item)
                     continue
-                if not item.component_name == "VCARD":
+                if not (item.component_name == "VCARD" or item.name == "VCARD"):
                     logger.debug("Skipping non-VCARD item: %r", item.component_name)
                     continue
 
