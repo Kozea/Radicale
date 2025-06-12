@@ -226,7 +226,7 @@ class Auth(auth.BaseAuth):
         except Exception as e:
             logger.debug(f"_login3 error 1 {e} (reader)")
             pass
-        if not conn.bind():
+        if not conn.bind(read_server_info=False):
             logger.debug("_login3 cannot bind (reader)")
             raise RuntimeError("Unable to read from LDAP server")
         logger.debug(f"_login3 bind as {self._ldap_reader_dn}")
@@ -257,7 +257,7 @@ class Auth(auth.BaseAuth):
                     conn.start_tls()
             except self.ldap3.core.exceptions.LDAPStartTLSError as e:
                 raise RuntimeError(f"_login3 StartTLS Error: {e}")
-            if not conn.bind():
+            if not conn.bind(read_server_info=False):
                 logger.debug(f"_login3 user '{login}' cannot be found")
                 return ""
             tmp: list[str] = []
