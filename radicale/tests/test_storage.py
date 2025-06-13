@@ -46,6 +46,12 @@ class TestMultiFileSystem(BaseTest):
         self.configure({"storage": {"filesystem_folder": folder}})
         assert os.path.isdir(folder)
 
+    def test_folder_creation_with_umask(self) -> None:
+        """Verify that the folder is created with umask."""
+        folder = os.path.join(self.colpath, "subfolder")
+        self.configure({"storage": {"filesystem_folder": folder, "folder_umask": "0077"}})
+        assert os.path.isdir(folder)
+
     def test_fsync(self) -> None:
         """Create a directory and file with syncing enabled."""
         self.configure({"storage": {"_filesystem_fsync": "True"}})
