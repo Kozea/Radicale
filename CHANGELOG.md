@@ -2,6 +2,7 @@
 
 ## 3.5.5.dev
 * Improve: [auth] ldap: do not read server info by bind to avoid needless network traffic
+* Fix: [storage] broken support of 'folder_umask'
 
 ## 3.5.4
 * Improve: item filter enhanced for 3rd level supporting VALARM and honoring TRIGGER (offset or absolute)

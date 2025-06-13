@@ -146,6 +146,21 @@ class Storage(
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
+        if sys.platform != "win32":
+            if not self._folder_umask:
+                # retrieve current umask by setting a dummy umask
+                current_umask = os.umask(0o0022)
+                logger.info("Storage folder umask (from system): '%04o'", current_umask)
+                # reset to original
+                os.umask(current_umask)
+            else:
+                try:
+                    config_umask = int(self._folder_umask, 8)
+                except Exception:
+                    logger.critical("storage folder umask defined but invalid: '%s'", self._folder_umask)
+                    raise
+                logger.info("storage folder umask defined: '%04o'", config_umask)
+                self._config_umask = config_umask
         logger.info("Storage location: %r", self._filesystem_folder)
         if not os.path.exists(self._filesystem_folder):
             logger.warning("Storage location: %r does not exist, creating now", self._filesystem_folder)
@@ -178,18 +193,3 @@ class Storage(
             if not os.path.exists(self._get_collection_cache_folder()):
                 logger.warning("Storage cache subfolder: %r does not exist, creating now", self._get_collection_cache_folder())
                 self._makedirs_synced(self._get_collection_cache_folder())
-        if sys.platform != "win32":
-            if not self._folder_umask:
-                # retrieve current umask by setting a dummy umask
-                current_umask = os.umask(0o0022)
-                logger.info("Storage folder umask (from system): '%04o'", current_umask)
-                # reset to original
-                os.umask(current_umask)
-            else:
-                try:
-                    config_umask = int(self._folder_umask, 8)
-                except Exception:
-                    logger.critical("storage folder umask defined but invalid: '%s'", self._folder_umask)
-                    raise
-                logger.info("storage folder umask defined: '%04o'", config_umask)
-                self._config_umask = config_umask
