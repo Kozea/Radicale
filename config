@@ -22,6 +22,7 @@
 #max_connections = 8
 
 # Max size of request body (bytes)
+# In case of using a reverse proxy in front of check also there related option
 #max_content_length = 100000000
 
 # Socket timeout (seconds)

@@ -763,6 +763,8 @@ The maximum size of the request body. (bytes)
 
 Default: `100000000`
 
+In case of using a reverse proxy in front of check also there related option
+
 ##### timeout
 
 Socket timeout. (seconds)
