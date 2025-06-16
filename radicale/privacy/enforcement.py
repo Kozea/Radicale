@@ -120,22 +120,28 @@ class PrivacyEnforcement:
         # Get all properties to remove based on privacy settings
         properties_to_remove: set[str] = set()
         for privacy_field, vcard_properties in PRIVACY_TO_VCARD_MAP.items():
+            logger.debug("Checking privacy field %s with value %s", privacy_field, getattr(privacy_settings, privacy_field, None))
             if getattr(privacy_settings, privacy_field, False):
                 logger.debug("Privacy field %s is enabled, will remove properties: %s", privacy_field, vcard_properties)
-                properties_to_remove.update(vcard_properties)
+                properties_to_remove.update(prop.lower() for prop in vcard_properties)
+
+        logger.debug("Properties to remove: %s", properties_to_remove)
+        logger.debug("Current vCard properties: %s", list(vcard.contents.keys()))
 
         # Remove disallowed properties
         for property_name in list(vcard.contents.keys()):
-            property_name_lower = property_name.lower()
-
-            # Skip if property is public or not a valid vCard property
-            if (property_name_lower in PUBLIC_VCARD_PROPERTIES or
-                    not self._is_valid_vcard_property(property_name)):
-                logger.debug("Skipping public or invalid property: %s", property_name)
+            # Skip if property is public
+            if property_name.lower() in PUBLIC_VCARD_PROPERTIES:
+                logger.debug("Skipping public property: %s", property_name)
                 continue
 
-            # Remove if property is in the disallowed list
-            if property_name_lower in properties_to_remove:
+            # Skip if not a valid vCard property
+            if not self._is_valid_vcard_property(property_name.lower()):
+                logger.debug("Skipping invalid property: %s", property_name)
+                continue
+
+            # Remove if property is in the disallowed list (case-insensitive comparison)
+            if property_name.lower() in properties_to_remove:
                 logger.debug("Removing disallowed field: %s", property_name)
                 del vcard.contents[property_name]
 

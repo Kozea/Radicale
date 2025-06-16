@@ -117,12 +117,12 @@ class PrivacyScanner:
         """
         matches: List[Dict[str, Any]] = []
         user_id = collection.path.split("/")[0]  # First part of path is user ID
-        logger.debug("Scanning collection %r for user %r", collection.path, user_id)
+        logger.info("Scanning collection %r for user %r", collection.path, user_id)
 
         try:
             # Get all items in the collection
             items = list(collection.get_all())
-            logger.debug("Found %d items in collection %r", len(items), collection.path)
+            logger.info("Found %d items in collection %r", len(items), collection.path)
 
             for item in items:
                 if not isinstance(item, Item):
@@ -132,10 +132,10 @@ class PrivacyScanner:
                     logger.debug("Skipping non-VCARD item: %r", item.component_name)
                     continue
 
-                logger.debug("Processing vCard in %r", collection.path)
+                logger.info("Processing vCard in %r", collection.path)
                 # Extract identifiers from the vCard
                 identifiers = self._extract_identifiers(item.vobject_item)
-                logger.debug("Found identifiers: %r", identifiers)
+                logger.info("Found identifiers: %r", identifiers)
                 matching_fields: List[str] = []
 
                 # Check each identifier against the search identity
@@ -171,7 +171,7 @@ class PrivacyScanner:
         except Exception as e:
             logger.error("Error scanning collection %r: %s", collection.path, str(e))
 
-        logger.debug("Scan complete for %r. Found %d matches", collection.path, len(matches))
+        logger.info("Scan complete for %r. Found %d matches", collection.path, len(matches))
         return matches
 
     def find_identity_occurrences(self, identity: str) -> List[Dict[str, Any]]:
@@ -208,6 +208,7 @@ class PrivacyScanner:
         try:
             # Get root collections
             root_collections = list(self._storage.discover("/", depth="1"))
+            logger.info("Found %d root collections", len(root_collections))
 
             # Try to get paths from collection objects
             root_paths = []
@@ -222,7 +223,7 @@ class PrivacyScanner:
                         collection_path = collection_path[1:]
                     root_paths.append(collection_path)
 
-            logger.debug("Found root collections: %r", root_paths)
+            logger.info("Found root collections: %r", root_paths)
 
             for collection in root_collections:
                 if not isinstance(collection, CollectionPartGet):
@@ -242,9 +243,9 @@ class PrivacyScanner:
                     continue
 
                 # Scan each root collection
-                logger.debug("Scanning root collection: %r", collection_path)
+                logger.info("Scanning root collection: %r", collection_path)
                 matches = self._scan_collection(collection, identity)
-                logger.debug("Found %d matches in root collection %r", len(matches), collection_path)
+                logger.info("Found %d matches in root collection %r", len(matches), collection_path)
                 all_matches.extend(matches)
 
                 # Discover and scan sub-collections
@@ -252,8 +253,9 @@ class PrivacyScanner:
                     # Ensure path starts with a slash for discover()
                     discover_path = "/" + collection_path if collection_path else "/"
                     sub_collections = list(self._storage.discover(discover_path, depth="1"))
+                    logger.info("Found %d sub-collections under %r", len(sub_collections), discover_path)
                 except Exception as e:
-                    logger.info("Error discovering sub-collections: %r", e)
+                    logger.error("Error discovering sub-collections: %r", e)
                     raise
 
                 # Try to get paths from sub-collection objects
@@ -269,7 +271,7 @@ class PrivacyScanner:
                             sub_collection_path = sub_collection_path[1:]
                         sub_paths.append(sub_collection_path)
 
-                logger.debug("Found sub-collections: %r", sub_paths)
+                logger.info("Found sub-collections: %r", sub_paths)
 
                 for sub_collection in sub_collections:
                     if not isinstance(sub_collection, CollectionPartGet):
@@ -287,21 +289,21 @@ class PrivacyScanner:
                     if sub_collection_path.startswith('/'):
                         sub_collection_path = sub_collection_path[1:]
 
-                    logger.debug("Scanning sub-collection: %r", sub_collection_path)
+                    logger.info("Scanning sub-collection: %r", sub_collection_path)
                     sub_matches = self._scan_collection(sub_collection, identity)
-                    logger.debug("Found %d matches in sub-collection %r", len(sub_matches), sub_collection_path)
+                    logger.info("Found %d matches in sub-collection %r", len(sub_matches), sub_collection_path)
                     all_matches.extend(sub_matches)
 
             # Update the index with the new matches
             if all_matches:
-                logger.debug("Updating index with %d new matches", len(all_matches))
+                logger.info("Updating index with %d new matches", len(all_matches))
                 self._index[identity] = all_matches
 
         except Exception as e:
             logger.error("Error during identity scan: %s", str(e), exc_info=True)
             raise
 
-        logger.info("Scan complete. Found %d matches", len(all_matches))
+        logger.info("Scan complete. Found %d total matches", len(all_matches))
         return all_matches
 
     def refresh_index(self) -> None:
