@@ -118,7 +118,7 @@ class PrivacyEnforcement:
         vcard = item.vobject_item
 
         # Get all properties to remove based on privacy settings
-        properties_to_remove = set()
+        properties_to_remove: set[str] = set()
         for privacy_field, vcard_properties in PRIVACY_TO_VCARD_MAP.items():
             if getattr(privacy_settings, privacy_field, False):
                 logger.debug("Privacy field %s is enabled, will remove properties: %s", privacy_field, vcard_properties)
