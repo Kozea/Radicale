@@ -83,7 +83,7 @@ PRIVACY_TO_VCARD_MAP = {
 }
 
 # List of public vCard properties that should never be filtered
-PUBLIC_VCARD_PROPERTIES = ['fn', 'n', 'email', 'tel']
+PUBLIC_VCARD_PROPERTIES = ['version', 'fn', 'n', 'email', 'tel']
 
 # Mapping of vCard property names to enum values
 VCARD_NAME_TO_ENUM = {
