@@ -113,9 +113,26 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
 
         cache_folder = self._storage._get_collection_cache_subfolder(self._filesystem_path, ".Radicale.cache", "item")
         self._storage._makedirs_synced(cache_folder)
+
+        # Get privacy enforcement instance
+        try:
+            privacy_enforcement = PrivacyEnforcement.get_instance(self._storage.configuration)
+        except Exception as e:
+            logger.error("Failed to get privacy enforcement instance: %s", str(e))
+            raise ValueError("Failed to get privacy enforcement instance: %s" % e) from e
+
         for item in items:
             uid = item.uid
             logger.debug("Store item from list with uid: '%s'" % uid)
+
+            # Apply privacy enforcement
+            try:
+                item = privacy_enforcement.enforce_privacy(item)
+            except Exception as e:
+                logger.error("Privacy enforcement error when uploading item with uid %r: %s", uid, str(e))
+                raise ValueError("Privacy enforcement error when uploading item with uid %r: %s" %
+                             (uid, e)) from e
+
             cache_content = self._item_cache_content(item)
             for href in get_safe_free_hrefs(uid):
                 path = os.path.join(self._filesystem_path, href)
