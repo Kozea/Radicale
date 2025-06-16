@@ -1,0 +1,9 @@
+node_modules/
+build/
+.react-router/
+public/
+*.min.js
+*.min.css
+pnpm-lock.yaml
+package-lock.json
+yarn.lock 
