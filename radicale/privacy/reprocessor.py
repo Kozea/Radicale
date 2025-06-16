@@ -54,10 +54,13 @@ class PrivacyReprocessor:
                     logger.debug("Processing vCard %r in collection %r", vcard_uid, collection_path)
 
                     # Get the collection using discover
-                    collections = list(self._storage.discover("/" + collection_path))
+                    discover_path = "/" + collection_path.lstrip("/")
+                    collections = list(self._storage.discover(discover_path))
+
                     if not collections:
                         logger.error("Collection not found: %r", collection_path)
                         continue
+
                     collection = collections[0]
 
                     # Get all items in the collection
@@ -66,7 +69,7 @@ class PrivacyReprocessor:
                     original_href = None
                     for i in items:
                         if (isinstance(i, Item) and
-                                i.component_name == "VCARD" and
+                                (i.component_name == "VCARD" or i.name == "VCARD") and
                                 hasattr(i.vobject_item, "uid") and
                                 i.vobject_item.uid.value == vcard_uid):
                             item = i
