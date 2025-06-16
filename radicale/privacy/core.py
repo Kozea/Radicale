@@ -342,10 +342,6 @@ class PrivacyCore:
                         if hasattr(vcard, prop_name):
                             vcard_match["fields"][prop_name] = make_json_safe(getattr(vcard, prop_name).value)
 
-                # Add photo field if present (special case as we only indicate presence)
-                if hasattr(vcard, "photo"):
-                    vcard_match["fields"]["photo"] = True
-
                 vcard_matches.append(vcard_match)
 
             return True, {"matches": vcard_matches}
