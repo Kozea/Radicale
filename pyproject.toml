@@ -39,6 +39,7 @@ dependencies = [
     "phonenumbers>=9.0.6",
     "pytest>=8.3.5",
     "pytest-mock>=3.14.1",
+    "pyjwt>=2.8.0",
 ]
 
 
