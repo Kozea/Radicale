@@ -33,7 +33,7 @@ export default function Home() {
               <h2 className="text-xl font-semibold text-gray-900 mb-3">Privacy Preferences</h2>
               <p className="text-gray-600 mb-4">
                 Declare how you want your personal information to be handled when stored 
-                in the contact management system with aone-time passcode.
+                in the contact management system with a one-time passcode.
               </p>
               <a 
                 href="/privacy-preferences" 
@@ -59,11 +59,10 @@ export default function Home() {
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">Anonymous Privacy Control</h3>
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">No accounts needed, just a one-time passcode</h3>
             <p className="text-blue-800">
-              No accounts needed, just a one-time passcode. 
               Simply set your privacy preferences and have them applied to the contact management system. 
-              Your preferences are yours to control, without compromising your privacy to manage your privacy.
+              Your preferences are yours to control, without compromising your privacy.
             </p>
           </div>
         </div>
