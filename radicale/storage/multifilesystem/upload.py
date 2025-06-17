@@ -131,7 +131,7 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
             except Exception as e:
                 logger.error("Privacy enforcement error when uploading item with uid %r: %s", uid, str(e))
                 raise ValueError("Privacy enforcement error when uploading item with uid %r: %s" %
-                             (uid, e)) from e
+                                 (uid, e)) from e
 
             cache_content = self._item_cache_content(item)
             for href in get_safe_free_hrefs(uid):
