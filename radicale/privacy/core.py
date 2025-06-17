@@ -87,8 +87,15 @@ class PrivacyCore:
                 return False, str(e)
 
         settings = self._privacy_db.get_user_settings(lookup_id)
+
+        # If settings don't exist, auto-create them with defaults
         if not settings:
-            return False, "User settings not found"
+            try:
+                logger.info("Creating default privacy settings for new user: %s", lookup_id)
+                settings = self._privacy_db.create_user_settings(lookup_id, {})
+            except Exception as e:
+                logger.error("Failed to create default settings for user %s: %s", lookup_id, e)
+                return False, f"Failed to create default settings: {str(e)}"
 
         # Convert settings to dict
         settings_dict = {
