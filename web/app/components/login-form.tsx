@@ -6,17 +6,51 @@ import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 
+// Helper to request OTP
+async function requestOtp(identifier: string): Promise<{ ok: boolean; error?: string }> {
+  const credentials = btoa(`${identifier}:`);
+  try {
+    const res = await fetch(`/privacy/settings/${encodeURIComponent(identifier)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (res.status === 401) {
+      // OTP sent, proceed to code entry
+      return { ok: true };
+    } else if (res.status === 200) {
+      // Already authenticated (should not happen in OTP flow)
+      return { ok: false, error: 'Already authenticated.' };
+    } else {
+      const data = await res.json().catch(() => ({}));
+      return { ok: false, error: data.error || 'Unexpected error.' };
+    }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
 export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
   const [step, setStep] = useState<'identifier' | 'code'>('identifier');
   const [identifier, setIdentifier] = useState('');
   const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleIdentifierSubmit = (e: FormEvent) => {
+  const handleIdentifierSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (identifier.trim()) {
-      setStep('code');
-      // Here you would typically send the OTP to the identifier
-      // console.log('Sending OTP to:', identifier);
+      setLoading(true);
+      const result = await requestOtp(identifier.trim());
+      setLoading(false);
+      if (result.ok) {
+        setStep('code');
+      } else {
+        setError(result.error || 'Failed to send OTP.');
+      }
     }
   };
 
@@ -71,13 +105,16 @@ export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
               placeholder="Email or Phone Number"
               className="h-14 text-lg px-4 rounded-lg border-2 border-gray-200"
               required
+              disabled={loading}
             />
           </div>
+          {error && <div className="text-red-600 text-sm">{error}</div>}
           <Button
             type="submit"
             className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
+            disabled={loading}
           >
-            Send Code
+            {loading ? 'Sending...' : 'Send Code'}
           </Button>
         </form>
       ) : (
