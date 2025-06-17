@@ -4,6 +4,12 @@
 
 Radicale's Twilio OTP (One-Time Password) authentication provides a secure two-factor authentication mechanism using SMS or email delivery through the Twilio service. This authentication method enhances security by requiring users to verify their identity using a time-limited code sent to their phone or email.
 
+**Key Features:**
+- **OTP Delivery**: SMS and email delivery via Twilio
+- **JWT Token Authentication**: Secure session tokens with detailed payload
+- **Automatic Type Detection**: Phone vs email identifier recognition
+- **CORS Support**: Full cross-origin request support for web applications
+
 ## Quick Setup
 
 ### 1. Prerequisites
@@ -32,11 +38,11 @@ Add the following to your Radicale configuration file (`~/.config/radicale/confi
 type = otp_twilio
 twilio_account_sid = your_account_sid
 twilio_auth_token = your_auth_token
-twilio_from_number = +1234567890  # Your Twilio phone number
-twilio_from_email = your@email.com  # Your Twilio verified email
-otp_length = 6
-otp_expiry = 300  # 5 minutes in seconds
-session_expiry = 3600  # Session token expiry in seconds (default: 1 hour)
+twilio_service_sid = your_service_sid
+
+# JWT Configuration
+jwt_secret = your_secret_key_here  # Auto-generated if not provided
+jwt_expiry = 3600  # Token expiry in seconds (default: 1 hour)
 
 # Required by BaseAuth
 lc_username = false
@@ -63,17 +69,16 @@ The server will be available at [http://127.0.0.1:5232/](http://127.0.0.1:5232/)
 
 - `twilio_account_sid`: Your Twilio account SID (required)
 - `twilio_auth_token`: Your Twilio auth token (required)
-- `twilio_from_number`: The Twilio phone number to send SMS from (required for SMS delivery)
-- `twilio_from_email`: The Twilio verified email to send from (required for email delivery)
+- `twilio_service_sid`: Your Twilio service SID (required)
 
-### OTP Settings
-
-- `otp_length`: Length of the OTP code (default: 6)
-- `otp_expiry`: Time in seconds before the OTP expires (default: 300)
-- `session_expiry`: Session token expiry time in seconds (default: 3600, i.e., 1 hour). Determines how long a session token remains valid after successful OTP authentication.
 - **Delivery method is determined automatically:**
   - If the user identifier contains an `@`, the OTP is sent via email.
   - Otherwise, the OTP is sent via SMS.
+
+### JWT Configuration
+
+- `jwt_secret`: Secret key for signing JWT tokens (auto-generated if not provided)
+- `jwt_expiry`: Token expiration time in seconds (default: 3600 = 1 hour)
 
 ### Base Authentication Settings
 
@@ -109,9 +114,88 @@ These settings are inherited from the base authentication class:
      - Authentication fails
      - System returns empty string
 
-## Session Token Authentication
+## JWT Token Authentication
 
-After successful OTP authentication, the backend issues a session token in the `X-Radicale-Session-Token` response header. The client must include this token in the `Authorization: Bearer <token>` header for all subsequent API requests. Session tokens are stored temporarily in memory on the backend and expire after a set time (default: 1 hour).
+After successful OTP verification, the system issues a **JWT (JSON Web Token)** containing user information and session metadata. This token provides secure, stateless authentication for subsequent API requests.
+
+### JWT Payload Structure
+
+The JWT token contains the following claims:
+
+```json
+{
+  "sub": "+41789600142",           // Subject: User identifier (phone/email)
+  "iat": 1640995200,               // Issued At: Unix timestamp
+  "exp": 1640998800,               // Expires: Unix timestamp
+  "identifier_type": "phone",      // Type: "phone" or "email"
+  "auth_method": "otp_twilio",     // Authentication method used
+  "iss": "radicale-idp"           // Issuer: Token issuer identifier
+}
+```
+
+**Payload Claims:**
+- **`sub`** (Subject): The user's phone number or email address
+- **`iat`** (Issued At): Timestamp when the token was created
+- **`exp`** (Expires): Timestamp when the token expires
+- **`identifier_type`**: Automatically detected as "phone" or "email" based on the presence of `@`
+- **`auth_method`**: Always "otp_twilio" for this authentication method
+- **`iss`** (Issuer): Always "radicale-idp" to identify the token source
+
+### JWT Authentication Flow
+
+1. **OTP Verification Success**:
+   ```http
+   GET /privacy/settings/+41789600142 HTTP/1.1
+   Authorization: Basic KzQxNzg5NjAwMTQyOjEyMzQ1Ng==
+   ```
+   *(Basic auth: +41789600142:123456)*
+
+   **Response:**
+   ```http
+   HTTP/1.1 200 OK
+   Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   Content-Type: application/json
+
+   {
+     "disallow_photo": true,
+     "disallow_birthday": false,
+     ...
+   }
+   ```
+
+2. **Subsequent Authenticated Requests**:
+   ```http
+   GET /privacy/settings/+41789600142 HTTP/1.1
+   Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   ```
+
+   **Response:**
+   ```http
+   HTTP/1.1 200 OK
+   Content-Type: application/json
+
+   {
+     "disallow_photo": true,
+     "disallow_birthday": false,
+     ...
+   }
+   ```
+
+### JWT Token Validation
+
+The server validates JWT tokens by:
+1. **Signature Verification**: Using the configured `jwt_secret`
+2. **Expiration Check**: Ensuring the token hasn't expired
+3. **Claim Validation**: Verifying required claims are present
+4. **User Authorization**: Ensuring the token user matches the requested resource
+
+### JWT Security Features
+
+- **Stateless**: No server-side session storage required
+- **Tamper-Proof**: Cryptographically signed with HS256 algorithm
+- **Time-Limited**: Automatic expiration prevents long-term abuse
+- **User-Specific**: Each token is tied to a specific user identifier
+- **Method Tracking**: Records the authentication method used
 
 ### Example Flow
 
@@ -135,14 +219,16 @@ After successful OTP authentication, the backend issues a session token in the `
    ```
    Note: The Basic Auth is now username:OTP (base64 encode of "user@example.com:523456")
 
-   **Server Response (Success):**
+   **Server Response:**
    ```http
    HTTP/1.1 200 OK
    Content-Type: application/json
-   X-Radicale-Session-Token: <session_token>
+   Authorization: Bearer <jwt_token>
 
    {
-     "settings": { ... }
+     "disallow_photo": true,
+     "disallow_birthday": false,
+     ...
    }
    ```
 
@@ -175,15 +261,11 @@ For web clients making cross-origin requests, the server includes the following 
 Access-Control-Allow-Origin: *
 Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
 Access-Control-Allow-Headers: Content-Type, Authorization
-Access-Control-Expose-Headers: X-Radicale-Session-Token
+Access-Control-Expose-Headers: Authorization
 Access-Control-Max-Age: 86400
 ```
 
-Note that `Access-Control-Expose-Headers` is specifically configured to allow web clients to read the `X-Radicale-Session-Token` header from the response.
-
-## Logout Endpoint
-
-To log out and invalidate a session token, send a POST request to `/logout` with the session token in the `Authorization: Bearer <token>` header.
+Note that `Access-Control-Expose-Headers` is configured to allow web clients to read the `Authorization` header from the response, which contains the JWT Bearer token.
 
 ### Example Request
 
@@ -243,203 +325,3 @@ The Twilio OTP authentication module includes comprehensive unit tests. Run them
 ```bash
 pytest tests/unit/auth/test_otp_twilio.py -v
 ```
-
-Tests cover:
-- Configuration validation
-- OTP generation and validation
-- SMS and email delivery
-- Error handling
-- Login flow with various scenarios
-- OTP expiration
-- Storage and cleanup of OTP codes
-
-### Manual Testing
-
-To test the authentication flow:
-
-1. Start the Radicale server with Twilio OTP authentication enabled
-2. Attempt to log in with a phone number or email
-3. Check for OTP delivery via SMS or email
-4. Verify the OTP code works
-5. Test expiration by waiting for the OTP to expire
-6. Test invalid codes and error handling
-
-## Troubleshooting
-
-### Common Issues
-
-1. **OTP Not Received**:
-   - Verify Twilio credentials
-   - Check phone number/email format
-   - Ensure Twilio account has sufficient credits
-   - Check Twilio logs for delivery status
-
-2. **Authentication Failures**:
-   - Verify OTP code is entered correctly
-   - Check if OTP has expired
-   - Ensure correct phone number/email is used
-   - Check server logs for detailed error messages
-
-3. **Configuration Issues**:
-   - Verify all required settings are present
-   - Check Twilio credentials are correct
-   - Ensure phone number/email is properly formatted
-   - Verify OTP settings are within acceptable ranges
-
-### Logging
-
-Enable debug logging to troubleshoot issues:
-
-```ini
-[logging]
-level = debug
-mask_passwords = true
-```
-
-## API Integration
-
-The Twilio OTP authentication can be integrated with other systems through Radicale's API. The authentication flow follows standard HTTP authentication mechanisms:
-
-1. Initial request returns 401 Unauthorized
-2. Client must provide valid credentials
-3. OTP is sent to the user
-4. Client must provide the OTP code
-5. Upon successful verification, access is granted
-
-## Detailed Authentication Flow
-
-### 1. Initial Authentication Request
-
-When a client makes an initial request to a protected endpoint:
-
-1. The server responds with a 401 Unauthorized status
-2. The client must provide the user's phone number or email address as the username
-3. The password field should be empty
-4. The server will:
-   - Generate a random OTP code
-   - Send it via Twilio (SMS or email)
-   - Store the OTP with an expiration time
-   - Return 401 Unauthorized
-
-Example HTTP request:
-```http
-GET / HTTP/1.1
-Host: example.com
-Authorization: Basic dXNlckBleGFtcGxlLmNvbTo=
-```
-
-### 2. OTP Generation and Delivery
-
-Upon receiving the initial request:
-
-1. The server generates a random OTP code (default: 6 digits)
-2. The code is stored in memory with an expiration time (default: 5 minutes)
-3. The code is sent to the user via:
-   - SMS: Using the configured Twilio phone number
-   - Email: Using the configured Twilio email address
-4. The server responds with 401 Unauthorized
-
-### 3. OTP Verification
-
-The client must then make a second request with the OTP code:
-
-1. Use the same username (phone/email) as before
-2. Use the received OTP code as the password
-3. The server validates:
-   - The OTP code matches the stored value
-   - The OTP has not expired
-   - If valid:
-     - The OTP is invalidated (removed from store)
-     - The server responds with 200 OK
-   - If invalid or expired:
-     - A new OTP is generated and sent
-     - The server responds with 401 Unauthorized
-
-Example HTTP request with OTP:
-```http
-GET / HTTP/1.1
-Host: example.com
-Authorization: Basic dXNlckBleGFtcGxlLmNvbToxMjM0NTY=
-```
-
-### 4. Successful Authentication
-
-Upon successful verification:
-
-1. The OTP is invalidated (single-use)
-2. The server responds with 200 OK
-3. The client can now access protected resources
-
-### 5. Failed Authentication
-
-If authentication fails:
-
-1. The server responds with 401 Unauthorized
-2. If the OTP is expired or invalid:
-   - A new OTP is automatically generated and sent
-   - The client must use the new OTP
-3. Previous OTPs are invalidated
-
-## HTTP API Integration Requirements
-
-To ensure proper integration with the Twilio OTP authentication:
-
-1. **Client Implementation**:
-   - Must handle 401 responses appropriately
-   - Should implement proper retry logic
-   - Must store and manage session tokens
-   - Should handle OTP expiration gracefully
-
-2. **Server Configuration**:
-   - Enable HTTPS for secure communication
-   - Configure proper CORS headers if needed
-   - Set appropriate timeouts for OTP expiration
-   - Configure rate limiting to prevent abuse
-
-3. **Error Handling**:
-   - Handle network failures gracefully
-   - Implement proper timeout handling
-   - Provide clear error messages to users
-   - Log authentication failures for monitoring
-
-4. **Security Considerations**:
-   - Use HTTPS for all communications
-   - Implement proper session management
-   - Monitor failed authentication attempts
-   - Regularly rotate Twilio credentials
-   - Implement proper rate limiting
-
-5. **Testing Requirements**:
-   - Test both SMS and email delivery methods
-   - Verify OTP expiration handling
-   - Test rate limiting functionality
-   - Validate error handling
-   - Test session management
-
-## Best Practices
-
-1. **Security**:
-   - Use HTTPS for all communications
-   - Keep Twilio credentials secure
-   - Regularly rotate auth tokens
-   - Monitor failed login attempts
-
-2. **Configuration**:
-   - Use appropriate OTP length (6-8 digits recommended)
-   - Set reasonable expiration times
-   - Configure proper rate limiting
-   - Enable logging for monitoring
-
-3. **User Experience**:
-   - Provide clear error messages
-   - Implement proper timeout handling
-   - Consider implementing a resend mechanism
-   - Add support for multiple delivery methods
-
-## Support
-
-For issues and support:
-1. Check the Radicale documentation
-2. Review Twilio's documentation
-3. Check server logs for detailed error messages
-4. Contact the Radicale community for assistance

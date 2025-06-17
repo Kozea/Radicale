@@ -66,11 +66,11 @@ For testing purposes, you can use the basic configuration with `type = none`. Ho
 type = otp_twilio
 twilio_account_sid = your_account_sid
 twilio_auth_token = your_auth_token
-twilio_from_number = +1234567890  # Your Twilio phone number
-twilio_from_email = your@email.com  # Your Twilio verified email
-otp_length = 6
-otp_expiry = 300  # 5 minutes in seconds
-session_expiry = 3600  # Session token expiry in seconds (default: 1 hour)
+twilio_service_sid = your_service_sid
+
+# JWT Configuration for Privacy API
+jwt_secret = your_secret_key_here  # Auto-generated if not provided
+jwt_expiry = 3600  # JWT token expiry in seconds (default: 1 hour)
 
 # Required by BaseAuth
 lc_username = false
@@ -88,6 +88,89 @@ cache_failed_logins_expiry = 90
 
 > [!NOTE]
 > When running integration tests, make sure to use `type = none` in the `[auth]` section to disable authentication. For production environments, always use proper authentication like Twilio OTP.
+
+## JWT Authentication for Privacy API
+
+The privacy API uses **JWT (JSON Web Token)** authentication for secure, stateless access to user privacy settings and vCard data. After successful OTP verification, the system issues a JWT token that contains user information and authentication metadata.
+
+### JWT Token Structure
+
+Privacy API JWT tokens include the following claims:
+
+```json
+{
+  "sub": "+41789600142",           // User identifier (phone/email)
+  "iat": 1640995200,               // Issued at timestamp
+  "exp": 1640998800,               // Expiration timestamp
+  "identifier_type": "phone",      // "phone" or "email"
+  "auth_method": "otp_twilio",     // Authentication method
+  "iss": "radicale-idp"           // Token issuer
+}
+```
+
+### Privacy API Authentication Flow
+
+1. **OTP Authentication** → **JWT Generation**:
+   ```http
+   GET /privacy/settings/+41789600142 HTTP/1.1
+   Authorization: Basic KzQxNzg5NjAwMTQyOjEyMzQ1Ng==
+   ```
+   *(Username: +41789600142, Password: 123456)*
+
+   **Response with JWT:**
+   ```http
+   HTTP/1.1 200 OK
+   Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+   Content-Type: application/json
+
+   {
+     "disallow_photo": true,
+     "disallow_birthday": false,
+     ...
+   }
+   ```
+
+2. **Subsequent API Requests**:
+   ```http
+   GET /privacy/settings/+41789600142 HTTP/1.1
+   Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+   ```
+
+   **Response:**
+   ```http
+   HTTP/1.1 200 OK
+   Content-Type: application/json
+
+   {
+     "disallow_photo": true,
+     "disallow_birthday": false,
+     ...
+   }
+   ```
+
+### JWT Benefits for Privacy Management
+
+- **Stateless Authentication**: No server-side session storage required
+- **User Context**: Token contains user identifier and type for authorization
+- **Secure**: Cryptographically signed and time-limited
+- **Cross-Origin Support**: Works seamlessly with web applications via CORS
+- **Audit Trail**: Tracks authentication method and issuance time
+
+### Frontend Integration
+
+For web applications, JWT tokens can be stored in localStorage and used for API calls:
+
+```javascript
+// After successful OTP verification
+const token = response.headers.get('Authorization')?.replace('Bearer ', '');
+localStorage.setItem('auth_token', token);
+
+// Use for subsequent API calls
+const headers = {
+  'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+  'Content-Type': 'application/json'
+};
+```
 
 ### 3. Launch the Radicale Server
 
