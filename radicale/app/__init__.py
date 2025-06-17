@@ -184,6 +184,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             # Add extra headers set in configuration
             headers.update(self._extra_headers)
 
+            # Add session token to response headers if present in environment
+            session_token = environ.get("radicale.session_token")
+            if session_token:
+                headers["X-Radicale-Session-Token"] = session_token
+
             # Start response
             time_end = datetime.datetime.now()
             status_text = "%d %s" % (
