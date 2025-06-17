@@ -232,26 +232,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "Twilio auth token for OTP authentication",
             "type": str}),
-        ("twilio_from_number", {
+        ("twilio_service_sid", {
             "value": "",
-            "help": "Twilio phone number to send SMS OTP from",
+            "help": "Twilio service SID for OTP authentication",
             "type": str}),
-        ("twilio_from_email", {
-            "value": "",
-            "help": "Twilio email address to send OTP from",
-            "type": str}),
-        ("otp_length", {
-            "value": "6",
-            "help": "Length of the OTP code",
-            "type": positive_int}),
-        ("otp_expiry", {
-            "value": "300",
-            "help": "OTP code expiry time in seconds (default: 5 minutes)",
-            "type": positive_int}),
-        ("session_expiry", {
-            "value": "3600",
-            "help": "Session token expiry time in seconds (default: 1 hour)",
-            "type": positive_int}),
         ("htpasswd_filename", {
             "value": "/etc/radicale/users",
             "help": "htpasswd filename",
