@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ComponentProps, FormEvent } from 'react';
 import { Contact } from 'lucide-react';
+import { useNavigate } from 'react-router';
 
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
@@ -67,6 +68,7 @@ async function requestOtp(identifier: string): Promise<{ ok: boolean; error?: st
 }
 
 export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
+  const navigate = useNavigate();
   const [step, setStep] = useState<'identifier' | 'code'>('identifier');
   const [identifier, setIdentifier] = useState('');
   const [code, setCode] = useState('');
@@ -100,9 +102,9 @@ export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
         // Store JWT token (you can use localStorage, sessionStorage, or a state management solution)
         localStorage.setItem('auth_token', result.jwt);
 
-        // Redirect to privacy preferences page
+        // Navigate to privacy preferences page using React Router
         console.log('Authentication successful! JWT token:', result.jwt);
-        window.location.href = '/privacy-preferences';
+        navigate('/privacy-preferences');
 
       } else {
         setError(result.error || 'Verification failed');
