@@ -111,40 +111,79 @@ These settings are inherited from the base authentication class:
 
 ## Session Token Authentication
 
-After successful OTP authentication, the backend issues a session token (random string) to the client in the JSON response. The client must include this token in the `Authorization: Bearer <token>` header for all subsequent API requests. Session tokens are stored temporarily in memory on the backend and expire after a set time (default: 1 hour).
+After successful OTP authentication, the backend issues a session token in the `X-Radicale-Session-Token` response header. The client must include this token in the `Authorization: Bearer <token>` header for all subsequent API requests. Session tokens are stored temporarily in memory on the backend and expire after a set time (default: 1 hour).
 
 ### Example Flow
 
 1. **Initial Login Attempt**:
-   - User provides their phone number or email address
-   - System generates and sends an OTP
-   - User receives the code
-   - System returns 401 Unauthorized with no response body
+   ```http
+   GET /privacy/settings/user@example.com HTTP/1.1
+   Authorization: Basic dXNlckBleGFtcGxlLmNvbTo=
+   ```
+   Note: The Basic Auth password is empty (base64 encode of "user@example.com:")
+
+   **Server Response:**
+   ```http
+   HTTP/1.1 401 Unauthorized
+   ```
+   The server also sends OTP via Twilio (SMS or email)
 
 2. **OTP Verification**:
-   - User enters the received OTP code
-   - If valid, the backend responds with 200 OK and JSON body:
-     ```json
-     {
-       "session_token": "random_token_string"
-     }
-     ```
-   - The client stores this token
+   ```http
+   GET /privacy/settings/user@example.com HTTP/1.1
+   Authorization: Basic dXNlckBleGFtcGxlLmNvbTo1MjM0NTY=
+   ```
+   Note: The Basic Auth is now username:OTP (base64 encode of "user@example.com:523456")
+
+   **Server Response (Success):**
+   ```http
+   HTTP/1.1 200 OK
+   Content-Type: application/json
+   X-Radicale-Session-Token: <session_token>
+
+   {
+     "settings": { ... }
+   }
+   ```
 
 3. **Authenticated Requests**:
-   - For all subsequent requests, the client sends:
-     ```http
-     Authorization: Bearer <session_token>
-     ```
-   - The backend validates the session token and grants access if valid
+   ```http
+   GET /privacy/settings/user@example.com HTTP/1.1
+   Authorization: Bearer <session_token>
+   ```
+
+   **Server Response:**
+   ```http
+   HTTP/1.1 200 OK
+   Content-Type: application/json
+
+   {
+     "settings": { ... }
+   }
+   ```
 
 4. **Session Expiry**:
    - Session tokens expire after a set time (default: 1 hour)
-   - After expiry, the client must re-authenticate using the OTP flow
+   - After expiry, requests with the token will receive 401 Unauthorized
+   - The client must re-authenticate using the OTP flow
+
+### CORS Considerations
+
+For web clients making cross-origin requests, the server includes the following CORS headers:
+
+```http
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Expose-Headers: X-Radicale-Session-Token
+Access-Control-Max-Age: 86400
+```
+
+Note that `Access-Control-Expose-Headers` is specifically configured to allow web clients to read the `X-Radicale-Session-Token` header from the response.
 
 ## Logout Endpoint
 
-To log out and invalidate a session token, the client should send a POST request to the `/logout` endpoint with the session token in the `Authorization: Bearer <token>` header.
+To log out and invalidate a session token, send a POST request to `/logout` with the session token in the `Authorization: Bearer <token>` header.
 
 ### Example Request
 
@@ -152,35 +191,31 @@ To log out and invalidate a session token, the client should send a POST request
 POST /logout HTTP/1.1
 Host: example.com
 Authorization: Bearer <session_token>
-Content-Type: application/json
 ```
 
 ### Example Response (Success)
-```json
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
 {
   "logout": "success"
 }
 ```
 
-### Example Response (No Token)
-```json
-{
-  "error": "No session token"
-}
-```
-
-### Example Response (Invalid Token)
+### Example Response (No Session Token)
 ```http
 HTTP/1.1 401 Unauthorized
 Content-Type: application/json
 
 {
-  "error": "Invalid session token"
+  "error": "No session token"
 }
 ```
 
-- After logout, the session token is invalidated and cannot be used for further requests.
-- If the token is missing or invalid, the server responds with 401 Unauthorized.
+- After logout, the session token is invalidated and cannot be used for further requests
+- If no Bearer token is provided, the server responds with 401 Unauthorized
+- The logout endpoint is accessible at the root path `/logout`
 
 ## Security Considerations
 
