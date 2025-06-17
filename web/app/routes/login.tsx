@@ -1,7 +1,15 @@
 import { LoginForm } from '~/components/login-form';
+import type { Route } from './+types/login';
+
+export function meta(_: Route.MetaArgs) {
+  return [
+    { title: 'Login' },
+    { name: 'description', content: 'Access your privacy preferences with a one-time passcode. No account creation required.' },
+  ];
+}
 
 export const handle = {
-  subtitle: 'Authentication',
+  subtitle: 'Login',
 };
 
 export default function LoginPage() {

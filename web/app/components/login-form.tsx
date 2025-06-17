@@ -44,6 +44,7 @@ export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
             <div className="absolute w-24 h-24 rounded-full border-2 border-dashed border-orange-300 opacity-40"></div>
             <div className="absolute w-16 h-16 rounded-full border-2 border-dashed border-orange-300 opacity-30"></div>
           </div>
+
           {/* Center logo placeholder */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-12 h-12 rounded-full flex items-center justify-center">
@@ -55,6 +56,9 @@ export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
 
       <div className="text-center mb-8">
         <h2 className="text-3xl font-semibold text-gray-900 mb-2">Sign in with your identifier</h2>
+        <p className="text-gray-600">
+        Enter your email or phone number to receive a one-time passcode. No account creation required.
+        </p>
       </div>
 
       {step === 'identifier' ? (
