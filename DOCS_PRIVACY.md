@@ -259,10 +259,10 @@ python3 tests/data/privacy/generate_privacy_settings_json.py
 > [!NOTE]
 > When running tests, make sure to use `type = none` in the `[auth]` section to disable authentication. For production environments, always use proper authentication like Twilio OTP.
 
-Use the `test_vcf_upload.py` script to automatically upload the generated VCF files and privacy settings to the running Radicale server, and verify privacy enforcement:
+Use the `run_integration.py` script to automatically upload the generated VCF files and privacy settings to the running Radicale server, and verify privacy enforcement:
 
 ```bash
-python3 tests/data/privacy/test_vcf_upload.py
+python3 tests/data/privacy/run_integration.py
 ```
 
 - Make sure your Radicale server is running and accessible at the API base URL specified in the script (default: `http://localhost:5232`).
