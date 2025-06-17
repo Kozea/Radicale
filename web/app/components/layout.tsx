@@ -1,23 +1,26 @@
 import { Contact, Menu, X } from 'lucide-react';
-import { Outlet, useMatches, Link } from 'react-router';
+import { Outlet, useMatches } from 'react-router';
 import { useState } from 'react';
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from '~/components/ui/navigation-menu';
+import { NavLink } from '~/components/ui/navigation-menu';
 
 interface RouteHandle {
   subtitle?: string;
 }
+
+const navigationItems = [
+  { to: '/', label: 'Home' },
+  { to: '/preferences', label: 'Preferences' },
+  { to: '/data-access', label: 'Data Access' },
+  { to: '/login', label: 'Login' },
+];
 
 export default function Layout() {
   const matches = useMatches();
   const currentMatch = matches[matches.length - 1];
   const subtitle = (currentMatch?.handle as RouteHandle)?.subtitle || '';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,31 +41,12 @@ export default function Layout() {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4">
-              <NavigationMenu>
-                <NavigationMenuList>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                      <Link to="/">Home</Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                      <Link to="/preferences">Preferences</Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                      <Link to="/data-access">Data Access</Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                      <Link to="/login">Login</Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenu>
+            <div className="hidden md:flex items-center space-x-1">
+              {navigationItems.map((item) => (
+                <NavLink key={item.to} to={item.to}>
+                  {item.label}
+                </NavLink>
+              ))}
             </div>
 
             {/* Mobile Menu Button */}
@@ -79,34 +63,16 @@ export default function Layout() {
           {isMobileMenuOpen && (
             <div className="md:hidden mt-4 pb-4 border-t border-accent-foreground/20">
               <div className="flex flex-col space-y-2 pt-4">
-                <Link
-                  to="/"
-                  className="px-4 py-2 text-sm font-medium hover:bg-accent-foreground/10 rounded-md transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Home
-                </Link>
-                <Link
-                  to="/preferences"
-                  className="px-4 py-2 text-sm font-medium hover:bg-accent-foreground/10 rounded-md transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Preferences
-                </Link>
-                <Link
-                  to="/data-access"
-                  className="px-4 py-2 text-sm font-medium hover:bg-accent-foreground/10 rounded-md transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Data Access
-                </Link>
-                <Link
-                  to="/login"
-                  className="px-4 py-2 text-sm font-medium hover:bg-accent-foreground/10 rounded-md transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Login
-                </Link>
+                {navigationItems.map((item) => (
+                  <NavLink 
+                    key={item.to} 
+                    to={item.to} 
+                    onClick={closeMobileMenu}
+                    className="justify-start"
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
               </div>
             </div>
           )}

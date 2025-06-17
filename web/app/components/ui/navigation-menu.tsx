@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as NavigationMenuPrimitive from '@radix-ui/react-navigation-menu';
 import { cva } from 'class-variance-authority';
 import { ChevronDownIcon } from 'lucide-react';
+import { useLocation, Link } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
@@ -56,7 +57,18 @@ function NavigationMenuItem({
 }
 
 const navigationMenuTriggerStyle = cva(
-  'group inline-flex h-9 w-max items-center justify-center rounded-md bg-accent text-accent-foreground px-4 py-2 text-sm font-medium hover:bg-background hover:text-foreground focus:bg-background focus:text-foreground disabled:pointer-events-none disabled:opacity-50 data-[state=open]:hover:bg-background data-[state=open]:text-foreground data-[state=open]:focus:bg-background data-[state=open]:bg-background/50 focus-visible:ring-ring/50 outline-none transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1'
+  'group inline-flex h-9 w-max items-center justify-center rounded-md bg-accent text-accent-foreground px-4 py-2 text-sm font-medium hover:bg-background hover:text-foreground focus:bg-background focus:text-foreground disabled:pointer-events-none disabled:opacity-50 data-[state=open]:hover:bg-background data-[state=open]:text-foreground data-[state=open]:focus:bg-background data-[state=open]:bg-background/50 focus-visible:ring-ring/50 outline-none transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1',
+  {
+    variants: {
+      active: {
+        true: 'bg-background text-foreground',
+        false: ''
+      }
+    },
+    defaultVariants: {
+      active: false
+    }
+  }
 );
 
 function NavigationMenuTrigger({
@@ -130,6 +142,37 @@ function NavigationMenuLink({
   );
 }
 
+interface NavLinkProps {
+  to: string;
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+}
+
+function NavLink({ to, children, className, onClick }: NavLinkProps) {
+  const location = useLocation();
+  const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
+
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className={cn(
+        // Base styles
+        'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        // Active state
+        isActive
+          ? 'bg-background text-foreground'
+          : 'bg-accent text-accent-foreground hover:bg-background hover:text-foreground',
+        className
+      )}
+    >
+      {children}
+    </Link>
+  );
+}
+
 function NavigationMenuIndicator({
   className,
   ...props
@@ -158,4 +201,5 @@ export {
   NavigationMenuIndicator,
   NavigationMenuViewport,
   navigationMenuTriggerStyle,
+  NavLink,
 };
