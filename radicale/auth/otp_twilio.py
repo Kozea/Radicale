@@ -18,8 +18,11 @@ Authentication backend that implements OTP (One-Time Password) authentication
 using Twilio for sending OTP codes via SMS or email.
 """
 
+import datetime
+import secrets
 from typing import Optional, Tuple
 
+import jwt
 from twilio.rest import Client
 
 from radicale import auth, config
@@ -44,6 +47,10 @@ class Auth(auth.BaseAuth):
 
         # Initialize Twilio client
         self._client: Client = Client(self._account_sid, self._auth_token)
+
+        # JWT configuration
+        self._jwt_secret: str = configuration.get("auth", "jwt_secret") or secrets.token_urlsafe(32)
+        self._jwt_expiry: int = configuration.get("auth", "jwt_expiry") or 3600  # 1 hour default
 
         logger.info("OTP authentication initialized")
 
@@ -85,7 +92,8 @@ class Auth(auth.BaseAuth):
             ).verification_checks.create(to=login, code=otp)
             logger.info("verification_check: %s", verification_check)
             logger.info("verification_check.status: %s", verification_check.status)
-            return bool(verification_check.status == "approved" and verification_check.valid == "true")
+            logger.info("verification_check.valid: %s", verification_check.valid)
+            return bool(verification_check.status == "approved")
         except Exception as e:
             logger.error("Failed to check OTP via Twilio: %s", str(e))
             return False
@@ -98,7 +106,7 @@ class Auth(auth.BaseAuth):
             password: The OTP code to validate.
 
         Returns:
-            Tuple of (login, session_token) if authentication is successful, empty strings otherwise.
+            Tuple of (login, jwt_token) if authentication is successful, empty strings otherwise.
         """
         # If password is empty, this is the initial request - generate and send OTP
         if not password:
@@ -111,7 +119,9 @@ class Auth(auth.BaseAuth):
             if self._check_otp(login, password):
                 logger.info("OTP validated for user: %s", login)
                 logger.info("User authenticated successfully: %s", login)
-                return login, None
+                # Generate JWT token for successful authentication
+                jwt_token = self._generate_jwt(login)
+                return login, jwt_token
             else:
                 logger.warning("Invalid OTP provided for user: %s", login)
                 return "", None
@@ -135,3 +145,50 @@ class Auth(auth.BaseAuth):
         """
         result, _ = self.login_with_session(user, password)
         return bool(result)
+
+    def _generate_jwt(self, user: str) -> str:
+        """Generate a JWT token for the authenticated user.
+
+        Args:
+            user: The authenticated user identifier
+
+        Returns:
+            JWT token string
+        """
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        # Determine identifier type
+        identifier_type = "email" if "@" in user else "phone"
+
+        payload = {
+            "sub": user,  # subject (user identifier)
+            "iat": now,   # issued at
+            "exp": now + datetime.timedelta(seconds=self._jwt_expiry),  # expiry
+            "identifier_type": identifier_type,  # phone or email
+            "auth_method": "otp_twilio",  # authentication method used
+        }
+
+        token = jwt.encode(payload, self._jwt_secret, algorithm="HS256")
+        logger.info("Generated JWT for user: %s (type: %s, expires in %d seconds)", user, identifier_type, self._jwt_expiry)
+        return token
+
+    def _validate_jwt(self, token: str) -> Optional[str]:
+        """Validate a JWT token and return the user if valid.
+
+        Args:
+            token: JWT token string
+
+        Returns:
+            User identifier if valid, None if invalid
+        """
+        try:
+            payload = jwt.decode(token, self._jwt_secret, algorithms=["HS256"])
+            user = payload.get("sub")
+            logger.info("JWT validated for user: %s", user)
+            return user
+        except jwt.ExpiredSignatureError:
+            logger.warning("JWT token expired")
+            return None
+        except jwt.InvalidTokenError as e:
+            logger.warning("Invalid JWT token: %s", e)
+            return None

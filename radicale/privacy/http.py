@@ -46,18 +46,34 @@ class PrivacyHTTP(ApplicationBase):
         self._privacy_core = PrivacyCore(configuration)
         self._otp_auth = OTPAuth(configuration)
 
-    def _get_authenticated_user(self, environ) -> Optional[str]:
-        # Only support Basic Auth (username: OTP)
+    def _get_authenticated_user(self, environ) -> tuple[Optional[str], Optional[str]]:
+        """Get authenticated user and JWT token if applicable.
+
+        Returns:
+            Tuple of (user, jwt_token) where jwt_token is only set on successful OTP verification
+        """
         auth_header = environ.get("HTTP_AUTHORIZATION", "")
-        if auth_header.startswith("Basic "):
+
+        # Check for Bearer JWT token first
+        if auth_header.startswith("Bearer "):
+            jwt_token = auth_header.split(" ", 1)[1]
+            user = self._otp_auth._validate_jwt(jwt_token)
+            return user, None  # No new JWT needed
+
+        # Check for Basic Auth (OTP verification)
+        elif auth_header.startswith("Basic "):
             try:
                 credentials = base64.b64decode(auth_header.split(" ", 1)[1]).decode()
                 login, password = credentials.split(":", 1)
-                user = self._otp_auth._login(login, password)
-                return user
-            except Exception:
-                return None
-        return None
+
+                # Use login_with_session to get both user and JWT
+                user, jwt_token = self._otp_auth.login_with_session(login, password)
+                return user, jwt_token
+            except Exception as e:
+                logger.error("Authentication error: %s", e)
+                return None, None
+
+        return None, None
 
     def _add_cors_headers(self, headers: dict) -> dict:
         """Merge CORS headers into the response headers."""
@@ -65,22 +81,27 @@ class PrivacyHTTP(ApplicationBase):
         merged.update(self.CORS_HEADERS)
         return merged
 
-    def _to_wsgi_response(self, success: bool, result: APIResult) -> types.WSGIResponse:
+    def _to_wsgi_response(self, success: bool, result: APIResult, jwt_token: Optional[str] = None) -> types.WSGIResponse:
         """Convert API response to WSGI response, always adding CORS headers.
 
         Args:
             success: Whether the API call was successful
-            result: The API response data. Can be:
-                - A string (error message)
-                - A dictionary with boolean values (settings)
-                - A dictionary with list of dictionaries (matching cards)
-                - A dictionary with mixed values (status messages)
+            result: The API response data
+            jwt_token: JWT token to include in Authorization header if provided
 
         Returns:
             WSGI response tuple (status, headers, body)
         """
         headers = {"Content-Type": "application/json"}
         headers = self._add_cors_headers(headers)
+
+        # Add JWT token to Authorization header if provided
+        if jwt_token:
+            headers["Authorization"] = f"Bearer {jwt_token}"
+            logger.info("Adding JWT token to response headers: %s", jwt_token[:20] + "..." if len(jwt_token) > 20 else jwt_token)
+        else:
+            logger.info("No JWT token to add to response headers")
+
         if isinstance(result, str):
             # Error message
             return client.BAD_REQUEST, headers, json.dumps({"error": result})
@@ -99,8 +120,15 @@ class PrivacyHTTP(ApplicationBase):
         Returns:
             WSGI response
         """
+        # Check authentication and get JWT token if this is OTP verification
+        authenticated_user, jwt_token = self._get_authenticated_user(environ)
+        logger.info("do_GET: authenticated_user=%s, jwt_token=%s", authenticated_user, jwt_token is not None)
+
+        if not authenticated_user:
+            # No authentication - return 401 (main app will handle OTP sending)
+            return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
+
         # Check if authenticated user matches the requested user
-        authenticated_user = self._get_authenticated_user(environ)
         if authenticated_user != user:
             return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 
@@ -123,7 +151,8 @@ class PrivacyHTTP(ApplicationBase):
         else:
             return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
 
-        return self._to_wsgi_response(success, result)
+        # Pass JWT token to response if this was OTP verification
+        return self._to_wsgi_response(success, result, jwt_token)
 
     def do_POST(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
                 user: str) -> types.WSGIResponse:
@@ -139,7 +168,7 @@ class PrivacyHTTP(ApplicationBase):
             WSGI response
         """
         # Check if authenticated user matches the requested user
-        authenticated_user = self._get_authenticated_user(environ)
+        authenticated_user, _ = self._get_authenticated_user(environ)
         if authenticated_user != user:
             return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 
@@ -190,7 +219,7 @@ class PrivacyHTTP(ApplicationBase):
             WSGI response
         """
         # Check if authenticated user matches the requested user
-        authenticated_user = self._get_authenticated_user(environ)
+        authenticated_user, _ = self._get_authenticated_user(environ)
         if authenticated_user != user:
             return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 
@@ -231,7 +260,7 @@ class PrivacyHTTP(ApplicationBase):
             WSGI response
         """
         # Check if authenticated user matches the requested user
-        authenticated_user = self._get_authenticated_user(environ)
+        authenticated_user, _ = self._get_authenticated_user(environ)
         if authenticated_user != user:
             return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 

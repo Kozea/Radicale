@@ -236,6 +236,14 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "Twilio service SID for OTP authentication",
             "type": str}),
+        ("jwt_secret", {
+            "value": "",
+            "help": "JWT secret key for token signing (auto-generated if empty)",
+            "type": str}),
+        ("jwt_expiry", {
+            "value": "3600",
+            "help": "JWT token expiry time in seconds (default: 1 hour)",
+            "type": positive_int}),
         ("htpasswd_filename", {
             "value": "/etc/radicale/users",
             "help": "htpasswd filename",
