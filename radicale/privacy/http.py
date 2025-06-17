@@ -47,22 +47,13 @@ class PrivacyHTTP(ApplicationBase):
         self._otp_auth = OTPAuth(configuration)
 
     def _get_authenticated_user(self, environ) -> Optional[str]:
-        # Check for Bearer token
+        # Only support Basic Auth (username: OTP)
         auth_header = environ.get("HTTP_AUTHORIZATION", "")
-        if auth_header.startswith("Bearer "):
-            token = auth_header.split(" ", 1)[1]
-            user = self._otp_auth.validate_session(token)
-            if user:
-                return user
-
-        # Fallback to Basic Auth
         if auth_header.startswith("Basic "):
             try:
                 credentials = base64.b64decode(auth_header.split(" ", 1)[1]).decode()
                 login, password = credentials.split(":", 1)
-                user, session_token = self._otp_auth.login_with_session(login, password)
-                # If session_token is returned, send it in the response header
-                environ["radicale.session_token"] = session_token
+                user = self._otp_auth._login(login, password)
                 return user
             except Exception:
                 return None
@@ -147,15 +138,6 @@ class PrivacyHTTP(ApplicationBase):
         Returns:
             WSGI response
         """
-        # Add logout endpoint
-        if path.strip("/") == "logout":
-            auth_header = environ.get("HTTP_AUTHORIZATION", "")
-            if auth_header.startswith("Bearer "):
-                token = auth_header.split(" ", 1)[1]
-                self._otp_auth.invalidate_session(token)
-                return client.OK, self._add_cors_headers({"Content-Type": "application/json"}), b'{"logout": "success"}'
-            return client.UNAUTHORIZED, self._add_cors_headers({"Content-Type": "application/json"}), b'{"error": "No session token"}'
-
         # Check if authenticated user matches the requested user
         authenticated_user = self._get_authenticated_user(environ)
         if authenticated_user != user:
