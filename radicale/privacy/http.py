@@ -115,7 +115,7 @@ class PrivacyHTTP(ApplicationBase):
             environ: The WSGI environment
             base_prefix: The base URL prefix
             path: The request path
-            user: The authenticated user
+            user: The authenticated user (from main app, may be empty for JWT auth)
 
         Returns:
             WSGI response
@@ -128,8 +128,10 @@ class PrivacyHTTP(ApplicationBase):
             # No authentication - return 401 (main app will handle OTP sending)
             return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 
-        # Check if authenticated user matches the requested user
-        if authenticated_user != user:
+        # For JWT authentication, the main app user parameter may be empty, so we skip this check
+        # For Basic auth, we still want to verify consistency
+        if user and authenticated_user != user:
+            logger.warning("User mismatch: authenticated_user=%s, main_app_user=%s", authenticated_user, user)
             return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 
         # Extract user identifier from path
@@ -162,14 +164,14 @@ class PrivacyHTTP(ApplicationBase):
             environ: The WSGI environment
             base_prefix: The base URL prefix
             path: The request path
-            user: The authenticated user
+            user: The authenticated user (from main app, may be empty for JWT auth)
 
         Returns:
             WSGI response
         """
         # Check if authenticated user matches the requested user
         authenticated_user, _ = self._get_authenticated_user(environ)
-        if authenticated_user != user:
+        if user and authenticated_user != user:
             return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 
         # Extract user identifier and action from path
@@ -213,14 +215,14 @@ class PrivacyHTTP(ApplicationBase):
             environ: The WSGI environment
             base_prefix: The base URL prefix
             path: The request path
-            user: The authenticated user
+            user: The authenticated user (from main app, may be empty for JWT auth)
 
         Returns:
             WSGI response
         """
         # Check if authenticated user matches the requested user
         authenticated_user, _ = self._get_authenticated_user(environ)
-        if authenticated_user != user:
+        if user and authenticated_user != user:
             return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 
         # Extract user identifier from path
@@ -254,14 +256,14 @@ class PrivacyHTTP(ApplicationBase):
             environ: The WSGI environment
             base_prefix: The base URL prefix
             path: The request path
-            user: The authenticated user
+            user: The authenticated user (from main app, may be empty for JWT auth)
 
         Returns:
             WSGI response
         """
         # Check if authenticated user matches the requested user
         authenticated_user, _ = self._get_authenticated_user(environ)
-        if authenticated_user != user:
+        if user and authenticated_user != user:
             return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 
         # Extract user identifier from path
