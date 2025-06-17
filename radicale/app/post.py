@@ -65,11 +65,11 @@ class ApplicationPartPost(ApplicationBase):
             result: APIResult
 
             if resource_type == "settings":
-                success, result = self._privacy_api.create_settings(user_identifier, data)
+                success, result = self._privacy_core.create_settings(user_identifier, data)
                 if success:
                     return client.CREATED, {"Content-Type": "application/json"}, json.dumps(result).encode()
             elif resource_type == "cards" and len(parts) > 3 and parts[3] == "reprocess":
-                success, result = self._privacy_api.reprocess_cards(user_identifier)
+                success, result = self._privacy_core.reprocess_cards(user_identifier)
             else:
                 return httputils.BAD_REQUEST
 

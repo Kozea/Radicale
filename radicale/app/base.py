@@ -52,7 +52,7 @@ class ApplicationBase:
     _permit_overwrite_collection: bool
     _hook: hook.BaseHook
     _privacy: Optional[privacy.PrivacyDatabase]
-    _privacy_api: PrivacyCore
+    _privacy_core: PrivacyCore
 
     def __init__(self, configuration: config.Configuration) -> None:
         self.configuration = configuration
@@ -66,7 +66,7 @@ class ApplicationBase:
         self._request_content_on_debug = configuration.get("logging", "request_content_on_debug")
         self._hook = hook.load(configuration)
         self._privacy = privacy.load(configuration)
-        self._privacy_api = PrivacyCore(configuration)
+        self._privacy_core = PrivacyCore(configuration)
 
     def _read_xml_request_body(self, environ: types.WSGIEnviron
                                ) -> Optional[ET.Element]:

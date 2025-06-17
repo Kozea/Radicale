@@ -69,7 +69,7 @@ class ApplicationPartDelete(ApplicationBase):
             if user != user_identifier:
                 return httputils.FORBIDDEN
 
-            success, result = self._privacy_api.delete_settings(user_identifier)
+            success, result = self._privacy_core.delete_settings(user_identifier)
             return self._to_wsgi_response(success, result)
 
         access = Access(self._rights, user, path)
