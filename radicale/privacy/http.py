@@ -27,6 +27,15 @@ APIResult = Union[SettingsResult, CardsResult, StatusResult, str]
 class PrivacyHTTP(ApplicationBase):
     """HTTP endpoints for privacy management."""
 
+    # Universal CORS headers
+    CORS_HEADERS = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Expose-Headers": "Authorization",
+        "Access-Control-Max-Age": "86400",
+    }
+
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize the privacy HTTP endpoints.
 
@@ -59,8 +68,14 @@ class PrivacyHTTP(ApplicationBase):
                 return None
         return None
 
+    def _add_cors_headers(self, headers: dict) -> dict:
+        """Merge CORS headers into the response headers."""
+        merged = dict(headers)
+        merged.update(self.CORS_HEADERS)
+        return merged
+
     def _to_wsgi_response(self, success: bool, result: APIResult) -> types.WSGIResponse:
-        """Convert API response to WSGI response.
+        """Convert API response to WSGI response, always adding CORS headers.
 
         Args:
             success: Whether the API call was successful
@@ -74,6 +89,7 @@ class PrivacyHTTP(ApplicationBase):
             WSGI response tuple (status, headers, body)
         """
         headers = {"Content-Type": "application/json"}
+        headers = self._add_cors_headers(headers)
         if isinstance(result, str):
             # Error message
             return client.BAD_REQUEST, headers, json.dumps({"error": result})
@@ -95,13 +111,13 @@ class PrivacyHTTP(ApplicationBase):
         # Check if authenticated user matches the requested user
         authenticated_user = self._get_authenticated_user(environ)
         if authenticated_user != user:
-            return httputils.FORBIDDEN
+            return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 
         # Extract user identifier from path
         # Path format: /privacy/settings/{user} or /privacy/cards/{user}
         parts = path.strip("/").split("/")
         if len(parts) < 3:
-            return httputils.BAD_REQUEST
+            return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
 
         resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
@@ -114,7 +130,7 @@ class PrivacyHTTP(ApplicationBase):
         elif resource_type == "cards":
             success, result = self._privacy_core.get_matching_cards(user_identifier)
         else:
-            return httputils.BAD_REQUEST
+            return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
 
         return self._to_wsgi_response(success, result)
 
@@ -137,18 +153,18 @@ class PrivacyHTTP(ApplicationBase):
             if auth_header.startswith("Bearer "):
                 token = auth_header.split(" ", 1)[1]
                 self._otp_auth.invalidate_session(token)
-                return client.OK, {"Content-Type": "application/json"}, b'{"logout": "success"}'
-            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, b'{"error": "No session token"}'
+                return client.OK, self._add_cors_headers({"Content-Type": "application/json"}), b'{"logout": "success"}'
+            return client.UNAUTHORIZED, self._add_cors_headers({"Content-Type": "application/json"}), b'{"error": "No session token"}'
 
         # Check if authenticated user matches the requested user
         authenticated_user = self._get_authenticated_user(environ)
         if authenticated_user != user:
-            return httputils.FORBIDDEN
+            return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 
         # Extract user identifier and action from path
         parts = path.strip("/").split("/")
         if len(parts) < 3:
-            return httputils.BAD_REQUEST
+            return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
 
         resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
@@ -162,7 +178,7 @@ class PrivacyHTTP(ApplicationBase):
             else:
                 data = {}
         except (ValueError, json.JSONDecodeError):
-            return httputils.BAD_REQUEST
+            return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
 
         success: bool
         result: APIResult
@@ -170,11 +186,11 @@ class PrivacyHTTP(ApplicationBase):
         if resource_type == "settings":
             success, result = self._privacy_core.create_settings(user_identifier, data)
             if success:
-                return client.CREATED, {"Content-Type": "application/json"}, json.dumps(result)
+                return client.CREATED, self._add_cors_headers({"Content-Type": "application/json"}), json.dumps(result)
         elif resource_type == "cards" and len(parts) > 3 and parts[3] == "reprocess":
             success, result = self._privacy_core.reprocess_cards(user_identifier)
         else:
-            return httputils.BAD_REQUEST
+            return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
 
         return self._to_wsgi_response(success, result)
 
@@ -194,12 +210,12 @@ class PrivacyHTTP(ApplicationBase):
         # Check if authenticated user matches the requested user
         authenticated_user = self._get_authenticated_user(environ)
         if authenticated_user != user:
-            return httputils.FORBIDDEN
+            return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 
         # Extract user identifier from path
         parts = path.strip("/").split("/")
         if len(parts) != 3 or parts[1] != "settings":
-            return httputils.BAD_REQUEST
+            return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
 
         user_identifier = parts[2]
 
@@ -210,9 +226,9 @@ class PrivacyHTTP(ApplicationBase):
                 body = environ["wsgi.input"].read(content_length)
                 data = json.loads(body)
             else:
-                return httputils.BAD_REQUEST
+                return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
         except (ValueError, json.JSONDecodeError):
-            return httputils.BAD_REQUEST
+            return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
 
         success: bool
         result: APIResult
@@ -235,12 +251,12 @@ class PrivacyHTTP(ApplicationBase):
         # Check if authenticated user matches the requested user
         authenticated_user = self._get_authenticated_user(environ)
         if authenticated_user != user:
-            return httputils.FORBIDDEN
+            return httputils.FORBIDDEN[0], self._add_cors_headers(dict(httputils.FORBIDDEN[1])), httputils.FORBIDDEN[2]
 
         # Extract user identifier from path
         parts = path.strip("/").split("/")
         if len(parts) != 3 or parts[1] != "settings":
-            return httputils.BAD_REQUEST
+            return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
 
         user_identifier = parts[2]
 
@@ -262,11 +278,5 @@ class PrivacyHTTP(ApplicationBase):
         Returns:
             WSGI response with CORS headers
         """
-        headers = {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Expose-Headers": "X-Radicale-Session-Token",
-            "Access-Control-Max-Age": "86400",  # 24 hours
-        }
+        headers = self._add_cors_headers({})
         return client.OK, headers, b""
