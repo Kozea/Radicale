@@ -6,6 +6,40 @@ import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 
+// Helper to verify OTP and get JWT token
+async function verifyOtp(identifier: string, code: string): Promise<{ ok: boolean; jwt?: string; error?: string }> {
+  const credentials = btoa(`${identifier}:${code}`);
+  try {
+    const res = await fetch(`/privacy/settings/${encodeURIComponent(identifier)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (res.status === 200) {
+      // OTP verified successfully, get JWT from Authorization header
+      const jwt = res.headers.get('Authorization')?.replace('Bearer ', '');
+      if (jwt) {
+        return { ok: true, jwt };
+      } else {
+        return { ok: false, error: 'No JWT token received' };
+      }
+    } else if (res.status === 401) {
+      // Invalid OTP
+      const data = await res.json().catch(() => ({}));
+      return { ok: false, error: data.error || 'Invalid verification code' };
+    } else {
+      // Other error
+      const data = await res.json().catch(() => ({}));
+      return { ok: false, error: data.error || 'Verification failed' };
+    }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
 // Helper to request OTP
 async function requestOtp(identifier: string): Promise<{ ok: boolean; error?: string }> {
   const credentials = btoa(`${identifier}:`);
@@ -54,11 +88,29 @@ export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
     }
   };
 
-  const handleCodeSubmit = (e: FormEvent) => {
+  const handleCodeSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (code.trim()) {
-      // Here you would verify the OTP code
-      // console.log('Verifying code:', code, 'for identifier:', identifier);
+      setLoading(true);
+      const result = await verifyOtp(identifier.trim(), code.trim());
+      setLoading(false);
+
+      if (result.ok && result.jwt) {
+        // Store JWT token (you can use localStorage, sessionStorage, or a state management solution)
+        localStorage.setItem('auth_token', result.jwt);
+
+        // Redirect to the main application or trigger a state change
+        // For now, we'll just show a success message
+        console.log('Authentication successful! JWT token:', result.jwt);
+
+        // You could navigate to another page here:
+        // window.location.href = '/dashboard';
+        // or trigger a callback prop if provided
+
+      } else {
+        setError(result.error || 'Verification failed');
+      }
     }
   };
 
@@ -140,22 +192,26 @@ export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
               className="h-14 text-lg px-4 rounded-lg border-2 border-gray-200"
               required
               autoFocus
+              disabled={loading}
             />
           </div>
+          {error && <div className="text-red-600 text-sm">{error}</div>}
           <div className="flex gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={handleBack}
               className="flex-1 h-12 rounded-lg"
+              disabled={loading}
             >
               Back
             </Button>
             <Button
               type="submit"
               className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
+              disabled={loading}
             >
-              Verify Code
+              {loading ? 'Verifying...' : 'Verify Code'}
             </Button>
           </div>
         </form>
