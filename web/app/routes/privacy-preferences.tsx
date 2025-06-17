@@ -1,8 +1,20 @@
 import { useState } from 'react';
 import { Checkbox } from '~/components/ui/checkbox';
+import type { Route } from './+types/privacy-preferences';
+
+export function meta(_: Route.MetaArgs) {
+  return [
+    { title: 'Privacy Preferences' },
+    { name: 'description', content: 'Set your privacy preferences for the contact management system. Control which personal information fields can be synced and how your data is handled.' },
+    { name: 'keywords', content: 'privacy preferences, contact manager privacy, data protection, personal information control, contact field preferences, GDPR preferences' },
+    { property: 'og:title', content: 'Privacy Preferences' },
+    { property: 'og:description', content: 'Control your personal information in the contact management system.' },
+    { property: 'og:type', content: 'website' },
+  ];
+}
 
 export const handle = {
-  subtitle: 'Subject Data Preferences',
+  subtitle: 'Privacy Preferences',
 };
 
 interface PreferenceField {
@@ -39,19 +51,26 @@ export default function PreferencesPage() {
         <div className="space-y-8">
           {/* Header */}
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-6">Your preferences</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-6">Privacy Preferences</h1>
             <p className="text-gray-600 text-lg leading-relaxed mb-2">
-              Please select the contact card fields that you do{' '}
-              <span className="font-semibold">not</span> want to be synced on iCloud.
+              Control how your personal information is handled in the contact management system. 
+              Select which contact fields you want to keep private and prevent from being synced.
             </p>
           </div>
 
           {/* Description */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">Your Privacy Control</h3>
+            <p className="text-blue-800">
+              These preferences apply to your contact information across the system. 
+              Fields marked as private will not be synced or shared when your contact details are accessed.
+            </p>
+          </div>
+
           <div className="text-gray-700 text-base leading-relaxed">
             <p>
-              Whenever an iCloud user creates a contact card that contains phone number +1 (234)
-              567-890 , the following fields will <span className="font-semibold">not</span> be
-              synced on iCloud servers.
+              When someone creates a contact card with your information, the following fields will{' '}
+              <span className="font-semibold">not</span> be included if you've marked them as private:
             </p>
           </div>
 
@@ -69,7 +88,7 @@ export default function PreferencesPage() {
                   htmlFor={field.id}
                   className="text-lg text-gray-900 cursor-pointer select-none"
                 >
-                  {field.label}
+                  Keep {field.label} private
                 </label>
               </div>
             ))}
@@ -84,7 +103,7 @@ export default function PreferencesPage() {
                 // console.log('Saved preferences:', preferences);
               }}
             >
-              Save Preferences
+              Save Privacy Preferences
             </button>
           </div>
         </div>

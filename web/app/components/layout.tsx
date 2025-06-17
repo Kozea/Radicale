@@ -9,7 +9,7 @@ interface RouteHandle {
 
 const navigationItems = [
   { to: '/', label: 'Home' },
-  { to: '/preferences', label: 'Preferences' },
+  { to: '/privacy-preferences', label: 'Privacy Preferences' },
   { to: '/data-access', label: 'Data Access' },
   { to: '/login', label: 'Login' },
 ];
