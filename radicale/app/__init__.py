@@ -369,8 +369,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             logger.debug("Asking client for authentication")
             status = client.UNAUTHORIZED
             headers = dict(headers)
-            headers.update({
-                "WWW-Authenticate":
-                "Basic realm=\"%s\"" % self._auth_realm})
+
+            # For privacy paths, don't add WWW-Authenticate to prevent browser popup
+            if not path.startswith("/privacy/"):
+                headers.update({
+                    "WWW-Authenticate":
+                    "Basic realm=\"%s\"" % self._auth_realm})
 
         return response(status, headers, answer)
