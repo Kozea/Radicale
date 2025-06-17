@@ -100,13 +100,9 @@ export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
         // Store JWT token (you can use localStorage, sessionStorage, or a state management solution)
         localStorage.setItem('auth_token', result.jwt);
 
-        // Redirect to the main application or trigger a state change
-        // For now, we'll just show a success message
+        // Redirect to privacy preferences page
         console.log('Authentication successful! JWT token:', result.jwt);
-
-        // You could navigate to another page here:
-        // window.location.href = '/dashboard';
-        // or trigger a callback prop if provided
+        window.location.href = '/privacy-preferences';
 
       } else {
         setError(result.error || 'Verification failed');
