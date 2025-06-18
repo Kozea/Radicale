@@ -50,6 +50,7 @@ from radicale.app.proppatch import ApplicationPartProppatch
 from radicale.app.put import ApplicationPartPut
 from radicale.app.report import ApplicationPartReport
 from radicale.log import logger
+from radicale.privacy.http import PrivacyHTTP
 
 # Combination of types.WSGIStartResponse and WSGI application return value
 _IntermediateResponse = Tuple[str, List[Tuple[str, str]], Iterable[bytes]]
@@ -73,6 +74,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _extra_headers: Mapping[str, str]
     _permit_delete_collection: bool
     _permit_overwrite_collection: bool
+    _privacy_http: PrivacyHTTP
 
     def __init__(self, configuration: config.Configuration) -> None:
         """Initialize Application.
@@ -83,6 +85,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
         """
         super().__init__(configuration)
+        from radicale.privacy.http import PrivacyHTTP
+        self._privacy_http = PrivacyHTTP(configuration)
         self._mask_passwords = configuration.get("logging", "mask_passwords")
         self._bad_put_request_content = configuration.get("logging", "bad_put_request_content")
         self._request_header_on_debug = configuration.get("logging", "request_header_on_debug")

@@ -10,8 +10,7 @@ import logging
 from http import client
 from typing import Any, Dict, List, Optional, Union
 
-from radicale import config, httputils, types
-from radicale.app.base import ApplicationBase
+from radicale import httputils, types
 from radicale.auth.otp_twilio import Auth as OTPAuth
 from radicale.privacy.core import PrivacyCore
 
@@ -24,7 +23,7 @@ StatusResult = Dict[str, Union[str, int, List[str]]]
 APIResult = Union[SettingsResult, CardsResult, StatusResult, str]
 
 
-class PrivacyHTTP(ApplicationBase):
+class PrivacyHTTP:
     """HTTP endpoints for privacy management."""
 
     # Universal CORS headers
@@ -36,13 +35,13 @@ class PrivacyHTTP(ApplicationBase):
         "Access-Control-Max-Age": "86400",
     }
 
-    def __init__(self, configuration: "config.Configuration") -> None:
+    def __init__(self, configuration) -> None:
         """Initialize the privacy HTTP endpoints.
 
         Args:
             configuration: The Radicale configuration object
         """
-        super().__init__(configuration)
+        self.configuration = configuration
         self._privacy_core = PrivacyCore(configuration)
         self._otp_auth = OTPAuth(configuration)
 

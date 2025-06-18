@@ -21,7 +21,6 @@
 
 import errno
 import itertools
-import json
 import logging
 import posixpath
 import re
@@ -29,7 +28,8 @@ import socket
 import sys
 from http import client
 from types import TracebackType
-from typing import Iterator, List, Mapping, MutableMapping, Optional, Tuple
+from typing import (TYPE_CHECKING, Iterator, List, Mapping, MutableMapping,
+                    Optional, Tuple)
 
 import vobject
 
@@ -39,6 +39,9 @@ from radicale import (httputils, pathutils, rights, storage, types, utils,
 from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
+
+if TYPE_CHECKING:
+    from radicale.privacy.http import PrivacyHTTP
 
 MIMETYPE_TAGS: Mapping[str, str] = {value: key for key, value in
                                     xmlutils.MIMETYPES.items()}
@@ -141,36 +144,14 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
 
 
 class ApplicationPartPut(ApplicationBase):
+    _privacy_http: "PrivacyHTTP"
 
     def do_PUT(self, environ: types.WSGIEnviron, base_prefix: str,
                path: str, user: str) -> types.WSGIResponse:
         """Manage PUT request."""
         # Handle privacy-specific paths first
         if path.startswith("/privacy/"):
-            parts = path.strip("/").split("/")
-            if len(parts) != 3 or parts[1] != "settings":
-                return httputils.BAD_REQUEST
-
-            user_identifier = parts[2]
-
-            # Check if authenticated user matches the requested resource
-            if user != user_identifier:
-                return httputils.FORBIDDEN
-
-            # Read request body
-            try:
-                content_length = int(environ.get("CONTENT_LENGTH", 0))
-                if content_length > 0:
-                    body = environ["wsgi.input"].read(content_length)
-                    data = json.loads(body)
-                else:
-                    return httputils.BAD_REQUEST
-            except (ValueError, json.JSONDecodeError):
-                return httputils.BAD_REQUEST
-
-            success, result = self._privacy_core.update_settings(user_identifier, data)
-            return self._to_wsgi_response(success, result)
-
+            return self._privacy_http.do_PUT(environ, base_prefix, path, user)
         access = Access(self._rights, user, path)
         if not access.check("w"):
             return httputils.NOT_ALLOWED

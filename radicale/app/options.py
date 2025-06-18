@@ -18,16 +18,24 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 from http import client
+from typing import TYPE_CHECKING
 
 from radicale import httputils, types
 from radicale.app.base import ApplicationBase
 
+if TYPE_CHECKING:
+    from radicale.privacy.http import PrivacyHTTP
+
 
 class ApplicationPartOptions(ApplicationBase):
+    _privacy_http: "PrivacyHTTP"
 
     def do_OPTIONS(self, environ: types.WSGIEnviron, base_prefix: str,
                    path: str, user: str) -> types.WSGIResponse:
         """Manage OPTIONS request."""
+        # Handle privacy-specific paths first
+        if path.startswith("/privacy/"):
+            return self._privacy_http.do_OPTIONS(environ, base_prefix, path, user)
         headers = {
             "Allow": ", ".join(
                 name[3:] for name in dir(self) if name.startswith("do_")),

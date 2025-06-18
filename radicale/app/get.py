@@ -19,12 +19,15 @@
 
 import posixpath
 from http import client
-from typing import Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 from urllib.parse import quote
 
 from radicale import httputils, pathutils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
+
+if TYPE_CHECKING:
+    from radicale.privacy.http import PrivacyHTTP
 
 # Define the possible result types
 SettingsResult = Union[Dict[str, bool], Dict[str, str]]
@@ -51,6 +54,7 @@ def propose_filename(collection: storage.BaseCollection) -> str:
 
 
 class ApplicationPartGet(ApplicationBase):
+    _privacy_http: "PrivacyHTTP"
 
     def _content_disposition_attachment(self, filename: str) -> str:
         value = "attachment"
@@ -69,31 +73,7 @@ class ApplicationPartGet(ApplicationBase):
         """Manage GET request."""
         # Handle privacy-specific paths first
         if path.startswith("/privacy/"):
-            parts = path.strip("/").split("/")
-            if len(parts) < 3:
-                return httputils.BAD_REQUEST
-
-            resource_type = parts[1]  # 'settings' or 'cards'
-            user_identifier = parts[2]
-
-            # Check if authenticated user matches the requested resource
-            if user != user_identifier:
-                return httputils.FORBIDDEN
-
-            success: bool
-            result: APIResult
-
-            if resource_type == "settings":
-                success, result = self._privacy_core.get_settings(user_identifier)
-                if not success and isinstance(result, str) and "not found" in result.lower():
-                    return httputils.NOT_FOUND
-            elif resource_type == "cards":
-                success, result = self._privacy_core.get_matching_cards(user_identifier)
-            else:
-                return httputils.BAD_REQUEST
-
-            return self._to_wsgi_response(success, result)
-
+            return self._privacy_http.do_GET(environ, base_prefix, path, user) # type: ignore[attr-defined]
         # Redirect to /.web if the root path is requested
         if not pathutils.strip_path(path):
             return httputils.redirect(base_prefix + "/.web")
