@@ -91,8 +91,9 @@ def core(mock_time_ranges):
 def test_get_settings_not_found(core):
     """Test getting settings for a non-existent user."""
     success, result = core.get_settings("nonexistent@example.com")
-    assert not success
-    assert result == "User settings not found"
+    assert success
+    assert isinstance(result, dict)
+    assert "disallow_photo" in result
 
 
 def test_get_settings_unauthorized(core):
@@ -242,10 +243,11 @@ def test_delete_settings_success(core):
     assert success
     assert result == {"status": "deleted"}
 
-    # Verify settings were deleted
+    # Verify settings were deleted (should be auto-created again)
     success, result = core.get_settings("test@example.com")
-    assert not success
-    assert result == "User settings not found"
+    assert success
+    assert isinstance(result, dict)
+    assert "disallow_photo" in result
 
 
 def test_delete_settings_not_found(core):
@@ -266,10 +268,11 @@ def test_validate_user_identifier_email(core):
     """Test email validation."""
     # Valid emails
     success, result = core.get_settings("test@example.com")
-    assert not success  # Not found is OK, we're just testing validation
-
+    assert success
+    assert isinstance(result, dict)
     success, result = core.get_settings("user.name@domain.co.uk")
-    assert not success
+    assert success
+    assert isinstance(result, dict)
 
     # Invalid emails
     success, result = core.get_settings("invalid.email")
@@ -287,16 +290,18 @@ def test_validate_user_identifier_email(core):
 
 def test_validate_user_identifier_phone(core):
     """Test phone number validation."""
-    # Valid phone numbers - these should pass validation but return NOT_FOUND
-    # since they don't exist in the database
-    success, result = core.get_settings("+1234567890")
-    assert not success
+    # Valid phone numbers - these should pass validation and auto-create settings
+    success, result = core.get_settings("+14155552671")
+    assert success
+    assert isinstance(result, dict)
 
     success, result = core.get_settings("+1-234-567-8900")
-    assert not success
+    assert success
+    assert isinstance(result, dict)
 
-    success, result = core.get_settings("+(123) 456-7890")
-    assert not success
+    success, result = core.get_settings("+1 (415) 555-2671")
+    assert success
+    assert isinstance(result, dict)
 
     # Invalid phone numbers - these should fail validation
     success, result = core.get_settings("(123) 456-7890")  # Missing +
