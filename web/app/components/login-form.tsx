@@ -11,7 +11,7 @@ import { Input } from '~/components/ui/input';
 async function verifyOtp(identifier: string, code: string): Promise<{ ok: boolean; jwt?: string; error?: string }> {
   const credentials = btoa(`${identifier}:${code}`);
   try {
-    const res = await fetch(`/privacy/settings/${encodeURIComponent(identifier)}`, {
+    const res = await fetch(`http://localhost:5232/privacy/settings/${encodeURIComponent(identifier)}`, {
       method: 'GET',
       headers: {
         'Authorization': `Basic ${credentials}`,
@@ -45,7 +45,7 @@ async function verifyOtp(identifier: string, code: string): Promise<{ ok: boolea
 async function requestOtp(identifier: string): Promise<{ ok: boolean; error?: string }> {
   const credentials = btoa(`${identifier}:`);
   try {
-    const res = await fetch(`/privacy/settings/${encodeURIComponent(identifier)}`, {
+    const res = await fetch(`http://localhost:5232/privacy/settings/${encodeURIComponent(identifier)}`, {
       method: 'GET',
       headers: {
         'Authorization': `Basic ${credentials}`,

@@ -17,21 +17,15 @@ export const handle = {
   subtitle: 'Privacy Preferences',
 };
 
-interface PreferenceField {
-  id: string;
-  label: string;
-  defaultChecked: boolean;
-}
-
-const preferenceFields: PreferenceField[] = [
-  { id: 'pronoun', label: 'Pronoun', defaultChecked: true },
-  { id: 'company', label: 'Company', defaultChecked: false },
-  { id: 'jobTitle', label: 'Job title', defaultChecked: false },
-  { id: 'photo', label: 'Photo', defaultChecked: true },
-  { id: 'birthday', label: 'Birthday', defaultChecked: true },
-  { id: 'relatedPerson', label: 'Related person', defaultChecked: false },
-  { id: 'address', label: 'Address', defaultChecked: false },
-];
+// Mapping between API field names and user-friendly labels
+const fieldMapping = {
+  disallow_photo: { label: 'Photo', description: 'Profile pictures and contact photos' },
+  disallow_gender: { label: 'Gender/Pronoun', description: 'Gender identity and preferred pronouns' },
+  disallow_birthday: { label: 'Birthday', description: 'Date of birth and age information' },
+  disallow_address: { label: 'Address', description: 'Home, work, and mailing addresses' },
+  disallow_company: { label: 'Company', description: 'Employer and organization information' },
+  disallow_title: { label: 'Job Title', description: 'Professional titles and positions' },
+};
 
 // Helper function to get JWT token from localStorage
 function getAuthToken(): string | null {
@@ -53,31 +47,25 @@ function getUserFromToken(token: string): string | null {
 }
 
 // Helper function to fetch settings from backend
-async function fetchSettings(): Promise<{ ok: boolean; settings?: any; error?: string }> {
+async function fetchSettings(user: string): Promise<{ ok: boolean; settings?: any; error?: string }> {
   const token = getAuthToken();
   if (!token) {
     return { ok: false, error: 'No authentication token found' };
   }
 
-  const user = getUserFromToken(token);
-  if (!user) {
-    return { ok: false, error: 'Invalid authentication token' };
-  }
-
   try {
-    const res = await fetch(`/privacy/settings/${encodeURIComponent(user)}`, {
+    const res = await fetch(`http://localhost:5232/privacy/settings/${encodeURIComponent(user)}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
     });
 
     if (res.status === 200) {
       const settings = await res.json();
       return { ok: true, settings };
-    } else if (res.status === 401) {
-      return { ok: false, error: 'Authentication expired' };
+    } else if (res.status === 401 || res.status === 403) {
+      return { ok: false, error: 'Authentication required' };
     } else {
       const data = await res.json().catch(() => ({}));
       return { ok: false, error: data.error || 'Failed to fetch settings' };
@@ -87,38 +75,75 @@ async function fetchSettings(): Promise<{ ok: boolean; settings?: any; error?: s
   }
 }
 
+// Helper function to save settings to backend
+async function saveSettings(user: string, settings: Record<string, boolean>): Promise<{ ok: boolean; error?: string }> {
+  const token = getAuthToken();
+  if (!token) {
+    return { ok: false, error: 'No authentication token found' };
+  }
+
+  try {
+    const res = await fetch(`http://localhost:5232/privacy/settings/${encodeURIComponent(user)}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(settings),
+    });
+
+    if (res.status === 200) {
+      return { ok: true };
+    } else if (res.status === 401 || res.status === 403) {
+      return { ok: false, error: 'Authentication required' };
+    } else {
+      const data = await res.json().catch(() => ({}));
+      return { ok: false, error: data.error || 'Failed to save settings' };
+    }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
 export default function PreferencesPage() {
-  const [preferences, setPreferences] = useState<Record<string, boolean>>(
-    Object.fromEntries(preferenceFields.map(field => [field.id, field.defaultChecked]))
-  );
+  const [preferences, setPreferences] = useState<Record<string, boolean>>({});
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [user, setUser] = useState<string>('');
 
   useEffect(() => {
     const loadSettings = async () => {
-      // Check if user is authenticated
+      // Check for token first, before making any requests
       const token = getAuthToken();
       if (!token) {
-        // Redirect to login if no token
-        window.location.href = '/login';
+        setLoading(false);
+        setError('Please log in to view your privacy preferences');
         return;
       }
 
+      const currentUser = getUserFromToken(token);
+      if (!currentUser) {
+        setLoading(false);
+        setError('Invalid authentication token - please log in again');
+        return;
+      }
+
+      setUser(currentUser);
+
       setLoading(true);
-      const result = await fetchSettings();
+      const result = await fetchSettings(currentUser);
       setLoading(false);
 
       if (result.ok && result.settings) {
         setSettings(result.settings);
+        // Initialize preferences from API settings
+        setPreferences(result.settings);
         console.log('Loaded settings:', result.settings);
       } else {
         setError(result.error || 'Failed to load settings');
-        if (result.error === 'Authentication expired') {
-          // Clear token and redirect to login
-          localStorage.removeItem('auth_token');
-          window.location.href = '/login';
-        }
       }
     };
 
@@ -130,6 +155,25 @@ export default function PreferencesPage() {
       ...prev,
       [fieldId]: checked,
     }));
+    // Clear any existing save message when user makes changes
+    setSaveMessage(null);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveMessage(null);
+    setError(null);
+
+    const result = await saveSettings(user, preferences);
+    setSaving(false);
+
+    if (result.ok) {
+      setSaveMessage('Privacy preferences saved successfully!');
+      // Update the settings display
+      setSettings(preferences);
+    } else {
+      setError(result.error || 'Failed to save preferences');
+    }
   };
 
   if (loading) {
@@ -145,14 +189,22 @@ export default function PreferencesPage() {
     );
   }
 
-  if (error) {
+  if (error && !settings) {
     return (
       <div className="min-h-screen py-8">
         <div className="container mx-auto max-w-4xl px-6">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-gray-900 mb-6">Privacy Preferences</h1>
             <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-              <p className="text-red-800">Error: {error}</p>
+              <p className="text-red-800 mb-4">Error: {error}</p>
+              {error.includes('log in') && (
+                <button
+                  onClick={() => window.location.href = '/login'}
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                >
+                  Go to Login
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -172,6 +224,19 @@ export default function PreferencesPage() {
               Select which contact fields you want to keep private and prevent from being synced.
             </p>
           </div>
+
+          {/* Success/Error Messages */}
+          {saveMessage && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+              <p className="text-green-800">{saveMessage}</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+              <p className="text-red-800">Error: {error}</p>
+            </div>
+          )}
 
           {/* Settings JSON Display */}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
@@ -199,20 +264,25 @@ export default function PreferencesPage() {
 
           {/* Preferences Form */}
           <div className="space-y-6">
-            {preferenceFields.map(field => (
-              <div key={field.id} className="flex items-center space-x-3">
+            {Object.entries(fieldMapping).map(([fieldId, fieldInfo]) => (
+              <div key={fieldId} className="flex items-start space-x-3">
                 <Checkbox
-                  id={field.id}
-                  checked={preferences[field.id]}
-                  onCheckedChange={(checked: boolean) => handlePreferenceChange(field.id, checked)}
-                  className="h-5 w-5"
+                  id={fieldId}
+                  checked={preferences[fieldId] || false}
+                  onCheckedChange={(checked: boolean) => handlePreferenceChange(fieldId, checked)}
+                  className="h-5 w-5 mt-1"
                 />
-                <label
-                  htmlFor={field.id}
-                  className="text-lg text-gray-900 cursor-pointer select-none"
-                >
-                  Keep {field.label} private
-                </label>
+                <div className="flex-1">
+                  <label
+                    htmlFor={fieldId}
+                    className="text-lg text-gray-900 cursor-pointer select-none font-medium"
+                  >
+                    Keep {fieldInfo.label} private
+                  </label>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {fieldInfo.description}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -220,13 +290,11 @@ export default function PreferencesPage() {
           {/* Save Button */}
           <div className="pt-6">
             <button
-              className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-md transition-colors"
-              onClick={() => {
-                // Here you would typically save to a backend
-                // console.log('Saved preferences:', preferences);
-              }}
+              className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-medium py-2 px-6 rounded-md transition-colors"
+              onClick={handleSave}
+              disabled={saving}
             >
-              Save Privacy Preferences
+              {saving ? 'Saving...' : 'Save Privacy Preferences'}
             </button>
           </div>
         </div>
