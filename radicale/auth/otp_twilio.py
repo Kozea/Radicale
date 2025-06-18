@@ -66,11 +66,11 @@ class Auth(auth.BaseAuth):
         try:
             if "@" in login:
                 # Treat as email
-                # TODO: Implement email verification
-                verification = self._client.messages.create(
-                    channel="email",
-                    to=login
-                )
+                verification = self._client.verify.v2.services(
+                    self._service_sid
+                ).verifications.create(to=login, channel="email")
+                logger.info("verification : %s", verification)
+                logger.info("verification.sid: %s", verification.sid)
             else:
                 # Treat as phone number
                 verification = self._client.verify.v2.services(
