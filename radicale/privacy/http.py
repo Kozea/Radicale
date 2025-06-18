@@ -142,6 +142,11 @@ class PrivacyHTTP(ApplicationBase):
         resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
 
+        # Only restrict access for 'settings' resource
+        if resource_type == "settings" and authenticated_user != user_identifier:
+            logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
+            return httputils.FORBIDDEN[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
+
         success: bool
         result: APIResult
 
@@ -183,6 +188,11 @@ class PrivacyHTTP(ApplicationBase):
 
         resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
+
+        # Only restrict access for 'settings' resource
+        if resource_type == "settings" and authenticated_user != user_identifier:
+            logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
+            return httputils.FORBIDDEN[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         # Read request body
         try:
@@ -232,7 +242,13 @@ class PrivacyHTTP(ApplicationBase):
         if len(parts) != 3 or parts[1] != "settings":
             return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
 
+        resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
+
+        # Only restrict access for 'settings' resource
+        if resource_type == "settings" and authenticated_user != user_identifier:
+            logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
+            return httputils.FORBIDDEN[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         # Read request body
         try:
@@ -273,7 +289,13 @@ class PrivacyHTTP(ApplicationBase):
         if len(parts) != 3 or parts[1] != "settings":
             return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
 
+        resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
+
+        # Only restrict access for 'settings' resource
+        if resource_type == "settings" and authenticated_user != user_identifier:
+            logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
+            return httputils.FORBIDDEN[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         success: bool
         result: APIResult
