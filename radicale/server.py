@@ -31,8 +31,8 @@ import socketserver
 import ssl
 import sys
 import wsgiref.simple_server
-from typing import (Any, Callable, Dict, List, MutableMapping, Optional, Set,
-                    Tuple, Union)
+from typing import (Any, Callable, Dict, Iterable, List, MutableMapping,
+                    Optional, Set, Tuple, Union)
 from urllib.parse import unquote
 
 from radicale import Application, config, utils
@@ -283,6 +283,32 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
         handler.run(app)
 
 
+# --- CORS Middleware for /privacy/ endpoints ---
+class CORSMiddleware:
+    def __init__(self, app: Any) -> None:
+        self.app = app
+        self.cors_headers = [
+            ("Access-Control-Allow-Origin", "*"),
+            ("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"),
+            ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+            ("Access-Control-Expose-Headers", "Authorization"),
+            ("Access-Control-Max-Age", "86400"),
+        ]
+
+    def __call__(self, environ, start_response) -> Iterable[bytes]:
+        def cors_start_response(status: str, headers: List[Tuple[str, str]], exc_info: Optional[Any] = None) -> Any:
+            # Only add CORS headers for /privacy/ endpoints
+            path = environ.get("PATH_INFO", "")
+            if path.startswith("/privacy/"):
+                # Remove any duplicate CORS headers
+                header_keys = set(k.lower() for k, _ in headers)
+                for k, v in self.cors_headers:
+                    if k.lower() not in header_keys:
+                        headers.append((k, v))
+            return start_response(status, headers, exc_info)
+        return self.app(environ, cors_start_response)
+
+
 def serve(configuration: config.Configuration,
           shutdown_socket: Optional[socket.socket] = None) -> None:
     """Serve radicale from configuration.
@@ -306,7 +332,9 @@ def serve(configuration: config.Configuration,
 
     use_ssl: bool = configuration.get("server", "ssl")
     server_class = ParallelHTTPSServer if use_ssl else ParallelHTTPServer
-    application = Application(configuration)
+    application: Any = Application(configuration)
+    # --- Wrap with CORS middleware ---
+    application = CORSMiddleware(application)
     servers = {}
     try:
         hosts: List[Tuple[str, int]] = configuration.get("server", "hosts")
