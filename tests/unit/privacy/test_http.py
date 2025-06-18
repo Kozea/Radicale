@@ -41,11 +41,7 @@ def http_app():
                 "type": "otp_twilio",
                 "twilio_account_sid": "test_sid",
                 "twilio_auth_token": "test_token",
-                "twilio_from_number": "+1234567890",
-                "twilio_from_email": "test@example.com",
-                "otp_length": 6,
-                "otp_expiry": 300,
-                "session_expiry": 1234
+                "twilio_service_sid": "test_service_sid",
             },
             # "auth": {
             #     "type": "htpasswd",
@@ -59,7 +55,7 @@ def http_app():
         with patch("radicale.auth.otp_twilio.Client"):
             app = PrivacyHTTP(configuration)
             # Patch authentication for all tests
-            app._get_authenticated_user = lambda environ: "test@example.com"
+            app._get_authenticated_user = lambda environ: ("test@example.com", None)
             yield app
 
 
@@ -113,7 +109,7 @@ def test_get_settings_error(http_app):
         }
 
         # Mock the authentication to return the same user as in the path
-        with patch.object(http_app, '_get_authenticated_user', return_value="nonexistent@example.com"):
+        with patch.object(http_app, '_get_authenticated_user', return_value=("nonexistent@example.com", None)):
             # Call the handler with matching user
             status, headers, body = http_app.do_GET(environ, "/", "/privacy/settings/nonexistent@example.com", "nonexistent@example.com")
 
@@ -328,7 +324,9 @@ def test_missing_content_length(http_app):
 
     # Verify response
     assert status == client.BAD_REQUEST
-    assert ("Content-Type", "text/plain") in headers
+    assert headers["Content-Type"] == "application/json"
+    data = json.loads(body)
+    assert "error" in data
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
@@ -348,7 +346,9 @@ def test_invalid_json(http_app):
 
     # Verify response
     assert status == client.BAD_REQUEST
-    assert ("Content-Type", "text/plain") in headers
+    assert headers["Content-Type"] == "application/json"
+    data = json.loads(body)
+    assert "error" in data
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
@@ -361,9 +361,11 @@ def test_unauthorized_access(http_app):
     }
 
     # Call the handler with different user than the one in the path
-    status, headers, body = http_app.do_GET(environ, "/", "/privacy/settings/test@example.com", "other@example.com")
+    with patch.object(http_app, '_get_authenticated_user', return_value=("other@example.com", None)):
+        status, headers, body = http_app.do_GET(environ, "/", "/privacy/settings/test@example.com", "other@example.com")
 
     # Verify response
     assert status == client.FORBIDDEN
-    assert ("Content-Type", "text/plain") in headers
-    assert "Action on the requested resource refused." in body
+    assert headers["Content-Type"] == "application/json"
+    data = json.loads(body)
+    assert "error" in data or "Action on the requested resource refused." in body.decode()
