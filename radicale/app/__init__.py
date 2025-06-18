@@ -291,9 +291,20 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         login = password = ""
         external_login = self._auth.get_external_login(environ)
         authorization = environ.get("HTTP_AUTHORIZATION", "")
+
         if external_login:
             login, password = external_login
             login, password = login or "", password or ""
+        elif authorization.startswith("Bearer "):
+            # Handle JWT Bearer token authentication
+            jwt_token = authorization[len("Bearer "):].strip()
+            if hasattr(self._auth, '_validate_jwt') and callable(getattr(self._auth, '_validate_jwt')):
+                user = self._auth._validate_jwt(jwt_token)
+                if user:
+                    login, password = user, "jwt_validated"  # Signal that JWT was used
+                    logger.debug("JWT Bearer token validated for user: %s", user)
+                else:
+                    logger.warning("Invalid or expired JWT token")
         elif authorization.startswith("Basic"):
             authorization = authorization[len("Basic"):].strip()
             login, password = httputils.decode_request(
@@ -302,8 +313,12 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
         # Enhanced authentication flow with JWT support
         if login:
+            # Check if this was JWT Bearer token authentication
+            if password == "jwt_validated":
+                user, info = login, "jwt"
+                logger.debug("User authenticated via JWT Bearer token: %s", user)
             # Check if auth backend supports JWT tokens (like OTP Twilio)
-            if hasattr(self._auth, 'login_with_jwt') and callable(getattr(self._auth, 'login_with_jwt')):
+            elif hasattr(self._auth, 'login_with_jwt') and callable(getattr(self._auth, 'login_with_jwt')):
                 logger.debug("Using JWT-capable authentication backend for user: %s", login)
                 user_result, jwt_token = self._auth.login_with_jwt(login, password)
                 user, info = (user_result, "otp_twilio") if user_result else ("", "")
