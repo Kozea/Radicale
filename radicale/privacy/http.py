@@ -66,8 +66,8 @@ class PrivacyHTTP(ApplicationBase):
                 credentials = base64.b64decode(auth_header.split(" ", 1)[1]).decode()
                 login, password = credentials.split(":", 1)
 
-                # Use login_with_session to get both user and JWT
-                user, jwt_token = self._otp_auth.login_with_session(login, password)
+                # Use login_with_jwt to get both user and JWT
+                user, jwt_token = self._otp_auth.login_with_jwt(login, password)
                 return user, jwt_token
             except Exception as e:
                 logger.error("Authentication error: %s", e)

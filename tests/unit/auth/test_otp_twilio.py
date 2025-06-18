@@ -136,7 +136,7 @@ class TestOTPTwilioAuth(unittest.TestCase):
 
     def test_login_initial_request(self):
         """Test initial login request (empty password)."""
-        user, session_token = self.auth.login_with_session("user@example.com", "")
+        user, session_token = self.auth.login_with_jwt("user@example.com", "")
         self.assertEqual(user, "")
         self.assertIsNone(session_token)
         self.assertIn("user@example.com", self.auth._otp_store)
@@ -147,7 +147,7 @@ class TestOTPTwilioAuth(unittest.TestCase):
         # Store an OTP
         self.auth._otp_store["user@example.com"] = ("123456", time.time() + 300)
         # Test valid OTP
-        user, session_token = self.auth.login_with_session("user@example.com", "123456")
+        user, session_token = self.auth.login_with_jwt("user@example.com", "123456")
         self.assertEqual(user, "user@example.com")
         self.assertIsInstance(session_token, str)
         self.assertNotIn("user@example.com", self.auth._otp_store)
@@ -157,7 +157,7 @@ class TestOTPTwilioAuth(unittest.TestCase):
         # Store an OTP
         self.auth._otp_store["user@example.com"] = ("123456", time.time() + 300)
         # Test invalid OTP
-        user, session_token = self.auth.login_with_session("user@example.com", "654321")
+        user, session_token = self.auth.login_with_jwt("user@example.com", "654321")
         self.assertEqual(user, "")
         self.assertIsNone(session_token)
         self.assertIn("user@example.com", self.auth._otp_store)
@@ -167,7 +167,7 @@ class TestOTPTwilioAuth(unittest.TestCase):
         # Store an expired OTP
         self.auth._otp_store["user@example.com"] = ("123456", time.time() - 1)
         # Test expired OTP
-        user, session_token = self.auth.login_with_session("user@example.com", "123456")
+        user, session_token = self.auth.login_with_jwt("user@example.com", "123456")
         self.assertEqual(user, "")
         self.assertIsNone(session_token)
         self.assertIn("user@example.com", self.auth._otp_store)
@@ -190,28 +190,28 @@ class TestOTPTwilioAuth(unittest.TestCase):
     def test_login_valid_otp_returns_session_token(self):
         """Test login with valid OTP returns a session token."""
         self.auth._otp_store["user@example.com"] = ("123456", time.time() + 300)
-        user, session_token = self.auth.login_with_session("user@example.com", "123456")
+        user, session_token = self.auth.login_with_jwt("user@example.com", "123456")
         self.assertEqual(user, "user@example.com")
         self.assertIsInstance(session_token, str)
         self.assertTrue(session_token in self.auth._session_store)
 
     def test_login_initial_request_no_session_token(self):
         """Test initial login request does not return a session token."""
-        user, session_token = self.auth.login_with_session("user@example.com", "")
+        user, session_token = self.auth.login_with_jwt("user@example.com", "")
         self.assertEqual(user, "")
         self.assertIsNone(session_token)
 
     def test_login_invalid_otp_no_session_token(self):
         """Test login with invalid OTP does not return a session token."""
         self.auth._otp_store["user@example.com"] = ("123456", time.time() + 300)
-        user, session_token = self.auth.login_with_session("user@example.com", "654321")
+        user, session_token = self.auth.login_with_jwt("user@example.com", "654321")
         self.assertEqual(user, "")
         self.assertIsNone(session_token)
 
     def test_validate_session_token(self):
         """Test validating a session token after successful login."""
         self.auth._otp_store["user@example.com"] = ("123456", time.time() + 300)
-        user, session_token = self.auth.login_with_session("user@example.com", "123456")
+        user, session_token = self.auth.login_with_jwt("user@example.com", "123456")
         validated_user = self.auth.validate_session(session_token)
         self.assertEqual(validated_user, "user@example.com")
 
@@ -233,7 +233,7 @@ class TestOTPTwilioAuth(unittest.TestCase):
     def test_logout_invalidate_session_token(self):
         """Test that logging out invalidates the session token."""
         self.auth._otp_store["user@example.com"] = ("123456", time.time() + 300)
-        user, session_token = self.auth.login_with_session("user@example.com", "123456")
+        user, session_token = self.auth.login_with_jwt("user@example.com", "123456")
         self.assertEqual(user, "user@example.com")
         self.assertIsInstance(session_token, str)
         self.assertTrue(session_token in self.auth._session_store)

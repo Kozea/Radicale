@@ -98,8 +98,8 @@ class Auth(auth.BaseAuth):
             logger.error("Failed to check OTP via Twilio: %s", str(e))
             return False
 
-    def login_with_session(self, login: str, password: str) -> Tuple[str, Optional[str]]:
-        """Validate credentials using OTP.
+    def login_with_jwt(self, login: str, password: str) -> Tuple[str, Optional[str]]:
+        """Validate credentials using OTP and return JWT token.
 
         Args:
             login: The phone number or email address to authenticate.
@@ -130,7 +130,7 @@ class Auth(auth.BaseAuth):
         return "", None
 
     def _login(self, login: str, password: str) -> str:
-        user, _ = self.login_with_session(login, password)
+        user, _ = self.login_with_jwt(login, password)
         return user
 
     def is_authenticated(self, user: str, password: str) -> bool:
@@ -143,7 +143,7 @@ class Auth(auth.BaseAuth):
         Returns:
             True if the user is authenticated, False otherwise.
         """
-        result, _ = self.login_with_session(user, password)
+        result, _ = self.login_with_jwt(user, password)
         return bool(result)
 
     def _generate_jwt(self, user: str) -> str:
