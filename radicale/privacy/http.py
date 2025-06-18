@@ -194,25 +194,26 @@ class PrivacyHTTP(ApplicationBase):
             logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
             return httputils.FORBIDDEN[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
 
-        # Read request body
-        try:
-            content_length = int(environ.get("CONTENT_LENGTH", 0))
-            if content_length > 0:
-                body = environ["wsgi.input"].read(content_length)
-                data = json.loads(body)
-            else:
-                return httputils.BAD_REQUEST[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Missing content length"}).encode()
-        except (ValueError, json.JSONDecodeError):
-            return httputils.BAD_REQUEST[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Invalid JSON"}).encode()
-
         success: bool
         result: APIResult
 
         if resource_type == "settings":
+            # Read request body
+            try:
+                content_length = int(environ.get("CONTENT_LENGTH", 0))
+                if content_length > 0:
+                    body = environ["wsgi.input"].read(content_length)
+                    data = json.loads(body)
+                else:
+                    return httputils.BAD_REQUEST[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Missing content length"}).encode()
+            except (ValueError, json.JSONDecodeError):
+                return httputils.BAD_REQUEST[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Invalid JSON"}).encode()
+
             success, result = self._privacy_core.create_settings(user_identifier, data)
             if success:
                 return client.CREATED, self._add_cors_headers({"Content-Type": "application/json"}), json.dumps(result).encode()
         elif resource_type == "cards" and len(parts) > 3 and parts[3] == "reprocess":
+            # No body required for reprocess
             success, result = self._privacy_core.reprocess_cards(user_identifier)
         else:
             return httputils.BAD_REQUEST[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Invalid request format"}).encode()
