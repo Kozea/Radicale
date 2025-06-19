@@ -50,7 +50,6 @@ from radicale.app.proppatch import ApplicationPartProppatch
 from radicale.app.put import ApplicationPartPut
 from radicale.app.report import ApplicationPartReport
 from radicale.log import logger
-from radicale.privacy.http import PrivacyHTTP
 
 # Combination of types.WSGIStartResponse and WSGI application return value
 _IntermediateResponse = Tuple[str, List[Tuple[str, str]], Iterable[bytes]]
@@ -74,7 +73,6 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _extra_headers: Mapping[str, str]
     _permit_delete_collection: bool
     _permit_overwrite_collection: bool
-    _privacy_http: PrivacyHTTP
 
     def __init__(self, configuration: config.Configuration) -> None:
         """Initialize Application.
@@ -85,8 +83,6 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
         """
         super().__init__(configuration)
-        from radicale.privacy.http import PrivacyHTTP
-        self._privacy_http = PrivacyHTTP(configuration)
         self._mask_passwords = configuration.get("logging", "mask_passwords")
         self._bad_put_request_content = configuration.get("logging", "bad_put_request_content")
         self._request_header_on_debug = configuration.get("logging", "request_header_on_debug")
@@ -274,15 +270,6 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 path = path_new
             else:
                 logger.warning("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching", base_prefix, path)
-
-        # --- Centralize privacy endpoint handling ---
-        if path.startswith("/privacy/"):
-            function = getattr(self._privacy_http, f"do_{request_method}", None)
-            if not function:
-                return response(*httputils.METHOD_NOT_ALLOWED)
-            status, headers, answer = function(environ, base_prefix, path, "")
-            return response(status, headers, answer)
-        # --- End privacy shortcut ---
 
         # Get function corresponding to method
         function = getattr(self, "do_%s" % request_method, None)

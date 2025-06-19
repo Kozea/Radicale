@@ -61,8 +61,11 @@ class ApplicationPartDelete(ApplicationBase):
     def do_DELETE(self, environ: types.WSGIEnviron, base_prefix: str,
                   path: str, user: str) -> types.WSGIResponse:
         """Manage DELETE request."""
-        # Handle privacy-specific paths first
+        # Handle privacy-specific paths
         if path.startswith("/privacy/"):
+            if not hasattr(self, '_privacy_http'):
+                from radicale.privacy.http import PrivacyHTTP
+                self._privacy_http = PrivacyHTTP(self.configuration)
             return self._privacy_http.do_DELETE(environ, base_prefix, path, user)
         access = Access(self._rights, user, path)
         if not access.check("w"):
