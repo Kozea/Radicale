@@ -58,7 +58,7 @@ class PrivacyScanner:
             for email_prop in vcard.email_list:
                 if email_prop.value:
                     identifiers.append(("email", email_prop.value))
-                    logger.debug("PRIVACY: Found email in vCard: %r", email_prop.value)
+                    logger.debug("PRIVACY: Found id (email) in vCard: %r", email_prop.value)
 
         # Extract phones
         if hasattr(vcard, "tel_list"):
@@ -72,7 +72,7 @@ class PrivacyScanner:
                         # all phone numbers present in the vCard are captured, even if not valid E.164.
                         # This preserves visibility of malformed or non-normalizable numbers for diagnostics.
                         identifiers.append(("phone", tel_prop.value))
-                    logger.debug("PRIVACY: Found phone in vCard: %r", tel_prop.value)
+                    logger.debug("PRIVACY: Found id (phone) in vCard: %r", tel_prop.value)
 
         return identifiers
 
