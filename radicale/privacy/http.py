@@ -103,18 +103,18 @@ class PrivacyHTTP:
         Returns:
             WSGI response
         """
-        # Check authentication and get JWT token if this is OTP verification
-        authenticated_user, jwt_token = self._get_authenticated_user(environ)
-        logger.info("do_GET: authenticated_user=%s, jwt_token=%s", authenticated_user, jwt_token is not None)
-        if not authenticated_user:
-            # No authentication - return 401 (main app will handle OTP sending)
-            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
-
-        # For JWT authentication, the main app user parameter may be empty, so we skip this check
-        # For Basic auth, we still want to verify consistency
-        if user and authenticated_user != user:
-            logger.warning("User mismatch: authenticated_user=%s, main_app_user=%s", authenticated_user, user)
-            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
+        # If main authentication already succeeded, trust that result
+        if user:
+            authenticated_user = user
+            jwt_token = None
+            logger.info("do_GET: using main auth result, user=%s", authenticated_user)
+        else:
+            # Check authentication and get JWT token if this is OTP verification
+            authenticated_user, jwt_token = self._get_authenticated_user(environ)
+            logger.info("do_GET: authenticated_user=%s, jwt_token=%s", authenticated_user, jwt_token is not None)
+            if not authenticated_user:
+                # No authentication - return 401 (main app will handle OTP sending)
+                return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
 
         # Extract user identifier from path
         # Path format: /privacy/settings/{user} or /privacy/cards/{user}
@@ -159,10 +159,15 @@ class PrivacyHTTP:
         Returns:
             WSGI response
         """
-        # Check if authenticated user matches the requested user
-        authenticated_user, _ = self._get_authenticated_user(environ)
-        if user and authenticated_user != user:
-            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
+        # If main authentication already succeeded, trust that result
+        if user:
+            authenticated_user = user
+            logger.info("do_POST: using main auth result, user=%s", authenticated_user)
+        else:
+            # Check authentication and get JWT token if this is OTP verification
+            authenticated_user, _ = self._get_authenticated_user(environ)
+            if not authenticated_user:
+                return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
 
         # Extract user identifier and action from path
         parts = path.strip("/").split("/")
@@ -216,10 +221,15 @@ class PrivacyHTTP:
         Returns:
             WSGI response
         """
-        # Check if authenticated user matches the requested user
-        authenticated_user, _ = self._get_authenticated_user(environ)
-        if user and authenticated_user != user:
-            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
+        # If main authentication already succeeded, trust that result
+        if user:
+            authenticated_user = user
+            logger.info("do_PUT: using main auth result, user=%s", authenticated_user)
+        else:
+            # Check authentication and get JWT token if this is OTP verification
+            authenticated_user, _ = self._get_authenticated_user(environ)
+            if not authenticated_user:
+                return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
 
         # Extract user identifier from path
         parts = path.strip("/").split("/")
@@ -263,10 +273,15 @@ class PrivacyHTTP:
         Returns:
             WSGI response
         """
-        # Check if authenticated user matches the requested user
-        authenticated_user, _ = self._get_authenticated_user(environ)
-        if user and authenticated_user != user:
-            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
+        # If main authentication already succeeded, trust that result
+        if user:
+            authenticated_user = user
+            logger.info("do_DELETE: using main auth result, user=%s", authenticated_user)
+        else:
+            # Check authentication and get JWT token if this is OTP verification
+            authenticated_user, _ = self._get_authenticated_user(environ)
+            if not authenticated_user:
+                return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
 
         # Extract user identifier from path
         parts = path.strip("/").split("/")
