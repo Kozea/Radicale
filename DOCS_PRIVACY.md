@@ -216,9 +216,11 @@ The privacy settings in Radicale are configured through the main configuration f
 ```ini
 [privacy]
 database_path = /path/to/privacy.db
+database_logging = true
 ```
 
 - `database_path`: Path to the SQLite database file that stores user privacy settings. Default is `~/.local/share/radicale/privacy.db` (expands to your home directory).
+- `database_logging`: Whether to log privacy events to the database for audit trail and statistics. Default is `false`. When enabled, the system logs user actions like settings changes, vCard processing, and authentication events to the `privacy_logs` table.
 
 ### Default Privacy Settings
 
@@ -255,6 +257,7 @@ Here's a complete example of privacy-related configuration:
 ```ini
 [privacy]
 database_path = /var/lib/radicale/privacy.db
+database_logging = true
 default_disallow_photo = true
 default_disallow_gender = true
 default_disallow_birthday = true
@@ -265,6 +268,7 @@ default_disallow_title = false
 
 This configuration:
 - Stores the database in `/var/lib/radicale/privacy.db`
+- Enables database logging for audit trail and statistics
 - Allows storing names, emails, company, and title by default (disallow = false)
 - Restricts storing phone numbers, photos, birthdays, and addresses by default (disallow = true)
 
