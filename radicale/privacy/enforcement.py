@@ -99,7 +99,12 @@ class PrivacyEnforcement:
         for id_type, id_value in identifiers:
             settings = self._privacy_db.get_user_settings(id_value)
             if settings:
-                logger.debug("PRIVACY: Found privacy settings for %s %r", id_type, id_value)
+                # Log all current privacy settings
+                settings_dict = {
+                    property: getattr(settings, property)
+                    for property in PRIVACY_TO_VCARD_MAP.keys()
+                }
+                logger.info("PRIVACY: Found privacy settings for %s %r: %s", id_type, id_value, settings_dict)
                 if privacy_settings is None:
                     privacy_settings = settings
                 else:
