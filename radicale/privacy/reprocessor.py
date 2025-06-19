@@ -45,6 +45,14 @@ class PrivacyReprocessor:
             matches = self._scanner.find_identity_occurrences(identity)
             logger.info("PRIVACY: Found %d vCards containing identity %r", len(matches), identity)
 
+            # Log to database for statistics
+            try:
+                from radicale.privacy.database import PrivacyDatabase
+                privacy_db = PrivacyDatabase(self._configuration)
+                privacy_db.log_vcard_action("reprocess_started", identity, details={"total_vcards": len(matches)})
+            except Exception as e:
+                logger.debug("PRIVACY: Could not log to database: %s", e)
+
             # Process each vCard
             for match in matches:
                 try:
@@ -86,8 +94,15 @@ class PrivacyReprocessor:
                     # Save the modified vCard using the original filename
                     try:
                         collection.upload(original_href, modified_item)
-                        logger.info("PRIVACY: Successfully updated vCard %r", vcard_uid)
+                        logger.debug("PRIVACY: Successfully updated vCard %r", vcard_uid)
                         reprocessed_cards.append(vcard_uid)
+
+                        # Log successful vCard processing to database
+                        try:
+                            privacy_db.log_vcard_action("processed", identity, vcard_uid, collection_path)
+                        except Exception as e:
+                            logger.debug("PRIVACY: Could not log vCard processing to database: %s", e)
+
                     except Exception as e:
                         logger.error("PRIVACY: Failed to save vCard %r: %s", vcard_uid, str(e))
 
@@ -95,6 +110,16 @@ class PrivacyReprocessor:
                     logger.error("PRIVACY: Error processing vCard: %s", str(e))
 
             logger.info("PRIVACY: Reprocessing complete. %d cards were updated", len(reprocessed_cards))
+
+            # Log completion to database
+            try:
+                privacy_db.log_vcard_action("reprocess_completed", identity, details={
+                    "total_vcards": len(matches),
+                    "successfully_processed": len(reprocessed_cards)
+                })
+            except Exception as e:
+                logger.debug("PRIVACY: Could not log completion to database: %s", e)
+
             return reprocessed_cards
 
         except Exception as e:

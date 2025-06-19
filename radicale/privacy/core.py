@@ -106,6 +106,9 @@ class PrivacyCore:
         # Log the privacy settings that were retrieved
         logger.info("PRIVACY: Retrieved privacy settings for %s: %s", lookup_id, settings_dict)
 
+        # Log to database for statistics
+        self._privacy_db.log_settings_action("retrieved", lookup_id, settings_dict)
+
         return True, settings_dict
 
     def create_settings(self, user: str, settings: Dict[str, bool]) -> Tuple[bool, Union[Dict[str, Any], str]]:
@@ -148,6 +151,9 @@ class PrivacyCore:
 
             # Log the privacy settings that were created
             logger.info("PRIVACY: Created privacy settings for %s: %s", store_id, settings)
+
+            # Log to database for statistics
+            self._privacy_db.log_settings_action("created", store_id, settings)
 
             # After creating settings, reprocess all vCards for this user
             try:
@@ -209,6 +215,9 @@ class PrivacyCore:
 
             logger.info("PRIVACY: Updated privacy settings for %s: %s", store_id, settings)
 
+            # Log to database for statistics
+            self._privacy_db.log_settings_action("updated", store_id, settings)
+
             # After updating settings, reprocess all vCards for this user
             try:
                 reprocessor = PrivacyReprocessor(self.configuration, self._scanner._storage)
@@ -254,6 +263,10 @@ class PrivacyCore:
                 return False, "User settings not found"
 
             logger.info("PRIVACY: Deleted privacy settings for %s", store_id)
+
+            # Log to database for statistics
+            self._privacy_db.log_settings_action("deleted", store_id)
+
             return True, {"status": "deleted"}
         except Exception as e:
             return False, str(e)
