@@ -26,15 +26,6 @@ APIResult = Union[SettingsResult, CardsResult, StatusResult, str]
 class PrivacyHTTP:
     """HTTP endpoints for privacy management."""
 
-    # Universal CORS headers
-    CORS_HEADERS = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Expose-Headers": "Authorization",
-        "Access-Control-Max-Age": "86400",
-    }
-
     def __init__(self, configuration) -> None:
         """Initialize the privacy HTTP endpoints.
 
@@ -74,14 +65,8 @@ class PrivacyHTTP:
 
         return None, None
 
-    def _add_cors_headers(self, headers: dict) -> dict:
-        """Merge CORS headers into the response headers."""
-        merged = dict(headers)
-        merged.update(self.CORS_HEADERS)
-        return merged
-
     def _to_wsgi_response(self, success: bool, result: APIResult, jwt_token: Optional[str] = None) -> types.WSGIResponse:
-        """Convert API response to WSGI response, always adding CORS headers.
+        """Convert API response to WSGI response.
 
         Args:
             success: Whether the API call was successful
@@ -92,7 +77,6 @@ class PrivacyHTTP:
             WSGI response tuple (status, headers, body)
         """
         headers = {"Content-Type": "application/json"}
-        headers = self._add_cors_headers(headers)
 
         # Add JWT token to Authorization header if provided
         if jwt_token:
@@ -124,19 +108,19 @@ class PrivacyHTTP:
         logger.info("do_GET: authenticated_user=%s, jwt_token=%s", authenticated_user, jwt_token is not None)
         if not authenticated_user:
             # No authentication - return 401 (main app will handle OTP sending)
-            return client.UNAUTHORIZED, self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Authentication required"}).encode()
+            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
 
         # For JWT authentication, the main app user parameter may be empty, so we skip this check
         # For Basic auth, we still want to verify consistency
         if user and authenticated_user != user:
             logger.warning("User mismatch: authenticated_user=%s, main_app_user=%s", authenticated_user, user)
-            return client.UNAUTHORIZED, self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
+            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         # Extract user identifier from path
         # Path format: /privacy/settings/{user} or /privacy/cards/{user}
         parts = path.strip("/").split("/")
         if len(parts) < 3:
-            return httputils.BAD_REQUEST[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Invalid request format"}).encode()
+            return httputils.BAD_REQUEST[0], {"Content-Type": "application/json"}, json.dumps({"error": "Invalid request format"}).encode()
 
         resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
@@ -144,7 +128,7 @@ class PrivacyHTTP:
         # Only restrict access for 'settings' resource
         if resource_type == "settings" and authenticated_user != user_identifier:
             logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
-            return httputils.FORBIDDEN[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
+            return httputils.FORBIDDEN[0], {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         success: bool
         result: APIResult
@@ -154,10 +138,10 @@ class PrivacyHTTP:
         elif resource_type == "cards":
             success, result = self._privacy_core.get_matching_cards(user_identifier)
         else:
-            return httputils.BAD_REQUEST[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Invalid resource type"}).encode()
+            return httputils.BAD_REQUEST[0], {"Content-Type": "application/json"}, json.dumps({"error": "Invalid resource type"}).encode()
 
         if not success:
-            return httputils.BAD_REQUEST[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": result}).encode()
+            return httputils.BAD_REQUEST[0], {"Content-Type": "application/json"}, json.dumps({"error": result}).encode()
 
         # Pass JWT token to response if this was OTP verification
         return self._to_wsgi_response(success, result, jwt_token)
@@ -178,12 +162,12 @@ class PrivacyHTTP:
         # Check if authenticated user matches the requested user
         authenticated_user, _ = self._get_authenticated_user(environ)
         if user and authenticated_user != user:
-            return client.UNAUTHORIZED, self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
+            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         # Extract user identifier and action from path
         parts = path.strip("/").split("/")
         if len(parts) < 3:
-            return httputils.BAD_REQUEST[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Invalid request format"}).encode()
+            return httputils.BAD_REQUEST[0], {"Content-Type": "application/json"}, json.dumps({"error": "Invalid request format"}).encode()
 
         resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
@@ -191,7 +175,7 @@ class PrivacyHTTP:
         # Only restrict access for 'settings' resource
         if resource_type == "settings" and authenticated_user != user_identifier:
             logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
-            return httputils.FORBIDDEN[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
+            return httputils.FORBIDDEN[0], {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         success: bool
         result: APIResult
@@ -204,18 +188,18 @@ class PrivacyHTTP:
                     body = environ["wsgi.input"].read(content_length)
                     data = json.loads(body)
                 else:
-                    return httputils.BAD_REQUEST[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Missing content length"}).encode()
+                    return httputils.BAD_REQUEST[0], {"Content-Type": "application/json"}, json.dumps({"error": "Missing content length"}).encode()
             except (ValueError, json.JSONDecodeError):
-                return httputils.BAD_REQUEST[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Invalid JSON"}).encode()
+                return httputils.BAD_REQUEST[0], {"Content-Type": "application/json"}, json.dumps({"error": "Invalid JSON"}).encode()
 
             success, result = self._privacy_core.create_settings(user_identifier, data)
             if success:
-                return client.CREATED, self._add_cors_headers({"Content-Type": "application/json"}), json.dumps(result).encode()
+                return client.CREATED, {"Content-Type": "application/json"}, json.dumps(result).encode()
         elif resource_type == "cards" and len(parts) > 3 and parts[3] == "reprocess":
             # No body required for reprocess
             success, result = self._privacy_core.reprocess_cards(user_identifier)
         else:
-            return httputils.BAD_REQUEST[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Invalid request format"}).encode()
+            return httputils.BAD_REQUEST[0], {"Content-Type": "application/json"}, json.dumps({"error": "Invalid request format"}).encode()
 
         return self._to_wsgi_response(success, result)
 
@@ -235,12 +219,12 @@ class PrivacyHTTP:
         # Check if authenticated user matches the requested user
         authenticated_user, _ = self._get_authenticated_user(environ)
         if user and authenticated_user != user:
-            return client.UNAUTHORIZED, self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
+            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         # Extract user identifier from path
         parts = path.strip("/").split("/")
         if len(parts) != 3 or parts[1] != "settings":
-            return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
+            return httputils.BAD_REQUEST[0], dict(httputils.BAD_REQUEST[1]), httputils.BAD_REQUEST[2]
 
         resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
@@ -248,7 +232,7 @@ class PrivacyHTTP:
         # Only restrict access for 'settings' resource
         if resource_type == "settings" and authenticated_user != user_identifier:
             logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
-            return httputils.FORBIDDEN[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
+            return httputils.FORBIDDEN[0], {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         # Read request body
         try:
@@ -257,9 +241,9 @@ class PrivacyHTTP:
                 body = environ["wsgi.input"].read(content_length)
                 data = json.loads(body)
             else:
-                return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
+                return httputils.BAD_REQUEST[0], dict(httputils.BAD_REQUEST[1]), httputils.BAD_REQUEST[2]
         except (ValueError, json.JSONDecodeError):
-            return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
+            return httputils.BAD_REQUEST[0], dict(httputils.BAD_REQUEST[1]), httputils.BAD_REQUEST[2]
 
         success: bool
         result: APIResult
@@ -282,12 +266,12 @@ class PrivacyHTTP:
         # Check if authenticated user matches the requested user
         authenticated_user, _ = self._get_authenticated_user(environ)
         if user and authenticated_user != user:
-            return client.UNAUTHORIZED, self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
+            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         # Extract user identifier from path
         parts = path.strip("/").split("/")
         if len(parts) != 3 or parts[1] != "settings":
-            return httputils.BAD_REQUEST[0], self._add_cors_headers(dict(httputils.BAD_REQUEST[1])), httputils.BAD_REQUEST[2]
+            return httputils.BAD_REQUEST[0], dict(httputils.BAD_REQUEST[1]), httputils.BAD_REQUEST[2]
 
         resource_type = parts[1]  # 'settings' or 'cards'
         user_identifier = parts[2]
@@ -295,25 +279,9 @@ class PrivacyHTTP:
         # Only restrict access for 'settings' resource
         if resource_type == "settings" and authenticated_user != user_identifier:
             logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
-            return httputils.FORBIDDEN[0], self._add_cors_headers({"Content-Type": "application/json"}), json.dumps({"error": "Action on the requested resource refused."}).encode()
+            return httputils.FORBIDDEN[0], {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         success: bool
         result: APIResult
         success, result = self._privacy_core.delete_settings(user_identifier)
         return self._to_wsgi_response(success, result)
-
-    def do_OPTIONS(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-                   user: str) -> types.WSGIResponse:
-        """Handle OPTIONS requests for CORS preflight.
-
-        Args:
-            environ: The WSGI environment
-            base_prefix: The base URL prefix
-            path: The request path
-            user: The authenticated user
-
-        Returns:
-            WSGI response with CORS headers
-        """
-        headers = self._add_cors_headers({})
-        return client.OK, headers, b""
