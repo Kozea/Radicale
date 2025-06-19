@@ -76,7 +76,7 @@ class VCardPropertyType(Enum):
 PRIVACY_TO_VCARD_MAP = {
     'disallow_photo': ['photo'],
     'disallow_gender': ['gender'],
-    'disallow_birthday': ['bday', 'anniversary'],
+    'disallow_birthday': ['bday'],
     'disallow_address': ['adr', 'label'],
     'disallow_company': ['org', 'logo'],
     'disallow_title': ['title', 'role'],
