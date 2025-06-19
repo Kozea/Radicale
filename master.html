@@ -611,8 +611,8 @@ available at the root of the web server (in the nginx case using
 <code>location /</code>), then the setting of the
 <code>X-Script-Name</code> header should be removed from the example
 below.</p>
-<p>Example <strong>nginx</strong> configuration:</p>
-<p>See for latest examples: <a href="https://github.com/Kozea/Radicale/tree/master/contrib/nginx/">https://github.com/Kozea/Radicale/tree/master/contrib/nginx/</a></p>
+<p>Example <strong>nginx</strong> configuration extension:</p>
+<p>See also for latest examples: <a href="https://github.com/Kozea/Radicale/tree/master/contrib/nginx/">https://github.com/Kozea/Radicale/tree/master/contrib/nginx/</a></p>
 <pre class="nginx"><code>location /radicale/ { # The trailing / is important!
     proxy_pass        http://localhost:5232/; # The / is important!
     proxy_set_header  X-Script-Name /radicale;
@@ -623,15 +623,15 @@ below.</p>
     proxy_set_header  Host $http_host;
     proxy_pass_header Authorization;
 }</code></pre>
-<p>Example <strong>Caddy</strong> configuration:</p>
+<p>Example <strong>Caddy</strong> configuration extension:</p>
+<p>See also for latest examples: <a href="https://github.com/Kozea/Radicale/tree/master/contrib/caddy/">https://github.com/Kozea/Radicale/tree/master/contrib/caddy/</a></p>
 <pre><code>handle_path /radicale/* {
     uri strip_prefix /radicale
     reverse_proxy localhost:5232 {
-        header_up X-Script-Name /radicale
     }
 }</code></pre>
-<p>Example <strong>Apache</strong> configuration:</p>
-<p>See for latest examples: <a href="https://github.com/Kozea/Radicale/tree/master/contrib/apache/">https://github.com/Kozea/Radicale/tree/master/contrib/apache/</a></p>
+<p>Example <strong>Apache</strong> configuration extension:</p>
+<p>See also for latest examples: <a href="https://github.com/Kozea/Radicale/tree/master/contrib/apache/">https://github.com/Kozea/Radicale/tree/master/contrib/apache/</a></p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode apache"><code class="sourceCode apache"><span id="cb21-1"><a aria-hidden="true" href="#cb21-1" tabindex="-1"></a><span class="ex">RewriteEngine</span><span class="ch"> </span><span class="kw">On</span></span>
 <span id="cb21-2"><a aria-hidden="true" href="#cb21-2" tabindex="-1"></a>RewriteRule<span class="st"> ^/radicale$ /radicale/ [R,L]</span></span>
 <span id="cb21-3"><a aria-hidden="true" href="#cb21-3" tabindex="-1"></a></span>
