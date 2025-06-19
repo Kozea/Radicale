@@ -82,8 +82,6 @@ class PrivacyHTTP:
         if jwt_token:
             headers["Authorization"] = f"Bearer {jwt_token}"
             logger.info("Adding JWT token to response headers: %s", jwt_token[:20] + "..." if len(jwt_token) > 20 else jwt_token)
-        else:
-            logger.info("No JWT token to add to response headers")
 
         if isinstance(result, str):
             # Error message
@@ -91,7 +89,7 @@ class PrivacyHTTP:
         return client.OK, headers, json.dumps(result).encode()
 
     def do_GET(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-               user: str) -> types.WSGIResponse:
+               user: str, jwt_token: Optional[str] = None) -> types.WSGIResponse:
         """Handle GET requests for privacy endpoints.
 
         Args:
@@ -99,18 +97,19 @@ class PrivacyHTTP:
             base_prefix: The base URL prefix
             path: The request path
             user: The authenticated user (from main app, may be empty for JWT auth)
+            jwt_token: JWT token from main authentication (optional)
 
         Returns:
             WSGI response
         """
         # If main authentication already succeeded, trust that result
         if user:
-            authenticated_user = user
-            jwt_token = None
+            authenticated_user: Optional[str] = user
             logger.info("do_GET: using main auth result, user=%s", authenticated_user)
         else:
             # Check authentication and get JWT token if this is OTP verification
-            authenticated_user, jwt_token = self._get_authenticated_user(environ)
+            auth_result = self._get_authenticated_user(environ)
+            authenticated_user, jwt_token = auth_result
             logger.info("do_GET: authenticated_user=%s, jwt_token=%s", authenticated_user, jwt_token is not None)
             if not authenticated_user:
                 # No authentication - return 401 (main app will handle OTP sending)
@@ -154,20 +153,18 @@ class PrivacyHTTP:
             environ: The WSGI environment
             base_prefix: The base URL prefix
             path: The request path
-            user: The authenticated user (from main app, may be empty for JWT auth)
+            user: The authenticated user (from main app)
 
         Returns:
             WSGI response
         """
-        # If main authentication already succeeded, trust that result
-        if user:
-            authenticated_user = user
-            logger.info("do_POST: using main auth result, user=%s", authenticated_user)
-        else:
-            # Check authentication and get JWT token if this is OTP verification
-            authenticated_user, _ = self._get_authenticated_user(environ)
-            if not authenticated_user:
-                return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
+        # POST requests should only use JWT Bearer token authentication
+        # OTP authentication only happens with GET requests
+        if not user:
+            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
+
+        authenticated_user = user
+        logger.info("do_POST: using main auth result, user=%s", authenticated_user)
 
         # Extract user identifier and action from path
         parts = path.strip("/").split("/")
@@ -206,7 +203,7 @@ class PrivacyHTTP:
         else:
             return httputils.BAD_REQUEST[0], {"Content-Type": "application/json"}, json.dumps({"error": "Invalid request format"}).encode()
 
-        return self._to_wsgi_response(success, result)
+        return self._to_wsgi_response(success, result, None)  # No JWT token for POST requests
 
     def do_PUT(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
                user: str) -> types.WSGIResponse:
@@ -216,20 +213,18 @@ class PrivacyHTTP:
             environ: The WSGI environment
             base_prefix: The base URL prefix
             path: The request path
-            user: The authenticated user (from main app, may be empty for JWT auth)
+            user: The authenticated user (from main app)
 
         Returns:
             WSGI response
         """
-        # If main authentication already succeeded, trust that result
-        if user:
-            authenticated_user = user
-            logger.info("do_PUT: using main auth result, user=%s", authenticated_user)
-        else:
-            # Check authentication and get JWT token if this is OTP verification
-            authenticated_user, _ = self._get_authenticated_user(environ)
-            if not authenticated_user:
-                return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
+        # PUT requests should only use JWT Bearer token authentication
+        # OTP authentication only happens with GET requests
+        if not user:
+            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
+
+        authenticated_user = user
+        logger.info("do_PUT: using main auth result, user=%s", authenticated_user)
 
         # Extract user identifier from path
         parts = path.strip("/").split("/")
@@ -258,7 +253,7 @@ class PrivacyHTTP:
         success: bool
         result: APIResult
         success, result = self._privacy_core.update_settings(user_identifier, data)
-        return self._to_wsgi_response(success, result)
+        return self._to_wsgi_response(success, result, None)  # No JWT token for PUT requests
 
     def do_DELETE(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
                   user: str) -> types.WSGIResponse:
@@ -268,20 +263,18 @@ class PrivacyHTTP:
             environ: The WSGI environment
             base_prefix: The base URL prefix
             path: The request path
-            user: The authenticated user (from main app, may be empty for JWT auth)
+            user: The authenticated user (from main app)
 
         Returns:
             WSGI response
         """
-        # If main authentication already succeeded, trust that result
-        if user:
-            authenticated_user = user
-            logger.info("do_DELETE: using main auth result, user=%s", authenticated_user)
-        else:
-            # Check authentication and get JWT token if this is OTP verification
-            authenticated_user, _ = self._get_authenticated_user(environ)
-            if not authenticated_user:
-                return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
+        # DELETE requests should only use JWT Bearer token authentication
+        # OTP authentication only happens with GET requests
+        if not user:
+            return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
+
+        authenticated_user = user
+        logger.info("do_DELETE: using main auth result, user=%s", authenticated_user)
 
         # Extract user identifier from path
         parts = path.strip("/").split("/")
@@ -299,4 +292,4 @@ class PrivacyHTTP:
         success: bool
         result: APIResult
         success, result = self._privacy_core.delete_settings(user_identifier)
-        return self._to_wsgi_response(success, result)
+        return self._to_wsgi_response(success, result, None)  # No JWT token for DELETE requests

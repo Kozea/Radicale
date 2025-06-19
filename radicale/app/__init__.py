@@ -312,6 +312,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     authorization.encode("ascii"))).split(":", 1)
 
         # Enhanced authentication flow with JWT support
+        jwt_token = None  # Initialize JWT token variable
         if login:
             # Check if this was JWT Bearer token authentication
             if password == "jwt_validated":
@@ -388,8 +389,13 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     return response(*httputils.REQUEST_ENTITY_TOO_LARGE)
 
         if not login or user:
-            status, headers, answer = function(
-                environ, base_prefix, path, user)
+            # For privacy paths, pass the JWT token if available
+            if path.startswith("/privacy/") and jwt_token:
+                status, headers, answer = function(
+                    environ, base_prefix, path, user, jwt_token)
+            else:
+                status, headers, answer = function(
+                    environ, base_prefix, path, user)
             if (status, headers, answer) == httputils.NOT_ALLOWED:
                 logger.info("Access to %r denied for %s", path,
                             repr(user) if user else "anonymous user")
