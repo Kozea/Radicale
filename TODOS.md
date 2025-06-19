@@ -139,7 +139,7 @@
 
 # Phase 5 Upgrade Authentication Flow to JWT-based OTP
 
-1. **CORS Handling**
+1. **CORS Handling** ✅
    - Ensure all relevant endpoints (especially `/privacy/settings/{user}`) handle CORS preflight (OPTIONS) requests.
    - For all responses (including errors), add:
      - `Access-Control-Allow-Origin: *`
@@ -147,13 +147,13 @@
      - (Optionally) `Access-Control-Allow-Headers: Content-Type, Authorization`
      - (Optionally) `Access-Control-Expose-Headers: Authorization`
 
-2. **OTP Generation and Initial Login**
+2. **OTP Generation and Initial Login** ✅
    - On `GET /privacy/settings/{user}`:
      - If no password (or password is empty), treat as OTP request.
      - Generate and send OTP to the user (email or phone).
      - Respond with `401 Unauthorized` and CORS headers.
 
-3. **OTP Verification and JWT Issuance**
+3. **OTP Verification and JWT Issuance** ✅
    - On `GET /privacy/settings/{user}` with password (OTP code):
      - Validate the OTP for the user.
      - If valid:
@@ -162,19 +162,19 @@
      - If invalid:
        - Respond with `401 Unauthorized` and CORS headers.
 
-4. **JWT Authentication for Subsequent Requests**
+4. **JWT Authentication for Subsequent Requests** ✅
    - For all protected endpoints (GET/POST/PUT/DELETE on `/privacy/settings/{user}` and similar):
      - Require `Authorization: Bearer <jwt>` header.
      - Validate the JWT (signature, expiry, user).
      - If valid, allow access.
      - If invalid/expired, respond with `401 Unauthorized` and CORS headers.
 
-5. **Remove Old Session System and Logout**
+5. **Remove Old Session System and Logout** ✅
    - Remove all code related to the previous session token system (in-memory session storage, session token headers, etc).
    - Remove the `/logout` endpoint entirely.
    - All authentication state is now JWT-based and stateless.
 
-6. **Testing and Documentation**
+6. **Testing and Documentation** ✅
    - Update or add tests for:
      - OTP generation and delivery.
      - JWT issuance and validation.
