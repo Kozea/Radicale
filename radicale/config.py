@@ -452,6 +452,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "~/.local/share/radicale/privacy.db",
             "help": "path where the privacy settings database is stored",
             "type": filepath}),
+        ("database_logging", {
+            "value": "False",
+            "help": "disable logging privacy events to the database",
+            "type": bool}),
         ("default_disallow_name", {
             "value": "False",
             "help": "default value for disallowing name in privacy settings",

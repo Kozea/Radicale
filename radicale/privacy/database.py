@@ -155,6 +155,10 @@ class PrivacyDatabase:
             details: Additional structured data as dictionary
             log_level: Log level (INFO, DEBUG, WARNING, ERROR)
         """
+        # Check if database logging is disabled
+        if not self._configuration.get("privacy", "database_logging"):
+            return
+
         session = self.Session()
         try:
             details_json = json.dumps(details) if details else None
