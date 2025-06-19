@@ -24,7 +24,7 @@ from typing import Optional
 
 from radicale import httputils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
-from radicale.hook import HookNotificationItem, HookNotificationItemTypes
+from radicale.hook import DeleteHookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
 
 
@@ -82,10 +82,11 @@ class ApplicationPartDelete(ApplicationBase):
                         return httputils.NOT_ALLOWED
                 for i in item.get_all():
                     hook_notification_item_list.append(
-                        HookNotificationItem(
+                        DeleteHookNotificationItem(
                             HookNotificationItemTypes.DELETE,
                             access.path,
-                            i.uid
+                            i.uid,
+                            old_content=item.serialize()
                         )
                     )
                 xml_answer = xml_delete(base_prefix, path, item)
@@ -93,10 +94,11 @@ class ApplicationPartDelete(ApplicationBase):
                 assert item.collection is not None
                 assert item.href is not None
                 hook_notification_item_list.append(
-                    HookNotificationItem(
+                    DeleteHookNotificationItem(
                         HookNotificationItemTypes.DELETE,
                         access.path,
-                        item.uid
+                        item.uid,
+                        old_content=item.serialize()
                     )
                 )
                 xml_answer = xml_delete(

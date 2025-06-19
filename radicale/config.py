@@ -436,7 +436,56 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("rabbitmq_queue_type", {
             "value": "",
             "help": "queue type for topic declaration",
-            "type": str})])),
+            "type": str}),
+        ("smtp_server", {
+            "value": "",
+            "help": "SMTP server to send emails",
+            "type": str}),
+        ("smtp_port", {
+            "value": "",
+            "help": "SMTP server port",
+            "type": str}),
+        ("smtp_username", {
+            "value": "",
+            "help": "SMTP server username",
+            "type": str}),
+        ("smtp_password", {
+            "value": "",
+            "help": "SMTP server password",
+            "type": str}),
+        ("from_email", {
+            "value": "",
+            "help": "SMTP server password",
+            "type": str}),
+        ("mass_email", {
+            "value": "False",
+            "help": "Send one email to all attendees, versus one email per attendee",
+            "type": bool}),
+        ("added_template", {
+            "value": """Hello $attendee_name,
+
+You have been added as an attendee to the following calendar event.
+
+    $event_title
+    $event_start_time - $event_end_time
+    $event_location
+
+This is an automated message. Please do not reply.""",
+            "help": "Template for the email sent when an event is added or updated. Select placeholder words prefixed with $ will be replaced",
+            "type": str}),
+        ("removed_template", {
+            "value": """Hello $attendee_name,
+
+You have been removed as an attendee from the following calendar event.
+
+    $event_title
+    $event_start_time - $event_end_time
+    $event_location
+
+This is an automated message. Please do not reply.""",
+            "help": "Template for the email sent when an event is deleted. Select placeholder words prefixed with $ will be replaced",
+            "type": str}),
+    ])),
     ("web", OrderedDict([
         ("type", {
             "value": "internal",
