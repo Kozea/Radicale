@@ -382,9 +382,9 @@ should be made available at the root of the web server (in the nginx case
 using `location /`), then the setting of the `X-Script-Name` header should be
 removed from the example below.
 
-Example **nginx** configuration:
+Example **nginx** configuration extension:
 
-See for latest examples: https://github.com/Kozea/Radicale/tree/master/contrib/nginx/
+See also for latest examples: https://github.com/Kozea/Radicale/tree/master/contrib/nginx/
 
 ```nginx
 location /radicale/ { # The trailing / is important!
@@ -399,20 +399,21 @@ location /radicale/ { # The trailing / is important!
 }
 ```
 
-Example **Caddy** configuration:
+Example **Caddy** configuration extension:
+
+See also for latest examples: https://github.com/Kozea/Radicale/tree/master/contrib/caddy/
 
 ```
 handle_path /radicale/* {
     uri strip_prefix /radicale
     reverse_proxy localhost:5232 {
-        header_up X-Script-Name /radicale
     }
 }
 ```
 
-Example **Apache** configuration:
+Example **Apache** configuration extension:
 
-See for latest examples: https://github.com/Kozea/Radicale/tree/master/contrib/apache/
+See also for latest examples: https://github.com/Kozea/Radicale/tree/master/contrib/apache/
 
 ```apache
 RewriteEngine On
