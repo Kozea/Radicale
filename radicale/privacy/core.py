@@ -91,10 +91,10 @@ class PrivacyCore:
         # If settings don't exist, auto-create them with defaults
         if not settings:
             try:
-                logger.info("Creating default privacy settings for new user: %s", lookup_id)
+                logger.info("PRIVACY: Creating default privacy settings for new user: %s", lookup_id)
                 settings = self._privacy_db.create_user_settings(lookup_id, {})
             except Exception as e:
-                logger.error("Failed to create default settings for user %s: %s", lookup_id, e)
+                logger.error("PRIVACY: Failed to create default settings for user %s: %s", lookup_id, e)
                 return False, f"Failed to create default settings: {str(e)}"
 
         # Convert settings to dict
@@ -149,7 +149,7 @@ class PrivacyCore:
                 reprocessor.reprocess_vcards(store_id)
                 return True, {"status": "created"}
             except Exception as e:
-                logger.error("Error reprocessing cards: %s", str(e))
+                logger.error("PRIVACY: Error reprocessing cards: %s", str(e))
                 # Still return success for settings creation, but include reprocessing error
                 return True, {
                     "status": "created",
@@ -201,13 +201,15 @@ class PrivacyCore:
             if not updated:
                 return False, "User settings not found"
 
+            logger.info("PRIVACY: Updated user settings for %s", store_id)
+
             # After updating settings, reprocess all vCards for this user
             try:
                 reprocessor = PrivacyReprocessor(self.configuration, self._scanner._storage)
                 reprocessor.reprocess_vcards(store_id)
                 return True, {"status": "updated"}
             except Exception as e:
-                logger.error("Error reprocessing cards: %s", str(e))
+                logger.error("PRIVACY: Error reprocessing cards: %s", str(e))
                 # Still return success for settings update, but include reprocessing error
                 return True, {
                     "status": "updated",
@@ -287,19 +289,19 @@ class PrivacyCore:
             vcard_matches = []
             for match in matches:
                 try:
-                    logger.debug("Attempting to discover collection: %r", match["collection_path"])
+                    logger.debug("PRIVACY: Attempting to discover collection: %r", match["collection_path"])
                     # Ensure path starts with a slash for discover()
                     discover_path = "/" + match["collection_path"].lstrip("/")
-                    logger.debug("Using discover path: %r", discover_path)
+                    logger.debug("PRIVACY: Using discover path: %r", discover_path)
                     collections = list(self._scanner._storage.discover(discover_path))
-                    logger.debug("Discover returned %d collections", len(collections))
+                    logger.debug("PRIVACY: Discover returned %d collections", len(collections))
                     collection = next(iter(collections), None)
                 except Exception as e:
-                    logger.info("Error discovering collection: %r", e)
+                    logger.warning("PRIVACY: Error discovering collection: %r", e)
                     continue
 
                 if not collection:
-                    logger.debug("No collection found for path: %r", match["collection_path"])
+                    logger.debug("PRIVACY: No collection found for path: %r", match["collection_path"])
                     continue
 
                 # Get the vCard
@@ -354,7 +356,7 @@ class PrivacyCore:
             return True, {"matches": vcard_matches}
 
         except Exception as e:
-            logger.error("Error finding matching cards: %s", str(e), exc_info=True)
+            logger.error("PRIVACY: Error finding matching cards: %s", str(e), exc_info=True)
             return False, f"Error finding matching cards: {str(e)}"
 
     def reprocess_cards(self, user: str) -> Tuple[bool, Union[Dict[str, Union[str, int, List[str]]], str]]:
