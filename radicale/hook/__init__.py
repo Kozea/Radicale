@@ -5,7 +5,7 @@ from typing import Sequence
 from radicale import pathutils, utils
 from radicale.log import logger
 
-INTERNAL_TYPES: Sequence[str] = ("none", "rabbitmq")
+INTERNAL_TYPES: Sequence[str] = ("none", "rabbitmq", "email")
 
 
 def load(configuration):
@@ -67,3 +67,9 @@ class HookNotificationItem:
             sort_keys=True,
             indent=4
         )
+
+
+class DeleteHookNotificationItem(HookNotificationItem):
+    def __init__(self, path, uid, old_content=None):
+        super().__init__(notification_item_type=HookNotificationItemTypes.DELETE, path=path, content=uid)
+        self.old_content = old_content

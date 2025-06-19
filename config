@@ -310,6 +310,12 @@
 #rabbitmq_endpoint =
 #rabbitmq_topic =
 #rabbitmq_queue_type = classic
+#smtp_server =
+#smtp_port = 587
+#smtp_username =
+#smtp_password =
+#from_email =
+#mass_email = False
 
 
 [reporting]
