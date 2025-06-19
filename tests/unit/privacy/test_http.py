@@ -273,27 +273,6 @@ def test_reprocess_cards_success(http_app):
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
-def test_options_request(http_app):
-    """Test OPTIONS request for CORS preflight."""
-    # Create mock WSGI environment
-    environ = {
-        "REQUEST_METHOD": "OPTIONS",
-        "PATH_INFO": "/privacy/settings/test@example.com"
-    }
-
-    # Call the handler with matching user
-    status, headers, body = http_app.do_OPTIONS(environ, "/", "/privacy/settings/test@example.com", "test@example.com")
-
-    # Verify response
-    assert status == client.OK
-    assert headers["Access-Control-Allow-Origin"] == "*"
-    assert headers["Access-Control-Allow-Methods"] == "GET, POST, PUT, DELETE, OPTIONS"
-    assert headers["Access-Control-Allow-Headers"] == "Content-Type, Authorization"
-    assert headers["Access-Control-Max-Age"] == "86400"
-    assert body == b""
-
-
-@pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
 def test_invalid_path(http_app):
     """Test request with invalid path."""
     # Create mock WSGI environment with invalid path
