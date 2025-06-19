@@ -52,7 +52,7 @@ class Auth(auth.BaseAuth):
         self._jwt_secret: str = configuration.get("auth", "jwt_secret") or secrets.token_urlsafe(32)
         self._jwt_expiry: int = configuration.get("auth", "jwt_expiry") or 3600  # 1 hour default
 
-        logger.info("OTP authentication initialized")
+        logger.info("AUTH: OTP authentication initialized")
 
     def _send_otp(self, login: str) -> bool:
         """Send OTP code via SMS or email using Twilio.
@@ -69,18 +69,15 @@ class Auth(auth.BaseAuth):
                 verification = self._client.verify.v2.services(
                     self._service_sid
                 ).verifications.create(to=login, channel="email")
-                logger.info("verification : %s", verification)
-                logger.info("verification.sid: %s", verification.sid)
             else:
                 # Treat as phone number
                 verification = self._client.verify.v2.services(
                     self._service_sid
                 ).verifications.create(to=login, channel="sms")
-                logger.info("verification : %s", verification)
-                logger.info("verification.sid: %s", verification.sid)
+            logger.debug("AUTH: OTP verification.sid: %s", verification.sid)
             return bool(verification.sid)
         except Exception as e:
-            logger.error("Failed to send OTP via Twilio: %s", str(e))
+            logger.error("AUTH: Failed to send OTP via Twilio: %s", str(e))
             return False
 
     def _check_otp(self, login: str, otp: str) -> bool:
@@ -90,12 +87,11 @@ class Auth(auth.BaseAuth):
             verification_check = self._client.verify.v2.services(
                 self._service_sid
             ).verification_checks.create(to=login, code=otp)
-            logger.info("verification_check: %s", verification_check)
-            logger.info("verification_check.status: %s", verification_check.status)
-            logger.info("verification_check.valid: %s", verification_check.valid)
+            logger.debug("AUTH: verification_check.status: %s", verification_check.status)
+            logger.debug("AUTH: verification_check.valid: %s", verification_check.valid)
             return bool(verification_check.status == "approved")
         except Exception as e:
-            logger.error("Failed to check OTP via Twilio: %s", str(e))
+            logger.error("AUTH: Failed to check OTP via Twilio: %s", str(e))
             return False
 
     def login_with_jwt(self, login: str, password: str) -> Tuple[str, Optional[str]]:
@@ -110,27 +106,26 @@ class Auth(auth.BaseAuth):
         """
         # If password is empty, this is the initial request - generate and send OTP
         if not password:
-            logger.info("login_with_jwt: Initial OTP request for %s", login)
+            logger.info("AUTH: Initial OTP request for %s", login)
             if self._send_otp(login):
-                logger.info("New OTP sent to user: %s", login)
+                logger.info("AUTH: OTP code sent successfully to %s", login)
             else:
-                logger.warning("Failed to send OTP to user: %s (possibly rate limited)", login)
+                logger.warning("AUTH: Failed to send OTP code to %s", login)
             return "", None
 
         # If password is provided, validate it against stored OTP
         if password:
-            logger.info("login_with_jwt: OTP verification attempt for %s", login)
+            logger.info("AUTH: OTP verification attempt for %s", login)
             if self._check_otp(login, password):
-                logger.info("OTP validated for user: %s", login)
-                logger.info("User authenticated successfully: %s", login)
+                logger.info("AUTH: OTP verification successful for %s", login)
                 # Generate JWT token for successful authentication
                 jwt_token = self._generate_jwt(login)
                 return login, jwt_token
             else:
-                logger.warning("Invalid OTP provided for user: %s", login)
+                logger.warning("AUTH: Invalid OTP code for %s", login)
                 return "", None
 
-        logger.warning("Invalid OTP provided for user: %s", login)
+        logger.warning("AUTH: Invalid OTP request for %s", login)
         return "", None
 
     def _login(self, login: str, password: str) -> str:
@@ -173,7 +168,7 @@ class Auth(auth.BaseAuth):
         }
 
         token = jwt.encode(payload, self._jwt_secret, algorithm="HS256")
-        logger.info("Generated JWT for user: %s (type: %s, expires in %d seconds)", user, identifier_type, self._jwt_expiry)
+        logger.info("AUTH: Generated JWT token for %s (type: %s, expires in %d seconds)", user, identifier_type, self._jwt_expiry)
         return token
 
     def _validate_jwt(self, token: str) -> Optional[str]:
@@ -188,11 +183,11 @@ class Auth(auth.BaseAuth):
         try:
             payload = jwt.decode(token, self._jwt_secret, algorithms=["HS256"])
             user = payload.get("sub")
-            logger.info("JWT validated for user: %s", user)
+            logger.info("AUTH: JWT token validated for %s", user)
             return user
         except jwt.ExpiredSignatureError:
-            logger.warning("JWT token expired")
+            logger.warning("AUTH: JWT token expired")
             return None
         except jwt.InvalidTokenError as e:
-            logger.warning("Invalid JWT token: %s", e)
+            logger.warning("AUTH: Invalid JWT token: %s", e)
             return None

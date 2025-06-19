@@ -60,7 +60,7 @@ class PrivacyHTTP:
                 user, jwt_token = self._otp_auth.login_with_jwt(login, password)
                 return user, jwt_token
             except Exception as e:
-                logger.error("Authentication error: %s", e)
+                logger.error("AUTH: Authentication error: %s", e)
                 return None, None
 
         return None, None
@@ -81,7 +81,7 @@ class PrivacyHTTP:
         # Add JWT token to Authorization header if provided
         if jwt_token:
             headers["Authorization"] = f"Bearer {jwt_token}"
-            logger.info("Adding JWT token to response headers: %s", jwt_token[:20] + "..." if len(jwt_token) > 20 else jwt_token)
+            logger.info("AUTH: Added JWT token to response headers")
 
         if isinstance(result, str):
             # Error message
@@ -105,7 +105,7 @@ class PrivacyHTTP:
         # If main authentication already succeeded, trust that result
         if user:
             authenticated_user: Optional[str] = user
-            logger.info("do_GET: using main auth result, user=%s", authenticated_user)
+            logger.info("AUTH: Using main auth result - user=%s", authenticated_user)
         else:
             # Check if this is an OTP request (empty password) that was already handled by main app
             auth_header = environ.get("HTTP_AUTHORIZATION", "")
@@ -117,16 +117,16 @@ class PrivacyHTTP:
                     # If password is empty, this is an OTP request that was already handled by main app
                     # Don't try to authenticate again to avoid double OTP sending
                     if not password:
-                        logger.info("do_GET: OTP request already handled by main app for %s, returning 401", login)
+                        logger.info("AUTH: OTP request already handled by main app for %s", login)
                         return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
                 except Exception as e:
-                    logger.error("Error parsing Basic auth: %s", e)
+                    logger.error("AUTH: Error parsing Basic auth: %s", e)
 
             # Check authentication and get JWT token if this is OTP verification
             # Only do this if we don't already have a user from main app
             auth_result = self._get_authenticated_user(environ)
             authenticated_user, jwt_token = auth_result
-            logger.info("do_GET: authenticated_user=%s, jwt_token=%s", authenticated_user, jwt_token is not None)
+            logger.info("AUTH: Auth result - user=%s, token=%s", authenticated_user, jwt_token is not None)
             if not authenticated_user:
                 # No authentication - return 401 (main app will handle OTP sending)
                 return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
@@ -142,7 +142,7 @@ class PrivacyHTTP:
 
         # Only restrict access for 'settings' resource
         if resource_type == "settings" and authenticated_user != user_identifier:
-            logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
+            logger.warning("AUTH: Access denied - user %s attempted to access %s", authenticated_user, user_identifier)
             return httputils.FORBIDDEN[0], {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         success: bool
@@ -180,7 +180,7 @@ class PrivacyHTTP:
             return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
 
         authenticated_user = user
-        logger.info("do_POST: using main auth result, user=%s", authenticated_user)
+        logger.info("AUTH: POST request - user=%s", authenticated_user)
 
         # Extract user identifier and action from path
         parts = path.strip("/").split("/")
@@ -192,7 +192,7 @@ class PrivacyHTTP:
 
         # Only restrict access for 'settings' resource
         if resource_type == "settings" and authenticated_user != user_identifier:
-            logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
+            logger.warning("AUTH: Access denied - user %s attempted to access %s", authenticated_user, user_identifier)
             return httputils.FORBIDDEN[0], {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         success: bool
@@ -240,7 +240,7 @@ class PrivacyHTTP:
             return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
 
         authenticated_user = user
-        logger.info("do_PUT: using main auth result, user=%s", authenticated_user)
+        logger.info("AUTH: PUT request - user=%s", authenticated_user)
 
         # Extract user identifier from path
         parts = path.strip("/").split("/")
@@ -252,7 +252,7 @@ class PrivacyHTTP:
 
         # Only restrict access for 'settings' resource
         if resource_type == "settings" and authenticated_user != user_identifier:
-            logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
+            logger.warning("AUTH: Access denied - user %s attempted to access %s", authenticated_user, user_identifier)
             return httputils.FORBIDDEN[0], {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         # Read request body
@@ -290,7 +290,7 @@ class PrivacyHTTP:
             return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
 
         authenticated_user = user
-        logger.info("do_DELETE: using main auth result, user=%s", authenticated_user)
+        logger.info("AUTH: DELETE request - user=%s", authenticated_user)
 
         # Extract user identifier from path
         parts = path.strip("/").split("/")
@@ -302,7 +302,7 @@ class PrivacyHTTP:
 
         # Only restrict access for 'settings' resource
         if resource_type == "settings" and authenticated_user != user_identifier:
-            logger.warning("Authenticated user '%s' attempted to access resource for '%s'", authenticated_user, user_identifier)
+            logger.warning("AUTH: Access denied - user %s attempted to access %s", authenticated_user, user_identifier)
             return httputils.FORBIDDEN[0], {"Content-Type": "application/json"}, json.dumps({"error": "Action on the requested resource refused."}).encode()
 
         success: bool
