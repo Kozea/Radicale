@@ -1,5 +1,6 @@
 """Unit tests for the privacy scanner module."""
 
+import os
 from typing import Optional
 
 import pytest
@@ -8,6 +9,59 @@ import vobject
 from radicale.item import Item
 from radicale.privacy.scanner import PrivacyScanner
 from radicale.storage.multifilesystem.get import CollectionPartGet
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_privacy_databases():
+    """Clean up any PrivacyDatabase instances after all tests."""
+    yield
+    # Clean up any remaining database connections
+    try:
+        # Try to clean up any PrivacyDatabase instances that might exist
+        try:
+            # Force cleanup of any existing instances
+            import gc
+            gc.collect()
+        except ImportError:
+            pass
+
+        # Force garbage collection to help release file handles
+        import gc
+        gc.collect()
+
+        # On Windows, give extra time for file handles to be released
+        if os.name == 'nt':
+            import time
+            time.sleep(0.2)
+            gc.collect()
+    except Exception:
+        pass
+
+
+@pytest.fixture(autouse=True)
+def cleanup_before_test():
+    """Clean up before each test to ensure clean state."""
+    # Reset scanner singleton
+    PrivacyScanner.reset()
+
+    # Force garbage collection
+    import gc
+    gc.collect()
+
+    yield
+
+    # Clean up after each test
+    try:
+        import gc
+        gc.collect()
+
+        # On Windows, give extra time for file handles to be released
+        if os.name == 'nt':
+            import time
+            time.sleep(0.1)
+            gc.collect()
+    except Exception:
+        pass
 
 
 @pytest.fixture
@@ -21,7 +75,25 @@ def scanner(storage):
     """Fixture providing a PrivacyScanner instance."""
     # Reset the singleton before each test
     PrivacyScanner.reset()
-    return PrivacyScanner(storage)
+    scanner_instance = PrivacyScanner(storage)
+
+    try:
+        yield scanner_instance
+    finally:
+        # Clean up any database connections that might have been created
+        # by importing privacy modules
+        try:
+            # Force garbage collection to help release file handles
+            import gc
+            gc.collect()
+
+            # On Windows, give extra time for file handles to be released
+            if os.name == 'nt':
+                import time
+                time.sleep(0.1)
+                gc.collect()
+        except Exception:
+            pass
 
 
 @pytest.fixture
