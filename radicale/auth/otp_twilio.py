@@ -110,12 +110,16 @@ class Auth(auth.BaseAuth):
         """
         # If password is empty, this is the initial request - generate and send OTP
         if not password:
+            logger.info("login_with_jwt: Initial OTP request for %s", login)
             if self._send_otp(login):
                 logger.info("New OTP sent to user: %s", login)
+            else:
+                logger.warning("Failed to send OTP to user: %s (possibly rate limited)", login)
             return "", None
 
         # If password is provided, validate it against stored OTP
         if password:
+            logger.info("login_with_jwt: OTP verification attempt for %s", login)
             if self._check_otp(login, password):
                 logger.info("OTP validated for user: %s", login)
                 logger.info("User authenticated successfully: %s", login)

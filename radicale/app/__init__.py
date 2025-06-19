@@ -323,6 +323,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 logger.debug("Using JWT-capable authentication backend for user: %s", login)
                 user_result, jwt_token = self._auth.login_with_jwt(login, password)
                 user, info = (user_result, "otp_twilio") if user_result else ("", "")
+                logger.debug("JWT auth result: user=%s, jwt_token=%s", user_result, jwt_token is not None)
             else:
                 # Standard auth backends without JWT support
                 (user, info) = self._auth.login(login, password) or ("", "")

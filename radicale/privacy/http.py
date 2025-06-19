@@ -107,7 +107,23 @@ class PrivacyHTTP:
             authenticated_user: Optional[str] = user
             logger.info("do_GET: using main auth result, user=%s", authenticated_user)
         else:
+            # Check if this is an OTP request (empty password) that was already handled by main app
+            auth_header = environ.get("HTTP_AUTHORIZATION", "")
+            if auth_header.startswith("Basic "):
+                try:
+                    credentials = base64.b64decode(auth_header.split(" ", 1)[1]).decode()
+                    login, password = credentials.split(":", 1)
+
+                    # If password is empty, this is an OTP request that was already handled by main app
+                    # Don't try to authenticate again to avoid double OTP sending
+                    if not password:
+                        logger.info("do_GET: OTP request already handled by main app for %s, returning 401", login)
+                        return client.UNAUTHORIZED, {"Content-Type": "application/json"}, json.dumps({"error": "Authentication required"}).encode()
+                except Exception as e:
+                    logger.error("Error parsing Basic auth: %s", e)
+
             # Check authentication and get JWT token if this is OTP verification
+            # Only do this if we don't already have a user from main app
             auth_result = self._get_authenticated_user(environ)
             authenticated_user, jwt_token = auth_result
             logger.info("do_GET: authenticated_user=%s, jwt_token=%s", authenticated_user, jwt_token is not None)
