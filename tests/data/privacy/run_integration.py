@@ -435,6 +435,121 @@ END:VCARD"""
     return True, messages
 
 
+def test_most_restrictive_settings_integration() -> Tuple[bool, List[str]]:
+    """Test that the most restrictive settings are applied when multiple matches exist.
+
+    This test verifies that when a vCard contains multiple identifiers (email and phone),
+    and different privacy settings exist for each identifier, the most restrictive
+    settings are applied (i.e., if any identifier has a setting enabled, that field
+    should be filtered out).
+    """
+    messages = []
+
+    # Test identifiers
+    email_identifier = "john.doe.restrictive@example.com"
+    phone_identifier = "+14155552671"  # Valid US phone number
+
+    # Create a vCard with multiple identifiers and all privacy-sensitive fields
+    vcf_content = f"""BEGIN:VCARD
+VERSION:4.0
+FN:John Doe
+N:Doe;John;;;
+EMAIL:{email_identifier}
+TEL:{phone_identifier}
+PHOTO:data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAD0lEQVQIHQEEAPv/AP///wX+Av4DfRnGAAAAAElFTkSuQmCC
+GENDER:M
+BDAY:1990-01-01
+ADR:;;123 Main St;Springfield;;12345;USA
+ORG:Test Company
+TITLE:Software Engineer
+END:VCARD"""
+
+    # Step 1: Set up different privacy settings for each identifier
+    # Email settings: disallow company and title
+    email_settings = {
+        "disallow_photo": False,
+        "disallow_gender": False,
+        "disallow_birthday": False,
+        "disallow_address": False,
+        "disallow_company": True,  # This should be filtered
+        "disallow_title": True,    # This should be filtered
+    }
+
+    # Phone settings: disallow photo and gender
+    phone_settings = {
+        "disallow_photo": True,    # This should be filtered
+        "disallow_gender": True,   # This should be filtered
+        "disallow_birthday": False,
+        "disallow_address": False,
+        "disallow_company": False,
+        "disallow_title": False,
+    }
+
+    # Upload settings for email identifier
+    success, msg = upload_settings(email_identifier, email_settings)
+    messages.append(f"Email settings upload: {msg}")
+    if not success:
+        return False, messages
+
+    # Upload settings for phone identifier
+    success, msg = upload_settings(phone_identifier, phone_settings)
+    messages.append(f"Phone settings upload: {msg}")
+    if not success:
+        return False, messages
+
+    # Verify settings were uploaded correctly
+    success, msg = verify_settings(email_identifier, email_settings)
+    messages.append(f"Email settings verification: {msg}")
+    if not success:
+        return False, messages
+
+    success, msg = verify_settings(phone_identifier, phone_settings)
+    messages.append(f"Phone settings verification: {msg}")
+    if not success:
+        return False, messages
+
+    # Step 2: Upload the vCard (using email as the uploader)
+    success, msg = upload_vcf(vcf_content, email_identifier)
+    messages.append(f"VCard upload: {msg}")
+    if not success:
+        return False, messages
+
+    # Step 3: Verify the card was uploaded successfully
+    success, msg = verify_card(email_identifier)
+    messages.append(f"Card verification: {msg}")
+    if not success:
+        return False, messages
+
+    # Step 4: Verify that the most restrictive settings are applied
+    # The combined most restrictive settings should be:
+    most_restrictive_settings = {
+        "disallow_photo": True,    # From phone settings
+        "disallow_gender": True,   # From phone settings
+        "disallow_birthday": False,
+        "disallow_address": False,
+        "disallow_company": True,  # From email settings
+        "disallow_title": True,    # From email settings
+    }
+
+    success, msg = verify_filtered_content(email_identifier, most_restrictive_settings)
+    messages.append(f"Most restrictive settings verification: {msg}")
+    if not success:
+        return False, messages
+
+    # Step 5: Also verify from phone identifier perspective
+    success, msg = verify_card(phone_identifier)
+    messages.append(f"Phone card verification: {msg}")
+    if not success:
+        return False, messages
+
+    success, msg = verify_filtered_content(phone_identifier, most_restrictive_settings)
+    messages.append(f"Phone most restrictive settings verification: {msg}")
+    if not success:
+        return False, messages
+
+    return True, messages
+
+
 def process_multi_vcf_file(vcf_file: str) -> Tuple[bool, List[str]]:
     """Process a VCF file containing multiple vCards.
 
@@ -551,6 +666,13 @@ def main() -> None:
     print("\nTesting privacy enforcement across users...")
     success, messages = test_privacy_enforcement_across_users()
     results.append(("privacy_enforcement", success, messages))
+    for msg in messages:
+        print(f"  {msg}")
+
+    # Run most restrictive settings test
+    print("\nTesting most restrictive settings integration...")
+    success, messages = test_most_restrictive_settings_integration()
+    results.append(("most_restrictive_settings", success, messages))
     for msg in messages:
         print(f"  {msg}")
 
