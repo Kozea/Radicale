@@ -26,9 +26,9 @@ import os
 import posixpath
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
-import defusedxml.ElementTree as DefusedET
 import vobject
 
+import defusedxml.ElementTree as DefusedET
 from radicale import storage, xmlutils
 from radicale.tests import RESPONSES, BaseTest
 from radicale.tests.helpers import get_file_content
