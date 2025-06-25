@@ -83,7 +83,6 @@ class ApplicationPartDelete(ApplicationBase):
                 for i in item.get_all():
                     hook_notification_item_list.append(
                         DeleteHookNotificationItem(
-                            HookNotificationItemTypes.DELETE,
                             access.path,
                             i.uid,
                             old_content=item.serialize()  # type: ignore
@@ -95,7 +94,6 @@ class ApplicationPartDelete(ApplicationBase):
                 assert item.href is not None
                 hook_notification_item_list.append(
                     DeleteHookNotificationItem(
-                        HookNotificationItemTypes.DELETE,
                         access.path,
                         item.uid,
                         old_content=item.serialize()  # type: ignore
