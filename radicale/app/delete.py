@@ -24,7 +24,7 @@ from typing import Optional
 
 from radicale import httputils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
-from radicale.hook import DeleteHookNotificationItem, HookNotificationItemTypes
+from radicale.hook import DeleteHookNotificationItem
 from radicale.log import logger
 
 

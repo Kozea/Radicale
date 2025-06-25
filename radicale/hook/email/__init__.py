@@ -6,11 +6,12 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
-from typing import Optional, Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import vobject
 
-from radicale.hook import BaseHook, HookNotificationItem, HookNotificationItemTypes, DeleteHookNotificationItem
+from radicale.hook import (BaseHook, DeleteHookNotificationItem,
+                           HookNotificationItem, HookNotificationItemTypes)
 from radicale.log import logger
 
 PLUGIN_CONFIG_SCHEMA = {
@@ -150,7 +151,8 @@ class VComponent:
             return [None]
         if not isinstance(sub_vobjects, (list, tuple)):
             sub_vobjects = [sub_vobjects]
-        return ([_class(vobject_item=so) for so in sub_vobjects if isinstance(so, vobject.base.Component)] # type: ignore
+        return ([_class(vobject_item=so) for so in sub_vobjects if
+                 isinstance(so, vobject.base.Component)]  # type: ignore
                 or [None])
 
 
