@@ -86,7 +86,7 @@ class ApplicationPartDelete(ApplicationBase):
                             HookNotificationItemTypes.DELETE,
                             access.path,
                             i.uid,
-                            old_content=item.serialize()
+                            old_content=item.serialize()  # type: ignore
                         )
                     )
                 xml_answer = xml_delete(base_prefix, path, item)
@@ -98,7 +98,7 @@ class ApplicationPartDelete(ApplicationBase):
                         HookNotificationItemTypes.DELETE,
                         access.path,
                         item.uid,
-                        old_content=item.serialize()
+                        old_content=item.serialize()  # type: ignore
                     )
                 )
                 xml_answer = xml_delete(

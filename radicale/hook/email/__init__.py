@@ -143,14 +143,15 @@ class VComponent:
         return [ContentLine(key=name, value=cl.value, params=cl.params)
                 for cl in _content_lines if isinstance(cl, vobject.base.ContentLine)] or [ContentLine("", None)]
 
-    def _get_sub_vobjects(self, attribute_name: str, _class: type['VComponent']) -> List['VComponent']:
+    def _get_sub_vobjects(self, attribute_name: str, _class: type['VComponent']) -> List[Optional['VComponent']]:
         """Get sub vobject items of the specified type if they exist."""
         sub_vobjects = getattr(self._vobject_item, attribute_name, None)
         if not sub_vobjects:
             return [None]
         if not isinstance(sub_vobjects, (list, tuple)):
             sub_vobjects = [sub_vobjects]
-        return [_class(vobject_item=so) for so in sub_vobjects if isinstance(so, vobject.base.Component)] or [None]
+        return ([_class(vobject_item=so) for so in sub_vobjects if isinstance(so, vobject.base.Component)] # type: ignore
+                or [None])
 
 
 class Attendee(ContentLine):
@@ -296,12 +297,12 @@ class Timezone(VComponent):
     @property
     def standard(self) -> Optional[StandardTimezone]:
         """Return the STANDARD subcomponent if it exists."""
-        return self._get_sub_vobjects("standard", StandardTimezone)[0]
+        return self._get_sub_vobjects("standard", StandardTimezone)[0]  # type: ignore
 
     @property
     def daylight(self) -> Optional[DaylightTimezone]:
         """Return the DAYLIGHT subcomponent if it exists."""
-        return self._get_sub_vobjects("daylight", DaylightTimezone)[0]
+        return self._get_sub_vobjects("daylight", DaylightTimezone)[0]  # type: ignore
 
 
 class Event(VComponent):
@@ -360,7 +361,7 @@ class Event(VComponent):
     @property
     def alarms(self) -> List[Alarm]:
         """Return a list of VALARM items in the event."""
-        return self._get_sub_vobjects("valarm", Alarm)  # Can be multiple
+        return self._get_sub_vobjects("valarm", Alarm)  # type: ignore # Can be multiple
 
     @property
     def attendees(self) -> List[Attendee]:
@@ -388,14 +389,14 @@ class Calendar(VComponent):
     @property
     def event(self) -> Optional[Event]:
         """Return the VEVENT item in the calendar."""
-        return self._get_sub_vobjects("vevent", Event)[0]
+        return self._get_sub_vobjects("vevent", Event)[0]  # type: ignore
 
     # TODO: Add VTODO and VJOURNAL support if needed
 
     @property
     def timezone(self) -> Optional[Timezone]:
         """Return the VTIMEZONE item in the calendar."""
-        return self._get_sub_vobjects("vtimezone", Timezone)[0]
+        return self._get_sub_vobjects("vtimezone", Timezone)[0]  # type: ignore
 
 
 class EmailEvent:
@@ -489,14 +490,14 @@ class MessageTemplate:
             attendee_name = "everyone"
         else:
             assert attendee is not None, "Attendee must be provided for non-mass emails"
-            attendee_name = attendee.name if attendee else "Unknown Name"
+            attendee_name = attendee.name if attendee else "Unknown Name"  # type: ignore
 
         context = {
             "attendee_name": attendee_name,
             "from_email": from_email,
             "organizer_name": event.event.organizer or "Unknown Organizer",
             "event_title": event.event.summary or "No Title",
-            "event_start_time": event.event.datetime_start.time_string(),
+            "event_start_time": event.event.datetime_start.time_string(),  # type: ignore
             "event_end_time": event.event.datetime_end.time_string() if event.event.datetime_end else "No End Time",
             "event_location": event.event.location or "No Location Specified",
         }
@@ -518,14 +519,14 @@ class MessageTemplate:
             attendee_name = "everyone"
         else:
             assert attendee is not None, "Attendee must be provided for non-mass emails"
-            attendee_name = attendee.name if attendee else "Unknown Name"
+            attendee_name = attendee.name if attendee else "Unknown Name"  # type: ignore
 
         context = {
             "attendee_name": attendee_name,
             "from_email": from_email,
             "organizer_name": event.event.organizer or "Unknown Organizer",
             "event_title": event.event.summary or "No Title",
-            "event_start_time": event.event.datetime_start.time_string(),
+            "event_start_time": event.event.datetime_start.time_string(),  # type: ignore
             "event_end_time": event.event.datetime_end.time_string() if event.event.datetime_end else "No End Time",
             "event_location": event.event.location or "No Location Specified",
         }
@@ -633,7 +634,7 @@ class EmailConfig:
     def _send_email(self,
                     subject: str,
                     body: str,
-                    attendees: Attendee,
+                    attendees: List[Attendee],
                     ics_attachment: Optional[ICSEmailAttachment] = None) -> bool:
         """
         Send the notification using the email service.
@@ -672,8 +673,8 @@ class EmailConfig:
             server.starttls()  # Start TLS connection
             server.ehlo()  # Identify again after starting TLS
             server.login(user=self.username, password=self.password)
-            errors: Dict[str, Tuple[int, str]] = server.sendmail(from_addr=self.from_email, to_addrs=to_addresses,
-                                                                 msg=text)
+            errors: Dict[str, Tuple[int, bytes]] = server.sendmail(from_addr=self.from_email, to_addrs=to_addresses,
+                                                                   msg=text)
             server.quit()
         except smtplib.SMTPException as e:
             logger.error(f"SMTP error occurred: {e}")
@@ -681,7 +682,7 @@ class EmailConfig:
 
         if errors:
             for email, (code, error) in errors.items():
-                logger.error(f"Failed to send email to {email}: {error} (Code: {code})")
+                logger.error(f"Failed to send email to {email}: {str(error)} (Code: {code})")
             return False
 
         return True
@@ -699,7 +700,7 @@ def _read_event(vobject_data: str) -> EmailEvent:
     """
     v_cal: vobject.base.Component = vobject.readOne(vobject_data)
     cal: Calendar = Calendar(vobject_item=v_cal)
-    event: Event = cal.event
+    event: Event = cal.event  # type: ignore
 
     return EmailEvent(
         event=event,
@@ -760,17 +761,16 @@ class Hook(BaseHook):
 
             # We don't have access to the original content for a PUT request, just the incoming data
 
-            item_str: str = notification_item.content  # A serialized vobject.base.Component
-            file_path: str = notification_item.point  # The path to the item, e.g. "calendars/user/calendar.ics"
+            item_str: str = notification_item.content  # type: ignore # A serialized vobject.base.Component
 
             if not ics_contents_contains_invited_event(contents=item_str):
                 # If the ICS file does not contain an event, we do not send any notifications.
                 logger.debug("No event found in the ICS file, skipping notification.")
                 return
 
-            email_event: EmailEvent = _read_event(vobject_data=item_str, file_path=file_path)
+            email_event: EmailEvent = _read_event(vobject_data=item_str)  # type: ignore
 
-            email_success: bool = self.email_config.send_updated_email(
+            email_success: bool = self.email_config.send_updated_email(  # type: ignore
                 attendees=email_event.event.attendees,
                 event=email_event
             )
@@ -786,18 +786,16 @@ class Hook(BaseHook):
             if not isinstance(notification_item, DeleteHookNotificationItem):
                 return
 
-            item_hash: str = notification_item.content  # The hash of the item
-            item_str: str = notification_item.old_content  # A serialized vobject.base.Component
-            file_path: str = notification_item.point  # The path to the item, e.g. "calendars/user/calendar.ics"
+            item_str: str = notification_item.old_content  # type: ignore # A serialized vobject.base.Component
 
             if not ics_contents_contains_invited_event(contents=item_str):
                 # If the ICS file does not contain an event, we do not send any notifications.
                 logger.debug("No event found in the ICS file, skipping notification.")
                 return
 
-            email_event: EmailEvent = _read_event(vobject_data=item_str, file_path=file_path)
+            email_event: EmailEvent = _read_event(vobject_data=item_str)  # type: ignore
 
-            email_success: bool = self.email_config.send_deleted_email(
+            email_success: bool = self.email_config.send_deleted_email(  # type: ignore
                 attendees=email_event.event.attendees,
                 event=email_event
             )
