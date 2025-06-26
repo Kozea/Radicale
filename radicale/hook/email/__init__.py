@@ -151,8 +151,8 @@ class VComponent:
             return [None]
         if not isinstance(sub_vobjects, (list, tuple)):
             sub_vobjects = [sub_vobjects]
-        return ([_class(vobject_item=so) for so in sub_vobjects if
-                 isinstance(so, vobject.base.Component)]  # type: ignore
+        return ([_class(vobject_item=so) for so in sub_vobjects if  # type: ignore
+                 isinstance(so, vobject.base.Component)]
                 or [None])
 
 
