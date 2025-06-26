@@ -1,3 +1,7 @@
+# This file is related to Radicale - CalDAV and CardDAV server
+# for email notifications
+# Copyright © 2025-2025 Nate Harris
+
 import re
 import smtplib
 from datetime import datetime, timedelta
@@ -556,6 +560,13 @@ class EmailConfig:
         self.updated_template = added_template  # Reuse added template for updated events
         self.deleted_template = removed_template  # Reuse removed template for deleted events
 
+    def __str__(self) -> str:
+        """
+        Return a string representation of the EmailConfig.
+        """
+        return f"EmailConfig(host={self.host}, port={self.port}, username={self.username}, " \
+               f"from_email={self.from_email}, send_mass_emails={self.send_mass_emails})"
+
     def send_added_email(self, attendees: List[Attendee], event: EmailEvent) -> bool:
         """
         Send a notification for added attendees.
@@ -677,6 +688,7 @@ class EmailConfig:
             server.login(user=self.username, password=self.password)
             errors: Dict[str, Tuple[int, bytes]] = server.sendmail(from_addr=self.from_email, to_addrs=to_addresses,
                                                                    msg=text)
+            logger.debug("Email sent successfully to %s", to_addresses)
             server.quit()
         except smtplib.SMTPException as e:
             logger.error(f"SMTP error occurred: {e}")
@@ -729,6 +741,10 @@ class Hook(BaseHook):
                 subject="You have been removed from an event",
                 body=self.configuration.get("hook", "removed_template")
             ),
+        )
+        logger.info(
+            "Email hook initialized with configuration: %s",
+            self.email_config
         )
 
     def notify(self, notification_item) -> None:
