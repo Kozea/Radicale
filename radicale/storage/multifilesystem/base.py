@@ -22,7 +22,7 @@ import sys
 from tempfile import TemporaryDirectory
 from typing import IO, AnyStr, ClassVar, Iterator, Optional, Type
 
-from radicale import config, pathutils, storage, types
+from radicale import config, logger, pathutils, storage, types, utils
 from radicale.storage import multifilesystem  # noqa:F401
 
 
@@ -161,7 +161,13 @@ class StorageBase(storage.BaseStorage):
             # Create parent dirs recursively
             self._makedirs_synced(parent_filesystem_path)
         # Possible race!
-        os.makedirs(filesystem_path, exist_ok=True)
+        try:
+            os.makedirs(filesystem_path, exist_ok=True)
+        except PermissionError as e:
+            logger.error("Directory permissions: %s / Effective user: %s", pathutils.path_permissions_as_string(parent_filesystem_path), utils.user_groups_as_string())
+            raise e
+        except Exception:
+            raise
         self._sync_directory(parent_filesystem_path)
         if sys.platform != "win32" and self._folder_umask:
             os.umask(oldmask)
