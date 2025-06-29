@@ -25,6 +25,7 @@ Built-in WSGI server.
 
 import http
 import os
+import platform
 import select
 import socket
 import socketserver
@@ -297,7 +298,7 @@ def serve(configuration: config.Configuration,
         info = "with PYTHONPATH=%r " % os.environ.get("PYTHONPATH")
     else:
         info = ""
-    logger.info("Starting Radicale %s(%s) as %s", info, utils.packages_version(), utils.user_groups_as_string())
+    logger.info("Starting Radicale %s(%s) as %s on %s", info, utils.packages_version(), utils.user_groups_as_string(), platform.platform())
     # Copy configuration before modifying
     configuration = configuration.copy()
     configuration.update({"server": {"_internal_server": "True"}}, "server",
