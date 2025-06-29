@@ -297,7 +297,7 @@ def serve(configuration: config.Configuration,
         info = "with PYTHONPATH=%r " % os.environ.get("PYTHONPATH")
     else:
         info = ""
-    logger.info("Starting Radicale %s(%s)", info, utils.packages_version())
+    logger.info("Starting Radicale %s(%s) as %s", info, utils.packages_version(), utils.user_groups_as_string())
     # Copy configuration before modifying
     configuration = configuration.copy()
     configuration.update({"server": {"_internal_server": "True"}}, "server",
