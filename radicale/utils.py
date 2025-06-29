@@ -19,7 +19,6 @@
 
 import getpass
 import os
-import pwd
 import ssl
 import sys
 from importlib import import_module, metadata
@@ -30,6 +29,7 @@ from radicale.log import logger
 
 if sys.platform != "win32":
     import grp
+    import pwd
 
 _T_co = TypeVar("_T_co", covariant=True)
 
