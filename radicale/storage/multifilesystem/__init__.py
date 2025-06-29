@@ -170,7 +170,7 @@ class Storage(
         if not os.path.exists(self._get_collection_root_folder()):
             logger.warning("Storage location subfolder: %r does not exist, creating now", self._get_collection_root_folder())
             self._makedirs_synced(self._get_collection_root_folder())
-        logger.info("Storage location permissions: %s", pathutils.path_permissions_as_string(self._get_collection_root_folder()))
+        logger.info("Storage location subfolder permissions: %s", pathutils.path_permissions_as_string(self._get_collection_root_folder()))
         logger.info("Storage cache subfolder usage for 'item': %s", self._use_cache_subfolder_for_item)
         logger.info("Storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
         logger.info("Storage cache subfolder usage for 'sync-token': %s", self._use_cache_subfolder_for_synctoken)
