@@ -18,7 +18,6 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import getpass
-import grp
 import os
 import pwd
 import ssl
@@ -28,6 +27,9 @@ from typing import Callable, Sequence, Tuple, Type, TypeVar, Union
 
 from radicale import config
 from radicale.log import logger
+
+if sys.platform != "win32":
+    import grp
 
 _T_co = TypeVar("_T_co", covariant=True)
 
