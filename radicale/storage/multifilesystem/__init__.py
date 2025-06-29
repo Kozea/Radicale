@@ -29,7 +29,7 @@ import sys
 import time
 from typing import ClassVar, Iterator, Optional, Type
 
-from radicale import config
+from radicale import config, pathutils, utils
 from radicale.log import logger
 from radicale.storage.multifilesystem.base import CollectionBase, StorageBase
 from radicale.storage.multifilesystem.cache import CollectionPartCache
@@ -165,10 +165,12 @@ class Storage(
         if not os.path.exists(self._filesystem_folder):
             logger.warning("Storage location: %r does not exist, creating now", self._filesystem_folder)
             self._makedirs_synced(self._filesystem_folder)
+        logger.info("Storage location permissions: %s", pathutils.path_permissions_as_string(self._filesystem_folder))
         logger.info("Storage location subfolder: %r", self._get_collection_root_folder())
         if not os.path.exists(self._get_collection_root_folder()):
             logger.warning("Storage location subfolder: %r does not exist, creating now", self._get_collection_root_folder())
             self._makedirs_synced(self._get_collection_root_folder())
+        logger.info("Storage location subfolder permissions: %s", pathutils.path_permissions_as_string(self._get_collection_root_folder()))
         logger.info("Storage cache subfolder usage for 'item': %s", self._use_cache_subfolder_for_item)
         logger.info("Storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
         logger.info("Storage cache subfolder usage for 'sync-token': %s", self._use_cache_subfolder_for_synctoken)
@@ -185,6 +187,9 @@ class Storage(
                 logger.info("Storage item mtime resolution test result: %d %s" % (precision_unit, unit))
                 if self._use_mtime_and_size_for_item_cache is False:
                     logger.info("Storage cache using mtime and size for 'item' may be an option in case of performance issues")
+        except PermissionError as e:
+            logger.error("Directory permissions: %s / Effective user: %s", pathutils.path_permissions_as_string(self._get_collection_root_folder()), utils.user_groups_as_string())
+            raise e
         except Exception:
             logger.warning("Storage item mtime resolution test result not successful")
         logger.debug("Storage cache action logging: %s", self._debug_cache_actions)
@@ -193,3 +198,4 @@ class Storage(
             if not os.path.exists(self._get_collection_cache_folder()):
                 logger.warning("Storage cache subfolder: %r does not exist, creating now", self._get_collection_cache_folder())
                 self._makedirs_synced(self._get_collection_cache_folder())
+            logger.info("Storage cache subfolder permissions: %s", pathutils.path_permissions_as_string(self._get_collection_cache_folder()))

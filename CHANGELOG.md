@@ -3,6 +3,8 @@
 ## 3.5.5.dev
 * Improve: [auth] ldap: do not read server info by bind to avoid needless network traffic
 * Fix: [storage] broken support of 'folder_umask'
+* Improve: add details about platform and effective user on startup
+* Improve: display owner+permissions on directories on startup, extend error message in case of missing permissions
 
 ## 3.5.4
 * Improve: item filter enhanced for 3rd level supporting VALARM and honoring TRIGGER (offset or absolute)
