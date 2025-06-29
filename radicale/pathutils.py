@@ -23,6 +23,7 @@ Helper functions for working with the file system.
 
 import errno
 import os
+import pathlib
 import posixpath
 import sys
 import threading
@@ -314,3 +315,14 @@ def name_from_path(path: str, collection: "storage.BaseCollection") -> str:
         raise ValueError("%r is not a component in collection %r" %
                          (name, collection.path))
     return name
+
+
+def path_permissions(path):
+    path = pathlib.Path(path)
+    return [path.owner(), path.group(), path.stat().st_mode]
+
+
+def path_permissions_as_string(path):
+    pp = path_permissions(path)
+    s = "path=%r owner=%s group=%s mode=%o" % (path, pp[0], pp[1], pp[2])
+    return s
