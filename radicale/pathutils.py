@@ -324,6 +324,9 @@ def path_permissions(path):
 
 
 def path_permissions_as_string(path):
-    pp = path_permissions(path)
-    s = "path=%r owner=%s group=%s mode=%o" % (path, pp[0], pp[1], pp[2])
+    try:
+        pp = path_permissions(path)
+        s = "path=%r owner=%s group=%s mode=%o" % (path, pp[0], pp[1], pp[2])
+    except NotImplementedError:
+        s = "path=%r owner=UNKNOWN(unsupported on this system)" % (path)
     return s
