@@ -305,13 +305,15 @@
 [hook]
 
 # Hook types
-# Value: none | rabbitmq
+# Value: none | rabbitmq | email
 #type = none
 #rabbitmq_endpoint =
 #rabbitmq_topic =
 #rabbitmq_queue_type = classic
-#smtp_server =
-#smtp_port = 587
+#smtp_server = localhost
+#smtp_port = 25
+#smtp_security = starttls
+#smtp_ssl_verify_mode = REQUIRED
 #smtp_username =
 #smtp_password =
 #from_email =

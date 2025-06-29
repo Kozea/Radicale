@@ -38,6 +38,7 @@ from typing import (Any, Callable, ClassVar, Iterable, List, Optional,
                     Sequence, Tuple, TypeVar, Union)
 
 from radicale import auth, hook, rights, storage, types, web
+from radicale.hook import email
 from radicale.item import check_and_sanitize_props
 
 DEFAULT_CONFIG_PATH: str = os.pathsep.join([
@@ -85,6 +86,7 @@ def list_of_ip_address(value: Any) -> List[Tuple[str, int]]:
             return address.strip(string.whitespace + "[]"), int(port)
         except ValueError:
             raise ValueError("malformed IP address: %r" % value)
+
     return [ip_address(s) for s in value.split(",")]
 
 
@@ -445,6 +447,16 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "SMTP server port",
             "type": str}),
+        ("smtp_security", {
+            "value": "none",
+            "help": "SMTP security mode: *none*|tls|starttls",
+            "type": str,
+            "internal": email.SMTP_SECURITY_TYPES}),
+        ("smtp_ssl_verify_mode", {
+            "value": "REQUIRED",
+            "help": "The certificate verification mode. Works for tls and starttls: NONE, OPTIONAL, default is REQUIRED",
+            "type": str,
+            "internal": email.SMTP_SSL_VERIFY_MODES}),
         ("smtp_username", {
             "value": "",
             "help": "SMTP server username",
@@ -606,7 +618,6 @@ _Self = TypeVar("_Self", bound="Configuration")
 
 
 class Configuration:
-
     SOURCE_MISSING: ClassVar[types.CONFIG] = {}
 
     _schema: types.CONFIG_SCHEMA

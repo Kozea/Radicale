@@ -1,16 +1,17 @@
 # This file is related to Radicale - CalDAV and CardDAV server
 # for email notifications
 # Copyright © 2025-2025 Nate Harris
-
+import enum
 import re
 import smtplib
+import ssl
 from datetime import datetime, timedelta
 from email.encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import vobject
 
@@ -27,6 +28,14 @@ PLUGIN_CONFIG_SCHEMA = {
         "smtp_port": {
             "value": "",
             "type": str
+        },
+        "smtp_security": {
+            "value": "none",
+            "type": str,
+        },
+        "smtp_ssl_verify_mode": {
+            "value": "REQUIRED",
+            "type": str,
         },
         "smtp_username": {
             "value": "",
@@ -80,6 +89,44 @@ MESSAGE_TEMPLATE_VARIABLES = [
     "event_end_time",
     "event_location",
 ]
+
+
+class SMTP_SECURITY_TYPE_ENUM(enum.Enum):
+    EMPTY = ""
+    NONE = "none"
+    STARTTLS = "starttls"
+    TLS = "tls"
+
+    @classmethod
+    def from_string(cls, value):
+        """Convert a string to the corresponding enum value."""
+        for member in cls:
+            if member.value == value:
+                return member
+        raise ValueError(f"Invalid security type: {value}. Allowed values are: {[m.value for m in cls]}")
+
+
+class SMTP_SSL_VERIFY_MODE_ENUM(enum.Enum):
+    EMPTY = ""
+    NONE = "NONE"
+    OPTIONAL = "OPTIONAL"
+    REQUIRED = "REQUIRED"
+
+    @classmethod
+    def from_string(cls, value):
+        """Convert a string to the corresponding enum value."""
+        for member in cls:
+            if member.value == value:
+                return member
+        raise ValueError(f"Invalid SSL verify mode: {value}. Allowed values are: {[m.value for m in cls]}")
+
+
+SMTP_SECURITY_TYPES: Sequence[str] = (SMTP_SECURITY_TYPE_ENUM.NONE.value,
+                                      SMTP_SECURITY_TYPE_ENUM.STARTTLS.value,
+                                      SMTP_SECURITY_TYPE_ENUM.TLS.value)
+SMTP_SSL_VERIFY_MODES: Sequence[str] = (SMTP_SSL_VERIFY_MODE_ENUM.NONE.value,
+                                        SMTP_SSL_VERIFY_MODE_ENUM.OPTIONAL.value,
+                                        SMTP_SSL_VERIFY_MODE_ENUM.REQUIRED.value)
 
 
 def ics_contents_contains_invited_event(contents: str):
@@ -543,6 +590,8 @@ class EmailConfig:
     def __init__(self,
                  host: str,
                  port: int,
+                 security: str,
+                 ssl_verify_mode: str,
                  username: str,
                  password: str,
                  from_email: str,
@@ -551,6 +600,8 @@ class EmailConfig:
                  removed_template: MessageTemplate):
         self.host = host
         self.port = port
+        self.security = SMTP_SECURITY_TYPE_ENUM.from_string(value=security)
+        self.ssl_verify_mode = SMTP_SSL_VERIFY_MODE_ENUM.from_string(value=ssl_verify_mode)
         self.username = username
         self.password = password
         self.from_email = from_email
@@ -566,6 +617,9 @@ class EmailConfig:
         """
         return f"EmailConfig(host={self.host}, port={self.port}, username={self.username}, " \
                f"from_email={self.from_email}, send_mass_emails={self.send_mass_emails})"
+
+    def __repr__(self):
+        return self.__str__()
 
     def send_added_email(self, attendees: List[Attendee], event: EmailEvent) -> bool:
         """
@@ -644,6 +698,23 @@ class EmailConfig:
 
             return not failure_encountered  # Return True if all emails were sent successfully
 
+    def _build_context(self) -> ssl.SSLContext:
+        """
+        Build the SSL context based on the configured security and SSL verify mode.
+        :return: An SSLContext object configured for the SMTP connection.
+        """
+        context = ssl.create_default_context()
+        if self.ssl_verify_mode == SMTP_SSL_VERIFY_MODE_ENUM.REQUIRED:
+            context.check_hostname = True
+            context.verify_mode = ssl.CERT_REQUIRED
+        elif self.ssl_verify_mode == SMTP_SSL_VERIFY_MODE_ENUM.OPTIONAL:
+            context.check_hostname = True
+            context.verify_mode = ssl.CERT_OPTIONAL
+        else:
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        return context
+
     def _send_email(self,
                     subject: str,
                     body: str,
@@ -681,11 +752,25 @@ class EmailConfig:
         text = message.as_string()
 
         try:
-            server = smtplib.SMTP(host=self.host, port=self.port)
-            server.ehlo()  # Identify self to server
-            server.starttls()  # Start TLS connection
-            server.ehlo()  # Identify again after starting TLS
-            server.login(user=self.username, password=self.password)
+            if self.security == SMTP_SECURITY_TYPE_ENUM.EMPTY:
+                logger.warning("SMTP security type is empty, raising ValueError.")
+                raise ValueError("SMTP security type cannot be empty. Please specify a valid security type.")
+            elif self.security == SMTP_SECURITY_TYPE_ENUM.NONE:
+                server = smtplib.SMTP(host=self.host, port=self.port)
+            elif self.security == SMTP_SECURITY_TYPE_ENUM.STARTTLS:
+                context = self._build_context()
+                server = smtplib.SMTP(host=self.host, port=self.port)
+                server.ehlo()  # Identify self to server
+                server.starttls(context=context)  # Start TLS connection
+                server.ehlo()  # Identify again after starting TLS
+            elif self.security == SMTP_SECURITY_TYPE_ENUM.TLS:
+                context = self._build_context()
+                server = smtplib.SMTP_SSL(host=self.host, port=self.port, context=context)
+
+            if self.username and self.password:
+                logger.debug("Logging in to SMTP server with username: %s", self.username)
+                server.login(user=self.username, password=self.password)
+
             errors: Dict[str, Tuple[int, bytes]] = server.sendmail(from_addr=self.from_email, to_addrs=to_addresses,
                                                                    msg=text)
             logger.debug("Email sent successfully to %s", to_addresses)
@@ -700,12 +785,6 @@ class EmailConfig:
             return False
 
         return True
-
-    def __repr__(self):
-        return f'EmailConfig(host={self.host}, port={self.port}, from_email={self.from_email})'
-
-    def __str__(self):
-        return f'{self.from_email} ({self.host}:{self.port})'
 
 
 def _read_event(vobject_data: str) -> EmailEvent:
@@ -729,6 +808,8 @@ class Hook(BaseHook):
         self.email_config = EmailConfig(
             host=self.configuration.get("hook", "smtp_server"),
             port=self.configuration.get("hook", "smtp_port"),
+            security=self.configuration.get("hook", "smtp_security"),
+            ssl_verify_mode=self.configuration.get("hook", "smtp_ssl_verify_mode"),
             username=self.configuration.get("hook", "smtp_username"),
             password=self.configuration.get("hook", "smtp_password"),
             from_email=self.configuration.get("hook", "from_email"),

@@ -1548,15 +1548,27 @@ Port to connect to SMTP server.
 
 Default:
 
+##### smtp_security
+
+Use encryption on the SMTP connection. none, tls, starttls
+
+Default: none
+
+##### smtp_ssl_verify_mode
+
+The certificate verification mode. Works for tls and starttls. NONE, OPTIONAL or REQUIRED
+
+Default: REQUIRED
+
 ##### smtp_username
 
-Username to authenticate with SMTP server.
+Username to authenticate with SMTP server. Leave empty to disable authentication (e.g. using local mail server).
 
 Default:
 
 ##### smtp_password
 
-Password to authenticate with SMTP server.
+Password to authenticate with SMTP server. Leave empty to disable authentication (e.g. using local mail server).
 
 Default:
 
