@@ -237,6 +237,6 @@ def user_groups_as_string():
                 groups.append("%s(%d)" % (gid, gid))
         s = "user=%s(%d) groups=%s" % (username, euid, ','.join(groups))
     else:
-        username = getpass.getuser()
+        username = os.getlogin()
         s = "user=%s" % (username)
     return s
