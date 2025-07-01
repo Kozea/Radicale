@@ -224,9 +224,17 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         root.findall(xmlutils.make_clark("C:filter")) +
         root.findall(xmlutils.make_clark("CR:filter")))
 
+    # extract time-range filter for processing after main filters
+    time_range_element = None
+    non_time_range_filters = []
+    for filter_ in filters:
+        time_range_element = filter_.find(".//" + xmlutils.make_clark("C:time-range"))
+        if time_range_element is None:
+            non_time_range_filters.append(filter_)
+
     # Retrieve everything required for finishing the request.
     retrieved_items = list(retrieve_items(
-        base_prefix, path, collection, hreferences, filters, multistatus))
+        base_prefix, path, collection, hreferences, non_time_range_filters, multistatus))
     collection_tag = collection.tag
     # !!! Don't access storage after this !!!
     unlock_storage_fn()
@@ -239,7 +247,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         if filters and not filters_matched:
             try:
                 if not all(test_filter(collection_tag, item, filter_)
-                           for filter_ in filters):
+                           for filter_ in non_time_range_filters):
                     continue
             except ValueError as e:
                 raise ValueError("Failed to filter item %r from %r: %s" %
@@ -247,6 +255,13 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
             except Exception as e:
                 raise RuntimeError("Failed to filter item %r from %r: %s" %
                                    (item.href, collection.path, e)) from e
+
+        # Filtering non-recurring events by time-range
+        if (time_range_element is not None) and not hasattr(item, 'rrule'):
+            start, end = radicale_filter.time_range_timestamps(time_range_element)
+            istart, iend = item.time_range
+            if istart >= end or iend <= start:
+                continue
 
         found_props = []
         not_found_props = []
@@ -280,8 +295,18 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                         end, '%Y%m%dT%H%M%SZ'
                     ).replace(tzinfo=datetime.timezone.utc)
 
+                    time_range_start = None
+                    time_range_end = None
+
+                    if time_range_element is not None:
+                        time_range_start, time_range_end = radicale_filter.parse_time_range(time_range_element)
+
                     expanded_element = _expand(
-                        element, copy.copy(item), start, end)
+                        element=element, item=copy.copy(item),
+                        start=start, end=end,
+                        time_range_start=time_range_start, time_range_end=time_range_end,
+                    )
+
                     found_props.append(expanded_element)
                 else:
                     found_props.append(element)
@@ -303,6 +328,8 @@ def _expand(
         item: radicale_item.Item,
         start: datetime.datetime,
         end: datetime.datetime,
+        time_range_start: Optional[datetime.datetime] = None,
+        time_range_end: Optional[datetime.datetime] = None,
 ) -> ET.Element:
     vevent_component: vobject.base.Component = copy.copy(item.vobject_item)
 
@@ -347,6 +374,13 @@ def _expand(
 
         for recurrence_dt in recurrences:
             recurrence_utc = recurrence_dt.astimezone(datetime.timezone.utc)
+
+            if time_range_start is not None and time_range_end is not None:
+                dtstart = recurrence_dt if all_day_event else recurrence_utc
+                dtend = dtstart + duration if duration else dtstart
+                if not (dtstart < time_range_end and dtend > time_range_start):
+                    continue
+
             i_overridden, vevent = _find_overridden(i_overridden, vevents_overridden, recurrence_utc, dt_format)
 
             if not vevent:
@@ -376,6 +410,47 @@ def _expand(
                 is_component_filled = True
             else:
                 vevent_component.add(vevent)
+
+        # Filter overridden events and vevent_recurrence if recurrences is empty
+        # Todo: optimize that code
+        if time_range_start is not None and time_range_end is not None:
+            filtered_vevents = []
+            for vevent in vevents_overridden:
+                dtstart = vevent.dtstart.value
+                dtend = vevent.dtend.value if hasattr(vevent, 'dtend') else dtstart
+
+                dtstart = datetime.datetime.strptime(
+                    dtstart, "%Y%m%dT%H%M%SZ").replace(
+                        tzinfo=datetime.timezone.utc)
+                dtend = datetime.datetime.strptime(
+                    dtend, "%Y%m%dT%H%M%SZ").replace(
+                        tzinfo=datetime.timezone.utc)
+
+                if dtstart < time_range_end and dtend > time_range_start:
+                    filtered_vevents.append(vevent)
+
+            dtstart = vevent_recurrence.dtstart.value
+            dtend = vevent_recurrence.dtend.value if hasattr(vevent_recurrence, 'dtend') else dtstart
+            dtstart = datetime.datetime.strptime(
+                dtstart, "%Y%m%dT%H%M%SZ").replace(
+                    tzinfo=datetime.timezone.utc)
+            dtend = datetime.datetime.strptime(
+                dtend, "%Y%m%dT%H%M%SZ").replace(
+                    tzinfo=datetime.timezone.utc)
+
+            if filtered_vevents or (dtstart < time_range_end and dtend > time_range_start):
+                if filtered_vevents:
+                    vevent_component.vevent = filtered_vevents[0]
+                    for vevent in filtered_vevents[1:]:
+                        vevent_component.add(vevent)
+                if dtstart < time_range_end and dtend > time_range_start:
+                    if not filtered_vevents:
+                        vevent_component.vevent = vevent_recurrence
+                    else:
+                        vevent_component.add(vevent_recurrence)
+            else:
+                element.text = ""
+                return element
 
     element.text = vevent_component.serialize()
 
