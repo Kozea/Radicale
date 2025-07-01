@@ -207,6 +207,19 @@ permissions: RrWw""")
             1
         )
 
+    def test_report_with_expand_property_issue1812(self) -> None:
+        """Test report with expand property for issue 1812"""
+        self._test_expand(
+            "event_issue1812",
+            "20250627T183000Z",
+            "20250627T183001Z",
+            ["RECURRENCE-ID:20250627T180000Z"],
+            ["DTSTART:20250627T180000Z"],
+            [],
+            CONTAINS_TIMES,
+            1
+        )
+
     def test_report_with_expand_property_all_day_event(self) -> None:
         """Test report with expand property for all day events"""
         self._test_expand(
