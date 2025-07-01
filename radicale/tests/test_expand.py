@@ -181,6 +181,32 @@ permissions: RrWw""")
             1
         )
 
+    def test_report_with_expand_property_start_inside(self) -> None:
+        """Test report with expand property start inside"""
+        self._test_expand(
+            "event_daily_rrule",
+            "20060103T171500Z",
+            "20060105T000000Z",
+            ["RECURRENCE-ID:20060103T170000Z", "RECURRENCE-ID:20060104T170000Z"],
+            ["DTSTART:20060103T170000Z", "DTSTART:20060104T170000Z"],
+            [],
+            CONTAINS_TIMES,
+            1
+        )
+
+    def test_report_with_expand_property_just_inside(self) -> None:
+        """Test report with expand property start and end inside event"""
+        self._test_expand(
+            "event_daily_rrule",
+            "20060103T171500Z",
+            "20060103T171501Z",
+            ["RECURRENCE-ID:20060103T170000Z"],
+            ["DTSTART:20060103T170000Z"],
+            [],
+            CONTAINS_TIMES,
+            1
+        )
+
     def test_report_with_expand_property_all_day_event(self) -> None:
         """Test report with expand property for all day events"""
         self._test_expand(
