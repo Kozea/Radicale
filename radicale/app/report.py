@@ -366,7 +366,7 @@ def _expand(
     if hasattr(vevent_recurrence, 'exdate'):
         exdates = vevent_recurrence.exdate.value
         if not isinstance(exdates, list):
-            exdates = [exdates]  # Convert single date to list
+            exdates = [exdates]
         logger.debug("EXDATE values: %s", exdates)
         latest_exdate = max(exdates) if exdates else None
         if latest_exdate and end > latest_exdate:
@@ -451,7 +451,7 @@ def _expand(
                         if all_day_event:
                             dtend = dtend.date()
                     except ValueError as e:
-                        logger.warning("Invalid DTSTART format: %s, error: %s", dtstart, e)
+                        logger.warning("Invalid DTEND format: %s, error: %s", dtend, e)
                         continue
 
                 # Convert to datetime for comparison
