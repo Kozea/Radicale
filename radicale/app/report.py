@@ -24,6 +24,7 @@
 import contextlib
 import copy
 import datetime
+import itertools
 import posixpath
 import socket
 import xml.etree.ElementTree as ET
@@ -257,9 +258,12 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                                    (item.href, collection.path, e)) from e
 
         # Filtering non-recurring events by time-range
-        if (time_range_element is not None) and not hasattr(item, 'rrule'):
+        vobj = item.vobject_item
+        if len(vobj.vevent_list) != 1:
+            raise ValueError("vobject has too many events")
+        if (time_range_element is not None) and not hasattr(vobj.vevent, 'rrule'):
             start, end = radicale_filter.time_range_timestamps(time_range_element)
-            istart, iend = item.time_range
+            istart, iend = item.vobject_item.time_range
             if istart >= end or iend <= start:
                 continue
 
@@ -371,6 +375,7 @@ def _expand(
 
         is_component_filled: bool = False
         i_overridden = 0
+        recurring_vevents = []
 
         for recurrence_dt in recurrences:
             recurrence_utc = recurrence_dt.astimezone(datetime.timezone.utc)
@@ -405,17 +410,13 @@ def _expand(
                         value=(recurrence_id + duration).strftime(dt_format), params={}
                     )
 
-            if not is_component_filled:
-                vevent_component.vevent = vevent
-                is_component_filled = True
-            else:
-                vevent_component.add(vevent)
+            recurring_vevents.append(vevent)
 
         # Filter overridden events and vevent_recurrence if recurrences is empty
         # Todo: optimize that code
         if time_range_start is not None and time_range_end is not None:
             filtered_vevents = []
-            for vevent in vevents_overridden:
+            for vevent in itertools.chain(vevents_overridden, recurring_vevents):
                 dtstart = vevent.dtstart.value
                 dtend = vevent.dtend.value if hasattr(vevent, 'dtend') else dtstart
 
