@@ -332,6 +332,7 @@ def _expand(
         time_range_end: Optional[datetime.datetime] = None,
 ) -> ET.Element:
     vevent_component: vobject.base.Component = copy.copy(item.vobject_item)
+    logger.info("Expanding event %s", item.href)
 
     # Split the vevents included in the component into one that contains the
     # recurrence information and others that contain a recurrence id to
@@ -350,6 +351,9 @@ def _expand(
         # rruleset.between computes with datetimes without timezone information
         start = start.replace(tzinfo=None)
         end = end.replace(tzinfo=None)
+        if time_range_start is not None and time_range_end is not None:
+            time_range_start = time_range_start.replace(tzinfo=None)
+            time_range_end = time_range_end.replace(tzinfo=None)
 
     for vevent in vevents_overridden:
         _strip_single_event(vevent, dt_format)
@@ -358,10 +362,21 @@ def _expand(
     if hasattr(vevent_recurrence, "dtend"):
         duration = vevent_recurrence.dtend.value - vevent_recurrence.dtstart.value
 
+    # Handle EXDATE to limit expansion range
+    if hasattr(vevent_recurrence, 'exdate'):
+        exdates = vevent_recurrence.exdate.value
+        if not isinstance(exdates, list):
+            exdates = [exdates]  # Convert single date to list
+        logger.debug("EXDATE values: %s", exdates)
+        latest_exdate = max(exdates) if exdates else None
+        if latest_exdate and end > latest_exdate:
+            end = min(end, latest_exdate)
+
     rruleset = None
     if hasattr(vevent_recurrence, 'rrule'):
         rruleset = vevent_recurrence.getrruleset()
 
+    filtered_vevents = []
     if rruleset:
         # This function uses datetimes internally without timezone info for dates
         recurrences = rruleset.between(start, end, inc=True)
@@ -369,27 +384,32 @@ def _expand(
         _strip_component(vevent_component)
         _strip_single_event(vevent_recurrence, dt_format)
 
-        is_component_filled: bool = False
         i_overridden = 0
 
         for recurrence_dt in recurrences:
-            recurrence_utc = recurrence_dt.astimezone(datetime.timezone.utc)
+            recurrence_utc = recurrence_dt if all_day_event else recurrence_dt.astimezone(datetime.timezone.utc)
+            logger.debug("Processing recurrence: %s (all_day_event: %s)", recurrence_utc, all_day_event)
 
+            # Apply time-range filter
             if time_range_start is not None and time_range_end is not None:
-                dtstart = recurrence_dt if all_day_event else recurrence_utc
+                dtstart = recurrence_utc
                 dtend = dtstart + duration if duration else dtstart
                 if not (dtstart < time_range_end and dtend > time_range_start):
+                    logger.debug("Recurrence %s filtered out by time-range", recurrence_utc)
                     continue
 
+            # Check for overridden instances
             i_overridden, vevent = _find_overridden(i_overridden, vevents_overridden, recurrence_utc, dt_format)
 
             if not vevent:
-                # We did not find an overridden instance, so create a new one
+                # Create new instance from recurrence
                 vevent = copy.deepcopy(vevent_recurrence)
 
                 # For all day events, the system timezone may influence the
                 # results, so use recurrence_dt
                 recurrence_id = recurrence_dt if all_day_event else recurrence_utc
+                logger.debug("Creating new VEVENT with RECURRENCE-ID: %s", recurrence_id)
+
                 vevent.recurrence_id = ContentLine(
                     name='RECURRENCE-ID',
                     value=recurrence_id, params={}
@@ -405,54 +425,60 @@ def _expand(
                         value=(recurrence_id + duration).strftime(dt_format), params={}
                     )
 
-            if not is_component_filled:
-                vevent_component.vevent = vevent
-                is_component_filled = True
-            else:
-                vevent_component.add(vevent)
+            filtered_vevents.append(vevent)
 
-        # Filter overridden events and vevent_recurrence if recurrences is empty
-        # Todo: optimize that code
+        # Filter overridden and recurrence base events
         if time_range_start is not None and time_range_end is not None:
-            filtered_vevents = []
-            for vevent in vevents_overridden:
+            for vevent in vevents_overridden + [vevent_recurrence]:
                 dtstart = vevent.dtstart.value
                 dtend = vevent.dtend.value if hasattr(vevent, 'dtend') else dtstart
+                logger.debug(
+                    "Filtering VEVENT with DTSTART: %s (type: %s), DTEND: %s (type: %s)",
+                    dtstart, type(dtstart), dtend, type(dtend))
 
-                dtstart = datetime.datetime.strptime(
-                    dtstart, "%Y%m%dT%H%M%SZ").replace(
-                        tzinfo=datetime.timezone.utc)
-                dtend = datetime.datetime.strptime(
-                    dtend, "%Y%m%dT%H%M%SZ").replace(
-                        tzinfo=datetime.timezone.utc)
+                # Handle string values for DTSTART/DTEND
+                if isinstance(dtstart, str):
+                    try:
+                        dtstart = datetime.datetime.strptime(dtstart, dt_format)
+                        if all_day_event:
+                            dtstart = dtstart.date()
+                    except ValueError as e:
+                        logger.warning("Invalid DTSTART format: %s, error: %s", dtstart, e)
+                        continue
+                if isinstance(dtend, str):
+                    try:
+                        dtend = datetime.datetime.strptime(dtend, dt_format)
+                        if all_day_event:
+                            dtend = dtend.date()
+                    except ValueError as e:
+                        logger.warning("Invalid DTSTART format: %s, error: %s", dtstart, e)
+                        continue
+
+                # Convert to datetime for comparison
+                if all_day_event and isinstance(dtstart, datetime.date) and not isinstance(dtstart, datetime.datetime):
+                    dtstart = datetime.datetime.fromordinal(dtstart.toordinal()).replace(tzinfo=None)
+                    dtend = datetime.datetime.fromordinal(dtend.toordinal()).replace(tzinfo=None)
+                elif not all_day_event and isinstance(dtstart, datetime.datetime) \
+                        and isinstance(dtend, datetime.datetime):
+                    dtstart = dtstart.replace(tzinfo=datetime.timezone.utc)
+                    dtend = dtend.replace(tzinfo=datetime.timezone.utc)
+                else:
+                    logger.warning("Unexpected DTSTART/DTEND type: dtstart=%s, dtend=%s", type(dtstart), type(dtend))
+                    continue
 
                 if dtstart < time_range_end and dtend > time_range_start:
-                    filtered_vevents.append(vevent)
+                    if vevent not in filtered_vevents:  # Avoid duplicates
+                        logger.debug("VEVENT passed time-range filter: %s", dtstart)
+                        filtered_vevents.append(vevent)
+                else:
+                    logger.debug("VEVENT filtered out: %s", dtstart)
 
-            dtstart = vevent_recurrence.dtstart.value
-            dtend = vevent_recurrence.dtend.value if hasattr(vevent_recurrence, 'dtend') else dtstart
-            dtstart = datetime.datetime.strptime(
-                dtstart, "%Y%m%dT%H%M%SZ").replace(
-                    tzinfo=datetime.timezone.utc)
-            dtend = datetime.datetime.strptime(
-                dtend, "%Y%m%dT%H%M%SZ").replace(
-                    tzinfo=datetime.timezone.utc)
+    # Rebuild component
 
-            if filtered_vevents or (dtstart < time_range_end and dtend > time_range_start):
-                if filtered_vevents:
-                    vevent_component.vevent = filtered_vevents[0]
-                    for vevent in filtered_vevents[1:]:
-                        vevent_component.add(vevent)
-                if dtstart < time_range_end and dtend > time_range_start:
-                    if not filtered_vevents:
-                        vevent_component.vevent = vevent_recurrence
-                    else:
-                        vevent_component.add(vevent_recurrence)
-            else:
-                element.text = ""
-                return element
-
+    # ToDo: Get rid of return vevent_recurrence if filtered_vevents is empty it's wrong behavior
+    vevent_component.vevent_list = filtered_vevents if filtered_vevents else [vevent_recurrence]
     element.text = vevent_component.serialize()
+    logger.debug("Returning %d VEVENTs", len(vevent_component.vevent_list))
 
     return element
 
