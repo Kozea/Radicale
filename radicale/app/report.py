@@ -357,6 +357,8 @@ def _expand(
     duration = None
     if hasattr(vevent_recurrence, "dtend"):
         duration = vevent_recurrence.dtend.value - vevent_recurrence.dtstart.value
+    elif hasattr(vevent_recurrence, "duration"):
+        duration = vevent_recurrence.duration.value
 
     # Handle EXDATE to limit expansion range
     if hasattr(vevent_recurrence, 'exdate'):
@@ -428,7 +430,8 @@ def _expand(
                     name='DTSTART',
                     value=recurrence_id.strftime(dt_format), params={}
                 )
-                if duration:
+                # if there is a DTEND, override it. Duration does not need changing
+                if hasattr(vevent, "dtend"):
                     vevent.dtend = ContentLine(
                         name='DTEND',
                         value=(recurrence_id + duration).strftime(dt_format), params={}
