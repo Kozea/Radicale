@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import ssl
 import sys
 from importlib import import_module, metadata
@@ -24,6 +25,10 @@ from typing import Callable, Sequence, Tuple, Type, TypeVar, Union
 
 from radicale import config
 from radicale.log import logger
+
+if sys.platform != "win32":
+    import grp
+    import pwd
 
 _T_co = TypeVar("_T_co", covariant=True)
 
@@ -214,3 +219,23 @@ def ssl_get_protocols(context):
         if (context.minimum_version <= ssl.TLSVersion.TLSv1_3) and (context.maximum_version >= ssl.TLSVersion.TLSv1_3):
             protocols.append("TLSv1.3")
     return protocols
+
+
+def user_groups_as_string():
+    if sys.platform != "win32":
+        euid = os.geteuid()
+        egid = os.getegid()
+        username = pwd.getpwuid(euid)[0]
+        gids = os.getgrouplist(username, egid)
+        groups = []
+        for gid in gids:
+            try:
+                gi = grp.getgrgid(gid)
+                groups.append("%s(%d)" % (gi.gr_name, gid))
+            except Exception:
+                groups.append("%s(%d)" % (gid, gid))
+        s = "user=%s(%d) groups=%s" % (username, euid, ','.join(groups))
+    else:
+        username = os.getlogin()
+        s = "user=%s" % (username)
+    return s

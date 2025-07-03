@@ -1,7 +1,8 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +24,7 @@ Helper functions for working with the file system.
 
 import errno
 import os
+import pathlib
 import posixpath
 import sys
 import threading
@@ -314,3 +316,17 @@ def name_from_path(path: str, collection: "storage.BaseCollection") -> str:
         raise ValueError("%r is not a component in collection %r" %
                          (name, collection.path))
     return name
+
+
+def path_permissions(path):
+    path = pathlib.Path(path)
+    return [path.owner(), path.group(), path.stat().st_mode]
+
+
+def path_permissions_as_string(path):
+    try:
+        pp = path_permissions(path)
+        s = "path=%r owner=%s group=%s mode=%o" % (path, pp[0], pp[1], pp[2])
+    except NotImplementedError:
+        s = "path=%r owner=UNKNOWN(unsupported on this system)" % (path)
+    return s
