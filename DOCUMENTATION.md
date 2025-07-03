@@ -1506,7 +1506,7 @@ Available types:
 `rabbitmq` _(>= 3.2.0)_
 : Push the message to the rabbitmq server.
 
-`email`
+`email` _(>= 3.5.5)_
 : Send an email notification to event attendees.
 
 Default: `none`
@@ -1538,11 +1538,15 @@ Default: classic
 
 ##### smtp_server
 
+_(>= 3.5.5)_
+
 Address to connect to SMTP server.
 
 Default:
 
 ##### smtp_port
+
+_(>= 3.5.5)_
 
 Port to connect to SMTP server.
 
@@ -1550,11 +1554,15 @@ Default:
 
 ##### smtp_security
 
+_(>= 3.5.5)_
+
 Use encryption on the SMTP connection. none, tls, starttls
 
 Default: none
 
 ##### smtp_ssl_verify_mode
+
+_(>= 3.5.5)_
 
 The certificate verification mode. Works for tls and starttls. NONE, OPTIONAL or REQUIRED
 
@@ -1562,11 +1570,15 @@ Default: REQUIRED
 
 ##### smtp_username
 
+_(>= 3.5.5)_
+
 Username to authenticate with SMTP server. Leave empty to disable authentication (e.g. using local mail server).
 
 Default:
 
 ##### smtp_password
+
+_(>= 3.5.5)_
 
 Password to authenticate with SMTP server. Leave empty to disable authentication (e.g. using local mail server).
 
@@ -1574,17 +1586,23 @@ Default:
 
 ##### from_email
 
+_(>= 3.5.5)_
+
 Email address to use as sender in email notifications.
 
 Default:
 
 ##### mass_email
 
+_(>= 3.5.5)_
+
 When enabled, send one email to all attendee email addresses. When disabled, send one email per attendee email address.
 
 Default: `False`
 
 ##### added_template
+
+_(>= 3.5.5)_
 
 Template to use for added/updated event email body.
 
@@ -1613,6 +1631,8 @@ This is an automated message. Please do not reply.
 ```
 
 ##### removed_template
+
+_(>= 3.5.5)_
 
 Template to use for deleted event email body.
 
