@@ -25,6 +25,9 @@ from typing import ClassVar, List
 
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
+from radicale.log import logger
+
+from xml.etree import ElementTree
 
 ONLY_DATES = True
 CONTAINS_TIMES = False
@@ -144,6 +147,8 @@ permissions: RrWw""")
         assert not isinstance(response_with_expand, int)
         status, element = response_with_expand["C:calendar-data"]
 
+        logger.debug("lbt: element is %s",
+                     ElementTree.tostring(element, encoding='unicode'))
         assert status == 200 and element.text
         assert "RRULE" not in element.text
         assert "BEGIN:VTIMEZONE" not in element.text
@@ -211,13 +216,26 @@ permissions: RrWw""")
         """Test report with expand property for issue 1812"""
         self._test_expand(
             "event_issue1812",
+            "20250127T183000Z",
+            "20250127T183001Z",
+            ["RECURRENCE-ID:20250127T180000Z"],
+            ["DTSTART:20250127T180000Z"],
+            ["DTEND:20250127T233000Z"],
+            CONTAINS_TIMES,
+            11
+        )
+
+    def test_report_with_expand_property_issue1812_DS(self) -> None:
+        """Test report with expand property for issue 1812 - DS active"""
+        self._test_expand(
+            "event_issue1812",
             "20250627T183000Z",
             "20250627T183001Z",
-            ["RECURRENCE-ID:20250627T180000Z"],
-            ["DTSTART:20250627T180000Z"],
-            [],
+            ["RECURRENCE-ID:20250627T170000Z"],
+            ["DTSTART:20250627T170000Z"],
+            ["DTEND:20250627T223000Z"],
             CONTAINS_TIMES,
-            1
+            11
         )
 
     def test_report_with_expand_property_all_day_event(self) -> None:
