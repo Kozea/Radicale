@@ -375,7 +375,19 @@ def _expand(
     filtered_vevents = []
     if rruleset:
         # This function uses datetimes internally without timezone info for dates
-        recurrences = rruleset.between(start, end, inc=True)
+
+        # A vobject rruleset is for the event dtstart.
+        # Expanded over a given time range this will not include
+        # events which started before the time range but are still
+        # ongoing at the start of the range
+
+        # To accomodate this, reduce the start time by the duration of
+        # the event. If this introduces an extra reccurence point then
+        # that event should be included as it is still ongoing. If no
+        # extra point is generated then it was a no-op.
+
+        rstart = start - duration if duration else start
+        recurrences = rruleset.between(rstart, end, inc=True)
 
         _strip_component(vevent_component)
         _strip_single_event(vevent_recurrence, dt_format)
