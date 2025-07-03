@@ -402,7 +402,8 @@ def _expand(
             if time_range_start is not None and time_range_end is not None:
                 dtstart = recurrence_utc
                 dtend = dtstart + duration if duration else dtstart
-                if not (dtstart < time_range_end and dtend > time_range_start):
+                # Start includes the time, end does not
+                if not (dtstart <= time_range_end and dtend > time_range_start):
                     logger.debug("Recurrence %s filtered out by time-range", recurrence_utc)
                     continue
 
