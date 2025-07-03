@@ -223,18 +223,22 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
     filters = (
         root.findall(xmlutils.make_clark("C:filter")) +
         root.findall(xmlutils.make_clark("CR:filter")))
+    expand = root.find(".//" + xmlutils.make_clark("C:expand"))
 
-    # extract time-range filter for processing after main filters
+    # if we have expand prop we use "filter (except time range) -> expand -> filter (only time range)" approach
     time_range_element = None
-    non_time_range_filters = []
+    main_filters = []
     for filter_ in filters:
+        # extract time-range filter for processing after main filters
+        # for expand request
         time_range_element = filter_.find(".//" + xmlutils.make_clark("C:time-range"))
-        if time_range_element is None:
-            non_time_range_filters.append(filter_)
+
+        if expand is None or time_range_element is None:
+            main_filters.append(filter_)
 
     # Retrieve everything required for finishing the request.
     retrieved_items = list(retrieve_items(
-        base_prefix, path, collection, hreferences, non_time_range_filters, multistatus))
+        base_prefix, path, collection, hreferences, main_filters, multistatus))
     collection_tag = collection.tag
     # !!! Don't access storage after this !!!
     unlock_storage_fn()
@@ -247,7 +251,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         if filters and not filters_matched:
             try:
                 if not all(test_filter(collection_tag, item, filter_)
-                           for filter_ in non_time_range_filters):
+                           for filter_ in main_filters):
                     continue
             except ValueError as e:
                 raise ValueError("Failed to filter item %r from %r: %s" %
@@ -257,7 +261,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                                    (item.href, collection.path, e)) from e
 
         # Filtering non-recurring events by time-range
-        if (time_range_element is not None) and not hasattr(item, 'rrule'):
+        if (expand is not None) and (time_range_element is not None) and not hasattr(item, 'rrule'):
             start, end = radicale_filter.time_range_timestamps(time_range_element)
             istart, iend = item.time_range
             if istart >= end or iend <= start:
@@ -279,8 +283,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                     xmlutils.make_clark("CR:address-data")):
                 element.text = item.serialize()
 
-                expand = prop.find(xmlutils.make_clark("C:expand"))
-                if expand is not None and item.component_name == 'VEVENT':
+                if (expand is not None) and item.component_name == 'VEVENT':
                     start = expand.get('start')
                     end = expand.get('end')
 
