@@ -441,7 +441,7 @@ def _expand(
 
         # Filter overridden and recurrence base events
         if time_range_start is not None and time_range_end is not None:
-            for vevent in vevents_overridden + [vevent_recurrence]:
+            for vevent in vevents_overridden:
                 dtstart = vevent.dtstart.value
                 dtend = vevent.dtend.value if hasattr(vevent, 'dtend') else dtstart
                 logger.debug(
