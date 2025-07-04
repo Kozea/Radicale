@@ -1506,6 +1506,9 @@ Available types:
 `rabbitmq` _(>= 3.2.0)_
 : Push the message to the rabbitmq server.
 
+`email` _(>= 3.5.5)_
+: Send an email notification to event attendees.
+
 Default: `none`
 
 ##### rabbitmq_endpoint
@@ -1532,6 +1535,130 @@ _(>= 3.2.0)_
 RabbitMQ queue type for the topic.
 
 Default: classic
+
+##### smtp_server
+
+_(>= 3.5.5)_
+
+Address to connect to SMTP server.
+
+Default:
+
+##### smtp_port
+
+_(>= 3.5.5)_
+
+Port to connect to SMTP server.
+
+Default:
+
+##### smtp_security
+
+_(>= 3.5.5)_
+
+Use encryption on the SMTP connection. none, tls, starttls
+
+Default: none
+
+##### smtp_ssl_verify_mode
+
+_(>= 3.5.5)_
+
+The certificate verification mode. Works for tls and starttls. NONE, OPTIONAL or REQUIRED
+
+Default: REQUIRED
+
+##### smtp_username
+
+_(>= 3.5.5)_
+
+Username to authenticate with SMTP server. Leave empty to disable authentication (e.g. using local mail server).
+
+Default:
+
+##### smtp_password
+
+_(>= 3.5.5)_
+
+Password to authenticate with SMTP server. Leave empty to disable authentication (e.g. using local mail server).
+
+Default:
+
+##### from_email
+
+_(>= 3.5.5)_
+
+Email address to use as sender in email notifications.
+
+Default:
+
+##### mass_email
+
+_(>= 3.5.5)_
+
+When enabled, send one email to all attendee email addresses. When disabled, send one email per attendee email address.
+
+Default: `False`
+
+##### added_template
+
+_(>= 3.5.5)_
+
+Template to use for added/updated event email body.
+
+The following placeholders will be replaced:
+- `$organizer_name`: Name of the organizer, or "Unknown Organizer" if not set in event
+- `$from_email`: Email address the email is sent from
+- `$attendee_name`: Name of the attendee (email recipient), or "everyone" if mass email enabled.
+- `$event_name`: Name/summary of the event, or "No Title" if not set in event
+- `$event_start_time`: Start time of the event in ISO 8601 format
+- `$event_end_time`: End time of the event in ISO 8601 format, or "No End Time" if the event has no end time
+- `$event_location`: Location of the event, or "No Location Specified" if not set in event
+
+Providing any words prefixed with $ not included in the list above will result in an error.
+
+Default: 
+```
+Hello $attendee_name,
+
+You have been added as an attendee to the following calendar event.
+
+    $event_title
+    $event_start_time - $event_end_time
+    $event_location
+
+This is an automated message. Please do not reply.
+```
+
+##### removed_template
+
+_(>= 3.5.5)_
+
+Template to use for deleted event email body.
+
+The following placeholders will be replaced:
+- `$organizer_name`: Name of the organizer, or "Unknown Organizer" if not set in event
+- `$from_email`: Email address the email is sent from
+- `$attendee_name`: Name of the attendee (email recipient), or "everyone" if mass email enabled.
+- `$event_name`: Name/summary of the event, or "No Title" if not set in event
+- `$event_start_time`: Start time of the event in ISO 8601 format
+- `$event_end_time`: End time of the event in ISO 8601 format, or "No End Time" if the event has no end time
+- `$event_location`: Location of the event, or "No Location Specified" if not set in event
+
+Providing any words prefixed with $ not included in the list above will result in an error.
+
+Default: 
+```
+Hello $attendee_name,
+
+You have been removed as an attendee from the following calendar event.
+
+    $event_title
+    $event_start_time - $event_end_time
+    $event_location
+
+This is an automated message. Please do not reply.
+```
 
 #### reporting
 

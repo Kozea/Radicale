@@ -38,6 +38,7 @@ from typing import (Any, Callable, ClassVar, Iterable, List, Optional,
                     Sequence, Tuple, TypeVar, Union)
 
 from radicale import auth, hook, rights, storage, types, web
+from radicale.hook import email
 from radicale.item import check_and_sanitize_props
 
 DEFAULT_CONFIG_PATH: str = os.pathsep.join([
@@ -85,6 +86,7 @@ def list_of_ip_address(value: Any) -> List[Tuple[str, int]]:
             return address.strip(string.whitespace + "[]"), int(port)
         except ValueError:
             raise ValueError("malformed IP address: %r" % value)
+
     return [ip_address(s) for s in value.split(",")]
 
 
@@ -436,7 +438,66 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("rabbitmq_queue_type", {
             "value": "",
             "help": "queue type for topic declaration",
-            "type": str})])),
+            "type": str}),
+        ("smtp_server", {
+            "value": "",
+            "help": "SMTP server to send emails",
+            "type": str}),
+        ("smtp_port", {
+            "value": "",
+            "help": "SMTP server port",
+            "type": str}),
+        ("smtp_security", {
+            "value": "none",
+            "help": "SMTP security mode: *none*|tls|starttls",
+            "type": str,
+            "internal": email.SMTP_SECURITY_TYPES}),
+        ("smtp_ssl_verify_mode", {
+            "value": "REQUIRED",
+            "help": "The certificate verification mode. Works for tls and starttls: NONE, OPTIONAL, default is REQUIRED",
+            "type": str,
+            "internal": email.SMTP_SSL_VERIFY_MODES}),
+        ("smtp_username", {
+            "value": "",
+            "help": "SMTP server username",
+            "type": str}),
+        ("smtp_password", {
+            "value": "",
+            "help": "SMTP server password",
+            "type": str}),
+        ("from_email", {
+            "value": "",
+            "help": "SMTP server password",
+            "type": str}),
+        ("mass_email", {
+            "value": "False",
+            "help": "Send one email to all attendees, versus one email per attendee",
+            "type": bool}),
+        ("added_template", {
+            "value": """Hello $attendee_name,
+
+You have been added as an attendee to the following calendar event.
+
+    $event_title
+    $event_start_time - $event_end_time
+    $event_location
+
+This is an automated message. Please do not reply.""",
+            "help": "Template for the email sent when an event is added or updated. Select placeholder words prefixed with $ will be replaced",
+            "type": str}),
+        ("removed_template", {
+            "value": """Hello $attendee_name,
+
+You have been removed as an attendee from the following calendar event.
+
+    $event_title
+    $event_start_time - $event_end_time
+    $event_location
+
+This is an automated message. Please do not reply.""",
+            "help": "Template for the email sent when an event is deleted. Select placeholder words prefixed with $ will be replaced",
+            "type": str}),
+    ])),
     ("web", OrderedDict([
         ("type", {
             "value": "internal",
@@ -557,7 +618,6 @@ _Self = TypeVar("_Self", bound="Configuration")
 
 
 class Configuration:
-
     SOURCE_MISSING: ClassVar[types.CONFIG] = {}
 
     _schema: types.CONFIG_SCHEMA
