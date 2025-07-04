@@ -358,15 +358,29 @@ def _expand(
     if hasattr(vevent_recurrence, "dtend"):
         duration = vevent_recurrence.dtend.value - vevent_recurrence.dtstart.value
     elif hasattr(vevent_recurrence, "duration"):
-        duration = vevent_recurrence.duration.value
+        try:
+            duration = vevent_recurrence.duration.value
+            if duration.total_seconds() <= 0:
+                logger.warning("Invalid DURATION: %s", duration)
+                duration = None
+        except (AttributeError, TypeError) as e:
+            logger.warning("Failed to parse DURATION: %s", e)
+            duration = None
 
     # Generate EXDATE to remove from expansion range
+    exdates_set = {}
     if hasattr(vevent_recurrence, 'exdate'):
         exdates = vevent_recurrence.exdate.value
         if not isinstance(exdates, list):
             exdates = [exdates]
-        logger.debug("EXDATE values: %s", exdates)
-        # TODO: these exdate values are not removed from the expanded set
+
+        exdates_set = {
+            exdate.astimezone(datetime.timezone.utc) if isinstance(exdate, datetime.datetime)
+            else datetime.datetime.fromordinal(exdate.toordinal()).replace(tzinfo=None)
+            for exdate in exdates
+        }
+
+        logger.debug("EXDATE values: %s", exdates_set)
 
     rruleset = None
     if hasattr(vevent_recurrence, 'rrule'):
@@ -385,8 +399,7 @@ def _expand(
         # the event. If this introduces an extra reccurence point then
         # that event should be included as it is still ongoing. If no
         # extra point is generated then it was a no-op.
-
-        rstart = start - duration if duration else start
+        rstart = start - duration if duration and duration.total_seconds() > 0 else start
         recurrences = rruleset.between(rstart, end, inc=True)
 
         _strip_component(vevent_component)
@@ -407,7 +420,10 @@ def _expand(
                     logger.debug("Recurrence %s filtered out by time-range", recurrence_utc)
                     continue
 
-            # Check here for exdate
+            # Check exdate
+            if recurrence_utc in exdates_set:
+                logger.debug("Recurrence %s excluded by EXDATE", recurrence_utc)
+                continue
 
             # Check for overridden instances
             i_overridden, vevent = _find_overridden(i_overridden, vevents_overridden, recurrence_utc, dt_format)
@@ -443,10 +459,6 @@ def _expand(
         if time_range_start is not None and time_range_end is not None:
             for vevent in vevents_overridden:
                 dtstart = vevent.dtstart.value
-                dtend = vevent.dtend.value if hasattr(vevent, 'dtend') else dtstart
-                logger.debug(
-                    "Filtering VEVENT with DTSTART: %s (type: %s), DTEND: %s (type: %s)",
-                    dtstart, type(dtstart), dtend, type(dtend))
 
                 # Handle string values for DTSTART/DTEND
                 if isinstance(dtstart, str):
@@ -457,14 +469,12 @@ def _expand(
                     except ValueError as e:
                         logger.warning("Invalid DTSTART format: %s, error: %s", dtstart, e)
                         continue
-                if isinstance(dtend, str):
-                    try:
-                        dtend = datetime.datetime.strptime(dtend, dt_format)
-                        if all_day_event:
-                            dtend = dtend.date()
-                    except ValueError as e:
-                        logger.warning("Invalid DTEND format: %s, error: %s", dtend, e)
-                        continue
+
+                dtend = dtstart + duration if duration else dtstart
+
+                logger.debug(
+                    "Filtering VEVENT with DTSTART: %s (type: %s), DTEND: %s (type: %s)",
+                    dtstart, type(dtstart), dtend, type(dtend))
 
                 # Convert to datetime for comparison
                 if all_day_event and isinstance(dtstart, datetime.date) and not isinstance(dtstart, datetime.datetime):
@@ -487,10 +497,14 @@ def _expand(
 
     # Rebuild component
 
-    # ToDo: Get rid of return vevent_recurrence if filtered_vevents is empty it's wrong behavior
-    vevent_component.vevent_list = filtered_vevents if filtered_vevents else [vevent_recurrence]
+    if not filtered_vevents:
+        element.text = ""
+        return element
+    else:
+        vevent_component.vevent_list = filtered_vevents
+        logger.debug("lbt: vevent_component %s", vevent_component)
+
     element.text = vevent_component.serialize()
-    logger.debug("Returning %d VEVENTs", len(vevent_component.vevent_list))
 
     return element
 
