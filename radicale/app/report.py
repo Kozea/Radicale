@@ -260,19 +260,6 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                 raise RuntimeError("Failed to filter item %r from %r: %s" %
                                    (item.href, collection.path, e)) from e
 
-        # Filtering non-recurring events by time-range
-        if hasattr(item.vobject_item, "vevent_list") and len(item.vobject_item.vevent_list) != 1:
-            # Not sure how to loop over these vevents
-            raise ValueError("vobject has too many events")
-        if ((expand is not None) and
-            (time_range_element is not None) and
-            not hasattr(item.vobject_item.vevent,
-                        'rrule')):
-            start, end = radicale_filter.time_range_timestamps(time_range_element)
-            istart, iend = item.vobject_item.time_range
-            if istart >= end or iend <= start:
-                continue
-
         found_props = []
         not_found_props = []
 
