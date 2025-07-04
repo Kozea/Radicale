@@ -360,15 +360,13 @@ def _expand(
     elif hasattr(vevent_recurrence, "duration"):
         duration = vevent_recurrence.duration.value
 
-    # Handle EXDATE to limit expansion range
+    # Generate EXDATE to remove from expansion range
     if hasattr(vevent_recurrence, 'exdate'):
         exdates = vevent_recurrence.exdate.value
         if not isinstance(exdates, list):
             exdates = [exdates]
         logger.debug("EXDATE values: %s", exdates)
-        latest_exdate = max(exdates) if exdates else None
-        if latest_exdate and end > latest_exdate:
-            end = min(end, latest_exdate)
+        # TODO: these exdate values are not removed from the expanded set
 
     rruleset = None
     if hasattr(vevent_recurrence, 'rrule'):
@@ -408,6 +406,8 @@ def _expand(
                 if not (dtstart <= time_range_end and dtend > time_range_start):
                     logger.debug("Recurrence %s filtered out by time-range", recurrence_utc)
                     continue
+
+            # Check here for exdate
 
             # Check for overridden instances
             i_overridden, vevent = _find_overridden(i_overridden, vevents_overridden, recurrence_utc, dt_format)
