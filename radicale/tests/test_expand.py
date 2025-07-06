@@ -22,12 +22,11 @@ Radicale tests with expand requests.
 
 import os
 from typing import ClassVar, List
+from xml.etree import ElementTree
 
+from radicale.log import logger
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
-from radicale.log import logger
-
-from xml.etree import ElementTree
 
 ONLY_DATES = True
 CONTAINS_TIMES = False

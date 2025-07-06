@@ -277,18 +277,18 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                 element.text = item.serialize()
 
                 if (expand is not None) and item.component_name == 'VEVENT':
-                    start = expand.get('start')
-                    end = expand.get('end')
+                    starts = expand.get('start')
+                    ends = expand.get('end')
 
-                    if (start is None) or (end is None):
+                    if (starts is None) or (ends is None):
                         return client.FORBIDDEN, \
                             xmlutils.webdav_error("C:expand")
 
                     start = datetime.datetime.strptime(
-                        start, '%Y%m%dT%H%M%SZ'
+                        starts, '%Y%m%dT%H%M%SZ'
                     ).replace(tzinfo=datetime.timezone.utc)
                     end = datetime.datetime.strptime(
-                        end, '%Y%m%dT%H%M%SZ'
+                        ends, '%Y%m%dT%H%M%SZ'
                     ).replace(tzinfo=datetime.timezone.utc)
 
                     time_range_start = None
@@ -368,7 +368,7 @@ def _expand(
             duration = None
 
     # Generate EXDATE to remove from expansion range
-    exdates_set = {}
+    exdates_set: set[datetime.datetime] = set()
     if hasattr(vevent_recurrence, 'exdate'):
         exdates = vevent_recurrence.exdate.value
         if not isinstance(exdates, list):
