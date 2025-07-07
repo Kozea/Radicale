@@ -1,6 +1,8 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2024 Pieter Hijma <pieterhijma@users.noreply.github.com>
+# Copyright © 2025 David Greaves <david@dgreaves.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
