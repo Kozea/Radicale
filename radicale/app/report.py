@@ -145,7 +145,8 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
 
 def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                collection: storage.BaseCollection, encoding: str,
-               unlock_storage_fn: Callable[[], None]
+               unlock_storage_fn: Callable[[], None],
+               max_occurrence: int = 0,
                ) -> Tuple[int, ET.Element]:
     """Read and answer REPORT requests that return XML.
 
@@ -244,6 +245,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
     # !!! Don't access storage after this !!!
     unlock_storage_fn()
 
+    n_vevents = 0
     while retrieved_items:
         # ``item.vobject_item`` might be accessed during filtering.
         # Don't keep reference to ``item``, because VObject requires a lot of
@@ -298,15 +300,21 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                     if time_range_element is not None:
                         time_range_start, time_range_end = radicale_filter.parse_time_range(time_range_element)
 
-                    expanded_element = _expand(
+                    (expanded_element, n_vev) = _expand(
                         element=element, item=copy.copy(item),
                         start=start, end=end,
                         time_range_start=time_range_start, time_range_end=time_range_end,
+                        max_occurrence=max_occurrence,
                     )
-
+                    n_vevents += n_vev
                     found_props.append(expanded_element)
                 else:
                     found_props.append(element)
+                    n_vevents += 1
+                # Avoid DoS with too many events
+                if max_occurrence and n_vevents > max_occurrence:
+                    raise ValueError("REPORT occurrences limit of {} hit"
+                                     .format(max_occurrence))
             else:
                 not_found_props.append(element)
 
@@ -327,7 +335,8 @@ def _expand(
         end: datetime.datetime,
         time_range_start: Optional[datetime.datetime] = None,
         time_range_end: Optional[datetime.datetime] = None,
-) -> ET.Element:
+        max_occurrence: int = 0,
+) -> Tuple[ET.Element, int]:
     vevent_component: vobject.base.Component = copy.copy(item.vobject_item)
     logger.info("Expanding event %s", item.href)
 
@@ -401,7 +410,13 @@ def _expand(
         # that event should be included as it is still ongoing. If no
         # extra point is generated then it was a no-op.
         rstart = start - duration if duration and duration.total_seconds() > 0 else start
-        recurrences = rruleset.between(rstart, end, inc=True)
+        recurrences = rruleset.between(rstart, end, inc=True, count=max_occurrence)
+        if max_occurrence and len(recurrences) >= max_occurrence:
+            # this shouldn't be > and if it's == then assume a limit
+            # was hit and ignore that maybe some would be filtered out
+            # by EXDATE etc. This is anti-DoS, not precise limits
+            raise ValueError("REPORT occurrences limit of {} hit"
+                             .format(max_occurrence))
 
         _strip_component(vevent_component)
         _strip_single_event(vevent_recurrence, dt_format)
@@ -500,14 +515,14 @@ def _expand(
 
     if not filtered_vevents:
         element.text = ""
-        return element
+        return element, 0
     else:
         vevent_component.vevent_list = filtered_vevents
         logger.debug("lbt: vevent_component %s", vevent_component)
 
     element.text = vevent_component.serialize()
 
-    return element
+    return element, len(filtered_vevents)
 
 
 def _convert_timezone(vevent: vobject.icalendar.RecurringComponent,
@@ -744,9 +759,9 @@ class ApplicationPartReport(ApplicationBase):
                 assert item.collection is not None
                 collection = item.collection
 
+            max_occurrence = self.configuration.get("reporting", "max_freebusy_occurrence")
             if xml_content is not None and \
                xml_content.tag == xmlutils.make_clark("C:free-busy-query"):
-                max_occurrence = self.configuration.get("reporting", "max_freebusy_occurrence")
                 try:
                     status, body = free_busy_report(
                         base_prefix, path, xml_content, collection, self._encoding,
@@ -761,7 +776,7 @@ class ApplicationPartReport(ApplicationBase):
                 try:
                     status, xml_answer = xml_report(
                         base_prefix, path, xml_content, collection, self._encoding,
-                        lock_stack.close)
+                        lock_stack.close, max_occurrence)
                 except ValueError as e:
                     logger.warning(
                         "Bad REPORT request on %r: %s", path, e, exc_info=True)
