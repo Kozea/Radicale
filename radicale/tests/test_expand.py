@@ -203,7 +203,7 @@ permissions: RrWw""")
 
         assert "RRULE" in element.text
 
-        status, headers, answer = self.request(
+        status, _, _ = self.request(
             "REPORT", "/calendar.ics/",
             self._req_with_expand(expected_uid, start, end),
             check=check)
@@ -332,3 +332,18 @@ permissions: RrWw""")
             "20060501T000000Z",
             check=400
         )
+
+    def test_report_with_max_occur(self) -> None:
+        """Test report with too many vevents"""
+        self.configure({"reporting": {"max_freebusy_occurrence": 10}})
+
+        uid = "event_multiple_too_many"
+        start = "20130901T000000Z"
+        end = "20130902T000000Z"
+        check = 400
+
+        status, responses = self.report("/calendar.ics/",
+                                        self._req_without_expand(uid, start, end),
+                                        check=check)
+        assert len(responses) == 0
+        assert status == check

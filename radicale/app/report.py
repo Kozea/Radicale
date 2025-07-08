@@ -310,7 +310,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                     found_props.append(expanded_element)
                 else:
                     found_props.append(element)
-                    n_vevents += 1
+                    n_vevents += len(item.vobject_item.vevent_list)
                 # Avoid DoS with too many events
                 if max_occurrence and n_vevents > max_occurrence:
                     raise ValueError("REPORT occurrences limit of {} hit"
