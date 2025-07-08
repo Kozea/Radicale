@@ -23,7 +23,7 @@ Radicale tests with expand requests.
 """
 
 import os
-from typing import ClassVar, List
+from typing import ClassVar, List, Optional
 from xml.etree import ElementTree
 
 from radicale.log import logger
@@ -154,6 +154,7 @@ permissions: RrWw""")
 
         _, responses = self.report("/calendar.ics/",
                                    self._req_with_expand(expected_uid, start, end))
+
         assert len(responses) == 1
 
         response_with_expand = responses[f'/calendar.ics/{expected_uid}.ics']
@@ -185,6 +186,29 @@ permissions: RrWw""")
 
         assert len(uids) == len(expected_recurrence_ids)
         assert len(set(recurrence_ids)) == len(expected_recurrence_ids)
+
+    def _test_expand_max(self,
+                         expected_uid: str,
+                         start: str,
+                         end: str,
+                         check: Optional[int] = None) -> None:
+        _, responses = self.report("/calendar.ics/",
+                                   self._req_without_expand(expected_uid, start, end))
+        assert len(responses) == 1
+        response_without_expand = responses[f'/calendar.ics/{expected_uid}.ics']
+        assert not isinstance(response_without_expand, int)
+        status, element = response_without_expand["C:calendar-data"]
+
+        assert status == 200 and element.text
+
+        assert "RRULE" in element.text
+
+        status, headers, answer = self.request(
+            "REPORT", "/calendar.ics/",
+            self._req_with_expand(expected_uid, start, end),
+            check=check)
+
+        assert status == 400
 
     def test_report_with_expand_property(self) -> None:
         """Test report with expand property"""
@@ -297,4 +321,14 @@ permissions: RrWw""")
             [],
             CONTAINS_TIMES,
             1
+        )
+
+    def test_report_with_expand_property_max_occur(self) -> None:
+        """Test report with expand property too many vevents"""
+        self.configure({"reporting": {"max_freebusy_occurrence": 100}})
+        self._test_expand_max(
+            "event_daily_rrule_forever",
+            "20060103T000000Z",
+            "20060501T000000Z",
+            check=400
         )
