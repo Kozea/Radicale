@@ -77,7 +77,13 @@ class IdentLogRecordFactory:
                 ident += "/%s" % (record.threadName or "unknown")
             if (sys.version_info >= (3, 8) and
                     record.thread == threading.get_ident()):
-                tid = threading.get_native_id()
+                try:
+                    tid = threading.get_native_id()
+                except AttributeError:
+                    # so far function not existing e.g. on SunOS
+                    # see also https://docs.python.org/3/library/threading.html#threading.get_native_id
+                    tid = None
+
         record.ident = ident  # type:ignore[attr-defined]
         record.tid = tid  # type:ignore[attr-defined]
         return record
