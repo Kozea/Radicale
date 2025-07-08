@@ -72,17 +72,13 @@ permissions: RrWw""")
         self.configure({"rights": {"file": rights_file_path,
                                    "type": "from_file"}})
 
-    def _test_expand(self,
-                     expected_uid: str,
-                     start: str,
-                     end: str,
-                     expected_recurrence_ids: List[str],
-                     expected_start_times: List[str],
-                     expected_end_times: List[str],
-                     only_dates: bool,
-                     nr_uids: int) -> None:
+    def _req_without_expand(self,
+                            expected_uid: str,
+                            start: str,
+                            end: str,
+                            ) -> str:
         self.put("/calendar.ics/", get_file_content(f"{expected_uid}.ics"))
-        req_body_without_expand = \
+        return \
             f"""<?xml version="1.0" encoding="utf-8" ?>
             <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
                 <D:prop>
@@ -98,9 +94,43 @@ permissions: RrWw""")
                 </C:filter>
             </C:calendar-query>
             """
-        _, responses = self.report("/calendar.ics/", req_body_without_expand)
-        assert len(responses) == 1
 
+    def _req_with_expand(self,
+                         expected_uid: str,
+                         start: str,
+                         end: str,
+                         ) -> str:
+        self.put("/calendar.ics/", get_file_content(f"{expected_uid}.ics"))
+        return \
+            f"""<?xml version="1.0" encoding="utf-8" ?>
+            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                <D:prop>
+                    <C:calendar-data>
+                        <C:expand start="{start}" end="{end}"/>
+                    </C:calendar-data>
+                </D:prop>
+                <C:filter>
+                    <C:comp-filter name="VCALENDAR">
+                        <C:comp-filter name="VEVENT">
+                            <C:time-range start="{start}" end="{end}"/>
+                        </C:comp-filter>
+                    </C:comp-filter>
+                </C:filter>
+            </C:calendar-query>
+            """
+
+    def _test_expand(self,
+                     expected_uid: str,
+                     start: str,
+                     end: str,
+                     expected_recurrence_ids: List[str],
+                     expected_start_times: List[str],
+                     expected_end_times: List[str],
+                     only_dates: bool,
+                     nr_uids: int) -> None:
+        _, responses = self.report("/calendar.ics/",
+                                   self._req_without_expand(expected_uid, start, end))
+        assert len(responses) == 1
         response_without_expand = responses[f'/calendar.ics/{expected_uid}.ics']
         assert not isinstance(response_without_expand, int)
         status, element = response_without_expand["C:calendar-data"]
@@ -122,26 +152,8 @@ permissions: RrWw""")
 
         assert len(uids) == nr_uids
 
-        req_body_with_expand = \
-            f"""<?xml version="1.0" encoding="utf-8" ?>
-            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
-                <D:prop>
-                    <C:calendar-data>
-                        <C:expand start="{start}" end="{end}"/>
-                    </C:calendar-data>
-                </D:prop>
-                <C:filter>
-                    <C:comp-filter name="VCALENDAR">
-                        <C:comp-filter name="VEVENT">
-                            <C:time-range start="{start}" end="{end}"/>
-                        </C:comp-filter>
-                    </C:comp-filter>
-                </C:filter>
-            </C:calendar-query>
-            """
-
-        _, responses = self.report("/calendar.ics/", req_body_with_expand)
-
+        _, responses = self.report("/calendar.ics/",
+                                   self._req_with_expand(expected_uid, start, end))
         assert len(responses) == 1
 
         response_with_expand = responses[f'/calendar.ics/{expected_uid}.ics']
