@@ -1,6 +1,8 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2024 Pieter Hijma <pieterhijma@users.noreply.github.com>
+# Copyright © 2025 David Greaves <david@dgreaves.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +23,10 @@ Radicale tests with expand requests.
 """
 
 import os
-from typing import ClassVar, List
+from typing import ClassVar, List, Optional
+from xml.etree import ElementTree
 
+from radicale.log import logger
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -68,17 +72,13 @@ permissions: RrWw""")
         self.configure({"rights": {"file": rights_file_path,
                                    "type": "from_file"}})
 
-    def _test_expand(self,
-                     expected_uid: str,
-                     start: str,
-                     end: str,
-                     expected_recurrence_ids: List[str],
-                     expected_start_times: List[str],
-                     expected_end_times: List[str],
-                     only_dates: bool,
-                     nr_uids: int) -> None:
+    def _req_without_expand(self,
+                            expected_uid: str,
+                            start: str,
+                            end: str,
+                            ) -> str:
         self.put("/calendar.ics/", get_file_content(f"{expected_uid}.ics"))
-        req_body_without_expand = \
+        return \
             f"""<?xml version="1.0" encoding="utf-8" ?>
             <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
                 <D:prop>
@@ -94,9 +94,43 @@ permissions: RrWw""")
                 </C:filter>
             </C:calendar-query>
             """
-        _, responses = self.report("/calendar.ics/", req_body_without_expand)
-        assert len(responses) == 1
 
+    def _req_with_expand(self,
+                         expected_uid: str,
+                         start: str,
+                         end: str,
+                         ) -> str:
+        self.put("/calendar.ics/", get_file_content(f"{expected_uid}.ics"))
+        return \
+            f"""<?xml version="1.0" encoding="utf-8" ?>
+            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                <D:prop>
+                    <C:calendar-data>
+                        <C:expand start="{start}" end="{end}"/>
+                    </C:calendar-data>
+                </D:prop>
+                <C:filter>
+                    <C:comp-filter name="VCALENDAR">
+                        <C:comp-filter name="VEVENT">
+                            <C:time-range start="{start}" end="{end}"/>
+                        </C:comp-filter>
+                    </C:comp-filter>
+                </C:filter>
+            </C:calendar-query>
+            """
+
+    def _test_expand(self,
+                     expected_uid: str,
+                     start: str,
+                     end: str,
+                     expected_recurrence_ids: List[str],
+                     expected_start_times: List[str],
+                     expected_end_times: List[str],
+                     only_dates: bool,
+                     nr_uids: int) -> None:
+        _, responses = self.report("/calendar.ics/",
+                                   self._req_without_expand(expected_uid, start, end))
+        assert len(responses) == 1
         response_without_expand = responses[f'/calendar.ics/{expected_uid}.ics']
         assert not isinstance(response_without_expand, int)
         status, element = response_without_expand["C:calendar-data"]
@@ -118,25 +152,8 @@ permissions: RrWw""")
 
         assert len(uids) == nr_uids
 
-        req_body_with_expand = \
-            f"""<?xml version="1.0" encoding="utf-8" ?>
-            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
-                <D:prop>
-                    <C:calendar-data>
-                        <C:expand start="{start}" end="{end}"/>
-                    </C:calendar-data>
-                </D:prop>
-                <C:filter>
-                    <C:comp-filter name="VCALENDAR">
-                        <C:comp-filter name="VEVENT">
-                            <C:time-range start="{start}" end="{end}"/>
-                        </C:comp-filter>
-                    </C:comp-filter>
-                </C:filter>
-            </C:calendar-query>
-            """
-
-        _, responses = self.report("/calendar.ics/", req_body_with_expand)
+        _, responses = self.report("/calendar.ics/",
+                                   self._req_with_expand(expected_uid, start, end))
 
         assert len(responses) == 1
 
@@ -144,6 +161,8 @@ permissions: RrWw""")
         assert not isinstance(response_with_expand, int)
         status, element = response_with_expand["C:calendar-data"]
 
+        logger.debug("lbt: element is %s",
+                     ElementTree.tostring(element, encoding='unicode'))
         assert status == 200 and element.text
         assert "RRULE" not in element.text
         assert "BEGIN:VTIMEZONE" not in element.text
@@ -168,6 +187,29 @@ permissions: RrWw""")
         assert len(uids) == len(expected_recurrence_ids)
         assert len(set(recurrence_ids)) == len(expected_recurrence_ids)
 
+    def _test_expand_max(self,
+                         expected_uid: str,
+                         start: str,
+                         end: str,
+                         check: Optional[int] = None) -> None:
+        _, responses = self.report("/calendar.ics/",
+                                   self._req_without_expand(expected_uid, start, end))
+        assert len(responses) == 1
+        response_without_expand = responses[f'/calendar.ics/{expected_uid}.ics']
+        assert not isinstance(response_without_expand, int)
+        status, element = response_without_expand["C:calendar-data"]
+
+        assert status == 200 and element.text
+
+        assert "RRULE" in element.text
+
+        status, _, _ = self.request(
+            "REPORT", "/calendar.ics/",
+            self._req_with_expand(expected_uid, start, end),
+            check=check)
+
+        assert status == 400
+
     def test_report_with_expand_property(self) -> None:
         """Test report with expand property"""
         self._test_expand(
@@ -179,6 +221,58 @@ permissions: RrWw""")
             [],
             CONTAINS_TIMES,
             1
+        )
+
+    def test_report_with_expand_property_start_inside(self) -> None:
+        """Test report with expand property start inside"""
+        self._test_expand(
+            "event_daily_rrule",
+            "20060103T171500Z",
+            "20060105T000000Z",
+            ["RECURRENCE-ID:20060103T170000Z", "RECURRENCE-ID:20060104T170000Z"],
+            ["DTSTART:20060103T170000Z", "DTSTART:20060104T170000Z"],
+            [],
+            CONTAINS_TIMES,
+            1
+        )
+
+    def test_report_with_expand_property_just_inside(self) -> None:
+        """Test report with expand property start and end inside event"""
+        self._test_expand(
+            "event_daily_rrule",
+            "20060103T171500Z",
+            "20060103T171501Z",
+            ["RECURRENCE-ID:20060103T170000Z"],
+            ["DTSTART:20060103T170000Z"],
+            [],
+            CONTAINS_TIMES,
+            1
+        )
+
+    def test_report_with_expand_property_issue1812(self) -> None:
+        """Test report with expand property for issue 1812"""
+        self._test_expand(
+            "event_issue1812",
+            "20250127T183000Z",
+            "20250127T183001Z",
+            ["RECURRENCE-ID:20250127T180000Z"],
+            ["DTSTART:20250127T180000Z"],
+            ["DTEND:20250127T233000Z"],
+            CONTAINS_TIMES,
+            11
+        )
+
+    def test_report_with_expand_property_issue1812_DS(self) -> None:
+        """Test report with expand property for issue 1812 - DS active"""
+        self._test_expand(
+            "event_issue1812",
+            "20250627T183000Z",
+            "20250627T183001Z",
+            ["RECURRENCE-ID:20250627T170000Z"],
+            ["DTSTART:20250627T170000Z"],
+            ["DTEND:20250627T223000Z"],
+            CONTAINS_TIMES,
+            11
         )
 
     def test_report_with_expand_property_all_day_event(self) -> None:
@@ -228,3 +322,28 @@ permissions: RrWw""")
             CONTAINS_TIMES,
             1
         )
+
+    def test_report_with_expand_property_max_occur(self) -> None:
+        """Test report with expand property too many vevents"""
+        self.configure({"reporting": {"max_freebusy_occurrence": 100}})
+        self._test_expand_max(
+            "event_daily_rrule_forever",
+            "20060103T000000Z",
+            "20060501T000000Z",
+            check=400
+        )
+
+    def test_report_with_max_occur(self) -> None:
+        """Test report with too many vevents"""
+        self.configure({"reporting": {"max_freebusy_occurrence": 10}})
+
+        uid = "event_multiple_too_many"
+        start = "20130901T000000Z"
+        end = "20130902T000000Z"
+        check = 400
+
+        status, responses = self.report("/calendar.ics/",
+                                        self._req_without_expand(uid, start, end),
+                                        check=check)
+        assert len(responses) == 0
+        assert status == check

@@ -5,8 +5,9 @@
 # Copyright © 2017-2021 Unrud <unrud@outlook.com>
 # Copyright © 2024-2024 Pieter Hijma <pieterhijma@users.noreply.github.com>
 # Copyright © 2024-2024 Ray <ray@react0r.com>
-# Copyright © 2024-2024 Georgiy <metallerok@gmail.com>
+# Copyright © 2024-2025 Georgiy <metallerok@gmail.com>
 # Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2025-2025 David Greaves <david@dgreaves.com>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -144,7 +145,8 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
 
 def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                collection: storage.BaseCollection, encoding: str,
-               unlock_storage_fn: Callable[[], None]
+               unlock_storage_fn: Callable[[], None],
+               max_occurrence: int = 0,
                ) -> Tuple[int, ET.Element]:
     """Read and answer REPORT requests that return XML.
 
@@ -223,14 +225,27 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
     filters = (
         root.findall(xmlutils.make_clark("C:filter")) +
         root.findall(xmlutils.make_clark("CR:filter")))
+    expand = root.find(".//" + xmlutils.make_clark("C:expand"))
+
+    # if we have expand prop we use "filter (except time range) -> expand -> filter (only time range)" approach
+    time_range_element = None
+    main_filters = []
+    for filter_ in filters:
+        # extract time-range filter for processing after main filters
+        # for expand request
+        time_range_element = filter_.find(".//" + xmlutils.make_clark("C:time-range"))
+
+        if expand is None or time_range_element is None:
+            main_filters.append(filter_)
 
     # Retrieve everything required for finishing the request.
     retrieved_items = list(retrieve_items(
-        base_prefix, path, collection, hreferences, filters, multistatus))
+        base_prefix, path, collection, hreferences, main_filters, multistatus))
     collection_tag = collection.tag
     # !!! Don't access storage after this !!!
     unlock_storage_fn()
 
+    n_vevents = 0
     while retrieved_items:
         # ``item.vobject_item`` might be accessed during filtering.
         # Don't keep reference to ``item``, because VObject requires a lot of
@@ -239,7 +254,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         if filters and not filters_matched:
             try:
                 if not all(test_filter(collection_tag, item, filter_)
-                           for filter_ in filters):
+                           for filter_ in main_filters):
                     continue
             except ValueError as e:
                 raise ValueError("Failed to filter item %r from %r: %s" %
@@ -264,27 +279,42 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                     xmlutils.make_clark("CR:address-data")):
                 element.text = item.serialize()
 
-                expand = prop.find(xmlutils.make_clark("C:expand"))
-                if expand is not None and item.component_name == 'VEVENT':
-                    start = expand.get('start')
-                    end = expand.get('end')
+                if (expand is not None) and item.component_name == 'VEVENT':
+                    starts = expand.get('start')
+                    ends = expand.get('end')
 
-                    if (start is None) or (end is None):
+                    if (starts is None) or (ends is None):
                         return client.FORBIDDEN, \
                             xmlutils.webdav_error("C:expand")
 
                     start = datetime.datetime.strptime(
-                        start, '%Y%m%dT%H%M%SZ'
+                        starts, '%Y%m%dT%H%M%SZ'
                     ).replace(tzinfo=datetime.timezone.utc)
                     end = datetime.datetime.strptime(
-                        end, '%Y%m%dT%H%M%SZ'
+                        ends, '%Y%m%dT%H%M%SZ'
                     ).replace(tzinfo=datetime.timezone.utc)
 
-                    expanded_element = _expand(
-                        element, copy.copy(item), start, end)
+                    time_range_start = None
+                    time_range_end = None
+
+                    if time_range_element is not None:
+                        time_range_start, time_range_end = radicale_filter.parse_time_range(time_range_element)
+
+                    (expanded_element, n_vev) = _expand(
+                        element=element, item=copy.copy(item),
+                        start=start, end=end,
+                        time_range_start=time_range_start, time_range_end=time_range_end,
+                        max_occurrence=max_occurrence,
+                    )
+                    n_vevents += n_vev
                     found_props.append(expanded_element)
                 else:
                     found_props.append(element)
+                    n_vevents += len(item.vobject_item.vevent_list)
+                # Avoid DoS with too many events
+                if max_occurrence and n_vevents > max_occurrence:
+                    raise ValueError("REPORT occurrences limit of {} hit"
+                                     .format(max_occurrence))
             else:
                 not_found_props.append(element)
 
@@ -303,8 +333,12 @@ def _expand(
         item: radicale_item.Item,
         start: datetime.datetime,
         end: datetime.datetime,
-) -> ET.Element:
+        time_range_start: Optional[datetime.datetime] = None,
+        time_range_end: Optional[datetime.datetime] = None,
+        max_occurrence: int = 0,
+) -> Tuple[ET.Element, int]:
     vevent_component: vobject.base.Component = copy.copy(item.vobject_item)
+    logger.info("Expanding event %s", item.href)
 
     # Split the vevents included in the component into one that contains the
     # recurrence information and others that contain a recurrence id to
@@ -323,6 +357,9 @@ def _expand(
         # rruleset.between computes with datetimes without timezone information
         start = start.replace(tzinfo=None)
         end = end.replace(tzinfo=None)
+        if time_range_start is not None and time_range_end is not None:
+            time_range_start = time_range_start.replace(tzinfo=None)
+            time_range_end = time_range_end.replace(tzinfo=None)
 
     for vevent in vevents_overridden:
         _strip_single_event(vevent, dt_format)
@@ -330,32 +367,92 @@ def _expand(
     duration = None
     if hasattr(vevent_recurrence, "dtend"):
         duration = vevent_recurrence.dtend.value - vevent_recurrence.dtstart.value
+    elif hasattr(vevent_recurrence, "duration"):
+        try:
+            duration = vevent_recurrence.duration.value
+            if duration.total_seconds() <= 0:
+                logger.warning("Invalid DURATION: %s", duration)
+                duration = None
+        except (AttributeError, TypeError) as e:
+            logger.warning("Failed to parse DURATION: %s", e)
+            duration = None
+
+    # Generate EXDATE to remove from expansion range
+    exdates_set: set[datetime.datetime] = set()
+    if hasattr(vevent_recurrence, 'exdate'):
+        exdates = vevent_recurrence.exdate.value
+        if not isinstance(exdates, list):
+            exdates = [exdates]
+
+        exdates_set = {
+            exdate.astimezone(datetime.timezone.utc) if isinstance(exdate, datetime.datetime)
+            else datetime.datetime.fromordinal(exdate.toordinal()).replace(tzinfo=None)
+            for exdate in exdates
+        }
+
+        logger.debug("EXDATE values: %s", exdates_set)
 
     rruleset = None
     if hasattr(vevent_recurrence, 'rrule'):
         rruleset = vevent_recurrence.getrruleset()
 
+    filtered_vevents = []
     if rruleset:
         # This function uses datetimes internally without timezone info for dates
-        recurrences = rruleset.between(start, end, inc=True)
+
+        # A vobject rruleset is for the event dtstart.
+        # Expanded over a given time range this will not include
+        # events which started before the time range but are still
+        # ongoing at the start of the range
+
+        # To accomodate this, reduce the start time by the duration of
+        # the event. If this introduces an extra reccurence point then
+        # that event should be included as it is still ongoing. If no
+        # extra point is generated then it was a no-op.
+        rstart = start - duration if duration and duration.total_seconds() > 0 else start
+        recurrences = rruleset.between(rstart, end, inc=True, count=max_occurrence)
+        if max_occurrence and len(recurrences) >= max_occurrence:
+            # this shouldn't be > and if it's == then assume a limit
+            # was hit and ignore that maybe some would be filtered out
+            # by EXDATE etc. This is anti-DoS, not precise limits
+            raise ValueError("REPORT occurrences limit of {} hit"
+                             .format(max_occurrence))
 
         _strip_component(vevent_component)
         _strip_single_event(vevent_recurrence, dt_format)
 
-        is_component_filled: bool = False
         i_overridden = 0
 
         for recurrence_dt in recurrences:
-            recurrence_utc = recurrence_dt.astimezone(datetime.timezone.utc)
+            recurrence_utc = recurrence_dt if all_day_event else recurrence_dt.astimezone(datetime.timezone.utc)
+            logger.debug("Processing recurrence: %s (all_day_event: %s)", recurrence_utc, all_day_event)
+
+            # Apply time-range filter
+            if time_range_start is not None and time_range_end is not None:
+                dtstart = recurrence_utc
+                dtend = dtstart + duration if duration else dtstart
+                # Start includes the time, end does not
+                if not (dtstart <= time_range_end and dtend > time_range_start):
+                    logger.debug("Recurrence %s filtered out by time-range", recurrence_utc)
+                    continue
+
+            # Check exdate
+            if recurrence_utc in exdates_set:
+                logger.debug("Recurrence %s excluded by EXDATE", recurrence_utc)
+                continue
+
+            # Check for overridden instances
             i_overridden, vevent = _find_overridden(i_overridden, vevents_overridden, recurrence_utc, dt_format)
 
             if not vevent:
-                # We did not find an overridden instance, so create a new one
+                # Create new instance from recurrence
                 vevent = copy.deepcopy(vevent_recurrence)
 
                 # For all day events, the system timezone may influence the
                 # results, so use recurrence_dt
                 recurrence_id = recurrence_dt if all_day_event else recurrence_utc
+                logger.debug("Creating new VEVENT with RECURRENCE-ID: %s", recurrence_id)
+
                 vevent.recurrence_id = ContentLine(
                     name='RECURRENCE-ID',
                     value=recurrence_id, params={}
@@ -365,21 +462,67 @@ def _expand(
                     name='DTSTART',
                     value=recurrence_id.strftime(dt_format), params={}
                 )
-                if duration:
+                # if there is a DTEND, override it. Duration does not need changing
+                if hasattr(vevent, "dtend"):
                     vevent.dtend = ContentLine(
                         name='DTEND',
                         value=(recurrence_id + duration).strftime(dt_format), params={}
                     )
 
-            if not is_component_filled:
-                vevent_component.vevent = vevent
-                is_component_filled = True
-            else:
-                vevent_component.add(vevent)
+            filtered_vevents.append(vevent)
+
+        # Filter overridden and recurrence base events
+        if time_range_start is not None and time_range_end is not None:
+            for vevent in vevents_overridden:
+                dtstart = vevent.dtstart.value
+
+                # Handle string values for DTSTART/DTEND
+                if isinstance(dtstart, str):
+                    try:
+                        dtstart = datetime.datetime.strptime(dtstart, dt_format)
+                        if all_day_event:
+                            dtstart = dtstart.date()
+                    except ValueError as e:
+                        logger.warning("Invalid DTSTART format: %s, error: %s", dtstart, e)
+                        continue
+
+                dtend = dtstart + duration if duration else dtstart
+
+                logger.debug(
+                    "Filtering VEVENT with DTSTART: %s (type: %s), DTEND: %s (type: %s)",
+                    dtstart, type(dtstart), dtend, type(dtend))
+
+                # Convert to datetime for comparison
+                if all_day_event and isinstance(dtstart, datetime.date) and not isinstance(dtstart, datetime.datetime):
+                    dtstart = datetime.datetime.fromordinal(dtstart.toordinal()).replace(tzinfo=None)
+                    dtend = datetime.datetime.fromordinal(dtend.toordinal()).replace(tzinfo=None)
+                elif not all_day_event and isinstance(dtstart, datetime.datetime) \
+                        and isinstance(dtend, datetime.datetime):
+                    dtstart = dtstart.replace(tzinfo=datetime.timezone.utc)
+                    dtend = dtend.replace(tzinfo=datetime.timezone.utc)
+                else:
+                    logger.warning("Unexpected DTSTART/DTEND type: dtstart=%s, dtend=%s", type(dtstart), type(dtend))
+                    continue
+
+                if dtstart < time_range_end and dtend > time_range_start:
+                    if vevent not in filtered_vevents:  # Avoid duplicates
+                        logger.debug("VEVENT passed time-range filter: %s", dtstart)
+                        filtered_vevents.append(vevent)
+                else:
+                    logger.debug("VEVENT filtered out: %s", dtstart)
+
+    # Rebuild component
+
+    if not filtered_vevents:
+        element.text = ""
+        return element, 0
+    else:
+        vevent_component.vevent_list = filtered_vevents
+        logger.debug("lbt: vevent_component %s", vevent_component)
 
     element.text = vevent_component.serialize()
 
-    return element
+    return element, len(filtered_vevents)
 
 
 def _convert_timezone(vevent: vobject.icalendar.RecurringComponent,
@@ -616,9 +759,9 @@ class ApplicationPartReport(ApplicationBase):
                 assert item.collection is not None
                 collection = item.collection
 
+            max_occurrence = self.configuration.get("reporting", "max_freebusy_occurrence")
             if xml_content is not None and \
                xml_content.tag == xmlutils.make_clark("C:free-busy-query"):
-                max_occurrence = self.configuration.get("reporting", "max_freebusy_occurrence")
                 try:
                     status, body = free_busy_report(
                         base_prefix, path, xml_content, collection, self._encoding,
@@ -633,7 +776,7 @@ class ApplicationPartReport(ApplicationBase):
                 try:
                     status, xml_answer = xml_report(
                         base_prefix, path, xml_content, collection, self._encoding,
-                        lock_stack.close)
+                        lock_stack.close, max_occurrence)
                 except ValueError as e:
                     logger.warning(
                         "Bad REPORT request on %r: %s", path, e, exc_info=True)
