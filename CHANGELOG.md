@@ -7,6 +7,7 @@
 * Improve: display owner+permissions on directories on startup, extend error message in case of missing permissions
 * Feature: add hook for server-side e-mail notification
 * Fix: logging ignores not retrievable get_native_id if not supported by OS
+* Fix: report with enabled expand honors now provided filter proper
 
 ## 3.5.4
 * Improve: item filter enhanced for 3rd level supporting VALARM and honoring TRIGGER (offset or absolute)
