@@ -238,6 +238,18 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         if expand is None or time_range_element is None:
             main_filters.append(filter_)
 
+    # Extract requested component types from filters
+    requested_components = set()
+    has_vcalendar_filter = False
+    for filter_ in filters:
+        for comp_filter in filter_.findall(".//" + xmlutils.make_clark("C:comp-filter")):
+            component_name = comp_filter.get("name")
+            if component_name:
+                if component_name == "VCALENDAR":
+                    has_vcalendar_filter = True
+                else:
+                    requested_components.add(component_name)
+
     # Retrieve everything required for finishing the request.
     retrieved_items = list(retrieve_items(
         base_prefix, path, collection, hreferences, main_filters, multistatus))
@@ -262,6 +274,13 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
             except Exception as e:
                 raise RuntimeError("Failed to filter item %r from %r: %s" %
                                    (item.href, collection.path, e)) from e
+
+        # Skip items that don't match requested component types, unless VCALENDAR filter allows all components
+        if requested_components and not has_vcalendar_filter:
+            if item.component_name not in requested_components:
+                logger.debug("Skipping component %r (type: %s) as it doesn't match requested components %s",
+                             item.href, item.component_name, requested_components)
+                continue
 
         found_props = []
         not_found_props = []
@@ -306,6 +325,11 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                         time_range_start=time_range_start, time_range_end=time_range_end,
                         max_occurrence=max_occurrence,
                     )
+
+                    if n_vev == 0:
+                        logger.debug("No VEVENTs found after expansion for %r, skipping", item.href)
+                        continue
+
                     n_vevents += n_vev
                     found_props.append(expanded_element)
                 else:
