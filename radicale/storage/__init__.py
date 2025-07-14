@@ -28,7 +28,7 @@ import json
 import xml.etree.ElementTree as ET
 from hashlib import sha256
 from typing import (Callable, ContextManager, Iterable, Iterator, Mapping,
-                    Optional, Sequence, Set, Tuple, Union, overload)
+                    Optional, Sequence, Set, Tuple, Union, overload, Dict, List)
 
 import vobject
 
@@ -175,8 +175,11 @@ class BaseCollection:
         return False
 
     def upload(self, href: str, item: "radicale_item.Item") -> (
-            "radicale_item.Item"):
-        """Upload a new or replace an existing item."""
+            "radicale_item.Item", Optional["radicale_item.Item"]):
+        """Upload a new or replace an existing item.
+
+        Return the uploaded item and the old item if it was replaced.
+        """
         raise NotImplementedError
 
     def delete(self, href: Optional[str] = None) -> None:
@@ -328,7 +331,8 @@ class BaseStorage:
     def create_collection(
             self, href: str,
             items: Optional[Iterable["radicale_item.Item"]] = None,
-            props: Optional[Mapping[str, str]] = None) -> BaseCollection:
+            props: Optional[Mapping[str, str]] = None) -> (
+            Tuple)[BaseCollection, Dict[str, "radicale_item.Item"], List[str]]:
         """Create a collection.
 
         ``href`` is the sanitized path.

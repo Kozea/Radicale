@@ -102,9 +102,9 @@ class ApplicationPartProppatch(ApplicationBase):
                                            item)
                 if xml_content is not None:
                     hook_notification_item = HookNotificationItem(
-                        HookNotificationItemTypes.CPATCH,
-                        access.path,
-                        DefusedET.tostring(
+                        notification_item_type=HookNotificationItemTypes.CPATCH,
+                        path=access.path,
+                        new_content=DefusedET.tostring(
                             xml_content,
                             encoding=self._encoding
                         ).decode(encoding=self._encoding)

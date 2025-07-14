@@ -243,14 +243,27 @@ class ApplicationPartPut(ApplicationBase):
 
             if write_whole_collection:
                 try:
-                    etag = self._storage.create_collection(
-                        path, prepared_items, props).etag
+                    col, replaced_items, new_item_hrefs = self._storage.create_collection(
+                        href=path,
+                        items=prepared_items,
+                        props=props)
                     for item in prepared_items:
-                        hook_notification_item = HookNotificationItem(
-                            HookNotificationItemTypes.UPSERT,
-                            access.path,
-                            item.serialize()
-                        )
+                        # Try to grab the previously-existing item by href
+                        existing_item = replaced_items.get(item.href, None)
+                        if existing_item:
+                            hook_notification_item = HookNotificationItem(
+                                notification_item_type=HookNotificationItemTypes.UPSERT,
+                                path=access.path,
+                                old_content=existing_item.serialize(),
+                                new_content=item.serialize()
+                            )
+                        else:  # We assume the item is new because it was not in the replaced_items
+                            hook_notification_item = HookNotificationItem(
+                                notification_item_type=HookNotificationItemTypes.UPSERT,
+                                path=access.path,
+                                old_content=None,
+                                new_content=item.serialize()
+                            )
                         self._hook.notify(hook_notification_item)
                 except ValueError as e:
                     logger.warning(
@@ -267,12 +280,23 @@ class ApplicationPartPut(ApplicationBase):
 
                 href = posixpath.basename(pathutils.strip_path(path))
                 try:
-                    etag = parent_item.upload(href, prepared_item).etag
-                    hook_notification_item = HookNotificationItem(
-                        HookNotificationItemTypes.UPSERT,
-                        access.path,
-                        prepared_item.serialize()
-                    )
+                    uploaded_item, replaced_item = parent_item.upload(href, prepared_item)
+                    etag = uploaded_item.etag
+                    if replaced_item:
+                        # If the item was replaced, we notify with the old content
+                        hook_notification_item = HookNotificationItem(
+                            notification_item_type=HookNotificationItemTypes.UPSERT,
+                            path=access.path,
+                            old_content=replaced_item.serialize(),
+                            new_content=prepared_item.serialize()
+                        )
+                    else:  # If it was a new item, we notify with no old content
+                        hook_notification_item = HookNotificationItem(
+                            notification_item_type=HookNotificationItemTypes.UPSERT,
+                            path=access.path,
+                            old_content=None,
+                            new_content=prepared_item.serialize()
+                        )
                     self._hook.notify(hook_notification_item)
                 except ValueError as e:
                     # return better matching HTTP result in case errno is provided and catched
