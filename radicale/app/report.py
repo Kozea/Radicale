@@ -349,9 +349,11 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         assert item.href
         uri = pathutils.unstrip_path(
             posixpath.join(collection.path, item.href))
-        multistatus.append(xml_item_response(
-            base_prefix, uri, found_props=found_props,
-            not_found_props=not_found_props, found_item=True))
+
+        if found_props or not_found_props:
+            multistatus.append(xml_item_response(
+                base_prefix, uri, found_props=found_props,
+                not_found_props=not_found_props, found_item=True))
 
     return client.MULTI_STATUS, multistatus
 
