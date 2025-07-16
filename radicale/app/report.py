@@ -228,22 +228,25 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
     expand = root.find(".//" + xmlutils.make_clark("C:expand"))
 
     # if we have expand prop we use "filter (except time range) -> expand -> filter (only time range)" approach
-    time_range_element = None
+    vevent_time_range = None
     main_filters = []
     for filter_ in filters:
-        # extract time-range filter for processing after main filters
-        # for expand request
-        time_range_element = filter_.find(".//" + xmlutils.make_clark("C:time-range"))
+        if expand is not None:
+            for comp_filter in filter_.findall(".//" + xmlutils.make_clark("C:comp-filter")):
+                if comp_filter.get("name", "").upper() == "VEVENT":
+                    vevent_time_range = comp_filter.find(".//" + xmlutils.make_clark("C:time-range"))
+                    if vevent_time_range is not None:
+                        comp_filter.remove(vevent_time_range)
+                    break
 
-        if expand is None or time_range_element is None:
-            main_filters.append(filter_)
+        main_filters.append(filter_)
 
     # Extract requested component types from filters
     requested_components = set()
     has_vcalendar_filter = False
     for filter_ in filters:
         for comp_filter in filter_.findall(".//" + xmlutils.make_clark("C:comp-filter")):
-            component_name = comp_filter.get("name")
+            component_name = comp_filter.get("name", "").upper()
             if component_name:
                 if component_name == "VCALENDAR":
                     has_vcalendar_filter = True
@@ -316,8 +319,8 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                     time_range_start = None
                     time_range_end = None
 
-                    if time_range_element is not None:
-                        time_range_start, time_range_end = radicale_filter.parse_time_range(time_range_element)
+                    if vevent_time_range is not None:
+                        time_range_start, time_range_end = radicale_filter.parse_time_range(vevent_time_range)
 
                     (expanded_element, n_vev) = _expand(
                         element=element, item=copy.copy(item),
