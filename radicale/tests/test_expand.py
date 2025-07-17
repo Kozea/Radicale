@@ -347,3 +347,114 @@ permissions: RrWw""")
                                         check=check)
         assert len(responses) == 0
         assert status == check
+
+    def test_report_vcalendar_all_components(self) -> None:
+        """Test calendar-query with comp-filter VCALENDAR, returns all components."""
+        self.mkcalendar("/test/")
+        self.put("/test/calendar.ics", get_file_content("event_daily_rrule.ics"))
+        self.put("/test/todo.ics", get_file_content("todo1.ics"))
+
+        request = """
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <C:calendar-data/>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR"/>
+            </C:filter>
+        </C:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        assert len(responses) == 2
+        assert "/test/calendar.ics" in responses
+        assert "/test/todo.ics" in responses
+
+    def test_report_vevent_only(self) -> None:
+        """Test calendar-query with comp-filter VEVENT, returns only VEVENT."""
+        self.mkcalendar("/test/")
+        self.put("/test/calendar.ics", get_file_content("event_daily_rrule.ics"))
+        self.put("/test/todo.ics", get_file_content("todo1.ics"))
+
+        request = """
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <C:calendar-data/>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                    <C:comp-filter name="VEVENT"/>
+                </C:comp-filter>
+            </C:filter>
+        </C:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        assert len(responses) == 1
+        assert "/test/calendar.ics" in responses
+        vevent_response = responses["/test/calendar.ics"]
+        status, element = vevent_response["C:calendar-data"]
+        assert status == 200 and element.text
+        assert "BEGIN:VEVENT" in element.text
+        assert "UID:" in element.text
+        assert "BEGIN:VTODO" not in element.text
+
+    def test_report_time_range_no_vevent(self) -> None:
+        """Test calendar-query with time-range filter, no matching VEVENT."""
+        self.mkcalendar("/test/")
+        self.put("/test/calendar.ics/", get_file_content("event_daily_rrule.ics"))
+
+        request = """
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <C:calendar-data>
+                    <C:expand start="20000101T000000Z" end="20000105T000000Z"/>
+                </C:calendar-data>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                    <C:comp-filter name="VEVENT">
+                        <C:time-range start="20000101T000000Z" end="20000105T000000Z"/>
+                    </C:comp-filter>
+                </C:comp-filter>
+            </C:filter>
+        </C:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        assert len(responses) == 0
+
+    def test_report_time_range_one_vevent(self) -> None:
+        """Test calendar-query with time-range filter, matches one VEVENT."""
+        self.mkcalendar("/test/")
+        self.put("/test/calendar1.ics/", get_file_content("event_daily_rrule.ics"))
+        self.put("/test/calendar2.ics/", get_file_content("event1.ics"))
+
+        start = "20060101T000000Z"
+        end = "20060104T000000Z"
+
+        request = f"""
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <C:calendar-data>
+                    <C:expand start="{start}" end="{end}"/>
+                </C:calendar-data>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                    <C:comp-filter name="VEVENT">
+                        <C:time-range start="{start}" end="{end}"/>
+                    </C:comp-filter>
+                </C:comp-filter>
+            </C:filter>
+        </C:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        assert len(responses) == 1
+        response = responses["/test/calendar1.ics"]
+        status, element = response["C:calendar-data"]
+        assert status == 200 and element.text
+        assert "BEGIN:VEVENT" in element.text
+        assert "RECURRENCE-ID:20060103T170000Z" in element.text
+        assert "DTSTART:20060103T170000Z" in element.text
