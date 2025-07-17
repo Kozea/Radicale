@@ -393,6 +393,7 @@ permissions: RrWw""")
         assert len(responses) == 1
         assert "/test/calendar.ics" in responses
         vevent_response = responses["/test/calendar.ics"]
+        assert type(vevent_response) is dict
         status, element = vevent_response["C:calendar-data"]
         assert status == 200 and element.text
         assert "BEGIN:VEVENT" in element.text
@@ -453,6 +454,7 @@ permissions: RrWw""")
         assert status == 207
         assert len(responses) == 1
         response = responses["/test/calendar1.ics"]
+        assert type(response) is dict
         status, element = response["C:calendar-data"]
         assert status == 200 and element.text
         assert "BEGIN:VEVENT" in element.text
