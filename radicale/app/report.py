@@ -233,22 +233,17 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
     for filter_ in filters:
         # extract time-range filter for processing after main filters
         # for expand request
-        time_range_element = filter_.find(".//" + xmlutils.make_clark("C:time-range"))
+        filter_copy = copy.deepcopy(filter_)
 
-        if expand is None or time_range_element is None:
-            main_filters.append(filter_)
+        if expand is not None:
+            for comp_filter in filter_copy.findall(".//" + xmlutils.make_clark("C:comp-filter")):
+                if comp_filter.get("name", "").upper() == "VCALENDAR":
+                    continue
+                time_range_element = comp_filter.find(xmlutils.make_clark("C:time-range"))
+                if time_range_element is not None:
+                    comp_filter.remove(time_range_element)
 
-    # Extract requested component types from filters
-    requested_components = set()
-    has_vcalendar_filter = False
-    for filter_ in filters:
-        for comp_filter in filter_.findall(".//" + xmlutils.make_clark("C:comp-filter")):
-            component_name = comp_filter.get("name", "").upper()
-            if component_name:
-                if component_name == "VCALENDAR":
-                    has_vcalendar_filter = True
-                else:
-                    requested_components.add(component_name)
+        main_filters.append(filter_copy)
 
     # Retrieve everything required for finishing the request.
     retrieved_items = list(retrieve_items(
@@ -274,13 +269,6 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
             except Exception as e:
                 raise RuntimeError("Failed to filter item %r from %r: %s" %
                                    (item.href, collection.path, e)) from e
-
-        # Skip items that don't match requested component types, unless VCALENDAR filter allows all components
-        if requested_components and not has_vcalendar_filter:
-            if item.component_name not in requested_components:
-                logger.debug("Skipping component %r (type: %s) as it doesn't match requested components %s",
-                             item.href, item.component_name, requested_components)
-                continue
 
         found_props = []
         not_found_props = []
@@ -366,6 +354,8 @@ def _expand(
 ) -> Tuple[ET.Element, int]:
     vevent_component: vobject.base.Component = copy.copy(item.vobject_item)
     logger.info("Expanding event %s", item.href)
+    logger.debug(f"Expand range: {start} to {end}")
+    logger.debug(f"Time range: {time_range_start} to {time_range_end}")
 
     # Split the vevents included in the component into one that contains the
     # recurrence information and others that contain a recurrence id to

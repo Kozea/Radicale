@@ -376,14 +376,21 @@ permissions: RrWw""")
         self.put("/test/calendar.ics", get_file_content("event_daily_rrule.ics"))
         self.put("/test/todo.ics", get_file_content("todo1.ics"))
 
-        request = """
+        start = "20060101T000000Z"
+        end = "20060104T000000Z"
+
+        request = f"""
         <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
             <D:prop>
-                <C:calendar-data/>
+                <C:calendar-data>
+                    <C:expand start="{start}" end="{end}"/>
+                </C:calendar-data>
             </D:prop>
             <C:filter>
                 <C:comp-filter name="VCALENDAR">
-                    <C:comp-filter name="VEVENT"/>
+                    <C:comp-filter name="VEVENT">
+                        <C:time-range start="{start}" end="{end}"/>
+                    </C:comp-filter>
                 </C:comp-filter>
             </C:filter>
         </C:calendar-query>
