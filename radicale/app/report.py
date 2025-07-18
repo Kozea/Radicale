@@ -233,10 +233,17 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
     for filter_ in filters:
         # extract time-range filter for processing after main filters
         # for expand request
-        time_range_element = filter_.find(".//" + xmlutils.make_clark("C:time-range"))
+        filter_copy = copy.deepcopy(filter_)
 
-        if expand is None or time_range_element is None:
-            main_filters.append(filter_)
+        if expand is not None:
+            for comp_filter in filter_copy.findall(".//" + xmlutils.make_clark("C:comp-filter")):
+                if comp_filter.get("name", "").upper() == "VCALENDAR":
+                    continue
+                time_range_element = comp_filter.find(xmlutils.make_clark("C:time-range"))
+                if time_range_element is not None:
+                    comp_filter.remove(time_range_element)
+
+        main_filters.append(filter_copy)
 
     # Retrieve everything required for finishing the request.
     retrieved_items = list(retrieve_items(
@@ -306,6 +313,11 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                         time_range_start=time_range_start, time_range_end=time_range_end,
                         max_occurrence=max_occurrence,
                     )
+
+                    if n_vev == 0:
+                        logger.debug("No VEVENTs found after expansion for %r, skipping", item.href)
+                        continue
+
                     n_vevents += n_vev
                     found_props.append(expanded_element)
                 else:
@@ -322,9 +334,11 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         assert item.href
         uri = pathutils.unstrip_path(
             posixpath.join(collection.path, item.href))
-        multistatus.append(xml_item_response(
-            base_prefix, uri, found_props=found_props,
-            not_found_props=not_found_props, found_item=True))
+
+        if found_props or not_found_props:
+            multistatus.append(xml_item_response(
+                base_prefix, uri, found_props=found_props,
+                not_found_props=not_found_props, found_item=True))
 
     return client.MULTI_STATUS, multistatus
 
@@ -340,6 +354,8 @@ def _expand(
 ) -> Tuple[ET.Element, int]:
     vevent_component: vobject.base.Component = copy.copy(item.vobject_item)
     logger.info("Expanding event %s", item.href)
+    logger.debug(f"Expand range: {start} to {end}")
+    logger.debug(f"Time range: {time_range_start} to {time_range_end}")
 
     # Split the vevents included in the component into one that contains the
     # recurrence information and others that contain a recurrence id to
