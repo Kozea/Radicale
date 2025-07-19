@@ -2262,6 +2262,17 @@ You can also download the content of the repository as an
 You can find the source packages of all releases on
 [GitHub](https://github.com/Kozea/Radicale/releases).
 
+#### Docker
+
+Radicale is available as a [Docker image](https://github.com/Kozea/Radicale/pkgs/container/radicale) for platforms `linux/amd64` and `linux/arm64`. To install the latest version, run:
+
+```bash
+docker pull ghcr.io/kozea/radicale:latest
+```
+
+An example `docker-compose.yml` and detailed instructions will soon be updated.
+
+
 #### Linux Distribution Packages
 
 Radicale has been packaged for:
@@ -2287,8 +2298,7 @@ Radicale has been packaged for:
   Smedegaard
 
 Radicale is also
-[available on Cloudron](https://cloudron.io/button.html?app=org.radicale.cloudronapp2)
-and has a Dockerfile.
+[available on Cloudron](https://cloudron.io/button.html?app=org.radicale.cloudronapp2).
 
 If you are interested in creating packages for other Linux distributions, read
 the ["Contribute" section](#contribute).
