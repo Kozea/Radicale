@@ -272,6 +272,12 @@
 # Value: debug | info | warning | error | critical
 #level = info
 
+# do not filter debug messages starting with 'TRACE'
+#trace_on_debug = False
+
+# filter debug messages starting with 'TRACE/<TOKEN>'
+#trace_filter = ""
+
 # Don't include passwords in logs
 #mask_passwords = True
 

@@ -165,7 +165,10 @@ def run() -> None:
         sys.exit(1)
 
     # Configure logging
-    log.set_level(cast(str, configuration.get("logging", "level")), configuration.get("logging", "backtrace_on_debug"))
+    log.set_level(cast(str, configuration.get("logging", "level")),
+                  configuration.get("logging", "backtrace_on_debug"),
+                  configuration.get("logging", "trace_on_debug"),
+                  configuration.get("logging", "trace_filter"))
 
     # Log configuration after logger is configured
     default_config_active = True

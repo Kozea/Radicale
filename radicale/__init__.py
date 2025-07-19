@@ -52,7 +52,10 @@ def _get_application_instance(config_path: str, wsgi_errors: types.ErrorStream
                 configuration = config.load(config.parse_compound_paths(
                     config.DEFAULT_CONFIG_PATH,
                     config_path))
-                log.set_level(cast(str, configuration.get("logging", "level")), configuration.get("logging", "backtrace_on_debug"))
+                log.set_level(cast(str, configuration.get("logging", "level")),
+                              configuration.get("logging", "backtrace_on_debug"),
+                              configuration.get("logging", "trace_on_debug"),
+                              configuration.get("logging", "trace_filter"))
                 # Log configuration after logger is configured
                 default_config_active = True
                 for source, miss in configuration.sources():
