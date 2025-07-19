@@ -1420,6 +1420,24 @@ Available levels: **debug**, **info**, **warning**, **error**, **critical**
 
 Default: `warning` _(< 3.2.0)_ `info` _(>= 3.2.0)_
 
+##### trace_on_debug
+
+_(> 3.5.4)_
+
+Do not filter debug messages starting with 'TRACE'
+
+Default: `False`
+
+##### trace_filter
+
+_(> 3.5.4)_
+
+Filter debug messages starting with 'TRACE/<TOKEN>'
+
+Precondition: `trace_on_debug = True`
+
+Default: (empty)
+
 ##### mask_passwords
 
 Don't include passwords in logs.

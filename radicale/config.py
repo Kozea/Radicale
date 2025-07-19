@@ -509,6 +509,14 @@ This is an automated message. Please do not reply.""",
             "value": "info",
             "help": "threshold for the logger",
             "type": logging_level}),
+        ("trace_on_debug", {
+            "value": "False",
+            "help": "do not filter debug messages starting with 'TRACE'",
+            "type": bool}),
+        ("trace_filter", {
+            "value": "",
+            "help": "filter debug messages starting with 'TRACE/<TOKEN>'",
+            "type": str}),
         ("bad_put_request_content", {
             "value": "False",
             "help": "log bad PUT request content",
