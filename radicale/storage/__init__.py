@@ -2,7 +2,7 @@
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ from radicale import item as radicale_item
 from radicale import types, utils
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
+from radicale.utils import format_ut
 
 INTERNAL_TYPES: Sequence[str] = ("multifilesystem", "multifilesystem_nolock",)
 
@@ -153,12 +154,17 @@ class BaseCollection:
             return
         tag, start, end, simple = radicale_filter.simplify_prefilters(
             filters, self.tag)
+        logger.debug("TRACE/STORAGE/get_filtered: prefilter tag=%s start=%s end=%s simple=%s", tag, format_ut(start), format_ut(end), simple)
         for item in self.get_all():
+            logger.debug("TRACE/STORAGE/get_filtered: component_name=%s tag=%s", item.component_name, tag)
             if tag is not None and tag != item.component_name:
                 continue
             istart, iend = item.time_range
+            logger.debug("TRACE/STORAGE/get_filtered: istart=%s iend=%s", format_ut(istart), format_ut(iend))
             if istart >= end or iend <= start:
+                logger.debug("TRACE/STORAGE/get_filtered: skip iuid=%s", item.uid)
                 continue
+            logger.debug("TRACE/STORAGE/get_filtered: add iuid=%s", item.uid)
             yield item, simple and (start <= istart or iend <= end)
 
     def has_uid(self, uid: str) -> bool:
