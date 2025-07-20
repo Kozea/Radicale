@@ -252,6 +252,9 @@ def user_groups_as_string():
 
 
 def format_ut(unixtime: int) -> str:
+    if sys.platform == "win32":
+        # TODO check how to support this better
+        return str(unixtime)
     if unixtime < DATETIME_MAX_UNIXTIME:
         if sys.version_info < (3, 11):
             dt = datetime.datetime.utcfromtimestamp(unixtime)
