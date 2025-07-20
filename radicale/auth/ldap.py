@@ -233,12 +233,16 @@ class Auth(auth.BaseAuth):
         """Search the user dn"""
         escaped_login = self.ldap3.utils.conv.escape_filter_chars(login)
         logger.debug(f"_login3 login escaped for LDAP filters: {escaped_login}")
-        conn.search(
-            search_base=self._ldap_base,
-            search_filter=self._ldap_filter.format(escaped_login),
-            search_scope=self.ldap3.SUBTREE,
-            attributes=self._ldap_attributes
-        )
+        try:
+            conn.search(
+                search_base=self._ldap_base,
+                search_filter=self._ldap_filter.format(escaped_login),
+                search_scope=self.ldap3.SUBTREE,
+                attributes=self._ldap_attributes
+            )
+        except Exception as e:
+            logger.error(f"_login3 LDAP search for {login} failed: {e}")
+            return ""
         if len(conn.entries) != 1:
             """User could not be found unambiguously"""
             logger.debug(f"_login3 no unique DN found for '{login}'")
