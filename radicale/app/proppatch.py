@@ -101,13 +101,17 @@ class ApplicationPartProppatch(ApplicationBase):
                 xml_answer = xml_proppatch(base_prefix, path, xml_content,
                                            item)
                 if xml_content is not None:
+                    content = DefusedET.tostring(
+                        xml_content,
+                        encoding=self._encoding
+                    ).decode(encoding=self._encoding)
                     hook_notification_item = HookNotificationItem(
                         notification_item_type=HookNotificationItemTypes.CPATCH,
                         path=access.path,
-                        new_content=DefusedET.tostring(
-                            xml_content,
-                            encoding=self._encoding
-                        ).decode(encoding=self._encoding)
+                        content=content,
+                        uid=None,
+                        old_content=None,
+                        new_content=content
                     )
                     self._hook.notify(hook_notification_item)
             except ValueError as e:
