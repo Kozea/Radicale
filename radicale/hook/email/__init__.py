@@ -91,13 +91,13 @@ This is an automated message. Please do not reply.""",
         },
         "updated_event_template": {
             "value": """Hello $attendee_name,
-            
+
 The following event has been updated.
 
     $event_title
     $event_start_time - $event_end_time
     $event_location
-    
+
 This is an automated message. Please do not reply.""",
             "type": str
         },
