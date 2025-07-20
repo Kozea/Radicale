@@ -16,6 +16,8 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import enum
+import hashlib
+import json
 import re
 import smtplib
 import ssl
@@ -88,7 +90,9 @@ This is an automated message. Please do not reply.""",
         },
         "updated_event_template": {
             "value": """Hello $attendee_name,
+            
 The following event has been updated.
+
     $event_title
     $event_start_time - $event_end_time
     $event_location
@@ -201,6 +205,42 @@ def determine_added_removed_and_unaltered_attendees(original_event: 'Event',
                            email in new_event_attendees]
 
     return added_attendees, removed_attendees, unaltered_attendees
+
+
+def event_details_other_than_attendees_changed(original_event: 'Event',
+                                               new_event: 'Event') -> bool:
+    """
+    Check if any details other than attendees and IDs have changed between two events.
+    """
+    def hash_dict(d: Dict[str, Any]) -> str:
+        """
+        Create a hash of the dictionary to compare contents.
+        This will ignore None values and empty strings.
+        """
+        return hashlib.sha1(json.dumps(d).encode("utf8")).hexdigest()
+
+    original_event_details = {
+        "summary": original_event.summary,
+        "description": original_event.description,
+        "location": original_event.location,
+        "datetime_start": original_event.datetime_start.time_string() if original_event.datetime_start else None,
+        "datetime_end": original_event.datetime_end.time_string() if original_event.datetime_end else None,
+        "duration": original_event.duration,
+        "status": original_event.status,
+        "organizer": original_event.organizer
+    }
+    new_event_details = {
+        "summary": new_event.summary,
+        "description": new_event.description,
+        "location": new_event.location,
+        "datetime_start": new_event.datetime_start.time_string() if new_event.datetime_start else None,
+        "datetime_end": new_event.datetime_end.time_string() if new_event.datetime_end else None,
+        "duration": new_event.duration,
+        "status": new_event.status,
+        "organizer": new_event.organizer
+    }
+
+    return hash_dict(original_event_details) != hash_dict(new_event_details)
 
 
 class ContentLine:
@@ -454,6 +494,11 @@ class Event(VComponent):
         return self._get_content_lines("SUMMARY")[0].value
 
     @property
+    def description(self) -> Optional[str]:
+        """Return the description of the event."""
+        return self._get_content_lines("DESCRIPTION")[0].value
+
+    @property
     def location(self) -> Optional[str]:
         """Return the location of the event."""
         return self._get_content_lines("LOCATION")[0].value
@@ -684,7 +729,8 @@ class EmailConfig:
         """
         ics_attachment = ICSEmailAttachment(file_content=event.ics_content, file_name=f"{event.file_name}")
 
-        return self._prepare_and_send_email(template=self.new_or_added_to_event_template, attendees=attendees, event=event,
+        return self._prepare_and_send_email(template=self.new_or_added_to_event_template, attendees=attendees,
+                                            event=event,
                                             ics_attachment=ics_attachment)
 
     def send_updated_email(self, attendees: List[Attendee], event: EmailEvent) -> bool:
@@ -706,7 +752,8 @@ class EmailConfig:
         :param event: The event being deleted (or the event the attendee is being removed from).
         :return: True if the email was sent successfully, False otherwise.
         """
-        return self._prepare_and_send_email(template=self.deleted_or_removed_from_event_template, attendees=attendees, event=event,
+        return self._prepare_and_send_email(template=self.deleted_or_removed_from_event_template, attendees=attendees,
+                                            event=event,
                                             ics_attachment=None)
 
     def _prepare_and_send_email(self, template: MessageTemplate, attendees: List[Attendee],
@@ -933,7 +980,8 @@ class Hook(BaseHook):
                     event=email_event
                 )
                 if not email_success:
-                    logger.error("Failed to send some or all added email notifications for event: %s", email_event.event.uid)
+                    logger.error("Failed to send some or all added email notifications for event: %s",
+                                 email_event.event.uid)
                 return
 
             # Dealing with an update to an existing event, compare new and previous content.
@@ -947,7 +995,8 @@ class Hook(BaseHook):
                     event=email_event
                 )
                 if not email_success:
-                    logger.error("Failed to send some or all added email notifications for event: %s", email_event.event.uid)
+                    logger.error("Failed to send some or all added email notifications for event: %s",
+                                 email_event.event.uid)
                 return
 
             # Determine added, removed, and unaltered attendees
@@ -961,7 +1010,8 @@ class Hook(BaseHook):
                     event=email_event
                 )
                 if not email_success:
-                    logger.error("Failed to send some or all added email notifications for event: %s", email_event.event.uid)
+                    logger.error("Failed to send some or all added email notifications for event: %s",
+                                 email_event.event.uid)
 
             # Notify removed attendees as "event deleted"
             if removed_attendees:
@@ -970,18 +1020,22 @@ class Hook(BaseHook):
                     event=email_event
                 )
                 if not email_success:
-                    logger.error("Failed to send some or all removed email notifications for event: %s", email_event.event.uid)
+                    logger.error("Failed to send some or all removed email notifications for event: %s",
+                                 email_event.event.uid)
 
-            # Notify unaltered attendees as "event updated"
-            if unaltered_attendees:
-                # TODO: Determine WHAT was updated in the event and send a more specific message if needed
-                # TODO: Don't send an email to unaltered attendees if only change was adding/removing other attendees
+            # Notify unaltered attendees as "event updated" if details other than attendees have changed
+            if unaltered_attendees and event_details_other_than_attendees_changed(original_event=previous_event,
+                                                                                  new_event=new_event):
                 email_success: bool = self.email_config.send_updated_email(  # type: ignore
                     attendees=unaltered_attendees,
                     event=email_event
                 )
                 if not email_success:
-                    logger.error("Failed to send some or all updated email notifications for event: %s", email_event.event.uid)
+                    logger.error("Failed to send some or all updated email notifications for event: %s",
+                                 email_event.event.uid)
+
+            # Skip sending notifications to existing attendees if the only changes made to the event
+            # were the addition/removal of other attendees.
 
             return
 
@@ -1002,7 +1056,8 @@ class Hook(BaseHook):
                 event=email_event
             )
             if not email_success:
-                logger.error("Failed to send some or all deleted email notifications for event: %s", email_event.event.uid)
+                logger.error("Failed to send some or all deleted email notifications for event: %s",
+                             email_event.event.uid)
 
             return
 
