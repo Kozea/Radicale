@@ -227,7 +227,7 @@ def user_groups_as_string():
         egid = os.getegid()
         try:
             username = pwd.getpwuid(euid)[0]
-        except:
+        except Exception:
             # name of user not found
             s = "user=(%d) group=(%d)" % (euid, egid)
             return s
