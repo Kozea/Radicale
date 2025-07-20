@@ -622,7 +622,14 @@ def simplify_prefilters(filters: Iterable[ET.Element], collection_tag: str
             continue
         simple &= len(col_filter) <= 1
         for comp_filter in col_filter:
+            logger.debug("TRACE/ITEM/FILTER/simplify_prefilters: filter.tag=%s simple=%s", comp_filter.tag, simple)
+            if comp_filter.tag == xmlutils.make_clark("C:time-range") and simple is True:
+                # time-filter found on level 0
+                start, end = time_range_timestamps(comp_filter)
+                logger.debug("TRACE/ITEM/FILTER/simplify_prefilters: found time-filter on level 0 start=%r(%d) end=%r(%d) simple=%s", format_ut(start), start, format_ut(end), end, simple)
+                return None, start, end, simple
             if comp_filter.tag != xmlutils.make_clark("C:comp-filter"):
+                logger.debug("TRACE/ITEM/FILTER/simplify_prefilters: no comp-filter on level 0")
                 simple = False
                 continue
             tag = comp_filter.get("name", "").upper()
