@@ -246,6 +246,7 @@ plugins</a></li>
 Repository</a></li>
 <li class="level4"><a href="#source-packages" id="toc-source-packages">Source
 Packages</a></li>
+<li class="level4"><a href="#docker" id="toc-docker">Docker</a></li>
 <li class="level4"><a href="#linux-distribution-packages" id="toc-linux-distribution-packages">Linux Distribution
 Packages</a></li>
 </ul></li>
@@ -2239,6 +2240,15 @@ GitHub</a>, or install it directly with:</p>
 <h4>Source Packages <a class="headerlink" href="#source-packages">&para;</a></h4>
 <p>You can find the source packages of all releases on <a href="https://github.com/Kozea/Radicale/releases">GitHub</a>.</p>
 </section>
+<section class="level4" id="docker">
+<h4>Docker <a class="headerlink" href="#docker">&para;</a></h4>
+<p>Radicale is available as a <a href="https://github.com/Kozea/Radicale/pkgs/container/radicale">Docker
+image</a> for platforms <code>linux/amd64</code> and
+<code>linux/arm64</code>. To install the latest version, run:</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb59-1"><a aria-hidden="true" href="#cb59-1" tabindex="-1"></a><span class="ex">docker</span> pull ghcr.io/kozea/radicale:latest</span></code></pre></div>
+<p>An example <code>docker-compose.yml</code> and detailed instructions
+will soon be updated.</p>
+</section>
 <section class="level4" id="linux-distribution-packages">
 <h4>Linux Distribution Packages <a class="headerlink" href="#linux-distribution-packages">&para;</a></h4>
 <p>Radicale has been packaged for:</p>
@@ -2265,7 +2275,7 @@ by Johannes Sch&ouml;pfer</li>
 and Jonas Smedegaard</li>
 </ul>
 <p>Radicale is also <a href="https://cloudron.io/button.html?app=org.radicale.cloudronapp2">available
-on Cloudron</a> and has a Dockerfile.</p>
+on Cloudron</a>.</p>
 <p>If you are interested in creating packages for other Linux
 distributions, read the <a href="#contribute">"Contribute"
 section</a>.</p>
