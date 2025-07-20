@@ -144,13 +144,24 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
                 trigger = subcomp.trigger.value
     for child in filter_:
         if child.tag == xmlutils.make_clark("C:prop-filter"):
+            logger.debug("TRACE/ITEM/FILTER/comp_match: prop-filter level=%d", level)
             if not any(prop_match(comp, child, "C")
                        for comp in components):
                 return False
         elif child.tag == xmlutils.make_clark("C:time-range"):
+            logger.debug("TRACE/ITEM/FILTER/comp_match: time-range level=%d tag=%s", level, tag)
+            if (level == 0) and (name == "VCALENDAR"):
+                for name_try in ("VTODO", "VEVENT", "VJOURNAL"):
+                    try:
+                        if time_range_match(item.vobject_item, filter_[0], name_try, trigger):
+                            return True
+                    except Exception:
+                        continue
+                return False
             if not time_range_match(item.vobject_item, filter_[0], tag, trigger):
                 return False
         elif child.tag == xmlutils.make_clark("C:comp-filter"):
+            logger.debug("TRACE/ITEM/FILTER/comp_match: comp-filter level=%d", level)
             if not comp_match(item, child, level=level + 1):
                 return False
         else:
