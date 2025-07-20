@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
 import os
 import ssl
 import sys
@@ -44,6 +45,10 @@ RADICALE_MODULES: Sequence[str] = ("radicale", "vobject", "passlib", "defusedxml
 # IPv4 (host, port) and IPv6 (host, port, flowinfo, scopeid)
 ADDRESS_TYPE = Union[Tuple[Union[str, bytes, bytearray], int],
                      Tuple[str, int, int, int]]
+
+
+# Max YEAR in datetime in unixtime
+DATETIME_MAX_UNIXTIME: int = (datetime.MAXYEAR - 1970) * 365 * 24 * 60 * 60
 
 
 def load_plugin(internal_types: Sequence[str], module_name: str,
@@ -244,3 +249,12 @@ def user_groups_as_string():
         username = os.getlogin()
         s = "user=%s" % (username)
     return s
+
+
+def format_ut(unixtime: int) -> str:
+    if unixtime < DATETIME_MAX_UNIXTIME:
+        dt = datetime.datetime.fromtimestamp(unixtime, datetime.UTC)
+        r = str(unixtime) + "(" + dt.strftime('%Y-%m-%dT%H:%M:%SZ') + ")"
+    else:
+        r = str(unixtime) + "(>MAX:" + str(DATETIME_MAX_UNIXTIME) + ")"
+    return r
