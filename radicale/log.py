@@ -57,7 +57,34 @@ class RemoveTracebackFilter(logging.Filter):
         return True
 
 
+class RemoveTRACEFilter(logging.Filter):
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.msg.startswith("TRACE"):
+            return False
+        else:
+            return True
+
+
+class PassTRACETOKENFilter(logging.Filter):
+    def __init__(self, trace_filter: str):
+        super().__init__()
+        self.trace_filter = trace_filter
+        self.prefix = "TRACE/" + self.trace_filter
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.msg.startswith("TRACE"):
+            if record.msg.startswith(self.prefix):
+                return True
+            else:
+                return False
+        else:
+            return True
+
+
 REMOVE_TRACEBACK_FILTER: logging.Filter = RemoveTracebackFilter()
+
+REMOVE_TRACE_FILTER: logging.Filter = RemoveTRACEFilter()
 
 
 class IdentLogRecordFactory:
@@ -231,7 +258,7 @@ logger_display_backtrace_disabled: bool = False
 logger_display_backtrace_enabled: bool = False
 
 
-def set_level(level: Union[int, str], backtrace_on_debug: bool) -> None:
+def set_level(level: Union[int, str], backtrace_on_debug: bool, trace_on_debug: bool = False, trace_filter: str = "") -> None:
     """Set logging level for global logger."""
     global logger_display_backtrace_disabled
     global logger_display_backtrace_enabled
@@ -255,3 +282,14 @@ def set_level(level: Union[int, str], backtrace_on_debug: bool) -> None:
                 logger.debug("Logging of backtrace is enabled by option in this loglevel")
                 logger_display_backtrace_enabled = True
             logger.removeFilter(REMOVE_TRACEBACK_FILTER)
+        if trace_on_debug:
+            if trace_filter != "":
+                logger.debug("Logging messages starting with 'TRACE/%s' enabled", trace_filter)
+                logger.addFilter(PassTRACETOKENFilter(trace_filter))
+                logger.removeFilter(REMOVE_TRACE_FILTER)
+            else:
+                logger.debug("Logging messages starting with 'TRACE' enabled")
+                logger.removeFilter(REMOVE_TRACE_FILTER)
+        else:
+            logger.debug("Logging messages starting with 'TRACE' disabled")
+            logger.addFilter(REMOVE_TRACE_FILTER)
