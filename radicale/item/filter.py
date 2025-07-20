@@ -32,6 +32,7 @@ import vobject
 
 from radicale import item, xmlutils
 from radicale.log import logger
+from radicale.utils import format_ut
 
 DAY: timedelta = timedelta(days=1)
 SECOND: timedelta = timedelta(seconds=1)
@@ -98,6 +99,7 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
     # HACK: the filters are tested separately against all components
 
     name = filter_.get("name", "").upper()
+    logger.debug("TRACE/ITEM/FILTER/comp_match: name=%s level=%d", name, level)
 
     if level == 0:
         tag = item.name
@@ -142,13 +144,24 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
                 trigger = subcomp.trigger.value
     for child in filter_:
         if child.tag == xmlutils.make_clark("C:prop-filter"):
+            logger.debug("TRACE/ITEM/FILTER/comp_match: prop-filter level=%d", level)
             if not any(prop_match(comp, child, "C")
                        for comp in components):
                 return False
         elif child.tag == xmlutils.make_clark("C:time-range"):
+            logger.debug("TRACE/ITEM/FILTER/comp_match: time-range level=%d tag=%s", level, tag)
+            if (level == 0) and (name == "VCALENDAR"):
+                for name_try in ("VTODO", "VEVENT", "VJOURNAL"):
+                    try:
+                        if time_range_match(item.vobject_item, filter_[0], name_try, trigger):
+                            return True
+                    except Exception:
+                        continue
+                return False
             if not time_range_match(item.vobject_item, filter_[0], tag, trigger):
                 return False
         elif child.tag == xmlutils.make_clark("C:comp-filter"):
+            logger.debug("TRACE/ITEM/FILTER/comp_match: comp-filter level=%d", level)
             if not comp_match(item, child, level=level + 1):
                 return False
         else:
@@ -233,6 +246,7 @@ def time_range_match(vobject_item: vobject.base.Component,
     def infinity_fn(start: datetime) -> bool:
         return False
 
+    logger.debug("TRACE/ITEM/FILTER/time_range_match: start=(%s) end=(%s) child_name=%s", start, end, child_name)
     visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn)
     return matched
 
@@ -288,6 +302,8 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
     # with Recurrence ID affects the recurrence itself and all following
     # recurrences too. This is not respected and client don't seem to bother
     # either.
+
+    logger.debug("TRACE/ITEM/FILTER/visit_time_ranges: child_name=%s", child_name)
 
     def getrruleset(child: vobject.base.Component, ignore: Sequence[date]
                     ) -> Tuple[Iterable[date], bool]:
@@ -516,6 +532,7 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
 
     else:
         # Match a property
+        logger.debug("TRACE/ITEM/FILTER/get_children: child_name=%s property match", child_name)
         child = getattr(vobject_item, child_name.lower())
         if isinstance(child.value, date):
             child_is_datetime = isinstance(child.value, datetime)
@@ -605,6 +622,7 @@ def simplify_prefilters(filters: Iterable[ET.Element], collection_tag: str
     """
     flat_filters = list(chain.from_iterable(filters))
     simple = len(flat_filters) <= 1
+    logger.debug("TRACE/ITEM/FILTER/simplify_prefilters: collection_tag=%s", collection_tag)
     for col_filter in flat_filters:
         if collection_tag != "VCALENDAR":
             simple = False
@@ -615,7 +633,14 @@ def simplify_prefilters(filters: Iterable[ET.Element], collection_tag: str
             continue
         simple &= len(col_filter) <= 1
         for comp_filter in col_filter:
+            logger.debug("TRACE/ITEM/FILTER/simplify_prefilters: filter.tag=%s simple=%s", comp_filter.tag, simple)
+            if comp_filter.tag == xmlutils.make_clark("C:time-range") and simple is True:
+                # time-filter found on level 0
+                start, end = time_range_timestamps(comp_filter)
+                logger.debug("TRACE/ITEM/FILTER/simplify_prefilters: found time-filter on level 0 start=%r(%d) end=%r(%d) simple=%s", format_ut(start), start, format_ut(end), end, simple)
+                return None, start, end, simple
             if comp_filter.tag != xmlutils.make_clark("C:comp-filter"):
+                logger.debug("TRACE/ITEM/FILTER/simplify_prefilters: no comp-filter on level 0")
                 simple = False
                 continue
             tag = comp_filter.get("name", "").upper()
@@ -632,6 +657,7 @@ def simplify_prefilters(filters: Iterable[ET.Element], collection_tag: str
                     simple = False
                     continue
                 start, end = time_range_timestamps(time_filter)
+                logger.debug("TRACE/ITEM/FILTER/simplify_prefilters: found time-filter on level 1 tag=%s start=%d end=%d simple=%s", tag, start, end, simple)
                 return tag, start, end, simple
             return tag, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
     return None, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
