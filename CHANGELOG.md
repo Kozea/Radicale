@@ -9,6 +9,7 @@
 * Fix: logging ignores not retrievable get_native_id if not supported by OS
 * Fix: report with enabled expand honors now provided filter proper
 * Improve: add options [logging] trace_on_debug and trace_filter for supporting trace logging
+* Fix: catch case where getpwuid is not returning a username
 
 ## 3.5.4
 * Improve: item filter enhanced for 3rd level supporting VALARM and honoring TRIGGER (offset or absolute)
