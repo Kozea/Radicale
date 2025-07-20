@@ -254,6 +254,8 @@ class ApplicationPartPut(ApplicationBase):
                             hook_notification_item = HookNotificationItem(
                                 notification_item_type=HookNotificationItemTypes.UPSERT,
                                 path=access.path,
+                                content=existing_item.serialize(),
+                                uid=None,
                                 old_content=existing_item.serialize(),
                                 new_content=item.serialize()
                             )
@@ -261,6 +263,8 @@ class ApplicationPartPut(ApplicationBase):
                             hook_notification_item = HookNotificationItem(
                                 notification_item_type=HookNotificationItemTypes.UPSERT,
                                 path=access.path,
+                                content=item.serialize(),
+                                uid=None,
                                 old_content=None,
                                 new_content=item.serialize()
                             )
@@ -282,21 +286,14 @@ class ApplicationPartPut(ApplicationBase):
                 try:
                     uploaded_item, replaced_item = parent_item.upload(href, prepared_item)
                     etag = uploaded_item.etag
-                    if replaced_item:
-                        # If the item was replaced, we notify with the old content
-                        hook_notification_item = HookNotificationItem(
-                            notification_item_type=HookNotificationItemTypes.UPSERT,
-                            path=access.path,
-                            old_content=replaced_item.serialize(),
-                            new_content=prepared_item.serialize()
-                        )
-                    else:  # If it was a new item, we notify with no old content
-                        hook_notification_item = HookNotificationItem(
-                            notification_item_type=HookNotificationItemTypes.UPSERT,
-                            path=access.path,
-                            old_content=None,
-                            new_content=prepared_item.serialize()
-                        )
+                    hook_notification_item = HookNotificationItem(
+                        notification_item_type=HookNotificationItemTypes.UPSERT,
+                        path=access.path,
+                        content=prepared_item.serialize(),
+                        uid=None,
+                        old_content=replaced_item.serialize() if replaced_item else None,
+                        new_content=prepared_item.serialize()
+                    )
                     self._hook.notify(hook_notification_item)
                 except ValueError as e:
                     # return better matching HTTP result in case errno is provided and catched

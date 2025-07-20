@@ -85,6 +85,7 @@ class ApplicationPartDelete(ApplicationBase):
                         HookNotificationItem(
                             notification_item_type=HookNotificationItemTypes.DELETE,
                             path=access.path,
+                            content=i.uid,
                             uid=i.uid,
                             old_content=item.serialize(),  # type: ignore
                             new_content=None
@@ -98,6 +99,7 @@ class ApplicationPartDelete(ApplicationBase):
                     HookNotificationItem(
                         notification_item_type=HookNotificationItemTypes.DELETE,
                         path=access.path,
+                        content=item.uid,
                         uid=item.uid,
                         old_content=item.serialize(),  # type: ignore
                         new_content=None,
