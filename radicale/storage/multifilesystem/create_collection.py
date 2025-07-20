@@ -19,7 +19,7 @@
 
 import os
 from tempfile import TemporaryDirectory
-from typing import Iterable, Optional, cast, List, Tuple, Dict
+from typing import Dict, Iterable, List, Optional, Tuple, cast
 
 import radicale.item as radicale_item
 from radicale import pathutils

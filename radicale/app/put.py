@@ -249,7 +249,7 @@ class ApplicationPartPut(ApplicationBase):
                         props=props)
                     for item in prepared_items:
                         # Try to grab the previously-existing item by href
-                        existing_item = replaced_items.get(item.href, None)
+                        existing_item = replaced_items.get(item.href, None)  # type: ignore
                         if existing_item:
                             hook_notification_item = HookNotificationItem(
                                 notification_item_type=HookNotificationItemTypes.UPSERT,

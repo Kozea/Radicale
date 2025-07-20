@@ -17,7 +17,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import vobject
 
-from radicale.hook import (BaseHook, HookNotificationItem, HookNotificationItemTypes)
+from radicale.hook import (BaseHook, HookNotificationItem,
+                           HookNotificationItemTypes)
 from radicale.log import logger
 
 PLUGIN_CONFIG_SCHEMA = {
@@ -962,7 +963,7 @@ class Hook(BaseHook):
                 return
 
             # Dealing with an update to an existing event, compare new and previous content.
-            new_event: Event = read_ics_event(contents=new_item_str)
+            new_event: Event = read_ics_event(contents=new_item_str)  # type: ignore
             previous_event: Optional[Event] = read_ics_event(contents=previous_item_str)
             if not previous_event:
                 # If we cannot parse the previous event for some reason, simply treat it as a new event.
