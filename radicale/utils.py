@@ -225,7 +225,12 @@ def user_groups_as_string():
     if sys.platform != "win32":
         euid = os.geteuid()
         egid = os.getegid()
-        username = pwd.getpwuid(euid)[0]
+        try:
+            username = pwd.getpwuid(euid)[0]
+        except Exception:
+            # name of user not found
+            s = "user=(%d) group=(%d)" % (euid, egid)
+            return s
         gids = os.getgrouplist(username, egid)
         groups = []
         for gid in gids:
