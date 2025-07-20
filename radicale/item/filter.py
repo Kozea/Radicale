@@ -32,6 +32,7 @@ import vobject
 
 from radicale import item, xmlutils
 from radicale.log import logger
+from radicale.utils import format_ut
 
 DAY: timedelta = timedelta(days=1)
 SECOND: timedelta = timedelta(seconds=1)
@@ -98,6 +99,7 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
     # HACK: the filters are tested separately against all components
 
     name = filter_.get("name", "").upper()
+    logger.debug("TRACE/ITEM/FILTER/comp_match: name=%s level=%d", name, level)
 
     if level == 0:
         tag = item.name
@@ -233,6 +235,7 @@ def time_range_match(vobject_item: vobject.base.Component,
     def infinity_fn(start: datetime) -> bool:
         return False
 
+    logger.debug("TRACE/ITEM/FILTER/time_range_match: start=(%s) end=(%s) child_name=%s", start, end, child_name)
     visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn)
     return matched
 
@@ -288,6 +291,8 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
     # with Recurrence ID affects the recurrence itself and all following
     # recurrences too. This is not respected and client don't seem to bother
     # either.
+
+    logger.debug("TRACE/ITEM/FILTER/visit_time_ranges: child_name=%s", child_name)
 
     def getrruleset(child: vobject.base.Component, ignore: Sequence[date]
                     ) -> Tuple[Iterable[date], bool]:
@@ -516,6 +521,7 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
 
     else:
         # Match a property
+        logger.debug("TRACE/ITEM/FILTER/get_children: child_name=%s property match", child_name)
         child = getattr(vobject_item, child_name.lower())
         if isinstance(child.value, date):
             child_is_datetime = isinstance(child.value, datetime)
@@ -605,6 +611,7 @@ def simplify_prefilters(filters: Iterable[ET.Element], collection_tag: str
     """
     flat_filters = list(chain.from_iterable(filters))
     simple = len(flat_filters) <= 1
+    logger.debug("TRACE/ITEM/FILTER/simplify_prefilters: collection_tag=%s", collection_tag)
     for col_filter in flat_filters:
         if collection_tag != "VCALENDAR":
             simple = False
@@ -632,6 +639,7 @@ def simplify_prefilters(filters: Iterable[ET.Element], collection_tag: str
                     simple = False
                     continue
                 start, end = time_range_timestamps(time_filter)
+                logger.debug("TRACE/ITEM/FILTER/simplify_prefilters: found time-filter on level 1 tag=%s start=%d end=%d simple=%s", tag, start, end, simple)
                 return tag, start, end, simple
             return tag, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
     return None, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
