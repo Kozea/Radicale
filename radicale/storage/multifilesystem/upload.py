@@ -21,7 +21,7 @@ import errno
 import os
 import pickle
 import sys
-from typing import Iterable, Iterator, TextIO, cast, Optional, Tuple
+from typing import Iterable, Iterator, Optional, TextIO, Tuple, cast
 
 import radicale.item as radicale_item
 from radicale import pathutils

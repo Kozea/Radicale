@@ -507,7 +507,7 @@ The following event has been updated.
     $event_title
     $event_start_time - $event_end_time
     $event_location
-    
+
 This is an automated message. Please do not reply.""",
             "help": "Template for the email sent when an event is updated. Select placeholder words prefixed with $ will be replaced",
             "type": str
