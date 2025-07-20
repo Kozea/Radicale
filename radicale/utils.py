@@ -253,7 +253,10 @@ def user_groups_as_string():
 
 def format_ut(unixtime: int) -> str:
     if unixtime < DATETIME_MAX_UNIXTIME:
-        dt = datetime.datetime.fromtimestamp(unixtime, datetime.UTC)
+        if sys.version_info < (3, 11):
+            dt = datetime.datetime.utcfromtimestamp(unixtime)
+        else:
+            dt = datetime.datetime.fromtimestamp(unixtime, datetime.UTC)
         r = str(unixtime) + "(" + dt.strftime('%Y-%m-%dT%H:%M:%SZ') + ")"
     else:
         r = str(unixtime) + "(>MAX:" + str(DATETIME_MAX_UNIXTIME) + ")"
