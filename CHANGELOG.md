@@ -11,6 +11,7 @@
 * Improve: add options [logging] trace_on_debug and trace_filter for supporting trace logging
 * Fix: catch case where getpwuid is not returning a username
 * Fix: add support for query without comp-type
+* Fix: expanded event with dates are missing VALUE=DATE
 
 ## 3.5.4
 * Improve: item filter enhanced for 3rd level supporting VALARM and honoring TRIGGER (offset or absolute)
