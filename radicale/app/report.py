@@ -298,10 +298,10 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                             xmlutils.webdav_error("C:expand")
 
                     start = datetime.datetime.strptime(
-                        starts, '%Y%m%dT%H%M%SZ'
+                        starts, DT_FORMAT_TIMESTAMP
                     ).replace(tzinfo=datetime.timezone.utc)
                     end = datetime.datetime.strptime(
-                        ends, '%Y%m%dT%H%M%SZ'
+                        ends, DT_FORMAT_TIMESTAMP
                     ).replace(tzinfo=datetime.timezone.utc)
 
                     time_range_start = None
