@@ -474,8 +474,8 @@ permissions: RrWw""")
         self.put("/test/event.ics/", get_file_content("event_issue1812_2.ics"))
         self.put("/test/event2.ics/", get_file_content("event_issue1812_3.ics"))
 
-        request = f"""
-            <c:calendar-query xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:ca="http://apple.com/ns/ical/" xmlns:d="DAV:">
+        request = """
+            <c:calendar-query xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:d="DAV:">
             <d:prop>
                 <d:getetag/>
                 <c:calendar-data>
@@ -504,6 +504,9 @@ permissions: RrWw""")
         status, event1_calendar_data = responses["/test/event.ics"]["C:calendar-data"]
         assert event1_calendar_data.text
         assert "UID:a07cfa8b-0ce6-4956-800d-c0bfe1f0730a" in event1_calendar_data.text
+        assert "RECURRENCE-ID:20250716" in event1_calendar_data.text
+        assert "RECURRENCE-ID:20250723" in event1_calendar_data.text
+        assert "RECURRENCE-ID:20250730" in event1_calendar_data.text
 
         assert "C:calendar-data" in responses["/test/event2.ics"]
         status, event2_calendar_data = responses["/test/event2.ics"]["C:calendar-data"]
