@@ -43,6 +43,9 @@ from radicale.app.base import Access, ApplicationBase
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
+DT_FORMAT_TIMESTAMP: str = '%Y%m%dT%H%M%SZ'
+DT_FORMAT_DATE: str = '%Y%m%d'
+
 
 def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                      collection: storage.BaseCollection, encoding: str,
@@ -362,13 +365,13 @@ def _expand(
     # override instances.
     vevent_recurrence, vevents_overridden = _split_overridden_vevents(vevent_component)
 
-    dt_format = '%Y%m%dT%H%M%SZ'
+    dt_format = DT_FORMAT_TIMESTAMP
     all_day_event = False
 
     if type(vevent_recurrence.dtstart.value) is datetime.date:
         # If an event comes to us with a dtstart specified as a date
         # then in the response we return the date, not datetime
-        dt_format = '%Y%m%d'
+        dt_format = DT_FORMAT_DATE
         all_day_event = True
         # In case of dates, we need to remove timezone information since
         # rruleset.between computes with datetimes without timezone information
@@ -475,14 +478,19 @@ def _expand(
                     value=recurrence_id, params={}
                 )
                 _convert_to_utc(vevent, 'recurrence_id', dt_format)
+                suffix = ''
+                if (dt_format == DT_FORMAT_DATE):
+                    suffix = ';VALUE=DATE'
+                else:
+                    suffix = ''
                 vevent.dtstart = ContentLine(
-                    name='DTSTART',
+                    name='DTSTART' + suffix,
                     value=recurrence_id.strftime(dt_format), params={}
                 )
                 # if there is a DTEND, override it. Duration does not need changing
                 if hasattr(vevent, "dtend"):
                     vevent.dtend = ContentLine(
-                        name='DTEND',
+                        name='DTEND' + suffix,
                         value=(recurrence_id + duration).strftime(dt_format), params={}
                     )
 
