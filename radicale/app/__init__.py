@@ -291,7 +291,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         (user, info) = self._auth.login(login, password) or ("", "") if login else ("", "")
         if self.configuration.get("auth", "type") == "ldap":
             try:
-                logger.debug("Groups %r", ",".join(self._auth._ldap_groups))
+                logger.debug("Groups received from LDAP: %r", ",".join(self._auth._ldap_groups))
                 self._rights._user_groups = self._auth._ldap_groups
             except AttributeError:
                 pass
