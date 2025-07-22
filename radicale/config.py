@@ -427,6 +427,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "hook backend",
             "type": str,
             "internal": hook.INTERNAL_TYPES}),
+        ("dryrun", {
+            "value": "False",
+            "help": "dry-run (do not really trigger hook action)",
+            "type": bool}),
         ("rabbitmq_endpoint", {
             "value": "",
             "help": "endpoint where rabbitmq server is running",

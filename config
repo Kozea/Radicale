@@ -313,9 +313,16 @@
 # Hook types
 # Value: none | rabbitmq | email
 #type = none
+
+# dry-run (do not really trigger hook action)
+#dryrun = False
+
+# hook: rabbitmq
 #rabbitmq_endpoint =
 #rabbitmq_topic =
 #rabbitmq_queue_type = classic
+
+# hook: email
 #smtp_server = localhost
 #smtp_port = 25
 #smtp_security = starttls

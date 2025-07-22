@@ -1529,6 +1529,14 @@ Available types:
 
 Default: `none`
 
+##### dryrun
+
+_(> 3.5.4)_
+
+Dry-Run (do not really trigger hook action)
+
+Default: `False`
+
 ##### rabbitmq_endpoint
 
 _(>= 3.2.0)_

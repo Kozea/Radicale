@@ -1,6 +1,20 @@
 # This file is related to Radicale - CalDAV and CardDAV server
 # for email notifications
 # Copyright © 2025-2025 Nate Harris
+#
+# This library is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
+
 import enum
 import re
 import smtplib
@@ -596,6 +610,7 @@ class EmailConfig:
                  password: str,
                  from_email: str,
                  send_mass_emails: bool,
+                 dryrun: bool,
                  added_template: MessageTemplate,
                  removed_template: MessageTemplate):
         self.host = host
@@ -606,6 +621,7 @@ class EmailConfig:
         self.password = password
         self.from_email = from_email
         self.send_mass_emails = send_mass_emails
+        self.dryrun = dryrun
         self.added_template = added_template
         self.removed_template = removed_template
         self.updated_template = added_template  # Reuse added template for updated events
@@ -616,7 +632,7 @@ class EmailConfig:
         Return a string representation of the EmailConfig.
         """
         return f"EmailConfig(host={self.host}, port={self.port}, username={self.username}, " \
-               f"from_email={self.from_email}, send_mass_emails={self.send_mass_emails})"
+               f"from_email={self.from_email}, send_mass_emails={self.send_mass_emails}, dryrun={self.dryrun})"
 
     def __repr__(self):
         return self.__str__()
@@ -733,6 +749,10 @@ class EmailConfig:
             logger.warning("No valid email addresses found in attendees. Cannot send email.")
             return False
 
+        if self.dryrun is True:
+            logger.warning("Hook 'email': DRY-RUN _send_email / to_addresses=%r", to_addresses)
+            return True
+
         # Add headers
         message = MIMEMultipart("mixed")
         message["From"] = self.from_email
@@ -805,6 +825,7 @@ def _read_event(vobject_data: str) -> EmailEvent:
 class Hook(BaseHook):
     def __init__(self, configuration):
         super().__init__(configuration)
+        self.dryrun = self.configuration.get("hook", "dryrun")
         self.email_config = EmailConfig(
             host=self.configuration.get("hook", "smtp_server"),
             port=self.configuration.get("hook", "smtp_port"),
@@ -814,6 +835,7 @@ class Hook(BaseHook):
             password=self.configuration.get("hook", "smtp_password"),
             from_email=self.configuration.get("hook", "from_email"),
             send_mass_emails=self.configuration.get("hook", "mass_email"),
+            dryrun=self.configuration.get("hook", "dryrun"),
             added_template=MessageTemplate(
                 subject="You have been added to an event",
                 body=self.configuration.get("hook", "added_template")
@@ -844,7 +866,10 @@ class Hook(BaseHook):
         :type notification_item: HookNotificationItem
         :return: None
         """
-        logger.debug("Received notification item: %s", notification_item)
+        if self.dryrun:
+            logger.warning("Hook 'email': DRY-RUN received notification_item: %r", vars(notification_item))
+        else:
+            logger.debug("Received notification_item: %r", vars(notification_item))
         try:
             notification_type = HookNotificationItemTypes(value=notification_item.type)
         except ValueError:
