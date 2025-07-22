@@ -31,16 +31,26 @@ class Hook(hook.BaseHook):
         self._topic = configuration.get("hook", "rabbitmq_topic")
         self._queue_type = configuration.get("hook", "rabbitmq_queue_type")
         self._encoding = configuration.get("encoding", "stock")
+        self._dryrun = configuration.get("hook", "dryrun")
+        logger.info("Hook 'rabbitmq': endpoint=%r topic=%r queue_type=%r dryrun=%s", self._endpoint, self._topic, self._queue_type, self._dryrun)
 
         self._make_connection_synced()
         self._make_declare_queue_synced()
 
     def _make_connection_synced(self):
         parameters = pika.URLParameters(self._endpoint)
+        if self._dryrun is True:
+            logger.warning("Hook 'rabbitmq': DRY-RUN _make_connection_synced / parameters=%r", parameters)
+            return
+        logger.debug("Hook 'rabbitmq': _make_connection_synced / parameters=%r", parameters)
         connection = pika.BlockingConnection(parameters)
         self._channel = connection.channel()
 
     def _make_declare_queue_synced(self):
+        if self._dryrun is True:
+            logger.warning("Hook 'rabbitmq': DRY-RUN _make_declare_queue_synced")
+            return
+        logger.debug("Hook 'rabbitmq': _make_declare_queue_synced")
         self._channel.queue_declare(queue=self._topic, durable=True, arguments={"x-queue-type": self._queue_type})
 
     def notify(self, notification_item):
@@ -48,6 +58,9 @@ class Hook(hook.BaseHook):
             self._notify(notification_item, True)
 
     def _notify(self, notification_item, recall):
+        if self._dryrun is True:
+            logger.warning("Hook 'rabbitmq': DRY-RUN _notify / notification_item: %r", vars(notification_item))
+            return
         try:
             self._channel.basic_publish(
                 exchange='',
