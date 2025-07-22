@@ -363,12 +363,12 @@ def _expand(
     # Split the vevents included in the component into one that contains the
     # recurrence information and others that contain a recurrence id to
     # override instances.
-    vevent_recurrence, vevents_overridden = _split_overridden_vevents(vevent_component)
+    base_vevent, vevents_overridden = _split_overridden_vevents(vevent_component)
 
     dt_format = DT_FORMAT_TIMESTAMP
     all_day_event = False
 
-    if type(vevent_recurrence.dtstart.value) is datetime.date:
+    if type(base_vevent.dtstart.value) is datetime.date:
         # If an event comes to us with a dtstart specified as a date
         # then in the response we return the date, not datetime
         dt_format = DT_FORMAT_DATE
@@ -385,11 +385,11 @@ def _expand(
         _strip_single_event(vevent, dt_format)
 
     duration = None
-    if hasattr(vevent_recurrence, "dtend"):
-        duration = vevent_recurrence.dtend.value - vevent_recurrence.dtstart.value
-    elif hasattr(vevent_recurrence, "duration"):
+    if hasattr(base_vevent, "dtend"):
+        duration = base_vevent.dtend.value - base_vevent.dtstart.value
+    elif hasattr(base_vevent, "duration"):
         try:
-            duration = vevent_recurrence.duration.value
+            duration = base_vevent.duration.value
             if duration.total_seconds() <= 0:
                 logger.warning("Invalid DURATION: %s", duration)
                 duration = None
@@ -399,8 +399,8 @@ def _expand(
 
     # Generate EXDATE to remove from expansion range
     exdates_set: set[datetime.datetime] = set()
-    if hasattr(vevent_recurrence, 'exdate'):
-        exdates = vevent_recurrence.exdate.value
+    if hasattr(base_vevent, 'exdate'):
+        exdates = base_vevent.exdate.value
         if not isinstance(exdates, list):
             exdates = [exdates]
 
@@ -412,9 +412,14 @@ def _expand(
 
         logger.debug("EXDATE values: %s", exdates_set)
 
+    events_for_filtering = vevents_overridden
+
     rruleset = None
-    if hasattr(vevent_recurrence, 'rrule'):
-        rruleset = vevent_recurrence.getrruleset()
+    if hasattr(base_vevent, 'rrule'):
+        rruleset = base_vevent.getrruleset()
+    else:
+        # if event does not have rrule, only include base event
+        events_for_filtering = [base_vevent]
 
     filtered_vevents = []
     if rruleset:
@@ -439,7 +444,7 @@ def _expand(
                              .format(max_occurrence))
 
         _strip_component(vevent_component)
-        _strip_single_event(vevent_recurrence, dt_format)
+        _strip_single_event(base_vevent, dt_format)
 
         i_overridden = 0
 
@@ -466,7 +471,7 @@ def _expand(
 
             if not vevent:
                 # Create new instance from recurrence
-                vevent = copy.deepcopy(vevent_recurrence)
+                vevent = copy.deepcopy(base_vevent)
 
                 # For all day events, the system timezone may influence the
                 # results, so use recurrence_dt
@@ -496,45 +501,45 @@ def _expand(
 
             filtered_vevents.append(vevent)
 
-        # Filter overridden and recurrence base events
-        if time_range_start is not None and time_range_end is not None:
-            for vevent in vevents_overridden:
-                dtstart = vevent.dtstart.value
+    # Filter overridden and non-recurring events
+    if time_range_start is not None and time_range_end is not None:
+        for vevent in events_for_filtering:
+            dtstart = vevent.dtstart.value
 
-                # Handle string values for DTSTART/DTEND
-                if isinstance(dtstart, str):
-                    try:
-                        dtstart = datetime.datetime.strptime(dtstart, dt_format)
-                        if all_day_event:
-                            dtstart = dtstart.date()
-                    except ValueError as e:
-                        logger.warning("Invalid DTSTART format: %s, error: %s", dtstart, e)
-                        continue
-
-                dtend = dtstart + duration if duration else dtstart
-
-                logger.debug(
-                    "Filtering VEVENT with DTSTART: %s (type: %s), DTEND: %s (type: %s)",
-                    dtstart, type(dtstart), dtend, type(dtend))
-
-                # Convert to datetime for comparison
-                if all_day_event and isinstance(dtstart, datetime.date) and not isinstance(dtstart, datetime.datetime):
-                    dtstart = datetime.datetime.fromordinal(dtstart.toordinal()).replace(tzinfo=None)
-                    dtend = datetime.datetime.fromordinal(dtend.toordinal()).replace(tzinfo=None)
-                elif not all_day_event and isinstance(dtstart, datetime.datetime) \
-                        and isinstance(dtend, datetime.datetime):
-                    dtstart = dtstart.replace(tzinfo=datetime.timezone.utc)
-                    dtend = dtend.replace(tzinfo=datetime.timezone.utc)
-                else:
-                    logger.warning("Unexpected DTSTART/DTEND type: dtstart=%s, dtend=%s", type(dtstart), type(dtend))
+            # Handle string values for DTSTART/DTEND
+            if isinstance(dtstart, str):
+                try:
+                    dtstart = datetime.datetime.strptime(dtstart, dt_format)
+                    if all_day_event:
+                        dtstart = dtstart.date()
+                except ValueError as e:
+                    logger.warning("Invalid DTSTART format: %s, error: %s", dtstart, e)
                     continue
 
-                if dtstart < time_range_end and dtend > time_range_start:
-                    if vevent not in filtered_vevents:  # Avoid duplicates
-                        logger.debug("VEVENT passed time-range filter: %s", dtstart)
-                        filtered_vevents.append(vevent)
-                else:
-                    logger.debug("VEVENT filtered out: %s", dtstart)
+            dtend = dtstart + duration if duration else dtstart
+
+            logger.debug(
+                "Filtering VEVENT with DTSTART: %s (type: %s), DTEND: %s (type: %s)",
+                dtstart, type(dtstart), dtend, type(dtend))
+
+            # Convert to datetime for comparison
+            if all_day_event and isinstance(dtstart, datetime.date) and not isinstance(dtstart, datetime.datetime):
+                dtstart = datetime.datetime.fromordinal(dtstart.toordinal()).replace(tzinfo=None)
+                dtend = datetime.datetime.fromordinal(dtend.toordinal()).replace(tzinfo=None)
+            elif not all_day_event and isinstance(dtstart, datetime.datetime) \
+                    and isinstance(dtend, datetime.datetime):
+                dtstart = dtstart.replace(tzinfo=datetime.timezone.utc)
+                dtend = dtend.replace(tzinfo=datetime.timezone.utc)
+            else:
+                logger.warning("Unexpected DTSTART/DTEND type: dtstart=%s, dtend=%s", type(dtstart), type(dtend))
+                continue
+
+            if dtstart < time_range_end and dtend > time_range_start:
+                if vevent not in filtered_vevents:  # Avoid duplicates
+                    logger.debug("VEVENT passed time-range filter: %s", dtstart)
+                    filtered_vevents.append(vevent)
+            else:
+                logger.debug("VEVENT filtered out: %s", dtstart)
 
     # Rebuild component
 

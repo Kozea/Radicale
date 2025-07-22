@@ -132,7 +132,7 @@ permissions: RrWw""")
                                    self._req_without_expand(expected_uid, start, end))
         assert len(responses) == 1
         response_without_expand = responses[f'/calendar.ics/{expected_uid}.ics']
-        assert not isinstance(response_without_expand, int)
+        assert isinstance(response_without_expand, dict)
         status, element = response_without_expand["C:calendar-data"]
 
         assert status == 200 and element.text
@@ -158,7 +158,7 @@ permissions: RrWw""")
         assert len(responses) == 1
 
         response_with_expand = responses[f'/calendar.ics/{expected_uid}.ics']
-        assert not isinstance(response_with_expand, int)
+        assert isinstance(response_with_expand, dict)
         status, element = response_with_expand["C:calendar-data"]
 
         logger.debug("lbt: element is %s",
@@ -196,7 +196,7 @@ permissions: RrWw""")
                                    self._req_without_expand(expected_uid, start, end))
         assert len(responses) == 1
         response_without_expand = responses[f'/calendar.ics/{expected_uid}.ics']
-        assert not isinstance(response_without_expand, int)
+        assert isinstance(response_without_expand, dict)
         status, element = response_without_expand["C:calendar-data"]
 
         assert status == 200 and element.text
@@ -467,3 +467,48 @@ permissions: RrWw""")
         assert "BEGIN:VEVENT" in element.text
         assert "RECURRENCE-ID:20060103T170000Z" in element.text
         assert "DTSTART:20060103T170000Z" in element.text
+
+    def test_expand_report_for_recurring_and_non_recurring_events(self) -> None:
+        """Test calendar-query with time-range filter, matches one VEVENT."""
+        self.mkcalendar("/test/")
+        self.put("/test/event.ics/", get_file_content("event_issue1812_2.ics"))
+        self.put("/test/event2.ics/", get_file_content("event_issue1812_3.ics"))
+
+        request = """
+            <c:calendar-query xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:d="DAV:">
+            <d:prop>
+                <d:getetag/>
+                <c:calendar-data>
+                    <c:expand start="20250629T220000Z" end="20250803T220000Z"/>
+                </c:calendar-data>
+            </d:prop>
+            <c:filter>
+                <c:comp-filter name="VCALENDAR">
+                    <c:comp-filter name="VEVENT">
+                        <c:time-range start="20250629T220000Z" end="20250803T220000Z"/>
+                    </c:comp-filter>
+                </c:comp-filter>
+            </c:filter>
+            </c:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        assert len(responses) == 2
+        assert isinstance(responses, dict)
+        assert "/test/event.ics" in responses
+        assert "/test/event2.ics" in responses
+        assert isinstance(responses["/test/event.ics"], dict)
+        assert isinstance(responses["/test/event2.ics"], dict)
+
+        assert "C:calendar-data" in responses["/test/event.ics"]
+        status, event1_calendar_data = responses["/test/event.ics"]["C:calendar-data"]
+        assert event1_calendar_data.text
+        assert "UID:a07cfa8b-0ce6-4956-800d-c0bfe1f0730a" in event1_calendar_data.text
+        assert "RECURRENCE-ID:20250716" in event1_calendar_data.text
+        assert "RECURRENCE-ID:20250723" in event1_calendar_data.text
+        assert "RECURRENCE-ID:20250730" in event1_calendar_data.text
+
+        assert "C:calendar-data" in responses["/test/event2.ics"]
+        status, event2_calendar_data = responses["/test/event2.ics"]["C:calendar-data"]
+        assert event2_calendar_data.text
+        assert "UID:c6be8b2c-3d72-453c-b698-4f25cdf1569e" in event2_calendar_data.text
