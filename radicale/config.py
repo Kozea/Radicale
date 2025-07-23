@@ -269,15 +269,15 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": str}),
         ("ldap_base", {
             "value": "",
-            "help": "The base DN of the ldap server where the user can be find.",
+            "help": "Base DN of the ldap server where the user can be find.",
             "type": str}),
         ("ldap_reader_dn", {
             "value": "",
-            "help": "The DN of a ldap user with read access to get the user accounts",
+            "help": "DN of a ldap user with read access to get the user accounts",
             "type": str}),
         ("ldap_secret", {
             "value": "",
-            "help": "The password of the ldap_reader_dn",
+            "help": "Password of the ldap_reader_dn",
             "type": str}),
         ("ldap_secret_file", {
             "value": "",
@@ -285,27 +285,27 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": str}),
         ("ldap_filter", {
             "value": "(cn={0})",
-            "help": "The search filter to find the user DN to authenticate by the username",
+            "help": "Search filter to find the user DN to authenticate by the username",
             "type": str}),
         ("ldap_user_attribute", {
             "value": "",
-            "help": "The attribute to be used as username after authentication",
+            "help": "Attribute to be used as username after authentication",
             "type": str}),
         ("ldap_groups_attribute", {
             "value": "",
             "help": "Attribute in the user entry to read the group memberships from.",
             "type": str}),
-        ("ldap_group_members_attribute", {
+        ("ldap_group_member_attribute", {
             "value": "",
             "help": "Attribute in the group entries to read the group members from.",
             "type": str}),
-        ("ldap_groups_base", {
+        ("ldap_group_base", {
             "value": "",
-            "help": "The base dn to find the groups. Necessary only if ldap_group_members_attribute is defined and different from ldap_base.",
+            "help": "Base DN to find the groups. Necessary only if ldap_group_member_attribute is defined and different from ldap_base.",
             "type": str}),
-        ("ldap_groups_filter", {
+        ("ldap_group_filter", {
             "value": "",
-            "help": "Additional filter to find the groups when ldap_group_members_attribute is defined. The following filter will be built (&{ldap_groups_filter}({ldap_group_members_attribute}={user_dn})",
+            "help": "Additional filter to find the groups when ldap_group_member_attribute is defined. Following filter will be built (&{ldap_group_filter}({ldap_group_member_attribute}={user_dn})",
             "type": str}),
         ("ldap_use_ssl", {
             "value": "False",
@@ -313,15 +313,15 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": bool}),
         ("ldap_security", {
             "value": "none",
-            "help": "the encryption mode to be used: *none*|tls|starttls",
+            "help": "Encryption mode to be used: *none*|tls|starttls",
             "type": str}),
         ("ldap_ssl_verify_mode", {
             "value": "REQUIRED",
-            "help": "The certificate verification mode. Works for tls and starttls. NONE, OPTIONAL, default is REQUIRED",
+            "help": "Certificate verification mode. Works for tls and starttls. NONE, OPTIONAL, default is REQUIRED",
             "type": str}),
         ("ldap_ssl_ca_file", {
             "value": "",
-            "help": "The path to the CA file in pem format which is used to certificate the server certificate",
+            "help": "Path to the CA file in pem format which is used to certificate the server certificate",
             "type": str}),
         ("imap_host", {
             "value": "localhost",
