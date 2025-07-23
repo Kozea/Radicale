@@ -180,6 +180,7 @@ class Auth(auth.BaseAuth):
             user_dn = user_entry[0]
             logger.debug(f"_login2 found LDAP user DN {user_dn}")
             if self._ldap_group_members_attr:
+                """Collect groups from the member or uniqueMember attributes"""
                 res = conn.search_s(
                     self._ldap_group_base,
                     self.ldap.SCOPE_SUBTREE,
@@ -189,6 +190,8 @@ class Auth(auth.BaseAuth):
                         self.ldap.filter.escape_filter_chars(user_dn)),
                     attrlist=self._ldap_attributes
                 )
+                for group in res:
+                    gdns.append(group[0])
             """Close LDAP connection"""
             conn.unbind()
         except Exception as e:
@@ -277,6 +280,7 @@ class Auth(auth.BaseAuth):
         user_entry = conn.response[0]
         user_dn = user_entry['dn']
         if self._ldap_group_members_attr:
+            """Collect groups from the member or uniqueMember attributes"""
             conn.search(
                 search_base=self._ldap_group_base,
                 search_filter="(&{0}({1}={2}))".format(
@@ -302,10 +306,10 @@ class Auth(auth.BaseAuth):
             if not conn.bind():
                 logger.debug(f"_login3 user '{login}' cannot be found")
                 return ""
-            tmp: list[str] = []
             """Let's collect the groups of the user."""
             if self._ldap_groups_attr:
                 gdns = user_entry['attributes'][self._ldap_groups_attr]
+            tmp: list[str] = []
             for g in gdns:
                 """Get group g's RDN's attribute value"""
                 try:
