@@ -144,9 +144,9 @@ All configuration options are described in detail in the
 
 #### Authentication
 
-In its default configuration since 3.2.2 Radicale rejects by default all authentication by `type = denyall` until explicitly configured.
+In its default configuration since 3.5.0 Radicale rejects by default all authentication by `type = denyall` (introduced with 3.2.2) until explicitly configured.
 
-Before 3.2.2 it didn't check usernames or passwords, and if the server is reachable over a network, you should change this as soon as possible.
+Before 3.5.0 it didn't check usernames or passwords, and if the server is reachable over a network, you should change this as soon as possible.
 
 First a `users` file with all usernames and passwords must be created.
 It can be stored in the same directory as the configuration file.
