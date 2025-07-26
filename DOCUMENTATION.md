@@ -117,7 +117,8 @@ python -m radicale --storage-filesystem-folder=~/radicale/collections --auth-typ
 ##### Common
 
 Victory! Open <http://localhost:5232> in your browser!
-You can log in with any username and password (no authentication is required as long as not proper configured - INSECURE).
+You can log in with any username and password as no authentication is required by example option `--auth-type none`.
+But this is INSECURE, see [Configuration/Authentication](#auth) for more.
 
 Just note that default configuration for security reason binds the server to `localhost` (IPv4: `127.0.0.1`, IPv6: `::1`).
 See [Addresses](#addresses) and [Configuration/Server](#server) for more.
@@ -143,8 +144,9 @@ All configuration options are described in detail in the
 
 #### Authentication
 
-In its default configuration Radicale doesn't check usernames or passwords.
-If the server is reachable over a network, you should change this.
+In its default configuration since 3.2.2 Radicale rejects by default all authentication by `type = denyall` until explicitly configured.
+
+Before 3.2.2 it didn't check usernames or passwords, and if the server is reachable over a network, you should change this as soon as possible.
 
 First a `users` file with all usernames and passwords must be created.
 It can be stored in the same directory as the configuration file.
