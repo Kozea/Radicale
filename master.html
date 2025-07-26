@@ -369,8 +369,10 @@ now". Wait a couple of minutes, it's done!</p>
 <section class="level5" id="common">
 <h5>Common <a class="headerlink" href="#common">&para;</a></h5>
 <p>Victory! Open <a href="http://localhost:5232">http://localhost:5232</a> in your browser!
-You can log in with any username and password (no authentication is
-required as long as not proper configured - INSECURE).</p>
+You can log in with any username and password as no authentication is
+required by example option <code>--auth-type none</code>. But this is
+INSECURE, see <a href="#auth">Configuration/Authentication</a> for
+more.</p>
 <p>Just note that default configuration for security reason binds the
 server to <code>localhost</code> (IPv4: <code>127.0.0.1</code>, IPv6:
 <code>::1</code>). See <a href="#addresses">Addresses</a> and <a href="#server">Configuration/Server</a> for more.</p>
@@ -394,9 +396,12 @@ passed via command line arguments.)</p>
 <p>All configuration options are described in detail in the <a href="#configuration">Configuration</a> section.</p>
 <section class="level4" id="authentication">
 <h4>Authentication <a class="headerlink" href="#authentication">&para;</a></h4>
-<p>In its default configuration Radicale doesn't check usernames or
-passwords. If the server is reachable over a network, you should change
-this.</p>
+<p>In its default configuration since 3.2.2 Radicale rejects by default
+all authentication by <code>type = denyall</code> until explicitly
+configured.</p>
+<p>Before 3.2.2 it didn't check usernames or passwords, and if the
+server is reachable over a network, you should change this as soon as
+possible.</p>
 <p>First a <code>users</code> file with all usernames and passwords must
 be created. It can be stored in the same directory as the configuration
 file.</p>
