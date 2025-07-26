@@ -396,10 +396,10 @@ passed via command line arguments.)</p>
 <p>All configuration options are described in detail in the <a href="#configuration">Configuration</a> section.</p>
 <section class="level4" id="authentication">
 <h4>Authentication <a class="headerlink" href="#authentication">&para;</a></h4>
-<p>In its default configuration since 3.2.2 Radicale rejects by default
-all authentication by <code>type = denyall</code> until explicitly
-configured.</p>
-<p>Before 3.2.2 it didn't check usernames or passwords, and if the
+<p>In its default configuration since 3.5.0 Radicale rejects by default
+all authentication by <code>type = denyall</code> (introduced with
+3.2.2) until explicitly configured.</p>
+<p>Before 3.5.0 it didn't check usernames or passwords, and if the
 server is reachable over a network, you should change this as soon as
 possible.</p>
 <p>First a <code>users</code> file with all usernames and passwords must
