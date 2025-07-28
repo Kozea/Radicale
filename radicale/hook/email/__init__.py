@@ -213,6 +213,7 @@ def event_details_other_than_attendees_changed(original_event: 'Event',
     """
     Check if any details other than attendees and IDs have changed between two events.
     """
+
     def hash_dict(d: Dict[str, Any]) -> str:
         """
         Create a hash of the dictionary to compare contents.
@@ -971,6 +972,20 @@ class Hook(BaseHook):
                 return
 
             email_event: EmailEvent = _read_event(vobject_data=new_item_str)  # type: ignore
+            if not email_event:
+                logger.error("Failed to read event from new content: %s", new_item_str)
+                return
+            email_event_event = email_event.event  # type: ignore
+            if not email_event_event:
+                logger.error("Event could not be parsed from the new content: %s", new_item_str)
+                return
+            email_event_end_time = email_event_event.datetime_end  # type: ignore
+            # Skip notification if the event end time is more than 1 minute in the past.
+            if email_event_end_time and email_event_end_time.time and email_event_end_time.time < (
+                    datetime.now() - timedelta(minutes=1)):
+                logger.warning("Event end time is in the past, skipping notification for event: %s",
+                               email_event_event.uid)
+                return
 
             if not previous_item_str:
                 # Dealing with a completely new event, no previous content to compare against.
