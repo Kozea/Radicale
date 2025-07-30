@@ -1716,9 +1716,11 @@ Radicale has been tested with:
 * [Mozilla Thunderbird](https://www.mozilla.org/thunderbird/) with
   [CardBook](https://addons.mozilla.org/thunderbird/addon/cardbook/) and
   [Lightning](https://www.mozilla.org/projects/calendar/)
-* [InfCloud](https://www.inf-it.com/open-source/clients/infcloud/),
-  [CalDavZAP](https://www.inf-it.com/open-source/clients/caldavzap/) and
-  [CardDavMATE](https://www.inf-it.com/open-source/clients/carddavmate/)
+* [InfCloud](https://www.inf-it.com/open-source/clients/infcloud/) [InfCloud/Radicale](https://github.com/Kozea/Radicale/wiki/Client-InfCloud),
+  [CalDavZAP](https://www.inf-it.com/open-source/clients/caldavzap/),
+  [CardDavMATE](https://www.inf-it.com/open-source/clients/carddavmate/) and
+  [Open Calendar](https://github.com/algoo/open-calendar/)
+* [pimsync](https://pimsync.whynothugo.nl/) [pimsync/Radicale](https://github.com/Kozea/Radicale/wiki/Client-pimsync)
 
 Many clients do not support the creation of new calendars and address books.
 You can use Radicale's web interface
