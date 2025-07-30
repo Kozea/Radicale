@@ -1713,7 +1713,7 @@ Radicale has been tested with:
 * [GNOME Calendar](https://wiki.gnome.org/Apps/Calendar),
   [Contacts](https://wiki.gnome.org/Apps/Contacts) and
   [Evolution](https://wiki.gnome.org/Apps/Evolution)
-* [Mozilla Thunderbird](https://www.mozilla.org/thunderbird/) with
+* [Mozilla Thunderbird](https://www.mozilla.org/thunderbird/) [Thunderbird/Radicale](https://github.com/Kozea/Radicale/wiki/Client-Thunderbird) with
   [CardBook](https://addons.mozilla.org/thunderbird/addon/cardbook/) and
   [Lightning](https://www.mozilla.org/projects/calendar/)
 * [InfCloud](https://www.inf-it.com/open-source/clients/infcloud/) [InfCloud/Radicale](https://github.com/Kozea/Radicale/wiki/Client-InfCloud),
