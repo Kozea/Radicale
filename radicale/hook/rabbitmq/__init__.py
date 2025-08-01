@@ -17,7 +17,6 @@
 
 import pika
 from pika.exceptions import ChannelWrongStateError, StreamLostError
-
 from radicale import hook
 from radicale.hook import HookNotificationItem
 from radicale.log import logger
