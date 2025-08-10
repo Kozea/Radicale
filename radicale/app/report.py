@@ -275,12 +275,16 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
 
         found_props = []
         not_found_props = []
+        item_etag: str = ""
 
         for prop in props:
             element = ET.Element(prop.tag)
             if prop.tag == xmlutils.make_clark("D:getetag"):
-                element.text = item.etag
-                found_props.append(element)
+                if expand is not None:
+                    item_etag = item.etag
+                else:
+                    element.text = item.etag
+                    found_props.append(element)
             elif prop.tag == xmlutils.make_clark("D:getcontenttype"):
                 element.text = xmlutils.get_content_type(item, encoding)
                 found_props.append(element)
@@ -341,7 +345,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         if found_props or not_found_props:
             multistatus.append(xml_item_response(
                 base_prefix, uri, found_props=found_props,
-                not_found_props=not_found_props, found_item=True))
+                not_found_props=not_found_props, found_item=True, item_etag=item_etag))
 
     return client.MULTI_STATUS, multistatus
 
@@ -660,7 +664,7 @@ def _find_overridden(
 def xml_item_response(base_prefix: str, href: str,
                       found_props: Sequence[ET.Element] = (),
                       not_found_props: Sequence[ET.Element] = (),
-                      found_item: bool = True) -> ET.Element:
+                      found_item: bool = True, item_etag: str = "") -> ET.Element:
     response = ET.Element(xmlutils.make_clark("D:response"))
 
     href_element = ET.Element(xmlutils.make_clark("D:href"))
@@ -674,6 +678,10 @@ def xml_item_response(base_prefix: str, href: str,
                 status = ET.Element(xmlutils.make_clark("D:status"))
                 status.text = xmlutils.make_response(code)
                 prop_element = ET.Element(xmlutils.make_clark("D:prop"))
+                if (item_etag != "") and (code == 200):
+                    prop_etag = ET.Element(xmlutils.make_clark("D:getetag"))
+                    prop_etag.text = item_etag
+                    prop_element.append(prop_etag)
                 for prop in props:
                     prop_element.append(prop)
                 propstat.append(prop_element)
