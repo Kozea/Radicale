@@ -74,8 +74,7 @@ class TestMultiFileSystem(BaseTest):
         self.propfind("/")
         self.propfind("/created_by_hook/", check=404)
 
-    @pytest.mark.skipif(not shutil.which("flock"),
-                        reason="flock command not found")
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
     def test_hook_storage_locked(self) -> None:
         """Verify that the storage is locked when the hook runs."""
         self.configure({"storage": {"hook": (
@@ -189,6 +188,7 @@ class TestMultiFileSystem(BaseTest):
             assert answer is not None
             assert "\r\nUID:%s\r\n" % uid in answer
 
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
     def test_hook_placeholders_PUT(self, caplog) -> None:
         """Run hook and check placeholders: PUT"""
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
@@ -229,6 +229,7 @@ class TestMultiFileSystem(BaseTest):
         else:
             logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
 
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
     def test_hook_placeholders_DELETE(self, caplog) -> None:
         """Run hook and check placeholders: DELETE"""
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
@@ -270,6 +271,7 @@ class TestMultiFileSystem(BaseTest):
         else:
             logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
 
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
     def test_hook_placeholders_MKCALENDAR(self, caplog) -> None:
         """Run hook and check placeholders: MKCALENDAR"""
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
@@ -307,6 +309,7 @@ class TestMultiFileSystem(BaseTest):
         else:
             logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
 
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
     def test_hook_placeholders_MKCOL(self, caplog) -> None:
         """Run hook and check placeholders: MKCOL"""
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
@@ -344,6 +347,7 @@ class TestMultiFileSystem(BaseTest):
         else:
             logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
 
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
     def test_hook_placeholders_PROPPATCH(self, caplog) -> None:
         """Run hook and check placeholders: PROPPATCH"""
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
@@ -383,6 +387,7 @@ class TestMultiFileSystem(BaseTest):
         else:
             logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
 
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
     def test_hook_placeholders_MOVE(self, caplog) -> None:
         """Run hook and check placeholders: MOVE"""
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
