@@ -87,7 +87,7 @@ class ApplicationPartProppatch(ApplicationBase):
         except socket.timeout:
             logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
-        with self._storage.acquire_lock("w", user):
+        with self._storage.acquire_lock("w", user, path=path):
             item = next(iter(self._storage.discover(path)), None)
             if not item:
                 return httputils.NOT_FOUND

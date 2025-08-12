@@ -60,7 +60,7 @@ class ApplicationPartDelete(ApplicationBase):
         access = Access(self._rights, user, path)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
-        with self._storage.acquire_lock("w", user):
+        with self._storage.acquire_lock("w", user, path=path):
             item = next(iter(self._storage.discover(path)), None)
             if not item:
                 return httputils.NOT_FOUND

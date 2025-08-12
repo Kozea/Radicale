@@ -62,7 +62,7 @@ class ApplicationPartMkcol(ApplicationBase):
         if not props.get("tag") and "W" not in permissions:
             logger.warning("MKCOL request %r (type:%s): %s", path, collection_type, "rejected because of missing rights 'W'")
             return httputils.NOT_ALLOWED
-        with self._storage.acquire_lock("w", user):
+        with self._storage.acquire_lock("w", user, path=path):
             item = next(iter(self._storage.discover(path)), None)
             if item:
                 return httputils.METHOD_NOT_ALLOWED

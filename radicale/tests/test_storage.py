@@ -21,9 +21,11 @@ Tests for storage backends.
 
 """
 
+import json
 import os
 import shutil
 from typing import ClassVar, cast
+import logging
 
 import pytest
 
@@ -227,3 +229,97 @@ class TestCustomStorageSystemCallable(BaseTest):
             "type": radicale.tests.custom.storage_simple_sync.Storage}})
 
     test_add_event = _TestBaseRequests.test_add_event
+
+
+class TestStorageHook(BaseTest):
+    """Test the storage hook"""
+    
+    HOOK_STRING="Captured stdout from storage hook:"
+    SANATISED_STRING="Sanitized path:"
+    
+    #TODO: How to give the result of the cmd to the test
+    def setup_method(self) -> None:
+        _TestBaseRequests.setup_method(cast(_TestBaseRequests, self))
+        cmd = "echo \'{\"user\":\"%(user)s\", \"path\":\"%(path)s\", \"cwd\":\"%(cwd)s\"}\'"
+        self.configure({"storage": {"hook": cmd}})
+        
+    def get_output(self, records:list[logging.LogRecord]) -> dict[str, str]:
+        """
+        Get the result of the storage hook execution
+
+        Args:
+            records (list[logging.LogRecord]): The records to look through
+        """
+        for record in records:
+            if record.levelname != "DEBUG":
+                # This should be a debug level message
+                continue
+            message = record.getMessage()
+            # We assume a message looks like such: [date] [thread] [DEBUG] Captured stdout from storage hook: "{user:"", "path":"", "cwd":""}"
+            if self.HOOK_STRING not in message:
+                continue
+            print("Message:",message)
+            _, raw_info = message.split(self.HOOK_STRING)
+            raw_info = raw_info.strip("\"")
+            try:
+                return json.loads(raw_info)
+            except:
+                # Try and find the next one
+                pass
+        assert "Unable to find storage hook"
+
+    def check_path(self, records: list[logging.LogRecord], path:str):
+        result = self.get_output(records)
+        assert result["path"].endswith(path), f"{result["path"]} does not end in {path}"
+
+    def test_put(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Create an event"""
+        caplog.set_level(logging.INFO)
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        caplog.set_level(logging.DEBUG)
+        self.put(path, event)
+        self.check_path(caplog.records, path)
+        
+        caplog.set_level(logging.INFO)
+        
+    
+    def test_update_event(self, caplog: pytest.LogCaptureFixture  ) -> None:
+        """Update an event."""
+        caplog.set_level(logging.INFO)
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        event_modified = get_file_content("event1_modified.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event)
+        caplog.set_level(logging.DEBUG)
+        self.put(path, event_modified, check=204)
+        caplog.set_level(logging.INFO)
+        self.check_path(caplog.records, path)
+
+    def test_delete(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Delete an event"""
+        caplog.set_level(logging.INFO)
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event)
+        caplog.set_level(logging.DEBUG)
+        self.delete(path)
+        caplog.set_level(logging.INFO)
+        self.check_path(caplog.records, path)
+
+    def test_mkcalendar(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Make a calendar"""
+        caplog.set_level(logging.DEBUG)
+        self.mkcalendar("/calendar.ics/")
+        caplog.set_level(logging.INFO)
+        self.check_path(caplog.records, "/calendar.ics/")
+        
+    def test_mkcol(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Make a collection."""
+        caplog.set_level(logging.DEBUG)
+        self.mkcol("/user/")
+        caplog.set_level(logging.INFO)
+        self.check_path(caplog.records, "/user/")
