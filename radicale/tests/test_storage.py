@@ -200,7 +200,11 @@ class TestMultiFileSystem(BaseTest):
         for line in caplog.messages:
             if line.find("\"hook-json ") != -1:
                 found = 1
-                s = re.search('.*\"hook-json ({.*})".*', line).group(1).replace("'", "\"")
+                r = re.search('.*\"hook-json ({.*})".*', line)
+                if r:
+                    s = r.group(1).replace("'", "\"")
+                else:
+                    break
                 d = json.loads(s)
                 if d["user"] == "Anonymous":
                     found = found | 2
@@ -237,7 +241,11 @@ class TestMultiFileSystem(BaseTest):
         for line in caplog.messages:
             if line.find("\"hook-json ") != -1:
                 found = 1
-                s = re.search('.*\"hook-json ({.*})".*', line).group(1).replace("'", "\"")
+                r = re.search('.*\"hook-json ({.*})".*', line)
+                if r:
+                    s = r.group(1).replace("'", "\"")
+                else:
+                    break
                 d = json.loads(s)
                 if d["user"] == "Anonymous":
                     found = found | 2
@@ -270,7 +278,11 @@ class TestMultiFileSystem(BaseTest):
         for line in caplog.messages:
             if line.find("\"hook-json ") != -1:
                 found = 1
-                s = re.search('.*\"hook-json ({.*})".*', line).group(1).replace("'", "\"")
+                r = re.search('.*\"hook-json ({.*})".*', line)
+                if r:
+                    s = r.group(1).replace("'", "\"")
+                else:
+                    break
                 d = json.loads(s)
                 if d["user"] == "Anonymous":
                     found = found | 2
@@ -303,7 +315,11 @@ class TestMultiFileSystem(BaseTest):
         for line in caplog.messages:
             if line.find("\"hook-json ") != -1:
                 found = 1
-                s = re.search('.*\"hook-json ({.*})".*', line).group(1).replace("'", "\"")
+                r = re.search('.*\"hook-json ({.*})".*', line)
+                if r:
+                    s = r.group(1).replace("'", "\"")
+                else:
+                    break
                 d = json.loads(s)
                 if d["user"] == "Anonymous":
                     found = found | 2
@@ -338,7 +354,11 @@ class TestMultiFileSystem(BaseTest):
         for line in caplog.messages:
             if line.find("\"hook-json ") != -1:
                 found = 1
-                s = re.search('.*\"hook-json ({.*})".*', line).group(1).replace("'", "\"")
+                r = re.search('.*\"hook-json ({.*})".*', line)
+                if r:
+                    s = r.group(1).replace("'", "\"")
+                else:
+                    break
                 d = json.loads(s)
                 if d["user"] == "Anonymous":
                     found = found | 2
@@ -377,7 +397,11 @@ class TestMultiFileSystem(BaseTest):
         for line in caplog.messages:
             if line.find("\"hook-json ") != -1:
                 found = 1
-                s = re.search('.*\"hook-json ({.*})".*', line).group(1).replace("'", "\"")
+                r = re.search('.*\"hook-json ({.*})".*', line)
+                if r:
+                    s = r.group(1).replace("'", "\"")
+                else:
+                    break
                 d = json.loads(s)
                 if d["user"] == "Anonymous":
                     found = found | 2
