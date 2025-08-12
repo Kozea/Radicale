@@ -234,9 +234,12 @@
 #   %(user)s: logged-in user
 #   %(cwd)s : current working directory
 #   %(path)s: full path of item
+#   %(to_path)s: full path of destination item (only set on MOVE request)
+#   %(request)s: request method
 #  Command will be executed with base directory defined in filesystem_folder
 #  For "git" check DOCUMENTATION.md for bootstrap instructions
 # Example(test): echo \"user=%(user)s path=%(path)s cwd=%(cwd)s\"
+# Example(test/json): echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\"
 # Example(git): git add -A && (git diff --cached --quiet || git commit -m "Changes by \"%(user)s\"")
 #hook =
 

@@ -13,6 +13,8 @@
 * Fix: add support for query without comp-type
 * Fix: expanded event with dates are missing VALUE=DATE
 * Add: [hook] dryrun: option to disable real hook action for testing, add tests for email+rabbitmq
+* Fix: storage hook path now added to DELETE, MKCOL, MKCALENDAR, MOVE, and PROPPATCH
+* Add: storage hook placeholder now supports "request" and "to_path" (MOVE only)
 
 ## 3.5.4
 * Improve: item filter enhanced for 3rd level supporting VALARM and honoring TRIGGER (offset or absolute)

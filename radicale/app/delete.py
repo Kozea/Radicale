@@ -2,8 +2,8 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2017-2020 Unrud <unrud@outlook.com>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ class ApplicationPartDelete(ApplicationBase):
         access = Access(self._rights, user, path)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
-        with self._storage.acquire_lock("w", user):
+        with self._storage.acquire_lock("w", user, path=path, request="DELETE"):
             item = next(iter(self._storage.discover(path)), None)
             if not item:
                 return httputils.NOT_FOUND

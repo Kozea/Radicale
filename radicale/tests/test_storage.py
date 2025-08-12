@@ -1,7 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,10 @@ Tests for storage backends.
 
 """
 
+import json
+import logging
 import os
+import re
 import shutil
 from typing import ClassVar, cast
 
@@ -71,8 +74,7 @@ class TestMultiFileSystem(BaseTest):
         self.propfind("/")
         self.propfind("/created_by_hook/", check=404)
 
-    @pytest.mark.skipif(not shutil.which("flock"),
-                        reason="flock command not found")
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
     def test_hook_storage_locked(self) -> None:
         """Verify that the storage is locked when the hook runs."""
         self.configure({"storage": {"hook": (
@@ -185,6 +187,247 @@ class TestMultiFileSystem(BaseTest):
             _, answer = self.get("/contacts.vcf/%s.vcf" % uid)
             assert answer is not None
             assert "\r\nUID:%s\r\n" % uid in answer
+
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    def test_hook_placeholders_PUT(self, caplog) -> None:
+        """Run hook and check placeholders: PUT"""
+        self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
+        found = 0
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event)
+        for line in caplog.messages:
+            if line.find("\"hook-json ") != -1:
+                found = 1
+                r = re.search('.*\"hook-json ({.*})".*', line)
+                if r:
+                    s = r.group(1).replace("'", "\"")
+                else:
+                    break
+                d = json.loads(s)
+                if d["user"] == "Anonymous":
+                    found = found | 2
+                if d["cwd"]:
+                    found = found | 4
+                if d["path"]:
+                    found = found | 8
+                    if d["path"] == d["cwd"] + "/collection-root/calendar.ics/event1.ics":
+                        found = found | 16
+                if d["request"]:
+                    found = found | 64
+                    if d["request"] == "PUT":
+                        found = found | 128
+                if d["to_path"]:
+                    found = found | 32
+                    if d["to_path"] == "":
+                        found = found | 256
+                else:
+                    found = found | 256 | 32
+        if (found != 511):
+            raise ValueError("Logging misses expected hook log line, found=%d data=%r", found, d)
+        else:
+            logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
+
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    def test_hook_placeholders_DELETE(self, caplog) -> None:
+        """Run hook and check placeholders: DELETE"""
+        self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
+        found = 0
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event)
+        self.delete(path)
+        for line in caplog.messages:
+            if line.find("\"hook-json ") != -1:
+                found = 1
+                r = re.search('.*\"hook-json ({.*})".*', line)
+                if r:
+                    s = r.group(1).replace("'", "\"")
+                else:
+                    break
+                d = json.loads(s)
+                if d["user"] == "Anonymous":
+                    found = found | 2
+                if d["cwd"]:
+                    found = found | 4
+                if d["path"]:
+                    found = found | 8
+                    if d["path"] == d["cwd"] + "/collection-root/calendar.ics/event1.ics":
+                        found = found | 16
+                if d["request"]:
+                    found = found | 64
+                    if d["request"] == "DELETE":
+                        found = found | 128
+                if d["to_path"]:
+                    found = found | 32
+                    if d["to_path"] == "":
+                        found = found | 256
+                else:
+                    found = found | 256 | 32
+        if (found != 511):
+            raise ValueError("Logging misses expected hook log line, found=%d data=%r", found, s)
+        else:
+            logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
+
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    def test_hook_placeholders_MKCALENDAR(self, caplog) -> None:
+        """Run hook and check placeholders: MKCALENDAR"""
+        self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
+        found = 0
+        self.mkcalendar("/calendar.ics/")
+        for line in caplog.messages:
+            if line.find("\"hook-json ") != -1:
+                found = 1
+                r = re.search('.*\"hook-json ({.*})".*', line)
+                if r:
+                    s = r.group(1).replace("'", "\"")
+                else:
+                    break
+                d = json.loads(s)
+                if d["user"] == "Anonymous":
+                    found = found | 2
+                if d["cwd"]:
+                    found = found | 4
+                if d["path"]:
+                    found = found | 8
+                    if d["path"] == d["cwd"] + "/collection-root/calendar.ics/":
+                        found = found | 16
+                if d["request"]:
+                    found = found | 64
+                    if d["request"] == "MKCALENDAR":
+                        found = found | 128
+                if d["to_path"]:
+                    found = found | 32
+                    if d["to_path"] == "":
+                        found = found | 256
+                else:
+                    found = found | 256 | 32
+        if (found != 511):
+            raise ValueError("Logging misses expected hook log line, found=%d data=%r", found, d)
+        else:
+            logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
+
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    def test_hook_placeholders_MKCOL(self, caplog) -> None:
+        """Run hook and check placeholders: MKCOL"""
+        self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
+        found = 0
+        self.mkcol("/user1/")
+        for line in caplog.messages:
+            if line.find("\"hook-json ") != -1:
+                found = 1
+                r = re.search('.*\"hook-json ({.*})".*', line)
+                if r:
+                    s = r.group(1).replace("'", "\"")
+                else:
+                    break
+                d = json.loads(s)
+                if d["user"] == "Anonymous":
+                    found = found | 2
+                if d["cwd"]:
+                    found = found | 4
+                if d["path"]:
+                    found = found | 8
+                    if d["path"] == d["cwd"] + "/collection-root/user1/":
+                        found = found | 16
+                if d["request"]:
+                    found = found | 64
+                    if d["request"] == "MKCOL":
+                        found = found | 128
+                if d["to_path"]:
+                    found = found | 32
+                    if d["to_path"] == "":
+                        found = found | 256
+                else:
+                    found = found | 256 | 32
+        if (found != 511):
+            raise ValueError("Logging misses expected hook log line, found=%d data=%r", found, d)
+        else:
+            logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
+
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    def test_hook_placeholders_PROPPATCH(self, caplog) -> None:
+        """Run hook and check placeholders: PROPPATCH"""
+        self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
+        found = 0
+        self.mkcalendar("/calendar.ics/")
+        proppatch = get_file_content("proppatch_set_calendar_color.xml")
+        _, responses = self.proppatch("/calendar.ics/", proppatch)
+        for line in caplog.messages:
+            if line.find("\"hook-json ") != -1:
+                found = 1
+                r = re.search('.*\"hook-json ({.*})".*', line)
+                if r:
+                    s = r.group(1).replace("'", "\"")
+                else:
+                    break
+                d = json.loads(s)
+                if d["user"] == "Anonymous":
+                    found = found | 2
+                if d["cwd"]:
+                    found = found | 4
+                if d["path"]:
+                    found = found | 8
+                    if d["path"] == d["cwd"] + "/collection-root/calendar.ics/":
+                        found = found | 16
+                if d["request"]:
+                    found = found | 64
+                    if d["request"] == "PROPPATCH":
+                        found = found | 128
+                if d["to_path"]:
+                    found = found | 32
+                    if d["to_path"] == "":
+                        found = found | 256
+                else:
+                    found = found | 256 | 32
+        if (found != 511):
+            raise ValueError("Logging misses expected hook log line, found=%d data=%r", found, d)
+        else:
+            logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
+
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    def test_hook_placeholders_MOVE(self, caplog) -> None:
+        """Run hook and check placeholders: MOVE"""
+        self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
+        found = 0
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path1 = "/calendar.ics/event1.ics"
+        path2 = "/calendar.ics/event2.ics"
+        self.put(path1, event)
+        self.request("MOVE", path1, check=201,
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
+        for line in caplog.messages:
+            if line.find("\"hook-json ") != -1:
+                found = 1
+                r = re.search('.*\"hook-json ({.*})".*', line)
+                if r:
+                    s = r.group(1).replace("'", "\"")
+                else:
+                    break
+                d = json.loads(s)
+                if d["user"] == "Anonymous":
+                    found = found | 2
+                if d["cwd"]:
+                    found = found | 4
+                if d["path"]:
+                    found = found | 8
+                    if d["path"] == d["cwd"] + "/collection-root/calendar.ics/event1.ics":
+                        found = found | 16
+                if d["request"]:
+                    found = found | 64
+                    if d["request"] == "MOVE":
+                        found = found | 128
+                if d["to_path"]:
+                    found = found | 32
+                    if d["to_path"] == d["cwd"] + "/collection-root/calendar.ics/event2.ics":
+                        found = found | 256
+        if (found != 511):
+            raise ValueError("Logging misses expected hook log line, found=%d data=%r", found, d)
+        else:
+            logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
 
 
 class TestMultiFileSystemNoLock(BaseTest):
