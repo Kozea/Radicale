@@ -233,17 +233,17 @@ class TestCustomStorageSystemCallable(BaseTest):
 
 class TestStorageHook(BaseTest):
     """Test the storage hook"""
-    
-    HOOK_STRING="Captured stdout from storage hook:"
-    SANATISED_STRING="Sanitized path:"
-    
-    #TODO: How to give the result of the cmd to the test
+
+    HOOK_STRING = "Captured stdout from storage hook:"
+    SANATISED_STRING = "Sanitized path:"
+
+    # TODO: How to give the result of the cmd to the test
     def setup_method(self) -> None:
         _TestBaseRequests.setup_method(cast(_TestBaseRequests, self))
         cmd = "echo \'{\"user\":\"%(user)s\", \"path\":\"%(path)s\", \"cwd\":\"%(cwd)s\"}\'"
         self.configure({"storage": {"hook": cmd}})
-        
-    def get_output(self, records:list[logging.LogRecord]) -> dict[str, str]:
+
+    def get_output(self, records: list[logging.LogRecord]) -> dict[str, str]:
         """
         Get the result of the storage hook execution
 
@@ -258,17 +258,17 @@ class TestStorageHook(BaseTest):
             # We assume a message looks like such: [date] [thread] [DEBUG] Captured stdout from storage hook: "{user:"", "path":"", "cwd":""}"
             if self.HOOK_STRING not in message:
                 continue
-            print("Message:",message)
+            print("Message:", message)
             _, raw_info = message.split(self.HOOK_STRING)
             raw_info = raw_info.strip("\"")
             try:
                 return json.loads(raw_info)
-            except:
+            except json.JSONDecodeError:
                 # Try and find the next one
                 pass
-        assert "Unable to find storage hook"
+        assert False, "Unable to find storage hook"
 
-    def check_path(self, records: list[logging.LogRecord], path:str):
+    def check_path(self, records: list[logging.LogRecord], path: str):
         result = self.get_output(records)
         assert result["path"].endswith(path), f"{result["path"]} does not end in {path}"
 
@@ -281,11 +281,10 @@ class TestStorageHook(BaseTest):
         caplog.set_level(logging.DEBUG)
         self.put(path, event)
         self.check_path(caplog.records, path)
-        
+
         caplog.set_level(logging.INFO)
-        
-    
-    def test_update_event(self, caplog: pytest.LogCaptureFixture  ) -> None:
+
+    def test_update_event(self, caplog: pytest.LogCaptureFixture) -> None:
         """Update an event."""
         caplog.set_level(logging.INFO)
         self.mkcalendar("/calendar.ics/")
@@ -312,14 +311,16 @@ class TestStorageHook(BaseTest):
 
     def test_mkcalendar(self, caplog: pytest.LogCaptureFixture) -> None:
         """Make a calendar"""
+        path = "/calendar.ics/"
         caplog.set_level(logging.DEBUG)
-        self.mkcalendar("/calendar.ics/")
+        self.mkcalendar(path)
         caplog.set_level(logging.INFO)
-        self.check_path(caplog.records, "/calendar.ics/")
-        
+        self.check_path(caplog.records, path)
+
     def test_mkcol(self, caplog: pytest.LogCaptureFixture) -> None:
         """Make a collection."""
+        path = "/user/"
         caplog.set_level(logging.DEBUG)
-        self.mkcol("/user/")
+        self.mkcol(path)
         caplog.set_level(logging.INFO)
-        self.check_path(caplog.records, "/user/")
+        self.check_path(caplog.records, path)
