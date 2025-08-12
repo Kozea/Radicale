@@ -1373,6 +1373,8 @@ Supported placeholders:
  - `%(user)s`: logged-in user
  - `%(cwd)s`: current working directory _(>= 3.5.1)_
  - `%(path)s`: full path of item _(>= 3.5.1)_
+ - `%(to_path)s`: full path of destination item (only set on MOVE request) _(>= 3.5.5)_
+ - `%(request)s`: request method _(>= 3.5.5)_
 
 Command will be executed with base directory defined in `filesystem_folder` (see above)
 
