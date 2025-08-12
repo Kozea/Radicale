@@ -57,7 +57,7 @@ class ApplicationPartMkcalendar(ApplicationBase):
             return httputils.BAD_REQUEST
         # TODO: use this?
         # timezone = props.get("C:calendar-timezone")
-        with self._storage.acquire_lock("w", user):
+        with self._storage.acquire_lock("w", user, path=path, request="MKCALENDAR"):
             item = next(iter(self._storage.discover(path)), None)
             if item:
                 return self._webdav_error_response(

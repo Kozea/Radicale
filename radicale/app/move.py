@@ -73,7 +73,7 @@ class ApplicationPartMove(ApplicationBase):
         if not to_access.check("w"):
             return httputils.NOT_ALLOWED
 
-        with self._storage.acquire_lock("w", user):
+        with self._storage.acquire_lock("w", user, path=path, request="MOVE", to_path=to_path):
             item = next(iter(self._storage.discover(path)), None)
             if not item:
                 return httputils.NOT_FOUND

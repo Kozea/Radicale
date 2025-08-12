@@ -174,7 +174,7 @@ class ApplicationPartPut(ApplicationBase):
              bool(rights.intersect(access.permissions, "Ww")),
              bool(rights.intersect(access.parent_permissions, "w")))
 
-        with self._storage.acquire_lock("w", user, path=path):
+        with self._storage.acquire_lock("w", user, path=path, request="PUT"):
             item = next(iter(self._storage.discover(path)), None)
             parent_item = next(iter(
                 self._storage.discover(access.parent_path)), None)
