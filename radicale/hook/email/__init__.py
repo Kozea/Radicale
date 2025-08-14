@@ -946,7 +946,7 @@ class Hook(BaseHook):
         :type notification_item: HookNotificationItem
         :return: None
         """
-        if self.dryrun:
+        if self.email_config.dryrun:
             logger.warning("Hook 'email': DRY-RUN received notification_item: %r", vars(notification_item))
         else:
             logger.debug("Received notification_item: %r", vars(notification_item))
