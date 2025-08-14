@@ -300,8 +300,7 @@ class BaseStorage:
 
     def discover(
             self, path: str, depth: str = "0",
-            child_context_manager: Optional[
-                Callable[[str, Optional[str]], ContextManager[None]]] = None,
+            child_context_manager: Optional[Callable[[str, Optional[str]], ContextManager[None]]] = None,
             user_groups: Set[str] = set([])) -> Iterable["types.CollectionOrItem"]:
         """Discover a list of collections under the given ``path``.
 
