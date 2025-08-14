@@ -21,7 +21,7 @@ import errno
 import os
 import pickle
 import sys
-from typing import Iterable, Iterator, TextIO, cast
+from typing import Iterable, Iterator, Optional, TextIO, Tuple, cast
 
 import radicale.item as radicale_item
 from radicale import pathutils
@@ -36,10 +36,11 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
                            CollectionPartHistory, CollectionBase):
 
     def upload(self, href: str, item: radicale_item.Item
-               ) -> radicale_item.Item:
+               ) -> Tuple[radicale_item.Item, Optional[radicale_item.Item]]:
         if not pathutils.is_safe_filesystem_path_component(href):
             raise pathutils.UnsafePathError(href)
         path = pathutils.path_to_filesystem(self._filesystem_path, href)
+        old_item = self._get(href, verify_href=False)
         try:
             with self._atomic_write(path, newline="") as fo:  # type: ignore
                 f = cast(TextIO, fo)
@@ -67,7 +68,7 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
         uploaded_item = self._get(href, verify_href=False)
         if uploaded_item is None:
             raise RuntimeError("Storage modified externally")
-        return uploaded_item
+        return uploaded_item, old_item
 
     def _upload_all_nonatomic(self, items: Iterable[radicale_item.Item],
                               suffix: str = "") -> None:

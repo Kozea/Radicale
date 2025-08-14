@@ -1630,11 +1630,11 @@ When enabled, send one email to all attendee email addresses. When disabled, sen
 
 Default: `False`
 
-##### added_template
+##### new_or_added_to_event_template
 
 _(>= 3.5.5)_
 
-Template to use for added/updated event email body.
+Template to use for added/updated event email body (sent to an attendee when the event is created or they are added to a pre-existing event).
 
 The following placeholders will be replaced:
 - `$organizer_name`: Name of the organizer, or "Unknown Organizer" if not set in event
@@ -1660,11 +1660,11 @@ You have been added as an attendee to the following calendar event.
 This is an automated message. Please do not reply.
 ```
 
-##### removed_template
+##### deleted_or_removed_from_event_template
 
 _(>= 3.5.5)_
 
-Template to use for deleted event email body.
+Template to use for deleted/removed event email body (sent to an attendee when the event is deleted or they are removed from the event).
 
 The following placeholders will be replaced:
 - `$organizer_name`: Name of the organizer, or "Unknown Organizer" if not set in event
@@ -1681,12 +1681,44 @@ Default:
 ```
 Hello $attendee_name,
 
-You have been removed as an attendee from the following calendar event.
+The following event has been deleted.
 
     $event_title
     $event_start_time - $event_end_time
     $event_location
 
+This is an automated message. Please do not reply.
+```
+
+#### updated_event_template
+
+_(>= 3.5.5)_
+
+Template to use for updated event email body (sent to an attendee when non-attendee-related details of the event are updated).
+
+Existing attendees will NOT be notified of a modified event if the only changes are adding/removing other attendees.
+
+The following placeholders will be replaced:
+- `$organizer_name`: Name of the organizer, or "Unknown Organizer" if not set in event
+- `$from_email`: Email address the email is sent from
+- `$attendee_name`: Name of the attendee (email recipient), or "everyone" if mass email enabled.
+- `$event_name`: Name/summary of the event, or "No Title" if not set in event
+- `$event_start_time`: Start time of the event in ISO 8601 format
+- `$event_end_time`: End time of the event in ISO 8601 format, or "No End Time" if the event has no end time
+- `$event_location`: Location of the event, or "No Location Specified" if not set in event
+
+Providing any words prefixed with $ not included in the list above will result in an error.
+
+Default: 
+```
+Hello $attendee_name,
+            
+The following event has been updated.
+
+    $event_title
+    $event_start_time - $event_end_time
+    $event_location
+    
 This is an automated message. Please do not reply.
 ```
 
