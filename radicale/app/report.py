@@ -475,7 +475,7 @@ def _expand(
 
             if not vevent:
                 # Create new instance from recurrence
-                vevent = copy.deepcopy(base_vevent)
+                vevent = copy.copy(base_vevent)
 
                 # For all day events, the system timezone may influence the
                 # results, so use recurrence_dt
