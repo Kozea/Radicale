@@ -1,10 +1,23 @@
-import { type RouteConfig, index, route, layout } from '@react-router/dev/routes';
+import {
+  type RouteConfig,
+  index,
+  route,
+  layout,
+} from '@react-router/dev/routes';
 
 export default [
-  layout('components/layout.tsx', [
+  // Public routes (no authentication required)
+  layout('components/login-layout.tsx', [route('/login', 'routes/login.tsx')]),
+
+  // Protected routes (authentication required)
+  layout('components/protected-layout.tsx', [
     index('routes/home.tsx'),
-    route('/privacy-preferences', 'routes/privacy-preferences.tsx'),
-    route('/data-access', 'routes/data-access.tsx'),
-    route('/login', 'routes/login.tsx'),
+    route('/subject-data-preferences', 'routes/subject-data-preferences.tsx'),
+    route('/subject-data-access', 'routes/subject-data-access.tsx'),
   ]),
+  // API routes for authentication
+  route('/api/auth/request-otp', 'routes/api.auth.request-otp.tsx'),
+  route('/api/auth/verify-otp', 'routes/api.auth.verify-otp.tsx'),
+  // API routes for user preferences
+  route('/api/user/preferences', 'routes/api.user.preferences.tsx'),
 ] satisfies RouteConfig;

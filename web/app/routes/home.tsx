@@ -1,68 +1,70 @@
-import type { Route } from './+types/home';
+import { MoveUpRightIcon } from 'lucide-react';
+import { meta, handle } from './home-meta';
 
-export function meta(_: Route.MetaArgs) {
-  return [
-    { title: 'User Privacy' },
-    { name: 'description', content: 'Set your privacy preferences for the contact management system without creating an account. Control how your personal information is handled.' },
-    { name: 'keywords', content: 'privacy preferences, contact manager privacy, data protection, no account, anonymous privacy settings, GDPR preferences' },
-    { property: 'og:title', content: 'User Privacy' },
-    { property: 'og:description', content: 'Anonymous privacy preference management for contact systems.' },
-    { property: 'og:type', content: 'website' },
-  ];
-}
-
-export const handle = {
-  subtitle: 'User Privacy',
-};
+export { meta, handle };
 
 export default function Home() {
   return (
-    <div className="min-h-screen py-8">
-      <div className="container mx-auto max-w-4xl px-6">
-        <div className="space-y-8">
+    <div className='py-30'>
+      <div className='container mx-auto max-w-8xl px-6'>
+        <div className='space-y-8'>
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-6">User Privacy</h1>
-            <p className="text-gray-600 text-lg leading-relaxed mb-6">
-              Define your privacy preferences for the contact management system without the need to create an account. 
-              Set your data handling preferences to control how your information is processed.
+            <h1 className='text-5xl font-medium text-gray-900 mb-6'>
+              Take control of your privacy
+            </h1>
+            <p className='text-gray-400 text-lg leading-relaxed mb-6 max-w-4xl'>
+              Define your Subject Data Preferences for the contact management
+              system without the need to create an account. Set your data
+              handling preferences to control how your information is processed.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Privacy Preferences</h2>
-              <p className="text-gray-600 mb-4">
-                Declare how you want your personal information to be handled when stored 
-                in the contact management system with a one-time passcode.
+          <div className='grid md:grid-cols-2 gap-6'>
+            <div className='bg-gray-100 p-6 rounded-2xl'>
+              <h2 className='text-xl font-medium text-gray-900 mb-3'>
+                Subject Data Preferences
+              </h2>
+              <p className='text-gray-600 mb-4'>
+                Declare how you want your personal information to be handled
+                when stored in the contact management system with a one-time
+                passcode.
               </p>
-              <a 
-                href="/privacy-preferences" 
-                className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
+              <a
+                href='/subject-data-preferences'
+                className='inline-flex items-center text-blue-600 hover:text-blue-700 font-normal'
               >
-                Set Your Privacy Preferences →
+                Set Your Subject Data Preferences{' '}
+                <MoveUpRightIcon className='w-4 h-4 ml-2' />
               </a>
             </div>
 
-            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Data Access</h2>
-              <p className="text-gray-600 mb-4">
-                See how your data is used in the contact management system and how other users are using it.
-                Make informed decisions about your privacy and data usage.
+            <div className='bg-gray-100 p-6 rounded-2xl'>
+              <h2 className='text-xl font-medium text-gray-900 mb-3'>
+                Subject Data Access
+              </h2>
+              <p className='text-gray-600 mb-4'>
+                See how your data is used in the contact management system and
+                how other users are using it. Make informed decisions about your
+                privacy and data usage.
               </p>
-              <a 
-                href="/data-access" 
-                className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
+              <a
+                href='/subject-data-access'
+                className='inline-flex items-center text-blue-600 hover:text-blue-700 font-normal'
               >
-                View Your Data Access →
+                View Subject Subject Data Access{' '}
+                <MoveUpRightIcon className='w-4 h-4 ml-2' />
               </a>
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">No accounts needed, just a one-time passcode</h3>
-            <p className="text-blue-800">
-              Simply set your privacy preferences and have them applied to the contact management system. 
-              Your preferences are yours to control, without compromising your privacy.
+          <div className='bg-blue-50 p-6 rounded-2xl'>
+            <h3 className='text-xl font-medium text-gray-900 mb-3'>
+              No accounts needed, just a one-time passcode
+            </h3>
+            <p className='text-gray-600 mb-4'>
+              Simply set your Subject Data Preferences and have them applied to
+              the contact management system. Your preferences are yours to
+              control, without compromising your privacy.
             </p>
           </div>
         </div>

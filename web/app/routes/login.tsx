@@ -1,23 +1,16 @@
 import { LoginForm } from '~/components/login-form';
-import type { Route } from './+types/login';
+import { meta, handle } from './login-meta';
 
-export function meta(_: Route.MetaArgs) {
-  return [
-    { title: 'Login' },
-    { name: 'description', content: 'Access your privacy preferences with a one-time passcode. No account creation required.' },
-  ];
-}
-
-export const handle = {
-  subtitle: 'Login',
-};
+export { meta, handle };
 
 export default function LoginPage() {
   return (
-    <div className="py-4">
-      <div className="flex justify-center">
-        <div className="w-full max-w-md">
-          <LoginForm />
+    <div className='py-30'>
+      <div className='container mx-auto max-w-8xl px-6'>
+        <div className='flex justify-center'>
+          <div className='w-full max-w-2xl shadow-2xl rounded-2xl p-32'>
+            <LoginForm />
+          </div>
         </div>
       </div>
     </div>

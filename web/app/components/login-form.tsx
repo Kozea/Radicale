@@ -1,66 +1,75 @@
-import { useState } from 'react';
-import type { ComponentProps, FormEvent } from 'react';
-import { Contact } from 'lucide-react';
+import {
+  useState,
+  useEffect,
+  type ComponentProps,
+  type FormEvent,
+} from 'react';
 import { useNavigate } from 'react-router';
+import { X, ArrowRight } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
+import { isAuthenticated } from '~/lib/auth';
 
-// Helper to verify OTP and get JWT token
-async function verifyOtp(identifier: string, code: string): Promise<{ ok: boolean; jwt?: string; error?: string }> {
-  const credentials = btoa(`${identifier}:${code}`);
+// Helper to request OTP via new API
+async function requestOtp(
+  identifier: string,
+): Promise<{ ok: boolean; error?: string }> {
   try {
-    const res = await fetch(`http://localhost:5232/privacy/settings/${encodeURIComponent(identifier)}`, {
-      method: 'GET',
+    const res = await fetch('/api/auth/request-otp', {
+      method: 'POST',
       headers: {
-        'Authorization': `Basic ${credentials}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ email: identifier }),
     });
 
-    if (res.status === 200) {
-      // OTP verified successfully, get JWT from Authorization header
-      const jwt = res.headers.get('Authorization')?.replace('Bearer ', '');
-      if (jwt) {
-        return { ok: true, jwt };
-      } else {
-        return { ok: false, error: 'No JWT token received' };
-      }
-    } else if (res.status === 401) {
-      // Invalid OTP
-      const data = await res.json().catch(() => ({}));
-      return { ok: false, error: data.error || 'Invalid verification code' };
+    const data = (await res.json()) as { message?: string; error?: string };
+
+    if (res.ok) {
+      return { ok: true };
     } else {
-      // Other error
-      const data = await res.json().catch(() => ({}));
-      return { ok: false, error: data.error || 'Verification failed' };
+      return {
+        ok: false,
+        error: data.error || 'Failed to send verification code',
+      };
     }
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
 }
 
-// Helper to request OTP
-async function requestOtp(identifier: string): Promise<{ ok: boolean; error?: string }> {
-  const credentials = btoa(`${identifier}:`);
+// Helper to verify OTP and get JWT token
+async function verifyOtp(
+  identifier: string,
+  code: string,
+): Promise<{
+  ok: boolean;
+  authToken?: string;
+  error?: string;
+}> {
   try {
-    const res = await fetch(`http://localhost:5232/privacy/settings/${encodeURIComponent(identifier)}`, {
-      method: 'GET',
+    const res = await fetch('/api/auth/verify-otp', {
+      method: 'POST',
       headers: {
-        'Authorization': `Basic ${credentials}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ email: identifier, code }),
     });
-    if (res.status === 401) {
-      // OTP sent, proceed to code entry
-      return { ok: true };
-    } else if (res.status === 200) {
-      // Already authenticated (should not happen in OTP flow)
-      return { ok: false, error: 'Already authenticated.' };
+
+    const data = (await res.json()) as {
+      authToken?: string;
+      error?: string;
+    };
+
+    if (res.ok) {
+      return { ok: true, authToken: data.authToken };
     } else {
-      const data = await res.json().catch(() => ({}));
-      return { ok: false, error: data.error || 'Unexpected error.' };
+      return {
+        ok: false,
+        error: data.error || 'Verification failed',
+      };
     }
   } catch (e) {
     return { ok: false, error: (e as Error).message };
@@ -75,6 +84,13 @@ export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Redirect authenticated users away from login page
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/');
+    }
+  }, [navigate]);
+
   const handleIdentifierSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -85,7 +101,7 @@ export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
       if (result.ok) {
         setStep('code');
       } else {
-        setError(result.error || 'Failed to send OTP.');
+        setError(result.error || 'Failed to send verification code.');
       }
     }
   };
@@ -93,26 +109,26 @@ export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
   const handleCodeSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (code.trim()) {
+    if (code.trim() && identifier.trim()) {
       setLoading(true);
       const result = await verifyOtp(identifier.trim(), code.trim());
       setLoading(false);
 
-      if (result.ok && result.jwt) {
-        // Store JWT token (you can use localStorage, sessionStorage, or a state management solution)
-        localStorage.setItem('auth_token', result.jwt);
+      if (result.ok && result.authToken) {
+        // Store JWT token
+        localStorage.setItem('auth_token', result.authToken);
 
-        // Navigate to privacy preferences page using React Router
-        console.log('Authentication successful! JWT token:', result.jwt);
-        navigate('/privacy-preferences');
-
+        // Navigate to home page
+        navigate('/');
       } else {
         setError(result.error || 'Verification failed');
       }
     }
   };
 
-  const handleBack = () => {
+  const handleBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setStep('identifier');
     setCode('');
   };
@@ -120,98 +136,112 @@ export function LoginForm({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div className={cn('flex flex-col gap-8', className)} {...props}>
       {/* Apple-style dotted circle */}
-      <div className="flex justify-center mt-8 mb-8">
-        <div className="relative w-32 h-32">
+      <div className='flex justify-center mt-8 mb-8'>
+        <div className='relative w-32 h-32'>
           {/* Dotted circle pattern */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-32 h-32 rounded-full border-2 border-dashed border-orange-300 opacity-60"></div>
-            <div className="absolute w-24 h-24 rounded-full border-2 border-dashed border-orange-300 opacity-40"></div>
-            <div className="absolute w-16 h-16 rounded-full border-2 border-dashed border-orange-300 opacity-30"></div>
+          <div className='absolute inset-0 flex items-center justify-center'>
+            <div className='absolute w-48 h-48 rounded-full border-2 border-dashed border-orange-300 opacity-60' />
+            <div className='absolute w-40 h-40 rounded-full border-2 border-dashed border-orange-300 opacity-50' />
+            <div className='absolute w-32 h-32 rounded-full border-2 border-dashed border-orange-300 opacity-40' />
           </div>
 
           {/* Center logo placeholder */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center">
-              <Contact className="w-7 h-7" />
-            </div>
+          <div className='absolute inset-0 flex items-center justify-center'>
+            <img
+              src='/apple.svg'
+              alt='Logo'
+              style={{ width: '48px', height: '60px', marginTop: '-10px' }}
+            />
           </div>
         </div>
       </div>
 
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-semibold text-gray-900 mb-2">Sign in with your identifier</h2>
-        <p className="text-gray-600">
-        Enter your email or phone number to receive a one-time passcode. No account creation required.
+      <div className='text-center mb-8 mt-8'>
+        <h2 className='text-3xl font-medium text-gray-900 mb-2'>
+          Sign in with email or phone
+        </h2>
+        <p className='text-gray-600'>
+          Enter your email address or phone number to receive a one-time
+          passcode. No account creation required.
         </p>
       </div>
 
       {step === 'identifier' ? (
-        <form onSubmit={handleIdentifierSubmit} className="space-y-4">
-          <div className="relative">
-            <Input
-              type="text"
-              value={identifier}
-              onChange={e => setIdentifier(e.target.value)}
-              placeholder="Email or Phone Number"
-              className="h-14 text-lg px-4 rounded-lg border-2 border-gray-200"
-              required
-              disabled={loading}
-            />
+        <form onSubmit={handleIdentifierSubmit} className='space-y-4' autoComplete='on'>
+          <div className='relative'>
+            <div className='relative flex items-center'>
+              <Input
+                type='text'
+                value={identifier}
+                onChange={e => setIdentifier(e.target.value)}
+                placeholder='Email or Phone Number'
+                className='h-14 text-lg px-4 pr-16 rounded-2xl border-2 border-gray-200 focus:border-gray-300 focus:ring-0'
+                required
+                disabled={loading}
+                autoComplete='email'
+                inputMode='email'
+              />
+              <Button
+                type='submit'
+                className='absolute right-2 h-10 w-10 rounded-full border-2 border-gray-200 bg-white hover:bg-gray-50 p-0 flex items-center justify-center shadow-sm'
+                disabled={loading || !identifier.trim()}
+              >
+                <ArrowRight className='text-gray-500' />
+              </Button>
+            </div>
           </div>
-          {error && <div className="text-red-600 text-sm">{error}</div>}
-          <Button
-            type="submit"
-            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
-            disabled={loading}
-          >
-            {loading ? 'Sending...' : 'Send Code'}
-          </Button>
+          {error && <div className='text-red-600 text-sm'>{error}</div>}
         </form>
       ) : (
-        <form onSubmit={handleCodeSubmit} className="space-y-4">
-          <div className="text-center mb-4">
-            <p className="text-gray-600">Enter the verification code sent to:</p>
-            <p className="font-medium text-gray-900">{identifier}</p>
+        <form id='otp-form' onSubmit={handleCodeSubmit} className='space-y-4' autoComplete='one-time-code'>
+          <div className='relative'>
+            <div className='relative flex items-center'>
+              <Input
+                type='text'
+                value={identifier}
+                className='h-14 text-lg px-4 pr-16 rounded-2xl border-2 border-gray-200 bg-gray-50'
+                disabled
+                readOnly
+              />
+              <Button
+                type='button'
+                onClick={handleBack}
+                className='absolute right-2 h-10 w-10 rounded-full border-2 border-gray-200 bg-white hover:bg-gray-50 p-0 flex items-center justify-center shadow-sm'
+                disabled={loading}
+              >
+                <X className='text-gray-500' />
+              </Button>
+            </div>
           </div>
-          <div className="relative">
+          <div className='relative'>
+            <div className='relative flex items-center'>
             <Input
-              type="text"
-              value={identifier}
-              className="h-14 text-lg px-4 rounded-lg border-2 border-gray-200 bg-gray-50"
-              disabled
-            />
-          </div>
-          <div className="relative">
-            <Input
-              type="text"
+              id='otp-input'
+              name='otp'       
+              type='tel'    
               value={code}
               onChange={e => setCode(e.target.value)}
-              placeholder="Code"
-              className="h-14 text-lg px-4 rounded-lg border-2 border-gray-200"
+              placeholder='6-digit code'
+              className='h-14 text-lg px-4 pr-16 rounded-2xl border-2 border-gray-200 focus:border-gray-300 focus:ring-0 tracking-widest'
               required
+              autoComplete='one-time-code'
+              inputMode='numeric'
+              enterKeyHint='done'
               autoFocus
               disabled={loading}
+              maxLength={6}
+              pattern='\d*'
             />
+              <Button
+                type='submit'
+                className='absolute right-2 h-10 w-10 rounded-full border-2 border-gray-200 bg-white hover:bg-gray-50 p-0 flex items-center justify-center shadow-sm'
+                disabled={loading || !code.trim() || !identifier.trim()}
+              >
+                <ArrowRight className='text-gray-500' />
+              </Button>
+            </div>
           </div>
-          {error && <div className="text-red-600 text-sm">{error}</div>}
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleBack}
-              className="flex-1 h-12 rounded-lg"
-              disabled={loading}
-            >
-              Back
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
-              disabled={loading}
-            >
-              {loading ? 'Verifying...' : 'Verify Code'}
-            </Button>
-          </div>
+          {error && <div className='text-red-600 text-sm'>{error}</div>}
         </form>
       )}
     </div>

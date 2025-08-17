@@ -5,12 +5,24 @@
 
 @theme {
   --font-sans:
-    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-    'Segoe UI Symbol', 'Noto Color Emoji';
+    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+  /* Apple-style shadows with color tinting and layered depth */
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow: 0 1px 6px 0 rgb(0 0 0 / 0.12), 0 2px 4px 0 rgb(0 0 0 / 0.06);
+  --shadow-md: 0 4px 12px 0 rgb(0 0 0 / 0.15), 0 2px 6px 0 rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 8px 25px 0 rgb(0 0 0 / 0.18), 0 4px 10px 0 rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 40px 0 rgb(0 0 0 / 0.22), 0 10px 20px 0 rgb(0 0 0 / 0.12);
+  --shadow-2xl:
+    0 25px 60px 0 rgb(0 0 0 / 0.25), 0 15px 30px 0 rgb(0 0 0 / 0.15);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.06);
 }
 
 html,
 body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+
   @apply bg-white dark:bg-gray-950;
 
   @media (prefers-color-scheme: dark) {
@@ -57,7 +69,7 @@ body {
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 2rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -70,7 +82,7 @@ body {
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --accent: rgba(242, 242, 247, 1);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);

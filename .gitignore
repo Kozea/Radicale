@@ -23,3 +23,5 @@ coverage.xml
 .vscode
 .sass-cache
 Gemfile.lock
+local.db
+.env
