@@ -981,10 +981,13 @@ class Hook(BaseHook):
                 return
             email_event_end_time = email_event_event.datetime_end  # type: ignore
             # Skip notification if the event end time is more than 1 minute in the past.
-            if email_event_end_time and email_event_end_time.time and email_event_end_time.time < (
-                    datetime.now() - timedelta(minutes=1)):
-                logger.warning("Event end time is in the past, skipping notification for event: %s",
-                               email_event_event.uid)
+            if email_event_end_time and email_event_end_time.time:
+                event_end = email_event_end_time.time  # type: ignore
+                now = datetime.now(
+                    event_end.tzinfo) if event_end.tzinfo else datetime.now()  # Handle timezone-aware datetime
+                if event_end < (now - timedelta(minutes=1)):
+                    logger.warning("Event end time is in the past, skipping notification for event: %s",
+                                   email_event_event.uid)
                 return
 
             if not previous_item_str:

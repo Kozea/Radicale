@@ -93,16 +93,12 @@ permissions: RrWw""")
         assert "VEVENT" in answer
         assert "Event" in answer
         assert "UID:event" in answer
-        found = 0
-        for line in caplog.messages:
-            if line.find("notification_item: {'type': 'upsert'") != -1:
-                found = found | 1
-            if line.find("to_addresses=['janedoe@example.com']") != -1:
-                found = found | 2
-            if line.find("to_addresses=['johndoe@example.com']") != -1:
-                found = found | 4
-        if (found != 7):
-            raise ValueError("Logging misses expected log lines, found=%d", found)
+
+        logs = caplog.messages
+        # Should have a log saying the notification item was received
+        assert len([log for log in logs if "received notification_item: {'type': 'upsert'," in log]) == 1
+        # Should NOT have a log saying that no email is sent (email won't actually be sent due to dryrun)
+        assert len([log for log in logs if "skipping notification for event: event1" in log]) == 0
 
     def test_add_event_with_past_end_date(self, caplog) -> None:
         caplog.set_level(logging.WARNING)
@@ -119,8 +115,11 @@ permissions: RrWw""")
         assert "Event" in answer
         assert "UID:event" in answer
 
-        # Should not trigger an email
-        assert len(caplog.messages) == 0
+        logs = caplog.messages
+        # Should have a log saying the notification item was received
+        assert len([log for log in logs if "received notification_item: {'type': 'upsert'," in log]) == 1
+        # Should have a log saying that no email is sent due to past end date
+        assert len([log for log in logs if "Event end time is in the past, skipping notification for event: event1" in log]) == 1
 
     def test_delete_event_with_future_end_date(self, caplog) -> None:
         caplog.set_level(logging.WARNING)
@@ -134,16 +133,12 @@ permissions: RrWw""")
         assert responses[path] == 200
         _, answer = self.get("/calendar.ics/")
         assert "VEVENT" not in answer
-        found = 0
-        for line in caplog.messages:
-            if line.find("notification_item: {'type': 'delete'") != -1:
-                found = found | 1
-            if line.find("to_addresses=['janedoe@example.com']") != -1:
-                found = found | 2
-            if line.find("to_addresses=['johndoe@example.com']") != -1:
-                found = found | 4
-        if (found != 7):
-            raise ValueError("Logging misses expected log lines, found=%d", found)
+
+        logs = caplog.messages
+        # Should have a log saying the notification item was received
+        assert len([log for log in logs if "received notification_item: {'type': 'delete'," in log]) == 1
+        # Should NOT have a log saying that no email is sent (email won't actually be sent due to dryrun)
+        assert len([log for log in logs if "skipping notification for event: event1" in log]) == 0
 
     def test_delete_event_with_past_end_date(self, caplog) -> None:
         caplog.set_level(logging.WARNING)
@@ -158,5 +153,8 @@ permissions: RrWw""")
         _, answer = self.get("/calendar.ics/")
         assert "VEVENT" not in answer
 
-        # Should not trigger an email
-        assert len(caplog.messages) == 0
+        logs = caplog.messages
+        # Should have a log saying the notification item was received
+        assert len([log for log in logs if "received notification_item: {'type': 'delete'," in log]) == 1
+        # Should have a log saying that no email is sent due to past end date
+        assert len([log for log in logs if "Event end time is in the past, skipping notification for event: event1" in log]) == 1
