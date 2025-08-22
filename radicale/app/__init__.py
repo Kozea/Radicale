@@ -68,6 +68,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _internal_server: bool
     _max_content_length: int
     _auth_realm: str
+    _auth_type: str
+    _web_type: str
     _script_name: str
     _extra_headers: Mapping[str, str]
     _permit_delete_collection: bool
@@ -87,6 +89,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         self._request_header_on_debug = configuration.get("logging", "request_header_on_debug")
         self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
         self._auth_delay = configuration.get("auth", "delay")
+        self._auth_type = configuration.get("auth", "type")
+        self._web_type = configuration.get("web", "type")
         self._internal_server = configuration.get("server", "_internal_server")
         self._script_name = configuration.get("server", "script_name")
         if self._script_name:
@@ -257,7 +261,10 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 logger.debug("Called by reverse proxy, remove base prefix %r from path: %r => %r", base_prefix, path, path_new)
                 path = path_new
             else:
-                logger.warning("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching", base_prefix, path)
+                if self._auth_type in ['remote_user', 'http_x_remote_user'] and self._web_type == 'internal':
+                    logger.warning("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching (may cause authentication issues using internal WebUI)", base_prefix, path)
+                else:
+                    logger.debug("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching", base_prefix, path)
 
         # Get function corresponding to method
         function = getattr(self, "do_%s" % request_method, None)
