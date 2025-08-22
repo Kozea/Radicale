@@ -334,6 +334,9 @@
 #smtp_password =
 #from_email =
 #mass_email = False
+#new_or_added_to_event_template =
+#deleted_or_removed_from_event_template =
+#updated_event_template =
 
 
 [reporting]

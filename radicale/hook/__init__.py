@@ -55,21 +55,26 @@ def _cleanup(path):
 
 class HookNotificationItem:
 
-    def __init__(self, notification_item_type, path, content):
+    def __init__(self, notification_item_type, path, content=None, uid=None, new_content=None, old_content=None):
         self.type = notification_item_type.value
         self.point = _cleanup(path)
-        self.content = content
+        self._content_legacy = content
+        self.uid = uid
+        self.new_content = new_content
+        self.old_content = old_content
+
+    @property
+    def content(self):  # For backward compatibility
+        return self._content_legacy or self.uid or self.new_content or self.old_content
+
+    @property
+    def replaces_existing_item(self) -> bool:
+        """Check if this notification item replaces/deletes an existing item."""
+        return self.old_content is not None
 
     def to_json(self):
         return json.dumps(
-            self,
-            default=lambda o: o.__dict__,
+            {**self.__dict__, "content": self.content},
             sort_keys=True,
             indent=4
         )
-
-
-class DeleteHookNotificationItem(HookNotificationItem):
-    def __init__(self, path, uid, old_content=None):
-        super().__init__(notification_item_type=HookNotificationItemTypes.DELETE, path=path, content=uid)
-        self.old_content = old_content

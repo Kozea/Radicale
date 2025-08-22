@@ -16,6 +16,8 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import enum
+import hashlib
+import json
 import re
 import smtplib
 import ssl
@@ -29,8 +31,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import vobject
 
-from radicale.hook import (BaseHook, DeleteHookNotificationItem,
-                           HookNotificationItem, HookNotificationItemTypes)
+from radicale.hook import (BaseHook, HookNotificationItem,
+                           HookNotificationItemTypes)
 from radicale.log import logger
 
 PLUGIN_CONFIG_SCHEMA = {
@@ -63,7 +65,7 @@ PLUGIN_CONFIG_SCHEMA = {
             "value": "",
             "type": str
         },
-        "added_template": {
+        "new_or_added_to_event_template": {
             "value": """Hello $attendee_name,
 
 You have been added as an attendee to the following calendar event.
@@ -75,10 +77,22 @@ You have been added as an attendee to the following calendar event.
 This is an automated message. Please do not reply.""",
             "type": str
         },
-        "removed_template": {
+        "deleted_or_removed_from_event_template": {
             "value": """Hello $attendee_name,
 
-You have been removed as an attendee from the following calendar event.
+The following event has been deleted.
+
+    $event_title
+    $event_start_time - $event_end_time
+    $event_location
+
+This is an automated message. Please do not reply.""",
+            "type": str
+        },
+        "updated_event_template": {
+            "value": """Hello $attendee_name,
+
+The following event has been updated.
 
     $event_title
     $event_start_time - $event_end_time
@@ -143,14 +157,22 @@ SMTP_SSL_VERIFY_MODES: Sequence[str] = (SMTP_SSL_VERIFY_MODE_ENUM.NONE.value,
                                         SMTP_SSL_VERIFY_MODE_ENUM.REQUIRED.value)
 
 
-def ics_contents_contains_invited_event(contents: str):
+def read_ics_event(contents: str) -> Optional['Event']:
     """
-    Check if the ICS contents contain an event (versus a VTODO or VJOURNAL).
+    Read the vobject item from the provided string and create an Event.
+    """
+    v_cal: vobject.base.Component = vobject.readOne(contents)
+    cal: Calendar = Calendar(vobject_item=v_cal)
+    return cal.event if cal.event else None
+
+
+def ics_contents_contains_event(contents: str):
+    """
+    Check if the ICS contents contain an event (versus a VADDRESSBOOK, VTODO or VJOURNAL).
     :param contents: The contents of the ICS file.
     :return: True if the ICS file contains an event, False otherwise.
     """
-    cal = vobject.readOne(contents)
-    return cal.vevent is not None
+    return read_ics_event(contents) is not None
 
 
 def extract_email(value: str) -> Optional[str]:
@@ -163,6 +185,64 @@ def extract_email(value: str) -> Optional[str]:
         return match.group(1)
     # Fallback to the whole value if no mailto found
     return value if "@" in value else None
+
+
+def determine_added_removed_and_unaltered_attendees(original_event: 'Event',
+                                                    new_event: 'Event') -> (
+        Tuple)[List['Attendee'], List['Attendee'], List['Attendee']]:
+    """
+    Determine the added, removed and unaltered attendees between two events.
+    """
+    original_event_attendees = {attendee.email: attendee for attendee in original_event.attendees}
+    new_event_attendees = {attendee.email: attendee for attendee in new_event.attendees}
+    # Added attendees are those who are in the new event but not in the original event
+    added_attendees = [new_event_attendees[email] for email in new_event_attendees if
+                       email not in original_event_attendees]
+    # Removed attendees are those who are in the original event but not in the new event
+    removed_attendees = [original_event_attendees[email] for email in original_event_attendees if
+                         email not in new_event_attendees]
+    # Unaltered attendees are those who are in both events
+    unaltered_attendees = [original_event_attendees[email] for email in original_event_attendees if
+                           email in new_event_attendees]
+
+    return added_attendees, removed_attendees, unaltered_attendees
+
+
+def event_details_other_than_attendees_changed(original_event: 'Event',
+                                               new_event: 'Event') -> bool:
+    """
+    Check if any details other than attendees and IDs have changed between two events.
+    """
+
+    def hash_dict(d: Dict[str, Any]) -> str:
+        """
+        Create a hash of the dictionary to compare contents.
+        This will ignore None values and empty strings.
+        """
+        return hashlib.sha1(json.dumps(d).encode("utf8")).hexdigest()
+
+    original_event_details = {
+        "summary": original_event.summary,
+        "description": original_event.description,
+        "location": original_event.location,
+        "datetime_start": original_event.datetime_start.time_string() if original_event.datetime_start else None,
+        "datetime_end": original_event.datetime_end.time_string() if original_event.datetime_end else None,
+        "duration": original_event.duration,
+        "status": original_event.status,
+        "organizer": original_event.organizer
+    }
+    new_event_details = {
+        "summary": new_event.summary,
+        "description": new_event.description,
+        "location": new_event.location,
+        "datetime_start": new_event.datetime_start.time_string() if new_event.datetime_start else None,
+        "datetime_end": new_event.datetime_end.time_string() if new_event.datetime_end else None,
+        "duration": new_event.duration,
+        "status": new_event.status,
+        "organizer": new_event.organizer
+    }
+
+    return hash_dict(original_event_details) != hash_dict(new_event_details)
 
 
 class ContentLine:
@@ -416,6 +496,11 @@ class Event(VComponent):
         return self._get_content_lines("SUMMARY")[0].value
 
     @property
+    def description(self) -> Optional[str]:
+        """Return the description of the event."""
+        return self._get_content_lines("DESCRIPTION")[0].value
+
+    @property
     def location(self) -> Optional[str]:
         """Return the location of the event."""
         return self._get_content_lines("LOCATION")[0].value
@@ -611,8 +696,9 @@ class EmailConfig:
                  from_email: str,
                  send_mass_emails: bool,
                  dryrun: bool,
-                 added_template: MessageTemplate,
-                 removed_template: MessageTemplate):
+                 new_or_added_to_event_template: MessageTemplate,
+                 deleted_or_removed_from_event_template: MessageTemplate,
+                 updated_event_template: MessageTemplate):
         self.host = host
         self.port = port
         self.security = SMTP_SECURITY_TYPE_ENUM.from_string(value=security)
@@ -622,10 +708,9 @@ class EmailConfig:
         self.from_email = from_email
         self.send_mass_emails = send_mass_emails
         self.dryrun = dryrun
-        self.added_template = added_template
-        self.removed_template = removed_template
-        self.updated_template = added_template  # Reuse added template for updated events
-        self.deleted_template = removed_template  # Reuse removed template for deleted events
+        self.new_or_added_to_event_template = new_or_added_to_event_template
+        self.deleted_or_removed_from_event_template = deleted_or_removed_from_event_template
+        self.updated_event_template = updated_event_template
 
     def __str__(self) -> str:
         """
@@ -639,25 +724,16 @@ class EmailConfig:
 
     def send_added_email(self, attendees: List[Attendee], event: EmailEvent) -> bool:
         """
-        Send a notification for added attendees.
+        Send a notification for created events (and/or adding attendees).
         :param attendees: The attendees to inform.
-        :param event: The event the attendee is being added to.
+        :param event: The event being created (or the event the attendee is being added to).
         :return: True if the email was sent successfully, False otherwise.
         """
         ics_attachment = ICSEmailAttachment(file_content=event.ics_content, file_name=f"{event.file_name}")
 
-        return self._prepare_and_send_email(template=self.added_template, attendees=attendees, event=event,
+        return self._prepare_and_send_email(template=self.new_or_added_to_event_template, attendees=attendees,
+                                            event=event,
                                             ics_attachment=ics_attachment)
-
-    def send_removed_email(self, attendees: List[Attendee], event: EmailEvent) -> bool:
-        """
-        Send a notification for removed attendees.
-        :param attendees: The attendees to inform.
-        :param event: The event the attendee is being removed from.
-        :return: True if the email was sent successfully, False otherwise.
-        """
-        return self._prepare_and_send_email(template=self.removed_template, attendees=attendees, event=event,
-                                            ics_attachment=None)
 
     def send_updated_email(self, attendees: List[Attendee], event: EmailEvent) -> bool:
         """
@@ -668,17 +744,18 @@ class EmailConfig:
         """
         ics_attachment = ICSEmailAttachment(file_content=event.ics_content, file_name=f"{event.file_name}")
 
-        return self._prepare_and_send_email(template=self.updated_template, attendees=attendees, event=event,
+        return self._prepare_and_send_email(template=self.updated_event_template, attendees=attendees, event=event,
                                             ics_attachment=ics_attachment)
 
     def send_deleted_email(self, attendees: List[Attendee], event: EmailEvent) -> bool:
         """
-        Send a notification for deleted events.
+        Send a notification for deleted events (and/or removing attendees).
         :param attendees: The attendees to inform.
-        :param event: The event being deleted.
+        :param event: The event being deleted (or the event the attendee is being removed from).
         :return: True if the email was sent successfully, False otherwise.
         """
-        return self._prepare_and_send_email(template=self.deleted_template, attendees=attendees, event=event,
+        return self._prepare_and_send_email(template=self.deleted_or_removed_from_event_template, attendees=attendees,
+                                            event=event,
                                             ics_attachment=None)
 
     def _prepare_and_send_email(self, template: MessageTemplate, attendees: List[Attendee],
@@ -825,7 +902,6 @@ def _read_event(vobject_data: str) -> EmailEvent:
 class Hook(BaseHook):
     def __init__(self, configuration):
         super().__init__(configuration)
-        self.dryrun = self.configuration.get("hook", "dryrun")
         self.email_config = EmailConfig(
             host=self.configuration.get("hook", "smtp_server"),
             port=self.configuration.get("hook", "smtp_port"),
@@ -836,14 +912,18 @@ class Hook(BaseHook):
             from_email=self.configuration.get("hook", "from_email"),
             send_mass_emails=self.configuration.get("hook", "mass_email"),
             dryrun=self.configuration.get("hook", "dryrun"),
-            added_template=MessageTemplate(
+            new_or_added_to_event_template=MessageTemplate(
                 subject="You have been added to an event",
-                body=self.configuration.get("hook", "added_template")
+                body=self.configuration.get("hook", "new_or_added_to_event_template")
             ),
-            removed_template=MessageTemplate(
-                subject="You have been removed from an event",
-                body=self.configuration.get("hook", "removed_template")
+            deleted_or_removed_from_event_template=MessageTemplate(
+                subject="An event you were invited to has been deleted",
+                body=self.configuration.get("hook", "deleted_or_removed_from_event_template")
             ),
+            updated_event_template=MessageTemplate(
+                subject="An event you are invited to has been updated",
+                body=self.configuration.get("hook", "updated_event_template")
+            )
         )
         logger.info(
             "Email hook initialized with configuration: %s",
@@ -866,7 +946,7 @@ class Hook(BaseHook):
         :type notification_item: HookNotificationItem
         :return: None
         """
-        if self.dryrun:
+        if self.email_config.dryrun:
             logger.warning("Hook 'email': DRY-RUN received notification_item: %r", vars(notification_item))
         else:
             logger.debug("Received notification_item: %r", vars(notification_item))
@@ -881,50 +961,122 @@ class Hook(BaseHook):
             return
 
         elif notification_type == HookNotificationItemTypes.UPSERT:
-            # Handle upsert notifications (POST request for new item and PUT for updating existing item)
+            # Handle upsert notifications
 
-            # We don't have access to the original content for a PUT request, just the incoming data
+            new_item_str: str = notification_item.new_content  # type: ignore # A serialized vobject.base.Component
+            previous_item_str: Optional[str] = notification_item.old_content
 
-            item_str: str = notification_item.content  # type: ignore # A serialized vobject.base.Component
-
-            if not ics_contents_contains_invited_event(contents=item_str):
-                # If the ICS file does not contain an event, we do not send any notifications.
+            if not ics_contents_contains_event(contents=new_item_str):
+                # If ICS file does not contain an event, do not send any notifications (regardless of previous content).
                 logger.debug("No event found in the ICS file, skipping notification.")
                 return
 
-            email_event: EmailEvent = _read_event(vobject_data=item_str)  # type: ignore
+            email_event: EmailEvent = _read_event(vobject_data=new_item_str)  # type: ignore
+            if not email_event:
+                logger.error("Failed to read event from new content: %s", new_item_str)
+                return
+            email_event_event = email_event.event  # type: ignore
+            if not email_event_event:
+                logger.error("Event could not be parsed from the new content: %s", new_item_str)
+                return
+            email_event_end_time = email_event_event.datetime_end  # type: ignore
+            # Skip notification if the event end time is more than 1 minute in the past.
+            if email_event_end_time and email_event_end_time.time:
+                event_end = email_event_end_time.time  # type: ignore
+                now = datetime.now(
+                    event_end.tzinfo) if event_end.tzinfo else datetime.now()  # Handle timezone-aware datetime
+                if event_end < (now - timedelta(minutes=1)):
+                    logger.warning("Event end time is in the past, skipping notification for event: %s",
+                                   email_event_event.uid)
+                return
 
-            email_success: bool = self.email_config.send_updated_email(  # type: ignore
-                attendees=email_event.event.attendees,
-                event=email_event
-            )
-            if not email_success:
-                logger.error("Failed to send some or all email notifications for event: %s", email_event.event.uid)
+            if not previous_item_str:
+                # Dealing with a completely new event, no previous content to compare against.
+                # Email every attendee about the new event.
+                logger.debug("New event detected, sending notifications to all attendees.")
+                email_success: bool = self.email_config.send_added_email(  # type: ignore
+                    attendees=email_event.event.attendees,
+                    event=email_event
+                )
+                if not email_success:
+                    logger.error("Failed to send some or all added email notifications for event: %s",
+                                 email_event.event.uid)
+                return
+
+            # Dealing with an update to an existing event, compare new and previous content.
+            new_event: Event = read_ics_event(contents=new_item_str)  # type: ignore
+            previous_event: Optional[Event] = read_ics_event(contents=previous_item_str)
+            if not previous_event:
+                # If we cannot parse the previous event for some reason, simply treat it as a new event.
+                logger.warning("Previous event content could not be parsed, treating as a new event.")
+                email_success: bool = self.email_config.send_added_email(  # type: ignore
+                    attendees=email_event.event.attendees,
+                    event=email_event
+                )
+                if not email_success:
+                    logger.error("Failed to send some or all added email notifications for event: %s",
+                                 email_event.event.uid)
+                return
+
+            # Determine added, removed, and unaltered attendees
+            added_attendees, removed_attendees, unaltered_attendees = determine_added_removed_and_unaltered_attendees(
+                original_event=previous_event, new_event=new_event)
+
+            # Notify added attendees as "event created"
+            if added_attendees:
+                email_success: bool = self.email_config.send_added_email(  # type: ignore
+                    attendees=added_attendees,
+                    event=email_event
+                )
+                if not email_success:
+                    logger.error("Failed to send some or all added email notifications for event: %s",
+                                 email_event.event.uid)
+
+            # Notify removed attendees as "event deleted"
+            if removed_attendees:
+                email_success: bool = self.email_config.send_deleted_email(  # type: ignore
+                    attendees=removed_attendees,
+                    event=email_event
+                )
+                if not email_success:
+                    logger.error("Failed to send some or all removed email notifications for event: %s",
+                                 email_event.event.uid)
+
+            # Notify unaltered attendees as "event updated" if details other than attendees have changed
+            if unaltered_attendees and event_details_other_than_attendees_changed(original_event=previous_event,
+                                                                                  new_event=new_event):
+                email_success: bool = self.email_config.send_updated_email(  # type: ignore
+                    attendees=unaltered_attendees,
+                    event=email_event
+                )
+                if not email_success:
+                    logger.error("Failed to send some or all updated email notifications for event: %s",
+                                 email_event.event.uid)
+
+            # Skip sending notifications to existing attendees if the only changes made to the event
+            # were the addition/removal of other attendees.
 
             return
 
         elif notification_type == HookNotificationItemTypes.DELETE:
-            # Handle delete notifications (DELETE requests)
+            # Handle delete notifications
 
-            # Ensure it's a delete notification, as we need the old content
-            if not isinstance(notification_item, DeleteHookNotificationItem):
-                return
+            deleted_item_str: str = notification_item.old_content  # type: ignore # A serialized vobject.base.Component
 
-            item_str: str = notification_item.old_content  # type: ignore # A serialized vobject.base.Component
-
-            if not ics_contents_contains_invited_event(contents=item_str):
+            if not ics_contents_contains_event(contents=deleted_item_str):
                 # If the ICS file does not contain an event, we do not send any notifications.
                 logger.debug("No event found in the ICS file, skipping notification.")
                 return
 
-            email_event: EmailEvent = _read_event(vobject_data=item_str)  # type: ignore
+            email_event: EmailEvent = _read_event(vobject_data=deleted_item_str)  # type: ignore
 
             email_success: bool = self.email_config.send_deleted_email(  # type: ignore
                 attendees=email_event.event.attendees,
                 event=email_event
             )
             if not email_success:
-                logger.error("Failed to send some or all email notifications for event: %s", email_event.event.uid)
+                logger.error("Failed to send some or all deleted email notifications for event: %s",
+                             email_event.event.uid)
 
             return
 
