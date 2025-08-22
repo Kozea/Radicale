@@ -47,7 +47,7 @@ else:
     TRIGGER = datetime | None
 
 
-def date_to_datetime(d: date) -> datetime:
+def date_to_datetime(d: date, tzinfo=vobject.icalendar.utc) -> datetime:
     """Transform any date to a UTC datetime.
 
     If ``d`` is a datetime without timezone, return as UTC datetime. If ``d``
@@ -58,7 +58,7 @@ def date_to_datetime(d: date) -> datetime:
         d = datetime.combine(d, datetime.min.time())
     if not d.tzinfo:
         # NOTE: using vobject's UTC as it wasn't playing well with datetime's.
-        d = d.replace(tzinfo=vobject.icalendar.utc)
+        d = d.replace(tzinfo=tzinfo)
     return d
 
 
