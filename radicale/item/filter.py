@@ -366,6 +366,21 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
             dtend = getattr(child, "dtend", None)
             if dtend is not None:
                 dtend = dtend.value
+
+                # Ensure that both datetime.datetime objects have a timezone or
+                # both do not have one before doing calculations. This is required
+                # as the library does not support performing mathematical operations
+                # on timezone-aware and timezone-naive objects. See #1847
+                if hasattr(dtstart, 'tzinfo') and hasattr(dtend, 'tzinfo'):
+                    if dtstart.tzinfo is None and dtend.tzinfo is not None:
+                        dtstart_orig = dtstart
+                        dtstart = date_to_datetime(dtstart, dtend.astimezone().tzinfo)
+                        logger.debug("TRACE/ITEM/FILTER/get_children: overtake missing tzinfo on dtstart from dtend: '%s' -> '%s'", dtstart_orig, dtstart)
+                    elif dtstart.tzinfo is not None and dtend.tzinfo is None:
+                        dtend_orig = dtend
+                        dtend = date_to_datetime(dtend, dtstart.astimezone().tzinfo)
+                        logger.debug("TRACE/ITEM/FILTER/get_children: overtake missing tzinfo on dtend from dtstart: '%s' -> '%s'", dtend_orig, dtend)
+
                 original_duration = (dtend - dtstart).total_seconds()
                 dtend = date_to_datetime(dtend)
 
