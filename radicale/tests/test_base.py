@@ -306,6 +306,22 @@ permissions: RrWw""")
             for uid2 in uids[i + 1:]:
                 assert uid1 != uid2
 
+    def test_add_event_tz_dtend_only(self) -> None:
+        """Add an event having TZ only on DTEND."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue1847_1.ics")
+        path = "/calendar.ics/event_issue1847_1.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+
+    def test_add_event_tz_dtstart_only(self) -> None:
+        """Add an event having TZ only on DTSTART."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue1847_2.ics")
+        path = "/calendar.ics/event_issue1847_2.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+
     def test_verify(self) -> None:
         """Verify the storage."""
         contacts = get_file_content("contact_multiple.vcf")
