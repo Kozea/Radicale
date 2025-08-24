@@ -21,6 +21,7 @@ Radicale tests related to hook 'rabbitmq'
 
 import logging
 import os
+
 import pytest
 
 from radicale.tests import BaseTest
