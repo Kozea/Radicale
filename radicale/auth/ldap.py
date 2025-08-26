@@ -17,18 +17,19 @@
 """
 Authentication backend that checks credentials with a LDAP server.
 Following parameters are needed in the configuration:
-   ldap_uri            The LDAP URL to the server like ldap://localhost
-   ldap_base           The baseDN of the LDAP server
-   ldap_reader_dn      The DN of a LDAP user with read access to get the user accounts
-   ldap_secret         The password of the ldap_reader_dn
-   ldap_secret_file    The path of the file containing the password of the ldap_reader_dn
-   ldap_filter         The search filter to find the user to authenticate by the username
-   ldap_user_attribute The attribute to be used as username after authentication
-   ldap_groups_attribute The attribute containing group memberships in the LDAP user entry
+   ldap_uri            LDAP URL to the server like ldap://localhost
+   ldap_base           BaseDN of the LDAP server searching for users.
+   ldap_reader_dn      DN of a LDAP user with read access to get the user accounts
+   ldap_secret         Password of the ldap_reader_dn
+   ldap_secret_file    Path of the file containing the password of the ldap_reader_dn
+   ldap_filter         Search filter to find the user to authenticate by the username
+   ldap_user_attribute Attribute to be used as username after authentication
+   ldap_groups_attribute Attribute containing group memberships in the LDAP user entry
+   ldap_group_base    BaseDN of the LDAP server searching for groups.
 Following parameters controls SSL connections:
    ldap_use_ssl        If ssl encryption should be used (to be deprecated)
-   ldap_security    The encryption mode to be used: *none*|tls|starttls
-   ldap_ssl_verify_mode The certificate verification mode. Works for tls and starttls. NONE, OPTIONAL, default is REQUIRED
+   ldap_security       Encryption mode to be used: *none*|tls|starttls
+   ldap_ssl_verify_mode Certificate verification mode. Works for tls and starttls. NONE, OPTIONAL, default is REQUIRED
    ldap_ssl_ca_file
 
 """
@@ -47,6 +48,9 @@ class Auth(auth.BaseAuth):
     _ldap_attributes: list[str] = []
     _ldap_user_attr: str
     _ldap_groups_attr: str
+    _ldap_group_members_attr: str
+    _ldap_group_base: str
+    _ldap_group_filter: str
     _ldap_module_version: int = 3
     _ldap_use_ssl: bool = False
     _ldap_security: str = "none"
@@ -78,6 +82,11 @@ class Auth(auth.BaseAuth):
         self._ldap_filter = configuration.get("auth", "ldap_filter")
         self._ldap_user_attr = configuration.get("auth", "ldap_user_attribute")
         self._ldap_groups_attr = configuration.get("auth", "ldap_groups_attribute")
+        self._ldap_group_members_attr = configuration.get("auth", "ldap_group_member_attribute")
+        self._ldap_group_base = configuration.get("auth", "ldap_group_base")
+        if self._ldap_group_base == "":
+            self._ldap_group_base = self._ldap_base
+        self._ldap_group_filter = configuration.get("auth", "ldap_group_filter")
         ldap_secret_file_path = configuration.get("auth", "ldap_secret_file")
         if ldap_secret_file_path:
             with open(ldap_secret_file_path, 'r') as file:
@@ -102,6 +111,7 @@ class Auth(auth.BaseAuth):
         logger.info("auth.ldap_base            : %r" % self._ldap_base)
         logger.info("auth.ldap_reader_dn       : %r" % self._ldap_reader_dn)
         logger.info("auth.ldap_filter          : %r" % self._ldap_filter)
+        logger.info("auth.ldap_group_base     : %r" % self._ldap_group_base)
         if self._ldap_user_attr:
             logger.info("auth.ldap_user_attribute  : %r" % self._ldap_user_attr)
         else:
@@ -110,6 +120,14 @@ class Auth(auth.BaseAuth):
             logger.info("auth.ldap_groups_attribute: %r" % self._ldap_groups_attr)
         else:
             logger.info("auth.ldap_groups_attribute: (not provided)")
+        if self._ldap_group_members_attr:
+            logger.info("auth.ldap_group_members_attr: %r" % self._ldap_group_members_attr)
+        else:
+            logger.info("auth.ldap_group_members_attr: (not provided)")
+        if self._ldap_group_filter:
+            logger.info("auth.ldap_group_filter: %r" % self._ldap_group_filter)
+        else:
+            logger.info("auth.ldap_group_filter: (not provided)")
         if ldap_secret_file_path:
             logger.info("auth.ldap_secret_file_path: %r" % ldap_secret_file_path)
             if self._ldap_secret:
@@ -137,6 +155,7 @@ class Auth(auth.BaseAuth):
         logger.info("ldap_attributes           : %r" % self._ldap_attributes)
 
     def _login2(self, login: str, password: str) -> str:
+        gdns: list[str] = []
         try:
             """Bind as reader dn"""
             logger.debug(f"_login2 {self._ldap_uri}, {self._ldap_reader_dn}")
@@ -160,6 +179,19 @@ class Auth(auth.BaseAuth):
             user_entry = res[0]
             user_dn = user_entry[0]
             logger.debug(f"_login2 found LDAP user DN {user_dn}")
+            if self._ldap_group_members_attr:
+                """Collect groups from the member or uniqueMember attributes"""
+                res = conn.search_s(
+                    self._ldap_group_base,
+                    self.ldap.SCOPE_SUBTREE,
+                    filterstr="(&{0}({1}={2}))".format(
+                        self._ldap_group_filter,
+                        self._ldap_group_members_attr,
+                        self.ldap.filter.escape_filter_chars(user_dn)),
+                    attrlist=self._ldap_attributes
+                )
+                for group in res:
+                    gdns.append(group[0])
             """Close LDAP connection"""
             conn.unbind()
         except Exception as e:
@@ -173,16 +205,16 @@ class Auth(auth.BaseAuth):
             conn.simple_bind_s(user_dn, password)
             tmp: list[str] = []
             if self._ldap_groups_attr:
-                tmp = []
-                for g in user_entry[1][self._ldap_groups_attr]:
-                    """Get group g's RDN's attribute value"""
-                    try:
-                        rdns = self.ldap.dn.explode_dn(g, notypes=True)
-                        tmp.append(rdns[0])
-                    except Exception:
-                        tmp.append(g.decode('utf8'))
-                self._ldap_groups = set(tmp)
-                logger.debug("_login2 LDAP groups of user: %s", ",".join(self._ldap_groups))
+                gdns = user_entry[1][self._ldap_groups_attr]
+            for g in gdns:
+                """Get group g's RDN's attribute value"""
+                try:
+                    rdns = self.ldap.dn.explode_dn(g, notypes=True)
+                    tmp.append(rdns[0])
+                except Exception:
+                    tmp.append(g.decode('utf8'))
+            self._ldap_groups = set(tmp)
+            logger.debug("_login2 LDAP groups of user: %s", ",".join(self._ldap_groups))
             if self._ldap_user_attr:
                 if user_entry[1][self._ldap_user_attr]:
                     tmplogin = user_entry[1][self._ldap_user_attr][0]
@@ -195,6 +227,7 @@ class Auth(auth.BaseAuth):
             return ""
 
     def _login3(self, login: str, password: str) -> str:
+        gdns: list[str] = []
         """Connect the server"""
         try:
             logger.debug(f"_login3 {self._ldap_uri}, {self._ldap_reader_dn}")
@@ -249,8 +282,21 @@ class Auth(auth.BaseAuth):
             return ""
 
         user_entry = conn.response[0]
-        conn.unbind()
         user_dn = user_entry['dn']
+        if self._ldap_group_members_attr:
+            """Collect groups from the member or uniqueMember attributes"""
+            conn.search(
+                search_base=self._ldap_group_base,
+                search_filter="(&{0}({1}={2}))".format(
+                    self._ldap_group_filter,
+                    self._ldap_group_members_attr,
+                    self.ldap3.utils.conv.escape_filter_chars(user_dn)),
+                search_scope=self.ldap3.SUBTREE,
+                attributes="dn"
+            )
+            for group in conn.response:
+                gdns.append(group['dn'])
+        conn.unbind()
         logger.debug(f"_login3 found LDAP user DN {user_dn}")
         try:
             """Try to bind as the user itself"""
@@ -264,18 +310,19 @@ class Auth(auth.BaseAuth):
             if not conn.bind(read_server_info=False):
                 logger.debug(f"_login3 user '{login}' cannot be found")
                 return ""
-            tmp: list[str] = []
+            """Let's collect the groups of the user."""
             if self._ldap_groups_attr:
-                tmp = []
-                for g in user_entry['attributes'][self._ldap_groups_attr]:
-                    """Get group g's RDN's attribute value"""
-                    try:
-                        rdns = self.ldap3.utils.dn.parse_dn(g)
-                        tmp.append(rdns[0][1])
-                    except Exception:
-                        tmp.append(g)
-                self._ldap_groups = set(tmp)
-                logger.debug("_login3 LDAP groups of user: %s", ",".join(self._ldap_groups))
+                gdns = user_entry['attributes'][self._ldap_groups_attr]
+            tmp: list[str] = []
+            for g in gdns:
+                """Get group g's RDN's attribute value"""
+                try:
+                    rdns = self.ldap3.utils.dn.parse_dn(g)
+                    tmp.append(rdns[0][1])
+                except Exception:
+                    tmp.append(g)
+            self._ldap_groups = set(tmp)
+            logger.debug("_login3 LDAP groups of user: %s", ",".join(self._ldap_groups))
             if self._ldap_user_attr:
                 if user_entry['attributes'][self._ldap_user_attr]:
                     if isinstance(user_entry['attributes'][self._ldap_user_attr], list):
