@@ -128,6 +128,9 @@
 # Port of via network exposed dovecot socket
 #dovecot_port = 12345
 
+# Use X-Forwarded-For for rip= in dovecot authentication
+#dovecot_rip_x_forwarded_for = False
+
 # IMAP server hostname
 # Syntax: address | address:port | [address]:port | imap.server.tld
 #imap_host = localhost

@@ -3,6 +3,7 @@
 ## 3.5.6.dev
 * Fix: broken start when UID does not exist (potential container startup case)
 * Improve: user/group retrievement for running service and directories
+* Add: option [auth] dovecot_rip_x_forwarded_for
 
 ## 3.5.5
 * Improve: [auth] ldap: do not read server info by bind to avoid needless network traffic

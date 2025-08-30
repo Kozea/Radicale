@@ -253,6 +253,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "12345",
             "help": "dovecot auth port",
             "type": int}),
+        ("dovecot_rip_x_forwarded_for", {
+            "value": "False",
+            "help": "dovecot X-Forwarded-For in rip=",
+            "type": bool}),
         ("realm", {
             "value": "Radicale - Password Required",
             "help": "message displayed when a password is needed",
