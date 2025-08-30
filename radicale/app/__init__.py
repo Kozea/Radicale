@@ -49,6 +49,7 @@ from radicale.app.propfind import ApplicationPartPropfind
 from radicale.app.proppatch import ApplicationPartProppatch
 from radicale.app.put import ApplicationPartPut
 from radicale.app.report import ApplicationPartReport
+from radicale.auth import AuthContext
 from radicale.log import logger
 
 # Combination of types.WSGIStartResponse and WSGI application return value
@@ -156,6 +157,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         unsafe_path = environ.get("PATH_INFO", "")
         https = environ.get("HTTPS", "")
 
+        context = AuthContext()
+
         """Manage a request."""
         def response(status: int, headers: types.WSGIResponseHeaders,
                      answer: Union[None, str, bytes]) -> _IntermediateResponse:
@@ -201,12 +204,16 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         remote_host = "unknown"
         if environ.get("REMOTE_HOST"):
             remote_host = repr(environ["REMOTE_HOST"])
-        elif environ.get("REMOTE_ADDR"):
-            remote_host = environ["REMOTE_ADDR"]
+        if environ.get("REMOTE_ADDR"):
+            if remote_host == 'unknown':
+                remote_host = environ["REMOTE_ADDR"]
+            context.remote_addr = environ["REMOTE_ADDR"]
         if environ.get("HTTP_X_FORWARDED_FOR"):
             reverse_proxy = True
             remote_host = "%s (forwarded for %r)" % (
                 remote_host, environ["HTTP_X_FORWARDED_FOR"])
+        if environ.get("HTTP_X_REMOTE_ADDR"):
+            context.x_remote_addr = environ["HTTP_X_REMOTE_ADDR"]
         if environ.get("HTTP_X_FORWARDED_HOST") or environ.get("HTTP_X_FORWARDED_PROTO") or environ.get("HTTP_X_FORWARDED_SERVER"):
             reverse_proxy = True
         remote_useragent = ""
@@ -295,7 +302,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 self.configuration, environ, base64.b64decode(
                     authorization.encode("ascii"))).split(":", 1)
 
-        (user, info) = self._auth.login(login, password) or ("", "") if login else ("", "")
+        (user, info) = self._auth.login(login, password, context) or ("", "") if login else ("", "")
         if self.configuration.get("auth", "type") == "ldap":
             try:
                 logger.debug("Groups received from LDAP: %r", ",".join(self._auth._ldap_groups))

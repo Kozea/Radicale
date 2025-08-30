@@ -4,6 +4,7 @@
 * Fix: broken start when UID does not exist (potential container startup case)
 * Improve: user/group retrievement for running service and directories
 * Extend/Improve: [auth] ldap: group membership lookup
+* Add: option [auth] dovecot_rip_x_remote_addr
 
 ## 3.5.5
 * Improve: [auth] ldap: do not read server info by bind to avoid needless network traffic

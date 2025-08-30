@@ -91,6 +91,15 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
                              configuration)
 
 
+class AuthContext:
+    remote_addr: str
+    x_remote_addr: str
+
+    def __init__(self):
+        self.remote_addr = None
+        self.x_remote_addr = None
+
+
 class BaseAuth:
 
     _ldap_groups: Set[str] = set([])
@@ -187,6 +196,21 @@ class BaseAuth:
 
         raise NotImplementedError
 
+    def _login_ext(self, login: str, password: str, context: AuthContext) -> str:
+        """Check credentials and map login to internal user
+
+        ``login`` the login name
+
+        ``password`` the password
+
+        ``context`` additional data for the login, e.g. IP address used
+
+        Returns the username or ``""`` for invalid credentials.
+        """
+
+        # override this method instead of _login() if you want the context
+        return self._login(login, password)
+
     def _sleep_for_constant_exec_time(self, time_ns_begin: int):
         """Sleep some time to reach a constant execution time for failed logins
 
@@ -216,7 +240,7 @@ class BaseAuth:
             time.sleep(sleep)
 
     @final
-    def login(self, login: str, password: str) -> Tuple[str, str]:
+    def login(self, login: str, password: str, context: AuthContext) -> Tuple[str, str]:
         time_ns_begin = time.time_ns()
         result_from_cache = False
         if self._lc_username:
@@ -284,7 +308,7 @@ class BaseAuth:
             if result == "":
                 # verify login+password via configured backend
                 logger.debug("Login verification for user+password via backend: '%s'", login)
-                result = self._login(login, password)
+                result = self._login_ext(login, password, context)
                 if result != "":
                     logger.debug("Login successful for user+password via backend: '%s'", login)
                     if digest == "":
@@ -314,7 +338,7 @@ class BaseAuth:
                 return (result, self._type)
         else:
             # self._cache_logins is False
-            result = self._login(login, password)
+            result = self._login_ext(login, password, context)
             if result == "":
                 self._sleep_for_constant_exec_time(time_ns_begin)
             return (result, self._type)

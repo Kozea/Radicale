@@ -136,6 +136,9 @@
 # Port of via network exposed dovecot socket
 #dovecot_port = 12345
 
+# Use X-Remote-Addr for remote IP (rip) in dovecot authentication
+#dovecot_rip_x_remote_addr = False
+
 # IMAP server hostname
 # Syntax: address | address:port | [address]:port | imap.server.tld
 #imap_host = localhost
