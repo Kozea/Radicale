@@ -16,24 +16,36 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 """
 Authentication backend that checks credentials with a LDAP server.
-Following parameters are needed in the configuration:
-   ldap_uri            The LDAP URL to the server like ldap://localhost
-   ldap_base           The baseDN of the LDAP server
-   ldap_reader_dn      The DN of a LDAP user with read access to get the user accounts
-   ldap_secret         The password of the ldap_reader_dn
-   ldap_secret_file    The path of the file containing the password of the ldap_reader_dn
-   ldap_filter         The search filter to find the user to authenticate by the username
-   ldap_user_attribute The attribute to be used as username after authentication
-   ldap_groups_attribute The attribute containing group memberships in the LDAP user entry
-Following parameters controls SSL connections:
-   ldap_use_ssl        If ssl encryption should be used (to be deprecated)
-   ldap_security    The encryption mode to be used: *none*|tls|starttls
-   ldap_ssl_verify_mode The certificate verification mode. Works for tls and starttls. NONE, OPTIONAL, default is REQUIRED
-   ldap_ssl_ca_file
+ The following parameters are needed in the configuration:
+   ldap_uri               URI to the LDAP server
+   ldap_base              Base DN of the LDAP server
+   ldap_reader_dn         DN of an LDAP user with read access to get the user accounts
+   ldap_secret            Password of the 'ldap_reader_dn'
+                          Better: use 'ldap_secret_file'!
+   ldap_secret_file       Path of the file containing the password of the 'ldap_reader_dn'
+   ldap_filter            Search filter to find the user DN to authenticate
+ The following parameters control TLS connections:
+   ldap_use_ssl           Use ssl on the ldap connection.
+                          Deprecated, use 'ldap_security' instead!
+   ldap_security          Encryption mode to be used,
+                          one of: *none* | tls | starttls
+   ldap_ssl_verify_mode   Certificate verification mode for tls and starttls;
+                          one of: *REQUIRED* | OPTIONAL | NONE
+   ldap_ssl_ca_file       Path to the CA file in PEM format to certify the server certificate
  The following parameters are optional:
-   ldap_group_base        Base DN to search for groups. Only if it differs from ldap_base and if ldap_group_members_attribute is set
-   ldap_group_filter      Search filter to search for groups having the user as member. Only if ldap_group_members_attribute is set
-   ldap_group_members_attribute    Attribute in the group entries to read the group's members from
+   ldap_user_attribute    Attribute to be used as username after authentication, e.g. cn;
+                          if not given, the name used to logon is used.
+   ldap_groups_attribute  Attribute in the user entry to read the user's group memberships from,
+                          e.g. memberof, groupMememberShip. This may even be a non-DN attribute!
+   ldap_group_base        Base DN to search for groups;
+                          only if it differs from 'ldap_base' and if 'ldap_group_members_attribute' is set
+   ldap_group_filter      Search filter to search for groups having the user DN found as member;
+                          only if 'ldap_group_members_attribute' is set
+   ldap_group_members_attribute    Attribute in the group entries to read the group's members from,
+                          e.g. member.
+ The following parameters are for LDAP servers with oddities
+   ldap_ignore_attribute_create_modify_timestamp
+                          Ignore modifyTimestamp and createTimestamp attributes. Needed for Authentik LDAP server
 
 """
 import ssl
