@@ -216,7 +216,7 @@ class Auth(auth.BaseAuth):
                 """Fill groupDNs with DNs of groups found"""
                 if len(res) > 0:
                     groupDNs = []
-                    for dn,entry in res:
+                    for dn, entry in res:
                         groupDNs.append(dn)
 
             """Close LDAP connection"""
