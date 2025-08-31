@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.5.6.dev
+* Fix: broken start when UID does not exist (potential container startup case)
 
 ## 3.5.5
 * Improve: [auth] ldap: do not read server info by bind to avoid needless network traffic
