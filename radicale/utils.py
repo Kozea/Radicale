@@ -226,25 +226,49 @@ def ssl_get_protocols(context):
     return protocols
 
 
+def unknown_if_empty(value):
+    if value == "":
+        return "UNKNOWN"
+    else:
+        return value
+
+
 def user_groups_as_string():
     if sys.platform != "win32":
         euid = os.geteuid()
-        egid = os.getegid()
         try:
             username = pwd.getpwuid(euid)[0]
+            user = "%s(%d)" % (unknown_if_empty(username), euid)
         except Exception:
             # name of user not found
-            s = "user=(%d) group=(%d)" % (euid, egid)
-            return s
-        gids = os.getgrouplist(username, egid)
+            user = "UNKNOWN(%d)" % euid
+
+        egid = os.getegid()
         groups = []
-        for gid in gids:
+        try:
+            gids = os.getgrouplist(username, egid)
+            for gid in gids:
+                try:
+                    gi = grp.getgrgid(gid)
+                    groups.append("%s(%d)" % (unknown_if_empty(gi.gr_name), gid))
+                except Exception:
+                    groups.append("UNKNOWN(%d)" % gid)
+        except Exception:
             try:
-                gi = grp.getgrgid(gid)
-                groups.append("%s(%d)" % (gi.gr_name, gid))
+                groups.append("%s(%d)" % (grp.getgrnam(egid)[0], egid))
             except Exception:
-                groups.append("%s(%d)" % (gid, gid))
-        s = "user=%s(%d) groups=%s" % (username, euid, ','.join(groups))
+                # workaround to get groupid by name
+                groups_all = grp.getgrall()
+                found = False
+                for entry in groups_all:
+                    if entry[2] == egid:
+                        groups.append("%s(%d)" % (unknown_if_empty(entry[0]), egid))
+                        found = True
+                        break
+                if not found:
+                    groups.append("UNKNOWN(%d)" % egid)
+
+        s = "user=%s groups=%s" % (user, ','.join(groups))
     else:
         username = os.getlogin()
         s = "user=%s" % (username)
