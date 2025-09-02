@@ -1130,6 +1130,29 @@ Port of via network exposed dovecot socket
 
 Default: `12345`
 
+##### dovecot_rip_x_forwarded_for
+
+_(>= 3.5.6)_
+
+Use the `X-Forwarded-For` value for the rip= parameter in authentication.
+If set, Radicale must be running behind a proxy that you control and
+that sets the `X-Forwarded-For` header (doesn't pass or append) so that
+the value passed to dovecot is reliable. For example, for nginx, use
+
+```
+    proxy_set_header  X-Forwarded-For $remote_addr;
+```
+
+instead of
+
+```
+    proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+```
+
+as the latter would pass through any upstream values as well.
+
+Default: `False`
+
 ##### imap_host
 
 _(>= 3.4.1)_
