@@ -67,6 +67,7 @@ class Auth(auth.BaseAuth):
     _ldap_group_filter: str
     _ldap_group_members_attr: str
     _ldap_module_version: int = 3
+    _use_encryption: bool = False
     _ldap_use_ssl: bool = False
     _ldap_security: str = "none"
     _ldap_ssl_verify_mode: int = ssl.CERT_REQUIRED
