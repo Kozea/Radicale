@@ -80,6 +80,7 @@ class Auth(auth.BaseAuth):
         except ImportError:
             try:
                 import ldap
+                import ldap.filter
                 self._ldap_module_version = 2
                 self.ldap = ldap
             except ImportError as e:
