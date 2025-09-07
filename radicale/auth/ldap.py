@@ -102,21 +102,19 @@ class Auth(auth.BaseAuth):
         if ldap_secret_file_path:
             with open(ldap_secret_file_path, 'r') as file:
                 self._ldap_secret = file.read().rstrip('\n')
-        if self._ldap_module_version == 3:
-            self._ldap_use_ssl = configuration.get("auth", "ldap_use_ssl")
-            self._ldap_security = configuration.get("auth", "ldap_security")
-            self._use_encryption = self._ldap_use_ssl or self._ldap_security in ("tls", "starttls")
-            if self._ldap_use_ssl and self._ldap_security == "starttls":
-                raise RuntimeError("Cannot set both 'ldap_use_ssl = True' and 'ldap_security' = 'starttls'")
-            if self._ldap_use_ssl:
-                logger.warning("Configuration uses soon to be deprecated 'ldap_use_ssl', use 'ldap_security' ('none', 'tls', 'starttls') instead.")
-            if self._use_encryption:
-                self._ldap_ssl_ca_file = configuration.get("auth", "ldap_ssl_ca_file")
-                tmp = configuration.get("auth", "ldap_ssl_verify_mode")
-                if tmp == "NONE":
-                    self._ldap_ssl_verify_mode = ssl.CERT_NONE
-                elif tmp == "OPTIONAL":
-                    self._ldap_ssl_verify_mode = ssl.CERT_OPTIONAL
+        self._ldap_use_ssl = configuration.get("auth", "ldap_use_ssl")
+        self._ldap_security = configuration.get("auth", "ldap_security")
+        self._use_encryption = self._ldap_use_ssl or self._ldap_security in ("tls", "starttls")
+        if self._ldap_use_ssl and self._ldap_security == "starttls":
+            raise RuntimeError("Cannot set both 'ldap_use_ssl = True' and 'ldap_security' = 'starttls'")
+        if self._ldap_use_ssl:
+            logger.warning("Configuration uses soon to be deprecated 'ldap_use_ssl', use 'ldap_security' ('none', 'tls', 'starttls') instead.")
+        self._ldap_ssl_ca_file = configuration.get("auth", "ldap_ssl_ca_file")
+        tmp = configuration.get("auth", "ldap_ssl_verify_mode")
+        if tmp == "NONE":
+            self._ldap_ssl_verify_mode = ssl.CERT_NONE
+        elif tmp == "OPTIONAL":
+            self._ldap_ssl_verify_mode = ssl.CERT_OPTIONAL
 
         logger.info("auth.ldap_uri             : %r" % self._ldap_uri)
         logger.info("auth.ldap_base            : %r" % self._ldap_base)
