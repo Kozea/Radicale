@@ -199,7 +199,7 @@ class Auth(auth.BaseAuth):
             logger.debug(f"_login2 found LDAP user DN {user_dn}")
 
             """Let's collect the groups of the user."""
-            groupDNs: list[str] = []
+            groupDNs = []
             if self._ldap_groups_attr:
                 groupDNs = user_entry[1][self._ldap_groups_attr]
 
@@ -239,7 +239,7 @@ class Auth(auth.BaseAuth):
                     logger.debug(f"_login2 user set to: '{login}'")
 
             """Get RDNs of groups' DNs"""
-            tmp: list[str] = []
+            tmp = []
             for g in groupDNs:
                 try:
                     rdns = self.ldap.dn.explode_dn(g, notypes=True)
@@ -314,7 +314,7 @@ class Auth(auth.BaseAuth):
         logger.debug(f"_login3 found LDAP user DN {user_dn}")
 
         """Let's collect the groups of the user."""
-        groupDNs: list[str] = []
+        groupDNs = []
         if self._ldap_groups_attr:
             if user_entry['attributes'][self._ldap_groups_attr]:
                 if isinstance(user_entry['attributes'][self._ldap_groups_attr], list):
@@ -360,7 +360,7 @@ class Auth(auth.BaseAuth):
                 return ""
 
             """Get RDNs of groups' DNs"""
-            tmp: list[str] = []
+            tmp = []
             for g in groupDNs:
                 try:
                     rdns = self.ldap3.utils.dn.parse_dn(g)
