@@ -234,8 +234,9 @@ class Auth(auth.BaseAuth):
             conn.simple_bind_s(user_dn, password)
             if self._ldap_user_attr:
                 if user_entry[1][self._ldap_user_attr]:
-                    tmplogin = user_entry[1][self._ldap_user_attr][0]
-                    login = tmplogin.decode('utf-8')
+                    login = user_entry[1][self._ldap_user_attr][0]
+                    if isinstance(login, bytes):
+                        login = login.decode('utf-8')
                     logger.debug(f"_login2 user set to: '{login}'")
 
             """Get RDNs of groups' DNs"""
@@ -245,7 +246,9 @@ class Auth(auth.BaseAuth):
                     rdns = self.ldap.dn.explode_dn(g, notypes=True)
                     tmp.append(rdns[0])
                 except Exception:
-                    tmp.append(g.decode('utf8'))
+                    if isinstance(g, bytes):
+                        g = g.decode('utf-8')
+                    tmp.append(g)
             self._ldap_groups = set(tmp)
             logger.debug("_login2 LDAP groups of user: %s", ",".join(self._ldap_groups))
 
