@@ -35,7 +35,25 @@ known_third_party = defusedxml,passlib,pkg_resources,pytest,vobject
 # Only enable default tests (https://github.com/PyCQA/flake8/issues/790#issuecomment-812823398)
 # DNE: DOES-NOT-EXIST
 select = E,F,W,C90,DNE000
-ignore = E121,E123,E126,E226,E24,E704,W503,W504,DNE000,E501
+ignore = E121,E123,E126,E226,E24,E704,W503,W504,DNE000,E501,E261
+exclude = .git,
+    __pycache__,
+    build,
+    dist,
+    *.egg,
+    *.egg-info,
+    *.eggs,
+    *.pyc,
+    *.pyo,
+    *.pyd,
+    .tox,
+    venv,
+    venv3,
+    .venv,
+    .venv3,
+    .env,
+    .mypy_cache,
+    .pytest_cache
 extend-exclude = build
 
 [mypy]
