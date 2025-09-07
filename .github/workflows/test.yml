@@ -19,7 +19,7 @@ jobs:
       - name: Install Test dependencies
         run: pip install tox
       - name: Test
-        run: tox -e py
+        run: tox -c pyproject.toml -e py
       - name: Install Coveralls
         if: github.event_name == 'push'
         run: pip install coveralls
@@ -55,4 +55,4 @@ jobs:
       - name: Install tox
         run: pip install tox
       - name: Lint
-        run: tox -e flake8,mypy,isort
+        run: tox -c pyproject.toml -e flake8,mypy,isort
