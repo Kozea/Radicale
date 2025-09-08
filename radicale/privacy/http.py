@@ -11,7 +11,7 @@ from http import client
 from typing import Any, Dict, List, Optional, Union
 
 from radicale import httputils, types
-from radicale.auth.otp_twilio import Auth as OTPAuth
+from radicale.auth.token import Auth as TokenAuth
 from radicale.privacy.core import PrivacyCore
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ class PrivacyHTTP:
         """
         self.configuration = configuration
         self._privacy_core = PrivacyCore(configuration)
-        self._otp_auth = OTPAuth(configuration)
+        self._token_auth = TokenAuth(configuration)
 
     def _get_authenticated_user(self, environ) -> tuple[Optional[str], Optional[str]]:
         """Get authenticated user and JWT token if applicable.
@@ -47,7 +47,7 @@ class PrivacyHTTP:
         # Check for Bearer JWT token first
         if auth_header.startswith("Bearer "):
             jwt_token = auth_header.split(" ", 1)[1]
-            user = self._otp_auth._validate_jwt(jwt_token)
+            user = self._token_auth._validate_jwt(jwt_token)
             return user, None  # No new JWT needed
 
         # Check for Basic Auth (OTP verification)
@@ -57,7 +57,7 @@ class PrivacyHTTP:
                 login, password = credentials.split(":", 1)
 
                 # Use login_with_jwt to get both user and JWT
-                user, jwt_token = self._otp_auth.login_with_jwt(login, password)
+                user, jwt_token = self._token_auth.login_with_jwt(login, password)
                 return user, jwt_token
             except Exception as e:
                 logger.error("AUTH: Authentication error: %s", e)

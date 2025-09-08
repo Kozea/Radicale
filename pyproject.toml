@@ -35,7 +35,6 @@ dependencies = [
     "pika>=1.1.0",
     "requests",
     "sqlalchemy>=2.0.41",
-    "twilio>=9.6.2",
     "phonenumbers>=9.0.6",
     "pytest>=8.3.5",
     "pytest-mock>=3.14.1",

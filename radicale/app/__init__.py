@@ -184,17 +184,6 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             # Add extra headers set in configuration
             headers.update(self._extra_headers)
 
-            # Add session token to response headers if present in environment
-            session_token = environ.get("radicale.session_token")
-            if session_token:
-                headers["X-Radicale-Session-Token"] = session_token
-
-            # Add JWT token to Authorization header if present in environment
-            jwt_token = environ.get("radicale.jwt_token")
-            if jwt_token:
-                headers["Authorization"] = f"Bearer {jwt_token}"
-                logger.debug("Added JWT token to Authorization header")
-
             # Start response
             time_end = datetime.datetime.now()
             status_text = "%d %s" % (
@@ -295,40 +284,13 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         if external_login:
             login, password = external_login
             login, password = login or "", password or ""
-        elif authorization.startswith("Bearer "):
-            # Handle Bearer JWT token authentication
-            jwt_token = authorization[len("Bearer "):].strip()
-            if hasattr(self._auth, '_validate_jwt') and callable(getattr(self._auth, '_validate_jwt')):
-                user = self._auth._validate_jwt(jwt_token)
-                if user:
-                    login, password = user, "jwt_validated"  # Signal that JWT was used
-                    logger.debug("AUTH: Bearer JWT token validated for %s", user)
-                else:
-                    logger.warning("AUTH: Invalid or expired Bearer JWT token")
         elif authorization.startswith("Basic"):
             authorization = authorization[len("Basic"):].strip()
             login, password = httputils.decode_request(
                 self.configuration, environ, base64.b64decode(
                     authorization.encode("ascii"))).split(":", 1)
 
-        # Enhanced authentication flow with JWT support
-        jwt_token = None  # Initialize JWT token variable
-        if login:
-            # Check if this was Bearer JWT token authentication
-            if password == "jwt_validated":
-                user, info = login, "jwt"
-                logger.debug("AUTH: User authenticated via Bearer JWT token: %s", user)
-            # Check if auth backend supports JWT tokens (like OTP Twilio)
-            elif hasattr(self._auth, 'login_with_jwt') and callable(getattr(self._auth, 'login_with_jwt')):
-                logger.debug("AUTH: Using JWT-capable backend for %s", login)
-                user_result, jwt_token = self._auth.login_with_jwt(login, password)
-                user, info = (user_result, "otp_twilio") if user_result else ("", "")
-                logger.debug("AUTH: JWT result - user=%s, token=%s", user_result, jwt_token is not None)
-            else:
-                # Standard auth backends without JWT support
-                (user, info) = self._auth.login(login, password) or ("", "")
-        else:
-            user, info = ("", "")
+        (user, info) = self._auth.login(login, password) or ("", "") if login else ("", "")
 
         if self.configuration.get("auth", "type") == "ldap":
             try:
@@ -390,13 +352,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     return response(*httputils.REQUEST_ENTITY_TOO_LARGE)
 
         if not login or user:
-            # For privacy paths, pass the JWT token if available
-            if path.startswith("/privacy/") and jwt_token:
-                status, headers, answer = function(
-                    environ, base_prefix, path, user, jwt_token)
-            else:
-                status, headers, answer = function(
-                    environ, base_prefix, path, user)
+            status, headers, answer = function(
+                environ, base_prefix, path, user)
             if (status, headers, answer) == httputils.NOT_ALLOWED:
                 logger.info("Access to %r denied for %s", path,
                             repr(user) if user else "anonymous user")

@@ -221,7 +221,7 @@ class PrivacyDatabase:
 
         self.log_action(action_type, message, user_identifier, log_details)
 
-    def log_auth_action(self, action: str, user_identifier: str, auth_method: str = "otp_twilio",
+    def log_auth_action(self, action: str, user_identifier: str, auth_method: str = "token",
                         details: Optional[Dict[str, Any]] = None) -> None:
         """Log an authentication action.
 

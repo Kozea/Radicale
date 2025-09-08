@@ -59,18 +59,11 @@ storage_cache_actions_on_debug = False
 
 #### Authentication Configuration
 
-For testing purposes, you can use the basic configuration with `type = none`. However, for production use, it's recommended to use proper authentication like Twilio OTP:
+For testing purposes, you can use the basic configuration with `type = none`. However, for production use, it's recommended to use proper authentication secure token:
 
 ```ini
 [auth]
-type = otp_twilio
-twilio_account_sid = your_account_sid
-twilio_auth_token = your_auth_token
-twilio_service_sid = your_service_sid
-
-# JWT Configuration for Privacy API
-jwt_secret = your_secret_key_here  # Auto-generated if not provided
-jwt_expiry = 3600  # JWT token expiry in seconds (default: 1 hour)
+type = token
 
 # Required by BaseAuth
 lc_username = false

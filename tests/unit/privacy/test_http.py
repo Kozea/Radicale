@@ -38,10 +38,7 @@ def http_app():
                 "filesystem_folder": tmpdir  # Use tmpdir as base, let storage add collection-root
             },
             "auth": {
-                "type": "otp_twilio",
-                "twilio_account_sid": "test_sid",
-                "twilio_auth_token": "test_token",
-                "twilio_service_sid": "test_service_sid",
+                "type": "token",
             },
             # "auth": {
             #     "type": "htpasswd",
@@ -52,11 +49,11 @@ def http_app():
                 "type": "authenticated"
             }
         }, "test")
-        with patch("radicale.auth.otp_twilio.Client"):
-            app = PrivacyHTTP(configuration)
-            # Patch authentication for all tests
-            app._get_authenticated_user = lambda environ: ("test@example.com", None)
-            yield app
+
+        app = PrivacyHTTP(configuration)
+        # Patch authentication for all tests
+        app._get_authenticated_user = lambda environ: ("test@example.com", None)
+        yield app
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Prolematic on Windows due to file locking")
