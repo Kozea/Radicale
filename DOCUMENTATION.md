@@ -987,7 +987,8 @@ Default: `Radicale - Password Required`
 
 _(>= 3.3.0)_
 
-The URI to the ldap server
+URI to the LDAP server.
+Mandatory for auth type `ldap`.
 
 Default: `ldap://localhost`
 
@@ -995,39 +996,44 @@ Default: `ldap://localhost`
 
 _(>= 3.3.0)_
 
-LDAP base DN of the ldap server. This parameter must be provided if auth type is ldap.
+Base DN of the LDAP server.
+Mandatory for auth type `ldap`.
 
-Default:
+Default: (unset)
 
 ##### ldap_reader_dn
 
 _(>= 3.3.0)_
 
-The DN of a ldap user with read access to get the user accounts. This parameter must be provided if auth type is ldap.
+DN of a LDAP user with read access users and - if defined - groups.
+Mandatory for auth type `ldap`.
 
-Default:
+Default: (unset)
 
 ##### ldap_secret
 
 _(>= 3.3.0)_
 
-The password of the ldap_reader_dn. Either this parameter or `ldap_secret_file` must be provided if auth type is ldap.
+Password of `ldap_reader_dn`.
+Mandatory for auth type `ldap` unless `ldap_secret_file` is given.
 
-Default:
+Default: (unset)
 
 ##### ldap_secret_file
 
 _(>= 3.3.0)_
 
-Path of the file containing the password of the ldap_reader_dn. Either this parameter or `ldap_secret` must be provided if auth type is ldap.
+Path to the file containing the password of `ldap_reader_dn`.
+Mandatory for auth type `ldap` unless `ldap_secret` is given.
 
-Default:
+Default: (unset)
 
 ##### ldap_filter
 
 _(>= 3.3.0)_
 
-The search filter to find the user DN to authenticate by the username. User '{0}' as placeholder for the user name.
+Filter to search for the LDAP entry of the user to authenticate.
+It must contain '{0}' as placeholder for the login name.
 
 Default: `(cn={0})`
 
@@ -1035,66 +1041,117 @@ Default: `(cn={0})`
 
 _(>= 3.4.0)_
 
-The LDAP attribute whose value shall be used as the user name after successful authentication
+LDAP attribute whose value shall be used as the username after successful authentication.
 
-Default: not set, i.e. the login name given is used directly.
+If set, you can use flexible logins in `ldap_filter` and still have consolidated usernames,
+e.g. to allow login in using mail addresses as an alternative to cn, simply set
+```
+ldap_filter = (&(objectclass=inetOrgPerson)(|(cn={0})(mail={0})))
+ldap_user_attribute = cn
+```
+Even for simple filter setups, it is recommended to set it in order to get usernames exactly
+as they are stored in LDAP and to avoid inconsistencies in the upper-/lower-case spelling of the
+login names.
 
-##### ldap_groups_attribute
-
-_(>= 3.4.0)_
-
-The LDAP attribute to read the group memberships from in the authenticated user's LDAP entry.
-
-If set, load the LDAP group memberships from the attribute given
-These memberships can be used later on to define rights.
-This also gives you access to the group calendars, if they exist.
-* The group calendar will be placed under collection_root_folder/GROUPS
-* The name of the calendar directory is the base64 encoded group name.
-* The group calendar folders will not be created automatically. This must be done manually. In the [LDAP-authentication section of Radicale's wiki](https://github.com/Kozea/Radicale/wiki/LDAP-authentication) you can find a script to create a group calendar.
-
-Use 'memberOf' if you want to load groups on Active Directory and alikes, 'groupMembership' on Novell eDirectory, ...
-
-Default: (unset)
+Default: (unset, in which case the login name is directly used as the username)
 
 ##### ldap_use_ssl
 
 _(>= 3.3.0)_
 
-Use ssl on the ldap connection (soon to be deprecated, use ldap_security instead)
+Use ssl on the LDAP connection. **Deprecated**, use `ldap_security` instead**!**
 
 ##### ldap_security
 
 _(>= 3.5.2)_
 
-Use encryption on the ldap connection. none, tls, starttls
+Use encryption on the LDAP connection. One of `none`, `tls`, `starttls`.
 
-Default: none
+Default: `none`
 
 ##### ldap_ssl_verify_mode
 
 _(>= 3.3.0)_
 
-The certificate verification mode. Works for tls and starttls. NONE, OPTIONAL or REQUIRED
+Certificate verification mode for tls and starttls. One of `NONE`, `OPTIONAL`, `REQUIRED`.
 
-Default: REQUIRED
+Default: `REQUIRED`
 
 ##### ldap_ssl_ca_file
 
 _(>= 3.3.0)_
 
-The path to the CA file in pem format which is used to certificate the server certificate
+Path to the CA file in PEM format which is used to certify the server certificate
 
-Default:
+Default: (unset)
+
+##### ldap_groups_attribute
+
+_(>= 3.4.0)_
+
+LDAP attribute in the authenticated user's LDAP entry to read the group memberships from.
+
+E.g. `memberOf` to get groups on Active Directory and alikes, `groupMembership` on Novell eDirectory, ...
+
+If set, get the user's LDAP groups from the attribute given.
+
+For DN-valued attributes, the value of the RDN is used to determine the group names.
+The implementation also supports non-DN-valued attributes: their values are taken directly.
+
+The user's group names can be used later on to define rights.
+They also give you access to the group calendars, if those exist.
+* Group calendars are placed directly under *collection_root_folder*`/GROUPS/`
+  with the base64-encoded group name as the calendar folder name.
+* Group calendar folders are not created automatically.
+  This must be done manually. In the [LDAP-authentication section of Radicale's wiki](https://github.com/Kozea/Radicale/wiki/LDAP-authentication) you can find a script to create a group calendar.
+
+Default: (unset)
+
+##### ldap_group_members_attribute
+
+_(>= 3.5.6)_
+
+Attribute in the group entries to read the group's members from.
+
+E.g. `member` for groups with objectclass `groupOfNames`.
+
+Using `ldap_group_members_attribute`, `ldap_group_base` and `ldap_group_filter` is an alternative
+approach to getting the user's groups. Instead of reading them from `ldap_groups_attribute`
+in the user's entry, an additional query is performed to seach for those groups beneath `ldap_group_base`,
+that have the user's DN in their `ldap_group_members_attribute` and additionally fulfil `ldap_group_filter`.
+
+As with DN-valued `ldap_groups_attribute`, the value of the RDN is used to determine the group names.
+
+Default: (unset)
+
+##### ldap_group_base
+
+_(>= 3.5.6)_
+
+Base DN to search for groups.
+Only necessary if `ldap_group_members_attribute` is set, and if the base DN for groups differs from `ldap_base`.
+
+Default: (unset, in which case `ldap_base` is used as fallback)
+
+##### ldap_group_filter
+
+_(>= 3.5.6)_
+
+Search filter to search for groups having the user DN found as member.
+Only necessary `ldap_group_members_attribute` is set, and you want the groups returned to be restricted
+instead of all groups the user's DN is in.
+
+Default: (unset)
 
 ##### ldap_ignore_attribute_create_modify_timestamp
 
 _(>= 3.5.1)_
 
-Add modifyTimestamp and createTimestamp to the exclusion list of internal ldap3 client
-so that these schema attributes are not checked. This is needed at least for Authentik
-LDAP server as not providing these both attributes.
+Quirks for Authentik LDAP server, which violates the LDAP RFCs:
+add modifyTimestamp and createTimestamp to the exclusion list of internal ldap3 client
+so that these schema attributes are not checked.
 
-Default: false
+Default: `false`
 
 ##### dovecot_connection_type = AF_UNIX
 
@@ -1177,7 +1234,9 @@ providers like ldap, kerberos
 
 Default: `False`
 
-Note: cannot be enabled together with `uc_username`
+Notes:
+* `lc_username` and `uc_username` are mutually exclusive
+* for auth type `ldap` the use of `ldap_user_attribute` is preferred
 
 ##### uc_username
 
@@ -1188,7 +1247,9 @@ providers like ldap, kerberos
 
 Default: `False`
 
-Note: cannot be enabled together with `lc_username`
+Notes:
+* `uc_username` and `lc_username` are mutually exclusive
+* for auth type `ldap` the use of `ldap_user_attribute` is preferred
 
 ##### strip_domain
 

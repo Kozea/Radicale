@@ -261,41 +261,53 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "1",
             "help": "incorrect authentication delay",
             "type": positive_float}),
-        ("ldap_ignore_attribute_create_modify_timestamp", {
-            "value": "false",
-            "help": "Ignore modifyTimestamp and createTimestamp attributes. Need if Authentik LDAP server is used.",
-            "type": bool}),
         ("ldap_uri", {
             "value": "ldap://localhost",
-            "help": "URI to the ldap server",
+            "help": "URI to the LDAP server",
             "type": str}),
         ("ldap_base", {
             "value": "",
-            "help": "LDAP base DN of the ldap server",
+            "help": "Base DN of the LDAP server",
             "type": str}),
         ("ldap_reader_dn", {
             "value": "",
-            "help": "the DN of a ldap user with read access to get the user accounts",
+            "help": "DN of an LDAP user with read access to users anmd - if defined - groups",
             "type": str}),
         ("ldap_secret", {
             "value": "",
-            "help": "the password of the ldap_reader_dn",
+            "help": "Password of ldap_reader_dn (better: use ldap_secret_file)",
             "type": str}),
         ("ldap_secret_file", {
             "value": "",
-            "help": "path of the file containing the password of the ldap_reader_dn",
+            "help": "Path to the file containing the password of ldap_reader_dn",
             "type": str}),
         ("ldap_filter", {
             "value": "(cn={0})",
-            "help": "the search filter to find the user DN to authenticate by the username",
+            "help": "Filter to search for the LDAP entry of the user to authenticate",
             "type": str}),
         ("ldap_user_attribute", {
             "value": "",
-            "help": "the attribute to be used as username after authentication",
+            "help": "Attribute to be used as username after authentication",
+            "type": str}),
+        ("ldap_use_ssl", {
+            "value": "False",
+            "help": "Use ssl on the LDAP connection. Deprecated, use ldap_security instead!",
+            "type": bool}),
+        ("ldap_security", {
+            "value": "none",
+            "help": "Encryption mode to be used: *none*|tls|starttls",
+            "type": str}),
+        ("ldap_ssl_verify_mode", {
+            "value": "REQUIRED",
+            "help": "Certificate verification mode for tls and starttls. NONE, OPTIONAL, default is REQUIRED",
+            "type": str}),
+        ("ldap_ssl_ca_file", {
+            "value": "",
+            "help": "Path to the CA file in PEM format which is used to certify the server certificate",
             "type": str}),
         ("ldap_groups_attribute", {
             "value": "",
-            "help": "attribute to read the group memberships from",
+            "help": "Attribute in the user's LDAP entry to read the group memberships from",
             "type": str}),
         ("ldap_group_members_attribute", {
             "value": "",
@@ -309,22 +321,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "Search filter to search for groups having the user as member. Only if ldap_group_members_attribute is set",
             "type": str}),
-        ("ldap_use_ssl", {
-            "value": "False",
-            "help": "Use ssl on the ldap connection. Soon to be deprecated, use ldap_security instead",
+        ("ldap_ignore_attribute_create_modify_timestamp", {
+            "value": "false",
+            "help": "Quirk for Authentik LDAP server: ignore modifyTimestamp and createTimestamp attributes.",
             "type": bool}),
-        ("ldap_security", {
-            "value": "none",
-            "help": "the encryption mode to be used: *none*|tls|starttls",
-            "type": str}),
-        ("ldap_ssl_verify_mode", {
-            "value": "REQUIRED",
-            "help": "The certificate verification mode. Works for tls and starttls. NONE, OPTIONAL, default is REQUIRED",
-            "type": str}),
-        ("ldap_ssl_ca_file", {
-            "value": "",
-            "help": "The path to the CA file in pem format which is used to certificate the server certificate",
-            "type": str}),
         ("imap_host", {
             "value": "localhost",
             "help": "IMAP server hostname: address|address:port|[address]:port|*localhost*",
