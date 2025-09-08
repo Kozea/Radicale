@@ -44,7 +44,7 @@ class ApplicationPartPost(ApplicationBase):
             if not hasattr(self, '_privacy_http'):
                 from radicale.privacy.http import PrivacyHTTP
                 self._privacy_http = PrivacyHTTP(self.configuration)
-            return self._privacy_http.do_POST(environ, base_prefix, path, user)
+            return self._privacy_http.do_POST(environ, path)
         if path == "/.web" or path.startswith("/.web/"):
             return self._web.post(environ, base_prefix, path, user)
         return httputils.METHOD_NOT_ALLOWED

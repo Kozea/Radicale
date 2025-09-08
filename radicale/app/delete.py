@@ -66,7 +66,7 @@ class ApplicationPartDelete(ApplicationBase):
             if not hasattr(self, '_privacy_http'):
                 from radicale.privacy.http import PrivacyHTTP
                 self._privacy_http = PrivacyHTTP(self.configuration)
-            return self._privacy_http.do_DELETE(environ, base_prefix, path, user)
+            return self._privacy_http.do_DELETE(environ, path)
         access = Access(self._rights, user, path)
         if not access.check("w"):
             return httputils.NOT_ALLOWED

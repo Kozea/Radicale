@@ -69,14 +69,14 @@ class ApplicationPartGet(ApplicationBase):
         return value
 
     def do_GET(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-               user: str, jwt_token: Optional[str] = None) -> types.WSGIResponse:
+               user: str) -> types.WSGIResponse:
         """Manage GET request."""
         # Handle privacy-specific paths
         if path.startswith("/privacy/"):
             if not hasattr(self, '_privacy_http'):
                 from radicale.privacy.http import PrivacyHTTP
                 self._privacy_http = PrivacyHTTP(self.configuration)
-            return self._privacy_http.do_GET(environ, base_prefix, path, user, jwt_token)
+            return self._privacy_http.do_GET(environ, path)
         # Redirect to /.web if the root path is requested
         if not pathutils.strip_path(path):
             return httputils.redirect(base_prefix + "/.web")
