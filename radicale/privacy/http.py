@@ -5,6 +5,7 @@ This module provides HTTP API endpoints for managing user privacy settings and c
 Uses Werkzeug's routing system for sophisticated URL handling.
 """
 
+import os
 import json
 import logging
 from http import client
@@ -16,7 +17,6 @@ from werkzeug.wrappers import Request
 
 from radicale import httputils, types
 from radicale.privacy.core import PrivacyCore
-from radicale.auth.token import Auth as TokenAuth
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,6 @@ class PrivacyHTTP:
         """
         self.configuration = configuration
         self._privacy_core = PrivacyCore(configuration)
-        self._token_auth = TokenAuth(configuration)
         
         # Define URL rules for all supported routes
         self.url_map = Map([
@@ -69,13 +68,22 @@ class PrivacyHTTP:
         Returns:
             True if authenticated, False otherwise
         """
-        try:
-            auth_result = self._token_auth.get_external_login(environ)
-            # get_external_login returns empty tuple () for failed auth,
-            # or (user, password) tuple for successful auth
-            return len(auth_result) > 0
-        except Exception as e:
-            logger.error("Error during authentication check: %s", e)
+        auth_header = environ.get("HTTP_AUTHORIZATION")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            logger.info("Authentication failed: No Bearer token in Authorization header")
+            return False
+
+        token = auth_header[len("Bearer "):].strip()
+        expected_token = os.environ.get("RADICALE_TOKEN")
+        if not expected_token:
+            logger.warning("RADICALE_TOKEN environment variable not set")
+            return False
+
+        if token == expected_token:
+            logger.info("Authentication successful")
+            return True
+        else:
+            logger.info("Authentication failed: Invalid token")
             return False
 
     def _dispatch_request(
