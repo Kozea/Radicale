@@ -253,10 +253,11 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "12345",
             "help": "dovecot auth port",
             "type": int}),
-        ("dovecot_rip_x_remote_addr", {
-            "value": "False",
-            "help": "use X-Remote-Addr for dovecot auth remote IP (rip) parameter",
-            "type": bool}),
+        ("remote_ip_source", {
+            "value": "REMOTE_ADDR",
+            "help": "remote address source for passing it to auth method",
+            "type": str,
+            "internal": auth.REMOTE_ADDR_SOURCE}),
         ("realm", {
             "value": "Radicale - Password Required",
             "help": "message displayed when a password is needed",

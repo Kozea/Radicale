@@ -33,7 +33,8 @@ class Auth(auth.BaseAuth):
         self.timeout = 5
         self.request_id_gen = itertools.count(1)
 
-        self.use_x_remote_addr = configuration.get("auth", "dovecot_rip_x_remote_addr")
+        remote_ip_source = configuration.get("auth", "remote_ip_source")
+        self.use_x_remote_addr = remote_ip_source == 'X-Remote-Addr'
 
         config_family = configuration.get("auth", "dovecot_connection_type")
         if config_family == "AF_UNIX":

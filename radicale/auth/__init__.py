@@ -64,6 +64,8 @@ INSECURE_IF_NO_LOOPBACK_TYPES: Sequence[str] = (
 
 AUTH_SOCKET_FAMILY: Sequence[str] = ("AF_UNIX", "AF_INET", "AF_INET6")
 
+REMOTE_ADDR_SOURCE: Sequence[str] = ("REMOTE_ADDR", "X-Remote-Addr")
+
 
 def load(configuration: "config.Configuration") -> "BaseAuth":
     """Load the authentication module chosen in configuration."""

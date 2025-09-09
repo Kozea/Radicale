@@ -428,7 +428,7 @@ class TestBaseAuthRequests(BaseTest):
                                'HTTP_X_REMOTE_ADDR': '172.17.16.15',
                            },
                            extra_config={
-                               'auth': {"dovecot_rip_x_remote_addr": "True"},
+                               'auth': {"remote_ip_source": "X-Remote-Addr"},
                            })
 
     @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
@@ -439,7 +439,7 @@ class TestBaseAuthRequests(BaseTest):
                                'HTTP_X_REMOTE_ADDR': '172.17.16.15\trip=127.0.0.1',
                            },
                            extra_config={
-                               'auth': {"dovecot_rip_x_remote_addr": "True"},
+                               'auth': {"remote_ip_source": "X-Remote-Addr"},
                            })
 
     def test_custom(self) -> None:
