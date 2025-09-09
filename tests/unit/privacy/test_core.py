@@ -633,7 +633,7 @@ def test_reprocess_cards_multiple_collections(core):
 
 @pytest.mark.skipif(os.name == 'nt', reason="Problematic on Windows due to file locking")
 def test_reprocess_cards_after_settings_update(core):
-    """Test that cards are reprocessed after settings update."""
+    """Test that settings update does not automatically reprocess cards, but explicit reprocessing does."""
     # First create initial settings
     initial_settings = {
         "disallow_photo": False,
@@ -672,17 +672,36 @@ def test_reprocess_cards_after_settings_update(core):
     assert success
     assert result["status"] == "updated"
 
-    # Verify the vCard was updated according to new privacy settings
+    # Verify the vCard was NOT automatically updated (no automatic reprocessing)
     items = list(collection.get_all())
     assert len(items) == 1
-    updated_vcard = items[0].vobject_item
+    unchanged_vcard = items[0].vobject_item
 
-    # Company should be removed (now disallowed)
-    assert 'org' not in updated_vcard.contents
+    # Company should still be present (settings updated but no reprocessing)
+    assert 'org' in unchanged_vcard.contents
+    assert ''.join(unchanged_vcard.org.value) == "Test Company"
+
+    # Title should also remain unchanged
+    assert 'title' in unchanged_vcard.contents
+    assert unchanged_vcard.title.value == "Test Title"
+
+    # Now explicitly trigger reprocessing
+    success, result = core.reprocess_cards("test@example.com")
+    assert success
+    assert result["status"] == "success"
+    assert result["reprocessed_cards"] == 1
+
+    # Verify the vCard was updated according to new privacy settings after explicit reprocessing
+    items = list(collection.get_all())
+    assert len(items) == 1
+    reprocessed_vcard = items[0].vobject_item
+
+    # Company should now be removed (after explicit reprocessing)
+    assert 'org' not in reprocessed_vcard.contents
 
     # Title should remain (still allowed)
-    assert 'title' in updated_vcard.contents
-    assert updated_vcard.title.value == "Test Title"
+    assert 'title' in reprocessed_vcard.contents
+    assert reprocessed_vcard.title.value == "Test Title"
 
 
 @pytest.mark.skipif(os.name == 'nt', reason="Problematic on Windows due to file locking")

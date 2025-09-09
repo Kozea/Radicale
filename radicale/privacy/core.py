@@ -155,18 +155,7 @@ class PrivacyCore:
             # Log to database for statistics
             self._privacy_db.log_settings_action("created", store_id, settings)
 
-            # After creating settings, reprocess all vCards for this user
-            try:
-                reprocessor = PrivacyReprocessor(self.configuration, self._scanner._storage)
-                reprocessor.reprocess_vcards(store_id)
-                return True, {"status": "created"}
-            except Exception as e:
-                logger.error("PRIVACY: Error reprocessing cards: %s", str(e))
-                # Still return success for settings creation, but include reprocessing error
-                return True, {
-                    "status": "created",
-                    "reprocessing_error": str(e)
-                }
+            return True, {"status": "created"}
         except Exception as e:
             return False, str(e)
 
@@ -218,18 +207,7 @@ class PrivacyCore:
             # Log to database for statistics
             self._privacy_db.log_settings_action("updated", store_id, settings)
 
-            # After updating settings, reprocess all vCards for this user
-            try:
-                reprocessor = PrivacyReprocessor(self.configuration, self._scanner._storage)
-                reprocessor.reprocess_vcards(store_id)
-                return True, {"status": "updated"}
-            except Exception as e:
-                logger.error("PRIVACY: Error reprocessing cards: %s", str(e))
-                # Still return success for settings update, but include reprocessing error
-                return True, {
-                    "status": "updated",
-                    "reprocessing_error": str(e)
-                }
+            return True, {"status": "updated"}
 
         except Exception as e:
             return False, str(e)
