@@ -19,6 +19,7 @@
 import base64
 import itertools
 import os
+import re
 import socket
 from contextlib import closing
 
@@ -31,6 +32,8 @@ class Auth(auth.BaseAuth):
         super().__init__(configuration)
         self.timeout = 5
         self.request_id_gen = itertools.count(1)
+
+        self.use_x_remote_addr = configuration.get("auth", "dovecot_rip_x_remote_addr")
 
         config_family = configuration.get("auth", "dovecot_connection_type")
         if config_family == "AF_UNIX":
@@ -46,7 +49,7 @@ class Auth(auth.BaseAuth):
         else:
             self.family = socket.AF_INET6
 
-    def _login(self, login, password):
+    def _login_ext(self, login, password, context):
         """Validate credentials.
 
         Check if the ``login``/``password`` pair is valid according to Dovecot.
@@ -148,10 +151,19 @@ class Auth(auth.BaseAuth):
                         "Authenticating with request id: '{}'"
                         .format(request_id)
                 )
+                rip = b''
+                if self.use_x_remote_addr and context.x_remote_addr:
+                    rip = context.x_remote_addr.encode('ascii')
+                elif context.remote_addr:
+                    rip = context.remote_addr.encode('ascii')
+                # squash all whitespace - shouldn't be there and auth protocol
+                # is sensitive to whitespace (in particular \t and \n)
+                if rip:
+                    rip = b'\trip=' + re.sub(br'\s', b'', rip)
                 sock.send(
-                        b'AUTH\t%u\tPLAIN\tservice=radicale\tresp=%b\n' %
+                        b'AUTH\t%u\tPLAIN\tservice=radicale%s\tresp=%b\n' %
                         (
-                            request_id, base64.b64encode(
+                            request_id, rip, base64.b64encode(
                                     b'\0%b\0%b' %
                                     (login.encode(), password.encode())
                             )

@@ -1187,6 +1187,26 @@ Port of via network exposed dovecot socket
 
 Default: `12345`
 
+##### dovecot_rip_x_remote_addr
+
+_(>= 3.5.6)_
+
+Use the `X-Remote-Addr` value for the remote IP (rip) parameter in the
+dovecot authentication protocol.
+
+If set, Radicale must be running behind a proxy that you control and
+that sets/overwrites the `X-Remote-Addr` header (doesn't pass it) so
+that the value passed to dovecot is reliable. For example, for nginx,
+add
+
+```
+    proxy_set_header  X-Remote-Addr $remote_addr;
+```
+
+to the configuration sample.
+
+Default: `False`
+
 ##### imap_host
 
 _(>= 3.4.1)_
