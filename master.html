@@ -1100,108 +1100,157 @@ autodetection of method per entry.</p>
 <section class="level5" id="ldap_uri">
 <h5>ldap_uri <a class="headerlink" href="#ldap_uri">&para;</a></h5>
 <p><em>(&gt;= 3.3.0)</em></p>
-<p>The URI to the ldap server</p>
+<p>URI to the LDAP server. Mandatory for auth type
+<code>ldap</code>.</p>
 <p>Default: <code>ldap://localhost</code></p>
 </section>
 <section class="level5" id="ldap_base">
 <h5>ldap_base <a class="headerlink" href="#ldap_base">&para;</a></h5>
 <p><em>(&gt;= 3.3.0)</em></p>
-<p>LDAP base DN of the ldap server. This parameter must be provided if
-auth type is ldap.</p>
-<p>Default:</p>
+<p>Base DN of the LDAP server. Mandatory for auth type
+<code>ldap</code>.</p>
+<p>Default: (unset)</p>
 </section>
 <section class="level5" id="ldap_reader_dn">
 <h5>ldap_reader_dn <a class="headerlink" href="#ldap_reader_dn">&para;</a></h5>
 <p><em>(&gt;= 3.3.0)</em></p>
-<p>The DN of a ldap user with read access to get the user accounts. This
-parameter must be provided if auth type is ldap.</p>
-<p>Default:</p>
+<p>DN of a LDAP user with read access users and - if defined - groups.
+Mandatory for auth type <code>ldap</code>.</p>
+<p>Default: (unset)</p>
 </section>
 <section class="level5" id="ldap_secret">
 <h5>ldap_secret <a class="headerlink" href="#ldap_secret">&para;</a></h5>
 <p><em>(&gt;= 3.3.0)</em></p>
-<p>The password of the ldap_reader_dn. Either this parameter or
-<code>ldap_secret_file</code> must be provided if auth type is ldap.</p>
-<p>Default:</p>
+<p>Password of <code>ldap_reader_dn</code>. Mandatory for auth type
+<code>ldap</code> unless <code>ldap_secret_file</code> is given.</p>
+<p>Default: (unset)</p>
 </section>
 <section class="level5" id="ldap_secret_file">
 <h5>ldap_secret_file <a class="headerlink" href="#ldap_secret_file">&para;</a></h5>
 <p><em>(&gt;= 3.3.0)</em></p>
-<p>Path of the file containing the password of the ldap_reader_dn.
-Either this parameter or <code>ldap_secret</code> must be provided if
-auth type is ldap.</p>
-<p>Default:</p>
+<p>Path to the file containing the password of
+<code>ldap_reader_dn</code>. Mandatory for auth type <code>ldap</code>
+unless <code>ldap_secret</code> is given.</p>
+<p>Default: (unset)</p>
 </section>
 <section class="level5" id="ldap_filter">
 <h5>ldap_filter <a class="headerlink" href="#ldap_filter">&para;</a></h5>
 <p><em>(&gt;= 3.3.0)</em></p>
-<p>The search filter to find the user DN to authenticate by the
-username. User '{0}' as placeholder for the user name.</p>
+<p>Filter to search for the LDAP entry of the user to authenticate. It
+must contain '{0}' as placeholder for the login name.</p>
 <p>Default: <code>(cn={0})</code></p>
 </section>
 <section class="level5" id="ldap_user_attribute">
 <h5>ldap_user_attribute <a class="headerlink" href="#ldap_user_attribute">&para;</a></h5>
 <p><em>(&gt;= 3.4.0)</em></p>
-<p>The LDAP attribute whose value shall be used as the user name after
-successful authentication</p>
-<p>Default: not set, i.e. the login name given is used directly.</p>
-</section>
-<section class="level5" id="ldap_groups_attribute">
-<h5>ldap_groups_attribute <a class="headerlink" href="#ldap_groups_attribute">&para;</a></h5>
-<p><em>(&gt;= 3.4.0)</em></p>
-<p>The LDAP attribute to read the group memberships from in the
-authenticated user's LDAP entry.</p>
-<p>If set, load the LDAP group memberships from the attribute given
-These memberships can be used later on to define rights. This also gives
-you access to the group calendars, if they exist.</p>
-<ul>
-<li>The group calendar will be placed under
-collection_root_folder/GROUPS</li>
-<li>The name of the calendar directory is the base64 encoded group
-name.</li>
-<li>The group calendar folders will not be created automatically. This
-must be done manually. In the <a href="https://github.com/Kozea/Radicale/wiki/LDAP-authentication">LDAP-authentication
-section of Radicale's wiki</a> you can find a script to create a group
-calendar.</li>
-</ul>
-<p>Use 'memberOf' if you want to load groups on Active Directory and
-alikes, 'groupMembership' on Novell eDirectory, ...</p>
-<p>Default: (unset)</p>
+<p>LDAP attribute whose value shall be used as the username after
+successful authentication.</p>
+<p>If set, you can use flexible logins in <code>ldap_filter</code> and
+still have consolidated usernames, e.g. to allow login in using mail
+addresses as an alternative to cn, simply set</p>
+<pre><code>ldap_filter = (&(objectclass=inetOrgPerson)(|(cn={0})(mail={0})))
+ldap_user_attribute = cn</code></pre>
+<p>Even for simple filter setups, it is recommended to set it in order
+to get usernames exactly as they are stored in LDAP and to avoid
+inconsistencies in the upper-/lower-case spelling of the login
+names.</p>
+<p>Default: (unset, in which case the login name is directly used as the
+username)</p>
 </section>
 <section class="level5" id="ldap_use_ssl">
 <h5>ldap_use_ssl <a class="headerlink" href="#ldap_use_ssl">&para;</a></h5>
 <p><em>(&gt;= 3.3.0)</em></p>
-<p>Use ssl on the ldap connection (soon to be deprecated, use
-ldap_security instead)</p>
+<p>Use ssl on the LDAP connection. <strong>Deprecated</strong>, use
+<code>ldap_security</code> instead**!**</p>
 </section>
 <section class="level5" id="ldap_security">
 <h5>ldap_security <a class="headerlink" href="#ldap_security">&para;</a></h5>
 <p><em>(&gt;= 3.5.2)</em></p>
-<p>Use encryption on the ldap connection. none, tls, starttls</p>
-<p>Default: none</p>
+<p>Use encryption on the LDAP connection. One of <code>none</code>,
+<code>tls</code>, <code>starttls</code>.</p>
+<p>Default: <code>none</code></p>
 </section>
 <section class="level5" id="ldap_ssl_verify_mode">
 <h5>ldap_ssl_verify_mode <a class="headerlink" href="#ldap_ssl_verify_mode">&para;</a></h5>
 <p><em>(&gt;= 3.3.0)</em></p>
-<p>The certificate verification mode. Works for tls and starttls. NONE,
-OPTIONAL or REQUIRED</p>
-<p>Default: REQUIRED</p>
+<p>Certificate verification mode for tls and starttls. One of
+<code>NONE</code>, <code>OPTIONAL</code>, <code>REQUIRED</code>.</p>
+<p>Default: <code>REQUIRED</code></p>
 </section>
 <section class="level5" id="ldap_ssl_ca_file">
 <h5>ldap_ssl_ca_file <a class="headerlink" href="#ldap_ssl_ca_file">&para;</a></h5>
 <p><em>(&gt;= 3.3.0)</em></p>
-<p>The path to the CA file in pem format which is used to certificate
-the server certificate</p>
-<p>Default:</p>
+<p>Path to the CA file in PEM format which is used to certify the server
+certificate</p>
+<p>Default: (unset)</p>
+</section>
+<section class="level5" id="ldap_groups_attribute">
+<h5>ldap_groups_attribute <a class="headerlink" href="#ldap_groups_attribute">&para;</a></h5>
+<p><em>(&gt;= 3.4.0)</em></p>
+<p>LDAP attribute in the authenticated user's LDAP entry to read the
+group memberships from.</p>
+<p>E.g. <code>memberOf</code> to get groups on Active Directory and
+alikes, <code>groupMembership</code> on Novell eDirectory, ...</p>
+<p>If set, get the user's LDAP groups from the attribute given.</p>
+<p>For DN-valued attributes, the value of the RDN is used to determine
+the group names. The implementation also supports non-DN-valued
+attributes: their values are taken directly.</p>
+<p>The user's group names can be used later on to define rights. They
+also give you access to the group calendars, if those exist.</p>
+<ul>
+<li>Group calendars are placed directly under
+<em>collection_root_folder</em><code>/GROUPS/</code> with the
+base64-encoded group name as the calendar folder name.</li>
+<li>Group calendar folders are not created automatically. This must be
+done manually. In the <a href="https://github.com/Kozea/Radicale/wiki/LDAP-authentication">LDAP-authentication
+section of Radicale's wiki</a> you can find a script to create a group
+calendar.</li>
+</ul>
+<p>Default: (unset)</p>
+</section>
+<section class="level5" id="ldap_group_members_attribute">
+<h5>ldap_group_members_attribute <a class="headerlink" href="#ldap_group_members_attribute">&para;</a></h5>
+<p><em>(&gt;= 3.5.6)</em></p>
+<p>Attribute in the group entries to read the group's members from.</p>
+<p>E.g. <code>member</code> for groups with objectclass
+<code>groupOfNames</code>.</p>
+<p>Using <code>ldap_group_members_attribute</code>,
+<code>ldap_group_base</code> and <code>ldap_group_filter</code> is an
+alternative approach to getting the user's groups. Instead of reading
+them from <code>ldap_groups_attribute</code> in the user's entry, an
+additional query is performed to seach for those groups beneath
+<code>ldap_group_base</code>, that have the user's DN in their
+<code>ldap_group_members_attribute</code> and additionally fulfil
+<code>ldap_group_filter</code>.</p>
+<p>As with DN-valued <code>ldap_groups_attribute</code>, the value of
+the RDN is used to determine the group names.</p>
+<p>Default: (unset)</p>
+</section>
+<section class="level5" id="ldap_group_base">
+<h5>ldap_group_base <a class="headerlink" href="#ldap_group_base">&para;</a></h5>
+<p><em>(&gt;= 3.5.6)</em></p>
+<p>Base DN to search for groups. Only necessary if
+<code>ldap_group_members_attribute</code> is set, and if the base DN for
+groups differs from <code>ldap_base</code>.</p>
+<p>Default: (unset, in which case <code>ldap_base</code> is used as
+fallback)</p>
+</section>
+<section class="level5" id="ldap_group_filter">
+<h5>ldap_group_filter <a class="headerlink" href="#ldap_group_filter">&para;</a></h5>
+<p><em>(&gt;= 3.5.6)</em></p>
+<p>Search filter to search for groups having the user DN found as
+member. Only necessary <code>ldap_group_members_attribute</code> is set,
+and you want the groups returned to be restricted instead of all groups
+the user's DN is in.</p>
+<p>Default: (unset)</p>
 </section>
 <section class="level5" id="ldap_ignore_attribute_create_modify_timestamp">
 <h5>ldap_ignore_attribute_create_modify_timestamp <a class="headerlink" href="#ldap_ignore_attribute_create_modify_timestamp">&para;</a></h5>
 <p><em>(&gt;= 3.5.1)</em></p>
-<p>Add modifyTimestamp and createTimestamp to the exclusion list of
-internal ldap3 client so that these schema attributes are not checked.
-This is needed at least for Authentik LDAP server as not providing these
-both attributes.</p>
-<p>Default: false</p>
+<p>Quirks for Authentik LDAP server, which violates the LDAP RFCs: add
+modifyTimestamp and createTimestamp to the exclusion list of internal
+ldap3 client so that these schema attributes are not checked.</p>
+<p>Default: <code>false</code></p>
 </section>
 <section class="level5" id="dovecot_connection_type--af_unix">
 <h5>dovecot_connection_type = AF_UNIX <a class="headerlink" href="#dovecot_connection_type--af_unix">&para;</a></h5>
@@ -1267,7 +1316,13 @@ imap.server.tld</p>
 <p>&Scy;onvert username to lowercase, must be true for case-insensitive auth
 providers like ldap, kerberos</p>
 <p>Default: <code>False</code></p>
-<p>Note: cannot be enabled together with <code>uc_username</code></p>
+<p>Notes:</p>
+<ul>
+<li><code>lc_username</code> and <code>uc_username</code> are mutually
+exclusive</li>
+<li>for auth type <code>ldap</code> the use of
+<code>ldap_user_attribute</code> is preferred</li>
+</ul>
 </section>
 <section class="level5" id="uc_username">
 <h5>uc_username <a class="headerlink" href="#uc_username">&para;</a></h5>
@@ -1275,7 +1330,13 @@ providers like ldap, kerberos</p>
 <p>&Scy;onvert username to uppercase, must be true for case-insensitive auth
 providers like ldap, kerberos</p>
 <p>Default: <code>False</code></p>
-<p>Note: cannot be enabled together with <code>lc_username</code></p>
+<p>Notes:</p>
+<ul>
+<li><code>uc_username</code> and <code>lc_username</code> are mutually
+exclusive</li>
+<li>for auth type <code>ldap</code> the use of
+<code>ldap_user_attribute</code> is preferred</li>
+</ul>
 </section>
 <section class="level5" id="strip_domain">
 <h5>strip_domain <a class="headerlink" href="#strip_domain">&para;</a></h5>
@@ -1553,7 +1614,7 @@ books and calendars.</p>
 <p>In this section additional HTTP headers that are sent to clients can
 be specified.</p>
 <p>An example to relax the same-origin policy:</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb42-1"><a aria-hidden="true" href="#cb42-1" tabindex="-1"></a><span class="dt">Access-Control-Allow-Origin </span><span class="ot">=</span><span class="st"> *</span></span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb43-1"><a aria-hidden="true" href="#cb43-1" tabindex="-1"></a><span class="dt">Access-Control-Allow-Origin </span><span class="ot">=</span><span class="st"> *</span></span></code></pre></div>
 </section>
 <section class="level4" id="hook-1">
 <h4>hook <a class="headerlink" href="#hook-1">&para;</a></h4>
@@ -1863,47 +1924,47 @@ InfCloud</a>.</p>
 calendars and address books. Use Radicale's web interface or a client
 with support for it (e.g. <strong>DAVx⁵</strong>).</p>
 <p>To create a new calendar run something like:</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb46-1"><a aria-hidden="true" href="#cb46-1" tabindex="-1"></a><span class="ex">$</span> curl <span class="at">-u</span> user <span class="at">-X</span> MKCOL <span class="st">'http://localhost:5232/user/calendar'</span> <span class="at">--data</span> <span class="dt">\</span></span>
-<span id="cb46-2"><a aria-hidden="true" href="#cb46-2" tabindex="-1"></a><span class="st">'&lt;?xml version="1.0" encoding="UTF-8" ?&gt;</span></span>
-<span id="cb46-3"><a aria-hidden="true" href="#cb46-3" tabindex="-1"></a><span class="st">&lt;create xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:I="http://apple.com/ns/ical/"&gt;</span></span>
-<span id="cb46-4"><a aria-hidden="true" href="#cb46-4" tabindex="-1"></a><span class="st">  &lt;set&gt;</span></span>
-<span id="cb46-5"><a aria-hidden="true" href="#cb46-5" tabindex="-1"></a><span class="st">    &lt;prop&gt;</span></span>
-<span id="cb46-6"><a aria-hidden="true" href="#cb46-6" tabindex="-1"></a><span class="st">      &lt;resourcetype&gt;</span></span>
-<span id="cb46-7"><a aria-hidden="true" href="#cb46-7" tabindex="-1"></a><span class="st">        &lt;collection /&gt;</span></span>
-<span id="cb46-8"><a aria-hidden="true" href="#cb46-8" tabindex="-1"></a><span class="st">        &lt;C:calendar /&gt;</span></span>
-<span id="cb46-9"><a aria-hidden="true" href="#cb46-9" tabindex="-1"></a><span class="st">      &lt;/resourcetype&gt;</span></span>
-<span id="cb46-10"><a aria-hidden="true" href="#cb46-10" tabindex="-1"></a><span class="st">      &lt;C:supported-calendar-component-set&gt;</span></span>
-<span id="cb46-11"><a aria-hidden="true" href="#cb46-11" tabindex="-1"></a><span class="st">        &lt;C:comp name="VEVENT" /&gt;</span></span>
-<span id="cb46-12"><a aria-hidden="true" href="#cb46-12" tabindex="-1"></a><span class="st">        &lt;C:comp name="VJOURNAL" /&gt;</span></span>
-<span id="cb46-13"><a aria-hidden="true" href="#cb46-13" tabindex="-1"></a><span class="st">        &lt;C:comp name="VTODO" /&gt;</span></span>
-<span id="cb46-14"><a aria-hidden="true" href="#cb46-14" tabindex="-1"></a><span class="st">      &lt;/C:supported-calendar-component-set&gt;</span></span>
-<span id="cb46-15"><a aria-hidden="true" href="#cb46-15" tabindex="-1"></a><span class="st">      &lt;displayname&gt;Calendar&lt;/displayname&gt;</span></span>
-<span id="cb46-16"><a aria-hidden="true" href="#cb46-16" tabindex="-1"></a><span class="st">      &lt;C:calendar-description&gt;Example calendar&lt;/C:calendar-description&gt;</span></span>
-<span id="cb46-17"><a aria-hidden="true" href="#cb46-17" tabindex="-1"></a><span class="st">      &lt;I:calendar-color&gt;#ff0000ff&lt;/I:calendar-color&gt;</span></span>
-<span id="cb46-18"><a aria-hidden="true" href="#cb46-18" tabindex="-1"></a><span class="st">    &lt;/prop&gt;</span></span>
-<span id="cb46-19"><a aria-hidden="true" href="#cb46-19" tabindex="-1"></a><span class="st">  &lt;/set&gt;</span></span>
-<span id="cb46-20"><a aria-hidden="true" href="#cb46-20" tabindex="-1"></a><span class="st">&lt;/create&gt;'</span></span></code></pre></div>
-<p>To create a new address book run something like:</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb47-1"><a aria-hidden="true" href="#cb47-1" tabindex="-1"></a><span class="ex">$</span> curl <span class="at">-u</span> user <span class="at">-X</span> MKCOL <span class="st">'http://localhost:5232/user/addressbook'</span> <span class="at">--data</span> <span class="dt">\</span></span>
+<div class="sourceCode" id="cb47"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb47-1"><a aria-hidden="true" href="#cb47-1" tabindex="-1"></a><span class="ex">$</span> curl <span class="at">-u</span> user <span class="at">-X</span> MKCOL <span class="st">'http://localhost:5232/user/calendar'</span> <span class="at">--data</span> <span class="dt">\</span></span>
 <span id="cb47-2"><a aria-hidden="true" href="#cb47-2" tabindex="-1"></a><span class="st">'&lt;?xml version="1.0" encoding="UTF-8" ?&gt;</span></span>
-<span id="cb47-3"><a aria-hidden="true" href="#cb47-3" tabindex="-1"></a><span class="st">&lt;create xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav"&gt;</span></span>
+<span id="cb47-3"><a aria-hidden="true" href="#cb47-3" tabindex="-1"></a><span class="st">&lt;create xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:I="http://apple.com/ns/ical/"&gt;</span></span>
 <span id="cb47-4"><a aria-hidden="true" href="#cb47-4" tabindex="-1"></a><span class="st">  &lt;set&gt;</span></span>
 <span id="cb47-5"><a aria-hidden="true" href="#cb47-5" tabindex="-1"></a><span class="st">    &lt;prop&gt;</span></span>
 <span id="cb47-6"><a aria-hidden="true" href="#cb47-6" tabindex="-1"></a><span class="st">      &lt;resourcetype&gt;</span></span>
 <span id="cb47-7"><a aria-hidden="true" href="#cb47-7" tabindex="-1"></a><span class="st">        &lt;collection /&gt;</span></span>
-<span id="cb47-8"><a aria-hidden="true" href="#cb47-8" tabindex="-1"></a><span class="st">        &lt;CR:addressbook /&gt;</span></span>
+<span id="cb47-8"><a aria-hidden="true" href="#cb47-8" tabindex="-1"></a><span class="st">        &lt;C:calendar /&gt;</span></span>
 <span id="cb47-9"><a aria-hidden="true" href="#cb47-9" tabindex="-1"></a><span class="st">      &lt;/resourcetype&gt;</span></span>
-<span id="cb47-10"><a aria-hidden="true" href="#cb47-10" tabindex="-1"></a><span class="st">      &lt;displayname&gt;Address book&lt;/displayname&gt;</span></span>
-<span id="cb47-11"><a aria-hidden="true" href="#cb47-11" tabindex="-1"></a><span class="st">      &lt;CR:addressbook-description&gt;Example address book&lt;/CR:addressbook-description&gt;</span></span>
-<span id="cb47-12"><a aria-hidden="true" href="#cb47-12" tabindex="-1"></a><span class="st">    &lt;/prop&gt;</span></span>
-<span id="cb47-13"><a aria-hidden="true" href="#cb47-13" tabindex="-1"></a><span class="st">  &lt;/set&gt;</span></span>
-<span id="cb47-14"><a aria-hidden="true" href="#cb47-14" tabindex="-1"></a><span class="st">&lt;/create&gt;'</span></span></code></pre></div>
+<span id="cb47-10"><a aria-hidden="true" href="#cb47-10" tabindex="-1"></a><span class="st">      &lt;C:supported-calendar-component-set&gt;</span></span>
+<span id="cb47-11"><a aria-hidden="true" href="#cb47-11" tabindex="-1"></a><span class="st">        &lt;C:comp name="VEVENT" /&gt;</span></span>
+<span id="cb47-12"><a aria-hidden="true" href="#cb47-12" tabindex="-1"></a><span class="st">        &lt;C:comp name="VJOURNAL" /&gt;</span></span>
+<span id="cb47-13"><a aria-hidden="true" href="#cb47-13" tabindex="-1"></a><span class="st">        &lt;C:comp name="VTODO" /&gt;</span></span>
+<span id="cb47-14"><a aria-hidden="true" href="#cb47-14" tabindex="-1"></a><span class="st">      &lt;/C:supported-calendar-component-set&gt;</span></span>
+<span id="cb47-15"><a aria-hidden="true" href="#cb47-15" tabindex="-1"></a><span class="st">      &lt;displayname&gt;Calendar&lt;/displayname&gt;</span></span>
+<span id="cb47-16"><a aria-hidden="true" href="#cb47-16" tabindex="-1"></a><span class="st">      &lt;C:calendar-description&gt;Example calendar&lt;/C:calendar-description&gt;</span></span>
+<span id="cb47-17"><a aria-hidden="true" href="#cb47-17" tabindex="-1"></a><span class="st">      &lt;I:calendar-color&gt;#ff0000ff&lt;/I:calendar-color&gt;</span></span>
+<span id="cb47-18"><a aria-hidden="true" href="#cb47-18" tabindex="-1"></a><span class="st">    &lt;/prop&gt;</span></span>
+<span id="cb47-19"><a aria-hidden="true" href="#cb47-19" tabindex="-1"></a><span class="st">  &lt;/set&gt;</span></span>
+<span id="cb47-20"><a aria-hidden="true" href="#cb47-20" tabindex="-1"></a><span class="st">&lt;/create&gt;'</span></span></code></pre></div>
+<p>To create a new address book run something like:</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb48-1"><a aria-hidden="true" href="#cb48-1" tabindex="-1"></a><span class="ex">$</span> curl <span class="at">-u</span> user <span class="at">-X</span> MKCOL <span class="st">'http://localhost:5232/user/addressbook'</span> <span class="at">--data</span> <span class="dt">\</span></span>
+<span id="cb48-2"><a aria-hidden="true" href="#cb48-2" tabindex="-1"></a><span class="st">'&lt;?xml version="1.0" encoding="UTF-8" ?&gt;</span></span>
+<span id="cb48-3"><a aria-hidden="true" href="#cb48-3" tabindex="-1"></a><span class="st">&lt;create xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav"&gt;</span></span>
+<span id="cb48-4"><a aria-hidden="true" href="#cb48-4" tabindex="-1"></a><span class="st">  &lt;set&gt;</span></span>
+<span id="cb48-5"><a aria-hidden="true" href="#cb48-5" tabindex="-1"></a><span class="st">    &lt;prop&gt;</span></span>
+<span id="cb48-6"><a aria-hidden="true" href="#cb48-6" tabindex="-1"></a><span class="st">      &lt;resourcetype&gt;</span></span>
+<span id="cb48-7"><a aria-hidden="true" href="#cb48-7" tabindex="-1"></a><span class="st">        &lt;collection /&gt;</span></span>
+<span id="cb48-8"><a aria-hidden="true" href="#cb48-8" tabindex="-1"></a><span class="st">        &lt;CR:addressbook /&gt;</span></span>
+<span id="cb48-9"><a aria-hidden="true" href="#cb48-9" tabindex="-1"></a><span class="st">      &lt;/resourcetype&gt;</span></span>
+<span id="cb48-10"><a aria-hidden="true" href="#cb48-10" tabindex="-1"></a><span class="st">      &lt;displayname&gt;Address book&lt;/displayname&gt;</span></span>
+<span id="cb48-11"><a aria-hidden="true" href="#cb48-11" tabindex="-1"></a><span class="st">      &lt;CR:addressbook-description&gt;Example address book&lt;/CR:addressbook-description&gt;</span></span>
+<span id="cb48-12"><a aria-hidden="true" href="#cb48-12" tabindex="-1"></a><span class="st">    &lt;/prop&gt;</span></span>
+<span id="cb48-13"><a aria-hidden="true" href="#cb48-13" tabindex="-1"></a><span class="st">  &lt;/set&gt;</span></span>
+<span id="cb48-14"><a aria-hidden="true" href="#cb48-14" tabindex="-1"></a><span class="st">&lt;/create&gt;'</span></span></code></pre></div>
 <p>The collection <code>/USERNAME</code> will be created automatically,
 when the user authenticates to Radicale for the first time. Clients with
 automatic discovery of collections will only show calendars and address
 books that are direct children of the path <code>/USERNAME/</code>.</p>
 <p>Delete the collections by running something like:</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb48-1"><a aria-hidden="true" href="#cb48-1" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-u</span> user <span class="at">-X</span> DELETE <span class="st">'http://localhost:5232/user/calendar'</span></span></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb49-1"><a aria-hidden="true" href="#cb49-1" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-u</span> user <span class="at">-X</span> DELETE <span class="st">'http://localhost:5232/user/calendar'</span></span></code></pre></div>
 <p>Note: requires config/option
 <code>permit_delete_collection = True</code></p>
 </section>
@@ -1919,24 +1980,24 @@ to calendars and address books outside the home directory of users
 collections and will not show them to the user. This is only useful if
 you access calendars and address books directly via URL.</p>
 <p>An example rights file:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb49-1"><a aria-hidden="true" href="#cb49-1" tabindex="-1"></a><span class="co"># Allow reading root collection for authenticated users</span></span>
-<span id="cb49-2"><a aria-hidden="true" href="#cb49-2" tabindex="-1"></a><span class="kw">[root]</span></span>
-<span id="cb49-3"><a aria-hidden="true" href="#cb49-3" tabindex="-1"></a><span class="dt">user: .+</span></span>
-<span id="cb49-4"><a aria-hidden="true" href="#cb49-4" tabindex="-1"></a><span class="dt">collection:</span></span>
-<span id="cb49-5"><a aria-hidden="true" href="#cb49-5" tabindex="-1"></a><span class="dt">permissions: R</span></span>
-<span id="cb49-6"><a aria-hidden="true" href="#cb49-6" tabindex="-1"></a></span>
-<span id="cb49-7"><a aria-hidden="true" href="#cb49-7" tabindex="-1"></a><span class="co"># Allow reading and writing principal collection (same as username)</span></span>
-<span id="cb49-8"><a aria-hidden="true" href="#cb49-8" tabindex="-1"></a><span class="kw">[principal]</span></span>
-<span id="cb49-9"><a aria-hidden="true" href="#cb49-9" tabindex="-1"></a><span class="dt">user: .+</span></span>
-<span id="cb49-10"><a aria-hidden="true" href="#cb49-10" tabindex="-1"></a><span class="dt">collection: {user}</span></span>
-<span id="cb49-11"><a aria-hidden="true" href="#cb49-11" tabindex="-1"></a><span class="dt">permissions: RW</span></span>
-<span id="cb49-12"><a aria-hidden="true" href="#cb49-12" tabindex="-1"></a></span>
-<span id="cb49-13"><a aria-hidden="true" href="#cb49-13" tabindex="-1"></a><span class="co"># Allow reading and writing calendars and address books that are direct</span></span>
-<span id="cb49-14"><a aria-hidden="true" href="#cb49-14" tabindex="-1"></a><span class="co"># children of the principal collection</span></span>
-<span id="cb49-15"><a aria-hidden="true" href="#cb49-15" tabindex="-1"></a><span class="kw">[calendars]</span></span>
-<span id="cb49-16"><a aria-hidden="true" href="#cb49-16" tabindex="-1"></a><span class="dt">user: .+</span></span>
-<span id="cb49-17"><a aria-hidden="true" href="#cb49-17" tabindex="-1"></a><span class="dt">collection: {user}/</span><span class="kw">[^/]</span><span class="dt">+</span></span>
-<span id="cb49-18"><a aria-hidden="true" href="#cb49-18" tabindex="-1"></a><span class="dt">permissions: rw</span></span></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb50-1"><a aria-hidden="true" href="#cb50-1" tabindex="-1"></a><span class="co"># Allow reading root collection for authenticated users</span></span>
+<span id="cb50-2"><a aria-hidden="true" href="#cb50-2" tabindex="-1"></a><span class="kw">[root]</span></span>
+<span id="cb50-3"><a aria-hidden="true" href="#cb50-3" tabindex="-1"></a><span class="dt">user: .+</span></span>
+<span id="cb50-4"><a aria-hidden="true" href="#cb50-4" tabindex="-1"></a><span class="dt">collection:</span></span>
+<span id="cb50-5"><a aria-hidden="true" href="#cb50-5" tabindex="-1"></a><span class="dt">permissions: R</span></span>
+<span id="cb50-6"><a aria-hidden="true" href="#cb50-6" tabindex="-1"></a></span>
+<span id="cb50-7"><a aria-hidden="true" href="#cb50-7" tabindex="-1"></a><span class="co"># Allow reading and writing principal collection (same as username)</span></span>
+<span id="cb50-8"><a aria-hidden="true" href="#cb50-8" tabindex="-1"></a><span class="kw">[principal]</span></span>
+<span id="cb50-9"><a aria-hidden="true" href="#cb50-9" tabindex="-1"></a><span class="dt">user: .+</span></span>
+<span id="cb50-10"><a aria-hidden="true" href="#cb50-10" tabindex="-1"></a><span class="dt">collection: {user}</span></span>
+<span id="cb50-11"><a aria-hidden="true" href="#cb50-11" tabindex="-1"></a><span class="dt">permissions: RW</span></span>
+<span id="cb50-12"><a aria-hidden="true" href="#cb50-12" tabindex="-1"></a></span>
+<span id="cb50-13"><a aria-hidden="true" href="#cb50-13" tabindex="-1"></a><span class="co"># Allow reading and writing calendars and address books that are direct</span></span>
+<span id="cb50-14"><a aria-hidden="true" href="#cb50-14" tabindex="-1"></a><span class="co"># children of the principal collection</span></span>
+<span id="cb50-15"><a aria-hidden="true" href="#cb50-15" tabindex="-1"></a><span class="kw">[calendars]</span></span>
+<span id="cb50-16"><a aria-hidden="true" href="#cb50-16" tabindex="-1"></a><span class="dt">user: .+</span></span>
+<span id="cb50-17"><a aria-hidden="true" href="#cb50-17" tabindex="-1"></a><span class="dt">collection: {user}/</span><span class="kw">[^/]</span><span class="dt">+</span></span>
+<span id="cb50-18"><a aria-hidden="true" href="#cb50-18" tabindex="-1"></a><span class="dt">permissions: rw</span></span></code></pre></div>
 <p>The titles of the sections are ignored (but must be unique). The keys
 <code>user</code> and <code>collection</code> contain regular
 expressions, that are matched against the username and the path of the
@@ -2023,10 +2084,10 @@ system. The storage is locked with exclusive access while the
 <h5>Linux shell scripts <a class="headerlink" href="#linux-shell-scripts">&para;</a></h5>
 <p>Use the <a href="https://manpages.debian.org/unstable/util-linux/flock.1.en.html">flock</a>
 utility.</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb50-1"><a aria-hidden="true" href="#cb50-1" tabindex="-1"></a><span class="co"># Exclusive</span></span>
-<span id="cb50-2"><a aria-hidden="true" href="#cb50-2" tabindex="-1"></a><span class="ex">$</span> flock <span class="at">--exclusive</span> /path/to/storage/.Radicale.lock COMMAND</span>
-<span id="cb50-3"><a aria-hidden="true" href="#cb50-3" tabindex="-1"></a><span class="co"># Shared</span></span>
-<span id="cb50-4"><a aria-hidden="true" href="#cb50-4" tabindex="-1"></a><span class="ex">$</span> flock <span class="at">--shared</span> /path/to/storage/.Radicale.lock COMMAND</span></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb51-1"><a aria-hidden="true" href="#cb51-1" tabindex="-1"></a><span class="co"># Exclusive</span></span>
+<span id="cb51-2"><a aria-hidden="true" href="#cb51-2" tabindex="-1"></a><span class="ex">$</span> flock <span class="at">--exclusive</span> /path/to/storage/.Radicale.lock COMMAND</span>
+<span id="cb51-3"><a aria-hidden="true" href="#cb51-3" tabindex="-1"></a><span class="co"># Shared</span></span>
+<span id="cb51-4"><a aria-hidden="true" href="#cb51-4" tabindex="-1"></a><span class="ex">$</span> flock <span class="at">--shared</span> /path/to/storage/.Radicale.lock COMMAND</span></code></pre></div>
 </section>
 <section class="level5" id="linux-and-macos">
 <h5>Linux and MacOS <a class="headerlink" href="#linux-and-macos">&para;</a></h5>
@@ -2051,11 +2112,11 @@ folder in the file system storage (e.g.
 clients that the collection is a calendar, you have to create the file
 <code>.Radicale.props</code> with the following content in the
 folder:</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb51-1"><a aria-hidden="true" href="#cb51-1" tabindex="-1"></a><span class="fu">{</span><span class="dt">"tag"</span><span class="fu">:</span> <span class="st">"VCALENDAR"</span><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb52-1"><a aria-hidden="true" href="#cb52-1" tabindex="-1"></a><span class="fu">{</span><span class="dt">"tag"</span><span class="fu">:</span> <span class="st">"VCALENDAR"</span><span class="fu">}</span></span></code></pre></div>
 <p>The calendar is now available at the URL path
 <code>/user/calendar</code>. For address books the file must
 contain:</p>
-<div class="sourceCode" id="cb52"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb52-1"><a aria-hidden="true" href="#cb52-1" tabindex="-1"></a><span class="fu">{</span><span class="dt">"tag"</span><span class="fu">:</span> <span class="st">"VADDRESSBOOK"</span><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb53-1"><a aria-hidden="true" href="#cb53-1" tabindex="-1"></a><span class="fu">{</span><span class="dt">"tag"</span><span class="fu">:</span> <span class="st">"VADDRESSBOOK"</span><span class="fu">}</span></span></code></pre></div>
 <p>Calendar and address book collections must not have any child
 collections. Clients with automatic discovery of collections will only
 show calendars and address books that are direct children of the path
@@ -2185,49 +2246,49 @@ password.</p>
 modules is <a href="https://docs.python.org/3/distutils/setupscript.html">Distutils</a>.
 For a minimal setup create the file <code>setup.py</code> with the
 following content in an empty folder:</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb53-1"><a aria-hidden="true" href="#cb53-1" tabindex="-1"></a><span class="co">#!/usr/bin/env python3</span></span>
-<span id="cb53-2"><a aria-hidden="true" href="#cb53-2" tabindex="-1"></a></span>
-<span id="cb53-3"><a aria-hidden="true" href="#cb53-3" tabindex="-1"></a><span class="im">from</span> distutils.core <span class="im">import</span> setup</span>
-<span id="cb53-4"><a aria-hidden="true" href="#cb53-4" tabindex="-1"></a></span>
-<span id="cb53-5"><a aria-hidden="true" href="#cb53-5" tabindex="-1"></a>setup(name<span class="op">=</span><span class="st">"radicale_static_password_auth"</span>,</span>
-<span id="cb53-6"><a aria-hidden="true" href="#cb53-6" tabindex="-1"></a>      packages<span class="op">=</span>[<span class="st">"radicale_static_password_auth"</span>])</span></code></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb54-1"><a aria-hidden="true" href="#cb54-1" tabindex="-1"></a><span class="co">#!/usr/bin/env python3</span></span>
+<span id="cb54-2"><a aria-hidden="true" href="#cb54-2" tabindex="-1"></a></span>
+<span id="cb54-3"><a aria-hidden="true" href="#cb54-3" tabindex="-1"></a><span class="im">from</span> distutils.core <span class="im">import</span> setup</span>
+<span id="cb54-4"><a aria-hidden="true" href="#cb54-4" tabindex="-1"></a></span>
+<span id="cb54-5"><a aria-hidden="true" href="#cb54-5" tabindex="-1"></a>setup(name<span class="op">=</span><span class="st">"radicale_static_password_auth"</span>,</span>
+<span id="cb54-6"><a aria-hidden="true" href="#cb54-6" tabindex="-1"></a>      packages<span class="op">=</span>[<span class="st">"radicale_static_password_auth"</span>])</span></code></pre></div>
 <p>In the same folder create the sub-folder
 <code>radicale_static_password_auth</code>. The folder must have the
 same name as specified in <code>packages</code> above.</p>
 <p>Create the file <code>__init__.py</code> in the
 <code>radicale_static_password_auth</code> folder with the following
 content:</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb54-1"><a aria-hidden="true" href="#cb54-1" tabindex="-1"></a><span class="im">from</span> radicale.auth <span class="im">import</span> BaseAuth</span>
-<span id="cb54-2"><a aria-hidden="true" href="#cb54-2" tabindex="-1"></a><span class="im">from</span> radicale.log <span class="im">import</span> logger</span>
-<span id="cb54-3"><a aria-hidden="true" href="#cb54-3" tabindex="-1"></a></span>
-<span id="cb54-4"><a aria-hidden="true" href="#cb54-4" tabindex="-1"></a>PLUGIN_CONFIG_SCHEMA <span class="op">=</span> {<span class="st">"auth"</span>: {</span>
-<span id="cb54-5"><a aria-hidden="true" href="#cb54-5" tabindex="-1"></a>    <span class="st">"password"</span>: {<span class="st">"value"</span>: <span class="st">""</span>, <span class="st">"type"</span>: <span class="bu">str</span>}}}</span>
-<span id="cb54-6"><a aria-hidden="true" href="#cb54-6" tabindex="-1"></a></span>
-<span id="cb54-7"><a aria-hidden="true" href="#cb54-7" tabindex="-1"></a></span>
-<span id="cb54-8"><a aria-hidden="true" href="#cb54-8" tabindex="-1"></a><span class="kw">class</span> Auth(BaseAuth):</span>
-<span id="cb54-9"><a aria-hidden="true" href="#cb54-9" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, configuration):</span>
-<span id="cb54-10"><a aria-hidden="true" href="#cb54-10" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(configuration.copy(PLUGIN_CONFIG_SCHEMA))</span>
-<span id="cb54-11"><a aria-hidden="true" href="#cb54-11" tabindex="-1"></a></span>
-<span id="cb54-12"><a aria-hidden="true" href="#cb54-12" tabindex="-1"></a>    <span class="kw">def</span> _login(<span class="va">self</span>, login, password):</span>
-<span id="cb54-13"><a aria-hidden="true" href="#cb54-13" tabindex="-1"></a>        <span class="co"># Get password from configuration option</span></span>
-<span id="cb54-14"><a aria-hidden="true" href="#cb54-14" tabindex="-1"></a>        static_password <span class="op">=</span> <span class="va">self</span>.configuration.get(<span class="st">"auth"</span>, <span class="st">"password"</span>)</span>
-<span id="cb54-15"><a aria-hidden="true" href="#cb54-15" tabindex="-1"></a>        <span class="co"># Check authentication</span></span>
-<span id="cb54-16"><a aria-hidden="true" href="#cb54-16" tabindex="-1"></a>        logger.info(<span class="st">"Login attempt by </span><span class="sc">%r</span><span class="st"> with password </span><span class="sc">%r</span><span class="st">"</span>,</span>
-<span id="cb54-17"><a aria-hidden="true" href="#cb54-17" tabindex="-1"></a>                    login, password)</span>
-<span id="cb54-18"><a aria-hidden="true" href="#cb54-18" tabindex="-1"></a>        <span class="cf">if</span> password <span class="op">==</span> static_password:</span>
-<span id="cb54-19"><a aria-hidden="true" href="#cb54-19" tabindex="-1"></a>            <span class="cf">return</span> login</span>
-<span id="cb54-20"><a aria-hidden="true" href="#cb54-20" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">""</span></span></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb55-1"><a aria-hidden="true" href="#cb55-1" tabindex="-1"></a><span class="im">from</span> radicale.auth <span class="im">import</span> BaseAuth</span>
+<span id="cb55-2"><a aria-hidden="true" href="#cb55-2" tabindex="-1"></a><span class="im">from</span> radicale.log <span class="im">import</span> logger</span>
+<span id="cb55-3"><a aria-hidden="true" href="#cb55-3" tabindex="-1"></a></span>
+<span id="cb55-4"><a aria-hidden="true" href="#cb55-4" tabindex="-1"></a>PLUGIN_CONFIG_SCHEMA <span class="op">=</span> {<span class="st">"auth"</span>: {</span>
+<span id="cb55-5"><a aria-hidden="true" href="#cb55-5" tabindex="-1"></a>    <span class="st">"password"</span>: {<span class="st">"value"</span>: <span class="st">""</span>, <span class="st">"type"</span>: <span class="bu">str</span>}}}</span>
+<span id="cb55-6"><a aria-hidden="true" href="#cb55-6" tabindex="-1"></a></span>
+<span id="cb55-7"><a aria-hidden="true" href="#cb55-7" tabindex="-1"></a></span>
+<span id="cb55-8"><a aria-hidden="true" href="#cb55-8" tabindex="-1"></a><span class="kw">class</span> Auth(BaseAuth):</span>
+<span id="cb55-9"><a aria-hidden="true" href="#cb55-9" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, configuration):</span>
+<span id="cb55-10"><a aria-hidden="true" href="#cb55-10" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(configuration.copy(PLUGIN_CONFIG_SCHEMA))</span>
+<span id="cb55-11"><a aria-hidden="true" href="#cb55-11" tabindex="-1"></a></span>
+<span id="cb55-12"><a aria-hidden="true" href="#cb55-12" tabindex="-1"></a>    <span class="kw">def</span> _login(<span class="va">self</span>, login, password):</span>
+<span id="cb55-13"><a aria-hidden="true" href="#cb55-13" tabindex="-1"></a>        <span class="co"># Get password from configuration option</span></span>
+<span id="cb55-14"><a aria-hidden="true" href="#cb55-14" tabindex="-1"></a>        static_password <span class="op">=</span> <span class="va">self</span>.configuration.get(<span class="st">"auth"</span>, <span class="st">"password"</span>)</span>
+<span id="cb55-15"><a aria-hidden="true" href="#cb55-15" tabindex="-1"></a>        <span class="co"># Check authentication</span></span>
+<span id="cb55-16"><a aria-hidden="true" href="#cb55-16" tabindex="-1"></a>        logger.info(<span class="st">"Login attempt by </span><span class="sc">%r</span><span class="st"> with password </span><span class="sc">%r</span><span class="st">"</span>,</span>
+<span id="cb55-17"><a aria-hidden="true" href="#cb55-17" tabindex="-1"></a>                    login, password)</span>
+<span id="cb55-18"><a aria-hidden="true" href="#cb55-18" tabindex="-1"></a>        <span class="cf">if</span> password <span class="op">==</span> static_password:</span>
+<span id="cb55-19"><a aria-hidden="true" href="#cb55-19" tabindex="-1"></a>            <span class="cf">return</span> login</span>
+<span id="cb55-20"><a aria-hidden="true" href="#cb55-20" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">""</span></span></code></pre></div>
 <p>Install the python module by running the following command in the
 same folder as <code>setup.py</code>:</p>
-<div class="sourceCode" id="cb55"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb55-1"><a aria-hidden="true" href="#cb55-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip install .</span></code></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb56-1"><a aria-hidden="true" href="#cb56-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip install .</span></code></pre></div>
 <p>To make use this great creation in Radicale, set the configuration
 option <code>type</code> in the <code>auth</code> section to
 <code>radicale_static_password_auth</code>:</p>
-<div class="sourceCode" id="cb56"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb56-1"><a aria-hidden="true" href="#cb56-1" tabindex="-1"></a><span class="kw">[auth]</span></span>
-<span id="cb56-2"><a aria-hidden="true" href="#cb56-2" tabindex="-1"></a><span class="dt">type </span><span class="ot">=</span><span class="st"> radicale_static_password_auth</span></span>
-<span id="cb56-3"><a aria-hidden="true" href="#cb56-3" tabindex="-1"></a><span class="dt">password </span><span class="ot">=</span><span class="st"> secret</span></span></code></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb57-1"><a aria-hidden="true" href="#cb57-1" tabindex="-1"></a><span class="kw">[auth]</span></span>
+<span id="cb57-2"><a aria-hidden="true" href="#cb57-2" tabindex="-1"></a><span class="dt">type </span><span class="ot">=</span><span class="st"> radicale_static_password_auth</span></span>
+<span id="cb57-3"><a aria-hidden="true" href="#cb57-3" tabindex="-1"></a><span class="dt">password </span><span class="ot">=</span><span class="st"> secret</span></span></code></pre></div>
 <p>You can uninstall the module with:</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb57-1"><a aria-hidden="true" href="#cb57-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip uninstall radicale_static_password_auth</span></code></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb58-1"><a aria-hidden="true" href="#cb58-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip uninstall radicale_static_password_auth</span></code></pre></div>
 </section>
 <section class="level4" id="authentication-plugins">
 <h4>Authentication plugins <a class="headerlink" href="#authentication-plugins">&para;</a></h4>
@@ -2286,14 +2347,14 @@ you want to add new features, fix bugs or update the documentation.</p>
 <h4>PyPI <a class="headerlink" href="#pypi">&para;</a></h4>
 <p>Radicale is <a href="https://pypi.python.org/pypi/Radicale/">available on PyPI</a>. To
 install, just type as superuser:</p>
-<div class="sourceCode" id="cb58"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb58-1"><a aria-hidden="true" href="#cb58-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip install <span class="at">--upgrade</span> radicale</span></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb59-1"><a aria-hidden="true" href="#cb59-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip install <span class="at">--upgrade</span> radicale</span></code></pre></div>
 </section>
 <section class="level4" id="git-repository">
 <h4>Git Repository <a class="headerlink" href="#git-repository">&para;</a></h4>
 <p>If you want the development version of Radicale, take a look at the
 <a href="https://github.com/Kozea/Radicale/">git repository on
 GitHub</a>, or install it directly with:</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb59-1"><a aria-hidden="true" href="#cb59-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip install <span class="at">--upgrade</span> https://github.com/Kozea/Radicale/archive/master.tar.gz</span></code></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb60-1"><a aria-hidden="true" href="#cb60-1" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pip install <span class="at">--upgrade</span> https://github.com/Kozea/Radicale/archive/master.tar.gz</span></code></pre></div>
 <p>You can also download the content of the repository as an <a href="https://github.com/Kozea/Radicale/tarball/master">archive</a>.</p>
 </section>
 <section class="level4" id="source-packages">
@@ -2305,7 +2366,7 @@ GitHub</a>, or install it directly with:</p>
 <p>Radicale is available as a <a href="https://github.com/Kozea/Radicale/pkgs/container/radicale">Docker
 image</a> for platforms <code>linux/amd64</code> and
 <code>linux/arm64</code>. To install the latest version, run:</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb60-1"><a aria-hidden="true" href="#cb60-1" tabindex="-1"></a><span class="ex">docker</span> pull ghcr.io/kozea/radicale:latest</span></code></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb61-1"><a aria-hidden="true" href="#cb61-1" tabindex="-1"></a><span class="ex">docker</span> pull ghcr.io/kozea/radicale:latest</span></code></pre></div>
 <p>An example <code>docker-compose.yml</code> and detailed instructions
 will soon be updated.</p>
 </section>
