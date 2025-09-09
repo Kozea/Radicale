@@ -10,7 +10,8 @@ Radicale is a small but powerful CalDAV (calendars, to-do lists) and CardDAV
 * Shares calendars and contact lists through CalDAV, CardDAV and HTTP.
 * Supports events, todos, journal entries and business cards.
 * Works out-of-the-box, no complicated setup or configuration required.
-* Can limit access by authentication.
+* Offers flexible authentication options.
+* Can limit access by authorization.
 * Can secure connections with TLS.
 * Works with many
   [CalDAV and CardDAV clients](#supported-clients).
@@ -25,10 +26,8 @@ Check
 * [Tutorials](#tutorials)
 * [Documentation](#documentation-1)
 * [Wiki on GitHub](https://github.com/Kozea/Radicale/wiki)
-* [Disussions on GitHub](https://github.com/Kozea/Radicale/discussions)
+* [Discussions on GitHub](https://github.com/Kozea/Radicale/discussions)
 * [Open and already Closed Issues on GitHub](https://github.com/Kozea/Radicale/issues?q=is%3Aissue)
-
-Hint: instead of downloading from PyPI look for packages provided by used [distribution](#linux-distribution-packages), they contain also startup scripts to run daemonized.
 
 #### What's New?
 
@@ -38,17 +37,22 @@ Read the [Changelog on GitHub](https://github.com/Kozea/Radicale/blob/master/CHA
 
 ### Simple 5-minute setup
 
-You want to try Radicale but only have 5 minutes free in your calendar? Let's
-go right now and play a bit with Radicale!
+You want to try Radicale but only have 5 minutes free in your calendar?
+Let's go right now and play a bit with Radicale!
 
-When everything works, you can get a [client](#supported-clients)
-and start creating calendars and address books. The server, configured with settings from this section, only binds to localhost (is not reachable over the network)
-and you can log in with any user name and password. When everything works, you may get a local client and start creating calendars and address books.
-If Radicale fits your needs, it may be time for some [basic configuration](#basic-configuration) to support remote clients and desired authentication type.
+The server, configured with settings from this section, only binds to localhost
+(i.e. it is not reachable over the network), and you can log in with any username and password.
+When everything works, you may get a local [client](#supported-clients)
+and start creating calendars and address books.
+If Radicale fits your needs, it may be time for some [basic configuration](#basic-configuration)
+to support remote clients and desired authentication type.
 
 Follow one of the chapters below depending on your operating system.
 
 #### Linux / \*BSD
+
+Hint: instead of downloading from PyPI, look for packages provided by your [distribution](#linux-distribution-packages).
+They contain also startup scripts integrated into your distributions, that allow Radicale to run daemonized.
 
 First, make sure that **python** 3.9 or later and **pip** are installed. On most distributions it should be
 enough to install the package ``python3-pip``.
@@ -62,7 +66,8 @@ Recommended only for testing - open a console and type:
 python3 -m pip install --user --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
 ```
 
-If _install_ is not working and instead `error: externally-managed-environment` is displayed, create and activate a virtual environment in advance
+If _install_ is not working and instead `error: externally-managed-environment` is displayed,
+create and activate a virtual environment in advance.
 
 ```bash
 python3 -m venv ~/venv
@@ -84,15 +89,15 @@ python3 -m radicale --storage-filesystem-folder=~/.var/lib/radicale/collections 
 
 ##### as system user (or as root)
 
-Alternative one can install and run as system user or as root (not recommended)
+Alternatively, you can install and run as system user or as root (not recommended):
 
 ```bash
-# Run the following command as root (not required)
-# or non-root system user (can require --user in case of dependencies are not available system-wide and/or virtual environment)
+# Run the following command as root (not recommended) or non-root system user
+# (the later may require --user in case dependencies are not available system-wide and/or virtual environment)
 python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/master.tar.gz
 ```
 
-Start the service manually, data is stored in a system folder
+Start the service manually, with data stored in a system folder under `/var/lib/radicale/collections`:
 
 ```bash
 # Start, data is stored in a system folder (requires write permissions to /var/lib/radicale/collections)
@@ -116,12 +121,12 @@ python -m radicale --storage-filesystem-folder=~/radicale/collections --auth-typ
 
 ##### Common
 
-Victory! Open <http://localhost:5232> in your browser!
+Success!!! Open <http://localhost:5232> in your browser!
 You can log in with any username and password as no authentication is required by example option `--auth-type none`.
-But this is INSECURE, see [Configuration/Authentication](#auth) for more.
+This is **INSECURE**, see [Configuration/Authentication](#auth) for more details.
 
 Just note that default configuration for security reason binds the server to `localhost` (IPv4: `127.0.0.1`, IPv6: `::1`).
-See [Addresses](#addresses) and [Configuration/Server](#server) for more.
+See [Addresses](#addresses) and [Configuration/Server](#server) for more details.
 
 ### Basic Configuration
 
@@ -144,9 +149,12 @@ All configuration options are described in detail in the
 
 #### Authentication
 
-In its default configuration since 3.5.0 Radicale rejects by default all authentication by `type = denyall` (introduced with 3.2.2) until explicitly configured.
+In its default configuration since version 3.5.0, Radicale rejects all
+authentication attempts by using config option `type = denyall` (introduced
+with 3.2.2) as default until explicitly configured.
 
-Before 3.5.0 it didn't check usernames or passwords if not explicitly configured, and if the server is reachable over a network, you should change this as soon as possible.
+Versions before 3.5.0 did not check usernames or passwords at all, unless explicitly configured.
+If such a server is reachable over a network, you should change this as soon as possible.
 
 First a `users` file with all usernames and passwords must be created.
 It can be stored in the same directory as the configuration file.
@@ -156,11 +164,12 @@ It can be stored in the same directory as the configuration file.
 The `users` file can be created and managed with
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html):
 
-Note: some OS contain unpatched `htpasswd` (< 2.4.59) without supporting SHA-256 or SHA-512
-(e.g. Ubuntu LTS 22), in this case use '-B' for "bcrypt" hash method or stay with
-insecure MD5 (default) or SHA-1 ('-s').
+Note: some OSes or distributions contain outdated versions of `htpasswd` (< 2.4.59) without
+support for SHA-256 or SHA-512 (e.g. Ubuntu LTS 22).
+In these cases use `htpasswd`'s command line option `-B` for the  `bcrypt` hash method (recommended),
+or stay with the insecure (not recommended) MD5 (default) or SHA-1 (command line option `-s`).
 
-Note that support of SHA-256 or SHA-512 was introduced with 3.1.9
+Note: support of SHA-256 and SHA-512 was introduced with 3.1.9
 
 ```bash
 # Create a new htpasswd file with the user "user1" using SHA-512 as hash method
@@ -204,7 +213,7 @@ htpasswd_encryption = plain
 
 #### Addresses
 
-The default configuration binds the server to localhost. It can't be reached
+The default configuration binds the server to localhost. It cannot be reached
 from other computers. This can be changed with the following configuration
 options (IPv4 and IPv6):
 
@@ -223,7 +232,7 @@ be changed with the following configuration:
 filesystem_folder = /path/to/storage
 ```
 
-> **Security:** The storage folder should not be readable by unauthorized users.
+> **Security:** The storage folder shall not be readable by unauthorized users.
 > Otherwise, they can read the calendar data and lock the storage.
 > You can find OS dependent instructions in the
 > [Running as a service](#running-as-a-service) section.
@@ -256,20 +265,30 @@ requirements.
 
 #### Linux with systemd system-wide
 
-Recommendation: check support by [Linux Distribution Packages](#linux-distribution-packages) instead of manual setup / initial configuration.
+Recommendation: check support by [Linux Distribution Packages](#linux-distribution-packages)
+instead of manual setup / initial configuration.
 
-Create the **radicale** user and group for the Radicale service. (Run
-`useradd --system --user-group --home-dir / --shell /sbin/nologin radicale` as root.)
-The storage folder must be writable by **radicale**. (Run
-`mkdir -p /var/lib/radicale/collections && chown -R radicale:radicale /var/lib/radicale/collections`
-as root.)
+Create the **radicale** user and group for the Radicale service by running (as `root`:
+```bash
+useradd --system --user-group --home-dir / --shell /sbin/nologin radicale
+```
 
-If a dedicated cache folder is configured (see option 'storage' -> 'filesystem_cache_folder'), it also must be also writable by **radicale**. (Run
-`mkdir -p /var/cache/radicale && chown -R radicale:radicale /var/cache/radicale`
-as root.)
+The storage folder must be writable by the **radicale** user by running (as `root`):
+```bash
+mkdir -p /var/lib/radicale/collections && chown -R radicale:radicale /var/lib/radicale/collections
+```
 
-> **Security:** The storage should not be readable by others.
-> (Run `chmod -R o= /var/lib/radicale/collections` as root.)
+If a dedicated cache folder is configured (see option [filesystem_cache_folder](#filesystem_cache_folder)),
+it also must be also writable by **radicale**. To achieva that, run (as `root`):
+```bash
+mkdir -p /var/cache/radicale && chown -R radicale:radicale /var/cache/radicale
+````
+
+> **Security:** The storage shall not be readable by others.
+> To make sure this is the case, run (as `root`):
+> ```bash
+> chmod -R o= /var/lib/radicale/collections
+> ```
 
 Create the file `/etc/systemd/system/radicale.service`:
 
@@ -295,14 +314,14 @@ ProtectKernelModules=true
 ProtectControlGroups=true
 NoNewPrivileges=true
 ReadWritePaths=/var/lib/radicale/
-# Replace with following in case of dedicated cache folder should be used
+# Replace with following in case dedicated cache folder should be used
 #ReadWritePaths=/var/lib/radicale/ /var/cache/radicale/
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-Radicale will load the configuration file from `/etc/radicale/config`.
+In this system-wide implementation, Radicale will load the configuration from the file `/etc/radicale/config`.
 
 To enable and manage the service run:
 
@@ -333,7 +352,8 @@ Restart=on-failure
 WantedBy=default.target
 ```
 
-Radicale will load the configuration file from `~/.config/radicale/config`.
+In this user-specific configuration, Radicale will load the configuration from
+the file `~/.config/radicale/config`.
 You should set the configuration option `filesystem_folder` in the `storage`
 section to something like `~/.var/lib/radicale/collections`.
 
@@ -475,7 +495,7 @@ incorrect authentication attempts. Connections are terminated after a timeout.
 Set the configuration option `type` in the `auth` section to
 `http_x_remote_user`.
 Radicale uses the username provided in the `X-Remote-User` HTTP header and
-disables HTTP authentication.
+disables its internal HTTP authentication.
 
 Example **nginx** configuration:
 
@@ -547,8 +567,8 @@ RequestHeader set X-Remote-User expr=%{REMOTE_USER}
 
 > **Security:** Untrusted clients should not be able to access the Radicale
 > server directly. Otherwise, they can authenticate as any user by simply
-> setting related HTTP header. This can be prevented by restrict listen to
-> loopback interface only or at least a local firewall rule.
+> setting related HTTP header. This can be prevented by listening to the
+> loopback interface only or local firewall rules.
 
 #### Secure connection between Radicale and the reverse proxy
 
@@ -556,8 +576,8 @@ SSL certificates can be used to encrypt and authenticate the connection between
 Radicale and the reverse proxy. First you have to generate a certificate for
 Radicale and a certificate for the reverse proxy. The following commands
 generate self-signed certificates. You will be asked to enter additional
-information about the certificate, the values don't matter and you can keep the
-defaults.
+information about the certificate, these values do not really matter and you can
+keep the defaults.
 
 ```bash
 openssl req -x509 -newkey rsa:4096 -keyout server_key.pem -out server_cert.pem \
@@ -576,7 +596,7 @@ key = /path/to/server_key.pem
 certificate_authority = /path/to/client_cert.pem
 ```
 
-If you're using the Let's Encrypt's Certbot, the configuration should look similar to this:
+If you are using the Let's Encrypt Certbot, the configuration should look similar to this:
 
 ```ini
 [server]
@@ -626,10 +646,10 @@ gunicorn --bind '127.0.0.1:5232' --env 'RADICALE_CONFIG=/etc/radicale/config' \
 #### Manage user accounts with the WSGI server
 
 Set the configuration option `type` in the `auth` section to `remote_user`.
-Radicale uses the username provided by the WSGI server and disables
-authentication over HTTP.
+This way Radicale uses the username provided by the WSGI server and disables
+its internal authentication over HTTP.
 
-### Versioning with Git
+### Versioning collections with Git
 
 This tutorial describes how to keep track of all changes to calendars and
 address books with **git** (or any other version control system).
@@ -695,6 +715,9 @@ Reason for problems can be
 Radicale can be configured with a configuration file or with
 command line arguments.
 
+Configuration files have INI-style syntax comprising key-value pairs
+grouped into sections with section headers enclosed in brackets.
+
 An example configuration file looks like:
 
 ```ini
@@ -729,7 +752,7 @@ python3 -m radicale --server-hosts 0.0.0.0:5232,[::]:5232 \
 Add the argument `--config ""` to stop Radicale from loading the default
 configuration files. Run `python3 -m radicale --help` for more information.
 
-One can also use command line options in startup scripts using following examples:
+You can also use command-line options in startup scripts as shown in the following examples:
 
 ```bash
 ## simple variable containing multiple options
@@ -747,12 +770,12 @@ RADICALE_OPTIONS+=("--config=/etc/radicale/config")
 /usr/bin/radicale ${RADICALE_OPTIONS[@]}
 ```
 
-In the following, all configuration categories and options are described.
+The following describes all configuration sections and options.
 
-#### server
+#### [server]
 
-The configuration options in this category are only relevant in standalone
-mode. All options are ignored, when Radicale runs via WSGI.
+The configuration options in this section are only relevant in standalone
+mode; they are ignored, when Radicale runs on WSGI.
 
 ##### hosts
 
@@ -835,7 +858,7 @@ Strip script name from URI if called by reverse proxy
 
 Default: (taken from HTTP_X_SCRIPT_NAME or SCRIPT_NAME)
 
-#### encoding
+#### [encoding]
 
 ##### request
 
@@ -849,55 +872,57 @@ Encoding for storing local collections
 
 Default: `utf-8`
 
-#### auth
+#### [auth]
 
 ##### type
 
 The method to verify usernames and passwords.
 
-Available backends:
+Available types are:
 
-`none`
-: Just allows all usernames and passwords.
+* `none`  
+  Just allows all usernames and passwords.
 
-`denyall`  _(>= 3.2.2)_
-: Just denies all usernames and passwords.
+* `denyall`  _(>= 3.2.2)_  
+  Just denies all usernames and passwords.
 
-`htpasswd`
-: Use an
+* `htpasswd`  
+  Use an
   [Apache htpasswd file](https://httpd.apache.org/docs/current/programs/htpasswd.html)
   to store usernames and passwords.
 
-`remote_user`
-: Takes the username from the `REMOTE_USER` environment variable and disables
-  HTTP authentication. This can be used to provide the username from a WSGI
-  server which authenticated the client upfront. Required to validate, otherwise
-  client can supply the header itself which is unconditionally trusted then.
+* `remote_user`  
+  Takes the username from the `REMOTE_USER` environment variable and disables
+  Radicale's internal HTTP authentication. This can be used to provide the
+  username from a WSGI server which authenticated the client upfront.
+  Requires validation, otherwise clients can supply the header themselves,
+  which then is unconditionally trusted.
 
-`http_x_remote_user`
-: Takes the username from the `X-Remote-User` HTTP header and disables HTTP
-  authentication. This can be used to provide the username from a reverse
-  proxy which authenticated the client upfront. Required to validate, otherwise
-  client can supply the header itself which is unconditionally trusted then.
+* `http_x_remote_user`  
+  Takes the username from the `X-Remote-User` HTTP header and disables
+  Radicale's internal HTTP authentication. This can be used to provide the
+  username from a reverse proxy which authenticated the client upfront.
+  Requires validation, otherwise clients can supply the header themselves,
+  which then is unconditionally trusted.
 
-`ldap` _(>= 3.3.0)_
-: Use a LDAP or AD server to authenticate users by relaying credentials from client and handle result.
+* `ldap` _(>= 3.3.0)_  
+  Use a LDAP or AD server to authenticate users by relaying credentials from clients and handle results.
 
-`dovecot` _(>= 3.3.1)_
-: Use a Dovecot server to authenticate users by relaying credentials from client and handle result.
+* `dovecot` _(>= 3.3.1)_  
+  Use a Dovecot server to authenticate users by relaying credentials from clients and handle results.
 
-`imap` _(>= 3.4.1)_
-: Use an IMAP server to authenticate users by relaying credentials from client and handle result.
+* `imap` _(>= 3.4.1)_  
+  Use an IMAP server to authenticate users by relaying credentials from clients and handle results.
 
-`oauth2` _(>= 3.5.0)_
-: Use an OAuth2 server to authenticate users by relaying credentials from client and handle result.
-  Oauth2 authentication (SSO) directly on client is not supported. Use herefore `http_x_remote_user`
+* `oauth2` _(>= 3.5.0)_  
+  Use an OAuth2 server to authenticate users by relaying credentials from clients and handle results.
+  OAuth2 authentication (SSO) directly on client is not supported. Use herefore `http_x_remote_user`
   in combination with SSO support in reverse proxy (e.g. Apache+mod_auth_openidc).
 
-`pam` _(>= 3.5.0)_
-: Use local PAM to authenticate users by relaying credentials from client and handle result..
+* `pam` _(>= 3.5.0)_  
+  Use local PAM to authenticate users by relaying credentials from client and handle result..
 
-Default: `none` _(< 3.5.0)_ `denyall` _(>= 3.5.0)_
+Default: `none` _(< 3.5.0)_ / `denyall` _(>= 3.5.0)_
 
 ##### cache_logins
 
@@ -906,7 +931,7 @@ _(>= 3.4.0)_
 Cache successful/failed logins until expiration time. Enable this to avoid
 overload of authentication backends.
 
-Default: `false`
+Default: `False`
 
 ##### cache_successful_logins_expiry
 
@@ -932,14 +957,15 @@ Default: `/etc/radicale/users`
 
 ##### htpasswd_encryption
 
-The encryption method that is used in the htpasswd file. Use the
+The encryption method that is used in the htpasswd file. Use
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html)
 or similar to generate this files.
 
 Available methods:
 
-`plain`
-: Passwords are stored in plaintext. This is obviously not secure!
+* `plain`  
+  Passwords are stored in plaintext.
+  This is not recommended. as it is obviously **insecure!**
   The htpasswd file for this can be created by hand and looks like:
 
   ```htpasswd
@@ -947,27 +973,27 @@ Available methods:
   user2:password2
   ```
 
-`bcrypt`
-: This uses a modified version of the Blowfish stream cipher. It's very secure.
-  The installation of **bcrypt** is required for this.
+* `bcrypt`  
+  This uses a modified version of the Blowfish stream cipher, which is considered very secure.
+  The installation of Python's **bcrypt** module is required for this to work.
 
-`md5`
-: This uses an iterated MD5 digest of the password with a salt (nowadays insecure).
+* `md5`  
+  Use an iterated MD5 digest of the password with salt (nowadays insecure).
 
-`sha256` _(>= 3.1.9)_
-: This uses an iterated SHA-256 digest of the password with a salt.
+* `sha256` _(>= 3.1.9)_  
+  Use an iterated SHA-256 digest of the password with salt.
 
-`sha512` _(>= 3.1.9)_
-: This uses an iterated SHA-512 digest of the password with a salt.
+* `sha512` _(>= 3.1.9)_  
+  Use an iterated SHA-512 digest of the password with salt.
 
-`argon2` _(>= 3.5.3)_
-: This uses an iterated ARGON2 digest of the password with a salt.
-  The installation of **argon2-cffi** is required for this.
+* `argon2` _(>= 3.5.3)_  
+  Use an iterated ARGON2 digest of the password with salt.
+  The installation of Python's **argon2-cffi** module is required for this to work.
 
-`autodetect` _(>= 3.1.9)_
-: This selects autodetection of method per entry.
+* `autodetect` _(>= 3.1.9)_  
+  Automatically detect the encryption method used per user entry.
 
-Default: `md5` _(< 3.3.0)_ `autodetect` _(>= 3.3.0)_
+Default: `md5` _(< 3.3.0)_ / `autodetect` _(>= 3.3.0)_
 
 ##### htpasswd_cache
 
@@ -979,7 +1005,7 @@ Default: `False`
 
 ##### delay
 
-Average delay after failed login attempts in seconds.
+Average delay (in seconds) after failed login attempts.
 
 Default: `1`
 
@@ -1050,8 +1076,8 @@ _(>= 3.4.0)_
 LDAP attribute whose value shall be used as the username after successful authentication.
 
 If set, you can use flexible logins in `ldap_filter` and still have consolidated usernames,
-e.g. to allow login in using mail addresses as an alternative to cn, simply set
-```
+e.g. to allow users to login using mail addresses as an alternative to cn, simply set
+```ini
 ldap_filter = (&(objectclass=inetOrgPerson)(|(cn={0})(mail={0})))
 ldap_user_attribute = cn
 ```
@@ -1065,13 +1091,18 @@ Default: (unset, in which case the login name is directly used as the username)
 
 _(>= 3.3.0)_
 
-Use ssl on the LDAP connection. **Deprecated**, use `ldap_security` instead**!**
+Use ssl on the LDAP connection. **Deprecated!** Use `ldap_security` instead.
 
 ##### ldap_security
 
 _(>= 3.5.2)_
 
-Use encryption on the LDAP connection. One of `none`, `tls`, `starttls`.
+Use encryption on the LDAP connection.
+
+One of
+* `none`
+* `tls`
+* `starttls`
 
 Default: `none`
 
@@ -1079,7 +1110,12 @@ Default: `none`
 
 _(>= 3.3.0)_
 
-Certificate verification mode for tls and starttls. One of `NONE`, `OPTIONAL`, `REQUIRED`.
+Certificate verification mode for tls and starttls.
+
+One of
+* `NONE`
+* `OPTIONAL`
+* `REQUIRED`.
 
 Default: `REQUIRED`
 
@@ -1157,13 +1193,18 @@ Quirks for Authentik LDAP server, which violates the LDAP RFCs:
 add modifyTimestamp and createTimestamp to the exclusion list of internal ldap3 client
 so that these schema attributes are not checked.
 
-Default: `false`
+Default: `False`
 
-##### dovecot_connection_type = AF_UNIX
+##### dovecot_connection_type
 
 _(>= 3.4.1)_
 
-Connection type for dovecot authentication (AF_UNIX|AF_INET|AF_INET6)
+Connection type for dovecot authentication.
+
+One of:
+* `AF_UNIX`
+* `AF_INET`
+* `AF_INET6`
 
 Note: credentials are transmitted in cleartext
 
@@ -1173,7 +1214,8 @@ Default: `AF_UNIX`
 
 _(>= 3.3.1)_
 
-The path to the Dovecot client authentication socket (eg. /run/dovecot/auth-client on Fedora). Radicale must have read / write access to the socket.
+Path to the Dovecot client authentication socket (eg. /run/dovecot/auth-client on Fedora).
+Radicale must have read & write access to the socket.
 
 Default: `/var/run/dovecot/auth-client`
 
@@ -1181,7 +1223,7 @@ Default: `/var/run/dovecot/auth-client`
 
 _(>= 3.4.1)_
 
-Host of via network exposed dovecot socket
+Host of dovecot socket exposed via network
 
 Default: `localhost`
 
@@ -1189,7 +1231,7 @@ Default: `localhost`
 
 _(>= 3.4.1)_
 
-Port of via network exposed dovecot socket
+Port of dovecot socket exposed via network
 
 Default: `12345`
 
@@ -1225,7 +1267,13 @@ Default: `REMOTE_ADDR`
 
 _(>= 3.4.1)_
 
-IMAP server hostname: address | address:port | [address]:port | imap.server.tld
+IMAP server hostname.
+
+One of:
+* address
+* address:port
+* [address]:port	(for IPv5 addresses)
+* imap.server.tld
 
 Default: `localhost`
 
@@ -1233,7 +1281,12 @@ Default: `localhost`
 
 _(>= 3.4.1)_
 
-Secure the IMAP connection: tls | starttls | none
+Secure the IMAP connection:
+
+One of:
+* `tls`
+* `starttls`
+* `none`
 
 Default: `tls`
 
@@ -1241,17 +1294,17 @@ Default: `tls`
 
 _(>= 3.5.0)_
 
-OAuth2 token endpoint URL
+Endpoint URL for the OAuth2 token
 
-Default:
+Default: (unset)
 
 ##### pam_service
 
 _(>= 3.5.0)_
 
-PAM service
+PAM service name
 
-Default: radicale
+Default: `radicale`
 
 ##### pam_group_membership
 
@@ -1259,31 +1312,31 @@ _(>= 3.5.0)_
 
 PAM group user should be member of
 
-Default:
+Default: (unset)
 
 ##### lc_username
 
-Сonvert username to lowercase, must be true for case-insensitive auth
-providers like ldap, kerberos
+Сonvert username to lowercase.
+Recommended to be `True` for case-insensitive auth providers like ldap, kerberos, ...
 
 Default: `False`
 
 Notes:
 * `lc_username` and `uc_username` are mutually exclusive
-* for auth type `ldap` the use of `ldap_user_attribute` is preferred
+* for auth type `ldap` the use of `ldap_user_attribute` is preferred over `lc_username`
 
 ##### uc_username
 
 _(>= 3.3.2)_
 
-Сonvert username to uppercase, must be true for case-insensitive auth
-providers like ldap, kerberos
+Сonvert username to uppercase.
+Recommended to be `True` for case-insensitive auth providers like ldap, kerberos, ...
 
 Default: `False`
 
 Notes:
 * `uc_username` and `lc_username` are mutually exclusive
-* for auth type `ldap` the use of `ldap_user_attribute` is preferred
+* for auth type `ldap` the use of `ldap_user_attribute` is preferred over `uc_username`
 
 ##### strip_domain
 
@@ -1297,87 +1350,93 @@ Default: `False`
 
 _(>= 3.5.3)_
 
-URL Decode the username.  When the username is an email, some clients send the username URL-encoded (notably iOS devices)
-breaking the authentication process (user@example.com becomes user%40example.com).  This setting will force decoding the username.
+URL-decode the username.
+If the username is an email address, some clients send the username URL-encoded
+(notably iOS devices) breaking the authentication process
+(user@example.com becomes user%40example.com).
+This setting forces decoding the username.
 
 Default: `False`
 
 
-#### rights
+#### [rights]
 
 ##### type
 
-The backend that is used to check the access rights of collections.
+Authorization backend that is used to check the access rights to collections.
 
-The recommended backend is `owner_only`. If access to calendars
-and address books outside the home directory of users (that's `/USERNAME/`)
-is granted, clients won't detect these collections and will not show them to
-the user. Choosing any other method is only useful if you access calendars and
-address books directly via URL.
+The default and recommended backend is `owner_only`. If access to calendars
+and address books outside the user's collection directory (that's `/username/`)
+is granted, clients will not detect these collections automatically and
+will not show them to the users.
+Choosing any other authorization backend is only useful if you access
+calendars and address books directly via URL.
 
-Available backends:
+Available backends are:
 
-`authenticated`
-: Authenticated users can read and write everything.
+* `authenticated`  
+  Authenticated users can read and write everything.
 
-`owner_only`
-: Authenticated users can read and write their own collections under the path
+* `owner_only`  
+  Authenticated users can read and write their own collections under the path
   */USERNAME/*.
 
-`owner_write`
-: Authenticated users can read everything and write their own collections under
+* `owner_write`  
+  Authenticated users can read everything and write their own collections under
   the path */USERNAME/*.
 
-`from_file`
-: Load the rules from a file.
+* `from_file`  
+  Load the rules from a file.
 
 Default: `owner_only`
 
 ##### file
 
-File for the rights backend `from_file`.  See the
-[Rights](#authentication-and-rights) section.
+Name of the file containing the authorization rules for the `from_file` backend.
+See the [Rights](#authorization-and-rights) section for details.
+
+Default: `/etc/radicale/rights`
 
 ##### permit_delete_collection
 
 _(>= 3.1.9)_
 
-Global control of permission to delete complete collection (default: True)
+Global permission to delete complete collections.
+* If `False` it can be explicitly granted per collection by `permissions: D`
+* If `True` it can be explicitly forbidden per collection by `permissions: d`
 
-If False it can be permitted by permissions per section with: D
-
-If True it can be forbidden by permissions per section with: d
+Default: `True`
 
 ##### permit_overwrite_collection
 
 _(>= 3.3.0)_
 
-Global control of permission to overwrite complete collection (default: True)
+Global permission to overwrite complete collections.
+* If `False` it can be explicitly granted per collection by `permissions: O`
+* If `True` it can be explicitly forbidden per collection by `permissions: o`
 
-If False it can be permitted by permissions per section with: O
+Default: `True`
 
-If True it can be forbidden by permissions per section with: o
-
-#### storage
+#### [storage]
 
 ##### type
 
-The backend that is used to store data.
+Backend used to store data.
 
-Available backends:
+Available backends are:
 
-`multifilesystem`
-: Stores the data in the filesystem.
+* `multifilesystem`  
+  Stores the data in the filesystem.
 
-`multifilesystem_nolock`
-: The `multifilesystem` backend without file-based locking.
+* `multifilesystem_nolock`  
+  The `multifilesystem` backend without file-based locking.
   Must only be used with a single process.
 
 Default: `multifilesystem`
 
 ##### filesystem_folder
 
-Folder for storing local collections, created if not present.
+Folder for storing local collections; will be auto-created if not present.
 
 Default: `/var/lib/radicale/collections`
 
@@ -1385,11 +1444,11 @@ Default: `/var/lib/radicale/collections`
 
 _(>= 3.3.2)_
 
-Folder for storing cache of local collections, created if not present
+Folder for storing cache of local collections; will be auto-created if not present
 
 Default: (filesystem_folder)
 
-Note: only used in case of use_cache_subfolder_* options are active
+Note: only used if use_cache_subfolder_* options are active
 
 Note: can be used on multi-instance setup to cache files on local node (see below)
 
@@ -1411,7 +1470,7 @@ Use subfolder `collection-cache` for cache file structure of 'history' instead o
 
 Default: `False`
 
-Note: use only on single-instance setup, will break consistency with client in multi-instance setup
+Note: only use on single-instance setup: it will break consistency with clients in multi-instance setup
 
 ##### use_cache_subfolder_for_synctoken
 
@@ -1421,33 +1480,38 @@ Use subfolder `collection-cache` for cache file structure of 'sync-token' instea
 
 Default: `False`
 
-Note: use only on single-instance setup, will break consistency with client in multi-instance setup
+Note: only use on single-instance setup: it will break consistency with clients in multi-instance setup
 
 ##### use_mtime_and_size_for_item_cache
 
 _(>= 3.3.2)_
 
-Use last modifiction time (nanoseconds) and size (bytes) for 'item' cache instead of SHA256 (improves speed)
+Use last modification time (in nanoseconds) and size (in bytes) for 'item' cache instead of SHA256 (improves speed)
 
 Default: `False`
 
-Note: check used filesystem mtime precision before enabling
-
-Note: conversion is done on access, bulk conversion can be done offline using storage verification option `radicale --verify-storage`
+Notes:
+* check used filesystem mtime precision before enabling
+* conversion is done on access
+* bulk conversion can be done offline using the storage verification option `radicale --verify-storage`
 
 ##### folder_umask
 
 _(>= 3.3.2)_
 
-Use configured umask for folder creation (not applicable for OS Windows)
+umask to use for folder creation (not applicable for OS Windows)
 
-Default: (system-default, usual `0022`)
+Default: (system-default, usually `0022`)
 
-Useful value: `0077` (user:rw group:- other:-) or `0027` (user:rw group:r other:-) or `0007` (user:rw group:rw other:-) or `0022` (user:rw group:r other:r)
+Useful values:
+* `0077` (user:rw group:- other:-)
+* `0027` (user:rw group:r other:-)
+* `0007` (user:rw group:rw other:-)
+* `0022` (user:rw group:r other:r)
 
 ##### max_sync_token_age
 
-Delete sync-token that are older than the specified time. (seconds)
+Delete sync-tokens that are older than the specified time (in seconds).
 
 Default: `2592000`
 
@@ -1462,9 +1526,10 @@ Default: `True`
 ##### hook
 
 Command that is run after changes to storage. Take a look at the
-[Versioning with Git](#versioning-with-git) tutorial for an example.
+[Versioning collections with Git](#versioning-collections-with-git)
+tutorial for an example.
 
-Default:
+Default: (unset)
 
 Supported placeholders:
  - `%(user)s`: logged-in user
@@ -1473,53 +1538,58 @@ Supported placeholders:
  - `%(to_path)s`: full path of destination item (only set on MOVE request) _(>= 3.5.5)_
  - `%(request)s`: request method _(>= 3.5.5)_
 
-Command will be executed with base directory defined in `filesystem_folder` (see above)
+The command will be executed with base directory defined in `filesystem_folder` (see above)
 
 ##### predefined_collections
 
-Create predefined user collections
+Create predefined user collections.
 
- Example:
+Example:
+```json
+{
+  "def-addressbook": {
+     "D:displayname": "Personal Address Book",
+     "tag": "VADDRESSBOOK"
+  },
+  "def-calendar": {
+     "C:supported-calendar-component-set": "VEVENT,VJOURNAL,VTODO",
+     "D:displayname": "Personal Calendar",
+     "tag": "VCALENDAR"
+  }
+}
+```
+Default: (unset)
 
-     {
-       "def-addressbook": {
-          "D:displayname": "Personal Address Book",
-          "tag": "VADDRESSBOOK"
-       },
-       "def-calendar": {
-          "C:supported-calendar-component-set": "VEVENT,VJOURNAL,VTODO",
-          "D:displayname": "Personal Calendar",
-          "tag": "VCALENDAR"
-       }
-     }
-
-Default:
-
-#### web
+#### [web]
 
 ##### type
 
 The backend that provides the web interface of Radicale.
 
-Available backends:
+Available backends are:
 
-`none`
-: Just shows the message "Radicale works!".
+* `none`  
+  Simply shows the message "Radicale works!".
 
-`internal`
-: Allows creation and management of address books and calendars.
+* `internal`  
+  Allows creation and management of address books and calendars.
 
 Default: `internal`
 
-#### logging
+#### [logging]
 
 ##### level
 
 Set the logging level.
 
-Available levels: **debug**, **info**, **warning**, **error**, **critical**
+Available levels are:
+* `debug`
+* `info`
+* `warning`
+* `error`
+* `critical`
 
-Default: `warning` _(< 3.2.0)_ `info` _(>= 3.2.0)_
+Default: `warning` _(< 3.2.0)_ / `info` _(>= 3.2.0)_
 
 ##### trace_on_debug
 
@@ -1535,13 +1605,13 @@ _(> 3.5.4)_
 
 Filter debug messages starting with 'TRACE/<TOKEN>'
 
-Precondition: `trace_on_debug = True`
+Prerequisite: `trace_on_debug = True`
 
 Default: (empty)
 
 ##### mask_passwords
 
-Don't include passwords in logs.
+Do not include passwords in logs.
 
 Default: `True`
 
@@ -1557,7 +1627,7 @@ Default: `False`
 
 _(>= 3.2.2)_
 
-Log backtrace on level=debug
+Log backtrace on `level = debug`
 
 Default: `False`
 
@@ -1565,7 +1635,7 @@ Default: `False`
 
 _(>= 3.2.2)_
 
-Log request on level=debug
+Log request on `level = debug`
 
 Default: `False`
 
@@ -1573,7 +1643,7 @@ Default: `False`
 
 _(>= 3.2.2)_
 
-Log request on level=debug
+Log request on `level = debug`
 
 Default: `False`
 
@@ -1581,7 +1651,7 @@ Default: `False`
 
 _(>= 3.2.2)_
 
-Log response on level=debug
+Log response on `level = debug`
 
 Default: `False`
 
@@ -1589,7 +1659,7 @@ Default: `False`
 
 _(>= 3.2.3)_
 
-Log rights rule which doesn't match on level=debug
+Log rights rule which doesn't match on `level = debug`
 
 Default: `False`
 
@@ -1597,14 +1667,13 @@ Default: `False`
 
 _(>= 3.3.2)_
 
-Log storage cache actions on level=debug
+Log storage cache actions on `level = debug`
 
 Default: `False`
 
-#### headers
+#### [headers]
 
-In this section additional HTTP headers that are sent to clients can be
-specified.
+This section can be used to specify additional HTTP headers that will be sent to clients.
 
 An example to relax the same-origin policy:
 
@@ -1612,21 +1681,22 @@ An example to relax the same-origin policy:
 Access-Control-Allow-Origin = *
 ```
 
-#### hook
+#### [hook]
+
 ##### type
 
 Hook binding for event changes and deletion notifications.
 
-Available types:
+Available types are:
 
-`none`
-: Disabled. Nothing will be notified.
+* `none`  
+  Disabled. Nothing will be notified.
 
-`rabbitmq` _(>= 3.2.0)_
-: Push the message to the rabbitmq server.
+* `rabbitmq` _(>= 3.2.0)_  
+  Push the message to the rabbitmq server.
 
-`email` _(>= 3.5.5)_
-: Send an email notification to event attendees.
+* `email` _(>= 3.5.5)_  
+  Send an email notification to event attendees.
 
 Default: `none`
 
@@ -1634,7 +1704,7 @@ Default: `none`
 
 _(> 3.5.4)_
 
-Dry-Run (do not really trigger hook action)
+Dry-Run / simulate (i.e. do not really trigger) the hook action.
 
 Default: `False`
 
@@ -1643,17 +1713,17 @@ Default: `False`
 _(>= 3.2.0)_
 
 End-point address for rabbitmq server.
-Ex: amqp://user:password@localhost:5672/
+E.g.: `amqp://user:password@localhost:5672/`
 
-Default:
+Default: (unset)
 
 ##### rabbitmq_topic
 
 _(>= 3.2.0)_
 
-RabbitMQ topic to publish message.
+RabbitMQ topic to publish message in.
 
-Default:
+Default: (unset)
 
 ##### rabbitmq_queue_type
 
@@ -1661,21 +1731,21 @@ _(>= 3.2.0)_
 
 RabbitMQ queue type for the topic.
 
-Default: classic
+Default: `classic`
 
 ##### smtp_server
 
 _(>= 3.5.5)_
 
-Address to connect to SMTP server.
+Address of SMTP server to connect to.
 
-Default:
+Default: (unset)
 
 ##### smtp_port
 
 _(>= 3.5.5)_
 
-Port to connect to SMTP server.
+Port on SMTP server to connect to.
 
 Default:
 
@@ -1683,33 +1753,45 @@ Default:
 
 _(>= 3.5.5)_
 
-Use encryption on the SMTP connection. none, tls, starttls
+Use encryption on the SMTP connection.
 
-Default: none
+One of:
+* `none`
+* `tls`
+* `starttls`
+
+Default: `none`
 
 ##### smtp_ssl_verify_mode
 
 _(>= 3.5.5)_
 
-The certificate verification mode. Works for tls and starttls. NONE, OPTIONAL or REQUIRED
+The certificate verification mode for tls and starttls.
 
-Default: REQUIRED
+One of:
+* `NONE`
+* `OPTIONAL`
+* `REQUIRED`
+
+Default: `REQUIRED`
 
 ##### smtp_username
 
 _(>= 3.5.5)_
 
-Username to authenticate with SMTP server. Leave empty to disable authentication (e.g. using local mail server).
+Username to authenticate with SMTP server.
+Leave empty to disable authentication (e.g. using local mail server).
 
-Default:
+Default: (unset)
 
 ##### smtp_password
 
 _(>= 3.5.5)_
 
-Password to authenticate with SMTP server. Leave empty to disable authentication (e.g. using local mail server).
+Password to authenticate with SMTP server.
+Leave empty to disable authentication (e.g. using local mail server).
 
-Default:
+Default: (unset)
 
 ##### from_email
 
@@ -1717,13 +1799,14 @@ _(>= 3.5.5)_
 
 Email address to use as sender in email notifications.
 
-Default:
+Default: (unset)
 
 ##### mass_email
 
 _(>= 3.5.5)_
 
-When enabled, send one email to all attendee email addresses. When disabled, send one email per attendee email address.
+When enabled, send one email to all attendee email addresses.
+When disabled, send one email per attendee email address.
 
 Default: `False`
 
@@ -1731,16 +1814,16 @@ Default: `False`
 
 _(>= 3.5.5)_
 
-Template to use for added/updated event email body (sent to an attendee when the event is created or they are added to a pre-existing event).
+Template to use for added/updated event email body sent to an attendee when the event is created or they are added to a pre-existing event.
 
 The following placeholders will be replaced:
-- `$organizer_name`: Name of the organizer, or "Unknown Organizer" if not set in event
-- `$from_email`: Email address the email is sent from
-- `$attendee_name`: Name of the attendee (email recipient), or "everyone" if mass email enabled.
-- `$event_name`: Name/summary of the event, or "No Title" if not set in event
-- `$event_start_time`: Start time of the event in ISO 8601 format
-- `$event_end_time`: End time of the event in ISO 8601 format, or "No End Time" if the event has no end time
-- `$event_location`: Location of the event, or "No Location Specified" if not set in event
+* `$organizer_name`: Name of the organizer, or "Unknown Organizer" if not set in event
+* `$from_email`: Email address the email is sent from
+* `$attendee_name`: Name of the attendee (email recipient), or "everyone" if mass email enabled.
+* `$event_name`: Name/summary of the event, or "No Title" if not set in event
+* `$event_start_time`: Start time of the event in ISO 8601 format
+* `$event_end_time`: End time of the event in ISO 8601 format, or "No End Time" if the event has no end time
+* `$event_location`: Location of the event, or "No Location Specified" if not set in event
 
 Providing any words prefixed with $ not included in the list above will result in an error.
 
@@ -1761,20 +1844,20 @@ This is an automated message. Please do not reply.
 
 _(>= 3.5.5)_
 
-Template to use for deleted/removed event email body (sent to an attendee when the event is deleted or they are removed from the event).
+Template to use for deleted/removed event email body sent to an attendee when the event is deleted or they are removed from the event.
 
 The following placeholders will be replaced:
-- `$organizer_name`: Name of the organizer, or "Unknown Organizer" if not set in event
-- `$from_email`: Email address the email is sent from
-- `$attendee_name`: Name of the attendee (email recipient), or "everyone" if mass email enabled.
-- `$event_name`: Name/summary of the event, or "No Title" if not set in event
-- `$event_start_time`: Start time of the event in ISO 8601 format
-- `$event_end_time`: End time of the event in ISO 8601 format, or "No End Time" if the event has no end time
-- `$event_location`: Location of the event, or "No Location Specified" if not set in event
+* `$organizer_name`: Name of the organizer, or "Unknown Organizer" if not set in event
+* `$from_email`: Email address the email is sent from
+* `$attendee_name`: Name of the attendee (email recipient), or "everyone" if mass email enabled.
+* `$event_name`: Name/summary of the event, or "No Title" if not set in event
+* `$event_start_time`: Start time of the event in ISO 8601 format
+* `$event_end_time`: End time of the event in ISO 8601 format, or "No End Time" if the event has no end time
+* `$event_location`: Location of the event, or "No Location Specified" if not set in event
 
 Providing any words prefixed with $ not included in the list above will result in an error.
 
-Default: 
+Default:
 ```
 Hello $attendee_name,
 
@@ -1787,26 +1870,26 @@ The following event has been deleted.
 This is an automated message. Please do not reply.
 ```
 
-#### updated_event_template
+##### updated_event_template
 
 _(>= 3.5.5)_
 
-Template to use for updated event email body (sent to an attendee when non-attendee-related details of the event are updated).
+Template to use for updated event email body sent to an attendee when non-attendee-related details of the event are updated.
 
 Existing attendees will NOT be notified of a modified event if the only changes are adding/removing other attendees.
 
 The following placeholders will be replaced:
-- `$organizer_name`: Name of the organizer, or "Unknown Organizer" if not set in event
-- `$from_email`: Email address the email is sent from
-- `$attendee_name`: Name of the attendee (email recipient), or "everyone" if mass email enabled.
-- `$event_name`: Name/summary of the event, or "No Title" if not set in event
-- `$event_start_time`: Start time of the event in ISO 8601 format
-- `$event_end_time`: End time of the event in ISO 8601 format, or "No End Time" if the event has no end time
-- `$event_location`: Location of the event, or "No Location Specified" if not set in event
+* `$organizer_name`: Name of the organizer, or "Unknown Organizer" if not set in event
+* `$from_email`: Email address the email is sent from
+* `$attendee_name`: Name of the attendee (email recipient), or "everyone" if mass email enabled.
+* `$event_name`: Name/summary of the event, or "No Title" if not set in event
+* `$event_start_time`: Start time of the event in ISO 8601 format
+* `$event_end_time`: End time of the event in ISO 8601 format, or "No End Time" if the event has no end time
+* `$event_location`: Location of the event, or "No Location Specified" if not set in event
 
 Providing any words prefixed with $ not included in the list above will result in an error.
 
-Default: 
+Default:
 ```
 Hello $attendee_name,
             
@@ -1819,7 +1902,7 @@ The following event has been updated.
 This is an automated message. Please do not reply.
 ```
 
-#### reporting
+#### [reporting]
 
 ##### max_freebusy_occurrence
 
@@ -1844,6 +1927,8 @@ Radicale has been tested with:
 * [GNOME Calendar](https://wiki.gnome.org/Apps/Calendar),
   [Contacts](https://wiki.gnome.org/Apps/Contacts) and
   [Evolution](https://wiki.gnome.org/Apps/Evolution)
+* [KDE PIM Applications](https://kontact.kde.org/),
+  [KDE Merkuro](https://apps.kde.org/de/merkuro/)
 * [Mozilla Thunderbird](https://www.mozilla.org/thunderbird/) ([Thunderbird/Radicale](https://github.com/Kozea/Radicale/wiki/Client-Thunderbird)) with
   [CardBook](https://addons.mozilla.org/thunderbird/addon/cardbook/) and
   [Lightning](https://www.mozilla.org/projects/calendar/)
@@ -1857,10 +1942,9 @@ Many clients do not support the creation of new calendars and address books.
 You can use Radicale's web interface
 (e.g. <http://localhost:5232>) to create and manage address books and calendars.
 
-In some clients you can just enter the URL of the Radicale server
+In some clients, it is sufficient to simply enter the URL of the Radicale server
 (e.g. `http://localhost:5232`) and your username. In others, you have to
-enter the URL of the collection directly
-(e.g. `http://localhost:5232/user/calendar`).
+enter the URL of the collection directly (e.g. `http://localhost:5232/user/calendar`).
 
 Some clients (notably macOS's Calendar.app) may silently refuse to include
 account credentials over unsecured HTTP, leading to unexpected authentication
@@ -1871,7 +1955,7 @@ failures. In these cases, you want to make sure the Radicale server is
 
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
 username. DAVx⁵ will show all existing calendars and address books and you
-can create new.
+can create new ones.
 
 #### OneCalendar
 
@@ -1884,7 +1968,10 @@ you want to see. OneCalendar supports many other server types too.
 
 GNOME 46 added CalDAV and CardDAV support to _GNOME Online Accounts_.
 
-Open GNOME Settings, navigate to _Online Accounts_ > _Connect an Account_ > _Calendar, Contacts and Files_. Enter the URL (e.g. `https://example.com/radicale`) and your credentials then click _Sign In_. In the pop-up dialog, turn off _Files_. After adding Radicale in _GNOME Online Accounts_, it should be available in GNOME Contacts and GNOME Calendar.
+Open GNOME Settings, navigate to _Online Accounts_ > _Connect an Account_ > _Calendar, Contacts and Files_.
+Enter the URL (e.g. `https://example.com/radicale`) and your credentials then click _Sign In_.
+In the pop-up dialog, turn off _Files_. After adding Radicale in _GNOME Online Accounts_,
+it should be available in GNOME Contacts and GNOME Calendar.
 
 #### Evolution
 
@@ -1893,7 +1980,16 @@ Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
 username. Clicking on the search button will list the existing calendars and
 address books.
 
-Adding CalDAV and CardDAV accounts in Evolution will automatically make them available in GNOME Contacts and GNOME Calendar.
+Adding CalDAV and CardDAV accounts in Evolution will automatically make them
+available in GNOME Contacts and GNOME Calendar.
+
+#### KDE PIM Applications
+
+In **Kontact** add a _DAV Groupware resource_ to Akonadi under
+_Settings > Configure Kontact > Calendar > General > Calendars_,
+select the protocol (CalDAV or CardDAV), add the URL to the Radicale collections
+and enter the credentials. After synchronization of the calendar resp.
+addressbook items, you can manage them in Kontact.
 
 #### Thunderbird
 
@@ -1980,16 +2076,16 @@ curl -u user -X DELETE 'http://localhost:5232/user/calendar'
 
 Note: requires config/option `permit_delete_collection = True`
 
-### Authentication and Rights
+### Authorization and Rights
 
 This section describes the format of the rights file for the `from_file`
 authentication backend. The configuration option `file` in the `rights`
 section must point to the rights file.
 
-The recommended rights method is `owner_only`. If access to calendars
-and address books outside the home directory of users (that's `/USERNAME/`)
-is granted, clients won't detect these collections and will not show them to
-the user.
+The recommended rights method is `owner_only`. If access is granted
+to calendars and address books outside the home directory of users
+(that's `/USERNAME/`), clients will not detect these collections automatically,
+and will not show them to the users.
 This is only useful if you access calendars and address books directly via URL.
 
 An example rights file:
@@ -2041,40 +2137,40 @@ The following `permissions` are recognized:
   (CalDAV/CardDAV is susceptible to expensive search requests)
 * **W:** write collections (excluding address books and calendars)
 * **w:** write address book and calendar collections
-* **D:** permit delete of collection in case permit_delete_collection=False _(>= 3.3.0)_
-* **d:** forbid delete of collection in case permit_delete_collection=True _(>= 3.3.0)_
-* **O:** permit overwrite of collection in case permit_overwrite_collection=False
-* **o:** forbid overwrite of collection in case permit_overwrite_collection=True
+* **D:** permit delete of collection in case `permit_delete_collection=False` _(>= 3.3.0)_
+* **d:** forbid delete of collection in case `permit_delete_collection=True` _(>= 3.3.0)_
+* **O:** permit overwrite of collection in case `permit_overwrite_collection=False`
+* **o:** forbid overwrite of collection in case `permit_overwrite_collection=True`
 
 ### Storage
 
-This document describes the layout and format of the file system storage
-(`multifilesystem` backend).
+This document describes the layout and format of the file system storage,
+the `multifilesystem` backend.
 
-It's safe to access and manipulate the data by hand or with scripts.
-Scripts can be invoked manually, periodically (e.g. with
+It is safe to access and manipulate the data by hand or with scripts.
+Scripts can be invoked manually, periodically (e.g. using
 [cron](https://manpages.debian.org/unstable/cron/cron.8.en.html)) or after each
 change to the storage with the configuration option `hook` in the `storage`
-section (e.g. [Versioning with Git](#versioning-with-git)).
+section (e.g. [Versioning collections with Git](#versioning-collections-with-git)).
 
 #### Layout
 
-The file system contains the following files and folders:
-
+The file system comprises the following files and folders:
 * `.Radicale.lock`: The lock file for locking the storage.
 * `collection-root`: This folder contains all collections and items.
 
-A collection is represented by a folder. This folder may contain the file
+Each collection is represented by a folder. This folder may contain the file
 `.Radicale.props` with all WebDAV properties of the collection encoded
 as [JSON](https://en.wikipedia.org/wiki/JSON).
 
-An item is represented by a file containing the iCalendar data.
+Each item in a calendar or address book collection is represented by
+a file containing the item's iCalendar resp. vCard data.
 
-All files and folders, whose names start with a dot but not `.Radicale.`
+All files and folders, whose names start with a dot but not with `.Radicale.`
 (internal files) are ignored.
 
-If you introduce syntax errors in any of the files, all requests that access
-the faulty data will fail. The logging output should contain the names of the
+Syntax errors in any of the files will cause all requests accessing
+the faulty data to fail. The logging output should contain the names of the
 culprits.
 
 Caches and sync-tokens are stored in the `.Radicale.cache` folder inside of
@@ -2082,14 +2178,14 @@ collections.
 This folder may be created or modified, while the storage is locked for shared
 access.
 In theory, it should be safe to delete the folder. Caches will be recreated
-automatically and clients will be told that their sync-token isn't valid
+automatically and clients will be told that their sync-token is not valid
 anymore.
 
 You may encounter files or folders that start with `.Radicale.tmp-`.
 Radicale uses them for atomic creation and deletion of files and folders.
-They should be deleted after requests are finished but it's possible that
+They should be deleted after requests are finished but it is possible that
 they are left behind when Radicale or the computer crashes.
-It's safe to delete them.
+You can safely delete them.
 
 #### Locking
 
@@ -2102,12 +2198,13 @@ The storage is locked with exclusive access while the `hook` runs.
 
 Use the
 [flock](https://manpages.debian.org/unstable/util-linux/flock.1.en.html)
-utility.
+utility to acquire exclusive or shared locks for the commands you want to run
+on Radicale's data.
 
 ```bash
-# Exclusive
+# Exclusive lock for COMMAND
 $ flock --exclusive /path/to/storage/.Radicale.lock COMMAND
-# Shared
+# Shared lock for COMMAND
 $ flock --shared /path/to/storage/.Radicale.lock COMMAND
 ```
 
@@ -2129,17 +2226,17 @@ and `nNumberOfBytesToLockHigh` to `0` works.
 
 #### Manually creating collections
 
-To create a new collection, you have to create the corresponding folder in the
+To create a new collection, you need to create the corresponding folder in the
 file system storage (e.g. `collection-root/user/calendar`).
-To tell Radicale and clients that the collection is a calendar, you have to
+To indicate to Radicale and clients that the collection is a calendar, you have to
 create the file ``.Radicale.props`` with the following content in the folder:
 
 ```json
 {"tag": "VCALENDAR"}
 ```
 
-The calendar is now available at the URL path ``/user/calendar``.
-For address books the file must contain:
+The calendar is now available at the URL path (e.g. ``/user/calendar``).
+For address books ``.Radicale.props`` must contain:
 
 ```json
 {"tag": "VADDRESSBOOK"}
@@ -2179,12 +2276,12 @@ an address book through network:
 
 Radicale is **only the server part** of this architecture.
 
-Please note that:
+Please note:
 
-* CalDAV and CardDAV are superset protocols of WebDAV,
-* WebDAV is a superset protocol of HTTP.
+* CalDAV and CardDAV are extension protocols of WebDAV,
+* WebDAV is an extension of the HTTP protocol.
 
-Radicale being a CalDAV/CardDAV server, it also can be seen as a special WebDAV
+Radicale being a CalDAV/CardDAV server, can also be seen as a special WebDAV
 and HTTP server.
 
 Radicale is **not the client part** of this architecture. It means that
@@ -2200,59 +2297,59 @@ icons and buttons, a terminal or another web application.
 
 The ``radicale`` package offers the following modules.
 
-`__init__`
-: Contains the entry point for WSGI.
+* `__init__`
+  : Contains the entry point for WSGI.
 
-`__main__`
-: Provides the entry point for the ``radicale`` executable and
+* `__main__`
+  : Provides the entry point for the ``radicale`` executable and
   includes the command line parser. It loads configuration files from
   the default (or specified) paths and starts the internal server.
 
-`app`
-: This is the core part of Radicale, with the code for the CalDAV/CardDAV
+* `app`
+  : This is the core part of Radicale, with the code for the CalDAV/CardDAV
   server. The code managing the different HTTP requests according to the
   CalDAV/CardDAV specification can be found here.
 
-`auth`
-: Used for authenticating users based on username and password, mapping
+* `auth`
+  : Used for authenticating users based on username and password, mapping
   usernames to internal users and optionally retrieving credentials from
   the environment.
 
-`config`
-: Contains the code for managing configuration and loading settings from files.
+* `config`
+  : Contains the code for managing configuration and loading settings from files.
 
-`ìtem`
-: Internal representation of address book and calendar entries. Based on
+* `ìtem`
+  : Internal representation of address book and calendar entries. Based on
   [VObject](https://github.com/py-vobject/vobject/).
 
-`log`
-: The logger for Radicale based on the default Python logging module.
+* `log`
+  : The logger for Radicale based on the default Python logging module.
 
-`rights`
-: This module is used by Radicale to manage access rights to collections,
+* `rights`
+  : This module is used by Radicale to manage access rights to collections,
   address books and calendars.
 
-`server`
+* `server`
 : The integrated HTTP server for standalone use.
 
-`storage`
-: This module contains the classes representing collections in Radicale and
+* `storage`
+  : This module contains the classes representing collections in Radicale and
   the code for storing and loading them in the filesystem.
 
-`web`
-: This module contains the web interface.
+* `web`
+  : This module contains the web interface.
 
-`utils`
-: Contains general helper functions.
+* `utils`
+  : Contains general helper functions.
 
-`httputils`
-: Contains helper functions for working with HTTP.
+* `httputils`
+  : Contains helper functions for working with HTTP.
 
-`pathutils`
-: Helper functions for working with paths and the filesystem.
+* `pathutils`
+  : Helper functions for working with paths and the filesystem.
 
-`xmlutils`
-: Helper functions for working with the XML part of CalDAV/CardDAV requests
+* `xmlutils`
+  : Helper functions for working with the XML part of CalDAV/CardDAV requests
   and responses. It's based on the ElementTree XML API.
 
 ### Plugins
@@ -2260,7 +2357,7 @@ The ``radicale`` package offers the following modules.
 Radicale can be extended by plugins for authentication, rights management and
 storage. Plugins are **python** modules.
 
-#### Getting started
+#### Getting started with plugin development
 
 To get started we walk through the creation of a simple authentication
 plugin, that accepts login attempts with a static password.
