@@ -20,6 +20,14 @@ export interface EnvConfig {
   EMAIL_FROM?: string;
   EMAIL_FROM_NAME?: string;
 
+  // Radicale Privacy API
+  RADICALE_URL?: string;
+  RADICALE_TOKEN?: string;
+
+  // Mock Configuration
+  MOCK_SMS?: boolean;
+  MOCK_EMAIL?: boolean;
+
   // Environment
   NODE_ENV: string;
   DEV: boolean;
@@ -29,18 +37,14 @@ export interface EnvConfig {
  * Get environment configuration with validation and defaults
  */
 export function getEnv(): EnvConfig {
-  const isDev =
-    process.env.NODE_ENV === 'development' ||
-    process.env.NODE_ENV === undefined;
+  const isDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === undefined;
 
   return {
     // Database
     DB_FILE_NAME: process.env.DB_FILE_NAME || 'local.db',
 
     // JWT
-    JWT_SECRET:
-      process.env.JWT_SECRET ||
-      (isDev ? 'dev-jwt-secret-key-for-testing-only' : ''),
+    JWT_SECRET: process.env.JWT_SECRET || (isDev ? 'dev-jwt-secret-key-for-testing-only' : ''),
 
     // AWS SES
     AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
@@ -48,6 +52,14 @@ export function getEnv(): EnvConfig {
     AWS_REGION: process.env.AWS_REGION,
     EMAIL_FROM: process.env.EMAIL_FROM,
     EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME,
+
+    // Radicale Privacy API
+    RADICALE_URL: process.env.RADICALE_URL,
+    RADICALE_TOKEN: process.env.RADICALE_TOKEN,
+
+    // Mock Configuration
+    MOCK_SMS: process.env.MOCK_SMS === 'true',
+    MOCK_EMAIL: process.env.MOCK_EMAIL === 'true',
 
     // Environment
     NODE_ENV: process.env.NODE_ENV || 'development',
@@ -59,12 +71,7 @@ export function getEnv(): EnvConfig {
  * Check if AWS SES is configured
  */
 export function isAwsConfigured(env: EnvConfig): boolean {
-  return !!(
-    env.AWS_ACCESS_KEY_ID &&
-    env.AWS_SECRET_ACCESS_KEY &&
-    env.AWS_REGION &&
-    env.EMAIL_FROM
-  );
+  return !!(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY && env.AWS_REGION && env.EMAIL_FROM);
 }
 
 /**

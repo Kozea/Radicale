@@ -1,9 +1,4 @@
-import {
-  type RouteConfig,
-  index,
-  route,
-  layout,
-} from '@react-router/dev/routes';
+import { type RouteConfig, index, route, layout } from '@react-router/dev/routes';
 
 export default [
   // Public routes (no authentication required)
@@ -20,4 +15,6 @@ export default [
   route('/api/auth/verify-otp', 'routes/api.auth.verify-otp.tsx'),
   // API routes for user preferences
   route('/api/user/preferences', 'routes/api.user.preferences.tsx'),
+  // API routes for user cards
+  route('/api/user/cards', 'routes/api.user.cards.tsx'),
 ] satisfies RouteConfig;

@@ -1,1 +1,0 @@
-ALTER TABLE `user_preferences` ADD `contactProviderSynced` integer DEFAULT 1 NOT NULL;

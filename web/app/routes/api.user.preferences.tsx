@@ -1,10 +1,10 @@
 import { verifyAuth } from '~/lib/auth';
 import {
-  getUserByContact,
-  getUserPreferences,
-  saveUserPreferences,
-  markContactProviderSynced,
-} from '~/db/operations';
+  getPrivacySettings,
+  updatePrivacySettings,
+  createPrivacySettings,
+  reprocessUserCards,
+} from '~/api/radicale';
 
 // Loader function for GET requests
 export async function loader({ request }: { request: Request }) {
@@ -13,8 +13,7 @@ export async function loader({ request }: { request: Request }) {
     const env = process.env;
     const isDevelopment = import.meta.env.DEV;
     const JWT_SECRET =
-      env.JWT_SECRET ||
-      (isDevelopment ? 'dev-jwt-secret-key-for-testing-only' : undefined);
+      env.JWT_SECRET || (isDevelopment ? 'dev-jwt-secret-key-for-testing-only' : undefined);
 
     if (!JWT_SECRET) {
       return new Response(
@@ -24,7 +23,7 @@ export async function loader({ request }: { request: Request }) {
         {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
-        },
+        }
       );
     }
 
@@ -37,50 +36,17 @@ export async function loader({ request }: { request: Request }) {
       });
     }
 
-    // Get user from database
-    const dbUser = await getUserByContact(user.contact);
-    if (!dbUser) {
-      return new Response(JSON.stringify({ error: 'User not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Get user preferences
-    const preferences = await getUserPreferences(dbUser.id);
-
-    // Convert database format to frontend format
-    const formattedPreferences = preferences
-      ? {
-          disallow_photo: preferences.disallowPhoto === 1,
-          disallow_gender: preferences.disallowGender === 1,
-          disallow_birthday: preferences.disallowBirthday === 1,
-          disallow_address: preferences.disallowAddress === 1,
-          disallow_company: preferences.disallowCompany === 1,
-          disallow_title: preferences.disallowTitle === 1,
-        }
-      : {
-          disallow_photo: false,
-          disallow_gender: false,
-          disallow_birthday: false,
-          disallow_address: false,
-          disallow_company: false,
-          disallow_title: false,
-        };
-
-    const contactProviderSynced = preferences
-      ? preferences.contactProviderSynced === 1
-      : true;
+    // Fetch preferences from Radicale (auto-creates defaults if missing)
+    const formattedPreferences = await getPrivacySettings(user.contact);
 
     return new Response(
       JSON.stringify({
         preferences: formattedPreferences,
-        contactProviderSynced,
       }),
       {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
-      },
+      }
     );
   } catch {
     return new Response(
@@ -90,7 +56,7 @@ export async function loader({ request }: { request: Request }) {
       {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
-      },
+      }
     );
   }
 }
@@ -102,8 +68,7 @@ export async function action({ request }: { request: Request }) {
     const env = process.env;
     const isDevelopment = import.meta.env.DEV;
     const JWT_SECRET =
-      env.JWT_SECRET ||
-      (isDevelopment ? 'dev-jwt-secret-key-for-testing-only' : undefined);
+      env.JWT_SECRET || (isDevelopment ? 'dev-jwt-secret-key-for-testing-only' : undefined);
 
     if (!JWT_SECRET) {
       return new Response(
@@ -113,7 +78,7 @@ export async function action({ request }: { request: Request }) {
         {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
-        },
+        }
       );
     }
 
@@ -126,15 +91,6 @@ export async function action({ request }: { request: Request }) {
       });
     }
 
-    // Get user from database
-    const dbUser = await getUserByContact(user.contact);
-    if (!dbUser) {
-      return new Response(JSON.stringify({ error: 'User not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
     const body = (await request.json()) as {
       preferences?: Record<string, boolean>;
       action?: string;
@@ -142,43 +98,41 @@ export async function action({ request }: { request: Request }) {
 
     const { preferences, action } = body;
 
-    // Handle sync action
+    // Handle sync action by triggering Radicale reprocessing
     if (action === 'sync') {
-      await markContactProviderSynced(dbUser.id);
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'Contact provider synchronized',
-        }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
+      await reprocessUserCards(user.contact);
+      return new Response(JSON.stringify({ success: true, message: 'Reprocessing triggered' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Handle preferences update
     if (!preferences || typeof preferences !== 'object') {
-      return new Response(
-        JSON.stringify({ error: 'Invalid preferences data' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
+      return new Response(JSON.stringify({ error: 'Invalid preferences data' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // Convert frontend format to database format
-    const dbPreferences = {
-      disallowPhoto: preferences.disallow_photo ? 1 : 0,
-      disallowGender: preferences.disallow_gender ? 1 : 0,
-      disallowBirthday: preferences.disallow_birthday ? 1 : 0,
-      disallowAddress: preferences.disallow_address ? 1 : 0,
-      disallowCompany: preferences.disallow_company ? 1 : 0,
-      disallowTitle: preferences.disallow_title ? 1 : 0,
-    };
-
-    await saveUserPreferences(dbUser.id, dbPreferences);
+    // Update preferences in Radicale; create if missing
+    try {
+      await updatePrivacySettings(user.contact, preferences);
+    } catch (err: any) {
+      if (err?.status === 400) {
+        await createPrivacySettings(user.contact, {
+          disallow_photo: false,
+          disallow_gender: false,
+          disallow_birthday: false,
+          disallow_address: false,
+          disallow_company: false,
+          disallow_title: false,
+          ...preferences,
+        });
+      } else {
+        throw err;
+      }
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -192,7 +146,7 @@ export async function action({ request }: { request: Request }) {
       {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
-      },
+      }
     );
   }
 }

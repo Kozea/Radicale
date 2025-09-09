@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1755343770736,
-      "tag": "0000_black_ben_grimm",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1755345080594,
-      "tag": "0001_yielding_firedrake",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1755348322250,
-      "tag": "0002_married_ben_urich",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1755349259892,
-      "tag": "0003_aberrant_xorn",
+      "when": 1757407785097,
+      "tag": "0000_init",
       "breakpoints": true
     }
   ]

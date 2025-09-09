@@ -2,16 +2,8 @@
  * Communication utility functions for Cloudflare Workers using Amazon SES & SNS
  */
 
-import {
-  SESClient,
-  SendEmailCommand,
-  type SendEmailCommandInput,
-} from '@aws-sdk/client-ses';
-import {
-  SNSClient,
-  PublishCommand,
-  type PublishCommandInput,
-} from '@aws-sdk/client-sns';
+import { SESClient, SendEmailCommand, type SendEmailCommandInput } from '@aws-sdk/client-ses';
+import { SNSClient, PublishCommand, type PublishCommandInput } from '@aws-sdk/client-sns';
 import { env } from '~/lib/env';
 
 export interface AmazonSESConfig {
@@ -84,15 +76,13 @@ export async function sendEmail(
   to: string,
   subject: string,
   html: string,
-  config: AmazonSESConfig,
+  config: AmazonSESConfig
 ): Promise<{ success: boolean; error?: string; messageId?: string }> {
   try {
     const sesClient = createSESClient(config);
 
     const params = {
-      Source: config.fromName
-        ? `${config.fromName} <${config.fromEmail}>`
-        : config.fromEmail,
+      Source: config.fromName ? `${config.fromName} <${config.fromEmail}>` : config.fromEmail,
       Destination: {
         ToAddresses: [to],
       },
@@ -119,12 +109,7 @@ export async function sendEmail(
   } catch (error: unknown) {
     let errorMessage = 'Unknown error occurred';
 
-    if (
-      error &&
-      typeof error === 'object' &&
-      'name' in error &&
-      'message' in error
-    ) {
+    if (error && typeof error === 'object' && 'name' in error && 'message' in error) {
       errorMessage = `${error.name}: ${error.message}`;
     } else if (error && typeof error === 'object' && 'message' in error) {
       errorMessage = String(error.message);
@@ -143,7 +128,7 @@ export async function sendEmail(
 export async function sendOtpEmail(
   email: string,
   otpCode: string,
-  config: AmazonSESConfig,
+  config: AmazonSESConfig
 ): Promise<{ success: boolean; error?: string; messageId?: string }> {
   const subject = 'Your Verification Code';
   const html = `
@@ -170,12 +155,7 @@ export async function sendOtpEmail(
  * Create SES configuration from environment variables
  */
 export function createSESConfig(): AmazonSESConfig {
-  if (
-    !env.AWS_ACCESS_KEY_ID ||
-    !env.AWS_SECRET_ACCESS_KEY ||
-    !env.AWS_REGION ||
-    !env.EMAIL_FROM
-  ) {
+  if (!env.AWS_ACCESS_KEY_ID || !env.AWS_SECRET_ACCESS_KEY || !env.AWS_REGION || !env.EMAIL_FROM) {
     throw new Error('Missing required AWS configuration environment variables');
   }
 
@@ -194,7 +174,7 @@ export function createSESConfig(): AmazonSESConfig {
 export async function sendOtp(
   email: string,
   otpCode: string,
-  sesConfig?: AmazonSESConfig,
+  sesConfig?: AmazonSESConfig
 ): Promise<{ success: boolean; error?: string; messageId?: string }> {
   if (!isValidEmail(email)) {
     return {
@@ -245,7 +225,7 @@ function createSNSClient(config: AmazonSNSConfig) {
 export async function sendSms(
   to: string,
   message: string,
-  config: AmazonSNSConfig,
+  config: AmazonSNSConfig
 ): Promise<{ success: boolean; error?: string; messageId?: string }> {
   if (!isValidE164(to)) {
     return {
@@ -275,12 +255,7 @@ export async function sendSms(
   } catch (error: unknown) {
     let errorMessage = 'Unknown error occurred';
 
-    if (
-      error &&
-      typeof error === 'object' &&
-      'name' in error &&
-      'message' in error
-    ) {
+    if (error && typeof error === 'object' && 'name' in error && 'message' in error) {
       errorMessage = `${error.name}: ${error.message}`;
     } else if (error && typeof error === 'object' && 'message' in error) {
       errorMessage = String(error.message);
@@ -300,10 +275,10 @@ export async function sendOtpSms(
   phone: string,
   otpCode: string,
   config: AmazonSNSConfig,
-  domain?: string,
+  domain?: string
 ): Promise<{ success: boolean; error?: string; messageId?: string }> {
   const humanLine = `Your verification code is ${otpCode}. It expires in 5 minutes.`;
-  const domainLine = domain ? `\n@${domain} #${otpCode}` : ""; // <-- Safari looks for this format
+  const domainLine = domain ? `\n@${domain} #${otpCode}` : ''; // <-- Safari looks for this format
   const msg = humanLine + domainLine;
   return sendSms(phone, msg, config);
 }
@@ -324,13 +299,54 @@ export function createSNSConfig(): AmazonSNSConfig {
 }
 
 /**
+ * Mock SMS sending for development/testing
+ */
+async function sendOtpSmsMock(
+  phone: string,
+  otpCode: string,
+  domain?: string
+): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  console.log('🔐 MOCK SMS OTP:', {
+    to: phone,
+    code: otpCode,
+    message: `Your verification code is ${otpCode}. It expires in 5 minutes.${domain ? `\n@${domain} #${otpCode}` : ''}`,
+    timestamp: new Date().toISOString(),
+  });
+
+  return {
+    success: true,
+    messageId: `mock_sms_${Date.now()}`,
+  };
+}
+
+/**
+ * Mock email sending for development/testing
+ */
+async function sendOtpEmailMock(
+  email: string,
+  otpCode: string
+): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  console.log('📧 MOCK EMAIL OTP:', {
+    to: email,
+    code: otpCode,
+    subject: 'Your Verification Code',
+    timestamp: new Date().toISOString(),
+  });
+
+  return {
+    success: true,
+    messageId: `mock_email_${Date.now()}`,
+  };
+}
+
+/**
  * Example: unified helper that decides channel by identifier
  */
 export async function sendOtpUnified(
   identifier: string,
   otpCode: string,
   sesConfig?: AmazonSESConfig,
-  snsConfig?: AmazonSNSConfig,
+  snsConfig?: AmazonSNSConfig
 ): Promise<{
   success: boolean;
   error?: string;
@@ -338,18 +354,31 @@ export async function sendOtpUnified(
   channel?: 'email' | 'sms';
 }> {
   if (isValidEmail(identifier)) {
+    // Check if email mocking is enabled
+    if (env.MOCK_EMAIL) {
+      const res = await sendOtpEmailMock(identifier, otpCode);
+      return { ...res, channel: 'email' };
+    }
+
     const cfg = sesConfig || createSESConfig();
     const res = await sendOtpEmail(identifier, otpCode, cfg);
     return { ...res, channel: 'email' };
   }
+
   if (isValidE164(identifier)) {
+    // Check if SMS mocking is enabled
+    if (env.MOCK_SMS) {
+      const res = await sendOtpSmsMock(identifier, otpCode, 'localhost');
+      return { ...res, channel: 'sms' };
+    }
+
     const cfg = snsConfig || createSNSConfig();
     const res = await sendOtpSms(identifier, otpCode, cfg, 'localhost');
     return { ...res, channel: 'sms' };
   }
+
   return {
     success: false,
-    error:
-      'Identifier must be an email or E.164 phone number (e.g. +14155550123).',
+    error: 'Identifier must be an email or E.164 phone number (e.g. +14155550123).',
   };
 }

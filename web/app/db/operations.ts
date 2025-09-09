@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from './index';
-import { usersTable, userPreferencesTable } from './schema';
+import { usersTable } from './schema';
 
 // User operations
 export async function createUser(contact: string) {
@@ -22,10 +22,7 @@ export async function getUserByContact(contact: string) {
     return null;
   }
 
-  const users = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.contact, contact));
+  const users = await db.select().from(usersTable).where(eq(usersTable.contact, contact));
   return users[0];
 }
 
@@ -34,72 +31,9 @@ export async function getUserById(id: number) {
   return users[0];
 }
 
-// User preferences operations
-export async function getUserPreferences(userId: number) {
-  const preferences = await db
-    .select()
-    .from(userPreferencesTable)
-    .where(eq(userPreferencesTable.userId, userId));
-  return preferences[0];
-}
-
-export async function saveUserPreferences(
-  userId: number,
-  preferences: {
-    disallowPhoto?: number;
-    disallowGender?: number;
-    disallowBirthday?: number;
-    disallowAddress?: number;
-    disallowCompany?: number;
-    disallowTitle?: number;
-  },
-) {
-  // Try to update existing preferences first
-  const existing = await getUserPreferences(userId);
-
-  if (existing) {
-    const updated = await db
-      .update(userPreferencesTable)
-      .set({
-        ...preferences,
-        contactProviderSynced: 0, // Mark as out of sync when preferences change
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(userPreferencesTable.userId, userId))
-      .returning();
-    return updated[0];
-  } else {
-    // Create new preferences record
-    const created = await db
-      .insert(userPreferencesTable)
-      .values({ userId, ...preferences, contactProviderSynced: 0 })
-      .returning();
-    return created[0];
-  }
-}
-
-// New function to mark contact provider as synced
-export async function markContactProviderSynced(userId: number) {
-  const updated = await db
-    .update(userPreferencesTable)
-    .set({
-      contactProviderSynced: 1,
-      updatedAt: new Date().toISOString(),
-    })
-    .where(eq(userPreferencesTable.userId, userId))
-    .returning();
-  return updated[0];
-}
-
 // Simplified OTP operations
-export async function storeOtp(
-  contact: string,
-  otpCode: string,
-  expiresInMinutes: number = 5,
-) {
-  const expiresAt = new Date(
-    Date.now() + expiresInMinutes * 60 * 1000,
-  ).toISOString();
+export async function storeOtp(contact: string, otpCode: string, expiresInMinutes: number = 5) {
+  const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000).toISOString();
 
   // Find or create user
   let user = await getUserByContact(contact);
@@ -119,7 +53,7 @@ export async function storeOtp(
 
 export async function verifyOtp(
   contact: string,
-  providedCode: string,
+  providedCode: string
 ): Promise<{ isValid: boolean; user?: typeof usersTable.$inferSelect }> {
   // Find user
   const user = await getUserByContact(contact);
