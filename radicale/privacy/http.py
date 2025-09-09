@@ -60,6 +60,24 @@ class PrivacyHTTP:
             "reprocess_cards": self._handle_reprocess_cards,
         }
 
+    def _check_authentication(self, environ: types.WSGIEnviron) -> bool:
+        """Check if the request is authenticated using token auth.
+
+        Args:
+            environ: WSGI environment
+
+        Returns:
+            True if authenticated, False otherwise
+        """
+        try:
+            auth_result = self._token_auth.get_external_login(environ)
+            # get_external_login returns empty tuple () for failed auth,
+            # or (user, password) tuple for successful auth
+            return len(auth_result) > 0
+        except Exception as e:
+            logger.error("Error during authentication check: %s", e)
+            return False
+
     def _dispatch_request(
         self, method: str, path: str, environ: types.WSGIEnviron
     ) -> types.WSGIResponse:
@@ -73,6 +91,15 @@ class PrivacyHTTP:
         Returns:
             WSGI response tuple
         """
+        # Check authentication first
+        if not self._check_authentication(environ):
+            logger.warning("Unauthorized access attempt to privacy endpoint: %s %s", method, path)
+            return (
+                client.UNAUTHORIZED,
+                {"Content-Type": "application/json", "WWW-Authenticate": "Bearer"},
+                json.dumps({"error": "Unauthorized. Bearer token required."}).encode(),
+            )
+
         adapter = self.url_map.bind("")
         try:
             endpoint, url_params = adapter.match(path, method)

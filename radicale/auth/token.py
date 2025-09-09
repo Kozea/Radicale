@@ -75,9 +75,3 @@ class Auth(auth.BaseAuth):
         else:
             logger.warning("Invalid token provided")
             return ()
-
-    def _login(self, login: str, password: str) -> str:
-        """This method should not be called for token authentication."""
-        # Token auth uses get_external_login, so this shouldn't be reached
-        # But we'll return empty string as fallback
-        return ""
