@@ -75,45 +75,53 @@
 ## Expiration time of caching failed logins in seconds
 #cache_failed_logins_expiry = 90
 
-# Ignore modifyTimestamp and createTimestamp attributes. Required e.g. for Authentik LDAP server
-#ldap_ignore_attribute_create_modify_timestamp = false
-
 # URI to the LDAP server
 #ldap_uri = ldap://localhost
 
-# The base DN where the user accounts have to be searched
+# Base DN of the LDAP server to search for user accounts
 #ldap_base = ##BASE_DN##
 
-# The reader DN of the LDAP server
+# Reader DN of the LDAP server;  (needs read access to users and - if defined - groups)
 #ldap_reader_dn = CN=ldapreader,CN=Users,##BASE_DN##
 
-# Password of the reader DN
+# Password of the reader DN (better: use 'ldap_secret_file'!)
 #ldap_secret = ldapreader-secret
 
-# Path of the file containing password of the reader DN
+# Path to the file containing the password of the reader DN
 #ldap_secret_file = /run/secrets/ldap_password
 
-# the attribute to read the group memberships from in the user's LDAP entry (default: not set)
-#ldap_groups_attribute = memberOf
-
-# The filter to find the DN of the user. This filter must contain a python-style placeholder for the login
+# Filter to search for the LDAP entry of the user to authenticate. It must contain '{0}' as placeholder for the login name.
 #ldap_filter = (&(objectClass=person)(uid={0}))
 
-# the attribute holding the value to be used as username after authentication
+# Attribute holding the value to be used as username after authentication
 #ldap_user_attribute = cn
 
-# Use ssl on the ldap connection
-# Soon to be deprecated, use ldap_security instead
+# Use ssl on the LDAP connection (DEPRECATED - use 'ldap_security'!)
 #ldap_use_ssl = False
 
-# the encryption mode to be used: tls, starttls, default is none
+# Encryption mode to be used. Default: none; one of: none, tls, starttls
 #ldap_security = none
 
-# The certificate verification mode. Works for ssl and starttls. NONE, OPTIONAL, default is REQUIRED
+# Certificate verification mode for tls & starttls. Default: REQUIRED; one of NONE, OPTIONAL, REQUIRED
 #ldap_ssl_verify_mode = REQUIRED
 
-# The path to the CA file in pem format which is used to certificate the server certificate
+# Path to the CA file in PEM format to certify the server certificate
 #ldap_ssl_ca_file =
+
+# Attribute in the user's LDAP entry to read the group memberships from; default: not set
+#ldap_groups_attribute = memberOf
+
+# Attribute in the group entries to read the group's members from, e.g. member; default: not set
+#ldap_group_members_attribute = member
+
+# Base DN to search for groups; only if it differs from 'ldap_base' and if 'ldap_group_members_attribute' is set
+#ldap_group_base = ##GROUP_BASE_DN##
+
+# Search filter to search for groups having the user DN found as member; only if 'ldap_group_members_attribute' is set
+#ldap_group_filter = (objectclass=groupOfNames)
+
+# Quirks for Authentik LDAP server: ignore modifyTimestamp and createTimestamp attributes
+#ldap_ignore_attribute_create_modify_timestamp = false
 
 # Connection type for dovecot authentication (AF_UNIX|AF_INET|AF_INET6)
 # Note: credentials are transmitted in cleartext
