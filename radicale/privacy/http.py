@@ -5,14 +5,14 @@ This module provides HTTP API endpoints for managing user privacy settings and c
 Uses Werkzeug's routing system for sophisticated URL handling.
 """
 
-import os
 import json
 import logging
+import os
 from http import client
 from typing import Any, Dict, List, Union
 
+from werkzeug.exceptions import MethodNotAllowed, NotFound
 from werkzeug.routing import Map, Rule
-from werkzeug.exceptions import NotFound, MethodNotAllowed
 from werkzeug.wrappers import Request
 
 from radicale import httputils, types
@@ -38,7 +38,6 @@ class PrivacyHTTP:
         """
         self.configuration = configuration
         self._privacy_core = PrivacyCore(configuration)
-        
         # Define URL rules for all supported routes
         self.url_map = Map([
             Rule('/privacy/settings/<user>', endpoint='get_settings', methods=['GET']),

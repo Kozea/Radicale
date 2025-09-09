@@ -77,6 +77,7 @@ skip_install = true
 deps = ["isort==5.13.2"]
 commands = [["isort", "--check", "--diff", "."]]
 skip_install = true
+allowlist_externals = ["isort"]
 
 [tool.tox.env.mypy]
 deps = ["mypy==1.11.0"]

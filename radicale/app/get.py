@@ -19,7 +19,7 @@
 
 import posixpath
 from http import client
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 from urllib.parse import quote
 
 from radicale import httputils, pathutils, storage, types, xmlutils
@@ -61,20 +61,21 @@ class ApplicationPartGet(ApplicationBase):
         try:
             encoded_filename = quote(filename, encoding=self._encoding)
         except UnicodeEncodeError:
-            logger.warning("Failed to encode filename: %r", filename,
-                           exc_info=True)
+            logger.warning("Failed to encode filename: %r", filename, exc_info=True)
             encoded_filename = ""
         if encoded_filename:
             value += "; filename*=%s''%s" % (self._encoding, encoded_filename)
         return value
 
-    def do_GET(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-               user: str) -> types.WSGIResponse:
+    def do_GET(
+        self, environ: types.WSGIEnviron, base_prefix: str, path: str, user: str
+    ) -> types.WSGIResponse:
         """Manage GET request."""
         # Handle privacy-specific paths
         if path.startswith("/privacy/"):
-            if not hasattr(self, '_privacy_http'):
+            if not hasattr(self, "_privacy_http"):
                 from radicale.privacy.http import PrivacyHTTP
+
                 self._privacy_http = PrivacyHTTP(self.configuration)
             return self._privacy_http.do_GET(environ, path)
         # Redirect to /.web if the root path is requested
@@ -87,8 +88,11 @@ class ApplicationPartGet(ApplicationBase):
                 unsafe_path = unsafe_path.removeprefix(base_prefix)
             if unsafe_path != path:
                 location = base_prefix + path
-                logger.info("Redirecting to sanitized path: %r ==> %r",
-                            base_prefix + unsafe_path, location)
+                logger.info(
+                    "Redirecting to sanitized path: %r ==> %r",
+                    base_prefix + unsafe_path,
+                    location,
+                )
                 return httputils.redirect(location, client.MOVED_PERMANENTLY)
             # Dispatch /.web path to web module
             return self._web.get(environ, base_prefix, path, user)
@@ -107,11 +111,15 @@ class ApplicationPartGet(ApplicationBase):
                 return httputils.NOT_ALLOWED
             if isinstance(item, storage.BaseCollection):
                 if not item.tag:
-                    return (httputils.NOT_ALLOWED if limited_access else
-                            httputils.DIRECTORY_LISTING)
+                    return (
+                        httputils.NOT_ALLOWED
+                        if limited_access
+                        else httputils.DIRECTORY_LISTING
+                    )
                 content_type = xmlutils.MIMETYPES[item.tag]
                 content_disposition = self._content_disposition_attachment(
-                    propose_filename(item))
+                    propose_filename(item)
+                )
             elif limited_access:
                 return httputils.NOT_ALLOWED
             else:
@@ -121,7 +129,8 @@ class ApplicationPartGet(ApplicationBase):
             headers = {
                 "Content-Type": content_type,
                 "Last-Modified": item.last_modified,
-                "ETag": item.etag}
+                "ETag": item.etag,
+            }
             if content_disposition:
                 headers["Content-Disposition"] = content_disposition
             answer = item.serialize()

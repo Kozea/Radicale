@@ -27,8 +27,6 @@ import subprocess
 import sys
 import threading
 import time
-
-import pytest
 from configparser import RawConfigParser
 from http.client import HTTPMessage
 from typing import IO, Callable, Dict, Optional, Tuple, cast
@@ -224,7 +222,6 @@ class TestBaseServerRequests(BaseTest):
     def test_command_line_interface_with_bool_options(self) -> None:
         self.test_command_line_interface(with_bool_options=True)
 
-    @pytest.mark.skip(reason="waitress dependency not available")
     def test_wsgi_server(self) -> None:
         config_path = os.path.join(self.colpath, "config")
         parser = RawConfigParser()

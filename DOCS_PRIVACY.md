@@ -358,7 +358,7 @@ uv pip install tox
 From the project root, run:
 
 ```bash
-tox -e py
+tox -c pyproject.toml -e py
 ```
 
 - This will automatically set up test environments, install dependencies, and
@@ -380,7 +380,7 @@ To ensure code quality and consistency, you can run the following tools via tox:
 Run all code quality checks at once:
 
 ```bash
-tox -e flake8,mypy,isort
+tox -c pyproject.toml -e flake8,mypy,isort
 ```
 
 - These checks help maintain a clean, readable, and robust codebase.

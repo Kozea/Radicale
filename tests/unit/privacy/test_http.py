@@ -7,7 +7,7 @@ import json
 import os
 import tempfile
 from http import client
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -22,7 +22,7 @@ def http_app():
     test_token = "test-token-12345"
     old_token = os.environ.get("RADICALE_TOKEN")
     os.environ["RADICALE_TOKEN"] = test_token
-    
+
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create collection-root directory
@@ -66,9 +66,9 @@ def test_unauthenticated_request(http_app):
         "REQUEST_METHOD": "GET",
         "PATH_INFO": "/privacy/settings/test@example.com"
     }
-    
+
     status, headers, body = http_app.do_GET(environ, "/privacy/settings/test@example.com")
-    
+
     assert status == client.UNAUTHORIZED
     assert headers["Content-Type"] == "application/json"
     assert headers["WWW-Authenticate"] == "Bearer"
@@ -80,13 +80,13 @@ def test_unauthenticated_request(http_app):
 def test_invalid_token_request(http_app):
     """Test request with invalid token returns 401."""
     environ = {
-        "REQUEST_METHOD": "GET", 
+        "REQUEST_METHOD": "GET",
         "PATH_INFO": "/privacy/settings/test@example.com",
         "HTTP_AUTHORIZATION": "Bearer invalid-token"
     }
-    
+
     status, headers, body = http_app.do_GET(environ, "/privacy/settings/test@example.com")
-    
+
     assert status == client.UNAUTHORIZED
     assert headers["Content-Type"] == "application/json"
     assert headers["WWW-Authenticate"] == "Bearer"
@@ -99,12 +99,12 @@ def test_malformed_auth_header(http_app):
     """Test request with malformed authorization header returns 401."""
     environ = {
         "REQUEST_METHOD": "GET",
-        "PATH_INFO": "/privacy/settings/test@example.com", 
+        "PATH_INFO": "/privacy/settings/test@example.com",
         "HTTP_AUTHORIZATION": "Basic invalid"  # Not Bearer token
     }
-    
+
     status, headers, body = http_app.do_GET(environ, "/privacy/settings/test@example.com")
-    
+
     assert status == client.UNAUTHORIZED
     assert headers["Content-Type"] == "application/json"
     assert headers["WWW-Authenticate"] == "Bearer"
@@ -120,9 +120,9 @@ def test_empty_bearer_token(http_app):
         "PATH_INFO": "/privacy/settings/test@example.com",
         "HTTP_AUTHORIZATION": "Bearer "  # Empty token
     }
-    
+
     status, headers, body = http_app.do_GET(environ, "/privacy/settings/test@example.com")
-    
+
     assert status == client.UNAUTHORIZED
     assert headers["Content-Type"] == "application/json"
     assert headers["WWW-Authenticate"] == "Bearer"
