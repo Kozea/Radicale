@@ -1280,18 +1280,23 @@ access to the socket.</p>
 <p>Port of via network exposed dovecot socket</p>
 <p>Default: <code>12345</code></p>
 </section>
-<section class="level5" id="dovecot_rip_x_remote_addr">
-<h5>dovecot_rip_x_remote_addr <a class="headerlink" href="#dovecot_rip_x_remote_addr">&para;</a></h5>
+<section class="level5" id="remote_ip_source">
+<h5>remote_ip_source <a class="headerlink" href="#remote_ip_source">&para;</a></h5>
 <p><em>(&gt;= 3.5.6)</em></p>
-<p>Use the <code>X-Remote-Addr</code> value for the remote IP (rip)
-parameter in the dovecot authentication protocol.</p>
-<p>If set, Radicale must be running behind a proxy that you control and
-that sets/overwrites the <code>X-Remote-Addr</code> header (doesn't pass
-it) so that the value passed to dovecot is reliable. For example, for
-nginx, add</p>
+<p>For authentication mechanisms that are made aware of the remote IP
+(such as dovecot via the <code>rip=</code> auth protocol parameter),
+determine the source to use. Currently, valid values are</p>
+<p><code>REMOTE_ADDR</code> (default) : Use the REMOTE_ADDR environment
+variable that captures the remote address of the socket connection.</p>
+<p><code>X-Remote-Addr</code> : Use the <code>X-Remote-Addr</code> HTTP
+header value.</p>
+<p>In the case of <code>X-Remote-Addr</code>, Radicale must be running
+be running behind a proxy that you control and that sets/overwrites the
+<code>X-Remote-Addr</code> header (doesn't pass it) so that the value
+passed to dovecot is reliable. For example, for nginx, add</p>
 <pre><code>    proxy_set_header  X-Remote-Addr $remote_addr;</code></pre>
 <p>to the configuration sample.</p>
-<p>Default: <code>False</code></p>
+<p>Default: <code>REMOTE_ADDR</code></p>
 </section>
 <section class="level5" id="imap_host">
 <h5>imap_host <a class="headerlink" href="#imap_host">&para;</a></h5>
