@@ -136,8 +136,9 @@
 # Port of via network exposed dovecot socket
 #dovecot_port = 12345
 
-# Use X-Remote-Addr for remote IP (rip) in dovecot authentication
-#dovecot_rip_x_remote_addr = False
+# Remote address source for authentication mechanisms (such as dovecot)
+# that are passed this information.
+#remote_ip_source = REMOTE_ADDR
 
 # IMAP server hostname
 # Syntax: address | address:port | [address]:port | imap.server.tld
