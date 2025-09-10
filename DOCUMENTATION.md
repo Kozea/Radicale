@@ -427,6 +427,9 @@ RewriteRule ^/radicale$ /radicale/ [R,L]
     RequestHeader    set X-Script-Name /radicale
     RequestHeader    set X-Forwarded-Port "%{SERVER_PORT}s"
     RequestHeader    set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    <IfVersion >= 2.4.40>
+    Proxy100Continue Off
+    </IfVersion>
 </Location>
 ```
 
@@ -517,6 +520,9 @@ RewriteRule ^/radicale$ /radicale/ [R,L]
 
     ProxyPass        http://localhost:5232/ retry=0
     ProxyPassReverse http://localhost:5232/
+    <IfVersion >= 2.4.40>
+    Proxy100Continue Off
+    </IfVersion>
     RequestHeader    set X-Script-Name /radicale
     RequestHeader    set X-Remote-User expr=%{REMOTE_USER}
 </Location>
