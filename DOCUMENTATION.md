@@ -410,7 +410,7 @@ See also for latest examples: https://github.com/Kozea/Radicale/tree/master/cont
 
 ```nginx
 location /radicale/ { # The trailing / is important!
-    proxy_pass        http://localhost:5232/; # The / is important!
+    proxy_pass        http://localhost:5232;
     proxy_set_header  X-Script-Name /radicale;
     proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header  X-Forwarded-Host $host;
