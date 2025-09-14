@@ -68,7 +68,6 @@ class Auth(auth.BaseAuth):
     _ldap_group_members_attr: str
     _ldap_module_version: int = 3
     _use_encryption: bool = False
-    _ldap_use_ssl: bool = False
     _ldap_security: str = "none"
     _ldap_ssl_verify_mode: int = ssl.CERT_REQUIRED
     _ldap_ssl_ca_file: str = ""
@@ -102,13 +101,16 @@ class Auth(auth.BaseAuth):
         if ldap_secret_file_path:
             with open(ldap_secret_file_path, 'r') as file:
                 self._ldap_secret = file.read().rstrip('\n')
-        self._ldap_use_ssl = configuration.get("auth", "ldap_use_ssl")
         self._ldap_security = configuration.get("auth", "ldap_security")
-        self._use_encryption = self._ldap_use_ssl or self._ldap_security in ("tls", "starttls")
-        if self._ldap_use_ssl and self._ldap_security == "starttls":
-            raise RuntimeError("Cannot set both 'ldap_use_ssl = True' and 'ldap_security' = 'starttls'")
-        if self._ldap_use_ssl:
-            logger.warning("Configuration uses soon to be deprecated 'ldap_use_ssl', use 'ldap_security' ('none', 'tls', 'starttls') instead.")
+        ldap_use_ssl = configuration.get("auth", "ldap_use_ssl")
+        self._use_encryption = ldap_use_ssl or self._ldap_security in ("tls", "starttls")
+        if ldap_use_ssl:
+            logger.warning("Configuration uses deprecated 'ldap_use_ssl': use 'ldap_security' ('none', 'tls', 'starttls') instead.")
+            if self._ldap_security == "starttls":
+                raise RuntimeError("Deprecated config setting 'ldap_use_ssl = True' conflicts with 'ldap_security' = 'starttls'")
+            elif self._ldap_security != "tls":
+                logger.warning("Update configuration: set 'ldap_security = tls' instead of deprecated 'ldap_use_ssl = True'")
+                self._ldap_security = "tls"
         self._ldap_ssl_ca_file = configuration.get("auth", "ldap_ssl_ca_file")
         tmp = configuration.get("auth", "ldap_ssl_verify_mode")
         if tmp == "NONE":
@@ -152,7 +154,7 @@ class Auth(auth.BaseAuth):
         if self._ldap_reader_dn and not self._ldap_secret:
             logger.error("auth.ldap_secret         : (not provided)")
             raise RuntimeError("LDAP authentication requires ldap_secret for ldap_reader_dn")
-        logger.info("auth.ldap_use_ssl         : %s" % self._ldap_use_ssl)
+        logger.info("auth.ldap_use_ssl         : %s" % ldap_use_ssl)
         logger.info("auth.ldap_security      : %s" % self._ldap_security)
         if self._use_encryption:
             logger.info("auth.ldap_ssl_verify_mode : %s" % self._ldap_ssl_verify_mode)
@@ -269,7 +271,7 @@ class Auth(auth.BaseAuth):
                         validate=self._ldap_ssl_verify_mode,
                         ca_certs_file=self._ldap_ssl_ca_file
                         )
-                if self._ldap_use_ssl or self._ldap_security == "tls":
+                if self._ldap_security == "tls":
                     logger.debug("_login3 using ssl (reader)")
                     server = self.ldap3.Server(self._ldap_uri, use_ssl=True, tls=tls)
                 else:
