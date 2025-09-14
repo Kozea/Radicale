@@ -124,6 +124,8 @@ class Auth(auth.BaseAuth):
 
         if self._ldap_ssl_ca_file == "" and self._ldap_ssl_verify_mode != ssl.CERT_NONE and self._ldap_security in ("tls", "starttls"):
             logger.warning("Certificate verification not possible: 'ldap_ssl_ca_file' not set")
+        if self._ldap_ssl_ca_file and self._ldap_security not in ("tls", "starttls"):
+            logger.warning("Config setting 'ldap_ssl_ca_file' useless without encrypted LDAP connection")
 
         logger.info("auth.ldap_uri             : %r" % self._ldap_uri)
         logger.info("auth.ldap_base            : %r" % self._ldap_base)
