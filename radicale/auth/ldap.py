@@ -83,7 +83,7 @@ class Auth(auth.BaseAuth):
                 self._ldap_module_version = 2
                 self.ldap = ldap
             except ImportError as e:
-                raise RuntimeError("LDAP authentication requires the ldap3 module") from e
+                raise RuntimeError("LDAP authentication requires the ldap3 or ldap module") from e
 
         self._ldap_ignore_attribute_create_modify_timestamp = configuration.get("auth", "ldap_ignore_attribute_create_modify_timestamp")
         self._ldap_uri = configuration.get("auth", "ldap_uri")
@@ -183,8 +183,26 @@ class Auth(auth.BaseAuth):
             """Bind as reader dn"""
             logger.debug(f"_login2 {self._ldap_uri}, {self._ldap_reader_dn}")
             conn = self.ldap.initialize(self._ldap_uri)
-            conn.protocol_version = 3
+            conn.protocol_version = self.ldap.VERSION3
             conn.set_option(self.ldap.OPT_REFERRALS, 0)
+
+            if self._ldap_security in ("tls", "starttls"):
+                """certificate validation mode"""
+                if self._ldap_ssl_verify_mode == ssl.CERT_REQUIRED:
+                    conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, self.ldap.OPT_X_TLS_DEMAND)
+                elif self._ldap_ssl_verify_mode == ssl.CERT_OPTIONAL:
+                    conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, self.ldap.OPT_X_TLS_ALLOW)
+                else:
+                    conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, self.ldap.OPT_X_TLS_NONE)
+                """CA file to validate certificate against"""
+                if self._ldap_ssl_ca_file:
+                    conn.set_option(self.ldap.OPT_X_TLS_CACERTFILE, self._ldap_ssl_ca_file)
+                """create TLS context- this must be the last TLS setting"""
+                conn.set_option(self.ldap.OPT_X_TLS_NEWCTX, self.ldap.OPT_ON)
+
+                if self._ldap_security == "starttls":
+                    conn.start_tls_s()
+
             conn.simple_bind_s(self._ldap_reader_dn, self._ldap_secret)
             """Search for the dn of user to authenticate"""
             escaped_login = self.ldap.filter.escape_filter_chars(login)
@@ -234,8 +252,26 @@ class Auth(auth.BaseAuth):
         try:
             """Bind as user to authenticate"""
             conn = self.ldap.initialize(self._ldap_uri)
-            conn.protocol_version = 3
+            conn.protocol_version = self.ldap.VERSION3
             conn.set_option(self.ldap.OPT_REFERRALS, 0)
+
+            if self._ldap_security in ("tls", "starttls"):
+                """certificate validation mode"""
+                if self._ldap_ssl_verify_mode == ssl.CERT_REQUIRED:
+                    conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, self.ldap.OPT_X_TLS_DEMAND)
+                elif self._ldap_ssl_verify_mode == ssl.CERT_OPTIONAL:
+                    conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, self.ldap.OPT_X_TLS_ALLOW)
+                else:
+                    conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, self.ldap.OPT_X_TLS_NONE)
+                """CA file to validate certificate against"""
+                if self._ldap_ssl_ca_file:
+                    conn.set_option(self.ldap.OPT_X_TLS_CACERTFILE, self._ldap_ssl_ca_file)
+                """create TLS context- this must be the last TLS setting"""
+                conn.set_option(self.ldap.OPT_X_TLS_NEWCTX, self.ldap.OPT_ON)
+
+                if self._ldap_security == "starttls":
+                    conn.start_tls_s()
+
             conn.simple_bind_s(user_dn, password)
             if self._ldap_user_attr:
                 if user_entry[1][self._ldap_user_attr]:
