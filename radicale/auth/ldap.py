@@ -88,10 +88,6 @@ class Auth(auth.BaseAuth):
                 raise RuntimeError("LDAP authentication requires the ldap3 module") from e
 
         self._ldap_ignore_attribute_create_modify_timestamp = configuration.get("auth", "ldap_ignore_attribute_create_modify_timestamp")
-        if self._ldap_ignore_attribute_create_modify_timestamp:
-            self.ldap3.utils.config._ATTRIBUTES_EXCLUDED_FROM_CHECK.extend(['createTimestamp', 'modifyTimestamp'])
-            logger.info("auth.ldap_ignore_attribute_create_modify_timestamp applied")
-
         self._ldap_uri = configuration.get("auth", "ldap_uri")
         self._ldap_base = configuration.get("auth", "ldap_base")
         self._ldap_reader_dn = configuration.get("auth", "ldap_reader_dn")
@@ -259,6 +255,10 @@ class Auth(auth.BaseAuth):
             return ""
 
     def _login3(self, login: str, password: str) -> str:
+        if self._ldap_ignore_attribute_create_modify_timestamp:
+            self.ldap3.utils.config._ATTRIBUTES_EXCLUDED_FROM_CHECK.extend(['createTimestamp', 'modifyTimestamp'])
+            logger.info("auth.ldap_ignore_attribute_create_modify_timestamp applied")
+
         """Connect the server"""
         try:
             logger.debug(f"_login3 {self._ldap_uri}, {self._ldap_reader_dn}")
