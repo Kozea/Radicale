@@ -88,9 +88,6 @@ class Auth(auth.BaseAuth):
                 raise RuntimeError("LDAP authentication requires the ldap3 module") from e
 
         self._ldap_ignore_attribute_create_modify_timestamp = configuration.get("auth", "ldap_ignore_attribute_create_modify_timestamp")
-        if self._ldap_ignore_attribute_create_modify_timestamp:
-            logger.info("auth.ldap_ignore_attribute_create_modify_timestamp will be applied")
-
         self._ldap_uri = configuration.get("auth", "ldap_uri")
         self._ldap_base = configuration.get("auth", "ldap_base")
         self._ldap_reader_dn = configuration.get("auth", "ldap_reader_dn")
@@ -165,6 +162,8 @@ class Auth(auth.BaseAuth):
                 logger.info("auth.ldap_ssl_ca_file     : %r" % self._ldap_ssl_ca_file)
             else:
                 logger.info("auth.ldap_ssl_ca_file     : (not provided)")
+        if self._ldap_ignore_attribute_create_modify_timestamp:
+            logger.info("auth.ldap_ignore_attribute_create_modify_timestamp applied (relevant for ldap3 only)")
         """Extend attributes to to be returned in the user query"""
         if self._ldap_groups_attr:
             self._ldap_attributes.append(self._ldap_groups_attr)
@@ -258,9 +257,10 @@ class Auth(auth.BaseAuth):
             return ""
 
     def _login3(self, login: str, password: str) -> str:
-        """Connect the server"""
         if self._ldap_ignore_attribute_create_modify_timestamp:
             self.ldap3.utils.config._ATTRIBUTES_EXCLUDED_FROM_CHECK.extend(['createTimestamp', 'modifyTimestamp'])
+
+        """Connect the server"""
         try:
             logger.debug(f"_login3 {self._ldap_uri}, {self._ldap_reader_dn}")
             if self._use_encryption:
