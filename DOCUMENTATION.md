@@ -166,7 +166,7 @@ The `users` file can be created and managed with
 
 Note: some OSes or distributions contain outdated versions of `htpasswd` (< 2.4.59) without
 support for SHA-256 or SHA-512 (e.g. Ubuntu LTS 22).
-In these cases use `htpasswd`'s command line option `-B` for the  `bcrypt` hash method (recommended),
+In these cases, use `htpasswd`'s command line option `-B` for the  `bcrypt` hash method (recommended),
 or stay with the insecure (not recommended) MD5 (default) or SHA-1 (command line option `-s`).
 
 Note: support of SHA-256 and SHA-512 was introduced with 3.1.9
@@ -273,13 +273,13 @@ Create the **radicale** user and group for the Radicale service by running (as `
 useradd --system --user-group --home-dir / --shell /sbin/nologin radicale
 ```
 
-The storage folder must be writable by the **radicale** user by running (as `root`):
+The storage folder must be made writable by the **radicale** user by running (as `root`):
 ```bash
 mkdir -p /var/lib/radicale/collections && chown -R radicale:radicale /var/lib/radicale/collections
 ```
 
 If a dedicated cache folder is configured (see option [filesystem_cache_folder](#filesystem_cache_folder)),
-it also must be also writable by **radicale**. To achieva that, run (as `root`):
+it also must be made writable by **radicale**. To achieve that, run (as `root`):
 ```bash
 mkdir -p /var/cache/radicale && chown -R radicale:radicale /var/cache/radicale
 ````
@@ -573,10 +573,10 @@ RequestHeader set X-Remote-User expr=%{REMOTE_USER}
 #### Secure connection between Radicale and the reverse proxy
 
 SSL certificates can be used to encrypt and authenticate the connection between
-Radicale and the reverse proxy. First you have to generate a certificate for
+Radicale and the reverse proxy. First you need to generate a certificate for
 Radicale and a certificate for the reverse proxy. The following commands
 generate self-signed certificates. You will be asked to enter additional
-information about the certificate, these values do not really matter and you can
+information about the certificate, these values do not really matter, and you can
 keep the defaults.
 
 ```bash
@@ -811,7 +811,7 @@ Default: `False`
 
 ##### certificate
 
-Path of the SSL certifcate.
+Path of the SSL certificate.
 
 Default: `/etc/ssl/radicale.cert.pem`
 
@@ -959,7 +959,7 @@ Default: `/etc/radicale/users`
 
 The encryption method that is used in the htpasswd file. Use
 [htpasswd](https://httpd.apache.org/docs/current/programs/htpasswd.html)
-or similar to generate this files.
+or similar to generate this file.
 
 Available methods:
 
@@ -1140,7 +1140,7 @@ If set, get the user's LDAP groups from the attribute given.
 For DN-valued attributes, the value of the RDN is used to determine the group names.
 The implementation also supports non-DN-valued attributes: their values are taken directly.
 
-The user's group names can be used later on to define rights.
+The user's group names can be used later to define rights.
 They also give you access to the group calendars, if those exist.
 * Group calendars are placed directly under *collection_root_folder*`/GROUPS/`
   with the base64-encoded group name as the calendar folder name.
@@ -1525,7 +1525,7 @@ Default: `True`
 
 ##### hook
 
-Command that is run after changes to storage. Take a look at the
+Command that is run after changes to storage. See the
 [Versioning collections with Git](#versioning-collections-with-git)
 tutorial for an example.
 
@@ -1959,7 +1959,7 @@ can create new ones.
 
 #### OneCalendar
 
-When adding account, select CalDAV account type, then enter user name, password and the
+When adding account, select CalDAV account type, then enter username, password and the
 Radicale server (e.g. `https://yourdomain:5232`). OneCalendar will show all
 existing calendars and (FIXME: address books), you need to select which ones
 you want to see. OneCalendar supports many other server types too.
@@ -2006,8 +2006,8 @@ It will list your existing address books.
 #### InfCloud, CalDavZAP and CardDavMATE
 
 You can integrate InfCloud into Radicale's web interface with by simply
-download latest package from [InfCloud](https://www.inf-it.com/open-source/clients/infcloud/)
-and extract content to new folder `infcloud` in `radicale/web/internal_data/`.
+downloading the latest package from [InfCloud](https://www.inf-it.com/open-source/clients/infcloud/)
+and extract the content into a folder named `infcloud` in `radicale/web/internal_data/`.
 
 No further adjustments are required as content is adjusted on the fly (tested with 0.13.1).
 
@@ -2137,10 +2137,10 @@ The following `permissions` are recognized:
   (CalDAV/CardDAV is susceptible to expensive search requests)
 * **W:** write collections (excluding address books and calendars)
 * **w:** write address book and calendar collections
-* **D:** permit delete of collection in case `permit_delete_collection=False` _(>= 3.3.0)_
-* **d:** forbid delete of collection in case `permit_delete_collection=True` _(>= 3.3.0)_
-* **O:** permit overwrite of collection in case `permit_overwrite_collection=False`
-* **o:** forbid overwrite of collection in case `permit_overwrite_collection=True`
+* **D:** allow deleting a collection in case `permit_delete_collection=False` _(>= 3.3.0)_
+* **d:** deny deleting a collection in case `permit_delete_collection=True` _(>= 3.3.0)_
+* **O:** allow overwriting a collection in case `permit_overwrite_collection=False`
+* **o:** deny overwriting a collection in case `permit_overwrite_collection=True`
 
 ### Storage
 
