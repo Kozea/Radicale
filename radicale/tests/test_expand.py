@@ -523,7 +523,7 @@ permissions: RrWw""")
         <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
             <D:prop>
                 <D:getetag>
-				    <C:expand start="20250921T220000Z" end="20250928T220000Z"/>
+                    <C:expand start="20250921T220000Z" end="20250928T220000Z"/>
                 </D:getetag>
             </D:prop>
             <C:filter>
@@ -647,7 +647,6 @@ permissions: RrWw""")
         status, responses = self.report("/test", request)
         assert status == 207
         assert len(responses) == 0
-
 
     def test_report_getetag_expand_filter_negative3(self) -> None:
         """Test getetag with time-range filter and expand, should not return anything (example from #1812)."""
