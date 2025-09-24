@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.5.7.dev
+* Extend: [auth] dovecot: add support for version >= 2.4
 
 ## 3.5.6
 * Fix: broken start when UID does not exist (potential container startup case)
