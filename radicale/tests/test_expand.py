@@ -538,6 +538,8 @@ permissions: RrWw""")
         status, responses = self.report("/test", request)
         assert status == 207
         assert len(responses) == 2
+        assert isinstance(responses["/test/event_issue1880_1.ics"], dict)
+        assert isinstance(responses["/test/event_issue1880_2.ics"], dict)
         assert "D:getetag" in responses["/test/event_issue1880_1.ics"]
         assert "D:getetag" in responses["/test/event_issue1880_2.ics"]
 
@@ -565,6 +567,7 @@ permissions: RrWw""")
         status, responses = self.report("/test", request)
         assert status == 207
         assert len(responses) == 1
+        assert isinstance(responses["/test/event_issue1812_getetag.ics"], dict)
         assert "D:getetag" in responses["/test/event_issue1812_getetag.ics"]
 
     def test_report_getetag_expand_filter_positive2(self) -> None:
@@ -591,6 +594,7 @@ permissions: RrWw""")
         status, responses = self.report("/test", request)
         assert status == 207
         assert len(responses) == 1
+        assert isinstance(responses["/test/event_issue1812.ics"], dict)
         assert "D:getetag" in responses["/test/event_issue1812.ics"]
 
     def test_report_getetag_expand_filter_negative1(self) -> None:
