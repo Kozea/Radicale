@@ -92,6 +92,7 @@ class Auth(auth.BaseAuth):
                 # Hence, we try to read just once with a buffer big
                 # enough to hold all of it.
                 buf = sock.recv(1024)
+                version_sent = False
                 while b'\n' in buf and not done:
                     line, buf = buf.split(b'\n', 1)
                     parts = line.split(b'\t')
@@ -114,6 +115,10 @@ class Auth(auth.BaseAuth):
                             )
                             return ""
                         seen_part[0] += 1
+                        if int(version[1]) >= 3:
+                            sock.send(b'VERSION\t1\t1\n')
+                            buf += sock.recv(1024)
+                            version_sent = True
                     elif first == b'MECH':
                         supported_mechs.append(parts[0])
                         seen_part[1] += 1
@@ -144,7 +149,8 @@ class Auth(auth.BaseAuth):
 
                 # Handshake
                 logger.debug("Sending auth handshake")
-                sock.send(b'VERSION\t1\t1\n')
+                if not version_sent:
+                    sock.send(b'VERSION\t1\t1\n')
                 sock.send(b'CPID\t%u\n' % os.getpid())
 
                 request_id = next(self.request_id_gen)
