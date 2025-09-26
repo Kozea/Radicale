@@ -3,6 +3,7 @@
 # Copyright © 2017-2019 Unrud <unrud@outlook.com>
 # Copyright © 2024 Pieter Hijma <pieterhijma@users.noreply.github.com>
 # Copyright © 2025 David Greaves <david@dgreaves.com>
+# Copyright © 2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
