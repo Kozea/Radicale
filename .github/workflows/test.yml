@@ -20,6 +20,23 @@ jobs:
         run: pip install tox
       - name: Test
         run: tox -c pyproject.toml -e py
+
+  coveralls-test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.13.0']
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test
+        run: tox -c pyproject.toml -e py
       - name: Install Coveralls
         if: github.event_name == 'push'
         run: pip install coveralls
@@ -31,7 +48,7 @@ jobs:
         run: coveralls --service=github
 
   coveralls-finish:
-    needs: test
+    needs: coveralls-test
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     continue-on-error: true
