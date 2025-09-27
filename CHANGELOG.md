@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.5.7.dev
+## 3.5.7
 * Extend: [auth] dovecot: add support for version >= 2.4
 * Fix: report/getetag with enabled expand
 * Adjust: use of option [auth] ldap_ignore_attribute_create_modify_timestamp for support of Authentik LDAP server
