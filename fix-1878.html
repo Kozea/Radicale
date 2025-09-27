@@ -92,7 +92,7 @@
 <noscript><link href="assets/screen-noscript.css" media="screen" rel="stylesheet"></noscript>
 <link href="https://github.com/Kozea/Radicale/releases.atom" rel="alternate" title="Radicale Releases" type="application/atom+xml">
 <link href="assets/icon.png" rel="icon" type="image/png">
-<title>Radicale v3 Documentation</title>
+<title>Radicale fix-1878 Documentation</title>
 <meta content="Free and Open-Source CalDAV and CardDAV Server" name="description">
 <script src="assets/navigation.js"></script>
 <script src="assets/document-branches.js"></script>
@@ -103,12 +103,12 @@
 <h1>
 Radicale
 <span class="documentBranch">
-<span>v3</span>
+<span>fix-1878</span>
 <select style="display: none;">
 <option value="superseed-1877.html">superseed-1877</option>
 <option value="master.html">master</option>
-<option value="fix-1878.html">fix-1878</option>
-<option selected value="v3.html">v3</option>
+<option selected value="fix-1878.html">fix-1878</option>
+<option value="v3.html">v3</option>
 <option value="v2.html">v2</option>
 <option value="v1.html">v1</option>
 </select>
@@ -418,10 +418,11 @@ file.</p>
 <p>The <code>users</code> file can be created and managed with <a href="https://httpd.apache.org/docs/current/programs/htpasswd.html">htpasswd</a>:</p>
 <p>Note: some OSes or distributions contain outdated versions of
 <code>htpasswd</code> (&lt; 2.4.59) without support for SHA-256 or
-SHA-512 (e.g. Ubuntu LTS 22). In these cases use <code>htpasswd</code>'s
-command line option <code>-B</code> for the <code>bcrypt</code> hash
-method (recommended), or stay with the insecure (not recommended) MD5
-(default) or SHA-1 (command line option <code>-s</code>).</p>
+SHA-512 (e.g. Ubuntu LTS 22). In these cases, use
+<code>htpasswd</code>'s command line option <code>-B</code> for the
+<code>bcrypt</code> hash method (recommended), or stay with the insecure
+(not recommended) MD5 (default) or SHA-1 (command line option
+<code>-s</code>).</p>
 <p>Note: support of SHA-256 and SHA-512 was introduced with 3.1.9</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a aria-hidden="true" href="#cb8-1" tabindex="-1"></a><span class="co"># Create a new htpasswd file with the user "user1" using SHA-512 as hash method</span></span>
 <span id="cb8-2"><a aria-hidden="true" href="#cb8-2" tabindex="-1"></a><span class="ex">$</span> htpasswd <span class="at">-5</span> <span class="at">-c</span> /path/to/users user1</span>
@@ -503,11 +504,11 @@ instead of manual setup / initial configuration.</p>
 <p>Create the <strong>radicale</strong> user and group for the Radicale
 service by running (as <code>root</code>:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a aria-hidden="true" href="#cb15-1" tabindex="-1"></a><span class="ex">useradd</span> <span class="at">--system</span> <span class="at">--user-group</span> <span class="at">--home-dir</span> / <span class="at">--shell</span> /sbin/nologin radicale</span></code></pre></div>
-<p>The storage folder must be writable by the <strong>radicale</strong>
-user by running (as <code>root</code>):</p>
+<p>The storage folder must be made writable by the
+<strong>radicale</strong> user by running (as <code>root</code>):</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a aria-hidden="true" href="#cb16-1" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> /var/lib/radicale/collections <span class="kw">&&</span> <span class="fu">chown</span> <span class="at">-R</span> radicale:radicale /var/lib/radicale/collections</span></code></pre></div>
 <p>If a dedicated cache folder is configured (see option <a href="#filesystem_cache_folder">filesystem_cache_folder</a>), it also
-must be also writable by <strong>radicale</strong>. To achieva that, run
+must be made writable by <strong>radicale</strong>. To achieve that, run
 (as <code>root</code>):</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a aria-hidden="true" href="#cb17-1" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> /var/cache/radicale <span class="kw">&&</span> <span class="fu">chown</span> <span class="at">-R</span> radicale:radicale /var/cache/radicale</span></code></pre></div>
 <blockquote>
@@ -756,11 +757,11 @@ listening to the loopback interface only or local firewall rules.</p>
 <section class="level4" id="secure-connection-between-radicale-and-the-reverse-proxy">
 <h4>Secure connection between Radicale and the reverse proxy <a class="headerlink" href="#secure-connection-between-radicale-and-the-reverse-proxy">&para;</a></h4>
 <p>SSL certificates can be used to encrypt and authenticate the
-connection between Radicale and the reverse proxy. First you have to
+connection between Radicale and the reverse proxy. First you need to
 generate a certificate for Radicale and a certificate for the reverse
 proxy. The following commands generate self-signed certificates. You
 will be asked to enter additional information about the certificate,
-these values do not really matter and you can keep the defaults.</p>
+these values do not really matter, and you can keep the defaults.</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a aria-hidden="true" href="#cb32-1" tabindex="-1"></a><span class="ex">openssl</span> req <span class="at">-x509</span> <span class="at">-newkey</span> rsa:4096 <span class="at">-keyout</span> server_key.pem <span class="at">-out</span> server_cert.pem <span class="dt">\</span></span>
 <span id="cb32-2"><a aria-hidden="true" href="#cb32-2" tabindex="-1"></a>        <span class="at">-nodes</span> <span class="at">-days</span> 9999</span>
 <span id="cb32-3"><a aria-hidden="true" href="#cb32-3" tabindex="-1"></a><span class="ex">openssl</span> req <span class="at">-x509</span> <span class="at">-newkey</span> rsa:4096 <span class="at">-keyout</span> client_key.pem <span class="at">-out</span> client_cert.pem <span class="dt">\</span></span>
@@ -946,7 +947,7 @@ option</p>
 </section>
 <section class="level5" id="certificate">
 <h5>certificate <a class="headerlink" href="#certificate">&para;</a></h5>
-<p>Path of the SSL certifcate.</p>
+<p>Path of the SSL certificate.</p>
 <p>Default: <code>/etc/ssl/radicale.cert.pem</code></p>
 </section>
 <section class="level5" id="key">
@@ -1075,7 +1076,7 @@ avoid overload of authentication backends.</p>
 <section class="level5" id="htpasswd_encryption">
 <h5>htpasswd_encryption <a class="headerlink" href="#htpasswd_encryption">&para;</a></h5>
 <p>The encryption method that is used in the htpasswd file. Use <a href="https://httpd.apache.org/docs/current/programs/htpasswd.html">htpasswd</a>
-or similar to generate this files.</p>
+or similar to generate this file.</p>
 <p>Available methods:</p>
 <ul>
 <li><p><code>plain</code><br>
@@ -1229,8 +1230,8 @@ alikes, <code>groupMembership</code> on Novell eDirectory, ...</p>
 <p>For DN-valued attributes, the value of the RDN is used to determine
 the group names. The implementation also supports non-DN-valued
 attributes: their values are taken directly.</p>
-<p>The user's group names can be used later on to define rights. They
-also give you access to the group calendars, if those exist.</p>
+<p>The user's group names can be used later to define rights. They also
+give you access to the group calendars, if those exist.</p>
 <ul>
 <li>Group calendars are placed directly under
 <em>collection_root_folder</em><code>/GROUPS/</code> with the
@@ -1585,7 +1586,7 @@ seconds).</p>
 </section>
 <section class="level5" id="hook">
 <h5>hook <a class="headerlink" href="#hook">&para;</a></h5>
-<p>Command that is run after changes to storage. Take a look at the <a href="#versioning-collections-with-git">Versioning collections with
+<p>Command that is run after changes to storage. See the <a href="#versioning-collections-with-git">Versioning collections with
 Git</a> tutorial for an example.</p>
 <p>Default: (unset)</p>
 <p>Supported placeholders:</p>
@@ -1986,8 +1987,8 @@ ones.</p>
 </section>
 <section class="level4" id="onecalendar">
 <h4>OneCalendar <a class="headerlink" href="#onecalendar">&para;</a></h4>
-<p>When adding account, select CalDAV account type, then enter user
-name, password and the Radicale server (e.g.
+<p>When adding account, select CalDAV account type, then enter username,
+password and the Radicale server (e.g.
 <code>https://yourdomain:5232</code>). OneCalendar will show all
 existing calendars and (FIXME: address books), you need to select which
 ones you want to see. OneCalendar supports many other server types
@@ -2037,8 +2038,8 @@ username and password. It will list your existing address books.</p>
 <section class="level4" id="infcloud-caldavzap-and-carddavmate">
 <h4>InfCloud, CalDavZAP and CardDavMATE <a class="headerlink" href="#infcloud-caldavzap-and-carddavmate">&para;</a></h4>
 <p>You can integrate InfCloud into Radicale's web interface with by
-simply download latest package from <a href="https://www.inf-it.com/open-source/clients/infcloud/">InfCloud</a>
-and extract content to new folder <code>infcloud</code> in
+simply downloading the latest package from <a href="https://www.inf-it.com/open-source/clients/infcloud/">InfCloud</a>
+and extract the content into a folder named <code>infcloud</code> in
 <code>radicale/web/internal_data/</code>.</p>
 <p>No further adjustments are required as content is adjusted on the fly
 (tested with 0.13.1).</p>
@@ -2154,13 +2155,13 @@ expensive search requests)</li>
 <li><strong>W:</strong> write collections (excluding address books and
 calendars)</li>
 <li><strong>w:</strong> write address book and calendar collections</li>
-<li><strong>D:</strong> permit delete of collection in case
+<li><strong>D:</strong> allow deleting a collection in case
 <code>permit_delete_collection=False</code> <em>(&gt;= 3.3.0)</em></li>
-<li><strong>d:</strong> forbid delete of collection in case
+<li><strong>d:</strong> deny deleting a collection in case
 <code>permit_delete_collection=True</code> <em>(&gt;= 3.3.0)</em></li>
-<li><strong>O:</strong> permit overwrite of collection in case
+<li><strong>O:</strong> allow overwriting a collection in case
 <code>permit_overwrite_collection=False</code></li>
-<li><strong>o:</strong> forbid overwrite of collection in case
+<li><strong>o:</strong> deny overwriting a collection in case
 <code>permit_overwrite_collection=True</code></li>
 </ul>
 </section>
