@@ -244,34 +244,11 @@ class Auth(auth.BaseAuth):
                     for dn, entry in res:
                         groupDNs.append(dn)
 
-            """Close LDAP connection"""
-            conn.unbind()
         except Exception as e:
             raise RuntimeError(f"Invalid LDAP configuration:{e}")
 
         try:
             """Bind as user to authenticate"""
-            conn = self.ldap.initialize(self._ldap_uri)
-            conn.protocol_version = self.ldap.VERSION3
-            conn.set_option(self.ldap.OPT_REFERRALS, 0)
-
-            if self._ldap_security in ("tls", "starttls"):
-                """certificate validation mode"""
-                if self._ldap_ssl_verify_mode == ssl.CERT_REQUIRED:
-                    conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, self.ldap.OPT_X_TLS_DEMAND)
-                elif self._ldap_ssl_verify_mode == ssl.CERT_OPTIONAL:
-                    conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, self.ldap.OPT_X_TLS_ALLOW)
-                else:
-                    conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, self.ldap.OPT_X_TLS_NONE)
-                """CA file to validate certificate against"""
-                if self._ldap_ssl_ca_file:
-                    conn.set_option(self.ldap.OPT_X_TLS_CACERTFILE, self._ldap_ssl_ca_file)
-                """create TLS context- this must be the last TLS setting"""
-                conn.set_option(self.ldap.OPT_X_TLS_NEWCTX, self.ldap.OPT_ON)
-
-                if self._ldap_security == "starttls":
-                    conn.start_tls_s()
-
             conn.simple_bind_s(user_dn, password)
             if self._ldap_user_attr:
                 if user_entry[1][self._ldap_user_attr]:
