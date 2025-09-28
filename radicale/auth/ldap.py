@@ -101,6 +101,8 @@ class Auth(auth.BaseAuth):
             with open(ldap_secret_file_path, 'r') as file:
                 self._ldap_secret = file.read().rstrip('\n')
         self._ldap_security = configuration.get("auth", "ldap_security")
+        if self._ldap_security not in ("none", "tls", "starttls"):
+            raise RuntimeError("Illegal value for config setting ´ldap_security'")
         ldap_use_ssl = configuration.get("auth", "ldap_use_ssl")
         if ldap_use_ssl:
             logger.warning("Configuration uses deprecated 'ldap_use_ssl': use 'ldap_security' ('none', 'tls', 'starttls') instead.")
@@ -115,6 +117,8 @@ class Auth(auth.BaseAuth):
             self._ldap_ssl_verify_mode = ssl.CERT_NONE
         elif tmp == "OPTIONAL":
             self._ldap_ssl_verify_mode = ssl.CERT_OPTIONAL
+        elif tmp != "REQUIRED":
+            raise RuntimeError("Illegal value for config setting ´ldap_ssl_verify_mode'")
 
         if self._ldap_uri.lower().startswith("ldaps://") and self._ldap_security not in ("tls", "starttls"):
             logger.info("Inferring 'ldap_security' = tls from 'ldap_uri' starting with 'ldaps://'")
