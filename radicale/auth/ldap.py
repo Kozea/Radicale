@@ -68,7 +68,7 @@ class Auth(auth.BaseAuth):
     _ldap_group_members_attr: str
     _ldap_module_version: int = 3
     _ldap_security: str = "none"
-    _ldap_ssl_verify_mode: int = ssl.CERT_REQUIRED
+    _ldap_ssl_verify_mode: str = "REQUIRED"
     _ldap_ssl_ca_file: str = ""
 
     def __init__(self, configuration: config.Configuration) -> None:
@@ -112,19 +112,15 @@ class Auth(auth.BaseAuth):
                 logger.warning("Update configuration: set 'ldap_security = tls' instead of deprecated 'ldap_use_ssl = True'")
                 self._ldap_security = "tls"
         self._ldap_ssl_ca_file = configuration.get("auth", "ldap_ssl_ca_file")
-        tmp = configuration.get("auth", "ldap_ssl_verify_mode")
-        if tmp == "NONE":
-            self._ldap_ssl_verify_mode = ssl.CERT_NONE
-        elif tmp == "OPTIONAL":
-            self._ldap_ssl_verify_mode = ssl.CERT_OPTIONAL
-        elif tmp != "REQUIRED":
+        self._ldap_ssl_verify_mode = configuration.get("auth", "ldap_ssl_verify_mode")
+        if self._ldap_ssl_verify_mode not in ("NONE", "OPTIONAL", "REQUIRED"):
             raise RuntimeError("Illegal value for config setting ´ldap_ssl_verify_mode'")
 
         if self._ldap_uri.lower().startswith("ldaps://") and self._ldap_security not in ("tls", "starttls"):
             logger.info("Inferring 'ldap_security' = tls from 'ldap_uri' starting with 'ldaps://'")
             self._ldap_security = "tls"
 
-        if self._ldap_ssl_ca_file == "" and self._ldap_ssl_verify_mode != ssl.CERT_NONE and self._ldap_security in ("tls", "starttls"):
+        if self._ldap_ssl_ca_file == "" and self._ldap_ssl_verify_mode != "NONE" and self._ldap_security in ("tls", "starttls"):
             logger.warning("Certificate verification not possible: 'ldap_ssl_ca_file' not set")
         if self._ldap_ssl_ca_file and self._ldap_security not in ("tls", "starttls"):
             logger.warning("Config setting 'ldap_ssl_ca_file' useless without encrypted LDAP connection")
@@ -191,12 +187,10 @@ class Auth(auth.BaseAuth):
 
             if self._ldap_security in ("tls", "starttls"):
                 """certificate validation mode"""
-                if self._ldap_ssl_verify_mode == ssl.CERT_REQUIRED:
-                    conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, self.ldap.OPT_X_TLS_DEMAND)
-                elif self._ldap_ssl_verify_mode == ssl.CERT_OPTIONAL:
-                    conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, self.ldap.OPT_X_TLS_ALLOW)
-                else:
-                    conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, self.ldap.OPT_X_TLS_NONE)
+                verifyMode = {"NONE": self.ldap.OPT_X_TLS_NEVER,
+                              "OPTIONAL": self.ldap.OPT_X_TLS_ALLOW,
+                              "REQUIRED": self.ldap.OPT_X_TLS_DEMAND}
+                conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, verifyMode[self._ldap_ssl_verify_mode])
                 """CA file to validate certificate against"""
                 if self._ldap_ssl_ca_file:
                     conn.set_option(self.ldap.OPT_X_TLS_CACERTFILE, self._ldap_ssl_ca_file)
@@ -288,12 +282,12 @@ class Auth(auth.BaseAuth):
             logger.debug(f"_login3 {self._ldap_uri}, {self._ldap_reader_dn}")
             if self._ldap_security in ("tls", "starttls"):
                 logger.debug("_login3 using encryption (reader)")
-                tls = self.ldap3.Tls(validate=self._ldap_ssl_verify_mode)
+                verifyMode = {"NONE": ssl.CERT_NONE,
+                              "OPTIONAL": ssl.CERT_OPTIONAL,
+                              "REQUIRED": ssl.CERT_REQUIRED}
+                tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode])
                 if self._ldap_ssl_ca_file != "":
-                    tls = self.ldap3.Tls(
-                        validate=self._ldap_ssl_verify_mode,
-                        ca_certs_file=self._ldap_ssl_ca_file
-                        )
+                    tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode], ca_certs_file=self._ldap_ssl_ca_file)
                 if self._ldap_security == "tls":
                     logger.debug("_login3 using ssl (reader)")
                     server = self.ldap3.Server(self._ldap_uri, use_ssl=True, tls=tls)
