@@ -119,6 +119,9 @@ class Auth(auth.BaseAuth):
         if self._ldap_uri.lower().startswith("ldaps://") and self._ldap_security not in ("tls", "starttls"):
             logger.info("Inferring 'ldap_security' = tls from 'ldap_uri' starting with 'ldaps://'")
             self._ldap_security = "tls"
+        if self._ldap_uri.lower().startswith("ldapi://") and self._ldap_ssl_verify_mode != "NONE":
+            logger.info("Lowering 'ldap_'ldap_ssl_verify_mode' to NONE for 'ldap_uri' starting with 'ldapi://'")
+            self._ldap_ssl_verify_mode = "NONE"
 
         if self._ldap_ssl_ca_file == "" and self._ldap_ssl_verify_mode != "NONE" and self._ldap_security in ("tls", "starttls"):
             logger.warning("Certificate verification not possible: 'ldap_ssl_ca_file' not set")
