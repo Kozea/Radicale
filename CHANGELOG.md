@@ -8,6 +8,7 @@
 * Fix: RECURRENCE-ID comparison on all-day events
 * Fix: format_ut problem on 32-bit systems (got lost inbetween since fixed in 3.5.8)
 * Maintain: Refactor Web UI Javascript into separate files
+* Cleanup: deprecate config option 'ldap_use_ssl' for good
 
 ## 3.6.0
 

@@ -26,8 +26,6 @@ Authentication backend that checks credentials with a LDAP server.
    ldap_secret_file       Path of the file containing the password of the 'ldap_reader_dn'
    ldap_filter            Search filter to find the user DN to authenticate
  The following parameters control TLS connections:
-   ldap_use_ssl           Use ssl on the ldap connection.
-                          Deprecated, use 'ldap_security' instead!
    ldap_security          Encryption mode to be used,
                           one of: *none* | tls | starttls
    ldap_ssl_verify_mode   Certificate verification mode for tls and starttls;
@@ -104,14 +102,6 @@ class Auth(auth.BaseAuth):
         self._ldap_security = configuration.get("auth", "ldap_security")
         if self._ldap_security not in ("none", "tls", "starttls"):
             raise RuntimeError("Illegal value for config setting ´ldap_security'")
-        ldap_use_ssl = configuration.get("auth", "ldap_use_ssl")
-        if ldap_use_ssl:
-            logger.warning("Configuration uses deprecated 'ldap_use_ssl': use 'ldap_security' ('none', 'tls', 'starttls') instead.")
-            if self._ldap_security == "starttls":
-                raise RuntimeError("Deprecated config setting 'ldap_use_ssl = True' conflicts with 'ldap_security' = 'starttls'")
-            elif self._ldap_security != "tls":
-                logger.warning("Update configuration: set 'ldap_security = tls' instead of deprecated 'ldap_use_ssl = True'")
-                self._ldap_security = "tls"
         self._ldap_ssl_ca_file = configuration.get("auth", "ldap_ssl_ca_file")
         self._ldap_ssl_verify_mode = configuration.get("auth", "ldap_ssl_verify_mode")
         if self._ldap_ssl_verify_mode not in ("NONE", "OPTIONAL", "REQUIRED"):
@@ -165,7 +155,6 @@ class Auth(auth.BaseAuth):
         if self._ldap_reader_dn and not self._ldap_secret:
             logger.error("auth.ldap_secret           : (not provided)")
             raise RuntimeError("LDAP authentication requires ldap_secret for ldap_reader_dn")
-        logger.info("auth.ldap_use_ssl           : %s" % ldap_use_ssl)
         logger.info("auth.ldap_security          : %s" % self._ldap_security)
         logger.info("auth.ldap_ssl_verify_mode   : %s" % self._ldap_ssl_verify_mode)
         if self._ldap_ssl_ca_file:
