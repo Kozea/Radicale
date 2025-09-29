@@ -1,6 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2022-2024 Peter Varkoly
 # Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Marschall <peter@adpm.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
