@@ -1,6 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2022-2024 Peter Varkoly
 # Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Marschall <peter@adpm.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,10 +68,8 @@ class Auth(auth.BaseAuth):
     _ldap_group_filter: str
     _ldap_group_members_attr: str
     _ldap_module_version: int = 3
-    _use_encryption: bool = False
-    _ldap_use_ssl: bool = False
     _ldap_security: str = "none"
-    _ldap_ssl_verify_mode: int = ssl.CERT_REQUIRED
+    _ldap_ssl_verify_mode: str = "REQUIRED"
     _ldap_ssl_ca_file: str = ""
 
     def __init__(self, configuration: config.Configuration) -> None:
@@ -85,7 +84,7 @@ class Auth(auth.BaseAuth):
                 self._ldap_module_version = 2
                 self.ldap = ldap
             except ImportError as e:
-                raise RuntimeError("LDAP authentication requires the ldap3 module") from e
+                raise RuntimeError("LDAP authentication requires the ldap3 or ldap module") from e
 
         self._ldap_ignore_attribute_create_modify_timestamp = configuration.get("auth", "ldap_ignore_attribute_create_modify_timestamp")
         self._ldap_uri = configuration.get("auth", "ldap_uri")
@@ -102,66 +101,77 @@ class Auth(auth.BaseAuth):
         if ldap_secret_file_path:
             with open(ldap_secret_file_path, 'r') as file:
                 self._ldap_secret = file.read().rstrip('\n')
-        if self._ldap_module_version == 3:
-            self._ldap_use_ssl = configuration.get("auth", "ldap_use_ssl")
-            self._ldap_security = configuration.get("auth", "ldap_security")
-            self._use_encryption = self._ldap_use_ssl or self._ldap_security in ("tls", "starttls")
-            if self._ldap_use_ssl and self._ldap_security == "starttls":
-                raise RuntimeError("Cannot set both 'ldap_use_ssl = True' and 'ldap_security' = 'starttls'")
-            if self._ldap_use_ssl:
-                logger.warning("Configuration uses soon to be deprecated 'ldap_use_ssl', use 'ldap_security' ('none', 'tls', 'starttls') instead.")
-            if self._use_encryption:
-                self._ldap_ssl_ca_file = configuration.get("auth", "ldap_ssl_ca_file")
-                tmp = configuration.get("auth", "ldap_ssl_verify_mode")
-                if tmp == "NONE":
-                    self._ldap_ssl_verify_mode = ssl.CERT_NONE
-                elif tmp == "OPTIONAL":
-                    self._ldap_ssl_verify_mode = ssl.CERT_OPTIONAL
+        self._ldap_security = configuration.get("auth", "ldap_security")
+        if self._ldap_security not in ("none", "tls", "starttls"):
+            raise RuntimeError("Illegal value for config setting ´ldap_security'")
+        ldap_use_ssl = configuration.get("auth", "ldap_use_ssl")
+        if ldap_use_ssl:
+            logger.warning("Configuration uses deprecated 'ldap_use_ssl': use 'ldap_security' ('none', 'tls', 'starttls') instead.")
+            if self._ldap_security == "starttls":
+                raise RuntimeError("Deprecated config setting 'ldap_use_ssl = True' conflicts with 'ldap_security' = 'starttls'")
+            elif self._ldap_security != "tls":
+                logger.warning("Update configuration: set 'ldap_security = tls' instead of deprecated 'ldap_use_ssl = True'")
+                self._ldap_security = "tls"
+        self._ldap_ssl_ca_file = configuration.get("auth", "ldap_ssl_ca_file")
+        self._ldap_ssl_verify_mode = configuration.get("auth", "ldap_ssl_verify_mode")
+        if self._ldap_ssl_verify_mode not in ("NONE", "OPTIONAL", "REQUIRED"):
+            raise RuntimeError("Illegal value for config setting ´ldap_ssl_verify_mode'")
 
-        logger.info("auth.ldap_uri             : %r" % self._ldap_uri)
-        logger.info("auth.ldap_base            : %r" % self._ldap_base)
-        logger.info("auth.ldap_reader_dn       : %r" % self._ldap_reader_dn)
-        logger.info("auth.ldap_filter          : %r" % self._ldap_filter)
+        if self._ldap_uri.lower().startswith("ldaps://") and self._ldap_security not in ("tls", "starttls"):
+            logger.info("Inferring 'ldap_security' = tls from 'ldap_uri' starting with 'ldaps://'")
+            self._ldap_security = "tls"
+        if self._ldap_uri.lower().startswith("ldapi://") and self._ldap_ssl_verify_mode != "NONE":
+            logger.info("Lowering 'ldap_'ldap_ssl_verify_mode' to NONE for 'ldap_uri' starting with 'ldapi://'")
+            self._ldap_ssl_verify_mode = "NONE"
+
+        if self._ldap_ssl_ca_file == "" and self._ldap_ssl_verify_mode != "NONE" and self._ldap_security in ("tls", "starttls"):
+            logger.warning("Certificate verification not possible: 'ldap_ssl_ca_file' not set")
+        if self._ldap_ssl_ca_file and self._ldap_security not in ("tls", "starttls"):
+            logger.warning("Config setting 'ldap_ssl_ca_file' useless without encrypted LDAP connection")
+
+        logger.info("auth.ldap_uri               : %r" % self._ldap_uri)
+        logger.info("auth.ldap_base              : %r" % self._ldap_base)
+        logger.info("auth.ldap_reader_dn         : %r" % self._ldap_reader_dn)
+        logger.info("auth.ldap_filter            : %r" % self._ldap_filter)
         if self._ldap_user_attr:
-            logger.info("auth.ldap_user_attribute  : %r" % self._ldap_user_attr)
+            logger.info("auth.ldap_user_attribute    : %r" % self._ldap_user_attr)
         else:
-            logger.info("auth.ldap_user_attribute  : (not provided)")
+            logger.info("auth.ldap_user_attribute    : (not provided)")
         if self._ldap_groups_attr:
-            logger.info("auth.ldap_groups_attribute: %r" % self._ldap_groups_attr)
+            logger.info("auth.ldap_groups_attribute  : %r" % self._ldap_groups_attr)
         else:
-            logger.info("auth.ldap_groups_attribute: (not provided)")
+            logger.info("auth.ldap_groups_attribute  : (not provided)")
         if self._ldap_group_base:
-            logger.info("auth.ldap_group_base     : %r" % self._ldap_group_base)
+            logger.info("auth.ldap_group_base        : %r" % self._ldap_group_base)
         else:
-            logger.info("auth.ldap_group_base     : (not provided, using ldap_base)")
+            logger.info("auth.ldap_group_base        : (not provided, using ldap_base)")
             self._ldap_group_base = self._ldap_base
         if self._ldap_group_filter:
-            logger.info("auth.ldap_group_filter: %r" % self._ldap_group_filter)
+            logger.info("auth.ldap_group_filter      : %r" % self._ldap_group_filter)
         else:
-            logger.info("auth.ldap_group_filter: (not provided)")
+            logger.info("auth.ldap_group_filter      : (not provided)")
         if self._ldap_group_members_attr:
             logger.info("auth.ldap_group_members_attr: %r" % self._ldap_group_members_attr)
         else:
             logger.info("auth.ldap_group_members_attr: (not provided)")
         if ldap_secret_file_path:
-            logger.info("auth.ldap_secret_file_path: %r" % ldap_secret_file_path)
+            logger.info("auth.ldap_secret_file_path  : %r" % ldap_secret_file_path)
             if self._ldap_secret:
-                logger.info("auth.ldap_secret          : (from file)")
+                logger.info("auth.ldap_secret            : (from file)")
         else:
-            logger.info("auth.ldap_secret_file_path: (not provided)")
+            logger.info("auth.ldap_secret_file_path  : (not provided)")
             if self._ldap_secret:
-                logger.info("auth.ldap_secret          : (from config)")
+                logger.info("auth.ldap_secret            : (from config)")
         if self._ldap_reader_dn and not self._ldap_secret:
-            logger.error("auth.ldap_secret         : (not provided)")
+            logger.error("auth.ldap_secret           : (not provided)")
             raise RuntimeError("LDAP authentication requires ldap_secret for ldap_reader_dn")
-        logger.info("auth.ldap_use_ssl         : %s" % self._ldap_use_ssl)
-        logger.info("auth.ldap_security      : %s" % self._ldap_security)
-        if self._use_encryption:
-            logger.info("auth.ldap_ssl_verify_mode : %s" % self._ldap_ssl_verify_mode)
-            if self._ldap_ssl_ca_file:
-                logger.info("auth.ldap_ssl_ca_file     : %r" % self._ldap_ssl_ca_file)
-            else:
-                logger.info("auth.ldap_ssl_ca_file     : (not provided)")
+        logger.info("auth.ldap_use_ssl           : %s" % ldap_use_ssl)
+        logger.info("auth.ldap_security          : %s" % self._ldap_security)
+        logger.info("auth.ldap_ssl_verify_mode   : %s" % self._ldap_ssl_verify_mode)
+        if self._ldap_ssl_ca_file:
+            logger.info("auth.ldap_ssl_ca_file       : %r" % self._ldap_ssl_ca_file)
+        else:
+            logger.info("auth.ldap_ssl_ca_file       : (not provided)")
         if self._ldap_ignore_attribute_create_modify_timestamp:
             logger.info("auth.ldap_ignore_attribute_create_modify_timestamp applied (relevant for ldap3 only)")
         """Extend attributes to to be returned in the user query"""
@@ -169,15 +179,31 @@ class Auth(auth.BaseAuth):
             self._ldap_attributes.append(self._ldap_groups_attr)
         if self._ldap_user_attr:
             self._ldap_attributes.append(self._ldap_user_attr)
-        logger.info("ldap_attributes           : %r" % self._ldap_attributes)
+        logger.info("ldap_attributes             : %r" % self._ldap_attributes)
 
     def _login2(self, login: str, password: str) -> str:
         try:
             """Bind as reader dn"""
             logger.debug(f"_login2 {self._ldap_uri}, {self._ldap_reader_dn}")
             conn = self.ldap.initialize(self._ldap_uri)
-            conn.protocol_version = 3
+            conn.protocol_version = self.ldap.VERSION3
             conn.set_option(self.ldap.OPT_REFERRALS, 0)
+
+            if self._ldap_security in ("tls", "starttls"):
+                """certificate validation mode"""
+                verifyMode = {"NONE": self.ldap.OPT_X_TLS_NEVER,
+                              "OPTIONAL": self.ldap.OPT_X_TLS_ALLOW,
+                              "REQUIRED": self.ldap.OPT_X_TLS_DEMAND}
+                conn.set_option(self.ldap.OPT_X_TLS_REQUIRE_CERT, verifyMode[self._ldap_ssl_verify_mode])
+                """CA file to validate certificate against"""
+                if self._ldap_ssl_ca_file:
+                    conn.set_option(self.ldap.OPT_X_TLS_CACERTFILE, self._ldap_ssl_ca_file)
+                """create TLS context- this must be the last TLS setting"""
+                conn.set_option(self.ldap.OPT_X_TLS_NEWCTX, self.ldap.OPT_ON)
+
+                if self._ldap_security == "starttls":
+                    conn.start_tls_s()
+
             conn.simple_bind_s(self._ldap_reader_dn, self._ldap_secret)
             """Search for the dn of user to authenticate"""
             escaped_login = self.ldap.filter.escape_filter_chars(login)
@@ -219,16 +245,11 @@ class Auth(auth.BaseAuth):
                     for dn, entry in res:
                         groupDNs.append(dn)
 
-            """Close LDAP connection"""
-            conn.unbind()
         except Exception as e:
             raise RuntimeError(f"Invalid LDAP configuration:{e}")
 
         try:
             """Bind as user to authenticate"""
-            conn = self.ldap.initialize(self._ldap_uri)
-            conn.protocol_version = 3
-            conn.set_option(self.ldap.OPT_REFERRALS, 0)
             conn.simple_bind_s(user_dn, password)
             if self._ldap_user_attr:
                 if user_entry[1][self._ldap_user_attr]:
@@ -263,15 +284,15 @@ class Auth(auth.BaseAuth):
         """Connect the server"""
         try:
             logger.debug(f"_login3 {self._ldap_uri}, {self._ldap_reader_dn}")
-            if self._use_encryption:
+            if self._ldap_security in ("tls", "starttls"):
                 logger.debug("_login3 using encryption (reader)")
-                tls = self.ldap3.Tls(validate=self._ldap_ssl_verify_mode)
+                verifyMode = {"NONE": ssl.CERT_NONE,
+                              "OPTIONAL": ssl.CERT_OPTIONAL,
+                              "REQUIRED": ssl.CERT_REQUIRED}
+                tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode])
                 if self._ldap_ssl_ca_file != "":
-                    tls = self.ldap3.Tls(
-                        validate=self._ldap_ssl_verify_mode,
-                        ca_certs_file=self._ldap_ssl_ca_file
-                        )
-                if self._ldap_use_ssl or self._ldap_security == "tls":
+                    tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode], ca_certs_file=self._ldap_ssl_ca_file)
+                if self._ldap_security == "tls":
                     logger.debug("_login3 using ssl (reader)")
                     server = self.ldap3.Server(self._ldap_uri, use_ssl=True, tls=tls)
                 else:
