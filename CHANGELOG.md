@@ -2,6 +2,7 @@
 
 ## 3.5.8.dev
 * Extend [auth]: re-factor & overhaul LDPA autrhentication, especially for Python's ldap module
+* Fix: out-of-range timestamp on 32-bit systems
 
 ## 3.5.7
 * Extend: [auth] dovecot: add support for version >= 2.4
