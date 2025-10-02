@@ -26,6 +26,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   coveralls-test:
+    if: github.event_name == 'push'
     strategy:
       matrix:
         os: [ubuntu-latest]
