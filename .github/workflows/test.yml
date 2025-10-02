@@ -54,7 +54,6 @@ jobs:
     needs: coveralls-test
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/setup-python@v5
         with:
