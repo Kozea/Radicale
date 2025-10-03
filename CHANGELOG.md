@@ -1,7 +1,7 @@
 # Changelog
 
 ## 3.5.8.dev
-* Extend [auth]: re-factor & overhaul LDPA autrhentication, especially for Python's ldap module
+* Extend [auth]: re-factor & overhaul LDAP authentication, especially for Python's ldap module
 * Fix: out-of-range timestamp on 32-bit systems
 
 ## 3.5.7
