@@ -1,6 +1,6 @@
 # This file is related to Radicale - CalDAV and CardDAV server
 #  for logwatch (script)
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # Detail levels
 # >= 5: Logins
