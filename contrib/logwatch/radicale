@@ -1,6 +1,6 @@
 # This file is related to Radicale - CalDAV and CardDAV server
 #  for logwatch (script)
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # Detail levels
 # >= 5: Logins
@@ -9,6 +9,7 @@
 $Detail = $ENV{'LOGWATCH_DETAIL_LEVEL'} || 0;
 
 my %ResponseTimes;
+my %ResponseSizes;
 my %Responses;
 my %Requests;
 my %Logins;
@@ -37,6 +38,28 @@ sub ResponseTimesMinMaxSum($$) {
    }
 
    $ResponseTimes{$req}->{'sum'} += $time;
+}
+
+sub ResponseSizesMinMaxSum($$$) {
+   my $req = $_[0];
+   my $type = $_[1];
+   my $size = $_[2];
+
+   $ResponseSizes{$type}->{$req}->{'cnt'}++;
+
+   if (! defined $ResponseSizes{$type}->{$req}->{'min'}) {
+      $ResponseSizes{$type}->{$req}->{'min'} = $size;
+   } elsif ($ResponseSizes{$type}->{$req}->{'min'} > $size) {
+      $ResponseSizes{$type}->{$req}->{'min'} = $size;
+   }
+
+   if (! defined $ResponseSizes{$type}->{$req}->{'max'}) {
+      $ResponseSizes{$type}->{$req}{'max'} = $size;
+   } elsif ($ResponseSizes{$type}->{$req}->{'max'} < $size) {
+      $ResponseSizes{$type}->{$req}{'max'} = $size;
+   }
+
+   $ResponseSizes{$type}->{$req}->{'sum'} += $size;
 }
 
 sub Sum($) {
@@ -75,9 +98,17 @@ while (defined($ThisLine = <STDIN>)) {
       if ( $ThisLine =~ / \S+ response status for .* with depth '(\d)' in ([0-9.]+) seconds: (\d+)/o ) {
          $req .= ":D=" . $1 . ":R=" . $3;
          ResponseTimesMinMaxSum($req, $2) if ($Detail >= 10);
-      } elsif ( $ThisLine =~ / \S+ response status for .* in ([0-9.]+) seconds: (\d+)/ ) {
+      } elsif ( $ThisLine =~ / \S+ response status for .* in ([0-9.]+) seconds: (\d+)/o ) {
          $req .= ":R=" . $2;
          ResponseTimesMinMaxSum($req, $1) if ($Detail >= 10);
+      } elsif ( $ThisLine =~ / \S+ response status for .* with depth '(\d)' in ([0-9.]+) seconds (\S+) (\d+) bytes: (\d+)/o ) {
+         $req .= ":D=" . $1 . ":R=" . $5;
+         ResponseTimesMinMaxSum($req, $2) if ($Detail >= 10);
+         ResponseSizesMinMaxSum($req, $3, $4) if ($Detail >= 10);
+      } elsif ( $ThisLine =~ / \S+ response status for .* in ([0-9.]+) seconds (\S+) (\d+) bytes: (\d+)/o ) {
+         $req .= ":R=" . $4;
+         ResponseTimesMinMaxSum($req, $1) if ($Detail >= 10);
+         ResponseSizesMinMaxSum($req, $2, $3) if ($Detail >= 10);
       }
       $Responses{$req}++;
    }
@@ -172,6 +203,22 @@ if (keys %ResponseTimes) {
          , $ResponseTimes{$req}->{'sum'} / $ResponseTimes{$req}->{'cnt'};
    }
    print "-" x60 . "\n";
+}
+
+if (keys %ResponseSizes) {
+   for my $type (sort keys %ResponseSizes) {
+      print "\n**Response sizes (counts, bytes: $type) (D=<depth> R=<result>)**\n";
+      printf "%-18s | %7s | %9s | %9s | %9s |\n", "Response", "cnt", "min", "max", "avg";
+      print "-" x66 . "\n";
+      foreach my $req (sort keys %{$ResponseSizes{$type}}) {
+         printf "%-18s | %7d | %9d | %9d | %9d |\n", $req
+            , $ResponseSizes{$type}->{$req}->{'cnt'}
+            , $ResponseSizes{$type}->{$req}->{'min'}
+            , $ResponseSizes{$type}->{$req}->{'max'}
+            , $ResponseSizes{$type}->{$req}->{'sum'} / $ResponseSizes{$type}->{$req}->{'cnt'};
+      }
+      print "-" x66 . "\n";
+   }
 }
 
 if (keys %OtherEvents) {

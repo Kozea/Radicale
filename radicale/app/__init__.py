@@ -164,6 +164,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                      answer: Union[None, str, bytes]) -> _IntermediateResponse:
             """Helper to create response from internal types.WSGIResponse"""
             headers = dict(headers)
+            content_encoding = "plain"
             # Set content length
             answers = []
             if answer is not None:
@@ -183,6 +184,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     zcomp = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
                     answer = zcomp.compress(answer) + zcomp.flush()
                     headers["Content-Encoding"] = "gzip"
+                    content_encoding = "gzip"
 
                 headers["Content-Length"] = str(len(answer))
                 answers.append(answer)
@@ -194,9 +196,14 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             time_end = datetime.datetime.now()
             status_text = "%d %s" % (
                 status, client.responses.get(status, "Unknown"))
-            logger.info("%s response status for %r%s in %.3f seconds: %s",
-                        request_method, unsafe_path, depthinfo,
-                        (time_end - time_begin).total_seconds(), status_text)
+            if answer is not None:
+                logger.info("%s response status for %r%s in %.3f seconds %s %s bytes: %s",
+                            request_method, unsafe_path, depthinfo,
+                            (time_end - time_begin).total_seconds(), content_encoding, str(len(answer)), status_text)
+            else:
+                logger.info("%s response status for %r%s in %.3f seconds: %s",
+                            request_method, unsafe_path, depthinfo,
+                            (time_end - time_begin).total_seconds(), status_text)
             # Return response content
             return status_text, list(headers.items()), answers
 
