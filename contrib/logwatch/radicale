@@ -75,7 +75,7 @@ while (defined($ThisLine = <STDIN>)) {
       if ( $ThisLine =~ / \S+ response status for .* with depth '(\d)' in ([0-9.]+) seconds: (\d+)/o ) {
          $req .= ":D=" . $1 . ":R=" . $3;
          ResponseTimesMinMaxSum($req, $2) if ($Detail >= 10);
-      } elsif ( $ThisLine =~ / \S+ response status for .* in ([0-9.]+) seconds: (\d+)/ ) {
+      } elsif ( $ThisLine =~ / \S+ response status for .* in ([0-9.]+) seconds: (\d+)/o ) {
          $req .= ":R=" . $2;
          ResponseTimesMinMaxSum($req, $1) if ($Detail >= 10);
       }
