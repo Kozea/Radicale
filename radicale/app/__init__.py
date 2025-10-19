@@ -73,8 +73,6 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _web_type: str
     _script_name: str
     _extra_headers: Mapping[str, str]
-    _permit_delete_collection: bool
-    _permit_overwrite_collection: bool
 
     def __init__(self, configuration: config.Configuration) -> None:
         """Initialize Application.
