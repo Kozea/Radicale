@@ -229,6 +229,40 @@ permissions: RrWw""")
         _, answer = self.get(path)
         assert "DTSTAMP:20130902T150159Z" in answer
 
+    def test_update_event_no_etag_strict_preconditions_true(self) -> None:
+        """Update an event without serving etag."""
+        self.configure({"storage": {"strict_preconditions": True}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        event_modified = get_file_content("event1_modified.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=201)
+        self.put(path, event_modified, check=412)
+
+    def test_update_event_with_etag_strict_preconditions_true(self) -> None:
+        """Update an event with serving etag."""
+        self.configure({"storage": {"strict_preconditions": True}})
+        self.configure({"logging": {"response_content_on_debug": True}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        event_modified = get_file_content("event1_modified.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=201)
+        # get etag
+        _, responses = self.report("/calendar.ics/", """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag/>
+    </D:prop>
+</C:calendar-query>""")
+        assert len(responses) == 1
+        response = responses["/calendar.ics/event1.ics"]
+        assert not isinstance(response, int)
+        status, prop = response["D:getetag"]
+        assert status == 200 and prop.text
+        self.put(path, event_modified, check=204, http_if_match=prop.text)
+
     def test_update_event_uid_event(self) -> None:
         """Update an event with a different UID."""
         self.mkcalendar("/calendar.ics/")

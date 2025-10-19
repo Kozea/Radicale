@@ -430,6 +430,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "command that is run after changes to storage",
             "type": str}),
+        ("strict_preconditions", {
+            "value": "False",
+            "help": "strict preconditions check on PUT",
+            "type": bool}),
         ("_filesystem_fsync", {
             "value": "True",
             "help": "sync all changes to filesystem during requests",

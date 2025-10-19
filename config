@@ -242,6 +242,9 @@
 # Skip broken item instead of triggering an exception
 #skip_broken_item = True
 
+# Strict preconditions check on PUT
+#strict_preconditions = False
+
 # Command that is run after changes to storage, default is emtpy
 #  Supported placeholders:
 #   %(user)s: logged-in user

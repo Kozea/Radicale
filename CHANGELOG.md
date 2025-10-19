@@ -4,6 +4,7 @@
 * Extend [auth]: re-factor & overhaul LDAP authentication, especially for Python's ldap module
 * Fix: out-of-range timestamp on 32-bit systems
 * Feature: extend logging with response size in bytes and flag served as plain or gzip
+* Feature: [storage] strict_preconditions: new config option to enforce strict preconditions check on PUT in case item already exists [RFC6352#9.2]
 
 ## 3.5.7
 * Extend: [auth] dovecot: add support for version >= 2.4

@@ -75,6 +75,10 @@ class BaseTest:
         if login is not None and not isinstance(login, str):
             raise TypeError("login argument must be %r, not %r" %
                             (str, type(login)))
+        http_if_match = kwargs.pop("http_if_match", None)
+        if http_if_match is not None and not isinstance(http_if_match, str):
+            raise TypeError("http_if_match argument must be %r, not %r" %
+                            (str, type(http_if_match)))
         environ: Dict[str, Any] = {k.upper(): v for k, v in kwargs.items()}
         for k, v in environ.items():
             if not isinstance(v, str):
@@ -84,6 +88,8 @@ class BaseTest:
         if login:
             environ["HTTP_AUTHORIZATION"] = "Basic " + base64.b64encode(
                     login.encode(encoding)).decode()
+        if http_if_match:
+            environ["HTTP_IF_MATCH"] = http_if_match
         environ["REQUEST_METHOD"] = method.upper()
         environ["PATH_INFO"] = path
         if data is not None:

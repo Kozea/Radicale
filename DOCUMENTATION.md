@@ -1523,6 +1523,14 @@ Skip broken item instead of triggering an exception
 
 Default: `True`
 
+##### strict_preconditions
+
+_(>= 3.5.8)_
+
+Strict preconditions check on PUT in case item already exists [RFC6352#9.2](https://www.rfc-editor.org/rfc/rfc6352#section-9.2)
+
+Default: `False`
+
 ##### hook
 
 Command that is run after changes to storage. See the
