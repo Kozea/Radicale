@@ -1523,6 +1523,14 @@ Skip broken item instead of triggering an exception
 
 Default: `True`
 
+##### strict_preconditions
+
+_(>= 3.5.8)_
+
+Strict preconditions check on PUT.
+
+Default: `False`
+
 ##### hook
 
 Command that is run after changes to storage. See the
