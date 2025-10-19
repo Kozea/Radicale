@@ -181,6 +181,9 @@
 # Strip domain name from username
 #strip_domain = False
 
+# URL Decode the given username (when URL-encoded by the client - useful for iOS devices when using email address)
+#urldecode_username = False
+
 
 [rights]
 
@@ -197,8 +200,6 @@
 # Permit overwrite of a collection (global)
 #permit_overwrite_collection = True
 
-# URL Decode the given username (when URL-encoded by the client - useful for iOS devices when using email address)
-# urldecode_username = False
 
 [storage]
 
