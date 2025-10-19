@@ -207,6 +207,9 @@ class ApplicationPartPut(ApplicationBase):
                 return httputils.NOT_ALLOWED
 
             etag = environ.get("HTTP_IF_MATCH", "")
+            if item and not etag and self._strict_preconditions:
+                logger.warning("Precondition failed for %r: existing item, no If-Match header, strict mode enabled", path)
+                return httputils.PRECONDITION_FAILED
             if not item and etag:
                 # Etag asked but no item found: item has been removed
                 logger.warning("Precondition failed on PUT request for %r (HTTP_IF_MATCH: %s, item not existing)", path, etag)

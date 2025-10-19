@@ -75,6 +75,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _extra_headers: Mapping[str, str]
     _permit_delete_collection: bool
     _permit_overwrite_collection: bool
+    _strict_preconditions: bool
 
     def __init__(self, configuration: config.Configuration) -> None:
         """Initialize Application.
@@ -116,6 +117,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         self._extra_headers = dict()
         for key in self.configuration.options("headers"):
             self._extra_headers[key] = configuration.get("headers", key)
+        self._strict_preconditions = configuration.get("storage", "strict_preconditions")
+        logger.info("strict preconditions check: %s", self._strict_preconditions)
 
     def _scrub_headers(self, environ: types.WSGIEnviron) -> types.WSGIEnviron:
         """Mask passwords and cookies."""
