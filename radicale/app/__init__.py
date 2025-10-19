@@ -75,7 +75,6 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _extra_headers: Mapping[str, str]
     _permit_delete_collection: bool
     _permit_overwrite_collection: bool
-    _strict_preconditions: bool
 
     def __init__(self, configuration: config.Configuration) -> None:
         """Initialize Application.

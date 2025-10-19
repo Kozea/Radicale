@@ -41,6 +41,7 @@ class ApplicationBase:
     _encoding: str
     _permit_delete_collection: bool
     _permit_overwrite_collection: bool
+    _strict_preconditions: bool
     _hook: hook.BaseHook
 
     def __init__(self, configuration: config.Configuration) -> None:
