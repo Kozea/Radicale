@@ -1527,7 +1527,7 @@ Default: `True`
 
 _(>= 3.5.8)_
 
-Strict preconditions check on PUT.
+Strict preconditions check on PUT in case item already exists [RFC6352#9.2](https://datatracker.ietf.org/doc/html/rfc6352#section-9.2)
 
 Default: `False`
 
