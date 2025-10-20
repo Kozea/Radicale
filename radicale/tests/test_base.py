@@ -230,7 +230,7 @@ permissions: RrWw""")
         assert "DTSTAMP:20130902T150159Z" in answer
 
     def test_update_event_no_etag_strict_preconditions_true(self) -> None:
-        """Update an event without serving etag."""
+        """Update an event without serving etag having strict_preconditions enabled (Precondition Failed)."""
         self.configure({"storage": {"strict_preconditions": True}})
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
@@ -240,7 +240,7 @@ permissions: RrWw""")
         self.put(path, event_modified, check=412)
 
     def test_update_event_with_etag_strict_preconditions_true(self) -> None:
-        """Update an event with serving etag."""
+        """Update an event with serving equal etag having strict_preconditions enabled (OK)."""
         self.configure({"storage": {"strict_preconditions": True}})
         self.configure({"logging": {"response_content_on_debug": True}})
         self.mkcalendar("/calendar.ics/")
@@ -262,6 +262,22 @@ permissions: RrWw""")
         status, prop = response["D:getetag"]
         assert status == 200 and prop.text
         self.put(path, event_modified, check=204, http_if_match=prop.text)
+
+    def test_update_event_with_etag_mismatch(self) -> None:
+        """Update an event with serving mismatch etag (Precondition Failed)."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        event_modified = get_file_content("event1_modified.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=201)
+        self.put(path, event_modified, check=412, http_if_match="0000")
+
+    def test_add_event_with_etag(self) -> None:
+        """Add an event with serving etag (Precondition Failed)."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=412, http_if_match="0000")
 
     def test_update_event_uid_event(self) -> None:
         """Update an event with a different UID."""
