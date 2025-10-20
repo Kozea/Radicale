@@ -263,6 +263,22 @@ permissions: RrWw""")
         assert status == 200 and prop.text
         self.put(path, event_modified, check=204, http_if_match=prop.text)
 
+    def test_update_event_with_etag_mismatch(self) -> None:
+        """Update an event with serving mismatch etag (Precondition Failed)."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        event_modified = get_file_content("event1_modified.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=201)
+        self.put(path, event_modified, check=412, http_if_match="0000")
+
+    def test_add_event_with_etag(self) -> None:
+        """Add an event with serving etag (Precondition Failed)."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=412, http_if_match="0000")
+
     def test_update_event_uid_event(self) -> None:
         """Update an event with a different UID."""
         self.mkcalendar("/calendar.ics/")
