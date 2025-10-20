@@ -230,7 +230,7 @@ permissions: RrWw""")
         assert "DTSTAMP:20130902T150159Z" in answer
 
     def test_update_event_no_etag_strict_preconditions_true(self) -> None:
-        """Update an event without serving etag."""
+        """Update an event without serving etag having strict_preconditions enabled (Precondition Failed)."""
         self.configure({"storage": {"strict_preconditions": True}})
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
@@ -240,7 +240,7 @@ permissions: RrWw""")
         self.put(path, event_modified, check=412)
 
     def test_update_event_with_etag_strict_preconditions_true(self) -> None:
-        """Update an event with serving etag."""
+        """Update an event with serving equal etag having strict_preconditions enabled (OK)."""
         self.configure({"storage": {"strict_preconditions": True}})
         self.configure({"logging": {"response_content_on_debug": True}})
         self.mkcalendar("/calendar.ics/")
