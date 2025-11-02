@@ -280,9 +280,14 @@ def format_ut(unixtime: int) -> str:
     if sys.platform == "win32":
         # TODO check how to support this better
         return str(unixtime)
-    if unixtime < DATETIME_MAX_UNIXTIME:
-        dt = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc) + datetime.timedelta(seconds=unixtime)
-        r = str(unixtime) + "(" + dt.strftime('%Y-%m-%dT%H:%M:%SZ') + ")"
+    if unixtime <= DATETIME_MIN_UNIXTIME:
+        r = str(unixtime) + "(<=MIN:" + str(DATETIME_MIN_UNIXTIME) + ")"
+    elif unixtime >= DATETIME_MAX_UNIXTIME:
+        r = str(unixtime) + "(>=MAX:" + str(DATETIME_MAX_UNIXTIME) + ")"
     else:
-        r = str(unixtime) + "(>MAX:" + str(DATETIME_MAX_UNIXTIME) + ")"
+        if sys.version_info < (3, 11):
+            dt = datetime.datetime.utcfromtimestamp(unixtime)
+        else:
+            dt = datetime.datetime.fromtimestamp(unixtime, datetime.UTC)
+        r = str(unixtime) + "(" + dt.strftime('%Y-%m-%dT%H:%M:%SZ') + ")"
     return r
