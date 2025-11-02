@@ -47,8 +47,9 @@ ADDRESS_TYPE = Union[Tuple[Union[str, bytes, bytearray], int],
                      Tuple[str, int, int, int]]
 
 
-# Max YEAR in datetime in unixtime
+# Max/Min YEAR in datetime in unixtime
 DATETIME_MAX_UNIXTIME: int = (datetime.MAXYEAR - 1970) * 365 * 24 * 60 * 60
+DATETIME_MIN_UNIXTIME: int = (datetime.MINYEAR - 1970) * 365 * 24 * 60 * 60
 
 
 def load_plugin(internal_types: Sequence[str], module_name: str,
