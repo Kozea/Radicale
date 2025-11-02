@@ -47,8 +47,9 @@ ADDRESS_TYPE = Union[Tuple[Union[str, bytes, bytearray], int],
                      Tuple[str, int, int, int]]
 
 
-# Max YEAR in datetime in unixtime
+# Max/Min YEAR in datetime in unixtime
 DATETIME_MAX_UNIXTIME: int = (datetime.MAXYEAR - 1970) * 365 * 24 * 60 * 60
+DATETIME_MIN_UNIXTIME: int = (datetime.MINYEAR - 1970) * 365 * 24 * 60 * 60
 
 
 def load_plugin(internal_types: Sequence[str], module_name: str,
@@ -279,9 +280,14 @@ def format_ut(unixtime: int) -> str:
     if sys.platform == "win32":
         # TODO check how to support this better
         return str(unixtime)
-    if unixtime < DATETIME_MAX_UNIXTIME:
-        dt = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc) + datetime.timedelta(seconds=unixtime)
-        r = str(unixtime) + "(" + dt.strftime('%Y-%m-%dT%H:%M:%SZ') + ")"
+    if unixtime <= DATETIME_MIN_UNIXTIME:
+        r = str(unixtime) + "(<=MIN:" + str(DATETIME_MIN_UNIXTIME) + ")"
+    elif unixtime >= DATETIME_MAX_UNIXTIME:
+        r = str(unixtime) + "(>=MAX:" + str(DATETIME_MAX_UNIXTIME) + ")"
     else:
-        r = str(unixtime) + "(>MAX:" + str(DATETIME_MAX_UNIXTIME) + ")"
+        if sys.version_info < (3, 11):
+            dt = datetime.datetime.utcfromtimestamp(unixtime)
+        else:
+            dt = datetime.datetime.fromtimestamp(unixtime, datetime.UTC)
+        r = str(unixtime) + "(" + dt.strftime('%Y-%m-%dT%H:%M:%SZ') + ")"
     return r
