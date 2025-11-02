@@ -1,0 +1,34 @@
+on:
+  schedule:
+    - cron: '10 0 * * *'
+  workflow_dispatch:
+
+
+jobs:
+  delete-package-versions:
+    name: Delete old nightly docker images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get list of all docker image versions in registry
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api --paginate -X GET "/orgs/Kozea/packages/container/Radicale/versions" -F package_type=container -F per_page=200 > data.json
+          
+      - name: Delete each nightly image older than cutoff date
+        run: |
+          cutoff_date=$(date --date="30 days ago" --iso-8601)
+          echo "Cutoff date is: $cutoff_date"
+          
+          # Loop through each nightly container version (tag) older than the cutoff date
+          for tag in $(jq --arg cutoff_date $cutoff_date -r '.[] | select((.metadata.container.tags | any(. | contains("nightly"))) and (.created_at < $cutoff_date)) | .metadata.container.tags[]' data.json); do
+            echo "Tag - $tag"
+
+            # Because of multi-platform, manifest for each tag would contain more than 1 image. Loop through all
+            all_digests=$(docker manifest inspect "ghcr.io/kozea/radicale:${tag}" | jq -r 'if .manifests then .manifests[]?.digest else empty end')
+            for digest in $all_digests; do
+              image_id=$(jq -r --arg digest "$digest" '.[] | select(.name == $digest) | .id' data.json)
+              echo "Deleting $image_id"
+              gh api -X DELETE "/orgs/Kozea/packages/container/Radicale/versions/$image_id"
+            done
+          done
