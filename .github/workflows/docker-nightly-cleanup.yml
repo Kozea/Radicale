@@ -1,3 +1,5 @@
+name: Cleanup old nightly docker images
+
 on:
   schedule:
     - cron: '10 0 * * *'
@@ -6,7 +8,7 @@ on:
 
 jobs:
   delete-package-versions:
-    name: Delete old nightly docker images
+    name: Cleanup old nightly docker images
     runs-on: ubuntu-latest
     steps:
       - name: Get list of all docker image versions in registry
@@ -16,12 +18,14 @@ jobs:
           gh api --paginate -X GET "/orgs/Kozea/packages/container/Radicale/versions" -F package_type=container -F per_page=200 > data.json
           
       - name: Delete each nightly image older than cutoff date
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cutoff_date=$(date --date="30 days ago" --iso-8601)
           echo "Cutoff date is: $cutoff_date"
           
-          # Loop through each nightly container version (tag) older than the cutoff date
-          for tag in $(jq --arg cutoff_date $cutoff_date -r '.[] | select((.metadata.container.tags | any(. | contains("nightly"))) and (.created_at < $cutoff_date)) | .metadata.container.tags[]' data.json); do
+          # Loop through each nightly image version (tag) older than the cutoff date
+          jq --arg cutoff_date "$cutoff_date" -r '.[] | select((.metadata.container.tags | any(. | contains("nightly"))) and (.created_at < $cutoff_date)) | [.metadata.container.tags[], .id] | @tsv' data.json | while IFS=$'\t' read -r tag nightly_image_id ; do
             echo "Tag - $tag"
 
             # Because of multi-platform, manifest for each tag would contain more than 1 image. Loop through all
@@ -31,4 +35,7 @@ jobs:
               echo "Deleting $image_id"
               gh api -X DELETE "/orgs/Kozea/packages/container/Radicale/versions/$image_id"
             done
+            # Now that all dependents are deleted, delete this tag
+            echo "Deleting $tag with ID: $nightly_image_id"
+            gh api -X DELETE "/orgs/Kozea/packages/container/Radicale/versions/$nightly_image_id"
           done
