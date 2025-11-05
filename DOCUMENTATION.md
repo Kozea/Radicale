@@ -2,7 +2,7 @@
 
 ## Translations of this page
 
-* [Telugu](docs/DOCUMENTATION.te.md)
+* [Telugu](https://github.com/Kozea/Radicale/blob/master/docs/DOCUMENTATION.te.md)
 
 ## Getting started
 
