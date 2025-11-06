@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.5.8.dev
+## 3.5.8
 * Extend [auth]: re-factor & overhaul LDAP authentication, especially for Python's ldap module
 * Fix: out-of-range timestamp on 32-bit systems
 * Feature: extend logging with response size in bytes and flag served as plain or gzip
