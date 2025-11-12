@@ -272,7 +272,7 @@ requirements.
 Recommendation: check support by [Linux Distribution Packages](#linux-distribution-packages)
 instead of manual setup / initial configuration.
 
-Create the **radicale** user and group for the Radicale service by running (as `root`:
+Create the **radicale** user and group for the Radicale service by running (as `root`):
 ```bash
 useradd --system --user-group --home-dir / --shell /sbin/nologin radicale
 ```
