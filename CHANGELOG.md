@@ -1,9 +1,10 @@
 # Changelog
 
 ## 3.5.9.dev
+* Extend: [auth] add support for type http_remote_use
 
 ## 3.5.8
-* Extend [auth]: re-factor & overhaul LDAP authentication, especially for Python's ldap module
+* Extend: [auth] re-factor & overhaul LDAP authentication, especially for Python's ldap module
 * Fix: out-of-range timestamp on 32-bit systems
 * Feature: extend logging with response size in bytes and flag served as plain or gzip
 * Feature: [storage] strict_preconditions: new config option to enforce strict preconditions check on PUT in case item already exists [RFC6352#9.2]
