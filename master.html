@@ -1026,12 +1026,19 @@ variable and disables Radicale's internal HTTP authentication. This can
 be used to provide the username from a WSGI server which authenticated
 the client upfront. Requires validation, otherwise clients can supply
 the header themselves, which then is unconditionally trusted.</p></li>
+<li><p><code>http_remote_user</code> <em>(&gt;= 3.5.9)</em> Takes the
+username from the Remote-User HTTP header <code>HTTP_REMOTE_USER</code>
+and disables Radicale's internal HTTP authentication. This can be used
+to provide the username from a reverse proxy which authenticated the
+client upfront. Requires validation, otherwise clients can supply the
+header themselves, which then is unconditionally trusted.</p></li>
 <li><p><code>http_x_remote_user</code><br>
-Takes the username from the <code>X-Remote-User</code> HTTP header and
-disables Radicale's internal HTTP authentication. This can be used to
-provide the username from a reverse proxy which authenticated the client
-upfront. Requires validation, otherwise clients can supply the header
-themselves, which then is unconditionally trusted.</p></li>
+Takes the username from the X-Remote-User HTTP header
+<code>HTTP_X_REMOTE_USER</code> and disables Radicale's internal HTTP
+authentication. This can be used to provide the username from a reverse
+proxy which authenticated the client upfront. Requires validation,
+otherwise clients can supply the header themselves, which then is
+unconditionally trusted.</p></li>
 <li><p><code>ldap</code> <em>(&gt;= 3.3.0)</em><br>
 Use a LDAP or AD server to authenticate users by relaying credentials
 from clients and handle results.</p></li>
