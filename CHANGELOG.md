@@ -1,7 +1,7 @@
 # Changelog
 
 ## 3.5.9.dev
-* Extend: [auth] add support for type http_remote_use
+* Extend: [auth] add support for type http_remote_user
 
 ## 3.5.8
 * Extend: [auth] re-factor & overhaul LDAP authentication, especially for Python's ldap module
