@@ -23,7 +23,7 @@ Authentication module.
 
 Authentication is based on usernames and passwords. If something more
 advanced is needed an external WSGI server or reverse proxy can be used
-(see ``remote_user`` or ``http_x_remote_user`` backend).
+(see ``remote_user``, ``http_remote_user`` or ``http_x_remote_user`` backend).
 
 Take a look at the class ``BaseAuth`` if you want to implement your own.
 
@@ -40,6 +40,7 @@ from radicale import config, types, utils
 from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
+                                 "http_remote_user",
                                  "denyall",
                                  "htpasswd",
                                  "ldap",
@@ -59,6 +60,7 @@ CACHE_LOGIN_TYPES: Sequence[str] = (
 
 INSECURE_IF_NO_LOOPBACK_TYPES: Sequence[str] = (
                                     "remote_user",
+                                    "http_remote_user",
                                     "http_x_remote_user",
                                    )
 

@@ -275,7 +275,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 logger.debug("Called by reverse proxy, remove base prefix %r from path: %r => %r", base_prefix, path, path_new)
                 path = path_new
             else:
-                if self._auth_type in ['remote_user', 'http_x_remote_user'] and self._web_type == 'internal':
+                if self._auth_type in ['remote_user', 'http_remote_user', 'http_x_remote_user'] and self._web_type == 'internal':
                     logger.warning("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching (may cause authentication issues using internal WebUI)", base_prefix, path)
                 else:
                     logger.debug("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching", base_prefix, path)
