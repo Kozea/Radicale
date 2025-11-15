@@ -902,8 +902,15 @@ Available types are:
   Requires validation, otherwise clients can supply the header themselves,
   which then is unconditionally trusted.
 
+* `http_remote_user` _(>= 3.5.9)_
+  Takes the username from the Remote-User HTTP header `HTTP_REMOTE_USER` and disables
+  Radicale's internal HTTP authentication. This can be used to provide the
+  username from a reverse proxy which authenticated the client upfront.
+  Requires validation, otherwise clients can supply the header themselves,
+  which then is unconditionally trusted.
+
 * `http_x_remote_user`  
-  Takes the username from the `X-Remote-User` HTTP header and disables
+  Takes the username from the X-Remote-User HTTP header `HTTP_X_REMOTE_USER` and disables
   Radicale's internal HTTP authentication. This can be used to provide the
   username from a reverse proxy which authenticated the client upfront.
   Requires validation, otherwise clients can supply the header themselves,

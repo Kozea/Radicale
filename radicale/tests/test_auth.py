@@ -263,6 +263,23 @@ class TestBaseAuthRequests(BaseTest):
         href_element = prop.find(xmlutils.make_clark("D:href"))
         assert href_element is not None and href_element.text == "/test/"
 
+    def test_http_remote_user(self) -> None:
+        self.configure({"auth": {"type": "http_remote_user"}})
+        _, responses = self.propfind("/", """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""", HTTP_REMOTE_USER="test")
+        assert responses is not None
+        response = responses["/"]
+        assert not isinstance(response, int)
+        status, prop = response["D:current-user-principal"]
+        assert status == 200
+        href_element = prop.find(xmlutils.make_clark("D:href"))
+        assert href_element is not None and href_element.text == "/test/"
+
     def test_http_x_remote_user(self) -> None:
         self.configure({"auth": {"type": "http_x_remote_user"}})
         _, responses = self.propfind("/", """\
