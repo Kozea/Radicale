@@ -1853,7 +1853,7 @@ permissions: RrWw""")
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
         sync_token, _ = self._report_sync_token(
-            calendar_path, "http://radicale.org/ns/sync/INVALID", login="testuser:", remote_host = "192.0.2.1", remote_useragent = "Testclient/1.0")
+            calendar_path, "http://radicale.org/ns/sync/INVALID", login="testuser:", remote_host="192.0.2.1", remote_useragent="Testclient/1.0")
         assert not sync_token
 
     def test_propfind_sync_token(self) -> None:
