@@ -1847,6 +1847,15 @@ permissions: RrWw""")
             calendar_path, "http://radicale.org/ns/sync/INVALID")
         assert not sync_token
 
+    def test_report_sync_collection_invalid_sync_token_with_user(self) -> None:
+        """Test sync-collection report with an invalid sync token and user+client"""
+        self.configure({"auth": {"type": "none"}})
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+        sync_token, _ = self._report_sync_token(
+            calendar_path, "http://radicale.org/ns/sync/INVALID", login="testuser:")
+        assert not sync_token
+
     def test_propfind_sync_token(self) -> None:
         """Retrieve the sync-token with a propfind request"""
         calendar_path = "/calendar.ics/"
