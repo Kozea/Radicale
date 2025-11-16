@@ -59,7 +59,7 @@ class ApplicationPartGet(ApplicationBase):
         return value
 
     def do_GET(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-               user: str) -> types.WSGIResponse:
+               user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage GET request."""
         # Redirect to /.web if the root path is requested
         if not pathutils.strip_path(path):

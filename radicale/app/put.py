@@ -142,7 +142,7 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
 class ApplicationPartPut(ApplicationBase):
 
     def do_PUT(self, environ: types.WSGIEnviron, base_prefix: str,
-               path: str, user: str) -> types.WSGIResponse:
+               path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PUT request."""
         access = Access(self._rights, user, path)
         if not access.check("w"):

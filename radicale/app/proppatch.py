@@ -73,7 +73,7 @@ def xml_proppatch(base_prefix: str, path: str,
 class ApplicationPartProppatch(ApplicationBase):
 
     def do_PROPPATCH(self, environ: types.WSGIEnviron, base_prefix: str,
-                     path: str, user: str) -> types.WSGIResponse:
+                     path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PROPPATCH request."""
         access = Access(self._rights, user, path)
         if not access.check("w"):

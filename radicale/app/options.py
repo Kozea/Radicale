@@ -27,7 +27,7 @@ from radicale.app.base import ApplicationBase
 class ApplicationPartOptions(ApplicationBase):
 
     def do_OPTIONS(self, environ: types.WSGIEnviron, base_prefix: str,
-                   path: str, user: str) -> types.WSGIResponse:
+                   path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage OPTIONS request."""
         headers = {
             "Allow": ", ".join(

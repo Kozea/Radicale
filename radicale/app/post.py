@@ -26,7 +26,7 @@ from radicale.app.base import ApplicationBase
 class ApplicationPartPost(ApplicationBase):
 
     def do_POST(self, environ: types.WSGIEnviron, base_prefix: str,
-                path: str, user: str) -> types.WSGIResponse:
+                path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage POST request."""
         if path == "/.web" or path.startswith("/.web/"):
             return self._web.post(environ, base_prefix, path, user)

@@ -48,7 +48,7 @@ def get_server_netloc(environ: types.WSGIEnviron, force_port: bool = False):
 class ApplicationPartMove(ApplicationBase):
 
     def do_MOVE(self, environ: types.WSGIEnviron, base_prefix: str,
-                path: str, user: str) -> types.WSGIResponse:
+                path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage MOVE request."""
         raw_dest = environ.get("HTTP_DESTINATION", "")
         to_url = urlparse(raw_dest)

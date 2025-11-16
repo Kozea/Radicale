@@ -377,7 +377,7 @@ class ApplicationPartPropfind(ApplicationBase):
                 yield item, permission
 
     def do_PROPFIND(self, environ: types.WSGIEnviron, base_prefix: str,
-                    path: str, user: str) -> types.WSGIResponse:
+                    path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PROPFIND request."""
         access = Access(self._rights, user, path)
         if not access.check("r"):
