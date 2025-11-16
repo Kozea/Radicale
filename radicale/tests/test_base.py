@@ -1687,7 +1687,7 @@ permissions: RrWw""")
 </C:free-busy-query>""", 400, is_xml=False)
 
     def _report_sync_token(
-            self, calendar_path: str, sync_token: Optional[str] = None
+            self, calendar_path: str, sync_token: Optional[str] = None, **kwargs
             ) -> Tuple[str, RESPONSES]:
         sync_token_xml = (
             "<sync-token><![CDATA[%s]]></sync-token>" % sync_token
@@ -1699,7 +1699,7 @@ permissions: RrWw""")
         <getetag />
     </prop>
     %s
-</sync-collection>""" % sync_token_xml)
+</sync-collection>""" % sync_token_xml, **kwargs)
         xml = DefusedET.fromstring(answer)
         if status in (403, 409):
             assert xml.tag == xmlutils.make_clark("D:error")
@@ -1845,6 +1845,15 @@ permissions: RrWw""")
         self.mkcalendar(calendar_path)
         sync_token, _ = self._report_sync_token(
             calendar_path, "http://radicale.org/ns/sync/INVALID")
+        assert not sync_token
+
+    def test_report_sync_collection_invalid_sync_token_with_user(self) -> None:
+        """Test sync-collection report with an invalid sync token and user+host+useragent"""
+        self.configure({"auth": {"type": "none"}})
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+        sync_token, _ = self._report_sync_token(
+            calendar_path, "http://radicale.org/ns/sync/INVALID", login="testuser:", remote_host="192.0.2.1", remote_useragent="Testclient/1.0")
         assert not sync_token
 
     def test_propfind_sync_token(self) -> None:

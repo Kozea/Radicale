@@ -149,7 +149,7 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
 def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                collection: storage.BaseCollection, encoding: str,
                unlock_storage_fn: Callable[[], None],
-               max_occurrence: int = 0,
+               max_occurrence: int = 0, user: str = "", remote_addr: str = "", remote_useragent: str = ""
                ) -> Tuple[int, ET.Element]:
     """Read and answer REPORT requests that return XML.
 
@@ -213,8 +213,8 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
             sync_token, names = collection.sync(old_sync_token)
         except ValueError as e:
             # Invalid sync token
-            logger.warning("Client provided invalid sync token %r: %s",
-                           old_sync_token, e, exc_info=True)
+            logger.warning("Client provided invalid sync token for path %r (user %r from %s%s): %s",
+                           path, user, remote_addr, remote_useragent, e, exc_info=True)
             # client.CONFLICT doesn't work with some clients (e.g. InfCloud)
             return (client.FORBIDDEN,
                     xmlutils.webdav_error("D:valid-sync-token"))
@@ -776,7 +776,7 @@ def test_filter(collection_tag: str, item: radicale_item.Item,
 class ApplicationPartReport(ApplicationBase):
 
     def do_REPORT(self, environ: types.WSGIEnviron, base_prefix: str,
-                  path: str, user: str) -> types.WSGIResponse:
+                  path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage REPORT request."""
         access = Access(self._rights, user, path)
         if not access.check("r"):
@@ -820,7 +820,7 @@ class ApplicationPartReport(ApplicationBase):
                 try:
                     status, xml_answer = xml_report(
                         base_prefix, path, xml_content, collection, self._encoding,
-                        lock_stack.close, max_occurrence)
+                        lock_stack.close, max_occurrence, user, remote_host, remote_useragent)
                 except ValueError as e:
                     logger.warning(
                         "Bad REPORT request on %r: %s", path, e, exc_info=True)

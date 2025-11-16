@@ -371,7 +371,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
         if not login or user:
             status, headers, answer = function(
-                environ, base_prefix, path, user)
+                environ, base_prefix, path, user, remote_host, remote_useragent)
             if (status, headers, answer) == httputils.NOT_ALLOWED:
                 logger.info("Access to %r denied for %s", path,
                             repr(user) if user else "anonymous user")

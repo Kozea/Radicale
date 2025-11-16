@@ -55,7 +55,7 @@ def xml_delete(base_prefix: str, path: str, collection: storage.BaseCollection,
 class ApplicationPartDelete(ApplicationBase):
 
     def do_DELETE(self, environ: types.WSGIEnviron, base_prefix: str,
-                  path: str, user: str) -> types.WSGIResponse:
+                  path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage DELETE request."""
         access = Access(self._rights, user, path)
         if not access.check("w"):

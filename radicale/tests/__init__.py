@@ -1,6 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2023 Unrud <unrud@outlook.com>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,6 +80,8 @@ class BaseTest:
         if http_if_match is not None and not isinstance(http_if_match, str):
             raise TypeError("http_if_match argument must be %r, not %r" %
                             (str, type(http_if_match)))
+        remote_useragent = kwargs.pop("remote_useragent", None)
+        remote_host = kwargs.pop("remote_host", None)
         environ: Dict[str, Any] = {k.upper(): v for k, v in kwargs.items()}
         for k, v in environ.items():
             if not isinstance(v, str):
@@ -90,6 +93,10 @@ class BaseTest:
                     login.encode(encoding)).decode()
         if http_if_match:
             environ["HTTP_IF_MATCH"] = http_if_match
+        if remote_useragent:
+            environ["HTTP_USER_AGENT"] = remote_useragent
+        if remote_host:
+            environ["REMOTE_ADDR"] = remote_host
         environ["REQUEST_METHOD"] = method.upper()
         environ["PATH_INFO"] = path
         if data is not None:

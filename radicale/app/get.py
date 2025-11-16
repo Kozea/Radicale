@@ -2,7 +2,8 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2023 Unrud <unrud@outlook.com>
+# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +59,7 @@ class ApplicationPartGet(ApplicationBase):
         return value
 
     def do_GET(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-               user: str) -> types.WSGIResponse:
+               user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage GET request."""
         # Redirect to /.web if the root path is requested
         if not pathutils.strip_path(path):

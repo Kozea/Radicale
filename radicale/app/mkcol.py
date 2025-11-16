@@ -33,7 +33,7 @@ from radicale.log import logger
 class ApplicationPartMkcol(ApplicationBase):
 
     def do_MKCOL(self, environ: types.WSGIEnviron, base_prefix: str,
-                 path: str, user: str) -> types.WSGIResponse:
+                 path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage MKCOL request."""
         permissions = self._rights.authorization(user, path)
         if not rights.intersect(permissions, "Ww"):
