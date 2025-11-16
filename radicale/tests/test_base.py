@@ -1848,7 +1848,7 @@ permissions: RrWw""")
         assert not sync_token
 
     def test_report_sync_collection_invalid_sync_token_with_user(self) -> None:
-        """Test sync-collection report with an invalid sync token and user+client"""
+        """Test sync-collection report with an invalid sync token and user"""
         self.configure({"auth": {"type": "none"}})
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
