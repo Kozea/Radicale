@@ -80,6 +80,8 @@ class BaseTest:
         if http_if_match is not None and not isinstance(http_if_match, str):
             raise TypeError("http_if_match argument must be %r, not %r" %
                             (str, type(http_if_match)))
+        remote_useragent = kwargs.pop("remote_useragent", None)
+        remote_host = kwargs.pop("remote_host", None)
         environ: Dict[str, Any] = {k.upper(): v for k, v in kwargs.items()}
         for k, v in environ.items():
             if not isinstance(v, str):
@@ -91,6 +93,10 @@ class BaseTest:
                     login.encode(encoding)).decode()
         if http_if_match:
             environ["HTTP_IF_MATCH"] = http_if_match
+        if remote_useragent:
+            environ["HTTP_USER_AGENT"] = remote_useragent
+        if remote_host:
+            environ["REMOTE_ADDR"] = remote_host
         environ["REQUEST_METHOD"] = method.upper()
         environ["PATH_INFO"] = path
         if data is not None:
