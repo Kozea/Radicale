@@ -2,7 +2,7 @@
 
 ## 3.5.9.dev
 * Extend: [auth] add support for type http_remote_user
-* Extend: logging of invalid sync-token with user and path
+* Extend: logging of invalid sync-token with user, path, remote host and useragent
 
 ## 3.5.8
 * Extend: [auth] re-factor & overhaul LDAP authentication, especially for Python's ldap module
