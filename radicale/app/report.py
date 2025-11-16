@@ -213,8 +213,8 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
             sync_token, names = collection.sync(old_sync_token)
         except ValueError as e:
             # Invalid sync token
-            logger.warning("Client provided invalid sync token for path %r (user %r): %s",
-                           path, user, e, exc_info=True)
+            logger.warning("Client provided invalid sync token for path %r (user %r from %s%s): %s",
+                           path, user, remote_addr, remote_useragent, e, exc_info=True)
             # client.CONFLICT doesn't work with some clients (e.g. InfCloud)
             return (client.FORBIDDEN,
                     xmlutils.webdav_error("D:valid-sync-token"))
