@@ -1687,7 +1687,7 @@ permissions: RrWw""")
 </C:free-busy-query>""", 400, is_xml=False)
 
     def _report_sync_token(
-            self, calendar_path: str, sync_token: Optional[str] = None
+            self, calendar_path: str, sync_token: Optional[str] = None, **kwargs
             ) -> Tuple[str, RESPONSES]:
         sync_token_xml = (
             "<sync-token><![CDATA[%s]]></sync-token>" % sync_token
@@ -1699,7 +1699,7 @@ permissions: RrWw""")
         <getetag />
     </prop>
     %s
-</sync-collection>""" % sync_token_xml)
+</sync-collection>""" % sync_token_xml, **kwargs)
         xml = DefusedET.fromstring(answer)
         if status in (403, 409):
             assert xml.tag == xmlutils.make_clark("D:error")
