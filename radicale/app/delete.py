@@ -87,7 +87,7 @@ class ApplicationPartDelete(ApplicationBase):
                             path=access.path,
                             content=i.uid,
                             uid=i.uid,
-                            old_content=item.serialize(),  # type: ignore
+                            old_content=i.serialize(),  # type: ignore
                             new_content=None
                         )
                     )
