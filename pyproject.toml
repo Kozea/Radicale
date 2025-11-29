@@ -3,7 +3,7 @@ name = "Radicale"
 # When the version is updated, a new section in the CHANGELOG.md file must be
 # added too.
 readme = "README.md"
-version = "3.5.9.dev"
+version = "3.5.9"
 authors = [{name = "Guillaume Ayoub", email = "guillaume.ayoub@kozea.fr"}, {name = "Unrud", email = "unrud@outlook.com"}, {name = "Peter Bieringer", email = "pb@bieringer.de"}]
 license = {text = "GNU GPL v3"}
 description = "CalDAV and CardDAV Server"
