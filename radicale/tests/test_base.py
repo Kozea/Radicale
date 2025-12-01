@@ -142,6 +142,20 @@ permissions: RrWw""")
         assert "Event" in answer
         assert "UID:event" in answer
 
+    def test_add_event_broken(self) -> None:
+        """Add a broken event."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("broken-vevent.ics")
+        path = "/calendar.ics/broken-vevent.ics"
+        self.put(path, event, check=400)
+
+    def test_add_events_broken2(self) -> None:
+        """Add a broken event (2nd one is broken)."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("broken-vevents.ics")
+        path = "/calendar.ics/"
+        self.put(path, event, check=400)
+
     def test_add_event_without_uid(self) -> None:
         """Add an event without UID."""
         self.mkcalendar("/calendar.ics/")
@@ -200,6 +214,34 @@ permissions: RrWw""")
         assert "UID:contact1" in answer
         _, answer = self.get(path)
         assert "UID:contact1" in answer
+
+    def test_add_contact_broken(self) -> None:
+        """Add a broken contact."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("broken-vcard.vcf")
+        path = "/contacts.vcf/broken-vcards.vcf"
+        self.put(path, contact, check=400)
+
+    def test_add_contacts_broken(self) -> None:
+        """Add broken contacts."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("broken-vcards.vcf")
+        path = "/contacts.vcf/"
+        self.put(path, contact, check=400)
+
+    def test_add_contacts_broken2(self) -> None:
+        """Add broken contacts (only 2nd one is broken)."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("broken-vcards2.vcf")
+        path = "/contacts.vcf/"
+        self.put(path, contact, check=400)
+
+    def test_add_contacts_broken2_no_uid(self) -> None:
+        """Add broken contacts (only 2nd one is broken and has no UID)."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("broken-vcards2-no_uid.vcf")
+        path = "/contacts.vcf/"
+        self.put(path, contact, check=400)
 
     def test_add_contact_photo_with_data_uri(self) -> None:
         """Test workaround for broken PHOTO data from InfCloud"""
