@@ -354,7 +354,10 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
         for child, is_recurrence, recurrences in get_children(
                 vobject_item.vevent_list):
             # TODO: check if there's a timezone
-            dtstart = child.dtstart.value
+            try:
+                dtstart = child.dtstart.value
+            except AttributeError:
+                raise AttributeError("missing DTSTART")
 
             if child.rruleset:
                 dtstarts, infinity = getrruleset(child, recurrences)
