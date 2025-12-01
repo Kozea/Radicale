@@ -1,6 +1,8 @@
 # Changelog
 
 ## 3.5.10.dev
+* Improve: logging of broken calendar items during PUT
+* Add: logging of broken contact items during PUT
 
 ## 3.5.9
 * Extend: [auth] add support for type http_remote_user
