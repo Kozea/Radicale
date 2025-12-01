@@ -108,7 +108,19 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
                 for vobject_item in vobject_items:
                     item = radicale_item.Item(collection_path=collection_path,
                                               vobject_item=vobject_item)
-                    item.prepare()
+                    logger.debug("Prepare item with UID '%s'", item.uid)
+                    try:
+                        item.prepare()
+                    except (RuntimeError, ValueError, AttributeError) as e:
+                        if logger.isEnabledFor(logging.DEBUG):
+                            if item._text is None:
+                                content = vobject_item
+                            else:
+                                content = item._text
+                            logger.warning("Problem during prepare item with UID '%s' (content below): %s\n%s", item.uid, e, content)
+                        else:
+                            logger.warning("Problem during prepare item with UID '%s' (content suppressed in this loglevel): %s", item.uid, e)
+                        raise
                     items.append(item)
             elif not write_whole_collection:
                 vobject_item, = vobject_items
