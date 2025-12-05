@@ -4,6 +4,7 @@
 * Improve: logging of broken calendar items during PUT
 * Add: logging of broken contact items during PUT
 * Extend: [auth] imap: add fallback support for LOGIN towards remote IMAP server (replaced in 3.5.0)
+* Fix: improper detection of HTTP_X_FORWARDED_PORT on MOVE
 
 ## 3.5.9
 * Extend: [auth] add support for type http_remote_user
