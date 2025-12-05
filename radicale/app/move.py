@@ -34,7 +34,7 @@ def get_server_netloc(environ: types.WSGIEnviron, force_port: bool = False):
         host = environ["HTTP_X_FORWARDED_HOST"]
         proto = environ.get("HTTP_X_FORWARDED_PROTO") or "http"
         port = "443" if proto == "https" else "80"
-        port = environ["HTTP_X_FORWARDED_PORT"] or port
+        port = environ.get("HTTP_X_FORWARDED_PORT") or port
     else:
         host = environ.get("HTTP_HOST") or environ["SERVER_NAME"]
         proto = environ["wsgi.url_scheme"]
