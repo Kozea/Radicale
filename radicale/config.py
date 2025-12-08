@@ -41,11 +41,11 @@ from radicale import auth, hook, rights, storage, types, web
 from radicale.hook import email
 from radicale.item import check_and_sanitize_props
 
-from radicale import app # isort:skip (circular import issue)
-
 DEFAULT_CONFIG_PATH: str = os.pathsep.join([
     "?/etc/radicale/config",
     "?~/.config/radicale/config"])
+
+PROFILING: Sequence[str] = ("per_request", "per_request_method", "none")
 
 
 def positive_int(value: Any) -> int:
@@ -69,6 +69,12 @@ def positive_float(value: Any) -> float:
 def logging_level(value: Any) -> str:
     if value not in ("debug", "info", "warning", "error", "critical"):
         raise ValueError("unsupported level: %r" % value)
+    return value
+
+
+def profiling(value: Any) -> str:
+    if value not in PROFILING:
+        raise ValueError("unsupported profiling: %r" % value)
     return value
 
 
@@ -584,10 +590,9 @@ This is an automated message. Please do not reply.""",
             "help": "log storage cache action on level=debug",
             "type": bool}),
         ("profiling", {
-            "value": "per_request_method",
+            "value": "none",
             "help": "log profiling data level=info",
-            "type": str,
-            "internal": app.PROFILING}),
+            "type": profiling}),
         ("profiling_per_request_min_duration", {
             "value": "3",
             "help": "log profiling data per request minimum duration (seconds)",

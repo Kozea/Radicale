@@ -1696,9 +1696,10 @@ _(>= 3.5.10)_
 
 Log profiling data on level=info
 
-Default: `per_request`
+Default: `none`
 
 One of
+* `none` (disabled)
 * `per_request` (above minimum duration)
 * `per_request_method` (regular interval)
 

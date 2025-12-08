@@ -322,8 +322,8 @@
 #storage_cache_actions_on_debug = False
 
 # Log profiling data on level=info
-# Value: per_request | per_request_method
-#profiling = per_request_method
+# Value: per_request | per_request_method | none
+#profiling = none
 
 # Log profiling data per request minium duration (seconds)
 #profiling_per_request_min_duration = 3
