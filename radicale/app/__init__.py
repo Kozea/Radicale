@@ -166,12 +166,12 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 s = io.StringIO()
                 stats = pstats.Stats(self.profiler_per_request_method[method], stream=s).sort_stats('cumulative')
                 stats.print_stats(self._profiling_top_x_functions)  # Print top X functions
-                logger.info("Profiling data per request method after %d seconds and %d requests: %s: %s", profiler_timedelta_start, self.profiler_per_request_method_counter[method], method, s.getvalue())
+                logger.info("Profiling data per request method %s after %d seconds and %d requests: %s", method, profiler_timedelta_start, self.profiler_per_request_method_counter[method], s.getvalue())
             else:
                 if shutdown:
-                    logger.info("Profiling data per request method after %d seconds: %s: (no requests seen so far)", profiler_timedelta_start, method)
+                    logger.info("Profiling data per request method %s after %d seconds: (no request seen so far)", method, profiler_timedelta_start)
                 else:
-                    logger.debug("Profiling data per request method after %d seconds: %s: (no requests seen so far)", profiler_timedelta_start, method)
+                    logger.debug("Profiling data per request method %s after %d seconds: (no request seen so far)", method, profiler_timedelta_start)
 
     def _scrub_headers(self, environ: types.WSGIEnviron) -> types.WSGIEnviron:
         """Mask passwords and cookies."""
@@ -268,14 +268,14 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 if profiler is not None:
                     # Profiling per request
                     if time_delta_seconds < self._profiling_per_request_min_duration:
-                        logger.debug("Profiling data %s response for %r%s: (supressed because duration below minimum %.3f < %.3f)", request_method, unsafe_path, depthinfo, time_delta_seconds, self._profiling_per_request_min_duration)
+                        logger.debug("Profiling data per request %s for %r%s: (suppressed because duration below minimum %.3f < %.3f)", request_method, unsafe_path, depthinfo, time_delta_seconds, self._profiling_per_request_min_duration)
                     else:
                         s = io.StringIO()
                         stats = pstats.Stats(profiler, stream=s).sort_stats('cumulative')
                         stats.print_stats(self._profiling_top_x_functions)  # Print top X functions
-                        logger.info("Profiling data %s response for %r%s: %s", request_method, unsafe_path, depthinfo, s.getvalue())
+                        logger.info("Profiling data per request %s for %r%s: %s", request_method, unsafe_path, depthinfo, s.getvalue())
                 else:
-                    logger.debug("Profiling data %s response for %r%s: (supressed because of no data)", request_method, unsafe_path, depthinfo)
+                    logger.debug("Profiling data per request %s for %r%s: (suppressed because of no data)", request_method, unsafe_path, depthinfo)
             elif self._profiling_per_request_method:
                 self.profiler_per_request_method[request_method].disable()
                 self.profiler_per_request_method_counter[request_method] += 1
