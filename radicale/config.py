@@ -41,6 +41,8 @@ from radicale import auth, hook, rights, storage, types, web
 from radicale.hook import email
 from radicale.item import check_and_sanitize_props
 
+from radicale import app # isort:skip (circular import issue)
+
 DEFAULT_CONFIG_PATH: str = os.pathsep.join([
     "?/etc/radicale/config",
     "?~/.config/radicale/config"])
@@ -581,6 +583,23 @@ This is an automated message. Please do not reply.""",
             "value": "False",
             "help": "log storage cache action on level=debug",
             "type": bool}),
+        ("profiling", {
+            "value": "per_request_method",
+            "help": "log profiling data level=info",
+            "type": str,
+            "internal": app.PROFILING}),
+        ("profiling_per_request_min_duration", {
+            "value": "3",
+            "help": "log profiling data per request minimum duration (seconds)",
+            "type": int}),
+        ("profiling_per_request_method_interval", {
+            "value": "600",
+            "help": "log profiling data per request method interval (seconds)",
+            "type": int}),
+        ("profiling_top_x_functions", {
+            "value": "10",
+            "help": "log profiling top X functions (limit)",
+            "type": int}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs",
