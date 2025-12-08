@@ -36,7 +36,7 @@ import random
 import time
 import zlib
 from http import client
-from typing import Iterable, List, Mapping, Sequence, Tuple, Union
+from typing import Iterable, List, Mapping, Tuple, Union
 
 from radicale import config, httputils, log, pathutils, types
 from radicale.app.base import ApplicationBase
@@ -59,8 +59,6 @@ from radicale.log import logger
 _IntermediateResponse = Tuple[str, List[Tuple[str, str]], Iterable[bytes]]
 
 REQUEST_METHODS = ["DELETE", "GET", "HEAD", "MKCALENDAR", "MKCOL", "MOVE", "OPTIONS", "POST", "PROPFIND", "PROPPATCH", "PUT", "REPORT"]
-
-PROFILING: Sequence[str] = ("per_request", "per_request_method")
 
 
 class Application(ApplicationPartDelete, ApplicationPartHead,
@@ -134,14 +132,13 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         self._profiling_per_request_min_duration = configuration.get("logging", "profiling_per_request_min_duration")
         self._profiling_per_request_method_interval = configuration.get("logging", "profiling_per_request_method_interval")
         self._profiling_top_x_functions = configuration.get("logging", "profiling_top_x_functions")
-        if self._profiling == "per_request":
-            self._profiling_per_request = True
-        elif self._profiling == "per_request_method":
-            self._profiling_per_request_method = True
-        else:
-            logger.warning("profiling: %s (not supported, disabled)", self._profiling)
-        if self._profiling_per_request or self._profiling_per_request_method:
+        if self._profiling in config.PROFILING:
             logger.info("profiling: %s", self._profiling)
+            if self._profiling == "per_request":
+                self._profiling_per_request = True
+            elif self._profiling == "per_request_method":
+                self._profiling_per_request_method = True
+        if self._profiling_per_request or self._profiling_per_request_method:
             logger.info("profiling top X functions: %d", self._profiling_top_x_functions)
         if self._profiling_per_request:
             logger.info("profiling per request minimum duration: %d (below are skipped)", self._profiling_per_request_min_duration)
