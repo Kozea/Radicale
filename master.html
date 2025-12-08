@@ -1729,6 +1729,38 @@ Allows creation and management of address books and calendars.</p></li>
 <p>Log storage cache actions on <code>level = debug</code></p>
 <p>Default: <code>False</code></p>
 </section>
+<section class="level5" id="profiling_per_request">
+<h5>profiling_per_request <a class="headerlink" href="#profiling_per_request">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log profiling data on level=info</p>
+<p>Default: <code>none</code></p>
+<p>One of</p>
+<ul>
+<li><code>none</code> (disabled)</li>
+<li><code>per_request</code> (above minimum duration)</li>
+<li><code>per_request_method</code> (regular interval)</li>
+</ul>
+</section>
+<section class="level5" id="profiling_per_request_min_duration">
+<h5>profiling_per_request_min_duration <a class="headerlink" href="#profiling_per_request_min_duration">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log profiling data per request minimum duration (seconds) before
+logging, otherwise skip</p>
+<p>Default: <code>3</code></p>
+</section>
+<section class="level5" id="profiling_per_request_method_interval">
+<h5>profiling_per_request_method_interval <a class="headerlink" href="#profiling_per_request_method_interval">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log profiling data per method interval (seconds) Triggered by
+request, not active on idle systems</p>
+<p>Default: <code>600</code></p>
+</section>
+<section class="level5" id="profiling_top_x_functions">
+<h5>profiling_top_x_functions <a class="headerlink" href="#profiling_top_x_functions">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log profiling top X functions (limit)</p>
+<p>Default: <code>10</code></p>
+</section>
 </section>
 <section class="level4" id="headers">
 <h4>[headers] <a class="headerlink" href="#headers">&para;</a></h4>
