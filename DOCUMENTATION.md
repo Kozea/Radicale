@@ -1690,6 +1690,44 @@ Log storage cache actions on `level = debug`
 
 Default: `False`
 
+##### profiling_per_request
+
+_(>= 3.5.10)_
+
+Log profiling data on level=info
+
+Default: `none`
+
+One of
+* `none` (disabled)
+* `per_request` (above minimum duration)
+* `per_request_method` (regular interval)
+
+##### profiling_per_request_min_duration
+
+_(>= 3.5.10)_
+
+Log profiling data per request minimum duration (seconds) before logging, otherwise skip
+
+Default: `3`
+
+##### profiling_per_request_method_interval
+
+_(>= 3.5.10)_
+
+Log profiling data per method interval (seconds)
+Triggered by request, not active on idle systems
+
+Default: `600`
+
+##### profiling_top_x_functions
+
+_(>= 3.5.10)_
+
+Log profiling top X functions (limit)
+
+Default: `10`
+
 #### [headers]
 
 This section can be used to specify additional HTTP headers that will be sent to clients.

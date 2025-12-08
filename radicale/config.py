@@ -45,6 +45,8 @@ DEFAULT_CONFIG_PATH: str = os.pathsep.join([
     "?/etc/radicale/config",
     "?~/.config/radicale/config"])
 
+PROFILING: Sequence[str] = ("per_request", "per_request_method", "none")
+
 
 def positive_int(value: Any) -> int:
     value = int(value)
@@ -67,6 +69,12 @@ def positive_float(value: Any) -> float:
 def logging_level(value: Any) -> str:
     if value not in ("debug", "info", "warning", "error", "critical"):
         raise ValueError("unsupported level: %r" % value)
+    return value
+
+
+def profiling(value: Any) -> str:
+    if value not in PROFILING:
+        raise ValueError("unsupported profiling: %r" % value)
     return value
 
 
@@ -581,6 +589,22 @@ This is an automated message. Please do not reply.""",
             "value": "False",
             "help": "log storage cache action on level=debug",
             "type": bool}),
+        ("profiling", {
+            "value": "none",
+            "help": "log profiling data level=info",
+            "type": profiling}),
+        ("profiling_per_request_min_duration", {
+            "value": "3",
+            "help": "log profiling data per request minimum duration (seconds)",
+            "type": int}),
+        ("profiling_per_request_method_interval", {
+            "value": "600",
+            "help": "log profiling data per request method interval (seconds)",
+            "type": int}),
+        ("profiling_top_x_functions", {
+            "value": "10",
+            "help": "log profiling top X functions (limit)",
+            "type": int}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs",

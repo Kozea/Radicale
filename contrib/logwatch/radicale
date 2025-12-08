@@ -126,11 +126,35 @@ while (defined($ThisLine = <STDIN>)) {
    elsif ( $ThisLine =~ / (Failed login attempt) /o ) {
       $OtherEvents{$1}++;
    }
+   elsif ( $ThisLine =~ / (Profiling data per request method \S+) /o ) {
+      my $info = $1;
+      if ( $ThisLine =~ /(no request seen so far)/o ) {
+         $OtherEvents{$info . " - " . $1}++;
+      } else {
+         $OtherEvents{$info}++;
+      };
+   }
+   elsif ( $ThisLine =~ / (Profiling data per request \S+) /o ) {
+      my $info = $1;
+      if ( $ThisLine =~ /(suppressed because duration below minimum|suppressed because of no data)/o ) {
+         $OtherEvents{$info . " - " . $1}++;
+      } else {
+         $OtherEvents{$info}++;
+      };
+   }
    elsif ( $ThisLine =~ /\[(DEBUG|INFO)\] /o ) {
       # skip if DEBUG+INFO
    }
    else {
       # Report any unmatched entries...
+      if ($ThisLine =~ /^({\'| )/o) {
+         # skip profiling or raw header data
+         next;
+      };
+      if ($ThisLine =~ /^$/o) {
+         # skip empty line
+         next;
+      };
       $ThisLine =~ s/^\[\d+(\/Thread-\d+)?\] //; # remove process/Thread ID
       chomp($ThisLine);
       $OtherList{$ThisLine}++;
