@@ -321,6 +321,20 @@
 # Log storage cache actions on level=debug
 #storage_cache_actions_on_debug = False
 
+# Log profiling data on level=info
+# Value: per_request | per_request_method
+#profiling = per_request_method
+
+# Log profiling data per request minium duration (seconds)
+#profiling_per_request_min_duration = 3
+
+# Log profiling data per request method interval
+#profiling_per_request_method_interval = 600
+
+# Log profiling top X functions (limit)
+#profiling_top_x_functions = 10
+
+
 [headers]
 
 # Additional HTTP headers
