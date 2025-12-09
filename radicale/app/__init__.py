@@ -133,7 +133,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         self._profiling_per_request_method_interval = configuration.get("logging", "profiling_per_request_method_interval")
         self._profiling_top_x_functions = configuration.get("logging", "profiling_top_x_functions")
         if self._profiling in config.PROFILING:
-            logger.info("profiling: %s", self._profiling)
+            logger.info("profiling: %r", self._profiling)
             if self._profiling == "per_request":
                 self._profiling_per_request = True
             elif self._profiling == "per_request_method":
