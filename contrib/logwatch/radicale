@@ -27,7 +27,7 @@ sub ResponseTimesMinMaxSum($$) {
 
    if (! defined $ResponseTimes{$req}->{'min'}) {
       $ResponseTimes{$req}->{'min'} = $time;
-   } elsif ($ResponseTimes->{$req}->{'min'} > $time) {
+   } elsif ($ResponseTimes{$req}->{'min'} > $time) {
       $ResponseTimes{$req}->{'min'} = $time;
    }
 
