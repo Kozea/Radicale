@@ -1719,6 +1719,22 @@ Log profiling data per request minimum duration (seconds) before logging, otherw
 
 Default: `3`
 
+##### profiling_per_request_header
+
+_(>= 3.5.10)_
+
+Log profiling request header (if passing minimum duration)
+
+Default: `False`
+
+##### profiling_per_request_xml
+
+_(>= 3.5.10)_
+
+Log profiling request XML (if passing minimum duration)
+
+Default: `False`
+
 ##### profiling_per_request_method_interval
 
 _(>= 3.5.10)_
