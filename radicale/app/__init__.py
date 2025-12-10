@@ -224,6 +224,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         unsafe_path = environ.get("PATH_INFO", "")
         https = environ.get("HTTPS", "")
         profiler = None
+        profiler_active = False
         xml_request = None
 
         context = AuthContext()
@@ -471,9 +472,19 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             # Profiling
             if self._profiling_per_request:
                 profiler = cProfile.Profile()
-                profiler.enable()
+                try:
+                    profiler.enable()
+                except ValueError:
+                    profiler_active = False
+                else:
+                    profiler_active = True
             elif self._profiling_per_request_method:
-                self.profiler_per_request_method[request_method].enable()
+                try:
+                    self.profiler_per_request_method[request_method].enable()
+                except ValueError:
+                    profiler_active = False
+                else:
+                    profiler_active = True
 
             status, headers, answer, xml_request = function(
                 environ, base_prefix, path, user, remote_host, remote_useragent)
@@ -481,9 +492,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             # Profiling
             if self._profiling_per_request:
                 if profiler is not None:
-                    profiler.disable()
+                    if profiler_active is True:
+                        profiler.disable()
             elif self._profiling_per_request_method:
-                self.profiler_per_request_method[request_method].disable()
+                if profiler_active is True:
+                    self.profiler_per_request_method[request_method].disable()
 
             if (status, headers, answer, xml_request) == httputils.NOT_ALLOWED:
                 logger.info("Access to %r denied for %s", path,
