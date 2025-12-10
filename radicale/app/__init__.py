@@ -175,9 +175,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         for method in REQUEST_METHODS:
             if self.profiler_per_request_method_counter[method] > 0:
                 s = io.StringIO()
+                s.write("**Profiling statistics BEGIN**\n")
                 stats = pstats.Stats(self.profiler_per_request_method[method], stream=s).sort_stats('cumulative')
                 stats.print_stats(self._profiling_top_x_functions)  # Print top X functions
-                logger.info("Profiling data per request method %s after %d seconds and %d requests: %s", method, profiler_timedelta_start, self.profiler_per_request_method_counter[method], utils.textwrap_str(s.getvalue(), -1))
+                s.write("**Profiling statistics END**\n")
+                logger.info("Profiling data per request method %s after %d seconds and %d requests:\n%s", method, profiler_timedelta_start, self.profiler_per_request_method_counter[method], utils.textwrap_str(s.getvalue(), -1))
             else:
                 if shutdown:
                     logger.info("Profiling data per request method %s after %d seconds: (no request seen so far)", method, profiler_timedelta_start)
@@ -284,17 +286,32 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
             # Profiling end
             if self._profiling_per_request:
-                if profiler is not None:
-                    # Profiling per request
-                    if time_delta_seconds < self._profiling_per_request_min_duration:
-                        logger.debug("Profiling data per request %s for %r%s: (suppressed because duration below minimum %.3f < %.3f)", request_method, unsafe_path, depthinfo, time_delta_seconds, self._profiling_per_request_min_duration)
+                if profiler_active is True:
+                    if profiler is not None:
+                        # Profiling per request
+                        if time_delta_seconds < self._profiling_per_request_min_duration:
+                            logger.debug("Profiling data per request %s for %r%s: (suppressed because duration below minimum %.3f < %.3f)", request_method, unsafe_path, depthinfo, time_delta_seconds, self._profiling_per_request_min_duration)
+                        else:
+                            s = io.StringIO()
+                            s.write("**Profiling statistics BEGIN**\n")
+                            stats = pstats.Stats(profiler, stream=s).sort_stats('cumulative')
+                            stats.print_stats(self._profiling_top_x_functions)  # Print top X functions
+                            s.write("**Profiling statistics END**\n")
+                            if self._profiling_per_request_header:
+                                s.write("**Profiling request header BEGIN**\n")
+                                s.write(pprint.pformat(self._scrub_headers(environ)))
+                                s.write("\n**Profiling request header END**")
+                            if self._profiling_per_request_xml:
+                                if xml_request is not None:
+                                    s.write("\n**Profiling request content (XML) BEGIN**\n")
+                                    if xml_request is not None:
+                                        s.write(xml_request)
+                                    s.write("**Profiling request content (XML) END**")
+                            logger.info("Profiling data per request %s for %r%s:\n%s", request_method, unsafe_path, depthinfo, utils.textwrap_str(s.getvalue(), -1))
                     else:
-                        s = io.StringIO()
-                        stats = pstats.Stats(profiler, stream=s).sort_stats('cumulative')
-                        stats.print_stats(self._profiling_top_x_functions)  # Print top X functions
-                        logger.info("Profiling data per request %s for %r%s: %s", request_method, unsafe_path, depthinfo, s.getvalue())
+                        logger.debug("Profiling data per request %s for %r%s: (suppressed because of no data)", request_method, unsafe_path, depthinfo)
                 else:
-                    logger.debug("Profiling data per request %s for %r%s: (suppressed because of no data)", request_method, unsafe_path, depthinfo)
+                    logger.info("Profiling data per request %s for %r%s: (not available because of concurrent running profiling request)", request_method, unsafe_path, depthinfo)
             elif self._profiling_per_request_method:
                 self.profiler_per_request_method[request_method].disable()
                 self.profiler_per_request_method_counter[request_method] += 1
