@@ -68,8 +68,21 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
         else:
             path = os.path.join(self._filesystem_path, href)
         try:
-            with open(path, "rb") as f:
-                raw_text = f.read()
+            if self._storage._use_mtime_and_size_for_item_cache is True:
+                # try to avoid "open"
+                if not os.path.isfile(path):
+                    if not os.path.exists(path):
+                        raise FileNotFoundError(path)
+                    if os.path.isdir(path):
+                        raise IsADirectoryError(path)
+                if not os.access(path, os.R_OK):
+                    raise PermissionError(path)
+            else:
+                with open(path, "rb") as f:
+                    # early read of the content
+                    if self._storage._debug_cache_actions is True:
+                        logger.debug("Item cache early read: %r", path)
+                    raw_text = f.read()
         except (FileNotFoundError, IsADirectoryError):
             return None
         except PermissionError:
@@ -100,6 +113,12 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                     # Check if another process created the file in the meantime
                     cache_content = self._load_item_cache(href, cache_hash)
                 if cache_content is None:
+                    if self._storage._use_mtime_and_size_for_item_cache is True:
+                        # delayed read of the content
+                        if self._storage._debug_cache_actions is True:
+                            logger.debug("Item cache late read : %r", path)
+                        with open(path, "rb") as f:
+                            raw_text = f.read()
                     try:
                         vobject_items = radicale_item.read_components(
                             raw_text.decode(self._encoding))
