@@ -577,6 +577,10 @@ This is an automated message. Please do not reply.""",
             "value": "False",
             "help": "log request content on level=debug",
             "type": bool}),
+        ("response_header_on_debug", {
+            "value": "False",
+            "help": "log response header on level=debug",
+            "type": bool}),
         ("response_content_on_debug", {
             "value": "False",
             "help": "log response content on level=debug",

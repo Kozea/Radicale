@@ -1666,6 +1666,14 @@ Log request content (body) on `level = debug`
 
 Default: `False`
 
+##### response_header_on_debug
+
+_(>= 3.5.10)_
+
+Log response header on `level = debug`
+
+Default: `False`
+
 ##### response_content_on_debug
 
 _(>= 3.2.2)_

@@ -312,6 +312,9 @@
 # Log request content on level=debug
 #request_content_on_debug = False
 
+# Log response header on level=debug
+#response_header_on_debug = False
+
 # Log response content on level=debug
 #response_content_on_debug = False
 
