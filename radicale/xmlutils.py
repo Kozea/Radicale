@@ -57,7 +57,7 @@ for short, url in NAMESPACES.items():
     ET.register_namespace("" if short == "D" else short, url)
 
 
-def pretty_xml(element: Union[ET.Element | None]) -> str:
+def pretty_xml(element: Union[ET.Element, None]) -> str:
     """Indent an ElementTree ``element`` and its children."""
     def pretty_xml_recursive(element: ET.Element, level: int) -> None:
         indent = "\n" + level * "  "
