@@ -127,4 +127,4 @@ class ApplicationPartMove(ApplicationBase):
                     logger.warning(
                         "Bad MOVE request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
-            return client.NO_CONTENT if to_item else client.CREATED, {}, None
+            return client.NO_CONTENT if to_item else client.CREATED, {}, None, None

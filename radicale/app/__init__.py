@@ -204,7 +204,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                              "%s", environ.get("REQUEST_METHOD", "unknown"),
                              environ.get("PATH_INFO", ""), e, exc_info=True)
                 # Make minimal response
-                status, raw_headers, raw_answer = (
+                status, raw_headers, raw_answer, xml_request = (
                     httputils.INTERNAL_SERVER_ERROR)
                 assert isinstance(raw_answer, str)
                 answer = raw_answer.encode("ascii")
@@ -224,12 +224,14 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         unsafe_path = environ.get("PATH_INFO", "")
         https = environ.get("HTTPS", "")
         profiler = None
+        xml_request = None
 
         context = AuthContext()
 
         """Manage a request."""
         def response(status: int, headers: types.WSGIResponseHeaders,
-                     answer: Union[None, str, bytes]) -> _IntermediateResponse:
+                     answer: Union[None, str, bytes],
+                     xml_request: Union[None, str] = None) -> _IntermediateResponse:
             """Helper to create response from internal types.WSGIResponse"""
             headers = dict(headers)
             content_encoding = "plain"
@@ -468,7 +470,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             elif self._profiling_per_request_method:
                 self.profiler_per_request_method[request_method].enable()
 
-            status, headers, answer = function(
+            status, headers, answer, xml_request = function(
                 environ, base_prefix, path, user, remote_host, remote_useragent)
 
             # Profiling
@@ -478,13 +480,13 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             elif self._profiling_per_request_method:
                 self.profiler_per_request_method[request_method].disable()
 
-            if (status, headers, answer) == httputils.NOT_ALLOWED:
+            if (status, headers, answer, xml_request) == httputils.NOT_ALLOWED:
                 logger.info("Access to %r denied for %s", path,
                             repr(user) if user else "anonymous user")
         else:
-            status, headers, answer = httputils.NOT_ALLOWED
+            status, headers, answer, xml_request = httputils.NOT_ALLOWED
 
-        if ((status, headers, answer) == httputils.NOT_ALLOWED and not user and
+        if ((status, headers, answer, xml_request) == httputils.NOT_ALLOWED and not user and
                 not external_login):
             # Unknown or unauthorized user
             logger.debug("Asking client for authentication")
@@ -494,4 +496,4 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 "WWW-Authenticate":
                 "Basic realm=\"%s\"" % self._auth_realm})
 
-        return response(status, headers, answer)
+        return response(status, headers, answer, xml_request)

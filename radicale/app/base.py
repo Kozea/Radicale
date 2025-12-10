@@ -93,7 +93,7 @@ class ApplicationBase:
         """Generate XML error response."""
         headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
         content = self._xml_response(xmlutils.webdav_error(human_tag))
-        return status, headers, content
+        return status, headers, content, None
 
 
 class Access:

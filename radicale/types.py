@@ -20,7 +20,7 @@ from typing import (Any, Callable, ContextManager, Iterator, List, Mapping,
                     runtime_checkable)
 
 WSGIResponseHeaders = Union[Mapping[str, str], Sequence[Tuple[str, str]]]
-WSGIResponse = Tuple[int, WSGIResponseHeaders, Union[None, str, bytes]]
+WSGIResponse = Tuple[int, WSGIResponseHeaders, Union[None, str, bytes], Union[None, str]]
 WSGIEnviron = Mapping[str, Any]
 WSGIStartResponse = Callable[[str, List[Tuple[str, str]]], Any]
 

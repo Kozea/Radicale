@@ -334,7 +334,7 @@ class ApplicationPartPut(ApplicationBase):
                 if (item and item.uid == prepared_item.uid):
                     logger.debug("PUT request updated existing item %r", path)
                     headers = {"ETag": etag}
-                    return client.NO_CONTENT, headers, None
+                    return client.NO_CONTENT, headers, None, None
 
             headers = {"ETag": etag}
-            return client.CREATED, headers, None
+            return client.CREATED, headers, None, None
