@@ -1702,19 +1702,25 @@ Allows creation and management of address books and calendars.</p></li>
 <section class="level5" id="request_header_on_debug">
 <h5>request_header_on_debug <a class="headerlink" href="#request_header_on_debug">&para;</a></h5>
 <p><em>(&gt;= 3.2.2)</em></p>
-<p>Log request on <code>level = debug</code></p>
+<p>Log request header on <code>level = debug</code></p>
 <p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="request_content_on_debug">
 <h5>request_content_on_debug <a class="headerlink" href="#request_content_on_debug">&para;</a></h5>
 <p><em>(&gt;= 3.2.2)</em></p>
-<p>Log request on <code>level = debug</code></p>
+<p>Log request content (body) on <code>level = debug</code></p>
+<p>Default: <code>False</code></p>
+</section>
+<section class="level5" id="response_header_on_debug">
+<h5>response_header_on_debug <a class="headerlink" href="#response_header_on_debug">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log response header on <code>level = debug</code></p>
 <p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="response_content_on_debug">
 <h5>response_content_on_debug <a class="headerlink" href="#response_content_on_debug">&para;</a></h5>
 <p><em>(&gt;= 3.2.2)</em></p>
-<p>Log response on <code>level = debug</code></p>
+<p>Log response content (body) on <code>level = debug</code></p>
 <p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="rights_rule_doesnt_match_on_debug">
@@ -1747,6 +1753,18 @@ Allows creation and management of address books and calendars.</p></li>
 <p>Log profiling data per request minimum duration (seconds) before
 logging, otherwise skip</p>
 <p>Default: <code>3</code></p>
+</section>
+<section class="level5" id="profiling_per_request_header">
+<h5>profiling_per_request_header <a class="headerlink" href="#profiling_per_request_header">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log profiling request header (if passing minimum duration)</p>
+<p>Default: <code>False</code></p>
+</section>
+<section class="level5" id="profiling_per_request_xml">
+<h5>profiling_per_request_xml <a class="headerlink" href="#profiling_per_request_xml">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log profiling request XML (if passing minimum duration)</p>
+<p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="profiling_per_request_method_interval">
 <h5>profiling_per_request_method_interval <a class="headerlink" href="#profiling_per_request_method_interval">&para;</a></h5>
