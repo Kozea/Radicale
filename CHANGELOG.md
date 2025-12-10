@@ -6,6 +6,8 @@
 * Extend: [auth] imap: add fallback support for LOGIN towards remote IMAP server (replaced in 3.5.0)
 * Fix: improper detection of HTTP_X_FORWARDED_PORT on MOVE
 * Extend: [logging] with profiling log per reqest or regular per request method
+* New: [logging] option to log response header on debug loglevel
+* Adjust: [logging] header/content debug log indended by space to be skipped by logwatch
 
 ## 3.5.9
 * Extend: [auth] add support for type http_remote_user
