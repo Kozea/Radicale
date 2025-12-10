@@ -99,7 +99,7 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
                                 content = vobject_item
                             else:
                                 content = item._text
-                            logger.warning("Problem during prepare item with UID '%s' (content below): %s\n%s", item.uid, e, content)
+                            logger.warning("Problem during prepare item with UID '%s' (content below): %s\n%s", item.uid, e, utils.textwrap_str(content))
                         else:
                             logger.warning("Problem during prepare item with UID '%s' (content suppressed in this loglevel): %s", item.uid, e)
                         raise
@@ -117,7 +117,7 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
                                 content = vobject_item
                             else:
                                 content = item._text
-                            logger.warning("Problem during prepare item with UID '%s' (content below): %s\n%s", item.uid, e, content)
+                            logger.warning("Problem during prepare item with UID '%s' (content below): %s\n%s", item.uid, e, utils.textwrap_str(content))
                         else:
                             logger.warning("Problem during prepare item with UID '%s' (content suppressed in this loglevel): %s", item.uid, e)
                         raise
@@ -180,7 +180,7 @@ class ApplicationPartPut(ApplicationBase):
             logger.warning(
                 "Bad PUT request on %r (read_components): %s", path, e, exc_info=True)
             if self._log_bad_put_request_content:
-                logger.warning("Bad PUT request content of %r:\n%s", path, content)
+                logger.warning("Bad PUT request content of %r:\n%s", path, utils.textwrap_str(content))
             else:
                 logger.debug("Bad PUT request content: suppressed by config/option [logging] bad_put_request_content")
             return httputils.BAD_REQUEST

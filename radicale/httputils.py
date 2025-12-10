@@ -31,7 +31,7 @@ import time
 from http import client
 from typing import List, Mapping, Union, cast
 
-from radicale import config, pathutils, types
+from radicale import config, pathutils, types, utils
 from radicale.log import logger
 
 if sys.version_info < (3, 9):
@@ -150,7 +150,7 @@ def read_request_body(configuration: "config.Configuration",
     content = decode_request(configuration, environ,
                              read_raw_request_body(configuration, environ))
     if configuration.get("logging", "request_content_on_debug"):
-        logger.debug("Request content:\n%s", content)
+        logger.debug("Request content:\n%s", utils.textwrap_str(content))
     else:
         logger.debug("Request content: suppressed by config/option [logging] request_content_on_debug")
     return content

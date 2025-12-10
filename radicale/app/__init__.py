@@ -38,7 +38,7 @@ import zlib
 from http import client
 from typing import Iterable, List, Mapping, Tuple, Union
 
-from radicale import config, httputils, log, pathutils, types
+from radicale import config, httputils, log, pathutils, types, utils
 from radicale.app.base import ApplicationBase
 from radicale.app.delete import ApplicationPartDelete
 from radicale.app.get import ApplicationPartGet
@@ -177,7 +177,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 s = io.StringIO()
                 stats = pstats.Stats(self.profiler_per_request_method[method], stream=s).sort_stats('cumulative')
                 stats.print_stats(self._profiling_top_x_functions)  # Print top X functions
-                logger.info("Profiling data per request method %s after %d seconds and %d requests: %s", method, profiler_timedelta_start, self.profiler_per_request_method_counter[method], s.getvalue())
+                logger.info("Profiling data per request method %s after %d seconds and %d requests: %s", method, profiler_timedelta_start, self.profiler_per_request_method_counter[method], utils.textwrap_str(s.getvalue(), -1))
             else:
                 if shutdown:
                     logger.info("Profiling data per request method %s after %d seconds: (no request seen so far)", method, profiler_timedelta_start)
@@ -238,7 +238,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             if answer is not None:
                 if isinstance(answer, str):
                     if self._response_content_on_debug:
-                        logger.debug("Response content:\n%s", answer)
+                        logger.debug("Response content (nonXML):\n%s", utils.textwrap_str(answer))
                     else:
                         logger.debug("Response content: suppressed by config/option [logging] response_content_on_debug")
                     headers["Content-Type"] += "; charset=%s" % self._encoding
@@ -329,7 +329,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     remote_host, remote_useragent, https_info)
         if self._request_header_on_debug:
             logger.debug("Request header:\n%s",
-                         pprint.pformat(self._scrub_headers(environ)))
+                         utils.textwrap_str(pprint.pformat(self._scrub_headers(environ))))
         else:
             logger.debug("Request header: suppressed by config/option [logging] request_header_on_debug")
 
