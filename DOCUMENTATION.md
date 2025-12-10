@@ -1654,7 +1654,7 @@ Default: `False`
 
 _(>= 3.2.2)_
 
-Log request on `level = debug`
+Log request header on `level = debug`
 
 Default: `False`
 
@@ -1662,7 +1662,7 @@ Default: `False`
 
 _(>= 3.2.2)_
 
-Log request on `level = debug`
+Log request content (body) on `level = debug`
 
 Default: `False`
 
@@ -1670,7 +1670,7 @@ Default: `False`
 
 _(>= 3.2.2)_
 
-Log response on `level = debug`
+Log response content (body) on `level = debug`
 
 Default: `False`
 
