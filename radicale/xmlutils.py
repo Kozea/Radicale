@@ -26,7 +26,7 @@ import copy
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from http import client
-from typing import Dict, Mapping, Optional
+from typing import Dict, Mapping, Optional, Union
 from urllib.parse import quote
 
 from radicale import item, pathutils
@@ -56,7 +56,7 @@ for short, url in NAMESPACES.items():
     ET.register_namespace("" if short == "D" else short, url)
 
 
-def pretty_xml(element: ET.Element) -> str:
+def pretty_xml(element: Union[ET.Element | None]) -> str:
     """Indent an ElementTree ``element`` and its children."""
     def pretty_xml_recursive(element: ET.Element, level: int) -> None:
         indent = "\n" + level * "  "
@@ -71,6 +71,9 @@ def pretty_xml(element: ET.Element) -> str:
                 sub_element.tail = indent
         elif level > 0 and not (element.tail or "").strip():
             element.tail = indent
+
+    if element is None:
+        return ""
     element = copy.deepcopy(element)
     pretty_xml_recursive(element, 0)
     return '<?xml version="1.0"?>\n%s' % ET.tostring(element, "unicode")
