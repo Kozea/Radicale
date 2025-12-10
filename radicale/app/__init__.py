@@ -96,8 +96,15 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         super().__init__(configuration)
         self._mask_passwords = configuration.get("logging", "mask_passwords")
         self._bad_put_request_content = configuration.get("logging", "bad_put_request_content")
+        logger.info("log bad put request content: %s", self._bad_put_request_content)
         self._request_header_on_debug = configuration.get("logging", "request_header_on_debug")
+        self._request_content_on_debug = configuration.get("logging", "request_content_on_debug")
+        self._response_header_on_debug = configuration.get("logging", "response_header_on_debug")
         self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
+        logger.debug("log request  header  on debug: %s", self._request_header_on_debug)
+        logger.debug("log request  content on debug: %s", self._request_content_on_debug)
+        logger.debug("log response header  on debug: %s", self._response_header_on_debug)
+        logger.debug("log response content on debug: %s", self._response_content_on_debug)
         self._auth_delay = configuration.get("auth", "delay")
         self._auth_type = configuration.get("auth", "type")
         self._web_type = configuration.get("web", "type")
@@ -130,6 +137,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         # Profiling options
         self._profiling = configuration.get("logging", "profiling")
         self._profiling_per_request_min_duration = configuration.get("logging", "profiling_per_request_min_duration")
+        self._profiling_per_request_header = configuration.get("logging", "profiling_per_request_header")
+        self._profiling_per_request_xml = configuration.get("logging", "profiling_per_request_xml")
         self._profiling_per_request_method_interval = configuration.get("logging", "profiling_per_request_method_interval")
         self._profiling_top_x_functions = configuration.get("logging", "profiling_top_x_functions")
         if self._profiling in config.PROFILING:
@@ -142,6 +151,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             logger.info("profiling top X functions: %d", self._profiling_top_x_functions)
         if self._profiling_per_request:
             logger.info("profiling per request minimum duration: %d (below are skipped)", self._profiling_per_request_min_duration)
+            logger.info("profiling per request header: %s", self._profiling_per_request_header)
+            logger.info("profiling per request xml   : %s", self._profiling_per_request_xml)
         if self._profiling_per_request_method:
             logger.info("profiling per request method interval: %d seconds", self._profiling_per_request_method_interval)
         # Profiling per request method initialization
