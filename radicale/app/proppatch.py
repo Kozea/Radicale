@@ -131,4 +131,4 @@ class ApplicationPartProppatch(ApplicationBase):
                     logger.warning(
                         "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
-            return client.MULTI_STATUS, headers, self._xml_response(xml_answer)
+            return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)

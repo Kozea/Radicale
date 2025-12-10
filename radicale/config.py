@@ -577,6 +577,10 @@ This is an automated message. Please do not reply.""",
             "value": "False",
             "help": "log request content on level=debug",
             "type": bool}),
+        ("response_header_on_debug", {
+            "value": "False",
+            "help": "log response header on level=debug",
+            "type": bool}),
         ("response_content_on_debug", {
             "value": "False",
             "help": "log response content on level=debug",
@@ -597,6 +601,14 @@ This is an automated message. Please do not reply.""",
             "value": "3",
             "help": "log profiling data per request minimum duration (seconds)",
             "type": int}),
+        ("profiling_per_request_header", {
+            "value": "False",
+            "help": "Log profiling request body (if passing minimum duration)",
+            "type": bool}),
+        ("profiling_per_request_xml", {
+            "value": "False",
+            "help": "Log profiling request XML (if passing minimum duration)",
+            "type": bool}),
         ("profiling_per_request_method_interval", {
             "value": "600",
             "help": "log profiling data per request method interval (seconds)",

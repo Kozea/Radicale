@@ -38,7 +38,7 @@ import zlib
 from http import client
 from typing import Iterable, List, Mapping, Tuple, Union
 
-from radicale import config, httputils, log, pathutils, types
+from radicale import config, httputils, log, pathutils, types, utils
 from radicale.app.base import ApplicationBase
 from radicale.app.delete import ApplicationPartDelete
 from radicale.app.get import ApplicationPartGet
@@ -96,8 +96,15 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         super().__init__(configuration)
         self._mask_passwords = configuration.get("logging", "mask_passwords")
         self._bad_put_request_content = configuration.get("logging", "bad_put_request_content")
+        logger.info("log bad put request content: %s", self._bad_put_request_content)
         self._request_header_on_debug = configuration.get("logging", "request_header_on_debug")
+        self._request_content_on_debug = configuration.get("logging", "request_content_on_debug")
+        self._response_header_on_debug = configuration.get("logging", "response_header_on_debug")
         self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
+        logger.debug("log request  header  on debug: %s", self._request_header_on_debug)
+        logger.debug("log request  content on debug: %s", self._request_content_on_debug)
+        logger.debug("log response header  on debug: %s", self._response_header_on_debug)
+        logger.debug("log response content on debug: %s", self._response_content_on_debug)
         self._auth_delay = configuration.get("auth", "delay")
         self._auth_type = configuration.get("auth", "type")
         self._web_type = configuration.get("web", "type")
@@ -130,6 +137,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         # Profiling options
         self._profiling = configuration.get("logging", "profiling")
         self._profiling_per_request_min_duration = configuration.get("logging", "profiling_per_request_min_duration")
+        self._profiling_per_request_header = configuration.get("logging", "profiling_per_request_header")
+        self._profiling_per_request_xml = configuration.get("logging", "profiling_per_request_xml")
         self._profiling_per_request_method_interval = configuration.get("logging", "profiling_per_request_method_interval")
         self._profiling_top_x_functions = configuration.get("logging", "profiling_top_x_functions")
         if self._profiling in config.PROFILING:
@@ -142,6 +151,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             logger.info("profiling top X functions: %d", self._profiling_top_x_functions)
         if self._profiling_per_request:
             logger.info("profiling per request minimum duration: %d (below are skipped)", self._profiling_per_request_min_duration)
+            logger.info("profiling per request header: %s", self._profiling_per_request_header)
+            logger.info("profiling per request xml   : %s", self._profiling_per_request_xml)
         if self._profiling_per_request_method:
             logger.info("profiling per request method interval: %d seconds", self._profiling_per_request_method_interval)
         # Profiling per request method initialization
@@ -164,9 +175,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         for method in REQUEST_METHODS:
             if self.profiler_per_request_method_counter[method] > 0:
                 s = io.StringIO()
+                s.write("**Profiling statistics BEGIN**\n")
                 stats = pstats.Stats(self.profiler_per_request_method[method], stream=s).sort_stats('cumulative')
                 stats.print_stats(self._profiling_top_x_functions)  # Print top X functions
-                logger.info("Profiling data per request method %s after %d seconds and %d requests: %s", method, profiler_timedelta_start, self.profiler_per_request_method_counter[method], s.getvalue())
+                s.write("**Profiling statistics END**\n")
+                logger.info("Profiling data per request method %s after %d seconds and %d requests:\n%s", method, profiler_timedelta_start, self.profiler_per_request_method_counter[method], utils.textwrap_str(s.getvalue(), -1))
             else:
                 if shutdown:
                     logger.info("Profiling data per request method %s after %d seconds: (no request seen so far)", method, profiler_timedelta_start)
@@ -193,7 +206,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                              "%s", environ.get("REQUEST_METHOD", "unknown"),
                              environ.get("PATH_INFO", ""), e, exc_info=True)
                 # Make minimal response
-                status, raw_headers, raw_answer = (
+                status, raw_headers, raw_answer, xml_request = (
                     httputils.INTERNAL_SERVER_ERROR)
                 assert isinstance(raw_answer, str)
                 answer = raw_answer.encode("ascii")
@@ -213,12 +226,15 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         unsafe_path = environ.get("PATH_INFO", "")
         https = environ.get("HTTPS", "")
         profiler = None
+        profiler_active = False
+        xml_request = None
 
         context = AuthContext()
 
         """Manage a request."""
         def response(status: int, headers: types.WSGIResponseHeaders,
-                     answer: Union[None, str, bytes]) -> _IntermediateResponse:
+                     answer: Union[None, str, bytes],
+                     xml_request: Union[None, str] = None) -> _IntermediateResponse:
             """Helper to create response from internal types.WSGIResponse"""
             headers = dict(headers)
             content_encoding = "plain"
@@ -227,7 +243,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             if answer is not None:
                 if isinstance(answer, str):
                     if self._response_content_on_debug:
-                        logger.debug("Response content:\n%s", answer)
+                        logger.debug("Response content (nonXML):\n%s", utils.textwrap_str(answer))
                     else:
                         logger.debug("Response content: suppressed by config/option [logging] response_content_on_debug")
                     headers["Content-Type"] += "; charset=%s" % self._encoding
@@ -249,6 +265,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             # Add extra headers set in configuration
             headers.update(self._extra_headers)
 
+            if self._response_header_on_debug:
+                logger.debug("Response header:\n%s", utils.textwrap_str(pprint.pformat(headers)))
+            else:
+                logger.debug("Response header: suppressed by config/option [logging] response_header_on_debug")
+
             # Start response
             time_end = datetime.datetime.now()
             time_delta_seconds = (time_end - time_begin).total_seconds()
@@ -265,17 +286,32 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
             # Profiling end
             if self._profiling_per_request:
-                if profiler is not None:
-                    # Profiling per request
-                    if time_delta_seconds < self._profiling_per_request_min_duration:
-                        logger.debug("Profiling data per request %s for %r%s: (suppressed because duration below minimum %.3f < %.3f)", request_method, unsafe_path, depthinfo, time_delta_seconds, self._profiling_per_request_min_duration)
+                if profiler_active is True:
+                    if profiler is not None:
+                        # Profiling per request
+                        if time_delta_seconds < self._profiling_per_request_min_duration:
+                            logger.debug("Profiling data per request %s for %r%s: (suppressed because duration below minimum %.3f < %.3f)", request_method, unsafe_path, depthinfo, time_delta_seconds, self._profiling_per_request_min_duration)
+                        else:
+                            s = io.StringIO()
+                            s.write("**Profiling statistics BEGIN**\n")
+                            stats = pstats.Stats(profiler, stream=s).sort_stats('cumulative')
+                            stats.print_stats(self._profiling_top_x_functions)  # Print top X functions
+                            s.write("**Profiling statistics END**\n")
+                            if self._profiling_per_request_header:
+                                s.write("**Profiling request header BEGIN**\n")
+                                s.write(pprint.pformat(self._scrub_headers(environ)))
+                                s.write("\n**Profiling request header END**")
+                            if self._profiling_per_request_xml:
+                                if xml_request is not None:
+                                    s.write("\n**Profiling request content (XML) BEGIN**\n")
+                                    if xml_request is not None:
+                                        s.write(xml_request)
+                                    s.write("**Profiling request content (XML) END**")
+                            logger.info("Profiling data per request %s for %r%s:\n%s", request_method, unsafe_path, depthinfo, utils.textwrap_str(s.getvalue(), -1))
                     else:
-                        s = io.StringIO()
-                        stats = pstats.Stats(profiler, stream=s).sort_stats('cumulative')
-                        stats.print_stats(self._profiling_top_x_functions)  # Print top X functions
-                        logger.info("Profiling data per request %s for %r%s: %s", request_method, unsafe_path, depthinfo, s.getvalue())
+                        logger.debug("Profiling data per request %s for %r%s: (suppressed because of no data)", request_method, unsafe_path, depthinfo)
                 else:
-                    logger.debug("Profiling data per request %s for %r%s: (suppressed because of no data)", request_method, unsafe_path, depthinfo)
+                    logger.info("Profiling data per request %s for %r%s: (not available because of concurrent running profiling request)", request_method, unsafe_path, depthinfo)
             elif self._profiling_per_request_method:
                 self.profiler_per_request_method[request_method].disable()
                 self.profiler_per_request_method_counter[request_method] += 1
@@ -318,7 +354,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     remote_host, remote_useragent, https_info)
         if self._request_header_on_debug:
             logger.debug("Request header:\n%s",
-                         pprint.pformat(self._scrub_headers(environ)))
+                         utils.textwrap_str(pprint.pformat(self._scrub_headers(environ))))
         else:
             logger.debug("Request header: suppressed by config/option [logging] request_header_on_debug")
 
@@ -453,27 +489,39 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             # Profiling
             if self._profiling_per_request:
                 profiler = cProfile.Profile()
-                profiler.enable()
+                try:
+                    profiler.enable()
+                except ValueError:
+                    profiler_active = False
+                else:
+                    profiler_active = True
             elif self._profiling_per_request_method:
-                self.profiler_per_request_method[request_method].enable()
+                try:
+                    self.profiler_per_request_method[request_method].enable()
+                except ValueError:
+                    profiler_active = False
+                else:
+                    profiler_active = True
 
-            status, headers, answer = function(
+            status, headers, answer, xml_request = function(
                 environ, base_prefix, path, user, remote_host, remote_useragent)
 
             # Profiling
             if self._profiling_per_request:
                 if profiler is not None:
-                    profiler.disable()
+                    if profiler_active is True:
+                        profiler.disable()
             elif self._profiling_per_request_method:
-                self.profiler_per_request_method[request_method].disable()
+                if profiler_active is True:
+                    self.profiler_per_request_method[request_method].disable()
 
-            if (status, headers, answer) == httputils.NOT_ALLOWED:
+            if (status, headers, answer, xml_request) == httputils.NOT_ALLOWED:
                 logger.info("Access to %r denied for %s", path,
                             repr(user) if user else "anonymous user")
         else:
-            status, headers, answer = httputils.NOT_ALLOWED
+            status, headers, answer, xml_request = httputils.NOT_ALLOWED
 
-        if ((status, headers, answer) == httputils.NOT_ALLOWED and not user and
+        if ((status, headers, answer, xml_request) == httputils.NOT_ALLOWED and not user and
                 not external_login):
             # Unknown or unauthorized user
             logger.debug("Asking client for authentication")
@@ -483,4 +531,4 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 "WWW-Authenticate":
                 "Basic realm=\"%s\"" % self._auth_realm})
 
-        return response(status, headers, answer)
+        return response(status, headers, answer, xml_request)

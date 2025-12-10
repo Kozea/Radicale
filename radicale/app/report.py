@@ -815,7 +815,7 @@ class ApplicationPartReport(ApplicationBase):
                         "Bad REPORT request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
                 headers = {"Content-Type": "text/calendar; charset=%s" % self._encoding}
-                return status, headers, str(body)
+                return status, headers, str(body), xmlutils.pretty_xml(xml_content)
             else:
                 try:
                     status, xml_answer = xml_report(
@@ -826,4 +826,4 @@ class ApplicationPartReport(ApplicationBase):
                         "Bad REPORT request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
                 headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
-                return status, headers, self._xml_response(xml_answer)
+                return status, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)

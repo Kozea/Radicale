@@ -1654,7 +1654,7 @@ Default: `False`
 
 _(>= 3.2.2)_
 
-Log request on `level = debug`
+Log request header on `level = debug`
 
 Default: `False`
 
@@ -1662,7 +1662,15 @@ Default: `False`
 
 _(>= 3.2.2)_
 
-Log request on `level = debug`
+Log request content (body) on `level = debug`
+
+Default: `False`
+
+##### response_header_on_debug
+
+_(>= 3.5.10)_
+
+Log response header on `level = debug`
 
 Default: `False`
 
@@ -1670,7 +1678,7 @@ Default: `False`
 
 _(>= 3.2.2)_
 
-Log response on `level = debug`
+Log response content (body) on `level = debug`
 
 Default: `False`
 
@@ -1710,6 +1718,22 @@ _(>= 3.5.10)_
 Log profiling data per request minimum duration (seconds) before logging, otherwise skip
 
 Default: `3`
+
+##### profiling_per_request_header
+
+_(>= 3.5.10)_
+
+Log profiling request header (if passing minimum duration)
+
+Default: `False`
+
+##### profiling_per_request_xml
+
+_(>= 3.5.10)_
+
+Log profiling request XML (if passing minimum duration)
+
+Default: `False`
 
 ##### profiling_per_request_method_interval
 

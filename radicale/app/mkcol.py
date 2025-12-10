@@ -94,4 +94,4 @@ class ApplicationPartMkcol(ApplicationBase):
                         "Bad MKCOL request on %r (type:%s): %s", path, collection_type, e, exc_info=True)
                     return httputils.BAD_REQUEST
             logger.info("MKCOL request %r (type:%s): %s", path, collection_type, "successful")
-            return client.CREATED, {}, None
+            return client.CREATED, {}, None, xmlutils.pretty_xml(xml_content)

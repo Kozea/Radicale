@@ -89,4 +89,4 @@ class ApplicationPartMkcalendar(ApplicationBase):
                     logger.warning(
                         "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
-            return client.CREATED, {}, None
+            return client.CREATED, {}, None, xmlutils.pretty_xml(xml_content)

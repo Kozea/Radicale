@@ -410,4 +410,4 @@ class ApplicationPartPropfind(ApplicationBase):
                                       allowed_items, user, self._encoding)
             if xml_answer is None:
                 return httputils.NOT_ALLOWED
-            return client.MULTI_STATUS, headers, self._xml_response(xml_answer)
+            return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)

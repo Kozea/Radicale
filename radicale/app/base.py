@@ -23,7 +23,7 @@ import xml.etree.ElementTree as ET
 from typing import Optional
 
 from radicale import (auth, config, hook, httputils, pathutils, rights,
-                      storage, types, web, xmlutils)
+                      storage, types, utils, web, xmlutils)
 from radicale.log import logger
 
 # HACK: https://github.com/tiran/defusedxml/issues/54
@@ -71,7 +71,7 @@ class ApplicationBase:
         if logger.isEnabledFor(logging.DEBUG):
             if self._request_content_on_debug:
                 logger.debug("Request content (XML):\n%s",
-                             xmlutils.pretty_xml(xml_content))
+                             utils.textwrap_str(xmlutils.pretty_xml(xml_content)))
             else:
                 logger.debug("Request content (XML): suppressed by config/option [logging] request_content_on_debug")
         return xml_content
@@ -80,7 +80,7 @@ class ApplicationBase:
         if logger.isEnabledFor(logging.DEBUG):
             if self._response_content_on_debug:
                 logger.debug("Response content (XML):\n%s",
-                             xmlutils.pretty_xml(xml_content))
+                             utils.textwrap_str(xmlutils.pretty_xml(xml_content)))
             else:
                 logger.debug("Response content (XML): suppressed by config/option [logging] response_content_on_debug")
         f = io.BytesIO()
@@ -93,7 +93,7 @@ class ApplicationBase:
         """Generate XML error response."""
         headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
         content = self._xml_response(xmlutils.webdav_error(human_tag))
-        return status, headers, content
+        return status, headers, content, None
 
 
 class Access:

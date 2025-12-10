@@ -312,6 +312,9 @@
 # Log request content on level=debug
 #request_content_on_debug = False
 
+# Log response header on level=debug
+#response_header_on_debug = False
+
 # Log response content on level=debug
 #response_content_on_debug = False
 
@@ -325,8 +328,14 @@
 # Value: per_request | per_request_method | none
 #profiling = none
 
-# Log profiling data per request minium duration (seconds)
+# Log profiling data per request minimum duration (seconds)
 #profiling_per_request_min_duration = 3
+
+# Log profiling request header (if passing minimum duration)
+#profiling_per_request_header = False
+
+# Log profiling request XML (if passing minimum duration)
+#profiling_per_request_xml = False
 
 # Log profiling data per request method interval (seconds)
 #profiling_per_request_method_interval = 600

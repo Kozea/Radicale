@@ -109,4 +109,4 @@ class ApplicationPartGet(ApplicationBase):
             if content_disposition:
                 headers["Content-Disposition"] = content_disposition
             answer = item.serialize()
-            return client.OK, headers, answer
+            return client.OK, headers, answer, None
