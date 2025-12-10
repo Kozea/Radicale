@@ -8,6 +8,7 @@
 * Extend: [logging] with profiling log per reqest or regular per request method
 * New: [logging] option to log response header on debug loglevel
 * Adjust: [logging] header/content debug log indended by space to be skipped by logwatch
+* Improve: remove unnecessary open+read for mtime+size cache
 
 ## 3.5.9
 * Extend: [auth] add support for type http_remote_user
