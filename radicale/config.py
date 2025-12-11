@@ -162,7 +162,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": positive_int}),
         ("max_content_length", {
             "value": "100000000",
-            "help": "maximum size of request body in bytes",
+            "help": "maximum size of request body in bytes (default: 100 Mbyte)",
             "type": positive_int}),
         ("timeout", {
             "value": "30",

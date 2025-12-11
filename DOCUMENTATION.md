@@ -797,9 +797,9 @@ Default: `8`
 
 The maximum size of the request body. (bytes)
 
-Default: `100000000`
+Default: `100000000` (100 Mbyte)
 
-In case of using a reverse proxy in front of check also there related option
+In case of using a reverse proxy in front of check also there related option.
 
 ##### timeout
 
