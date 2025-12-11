@@ -80,6 +80,28 @@ sub MaxLength($) {
    return $length;
 }
 
+sub ConvertTokens($) {
+   my %tokens_h;
+   # unique
+   foreach my $token (split(" ", $_[0])) {
+      $tokens_h{$token} = 1;
+   }
+   # map tokens
+   my @result_a;
+   if (defined $tokens_h{"sync-token"}) {
+      push @result_a, "ST";
+   }
+   if (defined $tokens_h{"getctag"}) {
+      push @result_a, "GCT";
+   }
+   # TODO: add potential others which causing long duration
+   $result = "";
+   if (scalar(@result_a) > 0) {
+      $result = ":F=" . join(",", @result_a);
+   }
+   return $result;
+}
+
 while (defined($ThisLine = <STDIN>)) {
    # count loglevel
    if ( $ThisLine =~ /\[(DEBUG|INFO|WARNING|ERROR|CRITICAL)\] /o ) {
@@ -108,6 +130,16 @@ while (defined($ThisLine = <STDIN>)) {
       } elsif ( $ThisLine =~ / \S+ response status for .* in ([0-9.]+) seconds (\S+) (\d+) bytes: (\d+)/o ) {
          $req .= ":R=" . $4;
          ResponseTimesMinMaxSum($req, $1) if ($Detail >= 10);
+         ResponseSizesMinMaxSum($req, $2, $3) if ($Detail >= 10);
+      } elsif ( $ThisLine =~ / \S+ response status for .* with depth '(\d)' in ([0-9.]+) seconds (\S+) (\d+) bytes \((.*)\): (\d+)/o ) {
+         $req .= ":D=" . $1 . ":R=" . $6;
+         $reqWithFlags = $req . ConvertTokens($5);
+         ResponseTimesMinMaxSum($reqWithFlags, $2) if ($Detail >= 10);
+         ResponseSizesMinMaxSum($req, $3, $4) if ($Detail >= 10);
+      } elsif ( $ThisLine =~ / \S+ response status for .* in ([0-9.]+) seconds (\S+) (\d+) bytes \((.*)\): (\d+)/o ) {
+         $req .= ":R=" . $5;
+         $reqWithFlags = $req . ConvertTokens($4);
+         ResponseTimesMinMaxSum($reqWithFlags, $1) if ($Detail >= 10);
          ResponseSizesMinMaxSum($req, $2, $3) if ($Detail >= 10);
       }
       $Responses{$req}++;
@@ -192,14 +224,15 @@ if (keys %Requests) {
 
 if (keys %Responses) {
    $sum = Sum(\%Responses);
+   $length = MaxLength(\%Responses);
    print "\n**Response result counters ((D=<depth> R=<result>)**\n";
-   printf "%-18s | %7s | %5s |\n", "Response", "cnt", "ratio";
-   print "-" x38 . "\n";
+   printf "%-" . $length . "s | %7s | %5s |\n", "Response", "cnt", "ratio";
+   print "-" x($length + 20) . "\n";
    foreach my $req (sort keys %Responses) {
-      printf "%-18s | %7d |  %3d%% |\n", $req, $Responses{$req}, int(($Responses{$req} * 100) / $sum);
+      printf "%-" . $length . "s | %7d |  %3d%% |\n", $req, $Responses{$req}, int(($Responses{$req} * 100) / $sum);
    }
-   print "-" x38 . "\n";
-   printf "%-18s | %7d |  %3d%% |\n", "", $sum, 100;
+   print "-" x($length + 20) . "\n";
+   printf "%-" . $length . "s | %7d |  %3d%% |\n", "", $sum, 100;
 }
 
 if (keys %Logins) {
@@ -216,32 +249,35 @@ if (keys %Logins) {
 }
 
 if (keys %ResponseTimes) {
-   print "\n**Response timings (counts, seconds) (D=<depth> R=<result>)**\n";
-   printf "%-18s | %7s | %7s | %7s | %7s |\n", "Response", "cnt", "min", "max", "avg";
-   print "-" x60 . "\n";
+   $length = MaxLength(\%ResponseTimes);
+   print "\n**Response timings (counts, seconds) (D=<depth> R=<result> F=<flags>)**\n";
+   print "*  Flags: ST:sync-token GCT:getctag\n";
+   printf "%-" . $length . "s | %7s | %7s | %7s | %7s |\n", "Response", "cnt", "min", "max", "avg";
+   print "-" x($length + 42) . "\n";
    foreach my $req (sort keys %ResponseTimes) {
-      printf "%-18s | %7d | %7.3f | %7.3f | %7.3f |\n", $req
+      printf "%-" . $length . "s | %7d | %7.3f | %7.3f | %7.3f |\n", $req
          , $ResponseTimes{$req}->{'cnt'}
          , $ResponseTimes{$req}->{'min'}
          , $ResponseTimes{$req}->{'max'}
          , $ResponseTimes{$req}->{'sum'} / $ResponseTimes{$req}->{'cnt'};
    }
-   print "-" x60 . "\n";
+   print "-" x($length + 42) . "\n";
 }
 
 if (keys %ResponseSizes) {
    for my $type (sort keys %ResponseSizes) {
+      $length = MaxLength($ResponseSizes{$type});
       print "\n**Response sizes (counts, bytes: $type) (D=<depth> R=<result>)**\n";
-      printf "%-18s | %7s | %9s | %9s | %9s |\n", "Response", "cnt", "min", "max", "avg";
-      print "-" x66 . "\n";
+      printf "%-" . $length . "s | %7s | %9s | %9s | %9s |\n", "Response", "cnt", "min", "max", "avg";
+      print "-" x($length + 48) . "\n";
       foreach my $req (sort keys %{$ResponseSizes{$type}}) {
-         printf "%-18s | %7d | %9d | %9d | %9d |\n", $req
+         printf "%-" . $length . "s | %7d | %9d | %9d | %9d |\n", $req
             , $ResponseSizes{$type}->{$req}->{'cnt'}
             , $ResponseSizes{$type}->{$req}->{'min'}
             , $ResponseSizes{$type}->{$req}->{'max'}
             , $ResponseSizes{$type}->{$req}->{'sum'} / $ResponseSizes{$type}->{$req}->{'cnt'};
       }
-      print "-" x66 . "\n";
+      print "-" x($length + 48) . "\n";
    }
 }
 
