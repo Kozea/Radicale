@@ -39,6 +39,7 @@ class ApplicationBase:
     _rights: rights.BaseRights
     _web: web.BaseWeb
     _encoding: str
+    _max_content_length: int
     _permit_delete_collection: bool
     _permit_overwrite_collection: bool
     _strict_preconditions: bool
@@ -51,6 +52,7 @@ class ApplicationBase:
         self._rights = rights.load(configuration)
         self._web = web.load(configuration)
         self._encoding = configuration.get("encoding", "request")
+        self._max_content_length = configuration.get("server", "max_content_length")
         self._log_bad_put_request_content = configuration.get("logging", "bad_put_request_content")
         self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
         self._request_content_on_debug = configuration.get("logging", "request_content_on_debug")
