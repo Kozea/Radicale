@@ -10,7 +10,8 @@
 * Adjust: [logging] header/content debug log indended by space to be skipped by logwatch
 * Improve: remove unnecessary open+read for mtime+size cache
 * Extend: add selected XML query properties to request result log line for improved timing analysis incl. logwatch support
-* Add: support PROPFIND/max-resource-size by 80% of max_content_length option
+* Add: [server] max_resource_size option
+* Add: support PROPFIND/max-resource-size by max_resource_size (capped to 80% of max_content_length)
 
 ## 3.5.9
 * Extend: [auth] add support for type http_remote_user
