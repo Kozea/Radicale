@@ -801,6 +801,18 @@ Default: `100000000` (100 Mbyte)
 
 In case of using a reverse proxy in front of check also there related option.
 
+##### max_resource_size
+
+_(>= 3.5.10)_
+
+The maximum size of a resource. (bytes)
+
+Default: `10000000` (10 Mbyte)
+
+Limited to 80% of max_content_length to cover plain base64 encoded payload.
+
+Announced to clients requesting "max-resource-size" via PROPFIND.
+
 ##### timeout
 
 Socket timeout. (seconds)

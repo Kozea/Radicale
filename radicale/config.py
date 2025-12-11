@@ -164,6 +164,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "100000000",
             "help": "maximum size of request body in bytes (default: 100 Mbyte)",
             "type": positive_int}),
+        ("max_resource_size", {
+            "value": "10000000",
+            "help": "maximum size of resource (default: 10 Mbyte)",
+            "type": positive_int}),
         ("timeout", {
             "value": "30",
             "help": "socket timeout",
