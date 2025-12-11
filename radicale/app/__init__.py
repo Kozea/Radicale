@@ -275,10 +275,22 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             time_delta_seconds = (time_end - time_begin).total_seconds()
             status_text = "%d %s" % (
                 status, client.responses.get(status, "Unknown"))
+            flags = []
+            if xml_request is not None:
+                if "<sync-token />" in xml_request:
+                    flags.append("sync-token")
+                if "<CS:getctag />" in xml_request:
+                    flags.append("getctag")
+            if flags:
+                flags_text = " (" + " ".join(flags) + ")"
+            else:
+                flags_text = ""
             if answer is not None:
-                logger.info("%s response status for %r%s in %.3f seconds %s %s bytes: %s",
+                logger.info("%s response status for %r%s in %.3f seconds %s %s bytes%s: %s",
                             request_method, unsafe_path, depthinfo,
-                            (time_end - time_begin).total_seconds(), content_encoding, str(len(answer)), status_text)
+                            (time_end - time_begin).total_seconds(), content_encoding, str(len(answer)),
+                            flags_text,
+                            status_text)
             else:
                 logger.info("%s response status for %r%s in %.3f seconds: %s",
                             request_method, unsafe_path, depthinfo,
