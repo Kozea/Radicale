@@ -73,6 +73,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _auth_delay: float
     _internal_server: bool
     _max_content_length: int
+    _max_resource_size: int
     _auth_realm: str
     _auth_type: str
     _web_type: str
@@ -95,6 +96,14 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         """
         super().__init__(configuration)
         self._mask_passwords = configuration.get("logging", "mask_passwords")
+        self._max_content_length = configuration.get("server", "max_content_length")
+        self._max_resource_size = configuration.get("server", "max_resource_size")
+        if (self._max_resource_size > (self._max_content_length * 0.8)):
+            max_resource_size_limited = int(self._max_content_length * 0.8)
+            logger.warning("max_resource_size capped to: %d bytes (from %d to 80%% of max_content_length %d)", max_resource_size_limited, self._max_resource_size, self._max_content_length)
+            self._max_resource_size = max_resource_size_limited
+        else:
+            logger.info("max_resource_size set to: %d bytes", self._max_resource_size)
         self._bad_put_request_content = configuration.get("logging", "bad_put_request_content")
         logger.info("log bad put request content: %s", self._bad_put_request_content)
         self._request_header_on_debug = configuration.get("logging", "request_header_on_debug")

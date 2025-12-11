@@ -34,7 +34,7 @@ from radicale.log import logger
 def xml_propfind(base_prefix: str, path: str,
                  xml_request: Optional[ET.Element],
                  allowed_items: Iterable[Tuple[types.CollectionOrItem, str]],
-                 user: str, encoding: str, max_content_length: int) -> Optional[ET.Element]:
+                 user: str, encoding: str, max_resource_size: int) -> Optional[ET.Element]:
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -71,14 +71,14 @@ def xml_propfind(base_prefix: str, path: str,
         write = permission == "w"
         multistatus.append(xml_propfind_response(
             base_prefix, path, item, props, user, encoding, write=write,
-            allprop=allprop, propname=propname, max_content_length=max_content_length))
+            allprop=allprop, propname=propname, max_resource_size=max_resource_size))
 
     return multistatus
 
 
 def xml_propfind_response(
         base_prefix: str, path: str, item: types.CollectionOrItem,
-        props: Sequence[str], user: str, encoding: str, max_content_length: int, write: bool = False,
+        props: Sequence[str], user: str, encoding: str, max_resource_size: int, write: bool = False,
         propname: bool = False, allprop: bool = False) -> ET.Element:
     """Build and return a PROPFIND response."""
     if propname and allprop or (props and (propname or allprop)):
@@ -241,8 +241,8 @@ def xml_propfind_response(
                     base_prefix, "/%s/" % collection.owner)
                 element.append(child_element)
         elif tag == xmlutils.make_clark("C:max-resource-size"):
-            # RFC4791#5.2.5 use 80% of max_content_length to cover base64 encoding
-            element.text = str(int(max_content_length * 0.8))
+            # RFC4791#5.2.5
+            element.text = str(max_resource_size)
         elif is_collection:
             if tag == xmlutils.make_clark("D:getcontenttype"):
                 if is_leaf:
@@ -411,7 +411,7 @@ class ApplicationPartPropfind(ApplicationBase):
             headers = {"DAV": httputils.DAV_HEADERS,
                        "Content-Type": "text/xml; charset=%s" % self._encoding}
             xml_answer = xml_propfind(base_prefix, path, xml_content,
-                                      allowed_items, user, self._encoding, max_content_length=self._max_content_length)
+                                      allowed_items, user, self._encoding, max_resource_size=self._max_resource_size)
             if xml_answer is None:
                 return httputils.NOT_ALLOWED
             return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)
