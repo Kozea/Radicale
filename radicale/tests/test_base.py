@@ -142,6 +142,22 @@ permissions: RrWw""")
         assert "Event" in answer
         assert "UID:event" in answer
 
+    def test_add_event_exceed_size(self) -> None:
+        """Add an event which is exceeding max-resource-size."""
+        self.configure({"server": {"max_resource_size": 20}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=412)
+
+    def test_add_events_exceed_size(self) -> None:
+        """Add multipe events where last is exceeding max-resource-size."""
+        self.configure({"server": {"max_resource_size": 603}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_multiple3.ics")
+        path = "/calendar.ics/"
+        self.put(path, event, check=412)
+
     def test_add_event_broken(self) -> None:
         """Add a broken event."""
         self.mkcalendar("/calendar.ics/")
