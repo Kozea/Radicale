@@ -692,6 +692,40 @@ permissions: RrWw""")
         status, prop = response["ICAL:calendar-color"]
         assert status == 404 and not prop.text
 
+    def test_propfind_max_resource_size(self) -> None:
+        """Read property C:max-resource-size"""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        self.put("/calendar.ics/event.ics", event)
+        _, responses = self.propfind("/calendar.ics/", """\
+<?xml version="1.0"?>
+ <propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+   <prop>
+     <C:max-resource-size />
+   </prop>
+ </propfind>""")
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int)
+        status, prop = response["C:max-resource-size"]
+        assert status == 200 and prop.text
+
+    def test_propfind_getctag(self) -> None:
+        """Read property CS:getctag"""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        self.put("/calendar.ics/event.ics", event)
+        _, responses = self.propfind("/calendar.ics/", """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:CS="http://calendarserver.org/ns/">
+  <prop>
+    <CS:getctag />
+  </prop>
+</propfind>""")
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int)
+        status, prop = response["CS:getctag"]
+        assert status == 200 and prop.text
+
     def test_proppatch(self) -> None:
         """Set/Remove a property and read it back."""
         self.mkcalendar("/calendar.ics/")
