@@ -111,6 +111,7 @@ def xml_propfind_response(
         props.append(xmlutils.make_clark("D:supported-report-set"))
         props.append(xmlutils.make_clark("D:resourcetype"))
         props.append(xmlutils.make_clark("D:owner"))
+        props.append(xmlutils.make_clark("C:max-resource-size"))
 
         if is_collection and collection.is_principal:
             props.append(xmlutils.make_clark("C:calendar-user-address-set"))
@@ -239,6 +240,8 @@ def xml_propfind_response(
                 child_element.text = xmlutils.make_href(
                     base_prefix, "/%s/" % collection.owner)
                 element.append(child_element)
+        elif tag == xmlutils.make_clark("C:max-resource-size"):
+            element.text = str(max_content_length)
         elif is_collection:
             if tag == xmlutils.make_clark("D:getcontenttype"):
                 if is_leaf:
