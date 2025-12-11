@@ -114,7 +114,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                     cache_content = self._load_item_cache(href, cache_hash)
                 if cache_content is None:
                     if self._storage._use_mtime_and_size_for_item_cache is True:
-                        # delayed read of the content
+                        # late read of the content
                         if self._storage._debug_cache_actions is True:
                             logger.debug("Item cache late read : %r", path)
                         with open(path, "rb") as f:
