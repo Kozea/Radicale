@@ -241,7 +241,8 @@ def xml_propfind_response(
                     base_prefix, "/%s/" % collection.owner)
                 element.append(child_element)
         elif tag == xmlutils.make_clark("C:max-resource-size"):
-            element.text = str(max_content_length)
+            # RFC4791#5.2.5 use 80% of max_content_length to cover base64 encoding
+            element.text = str(int(max_content_length * 0.8))
         elif is_collection:
             if tag == xmlutils.make_clark("D:getcontenttype"):
                 if is_leaf:
