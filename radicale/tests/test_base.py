@@ -692,11 +692,13 @@ permissions: RrWw""")
         assert not isinstance(response, int)
         status, prop = response["D:sync-token"]
         assert status == 200 and prop.text
+        assert "C:max-resource-size" not in response
         _, responses = self.propfind("/calendar.ics/event.ics", propfind)
         response = responses["/calendar.ics/event.ics"]
         assert not isinstance(response, int)
         status, prop = response["D:getetag"]
         assert status == 200 and prop.text
+        assert "C:max-resource-size" not in response
 
     def test_propfind_nonexistent(self) -> None:
         """Read a property that does not exist."""
