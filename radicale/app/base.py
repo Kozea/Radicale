@@ -39,6 +39,7 @@ class ApplicationBase:
     _rights: rights.BaseRights
     _web: web.BaseWeb
     _encoding: str
+    _max_resource_size: int
     _permit_delete_collection: bool
     _permit_overwrite_collection: bool
     _strict_preconditions: bool

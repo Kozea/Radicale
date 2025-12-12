@@ -162,7 +162,11 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": positive_int}),
         ("max_content_length", {
             "value": "100000000",
-            "help": "maximum size of request body in bytes",
+            "help": "maximum size of request body in bytes (default: 100 Mbyte)",
+            "type": positive_int}),
+        ("max_resource_size", {
+            "value": "10000000",
+            "help": "maximum size of resource (default: 10 Mbyte)",
             "type": positive_int}),
         ("timeout", {
             "value": "30",
@@ -600,7 +604,7 @@ This is an automated message. Please do not reply.""",
         ("profiling_per_request_min_duration", {
             "value": "3",
             "help": "log profiling data per request minimum duration (seconds)",
-            "type": int}),
+            "type": positive_int}),
         ("profiling_per_request_header", {
             "value": "False",
             "help": "Log profiling request body (if passing minimum duration)",
@@ -612,11 +616,11 @@ This is an automated message. Please do not reply.""",
         ("profiling_per_request_method_interval", {
             "value": "600",
             "help": "log profiling data per request method interval (seconds)",
-            "type": int}),
+            "type": positive_int}),
         ("profiling_top_x_functions", {
             "value": "10",
             "help": "log profiling top X functions (limit)",
-            "type": int}),
+            "type": positive_int}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs",

@@ -46,7 +46,7 @@ PRODID = u"-//Radicale//NONSGML Version " + utils.package_version("radicale") + 
 
 
 def prepare(vobject_items: List[vobject.base.Component], path: str,
-            content_type: str, permission: bool, parent_permission: bool,
+            content_type: str, permission: bool, parent_permission: bool, max_resource_size: int,
             tag: Optional[str] = None,
             write_whole_collection: Optional[bool] = None) -> Tuple[
                 Iterator[radicale_item.Item],  # items
@@ -103,6 +103,13 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
                         else:
                             logger.warning("Problem during prepare item with UID '%s' (content suppressed in this loglevel): %s", item.uid, e)
                         raise
+                    size = len(item.serialize())
+                    if (size > max_resource_size):
+                        logger.warning("PUT request contains item with UID %r size %d > limit %d: %r", item.uid, size, max_resource_size, path)
+                        # Use OverflowError as flag for max_resource_size
+                        raise OverflowError
+                    else:
+                        logger.debug("PUT request contains item with UID %r size %d <= limit %d: %r", item.uid, size, max_resource_size, path)
                     items.append(item)
             elif write_whole_collection and tag == "VADDRESSBOOK":
                 for vobject_item in vobject_items:
@@ -121,12 +128,26 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
                         else:
                             logger.warning("Problem during prepare item with UID '%s' (content suppressed in this loglevel): %s", item.uid, e)
                         raise
+                    size = len(item.serialize())
+                    if (size > max_resource_size):
+                        logger.warning("PUT request contains item with UID %r size %d > limit %d: %r", item.uid, size, max_resource_size, path)
+                        # Use OverflowError as flag for max_resource_size
+                        raise OverflowError
+                    else:
+                        logger.debug("PUT request contains item with UID %r size %d <= limit %d: %r", item.uid, size, max_resource_size, path)
                     items.append(item)
             elif not write_whole_collection:
                 vobject_item, = vobject_items
                 item = radicale_item.Item(collection_path=collection_path,
                                           vobject_item=vobject_item)
                 item.prepare()
+                size = len(item.serialize())
+                if (size > max_resource_size):
+                    logger.warning("PUT request contains item with UID %r size %d above limit %d: %r", item.uid, size, max_resource_size, path)
+                    # Use OverflowError as flag for max_resource_size
+                    raise OverflowError
+                else:
+                    logger.debug("PUT request contains item with UID %r size %d below limit %d: %r", item.uid, size, max_resource_size, path)
                 items.append(item)
 
         if write_whole_collection:
@@ -188,7 +209,8 @@ class ApplicationPartPut(ApplicationBase):
          prepared_props, prepared_exc_info) = prepare(
              vobject_items, path, content_type,
              bool(rights.intersect(access.permissions, "Ww")),
-             bool(rights.intersect(access.parent_permissions, "w")))
+             bool(rights.intersect(access.parent_permissions, "w")),
+             self._max_resource_size)
 
         with self._storage.acquire_lock("w", user, path=path, request="PUT"):
             item = next(iter(self._storage.discover(path)), None)
@@ -252,13 +274,18 @@ class ApplicationPartPut(ApplicationBase):
                      vobject_items, path, content_type,
                      bool(rights.intersect(access.permissions, "Ww")),
                      bool(rights.intersect(access.parent_permissions, "w")),
+                     self._max_resource_size,
                      tag, write_whole_collection)
             props = prepared_props
             if prepared_exc_info:
-                logger.warning(
-                    "Bad PUT request on %r (prepare): %s", path, prepared_exc_info[1],
-                    exc_info=prepared_exc_info)
-                return httputils.BAD_REQUEST
+                # Use OverflowError as flag for max_resource_size
+                if prepared_exc_info[0] == OverflowError:
+                    return httputils.PRECONDITION_FAILED
+                else:
+                    logger.warning(
+                        "Bad PUT request on %r (prepare): %s", path, prepared_exc_info[1],
+                        exc_info=prepared_exc_info)
+                    return httputils.BAD_REQUEST
 
             if write_whole_collection:
                 try:

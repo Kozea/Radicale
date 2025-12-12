@@ -142,6 +142,22 @@ permissions: RrWw""")
         assert "Event" in answer
         assert "UID:event" in answer
 
+    def test_add_event_exceed_size(self) -> None:
+        """Add an event which is exceeding max-resource-size."""
+        self.configure({"server": {"max_resource_size": 20}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=412)
+
+    def test_add_events_exceed_size(self) -> None:
+        """Add multipe events where last is exceeding max-resource-size."""
+        self.configure({"server": {"max_resource_size": 603}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_multiple3.ics")
+        path = "/calendar.ics/"
+        self.put(path, event, check=412)
+
     def test_add_event_broken(self) -> None:
         """Add a broken event."""
         self.mkcalendar("/calendar.ics/")
@@ -676,11 +692,13 @@ permissions: RrWw""")
         assert not isinstance(response, int)
         status, prop = response["D:sync-token"]
         assert status == 200 and prop.text
+        assert "C:max-resource-size" not in response
         _, responses = self.propfind("/calendar.ics/event.ics", propfind)
         response = responses["/calendar.ics/event.ics"]
         assert not isinstance(response, int)
         status, prop = response["D:getetag"]
         assert status == 200 and prop.text
+        assert "C:max-resource-size" not in response
 
     def test_propfind_nonexistent(self) -> None:
         """Read a property that does not exist."""
@@ -691,6 +709,40 @@ permissions: RrWw""")
         assert not isinstance(response, int) and len(response) == 1
         status, prop = response["ICAL:calendar-color"]
         assert status == 404 and not prop.text
+
+    def test_propfind_max_resource_size(self) -> None:
+        """Read property C:max-resource-size"""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        self.put("/calendar.ics/event.ics", event)
+        _, responses = self.propfind("/calendar.ics/", """\
+<?xml version="1.0"?>
+ <propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+   <prop>
+     <C:max-resource-size />
+   </prop>
+ </propfind>""")
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int)
+        status, prop = response["C:max-resource-size"]
+        assert status == 200 and prop.text
+
+    def test_propfind_getctag(self) -> None:
+        """Read property CS:getctag"""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        self.put("/calendar.ics/event.ics", event)
+        _, responses = self.propfind("/calendar.ics/", """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:CS="http://calendarserver.org/ns/">
+  <prop>
+    <CS:getctag />
+  </prop>
+</propfind>""")
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int)
+        status, prop = response["CS:getctag"]
+        assert status == 200 and prop.text
 
     def test_proppatch(self) -> None:
         """Set/Remove a property and read it back."""
