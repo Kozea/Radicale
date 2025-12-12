@@ -111,7 +111,9 @@ def xml_propfind_response(
         props.append(xmlutils.make_clark("D:supported-report-set"))
         props.append(xmlutils.make_clark("D:resourcetype"))
         props.append(xmlutils.make_clark("D:owner"))
-        props.append(xmlutils.make_clark("C:max-resource-size"))
+        if not allprop:
+            # RFC4791#5.2.5: SHOULD NOT be returned by a PROPFIND DAV:allprop request
+            props.append(xmlutils.make_clark("C:max-resource-size"))
 
         if is_collection and collection.is_principal:
             props.append(xmlutils.make_clark("C:calendar-user-address-set"))
