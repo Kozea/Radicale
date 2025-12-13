@@ -98,12 +98,13 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         self._mask_passwords = configuration.get("logging", "mask_passwords")
         self._max_content_length = configuration.get("server", "max_content_length")
         self._max_resource_size = configuration.get("server", "max_resource_size")
+        logger.info("max_content_length set to: %d bytes (%sbytes)", self._max_content_length, utils.format_unit(self._max_content_length, binary=True))
         if (self._max_resource_size > (self._max_content_length * 0.8)):
             max_resource_size_limited = int(self._max_content_length * 0.8)
-            logger.warning("max_resource_size capped to: %d bytes (from %d to 80%% of max_content_length %d)", max_resource_size_limited, self._max_resource_size, self._max_content_length)
+            logger.warning("max_resource_size set to: %d bytes (%sbytes) (capped from %d to 80%% of max_content_length)", max_resource_size_limited, utils.format_unit(max_resource_size_limited, binary=True), self._max_resource_size)
             self._max_resource_size = max_resource_size_limited
         else:
-            logger.info("max_resource_size set to: %d bytes", self._max_resource_size)
+            logger.info("max_resource_size  set to: %d bytes (%sbytes)", self._max_resource_size, utils.format_unit(self._max_resource_size, binary=True))
         self._bad_put_request_content = configuration.get("logging", "bad_put_request_content")
         logger.info("log bad put request content: %s", self._bad_put_request_content)
         self._request_header_on_debug = configuration.get("logging", "request_header_on_debug")

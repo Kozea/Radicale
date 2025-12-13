@@ -142,7 +142,7 @@ class BaseAuth:
         if self._lc_username is True and self._uc_username is True:
             raise RuntimeError("auth.lc_username and auth.uc_username cannot be enabled together")
         self._auth_delay = configuration.get("auth", "delay")
-        logger.info("auth.delay: %f", self._auth_delay)
+        logger.info("auth.delay: %f seconds", self._auth_delay)
         self._failed_auth_delay = 0
         self._lock = threading.Lock()
         # cache_successful_logins
