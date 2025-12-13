@@ -303,7 +303,7 @@ def format_ut(unixtime: int) -> str:
     return r
 
 
-def format_int(value: int, binary: bool = False) -> str:
+def format_unit(value: float, binary: bool = False) -> str:
     if binary:
         if value > UNIT_G:
             value = value / UNIT_G
