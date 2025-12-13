@@ -330,18 +330,6 @@ def format_int(value: int, binary: bool = False) -> str:
             unit = ""
     return ("%.1f %s" % (value, unit))
 
-    if unixtime <= DATETIME_MIN_UNIXTIME:
-        r = str(unixtime) + "(<=MIN:" + str(DATETIME_MIN_UNIXTIME) + ")"
-    elif unixtime >= DATETIME_MAX_UNIXTIME:
-        r = str(unixtime) + "(>=MAX:" + str(DATETIME_MAX_UNIXTIME) + ")"
-    else:
-        if sys.version_info < (3, 11):
-            dt = datetime.datetime.utcfromtimestamp(unixtime)
-        else:
-            dt = datetime.datetime.fromtimestamp(unixtime, datetime.UTC)
-        r = str(unixtime) + "(" + dt.strftime('%Y-%m-%dT%H:%M:%SZ') + ")"
-    return r
-
 
 def limit_str(content: str, limit: int) -> str:
     length = len(content)
