@@ -53,6 +53,15 @@ DATETIME_MAX_UNIXTIME: int = (datetime.MAXYEAR - 1970) * 365 * 24 * 60 * 60
 DATETIME_MIN_UNIXTIME: int = (datetime.MINYEAR - 1970) * 365 * 24 * 60 * 60
 
 
+# Number units
+UNIT_g: int = (1000 * 1000 * 1000)
+UNIT_m: int = (1000 * 1000)
+UNIT_k: int = (1000)
+UNIT_G: int = (1024 * 1024 * 1024)
+UNIT_M: int = (1024 * 1024)
+UNIT_K: int = (1024)
+
+
 def load_plugin(internal_types: Sequence[str], module_name: str,
                 class_name: str, base_class: Type[_T_co],
                 configuration: "config.Configuration") -> _T_co:
@@ -281,6 +290,46 @@ def format_ut(unixtime: int) -> str:
     if sys.platform == "win32":
         # TODO check how to support this better
         return str(unixtime)
+    if unixtime <= DATETIME_MIN_UNIXTIME:
+        r = str(unixtime) + "(<=MIN:" + str(DATETIME_MIN_UNIXTIME) + ")"
+    elif unixtime >= DATETIME_MAX_UNIXTIME:
+        r = str(unixtime) + "(>=MAX:" + str(DATETIME_MAX_UNIXTIME) + ")"
+    else:
+        if sys.version_info < (3, 11):
+            dt = datetime.datetime.utcfromtimestamp(unixtime)
+        else:
+            dt = datetime.datetime.fromtimestamp(unixtime, datetime.UTC)
+        r = str(unixtime) + "(" + dt.strftime('%Y-%m-%dT%H:%M:%SZ') + ")"
+    return r
+
+
+def format_int(value: int, binary: bool = False) -> str:
+    if binary:
+        if value > UNIT_G:
+            value = value / UNIT_G
+            unit = "G"
+        elif value > UNIT_M:
+            value = value / UNIT_M
+            unit = "M"
+        elif value > UNIT_K:
+            value = value / UNIT_K
+            unit = "K"
+        else:
+            unit = ""
+    else:
+        if value > UNIT_g:
+            value = value / UNIT_g
+            unit = "g"
+        elif value > UNIT_m:
+            value = value / UNIT_m
+            unit = "m"
+        elif value > UNIT_k:
+            value = value / UNIT_k
+            unit = "k"
+        else:
+            unit = ""
+    return ("%.1f %s" % (value, unit))
+
     if unixtime <= DATETIME_MIN_UNIXTIME:
         r = str(unixtime) + "(<=MIN:" + str(DATETIME_MIN_UNIXTIME) + ")"
     elif unixtime >= DATETIME_MAX_UNIXTIME:
