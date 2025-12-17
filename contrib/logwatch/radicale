@@ -91,8 +91,14 @@ sub ConvertTokens($) {
    if (defined $tokens_h{"sync-token"}) {
       push @result_a, "ST";
    }
+   if (defined $tokens_h{"sync-collection"}) {
+      push @result_a, "SC";
+   }
    if (defined $tokens_h{"getctag"}) {
       push @result_a, "GCT";
+   }
+   if (defined $tokens_h{"getetag"}) {
+      push @result_a, "GET";
    }
    # TODO: add potential others which causing long duration
    $result = "";
@@ -251,7 +257,7 @@ if (keys %Logins) {
 if (keys %ResponseTimes) {
    $length = MaxLength(\%ResponseTimes);
    print "\n**Response timings (counts, seconds) (D=<depth> R=<result> F=<flags>)**\n";
-   print "*  Flags: ST:sync-token GCT:getctag\n";
+   print "*  Flags: ST:sync-token SC:sync-collection GCT:getctag GET:getetag\n";
    printf "%-" . $length . "s | %7s | %7s | %7s | %7s |\n", "Response", "cnt", "min", "max", "avg";
    print "-" x($length + 42) . "\n";
    foreach my $req (sort keys %ResponseTimes) {
