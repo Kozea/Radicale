@@ -289,8 +289,12 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             if xml_request is not None:
                 if "<sync-token />" in xml_request:
                     flags.append("sync-token")
+                if "<getetag />" in xml_request:
+                    flags.append("getetag")
                 if "<CS:getctag />" in xml_request:
                     flags.append("getctag")
+                if "<sync-collection " in xml_request:
+                    flags.append("sync-collection")
             if flags:
                 flags_text = " (" + " ".join(flags) + ")"
             else:
