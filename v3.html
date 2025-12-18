@@ -936,9 +936,18 @@ disable the limit.</p>
 <section class="level5" id="max_content_length">
 <h5>max_content_length <a class="headerlink" href="#max_content_length">&para;</a></h5>
 <p>The maximum size of the request body. (bytes)</p>
-<p>Default: <code>100000000</code></p>
+<p>Default: <code>100000000</code> (100 Mbyte)</p>
 <p>In case of using a reverse proxy in front of check also there related
-option</p>
+option.</p>
+</section>
+<section class="level5" id="max_resource_size">
+<h5>max_resource_size <a class="headerlink" href="#max_resource_size">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>The maximum size of a resource. (bytes)</p>
+<p>Default: <code>10000000</code> (10 Mbyte)</p>
+<p>Limited to 80% of max_content_length to cover plain base64 encoded
+payload.</p>
+<p>Announced to clients requesting "max-resource-size" via PROPFIND.</p>
 </section>
 <section class="level5" id="timeout">
 <h5>timeout <a class="headerlink" href="#timeout">&para;</a></h5>
@@ -1702,19 +1711,25 @@ Allows creation and management of address books and calendars.</p></li>
 <section class="level5" id="request_header_on_debug">
 <h5>request_header_on_debug <a class="headerlink" href="#request_header_on_debug">&para;</a></h5>
 <p><em>(&gt;= 3.2.2)</em></p>
-<p>Log request on <code>level = debug</code></p>
+<p>Log request header on <code>level = debug</code></p>
 <p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="request_content_on_debug">
 <h5>request_content_on_debug <a class="headerlink" href="#request_content_on_debug">&para;</a></h5>
 <p><em>(&gt;= 3.2.2)</em></p>
-<p>Log request on <code>level = debug</code></p>
+<p>Log request content (body) on <code>level = debug</code></p>
+<p>Default: <code>False</code></p>
+</section>
+<section class="level5" id="response_header_on_debug">
+<h5>response_header_on_debug <a class="headerlink" href="#response_header_on_debug">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log response header on <code>level = debug</code></p>
 <p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="response_content_on_debug">
 <h5>response_content_on_debug <a class="headerlink" href="#response_content_on_debug">&para;</a></h5>
 <p><em>(&gt;= 3.2.2)</em></p>
-<p>Log response on <code>level = debug</code></p>
+<p>Log response content (body) on <code>level = debug</code></p>
 <p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="rights_rule_doesnt_match_on_debug">
@@ -1728,6 +1743,50 @@ Allows creation and management of address books and calendars.</p></li>
 <p><em>(&gt;= 3.3.2)</em></p>
 <p>Log storage cache actions on <code>level = debug</code></p>
 <p>Default: <code>False</code></p>
+</section>
+<section class="level5" id="profiling_per_request">
+<h5>profiling_per_request <a class="headerlink" href="#profiling_per_request">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log profiling data on level=info</p>
+<p>Default: <code>none</code></p>
+<p>One of</p>
+<ul>
+<li><code>none</code> (disabled)</li>
+<li><code>per_request</code> (above minimum duration)</li>
+<li><code>per_request_method</code> (regular interval)</li>
+</ul>
+</section>
+<section class="level5" id="profiling_per_request_min_duration">
+<h5>profiling_per_request_min_duration <a class="headerlink" href="#profiling_per_request_min_duration">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log profiling data per request minimum duration (seconds) before
+logging, otherwise skip</p>
+<p>Default: <code>3</code></p>
+</section>
+<section class="level5" id="profiling_per_request_header">
+<h5>profiling_per_request_header <a class="headerlink" href="#profiling_per_request_header">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log profiling request header (if passing minimum duration)</p>
+<p>Default: <code>False</code></p>
+</section>
+<section class="level5" id="profiling_per_request_xml">
+<h5>profiling_per_request_xml <a class="headerlink" href="#profiling_per_request_xml">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log profiling request XML (if passing minimum duration)</p>
+<p>Default: <code>False</code></p>
+</section>
+<section class="level5" id="profiling_per_request_method_interval">
+<h5>profiling_per_request_method_interval <a class="headerlink" href="#profiling_per_request_method_interval">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log profiling data per method interval (seconds) Triggered by
+request, not active on idle systems</p>
+<p>Default: <code>600</code></p>
+</section>
+<section class="level5" id="profiling_top_x_functions">
+<h5>profiling_top_x_functions <a class="headerlink" href="#profiling_top_x_functions">&para;</a></h5>
+<p><em>(&gt;= 3.5.10)</em></p>
+<p>Log profiling top X functions (limit)</p>
+<p>Default: <code>10</code></p>
 </section>
 </section>
 <section class="level4" id="headers">
