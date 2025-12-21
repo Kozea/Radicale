@@ -37,8 +37,11 @@ jobs:
           flavor: latest=true
           tags: |
             type=semver,pattern={{version}}
+            type=semver,pattern={{major}}
+            type=semver,pattern={{major}}.{{minor}}
             type=schedule,prefix=nightly-,pattern={{date 'YYYYMMDD'}}
             type=raw,enable=${{ github.event_name == 'workflow_dispatch' }},value=workflow_dispatch-{{branch}}-{{sha}}
+            type=raw,enable=${{ github.event_name == 'release' }},value=stable
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
