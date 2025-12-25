@@ -41,7 +41,7 @@ jobs:
         with:
           images: |
             name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-            name=${{ env.IMAGE_NAME }}
+            # name=${{ env.IMAGE_NAME }}
           flavor: latest=true
           tags: |
             type=semver,pattern={{version}}
