@@ -141,6 +141,7 @@ def main():
         branch_docs = {}
         for branch in branches[:]:
             if branch.startswith("trial/"):
+                print("Skip branch (startswith 'trial/'): %s" % branch, file=sys.stderr)
                 branches.remove(branch)
                 continue
             checkout(branch)
@@ -148,6 +149,7 @@ def main():
                 branch_docs[branch] = os.path.join(temp, "%s.md" % branch)
                 shutil.copy(DOCUMENTATION_SRC, branch_docs[branch])
             else:
+                print("Skip branch (no doc file found): %s" % branch, file=sys.stderr)
                 branches.remove(branch)
         checkout(target_branch)
         for path in glob.iglob("*.html"):
