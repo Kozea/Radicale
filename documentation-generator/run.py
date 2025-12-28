@@ -3,7 +3,7 @@
 """
 Documentation generator
 
-Generates the documentation for every Git branch and commits it.
+Generates the documentation for every Git branch (excluding starting with "trial/" and commits it.
 Gracefully handles conflicting commits.
 """
 
@@ -140,6 +140,9 @@ def main():
     with TemporaryDirectory(prefix="%s-" % PROG) as temp:
         branch_docs = {}
         for branch in branches[:]:
+            if branch.startswith("trial/"):
+                branches.remove(branch)
+                continue
             checkout(branch)
             if os.path.exists(DOCUMENTATION_SRC):
                 branch_docs[branch] = os.path.join(temp, "%s.md" % branch)
