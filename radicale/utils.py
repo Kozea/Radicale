@@ -22,7 +22,9 @@ import os
 import ssl
 import sys
 import textwrap
+from hashlib import sha256
 from importlib import import_module, metadata
+from string import ascii_letters, digits, punctuation
 from typing import Callable, Sequence, Tuple, Type, TypeVar, Union
 
 from radicale import config
@@ -342,3 +344,114 @@ def limit_str(content: str, limit: int) -> str:
 def textwrap_str(content: str, limit: int = 2000) -> str:
     # TODO: add support for config option and prefix
     return textwrap.indent(limit_str(content, limit), " ", lambda line: True)
+
+
+def dataToHex(data, count):
+    result = ''
+    for item in range(count):
+        if ((item > 0) and ((item % 8) == 0)):
+            result += ' '
+        if (item < len(data)):
+            result += '%02x' % data[item] + ' '
+        else:
+            result += '   '
+    return result
+
+
+def dataToAscii(data, count):
+    result = ''
+    for item in range(count):
+        if (item < len(data)):
+            char = chr(data[item])
+            if char in ascii_letters or \
+               char in digits or \
+               char in punctuation or \
+               char == ' ':
+                result += char
+            else:
+                result += '.'
+    return result
+
+
+def dataToSpecial(data, count):
+    result = ''
+    for item in range(count):
+        if (item < len(data)):
+            char = chr(data[item])
+            if char == '\r':
+                result += 'C'
+            elif char == '\n':
+                result += 'L'
+            elif ord(char) == 0xc2:
+                result += 'u'
+            else:
+                result += '.'
+    return result
+
+
+def hexdump_str(content: str, limit: int = 2000) -> str:
+
+    result = ""
+    index = 0
+    size = 16
+    bytestring = content.encode("utf-8")
+    length = len(bytestring)
+
+    while (index < length) and (index < limit):
+        data = bytestring[index:index+size]
+        hex = dataToHex(data, size)
+        ascii = dataToAscii(data, size)
+        special = dataToSpecial(data, size)
+        result += '%08x  ' % index
+        result += hex
+        result += '|'
+        result += '%-16s' % ascii
+        result += '|'
+        result += '%-16s' % special
+        result += '|'
+        result += '\n'
+        index += size
+
+    return result
+
+
+def hexdump_line(line: str, limit: int = 200) -> str:
+    result = ""
+    length_str = len(line)
+    bytestring = line.encode("utf-8")
+    length = len(bytestring)
+    size = length
+    if (size > limit):
+        size = limit
+
+    hex = dataToHex(bytestring, size)
+    ascii = dataToAscii(bytestring, size)
+    special = dataToSpecial(bytestring, size)
+    result += '%3d/%3d' % (length_str, length)
+    result += ': '
+    result += hex
+    result += '|'
+    result += ascii
+    result += '|'
+    result += special
+    result += '|'
+    result += '\n'
+
+    return result
+
+
+def hexdump_lines(lines: str, limit: int = 200) -> str:
+    result = ""
+    counter = 0
+    for line in lines.splitlines(True):
+        result += '% 4d  ' % counter
+        result += hexdump_line(line)
+        counter += 1
+
+    return result
+
+
+def sha256_str(content: str) -> str:
+    _hash = sha256()
+    _hash.update(content.encode("utf-8"))
+    return _hash.hexdigest()
