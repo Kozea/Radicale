@@ -30,6 +30,7 @@ import base64
 import cProfile
 import datetime
 import io
+import logging
 import pprint
 import pstats
 import random
@@ -253,9 +254,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             if answer is not None:
                 if isinstance(answer, str):
                     if self._response_content_on_debug:
-                        logger.debug("Response content (nonXML):\n%s", utils.textwrap_str(answer))
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug("Response content (nonXML):\n%s", utils.textwrap_str(answer))
                     else:
-                        logger.debug("Response content: suppressed by config/option [logging] response_content_on_debug")
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug("Response content: suppressed by config/option [logging] response_content_on_debug")
                     headers["Content-Type"] += "; charset=%s" % self._encoding
                     answer = answer.encode(self._encoding)
                 accept_encoding = [
@@ -276,9 +279,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             headers.update(self._extra_headers)
 
             if self._response_header_on_debug:
-                logger.debug("Response header:\n%s", utils.textwrap_str(pprint.pformat(headers)))
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("Response header:\n%s", utils.textwrap_str(pprint.pformat(headers)))
             else:
-                logger.debug("Response header: suppressed by config/option [logging] response_header_on_debug")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("Response header: suppressed by config/option [logging] response_header_on_debug")
 
             # Start response
             time_end = datetime.datetime.now()

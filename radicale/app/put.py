@@ -202,6 +202,9 @@ class ApplicationPartPut(ApplicationBase):
                 "Bad PUT request on %r (read_components): %s", path, e, exc_info=True)
             if self._log_bad_put_request_content:
                 logger.warning("Bad PUT request content of %r:\n%s", path, utils.textwrap_str(content))
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("Request content (sha256sum): %s", utils.sha256_str(content))
+                    logger.debug("Request content (hexdump/lines):\n%s", utils.hexdump_lines(content))
             else:
                 logger.debug("Bad PUT request content: suppressed by config/option [logging] bad_put_request_content")
             return httputils.BAD_REQUEST

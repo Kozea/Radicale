@@ -24,6 +24,7 @@ Helper functions for HTTP.
 """
 
 import contextlib
+import logging
 import os
 import pathlib
 import sys
@@ -150,9 +151,12 @@ def read_request_body(configuration: "config.Configuration",
     content = decode_request(configuration, environ,
                              read_raw_request_body(configuration, environ))
     if configuration.get("logging", "request_content_on_debug"):
-        logger.debug("Request content:\n%s", utils.textwrap_str(content))
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Request content (sha256sum): %s", utils.sha256_str(content))
+            logger.debug("Request content:\n%s", utils.textwrap_str(content))
     else:
-        logger.debug("Request content: suppressed by config/option [logging] request_content_on_debug")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Request content: suppressed by config/option [logging] request_content_on_debug")
     return content
 
 
