@@ -714,6 +714,44 @@ Reason for problems can be
 
 ## Documentation
 
+### Options
+
+#### General Options
+
+##### --version
+
+Print version
+
+##### --verify-storage
+
+Verification of local collections storage
+
+##### --verify-item <file>
+
+_(>= 3.5.11)_
+
+Verification of a particular item file
+
+##### -C|--config <file>
+
+Load one or more specified config file(s)
+
+##### -D|--debug
+
+Turns log level to debug
+
+#### Configuration Options
+
+Each supported option from config file can be provided/overridden by command line
+replacing `_` with `-` and prepending the section followed by a `-`, e.g.
+
+```
+[logging]
+backtrace_on_debug = False
+```
+
+can be enabled using `--logging-backtrace-on-debug=true` on command line.
+
 ### Configuration
 
 Radicale can be configured with a configuration file or with
