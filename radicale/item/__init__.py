@@ -37,7 +37,7 @@ from typing import (Any, Callable, List, MutableMapping, Optional, Sequence,
 import vobject
 
 from radicale import storage  # noqa:F401
-from radicale import pathutils
+from radicale import pathutils, utils
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
@@ -333,6 +333,23 @@ def find_time_range(vobject_item: vobject.base.Component, tag: str
     if end is None:
         end = radicale_filter.DATETIME_MAX
     return math.floor(start.timestamp()), math.ceil(end.timestamp())
+
+
+def verify(file: str, encoding: str):
+    logger.info("Verifying item: %s", file)
+    with open(file, "rb") as f:
+        content_raw = f.read()
+    content = content_raw.decode(encoding)
+    logger.info("Verifying item: %s has sha256sum %r", file, utils.sha256_str(content))
+    try:
+        vobject_items = read_components(content)  # noqa: F841
+    except Exception as e:
+        logger.error("Verifying item: %s problem: %s", file, e)
+        logger.info("Request content (hexdump/lines):\n%s", utils.hexdump_lines(content))
+        return False
+    else:
+        logger.info("Verifying item: %s successful", file)
+    return True
 
 
 class Item:

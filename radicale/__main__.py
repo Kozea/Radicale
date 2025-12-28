@@ -33,7 +33,7 @@ import sys
 from types import FrameType
 from typing import List, Optional, cast
 
-from radicale import VERSION, config, log, server, storage, types
+from radicale import VERSION, config, item, log, server, storage, types
 from radicale.log import logger
 
 
@@ -65,6 +65,8 @@ def run() -> None:
     parser.add_argument("--version", action="version", version=VERSION)
     parser.add_argument("--verify-storage", action="store_true",
                         help="check the storage for errors and exit")
+    parser.add_argument("--verify-item", action="store", nargs=1,
+                        help="check the provided item file for errors and exit")
     parser.add_argument("-C", "--config",
                         help="use specific configuration files", nargs="*")
     parser.add_argument("-D", "--debug", action="store_const", const="debug",
@@ -191,6 +193,19 @@ def run() -> None:
         except Exception as e:
             logger.critical("An exception occurred during storage "
                             "verification: %s", e, exc_info=True)
+            sys.exit(1)
+        return
+
+    if args_ns.verify_item:
+        encoding = configuration.get("encoding", "stock")
+        logger.info("Item verification start using 'stock' encoding: %s", encoding)
+        try:
+            if not item.verify(args_ns.verify_item[0], encoding):
+                logger.critical("Item verification failed")
+                sys.exit(1)
+        except Exception as e:
+            logger.critical("An exception occurred during item "
+                            "verification: %s", e, exc_info=False)
             sys.exit(1)
         return
 
