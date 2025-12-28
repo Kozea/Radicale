@@ -382,11 +382,11 @@ def dataToSpecial(data, count):
                 result += 'C'
             elif char == '\n':
                 result += 'L'
-            elif (ord(char) & 0xf8) == 0xf0:
+            elif (ord(char) & 0xf8) == 0xf0:  # assuming UTF-8
                 result += '4'
-            elif (ord(char) & 0xf0) == 0xf0:
+            elif (ord(char) & 0xf0) == 0xf0:  # assuming UTF-8
                 result += '3'
-            elif (ord(char) & 0xe0) == 0xe0:
+            elif (ord(char) & 0xe0) == 0xe0:  # assuming UTF-8
                 result += '2'
             else:
                 result += '.'
@@ -397,7 +397,7 @@ def hexdump_str(content: str, limit: int = 2000) -> str:
     result = "Hexdump of string: index  <bytes> | <ASCII> | <CTRL: C=CR L=LF 2/3/4=UTF-8-length> |\n"
     index = 0
     size = 16
-    bytestring = content.encode("utf-8")
+    bytestring = content.encode("utf-8")  # assuming UTF-8
     length = len(bytestring)
 
     while (index < length) and (index < limit):
@@ -421,7 +421,7 @@ def hexdump_str(content: str, limit: int = 2000) -> str:
 def hexdump_line(line: str, limit: int = 200) -> str:
     result = ""
     length_str = len(line)
-    bytestring = line.encode("utf-8")
+    bytestring = line.encode("utf-8")  # assuming UTF-8
     length = len(bytestring)
     size = length
     if (size > limit):
@@ -456,5 +456,11 @@ def hexdump_lines(lines: str, limit: int = 200) -> str:
 
 def sha256_str(content: str) -> str:
     _hash = sha256()
-    _hash.update(content.encode("utf-8"))
+    _hash.update(content.encode("utf-8"))  # assuming UTF-8
+    return _hash.hexdigest()
+
+
+def sha256_bytes(content: bytes) -> str:
+    _hash = sha256()
+    _hash.update(content)
     return _hash.hexdigest()

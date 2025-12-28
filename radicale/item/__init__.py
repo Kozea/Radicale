@@ -341,7 +341,7 @@ def verify(file: str, encoding: str):
     with open(file, "rb") as f:
         content_raw = f.read()
     content = content_raw.decode(encoding)
-    logger.info("Verifying item: %s has sha256sum %r", file, utils.sha256_str(content))
+    logger.info("Verifying item: %s has sha256sum %r", file, utils.sha256_bytes(content_raw))
     try:
         vobject_items = read_components(content)  # noqa: F841
     except Exception as e:
