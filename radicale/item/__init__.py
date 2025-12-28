@@ -346,7 +346,9 @@ def verify(file: str, encoding: str):
         vobject_items = read_components(content)  # noqa: F841
     except Exception as e:
         logger.error("Verifying item: %s problem: %s", file, e)
-        logger.info("Request content (hexdump/lines):\n%s", utils.hexdump_lines(content))
+        logger.warning("Item content:\n%s", utils.textwrap_str(content))
+        logger.info("Item content (hexdump):\n%s", utils.hexdump_str(content))
+        logger.info("Item content (hexdump/lines):\n%s", utils.hexdump_lines(content))
         return False
     else:
         logger.info("Verifying item: %s successful", file)
