@@ -382,16 +382,19 @@ def dataToSpecial(data, count):
                 result += 'C'
             elif char == '\n':
                 result += 'L'
-            elif ord(char) == 0xc2:
-                result += 'u'
+            elif (ord(char) & 0xf8) == 0xf0:
+                result += '4'
+            elif (ord(char) & 0xf0) == 0xf0:
+                result += '3'
+            elif (ord(char) & 0xe0) == 0xe0:
+                result += '2'
             else:
                 result += '.'
     return result
 
 
 def hexdump_str(content: str, limit: int = 2000) -> str:
-
-    result = ""
+    result = "Hexdump of string: index  <bytes> | <ASCII> | <CTRL: C=CR L=LF 2/3/4=UTF-8-length> |\n"
     index = 0
     size = 16
     bytestring = content.encode("utf-8")
@@ -441,7 +444,7 @@ def hexdump_line(line: str, limit: int = 200) -> str:
 
 
 def hexdump_lines(lines: str, limit: int = 200) -> str:
-    result = ""
+    result = "Hexdump of lines: nr  chars/bytes: <bytes> | <ASCII> | <CTRL: C=CR L=LF 2/3/4=UTF-8-length> |\n"
     counter = 0
     for line in lines.splitlines(True):
         result += '% 4d  ' % counter
