@@ -88,6 +88,17 @@ def package_version(name):
     return metadata.version(name)
 
 
+def vobject_supports_vcard4() -> bool:
+    """Check if vobject supports vCard 4.0 (requires version >= 1.0.0)."""
+    try:
+        version = package_version("vobject")
+        parts = version.split(".")
+        major = int(parts[0])
+        return major >= 1
+    except Exception:
+        return False
+
+
 def packages_version():
     versions = []
     versions.append("python=%s.%s.%s" % (sys.version_info[0], sys.version_info[1], sys.version_info[2]))

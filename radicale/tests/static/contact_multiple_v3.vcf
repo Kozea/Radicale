@@ -1,0 +1,12 @@
+BEGIN:VCARD
+VERSION:3.0
+UID:contact1
+N:Contact1;;;;
+FN:Contact1
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+UID:contact2
+N:Contact2;;;;
+FN:Contact2
+END:VCARD

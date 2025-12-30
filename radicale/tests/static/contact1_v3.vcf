@@ -1,0 +1,7 @@
+BEGIN:VCARD
+VERSION:3.0
+UID:contact1
+N:Contact;;;;
+FN:Contact
+NICKNAME:test
+END:VCARD
