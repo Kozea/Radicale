@@ -278,7 +278,7 @@ permissions: RrWw""")
     def test_add_contact_v3(self) -> None:
         """Add a vCard 3.0 contact."""
         self.create_addressbook("/contacts.vcf/")
-        contact = get_file_content("contact1_v3.vcf")
+        contact = get_file_content("contact1.vcf")
         path = "/contacts.vcf/contact.vcf"
         self.put(path, contact)
         _, headers, answer = self.request("GET", path, check=200)
@@ -293,7 +293,7 @@ permissions: RrWw""")
     def test_add_contact_v4(self) -> None:
         """Add a vCard 4.0 contact (requires vobject >= 1.0.0)."""
         self.create_addressbook("/contacts.vcf/")
-        contact = get_file_content("contact1.vcf")
+        contact = get_file_content("contact1_v4.vcf")
         path = "/contacts.vcf/contact.vcf"
         self.put(path, contact)
         _, headers, answer = self.request("GET", path, check=200)
@@ -306,7 +306,7 @@ permissions: RrWw""")
     def test_add_contact_photo_with_data_uri_v3(self) -> None:
         """Test vCard 3.0 PHOTO format"""
         self.create_addressbook("/contacts.vcf/")
-        contact = get_file_content("contact_photo_with_data_uri_v3.vcf")
+        contact = get_file_content("contact_photo_with_data_uri.vcf")
         self.put("/contacts.vcf/contact.vcf", contact)
 
     @pytest.mark.skipif(not utils.vobject_supports_vcard4(),
@@ -314,7 +314,7 @@ permissions: RrWw""")
     def test_add_contact_photo_with_data_uri_v4(self) -> None:
         """Test vCard 4.0 PHOTO data URI format (requires vobject >= 1.0.0)"""
         self.create_addressbook("/contacts.vcf/")
-        contact = get_file_content("contact_photo_with_data_uri.vcf")
+        contact = get_file_content("contact_photo_with_data_uri_v4.vcf")
         self.put("/contacts.vcf/contact.vcf", contact)
 
     def test_update_event(self) -> None:
@@ -790,7 +790,7 @@ permissions: RrWw""")
     def test_propfind_supported_address_data(self) -> None:
         """Read property CR:supported-address-data on addressbook"""
         self.create_addressbook("/addressbook.vcf/")
-        contact = get_file_content("contact1_v3.vcf")
+        contact = get_file_content("contact1.vcf")
         self.put("/addressbook.vcf/contact.vcf", contact)
         _, responses = self.propfind("/addressbook.vcf/", """\
 <?xml version="1.0"?>
