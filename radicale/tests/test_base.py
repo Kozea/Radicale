@@ -27,9 +27,10 @@ import posixpath
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
 import defusedxml.ElementTree as DefusedET
+import pytest
 import vobject
 
-from radicale import storage, xmlutils
+from radicale import storage, utils, xmlutils
 from radicale.tests import RESPONSES, BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -273,6 +274,48 @@ permissions: RrWw""")
         assert "\nUID" not in contact
         path = "/contacts.vcf/contact.vcf"
         self.put(path, contact, check=400)
+
+    def test_add_contact_v3(self) -> None:
+        """Add a vCard 3.0 contact."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("contact1.vcf")
+        path = "/contacts.vcf/contact.vcf"
+        self.put(path, contact)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/vcard; charset=utf-8"
+        assert "VCARD" in answer
+        assert "UID:contact1" in answer
+        assert "VERSION:3.0" in answer
+
+    @pytest.mark.skipif(not utils.vobject_supports_vcard4(),
+                        reason="vobject < 1.0.0 does not support vCard 4.0")
+    def test_add_contact_v4(self) -> None:
+        """Add a vCard 4.0 contact (requires vobject >= 1.0.0)."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("contact1_v4.vcf")
+        path = "/contacts.vcf/contact.vcf"
+        self.put(path, contact)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/vcard; charset=utf-8"
+        assert "VCARD" in answer
+        assert "UID:contact1" in answer
+        assert "VERSION:4.0" in answer
+
+    def test_add_contact_photo_with_data_uri_v3(self) -> None:
+        """Test vCard 3.0 PHOTO format"""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("contact_photo_with_data_uri.vcf")
+        self.put("/contacts.vcf/contact.vcf", contact)
+
+    @pytest.mark.skipif(not utils.vobject_supports_vcard4(),
+                        reason="vobject < 1.0.0 does not support vCard 4.0")
+    def test_add_contact_photo_with_data_uri_v4(self) -> None:
+        """Test vCard 4.0 PHOTO data URI format (requires vobject >= 1.0.0)"""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("contact_photo_with_data_uri_v4.vcf")
+        self.put("/contacts.vcf/contact.vcf", contact)
 
     def test_update_event(self) -> None:
         """Update an event."""
@@ -743,6 +786,53 @@ permissions: RrWw""")
         assert not isinstance(response, int)
         status, prop = response["CS:getctag"]
         assert status == 200 and prop.text
+
+    def test_propfind_supported_address_data(self) -> None:
+        """Read property CR:supported-address-data on addressbook"""
+        self.create_addressbook("/addressbook.vcf/")
+        contact = get_file_content("contact1.vcf")
+        self.put("/addressbook.vcf/contact.vcf", contact)
+        _, responses = self.propfind("/addressbook.vcf/", """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
+  <prop>
+    <CR:supported-address-data />
+  </prop>
+</propfind>""")
+        response = responses["/addressbook.vcf/"]
+        assert not isinstance(response, int)
+        status, prop = response["CR:supported-address-data"]
+        assert status == 200
+        # Should have at least one address-data-type element
+        address_data_types = prop.findall(
+            xmlutils.make_clark("CR:address-data-type"))
+        assert len(address_data_types) >= 1
+        # Check that 3.0 is always supported
+        versions = [e.get("version") for e in address_data_types]
+        assert "3.0" in versions
+        # Check content-type is text/vcard for all
+        for e in address_data_types:
+            assert e.get("content-type") == "text/vcard"
+        # If vobject >= 1.0.0, should also support 4.0
+        if utils.vobject_supports_vcard4():
+            assert "4.0" in versions
+            # vCard 4.0 should be listed first (preferred)
+            assert versions[0] == "4.0"
+
+    def test_propfind_supported_address_data_on_calendar(self) -> None:
+        """Read property CR:supported-address-data on calendar (should 404)"""
+        self.mkcalendar("/calendar.ics/")
+        _, responses = self.propfind("/calendar.ics/", """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
+  <prop>
+    <CR:supported-address-data />
+  </prop>
+</propfind>""")
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int)
+        status, prop = response["CR:supported-address-data"]
+        assert status == 404
 
     def test_proppatch(self) -> None:
         """Set/Remove a property and read it back."""

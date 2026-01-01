@@ -26,7 +26,8 @@ import xml.etree.ElementTree as ET
 from http import client
 from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
-from radicale import httputils, pathutils, rights, storage, types, xmlutils
+from radicale import (httputils, pathutils, rights, storage, types, utils,
+                      xmlutils)
 from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
 
@@ -135,6 +136,10 @@ def xml_propfind_response(
                 props.append(xmlutils.make_clark("CS:getctag"))
                 props.append(
                     xmlutils.make_clark("C:supported-calendar-component-set"))
+            if collection.tag == "VADDRESSBOOK":
+                props.append(xmlutils.make_clark("CS:getctag"))
+                props.append(
+                    xmlutils.make_clark("CR:supported-address-data"))
 
             meta = collection.get_meta()
             for tag in meta:
@@ -186,6 +191,21 @@ def xml_propfind_response(
                     comp = ET.Element(xmlutils.make_clark("C:comp"))
                     comp.set("name", component)
                     element.append(comp)
+            else:
+                is404 = True
+        elif tag == xmlutils.make_clark("CR:supported-address-data"):
+            if is_collection and is_leaf and collection.tag == "VADDRESSBOOK":
+                # Advertise supported vCard versions per RFC 6352 section 6.2.2
+                # vCard 4.0 requires vobject >= 1.0.0
+                versions: Sequence[str] = (("4.0", "3.0")
+                                           if utils.vobject_supports_vcard4()
+                                           else ("3.0",))
+                for version in versions:
+                    address_data_type = ET.Element(
+                        xmlutils.make_clark("CR:address-data-type"))
+                    address_data_type.set("content-type", "text/vcard")
+                    address_data_type.set("version", version)
+                    element.append(address_data_type)
             else:
                 is404 = True
         elif tag == xmlutils.make_clark("D:current-user-principal"):
