@@ -2621,10 +2621,31 @@ GitHub</a>, or install it directly with:</p>
 <h4>Docker <a class="headerlink" href="#docker">&para;</a></h4>
 <p>Radicale is available as a <a href="https://github.com/Kozea/Radicale/pkgs/container/radicale">Docker
 image</a> for platforms <code>linux/amd64</code> and
-<code>linux/arm64</code>. To install the latest version, run:</p>
-<div class="sourceCode" id="cb67"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb67-1"><a aria-hidden="true" href="#cb67-1" tabindex="-1"></a><span class="ex">docker</span> pull ghcr.io/kozea/radicale:latest</span></code></pre></div>
-<p>An example <code>docker-compose.yml</code> and detailed instructions
-will soon be updated.</p>
+<code>linux/arm64</code>.</p>
+<p>Here are the steps to install Radicale via Docker Compose:</p>
+<ol type="1">
+<li><p>Create required directories</p>
+<p>Create a directory to store the data, configuration and compose
+file.</p>
+<p>For example, assuming <code>./radicale</code>:</p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb67-1"><a aria-hidden="true" href="#cb67-1" tabindex="-1"></a><span class="ex">$</span> mkdir radicale</span>
+<span id="cb67-2"><a aria-hidden="true" href="#cb67-2" tabindex="-1"></a><span class="ex">$</span> cd radicale</span></code></pre></div>
+<p>Create directories to store data and configuration.</p>
+<p>For example, assuming data directory as <code>./data</code> and
+configuration directory as <code>./config</code>:</p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb68-1"><a aria-hidden="true" href="#cb68-1" tabindex="-1"></a><span class="ex">$</span> mkdir config data</span></code></pre></div></li>
+<li><p>Download the compose file</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb69-1"><a aria-hidden="true" href="#cb69-1" tabindex="-1"></a><span class="ex">$</span> wget https://raw.githubusercontent.com/Kozea/Radicale/refs/heads/master/compose.yaml</span></code></pre></div>
+<p>The compose file assumes <code>./config</code> and
+<code>./data</code> directories. Review the file and modify as
+needed.</p></li>
+<li><p>Create Radicale configuration file as necessary</p>
+<p>Create new or place existing configuration file in the
+<code>./config</code> directory.</p></li>
+<li><p>Start Radicale</p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb70-1"><a aria-hidden="true" href="#cb70-1" tabindex="-1"></a><span class="ex">$</span> docker compose up <span class="at">-d</span></span></code></pre></div>
+<p>This will start the Radicale container in detached mode.</p></li>
+</ol>
 </section>
 <section class="level4" id="linux-distribution-packages">
 <h4>Linux Distribution Packages <a class="headerlink" href="#linux-distribution-packages">&para;</a></h4>
