@@ -2635,14 +2635,47 @@ You can find the source packages of all releases on
 
 #### Docker
 
-Radicale is available as a [Docker image](https://github.com/Kozea/Radicale/pkgs/container/radicale) for platforms `linux/amd64` and `linux/arm64`. To install the latest version, run:
+Radicale is available as a [Docker image](https://github.com/Kozea/Radicale/pkgs/container/radicale) for platforms `linux/amd64` and `linux/arm64`.
 
-```bash
-docker pull ghcr.io/kozea/radicale:latest
-```
+Here are the steps to install Radicale via Docker Compose:
 
-An example `docker-compose.yml` and detailed instructions will soon be updated.
+1. Create required directories
 
+    Create a directory to store the data, configuration and compose file.
+
+    For example, assuming `./radicale`:
+
+    ```bash
+    $ mkdir radicale
+    $ cd radicale
+    ```
+    Create directories to store data and configuration.
+
+    For example, assuming data directory as `./data` and configuration directory as `./config`:
+
+    ```bash
+    $ mkdir config data
+    ```
+
+2. Download the compose file
+
+    ```bash
+    $ wget https://raw.githubusercontent.com/Kozea/Radicale/refs/heads/master/compose.yaml
+    ```
+
+    The compose file assumes `./config` and `./data` directories. Review the file and modify as needed.
+
+3. Create Radicale configuration file as necessary
+
+    Create new or place existing configuration file in the `./config` directory.
+
+4. Start Radicale
+
+    ```bash
+    $ docker compose up -d
+    ```
+
+    This will start the Radicale container in detached mode.
 
 #### Linux Distribution Packages
 
