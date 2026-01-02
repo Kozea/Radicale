@@ -6,6 +6,8 @@
 * Extend: [logging] bad_put_request_content: log checksum and hexdump of request on debug level
 * Extend: [logging] request_content_on_debug: log checksum of request on debug level
 * Extend: add command line option "--verify-item <file>" for dedicated item file analysis
+* Extend: PROPFIND response for VADDRESSBOOK with "CR:supported-address-data" and "CS:getctag"
+* Extend: conditionally announce vCard 4.0 in case vobject version is >= 1.0.0
 
 ## 3.5.10
 * Improve: logging of broken calendar items during PUT
