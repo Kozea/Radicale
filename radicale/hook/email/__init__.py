@@ -988,7 +988,7 @@ class Hook(BaseHook):
                 if event_end < (now - timedelta(minutes=1)):
                     logger.warning("Event end time is in the past, skipping notification for event: %s",
                                    email_event_event.uid)
-                return
+                    return
 
             if not previous_item_str:
                 # Dealing with a completely new event, no previous content to compare against.
