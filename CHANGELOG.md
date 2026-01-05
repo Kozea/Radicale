@@ -8,6 +8,7 @@
 * Extend: add command line option "--verify-item <file>" for dedicated item file analysis
 * Extend: PROPFIND response for VADDRESSBOOK with "CR:supported-address-data" and "CS:getctag"
 * Extend: conditionally announce vCard 4.0 in case vobject version is >= 1.0.0
+* Fix: hook for server-side e-mail notification
 
 ## 3.5.10
 * Improve: logging of broken calendar items during PUT
