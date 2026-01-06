@@ -1152,7 +1152,9 @@ user2:password2</code></pre></li>
 <li><p><code>bcrypt</code><br>
 This uses a modified version of the Blowfish stream cipher, which is
 considered very secure. The installation of Python's
-<strong>bcrypt</strong> module is required for this to work.</p></li>
+<strong>bcrypt</strong> module is required for this to work. Also
+consider version of passlib(libpass): bcrypt &gt;= 5.0.0 requires
+passlib(libpass) &gt;= 1.9.3</p></li>
 <li><p><code>md5</code><br>
 Use an iterated MD5 digest of the password with salt (nowadays
 insecure).</p></li>
