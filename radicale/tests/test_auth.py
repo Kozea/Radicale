@@ -121,47 +121,47 @@ class TestBaseAuthRequests(BaseTest):
         self._test_htpasswd("autodetect", "tmp:$6$3Qhl8r6FLagYdHYa$UCH9yXCed4A.J9FQsFPYAOXImzZUMfvLa0lwcWOxWYLOF5sE/lF99auQ4jKvHY2vijxmefl7G6kMqZ8JPdhIJ/")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib/libpass module")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2a(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2a$10$Mj4A9vMecAp/K7.0fMKoVOk1SjgR.RBhl06a52nvzXhxlT3HB7Reu")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed or incompatibe")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib/libpass module")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2a_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$2a$10$Mj4A9vMecAp/K7.0fMKoVOk1SjgR.RBhl06a52nvzXhxlT3HB7Reu")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib/libpass module")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2b(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2b$12$7a4z/fdmXlBIfkz0smvzW.1Nds8wpgC/bo2DVOb4OSQKWCDL1A1wu")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib/libpass module")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2b_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$2b$12$7a4z/fdmXlBIfkz0smvzW.1Nds8wpgC/bo2DVOb4OSQKWCDL1A1wu")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib/libpass module")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2y(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib/libpass module")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2y_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib/libpass module")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_C10(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2y$10$bZsWq06ECzxqi7RmulQvC.T1YHUnLW2E3jn.MU2pvVTGn1dfORt2a")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib/libpass module")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_C10_autodetect(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2y$10$bZsWq06ECzxqi7RmulQvC.T1YHUnLW2E3jn.MU2pvVTGn1dfORt2a")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib/libpass module")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_unicode(self) -> None:
         self._test_htpasswd("bcrypt", "😀:$2y$10$Oyz5aHV4MD9eQJbk6GPemOs4T6edK6U9Sqlzr.W1mMVCS8wJUftnW", "unicode")
 
