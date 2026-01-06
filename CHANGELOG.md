@@ -9,7 +9,7 @@
 * Extend: PROPFIND response for VADDRESSBOOK with "CR:supported-address-data" and "CS:getctag"
 * Extend: conditionally announce vCard 4.0 in case vobject version is >= 1.0.0
 * Fix: hook for server-side e-mail notification
-* Change: dependency passlib (EoSL since 2020) replaced with libpass >= 1.9.3
+* Change: dependency PyPI/passlib (stale since 2020) replaced with PyPI/libpass >= 1.9.3
 
 ## 3.5.10
 * Improve: logging of broken calendar items during PUT
