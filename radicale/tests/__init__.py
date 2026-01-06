@@ -1,7 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2023 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ Tests for Radicale.
 
 import base64
 import logging
+import os
+import platform
 import shutil
 import sys
 import tempfile
@@ -36,7 +38,7 @@ import defusedxml.ElementTree as DefusedET
 import vobject
 
 import radicale
-from radicale import app, config, types, xmlutils
+from radicale import app, config, types, utils, xmlutils
 
 RESPONSES = Dict[str, Union[int, Dict[str, Tuple[int, ET.Element]], vobject.base.Component]]
 
@@ -52,6 +54,11 @@ class BaseTest:
     application: app.Application
 
     def setup_method(self) -> None:
+        if os.environ.get("PYTHONPATH"):
+            info = "with PYTHONPATH=%r " % os.environ.get("PYTHONPATH")
+        else:
+            info = ""
+        logging.info("Testing Radicale %s(%s) as %s on %s", info, utils.packages_version(), utils.user_groups_as_string(), platform.platform())
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
         self.configure({

@@ -1037,6 +1037,7 @@ Available methods:
 * `bcrypt`  
   This uses a modified version of the Blowfish stream cipher, which is considered very secure.
   The installation of Python's **bcrypt** module is required for this to work.
+  Also consider version of passlib(libpass): bcrypt >= 5.0.0 requires passlib(libpass) >= 1.9.3
 
 * `md5`  
   Use an iterated MD5 digest of the password with salt (nowadays insecure).
