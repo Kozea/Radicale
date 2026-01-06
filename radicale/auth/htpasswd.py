@@ -123,9 +123,9 @@ class Auth(auth.BaseAuth):
                 self._has_bcrypt = True
                 if self._encryption == "autodetect":
                     if self._htpasswd_bcrypt_use == 0:
-                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bycrypt module found, but currently not required", self._encryption)
+                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bcrypt module found, but currently not required", self._encryption)
                     else:
-                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bycrypt module found (bcrypt entries found: %d)", self._encryption, self._htpasswd_bcrypt_use)
+                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bcrypt module found (bcrypt entries found: %d)", self._encryption, self._htpasswd_bcrypt_use)
             if self._encryption == "bcrypt":
                 self._verify = functools.partial(self._bcrypt, bcrypt)
             else:
