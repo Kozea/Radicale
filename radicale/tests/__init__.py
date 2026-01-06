@@ -23,6 +23,8 @@ Tests for Radicale.
 
 import base64
 import logging
+import os
+import platform
 import shutil
 import sys
 import tempfile
@@ -36,7 +38,7 @@ import defusedxml.ElementTree as DefusedET
 import vobject
 
 import radicale
-from radicale import app, config, types, xmlutils
+from radicale import app, config, types, utils, xmlutils
 
 RESPONSES = Dict[str, Union[int, Dict[str, Tuple[int, ET.Element]], vobject.base.Component]]
 
@@ -52,6 +54,11 @@ class BaseTest:
     application: app.Application
 
     def setup_method(self) -> None:
+        if os.environ.get("PYTHONPATH"):
+            info = "with PYTHONPATH=%r " % os.environ.get("PYTHONPATH")
+        else:
+            info = ""
+        logging.info("Testing Radicale %s(%s) as %s on %s", info, utils.packages_version(), utils.user_groups_as_string(), platform.platform())
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
         self.configure({
