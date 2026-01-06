@@ -728,7 +728,7 @@ Verification of local collections storage
 
 ##### --verify-item <file>
 
-_(>= 3.5.11)_
+_(>= 3.6.0)_
 
 Verification of a particular item file
 
