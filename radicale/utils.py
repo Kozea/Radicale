@@ -27,6 +27,8 @@ from importlib import import_module, metadata
 from string import ascii_letters, digits, punctuation
 from typing import Callable, Sequence, Tuple, Type, TypeVar, Union
 
+from packaging.version import Version
+
 from radicale import config
 from radicale.log import logger
 
@@ -85,6 +87,10 @@ def load_plugin(internal_types: Sequence[str], module_name: str,
 
 
 def package_version(name):
+    if name == "passlib":
+        # passlib(libpass) requires special handling as module name is unchanged, but metadata has new name
+        import passlib
+        return passlib.__version__
     return metadata.version(name)
 
 
@@ -97,6 +103,30 @@ def vobject_supports_vcard4() -> bool:
         return major >= 1
     except Exception:
         return False
+
+
+def passlib_libpass_supports_bcrypt() -> Tuple[bool, str]:
+    """Check if passlib/libpass version supports bcrypt version."""
+    info = ""
+    try:
+        version_bcrypt = package_version("bcrypt")
+        version_bcrypt_check = "5.0.0"
+        version_passlib = package_version("passlib")
+        version_passlib_check = "1.9.3"
+        if Version(version_bcrypt) >= Version(version_bcrypt_check):
+            # bcrypt >= 5.0.0 has issues with passlib(libpass) < 1.9.3
+            if Version(version_passlib) < Version(version_passlib_check):
+                info = "bcrypt module version %r >= %r and passlib(libpass) module version %r < %r found => incompatible, downgrade bcrypt or upgrade passlib(libpass)" % (version_bcrypt, version_bcrypt_check, version_passlib, version_passlib_check)
+                return (False, info)
+            else:
+                info = "bcrypt module version %r >= %r and passlib(libpass) module version %r >= %r found => ok" % (version_bcrypt, version_bcrypt_check, version_passlib, version_passlib_check)
+                return (True, info)
+        else:
+            info = "bcrypt module version %r < %r and passlib(libpass) module version %r found => ok" % (version_bcrypt, version_bcrypt_check, version_passlib)
+            return (True, info)
+    except Exception:
+        info = "bcrypt module version or passlib(libpass) module version %r not found => problem"
+        return (False, info)
 
 
 def packages_version():
