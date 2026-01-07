@@ -39,6 +39,7 @@ web_files = ["web/internal_data/css/icon.png",
 install_requires = ["defusedxml", "libpass>=1.9.3", "vobject>=0.9.6",
                     "pika>=1.1.0",
                     "requests",
+                    "packaging",
                     ]
 bcrypt_requires = ["bcrypt"]
 argon2_requires = ["argon2-cffi"]
