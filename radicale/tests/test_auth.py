@@ -114,11 +114,17 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_sha256_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$5$i4Ni4TQq6L5FKss5$ilpTjkmnxkwZeV35GB9cYSsDXTALBn6KtWRJAzNlCL/")
 
+    def test_htpasswd_sha256_autodetect_with_rounds(self) -> None:
+        self._test_htpasswd("autodetect", "tmp:$5$rounds=2500$9QD/kpJlV71PCXWy$/AbUzxa6kjDWHJ8BLU1hyQUBN/8wsGEf.rNjuKDHA24")
+
     def test_htpasswd_sha512(self) -> None:
         self._test_htpasswd("sha512", "tmp:$6$3Qhl8r6FLagYdHYa$UCH9yXCed4A.J9FQsFPYAOXImzZUMfvLa0lwcWOxWYLOF5sE/lF99auQ4jKvHY2vijxmefl7G6kMqZ8JPdhIJ/")
 
     def test_htpasswd_sha512_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$6$3Qhl8r6FLagYdHYa$UCH9yXCed4A.J9FQsFPYAOXImzZUMfvLa0lwcWOxWYLOF5sE/lF99auQ4jKvHY2vijxmefl7G6kMqZ8JPdhIJ/")
+
+    def test_htpasswd_sha512_autodetect_with_rounds(self) -> None:
+        self._test_htpasswd("autodetect", "tmp:$6$rounds=2500$A1H/cZUl3CBnsplz$bSKYCDQ/YGR..YhxaZcM1eKmAi/jlnpbENKU8a.9kE95JBIpyUss3.cUyss0xQnhjD4PReN4sAzmdziWmoCsg/")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
     @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
