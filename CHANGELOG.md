@@ -11,6 +11,7 @@
 * Fix: hook for server-side e-mail notification
 * Change: dependency PyPI/passlib (stale since 2020) replaced with PyPI/libpass >= 1.9.3
 * Extend: add a check whether bcrypt version is compatible with passlib(libpass) version (requires "packaging")
+* Improve: autodetection of hashes in htpasswd (SHA256/SHA512 "rounds" are now supported)
 
 ## 3.5.10
 * Improve: logging of broken calendar items during PUT
