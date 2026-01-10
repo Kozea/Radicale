@@ -106,7 +106,7 @@ def vobject_supports_vcard4() -> bool:
 
 
 def passlib_libpass_supports_bcrypt() -> Tuple[bool, str]:
-    """Check if passlib/libpass version supports bcrypt version."""
+    """Check if passlib(libpass) version supports bcrypt version."""
     info = ""
     try:
         version_bcrypt = package_version("bcrypt")
