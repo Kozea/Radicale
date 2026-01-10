@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.6.0.dev
+## 3.6.0
 
 * Extend: logwatch script
 * Extend: [logging] bad_put_request_content: log checksum and hexdump of request on debug level
