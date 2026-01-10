@@ -8,7 +8,7 @@ ARG VERSION=master
 # Optional dependencies (e.g. bcrypt or ldap)
 ARG DEPENDENCIES=bcrypt
 
-RUN apk add --no-cache --virtual gcc libffi-dev musl-dev \
+RUN apk add --no-cache --virtual gcc libffi-dev musl-dev curl \
     && python -m venv /app/venv \
     && /app/venv/bin/pip install --no-cache-dir "Radicale[${DEPENDENCIES}] @ https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz"
 
@@ -25,10 +25,7 @@ COPY --chown=radicale:radicale --from=builder /app/venv /app
 
 # Persistent storage for data
 VOLUME /var/lib/radicale
-# TCP port of Radicale
-EXPOSE 5232
 # Run Radicale
 ENTRYPOINT [ "/app/bin/python", "/app/bin/radicale"]
-CMD ["--hosts", "0.0.0.0:5232,[::]:5232"]
 
 USER radicale
