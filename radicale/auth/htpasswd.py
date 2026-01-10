@@ -123,7 +123,7 @@ class Auth(auth.BaseAuth):
                 [bcrypt_usable, info] = utils.passlib_libpass_supports_bcrypt()
                 if bcrypt_usable:
                     self._has_bcrypt = True
-                    logger.debug(info)
+                    logger.info(info)
                 else:
                     logger.warning(info)
                 if self._encryption == "autodetect":
