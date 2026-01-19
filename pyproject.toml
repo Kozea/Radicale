@@ -28,6 +28,7 @@ classifiers = [
 ]
 urls = {Homepage = "https://radicale.org/"}
 requires-python = ">=3.9.0"
+# Hint: if bcyrpt < 5.0.0 is used, passlib(libpass) dependency can be downgraded/reverted by: sed -i 's|libpass[^"]*|passlib|' pyproject.toml
 dependencies = [
     "defusedxml",
     "libpass>=1.9.3",

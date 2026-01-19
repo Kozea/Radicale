@@ -36,6 +36,7 @@ web_files = ["web/internal_data/css/icon.png",
              "web/internal_data/fn.js",
              "web/internal_data/index.html"]
 
+# Hint: if bcyrpt < 5.0.0 is used, passlib(libpass) dependency can be downgraded/reverted by: sed -i 's|libpass[^"]*|passlib|' setup.py.legacy
 install_requires = ["defusedxml", "libpass>=1.9.3", "vobject>=0.9.6",
                     "pika>=1.1.0",
                     "requests",
