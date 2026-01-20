@@ -43,7 +43,7 @@ out-of-the-box:
     - SHA256     (htpasswd -2 ...)
     - SHA512     (htpasswd -5 ...)
 
-When bcrypt is installed (bcrypt >= 5.0.0 requires passlib/libpass >= 1.9.3):
+When bcrypt is installed (bcrypt >= 5.0.0 requires passlib(libpass) >= 1.9.3):
     - BCRYPT     (htpasswd -B ...) -- Requires htpasswd 2.4.x
 
 When argon2 is installed:
@@ -123,7 +123,7 @@ class Auth(auth.BaseAuth):
                 [bcrypt_usable, info] = utils.passlib_libpass_supports_bcrypt()
                 if bcrypt_usable:
                     self._has_bcrypt = True
-                    logger.debug(info)
+                    logger.info(info)
                 else:
                     logger.warning(info)
                 if self._encryption == "autodetect":
