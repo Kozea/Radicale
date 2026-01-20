@@ -29,3 +29,4 @@ VOLUME /var/lib/radicale
 ENTRYPOINT [ "/app/bin/python", "/app/bin/radicale"]
 
 USER radicale
+CMD ["--hosts", "0.0.0.0:5232,[::]:5232"]
