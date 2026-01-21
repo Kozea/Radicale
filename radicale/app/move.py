@@ -22,7 +22,7 @@ import errno
 import posixpath
 import re
 from http import client
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from radicale import httputils, pathutils, storage, types
 from radicale.app.base import Access, ApplicationBase
@@ -51,15 +51,22 @@ class ApplicationPartMove(ApplicationBase):
                 path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage MOVE request."""
         raw_dest = environ.get("HTTP_DESTINATION", "")
-        to_url = urlparse(raw_dest)
-        to_netloc_with_port = to_url.netloc
-        if to_url.port is None:
-            to_netloc_with_port += (":443" if to_url.scheme == "https"
-                                    else ":80")
-        if to_netloc_with_port != get_server_netloc(environ, force_port=True):
-            logger.info("Unsupported destination address: %r", raw_dest)
-            # Remote destination server, not supported
-            return httputils.REMOTE_DESTINATION
+
+        # Decode URL-encoded characters (e.g. %40 -> @) before parsing
+        raw_dest_decoded = unquote(raw_dest)
+        to_url = urlparse(raw_dest_decoded)
+
+        # Only check netloc for absolute URLs
+        if to_url.netloc:
+            to_netloc_with_port = to_url.netloc
+            if to_url.port is None:
+                to_netloc_with_port += (":443" if to_url.scheme == "https"
+                                        else ":80")
+            if to_netloc_with_port != get_server_netloc(environ, force_port=True):
+                logger.info("Unsupported destination address: %r", raw_dest)
+                # Remote destination server, not supported
+                return httputils.REMOTE_DESTINATION
+
         access = Access(self._rights, user, path)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
