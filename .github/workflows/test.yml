@@ -2,11 +2,30 @@ name: Test
 on: [push, pull_request]
 
 jobs:
-  test:
+
+  test-python-latest:
+    needs: lint
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14', 'pypy-3.9', 'pypy-3.10', 'pypy-3.11']
+        python-version: ['3.14']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with latest Python
+        run: tox -c pyproject.toml -e py
+
+  test:
+    needs: test-python-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', pypy-3.9', 'pypy-3.10', 'pypy-3.11']
         exclude:
           - os: windows-latest
             python-version: 'pypy-3.9'
@@ -22,7 +41,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Test dependencies
         run: pip install tox
-      - name: Test
+      - name: Test with older Python
         run: tox -c pyproject.toml -e py
 
   coveralls-test:
