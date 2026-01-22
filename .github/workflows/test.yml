@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
 
-  test-ubuntu-latest-python-latest:
+  test-ubuntu-python-newest:
     needs: lint
     strategy:
       matrix:
@@ -20,8 +20,25 @@ jobs:
       - name: Test with latest Python on Ubuntu
         run: tox -c pyproject.toml -e py
 
-  test-python-latest:
-    needs: test-ubuntu-latest-python-latest
+  test-ubuntu-python-oldest:
+    needs: [lint, test-ubuntu-latest-python-newest]
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.9']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with oldest Python on Ubuntu
+        run: tox -c pyproject.toml -e py
+
+  test-otheros-python-newest:
+    needs: [lint, test-ubuntu-latest-python-newest]
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
@@ -37,12 +54,29 @@ jobs:
       - name: Test with latest Python on other OS
         run: tox -c pyproject.toml -e py
 
-  test:
-    needs: test-python-latest
+  test-otheros-python-oldest:
+    needs: [lint, test-ubuntu-latest-python-oldest]
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+        python-version: ['3.9']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with oldest Python on other OS
+        run: tox -c pyproject.toml -e py
+
+  test-python-versions:
+    needs: [lint, test-otheros-python-oldest, test-otheros-python-newest, test-ubuntu-python-oldest, test-ubuntu-python-newest]
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', 'pypy-3.9', 'pypy-3.10', 'pypy-3.11']
+        python-version: ['3.10', '3.11', '3.12', '3.13', 'pypy-3.9', 'pypy-3.10', 'pypy-3.11']
         exclude:
           - os: windows-latest
             python-version: 'pypy-3.9'
