@@ -4,7 +4,7 @@
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,6 +56,8 @@ def read_components(s: str) -> List[vobject.base.Component]:
     #  * 0x0A Line Feed
     #  * 0x0D Carriage Return
     s = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F]', '', s)
+    # Workaround delete all empty lines to avoid vobject parsing errors
+    s = re.sub(r'(?m)^[ \t]*\r?\n', '', s)
     return list(vobject.readComponents(s, allowQP=True))
 
 

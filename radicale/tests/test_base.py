@@ -144,6 +144,34 @@ permissions: RrWw""")
         assert "Event" in answer
         assert "UID:event" in answer
 
+    def test_add_event_with_desc_ok(self) -> None:
+        """Add an event."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue1970_ok.ics")
+        path = "/calendar.ics/event_issue1970_ok.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/calendar; charset=utf-8"
+        assert "DESCRIPTION" in answer
+        assert "VEVENT" in answer
+        assert "Event" in answer
+        assert "UID:event" in answer
+
+    def test_add_event_with_desc_problem(self) -> None:
+        """Add an event."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue1970_problem.ics")
+        path = "/calendar.ics/event_issue1970_problem.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/calendar; charset=utf-8"
+        assert "DESCRIPTION" in answer
+        assert "VEVENT" in answer
+        assert "Event" in answer
+        assert "UID:event" in answer
+
     def test_add_event_exceed_size(self) -> None:
         """Add an event which is exceeding max-resource-size."""
         self.configure({"server": {"max_resource_size": 20}})
