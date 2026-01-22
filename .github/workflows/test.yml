@@ -21,7 +21,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-ubuntu-python-oldest:
-    needs: [lint, test-ubuntu-latest-python-newest]
+    needs: [lint, test-ubuntu-python-newest]
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -38,7 +38,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-otheros-python-newest:
-    needs: [lint, test-ubuntu-latest-python-newest]
+    needs: [lint, test-ubuntu-python-newest]
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
@@ -55,7 +55,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-otheros-python-oldest:
-    needs: [lint, test-ubuntu-latest-python-oldest]
+    needs: [lint, test-ubuntu-python-oldest]
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
