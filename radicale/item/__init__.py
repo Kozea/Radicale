@@ -56,6 +56,8 @@ def read_components(s: str) -> List[vobject.base.Component]:
     #  * 0x0A Line Feed
     #  * 0x0D Carriage Return
     s = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F]', '', s)
+    # Workaround delete all empty lines to avoid vobject parsing errors
+    s = re.sub(r'(?m)^[ \t]*\r?\n', '', s)
     return list(vobject.readComponents(s, allowQP=True))
 
 
