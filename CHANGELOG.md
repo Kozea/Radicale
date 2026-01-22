@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.6.1.dev
+
+* Fix: MOVE failing with URL-encoded destination header
+
 ## 3.6.0
 
 * Extend: logwatch script
