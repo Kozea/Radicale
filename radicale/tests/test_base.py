@@ -1,7 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
 import defusedxml.ElementTree as DefusedET
 import pytest
+import urllib
 import vobject
 
 from radicale import storage, utils, xmlutils
@@ -565,6 +566,33 @@ permissions: RrWw""")
         self.put(path1, event)
         self.request("MOVE", path1, check=201,
                      HTTP_DESTINATION="http://127.0.0.1/"+path2)
+        self.get(path1, check=404)
+        self.get(path2)
+
+    def test_move_between_collections_with_at_native(self) -> None:
+        """Move a item."""
+        self.mkcalendar("/calendar1@domain.ics/")
+        self.mkcalendar("/calendar2@domain.ics/")
+        event = get_file_content("event1.ics")
+        path1 = "/calendar1@domain.ics/event1.ics"
+        path2 = "/calendar2@domain.ics/event2.ics"
+        self.put(path1, event)
+        self.request("MOVE", path1, check=201,
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
+        self.get(path1, check=404)
+        self.get(path2)
+
+    def test_move_between_collections_with_at_encoded(self) -> None:
+        """Move a item."""
+        self.mkcalendar("/calendar1@domain.ics/")
+        self.mkcalendar("/calendar2@domain.ics/")
+        event = get_file_content("event1.ics")
+        path1 = "/calendar1@domain.ics/event1.ics"
+        path2 = "/calendar2@domain.ics/event2.ics"
+        path2_encoded = urllib.parse.quote(path2)
+        self.put(path1, event)
+        self.request("MOVE", path1, check=201,
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2_encoded)
         self.get(path1, check=404)
         self.get(path2)
 
