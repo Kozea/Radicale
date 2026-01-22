@@ -21,7 +21,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-python-latest:
-    needs: test-ubuntu-latest-python-latest:
+    needs: test-ubuntu-latest-python-latest
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
