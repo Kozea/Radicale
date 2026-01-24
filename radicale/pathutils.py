@@ -286,9 +286,10 @@ def path_to_filesystem(root: str, sane_path: str) -> str:
         safe_path = os.path.join(safe_path, part)
         # Check for conflicting files (e.g. case-insensitive file systems
         # or short names on Windows file systems)
-        if (os.path.lexists(safe_path) and
-                part not in (e.name for e in os.scandir(safe_path_parent))):
-            raise CollidingPathError(part)
+        if os.path.lexists(safe_path):
+            with os.scandir(safe_path_parent) as entries:
+                if part not in (e.name for e in entries):
+                    raise CollidingPathError(part)
     return safe_path
 
 
