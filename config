@@ -268,18 +268,31 @@
 #
 # json format:
 #
-#  {
-#    "def-addressbook": {
+# predefined_collections = {
+#    "def-personal-addressbook": {
 #       "D:displayname": "Personal Address Book",
 #       "tag": "VADDRESSBOOK"
 #    },
-#    "def-calendar": {
+#    "def-work-addressbook": {
+#       "D:displayname": "Work Address Book",
+#       "tag": "VADDRESSBOOK"
+#    },
+#    "def-personal-calendar": {
 #       "C:supported-calendar-component-set": "VEVENT,VJOURNAL,VTODO",
 #       "D:displayname": "Personal Calendar",
 #       "tag": "VCALENDAR"
-#    }
-#  }
-#
+#    },
+#    "def-birthday-calendar": {
+#       "C:supported-calendar-component-set": "VEVENT",
+#       "D:displayname": "Birthday Calendar",
+#       "tag": "VCALENDAR"
+#    },
+#    "def-work-calendar": {
+#       "C:supported-calendar-component-set": "VEVENT",
+#       "D:displayname": "Work Calendar",
+#       "tag": "VCALENDAR"
+#    },
+# }
 #predefined_collections =
 
 
