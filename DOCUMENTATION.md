@@ -476,17 +476,11 @@ RequestHeader set X-Forwarded-Proto "https"
 Example **lighttpd** configuration:
 
 ```lighttpd
-server.modules += ( "mod_proxy" , "mod_setenv", "mod_rewrite" )
+server.modules += ( "mod_proxy" , "mod_setenv" )
 
 $HTTP["url"] =~ "^/radicale/" {
   proxy.server = ( "" => (( "host" => "127.0.0.1", "port" => "5232" )) )
-  proxy.header = ( "map-urlpath" => ( "/radicale/" => "/" ))
-
-  setenv.add-request-header = (
-    "X-Script-Name" => "/radicale",
-    "Script-Name" => "/radicale",
-  )
-  url.rewrite-once = ( "^/radicale/radicale/(.*)" => "/radicale/$1" )
+  setenv.add-request-header = ( "X-Script-Name" => "/radicale" )
 }
 ```
 
