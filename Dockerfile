@@ -19,7 +19,7 @@ WORKDIR /app
 
 RUN addgroup -g 1000 radicale \
     && adduser radicale --home /var/lib/radicale --system --uid 1000 --disabled-password -G radicale \
-    && apk add --no-cache ca-certificates openssl
+    && apk add --no-cache ca-certificates openssl git
 
 COPY --chown=radicale:radicale --from=builder /app/venv /app
 
