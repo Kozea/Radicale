@@ -27,6 +27,6 @@ COPY --chown=radicale:radicale --from=builder /app/venv /app
 VOLUME /var/lib/radicale
 # Run Radicale
 ENTRYPOINT [ "/app/bin/python", "/app/bin/radicale"]
+CMD ["--hosts", "0.0.0.0:5232,[::]:5232"]
 
 USER radicale
-CMD ["--hosts", "0.0.0.0:5232,[::]:5232"]
