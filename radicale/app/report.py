@@ -471,7 +471,13 @@ def _expand(
                 continue
 
             # Check for overridden instances
-            i_overridden, vevent = _find_overridden(i_overridden, vevents_overridden, recurrence_utc, dt_format)
+            i_overridden, vevent = _find_overridden(
+                i_overridden,
+                vevents_overridden,
+                recurrence_utc,
+                dt_format,
+                all_day_event,
+            )
 
             if not vevent:
                 # Create new instance from recurrence
@@ -649,13 +655,13 @@ def _find_overridden(
         start: int,
         vevents: List[vobject.icalendar.RecurringComponent],
         dt: datetime.datetime,
-        dt_format: str
+        dt_format: str,
+        all_day_event: bool,
 ) -> Tuple[int, Optional[vobject.icalendar.RecurringComponent]]:
     for i in range(start, len(vevents)):
-        dt_event = datetime.datetime.strptime(
-            vevents[i].recurrence_id.value,
-            dt_format
-        ).replace(tzinfo=datetime.timezone.utc)
+        dt_event = datetime.datetime.strptime(vevents[i].recurrence_id.value, dt_format)
+        if not all_day_event:
+            dt_event = dt_event.replace(tzinfo=datetime.timezone.utc)
         if dt_event == dt:
             return (i + 1, vevents[i])
     return (start, None)
