@@ -24,7 +24,7 @@ from typing import Optional
 
 from radicale import httputils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
-from radicale.hook import DeleteHookNotificationItem
+from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
 
 
@@ -55,7 +55,7 @@ def xml_delete(base_prefix: str, path: str, collection: storage.BaseCollection,
 class ApplicationPartDelete(ApplicationBase):
 
     def do_DELETE(self, environ: types.WSGIEnviron, base_prefix: str,
-                  path: str, user: str) -> types.WSGIResponse:
+                  path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage DELETE request."""
         access = Access(self._rights, user, path)
         if not access.check("w"):
@@ -82,10 +82,13 @@ class ApplicationPartDelete(ApplicationBase):
                         return httputils.NOT_ALLOWED
                 for i in item.get_all():
                     hook_notification_item_list.append(
-                        DeleteHookNotificationItem(
-                            access.path,
-                            i.uid,
-                            old_content=item.serialize()  # type: ignore
+                        HookNotificationItem(
+                            notification_item_type=HookNotificationItemTypes.DELETE,
+                            path=access.path,
+                            content=i.uid,
+                            uid=i.uid,
+                            old_content=i.serialize(),  # type: ignore
+                            new_content=None
                         )
                     )
                 xml_answer = xml_delete(base_prefix, path, item)
@@ -93,10 +96,13 @@ class ApplicationPartDelete(ApplicationBase):
                 assert item.collection is not None
                 assert item.href is not None
                 hook_notification_item_list.append(
-                    DeleteHookNotificationItem(
-                        access.path,
-                        item.uid,
-                        old_content=item.serialize()  # type: ignore
+                    HookNotificationItem(
+                        notification_item_type=HookNotificationItemTypes.DELETE,
+                        path=access.path,
+                        content=item.uid,
+                        uid=item.uid,
+                        old_content=item.serialize(),  # type: ignore
+                        new_content=None,
                     )
                 )
                 xml_answer = xml_delete(
@@ -104,4 +110,4 @@ class ApplicationPartDelete(ApplicationBase):
             for notification_item in hook_notification_item_list:
                 self._hook.notify(notification_item)
             headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
-            return client.OK, headers, self._xml_response(xml_answer)
+            return client.OK, headers, self._xml_response(xml_answer), None

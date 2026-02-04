@@ -149,13 +149,14 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
 def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                collection: storage.BaseCollection, encoding: str,
                unlock_storage_fn: Callable[[], None],
-               max_occurrence: int = 0,
+               max_occurrence: int = 0, user: str = "", remote_addr: str = "", remote_useragent: str = ""
                ) -> Tuple[int, ET.Element]:
     """Read and answer REPORT requests that return XML.
 
     Read rfc3253-3.6 for info.
 
     """
+    logger.debug("TRACE/REPORT/xml_report: base_prefix=%r path=%r", base_prefix, path)
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
     if xml_request is None:
         return client.MULTI_STATUS, multistatus
@@ -212,8 +213,8 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
             sync_token, names = collection.sync(old_sync_token)
         except ValueError as e:
             # Invalid sync token
-            logger.warning("Client provided invalid sync token %r: %s",
-                           old_sync_token, e, exc_info=True)
+            logger.warning("Client provided invalid sync token for path %r (user %r from %s%s): %s",
+                           path, user, remote_addr, remote_useragent, e, exc_info=True)
             # client.CONFLICT doesn't work with some clients (e.g. InfCloud)
             return (client.FORBIDDEN,
                     xmlutils.webdav_error("D:valid-sync-token"))
@@ -239,6 +240,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         filter_copy = copy.deepcopy(filter_)
 
         if expand is not None:
+            logger.debug("TRACE/REPORT/xml_report: expand")
             for comp_filter in filter_copy.findall(".//" + xmlutils.make_clark("C:comp-filter")):
                 if comp_filter.get("name", "").upper() == "VCALENDAR":
                     continue
@@ -275,21 +277,15 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
 
         found_props = []
         not_found_props = []
-        item_etag: str = ""
 
         for prop in props:
             element = ET.Element(prop.tag)
-            if prop.tag == xmlutils.make_clark("D:getetag"):
-                if expand is not None:
-                    item_etag = item.etag
-                else:
-                    element.text = item.etag
-                    found_props.append(element)
-            elif prop.tag == xmlutils.make_clark("D:getcontenttype"):
+            if prop.tag == xmlutils.make_clark("D:getcontenttype"):
                 element.text = xmlutils.get_content_type(item, encoding)
                 found_props.append(element)
             elif prop.tag in (
                     xmlutils.make_clark("C:calendar-data"),
+                    xmlutils.make_clark("D:getetag"),
                     xmlutils.make_clark("CR:address-data")):
                 element.text = item.serialize()
 
@@ -326,11 +322,24 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                         continue
 
                     n_vevents += n_vev
-                    found_props.append(expanded_element)
+                    if prop.tag == xmlutils.make_clark("D:getetag"):
+                        if n_vev > 0:
+                            logger.debug("TRACE/REPORT/xml_report: getetag/expanded element")
+                            element.text = item.etag
+                            found_props.append(element)
+                        else:
+                            logger.debug("TRACE/REPORT/xml_report: getetag/no expanded element")
+                    else:
+                        logger.debug("TRACE/REPORT/xml_report: default")
+                        found_props.append(expanded_element)
                 else:
-                    found_props.append(element)
-                    if hasattr(item.vobject_item, "vevent_list"):
-                        n_vevents += len(item.vobject_item.vevent_list)
+                    if prop.tag == xmlutils.make_clark("D:getetag"):
+                        element.text = item.etag
+                        found_props.append(element)
+                    else:
+                        found_props.append(element)
+                        if hasattr(item.vobject_item, "vevent_list"):
+                            n_vevents += len(item.vobject_item.vevent_list)
                 # Avoid DoS with too many events
                 if max_occurrence and n_vevents > max_occurrence:
                     raise ValueError("REPORT occurrences limit of {} hit"
@@ -345,7 +354,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         if found_props or not_found_props:
             multistatus.append(xml_item_response(
                 base_prefix, uri, found_props=found_props,
-                not_found_props=not_found_props, found_item=True, item_etag=item_etag))
+                not_found_props=not_found_props, found_item=True))
 
     return client.MULTI_STATUS, multistatus
 
@@ -481,7 +490,7 @@ def _expand(
 
             if not vevent:
                 # Create new instance from recurrence
-                vevent = copy.deepcopy(base_vevent)
+                vevent = base_vevent.duplicate(base_vevent)
 
                 # For all day events, the system timezone may influence the
                 # results, so use recurrence_dt
@@ -679,7 +688,7 @@ def _find_overridden(
 def xml_item_response(base_prefix: str, href: str,
                       found_props: Sequence[ET.Element] = (),
                       not_found_props: Sequence[ET.Element] = (),
-                      found_item: bool = True, item_etag: str = "") -> ET.Element:
+                      found_item: bool = True) -> ET.Element:
     response = ET.Element(xmlutils.make_clark("D:response"))
 
     href_element = ET.Element(xmlutils.make_clark("D:href"))
@@ -693,10 +702,6 @@ def xml_item_response(base_prefix: str, href: str,
                 status = ET.Element(xmlutils.make_clark("D:status"))
                 status.text = xmlutils.make_response(code)
                 prop_element = ET.Element(xmlutils.make_clark("D:prop"))
-                if (item_etag != "") and (code == 200):
-                    prop_etag = ET.Element(xmlutils.make_clark("D:getetag"))
-                    prop_etag.text = item_etag
-                    prop_element.append(prop_etag)
                 for prop in props:
                     prop_element.append(prop)
                 propstat.append(prop_element)
@@ -750,6 +755,7 @@ def retrieve_items(
         else:
             yield item, False
     if collection_requested:
+        logger.debug("TRACE/REPORT/retrieve_items: get_filtered")
         yield from collection.get_filtered(filters)
 
 
@@ -785,7 +791,7 @@ def test_filter(collection_tag: str, item: radicale_item.Item,
 class ApplicationPartReport(ApplicationBase):
 
     def do_REPORT(self, environ: types.WSGIEnviron, base_prefix: str,
-                  path: str, user: str) -> types.WSGIResponse:
+                  path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage REPORT request."""
         access = Access(self._rights, user, path)
         if not access.check("r"):
@@ -824,15 +830,15 @@ class ApplicationPartReport(ApplicationBase):
                         "Bad REPORT request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
                 headers = {"Content-Type": "text/calendar; charset=%s" % self._encoding}
-                return status, headers, str(body)
+                return status, headers, str(body), xmlutils.pretty_xml(xml_content)
             else:
                 try:
                     status, xml_answer = xml_report(
                         base_prefix, path, xml_content, collection, self._encoding,
-                        lock_stack.close, max_occurrence)
+                        lock_stack.close, max_occurrence, user, remote_host, remote_useragent)
                 except ValueError as e:
                     logger.warning(
                         "Bad REPORT request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
                 headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
-                return status, headers, self._xml_response(xml_answer)
+                return status, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)

@@ -3,7 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2019 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ out-of-the-box:
     - SHA256     (htpasswd -2 ...)
     - SHA512     (htpasswd -5 ...)
 
-When bcrypt is installed:
+When bcrypt is installed (bcrypt >= 5.0.0 requires passlib(libpass) >= 1.9.3):
     - BCRYPT     (htpasswd -B ...) -- Requires htpasswd 2.4.x
 
 When argon2 is installed:
@@ -61,7 +61,7 @@ from typing import Any, Tuple
 
 from passlib.hash import apr_md5_crypt, sha256_crypt, sha512_crypt
 
-from radicale import auth, config, logger
+from radicale import auth, config, logger, utils
 
 
 class Auth(auth.BaseAuth):
@@ -120,12 +120,22 @@ class Auth(auth.BaseAuth):
                         "The htpasswd encryption method 'bcrypt' or 'autodetect' requires "
                         "the bcrypt module (entries found: %d)." % self._htpasswd_bcrypt_use) from e
             else:
-                self._has_bcrypt = True
+                [bcrypt_usable, info] = utils.passlib_libpass_supports_bcrypt()
+                if bcrypt_usable:
+                    self._has_bcrypt = True
+                    logger.info(info)
+                else:
+                    logger.warning(info)
                 if self._encryption == "autodetect":
                     if self._htpasswd_bcrypt_use == 0:
-                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bycrypt module found, but currently not required", self._encryption)
+                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bcrypt module found, but currently not required", self._encryption)
                     else:
-                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bycrypt module found (bcrypt entries found: %d)", self._encryption, self._htpasswd_bcrypt_use)
+                        logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bcrypt module found (bcrypt entries found: %d)", self._encryption, self._htpasswd_bcrypt_use)
+                        if not bcrypt_usable:
+                            raise RuntimeError("The htpasswd encryption 'autodetect' requires the bcrypt module but not usuable")
+                else:
+                    if not bcrypt_usable:
+                        raise RuntimeError("The htpasswd encryption method 'bcrypt' requires the bcrypt module but not usuable")
             if self._encryption == "bcrypt":
                 self._verify = functools.partial(self._bcrypt, bcrypt)
             else:
@@ -181,37 +191,28 @@ class Auth(auth.BaseAuth):
         return ("ARGON2", argon2.verify(password, hash_value.strip()))
 
     def _md5apr1(self, hash_value: str, password: str) -> tuple[str, bool]:
-        if self._encryption == "autodetect" and len(hash_value) != 37:
-            return self._plain_fallback("MD5-APR1", hash_value, password)
-        else:
-            return ("MD5-APR1", apr_md5_crypt.verify(password, hash_value.strip()))
+        return ("MD5-APR1", apr_md5_crypt.verify(password, hash_value.strip()))
 
     def _sha256(self, hash_value: str, password: str) -> tuple[str, bool]:
-        if self._encryption == "autodetect" and len(hash_value) != 63:
-            return self._plain_fallback("SHA-256", hash_value, password)
-        else:
-            return ("SHA-256", sha256_crypt.verify(password, hash_value.strip()))
+        return ("SHA-256", sha256_crypt.verify(password, hash_value.strip()))
 
     def _sha512(self, hash_value: str, password: str) -> tuple[str, bool]:
-        if self._encryption == "autodetect" and len(hash_value) != 106:
-            return self._plain_fallback("SHA-512", hash_value, password)
-        else:
-            return ("SHA-512", sha512_crypt.verify(password, hash_value.strip()))
+        return ("SHA-512", sha512_crypt.verify(password, hash_value.strip()))
 
     def _autodetect(self, hash_value: str, password: str) -> tuple[str, bool]:
-        if hash_value.startswith("$apr1$", 0, 6):
+        if re.match(r"^\$apr1\$[A-Za-z0-9/.]{8}\$[A-Za-z0-9/.]{22}", hash_value):
             # MD5-APR1
             return self._md5apr1(hash_value, password)
-        elif re.match(r"^\$2(a|b|x|y)?\$", hash_value):
+        elif re.match(r"^\$2(a|b|x|y)?\$[0-9]{2}\$[A-Za-z0-9/.]{53}", hash_value):
             # BCRYPT
             return self._verify_bcrypt(hash_value, password)
         elif re.match(r"^\$argon2(i|d|id)\$", hash_value):
             # ARGON2
             return self._verify_argon2(hash_value, password)
-        elif hash_value.startswith("$5$", 0, 3):
+        elif re.match(r"^\$5\$(rounds=[0-9]+\$)?[A-Za-z0-9/.]{16}\$[A-Za-z0-9/.]{42}", hash_value):
             # SHA-256
             return self._sha256(hash_value, password)
-        elif hash_value.startswith("$6$", 0, 3):
+        elif re.match(r"^\$6\$(rounds=[0-9]+\$)?[A-Za-z0-9/.]{16}\$[A-Za-z0-9/.]{85}", hash_value):
             # SHA-512
             return self._sha512(hash_value, password)
         else:

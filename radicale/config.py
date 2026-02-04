@@ -45,6 +45,8 @@ DEFAULT_CONFIG_PATH: str = os.pathsep.join([
     "?/etc/radicale/config",
     "?~/.config/radicale/config"])
 
+PROFILING: Sequence[str] = ("per_request", "per_request_method", "none")
+
 
 def positive_int(value: Any) -> int:
     value = int(value)
@@ -67,6 +69,12 @@ def positive_float(value: Any) -> float:
 def logging_level(value: Any) -> str:
     if value not in ("debug", "info", "warning", "error", "critical"):
         raise ValueError("unsupported level: %r" % value)
+    return value
+
+
+def profiling(value: Any) -> str:
+    if value not in PROFILING:
+        raise ValueError("unsupported profiling: %r" % value)
     return value
 
 
@@ -154,7 +162,11 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": positive_int}),
         ("max_content_length", {
             "value": "100000000",
-            "help": "maximum size of request body in bytes",
+            "help": "maximum size of request body in bytes (default: 100 Mbyte)",
+            "type": positive_int}),
+        ("max_resource_size", {
+            "value": "10000000",
+            "help": "maximum size of resource (default: 10 Mbyte)",
             "type": positive_int}),
         ("timeout", {
             "value": "30",
@@ -253,6 +265,11 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "12345",
             "help": "dovecot auth port",
             "type": int}),
+        ("remote_ip_source", {
+            "value": "REMOTE_ADDR",
+            "help": "remote address source for passing it to auth method",
+            "type": str,
+            "internal": auth.REMOTE_ADDR_SOURCE}),
         ("realm", {
             "value": "Radicale - Password Required",
             "help": "message displayed when a password is needed",
@@ -261,58 +278,70 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "1",
             "help": "incorrect authentication delay",
             "type": positive_float}),
-        ("ldap_ignore_attribute_create_modify_timestamp", {
-            "value": "false",
-            "help": "Ignore modifyTimestamp and createTimestamp attributes. Need if Authentik LDAP server is used.",
-            "type": bool}),
         ("ldap_uri", {
             "value": "ldap://localhost",
-            "help": "URI to the ldap server",
+            "help": "URI to the LDAP server",
             "type": str}),
         ("ldap_base", {
             "value": "",
-            "help": "LDAP base DN of the ldap server",
+            "help": "Base DN of the LDAP server",
             "type": str}),
         ("ldap_reader_dn", {
             "value": "",
-            "help": "the DN of a ldap user with read access to get the user accounts",
+            "help": "DN of an LDAP user with read access to users anmd - if defined - groups",
             "type": str}),
         ("ldap_secret", {
             "value": "",
-            "help": "the password of the ldap_reader_dn",
+            "help": "Password of ldap_reader_dn (better: use ldap_secret_file)",
             "type": str}),
         ("ldap_secret_file", {
             "value": "",
-            "help": "path of the file containing the password of the ldap_reader_dn",
+            "help": "Path to the file containing the password of ldap_reader_dn",
             "type": str}),
         ("ldap_filter", {
             "value": "(cn={0})",
-            "help": "the search filter to find the user DN to authenticate by the username",
+            "help": "Filter to search for the LDAP entry of the user to authenticate",
             "type": str}),
         ("ldap_user_attribute", {
             "value": "",
-            "help": "the attribute to be used as username after authentication",
-            "type": str}),
-        ("ldap_groups_attribute", {
-            "value": "",
-            "help": "attribute to read the group memberships from",
+            "help": "Attribute to be used as username after authentication",
             "type": str}),
         ("ldap_use_ssl", {
             "value": "False",
-            "help": "Use ssl on the ldap connection. Soon to be deprecated, use ldap_security instead",
+            "help": "Use ssl on the LDAP connection. Deprecated, use ldap_security instead!",
             "type": bool}),
         ("ldap_security", {
             "value": "none",
-            "help": "the encryption mode to be used: *none*|tls|starttls",
+            "help": "Encryption mode to be used: *none*|tls|starttls",
             "type": str}),
         ("ldap_ssl_verify_mode", {
             "value": "REQUIRED",
-            "help": "The certificate verification mode. Works for tls and starttls. NONE, OPTIONAL, default is REQUIRED",
+            "help": "Certificate verification mode for tls and starttls. NONE, OPTIONAL, default is REQUIRED",
             "type": str}),
         ("ldap_ssl_ca_file", {
             "value": "",
-            "help": "The path to the CA file in pem format which is used to certificate the server certificate",
+            "help": "Path to the CA file in PEM format which is used to certify the server certificate",
             "type": str}),
+        ("ldap_groups_attribute", {
+            "value": "",
+            "help": "Attribute in the user's LDAP entry to read the group memberships from",
+            "type": str}),
+        ("ldap_group_members_attribute", {
+            "value": "",
+            "help": "Attribute in the group entries to read the group's members from",
+            "type": str}),
+        ("ldap_group_base", {
+            "value": "",
+            "help": "Base DN to search for groups. Only if it differs from ldap_base and if ldap_group_members_attribute is set",
+            "type": str}),
+        ("ldap_group_filter", {
+            "value": "",
+            "help": "Search filter to search for groups having the user as member. Only if ldap_group_members_attribute is set",
+            "type": str}),
+        ("ldap_ignore_attribute_create_modify_timestamp", {
+            "value": "false",
+            "help": "Quirk for Authentik LDAP server: ignore modifyTimestamp and createTimestamp attributes.",
+            "type": bool}),
         ("imap_host", {
             "value": "localhost",
             "help": "IMAP server hostname: address|address:port|[address]:port|*localhost*",
@@ -413,6 +442,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "command that is run after changes to storage",
             "type": str}),
+        ("strict_preconditions", {
+            "value": "False",
+            "help": "strict preconditions check on PUT",
+            "type": bool}),
         ("_filesystem_fsync", {
             "value": "True",
             "help": "sync all changes to filesystem during requests",
@@ -477,7 +510,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "Send one email to all attendees, versus one email per attendee",
             "type": bool}),
-        ("added_template", {
+        ("new_or_added_to_event_template", {
             "value": """Hello $attendee_name,
 
 You have been added as an attendee to the following calendar event.
@@ -487,20 +520,31 @@ You have been added as an attendee to the following calendar event.
     $event_location
 
 This is an automated message. Please do not reply.""",
-            "help": "Template for the email sent when an event is added or updated. Select placeholder words prefixed with $ will be replaced",
+            "help": "Template for the email sent when an event is created or attendee is added. Select placeholder words prefixed with $ will be replaced",
             "type": str}),
-        ("removed_template", {
+        ("deleted_or_removed_from_event_template", {
             "value": """Hello $attendee_name,
 
-You have been removed as an attendee from the following calendar event.
+The following event has been deleted.
 
     $event_title
     $event_start_time - $event_end_time
     $event_location
 
 This is an automated message. Please do not reply.""",
-            "help": "Template for the email sent when an event is deleted. Select placeholder words prefixed with $ will be replaced",
+            "help": "Template for the email sent when an event is deleted or attendee is removed. Select placeholder words prefixed with $ will be replaced",
             "type": str}),
+        ("updated_event_template", {
+            "value": """Hello $attendee_name,
+The following event has been updated.
+    $event_title
+    $event_start_time - $event_end_time
+    $event_location
+
+This is an automated message. Please do not reply.""",
+            "help": "Template for the email sent when an event is updated. Select placeholder words prefixed with $ will be replaced",
+            "type": str
+        })
     ])),
     ("web", OrderedDict([
         ("type", {
@@ -537,6 +581,10 @@ This is an automated message. Please do not reply.""",
             "value": "False",
             "help": "log request content on level=debug",
             "type": bool}),
+        ("response_header_on_debug", {
+            "value": "False",
+            "help": "log response header on level=debug",
+            "type": bool}),
         ("response_content_on_debug", {
             "value": "False",
             "help": "log response content on level=debug",
@@ -549,6 +597,30 @@ This is an automated message. Please do not reply.""",
             "value": "False",
             "help": "log storage cache action on level=debug",
             "type": bool}),
+        ("profiling", {
+            "value": "none",
+            "help": "log profiling data level=info",
+            "type": profiling}),
+        ("profiling_per_request_min_duration", {
+            "value": "3",
+            "help": "log profiling data per request minimum duration (seconds)",
+            "type": positive_int}),
+        ("profiling_per_request_header", {
+            "value": "False",
+            "help": "Log profiling request body (if passing minimum duration)",
+            "type": bool}),
+        ("profiling_per_request_xml", {
+            "value": "False",
+            "help": "Log profiling request XML (if passing minimum duration)",
+            "type": bool}),
+        ("profiling_per_request_method_interval", {
+            "value": "600",
+            "help": "log profiling data per request method interval (seconds)",
+            "type": positive_int}),
+        ("profiling_top_x_functions", {
+            "value": "10",
+            "help": "log profiling top X functions (limit)",
+            "type": positive_int}),
         ("mask_passwords", {
             "value": "True",
             "help": "mask passwords in logs",

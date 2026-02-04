@@ -16,11 +16,17 @@ caldav.example.com {
         not path /.web/*
     }
 
+    # disable this in case authentication is handled by Radicale
     basic_auth @not-webui {
         USER HASH
     }
 
     reverse_proxy localhost:5232 {
+        # disable this in case authentication is handled by Radicale
         header_up X-Remote-User {http.auth.user.id}
+        # replace "HOST" with configured hostname of URL (FQDN) in client
+        header_up Host HOST
+        # replace "PORT" with configured port of URL in client
+        header_up X-Forwarded-Port PORT
     }
 }

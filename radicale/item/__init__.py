@@ -3,7 +3,8 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +38,7 @@ from typing import (Any, Callable, List, MutableMapping, Optional, Sequence,
 import vobject
 
 from radicale import storage  # noqa:F401
-from radicale import pathutils
+from radicale import pathutils, utils
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
@@ -55,6 +56,8 @@ def read_components(s: str) -> List[vobject.base.Component]:
     #  * 0x0A Line Feed
     #  * 0x0D Carriage Return
     s = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F]', '', s)
+    # Workaround delete all empty lines to avoid vobject parsing errors
+    s = re.sub(r'(?m)^[ \t]*\r?\n', '', s)
     return list(vobject.readComponents(s, allowQP=True))
 
 
@@ -333,6 +336,25 @@ def find_time_range(vobject_item: vobject.base.Component, tag: str
     if end is None:
         end = radicale_filter.DATETIME_MAX
     return math.floor(start.timestamp()), math.ceil(end.timestamp())
+
+
+def verify(file: str, encoding: str):
+    logger.info("Verifying item: %s", file)
+    with open(file, "rb") as f:
+        content_raw = f.read()
+    content = content_raw.decode(encoding)
+    logger.info("Verifying item: %s has sha256sum %r", file, utils.sha256_bytes(content_raw))
+    try:
+        vobject_items = read_components(content)  # noqa: F841
+    except Exception as e:
+        logger.error("Verifying item: %s problem: %s", file, e)
+        logger.warning("Item content:\n%s", utils.textwrap_str(content))
+        logger.info("Item content (hexdump):\n%s", utils.hexdump_str(content))
+        logger.info("Item content (hexdump/lines):\n%s", utils.hexdump_lines(content))
+        return False
+    else:
+        logger.info("Verifying item: %s successful", file)
+    return True
 
 
 class Item:

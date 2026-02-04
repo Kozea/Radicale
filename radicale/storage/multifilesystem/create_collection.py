@@ -19,7 +19,7 @@
 
 import os
 from tempfile import TemporaryDirectory
-from typing import Iterable, Optional, cast
+from typing import Dict, Iterable, List, Optional, Tuple, cast
 
 import radicale.item as radicale_item
 from radicale import pathutils
@@ -30,9 +30,37 @@ from radicale.storage.multifilesystem.base import StorageBase
 
 class StoragePartCreateCollection(StorageBase):
 
+    def _discover_existing_items_pre_overwrite(self,
+                                               tmp_collection: "multifilesystem.Collection",
+                                               dst_path: str) -> Tuple[Dict[str, radicale_item.Item], List[str]]:
+        """Discover existing items in the collection before overwriting them."""
+        existing_items = {}
+        new_item_hrefs = []
+
+        existing_collection = self._collection_class(
+            cast(multifilesystem.Storage, self),
+            pathutils.unstrip_path(dst_path, True))
+        existing_item_hrefs = set(existing_collection._list())
+        tmp_collection_hrefs = set(tmp_collection._list())
+        for item_href in tmp_collection_hrefs:
+            if item_href not in existing_item_hrefs:
+                # Item in temporary collection does not exist in the existing collection (is new)
+                new_item_hrefs.append(item_href)
+                continue
+            # Item exists in both collections, grab the existing item for reference
+            try:
+                item = existing_collection._get(item_href, verify_href=False)
+                if item is not None:
+                    existing_items[item_href] = item
+            except Exception:
+                # TODO: Log exception?
+                continue
+
+        return existing_items, new_item_hrefs
+
     def create_collection(self, href: str,
                           items: Optional[Iterable[radicale_item.Item]] = None,
-                          props=None) -> "multifilesystem.Collection":
+                          props=None) -> Tuple["multifilesystem.Collection", Dict[str, radicale_item.Item], List[str]]:
         folder = self._get_collection_root_folder()
 
         # Path should already be sanitized
@@ -44,10 +72,13 @@ class StoragePartCreateCollection(StorageBase):
             self._makedirs_synced(filesystem_path)
             return self._collection_class(
                 cast(multifilesystem.Storage, self),
-                pathutils.unstrip_path(sane_path, True))
+                pathutils.unstrip_path(sane_path, True)), {}, []
 
         parent_dir = os.path.dirname(filesystem_path)
         self._makedirs_synced(parent_dir)
+
+        replaced_items: Dict[str, radicale_item.Item] = {}
+        new_item_hrefs: List[str] = []
 
         # Create a temporary directory with an unsafe name
         try:
@@ -68,14 +99,20 @@ class StoragePartCreateCollection(StorageBase):
                         col._upload_all_nonatomic(items, suffix=".vcf")
 
                 if os.path.lexists(filesystem_path):
+                    replaced_items, new_item_hrefs = self._discover_existing_items_pre_overwrite(
+                        tmp_collection=col,
+                        dst_path=sane_path)
                     pathutils.rename_exchange(tmp_filesystem_path, filesystem_path)
                 else:
+                    # If the destination path does not exist, obviously all items are new
+                    new_item_hrefs = list(col._list())
                     os.rename(tmp_filesystem_path, filesystem_path)
                 self._sync_directory(parent_dir)
         except Exception as e:
             raise ValueError("Failed to create collection %r as %r %s" %
                              (href, filesystem_path, e)) from e
 
+        # TODO: Return new-old pairs and just-new items (new vs updated)
         return self._collection_class(
             cast(multifilesystem.Storage, self),
-            pathutils.unstrip_path(sane_path, True))
+            pathutils.unstrip_path(sane_path, True)), replaced_items, new_item_hrefs

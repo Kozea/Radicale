@@ -33,7 +33,7 @@ from radicale.log import logger
 class ApplicationPartMkcalendar(ApplicationBase):
 
     def do_MKCALENDAR(self, environ: types.WSGIEnviron, base_prefix: str,
-                      path: str, user: str) -> types.WSGIResponse:
+                      path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage MKCALENDAR request."""
         if "w" not in self._rights.authorization(user, path):
             return httputils.NOT_ALLOWED
@@ -89,4 +89,4 @@ class ApplicationPartMkcalendar(ApplicationBase):
                     logger.warning(
                         "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
-            return client.CREATED, {}, None
+            return client.CREATED, {}, None, xmlutils.pretty_xml(xml_content)

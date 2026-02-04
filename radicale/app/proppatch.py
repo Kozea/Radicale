@@ -73,7 +73,7 @@ def xml_proppatch(base_prefix: str, path: str,
 class ApplicationPartProppatch(ApplicationBase):
 
     def do_PROPPATCH(self, environ: types.WSGIEnviron, base_prefix: str,
-                     path: str, user: str) -> types.WSGIResponse:
+                     path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PROPPATCH request."""
         access = Access(self._rights, user, path)
         if not access.check("w"):
@@ -101,13 +101,17 @@ class ApplicationPartProppatch(ApplicationBase):
                 xml_answer = xml_proppatch(base_prefix, path, xml_content,
                                            item)
                 if xml_content is not None:
+                    content = DefusedET.tostring(
+                        xml_content,
+                        encoding=self._encoding
+                    ).decode(encoding=self._encoding)
                     hook_notification_item = HookNotificationItem(
-                        HookNotificationItemTypes.CPATCH,
-                        access.path,
-                        DefusedET.tostring(
-                            xml_content,
-                            encoding=self._encoding
-                        ).decode(encoding=self._encoding)
+                        notification_item_type=HookNotificationItemTypes.CPATCH,
+                        path=access.path,
+                        content=content,
+                        uid=None,
+                        old_content=None,
+                        new_content=content
                     )
                     self._hook.notify(hook_notification_item)
             except ValueError as e:
@@ -127,4 +131,4 @@ class ApplicationPartProppatch(ApplicationBase):
                     logger.warning(
                         "Bad PROPPATCH request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
-            return client.MULTI_STATUS, headers, self._xml_response(xml_answer)
+            return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)

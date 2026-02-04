@@ -2,7 +2,8 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2022 Unrud <unrud@outlook.com>
+# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +26,7 @@ from radicale.app.get import ApplicationPartGet
 class ApplicationPartHead(ApplicationPartGet, ApplicationBase):
 
     def do_HEAD(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-                user: str) -> types.WSGIResponse:
+                user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage HEAD request."""
         # Body is dropped in `Application.__call__` for HEAD requests
-        return self.do_GET(environ, base_prefix, path, user)
+        return self.do_GET(environ, base_prefix, path, user, remote_host, remote_useragent)

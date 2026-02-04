@@ -1,5 +1,6 @@
 # This file is part of Radicale - CalDAV and CardDAV server
-# Copyright © 2020 Unrud <unrud@outlook.com>
+# Copyright © 2020-2023 Unrud <unrud@outlook.com>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +21,7 @@ from typing import (Any, Callable, ContextManager, Iterator, List, Mapping,
                     runtime_checkable)
 
 WSGIResponseHeaders = Union[Mapping[str, str], Sequence[Tuple[str, str]]]
-WSGIResponse = Tuple[int, WSGIResponseHeaders, Union[None, str, bytes]]
+WSGIResponse = Tuple[int, WSGIResponseHeaders, Union[None, str, bytes], Union[None, str]]
 WSGIEnviron = Mapping[str, Any]
 WSGIStartResponse = Callable[[str, List[Tuple[str, str]]], Any]
 

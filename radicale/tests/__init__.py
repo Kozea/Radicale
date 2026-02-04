@@ -1,6 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2023 Unrud <unrud@outlook.com>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +23,8 @@ Tests for Radicale.
 
 import base64
 import logging
+import os
+import platform
 import shutil
 import sys
 import tempfile
@@ -35,7 +38,7 @@ import defusedxml.ElementTree as DefusedET
 import vobject
 
 import radicale
-from radicale import app, config, types, xmlutils
+from radicale import app, config, types, utils, xmlutils
 
 RESPONSES = Dict[str, Union[int, Dict[str, Tuple[int, ET.Element]], vobject.base.Component]]
 
@@ -51,6 +54,11 @@ class BaseTest:
     application: app.Application
 
     def setup_method(self) -> None:
+        if os.environ.get("PYTHONPATH"):
+            info = "with PYTHONPATH=%r " % os.environ.get("PYTHONPATH")
+        else:
+            info = ""
+        logging.info("Testing Radicale %s(%s) as %s on %s", info, utils.packages_version(), utils.user_groups_as_string(), platform.platform())
         self.configuration = config.load()
         self.colpath = tempfile.mkdtemp()
         self.configure({
@@ -75,6 +83,12 @@ class BaseTest:
         if login is not None and not isinstance(login, str):
             raise TypeError("login argument must be %r, not %r" %
                             (str, type(login)))
+        http_if_match = kwargs.pop("http_if_match", None)
+        if http_if_match is not None and not isinstance(http_if_match, str):
+            raise TypeError("http_if_match argument must be %r, not %r" %
+                            (str, type(http_if_match)))
+        remote_useragent = kwargs.pop("remote_useragent", None)
+        remote_host = kwargs.pop("remote_host", None)
         environ: Dict[str, Any] = {k.upper(): v for k, v in kwargs.items()}
         for k, v in environ.items():
             if not isinstance(v, str):
@@ -84,6 +98,12 @@ class BaseTest:
         if login:
             environ["HTTP_AUTHORIZATION"] = "Basic " + base64.b64encode(
                     login.encode(encoding)).decode()
+        if http_if_match:
+            environ["HTTP_IF_MATCH"] = http_if_match
+        if remote_useragent:
+            environ["HTTP_USER_AGENT"] = remote_useragent
+        if remote_host:
+            environ["REMOTE_ADDR"] = remote_host
         environ["REQUEST_METHOD"] = method.upper()
         environ["PATH_INFO"] = path
         if data is not None:

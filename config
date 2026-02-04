@@ -21,9 +21,14 @@
 # Max parallel connections
 #max_connections = 8
 
-# Max size of request body (bytes)
+# Max size of request body (bytes), default: 100 Mbyte
 # In case of using a reverse proxy in front of check also there related option
 #max_content_length = 100000000
+
+# Max resource size (bytes), default: 10 Mbyte
+# Limited to 80% of max_content_length to cover plain base64 encoded payload
+# Announced to clients requesting "max-resource-size" via PROPFIND
+#max_ressource_size = 10000000
 
 # Socket timeout (seconds)
 #timeout = 30
@@ -63,7 +68,7 @@
 [auth]
 
 # Authentication method
-# Value: none | htpasswd | remote_user | http_x_remote_user | dovecot | ldap | oauth2 | pam | denyall
+# Value: none | htpasswd | remote_user | http_remote_user | http_x_remote_user | dovecot | ldap | oauth2 | pam | denyall
 #type = denyall
 
 # Cache logins for until expiration time
@@ -75,45 +80,53 @@
 ## Expiration time of caching failed logins in seconds
 #cache_failed_logins_expiry = 90
 
-# Ignore modifyTimestamp and createTimestamp attributes. Required e.g. for Authentik LDAP server
-#ldap_ignore_attribute_create_modify_timestamp = false
-
 # URI to the LDAP server
 #ldap_uri = ldap://localhost
 
-# The base DN where the user accounts have to be searched
+# Base DN of the LDAP server to search for user accounts
 #ldap_base = ##BASE_DN##
 
-# The reader DN of the LDAP server
+# Reader DN of the LDAP server;  (needs read access to users and - if defined - groups)
 #ldap_reader_dn = CN=ldapreader,CN=Users,##BASE_DN##
 
-# Password of the reader DN
+# Password of the reader DN (better: use 'ldap_secret_file'!)
 #ldap_secret = ldapreader-secret
 
-# Path of the file containing password of the reader DN
+# Path to the file containing the password of the reader DN
 #ldap_secret_file = /run/secrets/ldap_password
 
-# the attribute to read the group memberships from in the user's LDAP entry (default: not set)
-#ldap_groups_attribute = memberOf
-
-# The filter to find the DN of the user. This filter must contain a python-style placeholder for the login
+# Filter to search for the LDAP entry of the user to authenticate. It must contain '{0}' as placeholder for the login name.
 #ldap_filter = (&(objectClass=person)(uid={0}))
 
-# the attribute holding the value to be used as username after authentication
+# Attribute holding the value to be used as username after authentication
 #ldap_user_attribute = cn
 
-# Use ssl on the ldap connection
-# Soon to be deprecated, use ldap_security instead
+# Use ssl on the LDAP connection (DEPRECATED - use 'ldap_security'!)
 #ldap_use_ssl = False
 
-# the encryption mode to be used: tls, starttls, default is none
+# Encryption mode to be used. Default: none; one of: none, tls, starttls
 #ldap_security = none
 
-# The certificate verification mode. Works for ssl and starttls. NONE, OPTIONAL, default is REQUIRED
+# Certificate verification mode for tls & starttls. Default: REQUIRED; one of NONE, OPTIONAL, REQUIRED
 #ldap_ssl_verify_mode = REQUIRED
 
-# The path to the CA file in pem format which is used to certificate the server certificate
+# Path to the CA file in PEM format to certify the server certificate
 #ldap_ssl_ca_file =
+
+# Attribute in the user's LDAP entry to read the group memberships from; default: not set
+#ldap_groups_attribute = memberOf
+
+# Attribute in the group entries to read the group's members from, e.g. member; default: not set
+#ldap_group_members_attribute = member
+
+# Base DN to search for groups; only if it differs from 'ldap_base' and if 'ldap_group_members_attribute' is set
+#ldap_group_base = ##GROUP_BASE_DN##
+
+# Search filter to search for groups having the user DN found as member; only if 'ldap_group_members_attribute' is set
+#ldap_group_filter = (objectclass=groupOfNames)
+
+# Quirks for Authentik LDAP server: ignore modifyTimestamp and createTimestamp attributes
+#ldap_ignore_attribute_create_modify_timestamp = false
 
 # Connection type for dovecot authentication (AF_UNIX|AF_INET|AF_INET6)
 # Note: credentials are transmitted in cleartext
@@ -127,6 +140,10 @@
 
 # Port of via network exposed dovecot socket
 #dovecot_port = 12345
+
+# Remote address source for authentication mechanisms (such as dovecot)
+# that are passed this information.
+#remote_ip_source = REMOTE_ADDR
 
 # IMAP server hostname
 # Syntax: address | address:port | [address]:port | imap.server.tld
@@ -169,6 +186,9 @@
 # Strip domain name from username
 #strip_domain = False
 
+# URL Decode the given username (when URL-encoded by the client - useful for iOS devices when using email address)
+#urldecode_username = False
+
 
 [rights]
 
@@ -185,8 +205,6 @@
 # Permit overwrite of a collection (global)
 #permit_overwrite_collection = True
 
-# URL Decode the given username (when URL-encoded by the client - useful for iOS devices when using email address)
-# urldecode_username = False
 
 [storage]
 
@@ -229,6 +247,9 @@
 # Skip broken item instead of triggering an exception
 #skip_broken_item = True
 
+# Strict preconditions check on PUT
+#strict_preconditions = False
+
 # Command that is run after changes to storage, default is emtpy
 #  Supported placeholders:
 #   %(user)s: logged-in user
@@ -247,18 +268,31 @@
 #
 # json format:
 #
-#  {
-#    "def-addressbook": {
+# predefined_collections = {
+#    "def-personal-addressbook": {
 #       "D:displayname": "Personal Address Book",
 #       "tag": "VADDRESSBOOK"
 #    },
-#    "def-calendar": {
+#    "def-work-addressbook": {
+#       "D:displayname": "Work Address Book",
+#       "tag": "VADDRESSBOOK"
+#    },
+#    "def-personal-calendar": {
 #       "C:supported-calendar-component-set": "VEVENT,VJOURNAL,VTODO",
 #       "D:displayname": "Personal Calendar",
 #       "tag": "VCALENDAR"
-#    }
-#  }
-#
+#    },
+#    "def-birthday-calendar": {
+#       "C:supported-calendar-component-set": "VEVENT",
+#       "D:displayname": "Birthday Calendar",
+#       "tag": "VCALENDAR"
+#    },
+#    "def-work-calendar": {
+#       "C:supported-calendar-component-set": "VEVENT",
+#       "D:displayname": "Work Calendar",
+#       "tag": "VCALENDAR"
+#    },
+# }
 #predefined_collections =
 
 
@@ -296,6 +330,9 @@
 # Log request content on level=debug
 #request_content_on_debug = False
 
+# Log response header on level=debug
+#response_header_on_debug = False
+
 # Log response content on level=debug
 #response_content_on_debug = False
 
@@ -304,6 +341,26 @@
 
 # Log storage cache actions on level=debug
 #storage_cache_actions_on_debug = False
+
+# Log profiling data on level=info
+# Value: per_request | per_request_method | none
+#profiling = none
+
+# Log profiling data per request minimum duration (seconds)
+#profiling_per_request_min_duration = 3
+
+# Log profiling request header (if passing minimum duration)
+#profiling_per_request_header = False
+
+# Log profiling request XML (if passing minimum duration)
+#profiling_per_request_xml = False
+
+# Log profiling data per request method interval (seconds)
+#profiling_per_request_method_interval = 600
+
+# Log profiling top X functions (limit)
+#profiling_top_x_functions = 10
+
 
 [headers]
 
@@ -334,10 +391,13 @@
 #smtp_password =
 #from_email =
 #mass_email = False
+#new_or_added_to_event_template =
+#deleted_or_removed_from_event_template =
+#updated_event_template =
 
 
 [reporting]
 
 # When returning a free-busy report, limit the number of returned
-# occurences per event to prevent DOS attacks.
+# occurences per event to prevent DoS attacks.
 #max_freebusy_occurrence = 10000

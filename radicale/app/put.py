@@ -46,7 +46,7 @@ PRODID = u"-//Radicale//NONSGML Version " + utils.package_version("radicale") + 
 
 
 def prepare(vobject_items: List[vobject.base.Component], path: str,
-            content_type: str, permission: bool, parent_permission: bool,
+            content_type: str, permission: bool, parent_permission: bool, max_resource_size: int,
             tag: Optional[str] = None,
             write_whole_collection: Optional[bool] = None) -> Tuple[
                 Iterator[radicale_item.Item],  # items
@@ -93,24 +93,61 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
                     logger.debug("Prepare item with UID '%s'", item.uid)
                     try:
                         item.prepare()
-                    except ValueError as e:
+                    except (RuntimeError, ValueError, AttributeError) as e:
                         if logger.isEnabledFor(logging.DEBUG):
-                            logger.warning("Problem during prepare item with UID '%s' (content below): %s\n%s", item.uid, e, item._text)
+                            if item._text is None:
+                                content = vobject_item
+                            else:
+                                content = item._text
+                            logger.warning("Problem during prepare item with UID '%s' (content below): %s\n%s", item.uid, e, utils.textwrap_str(content))
                         else:
                             logger.warning("Problem during prepare item with UID '%s' (content suppressed in this loglevel): %s", item.uid, e)
                         raise
+                    size = len(item.serialize())
+                    if (size > max_resource_size):
+                        logger.warning("PUT request contains item with UID %r size %d > limit %d: %r", item.uid, size, max_resource_size, path)
+                        # Use OverflowError as flag for max_resource_size
+                        raise OverflowError
+                    else:
+                        logger.debug("PUT request contains item with UID %r size %d <= limit %d: %r", item.uid, size, max_resource_size, path)
                     items.append(item)
             elif write_whole_collection and tag == "VADDRESSBOOK":
                 for vobject_item in vobject_items:
                     item = radicale_item.Item(collection_path=collection_path,
                                               vobject_item=vobject_item)
-                    item.prepare()
+                    logger.debug("Prepare item with UID '%s'", item.uid)
+                    try:
+                        item.prepare()
+                    except (RuntimeError, ValueError, AttributeError) as e:
+                        if logger.isEnabledFor(logging.DEBUG):
+                            if item._text is None:
+                                content = vobject_item
+                            else:
+                                content = item._text
+                            logger.warning("Problem during prepare item with UID '%s' (content below): %s\n%s", item.uid, e, utils.textwrap_str(content))
+                        else:
+                            logger.warning("Problem during prepare item with UID '%s' (content suppressed in this loglevel): %s", item.uid, e)
+                        raise
+                    size = len(item.serialize())
+                    if (size > max_resource_size):
+                        logger.warning("PUT request contains item with UID %r size %d > limit %d: %r", item.uid, size, max_resource_size, path)
+                        # Use OverflowError as flag for max_resource_size
+                        raise OverflowError
+                    else:
+                        logger.debug("PUT request contains item with UID %r size %d <= limit %d: %r", item.uid, size, max_resource_size, path)
                     items.append(item)
             elif not write_whole_collection:
                 vobject_item, = vobject_items
                 item = radicale_item.Item(collection_path=collection_path,
                                           vobject_item=vobject_item)
                 item.prepare()
+                size = len(item.serialize())
+                if (size > max_resource_size):
+                    logger.warning("PUT request contains item with UID %r size %d above limit %d: %r", item.uid, size, max_resource_size, path)
+                    # Use OverflowError as flag for max_resource_size
+                    raise OverflowError
+                else:
+                    logger.debug("PUT request contains item with UID %r size %d below limit %d: %r", item.uid, size, max_resource_size, path)
                 items.append(item)
 
         if write_whole_collection:
@@ -142,7 +179,7 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
 class ApplicationPartPut(ApplicationBase):
 
     def do_PUT(self, environ: types.WSGIEnviron, base_prefix: str,
-               path: str, user: str) -> types.WSGIResponse:
+               path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PUT request."""
         access = Access(self._rights, user, path)
         if not access.check("w"):
@@ -164,7 +201,10 @@ class ApplicationPartPut(ApplicationBase):
             logger.warning(
                 "Bad PUT request on %r (read_components): %s", path, e, exc_info=True)
             if self._log_bad_put_request_content:
-                logger.warning("Bad PUT request content of %r:\n%s", path, content)
+                logger.warning("Bad PUT request content of %r:\n%s", path, utils.textwrap_str(content))
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("Request content (sha256sum): %s", utils.sha256_str(content))
+                    logger.debug("Request content (hexdump/lines):\n%s", utils.hexdump_lines(content))
             else:
                 logger.debug("Bad PUT request content: suppressed by config/option [logging] bad_put_request_content")
             return httputils.BAD_REQUEST
@@ -172,7 +212,8 @@ class ApplicationPartPut(ApplicationBase):
          prepared_props, prepared_exc_info) = prepare(
              vobject_items, path, content_type,
              bool(rights.intersect(access.permissions, "Ww")),
-             bool(rights.intersect(access.parent_permissions, "w")))
+             bool(rights.intersect(access.parent_permissions, "w")),
+             self._max_resource_size)
 
         with self._storage.acquire_lock("w", user, path=path, request="PUT"):
             item = next(iter(self._storage.discover(path)), None)
@@ -207,6 +248,9 @@ class ApplicationPartPut(ApplicationBase):
                 return httputils.NOT_ALLOWED
 
             etag = environ.get("HTTP_IF_MATCH", "")
+            if item and not etag and self._strict_preconditions:
+                logger.warning("Precondition failed for %r: existing item, no If-Match header, strict mode enabled", path)
+                return httputils.PRECONDITION_FAILED
             if not item and etag:
                 # Etag asked but no item found: item has been removed
                 logger.warning("Precondition failed on PUT request for %r (HTTP_IF_MATCH: %s, item not existing)", path, etag)
@@ -233,24 +277,46 @@ class ApplicationPartPut(ApplicationBase):
                      vobject_items, path, content_type,
                      bool(rights.intersect(access.permissions, "Ww")),
                      bool(rights.intersect(access.parent_permissions, "w")),
+                     self._max_resource_size,
                      tag, write_whole_collection)
             props = prepared_props
             if prepared_exc_info:
-                logger.warning(
-                    "Bad PUT request on %r (prepare): %s", path, prepared_exc_info[1],
-                    exc_info=prepared_exc_info)
-                return httputils.BAD_REQUEST
+                # Use OverflowError as flag for max_resource_size
+                if prepared_exc_info[0] == OverflowError:
+                    return httputils.PRECONDITION_FAILED
+                else:
+                    logger.warning(
+                        "Bad PUT request on %r (prepare): %s", path, prepared_exc_info[1],
+                        exc_info=prepared_exc_info)
+                    return httputils.BAD_REQUEST
 
             if write_whole_collection:
                 try:
-                    etag = self._storage.create_collection(
-                        path, prepared_items, props).etag
+                    col, replaced_items, new_item_hrefs = self._storage.create_collection(
+                        href=path,
+                        items=prepared_items,
+                        props=props)
                     for item in prepared_items:
-                        hook_notification_item = HookNotificationItem(
-                            HookNotificationItemTypes.UPSERT,
-                            access.path,
-                            item.serialize()
-                        )
+                        # Try to grab the previously-existing item by href
+                        existing_item = replaced_items.get(item.href, None)  # type: ignore
+                        if existing_item:
+                            hook_notification_item = HookNotificationItem(
+                                notification_item_type=HookNotificationItemTypes.UPSERT,
+                                path=access.path,
+                                content=existing_item.serialize(),
+                                uid=None,
+                                old_content=existing_item.serialize(),
+                                new_content=item.serialize()
+                            )
+                        else:  # We assume the item is new because it was not in the replaced_items
+                            hook_notification_item = HookNotificationItem(
+                                notification_item_type=HookNotificationItemTypes.UPSERT,
+                                path=access.path,
+                                content=item.serialize(),
+                                uid=None,
+                                old_content=None,
+                                new_content=item.serialize()
+                            )
                         self._hook.notify(hook_notification_item)
                 except ValueError as e:
                     logger.warning(
@@ -267,11 +333,15 @@ class ApplicationPartPut(ApplicationBase):
 
                 href = posixpath.basename(pathutils.strip_path(path))
                 try:
-                    etag = parent_item.upload(href, prepared_item).etag
+                    uploaded_item, replaced_item = parent_item.upload(href, prepared_item)
+                    etag = uploaded_item.etag
                     hook_notification_item = HookNotificationItem(
-                        HookNotificationItemTypes.UPSERT,
-                        access.path,
-                        prepared_item.serialize()
+                        notification_item_type=HookNotificationItemTypes.UPSERT,
+                        path=access.path,
+                        content=prepared_item.serialize(),
+                        uid=None,
+                        old_content=replaced_item.serialize() if replaced_item else None,
+                        new_content=prepared_item.serialize()
                     )
                     self._hook.notify(hook_notification_item)
                 except ValueError as e:
@@ -294,7 +364,7 @@ class ApplicationPartPut(ApplicationBase):
                 if (item and item.uid == prepared_item.uid):
                     logger.debug("PUT request updated existing item %r", path)
                     headers = {"ETag": etag}
-                    return client.NO_CONTENT, headers, None
+                    return client.NO_CONTENT, headers, None, None
 
             headers = {"ETag": etag}
-            return client.CREATED, headers, None
+            return client.CREATED, headers, None, None

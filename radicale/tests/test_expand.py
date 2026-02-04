@@ -3,6 +3,7 @@
 # Copyright © 2017-2019 Unrud <unrud@outlook.com>
 # Copyright © 2024 Pieter Hijma <pieterhijma@users.noreply.github.com>
 # Copyright © 2025 David Greaves <david@dgreaves.com>
+# Copyright © 2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -512,6 +513,191 @@ permissions: RrWw""")
         status, event2_calendar_data = responses["/test/event2.ics"]["C:calendar-data"]
         assert event2_calendar_data.text
         assert "UID:c6be8b2c-3d72-453c-b698-4f25cdf1569e" in event2_calendar_data.text
+
+    def test_report_getetag_expand_filter(self) -> None:
+        """Test getetag with time-range filter and expand (example from #1880)."""
+        self.mkcalendar("/test/")
+        self.put("/test/event_issue1880_1.ics", get_file_content("event_issue1880_1.ics"))
+        self.put("/test/event_issue1880_2.ics", get_file_content("event_issue1880_2.ics"))
+
+        request = """
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <D:getetag>
+                    <C:expand start="20250921T220000Z" end="20250928T220000Z"/>
+                </D:getetag>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                    <C:comp-filter name="VEVENT">
+                        <C:time-range start="20250921T220000Z" end="20250928T220000Z"/>
+                    </C:comp-filter>
+                </C:comp-filter>
+            </C:filter>
+        </C:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        assert len(responses) == 2
+        assert isinstance(responses["/test/event_issue1880_1.ics"], dict)
+        assert isinstance(responses["/test/event_issue1880_2.ics"], dict)
+        assert "D:getetag" in responses["/test/event_issue1880_1.ics"]
+        assert "D:getetag" in responses["/test/event_issue1880_2.ics"]
+
+    def test_report_getetag_expand_filter_positive1(self) -> None:
+        """Test getetag with time-range filter and expand (not applicable), should return as matching filter range (example from #1812)."""
+        self.mkcalendar("/test/")
+        self.put("/test/event_issue1812_getetag.ics", get_file_content("event_issue1812_getetag.ics"))
+
+        request = """
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <D:getetag>
+                    <C:expand start="20250706T220000Z" end="20250713T220000Z" />
+                </D:getetag>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                    <C:comp-filter name="VEVENT">
+                        <C:time-range start="20250716T220000Z" end="20250717T220000Z" />
+                    </C:comp-filter>
+                </C:comp-filter>
+            </C:filter>
+        </C:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        assert len(responses) == 1
+        assert isinstance(responses["/test/event_issue1812_getetag.ics"], dict)
+        assert "D:getetag" in responses["/test/event_issue1812_getetag.ics"]
+
+    def test_report_getetag_expand_filter_positive2(self) -> None:
+        """Test getetag with time-range filter and expand, should return as matching filter range (example from #1812)."""
+        self.mkcalendar("/test/")
+        self.put("/test/event_issue1812.ics", get_file_content("event_issue1812.ics"))
+
+        request = """
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <D:getetag>
+                   <C:expand start="20250706T220000Z" end="20250730T220000Z" />
+                </D:getetag>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                    <C:comp-filter name="VEVENT">
+                        <C:time-range start="20250716T220000Z" end="20250723T220000Z" />
+                    </C:comp-filter>
+                </C:comp-filter>
+            </C:filter>
+        </C:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        assert len(responses) == 1
+        assert isinstance(responses["/test/event_issue1812.ics"], dict)
+        assert "D:getetag" in responses["/test/event_issue1812.ics"]
+
+    def test_report_getetag_expand_filter_negative1(self) -> None:
+        """Test getetag with time-range filter and expand, should not return anything (example from #1812)."""
+        self.mkcalendar("/test/")
+        self.put("/test/event_issue1812_getetag.ics", get_file_content("event_issue1812_getetag.ics"))
+
+        request = """
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <D:getetag>
+                    <C:expand start="20250706T220000Z" end="20250713T220000Z" />
+                </D:getetag>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                    <C:comp-filter name="VEVENT">
+                        <C:time-range start="20250706T220000Z" end="20250713T220000Z" />
+                    </C:comp-filter>
+                </C:comp-filter>
+            </C:filter>
+        </C:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        assert len(responses) == 0
+
+    def test_report_getetag_expand_filter_negative2(self) -> None:
+        """Test getetag with time-range filter and expand, should not return anything (example from #1812)."""
+        self.mkcalendar("/test/")
+        self.put("/test/event_issue1812_getetag.ics", get_file_content("event_issue1812_getetag.ics"))
+
+        request = """
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <D:getetag />
+                <C:calendar-data>
+                    <C:expand start="20240706T220000Z" end="20240713T220000Z" />
+                </C:calendar-data>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                    <C:comp-filter name="VEVENT">
+                        <C:time-range start="20250706T220000Z" end="20250713T220000Z" />
+                    </C:comp-filter>
+                </C:comp-filter>
+            </C:filter>
+        </C:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        assert len(responses) == 0
+
+    def test_report_getetag_expand_filter_negative3(self) -> None:
+        """Test getetag with time-range filter and expand, should not return anything (example from #1812)."""
+        self.mkcalendar("/test/")
+        self.put("/test/event_issue1812_getetag.ics", get_file_content("event_issue1812_getetag.ics"))
+
+        request = """
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <C:calendar-data>
+                    <C:expand start="20240706T220000Z" end="20240713T220000Z" />
+                </C:calendar-data>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                    <C:comp-filter name="VEVENT">
+                        <C:time-range start="20250706T220000Z" end="20250713T220000Z" />
+                    </C:comp-filter>
+                </C:comp-filter>
+            </C:filter>
+        </C:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        assert len(responses) == 0
+
+    def test_report_getetag_expand_filter_negative4(self) -> None:
+        """Test getetag with time-range filter and expand, nothing returned as filter is not matching (example from #1812)."""
+        self.mkcalendar("/test/")
+        self.put("/test/event_issue1812.ics", get_file_content("event_issue1812.ics"))
+
+        request = """
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <D:getetag>
+                   <C:expand start="20250706T220000Z" end="20250730T220000Z" />
+                </D:getetag>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                    <C:comp-filter name="VEVENT">
+                        <C:time-range start="20240716T220000Z" end="20240723T220000Z" />
+                    </C:comp-filter>
+                </C:comp-filter>
+            </C:filter>
+        </C:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        assert len(responses) == 0
 
     def test_report_with_expand_property_all_day_event_overridden(self) -> None:
         self._test_expand(

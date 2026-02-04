@@ -64,10 +64,18 @@ class Auth(auth.BaseAuth):
                 if self._security == "starttls":
                     connection.starttls(ssl.create_default_context())
             try:
-                connection.authenticate(
-                    "PLAIN",
-                    lambda _: "{0}\x00{0}\x00{1}".format(login, password).encode(),
-                )
+                if "AUTH=PLAIN" in connection.capabilities:
+                    logger.debug("IMAP authentication PLAIN selected for user %r via %s:%d (security: %s)", login, self._host, self._port, self._security)
+                    connection.authenticate(
+                        "PLAIN",
+                        lambda _: "{0}\x00{0}\x00{1}".format(login, password).encode(),
+                    )
+                elif "AUTH=LOGIN" in connection.capabilities:
+                    logger.debug("IMAP authentication LOGIN selected for user %r via %s:%d (security: %s)", login, self._host, self._port, self._security)
+                    connection.login(login, password)
+                else:
+                    logger.error("IMAP server is neither supporting AUTH=PLAIN or AUTH=LOGIN: %s:%d (security: %s)", self._host, self._port, self._security)
+                    return ""
             except imaplib.IMAP4.error as e:
                 logger.warning("IMAP authentication failed for user %r: %s", login, e, exc_info=False)
                 return ""
