@@ -1,6 +1,61 @@
 # Changelog
 
-## 3.5.5.dev
+## 3.6.1.dev
+
+* Fix: MOVE failing with URL-encoded destination header
+* Improve: add workaround to remove empty lines in item to avoid reject by vobject parser
+
+## 3.6.0
+
+* Extend: logwatch script
+* Extend: [logging] bad_put_request_content: log checksum and hexdump of request on debug level
+* Extend: [logging] request_content_on_debug: log checksum of request on debug level
+* Extend: add command line option "--verify-item <file>" for dedicated item file analysis
+* Extend: PROPFIND response for VADDRESSBOOK with "CR:supported-address-data" and "CS:getctag"
+* Extend: conditionally announce vCard 4.0 in case vobject version is >= 1.0.0
+* Fix: hook for server-side e-mail notification
+* Change: dependency PyPI/passlib (stale since 2020) replaced with PyPI/libpass >= 1.9.3
+* Extend: add a check whether bcrypt version is compatible with passlib(libpass) version (requires "packaging")
+* Improve: autodetection of hashes in htpasswd (SHA256/SHA512 "rounds" are now supported)
+
+## 3.5.10
+* Improve: logging of broken calendar items during PUT
+* Add: logging of broken contact items during PUT
+* Extend: [auth] imap: add fallback support for LOGIN towards remote IMAP server (replaced in 3.5.0)
+* Fix: improper detection of HTTP_X_FORWARDED_PORT on MOVE
+* Extend: [logging] with profiling log per reqest or regular per request method
+* Add: [logging] option to log response header on debug loglevel
+* Adjust: [logging] header/content debug log indended by space to be skipped by logwatch
+* Improve: remove unnecessary open+read for mtime+size cache
+* Extend: add selected XML query properties to request result log line for improved timing analysis incl. logwatch support
+* Add: [server] max_resource_size option
+* Add: support PROPFIND/max-resource-size by max_resource_size (capped to 80% of max_content_length)
+
+## 3.5.9
+* Extend: [auth] add support for type http_remote_user
+* Extend: logging of invalid sync-token with user, path, remote host and useragent
+* Fix: typo related to collection delete hook
+
+## 3.5.8
+* Extend: [auth] re-factor & overhaul LDAP authentication, especially for Python's ldap module
+* Fix: out-of-range timestamp on 32-bit systems
+* Feature: extend logging with response size in bytes and flag served as plain or gzip
+* Feature: [storage] strict_preconditions: new config option to enforce strict preconditions check on PUT in case item already exists [RFC6352#9.2]
+* Fix: format_ut problem on 32-bit systems
+* Doc: Telugu translation
+
+## 3.5.7
+* Extend: [auth] dovecot: add support for version >= 2.4
+* Fix: report/getetag with enabled expand
+* Adjust: use of option [auth] ldap_ignore_attribute_create_modify_timestamp for support of Authentik LDAP server
+
+## 3.5.6
+* Fix: broken start when UID does not exist (potential container startup case)
+* Improve: user/group retrievement for running service and directories
+* Extend/Improve: [auth] ldap: group membership lookup
+* Add: [auth] remote_ip_source: set the remote IP source for auth algorithms
+
+## 3.5.5
 * Improve: [auth] ldap: do not read server info by bind to avoid needless network traffic
 * Fix: [storage] broken support of 'folder_umask'
 * Improve: add details about platform and effective user on startup
@@ -15,6 +70,8 @@
 * Add: [hook] dryrun: option to disable real hook action for testing, add tests for email+rabbitmq
 * Fix: storage hook path now added to DELETE, MKCOL, MKCALENDAR, MOVE, and PROPPATCH
 * Add: storage hook placeholder now supports "request" and "to_path" (MOVE only)
+* Improve: catch items having tzinfo only on dtstart or dtend set for whatever reason, overtake tzinfo from the other one
+* Improve: conditional log level for base_prefix strip action depending on auth and web type
 
 ## 3.5.4
 * Improve: item filter enhanced for 3rd level supporting VALARM and honoring TRIGGER (offset or absolute)
@@ -127,7 +184,7 @@
 * Fix: Using icalendar's tzinfo on created datetime to fix issue with icalendar
 * Fix: typos in code
 * Enhancement: Added free-busy report
-* Enhancement: Added 'max_freebusy_occurrences` setting to avoid potential DOS on reports
+* Enhancement: Added 'max_freebusy_occurrences` setting to avoid potential DoS on reports
 * Enhancement: remove unexpected control codes from uploaded items
 * Enhancement: add 'strip_domain' setting for username handling
 * Enhancement: add option to toggle debug log of rights rule with doesn't match

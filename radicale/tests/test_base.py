@@ -1,7 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,12 +24,14 @@ Radicale tests with simple requests.
 import logging
 import os
 import posixpath
+import urllib
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
 import defusedxml.ElementTree as DefusedET
+import pytest
 import vobject
 
-from radicale import storage, xmlutils
+from radicale import storage, utils, xmlutils
 from radicale.tests import RESPONSES, BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -142,6 +144,64 @@ permissions: RrWw""")
         assert "Event" in answer
         assert "UID:event" in answer
 
+    def test_add_event_with_desc_ok(self) -> None:
+        """Add an event."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue1970_ok.ics")
+        path = "/calendar.ics/event_issue1970_ok.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/calendar; charset=utf-8"
+        assert "DESCRIPTION" in answer
+        assert "VEVENT" in answer
+        assert "Event" in answer
+        assert "UID:event" in answer
+
+    def test_add_event_with_desc_problem(self) -> None:
+        """Add an event."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue1970_problem.ics")
+        path = "/calendar.ics/event_issue1970_problem.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/calendar; charset=utf-8"
+        assert "DESCRIPTION" in answer
+        assert "VEVENT" in answer
+        assert "Event" in answer
+        assert "UID:event" in answer
+
+    def test_add_event_exceed_size(self) -> None:
+        """Add an event which is exceeding max-resource-size."""
+        self.configure({"server": {"max_resource_size": 20}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=412)
+
+    def test_add_events_exceed_size(self) -> None:
+        """Add multipe events where last is exceeding max-resource-size."""
+        self.configure({"server": {"max_resource_size": 603}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_multiple3.ics")
+        path = "/calendar.ics/"
+        self.put(path, event, check=412)
+
+    def test_add_event_broken(self) -> None:
+        """Add a broken event."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("broken-vevent.ics")
+        path = "/calendar.ics/broken-vevent.ics"
+        self.put(path, event, check=400)
+
+    def test_add_events_broken2(self) -> None:
+        """Add a broken event (2nd one is broken)."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("broken-vevents.ics")
+        path = "/calendar.ics/"
+        self.put(path, event, check=400)
+
     def test_add_event_without_uid(self) -> None:
         """Add an event without UID."""
         self.mkcalendar("/calendar.ics/")
@@ -201,6 +261,34 @@ permissions: RrWw""")
         _, answer = self.get(path)
         assert "UID:contact1" in answer
 
+    def test_add_contact_broken(self) -> None:
+        """Add a broken contact."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("broken-vcard.vcf")
+        path = "/contacts.vcf/broken-vcards.vcf"
+        self.put(path, contact, check=400)
+
+    def test_add_contacts_broken(self) -> None:
+        """Add broken contacts."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("broken-vcards.vcf")
+        path = "/contacts.vcf/"
+        self.put(path, contact, check=400)
+
+    def test_add_contacts_broken2(self) -> None:
+        """Add broken contacts (only 2nd one is broken)."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("broken-vcards2.vcf")
+        path = "/contacts.vcf/"
+        self.put(path, contact, check=400)
+
+    def test_add_contacts_broken2_no_uid(self) -> None:
+        """Add broken contacts (only 2nd one is broken and has no UID)."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("broken-vcards2-no_uid.vcf")
+        path = "/contacts.vcf/"
+        self.put(path, contact, check=400)
+
     def test_add_contact_photo_with_data_uri(self) -> None:
         """Test workaround for broken PHOTO data from InfCloud"""
         self.create_addressbook("/contacts.vcf/")
@@ -216,6 +304,48 @@ permissions: RrWw""")
         path = "/contacts.vcf/contact.vcf"
         self.put(path, contact, check=400)
 
+    def test_add_contact_v3(self) -> None:
+        """Add a vCard 3.0 contact."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("contact1.vcf")
+        path = "/contacts.vcf/contact.vcf"
+        self.put(path, contact)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/vcard; charset=utf-8"
+        assert "VCARD" in answer
+        assert "UID:contact1" in answer
+        assert "VERSION:3.0" in answer
+
+    @pytest.mark.skipif(not utils.vobject_supports_vcard4(),
+                        reason="vobject < 1.0.0 does not support vCard 4.0")
+    def test_add_contact_v4(self) -> None:
+        """Add a vCard 4.0 contact (requires vobject >= 1.0.0)."""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("contact1_v4.vcf")
+        path = "/contacts.vcf/contact.vcf"
+        self.put(path, contact)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/vcard; charset=utf-8"
+        assert "VCARD" in answer
+        assert "UID:contact1" in answer
+        assert "VERSION:4.0" in answer
+
+    def test_add_contact_photo_with_data_uri_v3(self) -> None:
+        """Test vCard 3.0 PHOTO format"""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("contact_photo_with_data_uri.vcf")
+        self.put("/contacts.vcf/contact.vcf", contact)
+
+    @pytest.mark.skipif(not utils.vobject_supports_vcard4(),
+                        reason="vobject < 1.0.0 does not support vCard 4.0")
+    def test_add_contact_photo_with_data_uri_v4(self) -> None:
+        """Test vCard 4.0 PHOTO data URI format (requires vobject >= 1.0.0)"""
+        self.create_addressbook("/contacts.vcf/")
+        contact = get_file_content("contact_photo_with_data_uri_v4.vcf")
+        self.put("/contacts.vcf/contact.vcf", contact)
+
     def test_update_event(self) -> None:
         """Update an event."""
         self.mkcalendar("/calendar.ics/")
@@ -228,6 +358,56 @@ permissions: RrWw""")
         assert answer.count("BEGIN:VEVENT") == 1
         _, answer = self.get(path)
         assert "DTSTAMP:20130902T150159Z" in answer
+
+    def test_update_event_no_etag_strict_preconditions_true(self) -> None:
+        """Update an event without serving etag having strict_preconditions enabled (Precondition Failed)."""
+        self.configure({"storage": {"strict_preconditions": True}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        event_modified = get_file_content("event1_modified.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=201)
+        self.put(path, event_modified, check=412)
+
+    def test_update_event_with_etag_strict_preconditions_true(self) -> None:
+        """Update an event with serving equal etag having strict_preconditions enabled (OK)."""
+        self.configure({"storage": {"strict_preconditions": True}})
+        self.configure({"logging": {"response_content_on_debug": True}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        event_modified = get_file_content("event1_modified.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=201)
+        # get etag
+        _, responses = self.report("/calendar.ics/", """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag/>
+    </D:prop>
+</C:calendar-query>""")
+        assert len(responses) == 1
+        response = responses["/calendar.ics/event1.ics"]
+        assert not isinstance(response, int)
+        status, prop = response["D:getetag"]
+        assert status == 200 and prop.text
+        self.put(path, event_modified, check=204, http_if_match=prop.text)
+
+    def test_update_event_with_etag_mismatch(self) -> None:
+        """Update an event with serving mismatch etag (Precondition Failed)."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        event_modified = get_file_content("event1_modified.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=201)
+        self.put(path, event_modified, check=412, http_if_match="0000")
+
+    def test_add_event_with_etag(self) -> None:
+        """Add an event with serving etag (Precondition Failed)."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=412, http_if_match="0000")
 
     def test_update_event_uid_event(self) -> None:
         """Update an event with a different UID."""
@@ -305,6 +485,22 @@ permissions: RrWw""")
             assert uid1
             for uid2 in uids[i + 1:]:
                 assert uid1 != uid2
+
+    def test_add_event_tz_dtend_only(self) -> None:
+        """Add an event having TZ only on DTEND."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue1847_1.ics")
+        path = "/calendar.ics/event_issue1847_1.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+
+    def test_add_event_tz_dtstart_only(self) -> None:
+        """Add an event having TZ only on DTSTART."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue1847_2.ics")
+        path = "/calendar.ics/event_issue1847_2.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
 
     def test_verify(self) -> None:
         """Verify the storage."""
@@ -398,6 +594,33 @@ permissions: RrWw""")
         self.put(path1, event)
         self.request("MOVE", path1, check=201,
                      HTTP_DESTINATION="http://127.0.0.1/"+path2)
+        self.get(path1, check=404)
+        self.get(path2)
+
+    def test_move_between_collections_with_at_native(self) -> None:
+        """Move a item."""
+        self.mkcalendar("/calendar1@domain.ics/")
+        self.mkcalendar("/calendar2@domain.ics/")
+        event = get_file_content("event1.ics")
+        path1 = "/calendar1@domain.ics/event1.ics"
+        path2 = "/calendar2@domain.ics/event2.ics"
+        self.put(path1, event)
+        self.request("MOVE", path1, check=201,
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
+        self.get(path1, check=404)
+        self.get(path2)
+
+    def test_move_between_collections_with_at_encoded(self) -> None:
+        """Move a item."""
+        self.mkcalendar("/calendar1@domain.ics/")
+        self.mkcalendar("/calendar2@domain.ics/")
+        event = get_file_content("event1.ics")
+        path1 = "/calendar1@domain.ics/event1.ics"
+        path2 = "/calendar2@domain.ics/event2.ics"
+        path2_encoded = urllib.parse.quote(path2)
+        self.put(path1, event)
+        self.request("MOVE", path1, check=201,
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2_encoded)
         self.get(path1, check=404)
         self.get(path2)
 
@@ -568,11 +791,13 @@ permissions: RrWw""")
         assert not isinstance(response, int)
         status, prop = response["D:sync-token"]
         assert status == 200 and prop.text
+        assert "C:max-resource-size" not in response
         _, responses = self.propfind("/calendar.ics/event.ics", propfind)
         response = responses["/calendar.ics/event.ics"]
         assert not isinstance(response, int)
         status, prop = response["D:getetag"]
         assert status == 200 and prop.text
+        assert "C:max-resource-size" not in response
 
     def test_propfind_nonexistent(self) -> None:
         """Read a property that does not exist."""
@@ -583,6 +808,87 @@ permissions: RrWw""")
         assert not isinstance(response, int) and len(response) == 1
         status, prop = response["ICAL:calendar-color"]
         assert status == 404 and not prop.text
+
+    def test_propfind_max_resource_size(self) -> None:
+        """Read property C:max-resource-size"""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        self.put("/calendar.ics/event.ics", event)
+        _, responses = self.propfind("/calendar.ics/", """\
+<?xml version="1.0"?>
+ <propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+   <prop>
+     <C:max-resource-size />
+   </prop>
+ </propfind>""")
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int)
+        status, prop = response["C:max-resource-size"]
+        assert status == 200 and prop.text
+
+    def test_propfind_getctag(self) -> None:
+        """Read property CS:getctag"""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        self.put("/calendar.ics/event.ics", event)
+        _, responses = self.propfind("/calendar.ics/", """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:CS="http://calendarserver.org/ns/">
+  <prop>
+    <CS:getctag />
+  </prop>
+</propfind>""")
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int)
+        status, prop = response["CS:getctag"]
+        assert status == 200 and prop.text
+
+    def test_propfind_supported_address_data(self) -> None:
+        """Read property CR:supported-address-data on addressbook"""
+        self.create_addressbook("/addressbook.vcf/")
+        contact = get_file_content("contact1.vcf")
+        self.put("/addressbook.vcf/contact.vcf", contact)
+        _, responses = self.propfind("/addressbook.vcf/", """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
+  <prop>
+    <CR:supported-address-data />
+  </prop>
+</propfind>""")
+        response = responses["/addressbook.vcf/"]
+        assert not isinstance(response, int)
+        status, prop = response["CR:supported-address-data"]
+        assert status == 200
+        # Should have at least one address-data-type element
+        address_data_types = prop.findall(
+            xmlutils.make_clark("CR:address-data-type"))
+        assert len(address_data_types) >= 1
+        # Check that 3.0 is always supported
+        versions = [e.get("version") for e in address_data_types]
+        assert "3.0" in versions
+        # Check content-type is text/vcard for all
+        for e in address_data_types:
+            assert e.get("content-type") == "text/vcard"
+        # If vobject >= 1.0.0, should also support 4.0
+        if utils.vobject_supports_vcard4():
+            assert "4.0" in versions
+            # vCard 4.0 should be listed first (preferred)
+            assert versions[0] == "4.0"
+
+    def test_propfind_supported_address_data_on_calendar(self) -> None:
+        """Read property CR:supported-address-data on calendar (should 404)"""
+        self.mkcalendar("/calendar.ics/")
+        _, responses = self.propfind("/calendar.ics/", """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
+  <prop>
+    <CR:supported-address-data />
+  </prop>
+</propfind>""")
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int)
+        status, prop = response["CR:supported-address-data"]
+        assert status == 404
 
     def test_proppatch(self) -> None:
         """Set/Remove a property and read it back."""
@@ -1621,7 +1927,7 @@ permissions: RrWw""")
 </C:free-busy-query>""", 400, is_xml=False)
 
     def _report_sync_token(
-            self, calendar_path: str, sync_token: Optional[str] = None
+            self, calendar_path: str, sync_token: Optional[str] = None, **kwargs
             ) -> Tuple[str, RESPONSES]:
         sync_token_xml = (
             "<sync-token><![CDATA[%s]]></sync-token>" % sync_token
@@ -1633,7 +1939,7 @@ permissions: RrWw""")
         <getetag />
     </prop>
     %s
-</sync-collection>""" % sync_token_xml)
+</sync-collection>""" % sync_token_xml, **kwargs)
         xml = DefusedET.fromstring(answer)
         if status in (403, 409):
             assert xml.tag == xmlutils.make_clark("D:error")
@@ -1779,6 +2085,15 @@ permissions: RrWw""")
         self.mkcalendar(calendar_path)
         sync_token, _ = self._report_sync_token(
             calendar_path, "http://radicale.org/ns/sync/INVALID")
+        assert not sync_token
+
+    def test_report_sync_collection_invalid_sync_token_with_user(self) -> None:
+        """Test sync-collection report with an invalid sync token and user+host+useragent"""
+        self.configure({"auth": {"type": "none"}})
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+        sync_token, _ = self._report_sync_token(
+            calendar_path, "http://radicale.org/ns/sync/INVALID", login="testuser:", remote_host="192.0.2.1", remote_useragent="Testclient/1.0")
         assert not sync_token
 
     def test_propfind_sync_token(self) -> None:

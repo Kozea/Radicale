@@ -27,8 +27,8 @@ Take a look at the class ``BaseCollection`` if you want to implement your own.
 import json
 import xml.etree.ElementTree as ET
 from hashlib import sha256
-from typing import (Callable, ContextManager, Iterable, Iterator, Mapping,
-                    Optional, Sequence, Set, Tuple, Union, overload)
+from typing import (Callable, ContextManager, Dict, Iterable, Iterator, List,
+                    Mapping, Optional, Sequence, Set, Tuple, Union, overload)
 
 import vobject
 
@@ -44,7 +44,8 @@ INTERNAL_TYPES: Sequence[str] = ("multifilesystem", "multifilesystem_nolock",)
 # NOTE: change only if cache structure is modified to avoid cache invalidation on update
 CACHE_VERSION_RADICALE = "3.3.1"
 
-CACHE_VERSION: bytes = ("%s=%s;%s=%s;" % ("radicale", CACHE_VERSION_RADICALE, "vobject", utils.package_version("vobject"))).encode()
+CACHE_VERSION: bytes = (
+            "%s=%s;%s=%s;" % ("radicale", CACHE_VERSION_RADICALE, "vobject", utils.package_version("vobject"))).encode()
 
 
 def load(configuration: "config.Configuration") -> "BaseStorage":
@@ -112,17 +113,18 @@ class BaseCollection:
                  invalid.
 
         """
+
         def hrefs_iter() -> Iterator[str]:
             for item in self.get_all():
                 assert item.href
                 yield item.href
+
         token = "http://radicale.org/ns/sync/%s" % self.etag.strip("\"")
         if old_token:
             raise ValueError("Sync token are not supported")
         return token, hrefs_iter()
 
-    def get_multi(self, hrefs: Iterable[str]
-                  ) -> Iterable[Tuple[str, Optional["radicale_item.Item"]]]:
+    def get_multi(self, hrefs: Iterable[str]) -> Iterable[Tuple[str, Optional["radicale_item.Item"]]]:
         """Fetch multiple items.
 
         It's not required to return the requested items in the correct order.
@@ -175,8 +177,11 @@ class BaseCollection:
         return False
 
     def upload(self, href: str, item: "radicale_item.Item") -> (
-            "radicale_item.Item"):
-        """Upload a new or replace an existing item."""
+            Tuple)["radicale_item.Item", Optional["radicale_item.Item"]]:
+        """Upload a new or replace an existing item.
+
+        Return the uploaded item and the old item if it was replaced.
+        """
         raise NotImplementedError
 
     def delete(self, href: Optional[str] = None) -> None:
@@ -188,10 +193,12 @@ class BaseCollection:
         raise NotImplementedError
 
     @overload
-    def get_meta(self, key: None = None) -> Mapping[str, str]: ...
+    def get_meta(self, key: None = None) -> Mapping[str, str]:
+        ...
 
     @overload
-    def get_meta(self, key: str) -> Optional[str]: ...
+    def get_meta(self, key: str) -> Optional[str]:
+        ...
 
     def get_meta(self, key: Optional[str] = None
                  ) -> Union[Mapping[str, str], Optional[str]]:
@@ -293,8 +300,7 @@ class BaseStorage:
 
     def discover(
             self, path: str, depth: str = "0",
-            child_context_manager: Optional[
-            Callable[[str, Optional[str]], ContextManager[None]]] = None,
+            child_context_manager: Optional[Callable[[str, Optional[str]], ContextManager[None]]] = None,
             user_groups: Set[str] = set([])) -> Iterable["types.CollectionOrItem"]:
         """Discover a list of collections under the given ``path``.
 
@@ -328,7 +334,8 @@ class BaseStorage:
     def create_collection(
             self, href: str,
             items: Optional[Iterable["radicale_item.Item"]] = None,
-            props: Optional[Mapping[str, str]] = None) -> BaseCollection:
+            props: Optional[Mapping[str, str]] = None) -> (
+            Tuple)[BaseCollection, Dict[str, "radicale_item.Item"], List[str]]:
         """Create a collection.
 
         ``href`` is the sanitized path.
@@ -348,7 +355,7 @@ class BaseStorage:
         raise NotImplementedError
 
     @types.contextmanager
-    def acquire_lock(self, mode: str, user: str = "") -> Iterator[None]:
+    def acquire_lock(self, mode: str, user: str = "", *args, **kwargs) -> Iterator[None]:
         """Set a context manager to lock the whole storage.
 
         ``mode`` must either be "r" for shared access or "w" for exclusive

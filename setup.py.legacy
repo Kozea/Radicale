@@ -1,7 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2009-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ from setuptools import find_packages, setup
 
 # When the version is updated, a new section in the CHANGELOG.md file must be
 # added too.
-VERSION = "3.5.5.dev"
+VERSION = "3.6.1.dev"
 
 with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
@@ -36,9 +36,11 @@ web_files = ["web/internal_data/css/icon.png",
              "web/internal_data/fn.js",
              "web/internal_data/index.html"]
 
-install_requires = ["defusedxml", "passlib", "vobject>=0.9.6",
+# Hint: if bcyrpt < 5.0.0 is used, passlib(libpass) dependency can be downgraded/reverted by: sed -i 's|libpass[^"]*|passlib|' setup.py.legacy
+install_requires = ["defusedxml", "libpass>=1.9.3", "vobject>=0.9.6",
                     "pika>=1.1.0",
                     "requests",
+                    "packaging",
                     ]
 bcrypt_requires = ["bcrypt"]
 argon2_requires = ["argon2-cffi"]

@@ -2,7 +2,7 @@
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2018 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,13 @@ import datetime
 import os
 import ssl
 import sys
+import textwrap
+from hashlib import sha256
 from importlib import import_module, metadata
+from string import ascii_letters, digits, punctuation
 from typing import Callable, Sequence, Tuple, Type, TypeVar, Union
+
+from packaging.version import Version
 
 from radicale import config
 from radicale.log import logger
@@ -47,8 +52,18 @@ ADDRESS_TYPE = Union[Tuple[Union[str, bytes, bytearray], int],
                      Tuple[str, int, int, int]]
 
 
-# Max YEAR in datetime in unixtime
+# Max/Min YEAR in datetime in unixtime
 DATETIME_MAX_UNIXTIME: int = (datetime.MAXYEAR - 1970) * 365 * 24 * 60 * 60
+DATETIME_MIN_UNIXTIME: int = (datetime.MINYEAR - 1970) * 365 * 24 * 60 * 60
+
+
+# Number units
+UNIT_g: int = (1000 * 1000 * 1000)
+UNIT_m: int = (1000 * 1000)
+UNIT_k: int = (1000)
+UNIT_G: int = (1024 * 1024 * 1024)
+UNIT_M: int = (1024 * 1024)
+UNIT_K: int = (1024)
 
 
 def load_plugin(internal_types: Sequence[str], module_name: str,
@@ -72,7 +87,46 @@ def load_plugin(internal_types: Sequence[str], module_name: str,
 
 
 def package_version(name):
+    if name == "passlib":
+        # passlib(libpass) requires special handling as module name is unchanged, but metadata has new name
+        import passlib
+        return passlib.__version__
     return metadata.version(name)
+
+
+def vobject_supports_vcard4() -> bool:
+    """Check if vobject supports vCard 4.0 (requires version >= 1.0.0)."""
+    try:
+        version = package_version("vobject")
+        parts = version.split(".")
+        major = int(parts[0])
+        return major >= 1
+    except Exception:
+        return False
+
+
+def passlib_libpass_supports_bcrypt() -> Tuple[bool, str]:
+    """Check if passlib(libpass) version supports bcrypt version."""
+    info = ""
+    try:
+        version_bcrypt = package_version("bcrypt")
+        version_bcrypt_check = "5.0.0"
+        version_passlib = package_version("passlib")
+        version_passlib_check = "1.9.3"
+        if Version(version_bcrypt) >= Version(version_bcrypt_check):
+            # bcrypt >= 5.0.0 has issues with passlib(libpass) < 1.9.3
+            if Version(version_passlib) < Version(version_passlib_check):
+                info = "bcrypt module version %r >= %r and passlib(libpass) module version %r < %r found => incompatible, downgrade bcrypt or upgrade passlib(libpass)" % (version_bcrypt, version_bcrypt_check, version_passlib, version_passlib_check)
+                return (False, info)
+            else:
+                info = "bcrypt module version %r >= %r and passlib(libpass) module version %r >= %r found => ok" % (version_bcrypt, version_bcrypt_check, version_passlib, version_passlib_check)
+                return (True, info)
+        else:
+            info = "bcrypt module version %r < %r and passlib(libpass) module version %r found => ok" % (version_bcrypt, version_bcrypt_check, version_passlib)
+            return (True, info)
+    except Exception:
+        info = "bcrypt module version or passlib(libpass) module version %r not found => problem"
+        return (False, info)
 
 
 def packages_version():
@@ -226,25 +280,49 @@ def ssl_get_protocols(context):
     return protocols
 
 
+def unknown_if_empty(value):
+    if value == "":
+        return "UNKNOWN"
+    else:
+        return value
+
+
 def user_groups_as_string():
     if sys.platform != "win32":
         euid = os.geteuid()
-        egid = os.getegid()
         try:
             username = pwd.getpwuid(euid)[0]
+            user = "%s(%d)" % (unknown_if_empty(username), euid)
         except Exception:
             # name of user not found
-            s = "user=(%d) group=(%d)" % (euid, egid)
-            return s
-        gids = os.getgrouplist(username, egid)
+            user = "UNKNOWN(%d)" % euid
+
+        egid = os.getegid()
         groups = []
-        for gid in gids:
+        try:
+            gids = os.getgrouplist(username, egid)
+            for gid in gids:
+                try:
+                    gi = grp.getgrgid(gid)
+                    groups.append("%s(%d)" % (unknown_if_empty(gi.gr_name), gid))
+                except Exception:
+                    groups.append("UNKNOWN(%d)" % gid)
+        except Exception:
             try:
-                gi = grp.getgrgid(gid)
-                groups.append("%s(%d)" % (gi.gr_name, gid))
+                groups.append("%s(%d)" % (grp.getgrnam(egid)[0], egid))
             except Exception:
-                groups.append("%s(%d)" % (gid, gid))
-        s = "user=%s(%d) groups=%s" % (username, euid, ','.join(groups))
+                # workaround to get groupid by name
+                groups_all = grp.getgrall()
+                found = False
+                for entry in groups_all:
+                    if entry[2] == egid:
+                        groups.append("%s(%d)" % (unknown_if_empty(entry[0]), egid))
+                        found = True
+                        break
+                if not found:
+                    groups.append("UNKNOWN(%d)" % egid)
+
+        s = "user=%s groups=%s" % (user, ','.join(groups))
     else:
         username = os.getlogin()
         s = "user=%s" % (username)
@@ -255,12 +333,175 @@ def format_ut(unixtime: int) -> str:
     if sys.platform == "win32":
         # TODO check how to support this better
         return str(unixtime)
-    if unixtime < DATETIME_MAX_UNIXTIME:
+    if unixtime <= DATETIME_MIN_UNIXTIME:
+        r = str(unixtime) + "(<=MIN:" + str(DATETIME_MIN_UNIXTIME) + ")"
+    elif unixtime >= DATETIME_MAX_UNIXTIME:
+        r = str(unixtime) + "(>=MAX:" + str(DATETIME_MAX_UNIXTIME) + ")"
+    else:
         if sys.version_info < (3, 11):
             dt = datetime.datetime.utcfromtimestamp(unixtime)
         else:
             dt = datetime.datetime.fromtimestamp(unixtime, datetime.UTC)
         r = str(unixtime) + "(" + dt.strftime('%Y-%m-%dT%H:%M:%SZ') + ")"
-    else:
-        r = str(unixtime) + "(>MAX:" + str(DATETIME_MAX_UNIXTIME) + ")"
     return r
+
+
+def format_unit(value: float, binary: bool = False) -> str:
+    if binary:
+        if value > UNIT_G:
+            value = value / UNIT_G
+            unit = "G"
+        elif value > UNIT_M:
+            value = value / UNIT_M
+            unit = "M"
+        elif value > UNIT_K:
+            value = value / UNIT_K
+            unit = "K"
+        else:
+            unit = ""
+    else:
+        if value > UNIT_g:
+            value = value / UNIT_g
+            unit = "g"
+        elif value > UNIT_m:
+            value = value / UNIT_m
+            unit = "m"
+        elif value > UNIT_k:
+            value = value / UNIT_k
+            unit = "k"
+        else:
+            unit = ""
+    return ("%.1f %s" % (value, unit))
+
+
+def limit_str(content: str, limit: int) -> str:
+    length = len(content)
+    if limit > 0 and length >= limit:
+        return content[:limit] + ("...(shortened because original length %d > limit %d)" % (length, limit))
+    else:
+        return content
+
+
+def textwrap_str(content: str, limit: int = 2000) -> str:
+    # TODO: add support for config option and prefix
+    return textwrap.indent(limit_str(content, limit), " ", lambda line: True)
+
+
+def dataToHex(data, count):
+    result = ''
+    for item in range(count):
+        if ((item > 0) and ((item % 8) == 0)):
+            result += ' '
+        if (item < len(data)):
+            result += '%02x' % data[item] + ' '
+        else:
+            result += '   '
+    return result
+
+
+def dataToAscii(data, count):
+    result = ''
+    for item in range(count):
+        if (item < len(data)):
+            char = chr(data[item])
+            if char in ascii_letters or \
+               char in digits or \
+               char in punctuation or \
+               char == ' ':
+                result += char
+            else:
+                result += '.'
+    return result
+
+
+def dataToSpecial(data, count):
+    result = ''
+    for item in range(count):
+        if (item < len(data)):
+            char = chr(data[item])
+            if char == '\r':
+                result += 'C'
+            elif char == '\n':
+                result += 'L'
+            elif (ord(char) & 0xf8) == 0xf0:  # assuming UTF-8
+                result += '4'
+            elif (ord(char) & 0xf0) == 0xf0:  # assuming UTF-8
+                result += '3'
+            elif (ord(char) & 0xe0) == 0xe0:  # assuming UTF-8
+                result += '2'
+            else:
+                result += '.'
+    return result
+
+
+def hexdump_str(content: str, limit: int = 2000) -> str:
+    result = "Hexdump of string: index  <bytes> | <ASCII> | <CTRL: C=CR L=LF 2/3/4=UTF-8-length> |\n"
+    index = 0
+    size = 16
+    bytestring = content.encode("utf-8")  # assuming UTF-8
+    length = len(bytestring)
+
+    while (index < length) and (index < limit):
+        data = bytestring[index:index+size]
+        hex = dataToHex(data, size)
+        ascii = dataToAscii(data, size)
+        special = dataToSpecial(data, size)
+        result += '%08x  ' % index
+        result += hex
+        result += '|'
+        result += '%-16s' % ascii
+        result += '|'
+        result += '%-16s' % special
+        result += '|'
+        result += '\n'
+        index += size
+
+    return result
+
+
+def hexdump_line(line: str, limit: int = 200) -> str:
+    result = ""
+    length_str = len(line)
+    bytestring = line.encode("utf-8")  # assuming UTF-8
+    length = len(bytestring)
+    size = length
+    if (size > limit):
+        size = limit
+
+    hex = dataToHex(bytestring, size)
+    ascii = dataToAscii(bytestring, size)
+    special = dataToSpecial(bytestring, size)
+    result += '%3d/%3d' % (length_str, length)
+    result += ': '
+    result += hex
+    result += '|'
+    result += ascii
+    result += '|'
+    result += special
+    result += '|'
+    result += '\n'
+
+    return result
+
+
+def hexdump_lines(lines: str, limit: int = 200) -> str:
+    result = "Hexdump of lines: nr  chars/bytes: <bytes> | <ASCII> | <CTRL: C=CR L=LF 2/3/4=UTF-8-length> |\n"
+    counter = 0
+    for line in lines.splitlines(True):
+        result += '% 4d  ' % counter
+        result += hexdump_line(line)
+        counter += 1
+
+    return result
+
+
+def sha256_str(content: str) -> str:
+    _hash = sha256()
+    _hash.update(content.encode("utf-8"))  # assuming UTF-8
+    return _hash.hexdigest()
+
+
+def sha256_bytes(content: bytes) -> str:
+    _hash = sha256()
+    _hash.update(content)
+    return _hash.hexdigest()

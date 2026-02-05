@@ -22,12 +22,22 @@ Radicale tests related to hook 'rabbitmq'
 import logging
 import os
 
+import pytest
+
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
 
 class TestHooks(BaseTest):
     """Tests with hooks."""
+
+    # test for available pika module
+    try:
+        import pika
+    except ImportError:
+        has_pika = 0
+    else:
+        has_pika = 1
 
     def setup_method(self) -> None:
         BaseTest.setup_method(self)
@@ -63,6 +73,7 @@ permissions: RrWw""")
         self.configure({"hook": {"type": "rabbitmq",
                                  "dryrun": "True"}})
 
+    @pytest.mark.skipif(has_pika == 0, reason="No pika module installed")
     def test_add_event(self, caplog) -> None:
         caplog.set_level(logging.WARNING)
         """Add an event."""
@@ -83,6 +94,7 @@ permissions: RrWw""")
         if (found is False):
             raise ValueError("Logging misses expected log line")
 
+    @pytest.mark.skipif(has_pika == 0, reason="No pika module installed")
     def test_delete_event(self, caplog) -> None:
         caplog.set_level(logging.WARNING)
         """Delete an event."""

@@ -2,14 +2,105 @@ name: Test
 on: [push, pull_request]
 
 jobs:
-  test:
+
+  test-ubuntu-python-newest:
+    needs: lint
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.14']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with latest Python on Ubuntu
+        run: tox -c pyproject.toml -e py
+
+  test-ubuntu-python-oldest:
+    needs: [lint, test-ubuntu-python-newest]
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.9']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with oldest Python on Ubuntu
+        run: tox -c pyproject.toml -e py
+
+  test-otheros-python-newest:
+    needs: [lint, test-ubuntu-python-newest]
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+        python-version: ['3.14']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with latest Python on other OS
+        run: tox -c pyproject.toml -e py
+
+  test-otheros-python-oldest:
+    needs: [lint, test-ubuntu-python-oldest, test-otheros-python-newest]
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+        python-version: ['3.9']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with oldest Python on other OS
+        run: tox -c pyproject.toml -e py
+
+  test-python-versions:
+    needs: [lint, test-otheros-python-oldest, test-otheros-python-newest, test-ubuntu-python-oldest, test-ubuntu-python-newest]
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12.3', '3.13.0', pypy-3.9]
+        python-version: ['3.10', '3.11', '3.12', '3.13', 'pypy-3.9', 'pypy-3.10', 'pypy-3.11']
         exclude:
           - os: windows-latest
-            python-version: pypy-3.9
+            python-version: 'pypy-3.9'
+          - os: windows-latest
+            python-version: 'pypy-3.10'
+          - os: windows-latest
+            python-version: 'pypy-3.11'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with older Python
+        run: tox -c pyproject.toml -e py
+
+  coveralls-test:
+    if: github.event_name == 'push'
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.13']
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -19,7 +110,7 @@ jobs:
       - name: Install Test dependencies
         run: pip install tox
       - name: Test
-        run: tox -e py
+        run: tox -c pyproject.toml -e py
       - name: Install Coveralls
         if: github.event_name == 'push'
         run: pip install coveralls
@@ -31,7 +122,7 @@ jobs:
         run: coveralls --service=github
 
   coveralls-finish:
-    needs: test
+    needs: coveralls-test
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -51,8 +142,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
       - name: Install tox
         run: pip install tox
       - name: Lint
-        run: tox -e flake8,mypy,isort
+        run: tox -c pyproject.toml -e flake8,mypy,isort

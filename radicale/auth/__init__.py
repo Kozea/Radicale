@@ -23,7 +23,7 @@ Authentication module.
 
 Authentication is based on usernames and passwords. If something more
 advanced is needed an external WSGI server or reverse proxy can be used
-(see ``remote_user`` or ``http_x_remote_user`` backend).
+(see ``remote_user``, ``http_remote_user`` or ``http_x_remote_user`` backend).
 
 Take a look at the class ``BaseAuth`` if you want to implement your own.
 
@@ -40,6 +40,7 @@ from radicale import config, types, utils
 from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("none", "remote_user", "http_x_remote_user",
+                                 "http_remote_user",
                                  "denyall",
                                  "htpasswd",
                                  "ldap",
@@ -59,10 +60,13 @@ CACHE_LOGIN_TYPES: Sequence[str] = (
 
 INSECURE_IF_NO_LOOPBACK_TYPES: Sequence[str] = (
                                     "remote_user",
+                                    "http_remote_user",
                                     "http_x_remote_user",
                                    )
 
 AUTH_SOCKET_FAMILY: Sequence[str] = ("AF_UNIX", "AF_INET", "AF_INET6")
+
+REMOTE_ADDR_SOURCE: Sequence[str] = ("REMOTE_ADDR", "X-Remote-Addr")
 
 
 def load(configuration: "config.Configuration") -> "BaseAuth":
@@ -89,6 +93,15 @@ def load(configuration: "config.Configuration") -> "BaseAuth":
                 logger.warning("User authentication '[auth] type=%s' is selected but server is not only listen on loopback address (potentially INSECURE): %s", _type, " ".join(address))
     return utils.load_plugin(INTERNAL_TYPES, "auth", "Auth", BaseAuth,
                              configuration)
+
+
+class AuthContext:
+    remote_addr: str
+    x_remote_addr: str
+
+    def __init__(self):
+        self.remote_addr = None
+        self.x_remote_addr = None
 
 
 class BaseAuth:
@@ -129,7 +142,7 @@ class BaseAuth:
         if self._lc_username is True and self._uc_username is True:
             raise RuntimeError("auth.lc_username and auth.uc_username cannot be enabled together")
         self._auth_delay = configuration.get("auth", "delay")
-        logger.info("auth.delay: %f", self._auth_delay)
+        logger.info("auth.delay: %f seconds", self._auth_delay)
         self._failed_auth_delay = 0
         self._lock = threading.Lock()
         # cache_successful_logins
@@ -187,6 +200,21 @@ class BaseAuth:
 
         raise NotImplementedError
 
+    def _login_ext(self, login: str, password: str, context: AuthContext) -> str:
+        """Check credentials and map login to internal user
+
+        ``login`` the login name
+
+        ``password`` the password
+
+        ``context`` additional data for the login, e.g. IP address used
+
+        Returns the username or ``""`` for invalid credentials.
+        """
+
+        # override this method instead of _login() if you want the context
+        return self._login(login, password)
+
     def _sleep_for_constant_exec_time(self, time_ns_begin: int):
         """Sleep some time to reach a constant execution time for failed logins
 
@@ -216,7 +244,7 @@ class BaseAuth:
             time.sleep(sleep)
 
     @final
-    def login(self, login: str, password: str) -> Tuple[str, str]:
+    def login(self, login: str, password: str, context: AuthContext) -> Tuple[str, str]:
         time_ns_begin = time.time_ns()
         result_from_cache = False
         if self._lc_username:
@@ -284,7 +312,7 @@ class BaseAuth:
             if result == "":
                 # verify login+password via configured backend
                 logger.debug("Login verification for user+password via backend: '%s'", login)
-                result = self._login(login, password)
+                result = self._login_ext(login, password, context)
                 if result != "":
                     logger.debug("Login successful for user+password via backend: '%s'", login)
                     if digest == "":
@@ -314,7 +342,7 @@ class BaseAuth:
                 return (result, self._type)
         else:
             # self._cache_logins is False
-            result = self._login(login, password)
+            result = self._login_ext(login, password, context)
             if result == "":
                 self._sleep_for_constant_exec_time(time_ns_begin)
             return (result, self._type)

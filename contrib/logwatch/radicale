@@ -1,19 +1,33 @@
 # This file is related to Radicale - CalDAV and CardDAV server
 #  for logwatch (script)
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 #
 # Detail levels
-# >= 5: Logins
-# >= 10: ResponseTimes
+# <  5 : Request + ResponseCounters
+# >= 5 : incl. Logins
+# >= 10: incl. ResponseTimes + ResponseSize
+# >= 15: incl. ResponseTimes + ResponseSize incl. RequestFlags
+# >= 18: incl. UserAgents
+# >= 20: incl. Locations where supported, anonymize logins
+
+use Digest::SHA;
 
 $Detail = $ENV{'LOGWATCH_DETAIL_LEVEL'} || 0;
 
+my %ResponseTimesLocUsr;
+my %ResponseSizesLocUsr;
 my %ResponseTimes;
+my %ResponseSizes;
 my %Responses;
 my %Requests;
+my %UserAgents;
 my %Logins;
 my %Loglevel;
 my %OtherEvents;
+
+my %Locations;
+my %LocationsFile;
+my %LoginsHash;
 
 my $sum;
 my $length;
@@ -26,7 +40,7 @@ sub ResponseTimesMinMaxSum($$) {
 
    if (! defined $ResponseTimes{$req}->{'min'}) {
       $ResponseTimes{$req}->{'min'} = $time;
-   } elsif ($ResponseTimes->{$req}->{'min'} > $time) {
+   } elsif ($ResponseTimes{$req}->{'min'} > $time) {
       $ResponseTimes{$req}->{'min'} = $time;
    }
 
@@ -37,6 +51,28 @@ sub ResponseTimesMinMaxSum($$) {
    }
 
    $ResponseTimes{$req}->{'sum'} += $time;
+}
+
+sub ResponseSizesMinMaxSum($$$) {
+   my $req = $_[0];
+   my $type = $_[1];
+   my $size = $_[2];
+
+   $ResponseSizes{$type}->{$req}->{'cnt'}++;
+
+   if (! defined $ResponseSizes{$type}->{$req}->{'min'}) {
+      $ResponseSizes{$type}->{$req}->{'min'} = $size;
+   } elsif ($ResponseSizes{$type}->{$req}->{'min'} > $size) {
+      $ResponseSizes{$type}->{$req}->{'min'} = $size;
+   }
+
+   if (! defined $ResponseSizes{$type}->{$req}->{'max'}) {
+      $ResponseSizes{$type}->{$req}{'max'} = $size;
+   } elsif ($ResponseSizes{$type}->{$req}->{'max'} < $size) {
+      $ResponseSizes{$type}->{$req}{'max'} = $size;
+   }
+
+   $ResponseSizes{$type}->{$req}->{'sum'} += $size;
 }
 
 sub Sum($) {
@@ -57,6 +93,64 @@ sub MaxLength($) {
    return $length;
 }
 
+sub ConvertTokens($) {
+   my %tokens_h;
+   # unique
+   foreach my $token (split(" ", $_[0])) {
+      $tokens_h{$token} = 1;
+   }
+   # map tokens
+   my @result_a;
+   if (defined $tokens_h{"sync-token"}) {
+      push @result_a, "ST";
+   }
+   if (defined $tokens_h{"sync-collection"}) {
+      push @result_a, "SC";
+   }
+   if (defined $tokens_h{"getctag"}) {
+      push @result_a, "GCT";
+   }
+   if (defined $tokens_h{"getetag"}) {
+      push @result_a, "GET";
+   }
+   # TODO: add potential others which causing long duration
+   $result = "";
+   if (scalar(@result_a) > 0) {
+      $result = ":F=" . join(",", @result_a);
+   }
+   return $result;
+}
+
+sub ConvertLoc($) {
+   my $loc = $_[0];
+   if (defined $Locations{$loc}) {
+      # from cache
+      return ":L=" . $Locations{$loc};
+   } elsif (defined $LocationsFile{$loc}) {
+      # from cache
+      return ":L=" . $LocationsFile{$loc};
+   }
+
+   if ($loc =~ /\/'$/o) {
+      $Locations{$loc} = "L=" . substr(Digest::SHA::sha256_hex($loc), 0, 8);
+      return ":" . $Locations{$loc};
+   } else {
+      $LocationsFile{$loc} = "L=<FILE>";
+      return ":" . $Locations{$loc};
+   }
+}
+
+sub ConvertLogin($) {
+   my $login = $_[0];
+   if (defined $LoginsHash{$loginc}) {
+      # from cache
+      return $LoginsHash{$login};
+   }
+
+   $LoginsHash{$login} = "U=" . substr(Digest::SHA::sha256_hex($login), 0, 8);
+   return $LoginsHash{$login};
+}
+
 while (defined($ThisLine = <STDIN>)) {
    # count loglevel
    if ( $ThisLine =~ /\[(DEBUG|INFO|WARNING|ERROR|CRITICAL)\] /o ) {
@@ -72,34 +166,94 @@ while (defined($ThisLine = <STDIN>)) {
    }
    elsif ( $ThisLine =~ / (\S+) response status/o ) {
       my $req = $1;
-      if ( $ThisLine =~ / \S+ response status for .* with depth '(\d)' in ([0-9.]+) seconds: (\d+)/o ) {
-         $req .= ":D=" . $1 . ":R=" . $3;
+      if ( $ThisLine =~ / \S+ response status for (.*) with depth '(\d)' in ([0-9.]+) seconds: (\d+)/o ) {
+         $req .= ":D=" . $2 . ":R=" . $4;
+         $req .= ConvertLoc($1) if ($Detail >= 20);
          ResponseTimesMinMaxSum($req, $2) if ($Detail >= 10);
-      } elsif ( $ThisLine =~ / \S+ response status for .* in ([0-9.]+) seconds: (\d+)/ ) {
-         $req .= ":R=" . $2;
+      } elsif ( $ThisLine =~ / \S+ response status for (.*) in ([0-9.]+) seconds: (\d+)/o ) {
+         $req .= ":R=" . $3;
+         $req .= ConvertLoc($1) if ($Detail >= 20);
          ResponseTimesMinMaxSum($req, $1) if ($Detail >= 10);
+      } elsif ( $ThisLine =~ / \S+ response status for (.*) with depth '(\d)' in ([0-9.]+) seconds (\S+) (\d+) bytes: (\d+)/o ) {
+         $req .= ":D=" . $2 . ":R=" . $6;
+         $req .= ConvertLoc($1) if ($Detail >= 20);
+         ResponseTimesMinMaxSum($req, $3) if ($Detail >= 10);
+         ResponseSizesMinMaxSum($req, $4, $5) if ($Detail >= 10);
+      } elsif ( $ThisLine =~ / \S+ response status for (.*) in ([0-9.]+) seconds (\S+) (\d+) bytes: (\d+)/o ) {
+         $req .= ":R=" . $5;
+         $req .= ConvertLoc($1) if ($Detail >= 20);
+         ResponseTimesMinMaxSum($req, $2) if ($Detail >= 10);
+         ResponseSizesMinMaxSum($req, $3, $4) if ($Detail >= 10);
+      } elsif ( $ThisLine =~ / \S+ response status for (.*) with depth '(\d)' in ([0-9.]+) seconds (\S+) (\d+) bytes \((.*)\): (\d+)/o ) {
+         $req .= ":D=" . $2 . ":R=" . $7;
+         $req .= ConvertLoc($1) if ($Detail >= 20);
+         $req .= ConvertTokens($6) if ($Detail >= 15);
+         ResponseTimesMinMaxSum($req, $3) if ($Detail >= 10);
+         ResponseSizesMinMaxSum($req, $4, $5) if ($Detail >= 10);
+      } elsif ( $ThisLine =~ / \S+ response status for (.*) in ([0-9.]+) seconds (\S+) (\d+) bytes \((.*)\): (\d+)/o ) {
+         $req .= ":R=" . $6;
+         $req .= ConvertLoc($1) if ($Detail >= 20);
+         $req .= ConvertTokens($6) if ($Detail >= 15);
+         ResponseTimesMinMaxSum($req, $2) if ($Detail >= 10);
+         ResponseSizesMinMaxSum($req, $3, $4) if ($Detail >= 10);
       }
       $Responses{$req}++;
    }
-   elsif ( $ThisLine =~ / (\S+) request for/o ) {
+   elsif ( $ThisLine =~ / (\S+) request for ('[^']+')/o ) {
       my $req = $1;
-      if ( $ThisLine =~ / \S+ request for .* with depth '(\d)' received/o ) {
+      my $loc = $2;
+      if ( $ThisLine =~ / with depth '(\d)' received/o ) {
          $req .= ":D=" . $1;
       }
+      $req .= ConvertLoc($loc) if ($Detail >= 20);
       $Requests{$req}++;
+
+      if ( $ThisLine =~ /using ('.*')/o ) {
+         my $ua = $1;
+         # remove unexpected chars
+         $ua =~ s/[\x00-\x1F\x7F-\xFF]//g;
+         $ua .= ConvertLoc($loc) if ($Detail >= 20);
+         $UserAgents{$ua}++ if ($Detail >= 18);
+      }
    }
    elsif ( $ThisLine =~ / (Successful login): '([^']+)'/o ) {
-      $Logins{$2}++ if ($Detail >= 5);
+      my $login = $2;
+      $login = ConvertLogin($login) if ($Detail >= 20);
+      $Logins{$login}++ if ($Detail >= 5);
       $OtherEvents{$1}++;
    }
    elsif ( $ThisLine =~ / (Failed login attempt) /o ) {
       $OtherEvents{$1}++;
+   }
+   elsif ( $ThisLine =~ / (Profiling data per request method \S+) /o ) {
+      my $info = $1;
+      if ( $ThisLine =~ /(no request seen so far)/o ) {
+         $OtherEvents{$info . " - " . $1}++;
+      } else {
+         $OtherEvents{$info}++;
+      };
+   }
+   elsif ( $ThisLine =~ / (Profiling data per request \S+) /o ) {
+      my $info = $1;
+      if ( $ThisLine =~ /(suppressed because duration below minimum|suppressed because of no data)/o ) {
+         $OtherEvents{$info . " - " . $1}++;
+      } else {
+         $OtherEvents{$info}++;
+      };
    }
    elsif ( $ThisLine =~ /\[(DEBUG|INFO)\] /o ) {
       # skip if DEBUG+INFO
    }
    else {
       # Report any unmatched entries...
+      if ($ThisLine =~ /^({\'| )/o) {
+         # skip profiling or raw header data
+         next;
+      };
+      if ($ThisLine =~ /^$/o) {
+         # skip empty line
+         next;
+      };
       $ThisLine =~ s/^\[\d+(\/Thread-\d+)?\] //; # remove process/Thread ID
       chomp($ThisLine);
       $OtherList{$ThisLine}++;
@@ -114,64 +268,105 @@ if ($Started) {
 if (keys %Loglevel) {
    $sum = Sum(\%Loglevel);
    print "\n**Loglevel counters**\n";
-   printf "%-18s | %7s | %5s |\n", "Loglevel", "cnt", "ratio";
-   print "-" x38 . "\n";
+   printf "%-18s | %7s | %9s |\n", "Loglevel", "cnt", "ratio";
+   print "-" x42 . "\n";
    foreach my $level (sort keys %Loglevel) {
-      printf "%-18s | %7d |  %3d%% |\n", $level, $Loglevel{$level}, int(($Loglevel{$level} * 100) / $sum);
+      printf "%-18s | %7d |  %7.3f%% |\n", $level, $Loglevel{$level}, (($Loglevel{$level} * 100) / $sum);
    }
-   print "-" x38 . "\n";
-   printf "%-18s | %7d |  %3d%% |\n", "", $sum, 100;
-}
-
-if (keys %Requests) {
-   $sum = Sum(\%Requests);
-   print "\n**Request counters (D=<depth>)**\n";
-   printf "%-18s | %7s | %5s |\n", "Request", "cnt", "ratio";
-   print "-" x38 . "\n";
-   foreach my $req (sort keys %Requests) {
-      printf "%-18s | %7d |  %3d%% |\n", $req, $Requests{$req}, int(($Requests{$req} * 100) / $sum);
-   }
-   print "-" x38 . "\n";
-   printf "%-18s | %7d |  %3d%% |\n", "", $sum, 100;
-}
-
-if (keys %Responses) {
-   $sum = Sum(\%Responses);
-   print "\n**Response result counters ((D=<depth> R=<result>)**\n";
-   printf "%-18s | %7s | %5s |\n", "Response", "cnt", "ratio";
-   print "-" x38 . "\n";
-   foreach my $req (sort keys %Responses) {
-      printf "%-18s | %7d |  %3d%% |\n", $req, $Responses{$req}, int(($Responses{$req} * 100) / $sum);
-   }
-   print "-" x38 . "\n";
-   printf "%-18s | %7d |  %3d%% |\n", "", $sum, 100;
+   print "-" x42 . "\n";
+   printf "%-18s | %7d |  %7.3f%% |\n", "", $sum, 100;
 }
 
 if (keys %Logins) {
    $sum = Sum(\%Logins);
    $length = MaxLength(\%Logins);
    print "\n**Successful login counters**\n";
-   printf "%-" . $length . "s | %7s | %5s |\n", "Login", "cnt", "ratio";
-   print "-" x($length + 20) . "\n";
+   printf "%-" . $length . "s | %7s | %9s |\n", "Login", "cnt", "ratio";
+   print "-" x($length + 24) . "\n";
    foreach my $login (sort keys %Logins) {
-      printf "%-" . $length . "s | %7d |  %3d%% |\n", $login, $Logins{$login}, int(($Logins{$login} * 100) / $sum);
+      printf "%-" . $length . "s | %7d |  %7.3f%% |\n", $login, $Logins{$login}, (($Logins{$login} * 100) / $sum);
    }
-   print "-" x($length + 20) . "\n";
-   printf "%-" . $length . "s | %7d |  %3d%% |\n", "", $sum, 100;
+   print "-" x($length + 24) . "\n";
+   printf "%-" . $length . "s | %7d |  %7.3d%% |\n", "", $sum, 100;
+}
+
+if (keys %UserAgents) {
+   $sum = Sum(\%UserAgents);
+   $length = MaxLength(\%UserAgents);
+   print "\n**UserAgent Counters**\n";
+   print "*  Location: L=<HASH> -> see below  L=<FILE> -> see raw log\n" if (scalar(keys %Locations) > 0);
+   printf "%-" . $length . "s | %7s | %9s |\n", "UserAgent", "cnt", "ratio";
+   print "-" x($length + 24) . "\n";
+   foreach my $ua (sort keys %UserAgents) {
+      printf "%-" . $length . "s | %7d |  %7.3f%% |\n", $ua, $UserAgents{$ua}, (($UserAgents{$ua} * 100) / $sum);
+   }
+   print "-" x($length + 24) . "\n";
+   printf "%-" . $length . "s | %7d |  %7.3d%% |\n", "", $sum, 100;
+}
+
+if (keys %Requests) {
+   $sum = Sum(\%Requests);
+   $length = MaxLength(\%Requests);
+   print "\n**Request counters (D=<depth>)**\n";
+   print "*  Location: L=<HASH> -> see below  L=<FILE> -> see raw log\n" if (scalar(keys %Locations) > 0);
+   printf "%-" . $length . "s | %7s | %9s |\n", "Request", "cnt", "ratio";
+   print "-" x($length + 24) . "\n";
+   foreach my $req (sort keys %Requests) {
+      printf "%-" . $length . "s | %7d |  %7.3f%% |\n", $req, $Requests{$req}, (($Requests{$req} * 100) / $sum);
+   }
+   print "-" x($length + 24) . "\n";
+   printf "%-18s | %7d |  %7.3f%% |\n", "", $sum, 100;
+}
+
+if (keys %Responses) {
+   $sum = Sum(\%Responses);
+   $length = MaxLength(\%Responses);
+   print "\n**Response result counters ((D=<depth> R=<result>)**\n";
+   print "*  Flags: ST:sync-token SC:sync-collection GCT:getctag GET:getetag\n" if ($Detail >= 15);
+   print "*  Location: L=<HASH> -> see below  L=<FILE> -> see raw log\n" if (scalar(keys %Locations) > 0);
+   printf "%-" . $length . "s | %7s | %9s |\n", "Response", "cnt", "ratio";
+   print "-" x($length + 24) . "\n";
+   foreach my $req (sort keys %Responses) {
+      printf "%-" . $length . "s | %7d |  %7.3f%% |\n", $req, $Responses{$req}, (($Responses{$req} * 100) / $sum);
+   }
+   print "-" x($length + 24) . "\n";
+   printf "%-" . $length . "s | %7d |  %7.3f%% |\n", "", $sum, 100;
 }
 
 if (keys %ResponseTimes) {
-   print "\n**Response timings (counts, seconds) (D=<depth> R=<result>)**\n";
-   printf "%-18s | %7s | %7s | %7s | %7s |\n", "Response", "cnt", "min", "max", "avg";
-   print "-" x60 . "\n";
+   $length = MaxLength(\%ResponseTimes);
+   print "\n**Response timings (counts, seconds) (D=<depth> R=<result> F=<flags>)**\n";
+   print "*  Flags: ST:sync-token SC:sync-collection GCT:getctag GET:getetag\n" if ($Detail >= 15);
+   print "*  Location: L=<HASH> -> see below  L=<FILE> -> see raw log\n" if (scalar(keys %Locations) > 0);
+   printf "%-" . $length . "s | %7s | %7s | %7s | %7s |\n", "Response", "cnt", "min", "max", "avg";
+   print "-" x($length + 42) . "\n";
    foreach my $req (sort keys %ResponseTimes) {
-      printf "%-18s | %7d | %7.3f | %7.3f | %7.3f |\n", $req
+      printf "%-" . $length . "s | %7d | %7.3f | %7.3f | %7.3f |\n", $req
          , $ResponseTimes{$req}->{'cnt'}
          , $ResponseTimes{$req}->{'min'}
          , $ResponseTimes{$req}->{'max'}
          , $ResponseTimes{$req}->{'sum'} / $ResponseTimes{$req}->{'cnt'};
    }
-   print "-" x60 . "\n";
+   print "-" x($length + 42) . "\n";
+}
+
+if (keys %ResponseSizes) {
+   for my $type (sort keys %ResponseSizes) {
+      $length = MaxLength($ResponseSizes{$type});
+      print "\n**Response sizes (counts, bytes: $type) (D=<depth> R=<result>)**\n";
+      print "*  Flags: ST:sync-token SC:sync-collection GCT:getctag GET:getetag\n" if ($Detail >= 15);
+      print "*  Location: L=<HASH> -> see below  L=<FILE> -> see raw log\n" if (scalar(keys %Locations) > 0);
+      printf "%-" . $length . "s | %7s | %9s | %9s | %9s |\n", "Response", "cnt", "min", "max", "avg";
+      print "-" x($length + 48) . "\n";
+      foreach my $req (sort keys %{$ResponseSizes{$type}}) {
+         printf "%-" . $length . "s | %7d | %9d | %9d | %9d |\n", $req
+            , $ResponseSizes{$type}->{$req}->{'cnt'}
+            , $ResponseSizes{$type}->{$req}->{'min'}
+            , $ResponseSizes{$type}->{$req}->{'max'}
+            , $ResponseSizes{$type}->{$req}->{'sum'} / $ResponseSizes{$type}->{$req}->{'cnt'};
+      }
+      print "-" x($length + 48) . "\n";
+   }
 }
 
 if (keys %OtherEvents) {
@@ -186,6 +381,28 @@ if (keys %OtherList) {
    foreach $ThisOne (sort keys %OtherList) {
       print "$ThisOne: $OtherList{$ThisOne} Time(s)\n";
    }
+}
+
+if (scalar(keys %LoginsHash) > 0) {
+   print "\n**Map of login hashes (REMOVE THIS FOR PRIVACY REASONS before submit)**\n";
+   $length = MaxLength(\%LoginsHash);
+   printf "%-10s | %-" . $length . "s | \n", "Hash", "Login";
+   print "-" x($length + 15) . "\n";
+   foreach my $login (sort { $LoginsHash{$a} cmp $LoginsHash{$b} } keys %LoginsHash) {
+      printf "%10s | %-" . $length . "s |\n", $LoginsHash{$login}, $login;
+   }
+   print "-" x($length + 15) . "\n";
+}
+
+if (scalar(keys %Locations) > 0) {
+   print "\n**Map of location hashes (REMOVE THIS FOR PRIVACY REASONS before submit)**\n";
+   $length = MaxLength(\%Locations);
+   printf "%-10s | %-" . $length . "s | \n", "Hash", "Location";
+   print "-" x($length + 15) . "\n";
+   foreach my $loc (sort { $Locations{$a} cmp $Locations{$b} } keys %Locations) {
+      printf "%10s | %-" . $length . "s |\n", $Locations{$loc}, $loc;
+   }
+   print "-" x($length + 15) . "\n";
 }
 
 exit(0);

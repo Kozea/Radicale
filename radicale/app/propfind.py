@@ -2,7 +2,8 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2021 Unrud <unrud@outlook.com>
+# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +26,8 @@ import xml.etree.ElementTree as ET
 from http import client
 from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
-from radicale import httputils, pathutils, rights, storage, types, xmlutils
+from radicale import (httputils, pathutils, rights, storage, types, utils,
+                      xmlutils)
 from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
 
@@ -33,7 +35,7 @@ from radicale.log import logger
 def xml_propfind(base_prefix: str, path: str,
                  xml_request: Optional[ET.Element],
                  allowed_items: Iterable[Tuple[types.CollectionOrItem, str]],
-                 user: str, encoding: str) -> Optional[ET.Element]:
+                 user: str, encoding: str, max_resource_size: int) -> Optional[ET.Element]:
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -70,14 +72,14 @@ def xml_propfind(base_prefix: str, path: str,
         write = permission == "w"
         multistatus.append(xml_propfind_response(
             base_prefix, path, item, props, user, encoding, write=write,
-            allprop=allprop, propname=propname))
+            allprop=allprop, propname=propname, max_resource_size=max_resource_size))
 
     return multistatus
 
 
 def xml_propfind_response(
         base_prefix: str, path: str, item: types.CollectionOrItem,
-        props: Sequence[str], user: str, encoding: str, write: bool = False,
+        props: Sequence[str], user: str, encoding: str, max_resource_size: int, write: bool = False,
         propname: bool = False, allprop: bool = False) -> ET.Element:
     """Build and return a PROPFIND response."""
     if propname and allprop or (props and (propname or allprop)):
@@ -110,6 +112,9 @@ def xml_propfind_response(
         props.append(xmlutils.make_clark("D:supported-report-set"))
         props.append(xmlutils.make_clark("D:resourcetype"))
         props.append(xmlutils.make_clark("D:owner"))
+        if not allprop:
+            # RFC4791#5.2.5: SHOULD NOT be returned by a PROPFIND DAV:allprop request
+            props.append(xmlutils.make_clark("C:max-resource-size"))
 
         if is_collection and collection.is_principal:
             props.append(xmlutils.make_clark("C:calendar-user-address-set"))
@@ -131,6 +136,10 @@ def xml_propfind_response(
                 props.append(xmlutils.make_clark("CS:getctag"))
                 props.append(
                     xmlutils.make_clark("C:supported-calendar-component-set"))
+            if collection.tag == "VADDRESSBOOK":
+                props.append(xmlutils.make_clark("CS:getctag"))
+                props.append(
+                    xmlutils.make_clark("CR:supported-address-data"))
 
             meta = collection.get_meta()
             for tag in meta:
@@ -182,6 +191,21 @@ def xml_propfind_response(
                     comp = ET.Element(xmlutils.make_clark("C:comp"))
                     comp.set("name", component)
                     element.append(comp)
+            else:
+                is404 = True
+        elif tag == xmlutils.make_clark("CR:supported-address-data"):
+            if is_collection and is_leaf and collection.tag == "VADDRESSBOOK":
+                # Advertise supported vCard versions per RFC 6352 section 6.2.2
+                # vCard 4.0 requires vobject >= 1.0.0
+                versions: Sequence[str] = (("4.0", "3.0")
+                                           if utils.vobject_supports_vcard4()
+                                           else ("3.0",))
+                for version in versions:
+                    address_data_type = ET.Element(
+                        xmlutils.make_clark("CR:address-data-type"))
+                    address_data_type.set("content-type", "text/vcard")
+                    address_data_type.set("version", version)
+                    element.append(address_data_type)
             else:
                 is404 = True
         elif tag == xmlutils.make_clark("D:current-user-principal"):
@@ -238,6 +262,9 @@ def xml_propfind_response(
                 child_element.text = xmlutils.make_href(
                     base_prefix, "/%s/" % collection.owner)
                 element.append(child_element)
+        elif tag == xmlutils.make_clark("C:max-resource-size"):
+            # RFC4791#5.2.5
+            element.text = str(max_resource_size)
         elif is_collection:
             if tag == xmlutils.make_clark("D:getcontenttype"):
                 if is_leaf:
@@ -376,7 +403,7 @@ class ApplicationPartPropfind(ApplicationBase):
                 yield item, permission
 
     def do_PROPFIND(self, environ: types.WSGIEnviron, base_prefix: str,
-                    path: str, user: str) -> types.WSGIResponse:
+                    path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PROPFIND request."""
         access = Access(self._rights, user, path)
         if not access.check("r"):
@@ -406,7 +433,7 @@ class ApplicationPartPropfind(ApplicationBase):
             headers = {"DAV": httputils.DAV_HEADERS,
                        "Content-Type": "text/xml; charset=%s" % self._encoding}
             xml_answer = xml_propfind(base_prefix, path, xml_content,
-                                      allowed_items, user, self._encoding)
+                                      allowed_items, user, self._encoding, max_resource_size=self._max_resource_size)
             if xml_answer is None:
                 return httputils.NOT_ALLOWED
-            return client.MULTI_STATUS, headers, self._xml_response(xml_answer)
+            return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)

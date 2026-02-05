@@ -2,7 +2,7 @@
 # Copyright © 2012-2016 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ from typing import Iterable, Tuple, Union
 
 import pytest
 
-from radicale import xmlutils
+from radicale import utils, xmlutils
 from radicale.tests import BaseTest
 
 
@@ -114,45 +114,60 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_sha256_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$5$i4Ni4TQq6L5FKss5$ilpTjkmnxkwZeV35GB9cYSsDXTALBn6KtWRJAzNlCL/")
 
+    def test_htpasswd_sha256_autodetect_with_rounds(self) -> None:
+        self._test_htpasswd("autodetect", "tmp:$5$rounds=2500$9QD/kpJlV71PCXWy$/AbUzxa6kjDWHJ8BLU1hyQUBN/8wsGEf.rNjuKDHA24")
+
     def test_htpasswd_sha512(self) -> None:
         self._test_htpasswd("sha512", "tmp:$6$3Qhl8r6FLagYdHYa$UCH9yXCed4A.J9FQsFPYAOXImzZUMfvLa0lwcWOxWYLOF5sE/lF99auQ4jKvHY2vijxmefl7G6kMqZ8JPdhIJ/")
 
     def test_htpasswd_sha512_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$6$3Qhl8r6FLagYdHYa$UCH9yXCed4A.J9FQsFPYAOXImzZUMfvLa0lwcWOxWYLOF5sE/lF99auQ4jKvHY2vijxmefl7G6kMqZ8JPdhIJ/")
 
+    def test_htpasswd_sha512_autodetect_with_rounds(self) -> None:
+        self._test_htpasswd("autodetect", "tmp:$6$rounds=2500$A1H/cZUl3CBnsplz$bSKYCDQ/YGR..YhxaZcM1eKmAi/jlnpbENKU8a.9kE95JBIpyUss3.cUyss0xQnhjD4PReN4sAzmdziWmoCsg/")
+
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2a(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2a$10$Mj4A9vMecAp/K7.0fMKoVOk1SjgR.RBhl06a52nvzXhxlT3HB7Reu")
 
-    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed or incompatibe")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2a_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$2a$10$Mj4A9vMecAp/K7.0fMKoVOk1SjgR.RBhl06a52nvzXhxlT3HB7Reu")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2b(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2b$12$7a4z/fdmXlBIfkz0smvzW.1Nds8wpgC/bo2DVOb4OSQKWCDL1A1wu")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2b_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$2b$12$7a4z/fdmXlBIfkz0smvzW.1Nds8wpgC/bo2DVOb4OSQKWCDL1A1wu")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2y(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2y_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_C10(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2y$10$bZsWq06ECzxqi7RmulQvC.T1YHUnLW2E3jn.MU2pvVTGn1dfORt2a")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_C10_autodetect(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2y$10$bZsWq06ECzxqi7RmulQvC.T1YHUnLW2E3jn.MU2pvVTGn1dfORt2a")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_unicode(self) -> None:
         self._test_htpasswd("bcrypt", "😀:$2y$10$Oyz5aHV4MD9eQJbk6GPemOs4T6edK6U9Sqlzr.W1mMVCS8wJUftnW", "unicode")
 
@@ -263,6 +278,23 @@ class TestBaseAuthRequests(BaseTest):
         href_element = prop.find(xmlutils.make_clark("D:href"))
         assert href_element is not None and href_element.text == "/test/"
 
+    def test_http_remote_user(self) -> None:
+        self.configure({"auth": {"type": "http_remote_user"}})
+        _, responses = self.propfind("/", """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""", HTTP_REMOTE_USER="test")
+        assert responses is not None
+        response = responses["/"]
+        assert not isinstance(response, int)
+        status, prop = response["D:current-user-principal"]
+        assert status == 200
+        href_element = prop.find(xmlutils.make_clark("D:href"))
+        assert href_element is not None and href_element.text == "/test/"
+
     def test_http_x_remote_user(self) -> None:
         self.configure({"auth": {"type": "http_x_remote_user"}})
         _, responses = self.propfind("/", """\
@@ -282,13 +314,23 @@ class TestBaseAuthRequests(BaseTest):
 
     @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def _test_dovecot(
-            self, user, password, expected_status,
-            response=b'FAIL\n1\n', mech=[b'PLAIN'], broken=None):
+            self, user, password, expected_status, expected_rip=None,
+            response=b'FAIL\t1', mech=[b'PLAIN'], broken=None,
+            extra_config=None, extra_env=None):
         import socket
         from unittest.mock import DEFAULT, patch
 
-        self.configure({"auth": {"type": "dovecot",
-                                 "dovecot_socket": "./dovecot.sock"}})
+        if extra_env is None:
+            extra_env = {}
+        if extra_config is None:
+            extra_config = {}
+
+        config = {"auth": {"type": "dovecot",
+                           "dovecot_socket": "./dovecot.sock"}}
+        for toplvl, entries in extra_config.items():
+            for key, val in entries.items():
+                config[toplvl][key] = val
+        self.configure(config)
 
         if broken is None:
             broken = []
@@ -311,10 +353,18 @@ class TestBaseAuthRequests(BaseTest):
         if "done" not in broken:
             handshake += b'DONE\n'
 
+        sent_rip = None
+
+        def record_sent_data(s, data, flags=None):
+            nonlocal sent_rip
+            if b'\trip=' in data:
+                sent_rip = data.split(b'\trip=')[1].split(b'\t')[0]
+            return len(data)
+
         with patch.multiple(
                 'socket.socket',
                 connect=DEFAULT,
-                send=DEFAULT,
+                send=record_sent_data,
                 recv=DEFAULT
                 ) as mock_socket:
             if "socket" in broken:
@@ -325,7 +375,9 @@ class TestBaseAuthRequests(BaseTest):
             status, _, answer = self.request(
                 "PROPFIND", "/",
                 HTTP_AUTHORIZATION="Basic %s" % base64.b64encode(
-                    ("%s:%s" % (user, password)).encode()).decode())
+                    ("%s:%s" % (user, password)).encode()).decode(),
+                **extra_env)
+            assert sent_rip == expected_rip
             assert status == expected_status
 
     @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
@@ -391,6 +443,36 @@ class TestBaseAuthRequests(BaseTest):
     @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
     def test_dovecot_auth_id_mismatch(self):
         self._test_dovecot("user", "password", 401, response=b'OK\t2')
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_remote_addr(self):
+        self._test_dovecot("user", "password", 401, expected_rip=b'172.17.16.15',
+                           extra_env={
+                               'REMOTE_ADDR': '172.17.16.15',
+                               'HTTP_X_REMOTE_ADDR': '127.0.0.1',
+                           })
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_x_remote_addr(self):
+        self._test_dovecot("user", "password", 401, expected_rip=b'172.17.16.15',
+                           extra_env={
+                               'REMOTE_ADDR': '127.0.0.1',
+                               'HTTP_X_REMOTE_ADDR': '172.17.16.15',
+                           },
+                           extra_config={
+                               'auth': {"remote_ip_source": "X-Remote-Addr"},
+                           })
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_dovecot_x_remote_addr_whitespace(self):
+        self._test_dovecot("user", "password", 401, expected_rip=b'172.17.16.15rip=127.0.0.1',
+                           extra_env={
+                               'REMOTE_ADDR': '127.0.0.1',
+                               'HTTP_X_REMOTE_ADDR': '172.17.16.15\trip=127.0.0.1',
+                           },
+                           extra_config={
+                               'auth': {"remote_ip_source": "X-Remote-Addr"},
+                           })
 
     def test_custom(self) -> None:
         """Custom authentication."""

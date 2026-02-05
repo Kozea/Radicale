@@ -1,0 +1,25 @@
+name: Radicale
+services:
+    radicale:
+        image: ghcr.io/kozea/radicale:stable
+        ports:
+        - 5232:5232
+        volumes:
+          - config:/etc/radicale
+          - data:/var/lib/radicale
+
+volumes:
+  config:
+    name: radicale-config
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./config
+  data:
+    name: radicale-data
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data
