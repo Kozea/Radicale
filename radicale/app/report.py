@@ -641,6 +641,23 @@ def _split_overridden_vevents(
             vevent_recurrence = vevent
 
     if vevent_recurrence:
+        # RFC 5545 3.8.4.4: RECURRENCE-ID MUST have the same value type as DTSTART
+        # in the recurring component.
+        base_dtstart = vevent_recurrence.dtstart.value
+        expected_type = datetime.date
+        if isinstance(base_dtstart, datetime.datetime):
+            expected_type = datetime.datetime
+
+        for ov in vevents_overridden:
+            rid = ov.recurrence_id.value
+            if not isinstance(rid, expected_type):
+                raise ValueError(
+                    f"component with UID {vevent_recurrence.uid} has "
+                    f"incompatible RECURRENCE-ID value type: base DTSTART is "
+                    f"{type(base_dtstart).__name__}, but override RECURRENCE-ID is "
+                    f"{type(rid).__name__} ({ov.recurrence_id.value!r})"
+                )
+
         return (
             vevent_recurrence, sorted(
                 vevents_overridden,

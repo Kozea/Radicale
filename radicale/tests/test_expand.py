@@ -698,3 +698,43 @@ permissions: RrWw""")
         status, responses = self.report("/test", request)
         assert status == 207
         assert len(responses) == 0
+
+    def test_report_with_incompatible_recurrence_id_dt_types(self, caplog) -> None:
+        """Test report with incompatible RECURRENCE-ID value types (RFC 5545 3.8.4.4)"""
+
+        import logging
+        caplog.set_level(logging.WARNING)
+
+        event_id = "event_mixed_recurrence_id_dt_type"
+        start = "20060103T000000Z"
+        end = "20060105T000000Z"
+
+        self.put("/calendar.ics/", get_file_content(f"{event_id}.ics"))
+
+        request = f"""<?xml version="1.0" encoding="utf-8" ?>
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <C:calendar-data>
+                    <C:expand start="{start}" end="{end}"/>
+                </C:calendar-data>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                    <C:comp-filter name="VEVENT">
+                        <C:time-range start="{start}" end="{end}"/>
+                    </C:comp-filter>
+                </C:comp-filter>
+            </C:filter>
+        </C:calendar-query>
+        """
+
+        status, _, _ = self.request("REPORT", "/calendar.ics/", request)
+
+        assert status == 400
+
+        logs = caplog.messages
+        error_logs = [log for log in logs if "incompatible RECURRENCE-ID value type" in log]
+        assert len(error_logs) > 0
+        assert event_id in error_logs[0]
+        assert "base DTSTART is datetime" in error_logs[0]
+        assert "override RECURRENCE-ID is date" in error_logs[0]
