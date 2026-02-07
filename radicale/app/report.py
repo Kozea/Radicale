@@ -395,7 +395,7 @@ def _expand(
             time_range_end = time_range_end.replace(tzinfo=None)
 
     for vevent in vevents_overridden:
-        _strip_single_event(vevent, dt_format)
+        _strip_single_event(vevent, dt_format, all_day_event)
 
     duration = None
     if hasattr(base_vevent, "dtend"):
@@ -457,7 +457,7 @@ def _expand(
                              .format(max_occurrence))
 
         _strip_component(vevent_component)
-        _strip_single_event(base_vevent, dt_format)
+        _strip_single_event(base_vevent, dt_format, all_day_event)
 
         i_overridden = 0
 
@@ -480,7 +480,13 @@ def _expand(
                 continue
 
             # Check for overridden instances
-            i_overridden, vevent = _find_overridden(i_overridden, vevents_overridden, recurrence_utc, dt_format)
+            i_overridden, vevent = _find_overridden(
+                i_overridden,
+                vevents_overridden,
+                recurrence_utc,
+                dt_format,
+                all_day_event,
+            )
 
             if not vevent:
                 # Create new instance from recurrence
@@ -568,15 +574,20 @@ def _expand(
     return element, len(filtered_vevents)
 
 
-def _convert_timezone(vevent: vobject.icalendar.RecurringComponent,
-                      name_prop: str,
-                      name_content_line: str):
+def _convert_timezone(
+    vevent: vobject.icalendar.RecurringComponent,
+    name_prop: str,
+    name_content_line: str,
+    all_day_event: bool = False
+):
     prop = getattr(vevent, name_prop, None)
     if prop:
         if type(prop.value) is datetime.date:
             date_time = datetime.datetime.fromordinal(
                 prop.value.toordinal()
-            ).replace(tzinfo=datetime.timezone.utc)
+            )
+            if not all_day_event:
+                date_time = date_time.replace(tzinfo=datetime.timezone.utc)
         else:
             date_time = prop.value.astimezone(datetime.timezone.utc)
 
@@ -591,10 +602,14 @@ def _convert_to_utc(vevent: vobject.icalendar.RecurringComponent,
         setattr(vevent, name_prop, ContentLine(name=prop.name, value=prop.value.strftime(dt_format), params=[]))
 
 
-def _strip_single_event(vevent: vobject.icalendar.RecurringComponent, dt_format: str) -> None:
-    _convert_timezone(vevent, 'dtstart', 'DTSTART')
-    _convert_timezone(vevent, 'dtend', 'DTEND')
-    _convert_timezone(vevent, 'recurrence_id', 'RECURRENCE-ID')
+def _strip_single_event(
+    vevent: vobject.icalendar.RecurringComponent,
+    dt_format: str,
+    all_day_event: bool = False,
+) -> None:
+    _convert_timezone(vevent, 'dtstart', 'DTSTART', all_day_event)
+    _convert_timezone(vevent, 'dtend', 'DTEND', all_day_event)
+    _convert_timezone(vevent, 'recurrence_id', 'RECURRENCE-ID', all_day_event)
 
     # There is something strange behaviour during serialization native datetime, so converting manually
     _convert_to_utc(vevent, 'dtstart', dt_format)
@@ -675,13 +690,13 @@ def _find_overridden(
         start: int,
         vevents: List[vobject.icalendar.RecurringComponent],
         dt: datetime.datetime,
-        dt_format: str
+        dt_format: str,
+        all_day_event: bool,
 ) -> Tuple[int, Optional[vobject.icalendar.RecurringComponent]]:
     for i in range(start, len(vevents)):
-        dt_event = datetime.datetime.strptime(
-            vevents[i].recurrence_id.value,
-            dt_format
-        ).replace(tzinfo=datetime.timezone.utc)
+        dt_event = datetime.datetime.strptime(vevents[i].recurrence_id.value, dt_format)
+        if not all_day_event:
+            dt_event = dt_event.replace(tzinfo=datetime.timezone.utc)
         if dt_event == dt:
             return (i + 1, vevents[i])
     return (start, None)

@@ -738,3 +738,15 @@ permissions: RrWw""")
         assert event_id in error_logs[0]
         assert "base DTSTART is datetime" in error_logs[0]
         assert "override RECURRENCE-ID is date" in error_logs[0]
+
+    def test_report_with_expand_property_all_day_event_overridden(self) -> None:
+        self._test_expand(
+            "event_full_day_rrule_overridden",
+            "20060101T000000Z",
+            "20060111T235959Z",
+            ["RECURRENCE-ID:20060102", "RECURRENCE-ID:20060104", "RECURRENCE-ID:20060103"],
+            ["DTSTART:20060102", "DTSTART:20060104", "DTSTART:20060110"],
+            ["DTEND:20060103", "DTEND:20060105", "DTEND:20060111"],
+            ONLY_DATES,
+            2
+        )
