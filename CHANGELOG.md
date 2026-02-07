@@ -5,6 +5,7 @@
 * Fix: MOVE failing with URL-encoded destination header
 * Improve: add workaround to remove empty lines in item to avoid reject by vobject parser
 * Improve: check/enforce RECURRENCE-ID MUST have the same value type as DTSTART in the recurring component (RFC 5545 3.8.4.4)
+* Fix: RECURRENCE-ID comparison on all-day events
 
 ## 3.6.0
 
