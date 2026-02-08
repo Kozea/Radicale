@@ -291,8 +291,8 @@
 #       "C:supported-calendar-component-set": "VEVENT",
 #       "D:displayname": "Work Calendar",
 #       "tag": "VCALENDAR"
-#    },
-# }
+#    }
+#  }
 #predefined_collections =
 
 
