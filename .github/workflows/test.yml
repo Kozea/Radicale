@@ -22,14 +22,10 @@ jobs:
     needs: [lint, test-ubuntu-python-newest]
     runs-on: ubuntu-latest
     container:
-      image: archlinux:latest
+      image: i386/ubuntu:latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - name: Install Python dependencies
-        run: |
-          curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-          python get-pip.py
       - name: Install Test dependencies
         run: pip install tox
       - name: Test with newest Python on latest Ubuntu (32-bit)
