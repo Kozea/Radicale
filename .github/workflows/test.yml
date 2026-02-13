@@ -27,6 +27,10 @@ jobs:
         - /tmp:/__e/node24_alpine
         - /tmp:/__e/node20_alpine
     steps:
+      - name: Update system
+        run: |
+          apk update
+          apk upgrade
       - name: Fix checkout and upload-artifact
         run: |
           apk add nodejs npm
@@ -38,6 +42,9 @@ jobs:
           ln -sf $(which node) /__e/node20_alpine/bin/node
           ln -sf $(which npm) /__e/node20_alpine/bin/npm
           ln -sf $(which npx) /__e/node20_alpine/bin/npx
+      - name: Install git
+        run: |
+          apk add git
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
       - name: Install Python dependencies
