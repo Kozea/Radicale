@@ -4,54 +4,49 @@ on: [push, pull_request]
 jobs:
 
   test-ubuntu-python-newest:
+    name: Test Linux Ubuntu (latest Python:newest)
     needs: lint
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ['3.14']
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.14'
       - name: Install Test dependencies
         run: pip install tox
-      - name: Test with latest Python on Ubuntu
+      - name: Test with newest Python on latest Ubuntu
         run: tox -c pyproject.toml -e py
 
   test-ubuntu-python-newest-32bit:
-    name: Tests (32-bit Linux)
+    name: Test Linux Ubuntu (32-bit Python:newest)
     needs: [lint, test-ubuntu-python-newest]
     runs-on: ubuntu-latest
     container:
-      image: i386/python:3.14  # 32‑bit userland with Python
+      image: i386/ubuntu:22.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
       - name: Install Test dependencies
         run: pip install tox
-      - name: Test with newes Python on latest Ubuntu (32-bit)
+      - name: Test with newest Python on latest Ubuntu (32-bit)
         run: tox -c pyproject.toml -e py
 
   test-ubuntu-python-oldest:
+    name: Test Linux Ubuntu (latest Python:oldest)
     needs: [lint, test-ubuntu-python-newest]
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ['3.9']
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.9'
       - name: Install Test dependencies
         run: pip install tox
       - name: Test with oldest Python on Ubuntu
         run: tox -c pyproject.toml -e py
 
   test-otheros-python-newest:
+    name: Test MacOS/Windows (latest Python:newest)
     needs: [lint, test-ubuntu-python-newest]
     strategy:
       matrix:
@@ -69,6 +64,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-otheros-python-oldest:
+    name: Test MacOS/Windows (latest Python:oldest)
     needs: [lint, test-ubuntu-python-oldest, test-otheros-python-newest]
     strategy:
       matrix:
@@ -86,6 +82,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-python-versions:
+    name: Test Linux/MacOS/Windows (latest Python:Matrix)
     needs: [lint, test-otheros-python-oldest, test-otheros-python-newest, test-ubuntu-python-oldest, test-ubuntu-python-newest]
     strategy:
       matrix:
@@ -110,6 +107,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   coveralls-test:
+    name: Coveralls:Test
     if: github.event_name == 'push'
     strategy:
       matrix:
@@ -136,6 +134,7 @@ jobs:
         run: coveralls --service=github
 
   coveralls-finish:
+    name: Coveralls:Finish
     needs: coveralls-test
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -151,6 +150,7 @@ jobs:
         run: coveralls --service=github --finish
 
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
