@@ -17,8 +17,8 @@ jobs:
       - name: Test with newest Python on latest Ubuntu
         run: tox -c pyproject.toml -e py
 
-  test-ubuntu-python-32bit:
-    name: Test Ubuntu (Python 3.11 32-bit)
+  test--python-32bit:
+    name: Test Ubuntu/Alpine (32-bit)
     needs: [lint, test-ubuntu-python-newest]
     runs-on: ubuntu-latest
     container:
@@ -49,13 +49,13 @@ jobs:
       - uses: actions/setup-python@v5
       - name: Install Python dependencies
         run: |
-          apk add py3-pip py3-tox gcc python3-dev libc-dev
+          apk add py3-pip py3-tox gcc python3-dev libc-dev libffi-dev
       - name: Test 32-bit
         run: tox -c /__w/Radicale/Radicale/pyproject.toml -e py
 
   test-ubuntu-python-oldest:
     name: Test Ubuntu (latest Python:oldest)
-    needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-32bit]
+    needs: [lint, test-ubuntu-python-newest, test-python-32bit]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
