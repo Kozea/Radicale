@@ -338,10 +338,13 @@ def format_ut(unixtime: int) -> str:
     elif unixtime >= DATETIME_MAX_UNIXTIME:
         r = str(unixtime) + "(>=MAX:" + str(DATETIME_MAX_UNIXTIME) + ")"
     else:
-        if sys.version_info < (3, 11):
-            dt = datetime.datetime.utcfromtimestamp(unixtime)
+        if sys.maxsize > 2**32:
+            if sys.version_info < (3, 11):
+                dt = datetime.datetime.utcfromtimestamp(unixtime)
+            else:
+                dt = datetime.datetime.fromtimestamp(unixtime, datetime.UTC)
         else:
-            dt = datetime.datetime.fromtimestamp(unixtime, datetime.UTC)
+            dt = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc) + datetime.timedelta(seconds=unixtime)
         r = str(unixtime) + "(" + dt.strftime('%Y-%m-%dT%H:%M:%SZ') + ")"
     return r
 
