@@ -40,12 +40,10 @@ jobs:
           ln -sf $(which npx) /__e/node20_alpine/bin/npx
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - name: Install Python pip
+      - name: Install Python dependencies
         run: |
-          apk add py3-pip
-      - name: Install Test dependencies
-        run: pip install tox
-      - name: Test with newest Python on latest Ubuntu (32-bit)
+          apk add py3-pip py3-tox
+      - name: Test 32-bit
         run: tox -c pyproject.toml -e py
 
   test-ubuntu-python-oldest:
