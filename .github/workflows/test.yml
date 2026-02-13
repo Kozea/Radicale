@@ -18,11 +18,11 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-ubuntu-python-newest-32bit:
-    name: Test Linux Ubuntu (32-bit Python:newest)
+    name: Test Linux Ubuntu (32-bit)
     needs: [lint, test-ubuntu-python-newest]
     runs-on: ubuntu-latest
     container:
-      image: i386/ubuntu:latest
+      image: i386/python:3.11
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
