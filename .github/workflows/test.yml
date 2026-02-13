@@ -17,7 +17,7 @@ jobs:
       - name: Test with newest Python on latest Ubuntu
         run: tox -c pyproject.toml -e py
 
-  test--python-32bit:
+  test-python-32bit:
     name: Test Ubuntu/Alpine (32-bit)
     needs: [lint, test-ubuntu-python-newest]
     runs-on: ubuntu-latest
