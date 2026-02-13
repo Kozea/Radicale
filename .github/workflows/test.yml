@@ -20,6 +20,20 @@ jobs:
       - name: Test with latest Python on Ubuntu
         run: tox -c pyproject.toml -e py
 
+  test-ubuntu-python-newest-32bit:
+    name: Tests (32-bit Linux)
+    needs: [lint, test-ubuntu-python-newest]
+    runs-on: ubuntu-latest
+    container:
+      image: i386/python:3.14  # 32‑bit userland with Python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with newes Python on latest Ubuntu (32-bit)
+        run: tox -c pyproject.toml -e py
+
   test-ubuntu-python-oldest:
     needs: [lint, test-ubuntu-python-newest]
     strategy:
