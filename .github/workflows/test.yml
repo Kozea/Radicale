@@ -22,7 +22,7 @@ jobs:
     needs: [lint, test-ubuntu-python-newest]
     runs-on: ubuntu-latest
     container:
-      image: i386/alpine:3.19
+      image: i386/alpine:latest
       volumes:
         - /tmp:/__e/node24_alpine
         - /tmp:/__e/node20_alpine
