@@ -44,7 +44,7 @@ jobs:
         run: |
           apk add py3-pip py3-tox
       - name: Test 32-bit
-        run: tox -c pyproject.toml -e py
+        run: tox -c pyproject.toml -e py --workdir /__w/Radicale/Radicale
 
   test-ubuntu-python-oldest:
     name: Test Ubuntu (latest Python:oldest)
