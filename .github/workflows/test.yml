@@ -69,7 +69,7 @@ jobs:
 
   test-otheros-python-newest:
     name: Test MacOS/Windows (latest Python:newest)
-    needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-32bit]
+    needs: [lint, test-ubuntu-python-newest, test-python-32bit]
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
