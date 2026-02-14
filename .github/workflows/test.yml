@@ -49,7 +49,7 @@ jobs:
       - uses: actions/setup-python@v5
       - name: Install Python dependencies
         run: |
-          apk add py3-pip py3-tox gcc python3-dev libc-dev libffi-dev py3-bcrypt py3-cffi
+          apk add py3-pip py3-tox gcc python3-dev libc-dev libffi-dev py3-bcrypt py3-cffi py3-argon2-cffi py3-requests py3-packaging py3-idna py3-urllib3 py3-waitress py3-certifi 
       - name: Test 32-bit
         run: tox -c /__w/Radicale/Radicale/pyproject.toml -e py
 
