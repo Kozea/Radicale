@@ -54,7 +54,9 @@ jobs:
           . venv/bin/activate
           pip install --upgrade pip
       - name: Test 32-bit
-        run: tox -c /__w/Radicale/Radicale/pyproject.toml -e py
+        run: |
+          . venv/bin/activate
+          tox -c /__w/Radicale/Radicale/pyproject.toml -e py
 
   test-ubuntu-python-oldest:
     name: Test Ubuntu (latest Python:oldest)
