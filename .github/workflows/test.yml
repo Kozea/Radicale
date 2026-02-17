@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: i386/python:3.11
+      volumes:
+        - /home/runner/work/_temp:/__e/node20
     steps:
       - name: Update system
         run: |
