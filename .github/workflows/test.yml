@@ -4,7 +4,7 @@ on: [push, pull_request]
 jobs:
 
   test-ubuntu-python-newest:
-    name: Test Ubuntu (latest Python:newest)
+    name: Test Ubuntu:latest Python:newest
     needs: lint
     runs-on: ubuntu-latest
     steps:
@@ -18,21 +18,19 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-python-32bit:
-    name: Test Ubuntu/Python (32-bit)
+    name: Test Ubuntu:latest Python:32-bit
     needs: [lint, test-ubuntu-python-newest]
     runs-on: ubuntu-latest
     container:
       image: i386/python:3.11
-      volumes:
-        - /tmp:/__e/node20_ubuntu
     steps:
       - name: Fix checkout and upload-artifact
         run: |
           apk add nodejs npm
-          mkdir -p /__e/node20_ubuntu/bin
-          ln -sf $(which node) /__e/node20_ubuntu/bin/node
-          ln -sf $(which npm) /__e/node20_ubuntu/bin/npm
-          ln -sf $(which npx) /__e/node20_ubuntu/bin/npx
+          mkdir -p /__e/node20/bin
+          ln -sf $(which node) /__e/node20/bin/node
+          ln -sf $(which npm) /__e/node20/bin/npm
+          ln -sf $(which npx) /__e/node20/bin/npx
       - name: Update system
         run: |
           apt-get update
@@ -46,7 +44,7 @@ jobs:
           tox -c /__w/Radicale/Radicale/pyproject.toml -e py
 
   test-ubuntu-python-oldest:
-    name: Test Ubuntu (latest Python:oldest)
+    name: Test Ubuntu:latest Python:oldest
     needs: [lint, test-ubuntu-python-newest, test-python-32bit]
     runs-on: ubuntu-latest
     steps:
@@ -60,7 +58,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-otheros-python-newest:
-    name: Test MacOS/Windows (latest Python:newest)
+    name: Test MacOS/Windows:latest Python:newest
     needs: [lint, test-ubuntu-python-newest, test-python-32bit]
     strategy:
       matrix:
@@ -78,7 +76,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-otheros-python-oldest:
-    name: Test MacOS/Windows (latest Python:oldest)
+    name: Test MacOS/Windows:latest Python:oldest
     needs: [lint, test-ubuntu-python-oldest, test-otheros-python-newest]
     strategy:
       matrix:
@@ -96,7 +94,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-python-versions:
-    name: Test Ubuntu/MacOS/Windows (latest Python:Matrix)
+    name: Test Ubuntu/MacOS/Windows:latest Python:Matrix
     needs: [lint, test-otheros-python-oldest, test-otheros-python-newest, test-ubuntu-python-oldest, test-ubuntu-python-newest]
     strategy:
       matrix:
