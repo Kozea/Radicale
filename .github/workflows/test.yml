@@ -26,11 +26,11 @@ jobs:
     steps:
       - name: Update system
         run: |
-          apk update
-          apk upgrade
+          apt-get update
+          apt-get upgrade
       - name: Install git
         run: |
-          apk add git
+          apt-get install git
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
       - name: Test 32-bit
