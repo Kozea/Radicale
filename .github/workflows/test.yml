@@ -27,10 +27,9 @@ jobs:
       - name: Update system
         run: |
           apt-get update
-          apt-get upgrade
       - name: Install git
         run: |
-          apt-get install git
+          apt-get install -y git
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
       - name: Test 32-bit
