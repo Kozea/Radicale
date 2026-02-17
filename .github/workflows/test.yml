@@ -41,6 +41,9 @@ jobs:
           apt-get install -y git
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+      - name: Install Python dependencies
+        run: |
+          apt-get install -y tox
       - name: Test 32-bit
         run: |
           tox -c /__w/Radicale/Radicale/pyproject.toml -e py
