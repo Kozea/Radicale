@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: i386/python:3.11
+      volumes:
         - /tmp:/__e/node20_ubuntu
     steps:
       - name: Fix checkout and upload-artifact
