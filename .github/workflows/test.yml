@@ -25,6 +25,7 @@ jobs:
       image: i386/python:3.11
       volumes:
         - /home/runner/work/_temp:/__e/node20
+        - /home/runner/work/_temp:/__e/node24
     steps:
       - name: Update system
         run: |
@@ -36,6 +37,10 @@ jobs:
           ln -sf $(which node) /__e/node20/bin/node
           ln -sf $(which npm) /__e/node20/bin/npm
           ln -sf $(which npx) /__e/node20/bin/npx
+          mkdir -p /__e/node24/bin
+          ln -sf $(which node) /__e/node24/bin/node
+          ln -sf $(which npm) /__e/node24/bin/npm
+          ln -sf $(which npx) /__e/node24/bin/npx
       - name: Install git
         run: |
           apt-get install -y git
