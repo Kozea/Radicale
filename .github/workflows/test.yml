@@ -23,7 +23,15 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: i386/python:3.11
+        - /tmp:/__e/node20_ubuntu
     steps:
+      - name: Fix checkout and upload-artifact
+        run: |
+          apk add nodejs npm
+          mkdir -p /__e/node20_ubuntu/bin
+          ln -sf $(which node) /__e/node20_ubuntu/bin/node
+          ln -sf $(which npm) /__e/node20_ubuntu/bin/npm
+          ln -sf $(which npx) /__e/node20_ubuntu/bin/npx
       - name: Update system
         run: |
           apt-get update
