@@ -24,16 +24,12 @@ jobs:
     container:
       image: i386/python:3.11
     steps:
-      - name: Fix checkout and upload-artifact
-        run: |
-          apk add nodejs npm
-          mkdir -p /__e/node20/bin
-          ln -sf $(which node) /__e/node20/bin/node
-          ln -sf $(which npm) /__e/node20/bin/npm
-          ln -sf $(which npx) /__e/node20/bin/npx
       - name: Update system
         run: |
           apt-get update
+      - name: Fix checkout and upload-artifact
+        run: |
+          apt-get install -y nodejs npm
       - name: Install git
         run: |
           apt-get install -y git
