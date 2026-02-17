@@ -6,6 +6,7 @@
 * Improve: add workaround to remove empty lines in item to avoid reject by vobject parser
 * Improve: check/enforce RECURRENCE-ID MUST have the same value type as DTSTART in the recurring component (RFC 5545 3.8.4.4)
 * Fix: RECURRENCE-ID comparison on all-day events
+* Fix: format_ut problem on 32-bit systems (got lost inbetween since fixed in 3.5.8)
 
 ## 3.6.0
 
