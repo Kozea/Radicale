@@ -44,6 +44,8 @@ jobs:
       - name: Install Python dependencies
         run: |
           apt-get install -y tox rust-all cargo
+      - name: Activate Python virtual environment
+          python3 -m venv venv
           . venv/bin/activate
           pip install --upgrade pip
       - name: Test 32-bit
