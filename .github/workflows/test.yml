@@ -43,9 +43,12 @@ jobs:
       - uses: actions/setup-python@v5
       - name: Install Python dependencies
         run: |
-          apt-get install -y tox
+          apt-get install -y tox rust cargo
+          . venv/bin/activate
+          pip install --upgrade pip
       - name: Test 32-bit
         run: |
+          . venv/bin/activate
           tox -c /__w/Radicale/Radicale/pyproject.toml -e py
 
   test-ubuntu-python-oldest:
