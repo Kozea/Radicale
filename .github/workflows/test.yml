@@ -30,6 +30,10 @@ jobs:
       - name: Fix checkout and upload-artifact
         run: |
           apt-get install -y nodejs npm
+          mkdir -p /__e/node20/bin
+          ln -sf $(which node) /__e/node20/bin/node
+          ln -sf $(which npm) /__e/node20/bin/npm
+          ln -sf $(which npx) /__e/node20/bin/npx
       - name: Install git
         run: |
           apt-get install -y git
