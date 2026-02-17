@@ -18,44 +18,23 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-python-32bit:
-    name: Test Ubuntu/Alpine (32-bit)
+    name: Test Ubuntu/Python (32-bit)
     needs: [lint, test-ubuntu-python-newest]
     runs-on: ubuntu-latest
     container:
-      image: i386/alpine:latest
-      volumes:
-        - /tmp:/__e/node24_alpine
-        - /tmp:/__e/node20_alpine
+      image: i386/python:3.11
     steps:
       - name: Update system
         run: |
           apk update
           apk upgrade
-      - name: Fix checkout and upload-artifact
-        run: |
-          apk add nodejs npm
-          mkdir -p /__e/node24_alpine/bin
-          ln -sf $(which node) /__e/node24_alpine/bin/node
-          ln -sf $(which npm) /__e/node24_alpine/bin/npm
-          ln -sf $(which npx) /__e/node24_alpine/bin/npx
-          mkdir -p /__e/node20_alpine/bin
-          ln -sf $(which node) /__e/node20_alpine/bin/node
-          ln -sf $(which npm) /__e/node20_alpine/bin/npm
-          ln -sf $(which npx) /__e/node20_alpine/bin/npx
       - name: Install git
         run: |
           apk add git
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - name: Install Python dependencies
-        run: |
-          apk add py3-pip py3-tox gcc python3-dev libc-dev libffi-dev py3-bcrypt py3-cffi py3-argon2-cffi py3-requests py3-packaging py3-idna py3-urllib3 py3-waitress py3-certifi py3-argon2-cffi-bindings rust cargo
-          python3 -m venv venv
-          . venv/bin/activate
-          pip install --upgrade pip
       - name: Test 32-bit
         run: |
-          . venv/bin/activate
           tox -c /__w/Radicale/Radicale/pyproject.toml -e py
 
   test-ubuntu-python-oldest:
