@@ -43,7 +43,7 @@ jobs:
       - uses: actions/setup-python@v5
       - name: Install Python dependencies
         run: |
-          apt-get install -y tox rust cargo
+          apt-get install -y tox rust-all cargo
           . venv/bin/activate
           pip install --upgrade pip
       - name: Test 32-bit
