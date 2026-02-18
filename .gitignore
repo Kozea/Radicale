@@ -25,3 +25,4 @@ coverage.xml
 Gemfile.lock
 
 pytestdebug.log
+uv.lock
