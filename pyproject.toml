@@ -44,6 +44,7 @@ test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi"]
 bcrypt = ["bcrypt"]
 argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
+integ_test = ["pytest", "pytest-playwright"]
 
 [project.scripts]
 radicale = "radicale.__main__:run"
@@ -79,13 +80,16 @@ deps = ["mypy==1.11.0"]
 commands = [["mypy", "--install-types", "--non-interactive", "."]]
 skip_install = true
 
+[tool.pytest.ini_options]
+norecursedirs = ["integ_tests"]
+
 
 [tool.setuptools]
 platforms = ["Any"]
 include-package-data = false
 
 [tool.setuptools.packages.find]
-exclude = ["*.tests"] # *.tests.*; tests.*; tests
+exclude = ["*.tests", "integ_tests"] # *.tests.*; tests.*; tests
 namespaces = false
 
 [tool.setuptools.package-data]
@@ -116,7 +120,7 @@ exclude = "(^|/)build($|/)"
 [tool.coverage.run]
 branch = true
 source = ["radicale"]
-omit = ["tests/*", "*/tests/*"]
+omit = ["tests/*", "*/tests/*", "integ_tests/*", "*/integ_tests/*"]
 
 [tool.coverage.report]
 # Regexes for lines to exclude from consideration
