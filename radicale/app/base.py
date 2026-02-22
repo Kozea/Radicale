@@ -106,9 +106,9 @@ class Access:
     permissions: str
     _rights: rights.BaseRights
     _parent_permissions: Optional[str]
-    _permissions_filter: Union[str | None] = None
+    _permissions_filter: Union[str, None] = None
 
-    def __init__(self, rights: rights.BaseRights, user: str, path: str, permissions_filter: Union[str | None] = None
+    def __init__(self, rights: rights.BaseRights, user: str, path: str, permissions_filter: Union[str, None] = None
                  ) -> None:
         self._rights = rights
         self.user = user
