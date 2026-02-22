@@ -19,7 +19,6 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import errno
-import posixpath
 import re
 import socket
 from http import client
