@@ -75,7 +75,8 @@ class ApplicationPartProppatch(ApplicationBase):
     def do_PROPPATCH(self, environ: types.WSGIEnviron, base_prefix: str,
                      path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PROPPATCH request."""
-        access = Access(self._rights, user, path)
+        permissions_filter = None
+        access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         try:
