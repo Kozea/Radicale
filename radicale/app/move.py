@@ -97,8 +97,7 @@ class ApplicationPartMove(ApplicationBase):
             to_item = next(iter(self._storage.discover(to_path)), None)
             if isinstance(to_item, storage.BaseCollection):
                 return httputils.FORBIDDEN
-            to_parent_path = pathutils.unstrip_path(
-                posixpath.dirname(pathutils.strip_path(to_path)), True)
+            to_parent_path = pathutils.parent_path(to_path)
             to_collection = next(iter(
                 self._storage.discover(to_parent_path)), None)
             if not to_collection:
