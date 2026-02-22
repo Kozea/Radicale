@@ -405,7 +405,9 @@ class ApplicationPartPropfind(ApplicationBase):
     def do_PROPFIND(self, environ: types.WSGIEnviron, base_prefix: str,
                     path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PROPFIND request."""
-        access = Access(self._rights, user, path)
+        http_depth = environ.get("HTTP_DEPTH", "0")
+        permissions_filter = None
+        access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r"):
             return httputils.NOT_ALLOWED
         try:
@@ -419,7 +421,7 @@ class ApplicationPartPropfind(ApplicationBase):
             return httputils.REQUEST_TIMEOUT
         with self._storage.acquire_lock("r", user):
             items_iter = iter(self._storage.discover(
-                path, environ.get("HTTP_DEPTH", "0"),
+                path, http_depth,
                 None, self._rights._user_groups))
             # take root item for rights checking
             item = next(items_iter, None)
