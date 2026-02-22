@@ -90,6 +90,11 @@
                 <img src="css/icons/edit.svg" class="icon" alt="✏️">
               </a>
             </li>
+            <li class="hidden" data-name="shareoption">
+              <a href="" title="Share" class="blue" data-name="share">
+                <img src="css/icons/share.svg" class="icon" alt="🔗">
+              </a>
+            </li>
             <li>
               <a href="" title="Delete" class="red" data-name="delete">
                 <img src="css/icons/delete.svg" class="icon" alt="❌">
@@ -131,6 +136,39 @@
         </form>
         <span class="error hidden" data-name="error"></span>
         <br>
+      </section>
+
+      <section id="sharecollectionscene" class="container hidden">
+        <h1>Sharing</h1>
+        <p>Manage sharing for collection <span class="title" data-name="title">title</span>
+        </p>
+        <h2>By Token</h2>
+        <table>
+          <tbody>
+            <tr data-name="sharetokenrowtemplate" class="hidden">
+              <td>
+              <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg" class="small_icon" alt="Share"></button>
+              </td>
+              <td><img
+                src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw"/><img
+                src="css/icons/eye.svg" class="med_icon" alt="RO" data-name="ro"/></td>
+              <td><input type="text" data-name="pathortoken" value="" readonly="" onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td><button type="button" class="blue inline" data-name="sharebytoken_ro"><img
+                  src="css/icons/eye.svg" class="small_icon" alt="RO"><img
+                  src="css/icons/new.svg" class="badge_icon" alt="New"></button>&nbsp;
+                <button type="button" class="blue inline" data-name="sharebytoken_rw"><img
+                  src="css/icons/edit.svg" class="small_icon" alt="RW"><img
+                  src="css/icons/new.svg" class="badge_icon" alt="New"></button></td>
+            </tr>
+          </tbody>
+        </table>
+        <form>
+          <button type="button" class="green" data-name="cancel">Close</button>
+        </form>
       </section>
 
       <section id="createcollectionscene" class="container hidden">

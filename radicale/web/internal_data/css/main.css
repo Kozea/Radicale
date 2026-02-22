@@ -39,6 +39,14 @@ main{
     color: #484848;
 }
 
+.container h2{
+    margin: 0;
+    width: 100%;
+    text-align: left;
+    color: #484848;
+    font-size: 1.5em;
+}
+
 #loginscene .infcloudlink{
     margin: 0;
     width: 100%;
@@ -303,6 +311,29 @@ main{
     filter: invert(1);
 }
 
+.small_icon{
+    width: 1em;
+    height: 1em;
+    filter: invert(1);
+}
+
+.med_icon{
+    width: 1.5em;
+    height: 1.5em;
+}
+
+.badge_icon{
+    width: 1em;
+    height: 1em;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    filter: invert(1);
+    border-radius: 50%;
+    background-color: white;
+}
+
+
 .smalltext{
     font-size: 75% !important;
 }
@@ -345,6 +376,7 @@ button{
     margin-left: 10px;
     background: black;
     cursor: pointer;
+    position: relative;
 }
 
 input, select{
@@ -358,6 +390,10 @@ input, select{
     padding-left: 15px;
     padding-right: 15px;
     outline: none !important;
+}
+
+input.inline {
+    margin-bottom: 0 !important;
 }
 
 input[type=text], input[type=password]{
@@ -412,6 +448,12 @@ button.blue:hover, a.blue:hover{
 button.blue:active, a.blue:active{
     background: #055fb5;
     cursor: pointer !important;
+}
+
+button.inline {
+    padding-inline: 1px;
+    min-width: 2em;
+    margin: 0;
 }
 
 @media only screen and (max-width: 600px) {

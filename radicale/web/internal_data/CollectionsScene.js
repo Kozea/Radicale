@@ -20,6 +20,7 @@
 
 import { Scene, push_scene, pop_scene, scene_stack } from "./scene_manager.js";
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
+import { CreateShareCollectionScene } from "./ShareCollectionScene.js";
 import { UploadCollectionScene } from "./UploadCollectionScene.js";
 import { DeleteCollectionScene } from "./DeleteCollectionScene.js";
 import { LoadingScene } from "./LoadingScene.js";
@@ -78,6 +79,16 @@ export function CollectionsScene(user, password, collection, onerror) {
         return false;
     }
 
+    function onshare(collection) {
+        try {
+            let share_collection_scene = new CreateShareCollectionScene(user, password, collection);
+            push_scene(share_collection_scene, false);
+        } catch(err) {
+            console.error(err);
+        }
+        return false;
+    }
+
     function ondelete(collection) {
         try {
             let delete_collection_scene = new DeleteCollectionScene(user, password, collection);
@@ -102,6 +113,7 @@ export function CollectionsScene(user, password, collection, onerror) {
             let color_form = node.querySelector("[data-name=color]");
             let delete_btn = node.querySelector("[data-name=delete]");
             let edit_btn = node.querySelector("[data-name=edit]");
+            let share_btn = node.querySelector("[data-name=share]");
             let download_btn = node.querySelector("[data-name=download]");
             if (collection.color) {
                 color_form.style.background = collection.color;
@@ -144,6 +156,7 @@ export function CollectionsScene(user, password, collection, onerror) {
             }
             delete_btn.onclick = function() {return ondelete(collection);};
             edit_btn.onclick = function() {return onedit(collection);};
+            share_btn.onclick = function() {return onshare(collection);};
             node.classList.remove("hidden");
             nodes.push(node);
             template.parentNode.insertBefore(node, template);

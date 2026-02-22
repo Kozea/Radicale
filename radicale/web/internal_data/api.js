@@ -22,6 +22,8 @@ import { Collection, CollectionType } from "./models.js";
 import { SERVER, ROOT_PATH, COLOR_RE } from "./constants.js";
 import { escape_xml } from "./utils.js";
 
+export let server_features = {};
+
 /**
  * Find the principal collection.
  * @param {string} user
@@ -339,4 +341,131 @@ export function create_collection(user, password, collection, callback) {
  */
 export function edit_collection(user, password, collection, callback) {
     return create_edit_collection(user, password, collection, false, callback);
+}
+/* Sharing API */
+
+function call_sharing_api(
+  user,
+  password,
+  path,
+  body,
+  on_success,
+  on_not_found = null,
+  on_error = null,
+) {
+  let request = new XMLHttpRequest();
+  request.open(
+    "POST",
+    SERVER + ROOT_PATH + ".sharing/v1/" + path,
+    true,
+    user,
+    encodeURIComponent(password),
+  );
+  request.onreadystatechange = function () {
+    if (request.readyState !== 4) {
+      return;
+    }
+    if (200 <= request.status && request.status < 300) {
+      on_success(request.responseText);
+    } else if (request.status === 404) {
+      if (on_not_found) {
+        on_not_found();
+      } else if (on_error) {
+        on_error("Not found");
+      } else {
+        console.error("Not found");
+      }
+    } else {
+      if (on_error) {
+        on_error(request.status + " " + request.statusText);
+      } else {
+        console.error(request.status + " " + request.statusText);
+      }
+    }
+  };
+  request.setRequestHeader("Accept", "application/json");
+  request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  request.send(body ? JSON.stringify(body) : null);
+  return request;
+}
+
+export function discover_server_features(user, password, callback) {
+  call_sharing_api(
+    user,
+    password,
+    "all/info",
+    {},
+    function (response) {
+      server_features["sharing"] = JSON.parse(response);
+      callback();
+    },
+    function () {
+      // sharing is disabled on the server
+      server_features["sharing"] = {};
+      callback();
+    },
+    function (error) {
+      console.error("Failed to discover sharing features: " + error);
+    },
+  );
+}
+
+export function reload_sharing_list(user, password, collection, callback) {
+  call_sharing_api(
+    user,
+    password,
+    "all/list",
+    { PathMapped: collection.href },
+    function (response) {
+      callback(JSON.parse(response));
+    },
+  );
+}
+
+export function add_share_by_token(
+  user,
+  password,
+  collection,
+  permissions,
+  callback,
+) {
+  call_sharing_api(
+    user,
+    password,
+    "token/create",
+    {
+      PathMapped: collection.href,
+      Permissions: permissions,
+    },
+    function (response) {
+        let json_response = JSON.parse(response);
+        if (json_response["Status"] !== "success") {
+            console.error("Failed to create share token: " + (json_response["Status"] || "Unknown error"));
+        } else {
+            callback();
+        }
+    },
+  );
+}
+
+export function delete_share_by_token(
+  user,
+  password,
+  token,
+  callback,
+) {
+  call_sharing_api(
+    user,
+    password,
+    "token/delete",
+    { PathOrToken: token },
+    function (response) {
+        let json_response = JSON.parse(response);
+        if (json_response["Status"] !== "success") {
+            console.error("Failed to create delete token " + token + ": " + (json_response["Status"] || "Unknown error"));
+        } else {
+            callback();
+        }
+    },
+  );
 }
