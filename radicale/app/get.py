@@ -76,7 +76,8 @@ class ApplicationPartGet(ApplicationBase):
                 return httputils.redirect(location, client.MOVED_PERMANENTLY)
             # Dispatch /.web path to web module
             return self._web.get(environ, base_prefix, path, user)
-        access = Access(self._rights, user, path)
+        permissions_filter = None
+        access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r") and "i" not in access.permissions:
             return httputils.NOT_ALLOWED
         with self._storage.acquire_lock("r", user):
