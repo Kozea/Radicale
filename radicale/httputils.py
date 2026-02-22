@@ -106,6 +106,10 @@ MIMETYPES: Mapping[str, str] = {
 FALLBACK_MIMETYPE: str = "application/octet-stream"
 
 
+def bad_request(additional_details: str) -> types.WSGIResponse:
+    return (client.BAD_REQUEST, (("Content-Type", "text/plain"),), f"Bad Request: {additional_details}", None)
+
+
 def decode_request(configuration: "config.Configuration",
                    environ: types.WSGIEnviron, text: bytes) -> str:
     """Try to magically decode ``text`` according to given ``environ``."""
