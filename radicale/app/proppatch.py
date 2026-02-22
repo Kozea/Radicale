@@ -4,7 +4,7 @@
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2020 Unrud <unrud@outlook.com>
 # Copyright © 2020-2020 Tuna Celik <tuna@jakpark.com>
-# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2025-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,7 +75,8 @@ class ApplicationPartProppatch(ApplicationBase):
     def do_PROPPATCH(self, environ: types.WSGIEnviron, base_prefix: str,
                      path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PROPPATCH request."""
-        access = Access(self._rights, user, path)
+        permissions_filter = None
+        access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         try:

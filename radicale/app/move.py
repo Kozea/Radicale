@@ -3,7 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2023 Unrud <unrud@outlook.com>
-# Copyright © 2023-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2023-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,7 +67,8 @@ class ApplicationPartMove(ApplicationBase):
                 # Remote destination server, not supported
                 return httputils.REMOTE_DESTINATION
 
-        access = Access(self._rights, user, path)
+        permissions_filter = None
+        access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         to_path = pathutils.sanitize_path(to_url.path)
@@ -76,7 +77,9 @@ class ApplicationPartMove(ApplicationBase):
                            "start with base prefix", to_path, path)
             return httputils.NOT_ALLOWED
         to_path = to_path[len(base_prefix):]
-        to_access = Access(self._rights, user, to_path)
+        to_user = user
+        to_permissions_filter = None
+        to_access = Access(self._rights, to_user, to_path, to_permissions_filter)
         if not to_access.check("w"):
             return httputils.NOT_ALLOWED
 
@@ -94,8 +97,7 @@ class ApplicationPartMove(ApplicationBase):
             to_item = next(iter(self._storage.discover(to_path)), None)
             if isinstance(to_item, storage.BaseCollection):
                 return httputils.FORBIDDEN
-            to_parent_path = pathutils.unstrip_path(
-                posixpath.dirname(pathutils.strip_path(to_path)), True)
+            to_parent_path = pathutils.parent_path(to_path)
             to_collection = next(iter(
                 self._storage.discover(to_parent_path)), None)
             if not to_collection:

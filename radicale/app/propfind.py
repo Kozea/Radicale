@@ -3,7 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2021 Unrud <unrud@outlook.com>
-# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2025-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -405,7 +405,9 @@ class ApplicationPartPropfind(ApplicationBase):
     def do_PROPFIND(self, environ: types.WSGIEnviron, base_prefix: str,
                     path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PROPFIND request."""
-        access = Access(self._rights, user, path)
+        http_depth = environ.get("HTTP_DEPTH", "0")
+        permissions_filter = None
+        access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r"):
             return httputils.NOT_ALLOWED
         try:
@@ -419,7 +421,7 @@ class ApplicationPartPropfind(ApplicationBase):
             return httputils.REQUEST_TIMEOUT
         with self._storage.acquire_lock("r", user):
             items_iter = iter(self._storage.discover(
-                path, environ.get("HTTP_DEPTH", "0"),
+                path, http_depth,
                 None, self._rights._user_groups))
             # take root item for rights checking
             item = next(items_iter, None)
@@ -429,11 +431,11 @@ class ApplicationPartPropfind(ApplicationBase):
                 return httputils.NOT_ALLOWED
             # put item back
             items_iter = itertools.chain([item], items_iter)
-            allowed_items = self._collect_allowed_items(items_iter, user)
-            headers = {"DAV": httputils.DAV_HEADERS,
-                       "Content-Type": "text/xml; charset=%s" % self._encoding}
-            xml_answer = xml_propfind(base_prefix, path, xml_content,
-                                      allowed_items, user, self._encoding, max_resource_size=self._max_resource_size)
-            if xml_answer is None:
-                return httputils.NOT_ALLOWED
-            return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)
+            allowed_items = list(self._collect_allowed_items(items_iter, user))
+        headers = {"DAV": httputils.DAV_HEADERS,
+                   "Content-Type": "text/xml; charset=%s" % self._encoding}
+        xml_answer = xml_propfind(base_prefix, path, xml_content,
+                                  allowed_items, user, self._encoding, max_resource_size=self._max_resource_size)
+        if xml_answer is None:
+            return httputils.NOT_ALLOWED
+        return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)

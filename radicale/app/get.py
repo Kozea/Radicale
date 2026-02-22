@@ -3,7 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2023 Unrud <unrud@outlook.com>
-# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2025-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -76,7 +76,8 @@ class ApplicationPartGet(ApplicationBase):
                 return httputils.redirect(location, client.MOVED_PERMANENTLY)
             # Dispatch /.web path to web module
             return self._web.get(environ, base_prefix, path, user)
-        access = Access(self._rights, user, path)
+        permissions_filter = None
+        access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r") and "i" not in access.permissions:
             return httputils.NOT_ALLOWED
         with self._storage.acquire_lock("r", user):
