@@ -6,7 +6,7 @@
 # Copyright © 2024-2024 Pieter Hijma <pieterhijma@users.noreply.github.com>
 # Copyright © 2024-2024 Ray <ray@react0r.com>
 # Copyright © 2024-2025 Georgiy <metallerok@gmail.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 # Copyright © 2025-2025 David Greaves <david@dgreaves.com>
 #
 # This library is free software: you can redistribute it and/or modify
