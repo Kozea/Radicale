@@ -89,6 +89,8 @@ class BaseTest:
                             (str, type(http_if_match)))
         remote_useragent = kwargs.pop("remote_useragent", None)
         remote_host = kwargs.pop("remote_host", None)
+        content_type = kwargs.pop("content_type", None)
+        accept = kwargs.pop("accept", None)
         environ: Dict[str, Any] = {k.upper(): v for k, v in kwargs.items()}
         for k, v in environ.items():
             if not isinstance(v, str):
@@ -104,6 +106,10 @@ class BaseTest:
             environ["HTTP_USER_AGENT"] = remote_useragent
         if remote_host:
             environ["REMOTE_ADDR"] = remote_host
+        if content_type:
+            environ["CONTENT_TYPE"] = content_type
+        if accept:
+            environ["HTTP_ACCEPT"] = accept
         environ["REQUEST_METHOD"] = method.upper()
         environ["PATH_INFO"] = path
         if data is not None:
