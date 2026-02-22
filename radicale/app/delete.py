@@ -57,7 +57,8 @@ class ApplicationPartDelete(ApplicationBase):
     def do_DELETE(self, environ: types.WSGIEnviron, base_prefix: str,
                   path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage DELETE request."""
-        access = Access(self._rights, user, path)
+        permissions_filter = None
+        access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         with self._storage.acquire_lock("w", user, path=path, request="DELETE"):
