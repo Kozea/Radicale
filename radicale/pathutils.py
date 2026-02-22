@@ -293,6 +293,10 @@ def path_to_filesystem(root: str, sane_path: str) -> str:
     return safe_path
 
 
+def parent_path(path: str) -> str:
+    return unstrip_path(posixpath.dirname(strip_path(path)), True)
+
+
 class UnsafePathError(ValueError):
 
     def __init__(self, path: str) -> None:
