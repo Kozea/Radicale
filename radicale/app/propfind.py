@@ -431,11 +431,11 @@ class ApplicationPartPropfind(ApplicationBase):
                 return httputils.NOT_ALLOWED
             # put item back
             items_iter = itertools.chain([item], items_iter)
-            allowed_items = self._collect_allowed_items(items_iter, user)
-            headers = {"DAV": httputils.DAV_HEADERS,
-                       "Content-Type": "text/xml; charset=%s" % self._encoding}
-            xml_answer = xml_propfind(base_prefix, path, xml_content,
-                                      allowed_items, user, self._encoding, max_resource_size=self._max_resource_size)
-            if xml_answer is None:
-                return httputils.NOT_ALLOWED
-            return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)
+            allowed_items = list(self._collect_allowed_items(items_iter, user))
+        headers = {"DAV": httputils.DAV_HEADERS,
+                   "Content-Type": "text/xml; charset=%s" % self._encoding}
+        xml_answer = xml_propfind(base_prefix, path, xml_content,
+                                  allowed_items, user, self._encoding, max_resource_size=self._max_resource_size)
+        if xml_answer is None:
+            return httputils.NOT_ALLOWED
+        return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)
