@@ -66,8 +66,7 @@ class ApplicationPartMkcol(ApplicationBase):
             item = next(iter(self._storage.discover(path)), None)
             if item:
                 return httputils.METHOD_NOT_ALLOWED
-            parent_path = pathutils.unstrip_path(
-                posixpath.dirname(pathutils.strip_path(path)), True)
+            parent_path = pathutils.parent_path(path)
             parent_item = next(iter(self._storage.discover(parent_path)), None)
             if not parent_item:
                 return httputils.CONFLICT
