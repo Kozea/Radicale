@@ -3,7 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,6 +104,10 @@ MIMETYPES: Mapping[str, str] = {
     ".woff2": "font/woff2",
     ".xml": "text/xml"}
 FALLBACK_MIMETYPE: str = "application/octet-stream"
+
+
+def bad_request(additional_details: str) -> types.WSGIResponse:
+    return (client.BAD_REQUEST, (("Content-Type", "text/plain"),), f"Bad Request: {additional_details}", None)
 
 
 def decode_request(configuration: "config.Configuration",

@@ -67,6 +67,8 @@ class ApplicationPartMove(ApplicationBase):
                 # Remote destination server, not supported
                 return httputils.REMOTE_DESTINATION
 
+        to_user = user
+        to_permissions_filter = None
         permissions_filter = None
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
@@ -77,8 +79,6 @@ class ApplicationPartMove(ApplicationBase):
                            "start with base prefix", to_path, path)
             return httputils.NOT_ALLOWED
         to_path = to_path[len(base_prefix):]
-        to_user = user
-        to_permissions_filter = None
         to_access = Access(self._rights, to_user, to_path, to_permissions_filter)
         if not to_access.check("w"):
             return httputils.NOT_ALLOWED
