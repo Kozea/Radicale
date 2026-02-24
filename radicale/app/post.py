@@ -30,4 +30,6 @@ class ApplicationPartPost(ApplicationBase):
         """Manage POST request."""
         if path == "/.web" or path.startswith("/.web/"):
             return self._web.post(environ, base_prefix, path, user)
+        elif path == "/.sharing" or path.startswith("/.sharing/"):
+            return self._sharing.post(environ, base_prefix, path, user)
         return httputils.METHOD_NOT_ALLOWED
