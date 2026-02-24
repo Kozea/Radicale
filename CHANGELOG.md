@@ -8,6 +8,7 @@
 * Fix: RECURRENCE-ID comparison on all-day events
 * Fix: format_ut problem on 32-bit systems (got lost inbetween since fixed in 3.5.8)
 * Maintain: Refactor Web UI Javascript into separate files
+* Maintain: code preparation for upcoming "sharing" extension and optimizations
 
 ## 3.6.0
 
