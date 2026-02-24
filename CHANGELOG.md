@@ -3,6 +3,7 @@
 ## 3.7.0.dev
 
 * Feature: collection sharing by map or token incl. management API
+* Add: [auth] oauth2: allow custom client_id and client_secret (optional)
 
 ## 3.6.1
 
