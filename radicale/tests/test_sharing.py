@@ -554,14 +554,14 @@ class TestSharingApiSanity(BaseTest):
             json_dict['PathOrToken'] = token2
             _, headers, answer = self._sharing_api_json("token", "delete", check=200, login="owner:ownerpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
-            assert answer_dict['ApiVersion'] == "1"
+            assert answer_dict['ApiVersion'] == 1
             assert answer_dict['Status'] == "success"
 
             logging.info("\n*** delete token (json->json)")
             json_dict = {'PathOrToken': token}
             _, headers, answer = self._sharing_api_json("token", "delete", check=200, login="owner:ownerpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
-            assert answer_dict['ApiVersion'] == "1"
+            assert answer_dict['ApiVersion'] == 1
             assert answer_dict['Status'] == "success"
 
             logging.info("\n*** delete token (form->text) -> no longer available")
