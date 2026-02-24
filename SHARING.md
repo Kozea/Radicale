@@ -144,7 +144,7 @@ PermittedCreateCollectionByToken=True
 ```
 curl -u user:pass --silent -H "accept: application/json" -d "" http://localhost:5232/.sharing/v1/all/info | jq
 {
-  "ApiVersion": "1",
+  "ApiVersion": 1,
   "Status": "success",
   "FeatureEnabledCollectionByMap": true,
   "PermittedCreateCollectionByMap": true,
