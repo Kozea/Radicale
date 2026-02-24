@@ -598,7 +598,7 @@ class BaseSharing:
         answer: dict = {}
         result: dict = {}
         result_array: list[dict]
-        answer['ApiVersion'] = "1"
+        answer['ApiVersion'] = 1
         Timestamp = int((datetime.now() - datetime(1970, 1, 1)).total_seconds())
 
         # action: list
