@@ -153,6 +153,12 @@
 # OAuth2 token endpoint URL
 #oauth2_token_endpoint = <URL>
 
+# OAuth2 client id
+#oauth2_client_id = radicale
+
+# OAuth2 client secret (optional)
+#oauth2_client_secret =
+
 # PAM service
 #pam_serivce = radicale
 
@@ -291,6 +297,25 @@
 #    }
 #  }
 #predefined_collections =
+
+
+[sharing]
+
+# Sharing database type
+# Value: none | csv | files
+#type = none
+
+# Sharing database path for type 'csv'
+#database_path = (filesystem_folder)/collection-db/sharing.csv
+
+# Sharing database path for type 'files'
+#database_path = (filesystem_folder)/collection-db/files
+
+# Share collection by map
+#collection_by_map = false
+
+# Share collection by token
+#collection_by_token = false
 
 
 [web]

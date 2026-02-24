@@ -1,6 +1,12 @@
 # Changelog
 
-## 3.6.1.dev
+## 3.7.0.dev
+
+* Feature: collection sharing by map or token incl. management API
+* Add: [auth] oauth2: allow custom client_id and client_secret (optional)
+* Cleanup: deprecate config option 'ldap_use_ssl' for good
+
+## 3.6.1
 
 * Fix: MOVE failing with URL-encoded destination header
 * Improve: add workaround to remove empty lines in item to avoid reject by vobject parser
@@ -8,7 +14,7 @@
 * Fix: RECURRENCE-ID comparison on all-day events
 * Fix: format_ut problem on 32-bit systems (got lost inbetween since fixed in 3.5.8)
 * Maintain: Refactor Web UI Javascript into separate files
-* Cleanup: deprecate config option 'ldap_use_ssl' for good
+* Maintain: code preparation for upcoming "sharing" extension and optimizations
 
 ## 3.6.0
 

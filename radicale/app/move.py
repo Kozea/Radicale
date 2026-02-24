@@ -3,7 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2023 Unrud <unrud@outlook.com>
-# Copyright © 2023-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2023-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,7 +67,18 @@ class ApplicationPartMove(ApplicationBase):
                 # Remote destination server, not supported
                 return httputils.REMOTE_DESTINATION
 
-        access = Access(self._rights, user, path)
+        to_user = user
+        to_permissions_filter = None
+        permissions_filter = None
+        if self._sharing._enabled:
+            # Sharing by token or map (if enabled)
+            sharing = self._sharing.sharing_collection_resolver(path, user)
+            if sharing:
+                # overwrite and run through extended permission check
+                path = sharing['PathMapped']
+                user = sharing['Owner']
+                permissions_filter = sharing['Permissions']
+        access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         to_path = pathutils.sanitize_path(to_url.path)
@@ -76,7 +87,16 @@ class ApplicationPartMove(ApplicationBase):
                            "start with base prefix", to_path, path)
             return httputils.NOT_ALLOWED
         to_path = to_path[len(base_prefix):]
-        to_access = Access(self._rights, user, to_path)
+        if self._sharing._enabled:
+            # Sharing by token or map (if enabled)
+            sharing = self._sharing.sharing_collection_resolver(to_path, to_user)
+            if sharing:
+                # overwrite and run through extended permission check
+                to_path = sharing['PathMapped']
+                to_user = sharing['Owner']
+                to_permissions_filter = sharing['Permissions']
+                to_access = Access(self._rights, to_user, to_path, to_permissions_filter)
+        to_access = Access(self._rights, to_user, to_path, to_permissions_filter)
         if not to_access.check("w"):
             return httputils.NOT_ALLOWED
 
@@ -94,8 +114,7 @@ class ApplicationPartMove(ApplicationBase):
             to_item = next(iter(self._storage.discover(to_path)), None)
             if isinstance(to_item, storage.BaseCollection):
                 return httputils.FORBIDDEN
-            to_parent_path = pathutils.unstrip_path(
-                posixpath.dirname(pathutils.strip_path(to_path)), True)
+            to_parent_path = pathutils.parent_path(to_path)
             to_collection = next(iter(
                 self._storage.discover(to_parent_path)), None)
             if not to_collection:

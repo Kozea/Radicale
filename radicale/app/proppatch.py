@@ -4,7 +4,7 @@
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2020 Unrud <unrud@outlook.com>
 # Copyright © 2020-2020 Tuna Celik <tuna@jakpark.com>
-# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2025-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import re
 import socket
 import xml.etree.ElementTree as ET
 from http import client
-from typing import Dict, Optional, cast
+from typing import Dict, Optional, Union, cast
 
 import defusedxml.ElementTree as DefusedET
 
@@ -37,7 +37,7 @@ from radicale.log import logger
 
 def xml_proppatch(base_prefix: str, path: str,
                   xml_request: Optional[ET.Element],
-                  collection: storage.BaseCollection) -> ET.Element:
+                  collection: storage.BaseCollection, sharing: Union[dict, None] = None) -> ET.Element:
     """Read and answer PROPPATCH requests.
 
     Read rfc4918-9.2 for info.
@@ -48,6 +48,9 @@ def xml_proppatch(base_prefix: str, path: str,
     multistatus.append(response)
     href = ET.Element(xmlutils.make_clark("D:href"))
     href.text = xmlutils.make_href(base_prefix, path)
+    if sharing:
+        # backmap
+        href.text = href.text.replace(sharing['PathMapped'], sharing['PathOrToken'])
     response.append(href)
     # Create D:propstat element for props with status 200 OK
     propstat = ET.Element(xmlutils.make_clark("D:propstat"))
@@ -75,7 +78,17 @@ class ApplicationPartProppatch(ApplicationBase):
     def do_PROPPATCH(self, environ: types.WSGIEnviron, base_prefix: str,
                      path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PROPPATCH request."""
-        access = Access(self._rights, user, path)
+        permissions_filter = None
+        sharing = None
+        if self._sharing._enabled:
+            # Sharing by token or map (if enabled)
+            sharing = self._sharing.sharing_collection_resolver(path, user)
+            if sharing:
+                # overwrite and run through extended permission check
+                path = sharing['PathMapped']
+                user = sharing['Owner']
+                permissions_filter = sharing['Permissions']
+        access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         try:
@@ -99,7 +112,7 @@ class ApplicationPartProppatch(ApplicationBase):
                        "Content-Type": "text/xml; charset=%s" % self._encoding}
             try:
                 xml_answer = xml_proppatch(base_prefix, path, xml_content,
-                                           item)
+                                           item, sharing)
                 if xml_content is not None:
                     content = DefusedET.tostring(
                         xml_content,

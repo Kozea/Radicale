@@ -3,7 +3,7 @@ name = "Radicale"
 # When the version is updated, a new section in the CHANGELOG.md file must be
 # added too.
 readme = "README.md"
-version = "3.6.1.dev"
+version = "3.7.0.dev"
 authors = [{name = "Guillaume Ayoub", email = "guillaume.ayoub@kozea.fr"}, {name = "Unrud", email = "unrud@outlook.com"}, {name = "Peter Bieringer", email = "pb@bieringer.de"}]
 license = {text = "GNU GPL v3"}
 description = "CalDAV and CardDAV Server"
@@ -103,7 +103,7 @@ radicale = [
     "web/internal_data/css/icons/edit.svg",
     "web/internal_data/css/icons/new.svg",
     "web/internal_data/css/icons/upload.svg",
-    "web/internal_data/fn.js",
+    "web/internal_data/*.js",
     "web/internal_data/index.html",
     "py.typed",
 ]

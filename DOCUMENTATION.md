@@ -726,6 +726,12 @@ _(>= 3.6.0)_
 
 Verification of a particular item file
 
+##### --verify-sharing
+
+_(>= 3.7.0)_
+
+Verification of local sharing database
+
 ##### -C|--config <file>
 
 Load one or more specified config file(s)
@@ -1345,6 +1351,22 @@ Default: `tls`
 _(>= 3.5.0)_
 
 Endpoint URL for the OAuth2 token
+
+Default: (unset)
+
+##### oauth2_client_id
+
+_(>= 3.7.0)_
+
+Client ID used to request the Auth2 token
+
+Default: `radicale`
+
+##### oauth2_client_secret
+
+_(>= 3.7.0)_
+
+Client secret used to request the Auth2 token
 
 Default: (unset)
 
@@ -2036,6 +2058,49 @@ attacks on large time frames. If the limit is reached, an HTTP error
 is thrown instead of returning the results.
 
 Default: 10000
+
+#### [sharing]
+
+_(>= 3.7.0)_
+
+##### type
+
+_(>= 3.7.0)_
+
+Sharing database type
+
+One of:
+ * `none`
+ * `csv`
+ * `files`
+
+Default: `none` (implicit disabling the feature)
+
+##### database_path
+
+_(>= 3.7.0)_
+
+Sharing database path
+
+Default:
+ * type `csv`: `(filesystem_folder)/collection-db/sharing.csv`
+ * type `files`: `(filesystem_folder)/collection-db/files`
+
+##### collection_by_token
+
+_(>= 3.7.0)_
+
+Share collection by token
+
+Default: `false`
+
+##### collection_by_map
+
+_(>= 3.7.0)_
+
+Share collection by map
+
+Default: `false`
 
 ## Supported Clients
 

@@ -3,7 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2021 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import errno
-import posixpath
 import re
 import socket
 from http import client
@@ -62,12 +61,18 @@ class ApplicationPartMkcol(ApplicationBase):
         if not props.get("tag") and "W" not in permissions:
             logger.warning("MKCOL request %r (type:%s): %s", path, collection_type, "rejected because of missing rights 'W'")
             return httputils.NOT_ALLOWED
+        if self._sharing._enabled:
+            # check for shared collections (active or inactive)
+            collections_shared_map = self._sharing.sharing_collection_map_list(user, active=False)
+            if collections_shared_map:
+                for sharing in collections_shared_map:
+                    if sharing['PathOrToken'] == path:
+                        return httputils.CONFLICT
         with self._storage.acquire_lock("w", user, path=path, request="MKCOL"):
             item = next(iter(self._storage.discover(path)), None)
             if item:
                 return httputils.METHOD_NOT_ALLOWED
-            parent_path = pathutils.unstrip_path(
-                posixpath.dirname(pathutils.strip_path(path)), True)
+            parent_path = pathutils.parent_path(path)
             parent_item = next(iter(self._storage.discover(parent_path)), None)
             if not parent_item:
                 return httputils.CONFLICT

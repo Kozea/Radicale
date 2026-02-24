@@ -2,7 +2,7 @@
 # Copyright © 2014 Jean-Marc Martins
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2025-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -291,6 +291,10 @@ def path_to_filesystem(root: str, sane_path: str) -> str:
                 if part not in (e.name for e in entries):
                     raise CollidingPathError(part)
     return safe_path
+
+
+def parent_path(path: str) -> str:
+    return unstrip_path(posixpath.dirname(strip_path(path)), True)
 
 
 class UnsafePathError(ValueError):

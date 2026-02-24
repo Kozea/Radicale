@@ -1,6 +1,6 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2020 Unrud <unrud@outlook.com>
-# Copyright © 2024-2024 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,14 +17,14 @@
 
 import io
 import logging
-import posixpath
 import sys
 import xml.etree.ElementTree as ET
-from typing import Optional
+from typing import Optional, Union
 
 from radicale import (auth, config, hook, httputils, pathutils, rights,
-                      storage, types, utils, web, xmlutils)
+                      sharing, storage, types, utils, web, xmlutils)
 from radicale.log import logger
+from radicale.rights import intersect
 
 # HACK: https://github.com/tiran/defusedxml/issues/54
 import defusedxml.ElementTree as DefusedET  # isort:skip
@@ -38,6 +38,7 @@ class ApplicationBase:
     _storage: storage.BaseStorage
     _rights: rights.BaseRights
     _web: web.BaseWeb
+    _sharing: sharing.BaseSharing
     _encoding: str
     _max_resource_size: int
     _permit_delete_collection: bool
@@ -51,6 +52,7 @@ class ApplicationBase:
         self._storage = storage.load(configuration)
         self._rights = rights.load(configuration)
         self._web = web.load(configuration)
+        self._sharing = sharing.load(configuration)
         self._encoding = configuration.get("encoding", "request")
         self._log_bad_put_request_content = configuration.get("logging", "bad_put_request_content")
         self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
@@ -106,15 +108,19 @@ class Access:
     permissions: str
     _rights: rights.BaseRights
     _parent_permissions: Optional[str]
+    _permissions_filter: Union[str, None] = None
 
-    def __init__(self, rights: rights.BaseRights, user: str, path: str
+    def __init__(self, rights: rights.BaseRights, user: str, path: str, permissions_filter: Union[str, None] = None
                  ) -> None:
         self._rights = rights
         self.user = user
         self.path = path
-        self.parent_path = pathutils.unstrip_path(
-            posixpath.dirname(pathutils.strip_path(path)), True)
+        self.parent_path = pathutils.parent_path(path)
         self.permissions = self._rights.authorization(self.user, self.path)
+        if permissions_filter is not None:
+            self._permissions_filter = permissions_filter
+            permissions_filtered = intersect(self.permissions, permissions_filter)
+            self.permissions = permissions_filtered
         self._parent_permissions = None
 
     @property
@@ -124,6 +130,9 @@ class Access:
         if self._parent_permissions is None:
             self._parent_permissions = self._rights.authorization(
                 self.user, self.parent_path)
+        if self._permissions_filter is not None:
+            parent_permissions_filtered = intersect(self._parent_permissions, self._permissions_filter)
+            self._parent_permissions = parent_permissions_filtered
         return self._parent_permissions
 
     def check(self, permission: str,
