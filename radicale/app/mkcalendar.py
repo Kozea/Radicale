@@ -54,6 +54,13 @@ class ApplicationPartMkcalendar(ApplicationBase):
             logger.warning(
                 "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
+        if self._sharing._enabled:
+            # check for shared collections (active or inactive)
+            collections_shared_map = self._sharing.sharing_collection_map_list(user, active=False)
+            if collections_shared_map:
+                for sharing in collections_shared_map:
+                    if sharing['PathOrToken'] == path:
+                        return httputils.CONFLICT
         # TODO: use this?
         # timezone = props.get("C:calendar-timezone")
         with self._storage.acquire_lock("w", user, path=path, request="MKCALENDAR"):

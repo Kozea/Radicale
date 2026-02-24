@@ -77,6 +77,14 @@ class ApplicationPartGet(ApplicationBase):
             # Dispatch /.web path to web module
             return self._web.get(environ, base_prefix, path, user)
         permissions_filter = None
+        if self._sharing._enabled:
+            # Sharing by token or map (if enabled)
+            sharing = self._sharing.sharing_collection_resolver(path, user)
+            if sharing:
+                # overwrite and run through extended permission check
+                path = sharing['PathMapped']
+                user = sharing['Owner']
+                permissions_filter = sharing['Permissions']
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r") and "i" not in access.permissions:
             return httputils.NOT_ALLOWED

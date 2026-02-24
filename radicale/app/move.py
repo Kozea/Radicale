@@ -70,6 +70,14 @@ class ApplicationPartMove(ApplicationBase):
         to_user = user
         to_permissions_filter = None
         permissions_filter = None
+        if self._sharing._enabled:
+            # Sharing by token or map (if enabled)
+            sharing = self._sharing.sharing_collection_resolver(path, user)
+            if sharing:
+                # overwrite and run through extended permission check
+                path = sharing['PathMapped']
+                user = sharing['Owner']
+                permissions_filter = sharing['Permissions']
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
@@ -79,6 +87,15 @@ class ApplicationPartMove(ApplicationBase):
                            "start with base prefix", to_path, path)
             return httputils.NOT_ALLOWED
         to_path = to_path[len(base_prefix):]
+        if self._sharing._enabled:
+            # Sharing by token or map (if enabled)
+            sharing = self._sharing.sharing_collection_resolver(to_path, to_user)
+            if sharing:
+                # overwrite and run through extended permission check
+                to_path = sharing['PathMapped']
+                to_user = sharing['Owner']
+                to_permissions_filter = sharing['Permissions']
+                to_access = Access(self._rights, to_user, to_path, to_permissions_filter)
         to_access = Access(self._rights, to_user, to_path, to_permissions_filter)
         if not to_access.check("w"):
             return httputils.NOT_ALLOWED
