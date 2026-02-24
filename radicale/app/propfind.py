@@ -384,6 +384,8 @@ class ApplicationPartPropfind(ApplicationBase):
         for item in items:
             if isinstance(item, storage.BaseCollection):
                 path = pathutils.unstrip_path(item.path, True)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("TRACE/PROPFIND/_collect_allowed_items/BaseCollection: path=%r user=%r", path, user)
                 if item.tag:
                     permissions = rights.intersect(
                         self._rights.authorization(user, path), "rw")
@@ -440,6 +442,8 @@ class ApplicationPartPropfind(ApplicationBase):
             logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         with self._storage.acquire_lock("r", user):
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/PROPFIND: discover path=%r depth=%s", path, http_depth)
             items_iter = iter(self._storage.discover(
                 path, http_depth,
                 None, self._rights._user_groups))

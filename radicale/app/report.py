@@ -242,7 +242,8 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         filter_copy = copy.deepcopy(filter_)
 
         if expand is not None:
-            logger.debug("TRACE/REPORT/xml_report: expand")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/REPORT/xml_report: expand")
             for comp_filter in filter_copy.findall(".//" + xmlutils.make_clark("C:comp-filter")):
                 if comp_filter.get("name", "").upper() == "VCALENDAR":
                     continue
@@ -326,13 +327,16 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                     n_vevents += n_vev
                     if prop.tag == xmlutils.make_clark("D:getetag"):
                         if n_vev > 0:
-                            logger.debug("TRACE/REPORT/xml_report: getetag/expanded element")
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug("TRACE/REPORT/xml_report: getetag/expanded element")
                             element.text = item.etag
                             found_props.append(element)
                         else:
-                            logger.debug("TRACE/REPORT/xml_report: getetag/no expanded element")
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug("TRACE/REPORT/xml_report: getetag/no expanded element")
                     else:
-                        logger.debug("TRACE/REPORT/xml_report: default")
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug("TRACE/REPORT/xml_report: default")
                         found_props.append(expanded_element)
                 else:
                     if prop.tag == xmlutils.make_clark("D:getetag"):
@@ -776,7 +780,8 @@ def retrieve_items(
         else:
             yield item, False
     if collection_requested:
-        logger.debug("TRACE/REPORT/retrieve_items: get_filtered")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("TRACE/REPORT/retrieve_items: get_filtered")
         yield from collection.get_filtered(filters)
 
 
