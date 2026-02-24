@@ -37,7 +37,7 @@ from configparser import RawConfigParser
 from typing import (Any, Callable, ClassVar, Iterable, List, Optional,
                     Sequence, Tuple, TypeVar, Union)
 
-from radicale import auth, hook, rights, storage, types, web
+from radicale import auth, hook, rights, sharing, storage, types, web
 from radicale.hook import email
 from radicale.item import check_and_sanitize_props
 
@@ -454,6 +454,24 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "predefined user collections",
             "type": json_str})])),
+    ("sharing", OrderedDict([
+        ("type", {
+            "value": "none",
+            "help": "sharing database type",
+            "type": str_or_callable,
+            "internal": sharing.INTERNAL_TYPES}),
+        ("database_path", {
+            "value": "",
+            "help": "database path",
+            "type": filepath}),
+        ("collection_by_map", {
+            "value": "false",
+            "help": "enable sharing of collection by map",
+            "type": bool}),
+        ("collection_by_token", {
+            "value": "false",
+            "help": "enable sharing of collection by token",
+            "type": bool})])),
     ("hook", OrderedDict([
         ("type", {
             "value": "none",
