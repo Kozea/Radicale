@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.7.0.dev
+
 ## 3.6.1
 
 * Fix: MOVE failing with URL-encoded destination header
