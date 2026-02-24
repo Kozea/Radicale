@@ -22,7 +22,7 @@ import xml.etree.ElementTree as ET
 from typing import Optional, Union
 
 from radicale import (auth, config, hook, httputils, pathutils, rights,
-                      storage, types, utils, web, xmlutils)
+                      sharing, storage, types, utils, web, xmlutils)
 from radicale.log import logger
 from radicale.rights import intersect
 
@@ -38,6 +38,7 @@ class ApplicationBase:
     _storage: storage.BaseStorage
     _rights: rights.BaseRights
     _web: web.BaseWeb
+    _sharing: sharing.BaseSharing
     _encoding: str
     _max_resource_size: int
     _permit_delete_collection: bool
@@ -51,6 +52,7 @@ class ApplicationBase:
         self._storage = storage.load(configuration)
         self._rights = rights.load(configuration)
         self._web = web.load(configuration)
+        self._sharing = sharing.load(configuration)
         self._encoding = configuration.get("encoding", "request")
         self._log_bad_put_request_content = configuration.get("logging", "bad_put_request_content")
         self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")

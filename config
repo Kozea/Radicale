@@ -296,6 +296,25 @@
 #predefined_collections =
 
 
+[sharing]
+
+# Sharing database type
+# Value: none | csv | files
+#type = none
+
+# Sharing database path for type 'csv'
+#database_path = (filesystem_folder)/collection-db/sharing.csv
+
+# Sharing database path for type 'files'
+#database_path = (filesystem_folder)/collection-db/files
+
+# Share collection by map
+#collection_by_map = false
+
+# Share collection by token
+#collection_by_token = false
+
+
 [web]
 
 # Web interface backend

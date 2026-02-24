@@ -1,7 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2011-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,8 @@ import sys
 from types import FrameType
 from typing import List, Optional, cast
 
-from radicale import VERSION, config, item, log, server, storage, types
+from radicale import (VERSION, config, item, log, server, sharing, storage,
+                      types)
 from radicale.log import logger
 
 
@@ -67,6 +68,8 @@ def run() -> None:
                         help="check the storage for errors and exit")
     parser.add_argument("--verify-item", action="store", nargs=1,
                         help="check the provided item file for errors and exit")
+    parser.add_argument("--verify-sharing", action="store_true",
+                        help="check the sharing database for errors and exit")
     parser.add_argument("-C", "--config",
                         help="use specific configuration files", nargs="*")
     parser.add_argument("-D", "--debug", action="store_const", const="debug",
@@ -206,6 +209,19 @@ def run() -> None:
         except Exception as e:
             logger.critical("An exception occurred during item "
                             "verification: %s", e, exc_info=False)
+            sys.exit(1)
+        return
+
+    if args_ns.verify_sharing:
+        logger.info("Verifying sharing database")
+        try:
+            sharing_ = sharing.load(configuration)
+            if not sharing_.verify():
+                logger.critical("Sharing database verification failed")
+                sys.exit(1)
+        except Exception as e:
+            logger.critical("An exception occurred during sharing database "
+                            "verification: %s", e, exc_info=True)
             sys.exit(1)
         return
 

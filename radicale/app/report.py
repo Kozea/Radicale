@@ -25,6 +25,7 @@
 import contextlib
 import copy
 import datetime
+import logging
 import posixpath
 import socket
 import xml.etree.ElementTree as ET
@@ -149,14 +150,15 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
 def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                collection: storage.BaseCollection, encoding: str,
                unlock_storage_fn: Callable[[], None],
-               max_occurrence: int = 0, user: str = "", remote_addr: str = "", remote_useragent: str = ""
-               ) -> Tuple[int, ET.Element]:
+               max_occurrence: int = 0, user: str = "", remote_addr: str = "", remote_useragent: str = "",
+               sharing: Union[dict, None] = None) -> Tuple[int, ET.Element]:
     """Read and answer REPORT requests that return XML.
 
     Read rfc3253-3.6 for info.
 
     """
-    logger.debug("TRACE/REPORT/xml_report: base_prefix=%r path=%r", base_prefix, path)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug("TRACE/REPORT/xml_report: base_prefix=%r path=%r", base_prefix, path)
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
     if xml_request is None:
         return client.MULTI_STATUS, multistatus
@@ -240,7 +242,8 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         filter_copy = copy.deepcopy(filter_)
 
         if expand is not None:
-            logger.debug("TRACE/REPORT/xml_report: expand")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/REPORT/xml_report: expand")
             for comp_filter in filter_copy.findall(".//" + xmlutils.make_clark("C:comp-filter")):
                 if comp_filter.get("name", "").upper() == "VCALENDAR":
                     continue
@@ -324,13 +327,16 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                     n_vevents += n_vev
                     if prop.tag == xmlutils.make_clark("D:getetag"):
                         if n_vev > 0:
-                            logger.debug("TRACE/REPORT/xml_report: getetag/expanded element")
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug("TRACE/REPORT/xml_report: getetag/expanded element")
                             element.text = item.etag
                             found_props.append(element)
                         else:
-                            logger.debug("TRACE/REPORT/xml_report: getetag/no expanded element")
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug("TRACE/REPORT/xml_report: getetag/no expanded element")
                     else:
-                        logger.debug("TRACE/REPORT/xml_report: default")
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug("TRACE/REPORT/xml_report: default")
                         found_props.append(expanded_element)
                 else:
                     if prop.tag == xmlutils.make_clark("D:getetag"):
@@ -354,7 +360,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         if found_props or not_found_props:
             multistatus.append(xml_item_response(
                 base_prefix, uri, found_props=found_props,
-                not_found_props=not_found_props, found_item=True))
+                not_found_props=not_found_props, found_item=True, sharing=sharing))
 
     return client.MULTI_STATUS, multistatus
 
@@ -705,11 +711,13 @@ def _find_overridden(
 def xml_item_response(base_prefix: str, href: str,
                       found_props: Sequence[ET.Element] = (),
                       not_found_props: Sequence[ET.Element] = (),
-                      found_item: bool = True) -> ET.Element:
+                      found_item: bool = True, sharing: Union[dict, None] = None) -> ET.Element:
     response = ET.Element(xmlutils.make_clark("D:response"))
 
     href_element = ET.Element(xmlutils.make_clark("D:href"))
     href_element.text = xmlutils.make_href(base_prefix, href)
+    if sharing:
+        href_element.text = href_element.text.replace(sharing['PathMapped'], sharing['PathOrToken'])
     response.append(href_element)
 
     if found_item:
@@ -772,7 +780,8 @@ def retrieve_items(
         else:
             yield item, False
     if collection_requested:
-        logger.debug("TRACE/REPORT/retrieve_items: get_filtered")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("TRACE/REPORT/retrieve_items: get_filtered")
         yield from collection.get_filtered(filters)
 
 
@@ -811,6 +820,15 @@ class ApplicationPartReport(ApplicationBase):
                   path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage REPORT request."""
         permissions_filter = None
+        sharing = None
+        if self._sharing._enabled:
+            # Sharing by token or map (if enabled)
+            sharing = self._sharing.sharing_collection_resolver(path, user)
+            if sharing:
+                # overwrite and run through extended permission check
+                path = sharing['PathMapped']
+                user = sharing['Owner']
+                permissions_filter = sharing['Permissions']
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r"):
             return httputils.NOT_ALLOWED
@@ -853,7 +871,7 @@ class ApplicationPartReport(ApplicationBase):
                 try:
                     status, xml_answer = xml_report(
                         base_prefix, path, xml_content, collection, self._encoding,
-                        lock_stack.close, max_occurrence, user, remote_host, remote_useragent)
+                        lock_stack.close, max_occurrence, user, remote_host, remote_useragent, sharing=sharing)
                 except ValueError as e:
                     logger.warning(
                         "Bad REPORT request on %r: %s", path, e, exc_info=True)

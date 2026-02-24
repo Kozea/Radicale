@@ -20,11 +20,13 @@
 
 import collections
 import itertools
+import logging
 import posixpath
 import socket
 import xml.etree.ElementTree as ET
 from http import client
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
+from typing import (Dict, Iterable, Iterator, List, Optional, Sequence, Tuple,
+                    Union)
 
 from radicale import (httputils, pathutils, rights, storage, types, utils,
                       xmlutils)
@@ -35,7 +37,7 @@ from radicale.log import logger
 def xml_propfind(base_prefix: str, path: str,
                  xml_request: Optional[ET.Element],
                  allowed_items: Iterable[Tuple[types.CollectionOrItem, str]],
-                 user: str, encoding: str, max_resource_size: int) -> Optional[ET.Element]:
+                 user: str, encoding: str, max_resource_size: int, sharing: Union[dict, None] = None) -> Optional[ET.Element]:
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -72,7 +74,7 @@ def xml_propfind(base_prefix: str, path: str,
         write = permission == "w"
         multistatus.append(xml_propfind_response(
             base_prefix, path, item, props, user, encoding, write=write,
-            allprop=allprop, propname=propname, max_resource_size=max_resource_size))
+            allprop=allprop, propname=propname, max_resource_size=max_resource_size, sharing=sharing))
 
     return multistatus
 
@@ -80,7 +82,7 @@ def xml_propfind(base_prefix: str, path: str,
 def xml_propfind_response(
         base_prefix: str, path: str, item: types.CollectionOrItem,
         props: Sequence[str], user: str, encoding: str, max_resource_size: int, write: bool = False,
-        propname: bool = False, allprop: bool = False) -> ET.Element:
+        propname: bool = False, allprop: bool = False, sharing: Union[dict, None] = None) -> ET.Element:
     """Build and return a PROPFIND response."""
     if propname and allprop or (props and (propname or allprop)):
         raise ValueError("Only use one of props, propname and allprops")
@@ -100,6 +102,9 @@ def xml_propfind_response(
             collection.path, item.href))
     response = ET.Element(xmlutils.make_clark("D:response"))
     href = ET.Element(xmlutils.make_clark("D:href"))
+    if sharing:
+        # backmap
+        uri = uri.replace(sharing['PathMapped'], sharing['PathOrToken'])
     href.text = xmlutils.make_href(base_prefix, uri)
     response.append(href)
 
@@ -178,6 +183,9 @@ def xml_propfind_response(
               is_collection and collection.is_principal):
             child_element = ET.Element(xmlutils.make_clark("D:href"))
             child_element.text = xmlutils.make_href(base_prefix, path)
+            if sharing:
+                # backmap
+                child_element.text = child_element.text.replace(sharing['PathMapped'], sharing['PathOrToken'])
             element.append(child_element)
         elif tag == xmlutils.make_clark("C:supported-calendar-component-set"):
             human_tag = xmlutils.make_human_tag(tag)
@@ -213,6 +221,9 @@ def xml_propfind_response(
                 child_element = ET.Element(xmlutils.make_clark("D:href"))
                 child_element.text = xmlutils.make_href(
                     base_prefix, "/%s/" % user)
+                if sharing:
+                    # backmap
+                    child_element.text = child_element.text.replace(sharing['Owner'], sharing['User'])
                 element.append(child_element)
             else:
                 element.append(ET.Element(
@@ -373,6 +384,8 @@ class ApplicationPartPropfind(ApplicationBase):
         for item in items:
             if isinstance(item, storage.BaseCollection):
                 path = pathutils.unstrip_path(item.path, True)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("TRACE/PROPFIND/_collect_allowed_items/BaseCollection: path=%r user=%r", path, user)
                 if item.tag:
                     permissions = rights.intersect(
                         self._rights.authorization(user, path), "rw")
@@ -407,6 +420,15 @@ class ApplicationPartPropfind(ApplicationBase):
         """Manage PROPFIND request."""
         http_depth = environ.get("HTTP_DEPTH", "0")
         permissions_filter = None
+        sharing = None
+        if self._sharing._enabled:
+            # Sharing by token or map (if enabled)
+            sharing = self._sharing.sharing_collection_resolver(path, user)
+            if sharing:
+                # overwrite and run through extended permission check
+                path = sharing['PathMapped']
+                user = sharing['Owner']
+                permissions_filter = sharing['Permissions']
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r"):
             return httputils.NOT_ALLOWED
@@ -420,6 +442,8 @@ class ApplicationPartPropfind(ApplicationBase):
             logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         with self._storage.acquire_lock("r", user):
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/PROPFIND: discover path=%r depth=%s", path, http_depth)
             items_iter = iter(self._storage.discover(
                 path, http_depth,
                 None, self._rights._user_groups))
@@ -432,10 +456,35 @@ class ApplicationPartPropfind(ApplicationBase):
             # put item back
             items_iter = itertools.chain([item], items_iter)
             allowed_items = list(self._collect_allowed_items(items_iter, user))
+        if self._sharing._enabled:
+            if http_depth == "1":
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("TRACE/PROPFIND: get shared collections")
+                # check for shared collections
+                collections_shared_map = self._sharing.sharing_collection_map_list(user)
+                if collections_shared_map:
+                    for sharing in collections_shared_map:
+                        c_share = sharing['PathOrToken']
+                        c_path = sharing['PathMapped']
+                        c_user = sharing['Owner']
+                        c_permissions_filter = sharing['Permissions']
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug("TRACE/PROPFIND: test shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%s", c_share, c_path, c_user, c_permissions_filter)
+                        c_access = Access(self._rights, c_user, c_path, c_permissions_filter)
+                        if not c_access.check("r"):
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug("TRACE/PROPFIND: skip shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%s (permissions not matching)", c_share, c_path, c_user, c_permissions_filter)
+                            continue
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug("TRACE/PROPFIND: append shared collection: PathOrToken=%r PathMapped=%r Owner=%r", c_share, c_path, c_user)
+                        with self._storage.acquire_lock("r", c_user):
+                            c_items_iter = iter(self._storage.discover(c_path, "0"))
+                            c_allowed_items = list(self._collect_allowed_items(c_items_iter, c_user))
+                        allowed_items = allowed_items + c_allowed_items
         headers = {"DAV": httputils.DAV_HEADERS,
                    "Content-Type": "text/xml; charset=%s" % self._encoding}
         xml_answer = xml_propfind(base_prefix, path, xml_content,
-                                  allowed_items, user, self._encoding, max_resource_size=self._max_resource_size)
+                                  allowed_items, user, self._encoding, max_resource_size=self._max_resource_size, sharing=sharing)
         if xml_answer is None:
             return httputils.NOT_ALLOWED
         return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)
