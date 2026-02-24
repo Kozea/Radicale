@@ -684,17 +684,11 @@ below.</p>
 <span id="cb26-10"><a aria-hidden="true" href="#cb26-10" tabindex="-1"></a>RequestHeader<span class="st"> set X-Forwarded-Proto "https"</span></span>
 <span id="cb26-11"><a aria-hidden="true" href="#cb26-11" tabindex="-1"></a><span class="fu">&lt;/If&gt;</span></span></code></pre></div>
 <p>Example <strong>lighttpd</strong> configuration:</p>
-<pre class="lighttpd"><code>server.modules += ( "mod_proxy" , "mod_setenv", "mod_rewrite" )
+<pre class="lighttpd"><code>server.modules += ( "mod_proxy" , "mod_setenv" )
 
 $HTTP["url"] =~ "^/radicale/" {
   proxy.server = ( "" =&gt; (( "host" =&gt; "127.0.0.1", "port" =&gt; "5232" )) )
-  proxy.header = ( "map-urlpath" =&gt; ( "/radicale/" =&gt; "/" ))
-
-  setenv.add-request-header = (
-    "X-Script-Name" =&gt; "/radicale",
-    "Script-Name" =&gt; "/radicale",
-  )
-  url.rewrite-once = ( "^/radicale/radicale/(.*)" =&gt; "/radicale/$1" )
+  setenv.add-request-header = ( "X-Script-Name" =&gt; "/radicale" )
 }</code></pre>
 <p>Be reminded that Radicale's default configuration enforces limits on
 the maximum number of parallel connections, the maximum file size and
