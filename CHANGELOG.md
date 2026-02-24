@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.6.1.dev
+## 3.6.1
 
 * Fix: MOVE failing with URL-encoded destination header
 * Improve: add workaround to remove empty lines in item to avoid reject by vobject parser
