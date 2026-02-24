@@ -34,6 +34,8 @@ class Auth(auth.BaseAuth):
     def __init__(self, configuration):
         super().__init__(configuration)
         self._endpoint = configuration.get("auth", "oauth2_token_endpoint")
+        self._client_id = configuration.get("auth", "oauth2_client_id")
+        self._client_secret = configuration.get("auth", "oauth2_client_secret")
         if not self._endpoint:
             logger.error("auth.oauth2_token_endpoint URL missing")
             raise RuntimeError("OAuth2 token endpoint URL is required")
@@ -49,8 +51,11 @@ class Auth(auth.BaseAuth):
                 "username": login,
                 "password": password,
                 "grant_type": "password",
-                "client_id": "radicale",
+                "client_id": self._client_id,
             }
+            if self._client_secret:
+                req_params["client_secret"] = self._client_secret
+
             req_headers = {"Content-Type": "application/x-www-form-urlencoded"}
             response = requests.post(
                 self._endpoint, data=req_params, headers=req_headers

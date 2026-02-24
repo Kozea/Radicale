@@ -354,6 +354,14 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "OAuth2 token endpoint URL",
             "type": str}),
+        ("oauth2_client_id", {
+            "value": "radicale",
+            "help": "OAuth2 client id",
+            "type": str}),
+        ("oauth2_client_secret", {
+            "value": "",
+            "help": "OAuth2 client secret",
+            "type": str}),
         ("pam_group_membership", {
             "value": "",
             "help": "PAM group user should be member of",

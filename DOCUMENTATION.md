@@ -1360,6 +1360,22 @@ Endpoint URL for the OAuth2 token
 
 Default: (unset)
 
+##### oauth2_client_id
+
+_(>= 3.5.0)_
+
+Client ID used to request the Auth2 token
+
+Default: `radicale`
+
+##### oauth2_client_secret
+
+_(>= 3.5.0)_
+
+Client secret used to request the Auth2 token
+
+Default: (unset)
+
 ##### pam_service
 
 _(>= 3.5.0)_
