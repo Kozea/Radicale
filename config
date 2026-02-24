@@ -157,10 +157,10 @@
 #oauth2_token_endpoint = <URL>
 
 # OAuth2 client id
-#oauth2_client_id = <client_id>
+#oauth2_client_id = radicale
 
-# OAuth2 client secret
-#oauth2_client_secret = <client_secret>
+# OAuth2 client secret (optional)
+#oauth2_client_secret =
 
 # PAM service
 #pam_serivce = radicale
