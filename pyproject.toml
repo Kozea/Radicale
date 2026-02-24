@@ -103,7 +103,7 @@ radicale = [
     "web/internal_data/css/icons/edit.svg",
     "web/internal_data/css/icons/new.svg",
     "web/internal_data/css/icons/upload.svg",
-    "web/internal_data/fn.js",
+    "web/internal_data/*.js",
     "web/internal_data/index.html",
     "py.typed",
 ]
