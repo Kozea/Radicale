@@ -4,6 +4,7 @@
 
 * Feature: collection sharing by map or token incl. management API
 * Add: [auth] oauth2: allow custom client_id and client_secret (optional)
+* Cleanup: deprecate config option 'ldap_use_ssl' for good
 
 ## 3.6.1
 

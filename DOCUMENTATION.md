@@ -1149,12 +1149,6 @@ login names.
 
 Default: (unset, in which case the login name is directly used as the username)
 
-##### ldap_use_ssl
-
-_(>= 3.3.0)_
-
-Use ssl on the LDAP connection. **Deprecated!** Use `ldap_security` instead.
-
 ##### ldap_security
 
 _(>= 3.5.2)_

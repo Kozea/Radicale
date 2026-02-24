@@ -306,10 +306,6 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "Attribute to be used as username after authentication",
             "type": str}),
-        ("ldap_use_ssl", {
-            "value": "False",
-            "help": "Use ssl on the LDAP connection. Deprecated, use ldap_security instead!",
-            "type": bool}),
         ("ldap_security", {
             "value": "none",
             "help": "Encryption mode to be used: *none*|tls|starttls",

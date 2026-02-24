@@ -101,9 +101,6 @@
 # Attribute holding the value to be used as username after authentication
 #ldap_user_attribute = cn
 
-# Use ssl on the LDAP connection (DEPRECATED - use 'ldap_security'!)
-#ldap_use_ssl = False
-
 # Encryption mode to be used. Default: none; one of: none, tls, starttls
 #ldap_security = none
 
