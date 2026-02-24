@@ -200,6 +200,7 @@ Options</a></li>
 <li class="level4"><a href="#headers" id="toc-headers">[headers]</a></li>
 <li class="level4"><a href="#hook-1" id="toc-hook-1">[hook]</a></li>
 <li class="level4"><a href="#reporting" id="toc-reporting">[reporting]</a></li>
+<li class="level4"><a href="#sharing" id="toc-sharing">[sharing]</a></li>
 </ul></li>
 </ul></li>
 <li class="level2"><a href="#supported-clients" id="toc-supported-clients">Supported
@@ -884,6 +885,11 @@ logging</a>.</p>
 <h5>--verify-item <file></file> <a class="headerlink" href="#--verify-item-">&para;</a></h5>
 <p><em>(&gt;= 3.6.0)</em></p>
 <p>Verification of a particular item file</p>
+</section>
+<section class="level5" id="--verify-sharing">
+<h5>--verify-sharing <a class="headerlink" href="#--verify-sharing">&para;</a></h5>
+<p><em>(&gt;= 3.7.0)</em></p>
+<p>Verification of local sharing database</p>
 </section>
 <section class="level5" id="-c--config-">
 <h5>-C|--config <file></file> <a class="headerlink" href="#-c--config-">&para;</a></h5>
@@ -2058,6 +2064,46 @@ setting limits the lookup to prevent potential denial of service attacks
 on large time frames. If the limit is reached, an HTTP error is thrown
 instead of returning the results.</p>
 <p>Default: 10000</p>
+</section>
+</section>
+<section class="level4" id="sharing">
+<h4>[sharing] <a class="headerlink" href="#sharing">&para;</a></h4>
+<p><em>(&gt;= 3.7.0)</em></p>
+<section class="level5" id="type-5">
+<h5>type <a class="headerlink" href="#type-5">&para;</a></h5>
+<p><em>(&gt;= 3.7.0)</em></p>
+<p>Sharing database type</p>
+<p>One of:</p>
+<ul>
+<li><code>none</code></li>
+<li><code>csv</code></li>
+<li><code>files</code></li>
+</ul>
+<p>Default: <code>none</code> (implicit disabling the feature)</p>
+</section>
+<section class="level5" id="database_path">
+<h5>database_path <a class="headerlink" href="#database_path">&para;</a></h5>
+<p><em>(&gt;= 3.7.0)</em></p>
+<p>Sharing database path</p>
+<p>Default:</p>
+<ul>
+<li>type <code>csv</code>:
+<code>(filesystem_folder)/collection-db/sharing.csv</code></li>
+<li>type <code>files</code>:
+<code>(filesystem_folder)/collection-db/files</code></li>
+</ul>
+</section>
+<section class="level5" id="collection_by_token">
+<h5>collection_by_token <a class="headerlink" href="#collection_by_token">&para;</a></h5>
+<p><em>(&gt;= 3.7.0)</em></p>
+<p>Share collection by token</p>
+<p>Default: <code>false</code></p>
+</section>
+<section class="level5" id="collection_by_map">
+<h5>collection_by_map <a class="headerlink" href="#collection_by_map">&para;</a></h5>
+<p><em>(&gt;= 3.7.0)</em></p>
+<p>Share collection by map</p>
+<p>Default: <code>false</code></p>
 </section>
 </section>
 </section>
