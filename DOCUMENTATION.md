@@ -2324,8 +2324,8 @@ The following `permissions` are recognized:
 * **w:** write address book and calendar collections
 * **D:** allow deleting a collection in case `permit_delete_collection=False` _(>= 3.3.0)_
 * **d:** deny deleting a collection in case `permit_delete_collection=True` _(>= 3.3.0)_
-* **O:** allow overwriting a collection in case `permit_overwrite_collection=False`
-* **o:** deny overwriting a collection in case `permit_overwrite_collection=True`
+* **O:** allow overwriting a collection in case `permit_overwrite_collection=False` _(>= 3.3.0)_
+* **o:** deny overwriting a collection in case `permit_overwrite_collection=True` _(>= 3.3.0)_
 
 ### Storage
 
