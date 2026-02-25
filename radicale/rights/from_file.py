@@ -116,6 +116,7 @@ class Rights(rights.BaseRights):
                                    "%s" % (section, self._filename, e)) from e
             # evaluate permissions
             if collection_match:
+                permission = self._rights_config.get(section, "permissions")
                 if user_match and group_match:
                     logger.debug("Rule %r:%r:%r matches %r:%r:%r from section %r permission %r",
                                  user, group, sane_path, user_pattern, group_pattern,
@@ -128,7 +129,6 @@ class Rights(rights.BaseRights):
                     logger.debug("Rule %r:%r matches %r:%r from section %r permission %r",
                                  group, sane_path, group_pattern,
                                  collection_pattern, section, permission)
-                permission = self._rights_config.get(section, "permissions")
                 return permission
             if self._log_rights_rule_doesnt_match_on_debug:
                 logger.debug("Rule %r:%r doesn't match %r:%r from section %r",
