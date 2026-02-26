@@ -2261,10 +2261,10 @@ permissions: RrWw""")
         json_dict: dict
 
         path_user1 = "/user1/calendarPGu1.ics/"
-        path_owner1_T = "/owner1/cal-T/"
-        path_owner1_t = "/owner1/cal-t/"
-        path_owner1_M = "/owner1/cal-M/"
-        path_owner1_m = "/owner1/cal-m/"
+        path_owner1_T = "/owner1/cal-T-uc/"
+        path_owner1_t = "/owner1/cal-t-lc/"
+        path_owner1_M = "/owner1/cal-M-uc/"
+        path_owner1_m = "/owner1/cal-m-lc/"
 
         logging.info("\n*** prepare")
         self.mkcalendar(path_owner1_T, login="owner1:owner1pw")
