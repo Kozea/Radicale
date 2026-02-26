@@ -43,6 +43,8 @@ from radicale import config, utils
 INTERNAL_TYPES: Sequence[str] = ("authenticated", "owner_write", "owner_only",
                                  "from_file")
 
+INTERNAL_PERMISSIONS: str = "RriWwDdOoTtMm"
+
 
 def load(configuration: "config.Configuration") -> "BaseRights":
     """Load the rights module chosen in configuration."""

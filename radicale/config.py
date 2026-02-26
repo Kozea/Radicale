@@ -66,6 +66,13 @@ def positive_float(value: Any) -> float:
     return value
 
 
+def rights_permission(value: Any) -> str:
+    for permission in value:
+        if permission not in rights.INTERNAL_PERMISSIONS:
+            raise ValueError("unsupported permssion %r found in: %r" % (permission, value))
+    return value
+
+
 def logging_level(value: Any) -> str:
     if value not in ("debug", "info", "warning", "error", "critical"):
         raise ValueError("unsupported level: %r" % value)
