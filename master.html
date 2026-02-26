@@ -2111,6 +2111,40 @@ instead of returning the results.</p>
 <p>Share collection by map</p>
 <p>Default: <code>false</code></p>
 </section>
+<section class="level5" id="permit_create_token">
+<h5>permit_create_token <a class="headerlink" href="#permit_create_token">&para;</a></h5>
+<p><em>(&gt;= 3.7.0)</em></p>
+<p>Permit create of token-based sharing</p>
+<p>Default: <code>false</code></p>
+<ul>
+<li>If <code>False</code> it can be explicitly granted by
+<code>permissions: t</code></li>
+<li>If <code>True</code> it can be explicitly forbidden by
+<code>permissions: T</code></li>
+</ul>
+</section>
+<section class="level5" id="permit_create_map">
+<h5>permit_create_map <a class="headerlink" href="#permit_create_map">&para;</a></h5>
+<p><em>(&gt;= 3.7.0)</em></p>
+<p>Permit create of map-based sharing</p>
+<p>Default: <code>false</code></p>
+<ul>
+<li>If <code>False</code> it can be explicitly granted by
+<code>permissions: m</code></li>
+<li>If <code>True</code> it can be explicitly forbidden by
+<code>permissions: M</code></li>
+</ul>
+</section>
+<section class="level5" id="default_permissions_create_token">
+<h5>default_permissions_create_token <a class="headerlink" href="#default_permissions_create_token">&para;</a></h5>
+<p>Default permissions for create token-based sharing</p>
+<p>Default: <code>r</code></p>
+</section>
+<section class="level5" id="default_permissions_create_map">
+<h5>default_permissions_create_map <a class="headerlink" href="#default_permissions_create_map">&para;</a></h5>
+<p>Default permissions for map-based sharing</p>
+<p>Default: <code>r</code></p>
+</section>
 </section>
 </section>
 </section>
@@ -2333,6 +2367,17 @@ calendars)</li>
 <li><strong>o:</strong> deny overwriting a collection in case
 <code>permit_overwrite_collection=True</code> <em>(&gt;=
 3.3.0)</em></li>
+<li><strong>T:</strong> permit create of token-based sharing of
+collection in case <code>permit_create_token=False</code> <em>(&gt;=
+3.7.0)</em></li>
+<li><strong>t:</strong> deny create of token-based sharing of collection
+in case <code>permit_create_token=True</code> <em>(&gt;=
+3.7.0)</em></li>
+<li><strong>M:</strong> permit create of map-based sharing of collection
+in case <code>permit_create_map= False</code> <em>(&gt;=
+3.7.0)</em></li>
+<li><strong>m:</strong> deny create of map-based sharing of collection
+in case <code>permit_create_map=True</code> <em>(&gt;= 3.7.0)</em></li>
 </ul>
 </section>
 <section class="level3" id="storage-2">
