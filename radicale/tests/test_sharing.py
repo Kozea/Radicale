@@ -2223,19 +2223,19 @@ collection: {user}
 permissions: RrWw
 [owner1-T]
 user: owner1
-collection: {user}/cal-T(/.*)?
+collection: {user}/cal-T-uc(/.*)?
 permissions: RrWwT
 [owner1-t]
 user: owner1
-collection: {user}/cal-t(/.*)?
+collection: {user}/cal-t-lc(/.*)?
 permissions: RrWwt
 [owner1-M]
 user: owner1
-collection: {user}/cal-M(/.*)?
+collection: {user}/cal-M-uc(/.*)?
 permissions: RrWwM
 [owner1-m]
 user: owner1
-collection: {user}/cal-m(/.*)?
+collection: {user}/cal-m-lc(/.*)?
 permissions: RrWwm
 [default]
 user: .+
