@@ -2288,22 +2288,22 @@ permissions: RrWw""")
 
             logging.info("\n*** create map user1/owner1, globally disabled / not granted M -> 403")
             json_dict['PathMapped'] = path_owner1_M
-            json_dict['PathOrToken'] = path_user1 + "dM" + db_type
+            json_dict['PathOrToken'] = path_user1 + "dM-uc" + db_type
             _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally disabled / not granted T -> 403")
             json_dict['PathMapped'] = path_owner1_T
-            json_dict['PathOrToken'] = path_user1 + "dT" + db_type
+            json_dict['PathOrToken'] = path_user1 + "dT-uc" + db_type
             _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally disabled / not granted t -> 403")
             json_dict['PathMapped'] = path_owner1_t
-            json_dict['PathOrToken'] = path_user1 + "dt" + db_type
+            json_dict['PathOrToken'] = path_user1 + "dt-lc" + db_type
             _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally disabled / granted m -> 200")
             json_dict['PathMapped'] = path_owner1_m
-            json_dict['PathOrToken'] = path_user1 + "dm" + db_type
+            json_dict['PathOrToken'] = path_user1 + "dm-lc" + db_type
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally enabled")
@@ -2311,22 +2311,22 @@ permissions: RrWw""")
 
             logging.info("\n*** create map user1/owner1, globally enabled / not granted M -> 403")
             json_dict['PathMapped'] = path_owner1_M
-            json_dict['PathOrToken'] = path_user1 + "eM" + db_type
+            json_dict['PathOrToken'] = path_user1 + "eM-uc" + db_type
             _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally enabled / ignore T -> 200")
             json_dict['PathMapped'] = path_owner1_T
-            json_dict['PathOrToken'] = path_user1 + "eT" + db_type
+            json_dict['PathOrToken'] = path_user1 + "eT-uc" + db_type
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally enabled / ignore t -> 200")
             json_dict['PathMapped'] = path_owner1_t
-            json_dict['PathOrToken'] = path_user1 + "et" + db_type
+            json_dict['PathOrToken'] = path_user1 + "et-lc" + db_type
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally enabled / ignore m -> 200")
             json_dict['PathMapped'] = path_owner1_m
-            json_dict['PathOrToken'] = path_user1 + "em" + db_type
+            json_dict['PathOrToken'] = path_user1 + "em-lc" + db_type
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             # create token
