@@ -311,11 +311,27 @@
 # Sharing database path for type 'files'
 #database_path = (filesystem_folder)/collection-db/files
 
+# Share collection by token
+#collection_by_token = false
+
 # Share collection by map
 #collection_by_map = false
 
-# Share collection by token
-#collection_by_token = false
+# Permit create of token-based sharing
+#  If False it can be explicitly granted by permissions: t
+#  If True it can be explicitly forbidden by permissions: T
+#permit_create_token = false
+
+# Permit create of map-based sharing
+#  If False it can be explicitly granted by permissions: m
+#  If True it can be explicitly forbidden by permissions: M
+#permit_create_map = false
+
+# Default permissions for token-based sharing
+#default_permissions_create_token = r
+
+# Default permissions for map-based sharing
+#default_permissions_create_map = r
 
 
 [web]

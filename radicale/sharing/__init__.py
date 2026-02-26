@@ -102,8 +102,16 @@ class BaseSharing:
         # Sharing
         self.sharing_collection_by_map = configuration.get("sharing", "collection_by_map")
         self.sharing_collection_by_token = configuration.get("sharing", "collection_by_token")
+        self.permit_create_token = configuration.get("sharing", "permit_create_token")
+        self.permit_create_map = configuration.get("sharing", "permit_create_map")
+        self.default_permissions_create_token = configuration.get("sharing", "default_permissions_create_token")
+        self.default_permissions_create_map = configuration.get("sharing", "default_permissions_create_map")
         logger.info("sharing.collection_by_map  : %s", self.sharing_collection_by_map)
         logger.info("sharing.collection_by_token: %s", self.sharing_collection_by_token)
+        logger.info("sharing.permit_create_token: %s", self.permit_create_token)
+        logger.info("sharing.permit_create_map  : %s", self.permit_create_map)
+        logger.info("sharing.default_permissions_create_token: %r", self.default_permissions_create_token)
+        logger.info("sharing.default_permissions_create_map  : %r", self.default_permissions_create_map)
 
         if ((self.sharing_collection_by_map is False) and (self.sharing_collection_by_token is False)):
             logger.info("sharing disabled as no feature is enabled")
@@ -634,7 +642,13 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + ": start")
             if 'Permissions' not in request_data:
-                Permissions = "r"
+                if ShareType == "token":
+                    Permissions = self.default_permissions_create_token
+                elif ShareType == "map":
+                    Permissions = self.default_permissions_create_map
+                else:
+                    # default
+                    Permissions = "r"
 
             if 'Enabled' in request_data:
                 EnabledByOwner = config._convert_to_bool(request_data['Enabled'])
@@ -652,9 +666,18 @@ class BaseSharing:
             if ShareType == "token":
                 # check access Permissions
                 access = Access(self._rights, user, str(PathMapped))  # PathMapped is mandatory
-                if not access.check("r") and "i" not in access.permissions:
+                if not access.check("r"):
                     logger.info("Add sharing-by-token: access to %r not allowed for user %r", PathMapped, user)
                     return httputils.NOT_ALLOWED
+
+                if self.permit_create_token is False:
+                    if "t" not in access.permissions:
+                        logger.info("Add sharing-by-token: access to %r not allowed for user %r (permit=False but explict grant misses 't')", PathMapped, user)
+                        return httputils.NOT_ALLOWED
+                else:
+                    if "T" in access.permissions:
+                        logger.info("Add sharing-by-token: access to %r not allowed for user %r (permit=True but denied by 'T')", PathMapped, user)
+                        return httputils.NOT_ALLOWED
 
                 # v1: create uuid token with 2x 32 bytes = 256 bit
                 token = "v1/" + str(base64.urlsafe_b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes), 'utf-8')
@@ -690,9 +713,18 @@ class BaseSharing:
                     logger.info("Add sharing-by-map: access to path(mapped) %r not allowed for owner %r", PathMapped, Owner)
                     return httputils.NOT_ALLOWED
 
+                if self.permit_create_map is False:
+                    if "m" not in access.permissions:
+                        logger.info("Add sharing-by-map: access to %r not allowed for user %r (permit=False but explicit grant misses 'm')", PathMapped, user)
+                        return httputils.NOT_ALLOWED
+                else:
+                    if "M" in access.permissions:
+                        logger.info("Add sharing-by-map: access to %r not allowed for user %r (permit=True but denied by 'M')", PathMapped, user)
+                        return httputils.NOT_ALLOWED
+
                 access = Access(self._rights, str(User), PathOrToken)
-                if not access.check("r") and "i" not in access.permissions:
-                    logger.info("Add sharing-by-map: access to path %r not allowed for user %r", PathOrToken, user)
+                if not access.check("r"):
+                    logger.info("Add sharing-by-map: access to path %r not allowed for user %r", PathOrToken, User)
                     return httputils.NOT_ALLOWED
 
                 # check whether share is already existing as real collection

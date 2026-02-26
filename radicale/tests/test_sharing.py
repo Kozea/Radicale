@@ -185,6 +185,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "true",
@@ -272,6 +274,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -458,6 +462,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -613,6 +619,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -800,6 +808,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -892,6 +902,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -1084,6 +1096,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -1183,6 +1197,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -1328,6 +1344,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -1428,6 +1446,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -1596,6 +1616,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -1795,6 +1817,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -1911,6 +1935,8 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -2048,12 +2074,14 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['Lines'] == 1
 
     def test_sharing_api_create_conflict(self) -> None:
-        """sharing API usage tests related to update."""
+        """sharing API usage tests related to conflicts."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -2127,3 +2155,340 @@ class TestSharingApiSanity(BaseTest):
             json_dict['Enabled'] = "True"
             json_dict['Hidden'] = "False"
             _, headers, answer = self._sharing_api_json("map", "create", check=409, login="owner1:owner1pw", json_dict=json_dict)
+
+    def test_sharing_api_permissions_global(self) -> None:
+        """sharing API usage tests related to global permissions."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "False",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+        json_dict: dict
+
+        path_user1 = "/user1/calendarPGu1.ics/"
+        path_owner1 = "/owner1/calendarPGo1.ics/"
+
+        logging.info("\n*** prepare")
+        self.mkcalendar(path_owner1, login="owner1:owner1pw")
+
+        for db_type in sharing.INTERNAL_TYPES:
+            if db_type == "none":
+                continue
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # create map
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_owner1
+            json_dict['PathOrToken'] = path_user1
+
+            logging.info("\n*** create map user1/owner1 but globally disabled -> 403")
+            self.configure({"sharing": {"permit_create_map": "False"}})
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map user1/owner1 but globally enabled -> 200")
+            self.configure({"sharing": {"permit_create_map": "True"}})
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            # create token
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_owner1
+
+            logging.info("\n*** create token owner1 but globally disabled -> 403")
+            self.configure({"sharing": {"permit_create_token": "False"}})
+            _, headers, answer = self._sharing_api_json("token", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create token owner1 but globally enabled -> 200")
+            self.configure({"sharing": {"permit_create_token": "True"}})
+            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+    def test_sharing_api_permissions_rights(self) -> None:
+        """sharing API usage tests related to rights permissions."""
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[default-collection]
+user: .+
+collection: {user}
+permissions: RrWw
+[owner1-T]
+user: owner1
+collection: {user}/cal-T(/.*)?
+permissions: RrWwT
+[owner1-t]
+user: owner1
+collection: {user}/cal-t(/.*)?
+permissions: RrWwt
+[owner1-M]
+user: owner1
+collection: {user}/cal-M(/.*)?
+permissions: RrWwM
+[owner1-m]
+user: owner1
+collection: {user}/cal-m(/.*)?
+permissions: RrWwm
+[default]
+user: .+
+collection: {user}(/.*)?
+permissions: RrWw""")
+
+        self.configure({"rights": {"file": rights_file_path}})
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "False",
+                                    "rights_rule_doesnt_match_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "from_file"}})
+
+        json_dict: dict
+
+        path_user1 = "/user1/calendarPGu1.ics/"
+        path_owner1_T = "/owner1/cal-T/"
+        path_owner1_t = "/owner1/cal-t/"
+        path_owner1_M = "/owner1/cal-M/"
+        path_owner1_m = "/owner1/cal-m/"
+
+        logging.info("\n*** prepare")
+        self.mkcalendar(path_owner1_T, login="owner1:owner1pw")
+        self.mkcalendar(path_owner1_t, login="owner1:owner1pw")
+        self.mkcalendar(path_owner1_M, login="owner1:owner1pw")
+        self.mkcalendar(path_owner1_m, login="owner1:owner1pw")
+
+        for db_type in sharing.INTERNAL_TYPES:
+            if db_type == "none":
+                continue
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # create map
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathOrToken'] = path_user1
+
+            logging.info("\n*** create map user1/owner1, globally disabled")
+            self.configure({"sharing": {"permit_create_map": "False"}})
+
+            logging.info("\n*** create map user1/owner1, globally disabled / not granted M -> 403")
+            json_dict['PathMapped'] = path_owner1_M
+            json_dict['PathOrToken'] = path_user1 + "dM" + db_type
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map user1/owner1, globally disabled / not granted T -> 403")
+            json_dict['PathMapped'] = path_owner1_T
+            json_dict['PathOrToken'] = path_user1 + "dT" + db_type
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map user1/owner1, globally disabled / not granted t -> 403")
+            json_dict['PathMapped'] = path_owner1_t
+            json_dict['PathOrToken'] = path_user1 + "dt" + db_type
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map user1/owner1, globally disabled / granted m -> 200")
+            json_dict['PathMapped'] = path_owner1_m
+            json_dict['PathOrToken'] = path_user1 + "dm" + db_type
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map user1/owner1, globally enabled")
+            self.configure({"sharing": {"permit_create_map": "True"}})
+
+            logging.info("\n*** create map user1/owner1, globally enabled / not granted M -> 403")
+            json_dict['PathMapped'] = path_owner1_M
+            json_dict['PathOrToken'] = path_user1 + "eM" + db_type
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map user1/owner1, globally enabled / ignore T -> 200")
+            json_dict['PathMapped'] = path_owner1_T
+            json_dict['PathOrToken'] = path_user1 + "eT" + db_type
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map user1/owner1, globally enabled / ignore t -> 200")
+            json_dict['PathMapped'] = path_owner1_t
+            json_dict['PathOrToken'] = path_user1 + "et" + db_type
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map user1/owner1, globally enabled / ignore m -> 200")
+            json_dict['PathMapped'] = path_owner1_m
+            json_dict['PathOrToken'] = path_user1 + "em" + db_type
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            # create token
+            json_dict = {}
+
+            logging.info("\n*** create token owner1, globally disabled")
+            self.configure({"sharing": {"permit_create_token": "False"}})
+
+            logging.info("\n*** create token owner1, globally disabled / not granted M -> 403")
+            json_dict['PathMapped'] = path_owner1_M
+            _, headers, answer = self._sharing_api_json("token", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create token owner1, globally disabled / not granted m -> 403")
+            json_dict['PathMapped'] = path_owner1_m
+            _, headers, answer = self._sharing_api_json("token", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create token owner1, globally disabled / not granted T -> 403")
+            json_dict['PathMapped'] = path_owner1_T
+            _, headers, answer = self._sharing_api_json("token", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create token owner1, globally disabled / granted t -> 200")
+            json_dict['PathMapped'] = path_owner1_t
+            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create token owner1, globally enabled")
+            self.configure({"sharing": {"permit_create_token": "True"}})
+
+            logging.info("\n*** create token owner1, globally enabled / ignore M -> 200")
+            json_dict['PathMapped'] = path_owner1_M
+            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create token owner1, globally enabled / ignore m -> 200")
+            json_dict['PathMapped'] = path_owner1_m
+            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create token owner1, globally enabled / not granted T -> 403")
+            json_dict['PathMapped'] = path_owner1_T
+            _, headers, answer = self._sharing_api_json("token", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create token owner1, globally enabled / ignore t -> 200")
+            json_dict['PathMapped'] = path_owner1_t
+            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+    def test_sharing_api_permissions_default(self) -> None:
+        """sharing API usage tests related to global permissions."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "False",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        path_user1 = "/user1/calendarPGu1.ics/"
+        path_owner1 = "/owner1/calendarPGo1.ics/"
+
+        logging.info("\n*** prepare")
+        self.mkcalendar(path_owner1, login="owner1:owner1pw")
+
+        for db_type in sharing.INTERNAL_TYPES:
+            if db_type == "none":
+                continue
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # create map
+            self.configure({"sharing": {"default_permissions_create_map": "r"}})
+
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_owner1
+
+            logging.info("\n*** create map user1/owner1 r -> 200")
+            json_dict['PathOrToken'] = path_user1 + "r"
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** list (json->json)")
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Permissions'] == "r"
+
+            logging.info("\n*** create map user1/owner1 rw -> 200")
+            json_dict['PathOrToken'] = path_user1 + "rw"
+            json_dict['Permissions'] = "rw"
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** list (json->json)")
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Permissions'] == "rw"
+
+            logging.info("\n*** create map user1/owner1 with adjusted default permissions -> 200")
+            self.configure({"sharing": {"default_permissions_create_map": "RrWw"}})
+            json_dict['PathOrToken'] = path_user1 + "RrRw"
+            del json_dict['Permissions']
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** list (json->json)")
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Permissions'] == "RrWw"
+
+            # create token
+            self.configure({"sharing": {"default_permissions_create_token": "r"}})
+
+            json_dict = {}
+            json_dict['PathMapped'] = path_owner1
+
+            logging.info("\n*** create token user1/owner1 r -> 200")
+            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            Token = answer_dict['PathOrToken']
+
+            logging.info("\n*** list (json->json)")
+            json_dict['PathOrToken'] = Token
+            _, headers, answer = self._sharing_api_json("token", "list", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Permissions'] == "r"
+
+            logging.info("\n*** create token user1/owner1 rw -> 200")
+            json_dict['Permissions'] = "rw"
+            del json_dict['PathOrToken']
+            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            Token = answer_dict['PathOrToken']
+
+            logging.info("\n*** list (json->json)")
+            del json_dict['Permissions']
+            json_dict['PathOrToken'] = Token
+            _, headers, answer = self._sharing_api_json("token", "list", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Permissions'] == "rw"
+
+            logging.info("\n*** create token user1/owner1 with adjusted default permissions -> 200")
+            self.configure({"sharing": {"default_permissions_create_token": "RrWw"}})
+            del json_dict['PathOrToken']
+            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            Token = answer_dict['PathOrToken']
+
+            logging.info("\n*** list (json->json)")
+            json_dict['PathOrToken'] = Token
+            _, headers, answer = self._sharing_api_json("token", "list", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Permissions'] == "RrWw"

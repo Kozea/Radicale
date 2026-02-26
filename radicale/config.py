@@ -66,6 +66,13 @@ def positive_float(value: Any) -> float:
     return value
 
 
+def rights_permission(value: Any) -> str:
+    for permission in value:
+        if permission not in rights.INTERNAL_PERMISSIONS:
+            raise ValueError("unsupported permssion %r found in: %r" % (permission, value))
+    return value
+
+
 def logging_level(value: Any) -> str:
     if value not in ("debug", "info", "warning", "error", "critical"):
         raise ValueError("unsupported level: %r" % value)
@@ -468,14 +475,30 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "database path",
             "type": filepath}),
+        ("collection_by_token", {
+            "value": "false",
+            "help": "enable sharing of collection by token",
+            "type": bool}),
         ("collection_by_map", {
             "value": "false",
             "help": "enable sharing of collection by map",
             "type": bool}),
-        ("collection_by_token", {
+        ("permit_create_token", {
             "value": "false",
-            "help": "enable sharing of collection by token",
-            "type": bool})])),
+            "help": "permit create of token-based sharing",
+            "type": bool}),
+        ("permit_create_map", {
+            "value": "false",
+            "help": "permit create of map-based sharing",
+            "type": bool}),
+        ("default_permissions_create_token", {
+            "value": "r",
+            "help": "default permissions for token-based sharing",
+            "type": rights_permission}),
+        ("default_permissions_create_map", {
+            "value": "r",
+            "help": "default permissions for map-based sharing",
+            "type": rights_permission})])),
     ("hook", OrderedDict([
         ("type", {
             "value": "none",

@@ -2102,6 +2102,40 @@ Share collection by map
 
 Default: `false`
 
+##### permit_create_token
+
+_(>= 3.7.0)_
+
+Permit create of token-based sharing
+
+Default: `false`
+
+* If `False` it can be explicitly granted by `permissions: t`
+* If `True` it can be explicitly forbidden by `permissions: T`
+
+##### permit_create_map
+
+_(>= 3.7.0)_
+
+Permit create of map-based sharing
+
+Default: `false`
+
+* If `False` it can be explicitly granted by `permissions: m`
+* If `True` it can be explicitly forbidden by `permissions: M`
+
+##### default_permissions_create_token
+
+Default permissions for create token-based sharing
+
+Default: `r`
+
+##### default_permissions_create_map
+
+Default permissions for map-based sharing
+
+Default: `r`
+
 ## Supported Clients
 
 Radicale has been tested with:
@@ -2326,6 +2360,10 @@ The following `permissions` are recognized:
 * **d:** deny deleting a collection in case `permit_delete_collection=True` _(>= 3.3.0)_
 * **O:** allow overwriting a collection in case `permit_overwrite_collection=False` _(>= 3.3.0)_
 * **o:** deny overwriting a collection in case `permit_overwrite_collection=True` _(>= 3.3.0)_
+* **T:** permit create of token-based sharing of collection in case `permit_create_token=False` _(>= 3.7.0)_
+* **t:** deny create of token-based sharing of collection in case `permit_create_token=True` _(>= 3.7.0)_
+* **M:** permit create of map-based sharing of collection in case `permit_create_map= False` _(>= 3.7.0)_
+* **m:** deny create of map-based sharing of collection in case `permit_create_map=True` _(>= 3.7.0)_
 
 ### Storage
 
