@@ -468,13 +468,13 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "database path",
             "type": filepath}),
-        ("collection_by_map", {
-            "value": "false",
-            "help": "enable sharing of collection by map",
-            "type": bool}),
         ("collection_by_token", {
             "value": "false",
             "help": "enable sharing of collection by token",
+            "type": bool}),
+        ("collection_by_map", {
+            "value": "false",
+            "help": "enable sharing of collection by map",
             "type": bool})])),
     ("hook", OrderedDict([
         ("type", {
