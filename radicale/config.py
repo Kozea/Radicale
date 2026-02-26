@@ -482,7 +482,23 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("collection_by_map", {
             "value": "false",
             "help": "enable sharing of collection by map",
-            "type": bool})])),
+            "type": bool}),
+        ("permit_create_token", {
+            "value": "false",
+            "help": "permit create of token-based sharing",
+            "type": bool}),
+        ("permit_create_map", {
+            "value": "false",
+            "help": "permit create of map-based sharing",
+            "type": bool}),
+        ("default_permissions_create_token", {
+            "value": "r",
+            "help": "default permissions for token-based sharing",
+            "type": rights_permission}),
+        ("default_permissions_create_map", {
+            "value": "r",
+            "help": "default permissions for map-based sharing",
+            "type": rights_permission})])),
     ("hook", OrderedDict([
         ("type", {
             "value": "none",

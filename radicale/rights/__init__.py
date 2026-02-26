@@ -31,6 +31,10 @@ Permissions:
   - d: deny deleting a collection in case permit_delete_collection=True (>= 3.3.0)
   - O: allow overwriting a collection in case permit_overwrite_collection=False (>= 3.3.0)
   - o: deny overwriting a collection in case permit_overwrite_collection=True (>= 3.3.0)
+  - T: permit create of token-based sharing of collection in case permit_create_token=False (>= 3.7.0)
+  - t: deny create of token-based sharing of collection in case permit_create_token=True (>= 3.7.0)
+  - M: permit create of map-based sharing of collection in case permit_create_map= False (>= 3.7.0)
+  - m: deny create of map-based sharing of collection in case permit_create_map=True (>= 3.7.0)
 
 Take a look at the class ``BaseRights`` if you want to implement your own.
 
