@@ -345,6 +345,10 @@ def xml_propfind_response(
                 human_tag = xmlutils.make_human_tag(tag)
                 tag_text = collection.get_meta(human_tag)
                 if tag_text is not None:
+                    if sharing:
+                        # map from overlay
+                        if sharing['Properties'][human_tag] is not None:
+                            tag_text = sharing['Properties'][human_tag]
                     element.text = tag_text
                 else:
                     is404 = True

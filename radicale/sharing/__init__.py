@@ -33,7 +33,7 @@ from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("csv", "files", "none")
 
-DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Owner', 'User', 'Permissions', 'EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser', 'TimestampCreated', 'TimestampUpdated')
+DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Owner', 'User', 'Permissions', 'EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser', 'TimestampCreated', 'TimestampUpdated', 'Properties')
 DB_FIELDS_V1_BOOL: Sequence[str] = ('EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser')
 DB_FIELDS_V1_INT: Sequence[str] = ('TimestampCreated', 'TimestampUpdated')
 # ShareType:        <token|map>
@@ -76,6 +76,7 @@ PATH_PATTERN: str = "([a-zA-Z0-9/.\\-]+)"  # TODO: extend or find better source
 
 USER_PATTERN: str = "([a-zA-Z0-9@]+)"  # TODO: extend or find better source
 
+OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color")
 
 def load(configuration: "config.Configuration") -> "BaseSharing":
     """Load the sharing database module chosen in configuration."""
@@ -178,20 +179,22 @@ class BaseSharing:
                        Permissions: str = "r",
                        EnabledByOwner: bool = False, EnabledByUser: bool = False,
                        HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
-                       Timestamp: int = 0) -> dict:
+                       Timestamp: int = 0,
+                       Properties: Union[str, None] = None) -> dict:
         """ create sharing """
         return {"status": "not-implemented"}
 
     def update_sharing(self,
                        ShareType: str,
                        PathOrToken: str,
-                       Owner: Union[str, None] = None,
+                       OwnerOrUser: str,
                        User: Union[str, None] = None,
                        PathMapped: Union[str, None] = None,
                        Permissions: Union[str, None] = None,
                        EnabledByOwner: Union[bool, None] = None,
                        HiddenByOwner:  Union[bool, None] = None,
-                       Timestamp: int = 0) -> dict:
+                       Timestamp: int = 0,
+                       Properties: Union[str, None] = None) -> dict:
         """ update sharing """
         return {"status": "not-implemented"}
 
@@ -391,6 +394,8 @@ class BaseSharing:
                     PathOrToken: <path> (mandatory)
                     User: <target_user> (mandatory)
 
+            action: (token|map)/update
+
             action: (token|map)/(delete|disable|enable|hide|unhide)
                 PathOrToken: <path|token> (mandatory)
 
@@ -481,7 +486,21 @@ class BaseSharing:
             # convert arrays into single value
             request_data = {}
             for key in request_parsed:
-                request_data[key] = request_parsed[key][0]
+                if key == "Properties":
+                    # Properties key value parser
+                    properties_dict: dict = {}
+                    for entry in request_parsed[key]:
+                        m = re.search('^([^=]+)=([^=]+)$', entry)
+                        if not m:
+                            return httputils.bad_request("Invalid properties format in form")
+                        token = m.group(1).lstrip('"\'').rstrip('"\'')
+                        value = m.group(2).lstrip('"\'').rstrip('"\'')
+                        properties_dict[token] = value
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("TRACE/sharing/API: converted Properties from form into dict: %r", properties_dict)
+                    request_data[key] = properties_dict
+                else:
+                    request_data[key] = request_parsed[key][0]
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + " (form): %r", f"{request_data}")
         else:
@@ -518,6 +537,7 @@ class BaseSharing:
         HiddenByOwner:  Union[bool, None] = None
         EnabledByUser:  Union[bool, None] = None
         HiddenByUser:   Union[bool, None] = None
+        Properties:     Union[str, None] = None
 
         # parameters sanity check
         for key in request_data:
@@ -552,11 +572,8 @@ class BaseSharing:
 
         # check for mandatory parameters
         if 'PathMapped' not in request_data:
-            if action == 'info':
+            if action in ['info', 'list', 'update']:
                 # ignored
-                pass
-            elif action == "list":
-                # optional
                 pass
             else:
                 if ShareType == "token" and action != 'create':
@@ -587,6 +604,13 @@ class BaseSharing:
 
         if 'Permissions' in request_data:
             Permissions = request_data['Permissions']
+
+        if 'Properties' in request_data:
+            # verify against whitelist
+            for entry in request_data['Properties']:
+                if entry not in OVERLAY_PROPERTIES_WHITELIST:
+                    return httputils.bad_request("Property not supported to overlay: %r" % entry)
+            Properties = request_data['Properties']
 
         if ShareType == "map":
             if action == 'info':
@@ -691,7 +715,8 @@ class BaseSharing:
                         Owner=Owner, User=Owner,
                         Permissions=str(Permissions), # mandantory
                         EnabledByOwner=EnabledByOwner, HiddenByOwner=HiddenByOwner,
-                        Timestamp=Timestamp)
+                        Timestamp=Timestamp,
+                        Properties=Properties)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/" + api_info + ": result=%r", result)
 
@@ -747,7 +772,8 @@ class BaseSharing:
                         Permissions=str(Permissions),  # mandatory
                         EnabledByOwner=EnabledByOwner, HiddenByOwner=HiddenByOwner,
                         EnabledByUser=EnabledByUser, HiddenByUser=HiddenByUser,
-                        Timestamp=Timestamp)
+                        Timestamp=Timestamp,
+                        Properties=Properties)
 
             else:
                 logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
@@ -784,8 +810,10 @@ class BaseSharing:
                        EnabledByOwner=EnabledByOwner,
                        HiddenByOwner=HiddenByOwner,
                        PathOrToken=str(PathOrToken),  # verification above that it is not None
-                       Owner=Owner,
-                       Timestamp=Timestamp)
+                       OwnerOrUser=Owner,
+                       User=User,
+                       Timestamp=Timestamp,
+                       Properties=Properties)
 
             elif ShareType == "map":
                 result = self.update_sharing(
@@ -795,8 +823,10 @@ class BaseSharing:
                        EnabledByOwner=EnabledByOwner,
                        HiddenByOwner=HiddenByOwner,
                        PathOrToken=str(PathOrToken),  # verification above that it is not None
-                       Owner=Owner,
-                       Timestamp=Timestamp)
+                       OwnerOrUser=Owner,
+                       User=User,
+                       Timestamp=Timestamp,
+                       Properties=Properties)
 
             else:
                 logger.error(api_info + ": unsupported for ShareType=%r", ShareType)

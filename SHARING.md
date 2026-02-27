@@ -28,6 +28,7 @@ Types of supported sharing configuration:
  * `HiddenByUser`: control by user
  * `TimestampCreated`: unixtime of creation
  * `TimestampUpdated`: unixtime of last update
+ * `Properties`: overlay properties (limited set whitelisted)
  
 `Enabled*`: owner AND user have to enable a share to become usable
 
@@ -250,7 +251,9 @@ Update a share selected by `PathOrToken`
 | - | - | - |
 | PathOrToken | yes | n/a |
 | PathMapped | no | |
+| OwnerOrUser | yes | n/a |
 | User | no | |
+| Properties | no | |
 
   * Output: result status
 
