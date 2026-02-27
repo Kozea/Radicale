@@ -1439,7 +1439,7 @@ class TestSharingApiSanity(BaseTest):
             element = prop.find(xmlutils.make_clark("D:href"))
             assert element is not None and element.text == "/user/"
 
-    def test_sharing_api_map_proppatch(self) -> None:
+    def test_sharing_api_map_proppatch_acl(self) -> None:
         """share-by-map API usage tests related to report."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
