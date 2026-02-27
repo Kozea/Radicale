@@ -509,7 +509,7 @@ class Sharing(sharing.BaseSharing):
         logger.debug("sharing database load begin: %r", file)
         with self._storage.acquire_lock("r", None):
             with open(file, 'r', newline='') as csvfile:
-                reader = csv.DictReader(csvfile, fieldnames=sharing.DB_FIELDS_V1)
+                reader = csv.DictReader(csvfile, fieldnames=sharing.DB_FIELDS_V1, delimiter=';')
                 self._lines = 0
                 for row in reader:
                     # logger.debug("sharing database load read: %r", row)
@@ -542,6 +542,6 @@ class Sharing(sharing.BaseSharing):
 
     def _write_csv(self, file: str) -> bool:
         with open(file, 'w', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=sharing.DB_FIELDS_V1)
+            writer = csv.DictWriter(csvfile, fieldnames=sharing.DB_FIELDS_V1, delimiter=';')
             writer.writerows(self._sharing_cache)
         return True
