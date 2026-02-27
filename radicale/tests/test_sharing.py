@@ -2492,3 +2492,196 @@ permissions: RrWw""")
             assert answer_dict['Status'] == "success"
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['Permissions'] == "RrWw"
+
+    def test_sharing_api_map_propfind_overlay(self) -> None:
+        """share-by-map API usage tests related to proppatch."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        form_array: Sequence[str]
+        json_dict: dict
+
+        path_mapped = "/owner/calendarPP.ics/"
+        path_shared_r = "/user/calendarPP-shared-by-owner-r.ics/"
+
+        logging.info("\n*** prepare and test access")
+        self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+        for db_type in sharing.INTERNAL_TYPES:
+            if db_type == "none":
+                continue
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["D:current-user-principal"]
+            assert status == 200 and len(prop) == 1
+            element = prop.find(xmlutils.make_clark("D:href"))
+            assert element is not None and element.text == "/owner/"
+
+            # execute PROPPATCH as owner
+            logging.info("\n*** PROPPATCH collection owner -> ok")
+            _, responses = self.proppatch(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#AAAAAA</I:calendar-color>
+      <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">ICAL-OWNER</C:calendar-description>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int) and len(response) == 2
+            status, prop = response["ICAL:calendar-color"]
+            assert status == 200 and not prop.text
+            status, prop = response["C:calendar-description"]
+            assert status == 200 and not prop.text
+
+            # verify PROPPATCH by owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert prop.text == "ICAL-OWNER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert prop.text == "#AAAAAA"
+
+            # create map
+            logging.info("\n*** create map user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = "True"
+            json_dict['Hidden'] = "False"
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # verify PROPPATCH as user
+            logging.info("\n*** PROPFIND collection user -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert prop.text == "ICAL-OWNER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert prop.text == "#AAAAAA"
+
+            # update map by user
+            logging.info("\n*** update map by user (json)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Properties'] = { "C:calendar-description": "ICAL-USER", "ICAL:calendar-color": "#BBBBBB" }
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="user:userpw", json_dict=json_dict)
+
+            logging.info("\n*** list (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+
+            logging.info("\n*** list (json->csv)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/csv")
+
+            logging.info("\n*** list (json->txt)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/plain")
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert prop.text == "ICAL-USER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert prop.text == "#BBBBBB"
+
+            # verify overlay not visible by owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert prop.text == "ICAL-OWNER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert prop.text == "#AAAAAA"
+
+            # update map by user
+            logging.info("\n*** update map by user (form)")
+            form_array = ["User=" + "user"]
+            form_array.append("PathOrToken=" + path_shared_r)
+            form_array.append("Properties='C:calendar-description'='ICAL-USER-NEW'")
+            form_array.append("Properties='ICAL:calendar-color'='#CCCCCC'")
+            _, headers, answer = self._sharing_api_form("map", "update", check=200, login="user:userpw", form_array=form_array)
+            assert "Status=success" in answer
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert prop.text == "ICAL-USER-NEW"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert prop.text == "#CCCCCC"
+
+            # update map by user
+            logging.info("\n*** update map by user (form)")
+            form_array = ["User=" + "user"]
+            form_array.append("PathOrToken=" + path_shared_r)
+            form_array.append("Properties=BUGGYENTRY=BUGGYVALUE")
+            _, headers, answer = self._sharing_api_form("map", "update", check=400, login="user:userpw", form_array=form_array)
