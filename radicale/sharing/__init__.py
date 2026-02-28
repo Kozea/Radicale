@@ -414,7 +414,7 @@ class BaseSharing:
                 Status in JSON/TEXT (TEXT can be parsed by shell)
 
         """
-        if not self.sharing_collection_by_map and not self.sharing_collection_by_token:
+        if not self._enabled:
             # API is not enabled
             return httputils.NOT_FOUND
 
@@ -426,7 +426,7 @@ class BaseSharing:
         if not path.startswith("/.sharing/v1/"):
             return httputils.NOT_FOUND
 
-        # split into ShareType and action or "info"
+        # split into ShareType and action
         ShareType_action = path.removeprefix("/.sharing/v1/")
         match = re.search('([a-z]+)/([a-z]+)$', ShareType_action)
         if not match:
@@ -633,6 +633,11 @@ class BaseSharing:
         result_array: list[dict]
         answer['ApiVersion'] = 1
         Timestamp = int((datetime.now() - datetime(1970, 1, 1)).total_seconds())
+
+        if not self.sharing_collection_by_map and not self.sharing_collection_by_token:
+            if not action == 'info':
+                # API is not enabled
+                return httputils.NOT_FOUND
 
         # action: list
         if action == "list":
