@@ -208,7 +208,7 @@ class Sharing(sharing.BaseSharing):
                        EnabledByOwner: bool = False, EnabledByUser: bool = False,
                        HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
                        Timestamp: int = 0,
-                       Properties: Union[str, None] = None) -> dict:
+                       Properties: Union[dict, None] = None) -> dict:
         """ create sharing """
         row: dict
 
@@ -273,7 +273,7 @@ class Sharing(sharing.BaseSharing):
                        EnabledByOwner: Union[bool, None] = None,
                        HiddenByOwner:  Union[bool, None] = None,
                        Timestamp: int = 0,
-                       Properties: Union[str, None] = None) -> dict:
+                       Properties: Union[dict, None] = None) -> dict:
         """ update sharing """
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/%s/update: PathOrToken=%r OwnerOrUser=%r PathMapped=%r Properties=%r", ShareType, PathOrToken, OwnerOrUser, PathMapped, Properties)

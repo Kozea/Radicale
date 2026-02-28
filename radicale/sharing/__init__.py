@@ -78,6 +78,7 @@ USER_PATTERN: str = "([a-zA-Z0-9@]+)"  # TODO: extend or find better source
 
 OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color")
 
+
 def load(configuration: "config.Configuration") -> "BaseSharing":
     """Load the sharing database module chosen in configuration."""
     return utils.load_plugin(INTERNAL_TYPES, "sharing", "Sharing", BaseSharing, configuration)
@@ -180,7 +181,7 @@ class BaseSharing:
                        EnabledByOwner: bool = False, EnabledByUser: bool = False,
                        HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
                        Timestamp: int = 0,
-                       Properties: Union[str, None] = None) -> dict:
+                       Properties: Union[dict, None] = None) -> dict:
         """ create sharing """
         return {"status": "not-implemented"}
 
@@ -194,7 +195,7 @@ class BaseSharing:
                        EnabledByOwner: Union[bool, None] = None,
                        HiddenByOwner:  Union[bool, None] = None,
                        Timestamp: int = 0,
-                       Properties: Union[str, None] = None) -> dict:
+                       Properties: Union[dict, None] = None) -> dict:
         """ update sharing """
         return {"status": "not-implemented"}
 
@@ -537,7 +538,7 @@ class BaseSharing:
         HiddenByOwner:  Union[bool, None] = None
         EnabledByUser:  Union[bool, None] = None
         HiddenByUser:   Union[bool, None] = None
-        Properties:     Union[str, None] = None
+        Properties:     Union[dict, None] = None
 
         # parameters sanity check
         for key in request_data:
