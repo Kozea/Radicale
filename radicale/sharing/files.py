@@ -122,7 +122,9 @@ class Sharing(sharing.BaseSharing):
             UserShare = row['User']
             Permissions = row['Permissions']
             Hidden: bool = (row['HiddenByOwner'] or row['HiddenByUser'])
-            Properties = row['Properties']
+            Properties: Union[dict, None] = None
+            if 'Properties' in row:
+                Properties = row['Properties']
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing: map %r to %r (Owner=%r User=%r Permissions=%r Hidden=%s Properties=%r)", PathOrToken, PathMapped, Owner, UserShare, Permissions, Hidden, Properties)
             return {

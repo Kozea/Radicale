@@ -128,9 +128,9 @@ class Sharing(sharing.BaseSharing):
             UserShare = row['User']
             Permissions = row['Permissions']
             Hidden: bool = (row['HiddenByOwner'] or row['HiddenByUser'])
-            Properties = row['Properties']
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing: map %r to %r (Owner=%r User=%r Permissions=%r Hidden=%s Properties=%r)", PathOrToken, PathMapped, Owner, UserShare, Permissions, Hidden, Properties)
+            Properties: Union[dict, None] = None
+            if 'Properties' in row:
+                Properties = row['Properties']
             return {
                     "mapped": True,
                     "PathOrToken": PathOrToken,
@@ -501,7 +501,7 @@ class Sharing(sharing.BaseSharing):
     def _create_empty_csv(self, file: str) -> bool:
         with self._storage.acquire_lock("w", None, path=file):
             with open(file, 'w', newline='') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=sharing.DB_FIELDS_V1)
+                writer = csv.DictWriter(csvfile, fieldnames=sharing.DB_FIELDS_V1, delimiter=';')
                 writer.writeheader()
         return True
 
@@ -523,7 +523,10 @@ class Sharing(sharing.BaseSharing):
                     # convert txt to bool
                     if self._lines > 0:
                         for fieldname in sharing.DB_FIELDS_V1_BOOL:
-                            row[fieldname] = config._convert_to_bool(row[fieldname])
+                            try:
+                                row[fieldname] = config._convert_to_bool(row[fieldname])
+                            except Exception as e:
+                                logger.error("sharing database row error fieldname=%r row=%r error: %r", fieldname, row, e)
                         for fieldname in sharing.DB_FIELDS_V1_INT:
                             row[fieldname] = int(row[fieldname])
                     # check for duplicates

@@ -958,7 +958,8 @@ class BaseSharing:
                 if output_format == "csv":
                     writer.writeheader()
                 for entry in answer['Content']:
-                    writer.writerow(entry)
+                    # TODO: Argument 1 to "writerow" of "DictWriter" has incompatible type "str"; expected "Mapping[str, Any]"  [arg-type]
+                    writer.writerow(entry)  # type: ignore[arg-type]
                 if output_format == "csv":
                     answer_array.append(csv.getvalue())
                 else:
