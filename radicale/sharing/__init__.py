@@ -33,7 +33,7 @@ from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("csv", "files", "none")
 
-DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Owner', 'User', 'Permissions', 'EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser', 'TimestampCreated', 'TimestampUpdated')
+DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Owner', 'User', 'Permissions', 'EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser', 'TimestampCreated', 'TimestampUpdated', 'Properties')
 DB_FIELDS_V1_BOOL: Sequence[str] = ('EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser')
 DB_FIELDS_V1_INT: Sequence[str] = ('TimestampCreated', 'TimestampUpdated')
 # ShareType:        <token|map>
@@ -75,6 +75,8 @@ TOKEN_PATTERN_V1: str = "(v1/[a-zA-Z0-9_=\\-]{44})"
 PATH_PATTERN: str = "([a-zA-Z0-9/.\\-]+)"  # TODO: extend or find better source
 
 USER_PATTERN: str = "([a-zA-Z0-9@]+)"  # TODO: extend or find better source
+
+OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color")
 
 
 def load(configuration: "config.Configuration") -> "BaseSharing":
@@ -178,20 +180,22 @@ class BaseSharing:
                        Permissions: str = "r",
                        EnabledByOwner: bool = False, EnabledByUser: bool = False,
                        HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
-                       Timestamp: int = 0) -> dict:
+                       Timestamp: int = 0,
+                       Properties: Union[dict, None] = None) -> dict:
         """ create sharing """
         return {"status": "not-implemented"}
 
     def update_sharing(self,
                        ShareType: str,
                        PathOrToken: str,
-                       Owner: Union[str, None] = None,
+                       OwnerOrUser: str,
                        User: Union[str, None] = None,
                        PathMapped: Union[str, None] = None,
                        Permissions: Union[str, None] = None,
                        EnabledByOwner: Union[bool, None] = None,
                        HiddenByOwner:  Union[bool, None] = None,
-                       Timestamp: int = 0) -> dict:
+                       Timestamp: int = 0,
+                       Properties: Union[dict, None] = None) -> dict:
         """ update sharing """
         return {"status": "not-implemented"}
 
@@ -391,6 +395,8 @@ class BaseSharing:
                     PathOrToken: <path> (mandatory)
                     User: <target_user> (mandatory)
 
+            action: (token|map)/update
+
             action: (token|map)/(delete|disable|enable|hide|unhide)
                 PathOrToken: <path|token> (mandatory)
 
@@ -408,7 +414,7 @@ class BaseSharing:
                 Status in JSON/TEXT (TEXT can be parsed by shell)
 
         """
-        if not self.sharing_collection_by_map and not self.sharing_collection_by_token:
+        if not self._enabled:
             # API is not enabled
             return httputils.NOT_FOUND
 
@@ -420,7 +426,7 @@ class BaseSharing:
         if not path.startswith("/.sharing/v1/"):
             return httputils.NOT_FOUND
 
-        # split into ShareType and action or "info"
+        # split into ShareType and action
         ShareType_action = path.removeprefix("/.sharing/v1/")
         match = re.search('([a-z]+)/([a-z]+)$', ShareType_action)
         if not match:
@@ -481,7 +487,21 @@ class BaseSharing:
             # convert arrays into single value
             request_data = {}
             for key in request_parsed:
-                request_data[key] = request_parsed[key][0]
+                if key == "Properties":
+                    # Properties key value parser
+                    properties_dict: dict = {}
+                    for entry in request_parsed[key]:
+                        m = re.search('^([^=]+)=([^=]+)$', entry)
+                        if not m:
+                            return httputils.bad_request("Invalid properties format in form")
+                        token = m.group(1).lstrip('"\'').rstrip('"\'')
+                        value = m.group(2).lstrip('"\'').rstrip('"\'')
+                        properties_dict[token] = value
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("TRACE/sharing/API: converted Properties from form into dict: %r", properties_dict)
+                    request_data[key] = properties_dict
+                else:
+                    request_data[key] = request_parsed[key][0]
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + " (form): %r", f"{request_data}")
         else:
@@ -518,6 +538,7 @@ class BaseSharing:
         HiddenByOwner:  Union[bool, None] = None
         EnabledByUser:  Union[bool, None] = None
         HiddenByUser:   Union[bool, None] = None
+        Properties:     Union[dict, None] = None
 
         # parameters sanity check
         for key in request_data:
@@ -552,11 +573,8 @@ class BaseSharing:
 
         # check for mandatory parameters
         if 'PathMapped' not in request_data:
-            if action == 'info':
+            if action in ['info', 'list', 'update']:
                 # ignored
-                pass
-            elif action == "list":
-                # optional
                 pass
             else:
                 if ShareType == "token" and action != 'create':
@@ -588,6 +606,13 @@ class BaseSharing:
         if 'Permissions' in request_data:
             Permissions = request_data['Permissions']
 
+        if 'Properties' in request_data:
+            # verify against whitelist
+            for entry in request_data['Properties']:
+                if entry not in OVERLAY_PROPERTIES_WHITELIST:
+                    return httputils.bad_request("Property not supported to overlay: %r" % entry)
+            Properties = request_data['Properties']
+
         if ShareType == "map":
             if action == 'info':
                 # ignored
@@ -608,6 +633,11 @@ class BaseSharing:
         result_array: list[dict]
         answer['ApiVersion'] = 1
         Timestamp = int((datetime.now() - datetime(1970, 1, 1)).total_seconds())
+
+        if not self.sharing_collection_by_map and not self.sharing_collection_by_token:
+            if not action == 'info':
+                # API is not enabled
+                return httputils.NOT_FOUND
 
         # action: list
         if action == "list":
@@ -691,7 +721,8 @@ class BaseSharing:
                         Owner=Owner, User=Owner,
                         Permissions=str(Permissions), # mandantory
                         EnabledByOwner=EnabledByOwner, HiddenByOwner=HiddenByOwner,
-                        Timestamp=Timestamp)
+                        Timestamp=Timestamp,
+                        Properties=Properties)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/" + api_info + ": result=%r", result)
 
@@ -747,7 +778,8 @@ class BaseSharing:
                         Permissions=str(Permissions),  # mandatory
                         EnabledByOwner=EnabledByOwner, HiddenByOwner=HiddenByOwner,
                         EnabledByUser=EnabledByUser, HiddenByUser=HiddenByUser,
-                        Timestamp=Timestamp)
+                        Timestamp=Timestamp,
+                        Properties=Properties)
 
             else:
                 logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
@@ -784,8 +816,10 @@ class BaseSharing:
                        EnabledByOwner=EnabledByOwner,
                        HiddenByOwner=HiddenByOwner,
                        PathOrToken=str(PathOrToken),  # verification above that it is not None
-                       Owner=Owner,
-                       Timestamp=Timestamp)
+                       OwnerOrUser=Owner,
+                       User=User,
+                       Timestamp=Timestamp,
+                       Properties=Properties)
 
             elif ShareType == "map":
                 result = self.update_sharing(
@@ -795,8 +829,10 @@ class BaseSharing:
                        EnabledByOwner=EnabledByOwner,
                        HiddenByOwner=HiddenByOwner,
                        PathOrToken=str(PathOrToken),  # verification above that it is not None
-                       Owner=Owner,
-                       Timestamp=Timestamp)
+                       OwnerOrUser=Owner,
+                       User=User,
+                       Timestamp=Timestamp,
+                       Properties=Properties)
 
             else:
                 logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
@@ -918,18 +954,19 @@ class BaseSharing:
                         answer_array.append(key + '=' + str(answer[key]))
             if 'Content' in answer and answer['Content'] is not None:
                 csv = io.StringIO()
-                writer = DictWriter(csv, fieldnames=DB_FIELDS_V1)
+                writer = DictWriter(csv, fieldnames=DB_FIELDS_V1, delimiter=';')
                 if output_format == "csv":
                     writer.writeheader()
                 for entry in answer['Content']:
-                    writer.writerow(entry)
+                    # TODO: Argument 1 to "writerow" of "DictWriter" has incompatible type "str"; expected "Mapping[str, Any]"  [arg-type]
+                    writer.writerow(entry)  # type: ignore[arg-type]
                 if output_format == "csv":
                     answer_array.append(csv.getvalue())
                 else:
                     index = 0
                     for line in csv.getvalue().splitlines():
                         # create a shell array with content lines
-                        answer_array.append('Content[' + str(index) + ']="' + line + '"')
+                        answer_array.append('Content[' + str(index) + ']="' + line.replace('"', '\\"') + '"')
                         index += 1
             headers = {
                 "Content-Type": "text/csv"

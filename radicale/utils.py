@@ -385,7 +385,7 @@ def limit_str(content: str, limit: int) -> str:
         return content
 
 
-def textwrap_str(content: str, limit: int = 2000) -> str:
+def textwrap_str(content: str, limit: int = 3000) -> str:
     # TODO: add support for config option and prefix
     return textwrap.indent(limit_str(content, limit), " ", lambda line: True)
 

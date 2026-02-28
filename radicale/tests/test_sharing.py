@@ -76,25 +76,56 @@ class TestSharingApiSanity(BaseTest):
         # disabled
         for path in ["/.sharing", "/.sharing/"]:
             _, headers, _ = self.request("POST", path, check=404)
-        # enabled (permutations)
+
+        path = "/.sharing/"
+
+        # no database is active
+        logging.info("\n*** check API hook base: map=True token=False")
         self.configure({"sharing": {
                                     "collection_by_map": "True",
                                     "collection_by_token": "False"}
                         })
-        path = "/.sharing/"
-        _, headers, _ = self.request("POST", path, check=401)
+        _, headers, _ = self.request("POST", path, check=404)
+
+        logging.info("\n*** check API hook base: map=False token=True")
         self.configure({"sharing": {
                                     "collection_by_map": "False",
                                     "collection_by_token": "True"}
                         })
-        path = "/.sharing/"
-        _, headers, _ = self.request("POST", path, check=401)
+        _, headers, _ = self.request("POST", path, check=404)
+
+        logging.info("\n*** check API hook base: map=True token=True")
         self.configure({"sharing": {
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"}
                         })
-        path = "/.sharing/"
-        _, headers, _ = self.request("POST", path, check=401)
+        _, headers, _ = self.request("POST", path, check=404)
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # no database is active
+            logging.info("\n*** check API hook base: map=True token=False")
+            self.configure({"sharing": {
+                                        "collection_by_map": "True",
+                                        "collection_by_token": "False"}
+                            })
+            _, headers, _ = self.request("POST", path, check=401)
+
+            logging.info("\n*** check API hook base: map=False token=True")
+            self.configure({"sharing": {
+                                        "collection_by_map": "False",
+                                        "collection_by_token": "True"}
+                            })
+            _, headers, _ = self.request("POST", path, check=401)
+
+            logging.info("\n*** check API hook base: map=True token=True")
+            self.configure({"sharing": {
+                                        "collection_by_map": "True",
+                                        "collection_by_token": "True"}
+                            })
+            _, headers, _ = self.request("POST", path, check=401)
 
     def test_sharing_api_base_with_auth(self) -> None:
         """POST request at '/.sharing' with authentication."""
@@ -108,75 +139,82 @@ class TestSharingApiSanity(BaseTest):
 
         json_dict: dict
 
-        # path with no valid API hook
-        for path in ["/.sharing/", "/.sharing/v9/"]:
-            _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
 
-        # path with valid API but no hook
-        for path in ["/.sharing/v1/"]:
-            _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
+            for path in ["/.sharing/", "/.sharing/v9/"]:
+                logging.info("\n*** check invalid API URI: %r", path)
+                _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
 
-        # path with valid API and hook but not enabled "map"
-        self.configure({"sharing": {
-                                    "collection_by_map": "False",
-                                    "collection_by_token": "True"}
-                        })
-        sharetype = "map"
-        for action in sharing.API_HOOKS_V1:
-            path = "/.sharing/v1/" + sharetype + "/" + action
-            _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
+            # path with valid API but no hook
+            for path in ["/.sharing/v1/"]:
+                logging.info("\n*** check valid API URI without hook: %r", path)
+                _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
 
-        # path with valid API and hook but not enabled "token"
-        self.configure({"sharing": {
-                                    "collection_by_map": "True",
-                                    "collection_by_token": "False"}
-                        })
-        sharetype = "token"
-        for action in sharing.API_HOOKS_V1:
-            path = "/.sharing/v1/" + sharetype + "/" + action
-            _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
+            # path with valid API and hook but not enabled "map"
+            self.configure({"sharing": {
+                                        "collection_by_map": "False",
+                                        "collection_by_token": "True"}
+                            })
+            sharetype = "map"
+            for action in sharing.API_HOOKS_V1:
+                path = "/.sharing/v1/" + sharetype + "/" + action
+                logging.info("\n*** check valid API URI hook (but not enabled): %r", path)
+                _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
 
-        # check info hook
-        logging.info("\n*** check API hook: info/all")
-        json_dict = {}
-        _, headers, answer = self._sharing_api_json("all", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
-        answer_dict = json.loads(answer)
-        assert answer_dict['FeatureEnabledCollectionByMap'] is True
-        assert answer_dict['FeatureEnabledCollectionByToken'] is False
-        assert answer_dict['PermittedCreateCollectionByMap'] is True
-        assert answer_dict['PermittedCreateCollectionByToken'] is True
+            # path with valid API and hook but not enabled "token"
+            self.configure({"sharing": {
+                                        "collection_by_map": "True",
+                                        "collection_by_token": "False"}
+                            })
+            sharetype = "token"
+            for action in sharing.API_HOOKS_V1:
+                path = "/.sharing/v1/" + sharetype + "/" + action
+                logging.info("\n*** check valid API URI hook (but not enabled): %r", path)
+                _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
 
-        logging.info("\n*** check API hook: info/map")
-        json_dict = {}
-        _, headers, answer = self._sharing_api_json("map", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
-        answer_dict = json.loads(answer)
-        assert answer_dict['FeatureEnabledCollectionByMap'] is True
-        assert 'FeatureEnabledCollectionByToken' not in answer_dict
-        assert 'PermittedCreateCollectionByToken' not in answer_dict
+            # check info hook
+            logging.info("\n*** check API hook: info/all")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("all", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['FeatureEnabledCollectionByMap'] is True
+            assert answer_dict['FeatureEnabledCollectionByToken'] is False
+            assert answer_dict['PermittedCreateCollectionByMap'] is True
+            assert answer_dict['PermittedCreateCollectionByToken'] is True
 
-        logging.info("\n*** check API hook: info/token -> 404 (not enabled)")
-        json_dict = {}
-        _, headers, answer = self._sharing_api_json("token", "info", check=404, login="owner:ownerpw", json_dict=json_dict)
+            logging.info("\n*** check API hook: info/map")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['FeatureEnabledCollectionByMap'] is True
+            assert 'FeatureEnabledCollectionByToken' not in answer_dict
+            assert 'PermittedCreateCollectionByToken' not in answer_dict
 
-        # path with valid API and hook and all enabled
-        self.configure({"sharing": {
-                                    "collection_by_map": "True",
-                                    "collection_by_token": "True"}
-                        })
-        for sharetype in sharing.SHARE_TYPES:
-            path = "/.sharing/v1/" + sharetype + "/" + action
-            # invalid API
-            _, headers, _ = self.request("POST", path + "NA", check=404, login="owner:ownerpw")
-            #  valid API
-            _, headers, _ = self.request("POST", path, check=400, login="owner:ownerpw")
+            logging.info("\n*** check API hook: info/token -> 404 (not enabled)")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("token", "info", check=404, login="owner:ownerpw", json_dict=json_dict)
 
-        logging.info("\n*** check API hook: info/token -> 200")
-        json_dict = {}
-        _, headers, answer = self._sharing_api_json("token", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
-        answer_dict = json.loads(answer)
-        assert answer_dict['FeatureEnabledCollectionByToken'] is True
-        assert 'FeatureEnabledCollectionByMap' not in answer_dict
-        assert 'PermittedCreateCollectionByMap' not in answer_dict
+            # path with valid API and hook and all enabled
+            self.configure({"sharing": {
+                                        "collection_by_map": "True",
+                                        "collection_by_token": "True"}
+                            })
+            for sharetype in sharing.SHARE_TYPES:
+                path = "/.sharing/v1/" + sharetype + "/" + action
+                # invalid API
+                _, headers, _ = self.request("POST", path + "NA", check=404, login="owner:ownerpw")
+                #  valid API
+                _, headers, _ = self.request("POST", path, check=400, login="owner:ownerpw")
+
+            logging.info("\n*** check API hook: info/token -> 200")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("token", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['FeatureEnabledCollectionByToken'] is True
+            assert 'FeatureEnabledCollectionByMap' not in answer_dict
+            assert 'PermittedCreateCollectionByMap' not in answer_dict
 
     def test_sharing_api_list_with_auth(self) -> None:
         """POST/list with authentication."""
@@ -196,9 +234,7 @@ class TestSharingApiSanity(BaseTest):
         form_array: Sequence[str]
         json_dict: dict
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -286,9 +322,7 @@ class TestSharingApiSanity(BaseTest):
         form_array: Sequence[str]
         json_dict: dict
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -361,7 +395,7 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array, accept="text/csv")
             assert "Status=success" not in answer
             assert "Lines=2" not in answer
-            assert ",".join(sharing.DB_FIELDS_V1) in answer
+            assert ";".join(sharing.DB_FIELDS_V1) in answer
             assert "/owner/collection1/" in answer
             assert "/owner/collection2/" in answer
 
@@ -408,7 +442,7 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status=success" in answer
             assert "Lines=1" in answer
-            assert "True,True,True,True" in answer
+            assert "True;True;True;True" in answer
 
             logging.info("\n*** hide token#2 (form->text)")
             form_array = []
@@ -422,7 +456,7 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status=success" in answer
             assert "Lines=1" in answer
-            assert "True,True,True,True" in answer
+            assert "True;True;True;True" in answer
 
             logging.info("\n*** unhide token#2 (json->json)")
             json_dict = {}
@@ -484,9 +518,7 @@ class TestSharingApiSanity(BaseTest):
         path = path_base + "/event1.ics"
         self.put(path, event, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -592,9 +624,7 @@ class TestSharingApiSanity(BaseTest):
 
         json_dict: dict
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -645,9 +675,7 @@ class TestSharingApiSanity(BaseTest):
         event = get_file_content(file_item2)
         self.put(path_mapped_item2, event, check=201, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -834,9 +862,7 @@ class TestSharingApiSanity(BaseTest):
         path = path_mapped2 + "/event1.ics"
         self.put(path, event, login="%s:%s" % ("owner2", "owner2pw"))
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -923,9 +949,7 @@ class TestSharingApiSanity(BaseTest):
         path = path_mapped + "/event1.ics"
         self.put(path, event, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1117,9 +1141,7 @@ class TestSharingApiSanity(BaseTest):
         event = get_file_content("event1.ics")
         self.put(path_mapped_item, event, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1228,9 +1250,7 @@ class TestSharingApiSanity(BaseTest):
         event = get_file_content("event2.ics")
         self.put(path_user_item, event, login="user:userpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1364,9 +1384,7 @@ class TestSharingApiSanity(BaseTest):
         path = os.path.join(path_mapped, "event1.ics")
         self.put(path, event, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1439,7 +1457,7 @@ class TestSharingApiSanity(BaseTest):
             element = prop.find(xmlutils.make_clark("D:href"))
             assert element is not None and element.text == "/user/"
 
-    def test_sharing_api_map_proppatch(self) -> None:
+    def test_sharing_api_map_proppatch_acl(self) -> None:
         """share-by-map API usage tests related to report."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
@@ -1468,9 +1486,7 @@ class TestSharingApiSanity(BaseTest):
         path = os.path.join(path_mapped, "event1.ics")
         self.put(path, event, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1647,9 +1663,7 @@ class TestSharingApiSanity(BaseTest):
         event = get_file_content("event3.ics")
         self.put(os.path.join(path_user, "event3.ics"), event, login="user:userpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1837,9 +1851,7 @@ class TestSharingApiSanity(BaseTest):
         event = get_file_content("event1.ics")
         self.put(os.path.join(path_mapped1, "event1.ics"), event, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1959,9 +1971,7 @@ class TestSharingApiSanity(BaseTest):
         self.mkcalendar(path_user1, login="user1:user1pw")
         self.mkcalendar(path_user2, login="user2:user2pw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -2107,9 +2117,7 @@ class TestSharingApiSanity(BaseTest):
         logging.info("\n*** mkcalendar user2 -> conflict")
         self.mkcalendar(path_user2, login="user2:user2pw", check=409)
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -2179,9 +2187,7 @@ class TestSharingApiSanity(BaseTest):
         logging.info("\n*** prepare")
         self.mkcalendar(path_owner1, login="owner1:owner1pw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -2272,9 +2278,7 @@ permissions: RrWw""")
         self.mkcalendar(path_owner1_M, login="owner1:owner1pw")
         self.mkcalendar(path_owner1_m, login="owner1:owner1pw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -2394,9 +2398,7 @@ permissions: RrWw""")
         logging.info("\n*** prepare")
         self.mkcalendar(path_owner1, login="owner1:owner1pw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -2492,3 +2494,199 @@ permissions: RrWw""")
             assert answer_dict['Status'] == "success"
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['Permissions'] == "RrWw"
+
+    def test_sharing_api_map_propfind_overlay(self) -> None:
+        """share-by-map API usage tests related to proppatch."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        form_array: Sequence[str]
+        json_dict: dict
+
+        path_mapped = "/owner/calendarPFO.ics/"
+        path_shared_r = "/user/calendarPFO-shared-by-owner-r.ics/"
+
+        logging.info("\n*** prepare and test access")
+        self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["D:current-user-principal"]
+            assert status == 200 and len(prop) == 1
+            element = prop.find(xmlutils.make_clark("D:href"))
+            assert element is not None and element.text == "/owner/"
+
+            # execute PROPPATCH as owner
+            logging.info("\n*** PROPPATCH collection owner -> ok")
+            _, responses = self.proppatch(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#AAAAAA</I:calendar-color>
+      <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">ICAL-OWNER</C:calendar-description>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int) and len(response) == 2
+            status, prop = response["ICAL:calendar-color"]
+            assert status == 200 and not prop.text
+            status, prop = response["C:calendar-description"]
+            assert status == 200 and not prop.text
+
+            # verify PROPPATCH by owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert status == 200 and prop.text == "ICAL-OWNER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#AAAAAA"
+
+            # create map
+            logging.info("\n*** create map user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = "True"
+            json_dict['Hidden'] = "False"
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # verify PROPPATCH as user
+            logging.info("\n*** PROPFIND collection user -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert status == 200 and prop.text == "ICAL-OWNER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#AAAAAA"
+
+            # update map by user
+            logging.info("\n*** update map by user (json)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Properties'] = {"C:calendar-description": "ICAL-USER", "ICAL:calendar-color": "#BBBBBB"}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="user:userpw", json_dict=json_dict)
+
+            logging.info("\n*** list (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+
+            logging.info("\n*** list (json->csv)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/csv")
+
+            logging.info("\n*** list (json->txt)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/plain")
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int)
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert status == 200 and prop.text == "ICAL-USER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#BBBBBB"
+
+            # verify overlay not visible by owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert status == 200 and prop.text == "ICAL-OWNER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#AAAAAA"
+
+            # update map by user
+            logging.info("\n*** update map by user (form)")
+            form_array = ["User=" + "user"]
+            form_array.append("PathOrToken=" + path_shared_r)
+            form_array.append("Properties='C:calendar-description'='ICAL-USER-NEW'")
+            form_array.append("Properties='ICAL:calendar-color'='#CCCCCC'")
+            _, headers, answer = self._sharing_api_form("map", "update", check=200, login="user:userpw", form_array=form_array)
+            assert "Status=success" in answer
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int)
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert status == 200 and prop.text == "ICAL-USER-NEW"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#CCCCCC"
+
+            # update map by user
+            logging.info("\n*** update map by user (form)")
+            form_array = ["User=" + "user"]
+            form_array.append("PathOrToken=" + path_shared_r)
+            form_array.append("Properties=BUGGYENTRY=BUGGYVALUE")
+            _, headers, answer = self._sharing_api_form("map", "update", check=400, login="user:userpw", form_array=form_array)
