@@ -40,7 +40,9 @@ Types of supported sharing configuration:
 
 (_>= 3.7.0_)
 
-One CSV file containing one row per sharing config, separated by `,` and containing header with columns from above.
+One CSV file containing one row per sharing config, separated by `;` and containing header with columns from above.
+
+If given, properties are stored in JSON format in CSV.
 
 #### Files
 
@@ -121,6 +123,7 @@ Can be selected by `HTTP_ACCEPT`
  * `Permissions`: effective permission of the share
  * `Enabled`: owner/user selected by authentication
  * `Hidden`: owner/user selected by authentication
+ * `Properties`: properties to overlay
  
 #### API Hooks
 
@@ -285,4 +288,13 @@ ApiVersion=1
 Status=success
 ```
 
+## Properties Overlay
 
+Owner or user can define per share a set of properties to overlay on PROPFIND response during create or update via API.
+
+Whitelisted ones are defined in `OVERLAY_PROPERTIES_WHITELIST` in `radicale/sharing/__init__.py`:
+
+* `C:calendar-description` (_>= 3.7.0_)
+* `ICAL:calendar-color` (_>= 3.7.0_)
+* `CR:addressbook-description` (_>= 3.7.0_)
+* `INF:addressbook-color` (_>= 3.7.0_)
