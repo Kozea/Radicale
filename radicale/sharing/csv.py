@@ -40,6 +40,8 @@ class Sharing(sharing.BaseSharing):
             sharing_db_file = os.path.join(folder_db, "sharing.csv")
             logger.info("sharing database filename not provided, use default: %r", sharing_db_file)
         else:
+            sharing_db_file = os.path.abspath(sharing_db_file)
+            folder_db = os.path.dirname(sharing_db_file)
             logger.info("sharing database filename: %r", sharing_db_file)
 
         if not os.path.exists(folder_db):
