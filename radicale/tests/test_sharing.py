@@ -395,7 +395,7 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array, accept="text/csv")
             assert "Status=success" not in answer
             assert "Lines=2" not in answer
-            assert ",".join(sharing.DB_FIELDS_V1) in answer
+            assert ";".join(sharing.DB_FIELDS_V1) in answer
             assert "/owner/collection1/" in answer
             assert "/owner/collection2/" in answer
 
@@ -442,7 +442,7 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status=success" in answer
             assert "Lines=1" in answer
-            assert "True,True,True,True" in answer
+            assert "True;True;True;True" in answer
 
             logging.info("\n*** hide token#2 (form->text)")
             form_array = []
@@ -456,7 +456,7 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status=success" in answer
             assert "Lines=1" in answer
-            assert "True,True,True,True" in answer
+            assert "True;True;True;True" in answer
 
             logging.info("\n*** unhide token#2 (json->json)")
             json_dict = {}
