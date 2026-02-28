@@ -2514,15 +2514,13 @@ permissions: RrWw""")
         form_array: Sequence[str]
         json_dict: dict
 
-        path_mapped = "/owner/calendarPP.ics/"
-        path_shared_r = "/user/calendarPP-shared-by-owner-r.ics/"
+        path_mapped = "/owner/calendarPFO.ics/"
+        path_shared_r = "/user/calendarPFO-shared-by-owner-r.ics/"
 
         logging.info("\n*** prepare and test access")
         self.mkcalendar(path_mapped, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -2569,12 +2567,13 @@ permissions: RrWw""")
             _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
             logging.info("response: %r", responses)
             response = responses[path_mapped]
+            assert not isinstance(response, int)
             status, prop = response["C:calendar-description"]
             logging.debug("calendar-description: %r", prop.text)
-            assert prop.text == "ICAL-OWNER"
+            assert status == 200 and prop.text == "ICAL-OWNER"
             status, prop = response["ICAL:calendar-color"]
             logging.debug("calendar-color: %r", prop.text)
-            assert prop.text == "#AAAAAA"
+            assert status == 200 and prop.text == "#AAAAAA"
 
             # create map
             logging.info("\n*** create map user/owner:r -> ok")
@@ -2603,19 +2602,20 @@ permissions: RrWw""")
             _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
             logging.info("response: %r", responses)
             response = responses[path_mapped]
+            assert not isinstance(response, int)
             status, prop = response["C:calendar-description"]
             logging.debug("calendar-description: %r", prop.text)
-            assert prop.text == "ICAL-OWNER"
+            assert status == 200 and prop.text == "ICAL-OWNER"
             status, prop = response["ICAL:calendar-color"]
             logging.debug("calendar-color: %r", prop.text)
-            assert prop.text == "#AAAAAA"
+            assert status == 200 and prop.text == "#AAAAAA"
 
             # update map by user
             logging.info("\n*** update map by user (json)")
             json_dict = {}
             json_dict['User'] = "user"
             json_dict['PathOrToken'] = path_shared_r
-            json_dict['Properties'] = { "C:calendar-description": "ICAL-USER", "ICAL:calendar-color": "#BBBBBB" }
+            json_dict['Properties'] = {"C:calendar-description": "ICAL-USER", "ICAL:calendar-color": "#BBBBBB"}
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="user:userpw", json_dict=json_dict)
 
             logging.info("\n*** list (json->json)")
@@ -2639,12 +2639,13 @@ permissions: RrWw""")
             _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
             logging.info("response: %r", responses)
             response = responses[path_shared_r]
+            assert not isinstance(response, int)
             status, prop = response["C:calendar-description"]
             logging.debug("calendar-description: %r", prop.text)
-            assert prop.text == "ICAL-USER"
+            assert status == 200 and prop.text == "ICAL-USER"
             status, prop = response["ICAL:calendar-color"]
             logging.debug("calendar-color: %r", prop.text)
-            assert prop.text == "#BBBBBB"
+            assert status == 200 and prop.text == "#BBBBBB"
 
             # verify overlay not visible by owner
             logging.info("\n*** PROPFIND collection owner -> ok")
@@ -2652,12 +2653,13 @@ permissions: RrWw""")
             _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
             logging.info("response: %r", responses)
             response = responses[path_mapped]
+            assert not isinstance(response, int)
             status, prop = response["C:calendar-description"]
             logging.debug("calendar-description: %r", prop.text)
-            assert prop.text == "ICAL-OWNER"
+            assert status == 200 and prop.text == "ICAL-OWNER"
             status, prop = response["ICAL:calendar-color"]
             logging.debug("calendar-color: %r", prop.text)
-            assert prop.text == "#AAAAAA"
+            assert status == 200 and prop.text == "#AAAAAA"
 
             # update map by user
             logging.info("\n*** update map by user (form)")
@@ -2674,12 +2676,13 @@ permissions: RrWw""")
             _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
             logging.info("response: %r", responses)
             response = responses[path_shared_r]
+            assert not isinstance(response, int)
             status, prop = response["C:calendar-description"]
             logging.debug("calendar-description: %r", prop.text)
-            assert prop.text == "ICAL-USER-NEW"
+            assert status == 200 and prop.text == "ICAL-USER-NEW"
             status, prop = response["ICAL:calendar-color"]
             logging.debug("calendar-color: %r", prop.text)
-            assert prop.text == "#CCCCCC"
+            assert status == 200 and prop.text == "#CCCCCC"
 
             # update map by user
             logging.info("\n*** update map by user (form)")
