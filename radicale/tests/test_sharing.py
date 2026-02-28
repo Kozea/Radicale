@@ -71,6 +71,15 @@ class TestSharingApiSanity(BaseTest):
         return _, headers, answer
 
     # Test functions
+    def test_sharing_api_base_csv_custom(self) -> None:
+        self.database_path = os.path.join(self.colpath, "collection-db/test.csv")
+        self.configure({"sharing": {
+                                    "type": "csv",
+                                    "database_path": self.database_path,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "False"}
+                        })
+
     def test_sharing_api_base_no_auth(self) -> None:
         """POST request at '/.sharing' without authentication."""
         # disabled
