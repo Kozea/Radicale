@@ -2110,8 +2110,8 @@ Permit create of token-based sharing
 
 Default: `false`
 
-* If `False` it can be explicitly granted by permissions: `T`
-* If `True` it can be explicitly forbidden by permissions: `t`
+* If `False` it can be explicitly granted by *rights* permissions: `T`
+* If `True` it can be explicitly forbidden by *rights* permissions: `t`
 
 ##### permit_create_map
 
@@ -2121,8 +2121,8 @@ Permit create of map-based sharing
 
 Default: `false`
 
-* If `False` it can be explicitly granted by permissions: `M`
-* If `True` it can be explicitly forbidden by permissions: `m`
+* If `False` it can be explicitly granted by *rights* permissions: `M`
+* If `True` it can be explicitly forbidden by *rights* permissions: `m`
 
 ##### permit_properties_overlay
 

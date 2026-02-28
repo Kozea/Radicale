@@ -58,6 +58,11 @@ File-based configuration store is using encoded `PathOrToken` as filename for ea
 
 Map-based sharing can be accessed as usual after authentication and authorization.
 
+#### Permission Control
+
+ * `permit_create_map`
+   * supported *rights* permissions: `Mm`
+
 #### Workflow
 
 * create map as owner
@@ -78,12 +83,16 @@ Token-based sharing can be accessed after retrieving the token via
 
 Token-URI: `/.token/<Token>`
 
+#### Permission Control
+
+ * `permit_create_token`
+   * supported *rights* permissions: `Tt`
+
 #### Workflow
 
 * create token as owner
 * enable token as owner (can be combined with "create")
 * handover URI with token to client
-
 
 ## Sharing Configuration Management API
 
@@ -294,7 +303,14 @@ Owner or user can define per share a set of properties to overlay on PROPFIND re
 
 Whitelisted ones are defined in `OVERLAY_PROPERTIES_WHITELIST` in `radicale/sharing/__init__.py`:
 
-* `C:calendar-description` (_>= 3.7.0_)
-* `ICAL:calendar-color` (_>= 3.7.0_)
-* `CR:addressbook-description` (_>= 3.7.0_)
-* `INF:addressbook-color` (_>= 3.7.0_)
+ * `C:calendar-description` (_>= 3.7.0_)
+ * `ICAL:calendar-color` (_>= 3.7.0_)
+ * `CR:addressbook-description` (_>= 3.7.0_)
+ * `INF:addressbook-color` (_>= 3.7.0_)
+
+### Properties Overlay Control Options
+
+ * `permit_properties_overlay`
+   * supported *share* permissions: `Pp`
+ * `enforce_properties_overlay`
+   * supported *share* permissions: `Ee`
