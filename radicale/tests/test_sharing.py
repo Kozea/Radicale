@@ -76,25 +76,56 @@ class TestSharingApiSanity(BaseTest):
         # disabled
         for path in ["/.sharing", "/.sharing/"]:
             _, headers, _ = self.request("POST", path, check=404)
-        # enabled (permutations)
+
+        path = "/.sharing/"
+
+        # no database is active
+        logging.info("\n*** check API hook base: map=True token=False")
         self.configure({"sharing": {
                                     "collection_by_map": "True",
                                     "collection_by_token": "False"}
                         })
-        path = "/.sharing/"
-        _, headers, _ = self.request("POST", path, check=401)
+        _, headers, _ = self.request("POST", path, check=404)
+
+        logging.info("\n*** check API hook base: map=False token=True")
         self.configure({"sharing": {
                                     "collection_by_map": "False",
                                     "collection_by_token": "True"}
                         })
-        path = "/.sharing/"
-        _, headers, _ = self.request("POST", path, check=401)
+        _, headers, _ = self.request("POST", path, check=404)
+
+        logging.info("\n*** check API hook base: map=True token=True")
         self.configure({"sharing": {
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"}
                         })
-        path = "/.sharing/"
-        _, headers, _ = self.request("POST", path, check=401)
+        _, headers, _ = self.request("POST", path, check=404)
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # no database is active
+            logging.info("\n*** check API hook base: map=True token=False")
+            self.configure({"sharing": {
+                                        "collection_by_map": "True",
+                                        "collection_by_token": "False"}
+                            })
+            _, headers, _ = self.request("POST", path, check=401)
+
+            logging.info("\n*** check API hook base: map=False token=True")
+            self.configure({"sharing": {
+                                        "collection_by_map": "False",
+                                        "collection_by_token": "True"}
+                            })
+            _, headers, _ = self.request("POST", path, check=401)
+
+            logging.info("\n*** check API hook base: map=True token=True")
+            self.configure({"sharing": {
+                                        "collection_by_map": "True",
+                                        "collection_by_token": "True"}
+                            })
+            _, headers, _ = self.request("POST", path, check=401)
 
     def test_sharing_api_base_with_auth(self) -> None:
         """POST request at '/.sharing' with authentication."""
@@ -108,75 +139,82 @@ class TestSharingApiSanity(BaseTest):
 
         json_dict: dict
 
-        # path with no valid API hook
-        for path in ["/.sharing/", "/.sharing/v9/"]:
-            _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
 
-        # path with valid API but no hook
-        for path in ["/.sharing/v1/"]:
-            _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
+            for path in ["/.sharing/", "/.sharing/v9/"]:
+                logging.info("\n*** check invalid API URI: %r", path)
+                _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
 
-        # path with valid API and hook but not enabled "map"
-        self.configure({"sharing": {
-                                    "collection_by_map": "False",
-                                    "collection_by_token": "True"}
-                        })
-        sharetype = "map"
-        for action in sharing.API_HOOKS_V1:
-            path = "/.sharing/v1/" + sharetype + "/" + action
-            _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
+            # path with valid API but no hook
+            for path in ["/.sharing/v1/"]:
+                logging.info("\n*** check valid API URI without hook: %r", path)
+                _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
 
-        # path with valid API and hook but not enabled "token"
-        self.configure({"sharing": {
-                                    "collection_by_map": "True",
-                                    "collection_by_token": "False"}
-                        })
-        sharetype = "token"
-        for action in sharing.API_HOOKS_V1:
-            path = "/.sharing/v1/" + sharetype + "/" + action
-            _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
+            # path with valid API and hook but not enabled "map"
+            self.configure({"sharing": {
+                                        "collection_by_map": "False",
+                                        "collection_by_token": "True"}
+                            })
+            sharetype = "map"
+            for action in sharing.API_HOOKS_V1:
+                path = "/.sharing/v1/" + sharetype + "/" + action
+                logging.info("\n*** check valid API URI hook (but not enabled): %r", path)
+                _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
 
-        # check info hook
-        logging.info("\n*** check API hook: info/all")
-        json_dict = {}
-        _, headers, answer = self._sharing_api_json("all", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
-        answer_dict = json.loads(answer)
-        assert answer_dict['FeatureEnabledCollectionByMap'] is True
-        assert answer_dict['FeatureEnabledCollectionByToken'] is False
-        assert answer_dict['PermittedCreateCollectionByMap'] is True
-        assert answer_dict['PermittedCreateCollectionByToken'] is True
+            # path with valid API and hook but not enabled "token"
+            self.configure({"sharing": {
+                                        "collection_by_map": "True",
+                                        "collection_by_token": "False"}
+                            })
+            sharetype = "token"
+            for action in sharing.API_HOOKS_V1:
+                path = "/.sharing/v1/" + sharetype + "/" + action
+                logging.info("\n*** check valid API URI hook (but not enabled): %r", path)
+                _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
 
-        logging.info("\n*** check API hook: info/map")
-        json_dict = {}
-        _, headers, answer = self._sharing_api_json("map", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
-        answer_dict = json.loads(answer)
-        assert answer_dict['FeatureEnabledCollectionByMap'] is True
-        assert 'FeatureEnabledCollectionByToken' not in answer_dict
-        assert 'PermittedCreateCollectionByToken' not in answer_dict
+            # check info hook
+            logging.info("\n*** check API hook: info/all")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("all", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['FeatureEnabledCollectionByMap'] is True
+            assert answer_dict['FeatureEnabledCollectionByToken'] is False
+            assert answer_dict['PermittedCreateCollectionByMap'] is True
+            assert answer_dict['PermittedCreateCollectionByToken'] is True
 
-        logging.info("\n*** check API hook: info/token -> 404 (not enabled)")
-        json_dict = {}
-        _, headers, answer = self._sharing_api_json("token", "info", check=404, login="owner:ownerpw", json_dict=json_dict)
+            logging.info("\n*** check API hook: info/map")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['FeatureEnabledCollectionByMap'] is True
+            assert 'FeatureEnabledCollectionByToken' not in answer_dict
+            assert 'PermittedCreateCollectionByToken' not in answer_dict
 
-        # path with valid API and hook and all enabled
-        self.configure({"sharing": {
-                                    "collection_by_map": "True",
-                                    "collection_by_token": "True"}
-                        })
-        for sharetype in sharing.SHARE_TYPES:
-            path = "/.sharing/v1/" + sharetype + "/" + action
-            # invalid API
-            _, headers, _ = self.request("POST", path + "NA", check=404, login="owner:ownerpw")
-            #  valid API
-            _, headers, _ = self.request("POST", path, check=400, login="owner:ownerpw")
+            logging.info("\n*** check API hook: info/token -> 404 (not enabled)")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("token", "info", check=404, login="owner:ownerpw", json_dict=json_dict)
 
-        logging.info("\n*** check API hook: info/token -> 200")
-        json_dict = {}
-        _, headers, answer = self._sharing_api_json("token", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
-        answer_dict = json.loads(answer)
-        assert answer_dict['FeatureEnabledCollectionByToken'] is True
-        assert 'FeatureEnabledCollectionByMap' not in answer_dict
-        assert 'PermittedCreateCollectionByMap' not in answer_dict
+            # path with valid API and hook and all enabled
+            self.configure({"sharing": {
+                                        "collection_by_map": "True",
+                                        "collection_by_token": "True"}
+                            })
+            for sharetype in sharing.SHARE_TYPES:
+                path = "/.sharing/v1/" + sharetype + "/" + action
+                # invalid API
+                _, headers, _ = self.request("POST", path + "NA", check=404, login="owner:ownerpw")
+                #  valid API
+                _, headers, _ = self.request("POST", path, check=400, login="owner:ownerpw")
+
+            logging.info("\n*** check API hook: info/token -> 200")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("token", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['FeatureEnabledCollectionByToken'] is True
+            assert 'FeatureEnabledCollectionByMap' not in answer_dict
+            assert 'PermittedCreateCollectionByMap' not in answer_dict
 
     def test_sharing_api_list_with_auth(self) -> None:
         """POST/list with authentication."""
