@@ -1474,8 +1474,8 @@ Default: `/etc/radicale/rights`
 _(>= 3.1.9)_
 
 Global permission to delete complete collections.
-* If `False` it can be explicitly granted per collection by `permissions: D`
-* If `True` it can be explicitly forbidden per collection by `permissions: d`
+* If `False` it can be explicitly granted per collection by *rights* permissions: `D`
+* If `True` it can be explicitly forbidden per collection by *rights* permissions: `d`
 
 Default: `True`
 
@@ -1484,8 +1484,8 @@ Default: `True`
 _(>= 3.3.0)_
 
 Global permission to overwrite complete collections.
-* If `False` it can be explicitly granted per collection by `permissions: O`
-* If `True` it can be explicitly forbidden per collection by `permissions: o`
+* If `False` it can be explicitly granted per collection by *rights* permissions: `O`
+* If `True` it can be explicitly forbidden per collection by *rights* permissions: `o`
 
 Default: `True`
 
