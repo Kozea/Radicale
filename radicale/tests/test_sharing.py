@@ -196,9 +196,7 @@ class TestSharingApiSanity(BaseTest):
         form_array: Sequence[str]
         json_dict: dict
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -286,9 +284,7 @@ class TestSharingApiSanity(BaseTest):
         form_array: Sequence[str]
         json_dict: dict
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -484,9 +480,7 @@ class TestSharingApiSanity(BaseTest):
         path = path_base + "/event1.ics"
         self.put(path, event, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -592,9 +586,7 @@ class TestSharingApiSanity(BaseTest):
 
         json_dict: dict
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -645,9 +637,7 @@ class TestSharingApiSanity(BaseTest):
         event = get_file_content(file_item2)
         self.put(path_mapped_item2, event, check=201, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -834,9 +824,7 @@ class TestSharingApiSanity(BaseTest):
         path = path_mapped2 + "/event1.ics"
         self.put(path, event, login="%s:%s" % ("owner2", "owner2pw"))
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -923,9 +911,7 @@ class TestSharingApiSanity(BaseTest):
         path = path_mapped + "/event1.ics"
         self.put(path, event, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1117,9 +1103,7 @@ class TestSharingApiSanity(BaseTest):
         event = get_file_content("event1.ics")
         self.put(path_mapped_item, event, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1228,9 +1212,7 @@ class TestSharingApiSanity(BaseTest):
         event = get_file_content("event2.ics")
         self.put(path_user_item, event, login="user:userpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1364,9 +1346,7 @@ class TestSharingApiSanity(BaseTest):
         path = os.path.join(path_mapped, "event1.ics")
         self.put(path, event, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1468,9 +1448,7 @@ class TestSharingApiSanity(BaseTest):
         path = os.path.join(path_mapped, "event1.ics")
         self.put(path, event, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1647,9 +1625,7 @@ class TestSharingApiSanity(BaseTest):
         event = get_file_content("event3.ics")
         self.put(os.path.join(path_user, "event3.ics"), event, login="user:userpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1837,9 +1813,7 @@ class TestSharingApiSanity(BaseTest):
         event = get_file_content("event1.ics")
         self.put(os.path.join(path_mapped1, "event1.ics"), event, login="owner:ownerpw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1959,9 +1933,7 @@ class TestSharingApiSanity(BaseTest):
         self.mkcalendar(path_user1, login="user1:user1pw")
         self.mkcalendar(path_user2, login="user2:user2pw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -2107,9 +2079,7 @@ class TestSharingApiSanity(BaseTest):
         logging.info("\n*** mkcalendar user2 -> conflict")
         self.mkcalendar(path_user2, login="user2:user2pw", check=409)
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -2179,9 +2149,7 @@ class TestSharingApiSanity(BaseTest):
         logging.info("\n*** prepare")
         self.mkcalendar(path_owner1, login="owner1:owner1pw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -2272,9 +2240,7 @@ permissions: RrWw""")
         self.mkcalendar(path_owner1_M, login="owner1:owner1pw")
         self.mkcalendar(path_owner1_m, login="owner1:owner1pw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -2394,9 +2360,7 @@ permissions: RrWw""")
         logging.info("\n*** prepare")
         self.mkcalendar(path_owner1, login="owner1:owner1pw")
 
-        for db_type in sharing.INTERNAL_TYPES:
-            if db_type == "none":
-                continue
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
