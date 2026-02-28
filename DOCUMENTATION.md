@@ -2110,8 +2110,8 @@ Permit create of token-based sharing
 
 Default: `false`
 
-* If `False` it can be explicitly granted by `permissions: t`
-* If `True` it can be explicitly forbidden by `permissions: T`
+* If `False` it can be explicitly granted by permissions: `T`
+* If `True` it can be explicitly forbidden by permissions: `t`
 
 ##### permit_create_map
 
@@ -2121,8 +2121,30 @@ Permit create of map-based sharing
 
 Default: `false`
 
-* If `False` it can be explicitly granted by `permissions: m`
-* If `True` it can be explicitly forbidden by `permissions: M`
+* If `False` it can be explicitly granted by permissions: `M`
+* If `True` it can be explicitly forbidden by permissions: `m`
+
+##### permit_properties_overlay
+
+_(>= 3.7.0)_
+
+Permit (limited) properties overlay by user of shared collection
+
+Default: `false`
+
+* If `False` it can be explicitly granted by *share* permissions: `P`
+* If `True` it can be explicitly forbidden by *share* permissions: `p`
+
+##### enforce_properties_overlay
+
+_(>= 3.7.0)_
+
+Enforce properties overlay even on write access
+
+Default: `true`
+
+* If `False` it can be explicitly enforced by *share* permissions: `E`
+* If `True` it can be explicitly forbidden by *share* permissions: `e`
 
 ##### default_permissions_create_token
 
@@ -2130,11 +2152,15 @@ Default permissions for create token-based sharing
 
 Default: `r`
 
+Supported: `rwEePp`
+
 ##### default_permissions_create_map
 
 Default permissions for map-based sharing
 
 Default: `r`
+
+Supported: `rwEePp`
 
 ## Supported Clients
 

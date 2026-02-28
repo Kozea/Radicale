@@ -108,12 +108,16 @@ class BaseSharing:
         self.permit_create_map = configuration.get("sharing", "permit_create_map")
         self.default_permissions_create_token = configuration.get("sharing", "default_permissions_create_token")
         self.default_permissions_create_map = configuration.get("sharing", "default_permissions_create_map")
+        self.permit_properties_overlay = configuration.get("sharing", "permit_properties_overlay")
+        self.enforce_properties_overlay = configuration.get("sharing", "enforce_properties_overlay")
         logger.info("sharing.collection_by_map  : %s", self.sharing_collection_by_map)
         logger.info("sharing.collection_by_token: %s", self.sharing_collection_by_token)
         logger.info("sharing.permit_create_token: %s", self.permit_create_token)
         logger.info("sharing.permit_create_map  : %s", self.permit_create_map)
         logger.info("sharing.default_permissions_create_token: %r", self.default_permissions_create_token)
         logger.info("sharing.default_permissions_create_map  : %r", self.default_permissions_create_map)
+        logger.info("sharing.permit_properties_overlay: %s", self.permit_properties_overlay)
+        logger.info("sharing.enforce_properties_overlay: %s", self.enforce_properties_overlay)
 
         if ((self.sharing_collection_by_map is False) and (self.sharing_collection_by_token is False)):
             logger.info("sharing disabled as no feature is enabled")

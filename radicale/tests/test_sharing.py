@@ -2495,7 +2495,7 @@ permissions: RrWw""")
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['Permissions'] == "RrWw"
 
-    def test_sharing_api_map_propfind_overlay(self) -> None:
+    def test_sharing_api_map_propfind_overlay_api(self) -> None:
         """share-by-map API usage tests related to proppatch."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
@@ -2690,3 +2690,386 @@ permissions: RrWw""")
             form_array.append("PathOrToken=" + path_shared_r)
             form_array.append("Properties=BUGGYENTRY=BUGGYVALUE")
             _, headers, answer = self._sharing_api_form("map", "update", check=400, login="user:userpw", form_array=form_array)
+
+    def test_sharing_api_map_propfind_overlay_proppatch(self) -> None:
+        """share-by-map API usage tests related to proppatch."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/calendarPFP-" + db_type + ".ics/"
+            path_shared_r = "/user/calendarPFP-shared-by-owner-r-" + db_type + ".ics/"
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["D:current-user-principal"]
+            assert status == 200 and len(prop) == 1
+            element = prop.find(xmlutils.make_clark("D:href"))
+            assert element is not None and element.text == "/owner/"
+
+            # execute PROPPATCH as owner
+            logging.info("\n*** PROPPATCH collection owner -> ok")
+            _, responses = self.proppatch(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#AAAAAA</I:calendar-color>
+      <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">ICAL-OWNER</C:calendar-description>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int) and len(response) == 2
+            status, prop = response["ICAL:calendar-color"]
+            assert status == 200 and not prop.text
+            status, prop = response["C:calendar-description"]
+            assert status == 200 and not prop.text
+
+            # verify PROPPATCH by owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert status == 200 and prop.text == "ICAL-OWNER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#AAAAAA"
+
+            # create map
+            logging.info("\n*** create map user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rp"
+            json_dict['Enabled'] = "True"
+            json_dict['Hidden'] = "False"
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # verify PROPPATCH as user
+            logging.info("\n*** PROPFIND collection user -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert status == 200 and prop.text == "ICAL-OWNER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#AAAAAA"
+
+            # execute PROPPATCH as user
+            logging.info("\n*** PROPPATCH collection user -> ok")
+            _, responses = self.proppatch(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#BBBBBB</I:calendar-color>
+      <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">ICAL-USER</C:calendar-description>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int) and len(response) == 2
+            status, prop = response["ICAL:calendar-color"]
+            assert status == 200 and not prop.text
+            status, prop = response["C:calendar-description"]
+            assert status == 200 and not prop.text
+
+            logging.info("\n*** list (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+
+            logging.info("\n*** list (json->csv)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/csv")
+
+            logging.info("\n*** list (json->txt)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/plain")
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int)
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert status == 200 and prop.text == "ICAL-USER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#BBBBBB"
+
+            # verify overlay not visible by owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert status == 200 and prop.text == "ICAL-OWNER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#AAAAAA"
+
+            # execute PROPPATCH as user (delete color)
+            logging.info("\n*** PROPPATCH collection user (delete color) -> ok")
+            _, responses = self.proppatch(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:remove>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/" />
+    </D:prop>
+  </D:remove>
+</D:propertyupdate>""", login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["ICAL:calendar-color"]
+            assert status == 200 and not prop.text
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay, color back to owner) -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int)
+            status, prop = response["C:calendar-description"]
+            logging.debug("calendar-description: %r", prop.text)
+            assert status == 200 and prop.text == "ICAL-USER"
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#AAAAAA"
+
+            # update map by owner
+            logging.info("\n*** update map by owner (disable property overlay)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rwe"
+            json_dict['User'] = "user"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # execute PROPPATCH as user
+            logging.info("\n*** PROPPATCH collection user (set color) -> ok")
+            _, responses = self.proppatch(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#DDDDDD</I:calendar-color>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["ICAL:calendar-color"]
+            assert status == 200 and not prop.text
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay, color) -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int)
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#DDDDDD"
+
+            # verify overlay visible by owner
+            logging.info("\n*** PROPFIND collection owner (visible enforced change) -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#DDDDDD"
+
+            # update map by owner
+            logging.info("\n*** update map by owner (enable property overlay)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rwE"
+            json_dict['User'] = "user"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # execute PROPPATCH as user
+            logging.info("\n*** PROPPATCH collection user (set color rw, enforce overlay enabled by default) -> ok")
+            _, responses = self.proppatch(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#EEEEEE</I:calendar-color>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["ICAL:calendar-color"]
+            assert status == 200 and not prop.text
+
+            # verify overlay visible by owner
+            logging.info("\n*** PROPFIND collection owner (invisible change) -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#DDDDDD"
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay, color) -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int)
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#EEEEEE"
+
+            # update map by owner
+            logging.info("\n*** update map by owner (enable property overlay)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rwe"
+            json_dict['User'] = "user"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # execute PROPPATCH as user
+            logging.info("\n*** PROPPATCH collection user (set color rwe, enforce overlay enabled by default) -> ok")
+            _, responses = self.proppatch(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#EEEE00</I:calendar-color>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["ICAL:calendar-color"]
+            assert status == 200 and not prop.text
+
+            # verify overlay visible by owner
+            logging.info("\n*** PROPFIND collection owner (visible change) -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#EEEE00"
+
+            self.configure({"sharing": {"enforce_properties_overlay": False}})
+
+            # update map by owner
+            logging.info("\n*** update map by owner (enable property overlay)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rw"
+            json_dict['User'] = "user"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** PROPPATCH collection user (set color rwe but enforce disabled) -> ok")
+            _, responses = self.proppatch(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#FFFFFF</I:calendar-color>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["ICAL:calendar-color"]
+            assert status == 200 and not prop.text
+
+            # verify visible by owner
+            logging.info("\n*** PROPFIND collection owner (visible change) -> ok")
+            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#FFFFFF"
