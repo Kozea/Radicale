@@ -135,6 +135,7 @@ class Sharing(sharing.BaseSharing):
                 Properties = row['Properties']
             return {
                     "mapped": True,
+                    "ShareType": ShareType,
                     "PathOrToken": PathOrToken,
                     "PathMapped": PathMapped,
                     "Owner": Owner,

@@ -129,6 +129,7 @@ class Sharing(sharing.BaseSharing):
                 logger.debug("TRACE/sharing: map %r to %r (Owner=%r User=%r Permissions=%r Hidden=%s Properties=%r)", PathOrToken, PathMapped, Owner, UserShare, Permissions, Hidden, Properties)
             return {
                     "mapped": True,
+                    "ShareType": ShareType,
                     "PathOrToken": PathOrToken,
                     "PathMapped": PathMapped,
                     "Owner": Owner,
