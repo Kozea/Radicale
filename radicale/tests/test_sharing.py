@@ -70,6 +70,49 @@ class TestSharingApiSanity(BaseTest):
         _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept)
         return _, headers, answer
 
+    def _propfind_calendar_color(self, path, login) -> str:
+            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
+            _, responses = self.propfind(path=path, data=propfind_calendar_color, login=login)
+            logging.info("response: %r", responses)
+            response = responses[path]
+            assert not isinstance(response, int)
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200
+            return prop.text
+
+    def _proppatch_calendar_color(self, path, login, color) -> str:
+            _, responses = self.proppatch(path=path, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">""" + color + """</I:calendar-color>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login=login)
+            logging.info("response: %r", responses)
+            response = responses[path]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["ICAL:calendar-color"]
+            assert status == 200 and not prop.text
+
+    def _proppatch_calendar_color_remove(self, path, login) -> str:
+            _, responses = self.proppatch(path=path, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:remove>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/" />
+    </D:prop>
+  </D:remove>
+</D:propertyupdate>""", login=login)
+            logging.info("response: %r", responses)
+            response = responses[path]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["ICAL:calendar-color"]
+            assert status == 200 and not prop.text
+
     # Test functions
     def test_sharing_api_base_csv_custom(self) -> None:
         self.database_path = os.path.join(self.colpath, "collection-db/test.csv")
@@ -2747,37 +2790,12 @@ permissions: RrWw""")
 
             # execute PROPPATCH as owner
             logging.info("\n*** PROPPATCH collection owner -> ok")
-            _, responses = self.proppatch(path_mapped, """\
-<?xml version="1.0" encoding="utf-8"?>
-<D:propertyupdate xmlns:D="DAV:">
-  <D:set>
-    <D:prop>
-      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#AAAAAA</I:calendar-color>
-      <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">ICAL-OWNER</C:calendar-description>
-    </D:prop>
-  </D:set>
-</D:propertyupdate>""", login="owner:ownerpw")
-            logging.info("response: %r", responses)
-            response = responses[path_mapped]
-            assert not isinstance(response, int) and len(response) == 2
-            status, prop = response["ICAL:calendar-color"]
-            assert status == 200 and not prop.text
-            status, prop = response["C:calendar-description"]
-            assert status == 200 and not prop.text
+            self._proppatch_calendar_color(path_mapped, login="owner:ownerpw", color="#AAAAAA")
 
             # verify PROPPATCH by owner
-            logging.info("\n*** PROPFIND collection owner -> ok")
-            propfind_calendar_color = get_file_content("propfind_multiple.xml")
-            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
-            logging.info("response: %r", responses)
-            response = responses[path_mapped]
-            assert not isinstance(response, int)
-            status, prop = response["C:calendar-description"]
-            logging.debug("calendar-description: %r", prop.text)
-            assert status == 200 and prop.text == "ICAL-OWNER"
-            status, prop = response["ICAL:calendar-color"]
-            logging.debug("calendar-color: %r", prop.text)
-            assert status == 200 and prop.text == "#AAAAAA"
+            logging.info("\n*** PROPFIND collection owner (verify collection change) -> ok")
+            color = self._propfind_calendar_color(path_mapped, login="owner:ownerpw")
+            assert color == "#AAAAAA"
 
             # create map
             logging.info("\n*** create map user/owner:r -> ok")
@@ -2802,37 +2820,12 @@ permissions: RrWw""")
 
             # verify PROPPATCH as user
             logging.info("\n*** PROPFIND collection user -> ok")
-            propfind_calendar_color = get_file_content("propfind_multiple.xml")
-            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
-            logging.info("response: %r", responses)
-            response = responses[path_mapped]
-            assert not isinstance(response, int)
-            status, prop = response["C:calendar-description"]
-            logging.debug("calendar-description: %r", prop.text)
-            assert status == 200 and prop.text == "ICAL-OWNER"
-            status, prop = response["ICAL:calendar-color"]
-            logging.debug("calendar-color: %r", prop.text)
-            assert status == 200 and prop.text == "#AAAAAA"
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#AAAAAA"
 
             # execute PROPPATCH as user
             logging.info("\n*** PROPPATCH collection user -> ok")
-            _, responses = self.proppatch(path_shared_r, """\
-<?xml version="1.0" encoding="utf-8"?>
-<D:propertyupdate xmlns:D="DAV:">
-  <D:set>
-    <D:prop>
-      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#BBBBBB</I:calendar-color>
-      <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">ICAL-USER</C:calendar-description>
-    </D:prop>
-  </D:set>
-</D:propertyupdate>""", login="user:userpw")
-            logging.info("response: %r", responses)
-            response = responses[path_shared_r]
-            assert not isinstance(response, int) and len(response) == 2
-            status, prop = response["ICAL:calendar-color"]
-            assert status == 200 and not prop.text
-            status, prop = response["C:calendar-description"]
-            assert status == 200 and not prop.text
+            self._proppatch_calendar_color(path_shared_r, login="user:userpw", color="#BBBBBB")
 
             logging.info("\n*** list (json->json)")
             json_dict['PathOrToken'] = path_shared_r
@@ -2851,62 +2844,22 @@ permissions: RrWw""")
 
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay) -> ok")
-            propfind_calendar_color = get_file_content("propfind_multiple.xml")
-            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
-            logging.info("response: %r", responses)
-            response = responses[path_shared_r]
-            assert not isinstance(response, int)
-            status, prop = response["C:calendar-description"]
-            logging.debug("calendar-description: %r", prop.text)
-            assert status == 200 and prop.text == "ICAL-USER"
-            status, prop = response["ICAL:calendar-color"]
-            logging.debug("calendar-color: %r", prop.text)
-            assert status == 200 and prop.text == "#BBBBBB"
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color  == "#BBBBBB"
 
             # verify overlay not visible by owner
-            logging.info("\n*** PROPFIND collection owner -> ok")
-            propfind_calendar_color = get_file_content("propfind_multiple.xml")
-            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
-            logging.info("response: %r", responses)
-            response = responses[path_mapped]
-            assert not isinstance(response, int)
-            status, prop = response["C:calendar-description"]
-            logging.debug("calendar-description: %r", prop.text)
-            assert status == 200 and prop.text == "ICAL-OWNER"
-            status, prop = response["ICAL:calendar-color"]
-            logging.debug("calendar-color: %r", prop.text)
-            assert status == 200 and prop.text == "#AAAAAA"
+            logging.info("\n*** PROPFIND collection owner (no collection change) -> ok")
+            color = self._propfind_calendar_color(path_mapped, login="owner:ownerpw")
+            assert color == "#AAAAAA"
 
             # execute PROPPATCH as user (delete color)
             logging.info("\n*** PROPPATCH collection user (delete color) -> ok")
-            _, responses = self.proppatch(path_shared_r, """\
-<?xml version="1.0" encoding="utf-8"?>
-<D:propertyupdate xmlns:D="DAV:">
-  <D:remove>
-    <D:prop>
-      <I:calendar-color xmlns:I="http://apple.com/ns/ical/" />
-    </D:prop>
-  </D:remove>
-</D:propertyupdate>""", login="user:userpw")
-            logging.info("response: %r", responses)
-            response = responses[path_shared_r]
-            assert not isinstance(response, int) and len(response) == 1
-            status, prop = response["ICAL:calendar-color"]
-            assert status == 200 and not prop.text
+            self._proppatch_calendar_color_remove(path_shared_r, login="user:userpw")
 
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay, color back to owner) -> ok")
-            propfind_calendar_color = get_file_content("propfind_multiple.xml")
-            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
-            logging.info("response: %r", responses)
-            response = responses[path_shared_r]
-            assert not isinstance(response, int)
-            status, prop = response["C:calendar-description"]
-            logging.debug("calendar-description: %r", prop.text)
-            assert status == 200 and prop.text == "ICAL-USER"
-            status, prop = response["ICAL:calendar-color"]
-            logging.debug("calendar-color: %r", prop.text)
-            assert status == 200 and prop.text == "#AAAAAA"
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#AAAAAA"
 
             # update map by owner
             logging.info("\n*** update map by owner (disable property overlay)")
@@ -2919,43 +2872,18 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
 
             # execute PROPPATCH as user
-            logging.info("\n*** PROPPATCH collection user (set color) -> ok")
-            _, responses = self.proppatch(path_shared_r, """\
-<?xml version="1.0" encoding="utf-8"?>
-<D:propertyupdate xmlns:D="DAV:">
-  <D:set>
-    <D:prop>
-      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#DDDDDD</I:calendar-color>
-    </D:prop>
-  </D:set>
-</D:propertyupdate>""", login="user:userpw")
-            logging.info("response: %r", responses)
-            response = responses[path_shared_r]
-            assert not isinstance(response, int) and len(response) == 1
-            status, prop = response["ICAL:calendar-color"]
-            assert status == 200 and not prop.text
+            logging.info("\n*** PROPPATCH collection user (set color/collection) -> ok")
+            self._proppatch_calendar_color(path_shared_r, login="user:userpw", color="#DDDDDD")
 
             # verify overlay as user
-            logging.info("\n*** PROPFIND collection user (overlay, color) -> ok")
-            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
-            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
-            logging.info("response: %r", responses)
-            response = responses[path_shared_r]
-            assert not isinstance(response, int)
-            status, prop = response["ICAL:calendar-color"]
-            logging.debug("calendar-color: %r", prop.text)
-            assert status == 200 and prop.text == "#DDDDDD"
+            logging.info("\n*** PROPFIND collection user (collection color changed) -> ok")
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#DDDDDD"
 
             # verify overlay visible by owner
-            logging.info("\n*** PROPFIND collection owner (visible enforced change) -> ok")
-            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
-            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
-            logging.info("response: %r", responses)
-            response = responses[path_mapped]
-            assert not isinstance(response, int)
-            status, prop = response["ICAL:calendar-color"]
-            logging.debug("calendar-color: %r", prop.text)
-            assert status == 200 and prop.text == "#DDDDDD"
+            logging.info("\n*** PROPFIND collection owner (visible change by user) -> ok")
+            color = self._propfind_calendar_color(path_mapped, login="owner:ownerpw")
+            assert color == "#DDDDDD"
 
             # update map by owner
             logging.info("\n*** update map by owner (enable property overlay)")
@@ -2969,42 +2897,17 @@ permissions: RrWw""")
 
             # execute PROPPATCH as user
             logging.info("\n*** PROPPATCH collection user (set color rw, enforce overlay enabled by default) -> ok")
-            _, responses = self.proppatch(path_shared_r, """\
-<?xml version="1.0" encoding="utf-8"?>
-<D:propertyupdate xmlns:D="DAV:">
-  <D:set>
-    <D:prop>
-      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#EEEEEE</I:calendar-color>
-    </D:prop>
-  </D:set>
-</D:propertyupdate>""", login="user:userpw")
-            logging.info("response: %r", responses)
-            response = responses[path_shared_r]
-            assert not isinstance(response, int) and len(response) == 1
-            status, prop = response["ICAL:calendar-color"]
-            assert status == 200 and not prop.text
+            self._proppatch_calendar_color(path_shared_r, login="user:userpw", color="#EEEEEE")
 
             # verify overlay visible by owner
-            logging.info("\n*** PROPFIND collection owner (invisible change) -> ok")
-            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
-            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
-            logging.info("response: %r", responses)
-            response = responses[path_mapped]
-            assert not isinstance(response, int)
-            status, prop = response["ICAL:calendar-color"]
-            logging.debug("calendar-color: %r", prop.text)
-            assert status == 200 and prop.text == "#DDDDDD"
+            logging.info("\n*** PROPFIND collection owner (invisible change by user) -> ok")
+            color = self._propfind_calendar_color(path_mapped, login="owner:ownerpw")
+            assert color == "#DDDDDD"
 
             # verify overlay as user
-            logging.info("\n*** PROPFIND collection user (overlay, color) -> ok")
-            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
-            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
-            logging.info("response: %r", responses)
-            response = responses[path_shared_r]
-            assert not isinstance(response, int)
-            status, prop = response["ICAL:calendar-color"]
-            logging.debug("calendar-color: %r", prop.text)
-            assert status == 200 and prop.text == "#EEEEEE"
+            logging.info("\n*** PROPFIND collection user (overlay: color) -> ok")
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#EEEEEE"
 
             # update map by owner
             logging.info("\n*** update map by owner (enable property overlay)")
@@ -3018,31 +2921,12 @@ permissions: RrWw""")
 
             # execute PROPPATCH as user
             logging.info("\n*** PROPPATCH collection user (set color rwe, enforce overlay enabled by default) -> ok")
-            _, responses = self.proppatch(path_shared_r, """\
-<?xml version="1.0" encoding="utf-8"?>
-<D:propertyupdate xmlns:D="DAV:">
-  <D:set>
-    <D:prop>
-      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#EEEE00</I:calendar-color>
-    </D:prop>
-  </D:set>
-</D:propertyupdate>""", login="user:userpw")
-            logging.info("response: %r", responses)
-            response = responses[path_shared_r]
-            assert not isinstance(response, int) and len(response) == 1
-            status, prop = response["ICAL:calendar-color"]
-            assert status == 200 and not prop.text
+            self._proppatch_calendar_color(path_shared_r, login="user:userpw", color="#EEEE00")
 
             # verify overlay visible by owner
             logging.info("\n*** PROPFIND collection owner (visible change) -> ok")
-            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
-            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
-            logging.info("response: %r", responses)
-            response = responses[path_mapped]
-            assert not isinstance(response, int)
-            status, prop = response["ICAL:calendar-color"]
-            logging.debug("calendar-color: %r", prop.text)
-            assert status == 200 and prop.text == "#EEEE00"
+            color = self._propfind_calendar_color(path_mapped, login="owner:ownerpw")
+            assert color == "#EEEE00"
 
             self.configure({"sharing": {"enforce_properties_overlay": False}})
 
@@ -3057,28 +2941,9 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
 
             logging.info("\n*** PROPPATCH collection user (set color rwe but enforce disabled) -> ok")
-            _, responses = self.proppatch(path_shared_r, """\
-<?xml version="1.0" encoding="utf-8"?>
-<D:propertyupdate xmlns:D="DAV:">
-  <D:set>
-    <D:prop>
-      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#FFFFFF</I:calendar-color>
-    </D:prop>
-  </D:set>
-</D:propertyupdate>""", login="user:userpw")
-            logging.info("response: %r", responses)
-            response = responses[path_shared_r]
-            assert not isinstance(response, int) and len(response) == 1
-            status, prop = response["ICAL:calendar-color"]
-            assert status == 200 and not prop.text
+            self._proppatch_calendar_color(path_shared_r, login="user:userpw", color="#FFFFFF")
 
             # verify visible by owner
             logging.info("\n*** PROPFIND collection owner (visible change) -> ok")
-            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
-            _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
-            logging.info("response: %r", responses)
-            response = responses[path_mapped]
-            assert not isinstance(response, int)
-            status, prop = response["ICAL:calendar-color"]
-            logging.debug("calendar-color: %r", prop.text)
-            assert status == 200 and prop.text == "#FFFFFF"
+            color = self._propfind_calendar_color(path_mapped, login="owner:ownerpw")
+            assert color == "#FFFFFF"
