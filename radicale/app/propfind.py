@@ -347,9 +347,10 @@ def xml_propfind_response(
                 if tag_text is not None:
                     if sharing:
                         # map from overlay
-                        if human_tag in sharing['Properties']:
-                            if sharing['Properties'][human_tag] is not None:
-                                tag_text = sharing['Properties'][human_tag]
+                        if sharing['Properties']:
+                            if human_tag in sharing['Properties']:
+                                if sharing['Properties'][human_tag] is not None:
+                                    tag_text = sharing['Properties'][human_tag]
                     element.text = tag_text
                 else:
                     is404 = True
