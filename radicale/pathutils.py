@@ -282,7 +282,6 @@ def path_to_filesystem(root: str, sane_path: str) -> str:
     for part in parts:
         if not is_safe_filesystem_path_component(part):
             raise UnsafePathError(part)
-        safe_path_parent = safe_path
         safe_path = os.path.join(safe_path, part)
         # Check for conflicting files (e.g. case-insensitive file systems
         # or short names on Windows file systems)
