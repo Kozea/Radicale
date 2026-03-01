@@ -117,15 +117,15 @@ class ApplicationPartProppatch(ApplicationBase):
             if sharing:
                 # no write access -> use properties overlay
                 if self._sharing.permit_properties_overlay:
-                    if permissions_filter is not None and "P" in permissions_filter:
-                        logger.info("PROPPATCH request on shared %r: no write-permissions, overlay permitted, but denied by permission 'P'", path_orig)
+                    if permissions_filter is not None and "p" in permissions_filter:
+                        logger.info("PROPPATCH request on shared %r: no write-permissions, overlay permitted, but denied by permission 'p'", path_orig)
                         return httputils.NOT_ALLOWED
                     else:
                         logger.info("PROPPATCH request on shared %r: no write-permissions, overlay permitted by option", path_orig)
                         sharing_overlay = True
                 else:
-                    if permissions_filter is not None and "p" in permissions_filter:
-                        logger.info("PROPPATCH request on shared %r: no write-permissions, overlay denied, but granted by permission 'p'", path_orig)
+                    if permissions_filter is not None and "P" in permissions_filter:
+                        logger.info("PROPPATCH request on shared %r: no write-permissions, overlay denied, but granted by permission 'P'", path_orig)
                         sharing_overlay = True
                     else:
                         logger.info("PROPPATCH request on shared %r: no write-permissions and overlay denied by option", path_orig)
