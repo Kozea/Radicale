@@ -2937,7 +2937,7 @@ permissions: RrWw""")
 
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay, color) -> ok")
-            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
             _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
             logging.info("response: %r", responses)
             response = responses[path_shared_r]
@@ -2948,7 +2948,7 @@ permissions: RrWw""")
 
             # verify overlay visible by owner
             logging.info("\n*** PROPFIND collection owner (visible enforced change) -> ok")
-            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
             _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
             logging.info("response: %r", responses)
             response = responses[path_mapped]
@@ -2986,7 +2986,7 @@ permissions: RrWw""")
 
             # verify overlay visible by owner
             logging.info("\n*** PROPFIND collection owner (invisible change) -> ok")
-            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
             _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
             logging.info("response: %r", responses)
             response = responses[path_mapped]
@@ -2997,7 +2997,7 @@ permissions: RrWw""")
 
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay, color) -> ok")
-            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
             _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
             logging.info("response: %r", responses)
             response = responses[path_shared_r]
@@ -3035,7 +3035,7 @@ permissions: RrWw""")
 
             # verify overlay visible by owner
             logging.info("\n*** PROPFIND collection owner (visible change) -> ok")
-            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
             _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
             logging.info("response: %r", responses)
             response = responses[path_mapped]
@@ -3074,7 +3074,7 @@ permissions: RrWw""")
 
             # verify visible by owner
             logging.info("\n*** PROPFIND collection owner (visible change) -> ok")
-            propfind_calendar_color = get_file_content("propfind_multiple.xml")
+            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
             _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
             logging.info("response: %r", responses)
             response = responses[path_mapped]
