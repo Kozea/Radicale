@@ -70,48 +70,50 @@ class TestSharingApiSanity(BaseTest):
         _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept)
         return _, headers, answer
 
-    def _propfind_calendar_color(self, path, login) -> str:
-            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
-            _, responses = self.propfind(path=path, data=propfind_calendar_color, login=login)
-            logging.info("response: %r", responses)
-            response = responses[path]
-            assert not isinstance(response, int)
-            status, prop = response["ICAL:calendar-color"]
-            logging.debug("calendar-color: %r", prop.text)
-            assert status == 200
-            return prop.text
+    def _propfind_calendar_color(self, path, login):
+        propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
+        _, responses = self.propfind(path=path, data=propfind_calendar_color, login=login)
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int)
+        status, prop = response["ICAL:calendar-color"]
+        logging.debug("calendar-color: %r", prop.text)
+        assert status == 200
+        return prop.text
 
-    def _proppatch_calendar_color(self, path, login, color) -> str:
-            _, responses = self.proppatch(path=path, data="""\
+    def _proppatch_calendar_color(self, path, login, color) -> None:
+        _, responses = self.proppatch(path=path, data="""\
 <?xml version="1.0" encoding="utf-8"?>
 <D:propertyupdate xmlns:D="DAV:">
-  <D:set>
-    <D:prop>
-      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">""" + color + """</I:calendar-color>
-    </D:prop>
-  </D:set>
+<D:set>
+<D:prop>
+  <I:calendar-color xmlns:I="http://apple.com/ns/ical/">""" + color + """</I:calendar-color>
+</D:prop>
+</D:set>
 </D:propertyupdate>""", login=login)
-            logging.info("response: %r", responses)
-            response = responses[path]
-            assert not isinstance(response, int) and len(response) == 1
-            status, prop = response["ICAL:calendar-color"]
-            assert status == 200 and not prop.text
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        return
 
-    def _proppatch_calendar_color_remove(self, path, login) -> str:
-            _, responses = self.proppatch(path=path, data="""\
+    def _proppatch_calendar_color_remove(self, path, login) -> None:
+        _, responses = self.proppatch(path=path, data="""\
 <?xml version="1.0" encoding="utf-8"?>
 <D:propertyupdate xmlns:D="DAV:">
-  <D:remove>
-    <D:prop>
-      <I:calendar-color xmlns:I="http://apple.com/ns/ical/" />
-    </D:prop>
-  </D:remove>
+<D:remove>
+<D:prop>
+  <I:calendar-color xmlns:I="http://apple.com/ns/ical/" />
+</D:prop>
+</D:remove>
 </D:propertyupdate>""", login=login)
-            logging.info("response: %r", responses)
-            response = responses[path]
-            assert not isinstance(response, int) and len(response) == 1
-            status, prop = response["ICAL:calendar-color"]
-            assert status == 200 and not prop.text
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        return
 
     # Test functions
     def test_sharing_api_base_csv_custom(self) -> None:
@@ -2547,7 +2549,7 @@ permissions: RrWw""")
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['Permissions'] == "RrWw"
 
-    def test_sharing_api_map_propfind_overlay_api(self) -> None:
+    def test_sharing_api_map_propfind_overlay_api_base(self) -> None:
         """share-by-map API usage tests related to proppatch."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
@@ -2556,6 +2558,7 @@ permissions: RrWw""")
                                     "type": "csv",
                                     "permit_create_map": True,
                                     "permit_create_token": True,
+                                    "permit_properties_overlay": True,
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -2743,6 +2746,202 @@ permissions: RrWw""")
             form_array.append("Properties=BUGGYENTRY=BUGGYVALUE")
             _, headers, answer = self._sharing_api_form("map", "update", check=400, login="user:userpw", form_array=form_array)
 
+    def test_sharing_api_map_propfind_overlay_api_permissions(self) -> None:
+        """share-by-map API usage tests related to proppatch."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        path_mapped = "/owner/calendarPFOAP.ics/"
+        path_shared_r = "/user/calendarPFOAP-shared-by-owner-r.ics/"
+
+        logging.info("\n*** prepare and test access")
+        self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["D:current-user-principal"]
+            assert status == 200 and len(prop) == 1
+            element = prop.find(xmlutils.make_clark("D:href"))
+            assert element is not None and element.text == "/owner/"
+
+            # execute PROPPATCH as owner
+            logging.info("\n*** PROPPATCH collection owner -> ok")
+            self._proppatch_calendar_color(path_mapped, login="owner:ownerpw", color="#AAAAAA")
+
+            # verify PROPPATCH by owner
+            logging.info("\n*** PROPFIND collection owner (verify collection change) -> ok")
+            color = self._propfind_calendar_color(path_mapped, login="owner:ownerpw")
+            assert color == "#AAAAAA"
+
+            # create map
+            logging.info("\n*** create map user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = "True"
+            json_dict['Hidden'] = "False"
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            logging.info("\n*** list (json->json) db=" + db_type)
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Permissions'] == "r"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            logging.info("\n*** list after enable (json->json) db=" + db_type)
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Permissions'] == "r"
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay, color back to owner) -> ok")
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#AAAAAA"
+
+            self.configure({"sharing": {"permit_properties_overlay": False}})
+
+            # update map by user
+            logging.info("\n*** update map by user (json) -> 403 (no overlay permitted)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Properties'] = {"ICAL:calendar-color": "#BBBBBB"}
+            _, headers, answer = self._sharing_api_json("map", "update", check=403, login="user:userpw", json_dict=json_dict)
+
+            self.configure({"sharing": {"permit_properties_overlay": True}})
+
+            logging.info("\n*** update map by user (json) -> 200 (overlay permitted)")
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="user:userpw", json_dict=json_dict)
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#BBBBBB"
+
+            # update map by owner
+            logging.info("\n*** update map by owner (disable property overlay)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rp"
+            json_dict['User'] = "user"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** list after update by owner (json->json) db=" + db_type)
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Permissions'] == "rp"
+
+            logging.info("\n*** update map by user (json) -> 403 (no overlay permitted by share permissions)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Properties'] = {"ICAL:calendar-color": "#CCCCCC"}
+            _, headers, answer = self._sharing_api_json("map", "update", check=403, login="user:userpw", json_dict=json_dict)
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#BBBBBB"
+
+            # update map by owner
+            logging.info("\n*** update map by owner (disable property overlay)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rP"
+            json_dict['User'] = "user"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** update map by user (json) -> 200 (overlay permitted by share permissions)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Properties'] = {"ICAL:calendar-color": "#CCCCCC"}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="user:userpw", json_dict=json_dict)
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#CCCCCC"
+
+            self.configure({"sharing": {"permit_properties_overlay": True}})
+
+            # update map by owner
+            logging.info("\n*** update map by owner (disable property overlay)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rp"
+            json_dict['User'] = "user"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** update map by user (json) -> 403 (overlay permitted but denied by share permissions)")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Properties'] = {"ICAL:calendar-color": "#EEEEEE"}
+            _, headers, answer = self._sharing_api_json("map", "update", check=403, login="user:userpw", json_dict=json_dict)
+
     def test_sharing_api_map_propfind_overlay_proppatch(self) -> None:
         """share-by-map API usage tests related to proppatch."""
         self.configure({"auth": {"type": "htpasswd",
@@ -2798,12 +2997,12 @@ permissions: RrWw""")
             assert color == "#AAAAAA"
 
             # create map
-            logging.info("\n*** create map user/owner:r -> ok")
+            logging.info("\n*** create map user/owner:rP -> ok")
             json_dict = {}
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_r
-            json_dict['Permissions'] = "rp"
+            json_dict['Permissions'] = "rP"
             json_dict['Enabled'] = "True"
             json_dict['Hidden'] = "False"
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
@@ -2845,7 +3044,7 @@ permissions: RrWw""")
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay) -> ok")
             color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
-            assert color  == "#BBBBBB"
+            assert color == "#BBBBBB"
 
             # verify overlay not visible by owner
             logging.info("\n*** PROPFIND collection owner (no collection change) -> ok")
