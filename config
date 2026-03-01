@@ -327,10 +327,22 @@
 #  If True it can be explicitly forbidden by permissions: M
 #permit_create_map = false
 
+# Permit properties overlay
+#  If False it can be explicitly granted by share permissions: P
+#  If True it can be explicitly forbidden by share permissions: p
+#permit_properties_overlay = false
+
+# Enforce properties overlay on write access
+#  If False it can be explicitly enforced by share permissions: E
+#  If True it can be explicitly forbidden by share permissions: e
+#enforce_properties_overlay = true
+
 # Default permissions for token-based sharing
+#   Supported: rwEePp
 #default_permissions_create_token = r
 
 # Default permissions for map-based sharing
+#   Supported: rwEePp
 #default_permissions_create_map = r
 
 

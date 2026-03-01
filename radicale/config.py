@@ -491,6 +491,14 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "false",
             "help": "permit create of map-based sharing",
             "type": bool}),
+        ("permit_properties_overlay", {
+            "value": "false",
+            "help": "permit properties overlay",
+            "type": bool}),
+        ("enforce_properties_overlay", {
+            "value": "true",
+            "help": "enforce properties overlay on write access",
+            "type": bool}),
         ("default_permissions_create_token", {
             "value": "r",
             "help": "default permissions for token-based sharing",

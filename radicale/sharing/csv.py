@@ -135,6 +135,7 @@ class Sharing(sharing.BaseSharing):
                 Properties = row['Properties']
             return {
                     "mapped": True,
+                    "ShareType": ShareType,
                     "PathOrToken": PathOrToken,
                     "PathMapped": PathMapped,
                     "Owner": Owner,
@@ -197,7 +198,7 @@ class Sharing(sharing.BaseSharing):
                     pass
                 else:
                     if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/list/row: add: %r", row)
+                        logger.debug("TRACE/sharing/list/row: add : %r", row)
                     result.append(row)
             index += 1
         return result
@@ -316,7 +317,7 @@ class Sharing(sharing.BaseSharing):
 
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/%s/update: OwnerOrUser=%r PathOrToken=%r index=%d", ShareType, OwnerOrUser, PathOrToken, index)
-                logger.debug("TRACE/sharing/%s/update: orig row=%r", ShareType, row)
+                logger.debug("TRACE/sharing/%s/update: orig row[%d]=%r", ShareType, index, row)
 
             # CSV: remove+adjust+readd
             if PathMapped is not None:
@@ -335,11 +336,10 @@ class Sharing(sharing.BaseSharing):
             row["TimestampUpdated"] = Timestamp
 
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/%s/update: adj  row=%r", ShareType, row)
+                logger.debug("TRACE/sharing/%s/update: adj  row[%d]=%r", ShareType, index, row)
 
             # replace row
-            self._sharing_cache.pop(index)
-            self._sharing_cache.append(row)
+            self._sharing_cache[index] = row
 
             with self._storage.acquire_lock("w", OwnerOrUser, path=self._sharing_db_file):
                 if self._write_csv(self._sharing_db_file):
@@ -484,10 +484,8 @@ class Sharing(sharing.BaseSharing):
 
             row['TimestampUpdated'] = Timestamp
 
-            # remove
-            self._sharing_cache.pop(index)
-            # readd
-            self._sharing_cache.append(row)
+            # replace
+            self._sharing_cache[index] = row
 
             with self._storage.acquire_lock("w", OwnerOrUser, path=self._sharing_db_file):
                 if self._write_csv(self._sharing_db_file):
@@ -509,6 +507,7 @@ class Sharing(sharing.BaseSharing):
 
     def _load_csv(self, file: str) -> bool:
         logger.debug("sharing database load begin: %r", file)
+        self._sharing_cache = []
         with self._storage.acquire_lock("r", None):
             with open(file, 'r', newline='') as csvfile:
                 reader = csv.DictReader(csvfile, fieldnames=sharing.DB_FIELDS_V1, delimiter=';')
@@ -522,7 +521,7 @@ class Sharing(sharing.BaseSharing):
                             if fieldname not in row:
                                 logger.debug("sharing database is incompatible: %r", file)
                                 return False
-                    # convert txt to bool
+                    # convert txt to bool or int
                     if self._lines > 0:
                         for fieldname in sharing.DB_FIELDS_V1_BOOL:
                             try:
