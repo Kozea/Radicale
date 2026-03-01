@@ -1537,9 +1537,9 @@ Load the rules from a file.</p></li>
 <p>Global permission to delete complete collections.</p>
 <ul>
 <li>If <code>False</code> it can be explicitly granted per collection by
-<code>permissions: D</code></li>
+<em>rights</em> permissions: <code>D</code></li>
 <li>If <code>True</code> it can be explicitly forbidden per collection
-by <code>permissions: d</code></li>
+by <em>rights</em> permissions: <code>d</code></li>
 </ul>
 <p>Default: <code>True</code></p>
 </section>
@@ -1549,9 +1549,9 @@ by <code>permissions: d</code></li>
 <p>Global permission to overwrite complete collections.</p>
 <ul>
 <li>If <code>False</code> it can be explicitly granted per collection by
-<code>permissions: O</code></li>
+<em>rights</em> permissions: <code>O</code></li>
 <li>If <code>True</code> it can be explicitly forbidden per collection
-by <code>permissions: o</code></li>
+by <em>rights</em> permissions: <code>o</code></li>
 </ul>
 <p>Default: <code>True</code></p>
 </section>
@@ -2118,9 +2118,9 @@ instead of returning the results.</p>
 <p>Default: <code>false</code></p>
 <ul>
 <li>If <code>False</code> it can be explicitly granted by
-<code>permissions: t</code></li>
+<em>rights</em> permissions: <code>T</code></li>
 <li>If <code>True</code> it can be explicitly forbidden by
-<code>permissions: T</code></li>
+<em>rights</em> permissions: <code>t</code></li>
 </ul>
 </section>
 <section class="level5" id="permit_create_map">
@@ -2130,20 +2130,46 @@ instead of returning the results.</p>
 <p>Default: <code>false</code></p>
 <ul>
 <li>If <code>False</code> it can be explicitly granted by
-<code>permissions: m</code></li>
+<em>rights</em> permissions: <code>M</code></li>
 <li>If <code>True</code> it can be explicitly forbidden by
-<code>permissions: M</code></li>
+<em>rights</em> permissions: <code>m</code></li>
+</ul>
+</section>
+<section class="level5" id="permit_properties_overlay">
+<h5>permit_properties_overlay <a class="headerlink" href="#permit_properties_overlay">&para;</a></h5>
+<p><em>(&gt;= 3.7.0)</em></p>
+<p>Permit (limited) properties overlay by user of shared collection</p>
+<p>Default: <code>false</code></p>
+<ul>
+<li>If <code>False</code> it can be explicitly granted by <em>share</em>
+permissions: <code>P</code></li>
+<li>If <code>True</code> it can be explicitly forbidden by
+<em>share</em> permissions: <code>p</code></li>
+</ul>
+</section>
+<section class="level5" id="enforce_properties_overlay">
+<h5>enforce_properties_overlay <a class="headerlink" href="#enforce_properties_overlay">&para;</a></h5>
+<p><em>(&gt;= 3.7.0)</em></p>
+<p>Enforce properties overlay even on write access</p>
+<p>Default: <code>true</code></p>
+<ul>
+<li>If <code>False</code> it can be explicitly enforced by
+<em>share</em> permissions: <code>E</code></li>
+<li>If <code>True</code> it can be explicitly forbidden by
+<em>share</em> permissions: <code>e</code></li>
 </ul>
 </section>
 <section class="level5" id="default_permissions_create_token">
 <h5>default_permissions_create_token <a class="headerlink" href="#default_permissions_create_token">&para;</a></h5>
 <p>Default permissions for create token-based sharing</p>
 <p>Default: <code>r</code></p>
+<p>Supported: <code>rwEePp</code></p>
 </section>
 <section class="level5" id="default_permissions_create_map">
 <h5>default_permissions_create_map <a class="headerlink" href="#default_permissions_create_map">&para;</a></h5>
 <p>Default permissions for map-based sharing</p>
 <p>Default: <code>r</code></p>
+<p>Supported: <code>rwEePp</code></p>
 </section>
 </section>
 </section>
