@@ -812,7 +812,16 @@ class BaseSharing:
             if PathOrToken is None:
                 return httputils.bad_request("Missing PathOrToken")
 
-            if ShareType == "token":
+            if ShareType not in ["token", "map"]:
+                logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
+                return httputils.bad_request("Invalid share type")
+
+            # check for permissions to update
+            share = self.get_sharing(ShareType=ShareType, PathOrToken=PathOrToken)
+            if share is None:
+                return httputils.NOT_FOUND
+            if share['Owner'] is not None and user == share['Owner']:
+                # unconditional update as owner
                 result = self.update_sharing(
                        ShareType=ShareType,
                        PathMapped=PathMapped,
@@ -820,27 +829,47 @@ class BaseSharing:
                        EnabledByOwner=EnabledByOwner,
                        HiddenByOwner=HiddenByOwner,
                        PathOrToken=str(PathOrToken),  # verification above that it is not None
-                       OwnerOrUser=Owner,
+                       OwnerOrUser=user,
                        User=User,
                        Timestamp=Timestamp,
                        Properties=Properties)
 
-            elif ShareType == "map":
+            elif share['User'] is not None and Owner == share['User']:
+                # User is only allowed to update Properties
+                if PathMapped is not None or EnabledByOwner is not None or HiddenByOwner is not None:
+                    logger.info("Update sharing: access to %r not allowed for user %r to adjust anything beside Properties", PathOrToken, user)
+                    return httputils.NOT_ALLOWED
+                if Properties is None:
+                    logger.info("Update sharing: access to %r as user %r misses Properties", PathOrToken, user)
+                    return httputils.NOT_ALLOWED
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("TRACE/sharing/API/update: permit_properties_overlay=%s Permissions=%r", self.permit_properties_overlay, share['Permissions'])
+                if self.permit_properties_overlay:
+                    if share['Permissions'] is not None and "p" in str(share['Permissions']):
+                        logger.info("Update on shared %r: overlay permitted, but denied by permission 'p'", PathOrToken)
+                        return httputils.NOT_ALLOWED
+                    else:
+                        logger.info("Update on shared %r: overlay permitted by option", PathOrToken)
+                else:
+                    if share['Permissions'] is not None and "P" in str(share['Permissions']):
+                        logger.info("Update on shared %r: overlay denied, but granted by permission 'P'", PathOrToken)
+                    else:
+                        logger.info("Update on shared %r: overlay denied by option", PathOrToken)
+                        return httputils.NOT_ALLOWED
+                    return httputils.NOT_ALLOWED
+
+                # limited update as user
                 result = self.update_sharing(
                        ShareType=ShareType,
                        PathMapped=PathMapped,
-                       Permissions=Permissions,
-                       EnabledByOwner=EnabledByOwner,
-                       HiddenByOwner=HiddenByOwner,
                        PathOrToken=str(PathOrToken),  # verification above that it is not None
-                       OwnerOrUser=Owner,
-                       User=User,
+                       OwnerOrUser=user,
                        Timestamp=Timestamp,
                        Properties=Properties)
 
             else:
-                logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
-                return httputils.bad_request("Invalid share type")
+                # neither owner nor user matches
+                return httputils.NOT_ALLOWED
 
             # result handling
             if result['status'] == "not-found":
