@@ -507,6 +507,7 @@ class Sharing(sharing.BaseSharing):
 
     def _load_csv(self, file: str) -> bool:
         logger.debug("sharing database load begin: %r", file)
+        self._sharing_cache = []
         with self._storage.acquire_lock("r", None):
             with open(file, 'r', newline='') as csvfile:
                 reader = csv.DictReader(csvfile, fieldnames=sharing.DB_FIELDS_V1, delimiter=';')
