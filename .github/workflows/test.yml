@@ -6,12 +6,16 @@ jobs:
   test-ubuntu-python-newest:
     name: Test Ubuntu:latest Python:newest
     needs: lint
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.14']
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: ${{ matrix.python-version }}
       - name: Install Test dependencies
         run: pip install tox
       - name: Test with newest Python on latest Ubuntu
@@ -20,9 +24,13 @@ jobs:
   test-python-32bit:
     name: Test Ubuntu:latest Python:32-bit
     needs: [lint, test-ubuntu-python-newest]
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.11']
+    runs-on: ${{ matrix.os }}
     container:
-      image: i386/python:3.11
+      image: i386/python:${{ matrix.python-version }}
       volumes:
         - /home/runner/work/_temp:/__e/node20
         - /home/runner/work/_temp:/__e/node24
@@ -62,12 +70,16 @@ jobs:
   test-ubuntu-python-oldest:
     name: Test Ubuntu:latest Python:oldest
     needs: [lint, test-ubuntu-python-newest, test-python-32bit]
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.9']
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: ${{ matrix.python-version }}
       - name: Install Test dependencies
         run: pip install tox
       - name: Test with oldest Python on Ubuntu
