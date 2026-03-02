@@ -45,6 +45,7 @@ from radicale.log import logger
 class Rights(rights.BaseRights):
 
     _filename: str
+    _rights_config: dict
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
