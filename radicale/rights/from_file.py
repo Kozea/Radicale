@@ -50,14 +50,28 @@ class Rights(rights.BaseRights):
         super().__init__(configuration)
         self._filename = configuration.get("rights", "file")
         self._log_rights_rule_doesnt_match_on_debug = configuration.get("logging", "rights_rule_doesnt_match_on_debug")
-        self._rights_config = configparser.ConfigParser()
+        self._rights_config_parser = configparser.ConfigParser()
         try:
             with open(self._filename, "r") as f:
-                self._rights_config.read_file(f)
+                self._rights_config_parser.read_file(f)
             logger.debug("Read rights file")
         except Exception as e:
             raise RuntimeError("Failed to load rights file %r: %s" %
                                (self._filename, e)) from e
+
+        # Pre-load rights (ConfigParser is slow)
+        self._rights_config = {}
+        for section in self._rights_config_parser.sections():
+            try:
+                user_pattern = self._rights_config_parser.get(section, "user", fallback="")
+                collection_pattern = self._rights_config_parser.get(section, "collection")
+                allowed_groups = self._rights_config_parser.get(section, "groups", fallback="").split(",")
+                permission = self._rights_config_parser.get(section, "permissions")
+                self._rights_config[section] = {"user_pattern": user_pattern, "collection_pattern": collection_pattern,
+                                                "allowed_groups": allowed_groups, "permission": permission}
+            except Exception as e:
+                raise RuntimeError("Error in section %r of rights file %r: "
+                                   "%s" % (section, self._filename, e)) from e
 
     def authorization(self, user: str, path: str) -> str:
         user = user or ""
@@ -66,13 +80,13 @@ class Rights(rights.BaseRights):
         escaped_user = re.escape(user)
         if not self._log_rights_rule_doesnt_match_on_debug:
             logger.debug("logging of rules which doesn't match suppressed by config/option [logging] rights_rule_doesnt_match_on_debug")
-        for section in self._rights_config.sections():
+        for section, rules in self._rights_config.items():
             group_match = None
             user_match = None
             try:
-                user_pattern = self._rights_config.get(section, "user", fallback="")
-                collection_pattern = self._rights_config.get(section, "collection")
-                allowed_groups = self._rights_config.get(section, "groups", fallback="").split(",")
+                user_pattern = rules["user_pattern"]
+                collection_pattern = rules["collection_pattern"]
+                allowed_groups = rules["allowed_groups"]
                 try:
                     group_match = len(self._user_groups.intersection(allowed_groups)) > 0
                 except Exception:
@@ -90,13 +104,13 @@ class Rights(rights.BaseRights):
                 raise RuntimeError("Error in section %r of rights file %r: "
                                    "%s" % (section, self._filename, e)) from e
             if user_match and user_collection_match:
-                permission = self._rights_config.get(section, "permissions")
+                permission = rules["permission"]
                 logger.debug("Rule %r:%r matches %r:%r from section %r permission %r",
                              user, sane_path, user_pattern,
                              collection_pattern, section, permission)
                 return permission
             if group_match and group_collection_match:
-                permission = self._rights_config.get(section, "permissions")
+                permission = rules["permission"]
                 logger.debug("Rule %r:%r matches %r:%r from section %r permission %r by group membership",
                              user, sane_path, user_pattern,
                              collection_pattern, section, permission)
