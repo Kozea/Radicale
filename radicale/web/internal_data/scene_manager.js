@@ -21,19 +21,21 @@
 /**
  * @interface
  */
-export function Scene() {}
-/**
- * Scene is on top of stack and visible.
- */
-Scene.prototype.show = function() {};
-/**
- * Scene is no longer visible.
- */
-Scene.prototype.hide = function() {};
-/**
- * Scene is removed from scene stack.
- */
-Scene.prototype.release = function() {};
+export class Scene {
+    constructor() { }
+    /**
+     * Scene is on top of stack and visible.
+     */
+    show() { }
+    /**
+     * Scene is no longer visible.
+     */
+    hide() { }
+    /**
+     * Scene is removed from scene stack.
+     */
+    release() { }
+}
 
 
 /**
