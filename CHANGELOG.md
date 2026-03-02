@@ -6,6 +6,7 @@
 * Add: [auth] oauth2: allow custom client_id and client_secret (optional)
 * Cleanup: deprecate config option 'ldap_use_ssl' for good
 * Performance: improve `path_to_filesystem()`
+* Performance: preload access rights from file
 
 ## 3.6.1
 
