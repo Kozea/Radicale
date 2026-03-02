@@ -50,10 +50,10 @@ class Rights(rights.BaseRights):
         super().__init__(configuration)
         self._filename = configuration.get("rights", "file")
         self._log_rights_rule_doesnt_match_on_debug = configuration.get("logging", "rights_rule_doesnt_match_on_debug")
-        self._rights_config_parser = configparser.ConfigParser()
+        rights_config_parser = configparser.ConfigParser()
         try:
             with open(self._filename, "r") as f:
-                self._rights_config_parser.read_file(f)
+                rights_config_parser.read_file(f)
             logger.debug("Read rights file")
         except Exception as e:
             raise RuntimeError("Failed to load rights file %r: %s" %
@@ -61,12 +61,12 @@ class Rights(rights.BaseRights):
 
         # Pre-load rights (ConfigParser is slow)
         self._rights_config = {}
-        for section in self._rights_config_parser.sections():
+        for section in rights_config_parser.sections():
             try:
-                user_pattern = self._rights_config_parser.get(section, "user", fallback="")
-                collection_pattern = self._rights_config_parser.get(section, "collection")
-                allowed_groups = self._rights_config_parser.get(section, "groups", fallback="").split(",")
-                permission = self._rights_config_parser.get(section, "permissions")
+                user_pattern = rights_config_parser.get(section, "user", fallback="")
+                collection_pattern = rights_config_parser.get(section, "collection")
+                allowed_groups = rights_config_parser.get(section, "groups", fallback="").split(",")
+                permission = rights_config_parser.get(section, "permissions")
                 self._rights_config[section] = {"user_pattern": user_pattern, "collection_pattern": collection_pattern,
                                                 "allowed_groups": allowed_groups, "permission": permission}
             except Exception as e:
