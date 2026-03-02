@@ -37,28 +37,28 @@ import { create_collection, edit_collection } from "./api.js";
 export function CreateEditCollectionScene(user, password, collection) {
     let edit = collection.type !== CollectionType.PRINCIPAL;
     let html_scene = document.getElementById(edit ? "editcollectionscene" : "createcollectionscene");
-    let title_form = edit ? html_scene.querySelector("[data-name=title]") : null;
-    let error_form = html_scene.querySelector("[data-name=error]");
-    let href_form = html_scene.querySelector("[data-name=href]");
-    let href_label = html_scene.querySelector("label[for=href]");
-    let displayname_form = html_scene.querySelector("[data-name=displayname]");
-    let displayname_label = html_scene.querySelector("label[for=displayname]");
-    let description_form = html_scene.querySelector("[data-name=description]");
-    let description_label = html_scene.querySelector("label[for=description]");
-    let source_form = html_scene.querySelector("[data-name=source]");
-    let source_label = html_scene.querySelector("label[for=source]");
-    let type_form = html_scene.querySelector("[data-name=type]");
-    let type_label = html_scene.querySelector("label[for=type]");
-    let color_form = html_scene.querySelector("[data-name=color]");
-    let color_label = html_scene.querySelector("label[for=color]");
-    let submit_btn = html_scene.querySelector("[data-name=submit]");
-    let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+    /** @type {HTMLElement} */ let title_form = edit ? html_scene.querySelector("[data-name=title]") : null;
+    /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
+    /** @type {HTMLInputElement} */ let href_form = html_scene.querySelector("[data-name=href]");
+    /** @type {HTMLElement} */ let href_label = html_scene.querySelector("label[for=href]");
+    /** @type {HTMLInputElement} */ let displayname_form = html_scene.querySelector("[data-name=displayname]");
+    /** @type {HTMLElement} */ let displayname_label = html_scene.querySelector("label[for=displayname]");
+    /** @type {HTMLInputElement} */ let description_form = html_scene.querySelector("[data-name=description]");
+    /** @type {HTMLElement} */ let description_label = html_scene.querySelector("label[for=description]");
+    /** @type {HTMLInputElement} */ let source_form = html_scene.querySelector("[data-name=source]");
+    /** @type {HTMLElement} */ let source_label = html_scene.querySelector("label[for=source]");
+    /** @type {HTMLSelectElement} */ let type_form = html_scene.querySelector("[data-name=type]");
+    /** @type {HTMLElement} */ let type_label = html_scene.querySelector("label[for=type]");
+    /** @type {HTMLInputElement} */ let color_form = html_scene.querySelector("[data-name=color]");
+    /** @type {HTMLElement} */ let color_label = html_scene.querySelector("label[for=color]");
+    /** @type {HTMLElement} */ let submit_btn = html_scene.querySelector("[data-name=submit]");
+    /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
 
 
     /** @type {?number} */ let scene_index = null;
     /** @type {?XMLHttpRequest} */ let create_edit_req = null;
     let error = "";
-    /** @type {?Element} */ let saved_type_form = null;
+    /** @type {?HTMLSelectElement} */ let saved_type_form = null;
 
     let href = edit ? collection.href : collection.href + random_uuid() + "/";
     let displayname = edit ? collection.displayname : "";
@@ -137,7 +137,7 @@ export function CreateEditCollectionScene(user, password, collection) {
                 sane_color = color_match[1];
             }
             let loading_scene = new LoadingScene();
-            push_scene(loading_scene);
+            push_scene(loading_scene, false);
             let collection = new Collection(href, type, displayname, description, sane_color, 0, 0, source);
             let callback = function(error1) {
                 if (scene_index === null) {

@@ -24,6 +24,7 @@ import {
   reload_sharing_list,
   server_features,
 } from "./api.js";
+import { Collection } from "./models.js";
 import { pop_scene, scene_stack } from "./scene_manager.js";
 
 /**
@@ -38,15 +39,15 @@ export function CreateShareCollectionScene(user, password, collection) {
 
   let html_scene = document.getElementById("sharecollectionscene");
 
-  let cancel_btn = html_scene.querySelector("[data-name=cancel]");
-  let share_by_token_btn_ro = html_scene.querySelector(
+  /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+  /** @type {HTMLElement} */ let share_by_token_btn_ro = html_scene.querySelector(
     "[data-name=sharebytoken_ro]",
   );
-  let share_by_token_btn_rw = html_scene.querySelector(
+  /** @type {HTMLElement} */ let share_by_token_btn_rw = html_scene.querySelector(
     "[data-name=sharebytoken_rw]",
   );
 
-  let title = html_scene.querySelector("[data-name=title]");
+  /** @type {HTMLElement} */ let title = html_scene.querySelector("[data-name=title]");
 
   function oncancel() {
     try {
@@ -109,7 +110,7 @@ function update_share_list(user, password, collection) {
 }
 
 function add_share_rows(user, password, collection, shares) {
-  let template = document.querySelector("[data-name=sharetokenrowtemplate]");
+  /** @type {HTMLElement} */ let template = document.querySelector("[data-name=sharetokenrowtemplate]");
   shares.forEach(function (share) {
     let pathortoken = share["PathOrToken"] || "";
     let pathmapped = share["PathMapped"] || "";
@@ -117,9 +118,10 @@ function add_share_rows(user, password, collection, shares) {
       collection.href.includes(pathmapped) ||
       collection.href.includes(pathortoken)
     ) {
-      let node = template.cloneNode(true);
+      let node = /** @type {HTMLElement} */ (template.cloneNode(true));
       node.classList.remove("hidden");
-      node.querySelector("[data-name=pathortoken]").value = pathortoken;
+      /** @type {HTMLInputElement} */ let pathortoken_form = node.querySelector("[data-name=pathortoken]");
+      pathortoken_form.value = pathortoken;
       let permissions = (share["Permissions"] || "").toLowerCase();
       if (permissions === "rw") {
         node
@@ -132,7 +134,8 @@ function add_share_rows(user, password, collection, shares) {
       } else {
         console.warn("Unknown permissions", permissions);
       }
-      node.querySelector("[data-name=delete]").onclick = function () {
+      /** @type {HTMLElement} */ let delete_btn = node.querySelector("[data-name=delete]");
+      delete_btn.onclick = function () {
         delete_share_by_token(
           user,
           password,

@@ -29,19 +29,18 @@ import { upload_collection } from "./api.js";
  * @param {string} user
  * @param {string} password
  * @param {Collection} collection parent collection
- * @param {Array<File>} files
  */
 export function UploadCollectionScene(user, password, collection) {
-    let html_scene = document.getElementById("uploadcollectionscene");
-    let template = html_scene.querySelector("[data-name=filetemplate]");
-    let upload_btn = html_scene.querySelector("[data-name=submit]");
-    let close_btn = html_scene.querySelector("[data-name=close]");
-    let uploadfile_form = html_scene.querySelector("[data-name=uploadfile]");
-    let uploadfile_lbl = html_scene.querySelector("label[for=uploadfile]");
-    let href_form = html_scene.querySelector("[data-name=href]");
-    let href_label = html_scene.querySelector("label[for=href]");
-    let hreflimitmsg_html = html_scene.querySelector("[data-name=hreflimitmsg]");
-    let pending_html = html_scene.querySelector("[data-name=pending]");
+    /** @type {HTMLElement} */ let html_scene = document.getElementById("uploadcollectionscene");
+    /** @type {HTMLElement} */ let template = html_scene.querySelector("[data-name=filetemplate]");
+    /** @type {HTMLElement} */ let upload_btn = html_scene.querySelector("[data-name=submit]");
+    /** @type {HTMLElement} */ let close_btn = html_scene.querySelector("[data-name=close]");
+    /** @type {HTMLInputElement} */ let uploadfile_form = html_scene.querySelector("[data-name=uploadfile]");
+    /** @type {HTMLElement} */ let uploadfile_lbl = html_scene.querySelector("label[for=uploadfile]");
+    /** @type {HTMLInputElement} */ let href_form = html_scene.querySelector("[data-name=href]");
+    /** @type {HTMLElement} */ let href_label = html_scene.querySelector("label[for=href]");
+    /** @type {HTMLElement} */ let hreflimitmsg_html = html_scene.querySelector("[data-name=hreflimitmsg]");
+    /** @type {HTMLElement} */ let pending_html = html_scene.querySelector("[data-name=pending]");
 
     let files = uploadfile_form.files;
     href_form.addEventListener("keydown", cleanHREFinput);
@@ -49,11 +48,12 @@ export function UploadCollectionScene(user, password, collection) {
     uploadfile_form.onchange = onfileschange;
 
     href_form.value = "";
+    let href = "";
 
     /** @type {?number} */ let scene_index = null;
     /** @type {?XMLHttpRequest} */ let upload_req = null;
     /** @type {Array<string>} */ let results = [];
-    /** @type {?Array<Node>} */ let nodes = null;
+    /** @type {?Array<HTMLElement>} */ let nodes = null;
 
     function upload_start() {
         try {
@@ -73,7 +73,7 @@ export function UploadCollectionScene(user, password, collection) {
             nodes = [];
             for (let i = 0; i < files.length; i++) {
                 let file = files[i];
-                let node = template.cloneNode(true);
+                /** @type {HTMLElement} */ let node = template.cloneNode(true);
                 node.classList.remove("hidden");
                 let name_form = node.querySelector("[data-name=name]");
                 name_form.textContent = file.name;
@@ -180,12 +180,6 @@ export function UploadCollectionScene(user, password, collection) {
         scene_index = scene_stack.length - 1;
         html_scene.classList.remove("hidden");
         close_btn.onclick = onclose;
-        if(error){
-            error_form.textContent = "Error: " + error;
-            error_form.classList.remove("hidden");
-        }else{
-            error_form.classList.add("hidden");
-        }
     };
 
     this.hide = function() {

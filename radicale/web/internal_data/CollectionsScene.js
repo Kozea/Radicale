@@ -25,7 +25,7 @@ import { UploadCollectionScene } from "./UploadCollectionScene.js";
 import { DeleteCollectionScene } from "./DeleteCollectionScene.js";
 import { LoadingScene } from "./LoadingScene.js";
 import { get_collections } from "./api.js";
-import { CollectionType } from "./models.js";
+import { Collection, CollectionType } from "./models.js";
 import { bytesToHumanReadable } from "./utils.js";
 import { SERVER } from "./constants.js";
 
@@ -35,19 +35,19 @@ import { SERVER } from "./constants.js";
  * @param {string} user
  * @param {string} password
  * @param {Collection} collection The principal collection.
- * @param {function(string)} onerror Called when an error occurs, before the
+ * @param {function(string):void} onerror Called when an error occurs, before the
  *                                   scene is popped.
  */
 export function CollectionsScene(user, password, collection, onerror) {
-    let html_scene = document.getElementById("collectionsscene");
-    let template = html_scene.querySelector("[data-name=collectiontemplate]");
-    let new_btn = html_scene.querySelector("[data-name=new]");
-    let upload_btn = html_scene.querySelector("[data-name=upload]");
+    /** @type {HTMLElement} */ let html_scene = document.getElementById("collectionsscene");
+    /** @type {HTMLElement} */ let template = html_scene.querySelector("[data-name=collectiontemplate]");
+    /** @type {HTMLElement} */ let new_btn = html_scene.querySelector("[data-name=new]");
+    /** @type {HTMLElement} */ let upload_btn = html_scene.querySelector("[data-name=upload]");
 
     /** @type {?number} */ let scene_index = null;
     /** @type {?XMLHttpRequest} */ let collections_req = null;
     /** @type {?Array<Collection>} */ let collections = null;
-    /** @type {Array<Node>} */ let nodes = [];
+    /** @type {Array<HTMLElement>} */ let nodes = [];
 
     function onnew() {
         try {
@@ -62,7 +62,7 @@ export function CollectionsScene(user, password, collection, onerror) {
     function onupload() {
         try {
             let upload_scene = new UploadCollectionScene(user, password, collection);
-            push_scene(upload_scene);
+            push_scene(upload_scene, false);
         } catch(err) {
             console.error(err);
         }
@@ -104,17 +104,17 @@ export function CollectionsScene(user, password, collection, onerror) {
         html_scene.style.marginTop = heightOfNavBar;
         html_scene.style.height = "calc(100vh - " + heightOfNavBar +")";
         collections.forEach(function (collection) {
-            let node = template.cloneNode(true);
+            /** @type {HTMLElement} */ let node = template.cloneNode(true);
             node.classList.remove("hidden");
-            let title_form = node.querySelector("[data-name=title]");
-            let description_form = node.querySelector("[data-name=description]");
-            let contentcount_form = node.querySelector("[data-name=contentcount]");
-            let url_form = node.querySelector("[data-name=url]");
-            let color_form = node.querySelector("[data-name=color]");
-            let delete_btn = node.querySelector("[data-name=delete]");
-            let edit_btn = node.querySelector("[data-name=edit]");
-            let share_btn = node.querySelector("[data-name=share]");
-            let download_btn = node.querySelector("[data-name=download]");
+            /** @type {HTMLElement} */ let title_form = node.querySelector("[data-name=title]");
+            /** @type {HTMLElement} */ let description_form = node.querySelector("[data-name=description]");
+            /** @type {HTMLElement} */ let contentcount_form = node.querySelector("[data-name=contentcount]");
+            /** @type {HTMLElement} */ let url_form = node.querySelector("[data-name=url]");
+            /** @type {HTMLElement} */ let color_form = node.querySelector("[data-name=color]");
+            /** @type {HTMLElement} */ let delete_btn = node.querySelector("[data-name=delete]");
+            /** @type {HTMLElement} */ let edit_btn = node.querySelector("[data-name=edit]");
+            /** @type {HTMLElement} */ let share_btn = node.querySelector("[data-name=share]");
+            /** @type {HTMLAnchorElement} */ let download_btn = node.querySelector("[data-name=download]");
             if (collection.color) {
                 color_form.style.background = collection.color;
             }
