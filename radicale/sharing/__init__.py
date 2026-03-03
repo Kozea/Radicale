@@ -36,6 +36,7 @@ INTERNAL_TYPES: Sequence[str] = ("csv", "files", "none")
 DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Owner', 'User', 'Permissions', 'EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser', 'TimestampCreated', 'TimestampUpdated', 'Properties')
 DB_FIELDS_V1_BOOL: Sequence[str] = ('EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser')
 DB_FIELDS_V1_INT: Sequence[str] = ('TimestampCreated', 'TimestampUpdated')
+DB_FIELDS_V1_USER_PERMITTED: Sequence[str] = ('EnabledByUser', 'HiddenByUser', 'Properties')
 # ShareType:        <token|map>
 # PathOrToken:      <path|token> [PrimaryKey]
 # PathMapped:       <path>
@@ -48,6 +49,7 @@ DB_FIELDS_V1_INT: Sequence[str] = ('TimestampCreated', 'TimestampUpdated')
 # HiddenByUser:     True|False (share exposure controlled by user) - check skipped if Owner==User
 # TimestampCreated: <unixtime> (when created)
 # TimestampUpdated: <unixtime> (last update)
+# Properties:       Overlay of collection properties
 
 SHARE_TYPES: Sequence[str] = ('token', 'map', 'all')
 SHARE_TYPES_V1: Sequence[str] = ('token', 'map')
@@ -89,6 +91,8 @@ class BaseSharing:
     _storage: storage.BaseStorage
     _rights: rights.BaseRights
     _enabled: bool = False
+    default_permissions_create_token: str
+    default_permissions_create_map: str
 
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize Sharing.
@@ -128,98 +132,88 @@ class BaseSharing:
 
         # database tasks
         self.sharing_db_type = configuration.get("sharing", "type")
-        logger.info("sharing.db_type: %s", self.sharing_db_type)
+        logger.info("sharing.database_type: %s", self.sharing_db_type)
 
         try:
-            if self.init_database() is False:
+            if self.database_init() is False:
                 logger.info("sharing disabled as no database is active")
                 self._enabled = False
                 return
         except Exception as e:
             logger.error("sharing database cannot be initialized: %r", e)
             exit(1)
-        database_info = self.get_database_info()
+        database_info = self.database_get_info()
         if database_info:
             logger.info("sharing database info: %r", database_info)
         else:
             logger.info("sharing database info: (not provided)")
 
-    # overloadable functions
-    def init_database(self) -> bool:
-        """ initialize database """
+    # overloadable database functions
+    def database_init(self) -> bool:
+        """ initialize db """
         return False
 
-    def get_database_info(self) -> Union[dict, None]:
-        """ retrieve database information """
+    def database_get_info(self) -> Union[dict, None]:
+        """ retrieve db information """
         return None
 
-    def verify_database(self) -> bool:
-        """ verify database information """
+    def database_verify(self) -> bool:
+        """ verify db information """
         return False
 
-    def list_sharing(self,
-                     OwnerOrUser: Union[str, None] = None,
-                     ShareType: Union[str, None] = None,
-                     PathOrToken: Union[str, None] = None,
-                     PathMapped: Union[str, None] = None,
-                     User: Union[str, None] = None,
-                     EnabledByOwner: Union[bool, None] = None,
-                     EnabledByUser: Union[bool, None] = None,
-                     HiddenByOwner: Union[bool, None] = None,
-                     HiddenByUser:  Union[bool, None] = None) -> list[dict]:
+    def database_list_sharing(self,
+                              OwnerOrUser: Union[str, None] = None,
+                              ShareType: Union[str, None] = None,
+                              PathOrToken: Union[str, None] = None,
+                              PathMapped: Union[str, None] = None,
+                              User: Union[str, None] = None,
+                              EnabledByOwner: Union[bool, None] = None,
+                              EnabledByUser:  Union[bool, None] = None,
+                              HiddenByOwner:  Union[bool, None] = None,
+                              HiddenByUser:   Union[bool, None] = None) -> list[dict]:
         """ retrieve sharing """
         return []
 
-    def get_sharing(self,
-                    ShareType: str,
-                    PathOrToken: str,
-                    User: Union[str, None] = None) -> Union[dict, None]:
+    def database_get_sharing(self,
+                             ShareType: str,
+                             PathOrToken: str,
+                             OnlyEnabled: bool = True,
+                             User: Union[str, None] = None) -> Union[dict, None]:
         """ retrieve sharing target and attributes by map """
         return {"status": "not-implemented"}
 
-    def create_sharing(self,
-                       ShareType: str,
-                       PathOrToken: str, PathMapped: str,
-                       Owner: str, User: str,
-                       Permissions: str = "r",
-                       EnabledByOwner: bool = False, EnabledByUser: bool = False,
-                       HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
-                       Timestamp: int = 0,
-                       Properties: Union[dict, None] = None) -> dict:
+    def database_create_sharing(self,
+                                ShareType: str,
+                                PathOrToken: str, PathMapped: str,
+                                Owner: str, User: str,
+                                Permissions: str = "r",
+                                EnabledByOwner: bool = False, EnabledByUser: bool = False,
+                                HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
+                                Timestamp: int = 0,
+                                Properties: Union[dict, None] = None) -> dict:
         """ create sharing """
         return {"status": "not-implemented"}
 
-    def update_sharing(self,
-                       ShareType: str,
-                       PathOrToken: str,
-                       OwnerOrUser: str,
-                       User: Union[str, None] = None,
-                       PathMapped: Union[str, None] = None,
-                       Permissions: Union[str, None] = None,
-                       EnabledByOwner: Union[bool, None] = None,
-                       HiddenByOwner:  Union[bool, None] = None,
-                       Timestamp: int = 0,
-                       Properties: Union[dict, None] = None) -> dict:
+    def database_update_sharing(self,
+                                ShareType: str,
+                                PathOrToken: str,
+                                OwnerOrUser: Union[str, None] = None,
+                                User: Union[str, None] = None,
+                                PathMapped: Union[str, None] = None,
+                                Permissions: Union[str, None] = None,
+                                EnabledByOwner: Union[bool, None] = None,
+                                EnabledByUser:  Union[bool, None] = None,
+                                HiddenByOwner:  Union[bool, None] = None,
+                                HiddenByUser:   Union[bool, None] = None,
+                                Timestamp: int = 0,
+                                Properties: Union[dict, None] = None) -> dict:
         """ update sharing """
         return {"status": "not-implemented"}
 
-    def delete_sharing(self,
-                       ShareType: str,
-                       PathOrToken: str,
-                       Owner: str,
-                       PathMapped: Union[str, None] = None) -> dict:
+    def database_delete_sharing(self,
+                                ShareType: str,
+                                PathOrToken: str) -> dict:
         """ delete sharing """
-        return {"status": "not-implemented"}
-
-    def toggle_sharing(self,
-                       ShareType: str,
-                       PathOrToken: str,
-                       OwnerOrUser: str,
-                       Action: str,
-                       PathMapped: Union[str, None] = None,
-                       User: Union[str, None] = None,
-                       Timestamp: int = 0) -> dict:
-        """ toggle sharing """
         return {"status": "not-implemented"}
 
     # sharing functions called by request methods
@@ -227,7 +221,7 @@ class BaseSharing:
         """ verify database """
         logger.info("sharing database verification begin")
         logger.info("sharing database verification call: %s", self.sharing_db_type)
-        result = self.verify_database()
+        result = self.database_verify()
         if result is not True:
             logger.error("sharing database verification call -> PROBLEM: %s", self.sharing_db_type)
             return False
@@ -237,7 +231,7 @@ class BaseSharing:
         # check all entries
         logger.info("sharing database verification content start")
         with self._storage.acquire_lock("r"):
-            for entry in self.list_sharing():
+            for entry in self.database_list_sharing():
                 logger.debug("analyze: %r", entry)
                 if entry['ShareType'] not in SHARE_TYPES_V1:
                     logger.error("ShareType not supported: %r", entry['ShareType'])
@@ -291,7 +285,7 @@ class BaseSharing:
 
         # retrieve collections which are enabled and not hidden by owner+user
         if active:
-            shared_collection_list = self.list_sharing(
+            shared_collection_list = self.database_list_sharing(
                     ShareType="map",
                     OwnerOrUser=user,
                     User=user,
@@ -301,7 +295,7 @@ class BaseSharing:
                     HiddenByUser=False)
         else:
             # unconditional
-            shared_collection_list = self.list_sharing(
+            shared_collection_list = self.database_list_sharing(
                     ShareType="map",
                     OwnerOrUser=user,
                     User=user)
@@ -326,7 +320,7 @@ class BaseSharing:
                     # TODO add token validity checks
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug("TRACE/sharing/token: supported token found in path: %r (token=%r)", path, match[1])
-                    return self.get_sharing(
+                    return self.database_get_sharing(
                             ShareType="token",
                             PathOrToken=match[1])
             else:
@@ -343,7 +337,7 @@ class BaseSharing:
         if self.sharing_collection_by_map:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map/resolver: check path: %r", path)
-            result = self.get_sharing(
+            result = self.database_get_sharing(
                     ShareType="map",
                     PathOrToken=path,
                     User=user)
@@ -354,7 +348,7 @@ class BaseSharing:
                 parent_path = pathutils.parent_path(path)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/sharing/map/resolver: check parent path: %r", parent_path)
-                result = self.get_sharing(
+                result = self.database_get_sharing(
                         ShareType="map",
                         PathOrToken=parent_path,
                         User=user)
@@ -484,6 +478,12 @@ class BaseSharing:
                 request_data = json.loads(request_body)
             except json.JSONDecodeError:
                 return httputils.bad_request("Invalid JSON")
+            for key in ["Enabled", "Hidden"]:
+                # convert JSON boolean
+                if key in request_data:
+                    if type(request_data[key]) is not bool:
+                        logger.error(api_info + ": unsupported (non-boolean) " + key + ": " + request_data[key])
+                        return httputils.bad_request("Invalid non-boolean value for " + key + ": " + request_data[key])
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + " (json): %r", f"{request_data}")
         elif 'application/x-www-form-urlencoded' in content_type:
@@ -504,6 +504,12 @@ class BaseSharing:
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug("TRACE/sharing/API: converted Properties from form into dict: %r", properties_dict)
                     request_data[key] = properties_dict
+                elif key in ["Enabled", "Hidden"]:
+                    try:
+                        request_data[key] = config._convert_to_bool(request_parsed[key][0])
+                    except ValueError:
+                        logger.error(api_info + ": unsupported (non-boolean) " + key + ": " + request_parsed[key][0])
+                        return httputils.bad_request("Invalid non-boolean value for " + key + ": " + request_parsed[key][0])
                 else:
                     request_data[key] = request_parsed[key][0]
             if logger.isEnabledFor(logging.DEBUG):
@@ -538,17 +544,16 @@ class BaseSharing:
         Owner: str = user
         User: Union[str, None] = None
         Permissions: Union[str, None] = None  # no permissions by default
-        EnabledByOwner: Union[bool, None] = None
-        HiddenByOwner:  Union[bool, None] = None
-        EnabledByUser:  Union[bool, None] = None
-        HiddenByUser:   Union[bool, None] = None
+        Enabled: Union[bool, None] = None
+        Hidden:  Union[bool, None] = None
         Properties:     Union[dict, None] = None
 
         # parameters sanity check
         for key in request_data:
             if key == "Permissions":
-                if not re.search('^[a-zA-Z]+$', request_data[key]):
-                    return httputils.bad_request("Invalid value for Permissions")
+                for permission in request_data[key]:
+                    if permission not in rights.INTERNAL_PERMISSIONS:
+                        return httputils.bad_request("Invalid value for Permissions")
             elif key == "PathOrToken":
                 if ShareType == "token":
                     if not re.search('^' + TOKEN_PATTERN_V1 + '$', request_data[key]):
@@ -566,28 +571,14 @@ class BaseSharing:
                     return httputils.bad_request("Invalid value for PathMapped")
                 elif not request_data[key].endswith("/"):
                     return httputils.bad_request("PathMapped not ending with /")
-            elif key == "Enabled" or key == "Hidden":
-                if not re.search('^(False|True)$', request_data[key]):
-                    logger.error(api_info + ": unsupported " + key)
-                    return httputils.bad_request("Invalid value for " + key)
             elif key == "User":
                 if not re.search('^' + USER_PATTERN + '$', request_data[key]):
                     logger.error(api_info + ": unsupported " + key)
                     return httputils.bad_request("Invalid value for User")
 
-        # check for mandatory parameters
-        if 'PathMapped' not in request_data:
-            if action in ['info', 'list', 'update']:
-                # ignored
-                pass
-            else:
-                if ShareType == "token" and action != 'create':
-                    # optional
-                    pass
-                else:
-                    logger.error(api_info + ": missing PathMapped")
-                    return httputils.bad_request("Missing PathMapped")
-        else:
+        # check for optional parameters
+        if 'PathMapped' in request_data:
+            # used by create or list(filter)
             PathMapped = request_data['PathMapped']
 
         if 'PathOrToken' not in request_data:
@@ -617,20 +608,20 @@ class BaseSharing:
                     return httputils.bad_request("Property not supported to overlay: %r" % entry)
             Properties = request_data['Properties']
 
-        if ShareType == "map":
-            if action == 'info':
-                # ignored
-                pass
-            else:
-                if 'User' not in request_data:
-                    if action not in ['list', 'delete', 'update']:
-                        logger.warning(api_info + ": missing User")
-                        return httputils.bad_request("Missing User")
-                    else:
-                        # optional
-                        pass
-                else:
-                    User = request_data['User']
+        if 'Enabled' in request_data:
+            Enabled = request_data['Enabled']
+        else:
+            Enabled = None
+
+        if 'Hidden' in request_data:
+            Hidden = request_data['Hidden']
+        else:
+            Hidden = None
+
+        if 'User' in request_data:
+            User = request_data['User']
+        else:
+            User = None
 
         answer: dict = {}
         result: dict = {}
@@ -647,20 +638,20 @@ class BaseSharing:
         if action == "list":
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + ": start")
-            if 'PathOrToken' in request_data:
-                PathOrToken = request_data['PathOrToken']
+
+            if PathOrToken is not None:
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/" + api_info + ": filter: %r", PathOrToken)
 
             if ShareType != "all":
-                result_array = self.list_sharing(
+                result_array = self.database_list_sharing(
                         ShareType=ShareType,
-                        OwnerOrUser=Owner,
+                        OwnerOrUser=user,
                         PathMapped=PathMapped,
                         PathOrToken=PathOrToken)
             else:
-                result_array = self.list_sharing(
-                        OwnerOrUser=Owner,
+                result_array = self.database_list_sharing(
+                        OwnerOrUser=user,
                         PathMapped=PathMapped,
                         PathOrToken=PathOrToken)
 
@@ -675,7 +666,12 @@ class BaseSharing:
         elif action == "create":
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + ": start")
-            if 'Permissions' not in request_data:
+
+            if PathMapped is None:
+                logger.error(api_info + ": missing PathMapped")
+                return httputils.bad_request("Missing PathMapped")
+
+            if Permissions is None:
                 if ShareType == "token":
                     Permissions = self.default_permissions_create_token
                 elif ShareType == "map":
@@ -683,23 +679,27 @@ class BaseSharing:
                 else:
                     # default
                     Permissions = "r"
-
-            if 'Enabled' in request_data:
-                EnabledByOwner = config._convert_to_bool(request_data['Enabled'])
             else:
-                EnabledByOwner = False # security by default
+                Permissions = str(Permissions)
 
-            if 'Hidden' in request_data:
-                HiddenByOwner = config._convert_to_bool(request_data['Hidden'])
-            else:
-                HiddenByOwner = True # security by default
+            if Enabled is None:
+                Enabled = False # security by default
 
-            EnabledByUser = False # security by default
-            HiddenByUser = True # security by default
+            if Hidden is None:
+                Hidden = True # security by default
+
+            # create token share with security-by-default for User
+            EnabledByUser: bool = False
+            HiddenByUser: bool = True
+
+            if user == User:
+                # create token share with same flags
+                EnabledByUser = Enabled
+                HiddenByUser = Hidden
 
             if ShareType == "token":
                 # check access Permissions
-                access = Access(self._rights, user, str(PathMapped))  # PathMapped is mandatory
+                access = Access(self._rights, user, PathMapped)
                 if not access.check("r"):
                     logger.info("Add sharing-by-token: access to %r not allowed for user %r", PathMapped, user)
                     return httputils.NOT_ALLOWED
@@ -713,20 +713,32 @@ class BaseSharing:
                         logger.info("Add sharing-by-token: access to %r not allowed for user %r (permit=True but denied by 'T')", PathMapped, user)
                         return httputils.NOT_ALLOWED
 
+                if User is not None:
+                    # user is optional on tokens, otherwise it's the owner itself
+                    User = str(User)
+                else:
+                    User = user
+
                 # v1: create uuid token with 2x 32 bytes = 256 bit
                 token = "v1/" + str(base64.urlsafe_b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes), 'utf-8')
 
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/" + api_info + ": %r (Permissions=%r token=%r)", PathMapped, Permissions, token)
-                result = self.create_sharing(
+
+                result = self.database_create_sharing(
                         ShareType=ShareType,
                         PathOrToken=token,
-                        PathMapped=str(PathMapped), # mandatory
-                        Owner=Owner, User=Owner,
-                        Permissions=str(Permissions), # mandantory
-                        EnabledByOwner=EnabledByOwner, HiddenByOwner=HiddenByOwner,
+                        PathMapped=PathMapped,
+                        Owner=user,
+                        User=User,
+                        Permissions=Permissions,
+                        EnabledByOwner=Enabled,
+                        EnabledByUser=EnabledByUser,
+                        HiddenByOwner=Hidden,
+                        HiddenByUser=HiddenByUser,
                         Timestamp=Timestamp,
                         Properties=Properties)
+
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/" + api_info + ": result=%r", result)
 
@@ -737,13 +749,19 @@ class BaseSharing:
                 else:
                     PathOrToken = str(PathOrToken)
 
+                # retrieve existing share
+                share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, OnlyEnabled=False)
+                if share is not None:
+                    logger.error("Sharing/create/%s: already exists: %r", ShareType, PathOrToken)
+                    return httputils.CONFLICT
+
                 if User is None:
                     return httputils.bad_request("Missing User")
                 else:
                     User = str(User)
 
                 # check access Permissions
-                access = Access(self._rights, Owner, str(PathMapped), None)  # PathMapped is mandatory
+                access = Access(self._rights, Owner, PathMapped, None)  # PathMapped is mandatory
                 if not access.check("r") and "i" not in access.permissions:
                     logger.info("Add sharing-by-map: access to path(mapped) %r not allowed for owner %r", PathMapped, Owner)
                     return httputils.NOT_ALLOWED
@@ -757,7 +775,7 @@ class BaseSharing:
                         logger.info("Add sharing-by-map: access to %r not allowed for user %r (permit=True but denied by 'M')", PathMapped, user)
                         return httputils.NOT_ALLOWED
 
-                access = Access(self._rights, str(User), PathOrToken)
+                access = Access(self._rights, User, PathOrToken)
                 if not access.check("r"):
                     logger.info("Add sharing-by-map: access to path %r not allowed for user %r", PathOrToken, User)
                     return httputils.NOT_ALLOWED
@@ -773,15 +791,18 @@ class BaseSharing:
 
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/" + api_info + ": %r (Permissions=%r PathOrToken=%r user=%r)", PathMapped, Permissions, PathOrToken, User)
-                result = self.create_sharing(
+
+                result = self.database_create_sharing(
                         ShareType=ShareType,
-                        PathOrToken=PathOrToken,  # verification above that it is not None
-                        PathMapped=str(PathMapped),  # mandatory
-                        Owner=Owner,
-                        User=User,  # verification above that it is not None
-                        Permissions=str(Permissions),  # mandatory
-                        EnabledByOwner=EnabledByOwner, HiddenByOwner=HiddenByOwner,
-                        EnabledByUser=EnabledByUser, HiddenByUser=HiddenByUser,
+                        PathOrToken=PathOrToken,
+                        PathMapped=PathMapped,
+                        Owner=user,
+                        User=User,
+                        Permissions=Permissions,
+                        EnabledByOwner=Enabled,
+                        EnabledByUser=EnabledByUser,
+                        HiddenByOwner=Hidden,
+                        HiddenByUser=HiddenByUser,
                         Timestamp=Timestamp,
                         Properties=Properties)
 
@@ -809,66 +830,74 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + ": start")
 
-            if PathOrToken is None:
-                return httputils.bad_request("Missing PathOrToken")
-
             if ShareType not in ["token", "map"]:
                 logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
 
-            # check for permissions to update
-            share = self.get_sharing(ShareType=ShareType, PathOrToken=PathOrToken)
+            if PathOrToken is None:
+                return httputils.bad_request("Missing PathOrToken")
+            else:
+                PathOrToken = str(PathOrToken)
+
+            # retrieve existing share
+            share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, OnlyEnabled=False)
             if share is None:
                 return httputils.NOT_FOUND
-            if share['Owner'] is not None and user == share['Owner']:
-                # unconditional update as owner
-                result = self.update_sharing(
+
+            if user == share['Owner']:
+                if PathMapped is not None:
+                    # check access Permissions
+                    access = Access(self._rights, user, str(PathMapped), None)
+                    if not access.check("r") and "i" not in access.permissions:
+                        logger.warning("Update sharing: access to PathMapped %r not allowed for user %r", PathMapped, user)
+                        return httputils.NOT_ALLOWED
+
+                result = self.database_update_sharing(
                        ShareType=ShareType,
                        PathMapped=PathMapped,
                        Permissions=Permissions,
-                       EnabledByOwner=EnabledByOwner,
-                       HiddenByOwner=HiddenByOwner,
-                       PathOrToken=str(PathOrToken),  # verification above that it is not None
+                       EnabledByOwner=Enabled,
+                       HiddenByOwner=Hidden,
+                       PathOrToken=PathOrToken,
                        OwnerOrUser=user,
                        User=User,
                        Timestamp=Timestamp,
                        Properties=Properties)
 
-            elif share['User'] is not None and Owner == share['User']:
+            elif user == share['User']:
                 # User is only allowed to update Properties
-                if PathMapped is not None or EnabledByOwner is not None or HiddenByOwner is not None:
-                    logger.info("Update sharing: access to %r not allowed for user %r to adjust anything beside Properties", PathOrToken, user)
+                if PathMapped is not None or Permissions is not None or User is not None:
+                    logger.info("Update sharing: access to %r not allowed for user %r to adjust anything beside: %s", PathOrToken, user, " ".join(DB_FIELDS_V1_USER_PERMITTED))
                     return httputils.NOT_ALLOWED
-                if Properties is None:
-                    logger.info("Update sharing: access to %r as user %r misses Properties", PathOrToken, user)
-                    return httputils.NOT_ALLOWED
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/API/update: permit_properties_overlay=%s Permissions=%r", self.permit_properties_overlay, share['Permissions'])
-                if self.permit_properties_overlay:
-                    if share['Permissions'] is not None and "p" in str(share['Permissions']):
-                        logger.info("Update on shared %r: overlay permitted, but denied by permission 'p'", PathOrToken)
-                        return httputils.NOT_ALLOWED
+                if Properties is not None:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("TRACE/sharing/API/update: permit_properties_overlay=%s Permissions=%r", self.permit_properties_overlay, share['Permissions'])
+                    if self.permit_properties_overlay:
+                        if share['Permissions'] is not None and "p" in str(share['Permissions']):
+                            logger.info("Update on shared %r: overlay permitted, but denied by permission 'p'", PathOrToken)
+                            return httputils.NOT_ALLOWED
+                        else:
+                            logger.info("Update on shared %r: overlay permitted by option", PathOrToken)
                     else:
-                        logger.info("Update on shared %r: overlay permitted by option", PathOrToken)
-                else:
-                    if share['Permissions'] is not None and "P" in str(share['Permissions']):
-                        logger.info("Update on shared %r: overlay denied, but granted by permission 'P'", PathOrToken)
-                    else:
-                        logger.info("Update on shared %r: overlay denied by option", PathOrToken)
+                        if share['Permissions'] is not None and "P" in str(share['Permissions']):
+                            logger.info("Update on shared %r: overlay denied, but granted by permission 'P'", PathOrToken)
+                        else:
+                            logger.info("Update on shared %r: overlay denied by option", PathOrToken)
+                            return httputils.NOT_ALLOWED
                         return httputils.NOT_ALLOWED
-                    return httputils.NOT_ALLOWED
 
                 # limited update as user
-                result = self.update_sharing(
+                result = self.database_update_sharing(
                        ShareType=ShareType,
-                       PathMapped=PathMapped,
                        PathOrToken=str(PathOrToken),  # verification above that it is not None
-                       OwnerOrUser=user,
+                       EnabledByUser=Enabled,
+                       HiddenByUser=Hidden,
                        Timestamp=Timestamp,
                        Properties=Properties)
 
             else:
                 # neither owner nor user matches
+                logger.warning("Update sharing of %r not permitted for user %r", PathOrToken, user)
                 return httputils.NOT_ALLOWED
 
             # result handling
@@ -891,25 +920,28 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + ": start")
 
-            if PathOrToken is None:
-                return httputils.bad_request("Missing PathOrToken")
-
-            if ShareType == "token":
-                result = self.delete_sharing(
-                       ShareType=ShareType,
-                       PathOrToken=str(PathOrToken),  # verification above that it is not None
-                       Owner=Owner)
-
-            elif ShareType == "map":
-                result = self.delete_sharing(
-                       ShareType=ShareType,
-                       PathOrToken=str(PathOrToken),  # verification above that it is not None
-                       PathMapped=PathMapped,
-                       Owner=Owner)
-
-            else:
+            if ShareType not in ["token", "map"]:
                 logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
+
+            if PathOrToken is None:
+                return httputils.bad_request("Missing PathOrToken")
+            else:
+                PathOrToken = str(PathOrToken)
+
+            # check whether share exists
+            share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, OnlyEnabled=False)
+            if share is None:
+                return httputils.NOT_FOUND
+
+            if user == share['Owner']:
+                result = self.database_delete_sharing(
+                       ShareType=ShareType,
+                       PathOrToken=PathOrToken) # verification above that it is not None
+            else:
+                # only owner is permitted to delete a share
+                logger.warning("Delete sharing of %r not permitted for user %r", PathOrToken, user)
+                return httputils.NOT_ALLOWED
 
             # result handling
             if result['status'] == "not-found":
@@ -941,34 +973,74 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/API/POST/" + action)
 
-            if ShareType in ["token", "map"]:
-                if PathOrToken is None:
-                    return httputils.bad_request("Missing PathOrToken")
-
-                result = self.toggle_sharing(
-                       ShareType=ShareType,
-                       PathOrToken=str(PathOrToken),  # verification above that it is not None
-                       OwnerOrUser=user,        # authenticated user
-                       User=User,               # optional for selection
-                       PathMapped=PathMapped,  # optional for selection
-                       Action=action,
-                       Timestamp=Timestamp)
-
-                if result:
-                    if result['status'] == "not-found":
-                        return httputils.NOT_FOUND
-                    if result['status'] == "permission-denied":
-                        return httputils.NOT_ALLOWED
-                    elif result['status'] == "success":
-                        answer['Status'] = "success"
-                        pass
-                else:
-                    logger.error("Toggle sharing: %r of user %s not successful", request_data['PathOrToken'], user)
-                    return httputils.bad_request("Internal Error")
-
-            else:
+            if ShareType not in ["token", "map"]:
                 logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
+
+            if PathOrToken is None:
+                return httputils.bad_request("Missing PathOrToken")
+            else:
+                PathOrToken = str(PathOrToken)
+
+            share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, OnlyEnabled=False)
+            if share is None:
+                return httputils.NOT_FOUND
+
+            Enabled = None
+            Hidden = None
+
+            if action == "disable":
+                Enabled = False
+            elif action == "enable":
+                Enabled = True
+            elif action == "hide":
+                Hidden = True
+            elif action == "unhide":
+                Hidden = False
+
+            if user == share['Owner']:
+                if user == share['User']:
+                    # user is Owner and User
+                    result = self.database_update_sharing(
+                           ShareType=ShareType,
+                           PathOrToken=PathOrToken,
+                           EnabledByOwner=Enabled,
+                           EnabledByUser=Enabled,
+                           HiddenByOwner=Hidden,
+                           HiddenByUser=Hidden,
+                           Timestamp=Timestamp)
+                else:
+                    result = self.database_update_sharing(
+                           ShareType=ShareType,
+                           PathOrToken=PathOrToken,
+                           EnabledByOwner=Enabled,
+                           HiddenByOwner=Hidden,
+                           Timestamp=Timestamp)
+
+            elif user == share['User']:
+                result = self.database_update_sharing(
+                       ShareType=ShareType,
+                       PathOrToken=str(PathOrToken),  # verification above that it is not None
+                       EnabledByUser=Enabled,
+                       HiddenByUser=Hidden,
+                       Timestamp=Timestamp)
+
+            else:
+                # neither owner nor user matches
+                logger.warning("Toggle sharing of %r not permitted for user %r", PathOrToken, user)
+                return httputils.NOT_ALLOWED
+
+            if result:
+                if result['status'] == "not-found":
+                    return httputils.NOT_FOUND
+                if result['status'] == "permission-denied":
+                    return httputils.NOT_ALLOWED
+                elif result['status'] == "success":
+                    answer['Status'] = "success"
+                    pass
+            else:
+                logger.error("Toggle sharing: %r of user %s not successful", request_data['PathOrToken'], user)
+                return httputils.bad_request("Internal Error")
 
         else:
             # default
