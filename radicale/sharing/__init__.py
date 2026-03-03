@@ -214,17 +214,6 @@ class BaseSharing:
         """ delete sharing """
         return {"status": "not-implemented"}
 
-    def toggle_sharing(self,
-                       ShareType: str,
-                       PathOrToken: str,
-                       OwnerOrUser: str,
-                       Action: str,
-                       PathMapped: Union[str, None] = None,
-                       User: Union[str, None] = None,
-                       Timestamp: int = 0) -> dict:
-        """ toggle sharing """
-        return {"status": "not-implemented"}
-
     # sharing functions called by request methods
     def verify(self) -> bool:
         """ verify database """
@@ -582,7 +571,7 @@ class BaseSharing:
 
         # check for mandatory parameters
         if 'PathMapped' not in request_data:
-            if action in ['info', 'list', 'update', 'delete']:
+            if action in ['info', 'list', 'update', 'delete', 'enable', 'disable', 'hide', 'unhide']:
                 # ignored
                 pass
             else:
@@ -638,7 +627,7 @@ class BaseSharing:
                 pass
             else:
                 if 'User' not in request_data:
-                    if action not in ['list', 'delete', 'update']:
+                    if action not in ['list', 'delete', 'update', 'enable', 'disable', 'hide', 'unhide']:
                         logger.warning(api_info + ": missing User")
                         return httputils.bad_request("Missing User")
                     else:
@@ -963,34 +952,72 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/API/POST/" + action)
 
-            if ShareType in ["token", "map"]:
-                if PathOrToken is None:
-                    return httputils.bad_request("Missing PathOrToken")
-
-                result = self.toggle_sharing(
-                       ShareType=ShareType,
-                       PathOrToken=str(PathOrToken),  # verification above that it is not None
-                       OwnerOrUser=user,        # authenticated user
-                       User=User,               # optional for selection
-                       PathMapped=PathMapped,  # optional for selection
-                       Action=action,
-                       Timestamp=Timestamp)
-
-                if result:
-                    if result['status'] == "not-found":
-                        return httputils.NOT_FOUND
-                    if result['status'] == "permission-denied":
-                        return httputils.NOT_ALLOWED
-                    elif result['status'] == "success":
-                        answer['Status'] = "success"
-                        pass
-                else:
-                    logger.error("Toggle sharing: %r of user %s not successful", request_data['PathOrToken'], user)
-                    return httputils.bad_request("Internal Error")
-
-            else:
+            if ShareType not in ["token", "map"]:
                 logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
+
+            if PathOrToken is None:
+                return httputils.bad_request("Missing PathOrToken")
+
+            share = self.get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, OnlyEnabled=False)
+            if share is None:
+                return httputils.NOT_FOUND
+
+            Enabled = None
+            Hidden = None
+
+            if action == "disable":
+                Enabled = False
+            elif action == "enable":
+                Enabled = True
+            elif action == "hide":
+                Hidden = True
+            elif action == "unhide":
+                Hidden = False
+
+            if user == share['Owner']:
+                if user == share['User']:
+                    # user is Owner and User
+                    result = self.update_sharing(
+                           ShareType=ShareType,
+                           PathOrToken=str(PathOrToken),  # verification above that it is not None
+                           EnabledByOwner=Enabled,
+                           EnabledByUser=Enabled,
+                           HiddenByOwner=Hidden,
+                           HiddenByUser=Hidden,
+                           Timestamp=Timestamp)
+                else:
+                    result = self.update_sharing(
+                           ShareType=ShareType,
+                           PathOrToken=str(PathOrToken),  # verification above that it is not None
+                           EnabledByOwner=Enabled,
+                           HiddenByOwner=Hidden,
+                           Timestamp=Timestamp)
+
+            elif user == share['User']:
+                result = self.update_sharing(
+                       ShareType=ShareType,
+                       PathOrToken=str(PathOrToken),  # verification above that it is not None
+                       EnabledByUser=Enabled,
+                       HiddenByUser=Hidden,
+                       Timestamp=Timestamp)
+
+            else:
+                # neither owner nor user matches
+                logger.warning("Toggle sharing of %r not permitted for user %r", PathOrToken, user)
+                return httputils.NOT_ALLOWED
+
+            if result:
+                if result['status'] == "not-found":
+                    return httputils.NOT_FOUND
+                if result['status'] == "permission-denied":
+                    return httputils.NOT_ALLOWED
+                elif result['status'] == "success":
+                    answer['Status'] = "success"
+                    pass
+            else:
+                logger.error("Toggle sharing: %r of user %s not successful", request_data['PathOrToken'], user)
+                return httputils.bad_request("Internal Error")
 
         else:
             # default

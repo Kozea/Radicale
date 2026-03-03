@@ -245,6 +245,10 @@ map,/user/cal1-from-owner/,/owner/cal1/,owner,user,r,False,False,True,True,17719
 
 Delete a share selected by `PathOrToken`.
 
+ * Authorization
+
+Authenticated user is `Owner`
+
  * Input
 
 | Parameter | Type | Owner | User |
@@ -258,6 +262,10 @@ Delete a share selected by `PathOrToken`.
 Update a share selected by `PathOrToken`.
 
 Execute delete+create in case `PathOrToken` needs to be changed.
+
+ * Authorization
+
+Authenticated user is `Owner` or `User`
 
  * Input
 
@@ -274,17 +282,21 @@ Execute delete+create in case `PathOrToken` needs to be changed.
 
   * Output: result status
 
-##### API Hooks "*/(enable|disable|hide|unhide)"
+##### API Hooks "(map|token)/(enable|disable|hide|unhide)"
 
-Enable|disable|hide|unhide a share selected by `PathOrToken`
+Toggle enable|disable|hide|unhide of `Owner` or `User` of a share selected by `PathOrToken`
+
+ * Authorization
+
+Authenticated user is `Owner` or `User`
 
  * Input
 
-| Parameter | Mandatory | Default |
-| - | - | - |
-| PathOrToken | yes | n/a |
+| Parameter | Type | Owner | User |
+| - | - | - | - |
+| PathOrToken | selector | mandatory | mandatory |
 
-  * Output: result status
+ * Output: result status
   
  * Example: TEXT (enable)
  

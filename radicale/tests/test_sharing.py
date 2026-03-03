@@ -470,7 +470,7 @@ class TestSharingApiSanity(BaseTest):
             assert "Status=success" in answer
             assert "Lines=1" in answer
 
-            logging.info("\n*** disable token#2 (form->text)")
+            logging.info("\n*** disable token#2 as iwner (form->text)")
             form_array = ["PathOrToken=" + token2]
             _, headers, answer = self._sharing_api_form("token", "disable", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status=success" in answer
@@ -483,7 +483,7 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['EnabledByOwner'] is False
 
-            logging.info("\n*** enable token#2 (json->json)")
+            logging.info("\n*** enable token#2 as owner (json->json)")
             json_dict = {}
             json_dict['PathOrToken'] = token2
             _, headers, answer = self._sharing_api_json("token", "enable", check=200, login="owner:ownerpw", json_dict=json_dict)
@@ -769,37 +769,17 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['Content'][0]['HiddenByUser'] is True
             assert answer_dict['Content'][0]['Permissions'] == "r"
 
-            logging.info("\n*** enable map by owner for owner (json->json) -> 403")
+            logging.info("\n*** enable map by owner (json->json) -> 200")
             json_dict = {}
-            json_dict['User'] = "owner"
-            json_dict['PathMapped'] = path_mapped
-            json_dict['PathOrToken'] = path_shared
-            _, headers, answer = self._sharing_api_json("map", "enable", check=403, login="owner:ownerpw", json_dict=json_dict)
-
-            logging.info("\n*** enable map by owner for user (json->json) -> 200")
-            json_dict = {}
-            json_dict['User'] = "user"
-            json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="owner:ownerpw", json_dict=json_dict)
-            answer_dict = json.loads(answer)
-            assert answer_dict['Status'] == "success"
 
             logging.info("\n*** enable map by user (json->json)")
             json_dict = {}
-            json_dict['User'] = "user"
-            json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
-
-            logging.info("\n*** enable map by user for owner (json->json) -> should fail")
-            json_dict = {}
-            json_dict['User'] = "owner"
-            json_dict['PathMapped'] = path_mapped
-            json_dict['PathOrToken'] = path_shared
-            _, headers, answer = self._sharing_api_json("map", "enable", check=403, login="user:userpw", json_dict=json_dict)
 
             logging.info("\n*** fetch collection (without credentials)")
             _, headers, answer = self.request("GET", path_mapped, check=401)
@@ -1141,6 +1121,11 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner:ownerpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
+
+            logging.info("\n*** delete map by owner 2nd time (json->json) -> 404")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_shared
+            _, headers, answer = self._sharing_api_json("map", "delete", check=404, login="owner:ownerpw", json_dict=json_dict)
 
     def test_sharing_api_map_usercheck(self) -> None:
         """share-by-map API usage tests related to usercheck."""
