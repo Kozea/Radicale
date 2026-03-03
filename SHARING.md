@@ -167,18 +167,31 @@ curl -u user:pass --silent -H "accept: application/json" -d "" http://localhost:
 ```
 
 
-##### API Hook "*/create"
+##### API Hook "(token|map)/create"
 
-Create a share
+ * Authorization
+
+Authenticated user is `Owner`
 
 ###### API Hook "token/create"
 
+Create a share by mapping a collection of an `Owner` to a token.
+
+ * Authorization
+
+Authenticated user as `Owner` has at least read access to `PathMapped`
+
  * Input
 
-| Parameter | Mandatory | Default |
-| - | - | - |
-| PathMapped | yes | |
-| Permissions | no | r
+| Parameter | Owner |
+| - | - |
+| Owner | implicit(by authentication) |
+| PathMapped | mandatory |
+| User | optional(default:owner) |
+| Permissions | optional(default:r) |
+| Enabled | optional(owner) |
+| Hidden | optional(owner) |
+| Properties | optional |
 
   * Output
 
@@ -195,17 +208,28 @@ Status=success
 PathOrToken=v1/VQR7AmsVRi2ZlFj_JwGpFx-ES5Goyku-gP_YkLh1zUw=
 ```
 
-
 ###### API Hook "map/create"
+
+Create a share by mapping a collection of an `Owner` to an `User`.
+
+ * Authorization
+
+Authenticated user as `Owner` has at least read access to `PathMapped`
+
+Provided `User` has at least read access to `PathOrToken`
 
  * Input
 
-| Parameter | Mandatory | Default |
-| - | - | - |
-| PathOrToken | yes | |
-| PathMapped | yes | |
-| Permissions | no | r
-| User | yes | |
+| Parameter | Value |
+| - | - |
+| Owner | implicit(by authentication) |
+| PathOrToken | mandatory |
+| PathMapped | mandatory |
+| User | mandatory |
+| Permissions | optional(default:r) |
+| Enabled | optional(owner) |
+| Hidden | optional(owner) |
+| Properties | optional |
 
  * Output: result status
 
@@ -218,19 +242,24 @@ Status=success
 ```
 
 
-##### API Hook "*/list"
+##### API Hook "(map|token|all)/list"
 
-List shares (optional with filter)
+List shares (optional with filter) either owned or assigned as user.
+
+ * Authorization
+
+Authenticated user as `Owner` or `User`
 
  * Input
 
-| Parameter | Mandatory | Default |
-| - | - | - |
-| PathMapped | no | (all) |
-| Owner | no | (owned ones) |
-| User | no | (filtered) |
+| Parameter | Filter |
+| - | - |
+| Owner | implicit(by authentication) |
+| User | implicit(by authentication) |
+| PathOrToken | optional |
+| PathMapped | optional |
 
-  * Output: plain/csv/json
+ * Output: plain/csv/json
 
  * Example: CSV
  

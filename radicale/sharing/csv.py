@@ -96,7 +96,7 @@ class Sharing(sharing.BaseSharing):
         """ retrieve sharing target and attributes by map """
         # Lookup
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/sharing: lookup ShareType=%r PathOrToken=%r User=%r)", ShareType, PathOrToken, User)
+            logger.debug("TRACE/sharing: lookup ShareType=%r PathOrToken=%r User=%r OnlyEnabled=%s)", ShareType, PathOrToken, User, OnlyEnabled)
 
         index = 0
         found = False
@@ -115,12 +115,8 @@ class Sharing(sharing.BaseSharing):
                     pass
                 elif OnlyEnabled is True and row['EnabledByOwner'] is not True:
                     pass
-                elif row['ShareType'] == "map":
-                    if OnlyEnabled is True and row['EnabledByUser'] is not True:
-                        pass
-                    else:
-                        found = True
-                        break
+                elif OnlyEnabled is True and row['EnabledByUser'] is not True:
+                    pass
                 else:
                     found = True
                     break
