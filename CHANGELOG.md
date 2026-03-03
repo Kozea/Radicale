@@ -2,7 +2,7 @@
 
 ## 3.7.0.dev
 
-* Feature: collection sharing by map or token incl. management API
+* Feature: collection sharing by map or token incl. management API and WebUI extension
 * Add: [auth] oauth2: allow custom client_id and client_secret (optional)
 * Cleanup: deprecate config option 'ldap_use_ssl' for good
 * Performance: improve `path_to_filesystem()`
