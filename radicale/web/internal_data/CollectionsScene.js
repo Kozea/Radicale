@@ -21,9 +21,9 @@
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
 import { DeleteCollectionScene } from "./DeleteCollectionScene.js";
 import { LoadingScene } from "./LoadingScene.js";
-import { CreateShareCollectionScene } from "./ShareCollectionScene.js";
+import { CreateShareCollectionScene, maybe_enable_sharing_options } from "./ShareCollectionScene.js";
 import { UploadCollectionScene } from "./UploadCollectionScene.js";
-import { get_collections } from "./api.js";
+import { discover_server_features, get_collections } from "./api.js";
 import { SERVER } from "./constants.js";
 import { Collection, CollectionType } from "./models.js";
 import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
@@ -189,6 +189,7 @@ export class CollectionsScene {
             upload_btn.onclick = onupload;
             if (collections === null) {
                 update();
+                discover_server_features(user, password, maybe_enable_sharing_options);            
             } else {
                 // from update loading scene
                 show_collections(collections);
