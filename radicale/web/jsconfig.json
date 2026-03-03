@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "module": "CommonJS",
+        "target": "ES6",
+        "checkJs": true
+    },
+    "include": [
+        "internal_data/**/*.js"
+    ]
+}

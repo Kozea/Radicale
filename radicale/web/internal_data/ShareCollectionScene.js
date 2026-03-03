@@ -24,7 +24,8 @@ import {
   reload_sharing_list,
   server_features,
 } from "./api.js";
-import { pop_scene, scene_stack } from "./scene_manager.js";
+import { Collection } from "./models.js";
+import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
 
 /**
  * @constructor
@@ -33,64 +34,73 @@ import { pop_scene, scene_stack } from "./scene_manager.js";
  * @param {string} password
  * @param {Collection} collection The collection on which to edit sharing setting. Must exist.
  */
-export function CreateShareCollectionScene(user, password, collection) {
-  /** @type {?number} */ let scene_index = null;
+/**
+ * @constructor
+ * @implements {Scene}
+ * @param {string} user
+ * @param {string} password
+ * @param {Collection} collection The collection on which to edit sharing setting. Must exist.
+ */
+export class CreateShareCollectionScene {
+  constructor(user, password, collection) {
+        /** @type {?number} */ let scene_index = null;
 
-  let html_scene = document.getElementById("sharecollectionscene");
+    let html_scene = document.getElementById("sharecollectionscene");
 
-  let cancel_btn = html_scene.querySelector("[data-name=cancel]");
-  let share_by_token_btn_ro = html_scene.querySelector(
-    "[data-name=sharebytoken_ro]",
-  );
-  let share_by_token_btn_rw = html_scene.querySelector(
-    "[data-name=sharebytoken_rw]",
-  );
+        /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+        /** @type {HTMLElement} */ let share_by_token_btn_ro = html_scene.querySelector(
+      "[data-name=sharebytoken_ro]"
+    );
+        /** @type {HTMLElement} */ let share_by_token_btn_rw = html_scene.querySelector(
+      "[data-name=sharebytoken_rw]"
+    );
 
-  let title = html_scene.querySelector("[data-name=title]");
+        /** @type {HTMLElement} */ let title = html_scene.querySelector("[data-name=title]");
 
-  function oncancel() {
-    try {
-      pop_scene(scene_index - 1);
-    } catch (err) {
-      console.error(err);
+    function oncancel() {
+      try {
+        pop_scene(scene_index - 1);
+      } catch (err) {
+        console.error(err);
+      }
+      return false;
     }
-    return false;
-  }
 
-  function onsharebytoken_rw() {
-    add_share_by_token(user, password, collection, "rw", function () {
-      update_share_list(user, password, collection);
-    });
-  }
-
-  function onsharebytoken_ro() {
-    add_share_by_token(user, password, collection, "r", function () {
-      update_share_list(user, password, collection);
-    });
-  }
-
-  this.show = function () {
-    this.release();
-    scene_index = scene_stack.length - 1;
-    html_scene.classList.remove("hidden");
-    cancel_btn.onclick = oncancel;
-    if (server_features["sharing"]["FeatureEnabledCollectionByToken"]) {
-      share_by_token_btn_ro.onclick = onsharebytoken_ro;
-      share_by_token_btn_rw.onclick = onsharebytoken_rw;
-    } else {
-      share_by_token_btn_ro.parentElement.removeChild(share_by_token_btn_ro);
-      share_by_token_btn_rw.parentElement.removeChild(share_by_token_btn_rw);
+    function onsharebytoken_rw() {
+      add_share_by_token(user, password, collection, "rw", function () {
+        update_share_list(user, password, collection);
+      });
     }
-    title.textContent = collection.displayname || collection.href;
-    update_share_list(user, password, collection);
-  };
-  this.hide = function () {
-    html_scene.classList.add("hidden");
-    cancel_btn.onclick = null;
-  };
-  this.release = function () {
-    scene_index = null;
-  };
+
+    function onsharebytoken_ro() {
+      add_share_by_token(user, password, collection, "r", function () {
+        update_share_list(user, password, collection);
+      });
+    }
+
+    this.show = function () {
+      this.release();
+      scene_index = scene_stack.length - 1;
+      html_scene.classList.remove("hidden");
+      cancel_btn.onclick = oncancel;
+      if (server_features["sharing"]["FeatureEnabledCollectionByToken"]) {
+        share_by_token_btn_ro.onclick = onsharebytoken_ro;
+        share_by_token_btn_rw.onclick = onsharebytoken_rw;
+      } else {
+        share_by_token_btn_ro.parentElement.removeChild(share_by_token_btn_ro);
+        share_by_token_btn_rw.parentElement.removeChild(share_by_token_btn_rw);
+      }
+      title.textContent = collection.displayname || collection.href;
+      update_share_list(user, password, collection);
+    };
+    this.hide = function () {
+      html_scene.classList.add("hidden");
+      cancel_btn.onclick = null;
+    };
+    this.release = function () {
+      scene_index = null;
+    };
+  }
 }
 
 function update_share_list(user, password, collection) {
@@ -109,7 +119,7 @@ function update_share_list(user, password, collection) {
 }
 
 function add_share_rows(user, password, collection, shares) {
-  let template = document.querySelector("[data-name=sharetokenrowtemplate]");
+  /** @type {HTMLElement} */ let template = document.querySelector("[data-name=sharetokenrowtemplate]");
   shares.forEach(function (share) {
     let pathortoken = share["PathOrToken"] || "";
     let pathmapped = share["PathMapped"] || "";
@@ -117,9 +127,10 @@ function add_share_rows(user, password, collection, shares) {
       collection.href.includes(pathmapped) ||
       collection.href.includes(pathortoken)
     ) {
-      let node = template.cloneNode(true);
+      let node = /** @type {HTMLElement} */ (template.cloneNode(true));
       node.classList.remove("hidden");
-      node.querySelector("[data-name=pathortoken]").value = pathortoken;
+      /** @type {HTMLInputElement} */ let pathortoken_form = node.querySelector("[data-name=pathortoken]");
+      pathortoken_form.value = pathortoken;
       let permissions = (share["Permissions"] || "").toLowerCase();
       if (permissions === "rw") {
         node
@@ -132,7 +143,8 @@ function add_share_rows(user, password, collection, shares) {
       } else {
         console.warn("Unknown permissions", permissions);
       }
-      node.querySelector("[data-name=delete]").onclick = function () {
+      /** @type {HTMLElement} */ let delete_btn = node.querySelector("[data-name=delete]");
+      delete_btn.onclick = function () {
         delete_share_by_token(
           user,
           password,

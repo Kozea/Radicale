@@ -29,15 +29,15 @@ import { maybe_enable_sharing_options } from "./ShareCollectionScene.js";
  * @implements {Scene}
  */
 export function LoginScene() {
-    let html_scene = document.getElementById("loginscene");
-    let form = html_scene.querySelector("[data-name=form]");
-    let user_form = html_scene.querySelector("[data-name=user]");
-    let password_form = html_scene.querySelector("[data-name=password]");
-    let error_form = html_scene.querySelector("[data-name=error]");
-    let logout_view = document.getElementById("logoutview");
-    let logout_user_form = logout_view.querySelector("[data-name=user]");
-    let logout_btn = logout_view.querySelector("[data-name=logout]");
-    let refresh_btn = logout_view.querySelector("[data-name=refresh]");
+    /** @type {HTMLElement} */ let html_scene = document.getElementById("loginscene");
+    /** @type {HTMLElement} */ let form = html_scene.querySelector("[data-name=form]");
+    /** @type {HTMLInputElement} */ let user_form = html_scene.querySelector("[data-name=user]");
+    /** @type {HTMLInputElement} */ let password_form = html_scene.querySelector("[data-name=password]");
+    /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
+    /** @type {HTMLElement} */ let logout_view = document.getElementById("logoutview");
+    /** @type {HTMLElement} */ let logout_user_form = logout_view.querySelector("[data-name=user]");
+    /** @type {HTMLElement} */ let logout_btn = logout_view.querySelector("[data-name=logout]");
+    /** @type {HTMLElement} */ let refresh_btn = logout_view.querySelector("[data-name=refresh]");
 
     /** @type {?number} */ let scene_index = null;
     let user = "";

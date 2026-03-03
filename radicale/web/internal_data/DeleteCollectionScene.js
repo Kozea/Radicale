@@ -32,13 +32,13 @@ import { delete_collection } from "./api.js";
  * @param {Collection} collection
  */
 export function DeleteCollectionScene(user, password, collection) {
-    let html_scene = document.getElementById("deletecollectionscene");
-    let title_form = html_scene.querySelector("[data-name=title]");
-    let error_form = html_scene.querySelector("[data-name=error]");
-    let confirmation_txt = html_scene.querySelector("[data-name=confirmationtxt]");
-    let delete_confirmation_lbl = html_scene.querySelector("[data-name=deleteconfirmationtext]");
-    let delete_btn = html_scene.querySelector("[data-name=delete]");
-    let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+    /** @type {HTMLElement} */ let html_scene = document.getElementById("deletecollectionscene");
+    /** @type {HTMLElement} */ let title_form = html_scene.querySelector("[data-name=title]");
+    /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
+    /** @type {HTMLInputElement} */ let confirmation_txt = html_scene.querySelector("[data-name=confirmationtxt]");
+    /** @type {HTMLElement} */ let delete_confirmation_lbl = html_scene.querySelector("[data-name=deleteconfirmationtext]");
+    /** @type {HTMLElement} */ let delete_btn = html_scene.querySelector("[data-name=delete]");
+    /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
 
     delete_confirmation_lbl.innerHTML = DELETE_CONFIRMATION_TEXT;
     confirmation_txt.value = "";
@@ -56,7 +56,7 @@ export function DeleteCollectionScene(user, password, collection) {
         }
         try {
             let loading_scene = new LoadingScene();
-            push_scene(loading_scene);
+            push_scene(loading_scene, false);
             delete_req = delete_collection(user, password, collection, function(error1) {
                 if (scene_index === null) {
                     return;
