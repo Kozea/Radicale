@@ -220,7 +220,9 @@ class TestSharingApiSanity(BaseTest):
             # path with valid API and hook but not enabled "token"
             self.configure({"sharing": {
                                         "collection_by_map": "True",
-                                        "collection_by_token": "False"}
+                                        "collection_by_token": "False",
+                                        "permit_create_map": "False",
+                                        "permit_create_token": "False"}
                             })
             sharetype = "token"
             for action in sharing.API_HOOKS_V1:
@@ -233,10 +235,10 @@ class TestSharingApiSanity(BaseTest):
             json_dict = {}
             _, headers, answer = self._sharing_api_json("all", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
-            assert answer_dict['FeatureEnabledCollectionByMap'] is True
-            assert answer_dict['FeatureEnabledCollectionByToken'] is False
-            assert answer_dict['PermittedCreateCollectionByMap'] is True
-            assert answer_dict['PermittedCreateCollectionByToken'] is True
+            assert answer_dict['FeatureEnabledCollectionByMap'] is True, f'FeatureEnabledCollectionByMap {db_type}'
+            assert answer_dict['FeatureEnabledCollectionByToken'] is False, f'FeatureEnabledCollectionByToken {db_type}'
+            assert answer_dict['PermittedCreateCollectionByMap'] is False, f'PermittedCreateCollectionByMap {db_type}'
+            assert answer_dict['PermittedCreateCollectionByToken'] is False, f'PermittedCreateCollectionByToken {db_type}'
 
             logging.info("\n*** check API hook: info/map")
             json_dict = {}
@@ -269,6 +271,22 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['FeatureEnabledCollectionByToken'] is True
             assert 'FeatureEnabledCollectionByMap' not in answer_dict
             assert 'PermittedCreateCollectionByMap' not in answer_dict
+
+            # When turning on permission to create
+            self.configure({"sharing": {
+                                        "collection_by_map": "True",
+                                        "collection_by_token": "True",
+                                        "permit_create_map": "True",
+                                        "permit_create_token": "True"}
+                            })
+            logging.info("\n*** check API hook: info/all")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("all", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['FeatureEnabledCollectionByMap'] is True, f'FeatureEnabledCollectionByMap {db_type}'
+            assert answer_dict['FeatureEnabledCollectionByToken'] is True, f'FeatureEnabledCollectionByToken {db_type}'
+            assert answer_dict['PermittedCreateCollectionByMap'] is True, f'PermittedCreateCollectionByMap {db_type}'
+            assert answer_dict['PermittedCreateCollectionByToken'] is True, f'PermittedCreateCollectionByToken {db_type}'
 
     def test_sharing_api_list_with_auth(self) -> None:
         """POST/list with authentication."""

@@ -963,10 +963,10 @@ class BaseSharing:
             answer['Status'] = "success"
             if ShareType in ["all", "map"]:
                 answer['FeatureEnabledCollectionByMap'] = self.sharing_collection_by_map
-                answer['PermittedCreateCollectionByMap'] = True # TODO toggle per permission, default?
+                answer['PermittedCreateCollectionByMap'] = self.permit_create_map
             if ShareType in ["all", "token"]:
                 answer['FeatureEnabledCollectionByToken'] = self.sharing_collection_by_token
-                answer['PermittedCreateCollectionByToken'] = True # TODO toggle per permission, default?
+                answer['PermittedCreateCollectionByToken'] = self.permit_create_token
 
         # action: TOGGLE
         elif action in API_SHARE_TOGGLES_V1:
