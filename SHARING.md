@@ -241,31 +241,36 @@ map,/user/cal1-from-owner/,/owner/cal1/,owner,user,r,False,False,True,True,17719
 ```
 
 
-##### API Hook "*/delete"
+##### API Hook "(map|token)/delete"
 
-Delete a share selected by `PathOrToken`
+Delete a share selected by `PathOrToken`.
 
  * Input
 
-| Parameter | Mandatory | Default |
-| - | - | - |
-| PathOrToken | yes | |
+| Parameter | Type | Owner | User |
+| - | - | - | - |
+| PathOrToken | selector | mandatory | not-permitted |
 
   * Output: result status
 
-##### API Hook "*/update"
+##### API Hook "(token|map)/update"
 
-Update a share selected by `PathOrToken`
+Update a share selected by `PathOrToken`.
+
+Execute delete+create in case `PathOrToken` needs to be changed.
 
  * Input
 
-| Parameter | Mandatory | Default |
-| - | - | - |
-| PathOrToken | yes | n/a |
-| PathMapped | no | |
-| OwnerOrUser | yes | n/a |
-| User | no | |
-| Properties | no | |
+| Parameter | Type | Owner | User |
+| - | - | - | - |
+| PathOrToken | selector | mandatory | mandatory |
+| Owner | by authentication | not-permitted | not-permitted |
+| PathMapped | adjustable | optional | not-permitted |
+| User | adjustable | optional | not-permitted |
+| Permissions | adjustable | optional | not-permitted |
+| Enabled | adjustable | optional(owner) | optional(user) |
+| Hidden | adjustable | optional(owner) | optional(user) |
+| Properties | adjustable | optional | optional |
 
   * Output: result status
 

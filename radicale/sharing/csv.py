@@ -91,6 +91,7 @@ class Sharing(sharing.BaseSharing):
     def get_sharing(self,
                     ShareType: str,
                     PathOrToken: str,
+                    OnlyEnabled: bool = True,
                     User: Union[str, None] = None) -> Union[dict, None]:
         """ retrieve sharing target and attributes by map """
         # Lookup
@@ -103,25 +104,26 @@ class Sharing(sharing.BaseSharing):
             if index == 0:
                 # skip fieldnames
                 pass
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing: check row: %r", row)
-            if row['ShareType'] != ShareType:
-                pass
-            elif row['PathOrToken'] != PathOrToken:
-                pass
-            elif User is not None and row['User'] != User:
-                pass
-            elif row['EnabledByOwner'] is not True:
-                pass
-            elif row['ShareType'] == "map":
-                if row['EnabledByUser'] is not True:
+            else:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("TRACE/sharing: check row: %r", row)
+                if row['ShareType'] != ShareType:
                     pass
+                elif row['PathOrToken'] != PathOrToken:
+                    pass
+                elif User is not None and row['User'] != User:
+                    pass
+                elif OnlyEnabled is True and row['EnabledByOwner'] is not True:
+                    pass
+                elif row['ShareType'] == "map":
+                    if OnlyEnabled is True and row['EnabledByUser'] is not True:
+                        pass
+                    else:
+                        found = True
+                        break
                 else:
                     found = True
                     break
-            else:
-                found = True
-                break
             index += 1
 
         if found:
@@ -269,17 +271,19 @@ class Sharing(sharing.BaseSharing):
     def update_sharing(self,
                        ShareType: str,
                        PathOrToken: str,
-                       OwnerOrUser: str,
+                       OwnerOrUser: Union[str, None] = None,
                        User: Union[str, None] = None,
                        PathMapped: Union[str, None] = None,
                        Permissions: Union[str, None] = None,
                        EnabledByOwner: Union[bool, None] = None,
+                       EnabledByUser:  Union[bool, None] = None,
                        HiddenByOwner:  Union[bool, None] = None,
+                       HiddenByUser:   Union[bool, None] = None,
                        Timestamp: int = 0,
                        Properties: Union[dict, None] = None) -> dict:
         """ update sharing """
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/sharing/%s/update: PathOrToken=%r OwnerOrUser=%r PathMapped=%r Properties=%r", ShareType, PathOrToken, OwnerOrUser, PathMapped, Properties)
+            logger.debug("TRACE/sharing/%s/update: PathOrToken=%r OwnerOrUser=%r PathMapped=%r Properties=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s", ShareType, PathOrToken, OwnerOrUser, PathMapped, Properties, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser)
 
         # lookup token
         found = False
@@ -301,24 +305,6 @@ class Sharing(sharing.BaseSharing):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/%s/update: found index=%d", ShareType, index)
 
-            if row['Owner'] != OwnerOrUser:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/%s/update: OwnerOrUser=%r not matching Owner=%r -> check now for matching User=%r", ShareType, OwnerOrUser, row['Owner'], row['User'])
-                if row['User'] == OwnerOrUser and PathMapped is None and Permissions is None and EnabledByOwner is None and HiddenByOwner is None and Properties is not None:
-                    # user is only permitted to update Properties
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/%s/update: OwnerOrUser=%r PathOrToken=%r index=%d is permitted to update Properties", ShareType, OwnerOrUser, PathOrToken, index)
-                    pass
-                else:
-                    return {"status": "permission-denied"}
-
-            if User is not None and row['User'] != User:
-                return {"status": "permission-denied"}
-
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/%s/update: OwnerOrUser=%r PathOrToken=%r index=%d", ShareType, OwnerOrUser, PathOrToken, index)
-                logger.debug("TRACE/sharing/%s/update: orig row[%d]=%r", ShareType, index, row)
-
             # CSV: remove+adjust+readd
             if PathMapped is not None:
                 row["PathMapped"] = PathMapped
@@ -328,8 +314,12 @@ class Sharing(sharing.BaseSharing):
                 row["User"] = User
             if EnabledByOwner is not None:
                 row["EnabledByOwner"] = EnabledByOwner
+            if EnabledByUser is not None:
+                row["EnabledByUser"] = EnabledByUser
             if HiddenByOwner is not None:
                 row["HiddenByOwner"] = HiddenByOwner
+            if HiddenByUser is not None:
+                row["HiddenByUser"] = HiddenByUser
             if Properties is not None:
                 row["Properties"] = Properties
             # update timestamp
@@ -353,11 +343,10 @@ class Sharing(sharing.BaseSharing):
 
     def delete_sharing(self,
                        ShareType: str,
-                       PathOrToken: str, Owner: str,
-                       PathMapped: Union[str, None] = None) -> dict:
+                       PathOrToken: str) -> dict:
         """ delete sharing """
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/sharing/%s/delete: PathOrToken=%r Owner=%r PathMapped=%r", ShareType, PathOrToken, Owner, PathMapped)
+            logger.debug("TRACE/sharing/%s/delete: PathOrToken=%r", ShareType, PathOrToken)
 
         # lookup token
         found = False
@@ -373,28 +362,18 @@ class Sharing(sharing.BaseSharing):
             elif row['PathOrToken'] != PathOrToken:
                 pass
             else:
-                if ShareType == "map":
-                    # extra filter
-                    if row['PathMapped'] != PathMapped:
-                        pass
-                    else:
-                        found = True
-                        break
-                else:
-                    found = True
-                    break
+                found = True
+                break
             index += 1
 
         if found:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/%s/delete: found index=%d", ShareType, index)
-            if row['Owner'] != Owner:
-                return {"status": "permission-denied"}
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/%s/delete: Owner=%r PathOrToken=%r index=%d", ShareType, Owner, PathOrToken, index)
+                logger.debug("TRACE/sharing/%s/delete: PathOrToken=%r Owner=%r index=%d", ShareType, PathOrToken, row['Owner'], index)
             self._sharing_cache.pop(index)
 
-            with self._storage.acquire_lock("w", Owner, path=self._sharing_db_file):
+            with self._storage.acquire_lock("w", row['Owner'], path=self._sharing_db_file):
                 if self._write_csv(self._sharing_db_file):
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug("TRACE/sharing_by_token: write CSV done")

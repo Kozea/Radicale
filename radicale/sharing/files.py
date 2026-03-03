@@ -89,6 +89,7 @@ class Sharing(sharing.BaseSharing):
     def get_sharing(self,
                     ShareType: str,
                     PathOrToken: str,
+                    OnlyEnabled: bool = True,
                     User: Union[str, None] = None) -> Union[dict, None]:
         """ retrieve sharing target and attributes by map """
         # Lookup
@@ -111,9 +112,9 @@ class Sharing(sharing.BaseSharing):
 
             if User is not None and row['User'] != User:
                 return None
-            elif row['EnabledByOwner'] is not True:
+            elif OnlyEnabled is True and row['EnabledByOwner'] is not True:
                 return None
-            elif row['ShareType'] == "map":
+            elif OnlyEnabled is True and row['ShareType'] == "map":
                 if row['EnabledByUser'] is not True:
                     return None
 
@@ -264,12 +265,14 @@ class Sharing(sharing.BaseSharing):
     def update_sharing(self,
                        ShareType: str,
                        PathOrToken: str,
-                       OwnerOrUser: str,
+                       OwnerOrUser: Union[str, None] = None,
                        User: Union[str, None] = None,
                        PathMapped: Union[str, None] = None,
                        Permissions: Union[str, None] = None,
                        EnabledByOwner: Union[bool, None] = None,
+                       EnabledByUser:  Union[bool, None] = None,
                        HiddenByOwner:  Union[bool, None] = None,
+                       HiddenByUser:   Union[bool, None] = None,
                        Timestamp: int = 0,
                        Properties: Union[dict, None] = None) -> dict:
         """ update sharing """
@@ -293,20 +296,6 @@ class Sharing(sharing.BaseSharing):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/%s/update: check: %r", ShareType, row)
 
-            if row['Owner'] != OwnerOrUser:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/%s/update: OwnerOrUser=%r not matching Owner=%r -> check now for matching User=%r", ShareType, OwnerOrUser, row['Owner'], row['User'])
-                if row['User'] == OwnerOrUser and PathMapped is None and Permissions is None and EnabledByOwner is None and HiddenByOwner is None and Properties is not None:
-                    # user is only permitted to update Properties
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/%s/update: OwnerOrUser=%r PathOrToken=%r is permitted to update Properties", ShareType, OwnerOrUser, PathOrToken)
-                    pass
-                else:
-                    return {"status": "permission-denied"}
-
-            if User is not None and row['User'] != User:
-                return {"status": "permission-denied"}
-
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/%s/update: orig row=%r", ShareType, row)
 
@@ -318,8 +307,12 @@ class Sharing(sharing.BaseSharing):
                 row["User"] = User
             if EnabledByOwner is not None:
                 row["EnabledByOwner"] = EnabledByOwner
+            if EnabledByUser is not None:
+                row["EnabledByUser"] = EnabledByUser
             if HiddenByOwner is not None:
                 row["HiddenByOwner"] = HiddenByOwner
+            if HiddenByUser is not None:
+                row["HiddenByUser"] = HiddenByUser
             if Properties is not None:
                 row["Properties"] = Properties
             # update timestamp
@@ -340,11 +333,10 @@ class Sharing(sharing.BaseSharing):
 
     def delete_sharing(self,
                        ShareType: str,
-                       PathOrToken: str, Owner: str,
-                       PathMapped: Union[str, None] = None) -> dict:
+                       PathOrToken: str) -> dict:
         """ delete sharing """
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/sharing/%s/delete: PathOrToken=%r Owner=%r", ShareType, PathOrToken, Owner)
+            logger.debug("TRACE/sharing/%s/delete: PathOrToken=%r", ShareType, PathOrToken)
 
         sharing_config_file = os.path.join(self._sharing_db_path_ShareType[ShareType], self._encode_path(PathOrToken))
 
@@ -352,17 +344,13 @@ class Sharing(sharing.BaseSharing):
             return {"status": "not-found"}
 
         # read content
-        with self._storage.acquire_lock("r", Owner, path=sharing_config_file):
+        with self._storage.acquire_lock("r", path=sharing_config_file):
             # read file
             with open(sharing_config_file, "rb") as fb:
                 (version, row) = pickle.load(fb)
 
             if version != DB_VERSION:
                 return {"status": "error"}
-
-            # verify owner
-            if row['Owner'] != Owner:
-                return {"status": "permission-denied"}
 
             try:
                 os.remove(sharing_config_file)
