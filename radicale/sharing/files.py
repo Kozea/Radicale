@@ -29,19 +29,19 @@ DB_VERSION: str = "1"
 
 
 class Sharing(sharing.BaseSharing):
-    _sharing_db_path_ShareType: dict = {}
+    _sharing_database_path_ShareType: dict = {}
 
     # Overloaded functions
-    def init_database(self) -> bool:
+    def database_init(self) -> bool:
         logger.debug("sharing database initialization for type 'files'")
-        sharing_db_path = self.configuration.get("sharing", "database_path")
-        if sharing_db_path == "":
+        sharing_database_path = self.configuration.get("sharing", "database_path")
+        if sharing_database_path == "":
             folder = self.configuration.get("storage", "filesystem_folder")
             folder_db = os.path.join(folder, "collection-db")
-            sharing_db_path = os.path.join(folder_db, "files")
-            logger.info("sharing database path not provided, use default: %r", sharing_db_path)
+            sharing_database_path = os.path.join(folder_db, "files")
+            logger.info("sharing database path not provided, use default: %r", sharing_database_path)
         else:
-            logger.info("sharing database path: %r", sharing_db_path)
+            logger.info("sharing database path: %r", sharing_database_path)
 
         if not os.path.exists(folder_db):
             logger.warning("sharing database folder is not existing: %r (create now)", folder_db)
@@ -52,18 +52,18 @@ class Sharing(sharing.BaseSharing):
                 return False
             logger.info("sharing database folder successfully created: %r", folder_db)
 
-        if not os.path.exists(sharing_db_path):
-            logger.warning("sharing database path is not existing: %r", sharing_db_path)
+        if not os.path.exists(sharing_database_path):
+            logger.warning("sharing database path is not existing: %r", sharing_database_path)
             try:
-                os.mkdir(sharing_db_path)
+                os.mkdir(sharing_database_path)
             except Exception as e:
-                logger.error("sharing database path cannot be created (check permissions): %r (%r)", sharing_db_path, e)
+                logger.error("sharing database path cannot be created (check permissions): %r (%r)", sharing_database_path, e)
                 return False
-            logger.info("sharing database path successfully created: %r", sharing_db_path)
+            logger.info("sharing database path successfully created: %r", sharing_database_path)
 
         for ShareType in sharing.SHARE_TYPES_V1:
-            path = os.path.join(sharing_db_path, ShareType)
-            self._sharing_db_path_ShareType[ShareType] = path
+            path = os.path.join(sharing_database_path, ShareType)
+            self._sharing_database_path_ShareType[ShareType] = path
             if not os.path.exists(path):
                 logger.warning("sharing database path for %r is not existing: %r", ShareType, path)
                 try:
@@ -74,29 +74,29 @@ class Sharing(sharing.BaseSharing):
                 logger.info("sharing database path for %r successfully created: %r", ShareType, path)
         return True
 
-    def get_database_info(self) -> Union[dict, None]:
+    def database_get_info(self) -> Union[dict, None]:
         database_info = {'type': "files"}
         return database_info
 
-    def verify_database(self) -> bool:
+    def database_verify(self) -> bool:
         logger.info("sharing database (files) verification begin")
         for ShareType in sharing.SHARE_TYPES_V1:
-            logger.info("sharing database (files) path for %r: %r", ShareType, self._sharing_db_path_ShareType[ShareType])
+            logger.info("sharing database (files) path for %r: %r", ShareType, self._sharing_database_path_ShareType[ShareType])
         # TODO: count amount of files
         logger.info("sharing database (files) verification end")
         return True
 
-    def get_sharing(self,
-                    ShareType: str,
-                    PathOrToken: str,
-                    OnlyEnabled: bool = True,
-                    User: Union[str, None] = None) -> Union[dict, None]:
+    def database_get_sharing(self,
+                             ShareType: str,
+                             PathOrToken: str,
+                             OnlyEnabled: bool = True,
+                             User: Union[str, None] = None) -> Union[dict, None]:
         """ retrieve sharing target and attributes by map """
         # Lookup
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/%s/get: PathOrToken=%r User=%r)", ShareType, PathOrToken, User)
 
-        sharing_config_file = os.path.join(self._sharing_db_path_ShareType[ShareType], self._encode_path(PathOrToken))
+        sharing_config_file = os.path.join(self._sharing_database_path_ShareType[ShareType], self._encode_path(PathOrToken))
 
         if not os.path.isfile(sharing_config_file):
             return None
@@ -141,16 +141,16 @@ class Sharing(sharing.BaseSharing):
 
         return None
 
-    def list_sharing(self,
-                     OwnerOrUser: Union[str, None] = None,
-                     ShareType: Union[str, None] = None,
-                     PathOrToken: Union[str, None] = None,
-                     PathMapped: Union[str, None] = None,
-                     User: Union[str, None] = None,
-                     EnabledByOwner: Union[bool, None] = None,
-                     EnabledByUser: Union[bool, None] = None,
-                     HiddenByOwner: Union[bool, None] = None,
-                     HiddenByUser: Union[bool, None] = None) -> list[dict]:
+    def database_list_sharing(self,
+                              OwnerOrUser: Union[str, None] = None,
+                              ShareType: Union[str, None] = None,
+                              PathOrToken: Union[str, None] = None,
+                              PathMapped: Union[str, None] = None,
+                              User: Union[str, None] = None,
+                              EnabledByOwner: Union[bool, None] = None,
+                              EnabledByUser: Union[bool, None] = None,
+                              HiddenByOwner: Union[bool, None] = None,
+                              HiddenByUser: Union[bool, None] = None) -> list[dict]:
         """ retrieve sharing """
         result = []
 
@@ -162,7 +162,7 @@ class Sharing(sharing.BaseSharing):
                 # skip
                 continue
 
-            path = self._sharing_db_path_ShareType[_ShareType]
+            path = self._sharing_database_path_ShareType[_ShareType]
             with self._storage.acquire_lock("r", OwnerOrUser, path=path):
                 for entry in os.scandir(path):
                     if not entry.is_file():
@@ -213,19 +213,19 @@ class Sharing(sharing.BaseSharing):
 
         return result
 
-    def create_sharing(self,
-                       ShareType: str,
-                       PathOrToken: str, PathMapped: str,
-                       Owner: str, User: str,
-                       Permissions: str = "r",
-                       EnabledByOwner: bool = False, EnabledByUser: bool = False,
-                       HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
-                       Timestamp: int = 0,
-                       Properties: Union[dict, None] = None) -> dict:
+    def database_create_sharing(self,
+                                ShareType: str,
+                                PathOrToken: str, PathMapped: str,
+                                Owner: str, User: str,
+                                Permissions: str = "r",
+                                EnabledByOwner: bool = False, EnabledByUser: bool = False,
+                                HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
+                                Timestamp: int = 0,
+                                Properties: Union[dict, None] = None) -> dict:
         """ create sharing """
         row: dict
 
-        sharing_config_file = os.path.join(self._sharing_db_path_ShareType[ShareType], self._encode_path(PathOrToken))
+        sharing_config_file = os.path.join(self._sharing_database_path_ShareType[ShareType], self._encode_path(PathOrToken))
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/%s/create: sharing_config_file=%r", ShareType, sharing_config_file)
@@ -262,24 +262,24 @@ class Sharing(sharing.BaseSharing):
             logger.error("sharing/%s/create: cannot store share-config: %r (%r)", ShareType, sharing_config_file, e)
             return {"status": "error"}
 
-    def update_sharing(self,
-                       ShareType: str,
-                       PathOrToken: str,
-                       OwnerOrUser: Union[str, None] = None,
-                       User: Union[str, None] = None,
-                       PathMapped: Union[str, None] = None,
-                       Permissions: Union[str, None] = None,
-                       EnabledByOwner: Union[bool, None] = None,
-                       EnabledByUser:  Union[bool, None] = None,
-                       HiddenByOwner:  Union[bool, None] = None,
-                       HiddenByUser:   Union[bool, None] = None,
-                       Timestamp: int = 0,
-                       Properties: Union[dict, None] = None) -> dict:
+    def database_update_sharing(self,
+                                ShareType: str,
+                                PathOrToken: str,
+                                OwnerOrUser: Union[str, None] = None,
+                                User: Union[str, None] = None,
+                                PathMapped: Union[str, None] = None,
+                                Permissions: Union[str, None] = None,
+                                EnabledByOwner: Union[bool, None] = None,
+                                EnabledByUser:  Union[bool, None] = None,
+                                HiddenByOwner:  Union[bool, None] = None,
+                                HiddenByUser:   Union[bool, None] = None,
+                                Timestamp: int = 0,
+                                Properties: Union[dict, None] = None) -> dict:
         """ update sharing """
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/%s/update: PathOrToken=%r OwnerOrUser=%r User=%r Properties=%r", ShareType, PathOrToken, OwnerOrUser, User, Properties)
 
-        sharing_config_file = os.path.join(self._sharing_db_path_ShareType[ShareType], self._encode_path(PathOrToken))
+        sharing_config_file = os.path.join(self._sharing_database_path_ShareType[ShareType], self._encode_path(PathOrToken))
 
         if not os.path.isfile(sharing_config_file):
             return {"status": "not-found"}
@@ -331,14 +331,14 @@ class Sharing(sharing.BaseSharing):
                 logger.error("sharing/%s/create: cannot store share-config: %r (%r)", ShareType, sharing_config_file, e)
                 return {"status": "error"}
 
-    def delete_sharing(self,
-                       ShareType: str,
-                       PathOrToken: str) -> dict:
+    def database_delete_sharing(self,
+                                ShareType: str,
+                                PathOrToken: str) -> dict:
         """ delete sharing """
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/%s/delete: PathOrToken=%r", ShareType, PathOrToken)
 
-        sharing_config_file = os.path.join(self._sharing_db_path_ShareType[ShareType], self._encode_path(PathOrToken))
+        sharing_config_file = os.path.join(self._sharing_database_path_ShareType[ShareType], self._encode_path(PathOrToken))
 
         if not os.path.isfile(sharing_config_file):
             return {"status": "not-found"}

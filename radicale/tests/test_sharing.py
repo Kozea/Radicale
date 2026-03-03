@@ -470,7 +470,7 @@ class TestSharingApiSanity(BaseTest):
             assert "Status=success" in answer
             assert "Lines=1" in answer
 
-            logging.info("\n*** disable token#2 as iwner (form->text)")
+            logging.info("\n*** disable token#2 as owner (form->text)")
             form_array = ["PathOrToken=" + token2]
             _, headers, answer = self._sharing_api_form("token", "disable", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status=success" in answer

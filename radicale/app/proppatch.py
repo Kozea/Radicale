@@ -80,10 +80,10 @@ def xml_proppatch(base_prefix: str, path: str,
     all_props = radicale_item.check_and_sanitize_props(all_props_with_remove)
     if sharing and sharing_overlay and _sharing is not None:
         # _sharing is not None: always the case, but makes mypy happy
-        _sharing.update_sharing(ShareType=sharing['ShareType'],
-                                PathOrToken=sharing['PathOrToken'],
-                                OwnerOrUser=sharing['User'],
-                                Properties=cast(Dict[str, str], all_props))
+        _sharing.database_update_sharing(ShareType=sharing['ShareType'],
+                                         PathOrToken=sharing['PathOrToken'],
+                                         OwnerOrUser=sharing['User'],
+                                         Properties=cast(Dict[str, str], all_props))
     else:
         if collection is not None:
             # always the case, but makes mypy happy

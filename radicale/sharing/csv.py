@@ -31,7 +31,7 @@ class Sharing(sharing.BaseSharing):
     _sharing_db_file: str
 
     # Overloaded functions
-    def init_database(self) -> bool:
+    def database_init(self) -> bool:
         logger.debug("sharing database initialization for type 'csv'")
         sharing_db_file = self.configuration.get("sharing", "database_path")
         if sharing_db_file == "":
@@ -76,11 +76,11 @@ class Sharing(sharing.BaseSharing):
         self._sharing_db_file = sharing_db_file
         return True
 
-    def get_database_info(self) -> Union[dict, None]:
+    def database_get_info(self) -> Union[dict, None]:
         database_info = {'type': "csv"}
         return database_info
 
-    def verify_database(self) -> bool:
+    def database_verify(self) -> bool:
         logger.info("sharing database (csv) verification begin")
         logger.info("sharing database (csv) file: %r", self._sharing_db_file)
         logger.info("sharing database (csv) loaded entries: %d", self._lines)
@@ -88,11 +88,11 @@ class Sharing(sharing.BaseSharing):
         logger.info("sharing database (csv) verification end")
         return True
 
-    def get_sharing(self,
-                    ShareType: str,
-                    PathOrToken: str,
-                    OnlyEnabled: bool = True,
-                    User: Union[str, None] = None) -> Union[dict, None]:
+    def database_get_sharing(self,
+                             ShareType: str,
+                             PathOrToken: str,
+                             OnlyEnabled: bool = True,
+                             User: Union[str, None] = None) -> Union[dict, None]:
         """ retrieve sharing target and attributes by map """
         # Lookup
         if logger.isEnabledFor(logging.DEBUG):
@@ -143,16 +143,16 @@ class Sharing(sharing.BaseSharing):
                     "Properties": Properties}
         return None
 
-    def list_sharing(self,
-                     OwnerOrUser: Union[str, None] = None,
-                     ShareType: Union[str, None] = None,
-                     PathOrToken: Union[str, None] = None,
-                     PathMapped: Union[str, None] = None,
-                     User: Union[str, None] = None,
-                     EnabledByOwner: Union[bool, None] = None,
-                     EnabledByUser: Union[bool, None] = None,
-                     HiddenByOwner: Union[bool, None] = None,
-                     HiddenByUser: Union[bool, None] = None) -> list[dict]:
+    def database_list_sharing(self,
+                              OwnerOrUser: Union[str, None] = None,
+                              ShareType: Union[str, None] = None,
+                              PathOrToken: Union[str, None] = None,
+                              PathMapped: Union[str, None] = None,
+                              User: Union[str, None] = None,
+                              EnabledByOwner: Union[bool, None] = None,
+                              EnabledByUser: Union[bool, None] = None,
+                              HiddenByOwner: Union[bool, None] = None,
+                              HiddenByUser: Union[bool, None] = None) -> list[dict]:
         """ retrieve sharing """
         row: dict
         index = 0
@@ -201,15 +201,15 @@ class Sharing(sharing.BaseSharing):
             index += 1
         return result
 
-    def create_sharing(self,
-                       ShareType: str,
-                       PathOrToken: str, PathMapped: str,
-                       Owner: str, User: str,
-                       Permissions: str = "r",
-                       EnabledByOwner: bool = False, EnabledByUser: bool = False,
-                       HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
-                       Timestamp: int = 0,
-                       Properties: Union[dict, None] = None) -> dict:
+    def database_create_sharing(self,
+                                ShareType: str,
+                                PathOrToken: str, PathMapped: str,
+                                Owner: str, User: str,
+                                Permissions: str = "r",
+                                EnabledByOwner: bool = False, EnabledByUser: bool = False,
+                                HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
+                                Timestamp: int = 0,
+                                Properties: Union[dict, None] = None) -> dict:
         """ create sharing """
         row: dict
 
@@ -264,19 +264,19 @@ class Sharing(sharing.BaseSharing):
         logger.error("sharing/%s/create: cannot update CSV database", ShareType)
         return {"status": "error"}
 
-    def update_sharing(self,
-                       ShareType: str,
-                       PathOrToken: str,
-                       OwnerOrUser: Union[str, None] = None,
-                       User: Union[str, None] = None,
-                       PathMapped: Union[str, None] = None,
-                       Permissions: Union[str, None] = None,
-                       EnabledByOwner: Union[bool, None] = None,
-                       EnabledByUser:  Union[bool, None] = None,
-                       HiddenByOwner:  Union[bool, None] = None,
-                       HiddenByUser:   Union[bool, None] = None,
-                       Timestamp: int = 0,
-                       Properties: Union[dict, None] = None) -> dict:
+    def database_update_sharing(self,
+                                ShareType: str,
+                                PathOrToken: str,
+                                OwnerOrUser: Union[str, None] = None,
+                                User: Union[str, None] = None,
+                                PathMapped: Union[str, None] = None,
+                                Permissions: Union[str, None] = None,
+                                EnabledByOwner: Union[bool, None] = None,
+                                EnabledByUser:  Union[bool, None] = None,
+                                HiddenByOwner:  Union[bool, None] = None,
+                                HiddenByUser:   Union[bool, None] = None,
+                                Timestamp: int = 0,
+                                Properties: Union[dict, None] = None) -> dict:
         """ update sharing """
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/%s/update: PathOrToken=%r OwnerOrUser=%r PathMapped=%r Properties=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s", ShareType, PathOrToken, OwnerOrUser, PathMapped, Properties, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser)
@@ -337,9 +337,9 @@ class Sharing(sharing.BaseSharing):
         else:
             return {"status": "not-found"}
 
-    def delete_sharing(self,
-                       ShareType: str,
-                       PathOrToken: str) -> dict:
+    def database_delete_sharing(self,
+                                ShareType: str,
+                                PathOrToken: str) -> dict:
         """ delete sharing """
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/%s/delete: PathOrToken=%r", ShareType, PathOrToken)
