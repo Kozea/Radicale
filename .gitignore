@@ -23,6 +23,6 @@ coverage.xml
 .vscode
 .sass-cache
 Gemfile.lock
-
+pytest-results.xml
 pytestdebug.log
 uv.lock
