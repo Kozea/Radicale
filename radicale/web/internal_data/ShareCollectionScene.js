@@ -117,10 +117,10 @@ function add_share_rows(user, password, collection, shares) {
   shares.forEach(function (share) {
     let pathortoken = share["PathOrToken"] || "";
     let pathmapped = share["PathMapped"] || "";
-    if (
+    if ((
       collection.href.includes(pathmapped) ||
       collection.href.includes(pathortoken)
-    ) {
+    ) && (share["ShareType"] === "token")) {
       let node = /** @type {HTMLElement} */ (template.cloneNode(true));
       node.classList.remove("hidden");
       /** @type {HTMLInputElement} */ let pathortoken_form = node.querySelector("[data-name=pathortoken]");
