@@ -28,14 +28,6 @@ import { Collection } from "./models.js";
 import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
 
 /**
- * @constructor
- * @implements {Scene}
- * @param {string} user
- * @param {string} password
- * @param {Collection} collection The collection on which to edit sharing setting. Must exist.
- */
-/**
- * @constructor
  * @implements {Scene}
  * @param {string} user
  * @param {string} password
@@ -147,10 +139,13 @@ function add_share_rows(user, password, collection, shares) {
       }
       /** @type {HTMLElement} */ let delete_btn = node.querySelector("[data-name=delete]");
       delete_btn.onclick = function () {
+        if (!confirm("Are you sure you want to delete share " + pathortoken + "?")) {
+          return;
+        }
         delete_share_by_token(
           user,
           password,
-          share["PathOrToken"],
+          pathortoken,
           function () {
             update_share_list(user, password, collection);
           },
