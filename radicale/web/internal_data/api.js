@@ -28,7 +28,7 @@ export let server_features = {};
  * Find the principal collection.
  * @param {string} user
  * @param {string} password
- * @param {function(?Collection, ?string)} callback Returns result or error
+ * @param {function(?Collection, ?string):void} callback Returns result or error
  * @return {XMLHttpRequest}
  */
 export function get_principal(user, password, callback) {
@@ -47,6 +47,7 @@ export function get_principal(user, password, callback) {
                     principal_element.textContent,
                     CollectionType.PRINCIPAL,
                     displayname_element ? displayname_element.textContent : "",
+                    "",
                     "",
                     0,
                     ""), null);
@@ -72,7 +73,7 @@ export function get_principal(user, password, callback) {
  * @param {string} user
  * @param {string} password
  * @param {Collection} collection
- * @param {function(?Array<Collection>, ?string)} callback Returns result or error
+ * @param {function(?Array<Collection>, ?string):void} callback Returns result or error
  * @return {XMLHttpRequest}
  */
 export function get_collections(user, password, collection, callback) {
@@ -195,7 +196,7 @@ export function get_collections(user, password, collection, callback) {
  * @param {string} password
  * @param {string} collection_href Must always start and end with /.
  * @param {File} file
- * @param {function(?string)} callback Returns error or null
+ * @param {function(?string):void} callback Returns error or null
  * @return {XMLHttpRequest}
  */
 export function upload_collection(user, password, collection_href, file, callback) {
@@ -220,7 +221,7 @@ export function upload_collection(user, password, collection_href, file, callbac
  * @param {string} user
  * @param {string} password
  * @param {Collection} collection
- * @param {function(?string)} callback Returns error or null
+ * @param {function(?string):void} callback Returns error or null
  * @return {XMLHttpRequest}
  */
 export function delete_collection(user, password, collection, callback) {
@@ -245,7 +246,7 @@ export function delete_collection(user, password, collection, callback) {
  * @param {string} password
  * @param {Collection} collection
  * @param {boolean} create
- * @param {function(?string)} callback Returns error or null
+ * @param {function(?string):void} callback Returns error or null
  * @return {XMLHttpRequest}
  */
 function create_edit_collection(user, password, collection, create, callback) {
@@ -325,7 +326,7 @@ function create_edit_collection(user, password, collection, create, callback) {
  * @param {string} user
  * @param {string} password
  * @param {Collection} collection
- * @param {function(?string)} callback Returns error or null
+ * @param {function(?string):void} callback Returns error or null
  * @return {XMLHttpRequest}
  */
 export function create_collection(user, password, collection, callback) {
@@ -336,7 +337,7 @@ export function create_collection(user, password, collection, callback) {
  * @param {string} user
  * @param {string} password
  * @param {Collection} collection
- * @param {function(?string)} callback Returns error or null
+ * @param {function(?string):void} callback Returns error or null
  * @return {XMLHttpRequest}
  */
 export function edit_collection(user, password, collection, callback) {

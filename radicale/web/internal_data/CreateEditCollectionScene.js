@@ -18,12 +18,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Scene, push_scene, pop_scene, scene_stack } from "./scene_manager.js";
-import { Collection, CollectionType } from "./models.js";
-import { random_uuid, random_hex, cleanHREFinput, isValidHREF } from "./utils.js";
 import { LoadingScene } from "./LoadingScene.js";
-import { COLOR_RE } from "./constants.js";
 import { create_collection, edit_collection } from "./api.js";
+import { COLOR_RE } from "./constants.js";
+import { Collection, CollectionType } from "./models.js";
+import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
+import { cleanHREFinput, isValidHREF, random_hex, random_uuid } from "./utils.js";
 
 /**
  * @constructor
@@ -34,191 +34,193 @@ import { create_collection, edit_collection } from "./api.js";
  *                                collection will be created inside of it.
  *                                Otherwise the collection will be edited.
  */
-export function CreateEditCollectionScene(user, password, collection) {
-    let edit = collection.type !== CollectionType.PRINCIPAL;
-    let html_scene = document.getElementById(edit ? "editcollectionscene" : "createcollectionscene");
-    /** @type {HTMLElement} */ let title_form = edit ? html_scene.querySelector("[data-name=title]") : null;
-    /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
-    /** @type {HTMLInputElement} */ let href_form = html_scene.querySelector("[data-name=href]");
-    /** @type {HTMLElement} */ let href_label = html_scene.querySelector("label[for=href]");
-    /** @type {HTMLInputElement} */ let displayname_form = html_scene.querySelector("[data-name=displayname]");
-    /** @type {HTMLElement} */ let displayname_label = html_scene.querySelector("label[for=displayname]");
-    /** @type {HTMLInputElement} */ let description_form = html_scene.querySelector("[data-name=description]");
-    /** @type {HTMLElement} */ let description_label = html_scene.querySelector("label[for=description]");
-    /** @type {HTMLInputElement} */ let source_form = html_scene.querySelector("[data-name=source]");
-    /** @type {HTMLElement} */ let source_label = html_scene.querySelector("label[for=source]");
-    /** @type {HTMLSelectElement} */ let type_form = html_scene.querySelector("[data-name=type]");
-    /** @type {HTMLElement} */ let type_label = html_scene.querySelector("label[for=type]");
-    /** @type {HTMLInputElement} */ let color_form = html_scene.querySelector("[data-name=color]");
-    /** @type {HTMLElement} */ let color_label = html_scene.querySelector("label[for=color]");
-    /** @type {HTMLElement} */ let submit_btn = html_scene.querySelector("[data-name=submit]");
-    /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+export class CreateEditCollectionScene {
+    constructor(user, password, collection) {
+        let edit = collection.type !== CollectionType.PRINCIPAL;
+        let html_scene = document.getElementById(edit ? "editcollectionscene" : "createcollectionscene");
+        /** @type {HTMLElement} */ let title_form = edit ? html_scene.querySelector("[data-name=title]") : null;
+        /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
+        /** @type {HTMLInputElement} */ let href_form = html_scene.querySelector("[data-name=href]");
+        /** @type {HTMLElement} */ let href_label = html_scene.querySelector("label[for=href]");
+        /** @type {HTMLInputElement} */ let displayname_form = html_scene.querySelector("[data-name=displayname]");
+        /** @type {HTMLElement} */ let displayname_label = html_scene.querySelector("label[for=displayname]");
+        /** @type {HTMLInputElement} */ let description_form = html_scene.querySelector("[data-name=description]");
+        /** @type {HTMLElement} */ let description_label = html_scene.querySelector("label[for=description]");
+        /** @type {HTMLInputElement} */ let source_form = html_scene.querySelector("[data-name=source]");
+        /** @type {HTMLElement} */ let source_label = html_scene.querySelector("label[for=source]");
+        /** @type {HTMLSelectElement} */ let type_form = html_scene.querySelector("[data-name=type]");
+        /** @type {HTMLElement} */ let type_label = html_scene.querySelector("label[for=type]");
+        /** @type {HTMLInputElement} */ let color_form = html_scene.querySelector("[data-name=color]");
+        /** @type {HTMLElement} */ let color_label = html_scene.querySelector("label[for=color]");
+        /** @type {HTMLElement} */ let submit_btn = html_scene.querySelector("[data-name=submit]");
+        /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
 
 
-    /** @type {?number} */ let scene_index = null;
-    /** @type {?XMLHttpRequest} */ let create_edit_req = null;
-    let error = "";
-    /** @type {?HTMLSelectElement} */ let saved_type_form = null;
+        /** @type {?number} */ let scene_index = null;
+        /** @type {?XMLHttpRequest} */ let create_edit_req = null;
+        let error = "";
+        /** @type {?HTMLSelectElement} */ let saved_type_form = null;
 
-    let href = edit ? collection.href : collection.href + random_uuid() + "/";
-    let displayname = edit ? collection.displayname : "";
-    let description = edit ? collection.description : "";
-    let source = edit ? collection.source : "";
-    let type = edit ? collection.type : CollectionType.CALENDAR_JOURNAL_TASKS;
-    let color = edit && collection.color ? collection.color : "#" + random_hex(6);
+        let href = edit ? collection.href : collection.href + random_uuid() + "/";
+        let displayname = edit ? collection.displayname : "";
+        let description = edit ? collection.description : "";
+        let source = edit ? collection.source : "";
+        let type = edit ? collection.type : CollectionType.CALENDAR_JOURNAL_TASKS;
+        let color = edit && collection.color ? collection.color : "#" + random_hex(6);
 
-    if(!edit){
-        href_form.addEventListener("keydown", cleanHREFinput);
-    }
-
-    function remove_invalid_types() {
         if (!edit) {
-            return;
+            href_form.addEventListener("keydown", cleanHREFinput);
         }
-        /** @type {HTMLOptionsCollection} */ let options = type_form.options;
-        // remove all options that are not supersets
-        let valid_type_options = CollectionType.valid_options_for_type(type);
-        for (let i = options.length - 1; i >= 0; i--) {
-            if (valid_type_options.indexOf(options[i].value) < 0) {
-                options.remove(i);
+
+        function remove_invalid_types() {
+            if (!edit) {
+                return;
+            }
+            /** @type {HTMLOptionsCollection} */ let options = type_form.options;
+            // remove all options that are not supersets
+            let valid_type_options = CollectionType.valid_options_for_type(type);
+            for (let i = options.length - 1; i >= 0; i--) {
+                if (valid_type_options.indexOf(options[i].value) < 0) {
+                    options.remove(i);
+                }
             }
         }
-    }
 
-    function read_form() {
-        if(!edit){
-            cleanHREFinput(href_form);
-            let newhreftxtvalue = href_form.value.trim().toLowerCase();
-            if(!isValidHREF(newhreftxtvalue)){
-                alert("You must enter a valid HREF");
-                return false;
-            }
-            href = collection.href + newhreftxtvalue + "/";
-        }
-        displayname = displayname_form.value;
-        description = description_form.value;
-        source = source_form.value;
-        type = type_form.value;
-        color = color_form.value;
-        return true;
-    }
-
-    function fill_form() {
-        if(!edit){
-            href_form.value = random_uuid();
-        }
-        displayname_form.value = displayname;
-        description_form.value = description;
-        source_form.value = source;
-        type_form.value = type;
-        color_form.value = color;
-        if(error){
-            error_form.textContent = "Error: " + error;
-            error_form.classList.remove("hidden");
-        }
-        error_form.classList.add("hidden");
-        onTypeChange();
-        type_form.addEventListener("change", onTypeChange);
-    }
-
-    function onsubmit() {
-        try {
-            if(!read_form()){
-                return false;
-            }
-            let sane_color = color.trim();
-            if (sane_color) {
-                let color_match = COLOR_RE.exec(sane_color);
-                if (!color_match) {
-                    error = "Invalid color";
-                    fill_form();
+        function read_form() {
+            if (!edit) {
+                cleanHREFinput(href_form);
+                let newhreftxtvalue = href_form.value.trim().toLowerCase();
+                if (!isValidHREF(newhreftxtvalue)) {
+                    alert("You must enter a valid HREF");
                     return false;
                 }
-                sane_color = color_match[1];
+                href = collection.href + newhreftxtvalue + "/";
             }
-            let loading_scene = new LoadingScene();
-            push_scene(loading_scene, false);
-            let collection = new Collection(href, type, displayname, description, sane_color, 0, 0, source);
-            let callback = function(error1) {
-                if (scene_index === null) {
-                    return;
-                }
-                create_edit_req = null;
-                if (error1) {
-                    error = error1;
-                    pop_scene(scene_index);
-                } else {
-                    pop_scene(scene_index - 1);
-                }
-            };
-            if (edit) {
-                create_edit_req = edit_collection(user, password, collection, callback);
-            } else {
-                create_edit_req = create_collection(user, password, collection, callback);
+            displayname = displayname_form.value;
+            description = description_form.value;
+            source = source_form.value;
+            type = type_form.value;
+            color = color_form.value;
+            return true;
+        }
+
+        function fill_form() {
+            if (!edit) {
+                href_form.value = random_uuid();
             }
-        } catch(err) {
-            console.error(err);
-        }
-        return false;
-    }
-
-    function oncancel() {
-        try {
-            pop_scene(scene_index - 1);
-        } catch(err) {
-            console.error(err);
-        }
-        return false;
-    }
-
-
-    function onTypeChange(e){
-        if(type_form.value == CollectionType.WEBCAL){
-            source_label.classList.remove("hidden");
-            source_form.classList.remove("hidden");
-        }else{
-            source_label.classList.add("hidden");
-            source_form.classList.add("hidden");
-        }
-    }
-
-    this.show = function() {
-        this.release();
-        scene_index = scene_stack.length - 1;
-        // Clone type_form because it's impossible to hide options without removing them
-        saved_type_form = type_form;
-        type_form = type_form.cloneNode(true);
-        saved_type_form.parentNode.replaceChild(type_form, saved_type_form);
-        remove_invalid_types();
-        html_scene.classList.remove("hidden");
-        if (edit) {
-            title_form.textContent = collection.displayname || collection.href;
-        }
-        fill_form();
-        submit_btn.onclick = onsubmit;
-        cancel_btn.onclick = oncancel;
-        if(error){
-            error_form.textContent = "Error: " + error;
-            error_form.classList.remove("hidden");
-        }else{
+            displayname_form.value = displayname;
+            description_form.value = description;
+            source_form.value = source;
+            type_form.value = type;
+            color_form.value = color;
+            if (error) {
+                error_form.textContent = "Error: " + error;
+                error_form.classList.remove("hidden");
+            }
             error_form.classList.add("hidden");
+            onTypeChange();
+            type_form.addEventListener("change", onTypeChange);
         }
-    };
-    this.hide = function() {
-        read_form();
-        html_scene.classList.add("hidden");
-        // restore type_form
-        type_form.parentNode.replaceChild(saved_type_form, type_form);
-        type_form = saved_type_form;
-        saved_type_form = null;
-        submit_btn.onclick = null;
-        cancel_btn.onclick = null;
-    };
-    this.release = function() {
-        scene_index = null;
-        if (create_edit_req !== null) {
-            create_edit_req.abort();
-            create_edit_req = null;
+
+        function onsubmit() {
+            try {
+                if (!read_form()) {
+                    return false;
+                }
+                let sane_color = color.trim();
+                if (sane_color) {
+                    let color_match = COLOR_RE.exec(sane_color);
+                    if (!color_match) {
+                        error = "Invalid color";
+                        fill_form();
+                        return false;
+                    }
+                    sane_color = color_match[1];
+                }
+                let loading_scene = new LoadingScene();
+                push_scene(loading_scene, false);
+                let collection = new Collection(href, type, displayname, description, sane_color, 0, 0, source);
+                let callback = function (error1) {
+                    if (scene_index === null) {
+                        return;
+                    }
+                    create_edit_req = null;
+                    if (error1) {
+                        error = error1;
+                        pop_scene(scene_index);
+                    } else {
+                        pop_scene(scene_index - 1);
+                    }
+                };
+                if (edit) {
+                    create_edit_req = edit_collection(user, password, collection, callback);
+                } else {
+                    create_edit_req = create_collection(user, password, collection, callback);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+            return false;
         }
-    };
+
+        function oncancel() {
+            try {
+                pop_scene(scene_index - 1);
+            } catch (err) {
+                console.error(err);
+            }
+            return false;
+        }
+
+
+        function onTypeChange(e) {
+            if (type_form.value == CollectionType.WEBCAL) {
+                source_label.classList.remove("hidden");
+                source_form.classList.remove("hidden");
+            } else {
+                source_label.classList.add("hidden");
+                source_form.classList.add("hidden");
+            }
+        }
+
+        this.show = function () {
+            this.release();
+            scene_index = scene_stack.length - 1;
+            // Clone type_form because it's impossible to hide options without removing them
+            saved_type_form = type_form;
+            type_form = /** @type {HTMLSelectElement} */ (type_form.cloneNode(true));
+            saved_type_form.parentNode.replaceChild(type_form, saved_type_form);
+            remove_invalid_types();
+            html_scene.classList.remove("hidden");
+            if (edit) {
+                title_form.textContent = collection.displayname || collection.href;
+            }
+            fill_form();
+            submit_btn.onclick = onsubmit;
+            cancel_btn.onclick = oncancel;
+            if (error) {
+                error_form.textContent = "Error: " + error;
+                error_form.classList.remove("hidden");
+            } else {
+                error_form.classList.add("hidden");
+            }
+        };
+        this.hide = function () {
+            read_form();
+            html_scene.classList.add("hidden");
+            // restore type_form
+            type_form.parentNode.replaceChild(saved_type_form, type_form);
+            type_form = saved_type_form;
+            saved_type_form = null;
+            submit_btn.onclick = null;
+            cancel_btn.onclick = null;
+        };
+        this.release = function () {
+            scene_index = null;
+            if (create_edit_req !== null) {
+                create_edit_req.abort();
+                create_edit_req = null;
+            }
+        };
+    }
 }

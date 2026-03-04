@@ -83,12 +83,14 @@ export class CreateShareCollectionScene {
       scene_index = scene_stack.length - 1;
       html_scene.classList.remove("hidden");
       cancel_btn.onclick = oncancel;
-      if (server_features["sharing"]["FeatureEnabledCollectionByToken"]) {
+      if (server_features["sharing"]["PermittedCreateCollectionByToken"]) {
+        share_by_token_btn_ro.classList.remove("hidden");
+        share_by_token_btn_rw.classList.remove("hidden");
         share_by_token_btn_ro.onclick = onsharebytoken_ro;
         share_by_token_btn_rw.onclick = onsharebytoken_rw;
       } else {
-        share_by_token_btn_ro.parentElement.removeChild(share_by_token_btn_ro);
-        share_by_token_btn_rw.parentElement.removeChild(share_by_token_btn_rw);
+        share_by_token_btn_ro.classList.add("hidden");
+        share_by_token_btn_rw.classList.add("hidden");
       }
       title.textContent = collection.displayname || collection.href;
       update_share_list(user, password, collection);
