@@ -25,97 +25,98 @@ import { LoadingScene } from "./LoadingScene.js";
 import { delete_collection } from "./api.js";
 
 /**
- * @constructor
  * @implements {Scene}
  * @param {string} user
  * @param {string} password
  * @param {Collection} collection
  */
-export function DeleteCollectionScene(user, password, collection) {
-    /** @type {HTMLElement} */ let html_scene = document.getElementById("deletecollectionscene");
-    /** @type {HTMLElement} */ let title_form = html_scene.querySelector("[data-name=title]");
-    /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
-    /** @type {HTMLInputElement} */ let confirmation_txt = html_scene.querySelector("[data-name=confirmationtxt]");
-    /** @type {HTMLElement} */ let delete_confirmation_lbl = html_scene.querySelector("[data-name=deleteconfirmationtext]");
-    /** @type {HTMLElement} */ let delete_btn = html_scene.querySelector("[data-name=delete]");
-    /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+export class DeleteCollectionScene {
+    constructor(user, password, collection) {
+        /** @type {HTMLElement} */ let html_scene = document.getElementById("deletecollectionscene");
+        /** @type {HTMLElement} */ let title_form = html_scene.querySelector("[data-name=title]");
+        /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
+        /** @type {HTMLInputElement} */ let confirmation_txt = html_scene.querySelector("[data-name=confirmationtxt]");
+        /** @type {HTMLElement} */ let delete_confirmation_lbl = html_scene.querySelector("[data-name=deleteconfirmationtext]");
+        /** @type {HTMLElement} */ let delete_btn = html_scene.querySelector("[data-name=delete]");
+        /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
 
-    delete_confirmation_lbl.innerHTML = DELETE_CONFIRMATION_TEXT;
-    confirmation_txt.value = "";
-    confirmation_txt.addEventListener("keydown", onkeydown);
+        delete_confirmation_lbl.innerHTML = DELETE_CONFIRMATION_TEXT;
+        confirmation_txt.value = "";
+        confirmation_txt.addEventListener("keydown", onkeydown);
 
-    /** @type {?number} */ let scene_index = null;
-    /** @type {?XMLHttpRequest} */ let delete_req = null;
-    let error = "";
+        /** @type {?number} */ let scene_index = null;
+        /** @type {?XMLHttpRequest} */ let delete_req = null;
+        let error = "";
 
-    function ondelete() {
-        let confirmation_text_value = confirmation_txt.value;
-        if(confirmation_text_value != DELETE_CONFIRMATION_TEXT){
-            alert("Please type the confirmation text to delete this collection.");
-            return;
+        function ondelete() {
+            let confirmation_text_value = confirmation_txt.value;
+            if (confirmation_text_value != DELETE_CONFIRMATION_TEXT) {
+                alert("Please type the confirmation text to delete this collection.");
+                return;
+            }
+            try {
+                let loading_scene = new LoadingScene();
+                push_scene(loading_scene, false);
+                delete_req = delete_collection(user, password, collection, function (error1) {
+                    if (scene_index === null) {
+                        return;
+                    }
+                    delete_req = null;
+                    if (error1) {
+                        error = error1;
+                        pop_scene(scene_index);
+                    } else {
+                        pop_scene(scene_index - 1);
+                    }
+                });
+            } catch (err) {
+                console.error(err);
+            }
+            return false;
         }
-        try {
-            let loading_scene = new LoadingScene();
-            push_scene(loading_scene, false);
-            delete_req = delete_collection(user, password, collection, function(error1) {
-                if (scene_index === null) {
-                    return;
-                }
+
+        function oncancel() {
+            try {
+                pop_scene(scene_index - 1);
+            } catch (err) {
+                console.error(err);
+            }
+            return false;
+        }
+
+        function onkeydown(event) {
+            if (event.keyCode !== 13) {
+                return;
+            }
+            ondelete();
+        }
+
+        this.show = function () {
+            this.release();
+            scene_index = scene_stack.length - 1;
+            html_scene.classList.remove("hidden");
+            title_form.textContent = collection.displayname || collection.href;
+            delete_btn.onclick = ondelete;
+            cancel_btn.onclick = oncancel;
+            if (error) {
+                error_form.textContent = "Error: " + error;
+                error_form.classList.remove("hidden");
+            } else {
+                error_form.classList.add("hidden");
+            }
+
+        };
+        this.hide = function () {
+            html_scene.classList.add("hidden");
+            cancel_btn.onclick = null;
+            delete_btn.onclick = null;
+        };
+        this.release = function () {
+            scene_index = null;
+            if (delete_req !== null) {
+                delete_req.abort();
                 delete_req = null;
-                if (error1) {
-                    error = error1;
-                    pop_scene(scene_index);
-                } else {
-                    pop_scene(scene_index - 1);
-                }
-            });
-        } catch(err) {
-            console.error(err);
-        }
-        return false;
+            }
+        };
     }
-
-    function oncancel() {
-        try {
-            pop_scene(scene_index - 1);
-        } catch(err) {
-            console.error(err);
-        }
-        return false;
-    }
-
-    function onkeydown(event){
-        if (event.keyCode !== 13) {
-            return;
-        }
-        ondelete();
-    }
-
-    this.show = function() {
-        this.release();
-        scene_index = scene_stack.length - 1;
-        html_scene.classList.remove("hidden");
-        title_form.textContent = collection.displayname || collection.href;
-        delete_btn.onclick = ondelete;
-        cancel_btn.onclick = oncancel;
-        if(error){
-            error_form.textContent = "Error: " + error;
-            error_form.classList.remove("hidden");
-        }else{
-            error_form.classList.add("hidden");
-        }
-
-    };
-    this.hide = function() {
-        html_scene.classList.add("hidden");
-        cancel_btn.onclick = null;
-        delete_btn.onclick = null;
-    };
-    this.release = function() {
-        scene_index = null;
-        if (delete_req !== null) {
-            delete_req.abort();
-            delete_req = null;
-        }
-    };
 }
