@@ -29,6 +29,7 @@ def test_create_and_delete_share_by_key(page: Page, radicale_server: str) -> Non
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden) img[alt='RO']")
     ).to_be_visible()
+    page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
@@ -40,6 +41,7 @@ def test_create_and_delete_share_by_key(page: Page, radicale_server: str) -> Non
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden) img[alt='RW']")
     ).to_be_visible()
+    page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
