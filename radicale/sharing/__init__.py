@@ -72,6 +72,20 @@ API_HOOKS_V1: Sequence[str] = ('list', 'create', 'delete', 'update', 'hide', 'un
 
 API_SHARE_TOGGLES_V1: Sequence[str] = ('hide', 'unhide', 'enable', 'disable')
 
+API_TYPES_V1: dict[str, type] = {
+        "ApiVersion": int,
+        "Status": str,
+        "Lines": int,
+        "ShareType": str,
+        "PathOrToken": str,
+        "PathMapped:": str,
+        "Owner": str,
+        "User": str,
+        "Permissions": str,
+        "Enabled": bool,
+        "Hidden": bool,
+        "Properties": str}
+
 TOKEN_PATTERN_V1: str = "(v1/[a-zA-Z0-9_=\\-]{44})"
 
 PATH_PATTERN: str = "([a-zA-Z0-9/.\\-]+)"  # TODO: extend or find better source
@@ -1056,7 +1070,10 @@ class BaseSharing:
             if output_format == "txt":
                 for key in answer:
                     if key != 'Content':
-                        answer_array.append(key + '=' + str(answer[key]))
+                        if API_TYPES_V1[key] is bool or API_TYPES_V1[key] is int:
+                            answer_array.append(key + '=' + str(answer[key]))
+                        else:
+                            answer_array.append(key + "='" + str(answer[key]) + "'")
             if 'Content' in answer and answer['Content'] is not None:
                 csv = io.StringIO()
                 writer = DictWriter(csv, fieldnames=DB_FIELDS_V1, delimiter=';')

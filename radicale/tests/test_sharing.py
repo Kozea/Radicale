@@ -319,13 +319,13 @@ class TestSharingApiSanity(BaseTest):
                 logging.info("\n*** list (form->csv)")
                 form_array = []
                 _, headers, answer = self._sharing_api_form(sharing_type, "list", check=200, login="owner:ownerpw", form_array=form_array)
-                assert "Status=not-found" in answer
+                assert "Status='not-found'" in answer
                 assert "Lines=0" in answer
 
                 logging.info("\n*** list (json->text)")
                 json_dict = {}
                 _, headers, answer = self._sharing_api_json(sharing_type, "list", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/plain")
-                assert "Status=not-found" in answer
+                assert "Status='not-found'" in answer
                 assert "Lines=0" in answer
 
                 logging.info("\n*** list (json->json)")
@@ -338,10 +338,10 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** create a token -> 200")
             form_array = ["PathMapped=/owner/collectionL1/"]
             _, headers, answer = self._sharing_api_form("token", "create", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
-            assert "PathOrToken=" in answer
+            assert "Status='success'" in answer
+            assert "PathOrToken='" in answer
             # extract token
-            match = re.search('PathOrToken=(.+)', answer)
+            match = re.search("PathOrToken='(.+)'", answer)
             if match:
                 token = match.group(1)
                 logging.info("received token %r", token)
@@ -360,20 +360,20 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** list/all (form->csv)")
             form_array = []
             _, headers, answer = self._sharing_api_form("all", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=2" in answer
 
             logging.info("\n*** delete token -> 200")
             form_array = ["PathOrToken=" + token]
             _, headers, answer = self._sharing_api_form("token", "delete", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** delete share -> 200")
             form_array = []
             form_array.append("PathOrToken=/user/collectionL2-shared-by-owner/")
             form_array.append("PathMapped=/owner/collectionL2/")
             _, headers, answer = self._sharing_api_form("map", "delete", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
     def test_sharing_api_token_basic(self) -> None:
         """share-by-token API tests."""
@@ -409,10 +409,10 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** create token#1 (form->text)")
             form_array = ["PathMapped=/owner/collection1/"]
             _, headers, answer = self._sharing_api_form("token", "create", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
-            assert "PathOrToken=" in answer
+            assert "Status='success'" in answer
+            assert "PathOrToken='" in answer
             # extract token
-            match = re.search('PathOrToken=(.+)', answer)
+            match = re.search("PathOrToken='(.+)'", answer)
             if match:
                 token1 = match.group(1)
                 logging.info("received token %r", token1)
@@ -422,10 +422,10 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** create token#2 (json->text)")
             json_dict = {'PathMapped': "/owner/collection2/"}
             _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/plain")
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Token=" in answer
             # extract token
-            match = re.search('Token=(.+)', answer)
+            match = re.search("Token='(.+)'", answer)
             if match:
                 token2 = match.group(1)
                 logging.info("received token %r", token2)
@@ -435,14 +435,14 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** lookup token#1 (form->text)")
             form_array = ["PathOrToken=" + token1]
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
             assert "/owner/collection1/" in answer
 
             logging.info("\n*** lookup token#2 (json->text")
             json_dict = {'PathOrToken': token2}
             _, headers, answer = self._sharing_api_json("token", "list", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/plain")
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
             assert "/owner/collection2/" in answer
 
@@ -457,7 +457,7 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** lookup tokens (form->text)")
             form_array = []
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=2" in answer
             assert "/owner/collection1/" in answer
             assert "/owner/collection2/" in answer
@@ -465,7 +465,7 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** lookup tokens (form->csv)")
             form_array = []
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array, accept="text/csv")
-            assert "Status=success" not in answer
+            assert "Status='success'" not in answer
             assert "Lines=2" not in answer
             assert ";".join(sharing.DB_FIELDS_V1) in answer
             assert "/owner/collection1/" in answer
@@ -474,24 +474,24 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** delete token#1 (form->text)")
             form_array = ["PathOrToken=" + token1]
             _, headers, answer = self._sharing_api_form("token", "delete", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** lookup token#1 (form->text) -> should not be there anymore")
             form_array = ["PathOrToken=" + token1]
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=not-found" in answer
+            assert "Status='not-found'" in answer
             assert "Lines=0" in answer
 
             logging.info("\n*** lookup tokens (form->text) -> still one should be there")
             form_array = []
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
 
             logging.info("\n*** disable token#2 as owner (form->text)")
             form_array = ["PathOrToken=" + token2]
             _, headers, answer = self._sharing_api_form("token", "disable", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** lookup token#2 (json->json) -> check for not enabled")
             json_dict = {'PathOrToken': token2}
@@ -512,7 +512,7 @@ class TestSharingApiSanity(BaseTest):
             form_array = []
             form_array.append("PathOrToken=" + token2)
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
             assert "True;True;True;True" in answer
 
@@ -520,13 +520,13 @@ class TestSharingApiSanity(BaseTest):
             form_array = []
             form_array.append("PathOrToken=" + token2)
             _, headers, answer = self._sharing_api_form("token", "hide", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** lookup token#2 (form->text) -> check for hidden")
             form_array = []
             form_array.append("PathOrToken=" + token2)
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
             assert "True;True;True;True" in answer
 
@@ -606,10 +606,10 @@ class TestSharingApiSanity(BaseTest):
             form_array = []
             form_array.append("PathMapped=" + path_base)
             _, headers, answer = self._sharing_api_form("token", "create", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "PathOrToken=" in answer
             # extract token
-            match = re.search('PathOrToken=(.+)', answer)
+            match = re.search("PathOrToken='(.+)'", answer)
             if match:
                 token = match.group(1)
                 logging.info("received token %r", token)
@@ -620,10 +620,10 @@ class TestSharingApiSanity(BaseTest):
             form_array = []
             form_array.append("PathMapped=" + path_base2)
             _, headers, answer = self._sharing_api_form("token", "create", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "PathOrToken=" in answer
             # extract token
-            match = re.search('PathOrToken=(.+)', answer)
+            match = re.search("PathOrToken='(.+)'", answer)
             if match:
                 token2 = match.group(1)
                 logging.info("received token %r", token2)
@@ -633,7 +633,7 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** enable token (form->text)")
             form_array = ["PathOrToken=" + token]
             _, headers, answer = self._sharing_api_form("token", "enable", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** fetch collection using invalid token (without credentials)")
             _, headers, answer = self.request("GET", path_token + "v1/invalidtoken", check=401)
@@ -645,7 +645,7 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** disable token (form->text)")
             form_array = ["PathOrToken=" + token]
             _, headers, answer = self._sharing_api_form("token", "disable", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** fetch collection using disabled token (without credentials)")
             _, headers, answer = self.request("GET", path_token + token, check=401)
@@ -653,7 +653,7 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** enable token (form->text)")
             form_array = ["PathOrToken=" + token]
             _, headers, answer = self._sharing_api_form("token", "enable", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** fetch collection using token (without credentials)")
             _, headers, answer = self.request("GET", path_token + token, check=200)
@@ -2207,7 +2207,7 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** list/all (form->csv)")
             form_array = []
             _, headers, answer = self._sharing_api_form("map", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
 
             # read collection
@@ -2227,7 +2227,7 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** list/all (form->csv)")
             form_array = []
             _, headers, answer = self._sharing_api_form("map", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
 
             # read collection
@@ -2987,7 +2987,7 @@ permissions: RrWw""")
             form_array.append("Properties='C:calendar-description'='ICAL-USER-NEW'")
             form_array.append("Properties='ICAL:calendar-color'='#CCCCCC'")
             _, headers, answer = self._sharing_api_form("map", "update", check=200, login="user:userpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay) -> ok")
