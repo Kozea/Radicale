@@ -290,7 +290,7 @@ class BaseSharing:
         return None
 
     # list sharings of type "map"
-    def sharing_collection_map_list(self, user: str, active: bool = True) -> list[dict]:
+    def sharing_collection_map_list(self, user: Union[str, None], active: bool = True) -> list[dict]:
         """ returning dict with shared collections (active==True: enabled and unhidden) or None if not found"""
         if not self.sharing_collection_by_map:
             if logger.isEnabledFor(logging.DEBUG):
@@ -488,6 +488,7 @@ class BaseSharing:
         # parse body according to content-type
         content_type = environ.get("CONTENT_TYPE", "")
         if 'application/json' in content_type:
+            output_format = "json" # default
             try:
                 request_data = json.loads(request_body)
             except json.JSONDecodeError:
@@ -501,6 +502,7 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + " (json): %r", f"{request_data}")
         elif 'application/x-www-form-urlencoded' in content_type:
+            output_format = "txt"  # default
             request_parsed = parse_qs(request_body)
             # convert arrays into single value
             request_data = {}
@@ -539,8 +541,11 @@ class BaseSharing:
             output_format = "json"
         elif 'text/csv' in accept:
             output_format = "csv"
-        else:
+        elif 'text/plain' in accept:
             output_format = "txt"
+        else:
+            # default from input type
+            pass
 
         if output_format == "csv":
             if not action == "list":
@@ -555,7 +560,6 @@ class BaseSharing:
         # parameters default
         PathOrToken: Union[str, None] = None
         PathMapped: Union[str, None] = None
-        Owner: str = user
         User: Union[str, None] = None
         Permissions: Union[str, None] = None  # no permissions by default
         Enabled: Union[bool, None] = None
@@ -685,7 +689,7 @@ class BaseSharing:
                 logger.error(api_info + ": missing PathMapped")
                 return httputils.bad_request("Missing PathMapped")
 
-            ## check whether collection exists
+            # check whether collection exists
             with self._storage.acquire_lock("r", user, path=PathMapped):
                 item = next(iter(self._storage.discover(PathMapped)), None)
                 if not item:
@@ -741,7 +745,6 @@ class BaseSharing:
                 else:
                     User = user
 
-
                 # v1: create uuid token with 2x 32 bytes = 256 bit
                 token = "v1/" + str(base64.urlsafe_b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes), 'utf-8')
 
@@ -784,9 +787,9 @@ class BaseSharing:
                     User = str(User)
 
                 # check access Permissions
-                access = Access(self._rights, Owner, PathMapped, None)  # PathMapped is mandatory
+                access = Access(self._rights, user, PathMapped, None)  # PathMapped is mandatory
                 if not access.check("r") and "i" not in access.permissions:
-                    logger.info("Add sharing-by-map: access to path(mapped) %r not allowed for owner %r", PathMapped, Owner)
+                    logger.info("Add sharing-by-map: access to path(mapped) %r not allowed for owner %r", PathMapped, user)
                     return httputils.NOT_ALLOWED
 
                 if self.permit_create_map is False:

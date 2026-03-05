@@ -306,6 +306,9 @@ class TestSharingApiSanity(BaseTest):
         form_array: Sequence[str]
         json_dict: dict
 
+        self.mkcalendar("/owner/collectionL1/", login="owner:ownerpw")
+        self.mkcalendar("/owner/collectionL2/", login="owner:ownerpw")
+
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
@@ -604,6 +607,8 @@ class TestSharingApiSanity(BaseTest):
         event = get_file_content("event1.ics")
         path = path_base + "/event1.ics"
         self.put(path, event, login="owner:ownerpw")
+
+        self.mkcalendar(path_base2, login="owner:ownerpw")
 
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
