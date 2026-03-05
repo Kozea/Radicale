@@ -37,7 +37,7 @@ from radicale.log import logger
 
 def xml_proppatch(base_prefix: str, path: str,
                   xml_request: Optional[ET.Element],
-                  collection: Union[storage.BaseCollection, None], sharing: Union[dict, None] = None, sharing_overlay: bool = False, _sharing: Union[sharing.BaseSharing, None] = None) -> ET.Element:
+                  collection: Union[storage.BaseCollection, None], share: Union[dict, None] = None, share_overlay: bool = False, _sharing: Union[sharing.BaseSharing, None] = None) -> ET.Element:
     """Read and answer PROPPATCH requests.
 
     Read rfc4918-9.2 for info.
@@ -48,9 +48,9 @@ def xml_proppatch(base_prefix: str, path: str,
     multistatus.append(response)
     href = ET.Element(xmlutils.make_clark("D:href"))
     href.text = xmlutils.make_href(base_prefix, path)
-    if sharing:
+    if share:
         # backmap
-        href.text = href.text.replace(sharing['PathMapped'], sharing['PathOrToken'])
+        href.text = href.text.replace(share['PathMapped'], share['PathOrToken'])
     response.append(href)
     # Create D:propstat element for props with status 200 OK
     propstat = ET.Element(xmlutils.make_clark("D:propstat"))
@@ -62,27 +62,27 @@ def xml_proppatch(base_prefix: str, path: str,
     response.append(propstat)
 
     props_with_remove = xmlutils.props_from_request(xml_request)
-    if sharing and sharing_overlay:
+    if share and share_overlay:
         # PROPPATCH overlay adjustment
-        logger.debug("TRACE/PROPPATCH/xml_proppatch: sharing+sharing_overlay is active: %r", sharing)
-        if sharing['Properties'] is not None:
-            all_props_with_remove = cast(Dict[str, Optional[str]], radicale_item.check_and_sanitize_props(sharing['Properties']))
+        logger.debug("TRACE/PROPPATCH/xml_proppatch: share+share_overlay is active: %r", share)
+        if share['Properties'] is not None:
+            all_props_with_remove = cast(Dict[str, Optional[str]], radicale_item.check_and_sanitize_props(share['Properties']))
         else:
             all_props_with_remove = {}
         all_props_with_remove.update(props_with_remove)
         all_props = radicale_item.check_and_sanitize_props(all_props_with_remove)
-        logger.debug("TRACE/PROPPATCH/xml_proppatch: sharing+sharing_overlay result: %r", all_props)
+        logger.debug("TRACE/PROPPATCH/xml_proppatch: share+share_overlay result: %r", all_props)
     else:
         if collection is not None:
             # always the case, but makes mypy happy
             all_props_with_remove = cast(Dict[str, Optional[str]], dict(collection.get_meta()))
     all_props_with_remove.update(props_with_remove)
     all_props = radicale_item.check_and_sanitize_props(all_props_with_remove)
-    if sharing and sharing_overlay and _sharing is not None:
+    if share and share_overlay and _sharing is not None:
         # _sharing is not None: always the case, but makes mypy happy
-        _sharing.database_update_sharing(ShareType=sharing['ShareType'],
-                                         PathOrToken=sharing['PathOrToken'],
-                                         OwnerOrUser=sharing['User'],
+        _sharing.database_update_sharing(ShareType=share['ShareType'],
+                                         PathOrToken=share['PathOrToken'],
+                                         OwnerOrUser=share['User'],
                                          Properties=cast(Dict[str, str], all_props))
     else:
         if collection is not None:
@@ -100,21 +100,21 @@ class ApplicationPartProppatch(ApplicationBase):
                      path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PROPPATCH request."""
         permissions_filter = None
-        sharing = None
-        sharing_overlay = False
+        share = None
+        share_overlay = False
         path_orig = path
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
-            sharing = self._sharing.sharing_collection_resolver(path, user)
-            if sharing:
+            share = self._sharing.sharing_collection_resolver(path, user)
+            if share:
                 # overwrite and run through extended permission check
-                path = sharing['PathMapped']
-                user = sharing['Owner']
-                permissions_filter = sharing['Permissions']
+                path = share['PathMapped']
+                user = share['Owner']
+                permissions_filter = share['Permissions']
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             logger.debug("TRACE/PROPPATCH/xml_proppatch: no write-access: %r", path)
-            if sharing:
+            if share:
                 # no write access -> use properties overlay
                 if self._sharing.permit_properties_overlay:
                     if permissions_filter is not None and "p" in permissions_filter:
@@ -122,11 +122,11 @@ class ApplicationPartProppatch(ApplicationBase):
                         return httputils.NOT_ALLOWED
                     else:
                         logger.info("PROPPATCH request on shared %r: no write-permissions, overlay permitted by option", path_orig)
-                        sharing_overlay = True
+                        share_overlay = True
                 else:
                     if permissions_filter is not None and "P" in permissions_filter:
                         logger.info("PROPPATCH request on shared %r: no write-permissions, overlay denied, but granted by permission 'P'", path_orig)
-                        sharing_overlay = True
+                        share_overlay = True
                     else:
                         logger.info("PROPPATCH request on shared %r: no write-permissions and overlay denied by option", path_orig)
                         return httputils.NOT_ALLOWED
@@ -134,18 +134,18 @@ class ApplicationPartProppatch(ApplicationBase):
                 return httputils.NOT_ALLOWED
         else:
             logger.debug("TRACE/PROPPATCH/xml_proppatch: write-access: %r", path)
-            if sharing:
+            if share:
                 # write access -> check for enforced properties overlay
                 logger.debug("TRACE/PROPPATCH/xml_proppatch: write-access/sharing: %r", path_orig)
                 if self._sharing.enforce_properties_overlay:
                     if permissions_filter is not None and "e" in permissions_filter:
                         logger.info("PROPPATCH request on shared %r: write-permissions, overlay enforced, but disabled by permission 'e'", path_orig)
                     else:
-                        sharing_overlay = True
+                        share_overlay = True
                 else:
                     if permissions_filter is not None and "E" in permissions_filter:
                         logger.info("PROPPATCH request on shared %r: write-permissions, overlay not enforced, but enforced by permission 'E'", path_orig)
-                        sharing_overlay = True
+                        share_overlay = True
         try:
             xml_content = self._read_xml_request_body(environ)
         except RuntimeError as e:
@@ -156,13 +156,13 @@ class ApplicationPartProppatch(ApplicationBase):
             logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
 
-        if sharing_overlay:
+        if share_overlay:
             # call API function internally and no not trigger any hook
             headers = {"DAV": httputils.DAV_HEADERS,
                        "Content-Type": "text/xml; charset=%s" % self._encoding}
             try:
                 xml_answer = xml_proppatch(base_prefix, path, xml_content,
-                                           None, sharing, sharing_overlay, self._sharing)
+                                           None, share, share_overlay, self._sharing)
                 if xml_content is not None:
                     content = DefusedET.tostring(
                         xml_content,
@@ -199,7 +199,7 @@ class ApplicationPartProppatch(ApplicationBase):
                        "Content-Type": "text/xml; charset=%s" % self._encoding}
             try:
                 xml_answer = xml_proppatch(base_prefix, path, xml_content,
-                                           item, sharing)
+                                           item, share)
                 if xml_content is not None:
                     content = DefusedET.tostring(
                         xml_content,

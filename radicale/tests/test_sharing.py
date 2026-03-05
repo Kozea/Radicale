@@ -2415,8 +2415,23 @@ class TestSharingApiSanity(BaseTest):
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
                                     "response_content_on_debug": "False",
+                                    "rights_rule_doesnt_match_on_debug": "True",
                                     "request_content_on_debug": "True"},
                         "rights": {"type": "owner_only"}})
+
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[default-collection]
+user: .+
+collection: .+
+permissions: RrWw
+[default]
+user: .+
+collection: {user}(/.*)?
+permissions: RrWw""")
+        self.configure({"rights": {"file": rights_file_path}})
+
         json_dict: dict
 
         path_user1 = "/user1/calendarCCu1.ics/"
@@ -2440,6 +2455,9 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
+            # owner_only
+            self.configure({"rights": {"type": "owner_only"}})
+
             # create map
             logging.info("\n*** create map user1/owner1 -> ok")
             json_dict = {}
@@ -2453,7 +2471,7 @@ class TestSharingApiSanity(BaseTest):
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
 
-            logging.info("\n*** mkcalendar user1 for shared -> conflict")
+            logging.info("\n*** mkcalendar as user1 for user1/shared1 -> conflict")
             self.mkcalendar(path_user1_shared1, login="user1:user1pw", check=409)
 
             # create map
@@ -2469,7 +2487,7 @@ class TestSharingApiSanity(BaseTest):
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
 
-            logging.info("\n*** mkcol user2 for shared -> conflict")
+            logging.info("\n*** mkcol as user2 for user2/shared1 -> conflict")
             self.mkcalendar(path_user2_shared1, login="user2:user2pw", check=409)
 
             # create map
@@ -2482,6 +2500,15 @@ class TestSharingApiSanity(BaseTest):
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=409, login="owner1:owner1pw", json_dict=json_dict)
+
+            # from_file
+            self.configure({"rights": {"type": "from_file"}})
+
+            logging.info("\n*** mkcalendar as user1 for user2/shared1 with rights from file -> conflict")
+            self.mkcalendar(path_user2_shared1, login="user1:user1pw", check=409)
+
+            logging.info("\n*** mkcol as user1 for user2/shared1 with rights from file -> conflict")
+            self.mkcol(path_user2_shared1, login="user1:user1pw", check=409)
 
     def test_sharing_api_permissions_global(self) -> None:
         """sharing API usage tests related to global permissions."""

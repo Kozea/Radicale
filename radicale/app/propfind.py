@@ -37,7 +37,7 @@ from radicale.log import logger
 def xml_propfind(base_prefix: str, path: str,
                  xml_request: Optional[ET.Element],
                  allowed_items: Iterable[Tuple[types.CollectionOrItem, str]],
-                 user: str, encoding: str, max_resource_size: int, sharing: Union[dict, None] = None) -> Optional[ET.Element]:
+                 user: str, encoding: str, max_resource_size: int, share: Union[dict, None] = None) -> Optional[ET.Element]:
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -74,7 +74,7 @@ def xml_propfind(base_prefix: str, path: str,
         write = permission == "w"
         multistatus.append(xml_propfind_response(
             base_prefix, path, item, props, user, encoding, write=write,
-            allprop=allprop, propname=propname, max_resource_size=max_resource_size, sharing=sharing))
+            allprop=allprop, propname=propname, max_resource_size=max_resource_size, share=share))
 
     return multistatus
 
@@ -82,7 +82,7 @@ def xml_propfind(base_prefix: str, path: str,
 def xml_propfind_response(
         base_prefix: str, path: str, item: types.CollectionOrItem,
         props: Sequence[str], user: str, encoding: str, max_resource_size: int, write: bool = False,
-        propname: bool = False, allprop: bool = False, sharing: Union[dict, None] = None) -> ET.Element:
+        propname: bool = False, allprop: bool = False, share: Union[dict, None] = None) -> ET.Element:
     """Build and return a PROPFIND response."""
     if propname and allprop or (props and (propname or allprop)):
         raise ValueError("Only use one of props, propname and allprops")
@@ -102,9 +102,9 @@ def xml_propfind_response(
             collection.path, item.href))
     response = ET.Element(xmlutils.make_clark("D:response"))
     href = ET.Element(xmlutils.make_clark("D:href"))
-    if sharing:
+    if share:
         # backmap
-        uri = uri.replace(sharing['PathMapped'], sharing['PathOrToken'])
+        uri = uri.replace(share['PathMapped'], share['PathOrToken'])
     href.text = xmlutils.make_href(base_prefix, uri)
     response.append(href)
 
@@ -183,9 +183,9 @@ def xml_propfind_response(
               is_collection and collection.is_principal):
             child_element = ET.Element(xmlutils.make_clark("D:href"))
             child_element.text = xmlutils.make_href(base_prefix, path)
-            if sharing:
+            if share:
                 # backmap
-                child_element.text = child_element.text.replace(sharing['PathMapped'], sharing['PathOrToken'])
+                child_element.text = child_element.text.replace(share['PathMapped'], share['PathOrToken'])
             element.append(child_element)
         elif tag == xmlutils.make_clark("C:supported-calendar-component-set"):
             human_tag = xmlutils.make_human_tag(tag)
@@ -221,9 +221,9 @@ def xml_propfind_response(
                 child_element = ET.Element(xmlutils.make_clark("D:href"))
                 child_element.text = xmlutils.make_href(
                     base_prefix, "/%s/" % user)
-                if sharing:
+                if share:
                     # backmap
-                    child_element.text = child_element.text.replace(sharing['Owner'], sharing['User'])
+                    child_element.text = child_element.text.replace(share['Owner'], share['User'])
                 element.append(child_element)
             else:
                 element.append(ET.Element(
@@ -345,12 +345,12 @@ def xml_propfind_response(
                 human_tag = xmlutils.make_human_tag(tag)
                 tag_text = collection.get_meta(human_tag)
                 if tag_text is not None:
-                    if sharing:
+                    if share:
                         # map from overlay
-                        if sharing['Properties']:
-                            if human_tag in sharing['Properties']:
-                                if sharing['Properties'][human_tag] is not None:
-                                    tag_text = sharing['Properties'][human_tag]
+                        if share['Properties']:
+                            if human_tag in share['Properties']:
+                                if share['Properties'][human_tag] is not None:
+                                    tag_text = share['Properties'][human_tag]
                     element.text = tag_text
                 else:
                     is404 = True
@@ -426,15 +426,15 @@ class ApplicationPartPropfind(ApplicationBase):
         """Manage PROPFIND request."""
         http_depth = environ.get("HTTP_DEPTH", "0")
         permissions_filter = None
-        sharing = None
+        share = None
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
-            sharing = self._sharing.sharing_collection_resolver(path, user)
-            if sharing:
+            share = self._sharing.sharing_collection_resolver(path, user)
+            if share:
                 # overwrite and run through extended permission check
-                path = sharing['PathMapped']
-                user = sharing['Owner']
-                permissions_filter = sharing['Permissions']
+                path = share['PathMapped']
+                user = share['Owner']
+                permissions_filter = share['Permissions']
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r"):
             return httputils.NOT_ALLOWED
@@ -467,13 +467,13 @@ class ApplicationPartPropfind(ApplicationBase):
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/PROPFIND: get shared collections")
                 # check for shared collections
-                collections_shared_map = self._sharing.sharing_collection_map_list(user)
-                if collections_shared_map:
-                    for sharing in collections_shared_map:
-                        c_share = sharing['PathOrToken']
-                        c_path = sharing['PathMapped']
-                        c_user = sharing['Owner']
-                        c_permissions_filter = sharing['Permissions']
+                collections_share_map = self._sharing.sharing_collection_map_list(user)
+                if collections_share_map:
+                    for share in collections_share_map:
+                        c_share = share['PathOrToken']
+                        c_path = share['PathMapped']
+                        c_user = share['Owner']
+                        c_permissions_filter = share['Permissions']
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug("TRACE/PROPFIND: test shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%s", c_share, c_path, c_user, c_permissions_filter)
                         c_access = Access(self._rights, c_user, c_path, c_permissions_filter)
@@ -490,7 +490,7 @@ class ApplicationPartPropfind(ApplicationBase):
         headers = {"DAV": httputils.DAV_HEADERS,
                    "Content-Type": "text/xml; charset=%s" % self._encoding}
         xml_answer = xml_propfind(base_prefix, path, xml_content,
-                                  allowed_items, user, self._encoding, max_resource_size=self._max_resource_size, sharing=sharing)
+                                  allowed_items, user, self._encoding, max_resource_size=self._max_resource_size, share=share)
         if xml_answer is None:
             return httputils.NOT_ALLOWED
         return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)

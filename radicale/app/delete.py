@@ -60,12 +60,12 @@ class ApplicationPartDelete(ApplicationBase):
         permissions_filter = None
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
-            sharing = self._sharing.sharing_collection_resolver(path, user)
-            if sharing:
+            share = self._sharing.sharing_collection_resolver(path, user)
+            if share:
                 # overwrite and run through extended permission check
-                path = sharing['PathMapped']
-                user = sharing['Owner']
-                permissions_filter = sharing['Permissions']
+                path = share['PathMapped']
+                user = share['Owner']
+                permissions_filter = share['Permissions']
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
