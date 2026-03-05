@@ -685,6 +685,14 @@ class BaseSharing:
                 logger.error(api_info + ": missing PathMapped")
                 return httputils.bad_request("Missing PathMapped")
 
+            ## check whether collection exists
+            with self._storage.acquire_lock("r", user, path=PathMapped):
+                item = next(iter(self._storage.discover(PathMapped)), None)
+                if not item:
+                    return httputils.NOT_FOUND
+                if not isinstance(item, storage.BaseCollection):
+                    return httputils.METHOD_NOT_ALLOWED
+
             if Permissions is None:
                 if ShareType == "token":
                     Permissions = self.default_permissions_create_token
@@ -732,6 +740,7 @@ class BaseSharing:
                     User = str(User)
                 else:
                     User = user
+
 
                 # v1: create uuid token with 2x 32 bytes = 256 bit
                 token = "v1/" + str(base64.urlsafe_b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes), 'utf-8')

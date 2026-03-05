@@ -394,6 +394,9 @@ class TestSharingApiSanity(BaseTest):
         form_array: Sequence[str]
         json_dict: dict
 
+        path_base1 = "/owner/collection1.ics/"
+        path_base2 = "/owner/collection2.ics/"
+
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
@@ -406,8 +409,16 @@ class TestSharingApiSanity(BaseTest):
             json_dict = {}
             _, headers, answer = self._sharing_api_json("token", "create", 400, login="owner:ownerpw", json_dict=json_dict)
 
-            logging.info("\n*** create token#1 (form->text)")
-            form_array = ["PathMapped=/owner/collection1/"]
+            logging.info("\n*** create token#1 without existing collection (form->text)")
+            form_array = ["PathMapped=" + path_base1]
+            _, headers, answer = self._sharing_api_form("token", "create", check=404, login="owner:ownerpw", form_array=form_array)
+
+            logging.info("\n*** create collection*")
+            self.mkcalendar(path_base1, login="owner:ownerpw")
+            self.mkcalendar(path_base2, login="owner:ownerpw")
+
+            logging.info("\n*** create token#1 with existing collection (form->text)")
+            form_array = ["PathMapped=" + path_base1]
             _, headers, answer = self._sharing_api_form("token", "create", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status='success'" in answer
             assert "PathOrToken='" in answer
@@ -420,7 +431,7 @@ class TestSharingApiSanity(BaseTest):
                 assert False
 
             logging.info("\n*** create token#2 (json->text)")
-            json_dict = {'PathMapped': "/owner/collection2/"}
+            json_dict = {'PathMapped': path_base2}
             _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/plain")
             assert "Status='success'" in answer
             assert "Token=" in answer
@@ -437,14 +448,14 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status='success'" in answer
             assert "Lines=1" in answer
-            assert "/owner/collection1/" in answer
+            assert path_base1 in answer
 
             logging.info("\n*** lookup token#2 (json->text")
             json_dict = {'PathOrToken': token2}
             _, headers, answer = self._sharing_api_json("token", "list", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/plain")
             assert "Status='success'" in answer
             assert "Lines=1" in answer
-            assert "/owner/collection2/" in answer
+            assert path_base2 in answer
 
             logging.info("\n*** lookup token#2 (json->json)")
             json_dict = {'PathOrToken': token2}
@@ -452,15 +463,15 @@ class TestSharingApiSanity(BaseTest):
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
             assert answer_dict['Lines'] == 1
-            assert answer_dict['Content'][0]['PathMapped'] == "/owner/collection2/"
+            assert answer_dict['Content'][0]['PathMapped'] == path_base2
 
             logging.info("\n*** lookup tokens (form->text)")
             form_array = []
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status='success'" in answer
             assert "Lines=2" in answer
-            assert "/owner/collection1/" in answer
-            assert "/owner/collection2/" in answer
+            assert path_base1 in answer
+            assert path_base2 in answer
 
             logging.info("\n*** lookup tokens (form->csv)")
             form_array = []
@@ -468,8 +479,8 @@ class TestSharingApiSanity(BaseTest):
             assert "Status='success'" not in answer
             assert "Lines=2" not in answer
             assert ";".join(sharing.DB_FIELDS_V1) in answer
-            assert "/owner/collection1/" in answer
-            assert "/owner/collection2/" in answer
+            assert path_base1 in answer
+            assert path_base2 in answer
 
             logging.info("\n*** delete token#1 (form->text)")
             form_array = ["PathOrToken=" + token1]
@@ -560,6 +571,10 @@ class TestSharingApiSanity(BaseTest):
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "not-found"
             assert answer_dict['Lines'] == 0
+
+            logging.info("\n*** delete collection*")
+            self.delete(path_base1, login="owner:ownerpw")
+            self.delete(path_base2, login="owner:ownerpw")
 
     def test_sharing_api_token_usage(self) -> None:
         """share-by-token API tests - real usage."""

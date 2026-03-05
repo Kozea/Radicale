@@ -3,7 +3,7 @@
 
 Static collection sharing without permissions filter using soft-links (Unix-only) is supported since storage type `multifilesystem` was implemented, see (Wiki: Sharing Collections)[https://github.com/Kozea/Radicale/wiki/Sharing-Collections]
 
-With 3.7.0 a major extension was implemented using internal mapping configuration stored in a database and a management API.
+With 3.7.0 major extension was implemented using internal mapping configuration stored in a database and a management API.
 
 ## Sharing Implementation
 
@@ -93,7 +93,6 @@ Permissions are filtered by provided `Permissions`.
 
 #### CxDav request "(MOVE)"
 
-
   * Action
     * map source
     * map destination
@@ -110,7 +109,6 @@ Permissions are filtered by provided `Permissions`.
   * Activate
    * `permissions_filter` by `Permissions` (of `to_path`)
    * `to_permissions_filter` by `Permissions` (of `to_path`)
-
 
 ## Sharing Configuration Store
 
@@ -181,7 +179,6 @@ In case share should be visible using PROPFIND
 * unhide map as owner (can be combined with "create")
 * unhide map as user (explicit required to avoid sudden visible share)
 
-
 ### Sharing Access via Tokens
 
 (_>= 3.7.0_)
@@ -189,6 +186,8 @@ In case share should be visible using PROPFIND
 Token-based sharing can be accessed after retrieving the token via
 
 Token-URI: `/.token/<Token>`
+
+Note: requests to not enabled or not even defined tokens will resul tin _401 Not Authorized_
 
 #### Permission Control
 
