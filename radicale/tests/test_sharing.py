@@ -231,7 +231,16 @@ class TestSharingApiSanity(BaseTest):
                 _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
 
             # check info hook
-            logging.info("\n*** check API hook: info/all")
+            logging.info("\n*** check API hook: info/all (text)")
+            form_array = []
+            _, headers, answer = self._sharing_api_form("all", "info", check=200, login="owner:ownerpw", form_array=form_array)
+            assert "Status='success'" in answer
+            assert "PermittedCreateCollectionByMap=False" in answer
+            assert "PermittedCreateCollectionByToken=False" in answer
+            assert "FeatureEnabledCollectionByMap=True" in answer
+            assert "FeatureEnabledCollectionByToken=False" in answer
+
+            logging.info("\n*** check API hook: info/all (json)")
             json_dict = {}
             _, headers, answer = self._sharing_api_json("all", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
