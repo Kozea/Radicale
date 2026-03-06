@@ -162,7 +162,7 @@ class BaseSharing:
         else:
             logger.info("sharing database info: (not provided)")
 
-    # overloadable database functions
+    # *** overloadable database functions ***
     def database_init(self) -> bool:
         """ initialize db """
         return False
@@ -230,7 +230,7 @@ class BaseSharing:
         """ delete sharing """
         return {"status": "not-implemented"}
 
-    # sharing functions called by request methods
+    # *** functions called by cli ***
     def verify(self) -> bool:
         """ verify database """
         logger.info("sharing database verification begin")
@@ -263,6 +263,29 @@ class BaseSharing:
         logger.info("sharing database verification content successful")
         return True
 
+    # *** sharing functions called by request methods ***
+    # list sharings of type "map"
+    def sharing_collection_map_list(self, User: Union[str, None] = None, Enabled: Union[bool, None] = None, Hidden: Union[bool, None] = None) -> list[dict]:
+        """ returning dict with shared collections by filter(User/Enabled/Hidden) or None if not found"""
+        if not self.sharing_collection_by_map:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/sharing/map: not active")
+            return [{}]
+
+        # retrieve collections depending on filter
+        shared_collection_list = self.database_list_sharing(
+                ShareType="map",
+                OwnerOrUser=User,
+                User=User,
+                EnabledByOwner=Enabled,
+                EnabledByUser=Enabled,
+                HiddenByOwner=Hidden,
+                HiddenByUser=Hidden)
+
+        # final
+        return shared_collection_list
+
+    # resolves a path to a share
     def sharing_collection_resolver(self, path: str, user: str) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if not found"""
         if self.sharing_collection_by_token:
@@ -286,31 +309,19 @@ class BaseSharing:
                 logger.debug("TRACE/sharing/map: not active")
             return None
 
-        # final
         return None
 
-    # list sharings of type "map"
-    def sharing_collection_map_list(self, User: Union[str, None] = None, Enabled: Union[bool, None] = None, Hidden: Union[bool, None] = None) -> list[dict]:
-        """ returning dict with shared collections by filter(User/Enabled/Hidden) or None if not found"""
-        if not self.sharing_collection_by_map:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/map: not active")
-            return [{}]
+    # adjust a share
+    def sharing_collection_update(self, ShareType: str, PathOrToken: str, OwnerOrUser: str, Properties: dict) -> None:
+        """ returning dict with PathMapped, Owner, Permissions or None if not found"""
+        logger.info("Sharing/collection/update: ShareType=%r PathOrToken=%r OwnerOrUser=%r", ShareType, PathOrToken, OwnerOrUser)
+        self.database_update_sharing(ShareType=ShareType,
+                                     PathOrToken=PathOrToken,
+                                     OwnerOrUser=OwnerOrUser,
+                                     Properties=Properties)
 
-        # retrieve collections depending on filter
-        shared_collection_list = self.database_list_sharing(
-                ShareType="map",
-                OwnerOrUser=User,
-                User=User,
-                EnabledByOwner=Enabled,
-                EnabledByUser=Enabled,
-                HiddenByOwner=Hidden,
-                HiddenByUser=Hidden)
-
-        # final
-        return shared_collection_list
-
-    # internal sharing functions
+    # *** internal sharing functions ***
+    # resolves a token "path" to a share
     def sharing_collection_by_token_resolver(self, path) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if invalid"""
         if self.sharing_collection_by_token:
@@ -339,6 +350,7 @@ class BaseSharing:
                 logger.debug("TRACE/sharing/token: not active")
             return None
 
+    # resolves a map "path" to a share
     def sharing_collection_by_map_resolver(self, path: str, user: str) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if invalid"""
         if self.sharing_collection_by_map:
@@ -373,7 +385,7 @@ class BaseSharing:
                 logger.debug("TRACE/sharing/map: not active")
             return None
 
-    # POST API
+    # *** POST API ***
     def post(self, environ: types.WSGIEnviron, base_prefix: str, path: str, user: str) -> types.WSGIResponse:
         # Late import to avoid circular dependency in config
         from radicale.app.base import Access
