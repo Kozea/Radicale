@@ -3,7 +3,7 @@
 
 Static collection sharing without permissions filter using soft-links (Unix-only) is supported since storage type `multifilesystem` was implemented, see (Wiki: Sharing Collections)[https://github.com/Kozea/Radicale/wiki/Sharing-Collections]
 
-With 3.7.0 major extension was implemented using internal mapping configuration stored in a database and a management API.
+With _3.7.0_ major extension was implemented using internal mapping configuration stored in a database and a management API.
 
 ## Sharing Implementation
 
@@ -143,23 +143,17 @@ Types of supported sharing configuration:
 
 #### CSV
 
-(_>= 3.7.0_)
-
 One CSV file containing one row per sharing config, separated by `;` and containing header with columns from above.
 
 If given, properties are stored in JSON format in CSV.
 
 #### Files
 
-(_>= 3.7.0_)
-
 File-based configuration store is using encoded `PathOrToken` as filename for each config. File contains the data stored as "dict" in binary Python "pickle" format (same is also used for item cache files).
 
 ## Sharing Access
 
 ### Sharing Access via Maps
-
-(_>= 3.7.0_)
 
 Map-based sharing can be accessed as usual after authentication and authorization.
 
@@ -180,8 +174,6 @@ In case share should be visible using PROPFIND
 * unhide map as user (explicit required to avoid sudden visible share)
 
 ### Sharing Access via Tokens
-
-(_>= 3.7.0_)
 
 Token-based sharing can be accessed after retrieving the token via
 
@@ -204,8 +196,6 @@ Note: requests to not enabled or not even defined tokens will resul tin _401 Not
 
 ### Sharing Configuration Management API version 1
 
-(_>= 3.7.0_)
-
 Type: POST API
 
 Base-URI: `/.sharing/v1/<ShareType>/<Hook>`
@@ -218,16 +208,16 @@ See also test cases in `radicale/tests/test_sharing.py`
 
 Parsing be controlled by `CONTENT_TYPE`
 
- * application/x-www-form-urlencoded (_>= 3.7.0_)
- * application/json (_>= 3.7.0_)
+ * application/x-www-form-urlencoded
+ * application/json
  
 ##### Output Data Format
 
-Can be selected by `HTTP_ACCEPT`
+Can be selected by `HTTP_ACCEPT` - default is equal to provided `CONTENT_TYPE`
 
- * text/plain (_>= 3.7.0_)
- * text/csv (_>= 3.7.0_) - only for "list"
- * application/json (_>= 3.7.0_)
+ * text/plain
+ * text/csv (only for "list")
+ * application/json
  
 ##### Accepted Input Data Fields
 
@@ -264,6 +254,7 @@ PermittedCreateCollectionByToken=True
   * json->json, parsed with `jq`
 
 ```
+bash
 curl -u user:pass --silent -H "accept: application/json" -d "" http://localhost:5232/.sharing/v1/all/info | jq
 {
   "ApiVersion": 1,
@@ -311,7 +302,7 @@ Create a share by mapping a collection of an `Owner` to a token.
  * Examples:
   * form->text
 
-```
+```bash
 curl -u user:pass -d "PathMapped=/user/testcalendar1/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/token/create
 ApiVersion=1
 Status='success'
@@ -320,7 +311,7 @@ PathOrToken='v1/VQR7AmsVRi2ZlFj_JwGpFx-ES5Goyku-gP_YkLh1zUw='
 
   * json->json
 
-```
+```bash
 curl -u user:pass -H "Content-Type: application/json" -d '{ "PathMapped": "/user/testcalendar1/", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/token/create
 {"ApiVersion": 1, "Status": "success", "PathOrToken": "v1/aMsmGqOsRwSH-2-6tEa8EMr4RMYzMU7WvPmjnp5qDnw="}
 ```
@@ -353,7 +344,7 @@ Create a share by mapping a collection of an `Owner` to an `User`.
  * Examples:
   * form->text
 
-```
+```bash
 curl -u owner:pass -d "PathOrToken=/user/cal1-from-owner/" -d "PathMapped=/owner/testcalendar1/" -d "User=user" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/create
 ApiVersion=1
 Status='success'
@@ -361,7 +352,7 @@ Status='success'
 
   * json->json
 
-```
+```bash
 curl -u owner:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "/user/cal1-from-owner/", "PathMapped": "/owner/testcalendar1/", "User" : "user", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/map/create
 {"ApiVersion": 1, "Status": "success"}
 ```
@@ -383,9 +374,21 @@ List shares (optional with filter) either owned or assigned as user.
  * Output: text/plain|text/csv|application/json
 
  * Examples
+
+  * form->text ("all")
+
+```bash
+curl -u user:pass -d "" http://localhost:5232/.sharing/v1/map/list://localhost:5232/.sharing/v1/map/list
+ApiVersion=1
+Lines=1
+Status='success'
+Fields="ShareType;PathOrToken;PathMapped;Owner;User;Permissions;EnabledByOwner;EnabledByUser;HiddenByOwner;HiddenByUser;TimestampCreated;TimestampUpdated;Properties"
+Content[0]="map;/user/cal1-from-owner/;/owner/testcalendar1/;owner;user;r;True;True;False;False;1772748001;1772748163;
+```
+
   * form->csv ("map" only)
  
-```
+```bash
 curl -H "accept: text/csv" -u user:pass -d "" http://localhost:5232/.sharing/v1/map/list://localhost:5232/.sharing/v1/map/list
 ShareType;PathOrToken;PathMapped;Owner;User;Permissions;EnabledByOwner;EnabledByUser;HiddenByOwner;HiddenByUser;TimestampCreated;TimestampUpdated;Properties
 map;/user/cal1-from-owner/;/owner/testcalendar1/;owner;user;r;True;False;False;True;1772747277;1772747277;
@@ -393,7 +396,7 @@ map;/user/cal1-from-owner/;/owner/testcalendar1/;owner;user;r;True;False;False;T
 
   * json->json ("all"), parsed with `jq`
 
-```
+```bash
 curl -s -H "Content-Type: application/json" -u user:pass -d "{}" http://localhost:5232/.sharing/v1/all/list | jq
 {
   "ApiVersion": 1,
@@ -454,7 +457,7 @@ Delete a share selected by `PathOrToken`.
  * Examples:
   * form->text
 
-```
+```bash
 curl -u owner:pass -d "PathOrToken=/user/cal1-from-owner/" http://localhost:5232/.sharing/v1/map/delete
 ApiVersion=1
 Status='success'
@@ -462,7 +465,7 @@ Status='success'
 
   * json->json
 
-```
+```bash
 curl -u user:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "v1/DUSl_J5rRlWx3fy8YRXpH22FFllplkOTpcSwfGtpvkc="}' http://localhost:5232/.sharing/v1/token/delete
 {"ApiVersion": 1, "Status": "success"}
 ```
@@ -491,7 +494,8 @@ Execute delete+create in case `PathOrToken` needs to be changed.
  * Output: text/plain|application/json
 
   * form->text
-```
+
+```bash
 curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/update
 ApiVersion=1
 Status='success'
@@ -499,7 +503,7 @@ Status='success'
 
   * json->json
 
-```
+```bash
 curl -u user:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "/user/cal1-from-owner/", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/map/update
 {"ApiVersion": 1, "Status": "success"}
 ```
@@ -522,15 +526,15 @@ Toggle enable|disable|hide|unhide of `Owner` or `User` of a share selected by `P
   
   * form->text
 
-```
+```bash
 curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" http://localhost:5232/.sharing/v1/map/enable
 ApiVersion=1
 Status='success'
-```
+```bash
 
   * json->json
 
-```
+```bash
 curl -u user:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "/user/cal1-from-owner/"}' http://localhost:5232/.sharing/v1/map/unhide
 {"ApiVersion": 1, "Status": "success"}
 ```
@@ -541,10 +545,10 @@ Owner or user can define per share a set of properties to overlay on PROPFIND re
 
 Whitelisted ones are defined in `OVERLAY_PROPERTIES_WHITELIST` in `radicale/sharing/__init__.py`:
 
- * `C:calendar-description` (_>= 3.7.0_)
- * `ICAL:calendar-color` (_>= 3.7.0_)
- * `CR:addressbook-description` (_>= 3.7.0_)
- * `INF:addressbook-color` (_>= 3.7.0_)
+ * `C:calendar-description`
+ * `ICAL:calendar-color`
+ * `CR:addressbook-description`
+ * `INF:addressbook-color`
 
 ### Properties Overlay Control Options
 

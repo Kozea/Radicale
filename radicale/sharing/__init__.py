@@ -1091,6 +1091,8 @@ class BaseSharing:
                 writer = DictWriter(csv, fieldnames=DB_FIELDS_V1, delimiter=';')
                 if output_format == "csv":
                     writer.writeheader()
+                elif output_format == "txt":
+                    writer.writeheader()
                 for entry in answer['Content']:
                     # TODO: Argument 1 to "writerow" of "DictWriter" has incompatible type "str"; expected "Mapping[str, Any]"  [arg-type]
                     writer.writerow(entry)  # type: ignore[arg-type]
@@ -1100,7 +1102,10 @@ class BaseSharing:
                     index = 0
                     for line in csv.getvalue().splitlines():
                         # create a shell array with content lines
-                        answer_array.append('Content[' + str(index) + ']="' + line.replace('"', '\\"') + '"')
+                        if index == 0:
+                            answer_array.append('Fields="' + line + '"')
+                        else:
+                            answer_array.append('Content[' + str(index - 1) + ']="' + line.replace('"', '\\"') + '"')
                         index += 1
             headers = {
                 "Content-Type": "text/csv"

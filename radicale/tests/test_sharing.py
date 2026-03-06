@@ -362,9 +362,21 @@ class TestSharingApiSanity(BaseTest):
 
             logging.info("\n*** list/all (form->csv)")
             form_array = []
+            _, headers, answer = self._sharing_api_form("all", "list", check=200, login="owner:ownerpw", form_array=form_array, accept="text/csv")
+            assert "Status=" not in answer
+            assert "Line=" not in answer
+            assert "ShareType" in answer
+            assert "token" in answer
+            assert "map" in answer
+
+            logging.info("\n*** list/all (form->text)")
+            form_array = []
             _, headers, answer = self._sharing_api_form("all", "list", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status='success'" in answer
             assert "Lines=2" in answer
+            assert "Fields=" in answer
+            assert "Content[0]=" in answer
+            assert "Content[1]=" in answer
 
             logging.info("\n*** delete token -> 200")
             form_array = ["PathOrToken=" + token]
