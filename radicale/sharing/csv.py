@@ -159,7 +159,7 @@ class Sharing(sharing.BaseSharing):
         result = []
 
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/sharing/list/called: ShareType=%r OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r HiddenByOwner=%s HiddenByUser=%s", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, HiddenByOwner, HiddenByUser)
+            logger.debug("TRACE/sharing/list/called: ShareType=%r OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser)
 
         for row in self._sharing_cache:
             if index == 0:

@@ -55,8 +55,8 @@ class ApplicationPartMkcalendar(ApplicationBase):
                 "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
             return httputils.BAD_REQUEST
         if self._sharing._enabled:
-            # check for shared collections (all users / active or inactive)
-            collections_share_map = self._sharing.sharing_collection_map_list(user=None, active=False)
+            # check for shared collections (all)
+            collections_share_map = self._sharing.sharing_collection_map_list()
             if collections_share_map:
                 for share in collections_share_map:
                     if share['PathOrToken'] == path:

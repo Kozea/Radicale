@@ -466,8 +466,8 @@ class ApplicationPartPropfind(ApplicationBase):
             if http_depth == "1":
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/PROPFIND: get shared collections")
-                # check for shared collections
-                collections_share_map = self._sharing.sharing_collection_map_list(user)
+                # check for shared collections related to user, Enabled and not Hidden
+                collections_share_map = self._sharing.sharing_collection_map_list(User=user, Enabled=True, Hidden=False)
                 if collections_share_map:
                     for share in collections_share_map:
                         c_share = share['PathOrToken']

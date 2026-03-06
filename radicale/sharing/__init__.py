@@ -290,29 +290,22 @@ class BaseSharing:
         return None
 
     # list sharings of type "map"
-    def sharing_collection_map_list(self, user: Union[str, None], active: bool = True) -> list[dict]:
-        """ returning dict with shared collections (active==True: enabled and unhidden) or None if not found"""
+    def sharing_collection_map_list(self, User: Union[str, None] = None, Enabled: Union[bool, None] = None, Hidden: Union[bool, None] = None) -> list[dict]:
+        """ returning dict with shared collections by filter(User/Enabled/Hidden) or None if not found"""
         if not self.sharing_collection_by_map:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
             return [{}]
 
-        # retrieve collections which are enabled and not hidden by owner+user
-        if active:
-            shared_collection_list = self.database_list_sharing(
-                    ShareType="map",
-                    OwnerOrUser=user,
-                    User=user,
-                    EnabledByOwner=True,
-                    EnabledByUser=True,
-                    HiddenByOwner=False,
-                    HiddenByUser=False)
-        else:
-            # unconditional
-            shared_collection_list = self.database_list_sharing(
-                    ShareType="map",
-                    OwnerOrUser=user,
-                    User=user)
+        # retrieve collections depending on filter
+        shared_collection_list = self.database_list_sharing(
+                ShareType="map",
+                OwnerOrUser=User,
+                User=User,
+                EnabledByOwner=Enabled,
+                EnabledByUser=Enabled,
+                HiddenByOwner=Hidden,
+                HiddenByUser=Hidden)
 
         # final
         return shared_collection_list
