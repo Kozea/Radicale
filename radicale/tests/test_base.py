@@ -73,6 +73,7 @@ collection: .*
 permissions: RrWw""")
         self.configure({"rights": {"file": rights_file_path,
                                    "type": "from_file"},
+                        "server": {"delay_on_error": 0},
                         "logging": {"request_header_on_debug": "True",
                                     "request_content_on_debug": "True",
                                     "response_header_on_debug": "True",

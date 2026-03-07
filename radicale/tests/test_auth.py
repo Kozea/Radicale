@@ -69,8 +69,10 @@ class TestBaseAuthRequests(BaseTest):
         with open(htpasswd_file_path, "w", encoding=encoding) as f:
             f.write(htpasswd_content)
         self.configure({"auth": {"type": "htpasswd",
+                                 "delay": 0,
                                  "htpasswd_filename": htpasswd_file_path,
-                                 "htpasswd_encryption": htpasswd_encryption}})
+                                 "htpasswd_encryption": htpasswd_encryption},
+                        "server": {"delay_on_error": 0}})
         if test_matrix == "ascii":
             test_matrix = (("tmp", "bepo", True), ("tmp", "tmp", False),
                            ("tmp", "", False), ("unk", "unk", False),
