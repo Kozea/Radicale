@@ -7,6 +7,7 @@
 * Cleanup: deprecate config option 'ldap_use_ssl' for good
 * Performance: improve `path_to_filesystem()`
 * Performance: preload access rights from file
+* Add: [server] delay_on_error option
 
 ## 3.6.1
 
