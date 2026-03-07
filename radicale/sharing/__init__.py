@@ -344,7 +344,7 @@ class BaseSharing:
                             ShareType="token",
                             PathOrToken=match[1])
                     if result is not None:
-                        logger.info("Sharing/%s: resolved %r->%r, user ->%r, permissions %r" , "token", path, result['PathMapped'], result['Owner'], result['Permissions'])
+                        logger.info("Sharing/%s: resolved %r->%r, user ->%r, permissions %r", "token", path, result['PathMapped'], result['Owner'], result['Permissions'])
                     return result
             else:
                 if logger.isEnabledFor(logging.DEBUG):
@@ -385,7 +385,7 @@ class BaseSharing:
                         logger.debug("TRACE/sharing/map: not found")
                     return None
 
-            logger.info("Sharing/%s: resolved path %r->%r, user %r->%r, permissions %r" , "map", path, result['PathMapped'], user, result['Owner'], result['Permissions'])
+            logger.info("Sharing/%s: resolved path %r->%r, user %r->%r, permissions %r", "map", path, result['PathMapped'], user, result['Owner'], result['Permissions'])
             return result
         else:
             if logger.isEnabledFor(logging.DEBUG):
@@ -909,8 +909,8 @@ class BaseSharing:
                         return httputils.NOT_ALLOWED
 
                 if 'Properties' in request_data and Properties is None:
-                        # clear properties
-                        Properties = {}
+                    # clear properties
+                    Properties = {}
 
                 result = self.database_update_sharing(
                        ShareType=ShareType,
@@ -947,8 +947,8 @@ class BaseSharing:
                         return httputils.NOT_ALLOWED
 
                 if 'Properties' in request_data and Properties is None:
-                        # clear properties
-                        Properties = {}
+                    # clear properties
+                    Properties = {}
 
                 # limited update as user
                 result = self.database_update_sharing(
