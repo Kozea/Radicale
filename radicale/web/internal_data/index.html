@@ -185,16 +185,15 @@
               <td><input type="text" data-name="pathortoken" value="" readonly=""
                   onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
             </tr>
-            <!--
-          <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td><button type="button" class="blue inline" data-name="sharebymap"><img src="css/icons/new.svg"
-                  class="small_icon" alt="New Share by Map"></button>
-            </td>
-          </tr>
-          -->
+            <tr>
+              <td></td>
+              <td></td>
+              <td>
+                <button type="button" class="blue inline" data-name="sharebymap">
+                  <img src="css/icons/new.svg" class="small_icon" alt="New Share by Map">
+                </button>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -206,6 +205,13 @@
     <section id="newshare" class="container hidden">
       <h1>New Share</h1>
       <form>
+        <fieldset data-name="sharemapfields" class="hidden">
+          <legend>Map Target</legend>
+          <label for="newshare_attr_shareuser">Share User</label>
+          <input type="text" data-name="shareuser" id="newshare_attr_shareuser" />
+          <label for="newshare_attr_sharehref">Share Href</label>
+          <input type="text" data-name="sharehref" id="newshare_attr_sharehref" />
+        </fieldset>
         <fieldset>
           <legend>Attributes</legend>
           <input type="checkbox" data-name="enabled" checked="true" id="newshare_attr_enabled" /><label

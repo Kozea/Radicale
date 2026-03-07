@@ -46,6 +46,9 @@ export class ShareCollectionScene {
     /** @type {HTMLElement} */ let share_by_token_btn = html_scene.querySelector(
       "button[data-name=sharebytoken]"
     );
+     /** @type {HTMLElement} */ let share_by_map_btn = html_scene.querySelector(
+      "button[data-name=sharebymap]"
+    );
     /** @type {HTMLElement} */ let share_by_token_div = html_scene.querySelector(
       "div[data-name=sharebytoken]"
     );
@@ -65,7 +68,14 @@ export class ShareCollectionScene {
     }
 
     function onsharebytoken() {
-      let new_share_scene = new NewShareScene(user, password, collection.href, function () {
+      let new_share_scene = new NewShareScene(user, password, collection.href, "token", function () {
+        update_share_list(user, password, collection);
+      });
+      push_scene(new_share_scene, false);
+    }
+
+    function onsharebymap() {
+      let new_share_scene = new NewShareScene(user, password, collection.href, "map", function () {
         update_share_list(user, password, collection);
       });
       push_scene(new_share_scene, false);
@@ -89,6 +99,15 @@ export class ShareCollectionScene {
         if (share_by_token_div) share_by_token_div.classList.remove("hidden");
       } else {
         if (share_by_token_div) share_by_token_div.classList.add("hidden");
+      }
+
+      if (server_features.sharing && server_features.sharing.PermittedCreateCollectionByMap) {
+        if (share_by_map_btn) {
+          share_by_map_btn.classList.remove("hidden");
+          share_by_map_btn.onclick = onsharebymap;
+        }
+      } else {
+        if (share_by_map_btn) share_by_map_btn.classList.add("hidden");
       }
 
       if (server_features.sharing && server_features.sharing.FeatureEnabledCollectionByMap) {

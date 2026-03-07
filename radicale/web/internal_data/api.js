@@ -522,6 +522,54 @@ export function add_share_by_token(
 /**
  * @param {string} user
  * @param {string} password
+ * @param {string} pathMapped
+ * @param {string} permissions
+ * @param {boolean} enabled
+ * @param {boolean} hidden
+ * @param {string} properties
+ * @param {string} share_user
+ * @param {string} href
+ * @param {function():void} callback
+ */
+export function add_share_by_map(
+    user,
+    password,
+    pathMapped,
+    permissions,
+    enabled,
+    hidden,
+    properties,
+    share_user,
+    href,
+    callback,
+) {
+    call_sharing_api(
+        user,
+        password,
+        "map/create",
+        {
+            PathMapped: pathMapped,
+            Permissions: permissions,
+            Enabled: enabled,
+            Hidden: hidden,
+            Properties: properties,
+            User: share_user,
+            PathOrToken: "/" + share_user + "/" + href,
+        },
+        function (response) {
+            let json_response = JSON.parse(response);
+            if (json_response["Status"] !== "success") {
+                console.error("Failed to create share map: " + (json_response["Status"] || "Unknown error"));
+            } else {
+                callback();
+            }
+        },
+    );
+}
+
+/**
+ * @param {string} user
+ * @param {string} password
  * @param {string} token
  * @param {function():void} callback
  */

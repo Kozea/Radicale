@@ -18,7 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { add_share_by_token } from "./api.js";
+import { add_share_by_map, add_share_by_token } from "./api.js";
 import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
 
 /**
@@ -29,11 +29,15 @@ export class NewShareScene {
      * @param {string} user
      * @param {string} password
      * @param {string} pathMapped
+     * @param {string} shareType
      * @param {function():void} onclose
      */
-    constructor(user, password, pathMapped, onclose) {
+    constructor(user, password, pathMapped, shareType, onclose) {
         /** @type {HTMLElement} */ let html_scene = document.getElementById("newshare");
         /** @type {HTMLFormElement} */ let form = html_scene.querySelector("form");
+        /** @type {HTMLElement} */ let sharemapfields = html_scene.querySelector("[data-name=sharemapfields]");
+        /** @type {HTMLInputElement} */ let shareuser_input = html_scene.querySelector("[data-name=shareuser]");
+        /** @type {HTMLInputElement} */ let sharehref_input = html_scene.querySelector("[data-name=sharehref]");
         /** @type {HTMLInputElement} */ let enabled_checkbox = html_scene.querySelector("[data-name=enabled]");
         /** @type {HTMLInputElement} */ let hidden_checkbox = html_scene.querySelector("[data-name=hidden]");
         let permissions_ro_radio = /** @type {HTMLInputElement} */ (document.getElementById("newshare_attr_permissions_ro"));
@@ -62,12 +66,20 @@ export class NewShareScene {
                 let permissions = permissions_rw_radio.checked ? "rw" : "r";
                 let properties = properties_input.value;
 
-                add_share_by_token(user, password, pathMapped, permissions, enabled, hidden, properties, function () {
+                let callback = function () {
                     if (scene_index !== null) {
                         pop_scene(scene_index - 1);
                     }
                     if (onclose) onclose();
-                });
+                };
+
+                if (shareType === "map") {
+                    let share_user = shareuser_input.value;
+                    let href = sharehref_input.value;
+                    add_share_by_map(user, password, pathMapped, permissions, enabled, hidden, properties, share_user, href, callback);
+                } else {
+                    add_share_by_token(user, password, pathMapped, permissions, enabled, hidden, properties, callback);
+                }
             } catch (err) {
                 console.error(err);
             }
@@ -81,6 +93,14 @@ export class NewShareScene {
             cancel_btn.onclick = oncancel;
             form.onsubmit = onsubmit;
 
+            if (shareType === "map") {
+                sharemapfields.classList.remove("hidden");
+            } else {
+                sharemapfields.classList.add("hidden");
+            }
+
+            shareuser_input.value = "";
+            sharehref_input.value = "";
             enabled_checkbox.checked = true;
             hidden_checkbox.checked = false;
             permissions_ro_radio.checked = true;

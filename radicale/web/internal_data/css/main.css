@@ -263,6 +263,11 @@ main {
     margin-top: 15px;
 }
 
+#newshare input[type=text] {
+    margin-bottom: 0 !important;
+}
+
+
 .deleteconfirmationtxt {
     text-align: center;
     font-size: 1em;

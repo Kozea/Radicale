@@ -45,6 +45,8 @@ permit_create_map = true
     with open(user_path, "w") as f:
         f.write(
             """admin:adminpassword
+max:maxpassword
+
 """
         )
 
