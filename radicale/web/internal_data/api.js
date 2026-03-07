@@ -21,7 +21,22 @@
 import { COLOR_RE, ROOT_PATH, SERVER } from "./constants.js";
 import { Collection, CollectionType } from "./models.js";
 import { escape_xml } from "./utils.js";
+/**
+ * @typedef {Object} SharingFeatures
+ * @property {number} [ApiVersion]
+ * @property {string} [Status]
+ * @property {boolean} [FeatureEnabledCollectionByMap]
+ * @property {boolean} [PermittedCreateCollectionByMap]
+ * @property {boolean} [FeatureEnabledCollectionByToken]
+ * @property {boolean} [PermittedCreateCollectionByToken]
+ */
 
+/**
+ * @typedef {Object} ServerFeatures
+ * @property {SharingFeatures} [sharing]
+ */
+
+/** @type {ServerFeatures} */
 export let server_features = {};
 
 /**

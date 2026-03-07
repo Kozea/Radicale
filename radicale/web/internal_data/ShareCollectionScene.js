@@ -44,7 +44,13 @@ export class ShareCollectionScene {
 
     /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
     /** @type {HTMLElement} */ let share_by_token_btn = html_scene.querySelector(
-      "[data-name=sharebytoken]"
+      "button[data-name=sharebytoken]"
+    );
+    /** @type {HTMLElement} */ let share_by_token_div = html_scene.querySelector(
+      "div[data-name=sharebytoken]"
+    );
+    /** @type {HTMLElement} */ let share_by_map_div = html_scene.querySelector(
+      "div[data-name=sharebymap]"
     );
 
         /** @type {HTMLElement} */ let title = html_scene.querySelector("[data-name=title]");
@@ -70,12 +76,27 @@ export class ShareCollectionScene {
       scene_index = scene_stack.length - 1;
       html_scene.classList.remove("hidden");
       cancel_btn.onclick = oncancel;
-      if (server_features["sharing"]["PermittedCreateCollectionByToken"]) {
-        share_by_token_btn.classList.remove("hidden");
-        share_by_token_btn.onclick = onsharebytoken;
+      if (server_features.sharing && server_features.sharing.PermittedCreateCollectionByToken) {
+        if (share_by_token_btn) {
+          share_by_token_btn.classList.remove("hidden");
+          share_by_token_btn.onclick = onsharebytoken;
+        }
       } else {
-        share_by_token_btn.classList.add("hidden");
+        if (share_by_token_btn) share_by_token_btn.classList.add("hidden");
       }
+
+      if (server_features.sharing && server_features.sharing.FeatureEnabledCollectionByToken) {
+        if (share_by_token_div) share_by_token_div.classList.remove("hidden");
+      } else {
+        if (share_by_token_div) share_by_token_div.classList.add("hidden");
+      }
+
+      if (server_features.sharing && server_features.sharing.FeatureEnabledCollectionByMap) {
+        if (share_by_map_div) share_by_map_div.classList.remove("hidden");
+      } else {
+        if (share_by_map_div) share_by_map_div.classList.add("hidden");
+      }
+
       title.textContent = collection.displayname || collection.href;
       update_share_list(user, password, collection);
     };
@@ -186,11 +207,9 @@ function add_share_rows(user, password, collection, shares) {
 }
 
 export function maybe_enable_sharing_options() {
-  if (!server_features["sharing"]) return;
-  let map_is_enabled =
-    server_features["sharing"]["FeatureEnabledCollectionByMap"] || false;
-  let token_is_enabled =
-    server_features["sharing"]["FeatureEnabledCollectionByToken"] || false;
+  if (!server_features.sharing) return;
+  let map_is_enabled = server_features.sharing.FeatureEnabledCollectionByMap || false;
+  let token_is_enabled = server_features.sharing.FeatureEnabledCollectionByToken || false;
   if (map_is_enabled || token_is_enabled) {
     let share_options = document.querySelectorAll("[data-name=shareoption]");
     for (let i = 0; i < share_options.length; i++) {

@@ -147,42 +147,45 @@
       <h1>Sharing</h1>
       <p>Manage sharing for collection <span class="title" data-name="title">title</span>
       </p>
-      <h2>By Token</h2>
-      <table>
-        <tbody>
-          <tr data-name="sharetokenrowtemplate" class="hidden">
-            <td>
-              <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
-                  class="small_icon" alt="Delete"></button>
-            </td>
-            <td><img src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw" /><img src="css/icons/eye.svg"
-                class="med_icon" alt="RO" data-name="ro" /></td>
-            <td><input type="text" data-name="pathortoken" value="" readonly=""
-                onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
-          </tr>
-          <tr>
-            <td></td>
-            <td></td>
-            <td><button type="button" class="blue inline" data-name="sharebytoken"><img src="css/icons/new.svg"
-                  class="small_icon" alt="New Share by Token"></button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <h2>By Map</h2>
-      <table>
-        <tbody>
-          <tr data-name="sharemaprowtemplate" class="hidden">
-            <td>
-              <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
-                  class="small_icon" alt="Delete"></button>
-            </td>
-            <td><img src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw" /><img src="css/icons/eye.svg"
-                class="med_icon" alt="RO" data-name="ro" /></td>
-            <td><input type="text" data-name="pathortoken" value="" readonly=""
-                onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
-          </tr>
-          <!--
+      <div data-name="sharebytoken">
+        <h2>By Token</h2>
+        <table>
+          <tbody>
+            <tr data-name="sharetokenrowtemplate" class="hidden">
+              <td>
+                <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
+                    class="small_icon" alt="Delete"></button>
+              </td>
+              <td><img src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw" /><img src="css/icons/eye.svg"
+                  class="med_icon" alt="RO" data-name="ro" /></td>
+              <td><input type="text" data-name="pathortoken" value="" readonly=""
+                  onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td><button type="button" class="blue inline" data-name="sharebytoken"><img src="css/icons/new.svg"
+                    class="small_icon" alt="New Share by Token"></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div data-name="sharebymap">
+        <h2>By Map</h2>
+        <table>
+          <tbody>
+            <tr data-name="sharemaprowtemplate" class="hidden">
+              <td>
+                <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
+                    class="small_icon" alt="Delete"></button>
+              </td>
+              <td><img src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw" /><img src="css/icons/eye.svg"
+                  class="med_icon" alt="RO" data-name="ro" /></td>
+              <td><input type="text" data-name="pathortoken" value="" readonly=""
+                  onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
+            </tr>
+            <!--
           <tr>
             <td></td>
             <td></td>
@@ -192,8 +195,9 @@
             </td>
           </tr>
           -->
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
       <form>
         <button type="button" class="green" data-name="cancel">Close</button>
       </form>
