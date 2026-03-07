@@ -831,6 +831,14 @@ The maximum number of parallel connections. Set to `0` to disable the limit.
 
 Default: `8`
 
+##### delay_on_error
+
+_(>= 3.7.0)_
+
+Base delay in case of error response (seconds)
+
+Default: `0.01`
+
 ##### max_content_length
 
 The maximum size of the request body. (bytes)

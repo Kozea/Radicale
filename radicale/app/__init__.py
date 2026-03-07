@@ -72,6 +72,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
     _mask_passwords: bool
     _auth_delay: float
+    _delay_on_error: float
     _internal_server: bool
     _max_content_length: int
     _max_resource_size: int
@@ -97,6 +98,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         """
         super().__init__(configuration)
         self._mask_passwords = configuration.get("logging", "mask_passwords")
+        self._delay_on_error = configuration.get("server", "delay_on_error")
+        logger.info("delay_on_error set to: %.3f seconds", self._delay_on_error)
         self._max_content_length = configuration.get("server", "max_content_length")
         self._max_resource_size = configuration.get("server", "max_resource_size")
         logger.info("max_content_length set to: %d bytes (%sbytes)", self._max_content_length, utils.format_unit(self._max_content_length, binary=True))
@@ -304,6 +307,14 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 flags_text = " (" + " ".join(flags) + ")"
             else:
                 flags_text = ""
+            # delay on error
+            if status >= 400:
+                random_delay = self._delay_on_error * (1 + random.random())
+                if status >= 500:
+                    random_delay = 2 * random_delay
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("Response delay triggered by result code: %d -> %0.3f seconds", status, random_delay)
+                time.sleep(random_delay)
             if answer is not None:
                 logger.info("%s response status for %r%s in %.3f seconds %s %s bytes%s: %s",
                             request_method, unsafe_path, depthinfo,

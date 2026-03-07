@@ -21,6 +21,9 @@
 # Max parallel connections
 #max_connections = 8
 
+# Base delay in case of error response (seconds)
+#delay_on_error = 0.01
+
 # Max size of request body (bytes), default: 100 Mbyte
 # In case of using a reverse proxy in front of check also there related option
 #max_content_length = 100000000
