@@ -109,6 +109,7 @@ class BaseSharing:
     _enabled: bool = False
     default_permissions_create_token: str
     default_permissions_create_map: str
+    sharing_db_type: str
 
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize Sharing.
@@ -139,6 +140,10 @@ class BaseSharing:
         logger.info("sharing.permit_properties_overlay: %s", self.permit_properties_overlay)
         logger.info("sharing.enforce_properties_overlay: %s", self.enforce_properties_overlay)
 
+        # database tasks
+        self.sharing_db_type = configuration.get("sharing", "type")
+        logger.info("sharing.database_type: %s", self.sharing_db_type)
+
         if ((self.sharing_collection_by_map is False) and (self.sharing_collection_by_token is False)):
             logger.info("sharing disabled as no feature is enabled")
             self._enabled = False
@@ -146,15 +151,17 @@ class BaseSharing:
         else:
             self._enabled = True
 
-        # database tasks
-        self.sharing_db_type = configuration.get("sharing", "type")
-        logger.info("sharing.database_type: %s", self.sharing_db_type)
+        if not self._init_db():
+            return
 
+    def _init_db(self) -> bool:
+        """Initialize Sharing Database
+        """
         try:
             if self.database_init() is False:
                 logger.info("sharing disabled as no database is active")
                 self._enabled = False
-                return
+                return False
         except Exception as e:
             logger.error("sharing database cannot be initialized: %r", e)
             exit(1)
@@ -163,6 +170,7 @@ class BaseSharing:
             logger.info("sharing database info: %r", database_info)
         else:
             logger.info("sharing database info: (not provided)")
+        return True
 
     # *** overloadable database functions ***
     def database_init(self) -> bool:
@@ -236,6 +244,10 @@ class BaseSharing:
     def verify(self) -> bool:
         """ verify database """
         logger.info("sharing database verification begin")
+
+        if not self._init_db():
+            return False
+
         logger.info("sharing database verification call: %s", self.sharing_db_type)
         result = self.database_verify()
         if result is not True:
@@ -261,7 +273,16 @@ class BaseSharing:
                         return False
                 else:
                     pass
-                # TODO: check PathMapped exists
+
+                # check PathMapped exists
+                with self._storage.acquire_lock("r", path=entry['PathMapped']):
+                    item = next(iter(self._storage.discover(entry['PathMapped'])), None)
+                    if not item:
+                        logger.error("PathMapped is not existing: %r", entry['PathMapped'])
+                        return False
+                    else:
+                        logger.debug("PathMapped exists(ok): %r", entry['PathMapped'])
+
         logger.info("sharing database verification content successful")
         return True
 
