@@ -19,6 +19,7 @@
  */
 
 import {
+  delete_share_by_map,
   delete_share_by_token,
   reload_sharing_list,
   server_features,
@@ -88,9 +89,14 @@ export class ShareCollectionScene {
   }
 }
 
+/**
+ * @param {string} user
+ * @param {string} password
+ * @param {Collection} collection
+ */
 function update_share_list(user, password, collection) {
   let share_rows = document.querySelectorAll(
-    "[data-name=sharetokenrowtemplate]",
+    "[data-name=sharetokenrowtemplate], [data-name=sharemaprowtemplate]",
   );
   share_rows.forEach(function (row) {
     if (!row.classList.contains("hidden")) {
@@ -103,47 +109,78 @@ function update_share_list(user, password, collection) {
   });
 }
 
+/**
+ * 
+ * @param {string} user 
+ * @param {string} password 
+ * @param {Collection} collection 
+ * @param {Object} share 
+ * @param {HTMLElement} template 
+ * @param {string} delete_label 
+ * @param {function(string, string, string, function():void):void} delete_action 
+ */
+function add_share_row_node(user, password, collection, share, template, delete_label, delete_action) {
+  let pathortoken = share["PathOrToken"] || "";
+  let node = /** @type {HTMLElement} */ (template.cloneNode(true));
+  node.classList.remove("hidden");
+
+  /** @type {HTMLInputElement} */ let pathortoken_form = node.querySelector("[data-name=pathortoken]");
+  if (pathortoken_form) {
+    pathortoken_form.value = pathortoken;
+  }
+
+  let permissions = (share["Permissions"] || "").toLowerCase();
+  if (permissions === "rw") {
+    node
+      .querySelector("[data-name=ro]")
+      .parentNode.removeChild(node.querySelector("[data-name=ro]"));
+  } else if (permissions === "r") {
+    node
+      .querySelector("[data-name=rw]")
+      .parentNode.removeChild(node.querySelector("[data-name=rw]"));
+  } else {
+    console.warn("Unknown permissions", permissions);
+  }
+
+  /** @type {HTMLElement} */ let delete_btn = node.querySelector("[data-name=delete]");
+  delete_btn.onclick = function () {
+    if (!confirm("Are you sure you want to delete " + delete_label + " " + pathortoken + "?")) {
+      return;
+    }
+    delete_action(
+      user,
+      password,
+      pathortoken,
+      function () {
+        update_share_list(user, password, collection);
+      },
+    );
+  };
+
+  template.parentNode.insertBefore(node, template);
+}
+
+/**
+ * @param {string} user 
+ * @param {string} password 
+ * @param {Collection} collection 
+ * @param {Object} shares 
+ */
 function add_share_rows(user, password, collection, shares) {
-  /** @type {HTMLElement} */ let template = document.querySelector("[data-name=sharetokenrowtemplate]");
+  /** @type {HTMLElement} */ let token_template = document.querySelector("[data-name=sharetokenrowtemplate]");
+  /** @type {HTMLElement} */ let map_template = document.querySelector("[data-name=sharemaprowtemplate]");
   shares.forEach(function (share) {
     let pathortoken = share["PathOrToken"] || "";
     let pathmapped = share["PathMapped"] || "";
-    if ((
+    if (
       collection.href.includes(pathmapped) ||
       collection.href.includes(pathortoken)
-    ) && (share["ShareType"] === "token")) {
-      let node = /** @type {HTMLElement} */ (template.cloneNode(true));
-      node.classList.remove("hidden");
-      /** @type {HTMLInputElement} */ let pathortoken_form = node.querySelector("[data-name=pathortoken]");
-      pathortoken_form.value = pathortoken;
-      let permissions = (share["Permissions"] || "").toLowerCase();
-      if (permissions === "rw") {
-        node
-          .querySelector("[data-name=ro]")
-          .parentNode.removeChild(node.querySelector("[data-name=ro]"));
-      } else if (permissions === "r") {
-        node
-          .querySelector("[data-name=rw]")
-          .parentNode.removeChild(node.querySelector("[data-name=rw]"));
-      } else {
-        console.warn("Unknown permissions", permissions);
+    ) {
+      if (share["ShareType"] === "token") {
+        add_share_row_node(user, password, collection, share, token_template, "share", delete_share_by_token);
+      } else if (share["ShareType"] === "map") {
+        add_share_row_node(user, password, collection, share, map_template, "map", delete_share_by_map);
       }
-      /** @type {HTMLElement} */ let delete_btn = node.querySelector("[data-name=delete]");
-      delete_btn.onclick = function () {
-        if (!confirm("Are you sure you want to delete share " + pathortoken + "?")) {
-          return;
-        }
-        delete_share_by_token(
-          user,
-          password,
-          pathortoken,
-          function () {
-            update_share_list(user, password, collection);
-          },
-        );
-      };
-
-      template.parentNode.insertBefore(node, template);
     }
   });
 }

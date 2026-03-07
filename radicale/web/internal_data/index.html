@@ -153,7 +153,7 @@
           <tr data-name="sharetokenrowtemplate" class="hidden">
             <td>
               <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
-                  class="small_icon" alt="Share"></button>
+                  class="small_icon" alt="Delete"></button>
             </td>
             <td><img src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw" /><img src="css/icons/eye.svg"
                 class="med_icon" alt="RO" data-name="ro" /></td>
@@ -167,6 +167,31 @@
                   class="small_icon" alt="New Share by Token"></button>
             </td>
           </tr>
+        </tbody>
+      </table>
+      <h2>By Map</h2>
+      <table>
+        <tbody>
+          <tr data-name="sharemaprowtemplate" class="hidden">
+            <td>
+              <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
+                  class="small_icon" alt="Delete"></button>
+            </td>
+            <td><img src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw" /><img src="css/icons/eye.svg"
+                class="med_icon" alt="RO" data-name="ro" /></td>
+            <td><input type="text" data-name="pathortoken" value="" readonly=""
+                onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
+          </tr>
+          <!--
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td><button type="button" class="blue inline" data-name="sharebymap"><img src="css/icons/new.svg"
+                  class="small_icon" alt="New Share by Map"></button>
+            </td>
+          </tr>
+          -->
         </tbody>
       </table>
       <form>

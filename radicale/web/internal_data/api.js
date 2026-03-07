@@ -513,3 +513,31 @@ export function delete_share_by_token(
         },
     );
 }
+
+/**
+ * @param {string} user
+ * @param {string} password
+ * @param {string} pathortoken
+ * @param {function():void} callback
+ */
+export function delete_share_by_map(
+    user,
+    password,
+    pathortoken,
+    callback,
+) {
+    call_sharing_api(
+        user,
+        password,
+        "map/delete",
+        { PathOrToken: pathortoken },
+        function (response) {
+            let json_response = JSON.parse(response);
+            if (json_response["Status"] !== "success") {
+                console.error("Failed to delete map " + pathortoken + ": " + (json_response["Status"] || "Unknown error"));
+            } else {
+                callback();
+            }
+        },
+    );
+}
