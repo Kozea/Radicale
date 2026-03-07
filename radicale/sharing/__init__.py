@@ -518,7 +518,7 @@ class BaseSharing:
         elif 'application/x-www-form-urlencoded' in content_type:
             input_format = "form"
             output_format = "plain"  # default
-            request_parsed = parse_qs(request_body)
+            request_parsed = parse_qs(request_body, keep_blank_values=True)
             # convert arrays into single value
             request_data = {}
             for key in request_parsed:
@@ -526,6 +526,10 @@ class BaseSharing:
                     # Properties key value parser
                     properties_dict: dict = {}
                     for entry in request_parsed[key]:
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug("TRACE/sharing/API: parse property %r", entry)
+                        if entry == "":
+                            continue
                         m = re.search('^([^=]+)=([^=]+)$', entry)
                         if not m:
                             return httputils.bad_request("Invalid properties format in form")
@@ -535,6 +539,9 @@ class BaseSharing:
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug("TRACE/sharing/API: converted Properties from form into dict: %r", properties_dict)
                     request_data[key] = properties_dict
+                    if len(request_data[key]) == 0:
+                        # empty
+                        request_data[key] = {}
                 elif key in ["Enabled", "Hidden"]:
                     try:
                         request_data[key] = config._convert_to_bool(request_parsed[key][0])
@@ -901,6 +908,10 @@ class BaseSharing:
                         logger.warning(api_info + ": access to %r not allowed for user %r", PathMapped, user)
                         return httputils.NOT_ALLOWED
 
+                if 'Properties' in request_data and Properties is None:
+                        # clear properties
+                        Properties = {}
+
                 result = self.database_update_sharing(
                        ShareType=ShareType,
                        PathMapped=PathMapped,
@@ -918,7 +929,7 @@ class BaseSharing:
                 if PathMapped is not None or Permissions is not None or User is not None:
                     logger.warning(api_info + ": access to %r not allowed for user %r to adjust anything beside: %s", PathOrToken, user, " ".join(DB_FIELDS_V1_USER_PERMITTED))
                     return httputils.NOT_ALLOWED
-                if Properties is not None:
+                if 'Properties' in request_data:
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug("TRACE/sharing/API/update: permit_properties_overlay=%s Permissions=%r", self.permit_properties_overlay, share['Permissions'])
                     if self.permit_properties_overlay:
@@ -934,6 +945,10 @@ class BaseSharing:
                             logger.warning(api_info + ": %r properties overlay denied by option", PathOrToken)
                             return httputils.NOT_ALLOWED
                         return httputils.NOT_ALLOWED
+
+                if 'Properties' in request_data and Properties is None:
+                        # clear properties
+                        Properties = {}
 
                 # limited update as user
                 result = self.database_update_sharing(

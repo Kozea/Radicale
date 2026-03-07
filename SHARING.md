@@ -559,3 +559,67 @@ Whitelisted ones are defined in `OVERLAY_PROPERTIES_WHITELIST` in `radicale/shar
    * supported *share* permissions: `Pp`
  * `enforce_properties_overlay`
    * supported *share* permissions: `Ee`
+
+### Properties Overlay Example
+
+#### Requirements
+
+  * sharing / permit_properties_overlay = True
+
+#### Test sequence
+
+  * Prepare XML statements
+
+```bash
+## PROPFIND color
+xml_pfc='<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:ICAL="http://apple.com/ns/ical/">
+  <prop>
+    <ICAL:calendar-color />
+  </prop>
+</propfind>'
+
+## PROPPATCH color
+xml_ppc='<?xml version="1.0"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#DDDDDD</I:calendar-color>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>'
+```
+
+  * Tests
+
+```bash
+## Retrieve collection color of owner (no color set)
+curl -u owner:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/owner/testcalendar1/
+
+## Create read-only share for user
+curl -u owner:pass -d "PathOrToken=/user/cal1-from-owner/" -d "PathMapped=/owner/testcalendar1/" -d "User=user" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/create
+
+## Accept (enable+unhide) share by user
+curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/update
+
+## Retrieve collection color of share by user (no color set)
+curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
+
+## Set property overlay by user
+curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d 'Properties="ICAL:calendar-color"="#CCCCCC"' http://localhost:5232/.sharing/v1/map/update
+
+## Retrieve collection color of share by user (color set)
+curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
+
+## Delete property overlay by user
+curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d 'Properties=' http://localhost:5232/.sharing/v1/map/update
+
+## Retrieve collection color of share by user (no color set)
+curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
+
+## Add property overlay by user using PROPPATCH
+curl -u user:pass -d "$xml_ppc" -X PROPPATCH http://localhost:5232/user/cal1-from-owner/
+
+## Retrieve collection color of share by user (color set)
+curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
+```

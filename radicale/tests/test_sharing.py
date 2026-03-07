@@ -2985,7 +2985,7 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_shared_r
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
-            # verify PROPPATCH as user
+            # verify PROPFIND as user
             logging.info("\n*** PROPFIND collection user -> ok")
             propfind_calendar_color = get_file_content("propfind_multiple.xml")
             _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
@@ -3073,11 +3073,131 @@ permissions: RrWw""")
             assert status == 200 and prop.text == "#CCCCCC"
 
             # update map by user
-            logging.info("\n*** update map by user (form)")
+            logging.info("\n*** update properties with buggyy ones by user (form)")
             form_array = ["User=" + "user"]
             form_array.append("PathOrToken=" + path_shared_r)
             form_array.append("Properties=BUGGYENTRY=BUGGYVALUE")
             _, headers, answer = self._sharing_api_form("map", "update", check=400, login="user:userpw", form_array=form_array)
+
+    def test_sharing_api_map_propfind_overlay_api_delete(self) -> None:
+        """share-by-map API usage tests related to proppatch."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "permit_properties_overlay": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        form_array: Sequence[str]
+        json_dict: dict
+
+        path_mapped = "/owner/calendarPFD.ics/"
+        path_shared_r = "/user/calendarPFD-shared-by-owner-r.ics/"
+
+        logging.info("\n*** prepare and test access")
+        self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["D:current-user-principal"]
+            assert status == 200 and len(prop) == 1
+            element = prop.find(xmlutils.make_clark("D:href"))
+            assert element is not None and element.text == "/owner/"
+
+            # create map
+            logging.info("\n*** create map user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # set properties by user
+            logging.info("\n*** set properties by user (form)")
+            form_array = []
+            form_array.append("PathOrToken=" + path_shared_r)
+            form_array.append("Properties='ICAL:calendar-color'='#CCCCCC'")
+            _, headers, answer = self._sharing_api_form("map", "update", check=200, login="user:userpw", form_array=form_array)
+
+            # check that properties are existing in map
+            logging.info("\n*** list and check for properties (json->json)")
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user:userpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == '#CCCCCC'
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
+            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int)
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#CCCCCC"
+
+            # clear properties by user
+            logging.info("\n*** clear properties by user (form)")
+            form_array = []
+            form_array.append("PathOrToken=" + path_shared_r)
+            form_array.append("Properties=")
+            _, headers, answer = self._sharing_api_form("map", "update", check=200, login="user:userpw", form_array=form_array)
+
+            # check that properties are cleared
+            logging.info("\n*** list and check for cleared properties (json->json)")
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user:userpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Properties'] is not None
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay no longer exists) -> ok")
+            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
+            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int)
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 404
 
     def test_sharing_api_map_propfind_overlay_api_permissions(self) -> None:
         """share-by-map API usage tests related to proppatch."""
