@@ -340,9 +340,12 @@ class BaseSharing:
                     # TODO add token validity checks
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug("TRACE/sharing/token: supported token found in path: %r (token=%r)", path, match[1])
-                    return self.database_get_sharing(
+                    result = self.database_get_sharing(
                             ShareType="token",
                             PathOrToken=match[1])
+                    if result is not None:
+                        logger.info("Sharing/%s: resolved %r->%r, user ->%r, permissions %r" , "token", path, result['PathMapped'], result['Owner'], result['Permissions'])
+                    return result
             else:
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/sharing/token: no supported prefix found in path: %r", path)
@@ -363,7 +366,7 @@ class BaseSharing:
                     PathOrToken=path,
                     User=user)
             if result:
-                return result
+                pass
             else:
                 # fallback to parent path
                 parent_path = pathutils.parent_path(path)
@@ -377,11 +380,13 @@ class BaseSharing:
                     result['PathMapped'] = path.replace(parent_path, result['PathMapped'])
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug("TRACE/sharing/map/resolver: PathMapped=%r Permissions=%r by parent_path=%r", result['PathMapped'], result['Permissions'], parent_path)
-                    return result
                 else:
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug("TRACE/sharing/map: not found")
                     return None
+
+            logger.info("Sharing/%s: resolved path %r->%r, user %r->%r, permissions %r" , "map", path, result['PathMapped'], user, result['Owner'], result['Permissions'])
+            return result
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
@@ -918,15 +923,15 @@ class BaseSharing:
                         logger.debug("TRACE/sharing/API/update: permit_properties_overlay=%s Permissions=%r", self.permit_properties_overlay, share['Permissions'])
                     if self.permit_properties_overlay:
                         if share['Permissions'] is not None and "p" in str(share['Permissions']):
-                            logger.warning(api_info + ": %r overlay permitted, but denied by permission 'p'", PathOrToken)
+                            logger.warning(api_info + ": %r properties overlay permitted by option, but denied by permission 'p'", PathOrToken)
                             return httputils.NOT_ALLOWED
                         else:
-                            logger.info(api_info + ": %r overlay permitted by option", PathOrToken)
+                            logger.info(api_info + ": %r properties overlay permitted by option", PathOrToken)
                     else:
                         if share['Permissions'] is not None and "P" in str(share['Permissions']):
-                            logger.info(api_info + ": %r overlay denied, but granted by permission 'P'", PathOrToken)
+                            logger.info(api_info + ": %r properties overlay denied by option, but granted by permission 'P'", PathOrToken)
                         else:
-                            logger.warning(api_info + ": %r overlay denied by option", PathOrToken)
+                            logger.warning(api_info + ": %r properties overlay denied by option", PathOrToken)
                             return httputils.NOT_ALLOWED
                         return httputils.NOT_ALLOWED
 
