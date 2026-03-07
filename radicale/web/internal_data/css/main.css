@@ -44,7 +44,7 @@ main {
     width: 100%;
     text-align: left;
     color: #484848;
-    font-size: 1.5em;
+    font-size: 14pt;
 }
 
 #loginscene .infcloudlink {
@@ -403,6 +403,14 @@ input:focus,
 input:focus-visible {
     border-color: #2494fe !important;
     border-width: 1px !important;
+}
+
+input[type=radio],
+input[type=checkbox] {
+    width: auto;
+    height: 1.5em;
+    padding: 0;
+    margin: 2px;
 }
 
 p.red,

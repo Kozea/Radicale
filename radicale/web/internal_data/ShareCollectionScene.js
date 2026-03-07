@@ -19,32 +19,31 @@
  */
 
 import {
-  add_share_by_token,
   delete_share_by_token,
   reload_sharing_list,
   server_features,
 } from "./api.js";
 import { Collection } from "./models.js";
-import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
+import { NewShareScene } from "./NewShareScene.js";
+import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
 
 /**
  * @implements {Scene}
- * @param {string} user
- * @param {string} password
- * @param {Collection} collection The collection on which to edit sharing setting. Must exist.
  */
-export class CreateShareCollectionScene {
+export class ShareCollectionScene {
+  /**
+   * @param {string} user
+   * @param {string} password
+   * @param {Collection} collection The collection on which to edit sharing setting. Must exist.
+   */
   constructor(user, password, collection) {
-        /** @type {?number} */ let scene_index = null;
+    /** @type {?number} */ let scene_index = null;
 
     let html_scene = document.getElementById("sharecollectionscene");
 
-        /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
-        /** @type {HTMLElement} */ let share_by_token_btn_ro = html_scene.querySelector(
-      "[data-name=sharebytoken_ro]"
-    );
-        /** @type {HTMLElement} */ let share_by_token_btn_rw = html_scene.querySelector(
-      "[data-name=sharebytoken_rw]"
+    /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+    /** @type {HTMLElement} */ let share_by_token_btn = html_scene.querySelector(
+      "[data-name=sharebytoken]"
     );
 
         /** @type {HTMLElement} */ let title = html_scene.querySelector("[data-name=title]");
@@ -58,16 +57,11 @@ export class CreateShareCollectionScene {
       return false;
     }
 
-    function onsharebytoken_rw() {
-      add_share_by_token(user, password, collection, "rw", function () {
+    function onsharebytoken() {
+      let new_share_scene = new NewShareScene(user, password, collection.href, function () {
         update_share_list(user, password, collection);
       });
-    }
-
-    function onsharebytoken_ro() {
-      add_share_by_token(user, password, collection, "r", function () {
-        update_share_list(user, password, collection);
-      });
+      push_scene(new_share_scene, false);
     }
 
     this.show = function () {
@@ -76,13 +70,10 @@ export class CreateShareCollectionScene {
       html_scene.classList.remove("hidden");
       cancel_btn.onclick = oncancel;
       if (server_features["sharing"]["PermittedCreateCollectionByToken"]) {
-        share_by_token_btn_ro.classList.remove("hidden");
-        share_by_token_btn_rw.classList.remove("hidden");
-        share_by_token_btn_ro.onclick = onsharebytoken_ro;
-        share_by_token_btn_rw.onclick = onsharebytoken_rw;
+        share_by_token_btn.classList.remove("hidden");
+        share_by_token_btn.onclick = onsharebytoken;
       } else {
-        share_by_token_btn_ro.classList.add("hidden");
-        share_by_token_btn_rw.classList.add("hidden");
+        share_by_token_btn.classList.add("hidden");
       }
       title.textContent = collection.displayname || collection.href;
       update_share_list(user, password, collection);

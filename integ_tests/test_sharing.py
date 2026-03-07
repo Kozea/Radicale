@@ -22,7 +22,8 @@ def test_create_and_delete_share_by_key(page: Page, radicale_server: str) -> Non
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(0)
 
-    page.click('button[data-name="sharebytoken_ro"]')
+    page.click('button[data-name="sharebytoken"]')
+    page.click('#newshare button[data-name="submit"]')
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(1)
@@ -34,7 +35,9 @@ def test_create_and_delete_share_by_key(page: Page, radicale_server: str) -> Non
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(0)
-    page.click('button[data-name="sharebytoken_rw"]')
+    page.click('button[data-name="sharebytoken"]')
+    page.click('label[for="newshare_attr_permissions_rw"]')
+    page.click('#newshare button[data-name="submit"]')
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(1)
