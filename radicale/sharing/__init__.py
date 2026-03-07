@@ -506,13 +506,13 @@ class BaseSharing:
                 # convert JSON boolean
                 if key in request_data:
                     if type(request_data[key]) is not bool:
-                        logger.error(api_info + ": unsupported (non-boolean) " + key + ": " + request_data[key])
+                        logger.warning(api_info + ": unsupported (non-boolean) " + key + ": " + request_data[key])
                         return httputils.bad_request("Invalid non-boolean value for " + key + ": " + request_data[key])
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + " (json): %r", f"{request_data}")
         elif 'application/x-www-form-urlencoded' in content_type:
             input_format = "form"
-            output_format = "text"  # default
+            output_format = "plain"  # default
             request_parsed = parse_qs(request_body)
             # convert arrays into single value
             request_data = {}
@@ -534,7 +534,7 @@ class BaseSharing:
                     try:
                         request_data[key] = config._convert_to_bool(request_parsed[key][0])
                     except ValueError:
-                        logger.error(api_info + ": unsupported (non-boolean) " + key + ": " + request_parsed[key][0])
+                        logger.warning(api_info + ": unsupported (non-boolean) " + key + ": " + request_parsed[key][0])
                         return httputils.bad_request("Invalid non-boolean value for " + key + ": " + request_parsed[key][0])
                 else:
                     request_data[key] = request_parsed[key][0]
@@ -552,7 +552,7 @@ class BaseSharing:
         elif 'text/csv' in accept:
             output_format = "csv"
         elif 'text/plain' in accept:
-            output_format = "text"
+            output_format = "plain"
         else:
             # default from input type
             pass
@@ -562,7 +562,7 @@ class BaseSharing:
                 return httputils.bad_request("CSV output format is only allowed for list action")
         elif output_format == "json":
             pass
-        elif output_format == "text":
+        elif output_format == "plain":
             pass
         else:
             return httputils.bad_request("Output format not supported")
@@ -588,23 +588,23 @@ class BaseSharing:
             elif key == "PathOrToken":
                 if ShareType == "token":
                     if not re.search('^' + TOKEN_PATTERN_V1 + '$', request_data[key]):
-                        logger.error(api_info + ": unsupported " + key)
+                        logger.warning(api_info + ": unsupported " + key)
                         return httputils.bad_request("Invalid value for PathOrToken")
                 elif ShareType == "map":
                     if not re.search('^' + PATH_PATTERN + '$', request_data[key]):
-                        logger.error(api_info + ": unsupported " + key)
+                        logger.warning(api_info + ": unsupported " + key)
                         return httputils.bad_request("Invalid value for PathOrToken")
                 elif not request_data[key].endswith("/"):
                     return httputils.bad_request("PathOrToken not ending with /")
             elif key == "PathMapped":
                 if not re.search('^' + PATH_PATTERN + '$', request_data[key]):
-                    logger.error(api_info + ": unsupported " + key)
+                    logger.warning(api_info + ": unsupported " + key)
                     return httputils.bad_request("Invalid value for PathMapped")
                 elif not request_data[key].endswith("/"):
                     return httputils.bad_request("PathMapped not ending with /")
             elif key == "User":
                 if not re.search('^' + USER_PATTERN + '$', request_data[key]):
-                    logger.error(api_info + ": unsupported " + key)
+                    logger.warning(api_info + ": unsupported " + key)
                     return httputils.bad_request("Invalid value for User")
 
         # check for optional parameters
@@ -617,7 +617,7 @@ class BaseSharing:
                 # ignored
                 pass
             elif action not in ['list', 'create']:
-                logger.error(api_info + ": missing PathOrToken")
+                logger.warning(api_info + ": missing PathOrToken")
                 return httputils.bad_request("Missing PathOrToken")
             else:
                 # PathOrToken is optional
@@ -625,7 +625,7 @@ class BaseSharing:
         else:
             if action == "create" and ShareType == "token":
                 # not supported
-                logger.error(api_info + ": PathOrToken found but not supported")
+                logger.warning(api_info + ": PathOrToken found but not supported")
                 return httputils.bad_request("PathOrToken not supported")
             PathOrToken = request_data['PathOrToken']
 
@@ -701,7 +701,7 @@ class BaseSharing:
                 logger.debug("TRACE/" + api_info + ": start")
 
             if PathMapped is None:
-                logger.error(api_info + ": missing PathMapped")
+                logger.warning(api_info + ": missing PathMapped")
                 return httputils.bad_request("Missing PathMapped")
 
             # check whether collection exists
@@ -742,16 +742,16 @@ class BaseSharing:
                 # check access Permissions
                 access = Access(self._rights, user, PathMapped)
                 if not access.check("r"):
-                    logger.error(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
+                    logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
                     return httputils.NOT_ALLOWED
 
                 if self.permit_create_token is False:
                     if "t" not in access.permissions:
-                        logger.error(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explict grant misses 't')", PathMapped, user)
+                        logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explict grant misses 't')", PathMapped, user)
                         return httputils.NOT_ALLOWED
                 else:
                     if "T" in access.permissions:
-                        logger.error(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but denied by 'T')", PathMapped, user)
+                        logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but denied by 'T')", PathMapped, user)
                         return httputils.NOT_ALLOWED
 
                 if User is not None:
@@ -793,7 +793,7 @@ class BaseSharing:
                 # retrieve existing share
                 share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, OnlyEnabled=False)
                 if share is not None:
-                    logger.error(api_info + ": share already exists PathOrToken=%r", PathOrToken)
+                    logger.warning(api_info + ": share already exists PathOrToken=%r", PathOrToken)
                     return httputils.CONFLICT
 
                 if User is None:
@@ -804,21 +804,21 @@ class BaseSharing:
                 # check access Permissions
                 access = Access(self._rights, user, PathMapped, None)  # PathMapped is mandatory
                 if not access.check("r") and "i" not in access.permissions:
-                    logger.error(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
+                    logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
                     return httputils.NOT_ALLOWED
 
                 if self.permit_create_map is False:
                     if "m" not in access.permissions:
-                        logger.error(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explicit grant misses 'm')", PathMapped, user)
+                        logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explicit grant misses 'm')", PathMapped, user)
                         return httputils.NOT_ALLOWED
                 else:
                     if "M" in access.permissions:
-                        logger.error(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but denied by 'M')", PathMapped, user)
+                        logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but denied by 'M')", PathMapped, user)
                         return httputils.NOT_ALLOWED
 
                 access = Access(self._rights, User, PathOrToken)
                 if not access.check("r"):
-                    logger.error(api_info + ": access to PathOrToken=%r not allowed for User=%r", PathOrToken, User)
+                    logger.warning(api_info + ": access to PathOrToken=%r not allowed for User=%r", PathOrToken, User)
                     return httputils.NOT_ALLOWED
 
                 # check whether share is already existing as real collection
@@ -827,7 +827,7 @@ class BaseSharing:
                     if not item:
                         pass
                     else:
-                        logger.error(api_info + ": PathOrToken=%r already exists as real collection for User=%r", PathOrToken, User)
+                        logger.warning(api_info + ": PathOrToken=%r already exists as real collection for User=%r", PathOrToken, User)
                         return httputils.CONFLICT
 
                 if logger.isEnabledFor(logging.DEBUG):
@@ -848,7 +848,7 @@ class BaseSharing:
                         Properties=Properties)
 
             else:
-                logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
+                logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + ": result=%r", result)
@@ -860,13 +860,14 @@ class BaseSharing:
             elif result['status'] == "success":
                 answer['Status'] = "success"
             else:
-                return httputils.bad_request("Internal failure")
+                logger.warning(api_info + ": %r by user %r not successful", PathMapped, request_data['User'])
+                return httputils.bad_request("Internal Error")
 
             if ShareType == "token":
                 PathOrToken = token
                 answer['PathOrToken'] = token
 
-            logger.info(api_info + " success: PathMapped=%r Permissions=%r PathOrToken=%r", PathMapped, Permissions, token)
+            logger.info(api_info + " success: PathMapped=%r Permissions=%r PathOrToken=%r", PathMapped, Permissions, PathOrToken)
 
         # action: update
         elif action == "update":
@@ -874,7 +875,7 @@ class BaseSharing:
                 logger.debug("TRACE/" + api_info + ": start")
 
             if ShareType not in ["token", "map"]:
-                logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
+                logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
 
             if PathOrToken is None:
@@ -892,7 +893,7 @@ class BaseSharing:
                     # check access Permissions
                     access = Access(self._rights, user, str(PathMapped), None)
                     if not access.check("r") and "i" not in access.permissions:
-                        logger.warning("Update sharing: access to PathMapped %r not allowed for user %r", PathMapped, user)
+                        logger.warning(api_info + ": access to %r not allowed for user %r", PathMapped, user)
                         return httputils.NOT_ALLOWED
 
                 result = self.database_update_sharing(
@@ -910,22 +911,22 @@ class BaseSharing:
             elif user == share['User']:
                 # User is only allowed to update Properties
                 if PathMapped is not None or Permissions is not None or User is not None:
-                    logger.info("Update sharing: access to %r not allowed for user %r to adjust anything beside: %s", PathOrToken, user, " ".join(DB_FIELDS_V1_USER_PERMITTED))
+                    logger.warning(api_info + ": access to %r not allowed for user %r to adjust anything beside: %s", PathOrToken, user, " ".join(DB_FIELDS_V1_USER_PERMITTED))
                     return httputils.NOT_ALLOWED
                 if Properties is not None:
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug("TRACE/sharing/API/update: permit_properties_overlay=%s Permissions=%r", self.permit_properties_overlay, share['Permissions'])
                     if self.permit_properties_overlay:
                         if share['Permissions'] is not None and "p" in str(share['Permissions']):
-                            logger.info("Update on shared %r: overlay permitted, but denied by permission 'p'", PathOrToken)
+                            logger.warning(api_info + ": %r overlay permitted, but denied by permission 'p'", PathOrToken)
                             return httputils.NOT_ALLOWED
                         else:
-                            logger.info("Update on shared %r: overlay permitted by option", PathOrToken)
+                            logger.info(api_info + ": %r overlay permitted by option", PathOrToken)
                     else:
                         if share['Permissions'] is not None and "P" in str(share['Permissions']):
-                            logger.info("Update on shared %r: overlay denied, but granted by permission 'P'", PathOrToken)
+                            logger.info(api_info + ": %r overlay denied, but granted by permission 'P'", PathOrToken)
                         else:
-                            logger.info("Update on shared %r: overlay denied by option", PathOrToken)
+                            logger.warning(api_info + ": %r overlay denied by option", PathOrToken)
                             return httputils.NOT_ALLOWED
                         return httputils.NOT_ALLOWED
 
@@ -940,7 +941,7 @@ class BaseSharing:
 
             else:
                 # neither owner nor user matches
-                logger.warning("Update sharing of %r not permitted for user %r", PathOrToken, user)
+                logger.warning(api_info + ": sharing of %r not permitted for user %r", PathOrToken, user)
                 return httputils.NOT_ALLOWED
 
             # result handling
@@ -952,11 +953,8 @@ class BaseSharing:
                 answer['Status'] = "success"
                 pass
             else:
-                if ShareType == "token":
-                    logger.info("Update of sharing-by-token: %r not successful", request_data['PathOrToken'])
-                elif ShareType == "map":
-                    logger.info("Update of sharing-by-map: %r not successful", request_data['PathOrToken'])
-                return httputils.bad_request("Invalid share type")
+                logger.warning(api_info + ": %r not successful", request_data['PathOrToken'])
+                return httputils.bad_request("Internal Error")
 
         # action: delete
         elif action == "delete":
@@ -964,7 +962,7 @@ class BaseSharing:
                 logger.debug("TRACE/" + api_info + ": start")
 
             if ShareType not in ["token", "map"]:
-                logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
+                logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
 
             if PathOrToken is None:
@@ -983,7 +981,7 @@ class BaseSharing:
                        PathOrToken=PathOrToken) # verification above that it is not None
             else:
                 # only owner is permitted to delete a share
-                logger.warning("Delete sharing of %r not permitted for user %r", PathOrToken, user)
+                logger.warning(api_info + ": %r not permitted for user %r", PathOrToken, user)
                 return httputils.NOT_ALLOWED
 
             # result handling
@@ -995,11 +993,8 @@ class BaseSharing:
                 answer['Status'] = "success"
                 pass
             else:
-                if ShareType == "token":
-                    logger.info("Delete sharing-by-token: %r of user %r not successful", request_data['PathOrToken'], request_data['User'])
-                elif ShareType == "map":
-                    logger.info("Delete sharing-by-map: %r of user %r not successful", request_data['PathOrToken'], request_data['User'])
-                return httputils.bad_request("Invalid share type")
+                logger.warning(api_info + ": %r by user %r not successful", request_data['PathOrToken'], request_data['User'])
+                return httputils.bad_request("Internal Error")
 
         # action: info
         elif action == "info":
@@ -1018,7 +1013,7 @@ class BaseSharing:
                 logger.debug("TRACE/sharing/API/POST/" + action)
 
             if ShareType not in ["token", "map"]:
-                logger.error(api_info + ": unsupported for ShareType=%r", ShareType)
+                logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
 
             if PathOrToken is None:
@@ -1071,7 +1066,7 @@ class BaseSharing:
 
             else:
                 # neither owner nor user matches
-                logger.warning("Toggle sharing of %r not permitted for user %r", PathOrToken, user)
+                logger.warning(api_info + ": %r by user %r not permitted", PathOrToken, user)
                 return httputils.NOT_ALLOWED
 
             if result:
@@ -1083,21 +1078,21 @@ class BaseSharing:
                     answer['Status'] = "success"
                     pass
             else:
-                logger.error("Toggle sharing: %r of user %s not successful", request_data['PathOrToken'], user)
+                logger.warning(api_info + ": %r by user %s not successful", request_data['PathOrToken'], user)
                 return httputils.bad_request("Internal Error")
 
         else:
             # default
-            logger.error(api_info + ": unsupported action=%r", action)
+            logger.warning(api_info + ": unsupported action=%r", action)
             return httputils.bad_request("Invalid action")
 
         # output handler
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/API/POST output format: %r", output_format)
             logger.debug("TRACE/sharing/API/POST answer: %r", answer)
-        if output_format == "csv" or output_format == "text":
+        if output_format == "csv" or output_format == "plain":
             answer_array = []
-            if output_format == "text":
+            if output_format == "plain":
                 for key in answer:
                     if key != 'Content':
                         if API_TYPES_V1[key] is bool or API_TYPES_V1[key] is int:
@@ -1109,7 +1104,7 @@ class BaseSharing:
                 writer = DictWriter(csv, fieldnames=DB_FIELDS_V1, delimiter=';')
                 if output_format == "csv":
                     writer.writeheader()
-                elif output_format == "text":
+                elif output_format == "plain":
                     writer.writeheader()
                 for entry in answer['Content']:
                     # TODO: Argument 1 to "writerow" of "DictWriter" has incompatible type "str"; expected "Mapping[str, Any]"  [arg-type]

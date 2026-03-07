@@ -239,9 +239,10 @@ Shows what kind of ShareTypes are supported
  * Output: text/plain|application/json
 
  * Examples
+
   * form->text
 
-```
+```bash
 curl -u user:pass -H "accept: text/plain" -d "" http://localhost:5232/.sharing/v1/all/info
 ApiVersion=1
 Status='success'
@@ -269,8 +270,7 @@ curl -u user:pass --silent -H "accept: application/json" -d "" http://localhost:
 ##### API Hook "(token|map)/create"
 
  * Authorization
-
-Authenticated user is `Owner`
+   * Authenticated user is `Owner`
 
 ###### API Hook "token/create"
 
@@ -455,6 +455,7 @@ Delete a share selected by `PathOrToken`.
  * Output: text/plain|application/json
 
  * Examples:
+
   * form->text
 
 ```bash
@@ -493,7 +494,9 @@ Execute delete+create in case `PathOrToken` needs to be changed.
 
  * Output: text/plain|application/json
 
-  * form->text
+ * Examples:
+
+   * form->text
 
 ```bash
 curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/update

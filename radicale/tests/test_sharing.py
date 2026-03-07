@@ -191,6 +191,7 @@ class TestSharingApiSanity(BaseTest):
                                     "collection_by_token": "True"},
                         "rights": {"type": "owner_only"}})
 
+        form_array: Sequence[str]
         json_dict: dict
 
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
