@@ -3,7 +3,112 @@
 
 Static collection sharing without permissions filter using soft-links (Unix-only) is supported since storage type `multifilesystem` was implemented, see (Wiki: Sharing Collections)[https://github.com/Kozea/Radicale/wiki/Sharing-Collections]
 
-With 3.7.0 a major extension was implemented using internal mapping configuration stored in a database and a management API.
+With _3.7.0_ major extension was implemented using internal mapping configuration stored in a database and a management API.
+
+## Sharing Implementation
+
+Implemenation of sharing collections is done in case entry exists in sharing database by replacing provided data on request and adjust if required data in responses.
+
+Permissions are filtered by provided `Permissions`.
+
+### CxDAV requests
+
+#### CxDav request "(DELETE|GET|HEAD|PUT)"
+
+  * Actions
+    * map
+  * Lookup by
+    * `path` (provided in request)
+    * `user` (authenticated)
+  * Replace
+   * `user` by `Owner`
+   * `path` by `PathMapped`
+  * Activate
+   * `permissions_filter` by `Permissions`
+
+#### CxDav request "REPORT"
+
+  * Actions
+    * map
+    * back-map response
+  * Lookup by
+    * `path` (provided in request)
+    * `user` (authenticated)
+  * Replace
+   * `user` by `Owner`
+   * `path` by `PathMapped`
+  * Activate
+   * `permissions_filter` by `Permissions`
+
+#### CxDav request "PROPFIND" without HTTP_DEPTH=1
+
+  * Actions
+    * map
+    * back-map response
+    * overwrite `Properties` if provided
+  * Lookup by
+    * `path` (provided in request)
+    * `user` (authenticated)
+  * Replace
+   * `user` by `Owner`
+   * `path` by `PathMapped`
+  * Overlay
+   * `Properties` if provided
+  * Activate
+   * `permissions_filter` by `Permissions`
+
+#### CxDav request "PROPFIND" with HTTP_DEPTH=1
+
+  * Actions
+    * extend list
+  * Lookup for active shares for `user` in sharing database
+  * Extend list if conditions are met
+   * `permissions_filter` by `Permissions`
+
+#### CxDav request "PROPPATCH"
+
+  * Actions
+    * map
+    * adjust properties of a collection
+  * Lookup by
+    * `path` (provided in request)
+    * `user` (authenticated)
+  * Replace
+   * `user` by `Owner`
+   * `path` by `PathMapped`
+  * Activate
+   * `permissions_filter` by `Permissions`
+  * Depending on `permissions_filter`, global options and `Permissions`
+    * adjust properties of collection
+    * adjust whitelisted properties in `Properties` for overlay (see OVERLAY_PROPERTIES_WHITELIST)
+
+#### CxDav request "(MKCALENDAR|MKCOL)"
+
+  * Action
+    * check for conflicts
+  * Lookup by
+    * `user` (authenticated)
+  * Verify for non-existence as `PathOrToken` in sharing database
+    * `path` (provided in request)
+
+#### CxDav request "(MOVE)"
+
+  * Action
+    * map source
+    * map destination
+  * Lookup by
+    * `path` (provided in request)
+    * `user` (authenticated)
+    * `to_path` (provided in request)
+    * `to_user` (same as `user`)
+  * Replace
+   * `user` by `Owner` (of `path`)
+   * `path` by `PathMapped` (of path)
+   * `to_user` by `Owner` (of `to_path`)
+   * `to_path` by `PathMapped` (of `to_path`)
+  * Activate
+   * `permissions_filter` by `Permissions` (of `to_path`)
+   * `to_permissions_filter` by `Permissions` (of `to_path`)
 
 ## Sharing Configuration Store
 
@@ -38,23 +143,17 @@ Types of supported sharing configuration:
 
 #### CSV
 
-(_>= 3.7.0_)
-
 One CSV file containing one row per sharing config, separated by `;` and containing header with columns from above.
 
 If given, properties are stored in JSON format in CSV.
 
 #### Files
 
-(_>= 3.7.0_)
-
 File-based configuration store is using encoded `PathOrToken` as filename for each config. File contains the data stored as "dict" in binary Python "pickle" format (same is also used for item cache files).
 
 ## Sharing Access
 
 ### Sharing Access via Maps
-
-(_>= 3.7.0_)
 
 Map-based sharing can be accessed as usual after authentication and authorization.
 
@@ -74,14 +173,13 @@ In case share should be visible using PROPFIND
 * unhide map as owner (can be combined with "create")
 * unhide map as user (explicit required to avoid sudden visible share)
 
-
 ### Sharing Access via Tokens
-
-(_>= 3.7.0_)
 
 Token-based sharing can be accessed after retrieving the token via
 
 Token-URI: `/.token/<Token>`
+
+Note: requests to not enabled or not even defined tokens will resul tin _401 Not Authorized_
 
 #### Permission Control
 
@@ -98,8 +196,6 @@ Token-URI: `/.token/<Token>`
 
 ### Sharing Configuration Management API version 1
 
-(_>= 3.7.0_)
-
 Type: POST API
 
 Base-URI: `/.sharing/v1/<ShareType>/<Hook>`
@@ -112,16 +208,16 @@ See also test cases in `radicale/tests/test_sharing.py`
 
 Parsing be controlled by `CONTENT_TYPE`
 
- * application/x-www-form-urlencoded (_>= 3.7.0_)
- * application/json (_>= 3.7.0_)
+ * application/x-www-form-urlencoded
+ * application/json
  
 ##### Output Data Format
 
-Can be selected by `HTTP_ACCEPT`
+Can be selected by `HTTP_ACCEPT` - default is equal to provided `CONTENT_TYPE`
 
- * text/plain (_>= 3.7.0_)
- * text/csv (_>= 3.7.0_) - only for "list"
- * application/json (_>= 3.7.0_)
+ * text/plain
+ * text/csv (only for "list")
+ * application/json
  
 ##### Accepted Input Data Fields
 
@@ -140,21 +236,26 @@ Can be selected by `HTTP_ACCEPT`
 
 Shows what kind of ShareTypes are supported
 
-* Example: TEXT
+ * Output: text/plain|application/json
 
-```
+ * Examples
+
+  * form->text
+
+```bash
 curl -u user:pass -H "accept: text/plain" -d "" http://localhost:5232/.sharing/v1/all/info
 ApiVersion=1
-Status=success
+Status='success'
 FeatureEnabledCollectionByMap=True
 PermittedCreateCollectionByMap=True
 FeatureEnabledCollectionByToken=True
 PermittedCreateCollectionByToken=True  
 ```
 
-* Example: JSON
+  * json->json, parsed with `jq`
 
 ```
+bash
 curl -u user:pass --silent -H "accept: application/json" -d "" http://localhost:5232/.sharing/v1/all/info | jq
 {
   "ApiVersion": 1,
@@ -166,46 +267,53 @@ curl -u user:pass --silent -H "accept: application/json" -d "" http://localhost:
 }
 ```
 
-
 ##### API Hook "(token|map)/create"
 
  * Authorization
-
-Authenticated user is `Owner`
+   * Authenticated user is `Owner`
 
 ###### API Hook "token/create"
 
 Create a share by mapping a collection of an `Owner` to a token.
 
  * Authorization
-
-Authenticated user as `Owner` has at least read access to `PathMapped`
+  * `PathMapped` is existing and a collection
+  * Authenticated user as `Owner` has at least read access to `PathMapped`
+  * Global permitted by `permit_create_token = True` or `rights` permission `t`
+  * Global denied by `permit_create_token = False` or `rights` permission `T`
 
  * Input
 
-| Parameter | Owner |
+| Parameter | Type | Requirement |
+| - | - | - |
+| PathMapped | str | mandatory |
+| User | str | optional(default:owner) |
+| Permissions | str | optional(default:r) |
+| Enabled | bool | optional(owner/default:False) |
+| Hidden | bool | optional(owner/default:True) |
+| Properties | str | optional |
+
+ * Output: text/plain|application/json
+
+| Parameter | Type | Value |
 | - | - |
-| Owner | implicit(by authentication) |
-| PathMapped | mandatory |
-| User | optional(default:owner) |
-| Permissions | optional(default:r) |
-| Enabled | optional(owner) |
-| Hidden | optional(owner) |
-| Properties | optional |
+| PathOrToken | str | (autogenerated token) |
 
-  * Output
+ * Examples:
+  * form->text
 
-| Parameter | Value |
-| - | - |
-| PathOrToken | (autogenerated token) |
-
-* Example: TEXT
-
-```
-curl -u user:pass -d "PathMapped=/user/testcalendar1/" http://localhost:5232/.sharing/v1/token/create
+```bash
+curl -u user:pass -d "PathMapped=/user/testcalendar1/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/token/create
 ApiVersion=1
-Status=success
-PathOrToken=v1/VQR7AmsVRi2ZlFj_JwGpFx-ES5Goyku-gP_YkLh1zUw=
+Status='success'
+PathOrToken='v1/VQR7AmsVRi2ZlFj_JwGpFx-ES5Goyku-gP_YkLh1zUw='
+```
+
+  * json->json
+
+```bash
+curl -u user:pass -H "Content-Type: application/json" -d '{ "PathMapped": "/user/testcalendar1/", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/token/create
+{"ApiVersion": 1, "Status": "success", "PathOrToken": "v1/aMsmGqOsRwSH-2-6tEa8EMr4RMYzMU7WvPmjnp5qDnw="}
 ```
 
 ###### API Hook "map/create"
@@ -213,60 +321,120 @@ PathOrToken=v1/VQR7AmsVRi2ZlFj_JwGpFx-ES5Goyku-gP_YkLh1zUw=
 Create a share by mapping a collection of an `Owner` to an `User`.
 
  * Authorization
-
-Authenticated user as `Owner` has at least read access to `PathMapped`
-
-Provided `User` has at least read access to `PathOrToken`
+  * `PathMapped` is existing and a collection
+  * Authenticated user as `Owner` has at least read access to `PathMapped`
+  * Provided `User` has at least read access to `PathOrToken`
+  * Global permitted by `permit_create_map = True` or `rights` permission `m`
+  * Global denied by `permit_create_map = False` or `rights` permission `M`
 
  * Input
 
-| Parameter | Value |
+| Parameter | Type | Requirement |
 | - | - |
-| Owner | implicit(by authentication) |
-| PathOrToken | mandatory |
-| PathMapped | mandatory |
-| User | mandatory |
-| Permissions | optional(default:r) |
-| Enabled | optional(owner) |
-| Hidden | optional(owner) |
+| PathOrToken | str | mandatory |
+| PathMapped | str | mandatory |
+| User | str | mandatory |
+| Permissions | str | optional(default:r) |
+| Enabled | bool | optional(owner/default:False) |
+| Hidden | bool | optional(owner/default:True) |
 | Properties | optional |
 
- * Output: result status
+ * Output: text/plain|application/json
 
- * Example: TEXT
+ * Examples:
+  * form->text
 
-```
-curl -u owner:pass -d "PathOrToken=/user/cal1-from-owner/" -d "PathMapped=/owner/cal1/" -d "User=user" http://localhost:5232/.sharing/v1/map/create
+```bash
+curl -u owner:pass -d "PathOrToken=/user/cal1-from-owner/" -d "PathMapped=/owner/testcalendar1/" -d "User=user" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/create
 ApiVersion=1
-Status=success
+Status='success'
 ```
 
+  * json->json
+
+```bash
+curl -u owner:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "/user/cal1-from-owner/", "PathMapped": "/owner/testcalendar1/", "User" : "user", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/map/create
+{"ApiVersion": 1, "Status": "success"}
+```
 
 ##### API Hook "(map|token|all)/list"
 
 List shares (optional with filter) either owned or assigned as user.
 
  * Authorization
-
-Authenticated user as `Owner` or `User`
+  * Authenticated user as `Owner` or `User`
 
  * Input
 
-| Parameter | Filter |
-| - | - |
-| Owner | implicit(by authentication) |
-| User | implicit(by authentication) |
-| PathOrToken | optional |
-| PathMapped | optional |
+| Parameter | Type | Used for |
+| - | - | - |
+| PathOrToken | str | optional |
+| PathMapped | str | optional |
 
- * Output: plain/csv/json
+ * Output: text/plain|text/csv|application/json
 
- * Example: CSV
- 
+ * Examples
+
+  * form->text ("all")
+
+```bash
+curl -u user:pass -d "" http://localhost:5232/.sharing/v1/map/list://localhost:5232/.sharing/v1/map/list
+ApiVersion=1
+Lines=1
+Status='success'
+Fields="ShareType;PathOrToken;PathMapped;Owner;User;Permissions;EnabledByOwner;EnabledByUser;HiddenByOwner;HiddenByUser;TimestampCreated;TimestampUpdated;Properties"
+Content[0]="map;/user/cal1-from-owner/;/owner/testcalendar1/;owner;user;r;True;True;False;False;1772748001;1772748163;
 ```
-curl -H "accept: text/csv" -u owner:pass -d "" http://localhost:5232/.sharing/v1/map/list
-ShareType,PathOrToken,PathMapped,Owner,User,Permissions,EnabledByOwner,EnabledByUser,HiddenByOwner,HiddenByUser,TimestampCreated,TimestampUpdated
-map,/user/cal1-from-owner/,/owner/cal1/,owner,user,r,False,False,True,True,1771962120,1771962120
+
+  * form->csv ("map" only)
+ 
+```bash
+curl -H "accept: text/csv" -u user:pass -d "" http://localhost:5232/.sharing/v1/map/list://localhost:5232/.sharing/v1/map/list
+ShareType;PathOrToken;PathMapped;Owner;User;Permissions;EnabledByOwner;EnabledByUser;HiddenByOwner;HiddenByUser;TimestampCreated;TimestampUpdated;Properties
+map;/user/cal1-from-owner/;/owner/testcalendar1/;owner;user;r;True;False;False;True;1772747277;1772747277;
+```
+
+  * json->json ("all"), parsed with `jq`
+
+```bash
+curl -s -H "Content-Type: application/json" -u user:pass -d "{}" http://localhost:5232/.sharing/v1/all/list | jq
+{
+  "ApiVersion": 1,
+  "Lines": 2,
+  "Status": "success",
+  "Content": [
+    {
+      "ShareType": "map",
+      "PathOrToken": "/user/cal1-from-owner/",
+      "PathMapped": "/owner/testcalendar1/",
+      "Owner": "owner",
+      "User": "user",
+      "Permissions": "r",
+      "EnabledByOwner": true,
+      "EnabledByUser": false,
+      "HiddenByOwner": false,
+      "HiddenByUser": true,
+      "TimestampCreated": 1772747277,
+      "TimestampUpdated": 1772747277,
+      "Properties": ""
+    },
+    {
+      "ShareType": "token",
+      "PathOrToken": "v1/DUSl_J5rRlWx3fy8YRXpH22FFllplkOTpcSwfGtpvkc=",
+      "PathMapped": "/user/testcalendar1/",
+      "Owner": "user",
+      "User": "user",
+      "Permissions": "r",
+      "EnabledByOwner": true,
+      "EnabledByUser": false,
+      "HiddenByOwner": false,
+      "HiddenByUser": true,
+      "TimestampCreated": 1772747371,
+      "TimestampUpdated": 1772747371,
+      "Properties": ""
+    }
+  7]
+}
 ```
 
 
@@ -275,16 +443,33 @@ map,/user/cal1-from-owner/,/owner/cal1/,owner,user,r,False,False,True,True,17719
 Delete a share selected by `PathOrToken`.
 
  * Authorization
-
-Authenticated user is `Owner`
+  * Authenticated user is `Owner`
+  * Share is existing and owned
 
  * Input
 
-| Parameter | Type | Owner | User |
-| - | - | - | - |
-| PathOrToken | selector | mandatory | not-permitted |
+| Parameter | Type | Used for | as Owner | as User |
+| - | - | - | - | - |
+| PathOrToken | str | selection | mandatory | not-permitted |
 
-  * Output: result status
+ * Output: text/plain|application/json
+
+ * Examples:
+
+  * form->text
+
+```bash
+curl -u owner:pass -d "PathOrToken=/user/cal1-from-owner/" http://localhost:5232/.sharing/v1/map/delete
+ApiVersion=1
+Status='success'
+```
+
+  * json->json
+
+```bash
+curl -u user:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "v1/DUSl_J5rRlWx3fy8YRXpH22FFllplkOTpcSwfGtpvkc="}' http://localhost:5232/.sharing/v1/token/delete
+{"ApiVersion": 1, "Status": "success"}
+```
 
 ##### API Hook "(token|map)/update"
 
@@ -293,54 +478,68 @@ Update a share selected by `PathOrToken`.
 Execute delete+create in case `PathOrToken` needs to be changed.
 
  * Authorization
-
-Authenticated user is `Owner` or `User`
+   * Authenticated user is `Owner` or `User`
 
  * Input
 
-| Parameter | Type | Owner | User |
-| - | - | - | - |
-| PathOrToken | selector | mandatory | mandatory |
-| Owner | by authentication | not-permitted | not-permitted |
-| PathMapped | adjustable | optional | not-permitted |
-| User | adjustable | optional | not-permitted |
-| Permissions | adjustable | optional | not-permitted |
-| Enabled | adjustable | optional(owner) | optional(user) |
-| Hidden | adjustable | optional(owner) | optional(user) |
-| Properties | adjustable | optional | optional |
+| Parameter | Type | Used for | Owner | User |
+| - | - | - | - | - |
+| PathOrToken | str | selection | mandatory | mandatory |
+| PathMapped | str | adjust | optional | not-permitted |
+| User | str | adjust | optional | not-permitted |
+| Permissions | str | adjust | optional | not-permitted |
+| Enabled | bool | adjust | optional(owner) | optional(user) |
+| Hidden | bool | adjust | optional(owner) | optional(user) |
+| Properties | str | adjust | optional | optional |
 
-  * Output: result status
+ * Output: text/plain|application/json
+
+ * Examples:
+
+   * form->text
+
+```bash
+curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/update
+ApiVersion=1
+Status='success'
+```
+
+  * json->json
+
+```bash
+curl -u user:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "/user/cal1-from-owner/", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/map/update
+{"ApiVersion": 1, "Status": "success"}
+```
 
 ##### API Hooks "(map|token)/(enable|disable|hide|unhide)"
 
 Toggle enable|disable|hide|unhide of `Owner` or `User` of a share selected by `PathOrToken`
 
  * Authorization
-
-Authenticated user is `Owner` or `User`
+   * Authenticated user is `Owner` or `User`
+   * `PathOrToken` is existing and either owned or assigned to user
 
  * Input
 
-| Parameter | Type | Owner | User |
-| - | - | - | - |
-| PathOrToken | selector | mandatory | mandatory |
+| Parameter | Type | Used for | Owner | User |
+| - | - | - | - | - |
+| PathOrToken | selection | mandatory | mandatory |
 
- * Output: result status
+ * Output: text/plain|application/json
   
- * Example: TEXT (enable)
- 
-```
-curl -u owner:pass -d "PathOrToken=/user/cal1-from-owner/" -d "PathMapped=/owner/cal1/" -d "User=user" http://localhost:5232/.sharing/v1/map/enable
-ApiVersion=1
-Status=success
-```
+  * form->text
 
- * Example: JSON (unhide)
- 
-```
-curl -u owner:pass -d '{"PathOrToken": "/user/cal1-from-owner/", "PathMapped": "/owner/cal1/", "User": "user"} http://localhost:5232/.sharing/v1/map/unhide
+```bash
+curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" http://localhost:5232/.sharing/v1/map/enable
 ApiVersion=1
-Status=success
+Status='success'
+```bash
+
+  * json->json
+
+```bash
+curl -u user:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "/user/cal1-from-owner/"}' http://localhost:5232/.sharing/v1/map/unhide
+{"ApiVersion": 1, "Status": "success"}
 ```
 
 ## Properties Overlay
@@ -349,10 +548,10 @@ Owner or user can define per share a set of properties to overlay on PROPFIND re
 
 Whitelisted ones are defined in `OVERLAY_PROPERTIES_WHITELIST` in `radicale/sharing/__init__.py`:
 
- * `C:calendar-description` (_>= 3.7.0_)
- * `ICAL:calendar-color` (_>= 3.7.0_)
- * `CR:addressbook-description` (_>= 3.7.0_)
- * `INF:addressbook-color` (_>= 3.7.0_)
+ * `C:calendar-description`
+ * `ICAL:calendar-color`
+ * `CR:addressbook-description`
+ * `INF:addressbook-color`
 
 ### Properties Overlay Control Options
 
@@ -360,3 +559,67 @@ Whitelisted ones are defined in `OVERLAY_PROPERTIES_WHITELIST` in `radicale/shar
    * supported *share* permissions: `Pp`
  * `enforce_properties_overlay`
    * supported *share* permissions: `Ee`
+
+### Properties Overlay Example
+
+#### Requirements
+
+  * sharing / permit_properties_overlay = True
+
+#### Test sequence
+
+  * Prepare XML statements
+
+```bash
+## PROPFIND color
+xml_pfc='<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:ICAL="http://apple.com/ns/ical/">
+  <prop>
+    <ICAL:calendar-color />
+  </prop>
+</propfind>'
+
+## PROPPATCH color
+xml_ppc='<?xml version="1.0"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#DDDDDD</I:calendar-color>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>'
+```
+
+  * Tests
+
+```bash
+## Retrieve collection color of owner (no color set)
+curl -u owner:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/owner/testcalendar1/
+
+## Create read-only share for user
+curl -u owner:pass -d "PathOrToken=/user/cal1-from-owner/" -d "PathMapped=/owner/testcalendar1/" -d "User=user" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/create
+
+## Accept (enable+unhide) share by user
+curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/update
+
+## Retrieve collection color of share by user (no color set)
+curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
+
+## Set property overlay by user
+curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d 'Properties="ICAL:calendar-color"="#CCCCCC"' http://localhost:5232/.sharing/v1/map/update
+
+## Retrieve collection color of share by user (color set)
+curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
+
+## Delete property overlay by user
+curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d 'Properties=' http://localhost:5232/.sharing/v1/map/update
+
+## Retrieve collection color of share by user (no color set)
+curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
+
+## Add property overlay by user using PROPPATCH
+curl -u user:pass -d "$xml_ppc" -X PROPPATCH http://localhost:5232/user/cal1-from-owner/
+
+## Retrieve collection color of share by user (color set)
+curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
+```

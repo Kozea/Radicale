@@ -191,6 +191,7 @@ class TestSharingApiSanity(BaseTest):
                                     "collection_by_token": "True"},
                         "rights": {"type": "owner_only"}})
 
+        form_array: Sequence[str]
         json_dict: dict
 
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
@@ -231,7 +232,16 @@ class TestSharingApiSanity(BaseTest):
                 _, headers, _ = self.request("POST", path, check=404, login="owner:ownerpw")
 
             # check info hook
-            logging.info("\n*** check API hook: info/all")
+            logging.info("\n*** check API hook: info/all (text)")
+            form_array = []
+            _, headers, answer = self._sharing_api_form("all", "info", check=200, login="owner:ownerpw", form_array=form_array)
+            assert "Status='success'" in answer
+            assert "PermittedCreateCollectionByMap=False" in answer
+            assert "PermittedCreateCollectionByToken=False" in answer
+            assert "FeatureEnabledCollectionByMap=True" in answer
+            assert "FeatureEnabledCollectionByToken=False" in answer
+
+            logging.info("\n*** check API hook: info/all (json)")
             json_dict = {}
             _, headers, answer = self._sharing_api_json("all", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
@@ -306,6 +316,9 @@ class TestSharingApiSanity(BaseTest):
         form_array: Sequence[str]
         json_dict: dict
 
+        self.mkcalendar("/owner/collectionL1/", login="owner:ownerpw")
+        self.mkcalendar("/owner/collectionL2/", login="owner:ownerpw")
+
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
@@ -319,13 +332,13 @@ class TestSharingApiSanity(BaseTest):
                 logging.info("\n*** list (form->csv)")
                 form_array = []
                 _, headers, answer = self._sharing_api_form(sharing_type, "list", check=200, login="owner:ownerpw", form_array=form_array)
-                assert "Status=not-found" in answer
+                assert "Status='not-found'" in answer
                 assert "Lines=0" in answer
 
                 logging.info("\n*** list (json->text)")
                 json_dict = {}
                 _, headers, answer = self._sharing_api_json(sharing_type, "list", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/plain")
-                assert "Status=not-found" in answer
+                assert "Status='not-found'" in answer
                 assert "Lines=0" in answer
 
                 logging.info("\n*** list (json->json)")
@@ -338,10 +351,10 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** create a token -> 200")
             form_array = ["PathMapped=/owner/collectionL1/"]
             _, headers, answer = self._sharing_api_form("token", "create", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
-            assert "PathOrToken=" in answer
+            assert "Status='success'" in answer
+            assert "PathOrToken='" in answer
             # extract token
-            match = re.search('PathOrToken=(.+)', answer)
+            match = re.search("PathOrToken='(.+)'", answer)
             if match:
                 token = match.group(1)
                 logging.info("received token %r", token)
@@ -359,21 +372,33 @@ class TestSharingApiSanity(BaseTest):
 
             logging.info("\n*** list/all (form->csv)")
             form_array = []
+            _, headers, answer = self._sharing_api_form("all", "list", check=200, login="owner:ownerpw", form_array=form_array, accept="text/csv")
+            assert "Status=" not in answer
+            assert "Line=" not in answer
+            assert "ShareType" in answer
+            assert "token" in answer
+            assert "map" in answer
+
+            logging.info("\n*** list/all (form->text)")
+            form_array = []
             _, headers, answer = self._sharing_api_form("all", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=2" in answer
+            assert "Fields=" in answer
+            assert "Content[0]=" in answer
+            assert "Content[1]=" in answer
 
             logging.info("\n*** delete token -> 200")
             form_array = ["PathOrToken=" + token]
             _, headers, answer = self._sharing_api_form("token", "delete", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** delete share -> 200")
             form_array = []
             form_array.append("PathOrToken=/user/collectionL2-shared-by-owner/")
             form_array.append("PathMapped=/owner/collectionL2/")
             _, headers, answer = self._sharing_api_form("map", "delete", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
     def test_sharing_api_token_basic(self) -> None:
         """share-by-token API tests."""
@@ -394,6 +419,9 @@ class TestSharingApiSanity(BaseTest):
         form_array: Sequence[str]
         json_dict: dict
 
+        path_base1 = "/owner/collection1.ics/"
+        path_base2 = "/owner/collection2.ics/"
+
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
@@ -406,13 +434,21 @@ class TestSharingApiSanity(BaseTest):
             json_dict = {}
             _, headers, answer = self._sharing_api_json("token", "create", 400, login="owner:ownerpw", json_dict=json_dict)
 
-            logging.info("\n*** create token#1 (form->text)")
-            form_array = ["PathMapped=/owner/collection1/"]
+            logging.info("\n*** create token#1 without existing collection (form->text)")
+            form_array = ["PathMapped=" + path_base1]
+            _, headers, answer = self._sharing_api_form("token", "create", check=404, login="owner:ownerpw", form_array=form_array)
+
+            logging.info("\n*** create collection*")
+            self.mkcalendar(path_base1, login="owner:ownerpw")
+            self.mkcalendar(path_base2, login="owner:ownerpw")
+
+            logging.info("\n*** create token#1 with existing collection (form->text)")
+            form_array = ["PathMapped=" + path_base1]
             _, headers, answer = self._sharing_api_form("token", "create", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
-            assert "PathOrToken=" in answer
+            assert "Status='success'" in answer
+            assert "PathOrToken='" in answer
             # extract token
-            match = re.search('PathOrToken=(.+)', answer)
+            match = re.search("PathOrToken='(.+)'", answer)
             if match:
                 token1 = match.group(1)
                 logging.info("received token %r", token1)
@@ -420,12 +456,12 @@ class TestSharingApiSanity(BaseTest):
                 assert False
 
             logging.info("\n*** create token#2 (json->text)")
-            json_dict = {'PathMapped': "/owner/collection2/"}
+            json_dict = {'PathMapped': path_base2}
             _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/plain")
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Token=" in answer
             # extract token
-            match = re.search('Token=(.+)', answer)
+            match = re.search("Token='(.+)'", answer)
             if match:
                 token2 = match.group(1)
                 logging.info("received token %r", token2)
@@ -435,16 +471,16 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** lookup token#1 (form->text)")
             form_array = ["PathOrToken=" + token1]
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
-            assert "/owner/collection1/" in answer
+            assert path_base1 in answer
 
             logging.info("\n*** lookup token#2 (json->text")
             json_dict = {'PathOrToken': token2}
             _, headers, answer = self._sharing_api_json("token", "list", check=200, login="owner:ownerpw", json_dict=json_dict, accept="text/plain")
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
-            assert "/owner/collection2/" in answer
+            assert path_base2 in answer
 
             logging.info("\n*** lookup token#2 (json->json)")
             json_dict = {'PathOrToken': token2}
@@ -452,46 +488,46 @@ class TestSharingApiSanity(BaseTest):
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
             assert answer_dict['Lines'] == 1
-            assert answer_dict['Content'][0]['PathMapped'] == "/owner/collection2/"
+            assert answer_dict['Content'][0]['PathMapped'] == path_base2
 
             logging.info("\n*** lookup tokens (form->text)")
             form_array = []
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=2" in answer
-            assert "/owner/collection1/" in answer
-            assert "/owner/collection2/" in answer
+            assert path_base1 in answer
+            assert path_base2 in answer
 
             logging.info("\n*** lookup tokens (form->csv)")
             form_array = []
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array, accept="text/csv")
-            assert "Status=success" not in answer
+            assert "Status='success'" not in answer
             assert "Lines=2" not in answer
             assert ";".join(sharing.DB_FIELDS_V1) in answer
-            assert "/owner/collection1/" in answer
-            assert "/owner/collection2/" in answer
+            assert path_base1 in answer
+            assert path_base2 in answer
 
             logging.info("\n*** delete token#1 (form->text)")
             form_array = ["PathOrToken=" + token1]
             _, headers, answer = self._sharing_api_form("token", "delete", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** lookup token#1 (form->text) -> should not be there anymore")
             form_array = ["PathOrToken=" + token1]
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=not-found" in answer
+            assert "Status='not-found'" in answer
             assert "Lines=0" in answer
 
             logging.info("\n*** lookup tokens (form->text) -> still one should be there")
             form_array = []
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
 
             logging.info("\n*** disable token#2 as owner (form->text)")
             form_array = ["PathOrToken=" + token2]
             _, headers, answer = self._sharing_api_form("token", "disable", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** lookup token#2 (json->json) -> check for not enabled")
             json_dict = {'PathOrToken': token2}
@@ -512,7 +548,7 @@ class TestSharingApiSanity(BaseTest):
             form_array = []
             form_array.append("PathOrToken=" + token2)
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
             assert "True;True;True;True" in answer
 
@@ -520,13 +556,13 @@ class TestSharingApiSanity(BaseTest):
             form_array = []
             form_array.append("PathOrToken=" + token2)
             _, headers, answer = self._sharing_api_form("token", "hide", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** lookup token#2 (form->text) -> check for hidden")
             form_array = []
             form_array.append("PathOrToken=" + token2)
             _, headers, answer = self._sharing_api_form("token", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
             assert "True;True;True;True" in answer
 
@@ -561,6 +597,10 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['Status'] == "not-found"
             assert answer_dict['Lines'] == 0
 
+            logging.info("\n*** delete collection*")
+            self.delete(path_base1, login="owner:ownerpw")
+            self.delete(path_base2, login="owner:ownerpw")
+
     def test_sharing_api_token_usage(self) -> None:
         """share-by-token API tests - real usage."""
         self.configure({"auth": {"type": "htpasswd",
@@ -590,6 +630,8 @@ class TestSharingApiSanity(BaseTest):
         path = path_base + "/event1.ics"
         self.put(path, event, login="owner:ownerpw")
 
+        self.mkcalendar(path_base2, login="owner:ownerpw")
+
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
@@ -606,10 +648,10 @@ class TestSharingApiSanity(BaseTest):
             form_array = []
             form_array.append("PathMapped=" + path_base)
             _, headers, answer = self._sharing_api_form("token", "create", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "PathOrToken=" in answer
             # extract token
-            match = re.search('PathOrToken=(.+)', answer)
+            match = re.search("PathOrToken='(.+)'", answer)
             if match:
                 token = match.group(1)
                 logging.info("received token %r", token)
@@ -620,10 +662,10 @@ class TestSharingApiSanity(BaseTest):
             form_array = []
             form_array.append("PathMapped=" + path_base2)
             _, headers, answer = self._sharing_api_form("token", "create", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "PathOrToken=" in answer
             # extract token
-            match = re.search('PathOrToken=(.+)', answer)
+            match = re.search("PathOrToken='(.+)'", answer)
             if match:
                 token2 = match.group(1)
                 logging.info("received token %r", token2)
@@ -633,7 +675,7 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** enable token (form->text)")
             form_array = ["PathOrToken=" + token]
             _, headers, answer = self._sharing_api_form("token", "enable", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** fetch collection using invalid token (without credentials)")
             _, headers, answer = self.request("GET", path_token + "v1/invalidtoken", check=401)
@@ -645,7 +687,7 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** disable token (form->text)")
             form_array = ["PathOrToken=" + token]
             _, headers, answer = self._sharing_api_form("token", "disable", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** fetch collection using disabled token (without credentials)")
             _, headers, answer = self.request("GET", path_token + token, check=401)
@@ -653,7 +695,7 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** enable token (form->text)")
             form_array = ["PathOrToken=" + token]
             _, headers, answer = self._sharing_api_form("token", "enable", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             logging.info("\n*** fetch collection using token (without credentials)")
             _, headers, answer = self.request("GET", path_token + token, check=200)
@@ -2207,7 +2249,7 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** list/all (form->csv)")
             form_array = []
             _, headers, answer = self._sharing_api_form("map", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
 
             # read collection
@@ -2227,7 +2269,7 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** list/all (form->csv)")
             form_array = []
             _, headers, answer = self._sharing_api_form("map", "list", check=200, login="owner:ownerpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
             assert "Lines=1" in answer
 
             # read collection
@@ -2415,8 +2457,23 @@ class TestSharingApiSanity(BaseTest):
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
                                     "response_content_on_debug": "False",
+                                    "rights_rule_doesnt_match_on_debug": "True",
                                     "request_content_on_debug": "True"},
                         "rights": {"type": "owner_only"}})
+
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[default-collection]
+user: .+
+collection: .+
+permissions: RrWw
+[default]
+user: .+
+collection: {user}(/.*)?
+permissions: RrWw""")
+        self.configure({"rights": {"file": rights_file_path}})
+
         json_dict: dict
 
         path_user1 = "/user1/calendarCCu1.ics/"
@@ -2440,6 +2497,9 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
+            # owner_only
+            self.configure({"rights": {"type": "owner_only"}})
+
             # create map
             logging.info("\n*** create map user1/owner1 -> ok")
             json_dict = {}
@@ -2453,7 +2513,7 @@ class TestSharingApiSanity(BaseTest):
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
 
-            logging.info("\n*** mkcalendar user1 for shared -> conflict")
+            logging.info("\n*** mkcalendar as user1 for user1/shared1 -> conflict")
             self.mkcalendar(path_user1_shared1, login="user1:user1pw", check=409)
 
             # create map
@@ -2469,7 +2529,7 @@ class TestSharingApiSanity(BaseTest):
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
 
-            logging.info("\n*** mkcol user2 for shared -> conflict")
+            logging.info("\n*** mkcol as user2 for user2/shared1 -> conflict")
             self.mkcalendar(path_user2_shared1, login="user2:user2pw", check=409)
 
             # create map
@@ -2482,6 +2542,15 @@ class TestSharingApiSanity(BaseTest):
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=409, login="owner1:owner1pw", json_dict=json_dict)
+
+            # from_file
+            self.configure({"rights": {"type": "from_file"}})
+
+            logging.info("\n*** mkcalendar as user1 for user2/shared1 with rights from file -> conflict")
+            self.mkcalendar(path_user2_shared1, login="user1:user1pw", check=409)
+
+            logging.info("\n*** mkcol as user1 for user2/shared1 with rights from file -> conflict")
+            self.mkcol(path_user2_shared1, login="user1:user1pw", check=409)
 
     def test_sharing_api_permissions_global(self) -> None:
         """sharing API usage tests related to global permissions."""
@@ -2916,7 +2985,7 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_shared_r
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
-            # verify PROPPATCH as user
+            # verify PROPFIND as user
             logging.info("\n*** PROPFIND collection user -> ok")
             propfind_calendar_color = get_file_content("propfind_multiple.xml")
             _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
@@ -2987,7 +3056,7 @@ permissions: RrWw""")
             form_array.append("Properties='C:calendar-description'='ICAL-USER-NEW'")
             form_array.append("Properties='ICAL:calendar-color'='#CCCCCC'")
             _, headers, answer = self._sharing_api_form("map", "update", check=200, login="user:userpw", form_array=form_array)
-            assert "Status=success" in answer
+            assert "Status='success'" in answer
 
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay) -> ok")
@@ -3004,11 +3073,131 @@ permissions: RrWw""")
             assert status == 200 and prop.text == "#CCCCCC"
 
             # update map by user
-            logging.info("\n*** update map by user (form)")
+            logging.info("\n*** update properties with buggyy ones by user (form)")
             form_array = ["User=" + "user"]
             form_array.append("PathOrToken=" + path_shared_r)
             form_array.append("Properties=BUGGYENTRY=BUGGYVALUE")
             _, headers, answer = self._sharing_api_form("map", "update", check=400, login="user:userpw", form_array=form_array)
+
+    def test_sharing_api_map_propfind_overlay_api_delete(self) -> None:
+        """share-by-map API usage tests related to proppatch."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "permit_properties_overlay": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        form_array: Sequence[str]
+        json_dict: dict
+
+        path_mapped = "/owner/calendarPFD.ics/"
+        path_shared_r = "/user/calendarPFD-shared-by-owner-r.ics/"
+
+        logging.info("\n*** prepare and test access")
+        self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["D:current-user-principal"]
+            assert status == 200 and len(prop) == 1
+            element = prop.find(xmlutils.make_clark("D:href"))
+            assert element is not None and element.text == "/owner/"
+
+            # create map
+            logging.info("\n*** create map user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # set properties by user
+            logging.info("\n*** set properties by user (form)")
+            form_array = []
+            form_array.append("PathOrToken=" + path_shared_r)
+            form_array.append("Properties='ICAL:calendar-color'='#CCCCCC'")
+            _, headers, answer = self._sharing_api_form("map", "update", check=200, login="user:userpw", form_array=form_array)
+
+            # check that properties are existing in map
+            logging.info("\n*** list and check for properties (json->json)")
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user:userpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == '#CCCCCC'
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
+            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int)
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 200 and prop.text == "#CCCCCC"
+
+            # clear properties by user
+            logging.info("\n*** clear properties by user (form)")
+            form_array = []
+            form_array.append("PathOrToken=" + path_shared_r)
+            form_array.append("Properties=")
+            _, headers, answer = self._sharing_api_form("map", "update", check=200, login="user:userpw", form_array=form_array)
+
+            # check that properties are cleared
+            logging.info("\n*** list and check for cleared properties (json->json)")
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user:userpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['Properties'] is not None
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay no longer exists) -> ok")
+            propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
+            _, responses = self.propfind(path_shared_r, propfind_calendar_color, login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int)
+            status, prop = response["ICAL:calendar-color"]
+            logging.debug("calendar-color: %r", prop.text)
+            assert status == 404
 
     def test_sharing_api_map_propfind_overlay_api_permissions(self) -> None:
         """share-by-map API usage tests related to proppatch."""

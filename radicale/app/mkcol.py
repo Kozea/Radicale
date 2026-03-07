@@ -62,11 +62,11 @@ class ApplicationPartMkcol(ApplicationBase):
             logger.warning("MKCOL request %r (type:%s): %s", path, collection_type, "rejected because of missing rights 'W'")
             return httputils.NOT_ALLOWED
         if self._sharing._enabled:
-            # check for shared collections (active or inactive)
-            collections_shared_map = self._sharing.sharing_collection_map_list(user, active=False)
-            if collections_shared_map:
-                for sharing in collections_shared_map:
-                    if sharing['PathOrToken'] == path:
+            # check for shared collections (all)
+            collections_share_map = self._sharing.sharing_collection_map_list()
+            if collections_share_map:
+                for share in collections_share_map:
+                    if share['PathOrToken'] == path:
                         return httputils.CONFLICT
         with self._storage.acquire_lock("w", user, path=path, request="MKCOL"):
             item = next(iter(self._storage.discover(path)), None)
