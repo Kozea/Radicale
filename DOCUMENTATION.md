@@ -2063,6 +2063,8 @@ Default: 10000
 
 _(>= 3.7.0)_
 
+See also [Collecition Sharing](https://github.com/Kozea/Radicale/blob/master/SHARING.md).
+
 ##### type
 
 _(>= 3.7.0)_
