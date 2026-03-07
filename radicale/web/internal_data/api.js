@@ -427,10 +427,27 @@ export function discover_server_features(user, password, callback) {
 }
 
 /**
+ * @typedef {Object} Share
+ * @property {string} ShareType
+ * @property {string} PathOrToken
+ * @property {string} PathMapped
+ * @property {string} Owner
+ * @property {string} User
+ * @property {string} Permissions
+ * @property {boolean} EnabledByOwner
+ * @property {boolean} EnabledByUser
+ * @property {boolean} HiddenByOwner
+ * @property {boolean} HiddenByUser
+ * @property {number} TimestampCreated
+ * @property {number} TimestampUpdated
+ * @property {string} Properties
+ */
+
+/**
  * @param {string} user
  * @param {string} password
  * @param {Collection} collection
- * @param {function(object):void} callback
+ * @param {function(Array<Share>):void} callback
  */
 export function reload_sharing_list(user, password, collection, callback) {
     call_sharing_api(
@@ -439,7 +456,8 @@ export function reload_sharing_list(user, password, collection, callback) {
         "all/list",
         { PathMapped: collection.href },
         function (response) {
-            callback(JSON.parse(response));
+            let parsed = JSON.parse(response);
+            callback(parsed["Content"] || []);
         },
     );
 }

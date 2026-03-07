@@ -104,8 +104,8 @@ function update_share_list(user, password, collection) {
     }
   });
 
-  reload_sharing_list(user, password, collection, function (response) {
-    add_share_rows(user, password, collection, response["Content"] || []);
+  reload_sharing_list(user, password, collection, function (shares) {
+    add_share_rows(user, password, collection, shares);
   });
 }
 
@@ -114,7 +114,7 @@ function update_share_list(user, password, collection) {
  * @param {string} user 
  * @param {string} password 
  * @param {Collection} collection 
- * @param {Object} share 
+ * @param {import('./api.js').Share} share 
  * @param {HTMLElement} template 
  * @param {string} delete_label 
  * @param {function(string, string, string, function():void):void} delete_action 
@@ -164,7 +164,7 @@ function add_share_row_node(user, password, collection, share, template, delete_
  * @param {string} user 
  * @param {string} password 
  * @param {Collection} collection 
- * @param {Object} shares 
+ * @param {Array<import('./api.js').Share>} shares 
  */
 function add_share_rows(user, password, collection, shares) {
   /** @type {HTMLElement} */ let token_template = document.querySelector("[data-name=sharetokenrowtemplate]");
