@@ -20,6 +20,7 @@
 
 import { add_share_by_map, add_share_by_token } from "./api.js";
 import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
+import { onCleanHREFinput } from "./utils.js";
 
 /**
  * @implements {Scene}
@@ -44,6 +45,8 @@ export class NewShareScene {
         let permissions_rw_radio = /** @type {HTMLInputElement} */ (document.getElementById("newshare_attr_permissions_rw"));
         /** @type {HTMLInputElement} */ let properties_input = html_scene.querySelector("[data-name=properties]");
         /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+
+        sharehref_input.addEventListener("input", onCleanHREFinput);
 
         /** @type {?number} */ let scene_index = null;
 

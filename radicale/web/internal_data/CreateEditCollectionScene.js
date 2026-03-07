@@ -23,18 +23,19 @@ import { create_collection, edit_collection } from "./api.js";
 import { COLOR_RE } from "./constants.js";
 import { Collection, CollectionType } from "./models.js";
 import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
-import { cleanHREFinput, isValidHREF, random_hex, random_uuid } from "./utils.js";
+import { cleanHREFinput, isValidHREF, onCleanHREFinput, random_hex, random_uuid } from "./utils.js";
 
 /**
- * @constructor
  * @implements {Scene}
- * @param {string} user
- * @param {string} password
- * @param {Collection} collection if it's a principal collection, a new
- *                                collection will be created inside of it.
- *                                Otherwise the collection will be edited.
  */
 export class CreateEditCollectionScene {
+    /**
+     * @param {string} user
+     * @param {string} password
+     * @param {Collection} collection if it's a principal collection, a new
+     *                                collection will be created inside of it.
+     *                                Otherwise the collection will be edited.
+     */
     constructor(user, password, collection) {
         let edit = collection.type !== CollectionType.PRINCIPAL;
         let html_scene = document.getElementById(edit ? "editcollectionscene" : "createcollectionscene");
@@ -69,7 +70,7 @@ export class CreateEditCollectionScene {
         let color = edit && collection.color ? collection.color : "#" + random_hex(6);
 
         if (!edit) {
-            href_form.addEventListener("keydown", cleanHREFinput);
+            href_form.addEventListener("input", onCleanHREFinput);
         }
 
         function remove_invalid_types() {
