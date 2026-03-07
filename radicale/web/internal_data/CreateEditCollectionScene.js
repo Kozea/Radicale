@@ -42,17 +42,12 @@ export class CreateEditCollectionScene {
         /** @type {HTMLElement} */ let title_form = edit ? html_scene.querySelector("[data-name=title]") : null;
         /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
         /** @type {HTMLInputElement} */ let href_form = html_scene.querySelector("[data-name=href]");
-        /** @type {HTMLElement} */ let href_label = html_scene.querySelector("label[for=href]");
         /** @type {HTMLInputElement} */ let displayname_form = html_scene.querySelector("[data-name=displayname]");
-        /** @type {HTMLElement} */ let displayname_label = html_scene.querySelector("label[for=displayname]");
         /** @type {HTMLInputElement} */ let description_form = html_scene.querySelector("[data-name=description]");
-        /** @type {HTMLElement} */ let description_label = html_scene.querySelector("label[for=description]");
         /** @type {HTMLInputElement} */ let source_form = html_scene.querySelector("[data-name=source]");
         /** @type {HTMLElement} */ let source_label = html_scene.querySelector("label[for=source]");
         /** @type {HTMLSelectElement} */ let type_form = html_scene.querySelector("[data-name=type]");
-        /** @type {HTMLElement} */ let type_label = html_scene.querySelector("label[for=type]");
         /** @type {HTMLInputElement} */ let color_form = html_scene.querySelector("[data-name=color]");
-        /** @type {HTMLElement} */ let color_label = html_scene.querySelector("label[for=color]");
         /** @type {HTMLElement} */ let submit_btn = html_scene.querySelector("[data-name=submit]");
         /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
 
@@ -119,7 +114,7 @@ export class CreateEditCollectionScene {
                 error_form.classList.remove("hidden");
             }
             error_form.classList.add("hidden");
-            onTypeChange();
+            onTypeChange(null);
             type_form.addEventListener("change", onTypeChange);
         }
 
@@ -173,8 +168,10 @@ export class CreateEditCollectionScene {
             return false;
         }
 
-
-        function onTypeChange(e) {
+        /** 
+         * @param {Event} _e
+         */
+        function onTypeChange(_e) {
             if (type_form.value == CollectionType.WEBCAL) {
                 source_label.classList.remove("hidden");
                 source_form.classList.remove("hidden");

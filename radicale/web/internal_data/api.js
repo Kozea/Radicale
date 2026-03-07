@@ -65,6 +65,7 @@ export function get_principal(user, password, callback) {
                     "",
                     "",
                     0,
+                    0,
                     ""), null);
             } else {
                 callback(null, "Internal error");

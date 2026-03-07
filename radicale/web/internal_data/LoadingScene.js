@@ -21,16 +21,17 @@
 import { Scene } from "./scene_manager.js";
 
 /**
- * @constructor
  * @implements {Scene}
  */
-export function LoadingScene() {
-    let html_scene = document.getElementById("loadingscene");
-    this.show = function() {
-        html_scene.classList.remove("hidden");
-    };
-    this.hide = function() {
-        html_scene.classList.add("hidden");
-    };
-    this.release = function() {};
+export class LoadingScene {
+    constructor() {
+        let html_scene = document.getElementById("loadingscene");
+        this.show = function () {
+            html_scene.classList.remove("hidden");
+        };
+        this.hide = function () {
+            html_scene.classList.add("hidden");
+        };
+        this.release = function () { };
+    }
 }
