@@ -19,12 +19,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { create_collection, edit_collection } from "../api/api.js";
+import { COLOR_RE } from "../constants.js";
+import { Collection, CollectionType } from "../models/collection.js";
+import { cleanHREFinput, isValidHREF, onCleanHREFinput, random_hex, random_uuid } from "../utils/misc.js";
 import { LoadingScene } from "./LoadingScene.js";
-import { create_collection, edit_collection } from "./api.js";
-import { COLOR_RE } from "./constants.js";
-import { Collection, CollectionType } from "./models.js";
 import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
-import { cleanHREFinput, isValidHREF, onCleanHREFinput, random_hex, random_uuid } from "./utils.js";
 
 /**
  * @implements {Scene}

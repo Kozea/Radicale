@@ -100,6 +100,11 @@ radicale = [
     "web/internal_data/css/main.css",
     "web/internal_data/css/icons/*.svg",
     "web/internal_data/*.js",
+    "web/internal_data/js/*.js",
+    "web/internal_data/js/api/*.js",
+    "web/internal_data/js/models/*.js",
+    "web/internal_data/js/scenes/*.js",
+    "web/internal_data/js/utils/*.js",
     "web/internal_data/index.html",
     "py.typed",
 ]
