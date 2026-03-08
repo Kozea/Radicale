@@ -1,4 +1,4 @@
-body{
+body {
     background: #ffffff;
     color: #424247;
     font-family: sans-serif;
@@ -13,11 +13,11 @@ body{
     justify-content: space-around;
 }
 
-main{
-	width: 100%;
+main {
+    width: 100%;
 }
 
-.container{
+.container {
     height: auto;
     min-height: 450px;
     width: 350px;
@@ -32,56 +32,52 @@ main{
     margin: 0 auto;
 }
 
-.container h1{
+.container h1 {
     margin: 0;
     width: 100%;
     text-align: center;
     color: #484848;
 }
 
-.container h2{
+.container h2 {
     margin: 0;
     width: 100%;
     text-align: left;
     color: #484848;
-    font-size: 1.5em;
+    font-size: 14pt;
 }
 
-#loginscene .infcloudlink{
+#loginscene .infcloudlink {
     margin: 0;
     width: 100%;
     text-align: center;
     color: #484848;
 }
 
-#loginscene .infcloudlink-hidden{
+#loginscene .infcloudlink-hidden {
     visibility: hidden;
 }
 
-#loginscene input{
-}
-
-
-#loginscene .logocontainer{
+#loginscene .logocontainer {
     width: 100%;
     text-align: center;
 }
 
-#loginscene .logocontainer img{
+#loginscene .logocontainer img {
     width: 75px;
 }
 
-#loginscene h1{
+#loginscene h1 {
     text-align: center;
     font-family: sans-serif;
     font-weight: normal;
 }
 
-#loginscene button{
+#loginscene button {
     float: right;
 }
 
-#loadingscene{
+#loadingscene {
     width: 100%;
     height: 100%;
     background: rgb(237 237 237);
@@ -97,12 +93,12 @@ main{
     z-index: 999;
 }
 
-#loadingscene h2{
+#loadingscene h2 {
     font-size: 2em;
     font-weight: bold;
 }
 
-#logoutview{
+#logoutview {
     width: 100%;
     display: block;
     background: white;
@@ -113,12 +109,12 @@ main{
     position: fixed;
 }
 
-#logoutview span{
+#logoutview span {
     width: calc(100% - 60px);
     display: inline-block;
 }
 
-#logoutview a{
+#logoutview a {
     color: white;
     text-decoration: none;
     padding: 3px 10px;
@@ -126,17 +122,17 @@ main{
     border-radius: 4px;
 }
 
-#logoutview a[data-name=logout]{
+#logoutview a[data-name=logout] {
     right: 25px;
     float: right;
 }
 
-#logoutview a[data-name=refresh]{
+#logoutview a[data-name=refresh] {
     left: 25px;
     float: left;
 }
 
-#collectionsscene{
+#collectionsscene {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
@@ -147,7 +143,7 @@ main{
     height: 100vh;
 }
 
-#collectionsscene article{
+#collectionsscene article {
     width: 275px;
     background: rgb(250, 250, 250);
     border-radius: 8px;
@@ -161,23 +157,23 @@ main{
     overflow: hidden;
 }
 
-#collectionsscene article .colorbar{
+#collectionsscene article .colorbar {
     width: 500%;
     height: 15px;
     margin: 0px -100%;
     background: #000000;
 }
 
-#collectionsscene article .title{
+#collectionsscene article .title {
     width: 100%;
     text-align: center;
     font-size: 1.5em;
     display: block;
     padding: 10px 0;
-	margin: 0;
+    margin: 0;
 }
 
-#collectionsscene article small{
+#collectionsscene article small {
     font-size: 15px;
     float: left;
     font-weight: normal;
@@ -187,21 +183,21 @@ main{
     text-align: center;
 }
 
-#collectionsscene article input[type=text]{
+#collectionsscene article input[type=text] {
     margin-bottom: 0 !important;
 }
 
-#collectionsscene article p{
+#collectionsscene article p {
     font-size: 1em;
     max-height: 130px;
     overflow: overlay;
 }
 
-#collectionsscene article:hover ul{
+#collectionsscene article:hover ul {
     visibility: visible;
 }
 
-#collectionsscene ul{
+#collectionsscene ul {
     visibility: hidden;
     display: flex;
     justify-content: space-evenly;
@@ -210,12 +206,12 @@ main{
     padding: 0;
 }
 
-#collectionsscene li{
+#collectionsscene li {
     list-style: none;
     display: block;
 }
 
-#collectionsscene li a{
+#collectionsscene li a {
     text-decoration: none !important;
     padding: 5px;
     float: left;
@@ -225,41 +221,41 @@ main{
     text-align: center;
 }
 
-#collectionsscene article small[data-name=contentcount]{
+#collectionsscene article small[data-name=contentcount] {
     font-weight: bold;
     font-style: normal;
 }
 
-#editcollectionscene p span{
-    word-wrap:break-word;
+#editcollectionscene p span {
+    word-wrap: break-word;
     font-weight: bold;
     color: #4e9a06;
 }
 
-#deletecollectionscene p span{
-    word-wrap:break-word;
+#deletecollectionscene p span {
+    word-wrap: break-word;
     font-weight: bold;
     color: #a40000;
 }
 
-#uploadcollectionscene ul{
+#uploadcollectionscene ul {
     margin: 10px -30px;
     max-height: 600px;
     overflow-y: scroll;
 }
 
-#uploadcollectionscene li{
+#uploadcollectionscene li {
     border-bottom: 1px dashed #d5d5d5;
     margin-bottom: 10px;
     padding-bottom: 10px;
 }
 
-#uploadcollectionscene div[data-name=pending]{
+#uploadcollectionscene div[data-name=pending] {
     width: 100%;
     text-align: center;
 }
 
-#uploadcollectionscene .successmessage{
+#uploadcollectionscene .successmessage {
     color: #4e9a06;
     width: 100%;
     text-align: center;
@@ -267,13 +263,18 @@ main{
     margin-top: 15px;
 }
 
-.deleteconfirmationtxt{
+#newshare input[type=text] {
+    margin-bottom: 0 !important;
+}
+
+
+.deleteconfirmationtxt {
     text-align: center;
     font-size: 1em;
     font-weight: bold;
 }
 
-.fabcontainer{
+.fabcontainer {
     display: flex;
     flex-direction: column-reverse;
     position: fixed;
@@ -281,7 +282,7 @@ main{
     right: 0;
 }
 
-.fabcontainer a{
+.fabcontainer a {
     width: 30px;
     height: 30px;
     text-decoration: none;
@@ -300,29 +301,29 @@ main{
     box-shadow: 2px 2px 7px #000000d6;
 }
 
-.title{
+.title {
     word-wrap: break-word;
     font-weight: bold;
 }
 
-.icon{
+.icon {
     width: 100%;
     height: 100%;
     filter: invert(1);
 }
 
-.small_icon{
+.small_icon {
     width: 1em;
     height: 1em;
     filter: invert(1);
 }
 
-.med_icon{
+.med_icon {
     width: 1.5em;
     height: 1.5em;
 }
 
-.badge_icon{
+.badge_icon {
     width: 1em;
     height: 1em;
     position: absolute;
@@ -334,30 +335,30 @@ main{
 }
 
 
-.smalltext{
+.smalltext {
     font-size: 75% !important;
 }
 
-.error{
+.error {
     width: 100%;
     display: block;
     text-align: center;
-    color: rgb(217,48,37);
+    color: rgb(217, 48, 37);
     font-family: sans-serif;
     clear: both;
     padding-top: 15px;
 }
 
-img.loading{
+img.loading {
     width: 150px;
     height: 150px;
 }
 
-.error::before{
+.error::before {
     content: "!";
     height: 1em;
     color: white;
-    background: rgb(217,48,37);
+    background: rgb(217, 48, 37);
     font-weight: bold;
     border-radius: 100%;
     display: inline-block;
@@ -367,7 +368,7 @@ img.loading{
     text-align: center;
 }
 
-button{
+button {
     font-size: 1em;
     padding: 7px 21px;
     color: white;
@@ -379,7 +380,8 @@ button{
     position: relative;
 }
 
-input, select{
+input,
+select {
     width: 100%;
     height: 3em;
     border-style: solid;
@@ -396,56 +398,77 @@ input.inline {
     margin-bottom: 0 !important;
 }
 
-input[type=text], input[type=password]{
+input[type=text],
+input[type=password] {
     width: calc(100% - 30px);
 }
 
-input:active, input:focus, input:focus-visible{
+input:active,
+input:focus,
+input:focus-visible {
     border-color: #2494fe !important;
     border-width: 1px !important;
 }
 
-p.red, span.red{
+input[type=radio],
+input[type=checkbox] {
+    width: auto;
+    height: 1.5em;
+    padding: 0;
+    margin: 2px;
+}
+
+p.red,
+span.red {
     color: #b50202;
 }
 
-button.red, a.red{
+button.red,
+a.red {
     background: #b50202;
     border: 1px solid #a40000;
 }
 
-button.red:hover, a.red:hover{
+button.red:hover,
+a.red:hover {
     background: #a40000;
 }
 
-button.red:active, a.red:active{
+button.red:active,
+a.red:active {
     background: #8f0000;
 }
 
-button.green, a.green{
+button.green,
+a.green {
     background: #4e9a06;
     border: 1px solid #377200;
 }
 
-button.green:hover, a.green:hover{
+button.green:hover,
+a.green:hover {
     background: #377200;
 }
 
-button.green:active, a.green:active{
+button.green:active,
+a.green:active {
     background: #285200;
 }
 
-button.blue, a.blue{
+button.blue,
+a.blue {
     background: #2494fe;
     border: 1px solid #055fb5;
 }
 
-button.blue:hover, a.blue:hover{
+button.blue:hover,
+a.blue:hover {
     background: #1578d6;
     cursor: pointer !important;
 }
 
-button.blue:active, a.blue:active{
+button.blue:active,
+a.blue:active {
     background: #055fb5;
     cursor: pointer !important;
 }
@@ -457,25 +480,25 @@ button.inline {
 }
 
 @media only screen and (max-width: 600px) {
-    #collectionsscene{
+    #collectionsscene {
         flex-direction: column !important;
         flex-wrap: nowrap;
     }
 
-    #collectionsscene article{
+    #collectionsscene article {
         height: auto;
         min-height: 375px;
     }
 
-    .container{
+    .container {
         max-width: 280px !important;
     }
 
-    #collectionsscene ul{
+    #collectionsscene ul {
         visibility: visible !important;
     }
 
-    #logoutview span{
+    #logoutview span {
         padding: 0 5px;
     }
 }

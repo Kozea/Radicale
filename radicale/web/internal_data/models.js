@@ -18,21 +18,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * @enum {string}
- */
-export const CollectionType = {
-    PRINCIPAL: "PRINCIPAL",
-    ADDRESSBOOK: "ADDRESSBOOK",
-    CALENDAR_JOURNAL_TASKS: "CALENDAR_JOURNAL_TASKS",
-    CALENDAR_JOURNAL: "CALENDAR_JOURNAL",
-    CALENDAR_TASKS: "CALENDAR_TASKS",
-    JOURNAL_TASKS: "JOURNAL_TASKS",
-    CALENDAR: "CALENDAR",
-    JOURNAL: "JOURNAL",
-    TASKS: "TASKS",
-    WEBCAL: "WEBCAL",
-    is_subset: function(a, b) {
+export class CollectionType {
+    // Private Fields
+    static #_PRINCIPAL = "PRINCIPAL";
+    static #_ADDRESSBOOK = "ADDRESSBOOK";
+    static #_CALENDAR_JOURNAL_TASKS = "CALENDAR_JOURNAL_TASKS";
+    static #_CALENDAR_JOURNAL = "CALENDAR_JOURNAL";
+    static #_CALENDAR_TASKS = "CALENDAR_TASKS";
+    static #_JOURNAL_TASKS = "JOURNAL_TASKS";
+    static #_CALENDAR = "CALENDAR";
+    static #_JOURNAL = "JOURNAL";
+    static #_TASKS = "TASKS";
+    static #_WEBCAL = "WEBCAL";
+
+    // Accessors for "get" functions only (no "set" functions)
+    static get PRINCIPAL() { return this.#_PRINCIPAL; }
+    static get ADDRESSBOOK() { return this.#_ADDRESSBOOK; }
+    static get CALENDAR_JOURNAL_TASKS() { return this.#_CALENDAR_JOURNAL_TASKS; }
+    static get CALENDAR_JOURNAL() { return this.#_CALENDAR_JOURNAL; }
+    static get CALENDAR_TASKS() { return this.#_CALENDAR_TASKS; }
+    static get JOURNAL_TASKS() { return this.#_JOURNAL_TASKS; }
+    static get CALENDAR() { return this.#_CALENDAR; }
+    static get JOURNAL() { return this.#_JOURNAL; }
+    static get TASKS() { return this.#_TASKS; }
+    static get WEBCAL() { return this.#_WEBCAL; }
+
+    static is_subset(/** @type {string} */ a, /** @type {string} */ b) {
         let components = a.split("_");
         for (let i = 0; i < components.length; i++) {
             if (b.search(components[i]) === -1) {
@@ -40,8 +51,9 @@ export const CollectionType = {
             }
         }
         return true;
-    },
-    union: function(a, b) {
+    }
+
+    static union(/** @type {string} */ a, /** @type {string} */ b) {
         if (a.search(this.ADDRESSBOOK) !== -1 || b.search(this.ADDRESSBOOK) !== -1) {
             if (a && a !== this.ADDRESSBOOK || b && b !== this.ADDRESSBOOK) {
                 throw "Invalid union: " + a + " " + b;
@@ -62,10 +74,14 @@ export const CollectionType = {
             union.push(this.WEBCAL);
         }
         return union.join("_");
-    },
-    valid_options_for_type: function(a){
+    }
+
+    /**
+     * @param {string} a
+     */
+    static valid_options_for_type(a) {
         a = a.trim().toUpperCase();
-        switch(a){
+        switch (a) {
             case CollectionType.CALENDAR_JOURNAL_TASKS:
             case CollectionType.CALENDAR_JOURNAL:
             case CollectionType.CALENDAR_TASKS:
@@ -80,24 +96,28 @@ export const CollectionType = {
                 return [a];
         }
     }
-};
+}
 
-/**
- * @constructor
- * @struct
- * @param {string} href Must always start and end with /.
- * @param {CollectionType} type
- * @param {string} displayname
- * @param {string} description
- * @param {string} color
- */
-export function Collection(href, type, displayname, description, color, contentcount, size, source) {
-    this.href = href;
-    this.type = type;
-    this.displayname = displayname;
-    this.color = color;
-    this.description = description;
-    this.source = source;
-    this.contentcount = contentcount;
-    this.size = size;
+
+export class Collection {
+    /**
+     * @param {string} href Must always start and end with /.
+     * @param {string} type
+     * @param {string} displayname
+     * @param {string} description
+     * @param {string} color
+     * @param {number} contentcount
+     * @param {number} size
+     * @param {string} source
+     */
+    constructor(href, type, displayname, description, color, contentcount, size, source) {
+        this.href = href;
+        this.type = type;
+        this.displayname = displayname;
+        this.color = color;
+        this.description = description;
+        this.source = source;
+        this.contentcount = contentcount;
+        this.size = size;
+    }
 }

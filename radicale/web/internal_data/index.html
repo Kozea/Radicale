@@ -6,244 +6,310 @@
  * Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
 -->
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Radicale Web Interface</title>
-    <link href="css/main.css" type="text/css" media="screen" rel="stylesheet">
-    <link href="css/icon.png" type="image/png" rel="icon">
-    <style>.hidden {display: none !important;}</style>
-    <script type="module" src="main.js"></script>
-  </head>
 
-  <body>
-    <nav id="logoutview" class="hidden">
-      <span data-name="user" style="word-wrap:break-word;"></span>
-      <a href="#" class="green" data-name="refresh" title="Refresh">Refresh</a>
-      <a href="#" class="red" data-name="logout" title="Logout">Logout</a>
-    </nav>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Radicale Web Interface</title>
+  <link href="css/main.css" type="text/css" media="screen" rel="stylesheet">
+  <link href="css/icon.png" type="image/png" rel="icon">
+  <style>
+    .hidden {
+      display: none !important;
+    }
+  </style>
+  <script type="module" src="main.js"></script>
+</head>
 
-    <main>
-      <section id="loadingscene">
-        <img src="css/loading.svg" alt="Loading..." class="loading">
-        <h2>Loading</h2>
-        <p>Please wait...</p>
-        <noscript>JavaScript is required</noscript>
-      </section>
+<body>
+  <nav id="logoutview" class="hidden">
+    <span data-name="user" style="word-wrap:break-word;"></span>
+    <a href="#" class="green" data-name="refresh" title="Refresh">Refresh</a>
+    <a href="#" class="red" data-name="logout" title="Logout">Logout</a>
+  </nav>
 
-      <section id="loginscene" class="container hidden">
-        <div class="infcloudlink-hidden">
-	  <form action="infcloud/" method="get" target="_blank">
-            <button class="blue" type="submit">Collection content<br>(InfCloud web client)</button>
-	  </form>
-        </div>
-        <div class="logocontainer">
-          <img src="css/logo.svg" alt="Radicale">
-	  <br>
-	  Collection management
-        </div>
-        <h1>Sign in</h1>
+  <main>
+    <section id="loadingscene">
+      <img src="css/loading.svg" alt="Loading..." class="loading">
+      <h2>Loading</h2>
+      <p>Please wait...</p>
+      <noscript>JavaScript is required</noscript>
+    </section>
+
+    <section id="loginscene" class="container hidden">
+      <div class="infcloudlink-hidden">
+        <form action="infcloud/" method="get" target="_blank">
+          <button class="blue" type="submit">Collection content<br>(InfCloud web client)</button>
+        </form>
+      </div>
+      <div class="logocontainer">
+        <img src="css/logo.svg" alt="Radicale">
         <br>
-        <form data-name="form">
-          <input data-name="user" type="text" placeholder="Username">
-          <input data-name="password" type="password" placeholder="Password">
-          <button class="green" type="submit">Next</button>
-          <span class="error" data-name="error"></span>
-        </form>
-      </section>
+        Collection management
+      </div>
+      <h1>Sign in</h1>
+      <br>
+      <form data-name="form">
+        <input data-name="user" type="text" placeholder="Username">
+        <input data-name="password" type="password" placeholder="Password">
+        <button class="green" type="submit">Next</button>
+        <span class="error" data-name="error"></span>
+      </form>
+    </section>
 
-      <section id="collectionsscene" class="hidden">
-        <div class="fabcontainer">
-          <a href="" class="green" data-name="new" title="Create a new addressbook or calendar">
-            <img src="css/icons/new.svg" class="icon" alt="➕">
-          </a>
-          <a href="" class="blue" data-name="upload" title="Upload an addressbook or calendar">
-            <img src="css/icons/upload.svg" class="icon" alt="⬆️">
-          </a>
-        </div>
-        <article data-name="collectiontemplate" class="hidden">
-          <div class="colorbar" data-name="color"></div>
-          <h3 class="title" data-name="title">Title</h3>
-          <small>
-            <span data-name="ADDRESSBOOK">Address book</span>
-            <span data-name="CALENDAR_JOURNAL_TASKS">Calendar, journal and tasks</span>
-            <span data-name="CALENDAR_JOURNAL">Calendar and journal</span>
-            <span data-name="CALENDAR_TASKS">Calendar and tasks</span>
-            <span data-name="JOURNAL_TASKS">Journal and tasks</span>
-            <span data-name="CALENDAR">Calendar</span>
-            <span data-name="JOURNAL">Journal</span>
-            <span data-name="TASKS">Tasks</span>
-            <span data-name="WEBCAL">Webcal</span>
-          </small>
-          <small data-name="contentcount"></small>
-          <input type="text" data-name="url" value="" readonly="" onfocus="this.setSelectionRange(0, 99999);">
-          <p data-name="description" style="word-wrap:break-word;">Description</p>
-          <ul>
-            <li>
-              <a href="" title="Download" class="green" data-name="download">
-                <img src="css/icons/download.svg" class="icon" alt="🔗">
-              </a>
-            </li>
-            <li>
-              <a href="" title="Edit" class="blue" data-name="edit">
-                <img src="css/icons/edit.svg" class="icon" alt="✏️">
-              </a>
-            </li>
-            <li class="hidden" data-name="shareoption">
-              <a href="" title="Share" class="blue" data-name="share">
-                <img src="css/icons/share.svg" class="icon" alt="🔗">
-              </a>
-            </li>
-            <li>
-              <a href="" title="Delete" class="red" data-name="delete">
-                <img src="css/icons/delete.svg" class="icon" alt="❌">
-              </a>
-            </li>
-          </ul>
-        </article>
-      </section>
+    <section id="collectionsscene" class="hidden">
+      <div class="fabcontainer">
+        <a href="" class="green" data-name="new" title="Create a new addressbook or calendar">
+          <img src="css/icons/new.svg" class="icon" alt="➕">
+        </a>
+        <a href="" class="blue" data-name="upload" title="Upload an addressbook or calendar">
+          <img src="css/icons/upload.svg" class="icon" alt="⬆️">
+        </a>
+      </div>
+      <article data-name="collectiontemplate" class="hidden">
+        <div class="colorbar" data-name="color"></div>
+        <h3 class="title" data-name="title">Title</h3>
+        <small>
+          <span data-name="ADDRESSBOOK">Address book</span>
+          <span data-name="CALENDAR_JOURNAL_TASKS">Calendar, journal and tasks</span>
+          <span data-name="CALENDAR_JOURNAL">Calendar and journal</span>
+          <span data-name="CALENDAR_TASKS">Calendar and tasks</span>
+          <span data-name="JOURNAL_TASKS">Journal and tasks</span>
+          <span data-name="CALENDAR">Calendar</span>
+          <span data-name="JOURNAL">Journal</span>
+          <span data-name="TASKS">Tasks</span>
+          <span data-name="WEBCAL">Webcal</span>
+        </small>
+        <small data-name="contentcount"></small>
+        <input type="text" data-name="url" value="" readonly="" onfocus="this.setSelectionRange(0, 99999);">
+        <p data-name="description" style="word-wrap:break-word;">Description</p>
+        <ul>
+          <li>
+            <a href="" title="Download" class="green" data-name="download">
+              <img src="css/icons/download.svg" class="icon" alt="🔗">
+            </a>
+          </li>
+          <li>
+            <a href="" title="Edit" class="blue" data-name="edit">
+              <img src="css/icons/edit.svg" class="icon" alt="✏️">
+            </a>
+          </li>
+          <li class="hidden" data-name="shareoption">
+            <a href="" title="Share" class="blue" data-name="share">
+              <img src="css/icons/share.svg" class="icon" alt="🔗">
+            </a>
+          </li>
+          <li>
+            <a href="" title="Delete" class="red" data-name="delete">
+              <img src="css/icons/delete.svg" class="icon" alt="❌">
+            </a>
+          </li>
+        </ul>
+      </article>
+    </section>
 
-      <section id="editcollectionscene" class="container hidden">
-        <h1>Edit Collection</h1>
-        <p>Editing collection <span class="title" data-name="title">title</span>
-        </p>
-        <form> Type: <br>
-          <select data-name="type">
-            <option value="ADDRESSBOOK">addressbook</option>
-            <option value="CALENDAR_JOURNAL_TASKS">calendar, journal and tasks</option>
-            <option value="CALENDAR_JOURNAL">calendar and journal</option>
-            <option value="CALENDAR_TASKS">calendar and tasks</option>
-            <option value="JOURNAL_TASKS">journal and tasks</option>
-            <option value="CALENDAR">calendar</option>
-            <option value="JOURNAL">journal</option>
-            <option value="TASKS">tasks</option>
-            <option value="WEBCAL">webcal</option>
-          </select>
-          <label for="displayname">Title:</label>
-          <input data-name="displayname" type="text">
-          <label for="description">Description:</label>
-          <input data-name="description" type="text">
-          <label for="source">Source:</label>
-          <input data-name="source" type="url">
-          <label for="color">Color:</label>
-          <input data-name="color" type="color">
-          <br>
-          <span class="error hidden" data-name="error"></span>
-          <br>
-          <button type="submit" class="green" data-name="submit">Save</button>
-          <button type="button" class="red" data-name="cancel">Cancel</button>
-        </form>
+    <section id="editcollectionscene" class="container hidden">
+      <h1>Edit Collection</h1>
+      <p>Editing collection <span class="title" data-name="title">title</span>
+      </p>
+      <form> Type: <br>
+        <select data-name="type">
+          <option value="ADDRESSBOOK">addressbook</option>
+          <option value="CALENDAR_JOURNAL_TASKS">calendar, journal and tasks</option>
+          <option value="CALENDAR_JOURNAL">calendar and journal</option>
+          <option value="CALENDAR_TASKS">calendar and tasks</option>
+          <option value="JOURNAL_TASKS">journal and tasks</option>
+          <option value="CALENDAR">calendar</option>
+          <option value="JOURNAL">journal</option>
+          <option value="TASKS">tasks</option>
+          <option value="WEBCAL">webcal</option>
+        </select>
+        <label for="displayname">Title:</label>
+        <input data-name="displayname" type="text">
+        <label for="description">Description:</label>
+        <input data-name="description" type="text">
+        <label for="source">Source:</label>
+        <input data-name="source" type="url">
+        <label for="color">Color:</label>
+        <input data-name="color" type="color">
+        <br>
         <span class="error hidden" data-name="error"></span>
         <br>
-      </section>
+        <button type="submit" class="green" data-name="submit">Save</button>
+        <button type="button" class="red" data-name="cancel">Cancel</button>
+      </form>
+      <span class="error hidden" data-name="error"></span>
+      <br>
+    </section>
 
-      <section id="sharecollectionscene" class="container hidden">
-        <h1>Sharing</h1>
-        <p>Manage sharing for collection <span class="title" data-name="title">title</span>
-        </p>
+    <section id="sharecollectionscene" class="container hidden">
+      <h1>Sharing</h1>
+      <p>Manage sharing for collection <span class="title" data-name="title">title</span>
+      </p>
+      <div data-name="sharebytoken">
         <h2>By Token</h2>
         <table>
           <tbody>
             <tr data-name="sharetokenrowtemplate" class="hidden">
               <td>
-              <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg" class="small_icon" alt="Share"></button>
+                <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
+                    class="small_icon" alt="Delete"></button>
               </td>
-              <td><img
-                src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw"/><img
-                src="css/icons/eye.svg" class="med_icon" alt="RO" data-name="ro"/></td>
-              <td><input type="text" data-name="pathortoken" value="" readonly="" onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
+              <td><img src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw" /><img src="css/icons/eye.svg"
+                  class="med_icon" alt="RO" data-name="ro" /></td>
+              <td><input type="text" data-name="pathortoken" value="" readonly=""
+                  onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
             </tr>
             <tr>
               <td></td>
               <td></td>
-              <td><button type="button" class="blue inline" data-name="sharebytoken_ro"><img
-                  src="css/icons/eye.svg" class="small_icon" alt="RO"><img
-                  src="css/icons/new.svg" class="badge_icon" alt="New"></button>&nbsp;
-                <button type="button" class="blue inline" data-name="sharebytoken_rw"><img
-                  src="css/icons/edit.svg" class="small_icon" alt="RW"><img
-                  src="css/icons/new.svg" class="badge_icon" alt="New"></button></td>
+              <td><button type="button" class="blue inline" data-name="sharebytoken"><img src="css/icons/new.svg"
+                    class="small_icon" alt="New Share by Token"></button>
+              </td>
             </tr>
           </tbody>
         </table>
-        <form>
-          <button type="button" class="green" data-name="cancel">Close</button>
-        </form>
-      </section>
+      </div>
+      <div data-name="sharebymap">
+        <h2>By Map</h2>
+        <table>
+          <tbody>
+            <tr data-name="sharemaprowtemplate" class="hidden">
+              <td>
+                <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
+                    class="small_icon" alt="Delete"></button>
+              </td>
+              <td><img src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw" /><img src="css/icons/eye.svg"
+                  class="med_icon" alt="RO" data-name="ro" /></td>
+              <td><input type="text" data-name="pathortoken" value="" readonly=""
+                  onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td>
+                <button type="button" class="blue inline" data-name="sharebymap">
+                  <img src="css/icons/new.svg" class="small_icon" alt="New Share by Map">
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <form>
+        <button type="button" class="green" data-name="cancel">Close</button>
+      </form>
+    </section>
 
-      <section id="createcollectionscene" class="container hidden">
-        <h1>Create a new Collection</h1>
-        <p>Enter the details of your new collection.</p>
-        <form> Type: <br>
-          <select data-name="type">
-            <option value="ADDRESSBOOK">Address book</option>
-            <option value="CALENDAR_JOURNAL_TASKS">Calendar, journal and tasks</option>
-            <option value="CALENDAR_JOURNAL">Calendar and journal</option>
-            <option value="CALENDAR_TASKS">Calendar and tasks</option>
-            <option value="JOURNAL_TASKS">Journal and tasks</option>
-            <option value="CALENDAR">Calendar</option>
-            <option value="JOURNAL">Journal</option>
-            <option value="TASKS">Tasks</option>
-            <option value="WEBCAL">Webcal</option>
-          </select>
-          <label for="href">HREF:</label>
-          <input data-name="href" type="text">
-          <label for="displayname">Title:</label>
-          <input data-name="displayname" type="text">
-          <label for="description">Description:</label>
-          <input data-name="description" type="text">
-          <label for="source">Source:</label>
-          <input data-name="source" type="url">
-          <label for="color">Color:</label>
-          <input data-name="color" type="color">
+    <section id="newshare" class="container hidden">
+      <h1>New Share</h1>
+      <form>
+        <fieldset data-name="sharemapfields" class="hidden">
+          <legend>Map Target</legend>
+          <label for="newshare_attr_shareuser">Share User</label>
+          <input type="text" data-name="shareuser" id="newshare_attr_shareuser" />
+          <label for="newshare_attr_sharehref">Share Href</label>
+          <input type="text" data-name="sharehref" id="newshare_attr_sharehref" />
+        </fieldset>
+        <fieldset>
+          <legend>Attributes</legend>
+          <input type="checkbox" data-name="enabled" checked="true" id="newshare_attr_enabled" /><label
+            for="newshare_attr_enabled">Enabled</label>
+          <input type="checkbox" data-name="hidden" checked="false" id="newshare_attr_hidden" /><label
+            for="newshare_attr_hidden">Hidden</label>
+        </fieldset>
+        <fieldset>
+          <legend>Permissions</legend>
+          <input type="radio" data-name="permissions" checked="true" id="newshare_attr_permissions_ro"
+            name="newshare_permissions"><label for="newshare_attr_permissions_ro">Readonly</label>
+          <input type="radio" data-name="permissions" checked="false" id="newshare_attr_permissions_rw"
+            name="newshare_permissions" /><label for="newshare_attr_permissions_rw">Read/Write</label>
+        </fieldset>
+        <fieldset>
+          <legend>Properties override</legend>
+          <input type="text" data-name="properties" />
+        </fieldset>
+        <button type="submit" class="green" data-name="submit">Create</button>
+        <button type="button" class="red" data-name="cancel">Cancel</button>
+      </form>
+    </section>
+
+    <section id="createcollectionscene" class="container hidden">
+      <h1>Create a new Collection</h1>
+      <p>Enter the details of your new collection.</p>
+      <form> Type: <br>
+        <select data-name="type">
+          <option value="ADDRESSBOOK">Address book</option>
+          <option value="CALENDAR_JOURNAL_TASKS">Calendar, journal and tasks</option>
+          <option value="CALENDAR_JOURNAL">Calendar and journal</option>
+          <option value="CALENDAR_TASKS">Calendar and tasks</option>
+          <option value="JOURNAL_TASKS">Journal and tasks</option>
+          <option value="CALENDAR">Calendar</option>
+          <option value="JOURNAL">Journal</option>
+          <option value="TASKS">Tasks</option>
+          <option value="WEBCAL">Webcal</option>
+        </select>
+        <label for="href">HREF:</label>
+        <input data-name="href" type="text">
+        <label for="displayname">Title:</label>
+        <input data-name="displayname" type="text">
+        <label for="description">Description:</label>
+        <input data-name="description" type="text">
+        <label for="source">Source:</label>
+        <input data-name="source" type="url">
+        <label for="color">Color:</label>
+        <input data-name="color" type="color">
+        <br>
+        <span class="error" data-name="error"></span>
+        <br>
+        <button type="submit" class="green" data-name="submit">Create</button>
+        <button type="button" class="red" data-name="cancel">Cancel</button>
+      </form>
+      <span class="error hidden" data-name="error"></span>
+      <br>
+    </section>
+
+    <section id="uploadcollectionscene" class="container hidden">
+      <h1>Upload Collection</h1>
+      <ul>
+        <li data-name="filetemplate" class="hidden"> Uploading <span data-name="name">name</span>
           <br>
+          <span class="successmessage" data-name="success">Uploaded Successfully!</span>
           <span class="error" data-name="error"></span>
-          <br>
-          <button type="submit" class="green" data-name="submit">Create</button>
-          <button type="button" class="red" data-name="cancel">Cancel</button>
-        </form>
-        <span class="error hidden" data-name="error"></span>
-        <br>
-      </section>
+        </li>
+      </ul>
+      <div data-name="pending" class="hidden">
+        <img src="css/loading.svg" class="loading" alt="Please wait..." />
+      </div>
+      <form>
+        <label for="uploadfile">File:</label>
+        <input data-name="uploadfile" type="file" accept=".ics, .vcf" multiple>
+        <label for="href">HREF:</label>
+        <input data-name="href" type="text">
+        <small data-name="hreflimitmsg" class="hidden">You can only specify the HREF if you upload 1 file.</small>
+        <button type="submit" class="green" data-name="submit">Upload</button>
+        <button type="button" class="red" data-name="close">Close</button>
+      </form>
+      <span class="error hidden" data-name="error"></span>
+      <br>
+    </section>
 
-      <section id="uploadcollectionscene" class="container hidden">
-        <h1>Upload Collection</h1>
-        <ul>
-          <li data-name="filetemplate" class="hidden"> Uploading <span data-name="name">name</span>
-            <br>
-            <span class="successmessage" data-name="success">Uploaded Successfully!</span>
-            <span class="error" data-name="error"></span>
-          </li>
-        </ul>
-        <div data-name="pending" class="hidden">
-          <img src="css/loading.svg" class="loading" alt="Please wait..."/>
-        </div>
-        <form>
-          <label for="uploadfile">File:</label>
-          <input data-name="uploadfile" type="file" accept=".ics, .vcf" multiple>
-          <label for="href">HREF:</label>
-          <input data-name="href" type="text">
-          <small data-name="hreflimitmsg" class="hidden">You can only specify the HREF if you upload 1 file.</small>
-          <button type="submit" class="green" data-name="submit">Upload</button>
-          <button type="button" class="red" data-name="close">Close</button>
-        </form>
-        <span class="error hidden" data-name="error"></span>
-        <br>
-      </section>
+    <section id="deletecollectionscene" class="container hidden">
+      <h1>Delete Collection</h1>
+      <p>To delete the collection <span class="title" data-name="title">title</span> please enter the phrase <strong
+          data-name="deleteconfirmationtext"></strong> in the box below:</p>
+      <input type="text" class="deleteconfirmationtxt" data-name="confirmationtxt" />
+      <p class="red">WARNING: This action cannot be reversed.</p>
+      <form>
+        <button type="button" class="red" data-name="delete">Delete</button>
+        <button type="button" class="blue" data-name="cancel">Cancel</button>
+      </form>
+      <span class="error hidden" data-name="error"></span>
+      <br>
+    </section>
 
-      <section id="deletecollectionscene" class="container hidden">
-        <h1>Delete Collection</h1>
-        <p>To delete the collection <span class="title" data-name="title">title</span> please enter the phrase <strong data-name="deleteconfirmationtext"></strong> in the box below:</p>
-        <input type="text" class="deleteconfirmationtxt" data-name="confirmationtxt" />
-        <p class="red">WARNING: This action cannot be reversed.</p>
-        <form>
-          <button type="button" class="red" data-name="delete">Delete</button>
-          <button type="button" class="blue" data-name="cancel">Cancel</button>
-        </form>
-        <span class="error hidden" data-name="error"></span>
-        <br>
-      </section>
+  </main>
+</body>
 
-    </main>
-  </body>
 </html>

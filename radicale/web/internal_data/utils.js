@@ -25,11 +25,11 @@
  */
 export function escape_xml(s) {
     return (s
-            .replace(/&/g, "&amp;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&apos;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;"));
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;"));
 }
 
 /**
@@ -47,19 +47,18 @@ export function random_uuid() {
 export function random_hex(length) {
     let bytes = new Uint8Array(Math.ceil(length / 2));
     window.crypto.getRandomValues(bytes);
-    return bytes.reduce((s, b) => s + b.toString(16).padStart(2, "0"), "").substring(0, length);
+    // Fallback for compatibility with older browsers which may not have padStart
+    return bytes.reduce((s, b) => {
+        let hex = b.toString(16);
+        return s + (String.prototype["padStart"] ? hex["padStart"](2, "0") : ("0" + hex).slice(-2));
+    }, "").substring(0, length);
 }
 
 /**
  * Removed invalid HREF characters for a collection HREF.
- *
- * @param a A valid Input element or an onchange Event of an Input element.
+ * @param {HTMLInputElement} href_form A valid Input element or an onchange Event of an Input element.
  */
-export function cleanHREFinput(a) {
-    let href_form = a;
-    if (a.target) {
-        href_form = a.target;
-    }
+export function cleanHREFinput(href_form) {
     let currentTxtVal = href_form.value.trim().toLowerCase();
     //Clean the HREF to remove not permitted chars
     currentTxtVal = currentTxtVal.replace(/(?![0-9a-z\-\_\.])./g, '');
@@ -69,10 +68,18 @@ export function cleanHREFinput(a) {
 }
 
 /**
+ * Event listener for cleaning HREF input.
+ * @param {Event} event
+ */
+export function onCleanHREFinput(event) {
+    if (event.target instanceof HTMLInputElement) {
+        cleanHREFinput(event.target);
+    }
+}
+
+/**
  * Checks if a proposed HREF for a collection has a valid format and syntax.
- *
- * @param href String of the porposed HREF.
- *
+ * @param {string} href String of the proposed HREF.
  * @return Boolean results if the HREF is valid.
  */
 export function isValidHREF(href) {
@@ -88,16 +95,15 @@ export function isValidHREF(href) {
 
 /**
  * Format bytes to human-readable text.
- *
- * @param bytes Number of bytes.
- *
+ * @param {number} bytes Number of bytes.
  * @return Formatted string.
  */
-export function bytesToHumanReadable(bytes, dp=1) {
-    let isNumber = !isNaN(parseFloat(bytes)) && !isNaN(bytes - 0);
-    if(!isNumber){
+export function bytesToHumanReadable(bytes) {
+    if (isNaN(bytes - 0)) {
         return "";
     }
-    var i = bytes == 0 ? 0 : Math.floor(Math.log(bytes) / Math.log(1024));
-    return (bytes / Math.pow(1024, i)).toFixed(dp) * 1 + ' ' + ['b', 'kb', 'mb', 'gb', 'tb'][i];
+    const units = ['b', 'kb', 'mb', 'gb', 'tb'];
+    let i = bytes == 0 ? 0 : Math.floor(Math.log(bytes) / Math.log(1024));
+    i = Math.min(i, units.length - 1);
+    return (bytes / Math.pow(1024, i)) + ' ' + units[i];
 }
