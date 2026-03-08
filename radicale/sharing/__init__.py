@@ -34,9 +34,6 @@ from radicale.log import logger
 INTERNAL_TYPES: Sequence[str] = ("csv", "files", "none")
 
 DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Owner', 'User', 'Permissions', 'EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser', 'TimestampCreated', 'TimestampUpdated', 'Properties')
-DB_FIELDS_V1_BOOL: Sequence[str] = ('EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser')
-DB_FIELDS_V1_INT: Sequence[str] = ('TimestampCreated', 'TimestampUpdated')
-DB_FIELDS_V1_USER_PERMITTED: Sequence[str] = ('EnabledByUser', 'HiddenByUser', 'Properties')
 # ShareType:        <token|map>
 # PathOrToken:      <path|token> [PrimaryKey]
 # PathMapped:       <path>
@@ -49,9 +46,28 @@ DB_FIELDS_V1_USER_PERMITTED: Sequence[str] = ('EnabledByUser', 'HiddenByUser', '
 # HiddenByUser:     True|False (share exposure controlled by user) - check skipped if Owner==User
 # TimestampCreated: <unixtime> (when created)
 # TimestampUpdated: <unixtime> (last update)
-# Properties:       Overlay of collection properties
+# Properties:       Overlay of collection properties in JSON
+
+DB_TYPES_V1: dict[str, type] = {
+        "ShareType": str,
+        "PathOrToken": str,
+        "PathMapped": str,
+        "Owner": str,
+        "User": str,
+        "Permissions": str,
+        "EnabledByOwner": bool,
+        "HiddenByOwner": bool,
+        "EnabledByUser": bool,
+        "HiddenByUser": bool,
+        "TimestampCreated": int,
+        "TimestampUpdated": int,
+        "Properties": dict
+}
+
+DB_FIELDS_V1_USER_PERMITTED: Sequence[str] = ('EnabledByUser', 'HiddenByUser', 'Properties')
 
 SHARE_TYPES: Sequence[str] = ('token', 'map', 'all')
+
 SHARE_TYPES_V1: Sequence[str] = ('token', 'map')
 # token: share by secret token (does not require authentication)
 # map  : share by mapping collection of one user to another as virtual
@@ -80,13 +96,13 @@ API_TYPES_V1: dict[str, type] = {
         "PermittedCreateCollectionByToken": bool,
         "ShareType": str,
         "PathOrToken": str,
-        "PathMapped:": str,
+        "PathMapped": str,
         "Owner": str,
         "User": str,
         "Permissions": str,
         "Enabled": bool,
         "Hidden": bool,
-        "Properties": str}
+        "Properties": dict}
 
 TOKEN_PATTERN_V1: str = "(v1/[a-zA-Z0-9_=\\-]{44})"
 
@@ -261,6 +277,16 @@ class BaseSharing:
         with self._storage.acquire_lock("r"):
             for entry in self.database_list_sharing():
                 logger.debug("analyze: %r", entry)
+
+                # check type
+                for fieldname in entry:
+                    if fieldname not in DB_TYPES_V1:
+                        logger.error("sharing database row error, unsupported fieldname found: %r", fieldname)
+                        return False
+                    if type(entry[fieldname]) is not DB_TYPES_V1[fieldname]:
+                        logger.error("sharing database entry type error fieldname=%r is %r should %r entry=%r", fieldname, type(fieldname), DB_TYPES_V1[fieldname], entry)
+                        return False
+
                 if entry['ShareType'] not in SHARE_TYPES_V1:
                     logger.error("ShareType not supported: %r", entry['ShareType'])
                     return False
@@ -273,6 +299,14 @@ class BaseSharing:
                         return False
                 else:
                     pass
+
+                # permissions
+                try:
+                    # test
+                    config.rights_permission(entry['Permissions'])
+                except ValueError:
+                    logger.error("Permissions contain invalid entry: %r", entry['Permissions'])
+                    return False
 
                 # check PathMapped exists
                 with self._storage.acquire_lock("r", path=entry['PathMapped']):
@@ -921,6 +955,29 @@ class BaseSharing:
             if share is None:
                 return httputils.NOT_FOUND
 
+            if 'Properties' in request_data:
+                if Properties is None:
+                    # clear properties
+                    Properties = {}
+                elif Properties == {}:
+                    # empty, nothing to do
+                    pass
+                elif share['Properties'] is not None:
+                    # replace properties
+                    for prop in share['Properties']:
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug("TRACE/" + api_info + ": check for existing property %r", prop)
+                        if prop not in Properties:
+                            # overtake
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug("TRACE/" + api_info + ": overtake property %r", prop)
+                            Properties[prop] = share['Properties'][prop]
+                        elif Properties[prop] == '':
+                            # unset, do nothing
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug("TRACE/" + api_info + ": clear property %r", prop)
+                            del Properties[prop]
+
             if user == share['Owner']:
                 if PathMapped is not None:
                     # check access Permissions
@@ -928,10 +985,6 @@ class BaseSharing:
                     if not access.check("r") and "i" not in access.permissions:
                         logger.warning(api_info + ": access to %r not allowed for user %r", PathMapped, user)
                         return httputils.NOT_ALLOWED
-
-                if 'Properties' in request_data and Properties is None:
-                    # clear properties
-                    Properties = {}
 
                 result = self.database_update_sharing(
                        ShareType=ShareType,
@@ -966,10 +1019,6 @@ class BaseSharing:
                             logger.warning(api_info + ": %r properties overlay denied by option", PathOrToken)
                             return httputils.NOT_ALLOWED
                         return httputils.NOT_ALLOWED
-
-                if 'Properties' in request_data and Properties is None:
-                    # clear properties
-                    Properties = {}
 
                 # limited update as user
                 result = self.database_update_sharing(

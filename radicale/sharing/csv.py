@@ -15,6 +15,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import csv
+import json
 import logging
 import os
 from typing import Union
@@ -406,21 +407,39 @@ class Sharing(sharing.BaseSharing):
                                 return False
                     # convert txt to bool or int
                     if self._lines > 0:
-                        for fieldname in sharing.DB_FIELDS_V1_BOOL:
-                            try:
-                                row[fieldname] = config._convert_to_bool(row[fieldname])
-                            except Exception as e:
-                                logger.error("sharing database row error fieldname=%r row=%r error: %r", fieldname, row, e)
-                        for fieldname in sharing.DB_FIELDS_V1_INT:
-                            row[fieldname] = int(row[fieldname])
+                        for fieldname in row:
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug("TRACE/sharing/_load: test fieldname=%r", fieldname)
+                            if fieldname not in sharing.DB_TYPES_V1:
+                                logger.error("sharing database row error, unsupported fieldname found: %r", fieldname)
+                                return False
+                            if sharing.DB_TYPES_V1[fieldname] is bool:
+                                try:
+                                    row[fieldname] = config._convert_to_bool(row[fieldname])
+                                except Exception as e:
+                                    logger.error("sharing database row error in type conversion fieldname=%r row=%r error: %r", fieldname, row, e)
+                                    return False
+                            elif sharing.DB_TYPES_V1[fieldname] is int:
+                                try:
+                                    row[fieldname] = int(row[fieldname])
+                                except Exception as e:
+                                    logger.error("sharing database row error in type conversion fieldname=%r row=%r error: %r", fieldname, row, e)
+                                    return False
+                            elif sharing.DB_TYPES_V1[fieldname] is dict:
+                                if row[fieldname] is None or row[fieldname] == '':
+                                    row[fieldname] = {}
+                                else:
+                                    field = row[fieldname].lstrip('"').rstrip('"').replace("'", '"')
+                                    try:
+                                        row[fieldname] = json.loads(field)
+                                    except Exception as e:
+                                        logger.error("sharing database row error in type conversion fieldname=%r field=%r row=%r error: %r", fieldname, field, row, e)
+                                        return False
                     # check for duplicates
-                    dup = False
                     for row_cached in self._sharing_cache:
                         if row == row_cached:
-                            dup = True
-                            break
-                    if dup:
-                        continue
+                            logger.error("sharing database row duplicate row=%r", row)
+                            return False
                     # logger.debug("sharing database load add: %r", row)
                     self._sharing_cache.append(row)
                     self._lines += 1

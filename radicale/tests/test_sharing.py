@@ -77,7 +77,7 @@ class TestSharingApiSanity(BaseTest):
         response = responses[path]
         assert not isinstance(response, int)
         status, prop = response["ICAL:calendar-color"]
-        logging.debug("calendar-color: %r", prop.text)
+        logging.debug("ICAL:calendar-color: %r", prop.text)
         assert status == 200
         return prop.text
 
@@ -112,6 +112,56 @@ class TestSharingApiSanity(BaseTest):
         response = responses[path]
         assert not isinstance(response, int) and len(response) == 1
         status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        return
+
+    def _propfind_calendar_description(self, path, login):
+        _, responses = self.propfind(path=path, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav" />
+  </D:prop>
+</D:propfind>""", login=login)
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int)
+        status, prop = response["C:calendar-description"]
+        logging.debug("C:calendar-description: %r", prop.text)
+        assert status == 200
+        return prop.text
+
+    def _proppatch_calendar_description(self, path, login, description) -> None:
+        _, responses = self.proppatch(path=path, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:set>
+<D:prop>
+  <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">""" + description + """</C:calendar-description>
+</D:prop>
+</D:set>
+</D:propertyupdate>""", login=login)
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["C:calendar-description"]
+        assert status == 200 and not prop.text
+        return
+
+    def _proppatch_calendar_description_remove(self, path, login) -> None:
+        _, responses = self.proppatch(path=path, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:remove>
+<D:prop>
+  <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav" />
+</D:prop>
+</D:remove>
+</D:propertyupdate>""", login=login)
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["C:calendar-description"]
         assert status == 200 and not prop.text
         return
 
@@ -3320,6 +3370,16 @@ permissions: RrWw""")
             color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
             assert color == "#BBBBBB"
 
+            # one property have to be visible
+            logging.info("\n*** list check for one property (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#BBBBBB"
+
             # update map by owner
             logging.info("\n*** update map by owner (disable property overlay)")
             json_dict = {}
@@ -3346,6 +3406,16 @@ permissions: RrWw""")
             json_dict['Properties'] = {"ICAL:calendar-color": "#CCCCCC"}
             _, headers, answer = self._sharing_api_json("map", "update", check=403, login="user:userpw", json_dict=json_dict)
 
+            # one property have to be visible
+            logging.info("\n*** list check for one property (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#BBBBBB"
+
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay) -> ok")
             color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
@@ -3359,6 +3429,16 @@ permissions: RrWw""")
             json_dict['Permissions'] = "rP"
             json_dict['User'] = "user"
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # one property have to be visible
+            logging.info("\n*** list check for one property (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#BBBBBB"
 
             logging.info("\n*** update map by user (json) -> 200 (overlay permitted by share permissions)")
             json_dict = {}
@@ -3380,6 +3460,16 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_shared_r
             json_dict['Permissions'] = "rp"
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # one property have to be visible
+            logging.info("\n*** list check for one property (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#CCCCCC"
 
             logging.info("\n*** update map by user (json) -> 403 (overlay permitted but denied by share permissions)")
             json_dict = {}
@@ -3591,3 +3681,274 @@ permissions: RrWw""")
             logging.info("\n*** PROPFIND collection owner (visible change) -> ok")
             color = self._propfind_calendar_color(path_mapped, login="owner:ownerpw")
             assert color == "#FFFFFF"
+
+    def test_sharing_api_map_propfind_overlay_partial(self) -> None:
+        """share-by-map API usage tests related to partial overlay."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/calendarPFP-" + db_type + ".ics/"
+            path_shared_r = "/user/calendarPFP-shared-by-owner-r-" + db_type + ".ics/"
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["D:current-user-principal"]
+            assert status == 200 and len(prop) == 1
+            element = prop.find(xmlutils.make_clark("D:href"))
+            assert element is not None and element.text == "/owner/"
+
+            # execute PROPPATCH color as owner
+            logging.info("\n*** PROPPATCH color collection owner -> ok")
+            self._proppatch_calendar_color(path_mapped, login="owner:ownerpw", color="#AAAAAA")
+
+            # verify PROPPATCH color by owner
+            logging.info("\n*** PROPFIND color collection owner (verify collection change) -> ok")
+            color = self._propfind_calendar_color(path_mapped, login="owner:ownerpw")
+            assert color == "#AAAAAA"
+
+            # execute PROPPATCH description as owner
+            logging.info("\n*** PROPPATCH description collection owner -> ok")
+            self._proppatch_calendar_description(path_mapped, login="owner:ownerpw", description="OWNER")
+
+            # verify PROPPATCH description by owner
+            logging.info("\n*** PROPFIND description collection owner (verify collection change) -> ok")
+            description = self._propfind_calendar_description(path_mapped, login="owner:ownerpw")
+            assert description == "OWNER"
+
+            # create map
+            logging.info("\n*** create map user/owner:rP -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # verify PROPPATCH as user
+            logging.info("\n*** PROPFIND color collection collection user -> ok")
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#AAAAAA"
+
+            logging.info("\n*** PROPFIND description collection collection user -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == "OWNER"
+
+            # execute PROPPATCH color as user
+            logging.info("\n*** PROPPATCH color collection user -> ok")
+            self._proppatch_calendar_color(path_shared_r, login="user:userpw", color="#BBBBBB")
+
+            # one property has to be visible
+            logging.info("\n*** list (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#BBBBBB"
+
+            # execute PROPPATCH description as user
+            logging.info("\n*** PROPPATCH description collection user -> ok")
+            self._proppatch_calendar_description(path_shared_r, login="user:userpw", description="USER")
+
+            # both properties have to be visible
+            logging.info("\n*** list check for both properties (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#BBBBBB"
+            assert 'C:calendar-description' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['C:calendar-description'] == "USER"
+
+            # verify PROPPATCH as user
+            logging.info("\n*** PROPFIND color collection collection user -> ok")
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#BBBBBB"
+
+            logging.info("\n*** PROPFIND description collection collection user -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == "USER"
+
+            # execute PROPPATCH DELETE description as user
+            logging.info("\n*** PROPPATCH DELETE description collection user -> ok")
+            self._proppatch_calendar_description_remove(path_shared_r, login="user:userpw")
+
+            # one property has to survive
+            logging.info("\n*** list check for still one property (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#BBBBBB"
+
+            # set properties by user using API
+            logging.info("\n*** set properties by user color overwrite (form)")
+            form_array = []
+            form_array.append("PathOrToken=" + path_shared_r)
+            form_array.append("Properties='ICAL:calendar-color'='#CCCCCC'")
+            _, headers, answer = self._sharing_api_form("map", "update", check=200, login="user:userpw", form_array=form_array)
+
+            # one property has to survive
+            logging.info("\n*** list check for still one property (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#CCCCCC"
+            assert 'C:calendar-description' not in answer_dict['Content'][0]['Properties']
+
+            # set property by user using API
+            logging.info("\n*** set properties by user description extension (form)")
+            form_array = []
+            form_array.append("PathOrToken=" + path_shared_r)
+            form_array.append("Properties='C:calendar-description'='USER-OWNER'")
+            _, headers, answer = self._sharing_api_form("map", "update", check=200, login="user:userpw", form_array=form_array)
+
+            # both properties have to be visible
+            logging.info("\n*** list check for both properties (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#CCCCCC"
+            assert 'C:calendar-description' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['C:calendar-description'] == "USER-OWNER"
+
+            # delete property by user using API
+            logging.info("\n*** delete property by user color (form)")
+            form_array = []
+            form_array.append("PathOrToken=" + path_shared_r)
+            form_array.append("Properties='ICAL:calendar-color'=''")
+            _, headers, answer = self._sharing_api_form("map", "update", check=200, login="user:userpw", form_array=form_array)
+
+            # only one property has to be visible
+            logging.info("\n*** list check for single properties (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' not in answer_dict['Content'][0]['Properties']
+            assert 'C:calendar-description' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['C:calendar-description'] == "USER-OWNER"
+
+            # clear all propertie by user using API
+            logging.info("\n*** delete property by user color (form)")
+            form_array = []
+            form_array.append("PathOrToken=" + path_shared_r)
+            form_array.append("Properties=")
+            _, headers, answer = self._sharing_api_form("map", "update", check=200, login="user:userpw", form_array=form_array)
+
+            # no property has to be visible
+            logging.info("\n*** list check empty properties (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' not in answer_dict['Content'][0]['Properties']
+            assert 'C:calendar-description' not in answer_dict['Content'][0]['Properties']
+
+            # set properties by user using API
+            logging.info("\n*** set properties by user (json)")
+            json_dict = {}
+            json_dict["PathOrToken"] = path_shared_r
+            json_dict["Properties"] = {'C:calendar-description': 'USER-OWNER', 'ICAL:calendar-color': '#DDDDDD'}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="user:userpw", json_dict=json_dict)
+
+            # both properties have to be visible
+            logging.info("\n*** list check for both properties (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert 'C:calendar-description' in answer_dict['Content'][0]['Properties']
+
+            # delete on property by user using API
+            logging.info("\n*** delete property by user color (json)")
+            json_dict = {}
+            json_dict["PathOrToken"] = path_shared_r
+            json_dict["Properties"] = {'C:calendar-description': ''}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="user:userpw", json_dict=json_dict)
+
+            # one property have to be visible
+            logging.info("\n*** list check for one property (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert 'C:calendar-description' not in answer_dict['Content'][0]['Properties']
+
+            # delete all propertie by user using API
+            logging.info("\n*** delete all properties by user (json)")
+            json_dict = {}
+            json_dict["PathOrToken"] = path_shared_r
+            json_dict["Properties"] = {}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="user:userpw", json_dict=json_dict)
+
+            # no property has to be visible
+            logging.info("\n*** list check empty properties (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' not in answer_dict['Content'][0]['Properties']
+            assert 'C:calendar-description' not in answer_dict['Content'][0]['Properties']
