@@ -3,6 +3,7 @@
  * Copyright © 2017-2024 Unrud <unrud@outlook.com>
  * Copyright © 2023-2024 Matthew Hana <matthew.hana@gmail.com>
  * Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+ * Copyright © 2026-2026 Max Berger <max@berger.name>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
