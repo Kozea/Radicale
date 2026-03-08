@@ -921,6 +921,29 @@ class BaseSharing:
             if share is None:
                 return httputils.NOT_FOUND
 
+            if 'Properties' in request_data:
+                if Properties is None:
+                    # clear properties
+                    Properties = {}
+                elif Properties == {}:
+                    # empty, nothing to do
+                    pass
+                else:
+                    # replace properties
+                    for prop in share['Properties']:
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug("TRACE/" + api_info + ": check for existing property %r", prop)
+                        if prop not in Properties:
+                            # overtake
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug("TRACE/" + api_info + ": overtake property %r", prop)
+                            Properties[prop] = share['Properties'][prop]
+                        elif Properties[prop] == '':
+                            # unset, do nothing
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug("TRACE/" + api_info + ": clear property %r", prop)
+                            del Properties[prop]
+
             if user == share['Owner']:
                 if PathMapped is not None:
                     # check access Permissions
@@ -928,10 +951,6 @@ class BaseSharing:
                     if not access.check("r") and "i" not in access.permissions:
                         logger.warning(api_info + ": access to %r not allowed for user %r", PathMapped, user)
                         return httputils.NOT_ALLOWED
-
-                if 'Properties' in request_data and Properties is None:
-                    # clear properties
-                    Properties = {}
 
                 result = self.database_update_sharing(
                        ShareType=ShareType,
@@ -966,10 +985,6 @@ class BaseSharing:
                             logger.warning(api_info + ": %r properties overlay denied by option", PathOrToken)
                             return httputils.NOT_ALLOWED
                         return httputils.NOT_ALLOWED
-
-                if 'Properties' in request_data and Properties is None:
-                    # clear properties
-                    Properties = {}
 
                 # limited update as user
                 result = self.database_update_sharing(
