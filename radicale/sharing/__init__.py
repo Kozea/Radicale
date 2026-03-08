@@ -80,13 +80,13 @@ API_TYPES_V1: dict[str, type] = {
         "PermittedCreateCollectionByToken": bool,
         "ShareType": str,
         "PathOrToken": str,
-        "PathMapped:": str,
+        "PathMapped": str,
         "Owner": str,
         "User": str,
         "Permissions": str,
         "Enabled": bool,
         "Hidden": bool,
-        "Properties": str}
+        "Properties": dict}
 
 TOKEN_PATTERN_V1: str = "(v1/[a-zA-Z0-9_=\\-]{44})"
 
