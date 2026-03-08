@@ -3370,6 +3370,16 @@ permissions: RrWw""")
             color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
             assert color == "#BBBBBB"
 
+            # one property have to be visible
+            logging.info("\n*** list check for one property (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#BBBBBB"
+
             # update map by owner
             logging.info("\n*** update map by owner (disable property overlay)")
             json_dict = {}
@@ -3396,6 +3406,16 @@ permissions: RrWw""")
             json_dict['Properties'] = {"ICAL:calendar-color": "#CCCCCC"}
             _, headers, answer = self._sharing_api_json("map", "update", check=403, login="user:userpw", json_dict=json_dict)
 
+            # one property have to be visible
+            logging.info("\n*** list check for one property (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#BBBBBB"
+
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay) -> ok")
             color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
@@ -3409,6 +3429,16 @@ permissions: RrWw""")
             json_dict['Permissions'] = "rP"
             json_dict['User'] = "user"
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # one property have to be visible
+            logging.info("\n*** list check for one property (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#BBBBBB"
 
             logging.info("\n*** update map by user (json) -> 200 (overlay permitted by share permissions)")
             json_dict = {}
@@ -3430,6 +3460,16 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_shared_r
             json_dict['Permissions'] = "rp"
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # one property have to be visible
+            logging.info("\n*** list check for one property (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
+            assert answer_dict['Content'][0]['Properties']['ICAL:calendar-color'] == "#CCCCCC"
 
             logging.info("\n*** update map by user (json) -> 403 (overlay permitted but denied by share permissions)")
             json_dict = {}
