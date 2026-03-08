@@ -944,7 +944,7 @@ class BaseSharing:
                 elif Properties == {}:
                     # empty, nothing to do
                     pass
-                else:
+                elif share['Properties'] is not None:
                     # replace properties
                     for prop in share['Properties']:
                         if logger.isEnabledFor(logging.DEBUG):
