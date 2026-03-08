@@ -300,6 +300,13 @@ class BaseSharing:
                 else:
                     pass
 
+                # permissions
+                try:
+                    permissions = config.rights_permission(entry['Permissions'])
+                except ValueError as e:
+                    logger.error("Permissions contain invalid entry: %r", entry['Permissions'])
+                    return False
+
                 # check PathMapped exists
                 with self._storage.acquire_lock("r", path=entry['PathMapped']):
                     item = next(iter(self._storage.discover(entry['PathMapped'])), None)
