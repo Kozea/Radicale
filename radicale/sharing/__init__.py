@@ -283,7 +283,7 @@ class BaseSharing:
                     if fieldname not in DB_TYPES_V1:
                         logger.error("sharing database row error, unsupported fieldname found: %r", fieldname)
                         return False
-                    if type(entry[fieldname]) != DB_TYPES_V1[fieldname]:
+                    if type(entry[fieldname]) is not DB_TYPES_V1[fieldname]:
                         logger.error("sharing database entry type error fieldname=%r is %r should %r entry=%r", fieldname, type(fieldname), DB_TYPES_V1[fieldname], entry)
                         return False
 
@@ -302,8 +302,9 @@ class BaseSharing:
 
                 # permissions
                 try:
-                    permissions = config.rights_permission(entry['Permissions'])
-                except ValueError as e:
+                    # test
+                    config.rights_permission(entry['Permissions'])
+                except ValueError:
                     logger.error("Permissions contain invalid entry: %r", entry['Permissions'])
                     return False
 
