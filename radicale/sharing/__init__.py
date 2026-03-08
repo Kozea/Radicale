@@ -34,9 +34,6 @@ from radicale.log import logger
 INTERNAL_TYPES: Sequence[str] = ("csv", "files", "none")
 
 DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Owner', 'User', 'Permissions', 'EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser', 'TimestampCreated', 'TimestampUpdated', 'Properties')
-DB_FIELDS_V1_BOOL: Sequence[str] = ('EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser')
-DB_FIELDS_V1_INT: Sequence[str] = ('TimestampCreated', 'TimestampUpdated')
-DB_FIELDS_V1_USER_PERMITTED: Sequence[str] = ('EnabledByUser', 'HiddenByUser', 'Properties')
 # ShareType:        <token|map>
 # PathOrToken:      <path|token> [PrimaryKey]
 # PathMapped:       <path>
@@ -49,9 +46,28 @@ DB_FIELDS_V1_USER_PERMITTED: Sequence[str] = ('EnabledByUser', 'HiddenByUser', '
 # HiddenByUser:     True|False (share exposure controlled by user) - check skipped if Owner==User
 # TimestampCreated: <unixtime> (when created)
 # TimestampUpdated: <unixtime> (last update)
-# Properties:       Overlay of collection properties
+# Properties:       Overlay of collection properties in JSON
+
+DB_TYPES_V1: dict[str, type] = {
+        "ShareType": str,
+        "PathOrToken": str,
+        "PathMapped": str,
+        "Owner": str,
+        "User": str,
+        "Permissions": str,
+        "EnabledByOwner": bool,
+        "HiddenByOwner": bool,
+        "EnabledByUser": bool,
+        "HiddenByUser": bool,
+        "TimestampCreated": int,
+        "TimestampUpdated": int,
+        "Properties": dict
+}
+
+DB_FIELDS_V1_USER_PERMITTED: Sequence[str] = ('EnabledByUser', 'HiddenByUser', 'Properties')
 
 SHARE_TYPES: Sequence[str] = ('token', 'map', 'all')
+
 SHARE_TYPES_V1: Sequence[str] = ('token', 'map')
 # token: share by secret token (does not require authentication)
 # map  : share by mapping collection of one user to another as virtual
