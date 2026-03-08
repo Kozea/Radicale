@@ -277,6 +277,16 @@ class BaseSharing:
         with self._storage.acquire_lock("r"):
             for entry in self.database_list_sharing():
                 logger.debug("analyze: %r", entry)
+
+                # check type
+                for fieldname in entry:
+                    if fieldname not in DB_TYPES_V1:
+                        logger.error("sharing database row error, unsupported fieldname found: %r", fieldname)
+                        return False
+                    if type(entry[fieldname]) != DB_TYPES_V1[fieldname]:
+                        logger.error("sharing database entry type error fieldname=%r is %r should %r entry=%r", fieldname, type(fieldname), DB_TYPES_V1[fieldname], entry)
+                        return False
+
                 if entry['ShareType'] not in SHARE_TYPES_V1:
                     logger.error("ShareType not supported: %r", entry['ShareType'])
                     return False
