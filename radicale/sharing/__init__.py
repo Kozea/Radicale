@@ -533,12 +533,14 @@ class BaseSharing:
                 return httputils.NOT_FOUND
 
         # check for enabled ShareTypes
-        if not self.sharing_collection_by_map and ShareType == "map":
-            # API "map" is not enabled
-            return httputils.NOT_FOUND
-
         if not self.sharing_collection_by_token and ShareType == "token":
             # API "token" is not enabled
+            logger.warning(api_info + ": not enabled by config (collection_by_token)")
+            return httputils.NOT_FOUND
+
+        if not self.sharing_collection_by_map and ShareType == "map":
+            # API "map" is not enabled
+            logger.warning(api_info + ": not enabled by config (collection_by_map)")
             return httputils.NOT_FOUND
 
         # check for valid API hooks
