@@ -115,5 +115,19 @@ export function validate_color(input, field_name) {
         }
         return null;
     };
+}/**
+ * Validates that the input matches a specific string.
+ * @param {HTMLInputElement} input
+ * @param {string} target
+ * @param {string} field_name
+ * @returns {function(): ?string}
+ */
+export function validate_equals(input, target, field_name) {
+    return () => {
+        let value = input.value;
+        if (value === target) {
+            return null;
+        }
+        return "Please type " + target + " in the " + field_name + " field";
+    };
 }
-

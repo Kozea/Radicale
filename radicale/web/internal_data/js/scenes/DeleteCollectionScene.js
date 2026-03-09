@@ -22,16 +22,20 @@
 import { delete_collection } from "../api/api.js";
 import { DELETE_CONFIRMATION_TEXT } from "../constants.js";
 import { Collection } from "../models/collection.js";
+import { ErrorHandler } from "../utils/error.js";
+import { FormValidator, validate_equals } from "../utils/form_validator.js";
 import { LoadingScene } from "./LoadingScene.js";
 import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
 
 /**
  * @implements {Scene}
- * @param {string} user
- * @param {string} password
- * @param {Collection} collection
  */
 export class DeleteCollectionScene {
+    /**
+     * @param {string} user
+     * @param {string} password
+     * @param {Collection} collection
+     */
     constructor(user, password, collection) {
         /** @type {HTMLElement} */ let html_scene = document.getElementById("deletecollectionscene");
         /** @type {HTMLElement} */ let title_form = html_scene.querySelector("[data-name=title]");
@@ -47,13 +51,15 @@ export class DeleteCollectionScene {
 
         /** @type {?number} */ let scene_index = null;
         /** @type {?XMLHttpRequest} */ let delete_req = null;
-        let error = "";
+
+        let errorHandler = new ErrorHandler(error_form);
+        let validator = new FormValidator(errorHandler);
+
+        validator.addValidator(confirmation_txt, validate_equals(confirmation_txt, DELETE_CONFIRMATION_TEXT, "confirmation"));
 
         function ondelete() {
-            let confirmation_text_value = confirmation_txt.value;
-            if (confirmation_text_value != DELETE_CONFIRMATION_TEXT) {
-                alert("Please type the confirmation text to delete this collection.");
-                return;
+            if (!validator.validate()) {
+                return false;
             }
             try {
                 let loading_scene = new LoadingScene();
@@ -63,8 +69,9 @@ export class DeleteCollectionScene {
                         return;
                     }
                     delete_req = null;
+                    delete_req = null;
                     if (error1) {
-                        error = error1;
+                        errorHandler.setError(error1);
                         pop_scene(scene_index);
                     } else {
                         pop_scene(scene_index - 1);
@@ -99,13 +106,7 @@ export class DeleteCollectionScene {
             title_form.textContent = collection.displayname || collection.href;
             delete_btn.onclick = ondelete;
             cancel_btn.onclick = oncancel;
-            if (error) {
-                error_form.textContent = "Error: " + error;
-                error_form.classList.remove("hidden");
-            } else {
-                error_form.classList.add("hidden");
-            }
-
+            validator.validate();
         };
         this.hide = function () {
             html_scene.classList.add("hidden");
