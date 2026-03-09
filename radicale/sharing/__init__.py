@@ -328,7 +328,7 @@ class BaseSharing:
         if not self.sharing_collection_by_map:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
-            return [{}]
+            return []
 
         # retrieve collections depending on filter
         shared_collection_list = self.database_list_sharing(
@@ -356,7 +356,7 @@ class BaseSharing:
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/token: not active")
-            return None
+            pass
 
         if self.sharing_collection_by_map:
             result = self.sharing_collection_by_map_resolver(path, user)
@@ -494,8 +494,12 @@ class BaseSharing:
                 Status in JSON/TEXT (TEXT can be parsed by shell)
 
         """
+        # initial log prefix
+        api_info = "Sharing/API/POST"
+
         if not self._enabled:
             # API is not enabled
+            logger.warning(api_info + ": API is not enabled")
             return httputils.NOT_FOUND
 
         if user == "":
@@ -504,6 +508,7 @@ class BaseSharing:
 
         # supported API version check
         if not path.startswith("/.sharing/v1/"):
+            logger.warning(api_info + ": leading part of path not matching supported API version")
             return httputils.NOT_FOUND
 
         # split into ShareType and action
@@ -516,6 +521,9 @@ class BaseSharing:
         else:
             ShareType = match.group(1)
             action = match.group(2)
+
+        # append ShareType
+        api_info = api_info + "/" + ShareType
 
         # check for valid ShareTypes
         if ShareType:
@@ -539,6 +547,9 @@ class BaseSharing:
                 logger.debug("TRACE/sharing/API: action not whitelisted: %r", action)
             return httputils.NOT_FOUND
 
+        # append action
+        api_info = api_info + "/" + action
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/API: called by authenticated user: %r", user)
         # read POST data
@@ -550,9 +561,6 @@ class BaseSharing:
         except socket.timeout:
             logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
-
-        # initial log prefix
-        api_info = "Sharing/API/POST/" + ShareType + "/" + action
 
         # parse body according to content-type
         content_type = environ.get("CONTENT_TYPE", "")
@@ -776,6 +784,7 @@ class BaseSharing:
             with self._storage.acquire_lock("r", user, path=PathMapped):
                 item = next(iter(self._storage.discover(PathMapped)), None)
                 if not item:
+                    logger.warning(api_info + ": cannot find PathMapped=%r", PathMapped)
                     return httputils.NOT_FOUND
                 if not isinstance(item, storage.BaseCollection):
                     return httputils.METHOD_NOT_ALLOWED
