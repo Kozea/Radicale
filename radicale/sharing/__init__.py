@@ -365,7 +365,7 @@ class BaseSharing:
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
-            return None
+            pass
 
         return None
 
