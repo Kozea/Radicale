@@ -741,6 +741,7 @@ class BaseSharing:
         if not self.sharing_collection_by_map and not self.sharing_collection_by_token:
             if not action == 'info':
                 # API is not enabled
+                logger.warning(api_info + ": API is not enabled")
                 return httputils.NOT_FOUND
 
         # action: list
