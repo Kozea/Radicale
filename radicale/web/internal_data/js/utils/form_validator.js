@@ -16,7 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { COLOR_RE } from "../constants.js";
 import { ErrorHandler } from "./error.js";
+import { isValidHREF } from "./misc.js";
 
 /**
  * Manages form validation by running validation functions on input fields.
@@ -74,7 +76,44 @@ export function validate_non_empty(input, field_name) {
         return field_name + " is empty";
     };
 }
+/**
+ * Validates that the input is a valid HREF.
+ * @param {HTMLInputElement} input
+ * @param {string} field_name
+ * @returns {function(): ?string}
+ */
+export function validate_href(input, field_name) {
+    return () => {
+        let value = input.value.trim();
+        if (!value) {
+            return field_name + " is empty";
+        }
+        if (value.startsWith("/")) {
+            return field_name + " cannot start with /";
+        }
+        if (!isValidHREF(value)) {
+            return field_name + " is invalid";
+        }
+        return null;
+    };
+}
 
-
-
+/**
+ * Validates that the input is a valid color.
+ * @param {HTMLInputElement} input
+ * @param {string} field_name
+ * @returns {function(): ?string}
+ */
+export function validate_color(input, field_name) {
+    return () => {
+        let value = input.value.trim();
+        if (!value) {
+            return null;
+        }
+        if (!COLOR_RE.exec(value)) {
+            return field_name + " is invalid";
+        }
+        return null;
+    };
+}
 

@@ -22,7 +22,9 @@
 import { create_collection, edit_collection } from "../api/api.js";
 import { COLOR_RE } from "../constants.js";
 import { Collection, CollectionType } from "../models/collection.js";
-import { cleanHREFinput, isValidHREF, onCleanHREFinput, random_hex, random_uuid } from "../utils/misc.js";
+import { ErrorHandler } from "../utils/error.js";
+import { FormValidator, validate_color, validate_href } from "../utils/form_validator.js";
+import { cleanHREFinput, onCleanHREFinput, random_hex, random_uuid } from "../utils/misc.js";
 import { LoadingScene } from "./LoadingScene.js";
 import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
 
@@ -55,8 +57,15 @@ export class CreateEditCollectionScene {
 
         /** @type {?number} */ let scene_index = null;
         /** @type {?XMLHttpRequest} */ let create_edit_req = null;
-        let error = "";
         /** @type {?HTMLSelectElement} */ let saved_type_form = null;
+
+        let errorHandler = new ErrorHandler(error_form);
+        let validator = new FormValidator(errorHandler);
+
+        if (!edit) {
+            validator.addValidator(href_form, validate_href(href_form, "HREF"));
+        }
+        validator.addValidator(color_form, validate_color(color_form, "Color"));
 
         let href = edit ? collection.href : collection.href + random_uuid() + "/";
         let displayname = edit ? collection.displayname : "";
@@ -87,10 +96,6 @@ export class CreateEditCollectionScene {
             if (!edit) {
                 cleanHREFinput(href_form);
                 let newhreftxtvalue = href_form.value.trim().toLowerCase();
-                if (!isValidHREF(newhreftxtvalue)) {
-                    alert("You must enter a valid HREF");
-                    return false;
-                }
                 href = collection.href + newhreftxtvalue + "/";
             }
             displayname = displayname_form.value;
@@ -110,29 +115,19 @@ export class CreateEditCollectionScene {
             source_form.value = source;
             type_form.value = type;
             color_form.value = color;
-            if (error) {
-                error_form.textContent = "Error: " + error;
-                error_form.classList.remove("hidden");
-            }
-            error_form.classList.add("hidden");
             onTypeChange(null);
             type_form.addEventListener("change", onTypeChange);
         }
 
         function onsubmit() {
             try {
-                if (!read_form()) {
+                if (!validator.validate()) {
                     return false;
                 }
+                read_form();
                 let sane_color = color.trim();
                 if (sane_color) {
-                    let color_match = COLOR_RE.exec(sane_color);
-                    if (!color_match) {
-                        error = "Invalid color";
-                        fill_form();
-                        return false;
-                    }
-                    sane_color = color_match[1];
+                    sane_color = COLOR_RE.exec(sane_color)[1];
                 }
                 let loading_scene = new LoadingScene();
                 push_scene(loading_scene, false);
@@ -143,7 +138,7 @@ export class CreateEditCollectionScene {
                     }
                     create_edit_req = null;
                     if (error1) {
-                        error = error1;
+                        errorHandler.setError(error1);
                         pop_scene(scene_index);
                     } else {
                         pop_scene(scene_index - 1);
@@ -197,12 +192,7 @@ export class CreateEditCollectionScene {
             fill_form();
             submit_btn.onclick = onsubmit;
             cancel_btn.onclick = oncancel;
-            if (error) {
-                error_form.textContent = "Error: " + error;
-                error_form.classList.remove("hidden");
-            } else {
-                error_form.classList.add("hidden");
-            }
+            validator.validate();
         };
         this.hide = function () {
             read_form();
