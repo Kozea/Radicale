@@ -131,3 +131,18 @@ export function validate_equals(input, target, field_name) {
         return "Please type " + target + " in the " + field_name + " field";
     };
 }
+
+/**
+ * Validates that at least one file is selected in a file input.
+ * @param {HTMLInputElement} input
+ * @param {string} field_name
+ * @returns {function(): ?string}
+ */
+export function validate_files(input, field_name) {
+    return () => {
+        if (input.files && input.files.length > 0) {
+            return null;
+        }
+        return "Please select at least one " + field_name;
+    };
+}
