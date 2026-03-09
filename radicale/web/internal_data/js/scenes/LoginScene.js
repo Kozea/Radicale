@@ -23,7 +23,8 @@ import { get_principal } from "../api/api.js";
 import { CollectionsScene } from "./CollectionsScene.js";
 import { LoadingScene } from "./LoadingScene.js";
 import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
-
+import { ErrorHandler } from "../utils/error.js";
+import { FormValidator, validate_non_empty } from "../utils/form_validator.js";
 /**
  * @constructor
  * @implements {Scene}
@@ -42,8 +43,10 @@ export class LoginScene {
 
         /** @type {?number} */ let scene_index = null;
         let user = "";
-        let error = "";
         /** @type {?XMLHttpRequest} */ let principal_req = null;
+        let errorHandler = new ErrorHandler(error_form);
+        let validator = new FormValidator(errorHandler);
+        validator.addValidator(user_form, validate_non_empty(user_form, "Username"));
 
         function read_form() {
             user = user_form.value;
@@ -52,52 +55,43 @@ export class LoginScene {
         function fill_form() {
             user_form.value = user;
             password_form.value = "";
-            if (error) {
-                error_form.textContent = "Error: " + error;
-                error_form.classList.remove("hidden");
-            } else {
-                error_form.classList.add("hidden");
-            }
         }
 
         function onlogin() {
             try {
                 read_form();
                 let password = password_form.value;
-                if (user) {
-                    error = "";
-                    // setup logout
-                    logout_view.classList.remove("hidden");
-                    logout_btn.onclick = onlogout;
-                    refresh_btn.onclick = refresh;
-                    logout_user_form.textContent = user + "'s Collections";
-                    // Fetch principal
-                    let loading_scene = new LoadingScene();
-                    push_scene(loading_scene, false);
-                    principal_req = get_principal(user, password, function (collection, error1) {
-                        if (scene_index === null) {
-                            return;
-                        }
-                        principal_req = null;
-                        if (error1) {
-                            error = error1;
-                            pop_scene(scene_index);
-                        } else {
-                            // show collections
-                            let saved_user = user;
-                            user = "";
-                            let collections_scene = new CollectionsScene(
-                                saved_user, password, collection, function (error1) {
-                                    error = error1;
-                                    user = saved_user;
-                                });
-                            push_scene(collections_scene, true);
-                        }
-                    });
-                } else {
-                    error = "Username is empty";
-                    fill_form();
+                if (!validator.validate()) {
+                    return false;
                 }
+                // setup logout
+                logout_view.classList.remove("hidden");
+                logout_btn.onclick = onlogout;
+                refresh_btn.onclick = refresh;
+                logout_user_form.textContent = user + "'s Collections";
+                // Fetch principal
+                let loading_scene = new LoadingScene();
+                push_scene(loading_scene, false);
+                principal_req = get_principal(user, password, function (collection, error1) {
+                    if (scene_index === null) {
+                        return;
+                    }
+                    principal_req = null;
+                    if (error1) {
+                        errorHandler.setError(error1);
+                        pop_scene(scene_index);
+                    } else {
+                        // show collections
+                        let saved_user = user;
+                        user = "";
+                        let collections_scene = new CollectionsScene(
+                            saved_user, password, collection, function (error1) {
+                                errorHandler.setError(error1);
+                                user = saved_user;
+                            });
+                        push_scene(collections_scene, true);
+                    }
+                });
             } catch (err) {
                 console.error(err);
             }
@@ -116,6 +110,7 @@ export class LoginScene {
             }
             return false;
         }
+
 
         function remove_logout() {
             logout_view.classList.add("hidden");
