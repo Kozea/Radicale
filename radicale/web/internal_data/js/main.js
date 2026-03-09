@@ -19,8 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { push_scene } from "./scene_manager.js";
-import { LoginScene } from "./LoginScene.js";
+import { LoginScene } from "./scenes/LoginScene.js";
+import { push_scene } from "./scenes/scene_manager.js";
 
 // Hide startup loading message
 document.getElementById("loadingscene").classList.add("hidden");

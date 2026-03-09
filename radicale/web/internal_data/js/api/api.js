@@ -19,9 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { COLOR_RE, ROOT_PATH, SERVER } from "./constants.js";
-import { Collection, CollectionType } from "./models.js";
-import { escape_xml } from "./utils.js";
+import { COLOR_RE, ROOT_PATH, SERVER } from "../constants.js";
+import { Collection, CollectionType } from "../models/collection.js";
+import { escape_xml } from "../utils/misc.js";
 /**
  * @typedef {Object} SharingFeatures
  * @property {number} [ApiVersion]

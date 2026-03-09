@@ -19,16 +19,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { discover_server_features, get_collections } from "../api/api.js";
+import { SERVER } from "../constants.js";
+import { Collection, CollectionType } from "../models/collection.js";
+import { bytesToHumanReadable } from "../utils/misc.js";
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
 import { DeleteCollectionScene } from "./DeleteCollectionScene.js";
 import { LoadingScene } from "./LoadingScene.js";
+import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
 import { ShareCollectionScene, maybe_enable_sharing_options } from "./ShareCollectionScene.js";
 import { UploadCollectionScene } from "./UploadCollectionScene.js";
-import { discover_server_features, get_collections } from "./api.js";
-import { SERVER } from "./constants.js";
-import { Collection, CollectionType } from "./models.js";
-import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
-import { bytesToHumanReadable } from "./utils.js";
 
 /**
  * @implements {Scene}

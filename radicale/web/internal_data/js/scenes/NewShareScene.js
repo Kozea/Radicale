@@ -19,9 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { add_share_by_map, add_share_by_token } from "./api.js";
+import { add_share_by_map, add_share_by_token } from "../api/api.js";
+import { onCleanHREFinput } from "../utils/misc.js";
 import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
-import { onCleanHREFinput } from "./utils.js";
 
 /**
  * @implements {Scene}

@@ -19,11 +19,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Scene, push_scene, pop_scene, scene_stack } from "./scene_manager.js";
-import { Collection } from "./models.js";
-import { DELETE_CONFIRMATION_TEXT } from "./constants.js";
+import { delete_collection } from "../api/api.js";
+import { DELETE_CONFIRMATION_TEXT } from "../constants.js";
+import { Collection } from "../models/collection.js";
 import { LoadingScene } from "./LoadingScene.js";
-import { delete_collection } from "./api.js";
+import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
 
 /**
  * @implements {Scene}

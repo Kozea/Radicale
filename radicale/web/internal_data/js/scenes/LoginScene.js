@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { get_principal } from "./api.js";
+import { get_principal } from "../api/api.js";
 import { CollectionsScene } from "./CollectionsScene.js";
 import { LoadingScene } from "./LoadingScene.js";
 import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";

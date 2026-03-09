@@ -19,10 +19,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { upload_collection } from "../api/api.js";
+import { Collection } from "../models/collection.js";
+import { cleanHREFinput, isValidHREF, onCleanHREFinput, random_uuid } from "../utils/misc.js";
 import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
-import { Collection } from "./models.js";
-import { cleanHREFinput, isValidHREF, onCleanHREFinput, random_uuid } from "./utils.js";
-import { upload_collection } from "./api.js";
 
 /**
  * @implements {Scene}
