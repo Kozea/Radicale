@@ -356,13 +356,13 @@ img.loading {
 
 .error::before {
     content: "!";
-    height: 1em;
+    height: 1.4em;
     color: white;
     background: rgb(217, 48, 37);
     font-weight: bold;
     border-radius: 100%;
     display: inline-block;
-    width: 1.1em;
+    width: 1.4em;
     margin-right: 5px;
     font-size: 1em;
     text-align: center;
