@@ -46,7 +46,7 @@ export class UploadCollectionScene {
         /** @type {HTMLElement} */ let href_label = html_scene.querySelector("label[for=href]");
         /** @type {HTMLElement} */ let hreflimitmsg_html = html_scene.querySelector("[data-name=hreflimitmsg]");
         /** @type {HTMLElement} */ let pending_html = html_scene.querySelector("[data-name=pending]");
-        /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
+        /** @type {HTMLElement} */ let error_form = html_scene.querySelector(":scope > span[data-name=error]");
 
         let files = uploadfile_form.files;
         href_form.addEventListener("input", onCleanHREFinput);
@@ -177,7 +177,11 @@ export class UploadCollectionScene {
                 hreflimitmsg_html.classList.add("hidden");
                 href_form.classList.remove("hidden");
                 href_label.classList.remove("hidden");
-                href_form.value = files[0].name.replace(/\.(ics|vcf)$/, '');
+                if (files && files.length > 0) {
+                    href_form.value = files[0].name.replace(/\.(ics|vcf)$/, '');
+                } else {
+                    href_form.value = "";
+                }
             }
             return false;
         }
