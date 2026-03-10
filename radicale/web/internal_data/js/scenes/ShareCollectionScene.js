@@ -27,7 +27,7 @@ import {
 } from "../api/sharing.js";
 import { Collection } from "../models/collection.js";
 import { ErrorHandler } from "../utils/error.js";
-import { NewShareScene } from "./NewShareScene.js";
+import { CreateEditShareScene } from "./CreateEditShareScene.js";
 import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
 
 /**
@@ -73,17 +73,17 @@ export class ShareCollectionScene {
     }
 
     function onsharebytoken() {
-      let new_share_scene = new NewShareScene(user, password, collection, "token", function () {
+      let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "token", function () {
         update_share_list(user, password, collection, errorHandler);
       });
-      push_scene(new_share_scene, false);
+      push_scene(create_edit_share_scene, false);
     }
 
     function onsharebymap() {
-      let new_share_scene = new NewShareScene(user, password, collection, "map", function () {
+      let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "map", function () {
         update_share_list(user, password, collection, errorHandler);
       });
-      push_scene(new_share_scene, false);
+      push_scene(create_edit_share_scene, false);
     }
 
     this.show = function () {
@@ -167,7 +167,7 @@ function update_share_list(user, password, collection, errorHandler) {
  * @param {import('../api/sharing.js').Share} share 
  * @param {HTMLElement} template 
  * @param {string} delete_label 
- * @param {function(string, string, string, function(?string):void):void} delete_action 
+ * @param {function(string, string, import('../api/sharing.js').Share, function(?string):void):void} delete_action 
  * @param {ErrorHandler} errorHandler
  */
 function add_share_row_node(user, password, collection, share, template, delete_label, delete_action, errorHandler) {
@@ -193,6 +193,14 @@ function add_share_row_node(user, password, collection, share, template, delete_
     console.warn("Unknown permissions", permissions);
   }
 
+  /** @type {HTMLElement} */ let edit_btn = node.querySelector("[data-name=edit]");
+  edit_btn.onclick = function () {
+    let create_edit_share_scene = new CreateEditShareScene(user, password, collection, share.ShareType, function () {
+      update_share_list(user, password, collection, errorHandler);
+    }, share);
+    push_scene(create_edit_share_scene, false);
+  };
+
   /** @type {HTMLElement} */ let delete_btn = node.querySelector("[data-name=delete]");
   delete_btn.onclick = function () {
     if (!confirm("Are you sure you want to delete " + delete_label + " " + pathortoken + "?")) {
@@ -201,7 +209,7 @@ function add_share_row_node(user, password, collection, share, template, delete_
     delete_action(
       user,
       password,
-      pathortoken,
+      share,
       function (error) {
         if (error) {
           errorHandler.setError(error);

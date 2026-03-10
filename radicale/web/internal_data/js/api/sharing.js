@@ -118,22 +118,56 @@ export function discover_server_features(user, password, callback) {
     );
 }
 
-/**
- * @typedef {Object} Share
- * @property {string} ShareType
- * @property {string} PathOrToken
- * @property {string} PathMapped
- * @property {string} Owner
- * @property {string} User
- * @property {string} Permissions
- * @property {boolean} EnabledByOwner
- * @property {boolean} EnabledByUser
- * @property {boolean} HiddenByOwner
- * @property {boolean} HiddenByUser
- * @property {number} TimestampCreated
- * @property {number} TimestampUpdated
- * @property {string} Properties
- */
+export class Share {
+    /**
+     * @param {Object} [data]
+     */
+    constructor(data = {}) {
+        /** @type {string} */ this.ShareType = data.ShareType || "";
+        /** @type {string} */ this.PathOrToken = data.PathOrToken || "";
+        /** @type {string} */ this.PathMapped = data.PathMapped || "";
+        /** @type {string} */ this.Owner = data.Owner || "";
+        /** @type {string} */ this.User = data.User || "";
+        /** @type {string} */ this.Permissions = data.Permissions || "r";
+        /** @type {boolean} */ this.EnabledByOwner = data.EnabledByOwner ?? data.Enabled ?? false;
+        /** @type {boolean} */ this.EnabledByUser = data.EnabledByUser ?? data.Enabled ?? false;
+        /** @type {boolean} */ this.HiddenByOwner = data.HiddenByOwner ?? data.Hidden ?? false;
+        /** @type {boolean} */ this.HiddenByUser = data.HiddenByUser ?? data.Hidden ?? false;
+        /** @type {number} */ this.TimestampCreated = data.TimestampCreated || 0;
+        /** @type {number} */ this.TimestampUpdated = data.TimestampUpdated || 0;
+        /** @type {Object} */ this.Properties = data.Properties || {};
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    get Enabled() {
+        return this.EnabledByOwner || this.EnabledByUser;
+    }
+
+    /**
+     * @param {boolean} value
+     */
+    set Enabled(value) {
+        this.EnabledByOwner = value;
+        this.EnabledByUser = value;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    get Hidden() {
+        return this.HiddenByOwner || this.HiddenByUser;
+    }
+
+    /**
+     * @param {boolean} value
+     */
+    set Hidden(value) {
+        this.HiddenByOwner = value;
+        this.HiddenByUser = value;
+    }
+}
 
 /**
  * @param {string} user
@@ -149,7 +183,8 @@ export function reload_sharing_list(user, password, collection, callback) {
         { PathMapped: collection.href },
         function (response) {
             let parsed = JSON.parse(response);
-            callback(parsed["Content"] || [], null);
+            let shares = (parsed["Content"] || []).map(data => new Share(data));
+            callback(shares, null);
         },
         null, // on_not_found
         function (error) {
@@ -191,21 +226,13 @@ export function get_property_key(type, property) {
 /**
  * @param {string} user
  * @param {string} password
- * @param {string} pathMapped
- * @param {string} permissions
- * @param {boolean} enabled
- * @param {boolean} hidden
- * @param {Object} properties
+ * @param {Share} share
  * @param {function(?string):void} callback
  */
 export function add_share_by_token(
     user,
     password,
-    pathMapped,
-    permissions,
-    enabled,
-    hidden,
-    properties,
+    share,
     callback,
 ) {
     call_sharing_api(
@@ -213,11 +240,11 @@ export function add_share_by_token(
         password,
         "token/create",
         {
-            PathMapped: pathMapped,
-            Permissions: permissions,
-            Enabled: enabled,
-            Hidden: hidden,
-            Properties: properties,
+            PathMapped: share.PathMapped,
+            Permissions: share.Permissions,
+            Enabled: share.Enabled,
+            Hidden: share.Hidden,
+            Properties: share.Properties,
         },
         function (response) {
             let json_response = JSON.parse(response);
@@ -237,25 +264,13 @@ export function add_share_by_token(
 /**
  * @param {string} user
  * @param {string} password
- * @param {string} pathMapped
- * @param {string} permissions
- * @param {boolean} enabled
- * @param {boolean} hidden
- * @param {Object} properties
- * @param {string} share_user
- * @param {string} href
+ * @param {Share} share
  * @param {function(?string):void} callback
  */
 export function add_share_by_map(
     user,
     password,
-    pathMapped,
-    permissions,
-    enabled,
-    hidden,
-    properties,
-    share_user,
-    href,
+    share,
     callback,
 ) {
     call_sharing_api(
@@ -263,13 +278,13 @@ export function add_share_by_map(
         password,
         "map/create",
         {
-            PathMapped: pathMapped,
-            Permissions: permissions,
-            Enabled: enabled,
-            Hidden: hidden,
-            Properties: properties,
-            User: share_user,
-            PathOrToken: "/" + share_user + "/" + href,
+            PathMapped: share.PathMapped,
+            Permissions: share.Permissions,
+            Enabled: share.Enabled,
+            Hidden: share.Hidden,
+            Properties: share.Properties,
+            User: share.User,
+            PathOrToken: share.PathOrToken,
         },
         function (response) {
             let json_response = JSON.parse(response);
@@ -289,20 +304,20 @@ export function add_share_by_map(
 /**
  * @param {string} user
  * @param {string} password
- * @param {string} token
+ * @param {Share} share
  * @param {function(?string):void} callback
  */
 export function delete_share_by_token(
     user,
     password,
-    token,
+    share,
     callback,
 ) {
     call_sharing_api(
         user,
         password,
         "token/delete",
-        { PathOrToken: token },
+        { PathOrToken: share.PathOrToken },
         function (response) {
             let json_response = JSON.parse(response);
             if (json_response["Status"] !== "success") {
@@ -321,20 +336,97 @@ export function delete_share_by_token(
 /**
  * @param {string} user
  * @param {string} password
- * @param {string} pathortoken
+ * @param {Share} share
  * @param {function(?string):void} callback
  */
 export function delete_share_by_map(
     user,
     password,
-    pathortoken,
+    share,
     callback,
 ) {
     call_sharing_api(
         user,
         password,
         "map/delete",
-        { PathOrToken: pathortoken },
+        { PathOrToken: share.PathOrToken },
+        function (response) {
+            let json_response = JSON.parse(response);
+            if (json_response["Status"] !== "success") {
+                callback(json_response["Status"] || "Unknown error");
+            } else {
+                callback(null);
+            }
+        },
+        null,
+        function (error) {
+            callback(error);
+        }
+    );
+}
+/**
+ * @param {string} user
+ * @param {string} password
+ * @param {Share} share
+ * @param {function(?string):void} callback
+ */
+export function update_share_by_token(
+    user,
+    password,
+    share,
+    callback,
+) {
+    call_sharing_api(
+        user,
+        password,
+        "token/update",
+        {
+            PathOrToken: share.PathOrToken,
+            Permissions: share.Permissions,
+            Enabled: share.Enabled,
+            Hidden: share.Hidden,
+            Properties: share.Properties,
+        },
+        function (response) {
+            let json_response = JSON.parse(response);
+            if (json_response["Status"] !== "success") {
+                callback(json_response["Status"] || "Unknown error");
+            } else {
+                callback(null);
+            }
+        },
+        null,
+        function (error) {
+            callback(error);
+        }
+    );
+}
+
+/**
+ * @param {string} user
+ * @param {string} password
+ * @param {Share} share
+ * @param {function(?string):void} callback
+ */
+export function update_share_by_map(
+    user,
+    password,
+    share,
+    callback,
+) {
+    call_sharing_api(
+        user,
+        password,
+        "map/update",
+        {
+            PathOrToken: share.PathOrToken,
+            PathMapped: share.PathMapped,
+            User: share.User,
+            Permissions: share.Permissions,
+            Enabled: share.Enabled,
+            Hidden: share.Hidden,
+            Properties: share.Properties,
+        },
         function (response) {
             let json_response = JSON.parse(response);
             if (json_response["Status"] !== "success") {

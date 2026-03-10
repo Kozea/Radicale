@@ -170,3 +170,65 @@ def test_share_journal_no_overrides(page: Page, radicale_server: str) -> None:
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(1)
+
+
+def test_edit_share_by_token(page: Page, radicale_server: str) -> None:
+    login(page, radicale_server)
+    create_collection(page, radicale_server)
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+
+    # Create RO share
+    page.click('button[data-name="sharebytoken"]')
+    page.click('#newshare button[data-name="submit"]')
+    expect(
+        page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden) img[alt='RO']")
+    ).to_be_visible()
+
+    # Edit to RW
+    page.click('tr:not(.hidden) button[data-name="edit"]')
+    expect(page.locator('#newshare h1')).to_have_text("Edit Share")
+    page.click('label[for="newshare_attr_permissions_rw"]')
+    page.click('#newshare button[data-name="submit"]')
+
+    # Verify RW
+    expect(
+        page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden) img[alt='RW']")
+    ).to_be_visible()
+
+
+def test_edit_share_by_map(page: Page, radicale_server: str) -> None:
+    login(page, radicale_server)
+    create_collection(page, radicale_server)
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+
+    # Create RO map share
+    page.click('button[data-name="sharebymap"]')
+    page.locator('input[data-name="shareuser"]').fill("max")
+    page.locator('input[data-name="sharehref"]').fill("mapped")
+    page.click('#newshare button[data-name="submit"]')
+    expect(
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden) img[alt='RO']")
+    ).to_be_visible()
+
+    # Edit map share
+    page.click('tr:not(.hidden) button[data-name="edit"]')
+    expect(page.locator('#newshare h1')).to_have_text("Edit Share")
+    expect(page.locator('input[data-name="shareuser"]')).to_be_disabled()
+    expect(page.locator('input[data-name="sharehref"]')).to_be_disabled()
+
+    # Change permissions and enabled status
+    page.click('label[for="newshare_attr_permissions_rw"]')
+    page.uncheck('input[data-name="enabled"]')
+    page.click('#newshare button[data-name="submit"]')
+
+    # Verify changes
+    expect(
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden) img[alt='RW']")
+    ).to_be_visible()
+    # If disabled, it might not show up or show differently, but our current UI doesn't visually distinguish enabled/disabled in the list yet
+    # Let's verify by re-opening edit scene
+    page.click('tr:not(.hidden) button[data-name="edit"]')
+    expect(page.locator('input[data-name="enabled"]')).not_to_be_checked()
+    page.click('#newshare button[data-name="cancel"]')

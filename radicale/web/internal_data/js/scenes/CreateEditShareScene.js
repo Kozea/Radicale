@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { add_share_by_map, add_share_by_token, get_property_key } from "../api/sharing.js";
+import { Share, add_share_by_map, add_share_by_token, get_property_key, update_share_by_map, update_share_by_token } from "../api/sharing.js";
 import { CollectionType } from "../models/collection.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_href, validate_non_empty } from "../utils/form_validator.js";
@@ -29,15 +29,17 @@ import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
 /**
  * @implements {Scene}
  */
-export class NewShareScene {
+export class CreateEditShareScene {
     /**
      * @param {string} user
      * @param {string} password
      * @param {import("../models/collection.js").Collection} collection
      * @param {string} shareType
      * @param {function():void} onclose
+     * @param {Share} [share] If provided, the scene will be in edit mode.
      */
-    constructor(user, password, collection, shareType, onclose) {
+    constructor(user, password, collection, shareType, onclose, share) {
+        let edit = !!share;
         let pathMapped = collection.href;
         /** @type {HTMLElement} */ let html_scene = document.getElementById("newshare");
         /** @type {HTMLFormElement} */ let form = html_scene.querySelector("form");
@@ -56,6 +58,7 @@ export class NewShareScene {
         /** @type {HTMLInputElement} */ let color_override_input = html_scene.querySelector("[data-name=color_override]");
 
         /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
+        /** @type {HTMLElement} */ let submit_btn = html_scene.querySelector("[data-name=submit]");
         /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
 
         let errorHandler = new ErrorHandler(error_form);
@@ -120,12 +123,29 @@ export class NewShareScene {
                     }
                 };
 
-                if (shareType === "map") {
-                    let share_user = shareuser_input.value;
-                    let href = sharehref_input.value;
-                    add_share_by_map(user, password, pathMapped, permissions, enabled, hidden, properties, share_user, href, callback);
+                let new_share = new Share({
+                    ShareType: shareType,
+                    PathMapped: pathMapped,
+                    Permissions: permissions,
+                    Enabled: enabled,
+                    Hidden: hidden,
+                    Properties: properties,
+                    User: edit ? share.User : shareuser_input.value,
+                    PathOrToken: edit ? share.PathOrToken : (shareType === "map" ? "/" + shareuser_input.value + "/" + sharehref_input.value : ""),
+                });
+
+                if (edit) {
+                    if (shareType === "map") {
+                        update_share_by_map(user, password, new_share, callback);
+                    } else {
+                        update_share_by_token(user, password, new_share, callback);
+                    }
                 } else {
-                    add_share_by_token(user, password, pathMapped, permissions, enabled, hidden, properties, callback);
+                    if (shareType === "map") {
+                        add_share_by_map(user, password, new_share, callback);
+                    } else {
+                        add_share_by_token(user, password, new_share, callback);
+                    }
                 }
             } catch (err) {
                 console.error(err);
@@ -140,20 +160,44 @@ export class NewShareScene {
             cancel_btn.onclick = oncancel;
             form.onsubmit = onsubmit;
 
+            html_scene.querySelector("h1").textContent = edit ? "Edit Share" : "New Share";
+            submit_btn.textContent = edit ? "Save" : "Create";
 
-            shareuser_input.value = "";
-            enabled_checkbox.checked = true;
-            hidden_checkbox.checked = false;
-            permissions_ro_radio.checked = true;
-            permissions_rw_radio.checked = false;
+            shareuser_input.value = edit ? share.User : "";
+            shareuser_input.disabled = edit;
+            enabled_checkbox.checked = edit ? share.Enabled : true;
+            hidden_checkbox.checked = edit ? share.Hidden : false;
+            permissions_ro_radio.checked = edit ? share.Permissions.toLowerCase() === "r" : true;
+            permissions_rw_radio.checked = edit ? share.Permissions.toLowerCase() === "rw" : false;
 
-            description_override_enabled.checked = false;
-            description_override_input.value = collection.description || "";
-            description_override_input.disabled = true;
+            let description = collection.description || "";
+            let color = collection.color || "#ffffff";
+            let description_override_enabled_value = false;
+            let color_override_enabled_value = false;
 
-            color_override_enabled.checked = false;
-            color_override_input.value = collection.color || "#ffffff";
-            color_override_input.disabled = true;
+            if (edit && share.Properties) {
+                let description_key = get_property_key(collection.type, "DESCRIPTION");
+                if (description_key && share.Properties[description_key]) {
+                    description = share.Properties[description_key];
+                    description_override_enabled_value = true;
+                }
+                let color_key = get_property_key(collection.type, "COLOR");
+                if (color_key && share.Properties[color_key]) {
+                    color = share.Properties[color_key];
+                    if (color.length === 9 && color.endsWith("ff")) {
+                        color = color.substring(0, 7);
+                    }
+                    color_override_enabled_value = true;
+                }
+            }
+
+            description_override_enabled.checked = description_override_enabled_value;
+            description_override_input.value = description;
+            description_override_input.disabled = !description_override_enabled_value;
+
+            color_override_enabled.checked = color_override_enabled_value;
+            color_override_input.value = color;
+            color_override_input.disabled = !color_override_enabled_value;
 
             let is_calendar = CollectionType.is_subset(CollectionType.CALENDAR, collection.type);
             let is_addressbook = collection.type === CollectionType.ADDRESSBOOK;
@@ -164,7 +208,12 @@ export class NewShareScene {
             }
 
             if (shareType === "map") {
-                sharehref_input.value = random_uuid();
+                if (edit) {
+                    sharehref_input.value = share.PathOrToken.split("/").pop() || "";
+                } else {
+                    sharehref_input.value = random_uuid();
+                }
+                sharehref_input.disabled = edit;
                 sharemapfields.classList.remove("hidden");
                 map_validator.validate();
             } else {
