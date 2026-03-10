@@ -24,7 +24,7 @@ import {
   delete_share_by_token,
   reload_sharing_list,
   server_features,
-} from "../api/api.js";
+} from "../api/sharing.js";
 import { Collection } from "../models/collection.js";
 import { ErrorHandler } from "../utils/error.js";
 import { NewShareScene } from "./NewShareScene.js";
@@ -164,7 +164,7 @@ function update_share_list(user, password, collection, errorHandler) {
  * @param {string} user 
  * @param {string} password 
  * @param {Collection} collection 
- * @param {import('../api/api.js').Share} share 
+ * @param {import('../api/sharing.js').Share} share 
  * @param {HTMLElement} template 
  * @param {string} delete_label 
  * @param {function(string, string, string, function(?string):void):void} delete_action 
@@ -219,7 +219,7 @@ function add_share_row_node(user, password, collection, share, template, delete_
  * @param {string} user 
  * @param {string} password 
  * @param {Collection} collection 
- * @param {Array<import('../api/api.js').Share>} shares 
+ * @param {Array<import('../api/sharing.js').Share>} shares 
  * @param {ErrorHandler} errorHandler
  */
 function add_share_rows(user, password, collection, shares, errorHandler) {

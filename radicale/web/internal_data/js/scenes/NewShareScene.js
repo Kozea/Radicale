@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { add_share_by_map, add_share_by_token, get_property_key } from "../api/api.js";
+import { add_share_by_map, add_share_by_token, get_property_key } from "../api/sharing.js";
 import { CollectionType } from "../models/collection.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_href, validate_non_empty } from "../utils/form_validator.js";
