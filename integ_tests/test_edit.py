@@ -35,21 +35,21 @@ def radicale_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
 def test_edit_save(page: Page, radicale_server: str) -> None:
     login(page, radicale_server)
     create_collection(page, radicale_server)
-    
+
     # Get original values
-    article = page.locator('article:not(.hidden)')
-    
+    article = page.locator("article:not(.hidden)")
+
     # Open edit scene
     page.hover("article:not(.hidden)")
     page.click('article:not(.hidden) a[data-name="edit"]', force=True)
-    
+
     # Update title and description
     new_title = "Updated Title"
     new_description = "Updated Description"
     page.fill('#editcollectionscene input[data-name="displayname"]', new_title)
     page.fill('#editcollectionscene input[data-name="description"]', new_description)
     page.click('#editcollectionscene button[data-name="submit"]')
-    
+
     # Verify updates in the list
     expect(article.locator('[data-name="title"]')).to_have_text(new_title)
     expect(article.locator('[data-name="description"]')).to_have_text(new_description)
@@ -58,21 +58,25 @@ def test_edit_save(page: Page, radicale_server: str) -> None:
 def test_edit_cancel(page: Page, radicale_server: str) -> None:
     login(page, radicale_server)
     create_collection(page, radicale_server)
-    
+
     # Get original values
-    article = page.locator('article:not(.hidden)')
+    article = page.locator("article:not(.hidden)")
     original_title = article.locator('[data-name="title"]').text_content()
     original_description = article.locator('[data-name="description"]').text_content()
-    
+
     # Open edit scene
     page.hover("article:not(.hidden)")
     page.click('article:not(.hidden) a[data-name="edit"]', force=True)
-    
+
     # Update title and description but cancel
     page.fill('#editcollectionscene input[data-name="displayname"]', "Changed Title")
-    page.fill('#editcollectionscene input[data-name="description"]', "Changed Description")
+    page.fill(
+        '#editcollectionscene input[data-name="description"]', "Changed Description"
+    )
     page.click('#editcollectionscene button[data-name="cancel"]')
-    
+
     # Verify values remain unchanged
     expect(article.locator('[data-name="title"]')).to_have_text(original_title)
-    expect(article.locator('[data-name="description"]')).to_have_text(original_description)
+    expect(article.locator('[data-name="description"]')).to_have_text(
+        original_description
+    )

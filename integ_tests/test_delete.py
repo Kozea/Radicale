@@ -35,41 +35,43 @@ def radicale_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
 def test_delete_wrong_confirmation(page: Page, radicale_server: str) -> None:
     login(page, radicale_server)
     create_collection(page, radicale_server)
-    
+
     # Open delete scene
     page.hover("article:not(.hidden)")
     page.click('article:not(.hidden) a[data-name="delete"]', force=True)
-    
+
     # Input wrong confirmation
     page.fill('#deletecollectionscene input[data-name="confirmationtxt"]', "foo")
     page.click('#deletecollectionscene button[data-name="delete"]')
-    
+
     # Check for error message
     error_locator = page.locator('#deletecollectionscene span[data-name="error"]')
     expect(error_locator).to_be_visible()
-    expect(error_locator).to_contain_text("Please type DELETE in the confirmation field")
-    
+    expect(error_locator).to_contain_text(
+        "Please type DELETE in the confirmation field"
+    )
+
     # Scene should still be visible
-    expect(page.locator('#deletecollectionscene')).to_be_visible()
+    expect(page.locator("#deletecollectionscene")).to_be_visible()
 
 
 def test_delete_correct_confirmation(page: Page, radicale_server: str) -> None:
     login(page, radicale_server)
     create_collection(page, radicale_server)
-    
+
     # Verify collection exists
-    expect(page.locator('article:not(.hidden)')).to_have_count(1)
-    
+    expect(page.locator("article:not(.hidden)")).to_have_count(1)
+
     # Open delete scene
     page.hover("article:not(.hidden)")
     page.click('article:not(.hidden) a[data-name="delete"]', force=True)
-    
+
     # Input correct confirmation
     page.fill('#deletecollectionscene input[data-name="confirmationtxt"]', "DELETE")
     page.click('#deletecollectionscene button[data-name="delete"]')
-    
+
     # Verify collection is gone
-    expect(page.locator('article:not(.hidden)')).to_have_count(0)
-    
+    expect(page.locator("article:not(.hidden)")).to_have_count(0)
+
     # Scene should be hidden
-    expect(page.locator('#deletecollectionscene')).to_be_hidden()
+    expect(page.locator("#deletecollectionscene")).to_be_hidden()

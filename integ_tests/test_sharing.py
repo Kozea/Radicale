@@ -118,8 +118,12 @@ def test_share_with_property_overrides(page: Page, radicale_server: str) -> None
     login(page, radicale_server)
     # Create a collection with specific details
     page.click('a[data-name="new"]')
-    page.locator('#createcollectionscene input[data-name="displayname"]').fill("Test Collection")
-    page.locator('#createcollectionscene input[data-name="description"]').fill("Original Description")
+    page.locator('#createcollectionscene input[data-name="displayname"]').fill(
+        "Test Collection"
+    )
+    page.locator('#createcollectionscene input[data-name="description"]').fill(
+        "Original Description"
+    )
     page.locator('#createcollectionscene input[data-name="color"]').fill("#ff0000")
     page.click('#createcollectionscene button[data-name="submit"]')
 
@@ -128,14 +132,18 @@ def test_share_with_property_overrides(page: Page, radicale_server: str) -> None
     page.click('button[data-name="sharebytoken"]')
 
     # Verify defaults
-    expect(page.locator('input[data-name="description_override"]')).to_have_value("Original Description")
+    expect(page.locator('input[data-name="description_override"]')).to_have_value(
+        "Original Description"
+    )
     expect(page.locator('input[data-name="color_override"]')).to_have_value("#ff0000")
     expect(page.locator('input[data-name="description_override"]')).to_be_disabled()
     expect(page.locator('input[data-name="color_override"]')).to_be_disabled()
 
     # Set overrides
     page.click('label[for="newshare_attr_description_enabled"]')
-    page.locator('input[data-name="description_override"]').fill("Overridden Description")
+    page.locator('input[data-name="description_override"]').fill(
+        "Overridden Description"
+    )
     page.click('label[for="newshare_attr_color_enabled"]')
     page.locator('input[data-name="color_override"]').fill("#00ff00")
 
@@ -151,9 +159,15 @@ def test_share_journal_no_overrides(page: Page, radicale_server: str) -> None:
     login(page, radicale_server)
     # Create a collection of type JOURNAL
     page.click('a[data-name="new"]')
-    page.locator('#createcollectionscene select[data-name="type"]').select_option("JOURNAL")
-    page.locator('#createcollectionscene input[data-name="displayname"]').fill("Test Journal")
-    page.locator('#createcollectionscene input[data-name="description"]').fill("Journal Description")
+    page.locator('#createcollectionscene select[data-name="type"]').select_option(
+        "JOURNAL"
+    )
+    page.locator('#createcollectionscene input[data-name="displayname"]').fill(
+        "Test Journal"
+    )
+    page.locator('#createcollectionscene input[data-name="description"]').fill(
+        "Journal Description"
+    )
     page.click('#createcollectionscene button[data-name="submit"]')
 
     page.hover("article:not(.hidden)")
@@ -187,7 +201,7 @@ def test_edit_share_by_token(page: Page, radicale_server: str) -> None:
 
     # Edit to RW
     page.click('tr:not(.hidden) button[data-name="edit"]')
-    expect(page.locator('#newshare h1')).to_have_text("Edit Share")
+    expect(page.locator("#newshare h1")).to_have_text("Edit Share")
     page.click('label[for="newshare_attr_permissions_rw"]')
     page.click('#newshare button[data-name="submit"]')
 
@@ -214,7 +228,7 @@ def test_edit_share_by_map(page: Page, radicale_server: str) -> None:
 
     # Edit map share
     page.click('tr:not(.hidden) button[data-name="edit"]')
-    expect(page.locator('#newshare h1')).to_have_text("Edit Share")
+    expect(page.locator("#newshare h1")).to_have_text("Edit Share")
     expect(page.locator('input[data-name="shareuser"]')).to_be_disabled()
     expect(page.locator('input[data-name="sharehref"]')).to_be_disabled()
 
