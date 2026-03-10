@@ -20,7 +20,9 @@
  */
 
 import { add_share_by_map, add_share_by_token } from "../api/api.js";
-import { onCleanHREFinput } from "../utils/misc.js";
+import { ErrorHandler } from "../utils/error.js";
+import { FormValidator, validate_href, validate_non_empty } from "../utils/form_validator.js";
+import { onCleanHREFinput, random_uuid } from "../utils/misc.js";
 import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
 
 /**
@@ -45,7 +47,14 @@ export class NewShareScene {
         let permissions_ro_radio = /** @type {HTMLInputElement} */ (document.getElementById("newshare_attr_permissions_ro"));
         let permissions_rw_radio = /** @type {HTMLInputElement} */ (document.getElementById("newshare_attr_permissions_rw"));
         /** @type {HTMLInputElement} */ let properties_input = html_scene.querySelector("[data-name=properties]");
+        /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
         /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+
+        let errorHandler = new ErrorHandler(error_form);
+        let map_validator = new FormValidator(errorHandler);
+
+        map_validator.addValidator(shareuser_input, validate_non_empty(shareuser_input, "Share User"));
+        map_validator.addValidator(sharehref_input, validate_href(sharehref_input, "Share Href"));
 
         sharehref_input.addEventListener("input", onCleanHREFinput);
 
@@ -65,16 +74,26 @@ export class NewShareScene {
 
         function onsubmit() {
             try {
+                if (shareType === "map") {
+                    if (!map_validator.validate()) {
+                        return false;
+                    }
+                }
                 let enabled = enabled_checkbox.checked;
                 let hidden = hidden_checkbox.checked;
                 let permissions = permissions_rw_radio.checked ? "rw" : "r";
                 let properties = properties_input.value;
 
-                let callback = function () {
-                    if (scene_index !== null) {
-                        pop_scene(scene_index - 1);
+                let callback = function (/** @type {string} */ error) {
+                    if (scene_index === null) {
+                        return;
                     }
-                    if (onclose) onclose();
+                    if (error) {
+                        errorHandler.setError(error);
+                    } else {
+                        pop_scene(scene_index - 1);
+                        if (onclose) onclose();
+                    }
                 };
 
                 if (shareType === "map") {
@@ -97,19 +116,22 @@ export class NewShareScene {
             cancel_btn.onclick = oncancel;
             form.onsubmit = onsubmit;
 
-            if (shareType === "map") {
-                sharemapfields.classList.remove("hidden");
-            } else {
-                sharemapfields.classList.add("hidden");
-            }
 
             shareuser_input.value = "";
-            sharehref_input.value = "";
             enabled_checkbox.checked = true;
             hidden_checkbox.checked = false;
             permissions_ro_radio.checked = true;
             permissions_rw_radio.checked = false;
             properties_input.value = "";
+            if (shareType === "map") {
+                sharehref_input.value = random_uuid();
+                sharemapfields.classList.remove("hidden");
+                map_validator.validate();
+            } else {
+                sharehref_input.value = "";
+                sharemapfields.classList.add("hidden");
+                errorHandler.clearError();
+            }
         };
 
         this.hide = function () {

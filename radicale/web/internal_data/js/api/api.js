@@ -464,7 +464,7 @@ export function discover_server_features(user, password, callback) {
  * @param {string} user
  * @param {string} password
  * @param {Collection} collection
- * @param {function(Array<Share>):void} callback
+ * @param {function(Array<Share>, ?string):void} callback
  */
 export function reload_sharing_list(user, password, collection, callback) {
     call_sharing_api(
@@ -474,8 +474,12 @@ export function reload_sharing_list(user, password, collection, callback) {
         { PathMapped: collection.href },
         function (response) {
             let parsed = JSON.parse(response);
-            callback(parsed["Content"] || []);
+            callback(parsed["Content"] || [], null);
         },
+        null, // on_not_found
+        function (error) {
+            callback([], error);
+        }
     );
 }
 
@@ -487,7 +491,7 @@ export function reload_sharing_list(user, password, collection, callback) {
  * @param {boolean} enabled
  * @param {boolean} hidden
  * @param {string} properties
- * @param {function():void} callback
+ * @param {function(?string):void} callback
  */
 export function add_share_by_token(
     user,
@@ -513,11 +517,15 @@ export function add_share_by_token(
         function (response) {
             let json_response = JSON.parse(response);
             if (json_response["Status"] !== "success") {
-                console.error("Failed to create share token: " + (json_response["Status"] || "Unknown error"));
+                callback(json_response["Status"] || "Unknown error");
             } else {
-                callback();
+                callback(null);
             }
         },
+        null,
+        function (error) {
+            callback(error);
+        }
     );
 }
 
@@ -531,7 +539,7 @@ export function add_share_by_token(
  * @param {string} properties
  * @param {string} share_user
  * @param {string} href
- * @param {function():void} callback
+ * @param {function(?string):void} callback
  */
 export function add_share_by_map(
     user,
@@ -561,11 +569,15 @@ export function add_share_by_map(
         function (response) {
             let json_response = JSON.parse(response);
             if (json_response["Status"] !== "success") {
-                console.error("Failed to create share map: " + (json_response["Status"] || "Unknown error"));
+                callback(json_response["Status"] || "Unknown error");
             } else {
-                callback();
+                callback(null);
             }
         },
+        null,
+        function (error) {
+            callback(error);
+        }
     );
 }
 
@@ -573,7 +585,7 @@ export function add_share_by_map(
  * @param {string} user
  * @param {string} password
  * @param {string} token
- * @param {function():void} callback
+ * @param {function(?string):void} callback
  */
 export function delete_share_by_token(
     user,
@@ -589,11 +601,15 @@ export function delete_share_by_token(
         function (response) {
             let json_response = JSON.parse(response);
             if (json_response["Status"] !== "success") {
-                console.error("Failed to create delete token " + token + ": " + (json_response["Status"] || "Unknown error"));
+                callback(json_response["Status"] || "Unknown error");
             } else {
-                callback();
+                callback(null);
             }
         },
+        null,
+        function (error) {
+            callback(error);
+        }
     );
 }
 
@@ -601,7 +617,7 @@ export function delete_share_by_token(
  * @param {string} user
  * @param {string} password
  * @param {string} pathortoken
- * @param {function():void} callback
+ * @param {function(?string):void} callback
  */
 export function delete_share_by_map(
     user,
@@ -617,10 +633,14 @@ export function delete_share_by_map(
         function (response) {
             let json_response = JSON.parse(response);
             if (json_response["Status"] !== "success") {
-                console.error("Failed to delete map " + pathortoken + ": " + (json_response["Status"] || "Unknown error"));
+                callback(json_response["Status"] || "Unknown error");
             } else {
-                callback();
+                callback(null);
             }
         },
+        null,
+        function (error) {
+            callback(error);
+        }
     );
 }
