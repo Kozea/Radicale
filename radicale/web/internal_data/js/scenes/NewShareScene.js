@@ -19,7 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { add_share_by_map, add_share_by_token } from "../api/api.js";
+import { add_share_by_map, add_share_by_token, get_property_key } from "../api/api.js";
+import { CollectionType } from "../models/collection.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_href, validate_non_empty } from "../utils/form_validator.js";
 import { onCleanHREFinput, random_uuid } from "../utils/misc.js";
@@ -32,11 +33,12 @@ export class NewShareScene {
     /**
      * @param {string} user
      * @param {string} password
-     * @param {string} pathMapped
+     * @param {import("../models/collection.js").Collection} collection
      * @param {string} shareType
      * @param {function():void} onclose
      */
-    constructor(user, password, pathMapped, shareType, onclose) {
+    constructor(user, password, collection, shareType, onclose) {
+        let pathMapped = collection.href;
         /** @type {HTMLElement} */ let html_scene = document.getElementById("newshare");
         /** @type {HTMLFormElement} */ let form = html_scene.querySelector("form");
         /** @type {HTMLElement} */ let sharemapfields = html_scene.querySelector("[data-name=sharemapfields]");
@@ -46,7 +48,13 @@ export class NewShareScene {
         /** @type {HTMLInputElement} */ let hidden_checkbox = html_scene.querySelector("[data-name=hidden]");
         let permissions_ro_radio = /** @type {HTMLInputElement} */ (document.getElementById("newshare_attr_permissions_ro"));
         let permissions_rw_radio = /** @type {HTMLInputElement} */ (document.getElementById("newshare_attr_permissions_rw"));
-        /** @type {HTMLInputElement} */ let properties_input = html_scene.querySelector("[data-name=properties]");
+
+        /** @type {HTMLElement} */ let properties_fieldset = html_scene.querySelector("[data-name=properties_override]");
+        /** @type {HTMLInputElement} */ let description_override_enabled = html_scene.querySelector("[data-name=description_override_enabled]");
+        /** @type {HTMLInputElement} */ let description_override_input = html_scene.querySelector("[data-name=description_override]");
+        /** @type {HTMLInputElement} */ let color_override_enabled = html_scene.querySelector("[data-name=color_override_enabled]");
+        /** @type {HTMLInputElement} */ let color_override_input = html_scene.querySelector("[data-name=color_override]");
+
         /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
         /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
 
@@ -57,6 +65,13 @@ export class NewShareScene {
         map_validator.addValidator(sharehref_input, validate_href(sharehref_input, "Share Href"));
 
         sharehref_input.addEventListener("input", onCleanHREFinput);
+
+        description_override_enabled.onchange = function () {
+            description_override_input.disabled = !description_override_enabled.checked;
+        };
+        color_override_enabled.onchange = function () {
+            color_override_input.disabled = !color_override_enabled.checked;
+        };
 
         /** @type {?number} */ let scene_index = null;
 
@@ -82,7 +97,16 @@ export class NewShareScene {
                 let enabled = enabled_checkbox.checked;
                 let hidden = hidden_checkbox.checked;
                 let permissions = permissions_rw_radio.checked ? "rw" : "r";
-                let properties = properties_input.value;
+
+                let properties = {};
+                if (description_override_enabled.checked) {
+                    let key = get_property_key(collection.type, "DESCRIPTION");
+                    if (key) properties[key] = description_override_input.value;
+                }
+                if (color_override_enabled.checked) {
+                    let key = get_property_key(collection.type, "COLOR");
+                    if (key) properties[key] = color_override_input.value + (color_override_input.value ? "ff" : "");
+                }
 
                 let callback = function (/** @type {string} */ error) {
                     if (scene_index === null) {
@@ -122,7 +146,23 @@ export class NewShareScene {
             hidden_checkbox.checked = false;
             permissions_ro_radio.checked = true;
             permissions_rw_radio.checked = false;
-            properties_input.value = "";
+
+            description_override_enabled.checked = false;
+            description_override_input.value = collection.description || "";
+            description_override_input.disabled = true;
+
+            color_override_enabled.checked = false;
+            color_override_input.value = collection.color || "#ffffff";
+            color_override_input.disabled = true;
+
+            let is_calendar = CollectionType.is_subset(CollectionType.CALENDAR, collection.type);
+            let is_addressbook = collection.type === CollectionType.ADDRESSBOOK;
+            if (is_calendar || is_addressbook) {
+                properties_fieldset.classList.remove("hidden");
+            } else {
+                properties_fieldset.classList.add("hidden");
+            }
+
             if (shareType === "map") {
                 sharehref_input.value = random_uuid();
                 sharemapfields.classList.remove("hidden");

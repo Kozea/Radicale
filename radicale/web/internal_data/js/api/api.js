@@ -483,6 +483,36 @@ export function reload_sharing_list(user, password, collection, callback) {
     );
 }
 
+
+/**
+ * Property keys for different collection types.
+ * Map to OVERLAY_PROPERTIES_WHITELIST in radicale/sharing/__init__.py
+ */
+export const OVERLAY_PROPERTIES = {
+    CALENDAR: {
+        DESCRIPTION: "C:calendar-description",
+        COLOR: "ICAL:calendar-color",
+    },
+    ADDRESSBOOK: {
+        DESCRIPTION: "CR:addressbook-description",
+        COLOR: "INF:addressbook-color",
+    }
+};
+
+/**
+ * Returns the correct internal property key for a given collection type and property name.
+ * @param {string} type Collection type (ADDRESSBOOK, CALENDAR, etc.)
+ * @param {"DESCRIPTION" | "COLOR"} property Property name
+ * @returns {string | null} Internal property key or null if not supported
+ */
+export function get_property_key(type, property) {
+    if (type === CollectionType.ADDRESSBOOK) {
+        return OVERLAY_PROPERTIES.ADDRESSBOOK[property];
+    } else if (CollectionType.is_subset(CollectionType.CALENDAR, type)) {
+        return OVERLAY_PROPERTIES.CALENDAR[property];
+    }
+    return null;
+}
 /**
  * @param {string} user
  * @param {string} password
@@ -490,7 +520,7 @@ export function reload_sharing_list(user, password, collection, callback) {
  * @param {string} permissions
  * @param {boolean} enabled
  * @param {boolean} hidden
- * @param {string} properties
+ * @param {Object} properties
  * @param {function(?string):void} callback
  */
 export function add_share_by_token(
@@ -536,7 +566,7 @@ export function add_share_by_token(
  * @param {string} permissions
  * @param {boolean} enabled
  * @param {boolean} hidden
- * @param {string} properties
+ * @param {Object} properties
  * @param {string} share_user
  * @param {string} href
  * @param {function(?string):void} callback

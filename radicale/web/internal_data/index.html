@@ -227,9 +227,18 @@
           <input type="radio" data-name="permissions" checked="false" id="newshare_attr_permissions_rw"
             name="newshare_permissions" /><label for="newshare_attr_permissions_rw">Read/Write</label>
         </fieldset>
-        <fieldset>
+        <fieldset data-name="properties_override">
           <legend>Properties override</legend>
-          <input type="text" data-name="properties" />
+          <div class="property-override">
+            <input type="checkbox" data-name="description_override_enabled" id="newshare_attr_description_enabled">
+            <label for="newshare_attr_description_enabled">Description:</label>
+            <input type="text" data-name="description_override" disabled>
+          </div>
+          <div class="property-override">
+            <input type="checkbox" data-name="color_override_enabled" id="newshare_attr_color_enabled">
+            <label for="newshare_attr_color_enabled">Color:</label>
+            <input type="color" data-name="color_override" disabled>
+          </div>
         </fieldset>
         <button type="submit" class="green" data-name="submit">Create</button>
         <button type="button" class="red" data-name="cancel">Cancel</button>

@@ -73,14 +73,14 @@ export class ShareCollectionScene {
     }
 
     function onsharebytoken() {
-      let new_share_scene = new NewShareScene(user, password, collection.href, "token", function () {
+      let new_share_scene = new NewShareScene(user, password, collection, "token", function () {
         update_share_list(user, password, collection, errorHandler);
       });
       push_scene(new_share_scene, false);
     }
 
     function onsharebymap() {
-      let new_share_scene = new NewShareScene(user, password, collection.href, "map", function () {
+      let new_share_scene = new NewShareScene(user, password, collection, "map", function () {
         update_share_list(user, password, collection, errorHandler);
       });
       push_scene(new_share_scene, false);
