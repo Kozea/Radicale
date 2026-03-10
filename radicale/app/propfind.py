@@ -230,6 +230,16 @@ def xml_propfind_response(
                     xmlutils.make_clark("D:unauthenticated")))
         elif tag == xmlutils.make_clark("D:current-user-privilege-set"):
             privileges = ["D:read"]
+            if share:
+                if write:
+                    privileges.append("D:write-content")
+                else:
+                    if self._sharing.permit_properties_overlay:
+                        if share['Permissions'] and not "p" in share['Permissions']:
+                            privileges.append("D:write-properties")
+                    else:
+                        if share['Permissions'] and not "P" in share['Permissions']:
+                            privileges.append("D:write-properties")
             if write:
                 privileges.append("D:all")
                 privileges.append("D:write")
