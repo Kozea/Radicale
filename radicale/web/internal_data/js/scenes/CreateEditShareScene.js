@@ -131,7 +131,7 @@ export class CreateEditShareScene {
                     Hidden: hidden,
                     Properties: properties,
                     User: edit ? share.User : shareuser_input.value,
-                    PathOrToken: edit ? share.PathOrToken : (shareType === "map" ? "/" + shareuser_input.value + "/" + sharehref_input.value : ""),
+                    PathOrToken: edit ? share.PathOrToken : (shareType === "map" ? "/" + shareuser_input.value + "/" + sharehref_input.value + "/" : ""),
                 });
 
                 if (edit) {
@@ -209,7 +209,7 @@ export class CreateEditShareScene {
 
             if (shareType === "map") {
                 if (edit) {
-                    sharehref_input.value = share.PathOrToken.split("/").pop() || "";
+                    sharehref_input.value = share.PathOrToken.split("/").filter(Boolean).pop() || "";
                 } else {
                     sharehref_input.value = random_uuid();
                 }
