@@ -97,8 +97,8 @@ export class CreateEditShareScene {
                         return false;
                     }
                 }
-                let enabled = enabled_checkbox.checked;
-                let hidden = hidden_checkbox.checked;
+                let enabled_by_owner = enabled_checkbox.checked;
+                let hidden_by_owner = hidden_checkbox.checked;
                 let permissions = permissions_rw_radio.checked ? "rw" : "r";
 
                 let properties = {};
@@ -127,8 +127,10 @@ export class CreateEditShareScene {
                     ShareType: shareType,
                     PathMapped: pathMapped,
                     Permissions: permissions,
-                    Enabled: enabled,
-                    Hidden: hidden,
+                    EnabledByOwner: enabled_by_owner,
+                    EnabledByUser: edit ? share.EnabledByUser : null,
+                    HiddenByOwner: hidden_by_owner,
+                    HiddenByUser: edit ? share.HiddenByUser : null,
                     Properties: properties,
                     User: edit ? share.User : shareuser_input.value,
                     PathOrToken: edit ? share.PathOrToken : (shareType === "map" ? "/" + shareuser_input.value + "/" + sharehref_input.value + "/" : ""),
@@ -165,8 +167,8 @@ export class CreateEditShareScene {
 
             shareuser_input.value = edit ? share.User : "";
             shareuser_input.disabled = edit;
-            enabled_checkbox.checked = edit ? share.Enabled : true;
-            hidden_checkbox.checked = edit ? share.Hidden : false;
+            enabled_checkbox.checked = edit ? share.EnabledByOwner : true;
+            hidden_checkbox.checked = edit ? share.HiddenByOwner : false;
             permissions_ro_radio.checked = edit ? share.Permissions.toLowerCase() === "r" : true;
             permissions_rw_radio.checked = edit ? share.Permissions.toLowerCase() === "rw" : false;
 

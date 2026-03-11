@@ -130,42 +130,12 @@ export class Share {
         /** @type {string} */ this.User = data.User || "";
         /** @type {string} */ this.Permissions = data.Permissions || "r";
         /** @type {boolean} */ this.EnabledByOwner = data.EnabledByOwner ?? data.Enabled ?? false;
-        /** @type {boolean} */ this.EnabledByUser = data.EnabledByUser ?? data.Enabled ?? false;
+        /** @type {?boolean} */ this.EnabledByUser = data.EnabledByUser ?? data.Enabled ?? null;
         /** @type {boolean} */ this.HiddenByOwner = data.HiddenByOwner ?? data.Hidden ?? false;
-        /** @type {boolean} */ this.HiddenByUser = data.HiddenByUser ?? data.Hidden ?? false;
+        /** @type {?boolean} */ this.HiddenByUser = data.HiddenByUser ?? data.Hidden ?? null;
         /** @type {number} */ this.TimestampCreated = data.TimestampCreated || 0;
         /** @type {number} */ this.TimestampUpdated = data.TimestampUpdated || 0;
         /** @type {Object} */ this.Properties = data.Properties || {};
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    get Enabled() {
-        return this.EnabledByOwner || this.EnabledByUser;
-    }
-
-    /**
-     * @param {boolean} value
-     */
-    set Enabled(value) {
-        this.EnabledByOwner = value;
-        this.EnabledByUser = value;
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    get Hidden() {
-        return this.HiddenByOwner || this.HiddenByUser;
-    }
-
-    /**
-     * @param {boolean} value
-     */
-    set Hidden(value) {
-        this.HiddenByOwner = value;
-        this.HiddenByUser = value;
     }
 }
 
@@ -242,8 +212,8 @@ export function add_share_by_token(
         {
             PathMapped: share.PathMapped,
             Permissions: share.Permissions,
-            Enabled: share.Enabled,
-            Hidden: share.Hidden,
+            Enabled: share.EnabledByOwner,
+            Hidden: share.HiddenByOwner,
             Properties: share.Properties,
         },
         function (response) {
@@ -280,8 +250,8 @@ export function add_share_by_map(
         {
             PathMapped: share.PathMapped,
             Permissions: share.Permissions,
-            Enabled: share.Enabled,
-            Hidden: share.Hidden,
+            Enabled: share.EnabledByOwner,
+            Hidden: share.HiddenByOwner,
             Properties: share.Properties,
             User: share.User,
             PathOrToken: share.PathOrToken,
@@ -383,8 +353,8 @@ export function update_share_by_token(
         {
             PathOrToken: share.PathOrToken,
             Permissions: share.Permissions,
-            Enabled: share.Enabled,
-            Hidden: share.Hidden,
+            Enabled: share.EnabledByOwner,
+            Hidden: share.HiddenByOwner,
             Properties: share.Properties,
         },
         function (response) {
@@ -423,8 +393,8 @@ export function update_share_by_map(
             PathMapped: share.PathMapped,
             User: share.User,
             Permissions: share.Permissions,
-            Enabled: share.Enabled,
-            Hidden: share.Hidden,
+            Enabled: share.EnabledByOwner,
+            Hidden: share.HiddenByOwner,
             Properties: share.Properties,
         },
         function (response) {
