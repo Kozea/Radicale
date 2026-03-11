@@ -246,3 +246,36 @@ def test_edit_share_by_map(page: Page, radicale_server: str) -> None:
     page.click('tr:not(.hidden) button[data-name="edit"]')
     expect(page.locator('input[data-name="enabled"]')).not_to_be_checked()
     page.click('#newshare button[data-name="cancel"]')
+
+
+def test_share_by_map_validation(page: Page, radicale_server: str) -> None:
+    login(page, radicale_server)
+    create_collection(page, radicale_server)
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+
+    page.click('button[data-name="sharebymap"]')
+
+    # Try empty user
+    page.locator('input[data-name="shareuser"]').fill("")
+    page.locator('input[data-name="sharehref"]').fill("1234")
+    page.click('#newshare button[data-name="submit"]')
+    expect(page.locator('#newshare [data-name="error"]:not(.hidden)')).to_contain_text(
+        "Share User is empty"
+    )
+
+    # Try logged in user
+    page.locator('input[data-name="shareuser"]').fill("admin")
+    page.click('#newshare button[data-name="submit"]')
+    expect(page.locator('#newshare [data-name="error"]:not(.hidden)')).to_contain_text(
+        "Share User cannot be admin"
+    )
+
+    # Valid user
+    page.locator('input[data-name="shareuser"]').fill("max")
+    page.click('#newshare button[data-name="submit"]')
+
+    # Verify success
+    expect(
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
+    ).to_have_count(1)

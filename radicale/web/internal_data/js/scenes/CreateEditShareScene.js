@@ -22,7 +22,7 @@
 import { Share, add_share_by_map, add_share_by_token, get_property_key, update_share_by_map, update_share_by_token } from "../api/sharing.js";
 import { CollectionType } from "../models/collection.js";
 import { ErrorHandler } from "../utils/error.js";
-import { FormValidator, validate_href, validate_non_empty } from "../utils/form_validator.js";
+import { FormValidator, validate_href, validate_not_empty_or_equals } from "../utils/form_validator.js";
 import { onCleanHREFinput, random_uuid } from "../utils/misc.js";
 import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
 
@@ -64,7 +64,7 @@ export class CreateEditShareScene {
         let errorHandler = new ErrorHandler(error_form);
         let map_validator = new FormValidator(errorHandler);
 
-        map_validator.addValidator(shareuser_input, validate_non_empty(shareuser_input, "Share User"));
+        map_validator.addValidator(shareuser_input, validate_not_empty_or_equals(shareuser_input, user, "Share User"));
         map_validator.addValidator(sharehref_input, validate_href(sharehref_input, "Share Href"));
 
         sharehref_input.addEventListener("input", onCleanHREFinput);

@@ -76,6 +76,27 @@ export function validate_non_empty(input, field_name) {
         return field_name + " is empty";
     };
 }
+
+/**
+ * Validates that the input is not empty and not equal to a target string.
+ * @param {HTMLInputElement} input
+ * @param {string} target
+ * @param {string} field_name
+ * @returns {function(): ?string}
+ */
+export function validate_not_empty_or_equals(input, target, field_name) {
+    return () => {
+        let value = input.value.trim();
+        if (!value) {
+            return field_name + " is empty";
+        }
+        if (value === target) {
+            return field_name + " cannot be " + target;
+        }
+        return null;
+    };
+}
+
 /**
  * Validates that the input is a valid HREF.
  * @param {HTMLInputElement} input
