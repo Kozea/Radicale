@@ -27,6 +27,7 @@ import { Collection, CollectionType } from "../models/collection.js";
 import { bytesToHumanReadable } from "../utils/misc.js";
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
 import { DeleteCollectionScene } from "./DeleteCollectionScene.js";
+import { IncomingSharingScene } from "./IncomingSharingScene.js";
 import { LoadingScene } from "./LoadingScene.js";
 import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
 import { ShareCollectionScene, maybe_enable_sharing_options } from "./ShareCollectionScene.js";
@@ -48,6 +49,7 @@ export class CollectionsScene {
         /** @type {HTMLElement} */ let template = html_scene.querySelector("[data-name=collectiontemplate]");
         /** @type {HTMLElement} */ let new_btn = html_scene.querySelector("[data-name=new]");
         /** @type {HTMLElement} */ let upload_btn = html_scene.querySelector("[data-name=upload]");
+        /** @type {HTMLElement} */ let incomingshares_btn = html_scene.querySelector("[data-name=incomingshares]");
 
         /** @type {?number} */ let scene_index = null;
         /** @type {?XMLHttpRequest} */ let collections_req = null;
@@ -68,6 +70,16 @@ export class CollectionsScene {
             try {
                 let upload_scene = new UploadCollectionScene(user, password, collection);
                 push_scene(upload_scene, false);
+            } catch (err) {
+                console.error(err);
+            }
+            return false;
+        }
+
+        function onincomingshares() {
+            try {
+                let incoming_sharing_scene = new IncomingSharingScene(user, password);
+                push_scene(incoming_sharing_scene, false);
             } catch (err) {
                 console.error(err);
             }
@@ -191,6 +203,7 @@ export class CollectionsScene {
             html_scene.classList.remove("hidden");
             new_btn.onclick = onnew;
             upload_btn.onclick = onupload;
+            incomingshares_btn.onclick = onincomingshares;
             if (collections === null) {
                 update();
                 discover_server_features(user, password, maybe_enable_sharing_options);
@@ -204,6 +217,7 @@ export class CollectionsScene {
             scene_index = scene_stack.length - 1;
             new_btn.onclick = null;
             upload_btn.onclick = null;
+            incomingshares_btn.onclick = null;
             collections = null;
             // remove collection
             nodes.forEach(function (node) {

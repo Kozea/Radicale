@@ -234,7 +234,7 @@ def test_edit_share_by_map(page: Page, radicale_server: str) -> None:
 
     # Change permissions and enabled status
     page.click('label[for="newshare_attr_permissions_rw"]')
-    page.uncheck('input[data-name="enabled"]')
+    page.uncheck('#newshare input[data-name="enabled"]')
     page.click('#newshare button[data-name="submit"]')
 
     # Verify changes
@@ -244,7 +244,7 @@ def test_edit_share_by_map(page: Page, radicale_server: str) -> None:
     # If disabled, it might not show up or show differently, but our current UI doesn't visually distinguish enabled/disabled in the list yet
     # Let's verify by re-opening edit scene
     page.click('tr:not(.hidden) button[data-name="edit"]')
-    expect(page.locator('input[data-name="enabled"]')).not_to_be_checked()
+    expect(page.locator('#newshare input[data-name="enabled"]')).not_to_be_checked()
     page.click('#newshare button[data-name="cancel"]')
 
 
@@ -279,3 +279,55 @@ def test_share_by_map_validation(page: Page, radicale_server: str) -> None:
     expect(
         page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(1)
+
+
+def test_incoming_shares(page: Page, radicale_server: str) -> None:
+    # 1. Admin logs in and creates a map share for 'max'
+    login(page, radicale_server)
+    create_collection(page, radicale_server)
+
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+    page.click('button[data-name="sharebymap"]')
+    page.locator('input[data-name="shareuser"]').fill("max")
+    page.locator('input[data-name="sharehref"]').fill("mapped")
+    page.click('#newshare button[data-name="submit"]')
+    expect(
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
+    ).to_have_count(1)
+    page.click('#sharecollectionscene button[data-name="cancel"]')
+
+    # 2. Admin logs out
+    page.click('a[data-name="logout"]')
+
+    # 3. Max logs in
+    page.fill('#loginscene input[data-name="user"]', "max")
+    page.fill('#loginscene input[data-name="password"]', "maxpassword")
+    page.click('button:has-text("Next")')
+
+    # 4. Max sees the incoming share
+    page.click('a[data-name="incomingshares"]')
+    expect(page.locator('#incomingsharingscene')).to_be_visible()
+    expect(
+        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
+    ).to_have_count(1)
+
+    expect(
+        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden) td[data-name='pathortoken']")
+    ).to_have_text("mapped")
+
+    # 5. Max makes changes to the hidden flag
+    expect(
+        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='hidden']")
+    ).to_be_checked()
+    page.uncheck("tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='hidden']")
+
+    expect(
+        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='hidden']")
+    ).not_to_be_checked()
+
+    # 6. Assert no error was shown
+    expect(page.locator('#incomingsharingscene span[data-name="error"]')).to_be_hidden()
+
+    page.click('#incomingsharingscene button[data-name="cancel"]')
+    expect(page.locator('#incomingsharingscene')).to_be_hidden()

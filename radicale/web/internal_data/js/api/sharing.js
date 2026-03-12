@@ -146,11 +146,12 @@ export class Share {
  * @param {function(Array<Share>, ?string):void} callback
  */
 export function reload_sharing_list(user, password, collection, callback) {
+    let body = collection ? { PathMapped: collection.href } : {};
     call_sharing_api(
         user,
         password,
         "all/list",
-        { PathMapped: collection.href },
+        body,
         function (response) {
             let parsed = JSON.parse(response);
             let shares = (parsed["Content"] || []).map(data => new Share(data));
@@ -396,6 +397,44 @@ export function update_share_by_map(
             Enabled: share.EnabledByOwner,
             Hidden: share.HiddenByOwner,
             Properties: share.Properties,
+        },
+        function (response) {
+            let json_response = JSON.parse(response);
+            if (json_response["Status"] !== "success") {
+                callback(json_response["Status"] || "Unknown error");
+            } else {
+                callback(null);
+            }
+        },
+        null,
+        function (error) {
+            callback(error);
+        }
+    );
+}
+
+/**
+ * Update a shared map entry as the recipient user.
+ * Only sends fields the non-owner user is allowed to change: PathOrToken, EnabledByUser, HiddenByUser.
+ * @param {string} user
+ * @param {string} password
+ * @param {Share} share
+ * @param {function(?string):void} callback
+ */
+export function update_incoming_share(
+    user,
+    password,
+    share,
+    callback,
+) {
+    call_sharing_api(
+        user,
+        password,
+        "map/update",
+        {
+            PathOrToken: share.PathOrToken,
+            Enabled: share.EnabledByUser,
+            Hidden: share.HiddenByUser,
         },
         function (response) {
             let json_response = JSON.parse(response);

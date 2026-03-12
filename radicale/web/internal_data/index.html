@@ -66,6 +66,9 @@
         <a href="" class="blue" data-name="upload" title="Upload an addressbook or calendar">
           <img src="css/icons/upload.svg" class="icon" alt="⬆️">
         </a>
+        <a href="" class="blue" data-name="incomingshares" title="Incoming Shares">
+          <img src="css/icons/share.svg" class="icon" alt="🔗">
+        </a>
       </div>
       <article data-name="collectiontemplate" class="hidden">
         <div class="colorbar" data-name="color"></div>
@@ -201,6 +204,35 @@
           </tbody>
         </table>
       </div>
+      <form>
+        <button type="button" class="green" data-name="cancel">Close</button>
+      </form>
+      <span class="error hidden" data-name="error"></span>
+    </section>
+
+    <section id="incomingsharingscene" class="container hidden">
+      <h1>Incoming Shares</h1>
+      <p>Manage shares that others have shared with you.</p>
+      <table>
+        <!-- <thead>
+          <tr>
+            <th>Path</th>
+            <th>Owner</th>
+            <th>Permissions</th>
+            <th>Enabled</th>
+            <th>Hidden</th>
+          </tr>
+        </thead> -->
+        <tbody data-name="incomingsharesbody">
+          <tr data-name="incomingsharerowtemplate" class="hidden">
+            <td data-name="pathortoken"></td>
+            <td data-name="owner"></td>
+            <td data-name="permissions"></td>
+            <td><input type="checkbox" data-name="enabled"></td>
+            <td><input type="checkbox" data-name="hidden"></td>
+          </tr>
+        </tbody>
+      </table>
       <form>
         <button type="button" class="green" data-name="cancel">Close</button>
       </form>
