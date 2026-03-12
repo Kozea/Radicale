@@ -24,9 +24,10 @@ import {
   delete_share_by_token,
   reload_sharing_list,
   server_features,
-} from "../api/api.js";
+} from "../api/sharing.js";
 import { Collection } from "../models/collection.js";
-import { NewShareScene } from "./NewShareScene.js";
+import { ErrorHandler } from "../utils/error.js";
+import { CreateEditShareScene } from "./CreateEditShareScene.js";
 import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
 
 /**
@@ -56,8 +57,11 @@ export class ShareCollectionScene {
     /** @type {HTMLElement} */ let share_by_map_div = html_scene.querySelector(
       "div[data-name=sharebymap]"
     );
+    /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
 
-        /** @type {HTMLElement} */ let title = html_scene.querySelector("[data-name=title]");
+    let errorHandler = new ErrorHandler(error_form);
+
+    /** @type {HTMLElement} */ let title = html_scene.querySelector("[data-name=title]");
 
     function oncancel() {
       try {
@@ -69,17 +73,17 @@ export class ShareCollectionScene {
     }
 
     function onsharebytoken() {
-      let new_share_scene = new NewShareScene(user, password, collection.href, "token", function () {
-        update_share_list(user, password, collection);
+      let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "token", function () {
+        update_share_list(user, password, collection, errorHandler);
       });
-      push_scene(new_share_scene, false);
+      push_scene(create_edit_share_scene, false);
     }
 
     function onsharebymap() {
-      let new_share_scene = new NewShareScene(user, password, collection.href, "map", function () {
-        update_share_list(user, password, collection);
+      let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "map", function () {
+        update_share_list(user, password, collection, errorHandler);
       });
-      push_scene(new_share_scene, false);
+      push_scene(create_edit_share_scene, false);
     }
 
     this.show = function () {
@@ -118,7 +122,7 @@ export class ShareCollectionScene {
       }
 
       title.textContent = collection.displayname || collection.href;
-      update_share_list(user, password, collection);
+      update_share_list(user, password, collection, errorHandler);
     };
     this.hide = function () {
       html_scene.classList.add("hidden");
@@ -134,8 +138,9 @@ export class ShareCollectionScene {
  * @param {string} user
  * @param {string} password
  * @param {Collection} collection
+ * @param {ErrorHandler} errorHandler
  */
-function update_share_list(user, password, collection) {
+function update_share_list(user, password, collection, errorHandler) {
   let share_rows = document.querySelectorAll(
     "[data-name=sharetokenrowtemplate], [data-name=sharemaprowtemplate]",
   );
@@ -145,8 +150,12 @@ function update_share_list(user, password, collection) {
     }
   });
 
-  reload_sharing_list(user, password, collection, function (shares) {
-    add_share_rows(user, password, collection, shares);
+  reload_sharing_list(user, password, collection, function (shares, error) {
+    if (error) {
+      errorHandler.setError(error);
+    } else {
+      add_share_rows(user, password, collection, shares, errorHandler);
+    }
   });
 }
 
@@ -155,12 +164,13 @@ function update_share_list(user, password, collection) {
  * @param {string} user 
  * @param {string} password 
  * @param {Collection} collection 
- * @param {import('../api/api.js').Share} share 
+ * @param {import('../api/sharing.js').Share} share 
  * @param {HTMLElement} template 
  * @param {string} delete_label 
- * @param {function(string, string, string, function():void):void} delete_action 
+ * @param {function(string, string, import('../api/sharing.js').Share, function(?string):void):void} delete_action 
+ * @param {ErrorHandler} errorHandler
  */
-function add_share_row_node(user, password, collection, share, template, delete_label, delete_action) {
+function add_share_row_node(user, password, collection, share, template, delete_label, delete_action, errorHandler) {
   let pathortoken = share["PathOrToken"] || "";
   let node = /** @type {HTMLElement} */ (template.cloneNode(true));
   node.classList.remove("hidden");
@@ -183,6 +193,14 @@ function add_share_row_node(user, password, collection, share, template, delete_
     console.warn("Unknown permissions", permissions);
   }
 
+  /** @type {HTMLElement} */ let edit_btn = node.querySelector("[data-name=edit]");
+  edit_btn.onclick = function () {
+    let create_edit_share_scene = new CreateEditShareScene(user, password, collection, share.ShareType, function () {
+      update_share_list(user, password, collection, errorHandler);
+    }, share);
+    push_scene(create_edit_share_scene, false);
+  };
+
   /** @type {HTMLElement} */ let delete_btn = node.querySelector("[data-name=delete]");
   delete_btn.onclick = function () {
     if (!confirm("Are you sure you want to delete " + delete_label + " " + pathortoken + "?")) {
@@ -191,9 +209,13 @@ function add_share_row_node(user, password, collection, share, template, delete_
     delete_action(
       user,
       password,
-      pathortoken,
-      function () {
-        update_share_list(user, password, collection);
+      share,
+      function (error) {
+        if (error) {
+          errorHandler.setError(error);
+        } else {
+          update_share_list(user, password, collection, errorHandler);
+        }
       },
     );
   };
@@ -205,9 +227,10 @@ function add_share_row_node(user, password, collection, share, template, delete_
  * @param {string} user 
  * @param {string} password 
  * @param {Collection} collection 
- * @param {Array<import('../api/api.js').Share>} shares 
+ * @param {Array<import('../api/sharing.js').Share>} shares 
+ * @param {ErrorHandler} errorHandler
  */
-function add_share_rows(user, password, collection, shares) {
+function add_share_rows(user, password, collection, shares, errorHandler) {
   /** @type {HTMLElement} */ let token_template = document.querySelector("[data-name=sharetokenrowtemplate]");
   /** @type {HTMLElement} */ let map_template = document.querySelector("[data-name=sharemaprowtemplate]");
   shares.forEach(function (share) {
@@ -218,9 +241,9 @@ function add_share_rows(user, password, collection, shares) {
       collection.href.includes(pathortoken)
     ) {
       if (share["ShareType"] === "token") {
-        add_share_row_node(user, password, collection, share, token_template, "share", delete_share_by_token);
+        add_share_row_node(user, password, collection, share, token_template, "share", delete_share_by_token, errorHandler);
       } else if (share["ShareType"] === "map") {
-        add_share_row_node(user, password, collection, share, map_template, "map", delete_share_by_map);
+        add_share_row_node(user, password, collection, share, map_template, "map", delete_share_by_map, errorHandler);
       }
     }
   });

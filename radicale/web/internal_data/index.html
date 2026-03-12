@@ -153,17 +153,19 @@
           <tbody>
             <tr data-name="sharetokenrowtemplate" class="hidden">
               <td>
-                <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
-                    class="small_icon" alt="Delete"></button>
+                <button type="button" class="blue inline" data-name="edit"><img src="css/icons/edit.svg"
+                    class="small_icon" alt="Edit"></button>
               </td>
               <td><img src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw" /><img src="css/icons/eye.svg"
                   class="med_icon" alt="RO" data-name="ro" /></td>
               <td><input type="text" data-name="pathortoken" value="" readonly=""
                   onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
+              <td>
+                <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
+                    class="small_icon" alt="Delete"></button>
+              </td>
             </tr>
             <tr>
-              <td></td>
-              <td></td>
               <td><button type="button" class="blue inline" data-name="sharebytoken"><img src="css/icons/new.svg"
                     class="small_icon" alt="New Share by Token"></button>
               </td>
@@ -177,17 +179,19 @@
           <tbody>
             <tr data-name="sharemaprowtemplate" class="hidden">
               <td>
-                <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
-                    class="small_icon" alt="Delete"></button>
+                <button type="button" class="blue inline" data-name="edit"><img src="css/icons/edit.svg"
+                    class="small_icon" alt="Edit"></button>
               </td>
               <td><img src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw" /><img src="css/icons/eye.svg"
                   class="med_icon" alt="RO" data-name="ro" /></td>
               <td><input type="text" data-name="pathortoken" value="" readonly=""
                   onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
+              <td>
+                <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
+                    class="small_icon" alt="Delete"></button>
+              </td>
             </tr>
             <tr>
-              <td></td>
-              <td></td>
               <td>
                 <button type="button" class="blue inline" data-name="sharebymap">
                   <img src="css/icons/new.svg" class="small_icon" alt="New Share by Map">
@@ -200,6 +204,7 @@
       <form>
         <button type="button" class="green" data-name="cancel">Close</button>
       </form>
+      <span class="error hidden" data-name="error"></span>
     </section>
 
     <section id="newshare" class="container hidden">
@@ -226,13 +231,23 @@
           <input type="radio" data-name="permissions" checked="false" id="newshare_attr_permissions_rw"
             name="newshare_permissions" /><label for="newshare_attr_permissions_rw">Read/Write</label>
         </fieldset>
-        <fieldset>
+        <fieldset data-name="properties_override">
           <legend>Properties override</legend>
-          <input type="text" data-name="properties" />
+          <div class="property-override">
+            <input type="checkbox" data-name="description_override_enabled" id="newshare_attr_description_enabled">
+            <label for="newshare_attr_description_enabled">Description:</label>
+            <input type="text" data-name="description_override" disabled>
+          </div>
+          <div class="property-override">
+            <input type="checkbox" data-name="color_override_enabled" id="newshare_attr_color_enabled">
+            <label for="newshare_attr_color_enabled">Color:</label>
+            <input type="color" data-name="color_override" disabled>
+          </div>
         </fieldset>
         <button type="submit" class="green" data-name="submit">Create</button>
         <button type="button" class="red" data-name="cancel">Cancel</button>
       </form>
+      <span class="error hidden" data-name="error"></span>
     </section>
 
     <section id="createcollectionscene" class="container hidden">

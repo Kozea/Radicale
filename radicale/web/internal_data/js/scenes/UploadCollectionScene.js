@@ -21,7 +21,9 @@
 
 import { upload_collection } from "../api/api.js";
 import { Collection } from "../models/collection.js";
-import { cleanHREFinput, isValidHREF, onCleanHREFinput, random_uuid } from "../utils/misc.js";
+import { ErrorHandler } from "../utils/error.js";
+import { FormValidator, validate_files, validate_href } from "../utils/form_validator.js";
+import { cleanHREFinput, onCleanHREFinput, random_uuid } from "../utils/misc.js";
 import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
 
 /**
@@ -44,6 +46,7 @@ export class UploadCollectionScene {
         /** @type {HTMLElement} */ let href_label = html_scene.querySelector("label[for=href]");
         /** @type {HTMLElement} */ let hreflimitmsg_html = html_scene.querySelector("[data-name=hreflimitmsg]");
         /** @type {HTMLElement} */ let pending_html = html_scene.querySelector("[data-name=pending]");
+        /** @type {HTMLElement} */ let error_form = html_scene.querySelector(":scope > span[data-name=error]");
 
         let files = uploadfile_form.files;
         href_form.addEventListener("input", onCleanHREFinput);
@@ -53,6 +56,12 @@ export class UploadCollectionScene {
         href_form.value = "";
         let href = "";
 
+        let errorHandler = new ErrorHandler(error_form);
+        let validator = new FormValidator(errorHandler);
+
+        validator.addValidator(href_form, validate_href(href_form, "HREF"));
+        validator.addValidator(uploadfile_form, validate_files(uploadfile_form, "file"));
+
         /** @type {?number} */ let scene_index = null;
         /** @type {?XMLHttpRequest} */ let upload_req = null;
         /** @type {Array<string>} */ let results = [];
@@ -60,9 +69,10 @@ export class UploadCollectionScene {
 
         function upload_start() {
             try {
-                if (!read_form()) {
+                if (!validator.validate()) {
                     return false;
                 }
+                read_form();
                 uploadfile_form.classList.add("hidden");
                 uploadfile_lbl.classList.add("hidden");
                 href_form.classList.add("hidden");
@@ -125,40 +135,33 @@ export class UploadCollectionScene {
             return false;
         }
 
+        /**
+         * @param {number} i
+         */
         function updateFileStatus(i) {
             if (nodes === null) {
                 return;
             }
-            let success_form = nodes[i].querySelector("[data-name=success]");
-            let error_form = nodes[i].querySelector("[data-name=error]");
+            /** @type {HTMLElement} */ let file_success_form = nodes[i].querySelector("[data-name=success]");
+            /** @type {HTMLElement} */ let file_error_form = nodes[i].querySelector("[data-name=error]");
             if (results.length > i) {
                 if (results[i]) {
-                    success_form.classList.add("hidden");
-                    error_form.textContent = "Error: " + results[i];
+                    file_success_form.classList.add("hidden");
+                    file_error_form.textContent = "Error: " + results[i];
                     error_form.classList.remove("hidden");
                 } else {
-                    success_form.classList.remove("hidden");
-                    error_form.classList.add("hidden");
+                    file_success_form.classList.remove("hidden");
+                    file_error_form.classList.add("hidden");
                 }
             } else {
-                success_form.classList.add("hidden");
-                error_form.classList.add("hidden");
+                file_success_form.classList.add("hidden");
+                file_error_form.classList.add("hidden");
             }
         }
 
         function read_form() {
             cleanHREFinput(href_form);
-            let newhreftxtvalue = href_form.value.trim().toLowerCase();
-            if (!isValidHREF(newhreftxtvalue)) {
-                alert("You must enter a valid HREF");
-                return false;
-            }
-            href = newhreftxtvalue;
-
-            if (uploadfile_form.files.length == 0) {
-                alert("You must select at least one file to upload");
-                return false;
-            }
+            href = href_form.value.trim().toLowerCase();
             files = uploadfile_form.files;
             return true;
         }
@@ -169,12 +172,16 @@ export class UploadCollectionScene {
                 hreflimitmsg_html.classList.remove("hidden");
                 href_form.classList.add("hidden");
                 href_label.classList.add("hidden");
-                href_form.value = random_uuid(); // dummy, will be replaced on upload
+                href_form.value = random_uuid(); // fake HREF, will be replaced on upload
             } else {
                 hreflimitmsg_html.classList.add("hidden");
                 href_form.classList.remove("hidden");
                 href_label.classList.remove("hidden");
-                href_form.value = files[0].name.replace(/\.(ics|vcf)$/, '');
+                if (files && files.length > 0) {
+                    href_form.value = files[0].name.replace(/\.(ics|vcf)$/, '');
+                } else {
+                    href_form.value = "";
+                }
             }
             return false;
         }
@@ -195,6 +202,7 @@ export class UploadCollectionScene {
             href_label.classList.remove("hidden");
             hreflimitmsg_html.classList.add("hidden");
             pending_html.classList.add("hidden");
+            errorHandler.clearError();
             close_btn.onclick = null;
             upload_btn.onclick = null;
             href_form.value = "";

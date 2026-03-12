@@ -19,7 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { discover_server_features, get_collections } from "../api/api.js";
+import { get_collections } from "../api/api.js";
+import { discover_server_features } from "../api/sharing.js";
+
 import { SERVER } from "../constants.js";
 import { Collection, CollectionType } from "../models/collection.js";
 import { bytesToHumanReadable } from "../utils/misc.js";
