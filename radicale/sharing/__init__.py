@@ -346,28 +346,33 @@ class BaseSharing:
     # resolves a path to a share
     def sharing_collection_resolver(self, path: str, user: str) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if not found"""
+        share = None
+
         if self.sharing_collection_by_token:
-            result = self.sharing_collection_by_token_resolver(path)
-            if result is not None:
-                return result
-            else:
-                # check for map
-                pass
+            if share is None:
+                share = self.sharing_collection_by_token_resolver(path)
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/token: not active")
-            pass
 
         if self.sharing_collection_by_map:
-            result = self.sharing_collection_by_map_resolver(path, user)
-            if result is not None:
-                return result
+            if share is None:
+                share = self.sharing_collection_by_map_resolver(path, user)
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
-            pass
 
-        return None
+        if share is not None:
+            if self.permit_properties_overlay:
+                if share['Permissions'] and "p" not in share['Permissions']:
+                    # add permit permission
+                    share['Permissions'] += "P"
+            else:
+                if share['Permissions'] and "P" not in share['Permissions']:
+                    # add deny permission
+                    share['Permissions'] += "p"
+
+        return share
 
     # adjust a share
     def sharing_collection_update(self, ShareType: str, PathOrToken: str, OwnerOrUser: str, Properties: dict) -> None:
