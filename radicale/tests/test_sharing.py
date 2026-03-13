@@ -494,15 +494,15 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
-            logging.info("\n*** create token without PathMapped (form) -> should fail")
+            logging.info("\n*** create token without PathMapped (form) -> 400")
             form_array = []
             _, headers, answer = self._sharing_api_form("token", "create", 400, login="owner:ownerpw", form_array=form_array)
 
-            logging.info("\n*** create token without PathMapped (json) -> should fail")
+            logging.info("\n*** create token without PathMapped (json) -> 400")
             json_dict = {}
             _, headers, answer = self._sharing_api_json("token", "create", 400, login="owner:ownerpw", json_dict=json_dict)
 
-            logging.info("\n*** create token#1 without existing collection (form->text)")
+            logging.info("\n*** create token#1 without existing collection (form->text) -> 404")
             form_array = ["PathMapped=" + path_base1]
             _, headers, answer = self._sharing_api_form("token", "create", check=404, login="owner:ownerpw", form_array=form_array)
 
@@ -510,7 +510,11 @@ class TestSharingApiSanity(BaseTest):
             self.mkcalendar(path_base1, login="owner:ownerpw")
             self.mkcalendar(path_base2, login="owner:ownerpw")
 
-            logging.info("\n*** create token#1 with existing collection (form->text)")
+            logging.info("\n*** create token#1 with existing collection (form->text) but no trailing / -> 400")
+            form_array = ["PathMapped=" + path_base1.rstrip('/')]
+            _, headers, answer = self._sharing_api_form("token", "create", check=400, login="owner:ownerpw", form_array=form_array)
+
+            logging.info("\n*** create token#1 with existing collection (form->text) -> 200")
             form_array = ["PathMapped=" + path_base1]
             _, headers, answer = self._sharing_api_form("token", "create", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status='success'" in answer
@@ -806,23 +810,66 @@ class TestSharingApiSanity(BaseTest):
 
         json_dict: dict
 
+        path_owner = "/owner/calendar.ics/"
+        path_user = "/user/calendar-owner.ics/"
+        self.mkcalendar(path_owner, login="owner:ownerpw")
+
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            self.configure({"sharing": {"permit_create_map": "False"}})
+
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
-            logging.info("\n*** create map without PathMapped (json) -> should fail")
+            logging.info("\n*** create map without PathMapped (json) -> 400")
             json_dict = {}
             _, headers, answer = self._sharing_api_json("map", "create", 400, login="owner:ownerpw", json_dict=json_dict)
 
-            logging.info("\n*** create map without PathMapped but User (json) -> should fail")
+            logging.info("\n*** create map without PathMapped but User (json) -> 400")
             json_dict = {'User': "user"}
             _, headers, answer = self._sharing_api_json("map", "create", 400, login="owner:ownerpw", json_dict=json_dict)
 
-            logging.info("\n*** create map without PathMapped but User and PathOrToken (json) -> should fail")
+            logging.info("\n*** create map without PathMapped but User and PathOrToken (json) -> 400")
             json_dict = {}
             json_dict['User'] = "user"
-            json_dict['PathOrToken'] = "/owner/calendar.ics"
+            json_dict['PathOrToken'] = path_user
             _, headers, answer = self._sharing_api_json("map", "create", 400, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map with PathMapped, User, PathOrToken without trailing / (json) -> 400")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_user
+            json_dict['PathMapped'] = path_owner.rstrip('/')
+            _, headers, answer = self._sharing_api_json("map", "create", 400, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map with PathMapped without trailing /, User, PathOrToken (json) -> 400")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_user.rstrip('/')
+            json_dict['PathMapped'] = path_owner
+            _, headers, answer = self._sharing_api_json("map", "create", 400, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map with PathMapped, User, PathOrToken - not permitted (json) -> 403")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_user
+            json_dict['PathMapped'] = path_owner
+            _, headers, answer = self._sharing_api_json("map", "create", 403, login="owner:ownerpw", json_dict=json_dict)
+
+            self.configure({"sharing": {"permit_create_map": "True"}})
+
+            logging.info("\n*** create map with PathMapped, User, PathOrToken (json) -> 200")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_user
+            json_dict['PathMapped'] = path_owner
+            _, headers, answer = self._sharing_api_json("map", "create", 200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map with PathMapped, User, PathOrToken=PathOwner (json) -> 409")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathOrToken'] = path_owner
+            json_dict['PathMapped'] = path_owner
+            _, headers, answer = self._sharing_api_json("map", "create", 409, login="owner:ownerpw", json_dict=json_dict)
 
     def test_sharing_api_map_usage(self) -> None:
         """share-by-map API usage tests."""
