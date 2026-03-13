@@ -71,7 +71,24 @@ class TestSharingApiSanity(BaseTest):
         _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept)
         return _, headers, answer
 
-    def _propfind_calendar_color(self, path, login):
+    def _propfind_allprop(self, path: str, login) -> dict:
+        propfind_allprop = get_file_content("allprop.xml")
+        _, responses = self.propfind(path=path, data=propfind_allprop, login=login)
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int)
+        return response
+
+    def _propfind_priviledges(self, path: str, login) -> list[str]:
+        response = self._propfind_allprop(path, login)
+        status, prop = response["D:current-user-privilege-set"]
+        logging.debug("prop: %r", prop)
+        priviledges = prop.findall(xmlutils.make_clark("D:privilege"))
+        assert len(priviledges) >= 1
+        priviledges_list = [xmlutils.make_human_tag(priviledge.findall("*")[0].tag) for priviledge in priviledges]
+        return priviledges_list
+
+    def _propfind_calendar_color(self, path, login) -> Union[str | None]:
         propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
         _, responses = self.propfind(path=path, data=propfind_calendar_color, login=login)
         logging.info("response: %r", responses)
@@ -2825,14 +2842,16 @@ permissions: RrWw""")
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
-                                    "response_content_on_debug": "False",
+                                    "response_content_on_debug": "True",
                                     "request_content_on_debug": "True"},
                         "rights": {"type": "owner_only"}})
 
         json_dict: dict
 
-        path_user1 = "/user1/calendarPGu1.ics/"
         path_owner1 = "/owner1/calendarPGo1.ics/"
+        path_user1_r = "/user1/calendarPGu1-r.ics/"
+        path_user1_rw = "/user1/calendarPGu1-rw.ics/"
+        path_user1_RrWw = "/user1/calendarPGu1-RrWw.ics/"
 
         logging.info("\n*** prepare")
         self.mkcalendar(path_owner1, login="owner1:owner1pw")
@@ -2844,13 +2863,20 @@ permissions: RrWw""")
             # create map
             self.configure({"sharing": {"default_permissions_create_map": "r"}})
 
+            logging.info("\n*** create map user1/owner1 r -> 200")
             json_dict = {}
             json_dict['User'] = "user1"
             json_dict['PathMapped'] = path_owner1
-
-            logging.info("\n*** create map user1/owner1 r -> 200")
-            json_dict['PathOrToken'] = path_user1 + "r"
+            json_dict['PathOrToken'] = path_user1_r
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            # enable map by user
+            logging.info("\n*** enable map by user1")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_user1_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user1:user1pw", json_dict=json_dict)
 
             logging.info("\n*** list (json->json)")
             _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner1:owner1pw", json_dict=json_dict)
@@ -2859,9 +2885,23 @@ permissions: RrWw""")
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['Permissions'] == "r"
 
+            # check PROPFIND/priviledges item as user
+            logging.info("\n*** PROPFIND/priviledges item as user")
+            priviledges_list = self._propfind_priviledges(path_user1_r, login="user1:user1pw")
+            assert "D:read" in priviledges_list
+            assert "D:write-content" not in priviledges_list
+            assert "D:write-properties" not in priviledges_list
+            assert "D:write" not in priviledges_list
+            assert "D:all" not in priviledges_list
+
             logging.info("\n*** create map user1/owner1 rw -> 200")
-            json_dict['PathOrToken'] = path_user1 + "rw"
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_owner1
+            json_dict['PathOrToken'] = path_user1_rw
             json_dict['Permissions'] = "rw"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** list (json->json)")
@@ -2871,10 +2911,27 @@ permissions: RrWw""")
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['Permissions'] == "rw"
 
+            # enable map by user
+            logging.info("\n*** enable map by user1")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_user1_rw
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user1:user1pw", json_dict=json_dict)
+
+            # check PROPFIND/priviledges item as user
+            logging.info("\n*** PROPFIND/priviledges item as user")
+            priviledges_list = self._propfind_priviledges(path_user1_rw, login="user1:user1pw")
+            assert "D:read" in priviledges_list
+            assert "D:write-content" in priviledges_list
+            assert "D:write-properties" not in priviledges_list
+            assert "D:write" not in priviledges_list
+            assert "D:all" not in priviledges_list
+
             logging.info("\n*** create map user1/owner1 with adjusted default permissions -> 200")
             self.configure({"sharing": {"default_permissions_create_map": "RrWw"}})
-            json_dict['PathOrToken'] = path_user1 + "RrRw"
-            del json_dict['Permissions']
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_owner1
+            json_dict['PathOrToken'] = path_user1_RrWw
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** list (json->json)")
@@ -3485,8 +3542,8 @@ permissions: RrWw""")
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
-                                    "permit_create_map": True,
-                                    "permit_create_token": True,
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "True",
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -3552,6 +3609,15 @@ permissions: RrWw""")
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_r
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # check PROPFIND/priviledges item as user
+            logging.info("\n*** PROPFIND/priviledges item as user -> calendar")
+            priviledges_list = self._propfind_priviledges(path_shared_r, login="user:userpw")
+            assert "D:read" in priviledges_list
+            assert "D:write-content" not in priviledges_list
+            assert "D:write-properties" in priviledges_list
+            assert "D:write" not in priviledges_list
+            assert "D:all" not in priviledges_list
 
             # verify PROPPATCH as user
             logging.info("\n*** PROPFIND collection user -> ok")
