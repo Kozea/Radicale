@@ -259,6 +259,20 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
     collection_tag = collection.tag
     # !!! Don't access storage after this !!!
     unlock_storage_fn()
+    if share and share['ShareType'] == "bday":
+        collection_tag = "VCALENDAR"
+        # autoconvert
+        retrieved_items_vcf_to_ics = []
+        for item, flag in retrieved_items:
+            item_ics = item.convert_vcf_to_ics()
+            if item_ics is None:
+                continue
+            else:
+                pass
+            item_ics.href = item.href
+            retrieved_items_vcf_to_ics.append((item_ics, flag))
+        retrieved_items = retrieved_items_vcf_to_ics
+        logging.debug("TRACE/REPORT/retrieved_items: %r", retrieved_items)
 
     n_vevents = 0
     while retrieved_items:
@@ -712,12 +726,20 @@ def xml_item_response(base_prefix: str, href: str,
                       found_props: Sequence[ET.Element] = (),
                       not_found_props: Sequence[ET.Element] = (),
                       found_item: bool = True, share: Union[dict, None] = None) -> ET.Element:
+
     response = ET.Element(xmlutils.make_clark("D:response"))
+
+    share_bday_automap = False
+    if share and share['ShareType'] == "bday":
+        share_bday_automap = True
 
     href_element = ET.Element(xmlutils.make_clark("D:href"))
     href_element.text = xmlutils.make_href(base_prefix, href)
     if share:
+        # backmap
         href_element.text = href_element.text.replace(share['PathMapped'], share['PathOrToken'])
+        if share_bday_automap:
+            href_element.text = href_element.text.rstrip(".vcf") + ".ics"
     response.append(href_element)
 
     if found_item:
