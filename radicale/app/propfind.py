@@ -232,15 +232,11 @@ def xml_propfind_response(
             privileges = ["D:read"]
             if share:
                 if write:
-                    privileges.append("D:write-content")
-                else:
-                    if self._sharing.permit_properties_overlay:
-                        if share['Permissions'] and not "p" in share['Permissions']:
-                            privileges.append("D:write-properties")
-                    else:
-                        if share['Permissions'] and not "P" in share['Permissions']:
-                            privileges.append("D:write-properties")
-            if write:
+                    if "P" in share['Permissions']:
+                        privileges.append("D:write-properties")
+                    if "w" in share['Permissions']:
+                        privileges.append("D:write-content")
+            elif write:
                 privileges.append("D:all")
                 privileges.append("D:write")
                 privileges.append("D:write-properties")
