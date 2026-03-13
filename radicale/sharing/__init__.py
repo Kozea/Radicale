@@ -668,12 +668,12 @@ class BaseSharing:
                     if not re.search('^' + TOKEN_PATTERN_V1 + '$', request_data[key]):
                         logger.warning(api_info + ": unsupported " + key)
                         return httputils.bad_request("Invalid value for PathOrToken")
-                elif ShareType == "map":
+                else:
                     if not re.search('^' + PATH_PATTERN + '$', request_data[key]):
                         logger.warning(api_info + ": unsupported " + key)
                         return httputils.bad_request("Invalid value for PathOrToken")
-                elif not request_data[key].endswith("/"):
-                    return httputils.bad_request("PathOrToken not ending with /")
+                    if not request_data[key].endswith("/"):
+                        return httputils.bad_request("PathOrToken not ending with /")
             elif key == "PathMapped":
                 if not re.search('^' + PATH_PATTERN + '$', request_data[key]):
                     logger.warning(api_info + ": unsupported " + key)
