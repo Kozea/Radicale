@@ -256,6 +256,7 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "collection_by_map": "True",
+                                    "collection_by_bday": "True",
                                     "collection_by_token": "True"},
                         "rights": {"type": "owner_only"}})
 
@@ -333,13 +334,16 @@ class TestSharingApiSanity(BaseTest):
             # path with valid API and hook and all enabled
             self.configure({"sharing": {
                                         "collection_by_map": "True",
+                                        "collection_by_bday": "True",
                                         "collection_by_token": "True"}
                             })
             for sharetype in sharing.SHARE_TYPES:
                 path = "/.sharing/v1/" + sharetype + "/" + action
                 # invalid API
+                logging.info("\n*** check hook -> 404 (invalid)")
                 _, headers, _ = self.request("POST", path + "NA", check=404, login="owner:ownerpw")
                 #  valid API
+                logging.info("\n*** check hook -> 400 (valid but no data)")
                 _, headers, _ = self.request("POST", path, check=400, login="owner:ownerpw")
 
             logging.info("\n*** check API hook: info/token -> 200")
@@ -353,8 +357,10 @@ class TestSharingApiSanity(BaseTest):
             # When turning on permission to create
             self.configure({"sharing": {
                                         "collection_by_map": "True",
+                                        "collection_by_bday": "True",
                                         "collection_by_token": "True",
                                         "permit_create_map": "True",
+                                        "permit_create_bday": "True",
                                         "permit_create_token": "True"}
                             })
             logging.info("\n*** check API hook: info/all")
@@ -363,8 +369,10 @@ class TestSharingApiSanity(BaseTest):
             answer_dict = json.loads(answer)
             assert answer_dict['FeatureEnabledCollectionByMap'] is True, f'FeatureEnabledCollectionByMap {db_type}'
             assert answer_dict['FeatureEnabledCollectionByToken'] is True, f'FeatureEnabledCollectionByToken {db_type}'
+            assert answer_dict['FeatureEnabledCollectionByBday'] is True, f'FeatureEnabledCollectionByBday {db_type}'
             assert answer_dict['PermittedCreateCollectionByMap'] is True, f'PermittedCreateCollectionByMap {db_type}'
             assert answer_dict['PermittedCreateCollectionByToken'] is True, f'PermittedCreateCollectionByToken {db_type}'
+            assert answer_dict['PermittedCreateCollectionByBday'] is True, f'PermittedCreateCollectionByBday {db_type}'
 
     def test_sharing_api_list_with_auth(self) -> None:
         """POST/list with authentication."""
@@ -374,8 +382,10 @@ class TestSharingApiSanity(BaseTest):
                         "sharing": {
                                     "type": "csv",
                                     "permit_create_map": True,
+                                    "permit_create_bday": True,
                                     "permit_create_token": True,
                                     "collection_by_map": "True",
+                                    "collection_by_bday": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "true",
                                     "request_content_on_debug": "True"},
@@ -478,6 +488,7 @@ class TestSharingApiSanity(BaseTest):
                                     "permit_create_map": True,
                                     "permit_create_token": True,
                                     "collection_by_map": "True",
+                                    "collection_by_bday": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
                                     "response_content_on_debug": "True",
@@ -4170,3 +4181,124 @@ permissions: RrWw""")
             assert answer_dict['Lines'] == 1
             assert 'ICAL:calendar-color' not in answer_dict['Content'][0]['Properties']
             assert 'C:calendar-description' not in answer_dict['Content'][0]['Properties']
+
+    def test_sharing_api_bday_basic(self) -> None:
+        """share-by-map API usage tests related to partial overlay."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_bday": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_bday": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/adressbook-" + db_type + ".vcf/"
+            path_shared_r = "/user/calendar-bday-abook-shared-by-owner-r-" + db_type + ".ics/"
+            self.create_addressbook(path_mapped, login="owner:ownerpw")
+
+            contact = get_file_content("contact1.vcf")
+            path = path_mapped + "/contact1.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact2-with-bday.vcf")
+            path = path_mapped + "/contact2-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact3-with-bday.vcf")
+            path = path_mapped + "/contact3-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+<propname />
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            assert "CR:supported-address-data" in response
+
+            # execute GET as owner
+            logging.info("\n*** GET VCF collection owner -> ok")
+            _, answer = self.get(path_mapped, login="owner:ownerpw")
+            assert "contact1" in answer
+            assert "contact2" in answer
+
+            # create map
+            logging.info("\n*** create bday user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("bday", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable bday by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("bday", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # check PROPFIND item as user
+            logging.info("\n*** PROPFIND item as user -> calendar")
+            response = self._propfind_allprop(path_shared_r, login="user:userpw")
+            logging.debug("response: %r", response)
+            assert "CR:supported-address-data" not in response
+            assert "D:sync-token" not in response
+            assert "C:supported-calendar-component-set" in response
+            assert "D:current-user-privilege-set" in response
+
+            # check PROPFIND/priviledges item as user
+            logging.info("\n*** PROPFIND/priviledges item as user -> calendar")
+            priviledges_list = self._propfind_priviledges(path_shared_r, login="user:userpw")
+            assert "D:read" in priviledges_list
+            assert "D:write-content" not in priviledges_list
+            assert "D:write-properties" in priviledges_list
+            assert "D:write" not in priviledges_list
+            assert "D:all" not in priviledges_list
+
+            # verify content as user
+            logging.info("\n*** GET collection user -> ok")
+            _, answer = self.get(path_shared_r, login="user:userpw")
+            assert "BEGIN:VCARD" not in answer
+            assert "BEGIN:VCALENDAR" in answer
+            assert "RRULE:FREQ=YEARLY" in answer
+            assert "DTSTART;VALUE=DATE:19700101" in answer
+            assert "DTEND;VALUE=DATE:19700102" in answer
+            assert "TRANSP:TRANSPARENT" in answer
+
+            # verify report as user
+            logging.info("\n*** REPORT collection user -> ok")
+            _, responses = self.report(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag/>
+    </D:prop>
+</C:calendar-query>""", login="user:userpw")
+            logging.debug("resonses: %r", responses)
+            assert path_shared_r + "contact2-with-bday.ics" in responses
+            assert path_shared_r + "contact3-with-bday.ics" in responses
+            assert path_shared_r + "contact1.ics" not in responses
