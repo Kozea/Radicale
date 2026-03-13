@@ -241,6 +241,17 @@ class Sharing(sharing.BaseSharing):
                         # must be unique systemwide
                         logger.error("sharing/map/create: entry already exists: PathMapped=%r User=%r", PathMapped, User)
                         return {"status": "conflict"}
+            elif ShareType == "bday":
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("TRACE/sharing/bday/create: PathOrToken=%r Owner=%r PathMapped=%r User=%r Permissions=%r", PathOrToken, Owner, PathMapped, User, Permissions)
+                # check for duplicate map entry
+                for row in self._sharing_cache:
+                    if row['ShareType'] != "bday":
+                        continue
+                    if row['PathMapped'] == PathMapped and row['User'] == User and row['PathOrToken'] == PathOrToken:
+                        # must be unique systemwide
+                        logger.error("sharing/bday/create: entry already exists: PathMapped=%r User=%r", PathMapped, User)
+                        return {"status": "conflict"}
             else:
                 return {"status": "error"}
 
