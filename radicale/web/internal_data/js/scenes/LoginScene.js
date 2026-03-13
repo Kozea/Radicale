@@ -72,7 +72,7 @@ export class LoginScene {
                 // Fetch principal
                 let loading_scene = new LoadingScene();
                 push_scene(loading_scene, false);
-                principal_req = get_principal(user, password, function (collection, error1) {
+                principal_req = get_principal(user, password, function (principal_collection, error1) {
                     if (scene_index === null) {
                         return;
                     }
@@ -85,7 +85,7 @@ export class LoginScene {
                         let saved_user = user;
                         user = "";
                         let collections_scene = new CollectionsScene(
-                            saved_user, password, collection, function (error1) {
+                            saved_user, password, principal_collection, function (error1) {
                                 errorHandler.setError(error1);
                                 user = saved_user;
                             });

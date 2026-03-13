@@ -40,11 +40,11 @@ export class CollectionsScene {
     /**
      * @param {string} user
      * @param {string} password
-     * @param {Collection} collection The collection to show sharing options for.
+     * @param {Collection} principal_collection The princial collection
      * @param {function(string):void} onerror Called when an error occurs, before the
      *                                   scene is popped.
      */
-    constructor(user, password, collection, onerror) {
+    constructor(user, password, principal_collection, onerror) {
         /** @type {HTMLElement} */ let html_scene = document.getElementById("collectionsscene");
         /** @type {HTMLElement} */ let template = html_scene.querySelector("[data-name=collectiontemplate]");
         /** @type {HTMLElement} */ let new_btn = html_scene.querySelector("[data-name=new]");
@@ -53,12 +53,12 @@ export class CollectionsScene {
 
         /** @type {?number} */ let scene_index = null;
         /** @type {?XMLHttpRequest} */ let collections_req = null;
-        /** @type {?Array<Collection>} */ let collections = null;
+        /** @type {?Array<Collection>} */ let child_collections = null;
         /** @type {Array<HTMLElement>} */ let nodes = [];
 
         function onnew() {
             try {
-                let create_collection_scene = new CreateEditCollectionScene(user, password, collection);
+                let create_collection_scene = new CreateEditCollectionScene(user, password, principal_collection);
                 push_scene(create_collection_scene, false);
             } catch (err) {
                 console.error(err);
@@ -68,7 +68,7 @@ export class CollectionsScene {
 
         function onupload() {
             try {
-                let upload_scene = new UploadCollectionScene(user, password, collection);
+                let upload_scene = new UploadCollectionScene(user, password, principal_collection);
                 push_scene(upload_scene, false);
             } catch (err) {
                 console.error(err);
@@ -86,6 +86,9 @@ export class CollectionsScene {
             return false;
         }
 
+        /**
+         * @param {Collection} collection
+         */
         function onedit(collection) {
             try {
                 let edit_collection_scene = new CreateEditCollectionScene(user, password, collection);
@@ -96,6 +99,9 @@ export class CollectionsScene {
             return false;
         }
 
+        /**
+         * @param {Collection} collection
+         */
         function onshare(collection) {
             try {
                 let share_collection_scene = new ShareCollectionScene(user, password, collection);
@@ -106,6 +112,9 @@ export class CollectionsScene {
             return false;
         }
 
+        /**
+         * @param {Collection} collection
+         */
         function ondelete(collection) {
             try {
                 let delete_collection_scene = new DeleteCollectionScene(user, password, collection);
@@ -116,12 +125,15 @@ export class CollectionsScene {
             return false;
         }
 
+        /**
+         * @param {any[]} collections
+         */
         function show_collections(collections) {
             /** @type {HTMLElement} */ let navBar = document.querySelector("#logoutview");
             let heightOfNavBar = navBar.offsetHeight + "px";
             html_scene.style.marginTop = heightOfNavBar;
             html_scene.style.height = "calc(100vh - " + heightOfNavBar + ")";
-            collections.forEach(function (collection) {
+            collections.forEach(function (/** @type {Collection} */ collection) {
                 /** @type {HTMLElement} */ let node = /** @type {HTMLElement} */(template.cloneNode(true));
                 node.classList.remove("hidden");
                 /** @type {HTMLElement} */ let title_form = node.querySelector("[data-name=title]");
@@ -184,7 +196,7 @@ export class CollectionsScene {
         function update() {
             let loading_scene = new LoadingScene();
             push_scene(loading_scene, false);
-            collections_req = get_collections(user, password, collection, function (collections1, error) {
+            collections_req = get_collections(user, password, principal_collection, function (child_collections_, error) {
                 if (scene_index === null) {
                     return;
                 }
@@ -193,7 +205,7 @@ export class CollectionsScene {
                     onerror(error);
                     pop_scene(scene_index - 1);
                 } else {
-                    collections = collections1;
+                    child_collections = child_collections_;
                     pop_scene(scene_index);
                 }
             });
@@ -204,12 +216,12 @@ export class CollectionsScene {
             new_btn.onclick = onnew;
             upload_btn.onclick = onupload;
             incomingshares_btn.onclick = onincomingshares;
-            if (collections === null) {
+            if (child_collections === null) {
                 update();
                 discover_server_features(user, password, maybe_enable_sharing_options);
             } else {
                 // from update loading scene
-                show_collections(collections);
+                show_collections(child_collections);
             }
         };
         this.hide = function () {
@@ -218,7 +230,7 @@ export class CollectionsScene {
             new_btn.onclick = null;
             upload_btn.onclick = null;
             incomingshares_btn.onclick = null;
-            collections = null;
+            child_collections = null;
             // remove collection
             nodes.forEach(function (node) {
                 node.parentNode.removeChild(node);
@@ -231,7 +243,7 @@ export class CollectionsScene {
                 collections_req.abort();
                 collections_req = null;
             }
-            collections = null;
+            child_collections = null;
         };
     }
 }
