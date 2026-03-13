@@ -2120,6 +2120,14 @@ Share collection by map
 
 Default: `false`
 
+##### collection_by_bday
+
+_(>= 3.8.0)_
+
+Share collection by bday (conversion on-the-fly)
+
+Default: `false`
+
 ##### permit_create_token
 
 _(>= 3.7.0)_
@@ -2141,6 +2149,17 @@ Default: `false`
 
 * If `False` it can be explicitly granted by *rights* permissions: `M`
 * If `True` it can be explicitly forbidden by *rights* permissions: `m`
+
+##### permit_create_bday
+
+_(>= 3.8.0)_
+
+Permit create of bday-based sharing
+
+Default: `false`
+
+* If `False` it can be explicitly granted by *rights* permissions: `B`
+* If `True` it can be explicitly forbidden by *rights* permissions: `b`
 
 ##### permit_properties_overlay
 
