@@ -48,7 +48,7 @@ def test_create_and_delete_share_by_key(page: Page, radicale_server: str) -> Non
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(1)
     expect(
-        page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden) img[alt='RO']")
+        page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='ro']")
     ).to_be_visible()
     page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
@@ -62,7 +62,7 @@ def test_create_and_delete_share_by_key(page: Page, radicale_server: str) -> Non
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(1)
     expect(
-        page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden) img[alt='RW']")
+        page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='rw']")
     ).to_be_visible()
     page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
@@ -89,7 +89,7 @@ def test_create_and_delete_share_by_map(page: Page, radicale_server: str) -> Non
         page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(1)
     expect(
-        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden) img[alt='RO']")
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='ro']")
     ).to_be_visible()
     page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
@@ -105,7 +105,7 @@ def test_create_and_delete_share_by_map(page: Page, radicale_server: str) -> Non
         page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(1)
     expect(
-        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden) img[alt='RW']")
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='rw']")
     ).to_be_visible()
     page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
@@ -196,7 +196,7 @@ def test_edit_share_by_token(page: Page, radicale_server: str) -> None:
     page.click('button[data-name="sharebytoken"]')
     page.click('#newshare button[data-name="submit"]')
     expect(
-        page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden) img[alt='RO']")
+        page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='ro']")
     ).to_be_visible()
 
     # Edit to RW
@@ -207,7 +207,7 @@ def test_edit_share_by_token(page: Page, radicale_server: str) -> None:
 
     # Verify RW
     expect(
-        page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden) img[alt='RW']")
+        page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='rw']")
     ).to_be_visible()
 
 
@@ -223,7 +223,7 @@ def test_edit_share_by_map(page: Page, radicale_server: str) -> None:
     page.locator('input[data-name="sharehref"]').fill("mapped")
     page.click('#newshare button[data-name="submit"]')
     expect(
-        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden) img[alt='RO']")
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='ro']")
     ).to_be_visible()
 
     # Edit map share
@@ -239,7 +239,7 @@ def test_edit_share_by_map(page: Page, radicale_server: str) -> None:
 
     # Verify changes
     expect(
-        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden) img[alt='RW']")
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='rw']")
     ).to_be_visible()
     # If disabled, it might not show up or show differently, but our current UI doesn't visually distinguish enabled/disabled in the list yet
     # Let's verify by re-opening edit scene

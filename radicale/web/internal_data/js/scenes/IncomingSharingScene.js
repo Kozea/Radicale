@@ -21,6 +21,7 @@
 
 import { Share, reload_sharing_list, update_incoming_share } from "../api/sharing.js";
 import { ErrorHandler } from "../utils/error.js";
+import { displayPermissions } from "../utils/permissions.js";
 import { LoadingScene } from "./LoadingScene.js";
 import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
 
@@ -99,7 +100,7 @@ export class IncomingSharingScene {
 
                 let pathortoken_td = node.querySelector("[data-name=pathortoken]");
                 let owner_td = node.querySelector("[data-name=owner]");
-                let permissions_td = node.querySelector("[data-name=permissions]");
+                let permissions_td = /** @type {HTMLElement} */ node.querySelector("[data-name=permissions]");
                 let enabled_cb = /** @type {HTMLInputElement} */ (node.querySelector("[data-name=enabled]"));
                 let hidden_cb = /** @type {HTMLInputElement} */ (node.querySelector("[data-name=hidden]"));
 
@@ -110,7 +111,7 @@ export class IncomingSharingScene {
 
                 pathortoken_td.textContent = displayPath;
                 owner_td.textContent = share.Owner;
-                permissions_td.textContent = share.Permissions;
+                displayPermissions(share.Permissions, permissions_td);
 
                 enabled_cb.checked = share.EnabledByUser;
                 hidden_cb.checked = share.HiddenByUser;

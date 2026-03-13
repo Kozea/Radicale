@@ -27,6 +27,7 @@ import {
 } from "../api/sharing.js";
 import { Collection } from "../models/collection.js";
 import { ErrorHandler } from "../utils/error.js";
+import { displayPermissions } from "../utils/permissions.js";
 import { CreateEditShareScene } from "./CreateEditShareScene.js";
 import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
 
@@ -73,16 +74,12 @@ export class ShareCollectionScene {
     }
 
     function onsharebytoken() {
-      let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "token", function () {
-        update_share_list(user, password, collection, errorHandler);
-      });
+      let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "token");
       push_scene(create_edit_share_scene, false);
     }
 
     function onsharebymap() {
-      let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "map", function () {
-        update_share_list(user, password, collection, errorHandler);
-      });
+      let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "map");
       push_scene(create_edit_share_scene, false);
     }
 
@@ -181,23 +178,11 @@ function add_share_row_node(user, password, collection, share, template, delete_
   }
 
   let permissions = (share["Permissions"] || "").toLowerCase();
-  if (permissions === "rw") {
-    node
-      .querySelector("[data-name=ro]")
-      .parentNode.removeChild(node.querySelector("[data-name=ro]"));
-  } else if (permissions === "r") {
-    node
-      .querySelector("[data-name=rw]")
-      .parentNode.removeChild(node.querySelector("[data-name=rw]"));
-  } else {
-    console.warn("Unknown permissions", permissions);
-  }
+  displayPermissions(permissions, node);
 
   /** @type {HTMLElement} */ let edit_btn = node.querySelector("[data-name=edit]");
   edit_btn.onclick = function () {
-    let create_edit_share_scene = new CreateEditShareScene(user, password, collection, share.ShareType, function () {
-      update_share_list(user, password, collection, errorHandler);
-    }, share);
+    let create_edit_share_scene = new CreateEditShareScene(user, password, collection, share.ShareType, share);
     push_scene(create_edit_share_scene, false);
   };
 

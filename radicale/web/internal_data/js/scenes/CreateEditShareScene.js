@@ -35,10 +35,9 @@ export class CreateEditShareScene {
      * @param {string} password
      * @param {import("../models/collection.js").Collection} collection
      * @param {string} shareType
-     * @param {function():void} onclose
      * @param {Share} [share] If provided, the scene will be in edit mode.
      */
-    constructor(user, password, collection, shareType, onclose, share) {
+    constructor(user, password, collection, shareType, share) {
         let edit = !!share;
         let pathMapped = collection.href;
         /** @type {HTMLElement} */ let html_scene = document.getElementById("newshare");
@@ -83,7 +82,6 @@ export class CreateEditShareScene {
                 if (scene_index !== null) {
                     pop_scene(scene_index - 1);
                 }
-                if (onclose) onclose();
             } catch (err) {
                 console.error(err);
             }
@@ -119,7 +117,6 @@ export class CreateEditShareScene {
                         errorHandler.setError(error);
                     } else {
                         pop_scene(scene_index - 1);
-                        if (onclose) onclose();
                     }
                 };
 
