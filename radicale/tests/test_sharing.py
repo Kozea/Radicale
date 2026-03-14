@@ -88,7 +88,7 @@ class TestSharingApiSanity(BaseTest):
         priviledges_list = [xmlutils.make_human_tag(priviledge.findall("*")[0].tag) for priviledge in priviledges]
         return priviledges_list
 
-    def _propfind_calendar_color(self, path, login) -> Union[str | None]:
+    def _propfind_calendar_color(self, path, login) -> Union[str, None]:
         propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
         _, responses = self.propfind(path=path, data=propfind_calendar_color, login=login)
         logging.info("response: %r", responses)
