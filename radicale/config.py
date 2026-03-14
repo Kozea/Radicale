@@ -37,7 +37,7 @@ from configparser import RawConfigParser
 from typing import (Any, Callable, ClassVar, Iterable, List, Optional,
                     Sequence, Tuple, TypeVar, Union)
 
-from radicale import auth, hook, rights, sharing, storage, types, web
+from radicale import auth, hook, rights, sharing, storage, types, utils, web
 from radicale.hook import email
 from radicale.item import check_and_sanitize_props
 
@@ -614,6 +614,10 @@ This is an automated message. Please do not reply.""",
             "value": "info",
             "help": "threshold for the logger",
             "type": logging_level}),
+        ("limit_content", {
+            "value": str(utils.DEFAULT_LIMIT_CONTENT),
+            "help": "limit content of wrapped text (chars)",
+            "type": positive_int}),
         ("trace_on_debug", {
             "value": "False",
             "help": "do not filter debug messages starting with 'TRACE'",
