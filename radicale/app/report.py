@@ -743,13 +743,13 @@ def xml_item_response(base_prefix: str, href: str,
 def retrieve_items(
         base_prefix: str, path: str, collection: storage.BaseCollection,
         hreferences: Iterable[str], filters: Sequence[ET.Element],
-        multistatus: ET.Element, share: Union[dict | None]) -> Iterator[Tuple[radicale_item.Item, bool]]:
+        multistatus: ET.Element, share: Union[dict, None]) -> Iterator[Tuple[radicale_item.Item, bool]]:
     """Retrieves all items that are referenced in ``hreferences`` from
        ``collection`` and adds 404 responses for missing and invalid items
        to ``multistatus``."""
     collection_requested = False
 
-    def get_names(share: Union[dict | None]) -> Iterator[str]:
+    def get_names(share: Union[dict, None]) -> Iterator[str]:
         """Extracts all names from references in ``hreferences`` and adds
            404 responses for invalid references to ``multistatus``.
            If the whole collections is referenced ``collection_requested``
