@@ -111,7 +111,7 @@ PATH_PATTERN: str = "([a-zA-Z0-9/.\\-]+)"  # TODO: extend or find better source
 
 USER_PATTERN: str = "([a-zA-Z0-9@]+)"  # TODO: extend or find better source
 
-OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color")
+OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname")
 
 
 def load(configuration: "config.Configuration") -> "BaseSharing":

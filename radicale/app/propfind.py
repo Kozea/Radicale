@@ -312,6 +312,8 @@ def xml_propfind_response(
             elif tag == xmlutils.make_clark("RADICALE:displayname"):
                 # Only for internal use by the web interface
                 displayname = collection.get_meta("D:displayname")
+                if share and share['Properties'] and share['Properties']["D:displayname"]:
+                    displayname = share['Properties']["D:displayname"]
                 if displayname is not None:
                     element.text = displayname
                 else:
@@ -324,6 +326,8 @@ def xml_propfind_response(
                     is404 = True
             elif tag == xmlutils.make_clark("D:displayname"):
                 displayname = collection.get_meta("D:displayname")
+                if share and share['Properties'] and share['Properties']["D:displayname"]:
+                    displayname = share['Properties']["D:displayname"]
                 if not displayname and is_leaf:
                     displayname = collection.path
                 if displayname is not None:
