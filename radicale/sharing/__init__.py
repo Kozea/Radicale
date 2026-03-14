@@ -382,10 +382,19 @@ class BaseSharing:
     def sharing_collection_update(self, ShareType: str, PathOrToken: str, OwnerOrUser: str, Properties: dict) -> None:
         """ returning dict with PathMapped, Owner, Permissions or None if not found"""
         logger.info("Sharing/collection/update: ShareType=%r PathOrToken=%r OwnerOrUser=%r", ShareType, PathOrToken, OwnerOrUser)
+        # Filter properies for permitted ones
+        properties_filtered: dict = {}
+        for prop in Properties:
+            if prop in OVERLAY_PROPERTIES_WHITELIST:
+                properties_filtered[prop] = Properties[prop]
+            else:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("TRACE/sharing/collection_update: silent discard unsupported property: %r", prop)
+
         self.database_update_sharing(ShareType=ShareType,
                                      PathOrToken=PathOrToken,
                                      OwnerOrUser=OwnerOrUser,
-                                     Properties=Properties)
+                                     Properties=properties_filtered)
 
     # *** internal sharing functions ***
     # resolves a token "path" to a share
