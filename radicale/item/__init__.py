@@ -567,11 +567,15 @@ class Item:
         # set DTSTART
         date = datetime(bdayY, bdayM, bdayD)
         dtstart = date.strftime('%Y%m%d')
-        item_ics.vevent.add('dtstart;VALUE=DATE').value = dtstart
+        item_ics.vevent.add('dtstart').value = dtstart
+        item_ics.vevent.dtstart.value_param = "DATE"
+        item_ics.vevent.dtstart.isNative = False
 
         # calculate and set DTEND
         date += timedelta(days=1)
-        item_ics.vevent.add('dtend;VALUE=DATE').value = date.strftime('%Y%m%d')
+        item_ics.vevent.add('dtend').value = date.strftime('%Y%m%d')
+        item_ics.vevent.dtend.value_param = "DATE"
+        item_ics.vevent.dtend.isNative = False
 
         # set UID
         if hasattr(self.vobject_item, "uid"):
