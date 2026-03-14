@@ -25,7 +25,7 @@ import { Collection } from "../models/collection.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_equals } from "../utils/form_validator.js";
 import { LoadingScene } from "./LoadingScene.js";
-import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
+import { Scene, is_current_scene, pop_scene, pop_to_parent, push_scene } from "./scene_manager.js";
 
 /**
  * @implements {Scene}
@@ -49,7 +49,6 @@ export class DeleteCollectionScene {
         confirmation_txt.value = "";
         confirmation_txt.addEventListener("keydown", onkeydown);
 
-        /** @type {?number} */ let scene_index = null;
         /** @type {?XMLHttpRequest} */ let delete_req = null;
 
         let errorHandler = new ErrorHandler(error_form);
@@ -63,18 +62,17 @@ export class DeleteCollectionScene {
             }
             try {
                 let loading_scene = new LoadingScene();
-                push_scene(loading_scene, false);
+                push_scene(loading_scene);
                 delete_req = delete_collection(user, password, collection, function (error1) {
-                    if (scene_index === null) {
+                    if (!is_current_scene(loading_scene)) {
                         return;
                     }
                     delete_req = null;
-                    delete_req = null;
                     if (error1) {
                         errorHandler.setError(error1);
-                        pop_scene(scene_index);
+                        pop_scene();
                     } else {
-                        pop_scene(scene_index - 1);
+                        pop_to_parent();
                     }
                 });
             } catch (err) {
@@ -85,7 +83,7 @@ export class DeleteCollectionScene {
 
         function oncancel() {
             try {
-                pop_scene(scene_index - 1);
+                pop_scene();
             } catch (err) {
                 console.error(err);
             }
@@ -101,7 +99,6 @@ export class DeleteCollectionScene {
 
         this.show = function () {
             this.release();
-            scene_index = scene_stack.length - 1;
             html_scene.classList.remove("hidden");
             title_form.textContent = collection.displayname || collection.href;
             delete_btn.onclick = ondelete;
@@ -114,7 +111,6 @@ export class DeleteCollectionScene {
             delete_btn.onclick = null;
         };
         this.release = function () {
-            scene_index = null;
             if (delete_req !== null) {
                 delete_req.abort();
                 delete_req = null;

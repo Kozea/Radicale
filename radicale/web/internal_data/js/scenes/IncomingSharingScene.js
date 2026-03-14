@@ -23,7 +23,7 @@ import { Share, reload_sharing_list, update_incoming_share } from "../api/sharin
 import { ErrorHandler } from "../utils/error.js";
 import { displayPermissions } from "../utils/permissions.js";
 import { LoadingScene } from "./LoadingScene.js";
-import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
+import { Scene, is_current_scene, pop_scene, push_scene } from "./scene_manager.js";
 
 /**
  * @implements {Scene}
@@ -42,12 +42,11 @@ export class IncomingSharingScene {
 
         let error_handler = new ErrorHandler(error_element);
 
-        /** @type {?number} */ let scene_index = null;
         /** @type {Array<HTMLElement>} */ let nodes = [];
         /** @type {?Array<Object>} */ let shares_cache = null;
 
         function on_cancel() {
-            pop_scene(scene_index - 1);
+            pop_scene();
         }
 
         /**
@@ -100,7 +99,7 @@ export class IncomingSharingScene {
 
                 let pathortoken_td = node.querySelector("[data-name=pathortoken]");
                 let owner_td = node.querySelector("[data-name=owner]");
-                let permissions_td = /** @type {HTMLElement} */ node.querySelector("[data-name=permissions]");
+                let permissions_td = /** @type {HTMLElement} */ (node.querySelector("[data-name=permissions]"));
                 let enabled_cb = /** @type {HTMLInputElement} */ (node.querySelector("[data-name=enabled]"));
                 let hidden_cb = /** @type {HTMLInputElement} */ (node.querySelector("[data-name=hidden]"));
 
@@ -126,26 +125,25 @@ export class IncomingSharingScene {
 
         function update() {
             let loading_scene = new LoadingScene();
-            push_scene(loading_scene, false);
+            push_scene(loading_scene);
 
             error_handler.clearError();
 
             reload_sharing_list(user, password, null, function (shares, error) {
-                if (scene_index === null) {
+                if (!is_current_scene(loading_scene)) {
                     return;
                 }
                 if (error) {
                     error_handler.setError(error);
-                    pop_scene(scene_index - 1);
+                    pop_scene();
                 } else {
                     shares_cache = shares;
-                    pop_scene(scene_index);
+                    pop_scene();
                 }
             });
         }
 
         this.show = function () {
-            scene_index = scene_stack.length - 1;
             html_scene.classList.remove("hidden");
             cancel_btn.onclick = on_cancel;
             if (shares_cache === null) {
@@ -159,17 +157,16 @@ export class IncomingSharingScene {
             html_scene.classList.add("hidden");
             cancel_btn.onclick = null;
             error_handler.clearError();
-
-            nodes.forEach(function (node) {
-                node.parentNode.removeChild(node);
-            });
-            nodes = [];
-            shares_cache = null;
         };
 
         this.release = function () {
-            scene_index = null;
             error_handler.clearError();
+            nodes.forEach(function (node) {
+                if (node.parentNode) {
+                    node.parentNode.removeChild(node);
+                }
+            });
+            nodes = [];
             shares_cache = null;
         };
     }

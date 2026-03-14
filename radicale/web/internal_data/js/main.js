@@ -24,4 +24,4 @@ import { push_scene } from "./scenes/scene_manager.js";
 
 // Hide startup loading message
 document.getElementById("loadingscene").classList.add("hidden");
-push_scene(new LoginScene(), false);
+push_scene(new LoginScene());

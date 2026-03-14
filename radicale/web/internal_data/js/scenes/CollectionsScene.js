@@ -29,7 +29,7 @@ import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
 import { DeleteCollectionScene } from "./DeleteCollectionScene.js";
 import { IncomingSharingScene } from "./IncomingSharingScene.js";
 import { LoadingScene } from "./LoadingScene.js";
-import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
+import { Scene, is_current_scene, pop_scene, push_scene } from "./scene_manager.js";
 import { ShareCollectionScene, maybe_enable_sharing_options } from "./ShareCollectionScene.js";
 import { UploadCollectionScene } from "./UploadCollectionScene.js";
 
@@ -51,7 +51,6 @@ export class CollectionsScene {
         /** @type {HTMLElement} */ let upload_btn = html_scene.querySelector("[data-name=upload]");
         /** @type {HTMLElement} */ let incomingshares_btn = html_scene.querySelector("[data-name=incomingshares]");
 
-        /** @type {?number} */ let scene_index = null;
         /** @type {?XMLHttpRequest} */ let collections_req = null;
         /** @type {?Array<Collection>} */ let child_collections = null;
         /** @type {Array<HTMLElement>} */ let nodes = [];
@@ -59,7 +58,7 @@ export class CollectionsScene {
         function onnew() {
             try {
                 let create_collection_scene = new CreateEditCollectionScene(user, password, principal_collection);
-                push_scene(create_collection_scene, false);
+                push_scene(create_collection_scene);
             } catch (err) {
                 console.error(err);
             }
@@ -69,7 +68,7 @@ export class CollectionsScene {
         function onupload() {
             try {
                 let upload_scene = new UploadCollectionScene(user, password, principal_collection);
-                push_scene(upload_scene, false);
+                push_scene(upload_scene);
             } catch (err) {
                 console.error(err);
             }
@@ -79,7 +78,7 @@ export class CollectionsScene {
         function onincomingshares() {
             try {
                 let incoming_sharing_scene = new IncomingSharingScene(user, password);
-                push_scene(incoming_sharing_scene, false);
+                push_scene(incoming_sharing_scene);
             } catch (err) {
                 console.error(err);
             }
@@ -92,7 +91,7 @@ export class CollectionsScene {
         function onedit(collection) {
             try {
                 let edit_collection_scene = new CreateEditCollectionScene(user, password, collection);
-                push_scene(edit_collection_scene, false);
+                push_scene(edit_collection_scene);
             } catch (err) {
                 console.error(err);
             }
@@ -105,7 +104,7 @@ export class CollectionsScene {
         function onshare(collection) {
             try {
                 let share_collection_scene = new ShareCollectionScene(user, password, collection);
-                push_scene(share_collection_scene, false);
+                push_scene(share_collection_scene);
             } catch (err) {
                 console.error(err);
             }
@@ -118,7 +117,7 @@ export class CollectionsScene {
         function ondelete(collection) {
             try {
                 let delete_collection_scene = new DeleteCollectionScene(user, password, collection);
-                push_scene(delete_collection_scene, false);
+                push_scene(delete_collection_scene);
             } catch (err) {
                 console.error(err);
             }
@@ -195,18 +194,18 @@ export class CollectionsScene {
 
         function update() {
             let loading_scene = new LoadingScene();
-            push_scene(loading_scene, false);
+            push_scene(loading_scene);
             collections_req = get_collections(user, password, principal_collection, function (child_collections_, error) {
-                if (scene_index === null) {
+                if (!is_current_scene(loading_scene)) {
                     return;
                 }
                 collections_req = null;
                 if (error) {
                     onerror(error);
-                    pop_scene(scene_index - 1);
+                    pop_scene();
                 } else {
                     child_collections = child_collections_;
-                    pop_scene(scene_index);
+                    pop_scene();
                 }
             });
         }
@@ -226,7 +225,6 @@ export class CollectionsScene {
         };
         this.hide = function () {
             html_scene.classList.add("hidden");
-            scene_index = scene_stack.length - 1;
             new_btn.onclick = null;
             upload_btn.onclick = null;
             incomingshares_btn.onclick = null;
@@ -238,7 +236,6 @@ export class CollectionsScene {
             nodes = [];
         };
         this.release = function () {
-            scene_index = null;
             if (collections_req !== null) {
                 collections_req.abort();
                 collections_req = null;

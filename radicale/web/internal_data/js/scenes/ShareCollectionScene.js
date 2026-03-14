@@ -29,7 +29,7 @@ import { Collection } from "../models/collection.js";
 import { ErrorHandler } from "../utils/error.js";
 import { displayPermissions } from "../utils/permissions.js";
 import { CreateEditShareScene } from "./CreateEditShareScene.js";
-import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
+import { Scene, pop_scene, push_scene } from "./scene_manager.js";
 
 /**
  * @implements {Scene}
@@ -41,7 +41,6 @@ export class ShareCollectionScene {
    * @param {Collection} collection The collection on which to edit sharing setting. Must exist.
    */
   constructor(user, password, collection) {
-    /** @type {?number} */ let scene_index = null;
 
     let html_scene = document.getElementById("sharecollectionscene");
 
@@ -66,7 +65,7 @@ export class ShareCollectionScene {
 
     function oncancel() {
       try {
-        pop_scene(scene_index - 1);
+        pop_scene();
       } catch (err) {
         console.error(err);
       }
@@ -75,17 +74,16 @@ export class ShareCollectionScene {
 
     function onsharebytoken() {
       let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "token");
-      push_scene(create_edit_share_scene, false);
+      push_scene(create_edit_share_scene);
     }
 
     function onsharebymap() {
       let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "map");
-      push_scene(create_edit_share_scene, false);
+      push_scene(create_edit_share_scene);
     }
 
     this.show = function () {
       this.release();
-      scene_index = scene_stack.length - 1;
       html_scene.classList.remove("hidden");
       cancel_btn.onclick = oncancel;
       if (server_features.sharing && server_features.sharing.PermittedCreateCollectionByToken) {
@@ -126,7 +124,6 @@ export class ShareCollectionScene {
       cancel_btn.onclick = null;
     };
     this.release = function () {
-      scene_index = null;
     };
   }
 }
@@ -183,7 +180,7 @@ function add_share_row_node(user, password, collection, share, template, delete_
   /** @type {HTMLElement} */ let edit_btn = node.querySelector("[data-name=edit]");
   edit_btn.onclick = function () {
     let create_edit_share_scene = new CreateEditShareScene(user, password, collection, share.ShareType, share);
-    push_scene(create_edit_share_scene, false);
+    push_scene(create_edit_share_scene);
   };
 
   /** @type {HTMLElement} */ let delete_btn = node.querySelector("[data-name=delete]");

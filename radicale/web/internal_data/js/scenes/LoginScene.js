@@ -20,11 +20,11 @@
  */
 
 import { get_principal } from "../api/api.js";
-import { CollectionsScene } from "./CollectionsScene.js";
-import { LoadingScene } from "./LoadingScene.js";
-import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_non_empty } from "../utils/form_validator.js";
+import { CollectionsScene } from "./CollectionsScene.js";
+import { LoadingScene } from "./LoadingScene.js";
+import { Scene, is_current_scene, pop_scene, pop_to_root, push_scene, replace_scene } from "./scene_manager.js";
 /**
  * @constructor
  * @implements {Scene}
@@ -41,7 +41,6 @@ export class LoginScene {
         /** @type {HTMLElement} */ let logout_btn = logout_view.querySelector("[data-name=logout]");
         /** @type {HTMLElement} */ let refresh_btn = logout_view.querySelector("[data-name=refresh]");
 
-        /** @type {?number} */ let scene_index = null;
         let user = "";
         /** @type {?XMLHttpRequest} */ let principal_req = null;
         let errorHandler = new ErrorHandler(error_form);
@@ -71,15 +70,15 @@ export class LoginScene {
                 logout_user_form.textContent = user + "'s Collections";
                 // Fetch principal
                 let loading_scene = new LoadingScene();
-                push_scene(loading_scene, false);
+                push_scene(loading_scene);
                 principal_req = get_principal(user, password, function (principal_collection, error1) {
-                    if (scene_index === null) {
+                    if (!is_current_scene(loading_scene)) {
                         return;
                     }
                     principal_req = null;
                     if (error1) {
                         errorHandler.setError(error1);
-                        pop_scene(scene_index);
+                        pop_scene();
                     } else {
                         // show collections
                         let saved_user = user;
@@ -89,7 +88,7 @@ export class LoginScene {
                                 errorHandler.setError(error1);
                                 user = saved_user;
                             });
-                        push_scene(collections_scene, true);
+                        replace_scene(collections_scene);
                     }
                 });
             } catch (err) {
@@ -98,18 +97,15 @@ export class LoginScene {
             return false;
         }
 
-        function onlogout() {
+        let onlogout = function () {
             try {
-                if (scene_index === null) {
-                    return false;
-                }
                 user = "";
-                pop_scene(scene_index);
+                pop_to_root();
             } catch (err) {
                 console.error(err);
             }
             return false;
-        }
+        };
 
 
         function remove_logout() {
@@ -120,10 +116,10 @@ export class LoginScene {
         }
 
         function refresh() {
-            //The easiest way to refresh is to push a LoadingScene onto the stack and then pop it
-            //forcing the scene below it, the Collections Scene to refresh itself.
-            push_scene(new LoadingScene(), false);
-            pop_scene(scene_stack.length - 2);
+            // The easiest way to refresh is to push a LoadingScene onto the stack and then pop it
+            // forcing the scene below it, the Collections Scene to refresh itself.
+            push_scene(new LoadingScene());
+            pop_scene();
         }
 
         this.show = function () {
@@ -131,7 +127,6 @@ export class LoginScene {
             fill_form();
             form.onsubmit = onlogin;
             html_scene.classList.remove("hidden");
-            scene_index = scene_stack.length - 1;
             user_form.focus();
         };
         this.hide = function () {
@@ -140,7 +135,6 @@ export class LoginScene {
             form.onsubmit = null;
         };
         this.release = function () {
-            scene_index = null;
             // cancel pending requests
             if (principal_req !== null) {
                 principal_req.abort();

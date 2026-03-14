@@ -42,44 +42,89 @@ export class Scene {
 /**
  * @type {Array<Scene>}
  */
-export let scene_stack = [];
+let scene_stack = [];
 
 /**
  * Push scene onto stack.
  * @param {Scene} scene
- * @param {boolean} replace Replace the scene on top of the stack.
  */
-export function push_scene(scene, replace) {
+export function push_scene(scene) {
     if (scene_stack.length >= 1) {
         scene_stack[scene_stack.length - 1].hide();
-        if (replace) {
-            scene_stack.pop().release();
-        }
     }
     scene_stack.push(scene);
     scene.show();
 }
 
 /**
- * Remove scenes from stack.
- * @param {number} index New top of stack
+ * Replace the current scene with a new one.
+ * @param {Scene} scene
  */
-export function pop_scene(index) {
-    if (scene_stack.length - 1 <= index) {
+export function replace_scene(scene) {
+    if (scene_stack.length >= 1) {
+        scene_stack[scene_stack.length - 1].hide();
+        scene_stack.pop().release();
+    }
+    scene_stack.push(scene);
+    scene.show();
+}
+
+/**
+ * Remove the current scene from the stack.
+ */
+export function pop_scene() {
+    if (scene_stack.length === 0) {
         return;
     }
     scene_stack[scene_stack.length - 1].hide();
-    while (scene_stack.length - 1 > index) {
-        let old_length = scene_stack.length;
+    scene_stack.pop().release();
+    if (scene_stack.length >= 1) {
+        scene_stack[scene_stack.length - 1].show();
+    }
+}
+
+/**
+ * Pop the current scene and the one below it.
+ * Useful for returning to the parent of the caller.
+ */
+export function pop_to_parent() {
+    if (scene_stack.length === 0) {
+        return;
+    }
+    scene_stack[scene_stack.length - 1].hide();
+    scene_stack.pop().release();
+    if (scene_stack.length >= 1) {
         scene_stack.pop().release();
-        if (old_length - 1 === index + 1) {
-            break;
-        }
     }
     if (scene_stack.length >= 1) {
-        let scene = scene_stack[scene_stack.length - 1];
-        scene.show();
-    } else {
-        throw "Scene stack is empty";
+        scene_stack[scene_stack.length - 1].show();
     }
+}
+
+/**
+ * Pop all scenes until only the root scene remains.
+ * If the stack is empty, nothing happens.
+ */
+export function pop_to_root() {
+    if (scene_stack.length === 0) {
+        return;
+    }
+    // Pop all scenes until only the first one remains
+    while (scene_stack.length > 1) {
+        scene_stack[scene_stack.length - 1].hide();
+        scene_stack.pop().release();
+    }
+    // The root scene is now at the top (index 0) and should be shown
+    if (scene_stack.length === 1) {
+        scene_stack[0].show(); // Ensure the root scene is visible
+    }
+}
+
+/**
+ * Check if the given scene is the current top scene.
+ * @param {Scene} scene
+ * @returns {boolean}
+ */
+export function is_current_scene(scene) {
+    return scene_stack.length > 0 && scene_stack[scene_stack.length - 1] === scene;
 }
