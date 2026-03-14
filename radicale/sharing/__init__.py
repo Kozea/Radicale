@@ -354,13 +354,13 @@ class BaseSharing:
         else:
             # retrieve collections depending on filter
             sharing_collection_list += self.database_list_sharing(
-                    ShareType="bday",
-                    OwnerOrUser=User,
-                    User=User,
-                    EnabledByOwner=Enabled,
-                    EnabledByUser=Enabled,
-                    HiddenByOwner=Hidden,
-                    HiddenByUser=Hidden)
+                ShareType="bday",
+                OwnerOrUser=User,
+                User=User,
+                EnabledByOwner=Enabled,
+                EnabledByUser=Enabled,
+                HiddenByOwner=Hidden,
+                HiddenByUser=Hidden)
 
         return sharing_collection_list
 
