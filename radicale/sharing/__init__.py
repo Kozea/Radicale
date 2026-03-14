@@ -322,16 +322,17 @@ class BaseSharing:
         return True
 
     # *** sharing functions called by request methods ***
-    # list sharings of type "map"
-    def sharing_collection_map_list(self, User: Union[str, None] = None, Enabled: Union[bool, None] = None, Hidden: Union[bool, None] = None) -> list[dict]:
+    # list sharings
+    def sharing_collection_list(self, User: Union[str, None] = None, Enabled: Union[bool, None] = None, Hidden: Union[bool, None] = None) -> list[dict]:
         """ returning dict with shared collections by filter(User/Enabled/Hidden) or None if not found"""
+        sharing_collection_list = []
+
         if not self.sharing_collection_by_map:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
-            return []
-
-        # retrieve collections depending on filter
-        shared_collection_list = self.database_list_sharing(
+        else:
+            # retrieve collections depending on filter
+            sharing_collection_list += self.database_list_sharing(
                 ShareType="map",
                 OwnerOrUser=User,
                 User=User,
@@ -340,8 +341,7 @@ class BaseSharing:
                 HiddenByOwner=Hidden,
                 HiddenByUser=Hidden)
 
-        # final
-        return shared_collection_list
+        return sharing_collection_list
 
     # resolves a path to a share
     def sharing_collection_resolver(self, path: str, user: str) -> Union[dict, None]:
