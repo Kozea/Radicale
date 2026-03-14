@@ -793,6 +793,9 @@ def retrieve_items(
             if share:
                 # map back to owner
                 hreference = hreference.replace(share['PathOrToken'], share['PathMapped'])
+                if share['ShareType'] == "bday":
+                    if not hreference.endswith('/'):
+                        hreference = hreference.rstrip(".ics") + ".vcf"
             try:
                 name = pathutils.name_from_path(hreference, collection)
             except ValueError as e:
