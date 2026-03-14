@@ -26,11 +26,11 @@ Module for address books and calendar entries (see ``Item``).
 
 import binascii
 import contextlib
+import datetime
 import logging
 import math
 import os
 import re
-from datetime import datetime, timedelta
 from hashlib import sha256
 from itertools import chain
 from typing import (Any, Callable, List, MutableMapping, Optional, Sequence,
@@ -165,7 +165,7 @@ def check_and_sanitize_items(
             # an event with DTEND and DURATION:PT0S
             if (hasattr(component, "dtend") and
                     hasattr(component, "duration") and
-                    component.duration.value == timedelta(0)):
+                    component.duration.value == datetime.timedelta(0)):
                 logger.debug("Quirks: Removing zero duration from %s in "
                              "object %r", component_name, component_uid)
                 del component.duration
@@ -320,7 +320,7 @@ def find_time_range(vobject_item: vobject.base.Component, tag: str
         return radicale_filter.TIMESTAMP_MIN, radicale_filter.TIMESTAMP_MAX
     start = end = None
 
-    def range_fn(range_start: datetime, range_end: datetime,
+    def range_fn(range_start: datetime.datetime, range_end: datetime.datetime,
                  is_recurrence: bool) -> bool:
         nonlocal start, end
         if start is None or range_start < start:
@@ -329,7 +329,7 @@ def find_time_range(vobject_item: vobject.base.Component, tag: str
             end = range_end
         return False
 
-    def infinity_fn(range_start: datetime) -> bool:
+    def infinity_fn(range_start: datetime.datetime) -> bool:
         nonlocal start, end
         if start is None or range_start < start:
             start = range_start
