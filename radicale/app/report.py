@@ -765,7 +765,7 @@ def retrieve_items(
                 logger.warning("Skipping invalid path %r in REPORT request on "
                                "%r: %s", hreference, path, e)
                 response = xml_item_response(base_prefix, hreference,
-                                             found_item=False)
+                                             found_item=False, share=share)
                 multistatus.append(response)
                 continue
             if name:
@@ -778,7 +778,7 @@ def retrieve_items(
     for name, item in collection.get_multi(get_names(share)):
         if not item:
             uri = pathutils.unstrip_path(posixpath.join(collection.path, name))
-            response = xml_item_response(base_prefix, uri, found_item=False)
+            response = xml_item_response(base_prefix, uri, found_item=False, share=share)
             multistatus.append(response)
         else:
             yield item, False
