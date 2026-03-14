@@ -57,6 +57,7 @@ class ApplicationBase:
         self._log_bad_put_request_content = configuration.get("logging", "bad_put_request_content")
         self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
         self._request_content_on_debug = configuration.get("logging", "request_content_on_debug")
+        self._limit_content = configuration.get("logging", "limit_content")
         self._hook = hook.load(configuration)
 
     def _read_xml_request_body(self, environ: types.WSGIEnviron
