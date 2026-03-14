@@ -212,25 +212,28 @@
       <h1>Incoming Shares</h1>
       <p>Manage shares that others have shared with you.</p>
       <table>
-        <!-- <thead>
+        <thead>
           <tr>
             <th>Path</th>
             <th>Owner</th>
-            <th>Permissions</th>
-            <th>Enabled</th>
-            <th>Hidden</th>
+            <th title="Permissions">🔑</th>
+            <th title="Enabled">✔️</th>
+            <th title="Shown">👁️</th>
           </tr>
-        </thead> -->
+        </thead>
         <tbody data-name="incomingsharesbody">
           <tr data-name="incomingsharerowtemplate" class="hidden">
-            <td data-name="pathortoken"></td>
+            <td><input type="text" data-name="pathortoken" value="" readonly=""
+                onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
             <td data-name="owner"></td>
-            <td data-name="permissions"><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span></td>
+            <td data-name="permissions"><span class="pill" data-name="rw">rw</span><span class="pill"
+                data-name="ro">ro</span></td>
             <td><input type="checkbox" data-name="enabled"></td>
-            <td><input type="checkbox" data-name="hidden"></td>
+            <td><input type="checkbox" data-name="shown"></td>
           </tr>
         </tbody>
       </table>
+      <p class="hidden" data-name="nosharesmessage">No incoming shares</p>
       <form>
         <button type="button" class="green" data-name="cancel">Close</button>
       </form>
@@ -249,9 +252,9 @@
         </fieldset>
         <fieldset>
           <legend>Attributes</legend>
-          <input type="checkbox" data-name="enabled" checked="true" id="newshare_attr_enabled" /><label
+          <input type="checkbox" data-name="enabled" checked id="newshare_attr_enabled" /><label
             for="newshare_attr_enabled">Enabled</label>
-          <input type="checkbox" data-name="hidden" checked="false" id="newshare_attr_hidden" /><label
+          <input type="checkbox" data-name="hidden" id="newshare_attr_hidden" /><label
             for="newshare_attr_hidden">Hidden</label>
         </fieldset>
         <fieldset>
