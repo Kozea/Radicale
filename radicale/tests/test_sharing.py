@@ -1833,7 +1833,7 @@ class TestSharingApiSanity(BaseTest):
             response = responses[path_shared]
             assert isinstance(response, dict)
 
-    def test_sharing_api_map_propfind(self) -> None:
+    def test_sharing_api_map_propfind_base(self) -> None:
         """share-by-map API usage tests related to propfind."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
@@ -3231,7 +3231,7 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
             # verify PROPFIND as user
-            logging.info("\n*** PROPFIND collection user -> ok")
+            logging.info("\n*** PROPFIND collection owner -> ok")
             propfind_calendar_color = get_file_content("propfind_multiple.xml")
             _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
             logging.info("response: %r", responses)
@@ -3757,7 +3757,7 @@ permissions: RrWw""")
             assert "D:all" not in priviledges_list
 
             # verify PROPPATCH as user
-            logging.info("\n*** PROPFIND collection user -> ok")
+            logging.info("\n*** PROPFIND collection user -> color #AAAAAA")
             color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
             assert color == "#AAAAAA"
 
@@ -3973,7 +3973,7 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
             # verify PROPPATCH as user
-            logging.info("\n*** PROPFIND color collection collection user -> ok")
+            logging.info("\n*** PROPFIND color collection user -> #AAAAAA")
             color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
             assert color == "#AAAAAA"
 
@@ -4012,7 +4012,7 @@ permissions: RrWw""")
             assert answer_dict['Content'][0]['Properties']['C:calendar-description'] == "USER"
 
             # verify PROPPATCH as user
-            logging.info("\n*** PROPFIND color collection collection user -> ok")
+            logging.info("\n*** PROPFIND color collection user -> #BBBBBB")
             color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
             assert color == "#BBBBBB"
 
