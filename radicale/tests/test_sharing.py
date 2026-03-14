@@ -4303,6 +4303,46 @@ permissions: RrWw""")
             assert path_shared_r + "contact3-with-bday.ics" in responses
             assert path_shared_r + "contact1.ics" not in responses
 
+            # get elements as user
+            logging.info("\n*** REPORT collection entries user -> ok")
+            _, responses = self.report(path_shared_r, """\
+<?xml version="1.0"?>
+<C:calendar-multiget xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+   <prop>
+     <getetag />
+     <C:calendar-data />
+   </prop>
+   <href>""" + path_shared_r + "contact2-with-bday.ics" + """</href>
+   <href>""" + path_shared_r + "contact3-with-bday.ics" + """</href>
+</C:calendar-multiget>""", login="user:userpw")
+            logging.debug("resonses: %r", responses)
+            assert path_shared_r + "contact2-with-bday.ics" in responses
+            assert path_shared_r + "contact3-with-bday.ics" in responses
+            assert path_shared_r + "contact1.ics" not in responses
+
+            # timerange filter elements as user
+            logging.info("\n*** REPORT collection entries with timerange user -> ok")
+            _, responses = self.report(path_shared_r, """\
+<?xml version="1.0"?>
+ <C:calendar-query xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+   <prop>
+     <getcontenttype />
+     <getetag />
+     <C:calendar-data />
+   </prop>
+   <C:filter>
+     <C:comp-filter name="VCALENDAR">
+       <C:comp-filter name="VEVENT">
+         <C:time-range start="20251124T000000Z" end="20260715T000000Z" />
+       </C:comp-filter>
+     </C:comp-filter>
+   </C:filter>
+</C:calendar-query>""", login="user:userpw")
+            logging.debug("resonses: %r", responses)
+            assert path_shared_r + "contact2-with-bday.ics" in responses
+            assert path_shared_r + "contact3-with-bday.ics" in responses
+            assert path_shared_r + "contact1.ics" not in responses
+
     def test_sharing_api_bday_complex(self) -> None:
         """share-by-map API usage tests related to partial overlay."""
         self.configure({"auth": {"type": "htpasswd",
