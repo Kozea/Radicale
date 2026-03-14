@@ -287,7 +287,8 @@ def xml_propfind_response(
                        "D:principal-search-property-set",
                        "D:principal-property-search"]
             if is_collection and is_leaf:
-                reports.append("D:sync-collection")
+                if not share_bday_automap:
+                    reports.append("D:sync-collection")
                 if collection.tag == "VADDRESSBOOK" and not share_bday_automap:
                     reports.append("CR:addressbook-multiget")
                     reports.append("CR:addressbook-query")
