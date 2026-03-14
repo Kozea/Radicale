@@ -20,8 +20,11 @@
  */
 
 import { LoginScene } from "./scenes/LoginScene.js";
+import { LoadingScene } from "./scenes/LoadingScene.js";
 import { push_scene } from "./scenes/scene_manager.js";
 
 // Hide startup loading message
-document.getElementById("loadingscene").classList.add("hidden");
+// This works because the LoadingScene is the one that is already active in index.html,
+// and all other scenes are hidden.
+new LoadingScene().hide();
 push_scene(new LoginScene());
