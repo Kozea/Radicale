@@ -315,7 +315,7 @@ def xml_propfind_response(
             elif tag == xmlutils.make_clark("RADICALE:displayname"):
                 # Only for internal use by the web interface
                 displayname = collection.get_meta("D:displayname")
-                if share and share['Properties'] and share['Properties']["D:displayname"]:
+                if share and 'Properties' in share and share['Properties'] is not None and "D:displayname" in share['Properties']:
                     displayname = share['Properties']["D:displayname"]
                 if displayname is not None:
                     element.text = displayname
@@ -329,7 +329,7 @@ def xml_propfind_response(
                     is404 = True
             elif tag == xmlutils.make_clark("D:displayname"):
                 displayname = collection.get_meta("D:displayname")
-                if share and share['Properties'] and share['Properties']["D:displayname"]:
+                if share and 'Properties' in share and share['Properties'] is not None and "D:displayname" in share['Properties']:
                     displayname = share['Properties']["D:displayname"]
                 if not displayname and is_leaf:
                     displayname = collection.path
@@ -357,12 +357,10 @@ def xml_propfind_response(
             else:
                 human_tag = xmlutils.make_human_tag(tag)
                 tag_text = collection.get_meta(human_tag)
-                if share:
+                if share and 'Properties' in share and share['Properties'] is not None and human_tag in share['Properties']:
                     # map/add from overlay
-                    if share['Properties']:
-                        if human_tag in share['Properties']:
-                            if share['Properties'][human_tag] is not None:
-                                tag_text = share['Properties'][human_tag]
+                    if share['Properties'][human_tag] is not None:
+                        tag_text = share['Properties'][human_tag]
                 if tag_text is not None:
                     element.text = tag_text
                 else:
