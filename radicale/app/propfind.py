@@ -85,7 +85,7 @@ def xml_propfind(base_prefix: str, path: str,
 def xml_propfind_response(
         base_prefix: str, path: str, item: types.CollectionOrItem,
         props: Sequence[str], user: str, encoding: str, max_resource_size: int, write: bool = False,
-        propname: bool = False, allprop: bool = False, shares: dict = {}, sharetype: Union[str | None] = None) -> ET.Element:
+        propname: bool = False, allprop: bool = False, shares: dict = {}, sharetype: Union[str, None] = None) -> ET.Element:
     """Build and return a PROPFIND response."""
     if propname and allprop or (props and (propname or allprop)):
         raise ValueError("Only use one of props, propname and allprops")
