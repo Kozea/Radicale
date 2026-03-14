@@ -25,8 +25,7 @@ import posixpath
 import socket
 import xml.etree.ElementTree as ET
 from http import client
-from typing import (Dict, Iterable, Iterator, List, Optional, Sequence, Tuple,
-                    Union)
+from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
 from radicale import (httputils, pathutils, rights, storage, types, utils,
                       xmlutils)
@@ -37,7 +36,7 @@ from radicale.log import logger
 def xml_propfind(base_prefix: str, path: str,
                  xml_request: Optional[ET.Element],
                  allowed_items: Iterable[Tuple[types.CollectionOrItem, str]],
-                 user: str, encoding: str, max_resource_size: int, share: Union[dict, None] = None) -> Optional[ET.Element]:
+                 user: str, encoding: str, max_resource_size: int, shares: dict = {}) -> Optional[ET.Element]:
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -74,7 +73,7 @@ def xml_propfind(base_prefix: str, path: str,
         write = permission == "w"
         multistatus.append(xml_propfind_response(
             base_prefix, path, item, props, user, encoding, write=write,
-            allprop=allprop, propname=propname, max_resource_size=max_resource_size, share=share))
+            allprop=allprop, propname=propname, max_resource_size=max_resource_size, shares=shares))
 
     return multistatus
 
@@ -82,7 +81,7 @@ def xml_propfind(base_prefix: str, path: str,
 def xml_propfind_response(
         base_prefix: str, path: str, item: types.CollectionOrItem,
         props: Sequence[str], user: str, encoding: str, max_resource_size: int, write: bool = False,
-        propname: bool = False, allprop: bool = False, share: Union[dict, None] = None) -> ET.Element:
+        propname: bool = False, allprop: bool = False, shares: dict = {}) -> ET.Element:
     """Build and return a PROPFIND response."""
     if propname and allprop or (props and (propname or allprop)):
         raise ValueError("Only use one of props, propname and allprops")
@@ -102,6 +101,10 @@ def xml_propfind_response(
             collection.path, item.href))
     response = ET.Element(xmlutils.make_clark("D:response"))
     href = ET.Element(xmlutils.make_clark("D:href"))
+    if uri in shares:
+        share = shares[uri]
+    else:
+        share = None
     if share:
         # backmap
         uri = uri.replace(share['PathMapped'], share['PathOrToken'])
@@ -436,7 +439,7 @@ class ApplicationPartPropfind(ApplicationBase):
         """Manage PROPFIND request."""
         http_depth = environ.get("HTTP_DEPTH", "0")
         permissions_filter = None
-        share = None
+        shares: dict = {}
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
             share = self._sharing.sharing_collection_resolver(path, user)
@@ -445,6 +448,7 @@ class ApplicationPartPropfind(ApplicationBase):
                 path = share['PathMapped']
                 user = share['Owner']
                 permissions_filter = share['Permissions']
+                shares[share['PathMapped']] = share
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r"):
             return httputils.NOT_ALLOWED
@@ -497,10 +501,11 @@ class ApplicationPartPropfind(ApplicationBase):
                             c_items_iter = iter(self._storage.discover(c_path, "0"))
                             c_allowed_items = list(self._collect_allowed_items(c_items_iter, c_user))
                         allowed_items = allowed_items + c_allowed_items
+                        shares[c_path] = share
         headers = {"DAV": httputils.DAV_HEADERS,
                    "Content-Type": "text/xml; charset=%s" % self._encoding}
         xml_answer = xml_propfind(base_prefix, path, xml_content,
-                                  allowed_items, user, self._encoding, max_resource_size=self._max_resource_size, share=share)
+                                  allowed_items, user, self._encoding, max_resource_size=self._max_resource_size, shares=shares)
         if xml_answer is None:
             return httputils.NOT_ALLOWED
         return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)
