@@ -348,6 +348,20 @@ class BaseSharing:
                 HiddenByOwner=Hidden,
                 HiddenByUser=Hidden)
 
+        if not self.sharing_collection_by_bday:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/sharing/bday: not active")
+        else:
+            # retrieve collections depending on filter
+            sharing_collection_list += self.database_list_sharing(
+                    ShareType="bday",
+                    OwnerOrUser=User,
+                    User=User,
+                    EnabledByOwner=Enabled,
+                    EnabledByUser=Enabled,
+                    HiddenByOwner=Hidden,
+                    HiddenByUser=Hidden)
+
         return sharing_collection_list
 
     # resolves a path to a share
@@ -1045,7 +1059,7 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + ": start")
 
-            if ShareType not in ["token", "map"]:
+            if ShareType not in ["token", "map", "bday"]:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
 
@@ -1171,7 +1185,7 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + ": start")
 
-            if ShareType not in ["token", "map"]:
+            if ShareType not in ["token", "map", "bday"]:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
 
