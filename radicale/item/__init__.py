@@ -536,6 +536,7 @@ class Item:
         else:
             pass
 
+        bdayS = match[1] + match[2] + match[3]
         bdayY = int(match[1])
         bdayM = int(match[2])
         bdayD = int(match[3])
@@ -565,15 +566,14 @@ class Item:
         item_ics.add('vevent')
 
         # set DTSTART
-        date = datetime(bdayY, bdayM, bdayD)
-        dtstart = date.strftime('%Y%m%d')
+        dtstart = datetime.date(bdayY, bdayM, bdayD)
         item_ics.vevent.add('dtstart').value = dtstart
         item_ics.vevent.dtstart.value_param = "DATE"
         item_ics.vevent.dtstart.isNative = False
 
         # calculate and set DTEND
-        date += timedelta(days=1)
-        item_ics.vevent.add('dtend').value = date.strftime('%Y%m%d')
+        dtend = dtstart + datetime.timedelta(days=1)
+        item_ics.vevent.add('dtend').value = dtend
         item_ics.vevent.dtend.value_param = "DATE"
         item_ics.vevent.dtend.isNative = False
 
@@ -583,7 +583,7 @@ class Item:
             match = pattern.match(self.vobject_item.uid.value)
             if match:
                 # replace part of UUID by bday
-                item_ics.vevent.add('uid').value = match[1] + '-' + 'bda0' + dtstart + match[2]
+                item_ics.vevent.add('uid').value = match[1] + '-' + 'bda0' + bdayS + match[2]
             else:
                 item_ics.vevent.add('uid').value = self.vobject_item.uid.value + UID_SUFFIX
         else:
@@ -604,7 +604,7 @@ class Item:
 
         etag = self.etag
         # replace 14 leading chars of etag "<hexdigits>" by special format bda0YYYYMMDD00
-        etag = '"bda0' + dtstart + '00' + etag[15:]
+        etag = '"bda0' + bdayS + '00' + etag[15:]
 
         item_new: Item = Item(
                 collection=self.collection,
