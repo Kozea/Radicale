@@ -348,6 +348,10 @@ class BaseSharing:
         """ returning dict with PathMapped, Owner, Permissions or None if not found"""
         share = None
 
+        if path == "/":
+            # not supported
+            return None
+
         if self.sharing_collection_by_token:
             if share is None:
                 share = self.sharing_collection_by_token_resolver(path)
