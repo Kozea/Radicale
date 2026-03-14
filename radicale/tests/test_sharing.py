@@ -4285,8 +4285,8 @@ permissions: RrWw""")
             assert "BEGIN:VCARD" not in answer
             assert "BEGIN:VCALENDAR" in answer
             assert "RRULE:FREQ=YEARLY" in answer
-            assert "DTSTART;VALUE=DATE:19700101" in answer
-            assert "DTEND;VALUE=DATE:19700102" in answer
+            assert "DTSTART;VALUE=DATE:1970-01-01" in answer
+            assert "DTEND;VALUE=DATE:1970-01-02" in answer
             assert "TRANSP:TRANSPARENT" in answer
 
             # verify report as user
