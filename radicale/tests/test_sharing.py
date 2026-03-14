@@ -4481,10 +4481,12 @@ permissions: RrWw""")
     <getcontentlength />
   </prop>
 </propfind>""", login="user:userpw", HTTP_DEPTH="1")
-            #logging.debug("responses: %r", responses)
+            # logging.debug("responses: %r", responses)
             response = responses[path_shared_map]
+            assert not isinstance(response, int)
             logging.debug("response %r: %r", path_shared_map, response)
             assert "C:supported-calendar-component-set" in response
             response = responses[path_shared_bday]
+            assert not isinstance(response, int)
             logging.debug("response %r: %r", path_shared_bday, response)
             assert "C:supported-calendar-component-set" in response
