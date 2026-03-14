@@ -3038,6 +3038,96 @@ permissions: RrWw""")
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['Permissions'] == "RrWw"
 
+    def test_sharing_api_map_report_base(self) -> None:
+        """share-by-map API usage tests related to report."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "permit_properties_overlay": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        path_mapped = "/owner/abook1.vcf/"
+        path_shared_r = "/user/abook-shared-by-owner.vcf/"
+
+        logging.info("\n*** prepare and test access")
+        self.create_addressbook(path_mapped, login="owner:ownerpw")
+        contact = get_file_content("contact1.vcf")
+        path_mapped_item = path_mapped + "contact.vcf"
+        path_shared_item = path_shared_r + "contact.vcf"
+        self.put(path_mapped_item, contact, login="owner:ownerpw")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # create map
+            logging.info("\n*** create map user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # check REPORT as owner
+            logging.info("\n*** REPORT collection owner -> ok")
+            _, responses = self.report(path_mapped, """\
+<?xml version="1.0"?>
+<CR:addressbook-multiget xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
+   <prop>
+     <getetag />
+     <CR:address-data />
+   </prop>
+   <href>""" + path_mapped_item + """</href>
+</CR:addressbook-multiget>""", login="owner:ownerpw")
+            assert len(responses) == 1
+            logging.info("response: %r", responses)
+            response = responses[path_mapped_item]
+            assert isinstance(response, dict)
+            status, prop = response["D:getetag"]
+            assert status == 200 and prop.text
+
+            # check REPORT as user
+            logging.info("\n*** REPORT collection user -> ok")
+            _, responses = self.report(path_shared_r, """\
+<?xml version="1.0"?>
+<CR:addressbook-multiget xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
+   <prop>
+     <getetag />
+     <CR:address-data />
+   </prop>
+   <href>""" + path_shared_r + """</href>
+</CR:addressbook-multiget>""", login="user:userpw")
+            assert len(responses) == 1
+            logging.info("response: %r", responses)
+            response = responses[path_shared_item]
+            assert isinstance(response, dict)
+            status, prop = response["D:getetag"]
+            assert status == 200 and prop.text
+
     def test_sharing_api_map_propfind_overlay_api_base(self) -> None:
         """share-by-map API usage tests related to proppatch."""
         self.configure({"auth": {"type": "htpasswd",
