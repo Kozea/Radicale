@@ -122,11 +122,12 @@ Types of supported sharing configuration:
  * `ShareType`: type of share
     * `token`: token-based share (do not require user authentication)
     * `map`: map-based share (requires user authentication)
+    * `bday`: map-based share (requires user authentication) with on-the-fly auto-conversion
  * `PathOrToken`: token or "virtual" collection, has to be unique (PRIMARY KEY)
  * `PathMapped`: target collection
  * `Owner`: owner of the share
  * `User`: user of the share
- * `Permissions`: effective permission of the share
+ * `Permissions`: effective permission of the share (*bday* is always read-only)
  * `EnabledByOwner`: control by owner
  * `EnabledByUser`: control by user
  * `HiddenByOwner`: control by owner 
@@ -157,10 +158,15 @@ File-based configuration store is using encoded `PathOrToken` as filename for ea
 
 Map-based sharing can be accessed as usual after authentication and authorization.
 
+ * *map* is a standard sharing of one collection to another user
+ * *bday* is special sharing auto-mapping on-the-fly a VADDRESSBOOK to a VCALENDAR of all entries containing a `BDAY`
+
 #### Permission Control
 
  * `permit_create_map`
    * supported *rights* permissions: `Mm`
+ * `permit_create_bday`
+   * supported *rights* permissions: `Bb`
 
 #### Workflow
 
@@ -263,11 +269,13 @@ curl -u user:pass --silent -H "accept: application/json" -d "" http://localhost:
   "FeatureEnabledCollectionByMap": true,
   "PermittedCreateCollectionByMap": true,
   "FeatureEnabledCollectionByToken": true,
-  "PermittedCreateCollectionByToken": true
+  "PermittedCreateCollectionByToken": true,
+  "FeatureEnabledCollectionByBday": true,
+  "PermittedCreateCollectionByBday": true
 }
 ```
 
-##### API Hook "(token|map)/create"
+##### API Hook "(token|map|bday)/create"
 
  * Authorization
    * Authenticated user is `Owner`
@@ -316,7 +324,7 @@ curl -u user:pass -H "Content-Type: application/json" -d '{ "PathMapped": "/user
 {"ApiVersion": 1, "Status": "success", "PathOrToken": "v1/aMsmGqOsRwSH-2-6tEa8EMr4RMYzMU7WvPmjnp5qDnw="}
 ```
 
-###### API Hook "map/create"
+###### API Hook "(map|bday)/create"
 
 Create a share by mapping a collection of an `Owner` to an `User`.
 
@@ -325,8 +333,13 @@ Create a share by mapping a collection of an `Owner` to an `User`.
   * `PathMapped` is not existing already as a share target for same `User`
   * Authenticated user as `Owner` has at least read access to `PathMapped`
   * Provided `User` has at least read access to `PathOrToken`
-  * Global permitted by `permit_create_map = True` or `rights` permission `m`
-  * Global denied by `permit_create_map = False` or `rights` permission `M`
+  * *map*
+      * Global permitted by `permit_create_map = True` or `rights` permission `m`
+      * Global denied by `permit_create_map = False` or `rights` permission `M`
+  * *bday*
+      * Global permitted by `permit_create_map = True` or `rights` permission `b`
+      * Global denied by `permit_create_map = False` or `rights` permission `B`
+      * `PathMapped` is a VCALENDAR collection
 
  * Input
 
@@ -358,7 +371,7 @@ curl -u owner:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "/us
 {"ApiVersion": 1, "Status": "success"}
 ```
 
-##### API Hook "(map|token|all)/list"
+##### API Hook "(all|token|map|bday)/list"
 
 List shares (optional with filter) either owned or assigned as user.
 
@@ -439,7 +452,7 @@ curl -s -H "Content-Type: application/json" -u user:pass -d "{}" http://localhos
 ```
 
 
-##### API Hook "(map|token)/delete"
+##### API Hook "(token|map|bday)/delete"
 
 Delete a share selected by `PathOrToken`.
 
@@ -472,7 +485,7 @@ curl -u user:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "v1/D
 {"ApiVersion": 1, "Status": "success"}
 ```
 
-##### API Hook "(token|map)/update"
+##### API Hook "(token|map|bday)/update"
 
 Update a share selected by `PathOrToken`.
 
@@ -512,7 +525,7 @@ curl -u user:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "/use
 {"ApiVersion": 1, "Status": "success"}
 ```
 
-##### API Hooks "(map|token)/(enable|disable|hide|unhide)"
+##### API Hooks "(token|map|bday)/(enable|disable|hide|unhide)"
 
 Toggle enable|disable|hide|unhide of `Owner` or `User` of a share selected by `PathOrToken`
 
