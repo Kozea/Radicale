@@ -4302,3 +4302,149 @@ permissions: RrWw""")
             assert path_shared_r + "contact2-with-bday.ics" in responses
             assert path_shared_r + "contact3-with-bday.ics" in responses
             assert path_shared_r + "contact1.ics" not in responses
+
+    def test_sharing_api_bday_complex(self) -> None:
+        """share-by-map API usage tests related to partial overlay."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_bday": True,
+                                    "permit_create_map": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_map": "True",
+                                    "collection_by_bday": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/adressbook-" + db_type + ".vcf/"
+            path_user = "/user/"
+            path_shared_bday = path_user + "calendar-bday-abook-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared_map = path_user + "abook-shared-by-owner-r-" + db_type + ".vcf/"
+            self.create_addressbook(path_mapped, login="owner:ownerpw")
+
+            contact = get_file_content("contact1.vcf")
+            path = path_mapped + "/contact1.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact2-with-bday.vcf")
+            path = path_mapped + "/contact2-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact3-with-bday.vcf")
+            path = path_mapped + "/contact3-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+<propname />
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            assert "CR:supported-address-data" in response
+
+            # execute GET as owner
+            logging.info("\n*** GET VCF collection owner -> ok")
+            _, answer = self.get(path_mapped, login="owner:ownerpw")
+            assert "contact1" in answer
+            assert "contact2" in answer
+
+            # create bday
+            logging.info("\n*** create bday user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_bday
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("bday", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable bday by user
+            logging.info("\n*** enable bday by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_bday
+            _, headers, answer = self._sharing_api_json("bday", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # unhide bday by user
+            logging.info("\n*** unhide bday by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_bday
+            _, headers, answer = self._sharing_api_json("bday", "unhide", check=200, login="user:userpw", json_dict=json_dict)
+
+            # create map
+            logging.info("\n*** create map user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_map
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_map
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # unhide map by user
+            logging.info("\n*** unhide map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_map
+            _, headers, answer = self._sharing_api_json("map", "unhide", check=200, login="user:userpw", json_dict=json_dict)
+
+            # check PROPFIND item as user
+            logging.info("\n*** PROPFIND all as user")
+            _, responses = self.propfind(path_user, """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:ICAL="http://apple.com/ns/ical/" xmlns:RADICALE="http://radicale.org/ns/" xmlns:ns3="http://inf-it.com/ns/ab/">
+  <prop>
+    <resourcetype />
+    <RADICALE:displayname />
+    <ICAL:calendar-color />
+    <ns3:addressbook-color />
+    <C:calendar-description />
+    <C:supported-calendar-component-set />
+    <CR:addressbook-description />
+    <CS:source />
+    <RADICALE:getcontentcount />
+    <getcontentlength />
+  </prop>
+</propfind>""", login="user:userpw", HTTP_DEPTH="1")
+            #logging.debug("responses: %r", responses)
+            response = responses[path_shared_map]
+            logging.debug("response %r: %r", path_shared_map, response)
+            assert "C:supported-calendar-component-set" in response
+            response = responses[path_shared_bday]
+            logging.debug("response %r: %r", path_shared_bday, response)
+            assert "C:supported-calendar-component-set" in response
