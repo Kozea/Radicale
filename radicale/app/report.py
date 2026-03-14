@@ -181,8 +181,8 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                        xmlutils.make_human_tag(root.tag), path)
         return client.MULTI_STATUS, multistatus
     if ((root.tag == xmlutils.make_clark("C:calendar-multiget") and collection.tag != "VCALENDAR" and not share_bday_automap) or
-        (root.tag == xmlutils.make_clark("CR:addressbook-multiget") and collection.tag != "VADDRESSBOOK") or
-        (root.tag == xmlutils.make_clark("D:sync-collection") and collection.tag not in ("VADDRESSBOOK", "VCALENDAR"))):
+       (root.tag == xmlutils.make_clark("CR:addressbook-multiget") and collection.tag != "VADDRESSBOOK") or
+       (root.tag == xmlutils.make_clark("D:sync-collection") and collection.tag not in ("VADDRESSBOOK", "VCALENDAR"))):
         logger.warning("Invalid REPORT method %r on %r requested",
                        xmlutils.make_human_tag(root.tag), path)
         return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
