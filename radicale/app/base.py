@@ -57,6 +57,7 @@ class ApplicationBase:
         self._log_bad_put_request_content = configuration.get("logging", "bad_put_request_content")
         self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
         self._request_content_on_debug = configuration.get("logging", "request_content_on_debug")
+        self._limit_content = configuration.get("logging", "limit_content")
         self._hook = hook.load(configuration)
 
     def _read_xml_request_body(self, environ: types.WSGIEnviron
@@ -83,7 +84,7 @@ class ApplicationBase:
         if logger.isEnabledFor(logging.DEBUG):
             if self._response_content_on_debug:
                 logger.debug("Response content (XML):\n%s",
-                             utils.textwrap_str(xmlutils.pretty_xml(xml_content)))
+                             utils.textwrap_str(xmlutils.pretty_xml(xml_content), self._limit_content))
             else:
                 logger.debug("Response content (XML): suppressed by config/option [logging] response_content_on_debug")
         f = io.BytesIO()

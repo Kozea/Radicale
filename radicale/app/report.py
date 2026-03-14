@@ -255,7 +255,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
 
     # Retrieve everything required for finishing the request.
     retrieved_items = list(retrieve_items(
-        base_prefix, path, collection, hreferences, main_filters, multistatus))
+        base_prefix, path, collection, hreferences, main_filters, multistatus, share))
     collection_tag = collection.tag
     # !!! Don't access storage after this !!!
     unlock_storage_fn()
@@ -743,26 +743,29 @@ def xml_item_response(base_prefix: str, href: str,
 def retrieve_items(
         base_prefix: str, path: str, collection: storage.BaseCollection,
         hreferences: Iterable[str], filters: Sequence[ET.Element],
-        multistatus: ET.Element) -> Iterator[Tuple[radicale_item.Item, bool]]:
+        multistatus: ET.Element, share: Union[dict, None]) -> Iterator[Tuple[radicale_item.Item, bool]]:
     """Retrieves all items that are referenced in ``hreferences`` from
        ``collection`` and adds 404 responses for missing and invalid items
        to ``multistatus``."""
     collection_requested = False
 
-    def get_names() -> Iterator[str]:
+    def get_names(share: Union[dict, None]) -> Iterator[str]:
         """Extracts all names from references in ``hreferences`` and adds
            404 responses for invalid references to ``multistatus``.
            If the whole collections is referenced ``collection_requested``
            gets set to ``True``."""
         nonlocal collection_requested
         for hreference in hreferences:
+            if share:
+                # map back to owner
+                hreference = hreference.replace(share['PathOrToken'], share['PathMapped'])
             try:
                 name = pathutils.name_from_path(hreference, collection)
             except ValueError as e:
                 logger.warning("Skipping invalid path %r in REPORT request on "
                                "%r: %s", hreference, path, e)
                 response = xml_item_response(base_prefix, hreference,
-                                             found_item=False)
+                                             found_item=False, share=share)
                 multistatus.append(response)
                 continue
             if name:
@@ -772,10 +775,10 @@ def retrieve_items(
                 # Reference is a collection
                 collection_requested = True
 
-    for name, item in collection.get_multi(get_names()):
+    for name, item in collection.get_multi(get_names(share)):
         if not item:
             uri = pathutils.unstrip_path(posixpath.join(collection.path, name))
-            response = xml_item_response(base_prefix, uri, found_item=False)
+            response = xml_item_response(base_prefix, uri, found_item=False, share=share)
             multistatus.append(response)
         else:
             yield item, False

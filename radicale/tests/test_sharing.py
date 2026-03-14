@@ -71,7 +71,24 @@ class TestSharingApiSanity(BaseTest):
         _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept)
         return _, headers, answer
 
-    def _propfind_calendar_color(self, path, login):
+    def _propfind_allprop(self, path: str, login) -> dict:
+        propfind_allprop = get_file_content("allprop.xml")
+        _, responses = self.propfind(path=path, data=propfind_allprop, login=login)
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int)
+        return response
+
+    def _propfind_priviledges(self, path: str, login) -> list[str]:
+        response = self._propfind_allprop(path, login)
+        status, prop = response["D:current-user-privilege-set"]
+        logging.debug("prop: %r", prop)
+        priviledges = prop.findall(xmlutils.make_clark("D:privilege"))
+        assert len(priviledges) >= 1
+        priviledges_list = [xmlutils.make_human_tag(priviledge.findall("*")[0].tag) for priviledge in priviledges]
+        return priviledges_list
+
+    def _propfind_calendar_color(self, path, login) -> Union[str, None]:
         propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
         _, responses = self.propfind(path=path, data=propfind_calendar_color, login=login)
         logging.info("response: %r", responses)
@@ -477,15 +494,15 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
-            logging.info("\n*** create token without PathMapped (form) -> should fail")
+            logging.info("\n*** create token without PathMapped (form) -> 400")
             form_array = []
             _, headers, answer = self._sharing_api_form("token", "create", 400, login="owner:ownerpw", form_array=form_array)
 
-            logging.info("\n*** create token without PathMapped (json) -> should fail")
+            logging.info("\n*** create token without PathMapped (json) -> 400")
             json_dict = {}
             _, headers, answer = self._sharing_api_json("token", "create", 400, login="owner:ownerpw", json_dict=json_dict)
 
-            logging.info("\n*** create token#1 without existing collection (form->text)")
+            logging.info("\n*** create token#1 without existing collection (form->text) -> 404")
             form_array = ["PathMapped=" + path_base1]
             _, headers, answer = self._sharing_api_form("token", "create", check=404, login="owner:ownerpw", form_array=form_array)
 
@@ -493,7 +510,11 @@ class TestSharingApiSanity(BaseTest):
             self.mkcalendar(path_base1, login="owner:ownerpw")
             self.mkcalendar(path_base2, login="owner:ownerpw")
 
-            logging.info("\n*** create token#1 with existing collection (form->text)")
+            logging.info("\n*** create token#1 with existing collection (form->text) but no trailing / -> 400")
+            form_array = ["PathMapped=" + path_base1.rstrip('/')]
+            _, headers, answer = self._sharing_api_form("token", "create", check=400, login="owner:ownerpw", form_array=form_array)
+
+            logging.info("\n*** create token#1 with existing collection (form->text) -> 200")
             form_array = ["PathMapped=" + path_base1]
             _, headers, answer = self._sharing_api_form("token", "create", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status='success'" in answer
@@ -789,23 +810,66 @@ class TestSharingApiSanity(BaseTest):
 
         json_dict: dict
 
+        path_owner = "/owner/calendar.ics/"
+        path_user = "/user/calendar-owner.ics/"
+        self.mkcalendar(path_owner, login="owner:ownerpw")
+
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            self.configure({"sharing": {"permit_create_map": "False"}})
+
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
-            logging.info("\n*** create map without PathMapped (json) -> should fail")
+            logging.info("\n*** create map without PathMapped (json) -> 400")
             json_dict = {}
             _, headers, answer = self._sharing_api_json("map", "create", 400, login="owner:ownerpw", json_dict=json_dict)
 
-            logging.info("\n*** create map without PathMapped but User (json) -> should fail")
+            logging.info("\n*** create map without PathMapped but User (json) -> 400")
             json_dict = {'User': "user"}
             _, headers, answer = self._sharing_api_json("map", "create", 400, login="owner:ownerpw", json_dict=json_dict)
 
-            logging.info("\n*** create map without PathMapped but User and PathOrToken (json) -> should fail")
+            logging.info("\n*** create map without PathMapped but User and PathOrToken (json) -> 400")
             json_dict = {}
             json_dict['User'] = "user"
-            json_dict['PathOrToken'] = "/owner/calendar.ics"
+            json_dict['PathOrToken'] = path_user
             _, headers, answer = self._sharing_api_json("map", "create", 400, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map with PathMapped, User, PathOrToken without trailing / (json) -> 400")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_user
+            json_dict['PathMapped'] = path_owner.rstrip('/')
+            _, headers, answer = self._sharing_api_json("map", "create", 400, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map with PathMapped without trailing /, User, PathOrToken (json) -> 400")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_user.rstrip('/')
+            json_dict['PathMapped'] = path_owner
+            _, headers, answer = self._sharing_api_json("map", "create", 400, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map with PathMapped, User, PathOrToken - not permitted (json) -> 403")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_user
+            json_dict['PathMapped'] = path_owner
+            _, headers, answer = self._sharing_api_json("map", "create", 403, login="owner:ownerpw", json_dict=json_dict)
+
+            self.configure({"sharing": {"permit_create_map": "True"}})
+
+            logging.info("\n*** create map with PathMapped, User, PathOrToken (json) -> 200")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_user
+            json_dict['PathMapped'] = path_owner
+            _, headers, answer = self._sharing_api_json("map", "create", 200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map with PathMapped, User, PathOrToken=PathOwner (json) -> 409")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathOrToken'] = path_owner
+            json_dict['PathMapped'] = path_owner
+            _, headers, answer = self._sharing_api_json("map", "create", 409, login="owner:ownerpw", json_dict=json_dict)
 
     def test_sharing_api_map_usage(self) -> None:
         """share-by-map API usage tests."""
@@ -1769,7 +1833,7 @@ class TestSharingApiSanity(BaseTest):
             response = responses[path_shared]
             assert isinstance(response, dict)
 
-    def test_sharing_api_map_propfind(self) -> None:
+    def test_sharing_api_map_propfind_base(self) -> None:
         """share-by-map API usage tests related to propfind."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
@@ -2731,22 +2795,22 @@ permissions: RrWw""")
 
             logging.info("\n*** create map user1/owner1, globally disabled / not granted M -> 403")
             json_dict['PathMapped'] = path_owner1_M
-            json_dict['PathOrToken'] = path_user1 + "dM-uc" + db_type
+            json_dict['PathOrToken'] = path_user1.replace(".ics", "dM-uc" + db_type + ".ics")
             _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally disabled / not granted T -> 403")
             json_dict['PathMapped'] = path_owner1_T
-            json_dict['PathOrToken'] = path_user1 + "dT-uc" + db_type
+            json_dict['PathOrToken'] = path_user1.replace(".ics", "dT-uc" + db_type + ".ics")
             _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally disabled / not granted t -> 403")
             json_dict['PathMapped'] = path_owner1_t
-            json_dict['PathOrToken'] = path_user1 + "dt-lc" + db_type
+            json_dict['PathOrToken'] = path_user1.replace(".ics", "dt-lc" + db_type + ".ics")
             _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally disabled / granted m -> 200")
             json_dict['PathMapped'] = path_owner1_m
-            json_dict['PathOrToken'] = path_user1 + "dm-lc" + db_type
+            json_dict['PathOrToken'] = path_user1.replace(".ics", "dm-lc" + db_type + ".ics")
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally enabled")
@@ -2754,22 +2818,22 @@ permissions: RrWw""")
 
             logging.info("\n*** create map user1/owner1, globally enabled / not granted M -> 403")
             json_dict['PathMapped'] = path_owner1_M
-            json_dict['PathOrToken'] = path_user1 + "eM-uc" + db_type
+            json_dict['PathOrToken'] = path_user1.replace(".ics", "eM-uc" + db_type + ".ics")
             _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally enabled / ignore T -> 200")
             json_dict['PathMapped'] = path_owner1_T
-            json_dict['PathOrToken'] = path_user1 + "eT-uc" + db_type
+            json_dict['PathOrToken'] = path_user1.replace(".ics", "eT-uc" + db_type + ".ics")
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally enabled / ignore t -> 200")
             json_dict['PathMapped'] = path_owner1_t
-            json_dict['PathOrToken'] = path_user1 + "et-lc" + db_type
+            json_dict['PathOrToken'] = path_user1.replace(".ics", "et-lc" + db_type + ".ics")
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1, globally enabled / ignore m -> 200")
             json_dict['PathMapped'] = path_owner1_m
-            json_dict['PathOrToken'] = path_user1 + "em-lc" + db_type
+            json_dict['PathOrToken'] = path_user1.replace(".ics", "em-lc" + db_type + ".ics")
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             # create token
@@ -2825,14 +2889,16 @@ permissions: RrWw""")
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
-                                    "response_content_on_debug": "False",
+                                    "response_content_on_debug": "True",
                                     "request_content_on_debug": "True"},
                         "rights": {"type": "owner_only"}})
 
         json_dict: dict
 
-        path_user1 = "/user1/calendarPGu1.ics/"
         path_owner1 = "/owner1/calendarPGo1.ics/"
+        path_user1_r = "/user1/calendarPGu1-r.ics/"
+        path_user1_rw = "/user1/calendarPGu1-rw.ics/"
+        path_user1_RrWw = "/user1/calendarPGu1-RrWw.ics/"
 
         logging.info("\n*** prepare")
         self.mkcalendar(path_owner1, login="owner1:owner1pw")
@@ -2844,13 +2910,20 @@ permissions: RrWw""")
             # create map
             self.configure({"sharing": {"default_permissions_create_map": "r"}})
 
+            logging.info("\n*** create map user1/owner1 r -> 200")
             json_dict = {}
             json_dict['User'] = "user1"
             json_dict['PathMapped'] = path_owner1
-
-            logging.info("\n*** create map user1/owner1 r -> 200")
-            json_dict['PathOrToken'] = path_user1 + "r"
+            json_dict['PathOrToken'] = path_user1_r
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            # enable map by user
+            logging.info("\n*** enable map by user1")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_user1_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user1:user1pw", json_dict=json_dict)
 
             logging.info("\n*** list (json->json)")
             _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner1:owner1pw", json_dict=json_dict)
@@ -2859,9 +2932,23 @@ permissions: RrWw""")
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['Permissions'] == "r"
 
+            # check PROPFIND/priviledges item as user
+            logging.info("\n*** PROPFIND/priviledges item as user")
+            priviledges_list = self._propfind_priviledges(path_user1_r, login="user1:user1pw")
+            assert "D:read" in priviledges_list
+            assert "D:write-content" not in priviledges_list
+            assert "D:write-properties" not in priviledges_list
+            assert "D:write" not in priviledges_list
+            assert "D:all" not in priviledges_list
+
             logging.info("\n*** create map user1/owner1 rw -> 200")
-            json_dict['PathOrToken'] = path_user1 + "rw"
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_owner1
+            json_dict['PathOrToken'] = path_user1_rw
             json_dict['Permissions'] = "rw"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** list (json->json)")
@@ -2871,10 +2958,27 @@ permissions: RrWw""")
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['Permissions'] == "rw"
 
+            # enable map by user
+            logging.info("\n*** enable map by user1")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_user1_rw
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user1:user1pw", json_dict=json_dict)
+
+            # check PROPFIND/priviledges item as user
+            logging.info("\n*** PROPFIND/priviledges item as user")
+            priviledges_list = self._propfind_priviledges(path_user1_rw, login="user1:user1pw")
+            assert "D:read" in priviledges_list
+            assert "D:write-content" in priviledges_list
+            assert "D:write-properties" not in priviledges_list
+            assert "D:write" not in priviledges_list
+            assert "D:all" not in priviledges_list
+
             logging.info("\n*** create map user1/owner1 with adjusted default permissions -> 200")
             self.configure({"sharing": {"default_permissions_create_map": "RrWw"}})
-            json_dict['PathOrToken'] = path_user1 + "RrRw"
-            del json_dict['Permissions']
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_owner1
+            json_dict['PathOrToken'] = path_user1_RrWw
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** list (json->json)")
@@ -2933,6 +3037,96 @@ permissions: RrWw""")
             assert answer_dict['Status'] == "success"
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['Permissions'] == "RrWw"
+
+    def test_sharing_api_map_report_base(self) -> None:
+        """share-by-map API usage tests related to report."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "permit_properties_overlay": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        path_mapped = "/owner/abook1.vcf/"
+        path_shared_r = "/user/abook-shared-by-owner.vcf/"
+
+        logging.info("\n*** prepare and test access")
+        self.create_addressbook(path_mapped, login="owner:ownerpw")
+        contact = get_file_content("contact1.vcf")
+        path_mapped_item = path_mapped + "contact.vcf"
+        path_shared_item = path_shared_r + "contact.vcf"
+        self.put(path_mapped_item, contact, login="owner:ownerpw")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # create map
+            logging.info("\n*** create map user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # check REPORT as owner
+            logging.info("\n*** REPORT collection owner -> ok")
+            _, responses = self.report(path_mapped, """\
+<?xml version="1.0"?>
+<CR:addressbook-multiget xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
+   <prop>
+     <getetag />
+     <CR:address-data />
+   </prop>
+   <href>""" + path_mapped_item + """</href>
+</CR:addressbook-multiget>""", login="owner:ownerpw")
+            assert len(responses) == 1
+            logging.info("response: %r", responses)
+            response = responses[path_mapped_item]
+            assert isinstance(response, dict)
+            status, prop = response["D:getetag"]
+            assert status == 200 and prop.text
+
+            # check REPORT as user
+            logging.info("\n*** REPORT collection user -> ok")
+            _, responses = self.report(path_shared_r, """\
+<?xml version="1.0"?>
+<CR:addressbook-multiget xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
+   <prop>
+     <getetag />
+     <CR:address-data />
+   </prop>
+   <href>""" + path_shared_r + """</href>
+</CR:addressbook-multiget>""", login="user:userpw")
+            assert len(responses) == 1
+            logging.info("response: %r", responses)
+            response = responses[path_shared_item]
+            assert isinstance(response, dict)
+            status, prop = response["D:getetag"]
+            assert status == 200 and prop.text
 
     def test_sharing_api_map_propfind_overlay_api_base(self) -> None:
         """share-by-map API usage tests related to proppatch."""
@@ -3037,7 +3231,7 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
             # verify PROPFIND as user
-            logging.info("\n*** PROPFIND collection user -> ok")
+            logging.info("\n*** PROPFIND collection owner -> ok")
             propfind_calendar_color = get_file_content("propfind_multiple.xml")
             _, responses = self.propfind(path_mapped, propfind_calendar_color, login="owner:ownerpw")
             logging.info("response: %r", responses)
@@ -3485,8 +3679,8 @@ permissions: RrWw""")
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
-                                    "permit_create_map": True,
-                                    "permit_create_token": True,
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "True",
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
@@ -3553,8 +3747,17 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_shared_r
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
+            # check PROPFIND/priviledges item as user
+            logging.info("\n*** PROPFIND/priviledges item as user -> calendar")
+            priviledges_list = self._propfind_priviledges(path_shared_r, login="user:userpw")
+            assert "D:read" in priviledges_list
+            assert "D:write-content" not in priviledges_list
+            assert "D:write-properties" in priviledges_list
+            assert "D:write" not in priviledges_list
+            assert "D:all" not in priviledges_list
+
             # verify PROPPATCH as user
-            logging.info("\n*** PROPFIND collection user -> ok")
+            logging.info("\n*** PROPFIND collection user -> color #AAAAAA")
             color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
             assert color == "#AAAAAA"
 
@@ -3770,7 +3973,7 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
             # verify PROPPATCH as user
-            logging.info("\n*** PROPFIND color collection collection user -> ok")
+            logging.info("\n*** PROPFIND color collection user -> #AAAAAA")
             color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
             assert color == "#AAAAAA"
 
@@ -3809,7 +4012,7 @@ permissions: RrWw""")
             assert answer_dict['Content'][0]['Properties']['C:calendar-description'] == "USER"
 
             # verify PROPPATCH as user
-            logging.info("\n*** PROPFIND color collection collection user -> ok")
+            logging.info("\n*** PROPFIND color collection user -> #BBBBBB")
             color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
             assert color == "#BBBBBB"
 

@@ -1679,6 +1679,14 @@ Available levels are:
 
 Default: `warning` _(< 3.2.0)_ / `info` _(>= 3.2.0)_
 
+##### limit_content
+
+_(> 3.7.0)_
+
+Limit content of wrapped text (chars)
+
+Default: `3000`
+
 ##### trace_on_debug
 
 _(> 3.5.4)_

@@ -111,7 +111,7 @@ PATH_PATTERN: str = "([a-zA-Z0-9/.\\-]+)"  # TODO: extend or find better source
 
 USER_PATTERN: str = "([a-zA-Z0-9@]+)"  # TODO: extend or find better source
 
-OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color")
+OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname")
 
 
 def load(configuration: "config.Configuration") -> "BaseSharing":
@@ -322,16 +322,17 @@ class BaseSharing:
         return True
 
     # *** sharing functions called by request methods ***
-    # list sharings of type "map"
-    def sharing_collection_map_list(self, User: Union[str, None] = None, Enabled: Union[bool, None] = None, Hidden: Union[bool, None] = None) -> list[dict]:
+    # list sharings
+    def sharing_collection_list(self, User: Union[str, None] = None, Enabled: Union[bool, None] = None, Hidden: Union[bool, None] = None) -> list[dict]:
         """ returning dict with shared collections by filter(User/Enabled/Hidden) or None if not found"""
+        sharing_collection_list = []
+
         if not self.sharing_collection_by_map:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
-            return [{}]
-
-        # retrieve collections depending on filter
-        shared_collection_list = self.database_list_sharing(
+        else:
+            # retrieve collections depending on filter
+            sharing_collection_list += self.database_list_sharing(
                 ShareType="map",
                 OwnerOrUser=User,
                 User=User,
@@ -340,43 +341,60 @@ class BaseSharing:
                 HiddenByOwner=Hidden,
                 HiddenByUser=Hidden)
 
-        # final
-        return shared_collection_list
+        return sharing_collection_list
 
     # resolves a path to a share
     def sharing_collection_resolver(self, path: str, user: str) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if not found"""
+        share = None
+
+        if path == "/":
+            # not supported
+            return None
+
         if self.sharing_collection_by_token:
-            result = self.sharing_collection_by_token_resolver(path)
-            if result is not None:
-                return result
-            else:
-                # check for map
-                pass
+            if share is None:
+                share = self.sharing_collection_by_token_resolver(path)
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/token: not active")
-            return None
 
         if self.sharing_collection_by_map:
-            result = self.sharing_collection_by_map_resolver(path, user)
-            if result is not None:
-                return result
+            if share is None:
+                share = self.sharing_collection_by_map_resolver(path, user)
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
-            return None
 
-        return None
+        if share is not None:
+            if self.permit_properties_overlay:
+                if share['Permissions'] and "p" not in share['Permissions']:
+                    # add permit permission
+                    share['Permissions'] += "P"
+            else:
+                if share['Permissions'] and "P" not in share['Permissions']:
+                    # add deny permission
+                    share['Permissions'] += "p"
+
+        return share
 
     # adjust a share
     def sharing_collection_update(self, ShareType: str, PathOrToken: str, OwnerOrUser: str, Properties: dict) -> None:
         """ returning dict with PathMapped, Owner, Permissions or None if not found"""
         logger.info("Sharing/collection/update: ShareType=%r PathOrToken=%r OwnerOrUser=%r", ShareType, PathOrToken, OwnerOrUser)
+        # Filter properies for permitted ones
+        properties_filtered: dict = {}
+        for prop in Properties:
+            if prop in OVERLAY_PROPERTIES_WHITELIST:
+                properties_filtered[prop] = Properties[prop]
+            else:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("TRACE/sharing/collection_update: silent discard unsupported property: %r", prop)
+
         self.database_update_sharing(ShareType=ShareType,
                                      PathOrToken=PathOrToken,
                                      OwnerOrUser=OwnerOrUser,
-                                     Properties=Properties)
+                                     Properties=properties_filtered)
 
     # *** internal sharing functions ***
     # resolves a token "path" to a share
@@ -494,8 +512,12 @@ class BaseSharing:
                 Status in JSON/TEXT (TEXT can be parsed by shell)
 
         """
+        # initial log prefix
+        api_info = "Sharing/API/POST"
+
         if not self._enabled:
             # API is not enabled
+            logger.warning(api_info + ": API is not enabled")
             return httputils.NOT_FOUND
 
         if user == "":
@@ -504,6 +526,7 @@ class BaseSharing:
 
         # supported API version check
         if not path.startswith("/.sharing/v1/"):
+            logger.warning(api_info + ": leading part of path not matching supported API version")
             return httputils.NOT_FOUND
 
         # split into ShareType and action
@@ -517,6 +540,9 @@ class BaseSharing:
             ShareType = match.group(1)
             action = match.group(2)
 
+        # append ShareType
+        api_info = api_info + "/" + ShareType
+
         # check for valid ShareTypes
         if ShareType:
             if ShareType not in SHARE_TYPES:
@@ -525,12 +551,14 @@ class BaseSharing:
                 return httputils.NOT_FOUND
 
         # check for enabled ShareTypes
-        if not self.sharing_collection_by_map and ShareType == "map":
-            # API "map" is not enabled
-            return httputils.NOT_FOUND
-
         if not self.sharing_collection_by_token and ShareType == "token":
             # API "token" is not enabled
+            logger.warning(api_info + ": not enabled by config (collection_by_token)")
+            return httputils.NOT_FOUND
+
+        if not self.sharing_collection_by_map and ShareType == "map":
+            # API "map" is not enabled
+            logger.warning(api_info + ": not enabled by config (collection_by_map)")
             return httputils.NOT_FOUND
 
         # check for valid API hooks
@@ -538,6 +566,9 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/API: action not whitelisted: %r", action)
             return httputils.NOT_FOUND
+
+        # append action
+        api_info = api_info + "/" + action
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/API: called by authenticated user: %r", user)
@@ -550,9 +581,6 @@ class BaseSharing:
         except socket.timeout:
             logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
-
-        # initial log prefix
-        api_info = "Sharing/API/POST/" + ShareType + "/" + action
 
         # parse body according to content-type
         content_type = environ.get("CONTENT_TYPE", "")
@@ -658,12 +686,12 @@ class BaseSharing:
                     if not re.search('^' + TOKEN_PATTERN_V1 + '$', request_data[key]):
                         logger.warning(api_info + ": unsupported " + key)
                         return httputils.bad_request("Invalid value for PathOrToken")
-                elif ShareType == "map":
+                else:
                     if not re.search('^' + PATH_PATTERN + '$', request_data[key]):
                         logger.warning(api_info + ": unsupported " + key)
                         return httputils.bad_request("Invalid value for PathOrToken")
-                elif not request_data[key].endswith("/"):
-                    return httputils.bad_request("PathOrToken not ending with /")
+                    if not request_data[key].endswith("/"):
+                        return httputils.bad_request("PathOrToken not ending with /")
             elif key == "PathMapped":
                 if not re.search('^' + PATH_PATTERN + '$', request_data[key]):
                     logger.warning(api_info + ": unsupported " + key)
@@ -731,6 +759,7 @@ class BaseSharing:
         if not self.sharing_collection_by_map and not self.sharing_collection_by_token:
             if not action == 'info':
                 # API is not enabled
+                logger.warning(api_info + ": API is not enabled")
                 return httputils.NOT_FOUND
 
         # action: list
@@ -776,6 +805,7 @@ class BaseSharing:
             with self._storage.acquire_lock("r", user, path=PathMapped):
                 item = next(iter(self._storage.discover(PathMapped)), None)
                 if not item:
+                    logger.warning(api_info + ": cannot find PathMapped=%r", PathMapped)
                     return httputils.NOT_FOUND
                 if not isinstance(item, storage.BaseCollection):
                     return httputils.METHOD_NOT_ALLOWED
