@@ -159,6 +159,13 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
     """
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("TRACE/REPORT/xml_report: base_prefix=%r path=%r", base_prefix, path)
+
+    share_bday_automap = False
+    if share and share['ShareType'] == "bday":
+        share_bday_automap = True
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug("TRACE/REPORT/xml_report(1): share=%r", share)
+
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
     if xml_request is None:
         return client.MULTI_STATUS, multistatus
@@ -173,12 +180,9 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         logger.warning("Unsupported REPORT method %r on %r requested",
                        xmlutils.make_human_tag(root.tag), path)
         return client.MULTI_STATUS, multistatus
-    if (root.tag == xmlutils.make_clark("C:calendar-multiget") and
-            collection.tag != "VCALENDAR" or
-            root.tag == xmlutils.make_clark("CR:addressbook-multiget") and
-            collection.tag != "VADDRESSBOOK" or
-            root.tag == xmlutils.make_clark("D:sync-collection") and
-            collection.tag not in ("VADDRESSBOOK", "VCALENDAR")):
+    if ((root.tag == xmlutils.make_clark("C:calendar-multiget") and collection.tag != "VCALENDAR" and not share_bday_automap) or
+        (root.tag == xmlutils.make_clark("CR:addressbook-multiget") and collection.tag != "VADDRESSBOOK") or
+        (root.tag == xmlutils.make_clark("D:sync-collection") and collection.tag not in ("VADDRESSBOOK", "VCALENDAR"))):
         logger.warning("Invalid REPORT method %r on %r requested",
                        xmlutils.make_human_tag(root.tag), path)
         return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
@@ -273,6 +277,9 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
             retrieved_items_vcf_to_ics.append((item_ics, flag))
         retrieved_items = retrieved_items_vcf_to_ics
         logging.debug("TRACE/REPORT/retrieved_items: %r", retrieved_items)
+
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug("TRACE/REPORT/xml_report(2): share=%r", share)
 
     n_vevents = 0
     while retrieved_items:
@@ -729,12 +736,17 @@ def xml_item_response(base_prefix: str, href: str,
 
     response = ET.Element(xmlutils.make_clark("D:response"))
 
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug("TRACE/REPORT/xml_item_response: found=%s share=%r", found_item, share)
+
     share_bday_automap = False
     if share and share['ShareType'] == "bday":
         share_bday_automap = True
 
     href_element = ET.Element(xmlutils.make_clark("D:href"))
     href_element.text = xmlutils.make_href(base_prefix, href)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug("TRACE/REPORT/xml_report: href=%r", href_element.text)
     if share:
         # backmap
         href_element.text = href_element.text.replace(share['PathMapped'], share['PathOrToken'])
