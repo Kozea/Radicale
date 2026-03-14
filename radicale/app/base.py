@@ -83,7 +83,7 @@ class ApplicationBase:
         if logger.isEnabledFor(logging.DEBUG):
             if self._response_content_on_debug:
                 logger.debug("Response content (XML):\n%s",
-                             utils.textwrap_str(xmlutils.pretty_xml(xml_content)))
+                             utils.textwrap_str(xmlutils.pretty_xml(xml_content), self._limit_content))
             else:
                 logger.debug("Response content (XML): suppressed by config/option [logging] response_content_on_debug")
         f = io.BytesIO()
