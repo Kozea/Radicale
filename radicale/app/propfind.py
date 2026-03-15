@@ -491,7 +491,10 @@ class ApplicationPartPropfind(ApplicationBase):
             # put item back
             items_iter = itertools.chain([item], items_iter)
             for item, permission in list(self._collect_allowed_items(items_iter, user)):
-                allowed_items.append((item, permission, None))
+                if share:
+                    allowed_items.append((item, permission, share['ShareType']))
+                else:
+                    allowed_items.append((item, permission, None))
         if self._sharing._enabled:
             if http_depth == "1":
                 if logger.isEnabledFor(logging.DEBUG):
