@@ -117,7 +117,7 @@ def xml_propfind_response(
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/PROPFIND/xml_propfind: PathMapped=%r uri=%r", shares[entry]['PathMapped'], uri)
             if uri.startswith(shares[entry]['PathMapped']):
-                if sharetype is None or shares[entry]['ShareType'] == sharetype:
+                if sharetype is not None and shares[entry]['ShareType'] == sharetype:
                     share = shares[entry]
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug("TRACE/PROPFIND/xml_propfind: found share=%r", share)
