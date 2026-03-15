@@ -121,8 +121,9 @@ export class CollectionsScene {
 
         /**
          * @param {any[]} collections
+         * @param {import("../api/sharing.js").Share[]} shares
          */
-        function show_collections(collections) {
+        function show_collections(collections, shares) {
             /** @type {HTMLElement} */ let navBar = document.querySelector("#logoutview");
             let heightOfNavBar = navBar.offsetHeight + "px";
             html_scene.style.marginTop = heightOfNavBar;
@@ -164,6 +165,23 @@ export class CollectionsScene {
                         node.querySelector("[data-name=" + e + "]").classList.add("hidden");
                     }
                 });
+                let share_info = node.querySelector("[data-name=shared-by]");
+                let share = (shares || []).find(s => s.ShareType === "map" && (s.PathOrToken || "").replace(/\/+$/, "") === (collection.href || "").replace(/\/+$/, ""));
+                if (share && share.Owner !== user) {
+                    share_info.classList.remove("hidden");
+                    node.querySelector("[data-name=shared-by-owner]").textContent = share.Owner;
+                    let share_option = node.querySelector("[data-name=shareoption]");
+                    if (share_option) {
+                        share_option.classList.add("hidden");
+                        share_option.removeAttribute("data-name");
+                    }
+                    delete_btn.classList.add("hidden");
+                    if (!/w/i.test(share.Permissions || "")) {
+                        edit_btn.classList.add("hidden");
+                    } else {
+                        edit_btn.classList.remove("hidden");
+                    }
+                }
                 title_form.textContent = collection.displayname || collection.href;
                 if (title_form.textContent.length > 30) {
                     title_form.classList.add("smalltext");
