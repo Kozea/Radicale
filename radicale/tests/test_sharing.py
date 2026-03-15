@@ -812,6 +812,7 @@ class TestSharingApiSanity(BaseTest):
 
         path_owner = "/owner/calendar.ics/"
         path_user = "/user/calendar-owner.ics/"
+        path_user2 = "/user/calendar-owner2.ics/"
         self.mkcalendar(path_owner, login="owner:ownerpw")
 
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
@@ -863,6 +864,13 @@ class TestSharingApiSanity(BaseTest):
             json_dict['PathOrToken'] = path_user
             json_dict['PathMapped'] = path_owner
             _, headers, answer = self._sharing_api_json("map", "create", 200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map with PathMapped, User, PathOrToken2 (json) -> 409")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathOrToken'] = path_user2
+            json_dict['PathMapped'] = path_owner
+            _, headers, answer = self._sharing_api_json("map", "create", 409, login="owner:ownerpw", json_dict=json_dict)
 
             logging.info("\n*** create map with PathMapped, User, PathOrToken=PathOwner (json) -> 409")
             json_dict = {}
