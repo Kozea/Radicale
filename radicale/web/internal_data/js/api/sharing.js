@@ -34,9 +34,6 @@ import { CollectionType } from "../models/collection.js";
  * @property {SharingFeatures} [sharing]
  */
 
-/** @type {ServerFeatures} */
-export let server_features = {};
-
 /**
  * @param {string} user
  * @param {string} password
@@ -95,7 +92,7 @@ function call_sharing_api(
 /**
  * @param {string} user
  * @param {string} password
- * @param {function():void} callback
+ * @param {function(import("../api/sharing.js").ServerFeatures, ?string):void} callback
  */
 export function discover_server_features(user, password, callback) {
     call_sharing_api(
@@ -104,16 +101,19 @@ export function discover_server_features(user, password, callback) {
         "all/info",
         {},
         function (response) {
-            server_features["sharing"] = JSON.parse(response);
-            callback();
+            try {
+                let features = { "sharing": JSON.parse(response) };
+                callback(features, null);
+            } catch (e) {
+                callback({}, e.message);
+            }
         },
         function () {
             // sharing is disabled on the server
-            server_features["sharing"] = {};
-            callback();
+            callback({ "sharing": {} }, null);
         },
         function (error) {
-            console.error("Failed to discover sharing features: " + error);
+            callback({}, error);
         },
     );
 }
@@ -147,7 +147,7 @@ export class Share {
  */
 export function reload_sharing_list(user, password, collection, callback) {
     let body = collection ? { PathMapped: collection.href } : {};
-    call_sharing_api(
+    return call_sharing_api(
         user,
         password,
         "all/list",
@@ -160,7 +160,7 @@ export function reload_sharing_list(user, password, collection, callback) {
         null, // on_not_found
         function (error) {
             callback([], error);
-        }
+        },
     );
 }
 

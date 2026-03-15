@@ -20,6 +20,7 @@
  */
 
 import { get_principal } from "../api/api.js";
+import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_non_empty } from "../utils/form_validator.js";
 import { CollectionsScene } from "./CollectionsScene.js";
@@ -58,6 +59,7 @@ export class LoginScene {
 
         function onlogin() {
             try {
+                collectionsCache.invalidate();
                 read_form();
                 let password = password_form.value;
                 if (!validator.validate()) {
@@ -99,6 +101,7 @@ export class LoginScene {
 
         let onlogout = function () {
             try {
+                collectionsCache.invalidate();
                 user = "";
                 pop_to_root();
             } catch (err) {
@@ -118,6 +121,7 @@ export class LoginScene {
         function refresh() {
             // The easiest way to refresh is to push a LoadingScene onto the stack and then pop it
             // forcing the scene below it, the Collections Scene to refresh itself.
+            collectionsCache.invalidate();
             push_scene(new LoadingScene());
             pop_scene();
         }

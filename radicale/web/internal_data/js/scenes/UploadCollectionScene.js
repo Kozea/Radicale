@@ -21,6 +21,7 @@
 
 import { upload_collection } from "../api/api.js";
 import { Collection } from "../models/collection.js";
+import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_files, validate_href } from "../utils/form_validator.js";
 import { cleanHREFinput, onCleanHREFinput, random_uuid } from "../utils/misc.js";
@@ -127,6 +128,9 @@ export class UploadCollectionScene {
 
         function onclose() {
             try {
+                if (results.length > 0) {
+                    collectionsCache.invalidate();
+                }
                 pop_scene();
             } catch (err) {
                 console.error(err);
