@@ -112,24 +112,29 @@ def xml_propfind_response(
         logger.debug("TRACE/PROPFIND/xml_propfind: sharetype=%r item.path=%r", sharetype, uri)
     for entry in shares:
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/PROPFIND/xml_propfind: entry=%r", entry)
+            logger.debug("TRACE/PROPFIND/xml_propfind: check entry=%r", entry)
         if entry is not None:
-            if shares[entry]['PathMapped'] == uri:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/PROPFIND/xml_propfind: PathMapped=%r uri=%r", shares[entry]['PathMapped'], uri)
+            if uri.startswith(shares[entry]['PathMapped']):
                 if sharetype is None or shares[entry]['ShareType'] == sharetype:
                     share = shares[entry]
                     if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/PROPFIND/xml_propfind: share=%r", share)
+                        logger.debug("TRACE/PROPFIND/xml_propfind: found share=%r", share)
                     break
-
-    if share:
-        # backmap
-        uri = uri.replace(share['PathMapped'], share['PathOrToken'])
-    href.text = xmlutils.make_href(base_prefix, uri)
-    response.append(href)
 
     share_bday_automap = False
     if share and share['ShareType'] == "bday":
         share_bday_automap = True
+
+    if share:
+        # backmap
+        uri = uri.replace(share['PathMapped'], share['PathOrToken'])
+        if share_bday_automap and not uri.endswith("/"):
+            uri = uri.rstrip(".vcf") + ".ics"
+
+    href.text = xmlutils.make_href(base_prefix, uri)
+    response.append(href)
 
     if propname or allprop:
         props = []
@@ -431,6 +436,9 @@ def xml_propfind_response(
         elif tag == xmlutils.make_clark("D:getcontenttype"):
             assert not isinstance(item, storage.BaseCollection)
             element.text = xmlutils.get_content_type(item, encoding)
+            if share_bday_automap:
+                # overwrite
+                element.text = xmlutils.MIMETYPES["VCALENDAR"]
         elif tag == xmlutils.make_clark("D:resourcetype"):
             # resourcetype must be returned empty for non-collection elements
             pass
