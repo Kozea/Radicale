@@ -4183,7 +4183,7 @@ permissions: RrWw""")
             assert 'C:calendar-description' not in answer_dict['Content'][0]['Properties']
 
     def test_sharing_api_bday_basic(self) -> None:
-        """share-by-map API usage tests related to partial overlay."""
+        """share-by-bday basic tests."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
                                  "htpasswd_encryption": "plain"},
@@ -4363,7 +4363,7 @@ permissions: RrWw""")
             assert "text/calendar" in str(prop.text)
 
     def test_sharing_api_bday_complex(self) -> None:
-        """share-by-map API usage tests related to partial overlay."""
+        """share-by-bday complex tests."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
                                  "htpasswd_encryption": "plain"},
@@ -4533,3 +4533,141 @@ permissions: RrWw""")
             assert int(str(prop.text)) > 600
             status, prop = response["RADICALE:getcontentcount"]
             assert int(str(prop.text)) == 2
+
+    def test_sharing_api_bday_self(self) -> None:
+        """share-by-bday to self tests."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_bday": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_bday": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        path_owner = "/owner/"
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = path_owner + "abook-" + db_type + ".vcf/"
+            path_shared = path_owner + "cal-bday-abook-" + db_type + ".ics/"
+            self.create_addressbook(path_mapped, login="owner:ownerpw")
+
+            contact = get_file_content("contact1.vcf")
+            path = path_mapped + "/contact1.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact2-with-bday.vcf")
+            path = path_mapped + "/contact2-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact3-with-bday.vcf")
+            path = path_mapped + "/contact3-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+<propname />
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            assert "CR:supported-address-data" in response
+
+            # execute GET as owner
+            logging.info("\n*** GET VCF collection owner -> ok")
+            _, answer = self.get(path_mapped, login="owner:ownerpw")
+            assert "contact1" in answer
+            assert "contact2" in answer
+            assert "NICKNAME-C3" in answer
+
+            # create map
+            logging.info("\n*** create bday owner to itself -> ok")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared
+            json_dict['Enabled'] = False
+            json_dict['Hidden'] = True
+            _, headers, answer = self._sharing_api_json("bday", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # check PROPFIND item as owner
+            logging.info("\n*** PROPFIND all as owner")
+            _, responses = self.propfind(path_owner, """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:ICAL="http://apple.com/ns/ical/" xmlns:RADICALE="http://radicale.org/ns/" xmlns:ns3="http://inf-it.com/ns/ab/">
+  <prop>
+    <resourcetype />
+    <RADICALE:displayname />
+    <ICAL:calendar-color />
+    <ns3:addressbook-color />
+    <C:calendar-description />
+    <C:supported-calendar-component-set />
+    <CR:addressbook-description />
+    <CS:source />
+    <RADICALE:getcontentcount />
+    <getcontentlength />
+  </prop>
+</propfind>""", login="owner:ownerpw", HTTP_DEPTH="1")
+            # logging.debug("responses: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            logging.debug("response %r: %r", path_mapped, response)
+            assert "C:supported-calendar-component-set" in response
+            assert path_shared not in responses
+
+            # enable + unhide
+            logging.info("\n*** enable+unhide bday owner to itself -> ok")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_shared
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("bday", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # check PROPFIND item as owner
+            logging.info("\n*** PROPFIND all as owner")
+            _, responses = self.propfind(path_owner, """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:ICAL="http://apple.com/ns/ical/" xmlns:RADICALE="http://radicale.org/ns/" xmlns:ns3="http://inf-it.com/ns/ab/">
+  <prop>
+    <resourcetype />
+    <RADICALE:displayname />
+    <ICAL:calendar-color />
+    <ns3:addressbook-color />
+    <C:calendar-description />
+    <C:supported-calendar-component-set />
+    <CR:addressbook-description />
+    <CS:source />
+    <RADICALE:getcontentcount />
+    <getcontentlength />
+  </prop>
+</propfind>""", login="owner:ownerpw", HTTP_DEPTH="1")
+            # logging.debug("responses: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            logging.debug("response %r: %r", path_mapped, response)
+            assert "C:supported-calendar-component-set" in response
+            assert path_shared in responses
+
+            # check PROPFIND item as owner
+            logging.info("\n*** PROPFIND item as owner -> calendar")
+            response = self._propfind_allprop(path_shared, login="owner:ownerpw")
+            logging.debug("response: %r", response)
+            assert "CR:supported-address-data" not in response
+            assert "D:sync-token" not in response
+            assert "C:supported-calendar-component-set" in response
+            assert "D:current-user-privilege-set" in response
