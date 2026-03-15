@@ -305,9 +305,9 @@ def xml_propfind_response(
                 element.append(supported_report)
         elif tag == xmlutils.make_clark("D:getcontentlength"):
             if not is_collection or is_leaf:
-                if collection.tag == "VADDRESSBOOK" and share_bday_automap:
+                if collection.tag == "VADDRESSBOOK" and share_bday_automap and isinstance(item, storage.BaseCollection):
                     if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/PROPFIND/xml_propfind_response/getcontentcount: start bday automap handling")
+                        logger.debug("TRACE/PROPFIND/xml_propfind_response/getcontentlength: start bday automap handling")
                     length = 0
                     for entry in item.get_all():
                         item_ics = entry.convert_vcf_to_ics()
