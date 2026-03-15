@@ -568,14 +568,10 @@ class Item:
         # set DTSTART
         dtstart = datetime.date(bdayY, bdayM, bdayD)
         item_ics.vevent.add('dtstart').value = dtstart
-        item_ics.vevent.dtstart.value_param = "DATE"
-        item_ics.vevent.dtstart.isNative = False
 
         # calculate and set DTEND
         dtend = dtstart + datetime.timedelta(days=1)
         item_ics.vevent.add('dtend').value = dtend
-        item_ics.vevent.dtend.value_param = "DATE"
-        item_ics.vevent.dtend.isNative = False
 
         # set UID
         if hasattr(self.vobject_item, "uid"):
