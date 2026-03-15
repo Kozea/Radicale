@@ -24,7 +24,7 @@ import { CollectionType } from "../models/collection.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_href, validate_not_empty_or_equals } from "../utils/form_validator.js";
 import { onCleanHREFinput, random_uuid } from "../utils/misc.js";
-import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
+import { Scene, is_current_scene, pop_scene } from "./scene_manager.js";
 
 /**
  * @implements {Scene}
@@ -35,10 +35,10 @@ export class CreateEditShareScene {
      * @param {string} password
      * @param {import("../models/collection.js").Collection} collection
      * @param {string} shareType
-     * @param {function():void} onclose
      * @param {Share} [share] If provided, the scene will be in edit mode.
      */
-    constructor(user, password, collection, shareType, onclose, share) {
+    constructor(user, password, collection, shareType, share) {
+        let self = this;
         let edit = !!share;
         let pathMapped = collection.href;
         /** @type {HTMLElement} */ let html_scene = document.getElementById("newshare");
@@ -76,14 +76,10 @@ export class CreateEditShareScene {
             color_override_input.disabled = !color_override_enabled.checked;
         };
 
-        /** @type {?number} */ let scene_index = null;
 
         function oncancel() {
             try {
-                if (scene_index !== null) {
-                    pop_scene(scene_index - 1);
-                }
-                if (onclose) onclose();
+                pop_scene();
             } catch (err) {
                 console.error(err);
             }
@@ -112,14 +108,13 @@ export class CreateEditShareScene {
                 }
 
                 let callback = function (/** @type {string} */ error) {
-                    if (scene_index === null) {
+                    if (!is_current_scene(self)) {
                         return;
                     }
                     if (error) {
                         errorHandler.setError(error);
                     } else {
-                        pop_scene(scene_index - 1);
-                        if (onclose) onclose();
+                        pop_scene();
                     }
                 };
 
@@ -157,7 +152,6 @@ export class CreateEditShareScene {
 
         this.show = function () {
             this.release();
-            scene_index = scene_stack.length - 1;
             html_scene.classList.remove("hidden");
             cancel_btn.onclick = oncancel;
             form.onsubmit = onsubmit;
@@ -232,7 +226,6 @@ export class CreateEditShareScene {
         };
 
         this.release = function () {
-            scene_index = null;
         };
     }
 }

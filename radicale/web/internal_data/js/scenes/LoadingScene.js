@@ -26,13 +26,13 @@ import { Scene } from "./scene_manager.js";
  */
 export class LoadingScene {
     constructor() {
-        let html_scene = document.getElementById("loadingscene");
-        this.show = function () {
-            html_scene.classList.remove("hidden");
-        };
-        this.hide = function () {
-            html_scene.classList.add("hidden");
-        };
-        this.release = function () { };
+        this.html_scene = document.getElementById("loadingscene");
     }
+    show() {
+        this.html_scene.classList.remove("hidden");
+    }
+    hide() {
+        this.html_scene.classList.add("hidden");
+    }
+    release() { }
 }

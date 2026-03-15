@@ -66,6 +66,9 @@
         <a href="" class="blue" data-name="upload" title="Upload an addressbook or calendar">
           <img src="css/icons/upload.svg" class="icon" alt="⬆️">
         </a>
+        <a href="" class="blue" data-name="incomingshares" title="Incoming Shares">
+          <img src="css/icons/share.svg" class="icon" alt="🔗">
+        </a>
       </div>
       <article data-name="collectiontemplate" class="hidden">
         <div class="colorbar" data-name="color"></div>
@@ -156,8 +159,7 @@
                 <button type="button" class="blue inline" data-name="edit"><img src="css/icons/edit.svg"
                     class="small_icon" alt="Edit"></button>
               </td>
-              <td><img src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw" /><img src="css/icons/eye.svg"
-                  class="med_icon" alt="RO" data-name="ro" /></td>
+              <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span></td>
               <td><input type="text" data-name="pathortoken" value="" readonly=""
                   onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
               <td>
@@ -182,8 +184,7 @@
                 <button type="button" class="blue inline" data-name="edit"><img src="css/icons/edit.svg"
                     class="small_icon" alt="Edit"></button>
               </td>
-              <td><img src="css/icons/edit.svg" class="med_icon" alt="RW" data-name="rw" /><img src="css/icons/eye.svg"
-                  class="med_icon" alt="RO" data-name="ro" /></td>
+              <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span></td>
               <td><input type="text" data-name="pathortoken" value="" readonly=""
                   onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
               <td>
@@ -207,6 +208,38 @@
       <span class="error hidden" data-name="error"></span>
     </section>
 
+    <section id="incomingsharingscene" class="container hidden">
+      <h1>Incoming Shares</h1>
+      <p>Manage shares that others have shared with you.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Path</th>
+            <th>Owner</th>
+            <th title="Permissions">🔑</th>
+            <th title="Enabled">✔️</th>
+            <th title="Shown">👁️</th>
+          </tr>
+        </thead>
+        <tbody data-name="incomingsharesbody">
+          <tr data-name="incomingsharerowtemplate" class="hidden">
+            <td><input type="text" data-name="pathortoken" value="" readonly=""
+                onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
+            <td data-name="owner"></td>
+            <td data-name="permissions"><span class="pill" data-name="rw">rw</span><span class="pill"
+                data-name="ro">ro</span></td>
+            <td><input type="checkbox" data-name="enabled"></td>
+            <td><input type="checkbox" data-name="shown"></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="hidden" data-name="nosharesmessage">No incoming shares</p>
+      <form>
+        <button type="button" class="green" data-name="cancel">Close</button>
+      </form>
+      <span class="error hidden" data-name="error"></span>
+    </section>
+
     <section id="newshare" class="container hidden">
       <h1>New Share</h1>
       <form>
@@ -219,9 +252,9 @@
         </fieldset>
         <fieldset>
           <legend>Attributes</legend>
-          <input type="checkbox" data-name="enabled" checked="true" id="newshare_attr_enabled" /><label
+          <input type="checkbox" data-name="enabled" checked id="newshare_attr_enabled" /><label
             for="newshare_attr_enabled">Enabled</label>
-          <input type="checkbox" data-name="hidden" checked="false" id="newshare_attr_hidden" /><label
+          <input type="checkbox" data-name="hidden" id="newshare_attr_hidden" /><label
             for="newshare_attr_hidden">Hidden</label>
         </fieldset>
         <fieldset>

@@ -26,7 +26,7 @@ import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_color, validate_href } from "../utils/form_validator.js";
 import { cleanHREFinput, onCleanHREFinput, random_hex, random_uuid } from "../utils/misc.js";
 import { LoadingScene } from "./LoadingScene.js";
-import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
+import { Scene, is_current_scene, pop_scene, pop_to_parent, push_scene } from "./scene_manager.js";
 
 /**
  * @implements {Scene}
@@ -55,7 +55,6 @@ export class CreateEditCollectionScene {
         /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
 
 
-        /** @type {?number} */ let scene_index = null;
         /** @type {?XMLHttpRequest} */ let create_edit_req = null;
         /** @type {?HTMLSelectElement} */ let saved_type_form = null;
 
@@ -130,18 +129,18 @@ export class CreateEditCollectionScene {
                     sane_color = COLOR_RE.exec(sane_color)[1];
                 }
                 let loading_scene = new LoadingScene();
-                push_scene(loading_scene, false);
+                push_scene(loading_scene);
                 let collection = new Collection(href, type, displayname, description, sane_color, 0, 0, source);
                 let callback = function (error1) {
-                    if (scene_index === null) {
+                    if (!is_current_scene(loading_scene)) {
                         return;
                     }
                     create_edit_req = null;
                     if (error1) {
                         errorHandler.setError(error1);
-                        pop_scene(scene_index);
+                        pop_scene();
                     } else {
-                        pop_scene(scene_index - 1);
+                        pop_to_parent();
                     }
                 };
                 if (edit) {
@@ -157,7 +156,7 @@ export class CreateEditCollectionScene {
 
         function oncancel() {
             try {
-                pop_scene(scene_index - 1);
+                pop_scene();
             } catch (err) {
                 console.error(err);
             }
@@ -179,7 +178,6 @@ export class CreateEditCollectionScene {
 
         this.show = function () {
             this.release();
-            scene_index = scene_stack.length - 1;
             // Clone type_form because it's impossible to hide options without removing them
             saved_type_form = type_form;
             type_form = /** @type {HTMLSelectElement} */ (type_form.cloneNode(true));
@@ -205,7 +203,6 @@ export class CreateEditCollectionScene {
             cancel_btn.onclick = null;
         };
         this.release = function () {
-            scene_index = null;
             if (create_edit_req !== null) {
                 create_edit_req.abort();
                 create_edit_req = null;

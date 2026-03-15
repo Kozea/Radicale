@@ -1,8 +1,5 @@
 /**
  * This file is part of Radicale Server - Calendar Server
- * Copyright © 2017-2024 Unrud <unrud@outlook.com>
- * Copyright © 2023-2024 Matthew Hana <matthew.hana@gmail.com>
- * Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
  * Copyright © 2026-2026 Max Berger <max@berger.name>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,12 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { LoginScene } from "./scenes/LoginScene.js";
-import { LoadingScene } from "./scenes/LoadingScene.js";
-import { push_scene } from "./scenes/scene_manager.js";
-
-// Hide startup loading message
-// This works because the LoadingScene is the one that is already active in index.html,
-// and all other scenes are hidden.
-new LoadingScene().hide();
-push_scene(new LoginScene());
+/**
+ * @param {string} permissions
+ * @param {HTMLElement} node
+ */
+export function displayPermissions(permissions, node) {
+  permissions = (permissions || "").toLowerCase();
+  if (permissions === "rw") {
+    const roElement = node.querySelector("[data-name=ro]");
+    if (roElement) {
+      roElement.parentNode.removeChild(roElement);
+    }
+  } else if (permissions === "r") {
+    const rwElement = node.querySelector("[data-name=rw]");
+    if (rwElement) {
+      rwElement.parentNode.removeChild(rwElement);
+    }
+  } else {
+    console.warn("Unknown permissions", permissions);
+  }
+}

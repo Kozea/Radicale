@@ -502,3 +502,19 @@ button.inline {
         padding: 0 5px;
     }
 }
+
+.pill {
+  display: inline-block;
+  padding: 0.25em 0.6em;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.375rem;
+  background-color: #6c757d;
+  color: #fff;
+  margin: 0 2px;
+  width: 1.4em;
+}

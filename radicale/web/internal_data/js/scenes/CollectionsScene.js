@@ -27,8 +27,9 @@ import { Collection, CollectionType } from "../models/collection.js";
 import { bytesToHumanReadable } from "../utils/misc.js";
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
 import { DeleteCollectionScene } from "./DeleteCollectionScene.js";
+import { IncomingSharingScene } from "./IncomingSharingScene.js";
 import { LoadingScene } from "./LoadingScene.js";
-import { Scene, pop_scene, push_scene, scene_stack } from "./scene_manager.js";
+import { Scene, is_current_scene, pop_scene, push_scene } from "./scene_manager.js";
 import { ShareCollectionScene, maybe_enable_sharing_options } from "./ShareCollectionScene.js";
 import { UploadCollectionScene } from "./UploadCollectionScene.js";
 
@@ -39,25 +40,25 @@ export class CollectionsScene {
     /**
      * @param {string} user
      * @param {string} password
-     * @param {Collection} collection The collection to show sharing options for.
+     * @param {Collection} principal_collection The princial collection
      * @param {function(string):void} onerror Called when an error occurs, before the
      *                                   scene is popped.
      */
-    constructor(user, password, collection, onerror) {
+    constructor(user, password, principal_collection, onerror) {
         /** @type {HTMLElement} */ let html_scene = document.getElementById("collectionsscene");
         /** @type {HTMLElement} */ let template = html_scene.querySelector("[data-name=collectiontemplate]");
         /** @type {HTMLElement} */ let new_btn = html_scene.querySelector("[data-name=new]");
         /** @type {HTMLElement} */ let upload_btn = html_scene.querySelector("[data-name=upload]");
+        /** @type {HTMLElement} */ let incomingshares_btn = html_scene.querySelector("[data-name=incomingshares]");
 
-        /** @type {?number} */ let scene_index = null;
         /** @type {?XMLHttpRequest} */ let collections_req = null;
-        /** @type {?Array<Collection>} */ let collections = null;
+        /** @type {?Array<Collection>} */ let child_collections = null;
         /** @type {Array<HTMLElement>} */ let nodes = [];
 
         function onnew() {
             try {
-                let create_collection_scene = new CreateEditCollectionScene(user, password, collection);
-                push_scene(create_collection_scene, false);
+                let create_collection_scene = new CreateEditCollectionScene(user, password, principal_collection);
+                push_scene(create_collection_scene);
             } catch (err) {
                 console.error(err);
             }
@@ -66,50 +67,72 @@ export class CollectionsScene {
 
         function onupload() {
             try {
-                let upload_scene = new UploadCollectionScene(user, password, collection);
-                push_scene(upload_scene, false);
+                let upload_scene = new UploadCollectionScene(user, password, principal_collection);
+                push_scene(upload_scene);
             } catch (err) {
                 console.error(err);
             }
             return false;
         }
 
+        function onincomingshares() {
+            try {
+                let incoming_sharing_scene = new IncomingSharingScene(user, password);
+                push_scene(incoming_sharing_scene);
+            } catch (err) {
+                console.error(err);
+            }
+            return false;
+        }
+
+        /**
+         * @param {Collection} collection
+         */
         function onedit(collection) {
             try {
                 let edit_collection_scene = new CreateEditCollectionScene(user, password, collection);
-                push_scene(edit_collection_scene, false);
+                push_scene(edit_collection_scene);
             } catch (err) {
                 console.error(err);
             }
             return false;
         }
 
+        /**
+         * @param {Collection} collection
+         */
         function onshare(collection) {
             try {
                 let share_collection_scene = new ShareCollectionScene(user, password, collection);
-                push_scene(share_collection_scene, false);
+                push_scene(share_collection_scene);
             } catch (err) {
                 console.error(err);
             }
             return false;
         }
 
+        /**
+         * @param {Collection} collection
+         */
         function ondelete(collection) {
             try {
                 let delete_collection_scene = new DeleteCollectionScene(user, password, collection);
-                push_scene(delete_collection_scene, false);
+                push_scene(delete_collection_scene);
             } catch (err) {
                 console.error(err);
             }
             return false;
         }
 
+        /**
+         * @param {any[]} collections
+         */
         function show_collections(collections) {
             /** @type {HTMLElement} */ let navBar = document.querySelector("#logoutview");
             let heightOfNavBar = navBar.offsetHeight + "px";
             html_scene.style.marginTop = heightOfNavBar;
             html_scene.style.height = "calc(100vh - " + heightOfNavBar + ")";
-            collections.forEach(function (collection) {
+            collections.forEach(function (/** @type {Collection} */ collection) {
                 /** @type {HTMLElement} */ let node = /** @type {HTMLElement} */(template.cloneNode(true));
                 node.classList.remove("hidden");
                 /** @type {HTMLElement} */ let title_form = node.querySelector("[data-name=title]");
@@ -171,18 +194,18 @@ export class CollectionsScene {
 
         function update() {
             let loading_scene = new LoadingScene();
-            push_scene(loading_scene, false);
-            collections_req = get_collections(user, password, collection, function (collections1, error) {
-                if (scene_index === null) {
+            push_scene(loading_scene);
+            collections_req = get_collections(user, password, principal_collection, function (child_collections_, error) {
+                if (!is_current_scene(loading_scene)) {
                     return;
                 }
                 collections_req = null;
                 if (error) {
                     onerror(error);
-                    pop_scene(scene_index - 1);
+                    pop_scene();
                 } else {
-                    collections = collections1;
-                    pop_scene(scene_index);
+                    child_collections = child_collections_;
+                    pop_scene();
                 }
             });
         }
@@ -191,20 +214,21 @@ export class CollectionsScene {
             html_scene.classList.remove("hidden");
             new_btn.onclick = onnew;
             upload_btn.onclick = onupload;
-            if (collections === null) {
+            incomingshares_btn.onclick = onincomingshares;
+            if (child_collections === null) {
                 update();
                 discover_server_features(user, password, maybe_enable_sharing_options);
             } else {
                 // from update loading scene
-                show_collections(collections);
+                show_collections(child_collections);
             }
         };
         this.hide = function () {
             html_scene.classList.add("hidden");
-            scene_index = scene_stack.length - 1;
             new_btn.onclick = null;
             upload_btn.onclick = null;
-            collections = null;
+            incomingshares_btn.onclick = null;
+            child_collections = null;
             // remove collection
             nodes.forEach(function (node) {
                 node.parentNode.removeChild(node);
@@ -212,12 +236,11 @@ export class CollectionsScene {
             nodes = [];
         };
         this.release = function () {
-            scene_index = null;
             if (collections_req !== null) {
                 collections_req.abort();
                 collections_req = null;
             }
-            collections = null;
+            child_collections = null;
         };
     }
 }

@@ -24,7 +24,7 @@ import { Collection } from "../models/collection.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_files, validate_href } from "../utils/form_validator.js";
 import { cleanHREFinput, onCleanHREFinput, random_uuid } from "../utils/misc.js";
-import { Scene, pop_scene, scene_stack } from "./scene_manager.js";
+import { Scene, pop_scene } from "./scene_manager.js";
 
 /**
  * @implements {Scene}
@@ -62,7 +62,6 @@ export class UploadCollectionScene {
         validator.addValidator(href_form, validate_href(href_form, "HREF"));
         validator.addValidator(uploadfile_form, validate_files(uploadfile_form, "file"));
 
-        /** @type {?number} */ let scene_index = null;
         /** @type {?XMLHttpRequest} */ let upload_req = null;
         /** @type {Array<string>} */ let results = [];
         /** @type {?Array<HTMLElement>} */ let nodes = null;
@@ -128,7 +127,7 @@ export class UploadCollectionScene {
 
         function onclose() {
             try {
-                pop_scene(scene_index - 1);
+                pop_scene();
             } catch (err) {
                 console.error(err);
             }
@@ -187,7 +186,6 @@ export class UploadCollectionScene {
         }
 
         this.show = function () {
-            scene_index = scene_stack.length - 1;
             html_scene.classList.remove("hidden");
             close_btn.onclick = onclose;
         };
@@ -216,7 +214,6 @@ export class UploadCollectionScene {
             nodes = null;
         };
         this.release = function () {
-            scene_index = null;
             if (upload_req !== null) {
                 upload_req.abort();
                 upload_req = null;
