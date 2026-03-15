@@ -249,7 +249,7 @@ Shows what kind of ShareTypes are supported
   * form->text
 
 ```bash
-curl -u user:pass -H "accept: text/plain" -d "" http://localhost:5232/.sharing/v1/all/info
+curl -u $user:$userpw -H "accept: text/plain" -d "" http://localhost:5232/.sharing/v1/all/info
 ApiVersion=1
 Status='success'
 FeatureEnabledCollectionByMap=True
@@ -262,7 +262,7 @@ PermittedCreateCollectionByToken=True
 
 ```
 bash
-curl -u user:pass --silent -H "accept: application/json" -d "" http://localhost:5232/.sharing/v1/all/info | jq
+curl -u $user:$userpw --silent -H "accept: application/json" -d "" http://localhost:5232/.sharing/v1/all/info | jq
 {
   "ApiVersion": 1,
   "Status": "success",
@@ -311,7 +311,7 @@ Create a share by mapping a collection of an `Owner` to a token.
   * form->text
 
 ```bash
-curl -u user:pass -d "PathMapped=/user/testcalendar1/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/token/create
+curl -u $user:$userpw -d "PathMapped=/user/testcalendar1/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/token/create
 ApiVersion=1
 Status='success'
 PathOrToken='v1/VQR7AmsVRi2ZlFj_JwGpFx-ES5Goyku-gP_YkLh1zUw='
@@ -320,7 +320,7 @@ PathOrToken='v1/VQR7AmsVRi2ZlFj_JwGpFx-ES5Goyku-gP_YkLh1zUw='
   * json->json
 
 ```bash
-curl -u user:pass -H "Content-Type: application/json" -d '{ "PathMapped": "/user/testcalendar1/", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/token/create
+curl -u $user:$userpw -H "Content-Type: application/json" -d '{ "PathMapped": "/user/testcalendar1/", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/token/create
 {"ApiVersion": 1, "Status": "success", "PathOrToken": "v1/aMsmGqOsRwSH-2-6tEa8EMr4RMYzMU7WvPmjnp5qDnw="}
 ```
 
@@ -359,7 +359,7 @@ Create a share by mapping a collection of an `Owner` to an `User`.
   * form->text
 
 ```bash
-curl -u owner:pass -d "PathOrToken=/user/cal1-from-owner/" -d "PathMapped=/owner/testcalendar1/" -d "User=user" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/create
+curl -u $owner:$ownerpw -d "PathOrToken=/user/cal1-from-owner/" -d "PathMapped=/owner/testcalendar1/" -d "User=user" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/create
 ApiVersion=1
 Status='success'
 ```
@@ -367,7 +367,7 @@ Status='success'
   * json->json
 
 ```bash
-curl -u owner:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "/user/cal1-from-owner/", "PathMapped": "/owner/testcalendar1/", "User" : "user", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/map/create
+curl -u $owner:$ownerpw -H "Content-Type: application/json" -d '{ "PathOrToken": "/user/cal1-from-owner/", "PathMapped": "/owner/testcalendar1/", "User" : "user", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/map/create
 {"ApiVersion": 1, "Status": "success"}
 ```
 
@@ -392,7 +392,7 @@ List shares (optional with filter) either owned or assigned as user.
   * form->text ("all")
 
 ```bash
-curl -u user:pass -d "" http://localhost:5232/.sharing/v1/map/list://localhost:5232/.sharing/v1/map/list
+curl -u $user:$userpw -d "" http://localhost:5232/.sharing/v1/map/list://localhost:5232/.sharing/v1/map/list
 ApiVersion=1
 Lines=1
 Status='success'
@@ -403,7 +403,7 @@ Content[0]="map;/user/cal1-from-owner/;/owner/testcalendar1/;owner;user;r;True;T
   * form->csv ("map" only)
  
 ```bash
-curl -H "accept: text/csv" -u user:pass -d "" http://localhost:5232/.sharing/v1/map/list://localhost:5232/.sharing/v1/map/list
+curl -H "accept: text/csv" -u $user:$userpw -d "" http://localhost:5232/.sharing/v1/map/list://localhost:5232/.sharing/v1/map/list
 ShareType;PathOrToken;PathMapped;Owner;User;Permissions;EnabledByOwner;EnabledByUser;HiddenByOwner;HiddenByUser;TimestampCreated;TimestampUpdated;Properties
 map;/user/cal1-from-owner/;/owner/testcalendar1/;owner;user;r;True;False;False;True;1772747277;1772747277;
 ```
@@ -411,7 +411,7 @@ map;/user/cal1-from-owner/;/owner/testcalendar1/;owner;user;r;True;False;False;T
   * json->json ("all"), parsed with `jq`
 
 ```bash
-curl -s -H "Content-Type: application/json" -u user:pass -d "{}" http://localhost:5232/.sharing/v1/all/list | jq
+curl -s -H "Content-Type: application/json" -u $user:$userpw -d "{}" http://localhost:5232/.sharing/v1/all/list | jq
 {
   "ApiVersion": 1,
   "Lines": 2,
@@ -473,7 +473,7 @@ Delete a share selected by `PathOrToken`.
   * form->text
 
 ```bash
-curl -u owner:pass -d "PathOrToken=/user/cal1-from-owner/" http://localhost:5232/.sharing/v1/map/delete
+curl -u $owner:$ownerpw -d "PathOrToken=/user/cal1-from-owner/" http://localhost:5232/.sharing/v1/map/delete
 ApiVersion=1
 Status='success'
 ```
@@ -481,7 +481,7 @@ Status='success'
   * json->json
 
 ```bash
-curl -u user:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "v1/DUSl_J5rRlWx3fy8YRXpH22FFllplkOTpcSwfGtpvkc="}' http://localhost:5232/.sharing/v1/token/delete
+curl -u $user:$userpw -H "Content-Type: application/json" -d '{ "PathOrToken": "v1/DUSl_J5rRlWx3fy8YRXpH22FFllplkOTpcSwfGtpvkc="}' http://localhost:5232/.sharing/v1/token/delete
 {"ApiVersion": 1, "Status": "success"}
 ```
 
@@ -513,7 +513,7 @@ Execute delete+create in case `PathOrToken` needs to be changed.
    * form->text
 
 ```bash
-curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/update
+curl -u $user:$userpw -d "PathOrToken=/user/cal1-from-owner/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/update
 ApiVersion=1
 Status='success'
 ```
@@ -521,7 +521,7 @@ Status='success'
   * json->json
 
 ```bash
-curl -u user:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "/user/cal1-from-owner/", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/map/update
+curl -u $user:$userpw -H "Content-Type: application/json" -d '{ "PathOrToken": "/user/cal1-from-owner/", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/map/update
 {"ApiVersion": 1, "Status": "success"}
 ```
 
@@ -544,7 +544,7 @@ Toggle enable|disable|hide|unhide of `Owner` or `User` of a share selected by `P
   * form->text
 
 ```bash
-curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" http://localhost:5232/.sharing/v1/map/enable
+curl -u $user:$userpw -d "PathOrToken=/user/cal1-from-owner/" http://localhost:5232/.sharing/v1/map/enable
 ApiVersion=1
 Status='success'
 ```bash
@@ -552,7 +552,7 @@ Status='success'
   * json->json
 
 ```bash
-curl -u user:pass -H "Content-Type: application/json" -d '{ "PathOrToken": "/user/cal1-from-owner/"}' http://localhost:5232/.sharing/v1/map/unhide
+curl -u $user:$userpw -H "Content-Type: application/json" -d '{ "PathOrToken": "/user/cal1-from-owner/"}' http://localhost:5232/.sharing/v1/map/unhide
 {"ApiVersion": 1, "Status": "success"}
 ```
 
@@ -608,34 +608,34 @@ xml_ppc='<?xml version="1.0"?>
 
 ```bash
 ## Retrieve collection color of owner (no color set)
-curl -u owner:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/owner/testcalendar1/
+curl -u $owner:$ownerpw -d "$xml_pfc" -X PROPFIND http://localhost:5232/owner/testcalendar1/
 
 ## Create read-only share for user
-curl -u owner:pass -d "PathOrToken=/user/cal1-from-owner/" -d "PathMapped=/owner/testcalendar1/" -d "User=user" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/create
+curl -u $owner:$ownerpw -d "PathOrToken=/user/cal1-from-owner/" -d "PathMapped=/owner/testcalendar1/" -d "User=user" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/create
 
 ## Accept (enable+unhide) share by user
-curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/update
+curl -u $user:$userpw -d "PathOrToken=/user/cal1-from-owner/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/map/update
 
 ## Retrieve collection color of share by user (no color set)
-curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
+curl -u $user:$userpw -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
 
 ## Set property overlay by user
-curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d 'Properties="ICAL:calendar-color"="#CCCCCC"' http://localhost:5232/.sharing/v1/map/update
+curl -u $user:$userpw -d "PathOrToken=/user/cal1-from-owner/" -d 'Properties="ICAL:calendar-color"="#CCCCCC"' http://localhost:5232/.sharing/v1/map/update
 
 ## Retrieve collection color of share by user (color set)
-curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
+curl -u $user:$userpw -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
 
 ## Delete property overlay by user
-curl -u user:pass -d "PathOrToken=/user/cal1-from-owner/" -d 'Properties=' http://localhost:5232/.sharing/v1/map/update
+curl -u $user:$userpw -d "PathOrToken=/user/cal1-from-owner/" -d 'Properties=' http://localhost:5232/.sharing/v1/map/update
 
 ## Retrieve collection color of share by user (no color set)
-curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
+curl -u $user:$userpw -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
 
 ## Add property overlay by user using PROPPATCH
-curl -u user:pass -d "$xml_ppc" -X PROPPATCH http://localhost:5232/user/cal1-from-owner/
+curl -u $user:$userpw -d "$xml_ppc" -X PROPPATCH http://localhost:5232/user/cal1-from-owner/
 
 ## Retrieve collection color of share by user (color set)
-curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
+curl -u $user:$userpw -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
 ```
 
 ## Virtual "bday" collection
