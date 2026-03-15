@@ -305,7 +305,18 @@ def xml_propfind_response(
                 element.append(supported_report)
         elif tag == xmlutils.make_clark("D:getcontentlength"):
             if not is_collection or is_leaf:
-                element.text = str(len(item.serialize().encode(encoding)))
+                if collection.tag == "VADDRESSBOOK" and share_bday_automap:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("TRACE/PROPFIND/xml_propfind_response/getcontentcount: start bday automap handling")
+                    length = 0
+                    for entry in item.get_all():
+                        item_ics = entry.convert_vcf_to_ics()
+                        if item_ics is None:
+                            continue
+                        length += len(item_ics.vobject_item.serialize().encode(encoding))
+                    element.text = str(length)
+                else:
+                    element.text = str(len(item.serialize().encode(encoding)))
             else:
                 is404 = True
         elif tag == xmlutils.make_clark("D:owner"):
@@ -362,7 +373,18 @@ def xml_propfind_response(
             elif tag == xmlutils.make_clark("RADICALE:getcontentcount"):
                 # Only for internal use by the web interface
                 if isinstance(item, storage.BaseCollection) and not collection.is_principal:
-                    element.text = str(sum(1 for x in item.get_all()))
+                    if collection.tag == "VADDRESSBOOK" and share_bday_automap:
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug("TRACE/PROPFIND/xml_propfind_response/getcontentcount: start bday automap handling")
+                        items = []
+                        for entry in item.get_all():
+                            item_ics = entry.convert_vcf_to_ics()
+                            if item_ics is None:
+                                continue
+                            items.append(item_ics.vobject_item)
+                        element.text = str(sum(1 for x in items))
+                    else:
+                        element.text = str(sum(1 for x in item.get_all()))
                 else:
                     is404 = True
             elif tag == xmlutils.make_clark("D:displayname"):
