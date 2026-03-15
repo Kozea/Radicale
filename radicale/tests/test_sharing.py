@@ -4360,7 +4360,7 @@ permissions: RrWw""")
             response = responses[path_shared_r + "contact2-with-bday.ics"]
             assert not isinstance(response, int)
             status, prop = response["D:getcontenttype"]
-            assert "vcard" not in prop.text
+            assert "text/calendar" in str(prop.text)
 
     def test_sharing_api_bday_complex(self) -> None:
         """share-by-map API usage tests related to partial overlay."""

@@ -545,7 +545,7 @@ class ApplicationPartPropfind(ApplicationBase):
             # put item back
             items_iter = itertools.chain([item], items_iter)
             for item, permission in list(self._collect_allowed_items(items_iter, user)):
-                if share:
+                if self._sharing._enabled and share:
                     if share['ShareType'] == "bday" and not isinstance(item, storage.BaseCollection):
                         if not item.convert_vcf_to_ics():
                             continue
