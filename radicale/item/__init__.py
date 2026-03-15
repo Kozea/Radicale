@@ -505,7 +505,7 @@ class Item:
         self.component_name
         self._vobject_item = orig_vobject_item
 
-    def convert_vcf_to_ics(self) -> Union["Item" | None]:
+    def convert_vcf_to_ics(self) -> Union["Item", None]:
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/item/convert_vcf_to_ics: convert VCF to ICS (href): %r", self.href)
             logger.debug("TRACE/item/convert_vcf_to_ics: convert VCF to ICS (vobject): %r", self.vobject_item)
