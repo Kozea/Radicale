@@ -899,6 +899,12 @@ class BaseSharing:
                 else:
                     User = str(User)
 
+                # lookup existing shares with requested PathMapped for same User
+                shares = self.database_list_sharing(ShareType=ShareType, PathMapped=PathMapped, User=User)
+                if len(shares) > 0:
+                    logger.warning(api_info + ": share already exists with PathMapped=%r User=%r", PathMapped, User)
+                    return httputils.CONFLICT
+
                 # check access Permissions
                 access = Access(self._rights, user, PathMapped, None)  # PathMapped is mandatory
                 if not access.check("r") and "i" not in access.permissions:
