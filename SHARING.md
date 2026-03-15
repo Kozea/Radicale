@@ -637,3 +637,37 @@ curl -u user:pass -d "$xml_ppc" -X PROPPATCH http://localhost:5232/user/cal1-fro
 ## Retrieve collection color of share by user (color set)
 curl -u user:pass -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-from-owner/
 ```
+
+## Virtual "bday" collection
+
+Owner can create for itself or for particular user a virtual bday collection from an existing addressbook.
+
+
+### Examples
+
+Preconditions:
+
+ * Collection with type *adressbook* is existing
+ * Config options enabled in section `sharing`:
+   * `collection_by_bday`
+   * `permit_create_bday`
+
+#### Examples using API
+
+  * Create
+
+```bash
+## Create sharing of type "bday"
+curl -u owner:ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" -d "PathMapped=/owner/addressbook/" -d "User=owner" http://localhost:5232/.sharing/v1/bday/create
+
+
+## Enable
+curl -u owner:ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" http://localhost:5232/.sharing/v1/bday/enable
+
+## Unhide
+curl -u owner:ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" http://localhost:5232/.sharing/v1/bday/unhide
+```
+
+  * Check
+
+Use e.g. WebUI, an additional (virtual) calendar collection appears
