@@ -1023,17 +1023,33 @@ class BaseSharing:
                         logger.warning(api_info + ": access to %r not allowed for user %r", PathMapped, user)
                         return httputils.NOT_ALLOWED
 
-                result = self.database_update_sharing(
-                       ShareType=ShareType,
-                       PathMapped=PathMapped,
-                       Permissions=Permissions,
-                       EnabledByOwner=Enabled,
-                       HiddenByOwner=Hidden,
-                       PathOrToken=PathOrToken,
-                       OwnerOrUser=user,
-                       User=User,
-                       Timestamp=Timestamp,
-                       Properties=Properties)
+                if user == share['User']:
+                    # self-owned share
+                    result = self.database_update_sharing(
+                           ShareType=ShareType,
+                           PathMapped=PathMapped,
+                           Permissions=Permissions,
+                           EnabledByOwner=Enabled,
+                           EnabledByUser=Enabled,
+                           HiddenByOwner=Hidden,
+                           HiddenByUser=Hidden,
+                           PathOrToken=PathOrToken,
+                           OwnerOrUser=user,
+                           User=User,
+                           Timestamp=Timestamp,
+                           Properties=Properties)
+                else:
+                    result = self.database_update_sharing(
+                           ShareType=ShareType,
+                           PathMapped=PathMapped,
+                           Permissions=Permissions,
+                           EnabledByOwner=Enabled,
+                           HiddenByOwner=Hidden,
+                           PathOrToken=PathOrToken,
+                           OwnerOrUser=user,
+                           User=User,
+                           Timestamp=Timestamp,
+                           Properties=Properties)
 
             elif user == share['User']:
                 # User is only allowed to update Properties
