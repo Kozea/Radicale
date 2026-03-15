@@ -4343,6 +4343,25 @@ permissions: RrWw""")
             assert path_shared_r + "contact3-with-bday.ics" in responses
             assert path_shared_r + "contact1.ics" not in responses
 
+            logging.info("\n*** PROPFIND collection entries user -> ok")
+            _, responses = self.propfind(path_shared_r, """\
+<?xml version="1.0"?>
+ <propfind xmlns="DAV:">
+   <prop>
+     <getcontenttype />
+     <resourcetype />
+     <getetag />
+   </prop>
+</propfind>""", login="user:userpw", HTTP_DEPTH="1")
+            logging.debug("resonses: %r", responses)
+            assert path_shared_r + "contact2-with-bday.ics" in responses
+            assert path_shared_r + "contact3-with-bday.ics" in responses
+            assert path_shared_r + "contact1.ics" not in responses
+            response = responses[path_shared_r + "contact2-with-bday.ics"]
+            assert not isinstance(response, int)
+            status, prop = response["D:getcontenttype"]
+            assert "vcard" not in prop.text
+
     def test_sharing_api_bday_complex(self) -> None:
         """share-by-map API usage tests related to partial overlay."""
         self.configure({"auth": {"type": "htpasswd",
