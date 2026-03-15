@@ -35,8 +35,8 @@ Permissions:
   - t: deny create of token-based sharing of collection in case permit_create_token=True (>= 3.7.0)
   - M: permit create of map-based sharing of collection in case permit_create_map=False (>= 3.7.0)
   - m: deny create of map-based sharing of collection in case permit_create_map=True (>= 3.7.0)
-  - B: permit create of bday-based sharing of collection in case permit_create_bday=False (>= 3.8.0)
-  - b: deny create of bday-based sharing of collection in case permit_create_bday=True (>= 3.8.0)
+  - B: permit create of bday-based sharing of addressbook collection in case permit_create_bday=False (>= 3.7.0)
+  - b: deny create of bday-based sharing of addressbook collection in case permit_create_bday=True (>= 3.7.0)
 
 Permissions only supported so far in share permissions:
   - P: permit properties overlay in case permit_properties_overlay=False (>= 3.7.0)

@@ -2122,7 +2122,7 @@ Default: `false`
 
 ##### collection_by_bday
 
-_(>= 3.8.0)_
+_(>= 3.7.0)_
 
 Share collection by bday (conversion on-the-fly)
 
@@ -2152,7 +2152,7 @@ Default: `false`
 
 ##### permit_create_bday
 
-_(>= 3.8.0)_
+_(>= 3.7.0)_
 
 Permit create of bday-based sharing
 
@@ -2427,6 +2427,8 @@ The following `permissions` are recognized:
 * **t:** deny create of token-based sharing of collection in case `permit_create_token=True` _(>= 3.7.0)_
 * **M:** permit create of map-based sharing of collection in case `permit_create_map= False` _(>= 3.7.0)_
 * **m:** deny create of map-based sharing of collection in case `permit_create_map=True` _(>= 3.7.0)_
+* **B:** permit create of bday-based sharing of addressbook collection in case `permit_create_bday= False` _(>= 3.7.0)_
+* **b:** deny create of bday-based sharing of addressbook collection in case `permit_create_bday=True` _(>= 3.7.0)_
 
 ### Storage
 
