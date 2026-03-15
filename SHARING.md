@@ -322,6 +322,7 @@ Create a share by mapping a collection of an `Owner` to an `User`.
 
  * Authorization
   * `PathMapped` is existing and a collection
+  * `PathMapped` is not existing already as a share target for same `User`
   * Authenticated user as `Owner` has at least read access to `PathMapped`
   * Provided `User` has at least read access to `PathOrToken`
   * Global permitted by `permit_create_map = True` or `rights` permission `m`

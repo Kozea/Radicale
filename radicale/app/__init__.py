@@ -83,6 +83,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _extra_headers: Mapping[str, str]
     _profiling_per_request: bool = False
     _profiling_per_request_method: bool = False
+    _limit_content: int
     profiler_per_request_method: dict[str, cProfile.Profile] = {}
     profiler_per_request_method_counter: dict[str, int] = {}
     profiler_per_request_method_starttime: datetime.datetime
@@ -119,6 +120,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         logger.debug("log request  content on debug: %s", self._request_content_on_debug)
         logger.debug("log response header  on debug: %s", self._response_header_on_debug)
         logger.debug("log response content on debug: %s", self._response_content_on_debug)
+        self._limit_content = configuration.get("logging", "limit_content")
+        logger.debug("log limit for content: %d", self._limit_content)
         self._auth_delay = configuration.get("auth", "delay")
         self._auth_type = configuration.get("auth", "type")
         self._web_type = configuration.get("web", "type")
@@ -258,7 +261,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 if isinstance(answer, str):
                     if self._response_content_on_debug:
                         if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("Response content (nonXML):\n%s", utils.textwrap_str(answer))
+                            logger.debug("Response content (nonXML):\n%s", utils.textwrap_str(answer, self._limit_content))
                     else:
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug("Response content: suppressed by config/option [logging] response_content_on_debug")
@@ -283,7 +286,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
             if self._response_header_on_debug:
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("Response header:\n%s", utils.textwrap_str(pprint.pformat(headers)))
+                    logger.debug("Response header:\n%s", utils.textwrap_str(pprint.pformat(headers), self._limit_content))
             else:
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("Response header: suppressed by config/option [logging] response_header_on_debug")
@@ -397,7 +400,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     remote_host, remote_useragent, https_info)
         if self._request_header_on_debug:
             logger.debug("Request header:\n%s",
-                         utils.textwrap_str(pprint.pformat(self._scrub_headers(environ))))
+                         utils.textwrap_str(pprint.pformat(self._scrub_headers(environ)), self._limit_content))
         else:
             logger.debug("Request header: suppressed by config/option [logging] request_header_on_debug")
 

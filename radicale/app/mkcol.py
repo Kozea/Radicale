@@ -63,9 +63,9 @@ class ApplicationPartMkcol(ApplicationBase):
             return httputils.NOT_ALLOWED
         if self._sharing._enabled:
             # check for shared collections (all)
-            collections_share_map = self._sharing.sharing_collection_map_list()
-            if collections_share_map:
-                for share in collections_share_map:
+            collections_share_list = self._sharing.sharing_collection_list()
+            if collections_share_list:
+                for share in collections_share_list:
                     if share['PathOrToken'] == path:
                         return httputils.CONFLICT
         with self._storage.acquire_lock("w", user, path=path, request="MKCOL"):

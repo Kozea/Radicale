@@ -154,12 +154,12 @@ def read_request_body(configuration: "config.Configuration",
                       environ: types.WSGIEnviron) -> str:
     content = decode_request(configuration, environ,
                              read_raw_request_body(configuration, environ))
-    if configuration.get("logging", "request_content_on_debug"):
-        if logger.isEnabledFor(logging.DEBUG):
+    if logger.isEnabledFor(logging.DEBUG):
+        if configuration.get("logging", "request_content_on_debug"):
+            _limit_content = configuration.get("logging", "limit_content")
             logger.debug("Request content (sha256sum): %s", utils.sha256_str(content))
-            logger.debug("Request content:\n%s", utils.textwrap_str(content))
-    else:
-        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Request content:\n%s", utils.textwrap_str(content, _limit_content))
+        else:
             logger.debug("Request content: suppressed by config/option [logging] request_content_on_debug")
     return content
 

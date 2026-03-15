@@ -66,6 +66,10 @@ UNIT_M: int = (1024 * 1024)
 UNIT_K: int = (1024)
 
 
+# Limits
+DEFAULT_LIMIT_CONTENT: int = 3000
+
+
 def load_plugin(internal_types: Sequence[str], module_name: str,
                 class_name: str, base_class: Type[_T_co],
                 configuration: "config.Configuration") -> _T_co:
@@ -385,7 +389,7 @@ def limit_str(content: str, limit: int) -> str:
         return content
 
 
-def textwrap_str(content: str, limit: int = 3000) -> str:
+def textwrap_str(content: str, limit: int = DEFAULT_LIMIT_CONTENT) -> str:
     # TODO: add support for config option and prefix
     return textwrap.indent(limit_str(content, limit), " ", lambda line: True)
 

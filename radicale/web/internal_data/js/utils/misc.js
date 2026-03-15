@@ -106,5 +106,5 @@ export function bytesToHumanReadable(bytes) {
     const units = ['b', 'kb', 'mb', 'gb', 'tb'];
     let i = bytes == 0 ? 0 : Math.floor(Math.log(bytes) / Math.log(1024));
     i = Math.min(i, units.length - 1);
-    return (bytes / Math.pow(1024, i)) + ' ' + units[i];
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + units[i];
 }

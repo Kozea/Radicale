@@ -36,8 +36,8 @@ from radicale.log import logger
 
 def xml_propfind(base_prefix: str, path: str,
                  xml_request: Optional[ET.Element],
-                 allowed_items: Iterable[Tuple[types.CollectionOrItem, str]],
-                 user: str, encoding: str, max_resource_size: int, share: Union[dict, None] = None) -> Optional[ET.Element]:
+                 allowed_items: Iterable[Tuple[types.CollectionOrItem, str, str]],
+                 user: str, encoding: str, max_resource_size: int, shares: dict = {}) -> Optional[ET.Element]:
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -70,11 +70,14 @@ def xml_propfind(base_prefix: str, path: str,
     # Writing answer
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
 
-    for item, permission in allowed_items:
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug("TRACE/PROPFIND/xml_propfind: shares=%r", shares)
+
+    for item, permission, sharetype in allowed_items:
         write = permission == "w"
         multistatus.append(xml_propfind_response(
             base_prefix, path, item, props, user, encoding, write=write,
-            allprop=allprop, propname=propname, max_resource_size=max_resource_size, share=share))
+            allprop=allprop, propname=propname, max_resource_size=max_resource_size, shares=shares, sharetype=sharetype))
 
     return multistatus
 
@@ -82,7 +85,7 @@ def xml_propfind(base_prefix: str, path: str,
 def xml_propfind_response(
         base_prefix: str, path: str, item: types.CollectionOrItem,
         props: Sequence[str], user: str, encoding: str, max_resource_size: int, write: bool = False,
-        propname: bool = False, allprop: bool = False, share: Union[dict, None] = None) -> ET.Element:
+        propname: bool = False, allprop: bool = False, shares: dict = {}, sharetype: Union[str, None] = None) -> ET.Element:
     """Build and return a PROPFIND response."""
     if propname and allprop or (props and (propname or allprop)):
         raise ValueError("Only use one of props, propname and allprops")
@@ -102,6 +105,22 @@ def xml_propfind_response(
             collection.path, item.href))
     response = ET.Element(xmlutils.make_clark("D:response"))
     href = ET.Element(xmlutils.make_clark("D:href"))
+
+    # lookup share
+    share = None
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug("TRACE/PROPFIND/xml_propfind: sharetype=%r item.path=%r", sharetype, uri)
+    for entry in shares:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("TRACE/PROPFIND/xml_propfind: entry=%r", entry)
+        if entry is not None:
+            if shares[entry]['PathMapped'] == uri:
+                if sharetype is None or shares[entry]['ShareType'] == sharetype:
+                    share = shares[entry]
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("TRACE/PROPFIND/xml_propfind: share=%r", share)
+                    break
+
     if share:
         # backmap
         uri = uri.replace(share['PathMapped'], share['PathOrToken'])
@@ -230,7 +249,13 @@ def xml_propfind_response(
                     xmlutils.make_clark("D:unauthenticated")))
         elif tag == xmlutils.make_clark("D:current-user-privilege-set"):
             privileges = ["D:read"]
-            if write:
+            if share:
+                if write:
+                    if "P" in share['Permissions']:
+                        privileges.append("D:write-properties")
+                    if "w" in share['Permissions']:
+                        privileges.append("D:write-content")
+            elif write:
                 privileges.append("D:all")
                 privileges.append("D:write")
                 privileges.append("D:write-properties")
@@ -306,6 +331,8 @@ def xml_propfind_response(
             elif tag == xmlutils.make_clark("RADICALE:displayname"):
                 # Only for internal use by the web interface
                 displayname = collection.get_meta("D:displayname")
+                if share and 'Properties' in share and share['Properties'] is not None and "D:displayname" in share['Properties']:
+                    displayname = share['Properties']["D:displayname"]
                 if displayname is not None:
                     element.text = displayname
                 else:
@@ -318,6 +345,8 @@ def xml_propfind_response(
                     is404 = True
             elif tag == xmlutils.make_clark("D:displayname"):
                 displayname = collection.get_meta("D:displayname")
+                if share and 'Properties' in share and share['Properties'] is not None and "D:displayname" in share['Properties']:
+                    displayname = share['Properties']["D:displayname"]
                 if not displayname and is_leaf:
                     displayname = collection.path
                 if displayname is not None:
@@ -344,12 +373,10 @@ def xml_propfind_response(
             else:
                 human_tag = xmlutils.make_human_tag(tag)
                 tag_text = collection.get_meta(human_tag)
-                if share:
+                if share and 'Properties' in share and share['Properties'] is not None and human_tag in share['Properties']:
                     # map/add from overlay
-                    if share['Properties']:
-                        if human_tag in share['Properties']:
-                            if share['Properties'][human_tag] is not None:
-                                tag_text = share['Properties'][human_tag]
+                    if share['Properties'][human_tag] is not None:
+                        tag_text = share['Properties'][human_tag]
                 if tag_text is not None:
                     element.text = tag_text
                 else:
@@ -426,7 +453,8 @@ class ApplicationPartPropfind(ApplicationBase):
         """Manage PROPFIND request."""
         http_depth = environ.get("HTTP_DEPTH", "0")
         permissions_filter = None
-        share = None
+        shares: dict = {}
+        allowed_items: list = []
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
             share = self._sharing.sharing_collection_resolver(path, user)
@@ -435,6 +463,7 @@ class ApplicationPartPropfind(ApplicationBase):
                 path = share['PathMapped']
                 user = share['Owner']
                 permissions_filter = share['Permissions']
+                shares[share['PathOrToken']] = share
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r"):
             return httputils.NOT_ALLOWED
@@ -461,15 +490,16 @@ class ApplicationPartPropfind(ApplicationBase):
                 return httputils.NOT_ALLOWED
             # put item back
             items_iter = itertools.chain([item], items_iter)
-            allowed_items = list(self._collect_allowed_items(items_iter, user))
+            for item, permission in list(self._collect_allowed_items(items_iter, user)):
+                allowed_items.append((item, permission, None))
         if self._sharing._enabled:
             if http_depth == "1":
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/PROPFIND: get shared collections")
                 # check for shared collections related to user, Enabled and not Hidden
-                collections_share_map = self._sharing.sharing_collection_map_list(User=user, Enabled=True, Hidden=False)
-                if collections_share_map:
-                    for share in collections_share_map:
+                collections_share_list = self._sharing.sharing_collection_list(User=user, Enabled=True, Hidden=False)
+                if collections_share_list:
+                    for share in collections_share_list:
                         c_share = share['PathOrToken']
                         c_path = share['PathMapped']
                         c_user = share['Owner']
@@ -486,11 +516,14 @@ class ApplicationPartPropfind(ApplicationBase):
                         with self._storage.acquire_lock("r", c_user):
                             c_items_iter = iter(self._storage.discover(c_path, "0"))
                             c_allowed_items = list(self._collect_allowed_items(c_items_iter, c_user))
-                        allowed_items = allowed_items + c_allowed_items
+                        for item, permission in c_allowed_items:
+                            allowed_items.append((item, permission, share['ShareType']))
+                        shares[c_share] = share
+
         headers = {"DAV": httputils.DAV_HEADERS,
                    "Content-Type": "text/xml; charset=%s" % self._encoding}
         xml_answer = xml_propfind(base_prefix, path, xml_content,
-                                  allowed_items, user, self._encoding, max_resource_size=self._max_resource_size, share=share)
+                                  allowed_items, user, self._encoding, max_resource_size=self._max_resource_size, shares=shares)
         if xml_answer is None:
             return httputils.NOT_ALLOWED
         return client.MULTI_STATUS, headers, self._xml_response(xml_answer), xmlutils.pretty_xml(xml_content)

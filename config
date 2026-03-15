@@ -362,6 +362,9 @@
 # Value: debug | info | warning | error | critical
 #level = info
 
+# Limit content of wrapped text (chars)
+#limit_content = 3000
+
 # do not filter debug messages starting with 'TRACE'
 #trace_on_debug = False
 

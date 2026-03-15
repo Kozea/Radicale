@@ -8,6 +8,7 @@
 * Performance: improve `path_to_filesystem()`
 * Performance: preload access rights from file
 * Add: [server] delay_on_error option
+* Add: [logging] limit_content option
 
 ## 3.6.1
 
