@@ -4490,3 +4490,27 @@ permissions: RrWw""")
             assert not isinstance(response, int)
             logging.debug("response %r: %r", path_shared_bday, response)
             assert "C:supported-calendar-component-set" in response
+
+            # check PROPFIND item as user
+            logging.info("\n*** PROPFIND all as user (reduced)")
+            _, responses = self.propfind(path_user, """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:ICAL="http://apple.com/ns/ical/" xmlns:RADICALE="http://radicale.org/ns/" xmlns:ns3="http://inf-it.com/ns/ab/">
+  <prop>
+    <resourcetype />
+    <C:calendar-description />
+    <CR:addressbook-description />
+    <RADICALE:getcontentcount />
+    <getcontentlength />
+  </prop>
+</propfind>""", login="user:userpw", HTTP_DEPTH="1")
+            # logging.debug("responses: %r", responses)
+            response = responses[path_shared_bday]
+            assert not isinstance(response, int)
+            logging.debug("response %r: %r", path_shared_bday, response)
+            assert "D:getcontentlength" in response
+            assert "RADICALE:getcontentcount" in response
+            status, prop = response["D:getcontentlength"]
+            assert int(str(prop.text)) > 600
+            status, prop = response["RADICALE:getcontentcount"]
+            assert int(str(prop.text)) == 2
