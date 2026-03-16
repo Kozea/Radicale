@@ -256,6 +256,7 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "collection_by_map": "True",
+                                    "collection_by_bday": "True",
                                     "collection_by_token": "True"},
                         "rights": {"type": "owner_only"}})
 
@@ -333,13 +334,16 @@ class TestSharingApiSanity(BaseTest):
             # path with valid API and hook and all enabled
             self.configure({"sharing": {
                                         "collection_by_map": "True",
+                                        "collection_by_bday": "True",
                                         "collection_by_token": "True"}
                             })
             for sharetype in sharing.SHARE_TYPES:
                 path = "/.sharing/v1/" + sharetype + "/" + action
                 # invalid API
+                logging.info("\n*** check hook -> 404 (invalid)")
                 _, headers, _ = self.request("POST", path + "NA", check=404, login="owner:ownerpw")
                 #  valid API
+                logging.info("\n*** check hook -> 400 (valid but no data)")
                 _, headers, _ = self.request("POST", path, check=400, login="owner:ownerpw")
 
             logging.info("\n*** check API hook: info/token -> 200")
@@ -353,8 +357,10 @@ class TestSharingApiSanity(BaseTest):
             # When turning on permission to create
             self.configure({"sharing": {
                                         "collection_by_map": "True",
+                                        "collection_by_bday": "True",
                                         "collection_by_token": "True",
                                         "permit_create_map": "True",
+                                        "permit_create_bday": "True",
                                         "permit_create_token": "True"}
                             })
             logging.info("\n*** check API hook: info/all")
@@ -363,8 +369,10 @@ class TestSharingApiSanity(BaseTest):
             answer_dict = json.loads(answer)
             assert answer_dict['FeatureEnabledCollectionByMap'] is True, f'FeatureEnabledCollectionByMap {db_type}'
             assert answer_dict['FeatureEnabledCollectionByToken'] is True, f'FeatureEnabledCollectionByToken {db_type}'
+            assert answer_dict['FeatureEnabledCollectionByBday'] is True, f'FeatureEnabledCollectionByBday {db_type}'
             assert answer_dict['PermittedCreateCollectionByMap'] is True, f'PermittedCreateCollectionByMap {db_type}'
             assert answer_dict['PermittedCreateCollectionByToken'] is True, f'PermittedCreateCollectionByToken {db_type}'
+            assert answer_dict['PermittedCreateCollectionByBday'] is True, f'PermittedCreateCollectionByBday {db_type}'
 
     def test_sharing_api_list_with_auth(self) -> None:
         """POST/list with authentication."""
@@ -374,8 +382,10 @@ class TestSharingApiSanity(BaseTest):
                         "sharing": {
                                     "type": "csv",
                                     "permit_create_map": True,
+                                    "permit_create_bday": True,
                                     "permit_create_token": True,
                                     "collection_by_map": "True",
+                                    "collection_by_bday": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "true",
                                     "request_content_on_debug": "True"},
@@ -478,6 +488,7 @@ class TestSharingApiSanity(BaseTest):
                                     "permit_create_map": True,
                                     "permit_create_token": True,
                                     "collection_by_map": "True",
+                                    "collection_by_bday": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
                                     "response_content_on_debug": "True",
@@ -4170,3 +4181,493 @@ permissions: RrWw""")
             assert answer_dict['Lines'] == 1
             assert 'ICAL:calendar-color' not in answer_dict['Content'][0]['Properties']
             assert 'C:calendar-description' not in answer_dict['Content'][0]['Properties']
+
+    def test_sharing_api_bday_basic(self) -> None:
+        """share-by-bday basic tests."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_bday": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_bday": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/adressbook-" + db_type + ".vcf/"
+            path_shared_r = "/user/calendar-bday-abook-shared-by-owner-r-" + db_type + ".ics/"
+            self.create_addressbook(path_mapped, login="owner:ownerpw")
+
+            contact = get_file_content("contact1.vcf")
+            path = path_mapped + "/contact1.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact2-with-bday.vcf")
+            path = path_mapped + "/contact2-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact3-with-bday.vcf")
+            path = path_mapped + "/contact3-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+<propname />
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            assert "CR:supported-address-data" in response
+
+            # execute GET as owner
+            logging.info("\n*** GET VCF collection owner -> ok")
+            _, answer = self.get(path_mapped, login="owner:ownerpw")
+            assert "contact1" in answer
+            assert "contact2" in answer
+
+            # create map
+            logging.info("\n*** create bday user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("bday", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable bday by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("bday", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # check PROPFIND item as user
+            logging.info("\n*** PROPFIND item as user -> calendar")
+            response = self._propfind_allprop(path_shared_r, login="user:userpw")
+            logging.debug("response: %r", response)
+            assert "CR:supported-address-data" not in response
+            assert "D:sync-token" not in response
+            assert "C:supported-calendar-component-set" in response
+            assert "D:current-user-privilege-set" in response
+
+            # check PROPFIND/priviledges item as user
+            logging.info("\n*** PROPFIND/priviledges item as user -> calendar")
+            priviledges_list = self._propfind_priviledges(path_shared_r, login="user:userpw")
+            assert "D:read" in priviledges_list
+            assert "D:write-content" not in priviledges_list
+            assert "D:write-properties" in priviledges_list
+            assert "D:write" not in priviledges_list
+            assert "D:all" not in priviledges_list
+
+            # verify content as user
+            logging.info("\n*** GET collection user -> ok")
+            _, answer = self.get(path_shared_r, login="user:userpw")
+            assert "BEGIN:VCARD" not in answer
+            assert "BEGIN:VCALENDAR" in answer
+            assert "RRULE:FREQ=YEARLY" in answer
+            assert "DTSTART;VALUE=DATE:19700101" in answer
+            assert "DTEND;VALUE=DATE:19700102" in answer
+            assert "TRANSP:TRANSPARENT" in answer
+
+            # verify report as user
+            logging.info("\n*** REPORT collection user -> ok")
+            _, responses = self.report(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag/>
+    </D:prop>
+</C:calendar-query>""", login="user:userpw")
+            logging.debug("resonses: %r", responses)
+            assert path_shared_r + "contact2-with-bday.ics" in responses
+            assert path_shared_r + "contact3-with-bday.ics" in responses
+            assert path_shared_r + "contact1.ics" not in responses
+
+            # get elements as user
+            logging.info("\n*** REPORT collection entries user -> ok")
+            _, responses = self.report(path_shared_r, """\
+<?xml version="1.0"?>
+<C:calendar-multiget xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+   <prop>
+     <getetag />
+     <C:calendar-data />
+   </prop>
+   <href>""" + path_shared_r + "contact2-with-bday.ics" + """</href>
+   <href>""" + path_shared_r + "contact3-with-bday.ics" + """</href>
+</C:calendar-multiget>""", login="user:userpw")
+            logging.debug("resonses: %r", responses)
+            assert path_shared_r + "contact2-with-bday.ics" in responses
+            assert path_shared_r + "contact3-with-bday.ics" in responses
+            assert path_shared_r + "contact1.ics" not in responses
+
+            # timerange filter elements as user
+            logging.info("\n*** REPORT collection entries with timerange user -> ok")
+            _, responses = self.report(path_shared_r, """\
+<?xml version="1.0"?>
+ <C:calendar-query xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+   <prop>
+     <getcontenttype />
+     <getetag />
+     <C:calendar-data />
+   </prop>
+   <C:filter>
+     <C:comp-filter name="VCALENDAR">
+       <C:comp-filter name="VEVENT">
+         <C:time-range start="20251124T000000Z" end="20260715T000000Z" />
+       </C:comp-filter>
+     </C:comp-filter>
+   </C:filter>
+</C:calendar-query>""", login="user:userpw")
+            logging.debug("resonses: %r", responses)
+            assert path_shared_r + "contact2-with-bday.ics" in responses
+            assert path_shared_r + "contact3-with-bday.ics" in responses
+            assert path_shared_r + "contact1.ics" not in responses
+
+            logging.info("\n*** PROPFIND collection entries user -> ok")
+            _, responses = self.propfind(path_shared_r, """\
+<?xml version="1.0"?>
+ <propfind xmlns="DAV:">
+   <prop>
+     <getcontenttype />
+     <resourcetype />
+     <getetag />
+   </prop>
+</propfind>""", login="user:userpw", HTTP_DEPTH="1")
+            logging.debug("resonses: %r", responses)
+            assert path_shared_r + "contact2-with-bday.ics" in responses
+            assert path_shared_r + "contact3-with-bday.ics" in responses
+            assert path_shared_r + "contact1.ics" not in responses
+            response = responses[path_shared_r + "contact2-with-bday.ics"]
+            assert not isinstance(response, int)
+            status, prop = response["D:getcontenttype"]
+            assert "text/calendar" in str(prop.text)
+
+    def test_sharing_api_bday_complex(self) -> None:
+        """share-by-bday complex tests."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_bday": True,
+                                    "permit_create_map": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_map": "True",
+                                    "collection_by_bday": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/adressbook-" + db_type + ".vcf/"
+            path_user = "/user/"
+            path_shared_bday = path_user + "calendar-bday-abook-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared_map = path_user + "abook-shared-by-owner-r-" + db_type + ".vcf/"
+            self.create_addressbook(path_mapped, login="owner:ownerpw")
+
+            contact = get_file_content("contact1.vcf")
+            path = path_mapped + "/contact1.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact2-with-bday.vcf")
+            path = path_mapped + "/contact2-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact3-with-bday.vcf")
+            path = path_mapped + "/contact3-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+<propname />
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            assert "CR:supported-address-data" in response
+
+            # execute GET as owner
+            logging.info("\n*** GET VCF collection owner -> ok")
+            _, answer = self.get(path_mapped, login="owner:ownerpw")
+            assert "contact1" in answer
+            assert "contact2" in answer
+
+            # create bday
+            logging.info("\n*** create bday user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_bday
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("bday", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable bday by user
+            logging.info("\n*** enable bday by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_bday
+            _, headers, answer = self._sharing_api_json("bday", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # unhide bday by user
+            logging.info("\n*** unhide bday by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_bday
+            _, headers, answer = self._sharing_api_json("bday", "unhide", check=200, login="user:userpw", json_dict=json_dict)
+
+            # create map
+            logging.info("\n*** create map user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_map
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_map
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # unhide map by user
+            logging.info("\n*** unhide map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_map
+            _, headers, answer = self._sharing_api_json("map", "unhide", check=200, login="user:userpw", json_dict=json_dict)
+
+            # check PROPFIND item as user
+            logging.info("\n*** PROPFIND all as user")
+            _, responses = self.propfind(path_user, """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:ICAL="http://apple.com/ns/ical/" xmlns:RADICALE="http://radicale.org/ns/" xmlns:ns3="http://inf-it.com/ns/ab/">
+  <prop>
+    <resourcetype />
+    <RADICALE:displayname />
+    <ICAL:calendar-color />
+    <ns3:addressbook-color />
+    <C:calendar-description />
+    <C:supported-calendar-component-set />
+    <CR:addressbook-description />
+    <CS:source />
+    <RADICALE:getcontentcount />
+    <getcontentlength />
+  </prop>
+</propfind>""", login="user:userpw", HTTP_DEPTH="1")
+            # logging.debug("responses: %r", responses)
+            response = responses[path_shared_map]
+            assert not isinstance(response, int)
+            logging.debug("response %r: %r", path_shared_map, response)
+            assert "C:supported-calendar-component-set" in response
+            response = responses[path_shared_bday]
+            assert not isinstance(response, int)
+            logging.debug("response %r: %r", path_shared_bday, response)
+            assert "C:supported-calendar-component-set" in response
+
+            # check PROPFIND item as user
+            logging.info("\n*** PROPFIND all as user (reduced)")
+            _, responses = self.propfind(path_user, """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:ICAL="http://apple.com/ns/ical/" xmlns:RADICALE="http://radicale.org/ns/" xmlns:ns3="http://inf-it.com/ns/ab/">
+  <prop>
+    <resourcetype />
+    <C:calendar-description />
+    <CR:addressbook-description />
+    <RADICALE:getcontentcount />
+    <getcontentlength />
+  </prop>
+</propfind>""", login="user:userpw", HTTP_DEPTH="1")
+            # logging.debug("responses: %r", responses)
+            response = responses[path_shared_bday]
+            assert not isinstance(response, int)
+            logging.debug("response %r: %r", path_shared_bday, response)
+            assert "D:getcontentlength" in response
+            assert "RADICALE:getcontentcount" in response
+            status, prop = response["D:getcontentlength"]
+            assert int(str(prop.text)) > 600
+            status, prop = response["RADICALE:getcontentcount"]
+            assert int(str(prop.text)) == 2
+
+    def test_sharing_api_bday_self(self) -> None:
+        """share-by-bday to self tests."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_bday": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_bday": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        path_owner = "/owner/"
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = path_owner + "abook-" + db_type + ".vcf/"
+            path_shared = path_owner + "cal-bday-abook-" + db_type + ".ics/"
+            self.create_addressbook(path_mapped, login="owner:ownerpw")
+
+            contact = get_file_content("contact1.vcf")
+            path = path_mapped + "/contact1.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact2-with-bday.vcf")
+            path = path_mapped + "/contact2-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact3-with-bday.vcf")
+            path = path_mapped + "/contact3-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+<propname />
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            assert "CR:supported-address-data" in response
+
+            # execute GET as owner
+            logging.info("\n*** GET VCF collection owner -> ok")
+            _, answer = self.get(path_mapped, login="owner:ownerpw")
+            assert "contact1" in answer
+            assert "contact2" in answer
+            assert "NICKNAME-C3" in answer
+
+            # create map
+            logging.info("\n*** create bday owner to itself -> ok")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared
+            json_dict['Enabled'] = False
+            json_dict['Hidden'] = True
+            _, headers, answer = self._sharing_api_json("bday", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # check PROPFIND item as owner
+            logging.info("\n*** PROPFIND all as owner")
+            _, responses = self.propfind(path_owner, """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:ICAL="http://apple.com/ns/ical/" xmlns:RADICALE="http://radicale.org/ns/" xmlns:ns3="http://inf-it.com/ns/ab/">
+  <prop>
+    <resourcetype />
+    <RADICALE:displayname />
+    <ICAL:calendar-color />
+    <ns3:addressbook-color />
+    <C:calendar-description />
+    <C:supported-calendar-component-set />
+    <CR:addressbook-description />
+    <CS:source />
+    <RADICALE:getcontentcount />
+    <getcontentlength />
+  </prop>
+</propfind>""", login="owner:ownerpw", HTTP_DEPTH="1")
+            # logging.debug("responses: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            logging.debug("response %r: %r", path_mapped, response)
+            assert "C:supported-calendar-component-set" in response
+            assert path_shared not in responses
+
+            # enable + unhide
+            logging.info("\n*** enable+unhide bday owner to itself -> ok")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_shared
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("bday", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # check PROPFIND item as owner
+            logging.info("\n*** PROPFIND all as owner")
+            _, responses = self.propfind(path_owner, """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:ICAL="http://apple.com/ns/ical/" xmlns:RADICALE="http://radicale.org/ns/" xmlns:ns3="http://inf-it.com/ns/ab/">
+  <prop>
+    <resourcetype />
+    <RADICALE:displayname />
+    <ICAL:calendar-color />
+    <ns3:addressbook-color />
+    <C:calendar-description />
+    <C:supported-calendar-component-set />
+    <CR:addressbook-description />
+    <CS:source />
+    <RADICALE:getcontentcount />
+    <getcontentlength />
+  </prop>
+</propfind>""", login="owner:ownerpw", HTTP_DEPTH="1")
+            # logging.debug("responses: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            logging.debug("response %r: %r", path_mapped, response)
+            assert "C:supported-calendar-component-set" in response
+            assert path_shared in responses
+
+            # check PROPFIND item as owner
+            logging.info("\n*** PROPFIND item as owner -> calendar")
+            response = self._propfind_allprop(path_shared, login="owner:ownerpw")
+            logging.debug("response: %r", response)
+            assert "CR:supported-address-data" not in response
+            assert "D:sync-token" not in response
+            assert "C:supported-calendar-component-set" in response
+            assert "D:current-user-privilege-set" in response

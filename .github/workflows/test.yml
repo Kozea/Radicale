@@ -12,8 +12,8 @@ jobs:
         python-version: ['3.14']
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Test dependencies
@@ -32,7 +32,6 @@ jobs:
     container:
       image: i386/python:${{ matrix.python-version }}
       volumes:
-        - /home/runner/work/_temp:/__e/node20
         - /home/runner/work/_temp:/__e/node24
     steps:
       - name: Update system
@@ -41,10 +40,6 @@ jobs:
       - name: Fix checkout and upload-artifact
         run: |
           apt-get install -y nodejs npm
-          mkdir -p /__e/node20/bin
-          ln -sf $(which node) /__e/node20/bin/node
-          ln -sf $(which npm) /__e/node20/bin/npm
-          ln -sf $(which npx) /__e/node20/bin/npx
           mkdir -p /__e/node24/bin
           ln -sf $(which node) /__e/node24/bin/node
           ln -sf $(which npm) /__e/node24/bin/npm
@@ -52,8 +47,8 @@ jobs:
       - name: Install git
         run: |
           apt-get install -y git
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
       - name: Install Python dependencies
         run: |
           apt-get install -y tox rust-all cargo
@@ -76,8 +71,8 @@ jobs:
         python-version: ['3.9']
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Test dependencies
@@ -94,8 +89,8 @@ jobs:
         python-version: ['3.14']
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Test dependencies
@@ -112,8 +107,8 @@ jobs:
         python-version: ['3.9']
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Test dependencies
@@ -137,8 +132,8 @@ jobs:
             python-version: 'pypy-3.11'
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Test dependencies
@@ -152,8 +147,8 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.14'
       - name: Install Test dependencies
@@ -191,8 +186,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: test-ubuntu-python-newest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
       - name: JS Type Check
@@ -213,8 +208,8 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.14'
       - name: Install tox
@@ -227,8 +222,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: test-ubuntu-python-newest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Install uv

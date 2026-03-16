@@ -67,11 +67,12 @@ DB_TYPES_V1: dict[str, type] = {
 
 DB_FIELDS_V1_USER_PERMITTED: Sequence[str] = ('EnabledByUser', 'HiddenByUser', 'Properties')
 
-SHARE_TYPES: Sequence[str] = ('token', 'map', 'all')
+SHARE_TYPES: Sequence[str] = ('token', 'map', 'bday', 'all')
 
-SHARE_TYPES_V1: Sequence[str] = ('token', 'map')
+SHARE_TYPES_V1: Sequence[str] = ('token', 'map', 'bday')
 # token: share by secret token (does not require authentication)
 # map  : share by mapping collection of one user to another as virtual
+# bday : share by mapping addressbook-collection of one user to another as virtual calendar-collection
 # all  : only supported for "list" and "info"
 
 API_HOOKS_V1: Sequence[str] = ('list', 'create', 'delete', 'update', 'hide', 'unhide', 'enable', 'disable', 'info')
@@ -93,8 +94,10 @@ API_TYPES_V1: dict[str, type] = {
         "Lines": int,
         "FeatureEnabledCollectionByMap": bool,
         "FeatureEnabledCollectionByToken": bool,
+        "FeatureEnabledCollectionByBday": bool,
         "PermittedCreateCollectionByMap": bool,
         "PermittedCreateCollectionByToken": bool,
+        "PermittedCreateCollectionByBday": bool,
         "ShareType": str,
         "PathOrToken": str,
         "PathMapped": str,
@@ -142,16 +145,20 @@ class BaseSharing:
         # Sharing
         self.sharing_collection_by_map = configuration.get("sharing", "collection_by_map")
         self.sharing_collection_by_token = configuration.get("sharing", "collection_by_token")
+        self.sharing_collection_by_bday = configuration.get("sharing", "collection_by_bday")
         self.permit_create_token = configuration.get("sharing", "permit_create_token")
         self.permit_create_map = configuration.get("sharing", "permit_create_map")
+        self.permit_create_bday = configuration.get("sharing", "permit_create_bday")
         self.default_permissions_create_token = configuration.get("sharing", "default_permissions_create_token")
         self.default_permissions_create_map = configuration.get("sharing", "default_permissions_create_map")
         self.permit_properties_overlay = configuration.get("sharing", "permit_properties_overlay")
         self.enforce_properties_overlay = configuration.get("sharing", "enforce_properties_overlay")
         logger.info("sharing.collection_by_map  : %s", self.sharing_collection_by_map)
         logger.info("sharing.collection_by_token: %s", self.sharing_collection_by_token)
+        logger.info("sharing.collection_by_bday : %s", self.sharing_collection_by_bday)
         logger.info("sharing.permit_create_token: %s", self.permit_create_token)
         logger.info("sharing.permit_create_map  : %s", self.permit_create_map)
+        logger.info("sharing.permit_create_bday : %s", self.permit_create_bday)
         logger.info("sharing.default_permissions_create_token: %r", self.default_permissions_create_token)
         logger.info("sharing.default_permissions_create_map  : %r", self.default_permissions_create_map)
         logger.info("sharing.permit_properties_overlay: %s", self.permit_properties_overlay)
@@ -161,7 +168,7 @@ class BaseSharing:
         self.sharing_db_type = configuration.get("sharing", "type")
         logger.info("sharing.database_type: %s", self.sharing_db_type)
 
-        if ((self.sharing_collection_by_map is False) and (self.sharing_collection_by_token is False)):
+        if ((self.sharing_collection_by_map is False) and (self.sharing_collection_by_token is False) and (self.sharing_collection_by_bday is False)):
             logger.info("sharing disabled as no feature is enabled")
             self._enabled = False
             return
@@ -341,6 +348,20 @@ class BaseSharing:
                 HiddenByOwner=Hidden,
                 HiddenByUser=Hidden)
 
+        if not self.sharing_collection_by_bday:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/sharing/bday: not active")
+        else:
+            # retrieve collections depending on filter
+            sharing_collection_list += self.database_list_sharing(
+                ShareType="bday",
+                OwnerOrUser=User,
+                User=User,
+                EnabledByOwner=Enabled,
+                EnabledByUser=Enabled,
+                HiddenByOwner=Hidden,
+                HiddenByUser=Hidden)
+
         return sharing_collection_list
 
     # resolves a path to a share
@@ -365,6 +386,13 @@ class BaseSharing:
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
+
+        if self.sharing_collection_by_bday:
+            if share is None:
+                share = self.sharing_collection_by_bday_resolver(path, user)
+        else:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/sharing/bday: not active")
 
         if share is not None:
             if self.permit_properties_overlay:
@@ -466,6 +494,43 @@ class BaseSharing:
                 logger.debug("TRACE/sharing/map: not active")
             return None
 
+    # resolves a bday "path" to a share
+    def sharing_collection_by_bday_resolver(self, path: str, user: str) -> Union[dict, None]:
+        """ returning dict with PathMapped, Owner, Permissions or None if invalid"""
+        if self.sharing_collection_by_bday:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/sharing/bday/resolver: check path: %r", path)
+            result = self.database_get_sharing(
+                    ShareType="bday",
+                    PathOrToken=path,
+                    User=user)
+            if result:
+                pass
+            else:
+                # fallback to parent path
+                parent_path = pathutils.parent_path(path)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("TRACE/sharing/bday/resolver: check parent path: %r", parent_path)
+                result = self.database_get_sharing(
+                        ShareType="bday",
+                        PathOrToken=parent_path,
+                        User=user)
+                if result:
+                    result['PathMapped'] = path.replace(parent_path, result['PathMapped'])
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("TRACE/sharing/bday/resolver: PathMapped=%r Permissions=%r by parent_path=%r", result['PathMapped'], result['Permissions'], parent_path)
+                else:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("TRACE/sharing/bday: not found")
+                    return None
+
+            logger.info("Sharing/%s: resolved path %r->%r, user %r->%r, permissions %r", "bday", path, result['PathMapped'], user, result['Owner'], result['Permissions'])
+            return result
+        else:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/sharing/bday: not active")
+            return None
+
     # *** POST API ***
     def post(self, environ: types.WSGIEnviron, base_prefix: str, path: str, user: str) -> types.WSGIResponse:
         # Late import to avoid circular dependency in config
@@ -480,28 +545,28 @@ class BaseSharing:
         ``user`` is empty for anonymous users.
 
         Request:
-            action: (token|map/list
+            action: (token|map|bday)/list
                 PathOrToken: <path|token> (optional for filter)
 
-            action: (token|map)/create
+            action: (token|map|bday)/create
                 PathMapped: <path> (mandatory)
                 Permissions: <Permissions> (default: r)
 
                 token -> returns <token>
 
-                map
+                map|bday
                     PathOrToken: <path> (mandatory)
                     User: <target_user> (mandatory)
 
-            action: (token|map)/update
+            action: (token|map|bday)/update
 
-            action: (token|map)/(delete|disable|enable|hide|unhide)
+            action: (token|map|bday)/(delete|disable|enable|hide|unhide)
                 PathOrToken: <path|token> (mandatory)
 
                 token
 
-                map
-                    PathMapped: <path> (mandator)
+                map|bday
+                    PathMapped: <path> (mandatory)
                     User: <target_user>
 
         Response: output format depending on ACCEPT header
@@ -559,6 +624,11 @@ class BaseSharing:
         if not self.sharing_collection_by_map and ShareType == "map":
             # API "map" is not enabled
             logger.warning(api_info + ": not enabled by config (collection_by_map)")
+            return httputils.NOT_FOUND
+
+        if not self.sharing_collection_by_bday and ShareType == "bday":
+            # API "token" is not enabled
+            logger.warning(api_info + ": not enabled by config (collection_by_bday)")
             return httputils.NOT_FOUND
 
         # check for valid API hooks
@@ -756,7 +826,7 @@ class BaseSharing:
         answer['ApiVersion'] = 1
         Timestamp = int((datetime.now() - datetime(1970, 1, 1)).total_seconds())
 
-        if not self.sharing_collection_by_map and not self.sharing_collection_by_token:
+        if not self.sharing_collection_by_map and not self.sharing_collection_by_token and not self.sharing_collection_by_bday:
             if not action == 'info':
                 # API is not enabled
                 logger.warning(api_info + ": API is not enabled")
@@ -881,7 +951,7 @@ class BaseSharing:
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/" + api_info + ": result=%r", result)
 
-            elif ShareType == "map":
+            elif ShareType in ["map", "bday"]:
                 # check preconditions
                 if PathOrToken is None:
                     return httputils.bad_request("Missing PathOrToken")
@@ -911,14 +981,25 @@ class BaseSharing:
                     logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
                     return httputils.NOT_ALLOWED
 
-                if self.permit_create_map is False:
-                    if "m" not in access.permissions:
-                        logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explicit grant misses 'm')", PathMapped, user)
-                        return httputils.NOT_ALLOWED
-                else:
-                    if "M" in access.permissions:
-                        logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but denied by 'M')", PathMapped, user)
-                        return httputils.NOT_ALLOWED
+                if ShareType == "map":
+                    if self.permit_create_map is False:
+                        if "m" not in access.permissions:
+                            logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explicit grant misses 'm')", PathMapped, user)
+                            return httputils.NOT_ALLOWED
+                    else:
+                        if "M" in access.permissions:
+                            logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but denied by 'M')", PathMapped, user)
+                            return httputils.NOT_ALLOWED
+
+                elif ShareType == "bday":
+                    if self.permit_create_bday is False:
+                        if "b" not in access.permissions:
+                            logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explicit grant misses 'b')", PathMapped, user)
+                            return httputils.NOT_ALLOWED
+                    else:
+                        if "B" in access.permissions:
+                            logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but denied by 'B')", PathMapped, user)
+                            return httputils.NOT_ALLOWED
 
                 access = Access(self._rights, User, PathOrToken)
                 if not access.check("r"):
@@ -978,7 +1059,7 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + ": start")
 
-            if ShareType not in ["token", "map"]:
+            if ShareType not in ["token", "map", "bday"]:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
 
@@ -1023,17 +1104,33 @@ class BaseSharing:
                         logger.warning(api_info + ": access to %r not allowed for user %r", PathMapped, user)
                         return httputils.NOT_ALLOWED
 
-                result = self.database_update_sharing(
-                       ShareType=ShareType,
-                       PathMapped=PathMapped,
-                       Permissions=Permissions,
-                       EnabledByOwner=Enabled,
-                       HiddenByOwner=Hidden,
-                       PathOrToken=PathOrToken,
-                       OwnerOrUser=user,
-                       User=User,
-                       Timestamp=Timestamp,
-                       Properties=Properties)
+                if user == share['User']:
+                    # self-owned share
+                    result = self.database_update_sharing(
+                           ShareType=ShareType,
+                           PathMapped=PathMapped,
+                           Permissions=Permissions,
+                           EnabledByOwner=Enabled,
+                           EnabledByUser=Enabled,
+                           HiddenByOwner=Hidden,
+                           HiddenByUser=Hidden,
+                           PathOrToken=PathOrToken,
+                           OwnerOrUser=user,
+                           User=User,
+                           Timestamp=Timestamp,
+                           Properties=Properties)
+                else:
+                    result = self.database_update_sharing(
+                           ShareType=ShareType,
+                           PathMapped=PathMapped,
+                           Permissions=Permissions,
+                           EnabledByOwner=Enabled,
+                           HiddenByOwner=Hidden,
+                           PathOrToken=PathOrToken,
+                           OwnerOrUser=user,
+                           User=User,
+                           Timestamp=Timestamp,
+                           Properties=Properties)
 
             elif user == share['User']:
                 # User is only allowed to update Properties
@@ -1088,7 +1185,7 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + ": start")
 
-            if ShareType not in ["token", "map"]:
+            if ShareType not in ["token", "map", "bday"]:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
 
@@ -1133,13 +1230,16 @@ class BaseSharing:
             if ShareType in ["all", "token"]:
                 answer['FeatureEnabledCollectionByToken'] = self.sharing_collection_by_token
                 answer['PermittedCreateCollectionByToken'] = self.permit_create_token
+            if ShareType in ["all", "bday"]:
+                answer['FeatureEnabledCollectionByBday'] = self.sharing_collection_by_bday
+                answer['PermittedCreateCollectionByBday'] = self.permit_create_bday
 
         # action: TOGGLE
         elif action in API_SHARE_TOGGLES_V1:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/API/POST/" + action)
 
-            if ShareType not in ["token", "map"]:
+            if ShareType not in ["token", "map", "bday"]:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
 

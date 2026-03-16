@@ -25,6 +25,7 @@ Take a look at the class ``BaseCollection`` if you want to implement your own.
 """
 
 import json
+import logging
 import xml.etree.ElementTree as ET
 from hashlib import sha256
 from typing import (Callable, ContextManager, Dict, Iterable, Iterator, List,
@@ -223,7 +224,7 @@ class BaseCollection:
         """Get the HTTP-datetime of when the collection was modified."""
         raise NotImplementedError
 
-    def serialize(self) -> str:
+    def serialize(self, vcf_to_ics: bool = False) -> str:
         """Get the unicode string representing the whole collection."""
         if self.tag == "VCALENDAR":
             in_vcalendar = False
@@ -282,7 +283,23 @@ class BaseCollection:
                     vtimezones + components +
                     template[template_insert_pos:])
         if self.tag == "VADDRESSBOOK":
-            return "".join((item.serialize() for item in self.get_all()))
+            if vcf_to_ics:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("TRACE/storage: convert VCF to ICS")
+
+                items = []
+                for item in self.get_all():
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("TRACE/storage/convert VCF to ICS: %r:", item)
+                    item_ics = item.convert_vcf_to_ics()
+                    if item_ics is None:
+                        continue
+                    else:
+                        pass
+                    items.append(item_ics.vobject_item)
+                return "".join((item.serialize() for item in items))
+            else:
+                return "".join((item.serialize() for item in self.get_all()))
         return ""
 
 

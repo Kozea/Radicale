@@ -112,18 +112,27 @@ def xml_propfind_response(
         logger.debug("TRACE/PROPFIND/xml_propfind: sharetype=%r item.path=%r", sharetype, uri)
     for entry in shares:
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/PROPFIND/xml_propfind: entry=%r", entry)
+            logger.debug("TRACE/PROPFIND/xml_propfind: check entry=%r", entry)
         if entry is not None:
-            if shares[entry]['PathMapped'] == uri:
-                if sharetype is None or shares[entry]['ShareType'] == sharetype:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/PROPFIND/xml_propfind: PathMapped=%r uri=%r", shares[entry]['PathMapped'], uri)
+            if uri.startswith(shares[entry]['PathMapped']):
+                if sharetype is not None and shares[entry]['ShareType'] == sharetype:
                     share = shares[entry]
                     if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/PROPFIND/xml_propfind: share=%r", share)
+                        logger.debug("TRACE/PROPFIND/xml_propfind: found share=%r", share)
                     break
+
+    share_bday_automap = False
+    if share and share['ShareType'] == "bday":
+        share_bday_automap = True
 
     if share:
         # backmap
         uri = uri.replace(share['PathMapped'], share['PathOrToken'])
+        if share_bday_automap and not uri.endswith("/"):
+            uri = uri.rstrip(".vcf") + ".ics"
+
     href.text = xmlutils.make_href(base_prefix, uri)
     response.append(href)
 
@@ -155,12 +164,16 @@ def xml_propfind_response(
         if is_collection:
             if is_leaf:
                 props.append(xmlutils.make_clark("D:displayname"))
-                props.append(xmlutils.make_clark("D:sync-token"))
-            if collection.tag == "VCALENDAR":
+                if share_bday_automap:
+                    # bday share has no sync-token support
+                    pass
+                else:
+                    props.append(xmlutils.make_clark("D:sync-token"))
+            if collection.tag == "VCALENDAR" or share_bday_automap:
                 props.append(xmlutils.make_clark("CS:getctag"))
                 props.append(
                     xmlutils.make_clark("C:supported-calendar-component-set"))
-            if collection.tag == "VADDRESSBOOK":
+            if collection.tag == "VADDRESSBOOK" and not share_bday_automap:
                 props.append(xmlutils.make_clark("CS:getctag"))
                 props.append(
                     xmlutils.make_clark("CR:supported-address-data"))
@@ -205,6 +218,8 @@ def xml_propfind_response(
             if share:
                 # backmap
                 child_element.text = child_element.text.replace(share['PathMapped'], share['PathOrToken'])
+                if share_bday_automap:
+                    child_element.text = child_element.text.rstrip(".vcf") + ".ics"
             element.append(child_element)
         elif tag == xmlutils.make_clark("C:supported-calendar-component-set"):
             human_tag = xmlutils.make_human_tag(tag)
@@ -214,6 +229,9 @@ def xml_propfind_response(
                     components = components_text.split(",")
                 else:
                     components = ["VTODO", "VEVENT", "VJOURNAL"]
+                if share_bday_automap:
+                    # enforce VEVENT-only
+                    components = ["VEVENT"]
                 for component in components:
                     comp = ET.Element(xmlutils.make_clark("C:comp"))
                     comp.set("name", component)
@@ -221,7 +239,7 @@ def xml_propfind_response(
             else:
                 is404 = True
         elif tag == xmlutils.make_clark("CR:supported-address-data"):
-            if is_collection and is_leaf and collection.tag == "VADDRESSBOOK":
+            if is_collection and is_leaf and collection.tag == "VADDRESSBOOK" and not share_bday_automap:
                 # Advertise supported vCard versions per RFC 6352 section 6.2.2
                 # vCard 4.0 requires vobject >= 1.0.0
                 versions: Sequence[str] = (("4.0", "3.0")
@@ -243,6 +261,8 @@ def xml_propfind_response(
                 if share:
                     # backmap
                     child_element.text = child_element.text.replace(share['Owner'], share['User'])
+                    if share_bday_automap:
+                        child_element.text = child_element.text.rstrip(".vcf") + ".ics"
                 element.append(child_element)
             else:
                 element.append(ET.Element(
@@ -254,7 +274,8 @@ def xml_propfind_response(
                     if "P" in share['Permissions']:
                         privileges.append("D:write-properties")
                     if "w" in share['Permissions']:
-                        privileges.append("D:write-content")
+                        if not share_bday_automap:
+                            privileges.append("D:write-content")
             elif write:
                 privileges.append("D:all")
                 privileges.append("D:write")
@@ -271,11 +292,12 @@ def xml_propfind_response(
                        "D:principal-search-property-set",
                        "D:principal-property-search"]
             if is_collection and is_leaf:
-                reports.append("D:sync-collection")
-                if collection.tag == "VADDRESSBOOK":
+                if not share_bday_automap:
+                    reports.append("D:sync-collection")
+                if collection.tag == "VADDRESSBOOK" and not share_bday_automap:
                     reports.append("CR:addressbook-multiget")
                     reports.append("CR:addressbook-query")
-                elif collection.tag == "VCALENDAR":
+                elif collection.tag == "VCALENDAR" or share_bday_automap:
                     reports.append("C:calendar-multiget")
                     reports.append("C:calendar-query")
             for human_tag in reports:
@@ -288,7 +310,18 @@ def xml_propfind_response(
                 element.append(supported_report)
         elif tag == xmlutils.make_clark("D:getcontentlength"):
             if not is_collection or is_leaf:
-                element.text = str(len(item.serialize().encode(encoding)))
+                if collection.tag == "VADDRESSBOOK" and share_bday_automap and isinstance(item, storage.BaseCollection):
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("TRACE/PROPFIND/xml_propfind_response/getcontentlength: start bday automap handling")
+                    length = 0
+                    for entry in item.get_all():
+                        item_ics = entry.convert_vcf_to_ics()
+                        if item_ics is None:
+                            continue
+                        length += len(item_ics.vobject_item.serialize().encode(encoding))
+                    element.text = str(length)
+                else:
+                    element.text = str(len(item.serialize().encode(encoding)))
             else:
                 is404 = True
         elif tag == xmlutils.make_clark("D:owner"):
@@ -306,6 +339,9 @@ def xml_propfind_response(
                 if is_leaf:
                     element.text = xmlutils.MIMETYPES[
                         collection.tag]
+                    if share_bday_automap:
+                        # overwrite
+                        element.text = xmlutils.MIMETYPES["VCALENDAR"]
                 else:
                     is404 = True
             elif tag == xmlutils.make_clark("D:resourcetype"):
@@ -314,11 +350,11 @@ def xml_propfind_response(
                         xmlutils.make_clark("D:principal"))
                     element.append(child_element)
                 if is_leaf:
-                    if collection.tag == "VADDRESSBOOK":
+                    if collection.tag == "VADDRESSBOOK" and not share_bday_automap:
                         child_element = ET.Element(
                             xmlutils.make_clark("CR:addressbook"))
                         element.append(child_element)
-                    elif collection.tag == "VCALENDAR":
+                    elif collection.tag == "VCALENDAR" or share_bday_automap:
                         child_element = ET.Element(
                             xmlutils.make_clark("C:calendar"))
                         element.append(child_element)
@@ -335,12 +371,25 @@ def xml_propfind_response(
                     displayname = share['Properties']["D:displayname"]
                 if displayname is not None:
                     element.text = displayname
+                    if share_bday_automap:
+                        element.text += " (BDAY)"
                 else:
                     is404 = True
             elif tag == xmlutils.make_clark("RADICALE:getcontentcount"):
                 # Only for internal use by the web interface
                 if isinstance(item, storage.BaseCollection) and not collection.is_principal:
-                    element.text = str(sum(1 for x in item.get_all()))
+                    if collection.tag == "VADDRESSBOOK" and share_bday_automap:
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug("TRACE/PROPFIND/xml_propfind_response/getcontentcount: start bday automap handling")
+                        items = []
+                        for entry in item.get_all():
+                            item_ics = entry.convert_vcf_to_ics()
+                            if item_ics is None:
+                                continue
+                            items.append(item_ics.vobject_item)
+                        element.text = str(sum(1 for x in items))
+                    else:
+                        element.text = str(sum(1 for x in item.get_all()))
                 else:
                     is404 = True
             elif tag == xmlutils.make_clark("D:displayname"):
@@ -351,6 +400,8 @@ def xml_propfind_response(
                     displayname = collection.path
                 if displayname is not None:
                     element.text = displayname
+                    if share_bday_automap:
+                        element.text += " (BDAY)"
                 else:
                     is404 = True
             elif tag == xmlutils.make_clark("CS:getctag"):
@@ -385,6 +436,9 @@ def xml_propfind_response(
         elif tag == xmlutils.make_clark("D:getcontenttype"):
             assert not isinstance(item, storage.BaseCollection)
             element.text = xmlutils.get_content_type(item, encoding)
+            if share_bday_automap:
+                # overwrite
+                element.text = xmlutils.MIMETYPES["VCALENDAR"]
         elif tag == xmlutils.make_clark("D:resourcetype"):
             # resourcetype must be returned empty for non-collection elements
             pass
@@ -491,7 +545,13 @@ class ApplicationPartPropfind(ApplicationBase):
             # put item back
             items_iter = itertools.chain([item], items_iter)
             for item, permission in list(self._collect_allowed_items(items_iter, user)):
-                allowed_items.append((item, permission, None))
+                if self._sharing._enabled and share:
+                    if share['ShareType'] == "bday" and not isinstance(item, storage.BaseCollection):
+                        if not item.convert_vcf_to_ics():
+                            continue
+                    allowed_items.append((item, permission, share['ShareType']))
+                else:
+                    allowed_items.append((item, permission, None))
         if self._sharing._enabled:
             if http_depth == "1":
                 if logger.isEnabledFor(logging.DEBUG):

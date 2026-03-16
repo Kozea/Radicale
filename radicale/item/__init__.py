@@ -26,14 +26,15 @@ Module for address books and calendar entries (see ``Item``).
 
 import binascii
 import contextlib
+import datetime
+import logging
 import math
 import os
 import re
-from datetime import datetime, timedelta
 from hashlib import sha256
 from itertools import chain
 from typing import (Any, Callable, List, MutableMapping, Optional, Sequence,
-                    Tuple)
+                    Tuple, Union)
 
 import vobject
 
@@ -41,6 +42,11 @@ from radicale import storage  # noqa:F401
 from radicale import pathutils, utils
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
+
+# Product ID for auto-conversion
+PRODID_CONVERTED = u"-//Radicale//NONSGML " + utils.package_version("radicale") + "//EN (auto-converted)"
+PRODID_SUFFIX = " (auto-converted by Radicale " + utils.package_version("radicale") + ")"
+UID_SUFFIX = "-auto-converted-by-Radicale"
 
 
 def read_components(s: str) -> List[vobject.base.Component]:
@@ -159,7 +165,7 @@ def check_and_sanitize_items(
             # an event with DTEND and DURATION:PT0S
             if (hasattr(component, "dtend") and
                     hasattr(component, "duration") and
-                    component.duration.value == timedelta(0)):
+                    component.duration.value == datetime.timedelta(0)):
                 logger.debug("Quirks: Removing zero duration from %s in "
                              "object %r", component_name, component_uid)
                 del component.duration
@@ -314,7 +320,7 @@ def find_time_range(vobject_item: vobject.base.Component, tag: str
         return radicale_filter.TIMESTAMP_MIN, radicale_filter.TIMESTAMP_MAX
     start = end = None
 
-    def range_fn(range_start: datetime, range_end: datetime,
+    def range_fn(range_start: datetime.datetime, range_end: datetime.datetime,
                  is_recurrence: bool) -> bool:
         nonlocal start, end
         if start is None or range_start < start:
@@ -323,7 +329,7 @@ def find_time_range(vobject_item: vobject.base.Component, tag: str
             end = range_end
         return False
 
-    def infinity_fn(range_start: datetime) -> bool:
+    def infinity_fn(range_start: datetime.datetime) -> bool:
         nonlocal start, end
         if start is None or range_start < start:
             start = range_start
@@ -498,3 +504,114 @@ class Item:
         self.time_range
         self.component_name
         self._vobject_item = orig_vobject_item
+
+    def convert_vcf_to_ics(self) -> Union["Item", None]:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("TRACE/item/convert_vcf_to_ics: convert VCF to ICS (href): %r", self.href)
+            logger.debug("TRACE/item/convert_vcf_to_ics: convert VCF to ICS (vobject): %r", self.vobject_item)
+        if self.vobject_item.name != "VCARD":
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/item/convert_vcf_to_ics: item is not a VCARD (skip): %r", self.href)
+                return None
+        else:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/item/convert_vcf_to_ics: item is a VCARD (ok): %r", self.href)
+        if not hasattr(self.vobject_item, "bday"):
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/item/convert_vcf_to_ics: miss bday (skip): %r", self.href)
+                return None
+        else:
+            pass
+
+        bday = self.vobject_item.bday
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("TRACE/item/convert_vcf_to_ics: has bday (ok): %r -> %r", self.href, bday.value)
+
+        pattern = re.compile('^([0-9]{4})-?([0-9]{2})-?([0-9]{2})$')
+        match = pattern.match(bday.value)
+        if not match:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/item/convert_vcf_to_ics: has unsupported bday: %r -> %r", self.href, bday.value)
+            return None
+        else:
+            pass
+
+        bdayS = match[1] + match[2] + match[3]
+        bdayY = int(match[1])
+        bdayM = int(match[2])
+        bdayD = int(match[3])
+
+        # create ICS
+        if hasattr(self.vobject_item, "fn"):
+            name = self.vobject_item.fn.value
+        elif hasattr(self.vobject_item, "n"):
+            name = self.vobject_item.n.value
+        elif hasattr(self.vobject_item, "nickname"):
+            name = self.vobject_item.nickname.value
+        else:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/item/convert_vcf_to_ics: has bday but neither FN or N or NICKNAME (skip): %r", self.href)
+            return None
+
+        # create VCALENDAR
+        item_ics = vobject.newFromBehavior('vcalendar')
+
+        # set PRODID
+        if hasattr(self.vobject_item, "prodid"):
+            item_ics.add('prodid').value = self.vobject_item.prodid.value + PRODID_SUFFIX
+        else:
+            item_ics.add('prodid').value = PRODID_CONVERTED
+
+        # create EVENT
+        item_ics.add('vevent')
+
+        # set DTSTART
+        dtstart = datetime.date(bdayY, bdayM, bdayD)
+        item_ics.vevent.add('dtstart').value = dtstart
+
+        # calculate and set DTEND
+        dtend = dtstart + datetime.timedelta(days=1)
+        item_ics.vevent.add('dtend').value = dtend
+
+        # set UID
+        if hasattr(self.vobject_item, "uid"):
+            pattern = re.compile('^(.*)-[0-9a-fA-F]{12}(.*)$')
+            match = pattern.match(self.vobject_item.uid.value)
+            if match:
+                # replace part of UUID by bday
+                item_ics.vevent.add('uid').value = match[1] + '-' + 'bda0' + bdayS + match[2]
+            else:
+                item_ics.vevent.add('uid').value = self.vobject_item.uid.value + UID_SUFFIX
+        else:
+            item_ics.vevent.add('uid').value = match[1] + match[2] + match[3] + "@" + name.replace(" ", "-") + UID_SUFFIX
+
+        # set SUMMARY
+        item_ics.vevent.add('summary').value = name + " (BDAY)"
+
+        # set RRULE
+        item_ics.vevent.add('rrule').value = "FREQ=YEARLY"
+
+        # add transparency
+        item_ics.vevent.add('transp').value = "TRANSPARENT"
+
+        href = self.href
+        if href is not None:
+            href = href.rstrip(".vcf") + ".ics"
+
+        etag = self.etag
+        # replace 14 leading chars of etag "<hexdigits>" by special format bda0YYYYMMDD00
+        etag = '"bda0' + bdayS + '00' + etag[15:]
+
+        item_new: Item = Item(
+                collection=self.collection,
+                etag=etag,
+                href=href,
+                vobject_item=item_ics)
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("TRACE/storage: item generated/vobject: %r", item_ics.serialize())
+            logger.debug("TRACE/storage: item orig     /etag   : %r", self.etag)
+            logger.debug("TRACE/storage: item generated/etag   : %r", item_new.etag)
+            logger.debug("TRACE/storage: item generated/href   : %r", item_new.href)
+
+        return item_new

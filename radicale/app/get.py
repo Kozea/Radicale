@@ -117,5 +117,9 @@ class ApplicationPartGet(ApplicationBase):
                 "ETag": item.etag}
             if content_disposition:
                 headers["Content-Disposition"] = content_disposition
-            answer = item.serialize()
+            if isinstance(item, storage.BaseCollection) and self._sharing._enabled and share and share['ShareType'] == "bday":
+                # convert VCF to ICS
+                answer = item.serialize(vcf_to_ics=True)
+            else:
+                answer = item.serialize()
             return client.OK, headers, answer, None
