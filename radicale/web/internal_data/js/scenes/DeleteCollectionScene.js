@@ -22,6 +22,7 @@
 import { delete_collection } from "../api/api.js";
 import { DELETE_CONFIRMATION_TEXT } from "../constants.js";
 import { Collection } from "../models/collection.js";
+import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_equals } from "../utils/form_validator.js";
 import { LoadingScene } from "./LoadingScene.js";
@@ -72,6 +73,7 @@ export class DeleteCollectionScene {
                         errorHandler.setError(error1);
                         pop_scene();
                     } else {
+                        collectionsCache.invalidate();
                         pop_to_parent();
                     }
                 });

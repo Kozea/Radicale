@@ -19,11 +19,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Share, reload_sharing_list, update_incoming_share } from "../api/sharing.js";
+import { update_incoming_share } from "../api/sharing.js";
+import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { displayPermissions } from "../utils/permissions.js";
-import { LoadingScene } from "./LoadingScene.js";
-import { Scene, is_current_scene, pop_scene, push_scene } from "./scene_manager.js";
+import { Scene, pop_scene } from "./scene_manager.js";
 
 /**
  * @implements {Scene}
@@ -45,14 +45,13 @@ export class IncomingSharingScene {
         let error_handler = new ErrorHandler(error_element);
 
         /** @type {Array<HTMLElement>} */ let nodes = [];
-        /** @type {?Array<Object>} */ let shares_cache = null;
 
         function on_cancel() {
             pop_scene();
         }
 
         /**
-         * @param {Share} share
+         * @param {import("../api/sharing.js").Share} share
          * @param {HTMLElement} node
          */
         function toggle_share(share, node) {
@@ -79,12 +78,14 @@ export class IncomingSharingScene {
                     enabled_cb.checked = old_enabled;
                     shown_cb.checked = !old_hidden;
                     shown_cb.disabled = !old_enabled;
+                } else {
+                    collectionsCache.invalidate();
                 }
             });
         }
 
         /**
-         * @param {Share[]} shares
+         * @param {import("../api/sharing.js").Share[]} shares
          */
         function render_shares(shares) {
             // clear old nodes
@@ -138,34 +139,11 @@ export class IncomingSharingScene {
             });
         }
 
-        function update() {
-            let loading_scene = new LoadingScene();
-            push_scene(loading_scene);
-
-            error_handler.clearError();
-
-            reload_sharing_list(user, password, null, function (shares, error) {
-                if (!is_current_scene(loading_scene)) {
-                    return;
-                }
-                if (error) {
-                    error_handler.setError(error);
-                    pop_scene();
-                } else {
-                    shares_cache = shares;
-                    pop_scene();
-                }
-            });
-        }
-
         this.show = function () {
             html_scene.classList.remove("hidden");
             cancel_btn.onclick = on_cancel;
-            if (shares_cache === null) {
-                update();
-            } else {
-                render_shares(shares_cache);
-            }
+            error_handler.clearError();
+            collectionsCache.getIncomingShares(user, password, error_handler.setError, render_shares);
         };
 
         this.hide = function () {
@@ -182,7 +160,6 @@ export class IncomingSharingScene {
                 }
             });
             nodes = [];
-            shares_cache = null;
         };
     }
 }

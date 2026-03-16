@@ -297,7 +297,8 @@ def test_share_by_map_validation(page: Page, radicale_server: str) -> None:
     ).to_have_count(1)
 
 
-def test_incoming_shares(page: Page, radicale_server: str) -> None:
+@pytest.mark.parametrize("permissions", ["ro", "rw"])
+def test_incoming_shares(page: Page, radicale_server: str, permissions: str) -> None:
     # 1. Admin logs in and creates a map share for 'max'
     login(page, radicale_server)
     create_collection(page, radicale_server)
@@ -307,6 +308,8 @@ def test_incoming_shares(page: Page, radicale_server: str) -> None:
     page.click('button[data-name="sharebymap"]')
     page.locator('input[data-name="shareuser"]').fill("max")
     page.locator('input[data-name="sharehref"]').fill("mapped")
+    if permissions == "rw":
+        page.check("#newshare_attr_permissions_rw")
     page.click('#newshare button[data-name="submit"]')
     expect(
         page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
@@ -372,11 +375,30 @@ def test_incoming_shares(page: Page, radicale_server: str) -> None:
         )
     ).to_be_checked()
 
-    # 6. Assert no error was shown
-    expect(page.locator('#incomingsharingscene span[data-name="error"]')).to_be_hidden()
-
+    # 6. Verify "shared by admin" and button visibility in the collection article
     page.click('#incomingsharingscene button[data-name="cancel"]')
     expect(page.locator("#incomingsharingscene")).to_be_hidden()
+
+    article = page.locator("article:not(.hidden)").first
+    expect(article.locator('[data-name="shared-by"]')).to_be_visible()
+    expect(article.locator('[data-name="shared-by-owner"]')).to_have_text("admin")
+
+    # Action buttons are only visible on mouseover
+    article.hover()
+
+    # Share and delete buttons should be hidden for all incoming shares
+    expect(article.locator('a[data-name="share"]')).to_be_hidden()
+    expect(article.locator('[data-name="shareoption"]')).to_be_hidden()
+    expect(article.locator('a[data-name="delete"]')).to_be_hidden()
+
+    # Edit button depends on permissions
+    if permissions == "rw":
+        expect(article.locator('a[data-name="edit"]')).to_be_visible()
+    else:
+        expect(article.locator('a[data-name="edit"]')).to_be_hidden()
+
+    # 7. Assert no error was shown
+    expect(page.locator('#incomingsharingscene span[data-name="error"]')).to_be_hidden()
 
 
 def test_no_incoming_shares_message(page: Page, radicale_server: str) -> None:

@@ -22,6 +22,7 @@
 import { create_collection, edit_collection } from "../api/api.js";
 import { COLOR_RE } from "../constants.js";
 import { Collection, CollectionType } from "../models/collection.js";
+import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_color, validate_href } from "../utils/form_validator.js";
 import { cleanHREFinput, onCleanHREFinput, random_hex, random_uuid } from "../utils/misc.js";
@@ -140,6 +141,7 @@ export class CreateEditCollectionScene {
                         errorHandler.setError(error1);
                         pop_scene();
                     } else {
+                        collectionsCache.invalidate();
                         pop_to_parent();
                     }
                 };
