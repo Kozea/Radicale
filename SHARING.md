@@ -566,6 +566,7 @@ Whitelisted ones are defined in `OVERLAY_PROPERTIES_WHITELIST` in `radicale/shar
  * `ICAL:calendar-color`
  * `CR:addressbook-description`
  * `INF:addressbook-color`
+ * `D:displayname`
 
 ### Properties Overlay Control Options
 
