@@ -182,10 +182,13 @@ export const OVERLAY_PROPERTIES = {
 /**
  * Returns the correct internal property key for a given collection type and property name.
  * @param {string} type Collection type (ADDRESSBOOK, CALENDAR, etc.)
- * @param {"DESCRIPTION" | "COLOR"} property Property name
+ * @param {"DISPLAYNAME" | "DESCRIPTION" | "COLOR"} property Property name
  * @returns {string | null} Internal property key or null if not supported
  */
 export function get_property_key(type, property) {
+    if (property === "DISPLAYNAME") {
+        return "D:displayname";
+    }
     if (type === CollectionType.ADDRESSBOOK) {
         return OVERLAY_PROPERTIES.ADDRESSBOOK[property];
     } else if (CollectionType.is_subset(CollectionType.CALENDAR, type)) {

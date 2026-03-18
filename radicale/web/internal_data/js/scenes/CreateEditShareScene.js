@@ -52,6 +52,8 @@ export class CreateEditShareScene {
         let permissions_rw_radio = /** @type {HTMLInputElement} */ (document.getElementById("newshare_attr_permissions_rw"));
 
         /** @type {HTMLElement} */ let properties_fieldset = html_scene.querySelector("[data-name=properties_override]");
+        /** @type {HTMLInputElement} */ let displayname_override_enabled = html_scene.querySelector("[data-name=displayname_override_enabled]");
+        /** @type {HTMLInputElement} */ let displayname_override_input = html_scene.querySelector("[data-name=displayname_override]");
         /** @type {HTMLInputElement} */ let description_override_enabled = html_scene.querySelector("[data-name=description_override_enabled]");
         /** @type {HTMLInputElement} */ let description_override_input = html_scene.querySelector("[data-name=description_override]");
         /** @type {HTMLInputElement} */ let color_override_enabled = html_scene.querySelector("[data-name=color_override_enabled]");
@@ -69,6 +71,9 @@ export class CreateEditShareScene {
 
         sharehref_input.addEventListener("input", onCleanHREFinput);
 
+        displayname_override_enabled.onchange = function () {
+            displayname_override_input.disabled = !displayname_override_enabled.checked;
+        };
         description_override_enabled.onchange = function () {
             description_override_input.disabled = !description_override_enabled.checked;
         };
@@ -98,6 +103,10 @@ export class CreateEditShareScene {
                 let permissions = permissions_rw_radio.checked ? "rw" : "r";
 
                 let properties = {};
+                if (displayname_override_enabled.checked) {
+                    let key = get_property_key(collection.type, "DISPLAYNAME");
+                    if (key) properties[key] = displayname_override_input.value;
+                }
                 if (description_override_enabled.checked) {
                     let key = get_property_key(collection.type, "DESCRIPTION");
                     if (key) properties[key] = description_override_input.value;
@@ -166,19 +175,26 @@ export class CreateEditShareScene {
             permissions_ro_radio.checked = edit ? share.Permissions.toLowerCase() === "r" : true;
             permissions_rw_radio.checked = edit ? share.Permissions.toLowerCase() === "rw" : false;
 
+            let displayname = collection.displayname || "";
             let description = collection.description || "";
             let color = collection.color || "#ffffff";
+            let displayname_override_enabled_value = false;
             let description_override_enabled_value = false;
             let color_override_enabled_value = false;
 
             if (edit && share.Properties) {
+                let displayname_key = get_property_key(collection.type, "DISPLAYNAME");
+                if (displayname_key && share.Properties[displayname_key] !== undefined) {
+                    displayname = share.Properties[displayname_key];
+                    displayname_override_enabled_value = true;
+                }
                 let description_key = get_property_key(collection.type, "DESCRIPTION");
-                if (description_key && share.Properties[description_key]) {
+                if (description_key && share.Properties[description_key] !== undefined) {
                     description = share.Properties[description_key];
                     description_override_enabled_value = true;
                 }
                 let color_key = get_property_key(collection.type, "COLOR");
-                if (color_key && share.Properties[color_key]) {
+                if (color_key && share.Properties[color_key] !== undefined) {
                     color = share.Properties[color_key];
                     if (color.length === 9 && color.endsWith("ff")) {
                         color = color.substring(0, 7);
@@ -186,6 +202,10 @@ export class CreateEditShareScene {
                     color_override_enabled_value = true;
                 }
             }
+
+            displayname_override_enabled.checked = displayname_override_enabled_value;
+            displayname_override_input.value = displayname;
+            displayname_override_input.disabled = !displayname_override_enabled_value;
 
             description_override_enabled.checked = description_override_enabled_value;
             description_override_input.value = description;
@@ -197,10 +217,13 @@ export class CreateEditShareScene {
 
             let is_calendar = CollectionType.is_subset(CollectionType.CALENDAR, collection.type);
             let is_addressbook = collection.type === CollectionType.ADDRESSBOOK;
+            properties_fieldset.classList.remove("hidden");
             if (is_calendar || is_addressbook) {
-                properties_fieldset.classList.remove("hidden");
+                description_override_enabled.parentElement.classList.remove("hidden");
+                color_override_enabled.parentElement.classList.remove("hidden");
             } else {
-                properties_fieldset.classList.add("hidden");
+                description_override_enabled.parentElement.classList.add("hidden");
+                color_override_enabled.parentElement.classList.add("hidden");
             }
 
             if (shareType === "map") {

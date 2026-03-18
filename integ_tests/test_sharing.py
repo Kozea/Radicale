@@ -140,14 +140,22 @@ def test_share_with_property_overrides(page: Page, radicale_server: str) -> None
     page.click('button[data-name="sharebytoken"]')
 
     # Verify defaults
+    expect(page.locator('input[data-name="displayname_override"]')).to_have_value(
+        "Test Collection"
+    )
     expect(page.locator('input[data-name="description_override"]')).to_have_value(
         "Original Description"
     )
     expect(page.locator('input[data-name="color_override"]')).to_have_value("#ff0000")
+    expect(page.locator('input[data-name="displayname_override"]')).to_be_disabled()
     expect(page.locator('input[data-name="description_override"]')).to_be_disabled()
     expect(page.locator('input[data-name="color_override"]')).to_be_disabled()
 
     # Set overrides
+    page.click('label[for="newshare_attr_displayname_enabled"]')
+    page.locator('input[data-name="displayname_override"]').fill(
+        "Overridden Displayname"
+    )
     page.click('label[for="newshare_attr_description_enabled"]')
     page.locator('input[data-name="description_override"]').fill(
         "Overridden Description"
@@ -182,8 +190,11 @@ def test_share_journal_no_overrides(page: Page, radicale_server: str) -> None:
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
     page.click('button[data-name="sharebytoken"]')
 
-    # Verify property override fieldset is hidden
-    expect(page.locator('fieldset[data-name="properties_override"]')).to_be_hidden()
+    # Verify property override visibility
+    expect(page.locator('fieldset[data-name="properties_override"]')).to_be_visible()
+    expect(page.locator('input[data-name="displayname_override_enabled"]')).to_be_visible()
+    expect(page.locator('input[data-name="description_override_enabled"]')).to_be_hidden()
+    expect(page.locator('input[data-name="color_override_enabled"]')).to_be_hidden()
 
     # Create the share
     page.click('#newshare button[data-name="submit"]')
