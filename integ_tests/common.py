@@ -60,6 +60,8 @@ collection_by_token = true
 permit_create_token = true
 permit_create_map = true
 permit_properties_overlay = true
+collection_by_bday = true
+permit_create_bday = true
 
 """
         )

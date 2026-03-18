@@ -449,3 +449,107 @@ def test_no_incoming_shares_message(page: Page, radicale_server: str) -> None:
 
     page.click('#incomingsharingscene button[data-name="cancel"]')
     expect(page.locator("#incomingsharingscene")).to_be_hidden()
+
+
+def test_create_and_delete_share_by_bday(page: Page, radicale_server: str) -> None:
+    login(page, radicale_server)
+    # create collection of type ADDRESSBOOK for bday (bday only works with ADDRESSBOOK)
+    page.click('a[data-name="new"]')
+    page.locator('#createcollectionscene select[data-name="type"]').select_option(
+        "ADDRESSBOOK"
+    )
+    page.locator('#createcollectionscene input[data-name="displayname"]').fill(
+        "Addressbook For Bday"
+    )
+    page.click('#createcollectionscene button[data-name="submit"]')
+
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+
+    expect(
+        page.locator("tr[data-name='sharebdayrowtemplate']:not(.hidden)")
+    ).to_have_count(0)
+
+    page.click('button[data-name="sharebybday"]')
+
+    # verify user is auto-filled with current user (admin)
+    expect(page.locator('input[data-name="shareuser"]')).to_have_value("admin")
+    page.locator('input[data-name="sharehref"]').fill("bdaymapped")
+
+    # verify that the permissions section is hidden entirely
+    expect(page.locator("input#newshare_attr_permissions_ro")).to_be_hidden()
+    expect(page.locator("input#newshare_attr_permissions_rw")).to_be_hidden()
+
+    page.click('#newshare button[data-name="submit"]')
+    expect(
+        page.locator("tr[data-name='sharebdayrowtemplate']:not(.hidden)")
+    ).to_have_count(1)
+
+    # verify no permissions pill in the bday row
+    expect(
+        page.locator(
+            "tr[data-name='sharebdayrowtemplate']:not(.hidden) span[data-name='ro']"
+        )
+    ).to_have_count(0)
+
+    # Close the share scene and verify the virtual bday calendar is now in the collections list
+    page.click('#sharecollectionscene button[data-name="cancel"]')
+    expect(page.locator("#sharecollectionscene")).to_be_hidden()
+
+    # The virtual calendar (bdaymapped) should appear as its own article
+    # after the cache was invalidated following the self-share
+    expect(page.locator("article:not(.hidden)")).to_have_count(2)
+
+    # Delete the bday share by re-opening the share scene
+    page.hover("article:not(.hidden) >> nth=0")
+    page.click('article:not(.hidden) >> nth=0 >> a[data-name="share"]', force=True)
+    page.click(
+        "tr[data-name='sharebdayrowtemplate']:not(.hidden) button[data-name='delete']",
+        strict=True,
+    )
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
+    expect(
+        page.locator("tr[data-name='sharebdayrowtemplate']:not(.hidden)")
+    ).to_have_count(0)
+
+
+def test_bday_section_hidden_for_calendar(page: Page, radicale_server: str) -> None:
+    """Verify the bday calendar section is hidden for CALENDAR collections."""
+    login(page, radicale_server)
+
+    page.click('a[data-name="new"]')
+    page.locator('#createcollectionscene select[data-name="type"]').select_option(
+        "CALENDAR"
+    )
+    page.locator('#createcollectionscene input[data-name="displayname"]').fill(
+        "My Calendar"
+    )
+    page.click('#createcollectionscene button[data-name="submit"]')
+
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+
+    expect(page.locator("#sharecollectionscene")).to_be_visible()
+    expect(page.locator("div[data-name='sharebybday']")).to_be_hidden()
+    page.click('#sharecollectionscene button[data-name="cancel"]')
+
+
+def test_bday_section_visible_for_addressbook(page: Page, radicale_server: str) -> None:
+    """Verify the bday calendar section is visible for ADDRESSBOOK collections."""
+    login(page, radicale_server)
+
+    page.click('a[data-name="new"]')
+    page.locator('#createcollectionscene select[data-name="type"]').select_option(
+        "ADDRESSBOOK"
+    )
+    page.locator('#createcollectionscene input[data-name="displayname"]').fill(
+        "My Addressbook"
+    )
+    page.click('#createcollectionscene button[data-name="submit"]')
+
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+
+    expect(page.locator("#sharecollectionscene")).to_be_visible()
+    expect(page.locator("div[data-name='sharebybday']")).to_be_visible()
+    page.click('#sharecollectionscene button[data-name="cancel"]')

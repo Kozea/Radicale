@@ -170,10 +170,17 @@ export class CollectionsScene {
                     }
                 });
                 let share_info = node.querySelector("[data-name=shared-by]");
-                let share = (shares || []).find(s => s.ShareType === "map" && (s.PathOrToken || "").replace(/\/+$/, "") === (collection.href || "").replace(/\/+$/, ""));
-                if (share && share.Owner !== user) {
-                    share_info.classList.remove("hidden");
-                    node.querySelector("[data-name=shared-by-owner]").textContent = share.Owner;
+                let transformed_from = node.querySelector("[data-name=transformed-from]");
+                let share = (shares || []).find(
+                    s => (s.ShareType === "map" || s.ShareType === "bday") &&
+                        (s.PathOrToken || "").replace(/\/+$/, "") === (collection.href || "").replace(/\/+$/, ""));
+                if (share) {
+                    if (share.Owner !== user) {
+                        share_info.classList.remove("hidden");
+                        node.querySelector("[data-name=shared-by-owner]").textContent = share.Owner;
+                    } else {
+                        transformed_from.classList.remove("hidden");
+                    }
                     let share_option = node.querySelector("[data-name=shareoption]");
                     if (share_option) {
                         share_option.classList.add("hidden");

@@ -27,6 +27,8 @@ import { CollectionType } from "../models/collection.js";
  * @property {boolean} [PermittedCreateCollectionByMap]
  * @property {boolean} [FeatureEnabledCollectionByToken]
  * @property {boolean} [PermittedCreateCollectionByToken]
+ * @property {boolean} [FeatureEnabledCollectionByBday]
+ * @property {boolean} [PermittedCreateCollectionByBday]
  */
 
 /**
@@ -433,11 +435,123 @@ export function update_incoming_share(
     call_sharing_api(
         user,
         password,
-        "map/update",
+        share.ShareType + "/update",
         {
             PathOrToken: share.PathOrToken,
             Enabled: share.EnabledByUser,
             Hidden: share.HiddenByUser,
+        },
+        function (response) {
+            let json_response = JSON.parse(response);
+            if (json_response["Status"] !== "success") {
+                callback(json_response["Status"] || "Unknown error");
+            } else {
+                callback(null);
+            }
+        },
+        null,
+        function (error) {
+            callback(error);
+        }
+    );
+}
+
+/**
+ * @param {string} user
+ * @param {string} password
+ * @param {Share} share
+ * @param {function(?string):void} callback
+ */
+export function add_share_by_bday(
+    user,
+    password,
+    share,
+    callback,
+) {
+    call_sharing_api(
+        user,
+        password,
+        "bday/create",
+        {
+            PathMapped: share.PathMapped,
+            Permissions: share.Permissions,
+            Enabled: share.EnabledByOwner,
+            Hidden: share.HiddenByOwner,
+            Properties: share.Properties,
+            User: share.User,
+            PathOrToken: share.PathOrToken,
+        },
+        function (response) {
+            let json_response = JSON.parse(response);
+            if (json_response["Status"] !== "success") {
+                callback(json_response["Status"] || "Unknown error");
+            } else {
+                callback(null);
+            }
+        },
+        null,
+        function (error) {
+            callback(error);
+        }
+    );
+}
+
+/**
+ * @param {string} user
+ * @param {string} password
+ * @param {Share} share
+ * @param {function(?string):void} callback
+ */
+export function delete_share_by_bday(
+    user,
+    password,
+    share,
+    callback,
+) {
+    call_sharing_api(
+        user,
+        password,
+        "bday/delete",
+        { PathOrToken: share.PathOrToken },
+        function (response) {
+            let json_response = JSON.parse(response);
+            if (json_response["Status"] !== "success") {
+                callback(json_response["Status"] || "Unknown error");
+            } else {
+                callback(null);
+            }
+        },
+        null,
+        function (error) {
+            callback(error);
+        }
+    );
+}
+
+/**
+ * @param {string} user
+ * @param {string} password
+ * @param {Share} share
+ * @param {function(?string):void} callback
+ */
+export function update_share_by_bday(
+    user,
+    password,
+    share,
+    callback,
+) {
+    call_sharing_api(
+        user,
+        password,
+        "bday/update",
+        {
+            PathOrToken: share.PathOrToken,
+            PathMapped: share.PathMapped,
+            User: share.User,
+            Permissions: share.Permissions,
+            Enabled: share.EnabledByOwner,
+            Hidden: share.HiddenByOwner,
+            Properties: share.Properties,
         },
         function (response) {
             let json_response = JSON.parse(response);

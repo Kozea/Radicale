@@ -70,6 +70,7 @@
         <h3 class="title" data-name="title">Title</h3>
         <small>
           <span data-name="shared-by" class="hidden">👥 shared by <span data-name="shared-by-owner"></span> &gt;</span>
+          <span data-name="transformed-from" class="hidden">Address book ⟿</span>
           <span data-name="ADDRESSBOOK">Address book</span>
           <span data-name="CALENDAR_JOURNAL_TASKS">Calendar, journal and tasks</span>
           <span data-name="CALENDAR_JOURNAL">Calendar and journal</span>
@@ -193,6 +194,33 @@
                 <td>
                   <button type="button" class="blue inline" data-name="sharebymap">
                     <img src="css/icons/new.svg" class="small_icon" alt="New Share by Map">
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </div>
+      <div data-name="sharebybday">
+        <details open>
+          <summary>shared as bday calendar</summary>
+          <table>
+            <tbody>
+              <tr data-name="sharebdayrowtemplate" class="hidden">
+                <td>
+                  <button type="button" class="blue inline" data-name="edit"><img src="css/icons/edit.svg"
+                      class="small_icon" alt="Edit"></button>
+                </td>
+                <td><input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall"></td>
+                <td>
+                  <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
+                      class="small_icon" alt="Delete"></button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <button type="button" class="blue inline" data-name="sharebybday">
+                    <img src="css/icons/new.svg" class="small_icon" alt="New Share as Bday Calendar">
                   </button>
                 </td>
               </tr>
