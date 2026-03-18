@@ -51,7 +51,7 @@ export class CreateEditShareScene {
         let permissions_ro_radio = /** @type {HTMLInputElement} */ (document.getElementById("newshare_attr_permissions_ro"));
         let permissions_rw_radio = /** @type {HTMLInputElement} */ (document.getElementById("newshare_attr_permissions_rw"));
 
-        /** @type {HTMLElement} */ let properties_fieldset = html_scene.querySelector("[data-name=properties_override]");
+        /** @type {HTMLDetailsElement} */ let properties_fieldset = /** @type {HTMLDetailsElement} */ (html_scene.querySelector("[data-name=properties_override]"));
         /** @type {HTMLInputElement} */ let displayname_override_enabled = html_scene.querySelector("[data-name=displayname_override_enabled]");
         /** @type {HTMLInputElement} */ let displayname_override_input = html_scene.querySelector("[data-name=displayname_override]");
         /** @type {HTMLInputElement} */ let description_override_enabled = html_scene.querySelector("[data-name=description_override_enabled]");
@@ -162,6 +162,13 @@ export class CreateEditShareScene {
         this.show = function () {
             this.release();
             html_scene.classList.remove("hidden");
+            html_scene.querySelectorAll("details").forEach(function (details) {
+                if (details.dataset.name !== "properties_override") {
+                    details.open = true;
+                } else {
+                    details.open = false;
+                }
+            });
             cancel_btn.onclick = oncancel;
             form.onsubmit = onsubmit;
 
@@ -218,6 +225,9 @@ export class CreateEditShareScene {
             let is_calendar = CollectionType.is_subset(CollectionType.CALENDAR, collection.type);
             let is_addressbook = collection.type === CollectionType.ADDRESSBOOK;
             properties_fieldset.classList.remove("hidden");
+            if (displayname_override_enabled_value || description_override_enabled_value || color_override_enabled_value) {
+                properties_fieldset.open = true;
+            }
             if (is_calendar || is_addressbook) {
                 description_override_enabled.parentElement.classList.remove("hidden");
                 color_override_enabled.parentElement.classList.remove("hidden");

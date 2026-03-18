@@ -86,6 +86,9 @@ export class ShareCollectionScene {
     this.show = function () {
       this.release();
       html_scene.classList.remove("hidden");
+      html_scene.querySelectorAll("details").forEach(function (details) {
+          details.open = true;
+      });
       cancel_btn.onclick = oncancel;
 
       collectionsCache.getServerFeatures(user, password, errorHandler.setError, (features) => {

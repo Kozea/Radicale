@@ -147,56 +147,58 @@
       <p>Manage sharing for collection <span class="title" data-name="title">title</span>
       </p>
       <div data-name="sharebytoken">
-        <h2>By Token</h2>
-        <table>
-          <tbody>
-            <tr data-name="sharetokenrowtemplate" class="hidden">
-              <td>
-                <button type="button" class="blue inline" data-name="edit"><img src="css/icons/edit.svg"
-                    class="small_icon" alt="Edit"></button>
-              </td>
-              <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span></td>
-              <td><input type="text" data-name="pathortoken" value="" readonly=""
-                  class="inline selectall"></td>
-              <td>
-                <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
-                    class="small_icon" alt="Delete"></button>
-              </td>
-            </tr>
-            <tr>
-              <td><button type="button" class="blue inline" data-name="sharebytoken"><img src="css/icons/new.svg"
-                    class="small_icon" alt="New Share by Token"></button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <details open>
+          <summary>By Token</summary>
+          <table>
+            <tbody>
+              <tr data-name="sharetokenrowtemplate" class="hidden">
+                <td>
+                  <button type="button" class="blue inline" data-name="edit"><img src="css/icons/edit.svg"
+                      class="small_icon" alt="Edit"></button>
+                </td>
+                <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span></td>
+                <td><input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall"></td>
+                <td>
+                  <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
+                      class="small_icon" alt="Delete"></button>
+                </td>
+              </tr>
+              <tr>
+                <td><button type="button" class="blue inline" data-name="sharebytoken"><img src="css/icons/new.svg"
+                      class="small_icon" alt="New Share by Token"></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
       </div>
       <div data-name="sharebymap">
-        <h2>By Map</h2>
-        <table>
-          <tbody>
-            <tr data-name="sharemaprowtemplate" class="hidden">
-              <td>
-                <button type="button" class="blue inline" data-name="edit"><img src="css/icons/edit.svg"
-                    class="small_icon" alt="Edit"></button>
-              </td>
-              <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span></td>
-              <td><input type="text" data-name="pathortoken" value="" readonly=""
-                  class="inline selectall"></td>
-              <td>
-                <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
-                    class="small_icon" alt="Delete"></button>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <button type="button" class="blue inline" data-name="sharebymap">
-                  <img src="css/icons/new.svg" class="small_icon" alt="New Share by Map">
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <details open>
+          <summary>By Map</summary>
+          <table>
+            <tbody>
+              <tr data-name="sharemaprowtemplate" class="hidden">
+                <td>
+                  <button type="button" class="blue inline" data-name="edit"><img src="css/icons/edit.svg"
+                      class="small_icon" alt="Edit"></button>
+                </td>
+                <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span></td>
+                <td><input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall"></td>
+                <td>
+                  <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
+                      class="small_icon" alt="Delete"></button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <button type="button" class="blue inline" data-name="sharebymap">
+                    <img src="css/icons/new.svg" class="small_icon" alt="New Share by Map">
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
       </div>
       <form>
         <button type="button" class="green" data-name="cancel">Close</button>
@@ -219,8 +221,7 @@
         </thead>
         <tbody data-name="incomingsharesbody">
           <tr data-name="incomingsharerowtemplate" class="hidden">
-            <td><input type="text" data-name="pathortoken" value="" readonly=""
-                class="inline selectall"></td>
+            <td><input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall"></td>
             <td data-name="owner"></td>
             <td data-name="permissions"><span class="pill" data-name="rw">rw</span><span class="pill"
                 data-name="ro">ro</span></td>
@@ -239,29 +240,29 @@
     <section id="newshare" class="container hidden">
       <h1>New Share</h1>
       <form>
-        <fieldset data-name="sharemapfields" class="hidden">
-          <legend>Map Target</legend>
+        <details open data-name="sharemapfields" class="hidden">
+          <summary>Map Target</summary>
           <label for="newshare_attr_shareuser">Share User</label>
           <input type="text" data-name="shareuser" id="newshare_attr_shareuser" />
           <label for="newshare_attr_sharehref">Share Href</label>
           <input type="text" data-name="sharehref" id="newshare_attr_sharehref" />
-        </fieldset>
-        <fieldset>
-          <legend>Attributes</legend>
+        </details>
+        <details open>
+          <summary>Attributes</summary>
           <input type="checkbox" data-name="enabled" checked id="newshare_attr_enabled" /><label
             for="newshare_attr_enabled">Enabled</label>
           <input type="checkbox" data-name="hidden" id="newshare_attr_hidden" /><label
             for="newshare_attr_hidden">Hidden</label>
-        </fieldset>
-        <fieldset>
-          <legend>Permissions</legend>
+        </details>
+        <details open>
+          <summary>Permissions</summary>
           <input type="radio" data-name="permissions" checked="true" id="newshare_attr_permissions_ro"
             name="newshare_permissions"><label for="newshare_attr_permissions_ro">Readonly</label>
           <input type="radio" data-name="permissions" checked="false" id="newshare_attr_permissions_rw"
             name="newshare_permissions" /><label for="newshare_attr_permissions_rw">Read/Write</label>
-        </fieldset>
-        <fieldset data-name="properties_override">
-          <legend>Properties override</legend>
+        </details>
+        <details data-name="properties_override">
+          <summary>Properties override</summary>
           <div class="property-override">
             <input type="checkbox" data-name="displayname_override_enabled" id="newshare_attr_displayname_enabled">
             <label for="newshare_attr_displayname_enabled">Displayname:</label>
@@ -277,7 +278,7 @@
             <label for="newshare_attr_color_enabled">Color:</label>
             <input type="color" data-name="color_override" disabled>
           </div>
-        </fieldset>
+        </details>
         <button type="submit" class="green" data-name="submit">Create</button>
         <button type="button" class="red" data-name="cancel">Cancel</button>
       </form>
@@ -346,8 +347,8 @@
 
     <section id="deleteconfirmationscene" class="container hidden">
       <h1 data-name="headertitle">Delete Collection</h1>
-      <p data-name="confirmationprompt">To delete the collection <span class="title" data-name="title">title</span> please enter the phrase <strong
-          data-name="deleteconfirmationtext"></strong> in the box below:</p>
+      <p data-name="confirmationprompt">To delete the collection <span class="title" data-name="title">title</span>
+        please enter the phrase <strong data-name="deleteconfirmationtext"></strong> in the box below:</p>
       <input type="text" class="deleteconfirmationtxt" data-name="confirmationtxt" />
       <p class="red">WARNING: This action cannot be reversed.</p>
       <form>

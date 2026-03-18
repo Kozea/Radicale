@@ -139,6 +139,12 @@ def test_share_with_property_overrides(page: Page, radicale_server: str) -> None
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
     page.click('button[data-name="sharebytoken"]')
 
+    # Verify property override is closed by default
+    expect(
+        page.locator('input[data-name="displayname_override_enabled"]')
+    ).not_to_be_visible()
+    page.click('details[data-name="properties_override"] summary')
+
     # Verify defaults
     expect(page.locator('input[data-name="displayname_override"]')).to_have_value(
         "Test Collection"
@@ -191,7 +197,12 @@ def test_share_journal_no_overrides(page: Page, radicale_server: str) -> None:
     page.click('button[data-name="sharebytoken"]')
 
     # Verify property override visibility
-    expect(page.locator('fieldset[data-name="properties_override"]')).to_be_visible()
+    expect(page.locator('details[data-name="properties_override"]')).to_be_visible()
+    expect(
+        page.locator('input[data-name="displayname_override_enabled"]')
+    ).not_to_be_visible()
+    page.click('details[data-name="properties_override"] summary')
+
     expect(
         page.locator('input[data-name="displayname_override_enabled"]')
     ).to_be_visible()
