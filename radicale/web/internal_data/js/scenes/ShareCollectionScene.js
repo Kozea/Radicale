@@ -29,6 +29,7 @@ import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { displayPermissions } from "../utils/permissions.js";
 import { CreateEditShareScene } from "./CreateEditShareScene.js";
+import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
 import { Scene, pop_scene, push_scene } from "./scene_manager.js";
 
 /**
@@ -188,21 +189,14 @@ function add_share_row_node(user, password, collection, share, template, delete_
 
   /** @type {HTMLElement} */ let delete_btn = node.querySelector("[data-name=delete]");
   delete_btn.onclick = function () {
-    if (!confirm("Are you sure you want to delete " + delete_label + " " + pathortoken + "?")) {
-      return;
-    }
-    delete_action(
-      user,
-      password,
-      share,
-      function (error) {
-        if (error) {
-          errorHandler.setError(error);
-        } else {
-          update_share_list(user, password, collection, errorHandler);
-        }
-      },
+    let delete_collection_scene = new DeleteConfirmationScene(
+      user, password, "Delete Share", share, delete_label + " " + pathortoken, delete_action, false,
+      function () {
+        pop_scene();
+        update_share_list(user, password, collection, errorHandler);
+      }
     );
+    push_scene(delete_collection_scene);
   };
 
   template.parentNode.insertBefore(node, template);

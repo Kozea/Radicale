@@ -52,8 +52,8 @@ def test_create_and_delete_share_by_key(page: Page, radicale_server: str) -> Non
             "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='ro']"
         )
     ).to_be_visible()
-    page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(0)
@@ -68,8 +68,8 @@ def test_create_and_delete_share_by_key(page: Page, radicale_server: str) -> Non
             "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='rw']"
         )
     ).to_be_visible()
-    page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(0)
@@ -97,8 +97,8 @@ def test_create_and_delete_share_by_map(page: Page, radicale_server: str) -> Non
             "tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='ro']"
         )
     ).to_be_visible()
-    page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
         page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(0)
@@ -115,8 +115,8 @@ def test_create_and_delete_share_by_map(page: Page, radicale_server: str) -> Non
             "tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='rw']"
         )
     ).to_be_visible()
-    page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
         page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(0)
@@ -192,8 +192,12 @@ def test_share_journal_no_overrides(page: Page, radicale_server: str) -> None:
 
     # Verify property override visibility
     expect(page.locator('fieldset[data-name="properties_override"]')).to_be_visible()
-    expect(page.locator('input[data-name="displayname_override_enabled"]')).to_be_visible()
-    expect(page.locator('input[data-name="description_override_enabled"]')).to_be_hidden()
+    expect(
+        page.locator('input[data-name="displayname_override_enabled"]')
+    ).to_be_visible()
+    expect(
+        page.locator('input[data-name="description_override_enabled"]')
+    ).to_be_hidden()
     expect(page.locator('input[data-name="color_override_enabled"]')).to_be_hidden()
 
     # Create the share

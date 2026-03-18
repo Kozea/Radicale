@@ -41,18 +41,18 @@ def test_delete_wrong_confirmation(page: Page, radicale_server: str) -> None:
     page.click('article:not(.hidden) a[data-name="delete"]', force=True)
 
     # Input wrong confirmation
-    page.fill('#deletecollectionscene input[data-name="confirmationtxt"]', "foo")
-    page.click('#deletecollectionscene button[data-name="delete"]')
+    page.fill('#deleteconfirmationscene input[data-name="confirmationtxt"]', "foo")
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
 
     # Check for error message
-    error_locator = page.locator('#deletecollectionscene span[data-name="error"]')
+    error_locator = page.locator('#deleteconfirmationscene span[data-name="error"]')
     expect(error_locator).to_be_visible()
     expect(error_locator).to_contain_text(
         "Please type DELETE in the confirmation field"
     )
 
     # Scene should still be visible
-    expect(page.locator("#deletecollectionscene")).to_be_visible()
+    expect(page.locator("#deleteconfirmationscene")).to_be_visible()
 
 
 def test_delete_correct_confirmation(page: Page, radicale_server: str) -> None:
@@ -67,11 +67,11 @@ def test_delete_correct_confirmation(page: Page, radicale_server: str) -> None:
     page.click('article:not(.hidden) a[data-name="delete"]', force=True)
 
     # Input correct confirmation
-    page.fill('#deletecollectionscene input[data-name="confirmationtxt"]', "DELETE")
-    page.click('#deletecollectionscene button[data-name="delete"]')
+    page.fill('#deleteconfirmationscene input[data-name="confirmationtxt"]', "DELETE")
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
 
     # Verify collection is gone
     expect(page.locator("article:not(.hidden)")).to_have_count(0)
 
     # Scene should be hidden
-    expect(page.locator("#deletecollectionscene")).to_be_hidden()
+    expect(page.locator("#deleteconfirmationscene")).to_be_hidden()
