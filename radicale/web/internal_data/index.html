@@ -14,17 +14,12 @@
   <title>Radicale Web Interface</title>
   <link href="css/main.css" type="text/css" media="screen" rel="stylesheet">
   <link href="css/icon.png" type="image/png" rel="icon">
-  <style>
-    .hidden {
-      display: none !important;
-    }
-  </style>
   <script type="module" src="js/main.js"></script>
 </head>
 
 <body>
   <nav id="logoutview" class="hidden">
-    <span data-name="user" style="word-wrap:break-word;"></span>
+    <span data-name="user"></span>
     <a href="#" class="green" data-name="refresh" title="Refresh">Refresh</a>
     <a href="#" class="red" data-name="logout" title="Logout">Logout</a>
   </nav>
@@ -86,8 +81,8 @@
           <span data-name="WEBCAL">Webcal</span>
         </small>
         <small data-name="contentcount"></small>
-        <input type="text" data-name="url" value="" readonly="" onfocus="this.setSelectionRange(0, 99999);">
-        <p data-name="description" style="word-wrap:break-word;">Description</p>
+        <input type="text" data-name="url" value="" readonly="" class="selectall">
+        <p data-name="description">Description</p>
         <ul>
           <li>
             <a href="" title="Download" class="green" data-name="download">
@@ -162,7 +157,7 @@
               </td>
               <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span></td>
               <td><input type="text" data-name="pathortoken" value="" readonly=""
-                  onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
+                  class="inline selectall"></td>
               <td>
                 <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
                     class="small_icon" alt="Delete"></button>
@@ -187,7 +182,7 @@
               </td>
               <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span></td>
               <td><input type="text" data-name="pathortoken" value="" readonly=""
-                  onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
+                  class="inline selectall"></td>
               <td>
                 <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
                     class="small_icon" alt="Delete"></button>
@@ -225,7 +220,7 @@
         <tbody data-name="incomingsharesbody">
           <tr data-name="incomingsharerowtemplate" class="hidden">
             <td><input type="text" data-name="pathortoken" value="" readonly=""
-                onfocus="this.setSelectionRange(0, 99999);" class="inline"></td>
+                class="inline selectall"></td>
             <td data-name="owner"></td>
             <td data-name="permissions"><span class="pill" data-name="rw">rw</span><span class="pill"
                 data-name="ro">ro</span></td>
