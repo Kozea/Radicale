@@ -19,12 +19,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { delete_collection } from "../api/api.js";
 import { SERVER } from "../constants.js";
 import { Collection, CollectionType } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { bytesToHumanReadable } from "../utils/misc.js";
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
-import { DeleteCollectionScene } from "./DeleteCollectionScene.js";
+import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
 import { IncomingSharingScene } from "./IncomingSharingScene.js";
 import { Scene, push_scene } from "./scene_manager.js";
 import { ShareCollectionScene, maybe_enable_sharing_options } from "./ShareCollectionScene.js";
@@ -111,7 +112,10 @@ export class CollectionsScene {
          */
         function ondelete(collection) {
             try {
-                let delete_collection_scene = new DeleteCollectionScene(user, password, collection);
+                let delete_collection_scene = new DeleteConfirmationScene(
+                    user, password, "Delete Collection", collection, collection.displayname || collection.href,
+                    delete_collection, true
+                );
                 push_scene(delete_collection_scene);
             } catch (err) {
                 console.error(err);
@@ -166,10 +170,17 @@ export class CollectionsScene {
                     }
                 });
                 let share_info = node.querySelector("[data-name=shared-by]");
-                let share = (shares || []).find(s => s.ShareType === "map" && (s.PathOrToken || "").replace(/\/+$/, "") === (collection.href || "").replace(/\/+$/, ""));
-                if (share && share.Owner !== user) {
-                    share_info.classList.remove("hidden");
-                    node.querySelector("[data-name=shared-by-owner]").textContent = share.Owner;
+                let transformed_from = node.querySelector("[data-name=transformed-from]");
+                let share = (shares || []).find(
+                    s => (s.ShareType === "map" || s.ShareType === "bday") &&
+                        (s.PathOrToken || "").replace(/\/+$/, "") === (collection.href || "").replace(/\/+$/, ""));
+                if (share) {
+                    if (share.Owner !== user) {
+                        share_info.classList.remove("hidden");
+                        node.querySelector("[data-name=shared-by-owner]").textContent = share.Owner;
+                    } else {
+                        transformed_from.classList.remove("hidden");
+                    }
                     let share_option = node.querySelector("[data-name=shareoption]");
                     if (share_option) {
                         share_option.classList.add("hidden");

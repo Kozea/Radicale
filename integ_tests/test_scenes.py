@@ -68,10 +68,10 @@ def test_navigation_delete_collection_cancel(page: Page, radicale_server: str) -
 
     page.hover("article:not(.hidden)")
     page.click('article:not(.hidden) a[data-name="delete"]', force=True)
-    expect(page.locator("#deletecollectionscene")).to_be_visible()
+    expect(page.locator("#deleteconfirmationscene")).to_be_visible()
 
-    page.click('#deletecollectionscene button[data-name="cancel"]')
-    expect(page.locator("#deletecollectionscene")).to_be_hidden()
+    page.click('#deleteconfirmationscene button[data-name="cancel"]')
+    expect(page.locator("#deleteconfirmationscene")).to_be_hidden()
     expect(page.locator("#collectionsscene")).to_be_visible()
 
 
@@ -82,18 +82,18 @@ def test_navigation_delete_collection_confirm(page: Page, radicale_server: str) 
 
     page.hover("article:not(.hidden)")
     page.click('article:not(.hidden) a[data-name="delete"]', force=True)
-    expect(page.locator("#deletecollectionscene")).to_be_visible()
+    expect(page.locator("#deleteconfirmationscene")).to_be_visible()
 
     # We need to fill the confirmation text
     confirmation_text = page.locator(
-        "#deletecollectionscene [data-name='deleteconfirmationtext']"
+        "#deleteconfirmationscene [data-name='deleteconfirmationtext']"
     ).inner_text()
-    page.locator("#deletecollectionscene input[data-name='confirmationtxt']").fill(
+    page.locator("#deleteconfirmationscene input[data-name='confirmationtxt']").fill(
         confirmation_text
     )
-    page.click('#deletecollectionscene button[data-name="delete"]')
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
 
-    expect(page.locator("#deletecollectionscene")).to_be_hidden()
+    expect(page.locator("#deleteconfirmationscene")).to_be_hidden()
     expect(page.locator("#collectionsscene")).to_be_visible()
     expect(page.locator("article:not(.hidden)")).to_have_count(0)
 

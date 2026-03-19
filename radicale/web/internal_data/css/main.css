@@ -112,6 +112,7 @@ main {
 #logoutview span {
     width: calc(100% - 60px);
     display: inline-block;
+    word-wrap: break-word;
 }
 
 #logoutview a {
@@ -191,6 +192,7 @@ main {
     font-size: 1em;
     max-height: 130px;
     overflow: overlay;
+    word-wrap: break-word;
 }
 
 #collectionsscene article:hover ul {
@@ -517,4 +519,8 @@ button.inline {
   color: #fff;
   margin: 0 2px;
   width: 1.4em;
+}
+
+.hidden {
+    display: none !important;
 }

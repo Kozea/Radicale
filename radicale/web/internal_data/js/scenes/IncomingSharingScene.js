@@ -95,7 +95,9 @@ export class IncomingSharingScene {
             nodes = [];
 
             let prefix = "/" + user + "/";
-            let filtered_shares = shares.filter(share => share.ShareType === "map" && share.PathOrToken.startsWith(prefix));
+            let filtered_shares = shares.filter(
+                share => (share.ShareType === "map" || share.ShareType === "bday")
+                    && share.PathOrToken.startsWith(prefix));
 
             if (filtered_shares.length === 0) {
                 table.classList.add("hidden");

@@ -52,8 +52,8 @@ def test_create_and_delete_share_by_key(page: Page, radicale_server: str) -> Non
             "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='ro']"
         )
     ).to_be_visible()
-    page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(0)
@@ -68,8 +68,8 @@ def test_create_and_delete_share_by_key(page: Page, radicale_server: str) -> Non
             "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='rw']"
         )
     ).to_be_visible()
-    page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(0)
@@ -97,8 +97,8 @@ def test_create_and_delete_share_by_map(page: Page, radicale_server: str) -> Non
             "tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='ro']"
         )
     ).to_be_visible()
-    page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
         page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(0)
@@ -115,8 +115,8 @@ def test_create_and_delete_share_by_map(page: Page, radicale_server: str) -> Non
             "tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='rw']"
         )
     ).to_be_visible()
-    page.once("dialog", lambda dialog: dialog.accept())
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
         page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(0)
@@ -139,15 +139,29 @@ def test_share_with_property_overrides(page: Page, radicale_server: str) -> None
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
     page.click('button[data-name="sharebytoken"]')
 
+    # Verify property override is closed by default
+    expect(
+        page.locator('input[data-name="displayname_override_enabled"]')
+    ).not_to_be_visible()
+    page.click('details[data-name="properties_override"] summary')
+
     # Verify defaults
+    expect(page.locator('input[data-name="displayname_override"]')).to_have_value(
+        "Test Collection"
+    )
     expect(page.locator('input[data-name="description_override"]')).to_have_value(
         "Original Description"
     )
     expect(page.locator('input[data-name="color_override"]')).to_have_value("#ff0000")
+    expect(page.locator('input[data-name="displayname_override"]')).to_be_disabled()
     expect(page.locator('input[data-name="description_override"]')).to_be_disabled()
     expect(page.locator('input[data-name="color_override"]')).to_be_disabled()
 
     # Set overrides
+    page.click('label[for="newshare_attr_displayname_enabled"]')
+    page.locator('input[data-name="displayname_override"]').fill(
+        "Overridden Displayname"
+    )
     page.click('label[for="newshare_attr_description_enabled"]')
     page.locator('input[data-name="description_override"]').fill(
         "Overridden Description"
@@ -182,8 +196,20 @@ def test_share_journal_no_overrides(page: Page, radicale_server: str) -> None:
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
     page.click('button[data-name="sharebytoken"]')
 
-    # Verify property override fieldset is hidden
-    expect(page.locator('fieldset[data-name="properties_override"]')).to_be_hidden()
+    # Verify property override visibility
+    expect(page.locator('details[data-name="properties_override"]')).to_be_visible()
+    expect(
+        page.locator('input[data-name="displayname_override_enabled"]')
+    ).not_to_be_visible()
+    page.click('details[data-name="properties_override"] summary')
+
+    expect(
+        page.locator('input[data-name="displayname_override_enabled"]')
+    ).to_be_visible()
+    expect(
+        page.locator('input[data-name="description_override_enabled"]')
+    ).to_be_hidden()
+    expect(page.locator('input[data-name="color_override_enabled"]')).to_be_hidden()
 
     # Create the share
     page.click('#newshare button[data-name="submit"]')
@@ -423,3 +449,107 @@ def test_no_incoming_shares_message(page: Page, radicale_server: str) -> None:
 
     page.click('#incomingsharingscene button[data-name="cancel"]')
     expect(page.locator("#incomingsharingscene")).to_be_hidden()
+
+
+def test_create_and_delete_share_by_bday(page: Page, radicale_server: str) -> None:
+    login(page, radicale_server)
+    # create collection of type ADDRESSBOOK for bday (bday only works with ADDRESSBOOK)
+    page.click('a[data-name="new"]')
+    page.locator('#createcollectionscene select[data-name="type"]').select_option(
+        "ADDRESSBOOK"
+    )
+    page.locator('#createcollectionscene input[data-name="displayname"]').fill(
+        "Addressbook For Bday"
+    )
+    page.click('#createcollectionscene button[data-name="submit"]')
+
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+
+    expect(
+        page.locator("tr[data-name='sharebdayrowtemplate']:not(.hidden)")
+    ).to_have_count(0)
+
+    page.click('button[data-name="sharebybday"]')
+
+    # verify user is auto-filled with current user (admin)
+    expect(page.locator('input[data-name="shareuser"]')).to_have_value("admin")
+    page.locator('input[data-name="sharehref"]').fill("bdaymapped")
+
+    # verify that the permissions section is hidden entirely
+    expect(page.locator("input#newshare_attr_permissions_ro")).to_be_hidden()
+    expect(page.locator("input#newshare_attr_permissions_rw")).to_be_hidden()
+
+    page.click('#newshare button[data-name="submit"]')
+    expect(
+        page.locator("tr[data-name='sharebdayrowtemplate']:not(.hidden)")
+    ).to_have_count(1)
+
+    # verify no permissions pill in the bday row
+    expect(
+        page.locator(
+            "tr[data-name='sharebdayrowtemplate']:not(.hidden) span[data-name='ro']"
+        )
+    ).to_have_count(0)
+
+    # Close the share scene and verify the virtual bday calendar is now in the collections list
+    page.click('#sharecollectionscene button[data-name="cancel"]')
+    expect(page.locator("#sharecollectionscene")).to_be_hidden()
+
+    # The virtual calendar (bdaymapped) should appear as its own article
+    # after the cache was invalidated following the self-share
+    expect(page.locator("article:not(.hidden)")).to_have_count(2)
+
+    # Delete the bday share by re-opening the share scene
+    page.hover("article:not(.hidden) >> nth=0")
+    page.click('article:not(.hidden) >> nth=0 >> a[data-name="share"]', force=True)
+    page.click(
+        "tr[data-name='sharebdayrowtemplate']:not(.hidden) button[data-name='delete']",
+        strict=True,
+    )
+    page.click('#deleteconfirmationscene button[data-name="delete"]')
+    expect(
+        page.locator("tr[data-name='sharebdayrowtemplate']:not(.hidden)")
+    ).to_have_count(0)
+
+
+def test_bday_section_hidden_for_calendar(page: Page, radicale_server: str) -> None:
+    """Verify the bday calendar section is hidden for CALENDAR collections."""
+    login(page, radicale_server)
+
+    page.click('a[data-name="new"]')
+    page.locator('#createcollectionscene select[data-name="type"]').select_option(
+        "CALENDAR"
+    )
+    page.locator('#createcollectionscene input[data-name="displayname"]').fill(
+        "My Calendar"
+    )
+    page.click('#createcollectionscene button[data-name="submit"]')
+
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+
+    expect(page.locator("#sharecollectionscene")).to_be_visible()
+    expect(page.locator("div[data-name='sharebybday']")).to_be_hidden()
+    page.click('#sharecollectionscene button[data-name="cancel"]')
+
+
+def test_bday_section_visible_for_addressbook(page: Page, radicale_server: str) -> None:
+    """Verify the bday calendar section is visible for ADDRESSBOOK collections."""
+    login(page, radicale_server)
+
+    page.click('a[data-name="new"]')
+    page.locator('#createcollectionscene select[data-name="type"]').select_option(
+        "ADDRESSBOOK"
+    )
+    page.locator('#createcollectionscene input[data-name="displayname"]').fill(
+        "My Addressbook"
+    )
+    page.click('#createcollectionscene button[data-name="submit"]')
+
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+
+    expect(page.locator("#sharecollectionscene")).to_be_visible()
+    expect(page.locator("div[data-name='sharebybday']")).to_be_visible()
+    page.click('#sharecollectionscene button[data-name="cancel"]')

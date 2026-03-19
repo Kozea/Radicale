@@ -19,62 +19,83 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { delete_collection } from "../api/api.js";
 import { DELETE_CONFIRMATION_TEXT } from "../constants.js";
-import { Collection } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_equals } from "../utils/form_validator.js";
 import { LoadingScene } from "./LoadingScene.js";
-import { Scene, is_current_scene, pop_scene, pop_to_parent, push_scene } from "./scene_manager.js";
+import { Scene, is_current_scene, pop_scene, push_scene } from "./scene_manager.js";
 
 /**
  * @implements {Scene}
  */
-export class DeleteCollectionScene {
+export class DeleteConfirmationScene {
     /**
      * @param {string} user
      * @param {string} password
-     * @param {Collection} collection
+     * @param {string} header_title
+     * @param {any} item
+     * @param {string} item_title
+     * @param {function} delete_action
+     * @param {boolean} needsconfirmation
+     * @param {function} [on_success]
      */
-    constructor(user, password, collection) {
-        /** @type {HTMLElement} */ let html_scene = document.getElementById("deletecollectionscene");
+    constructor(user, password, header_title, item, item_title, delete_action, needsconfirmation, on_success) {
+        /** @type {HTMLElement} */ let html_scene = document.getElementById("deleteconfirmationscene");
+        /** @type {HTMLElement} */ let header_html = html_scene.querySelector("[data-name=headertitle]");
+        if (header_html) header_html.textContent = header_title;
         /** @type {HTMLElement} */ let title_form = html_scene.querySelector("[data-name=title]");
         /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
+        /** @type {HTMLElement} */ let confirmation_prompt = html_scene.querySelector("[data-name=confirmationprompt]");
         /** @type {HTMLInputElement} */ let confirmation_txt = html_scene.querySelector("[data-name=confirmationtxt]");
         /** @type {HTMLElement} */ let delete_confirmation_lbl = html_scene.querySelector("[data-name=deleteconfirmationtext]");
         /** @type {HTMLElement} */ let delete_btn = html_scene.querySelector("[data-name=delete]");
         /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
 
-        delete_confirmation_lbl.innerHTML = DELETE_CONFIRMATION_TEXT;
-        confirmation_txt.value = "";
-        confirmation_txt.addEventListener("keydown", onkeydown);
+        if (needsconfirmation) {
+            delete_confirmation_lbl.innerHTML = DELETE_CONFIRMATION_TEXT;
+            confirmation_txt.value = "";
+            confirmation_txt.addEventListener("keydown", onkeydown);
+            confirmation_prompt.classList.remove("hidden");
+            confirmation_txt.classList.remove("hidden");
+        } else {
+            confirmation_prompt.classList.add("hidden");
+            confirmation_txt.classList.add("hidden");
+            confirmation_txt.removeEventListener("keydown", onkeydown);
+        }
 
         /** @type {?XMLHttpRequest} */ let delete_req = null;
 
         let errorHandler = new ErrorHandler(error_form);
         let validator = new FormValidator(errorHandler);
 
-        validator.addValidator(confirmation_txt, validate_equals(confirmation_txt, DELETE_CONFIRMATION_TEXT, "confirmation"));
+        if (needsconfirmation) {
+            validator.addValidator(confirmation_txt, validate_equals(confirmation_txt, DELETE_CONFIRMATION_TEXT, "confirmation"));
+        }
 
         function ondelete() {
-            if (!validator.validate()) {
+            if (needsconfirmation && !validator.validate()) {
                 return false;
             }
             try {
                 let loading_scene = new LoadingScene();
                 push_scene(loading_scene);
-                delete_req = delete_collection(user, password, collection, function (error1) {
+                delete_req = delete_action(user, password, item, function (error1) {
                     if (!is_current_scene(loading_scene)) {
                         return;
                     }
                     delete_req = null;
                     if (error1) {
-                        errorHandler.setError(error1);
                         pop_scene();
+                        errorHandler.setError(error1);
                     } else {
-                        collectionsCache.invalidate();
-                        pop_to_parent();
+                        pop_scene();
+                        if (on_success) {
+                            on_success();
+                        } else {
+                            collectionsCache.invalidate();
+                            pop_scene();
+                        }
                     }
                 });
             } catch (err) {
@@ -102,7 +123,7 @@ export class DeleteCollectionScene {
         this.show = function () {
             this.release();
             html_scene.classList.remove("hidden");
-            title_form.textContent = collection.displayname || collection.href;
+            title_form.textContent = item_title;
             delete_btn.onclick = ondelete;
             cancel_btn.onclick = oncancel;
             validator.validate();
