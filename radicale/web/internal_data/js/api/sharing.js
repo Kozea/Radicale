@@ -18,6 +18,7 @@
 
 import { ROOT_PATH, SERVER } from "../constants.js";
 import { CollectionType } from "../models/collection.js";
+import { to_error_message } from "./common.js";
 
 /**
  * @typedef {Object} SharingFeatures
@@ -79,9 +80,9 @@ function call_sharing_api(
             }
         } else {
             if (on_error) {
-                on_error(request.status + " " + request.statusText);
+                on_error(to_error_message(request));
             } else {
-                console.error(request.status + " " + request.statusText);
+                console.error(to_error_message(request));
             }
         }
     };
