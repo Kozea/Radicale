@@ -200,7 +200,6 @@ def _serve_traversable(
         os.path.splitext(traversable.name)[1].lower(), FALLBACK_MIMETYPE)
     headers = {
         "Content-Type": content_type,
-        "Content-Security-Policy": "default-src 'self'; object-src 'none'"
     }
     if isinstance(traversable, pathlib.Path):
         headers["Last-Modified"] = time.strftime(

@@ -431,6 +431,9 @@
 # Additional HTTP headers
 #Access-Control-Allow-Origin = *
 
+# Set CSP to disallow execution of unknown javascript
+# This may become the default in future versions, override if you need a different CSP.
+Content-Security-Policy = default-src 'self'; object-src 'none'
 
 [hook]
 

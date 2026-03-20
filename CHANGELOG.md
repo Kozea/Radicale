@@ -3,12 +3,19 @@
 ## 3.7.0.dev
 
 * Feature: collection sharing by map or token incl. management API and WebUI extension
+* Feature: share address book collection as birthday calendar
 * Add: [auth] oauth2: allow custom client_id and client_secret (optional)
 * Cleanup: deprecate config option 'ldap_use_ssl' for good
+* Cleanup: WebUI is now split into smaller javascript files
+* Cleanup: WebUI is now fit for strict content security policy
+* Cleanup: WebUI: Simplfied Caching and Navigation internally
+* Cleanup: WebUI: Unified error handling
+* Cleanup: Added integration test for verification of end-to-end behavior of WebUI
 * Performance: improve `path_to_filesystem()`
 * Performance: preload access rights from file
 * Add: [server] delay_on_error option
 * Add: [logging] limit_content option
+* Add: [headers] Content-Security-Policy is now set to be strict on new configs
 
 ## 3.6.1
 
