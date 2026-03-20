@@ -53,6 +53,8 @@ type = htpasswd
 htpasswd_filename = {user_path}
 [web]
 type = internal
+[headers]
+Content-Security-Policy = default-src 'self'; object-src 'none'
 [sharing]
 type = csv
 collection_by_map = true
