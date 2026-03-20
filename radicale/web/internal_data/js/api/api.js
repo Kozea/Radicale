@@ -22,7 +22,7 @@
 import { COLOR_RE, ROOT_PATH, SERVER } from "../constants.js";
 import { Collection, CollectionType } from "../models/collection.js";
 import { escape_xml } from "../utils/misc.js";
-
+import { to_error_message } from "./common.js";
 
 /**
  * Find the principal collection.
@@ -56,7 +56,7 @@ export function get_principal(user, password, callback) {
                 callback(null, "Internal error");
             }
         } else {
-            callback(null, request.status + " " + request.statusText);
+            callback(null, to_error_message(request));
         }
     };
     request.send('<?xml version="1.0" encoding="utf-8" ?>' +
@@ -163,7 +163,7 @@ export function get_collections(user, password, collection, callback) {
             });
             callback(collections, null);
         } else {
-            callback(null, request.status + " " + request.statusText);
+            callback(null, to_error_message(request));
         }
     };
     request.send('<?xml version="1.0" encoding="utf-8" ?>' +
@@ -210,7 +210,7 @@ export function upload_collection(user, password, collection_href, file, callbac
         if (200 <= request.status && request.status < 300) {
             callback(null);
         } else {
-            callback(request.status + " " + request.statusText);
+            callback(to_error_message(request));
         }
     };
     request.setRequestHeader("If-None-Match", "*");
@@ -235,7 +235,7 @@ export function delete_collection(user, password, collection, callback) {
         if (200 <= request.status && request.status < 300) {
             callback(null);
         } else {
-            callback(request.status + " " + request.statusText);
+            callback(to_error_message(request));
         }
     };
     request.send();
@@ -260,7 +260,7 @@ function create_edit_collection(user, password, collection, create, callback) {
         if (200 <= request.status && request.status < 300) {
             callback(null);
         } else {
-            callback(request.status + " " + request.statusText);
+            callback(to_error_message(request));
         }
     };
     let displayname = escape_xml(collection.displayname);
