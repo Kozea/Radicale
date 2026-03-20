@@ -1839,6 +1839,13 @@ An example to relax the same-origin policy:
 Access-Control-Allow-Origin = *
 ```
 
+An example to set CSP to disallow execution of unknown javascript:
+
+```ini
+Content-Security-Policy = default-src 'self'; object-src 'none'
+```
+
+
 #### [hook]
 
 ##### type
