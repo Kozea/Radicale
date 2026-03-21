@@ -266,7 +266,9 @@ class Sharing(sharing.BaseSharing):
                    "HiddenByOwner": HiddenByOwner,
                    "HiddenByUser": HiddenByUser,
                    "TimestampCreated": Timestamp,
-                   "TimestampUpdated": Timestamp}
+                   "TimestampUpdated": Timestamp,
+                   "Properties": Properties}
+
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/*/create: add row: %r", row)
             self._sharing_cache.append(row)
