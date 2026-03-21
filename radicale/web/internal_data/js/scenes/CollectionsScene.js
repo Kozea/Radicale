@@ -23,6 +23,7 @@ import { delete_collection } from "../api/api.js";
 import { SERVER } from "../constants.js";
 import { Collection, CollectionType } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
+import { ErrorHandler } from "../utils/error.js";
 import { bytesToHumanReadable } from "../utils/misc.js";
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
 import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
@@ -48,8 +49,10 @@ export class CollectionsScene {
         /** @type {HTMLElement} */ let new_btn = html_scene.querySelector("[data-name=new]");
         /** @type {HTMLElement} */ let upload_btn = html_scene.querySelector("[data-name=upload]");
         /** @type {HTMLElement} */ let incomingshares_btn = html_scene.querySelector("[data-name=incomingshares]");
+        /** @type {HTMLElement} */ let error_div = html_scene.querySelector("[data-name=collectionsscene_error]");
 
         /** @type {Array<HTMLElement>} */ let nodes = [];
+        let errorHandler = new ErrorHandler(error_div);
 
         function onnew() {
             try {
@@ -126,12 +129,17 @@ export class CollectionsScene {
         /**
          * @param {any[]} collections
          * @param {import("../api/sharing.js").Share[]} shares
+         * @param {boolean} clear_error
          */
-        function show_collections(collections, shares) {
+        function show_collections(collections, shares, clear_error) {
             /** @type {HTMLElement} */ let navBar = document.querySelector("#logoutview");
             let heightOfNavBar = navBar.offsetHeight + "px";
             html_scene.style.marginTop = heightOfNavBar;
             html_scene.style.height = "calc(100vh - " + heightOfNavBar + ")";
+
+            if (clear_error) {
+                errorHandler.clearError();
+            }
 
             // Clear old nodes
             nodes.forEach(function (node) {
@@ -223,14 +231,18 @@ export class CollectionsScene {
             });
         }
 
+        this.errorwrapper = function (/** @type {string} */ error) {
+            errorHandler.setError(error);
+            if (onerror) onerror(error);
+        };
 
         this.show = function () {
             html_scene.classList.remove("hidden");
             new_btn.onclick = onnew;
             upload_btn.onclick = onupload;
             incomingshares_btn.onclick = onincomingshares;
-            collectionsCache.getChildCollections(user, password, principal_collection, onerror, show_collections);
-            collectionsCache.getServerFeatures(user, password, null, maybe_enable_sharing_options);
+            collectionsCache.getChildCollections(user, password, principal_collection, this.errorwrapper, show_collections);
+            collectionsCache.getServerFeatures(user, password, this.errorwrapper, maybe_enable_sharing_options);
         };
         this.hide = function () {
             html_scene.classList.add("hidden");
