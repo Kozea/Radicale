@@ -549,8 +549,12 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 else:
                     profiler_active = True
 
-            status, headers, answer, xml_request = function(
-                environ, base_prefix, path, user, remote_host, remote_useragent)
+            try:
+                status, headers, answer, xml_request = function(
+                    environ, base_prefix, path, user, remote_host, remote_useragent)
+            except PermissionError as e:
+                logger.error("PermissionError: %s", e)
+                status, headers, answer, xml_request = httputils.INTERNAL_SERVER_ERROR
 
             # Profiling
             if self._profiling_per_request:
