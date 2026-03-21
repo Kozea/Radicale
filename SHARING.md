@@ -1,121 +1,29 @@
 
 # Collection Sharing
 
-Static collection sharing without permissions filter using soft-links (Unix-only) is supported since storage type `multifilesystem` was implemented, see (Wiki: Sharing Collections)[https://github.com/Kozea/Radicale/wiki/Sharing-Collections]
+Static collection sharing without permissions filter using soft-links (Unix-only) is supported since storage type `multifilesystem` was implemented, see [Wiki: Sharing Collections](https://github.com/Kozea/Radicale/wiki/Sharing-Collections)
 
-With _3.7.0_ major extension was implemented using internal mapping configuration stored in a database and a management API.
+With _3.7.0_ major extension was implemented
+ * added internal mapping with configuration stored in a database
+ * added management API
+ * WebUI extension using the management API
 
 ## Sharing Implementation
 
-Implemenation of sharing collections is done in case entry exists in sharing database by replacing provided data on request and adjust if required data in responses.
+Implemenation of sharing collections is done by using a database to lookup the URI and in case entry exists by mapping to target URI and replacing provided data on request and adjust if required data in response.
 
 Permissions are filtered by provided `Permissions`.
 
-### CxDAV requests
+## Sharing Configuration
 
-#### CxDav request "(DELETE|GET|HEAD|PUT)"
-
-  * Actions
-    * map
-  * Lookup by
-    * `path` (provided in request)
-    * `user` (authenticated)
-  * Replace
-   * `user` by `Owner`
-   * `path` by `PathMapped`
-  * Activate
-   * `permissions_filter` by `Permissions`
-
-#### CxDav request "REPORT"
-
-  * Actions
-    * map
-    * back-map response
-  * Lookup by
-    * `path` (provided in request)
-    * `user` (authenticated)
-  * Replace
-   * `user` by `Owner`
-   * `path` by `PathMapped`
-  * Activate
-   * `permissions_filter` by `Permissions`
-
-#### CxDav request "PROPFIND" without HTTP_DEPTH=1
-
-  * Actions
-    * map
-    * back-map response
-    * overwrite `Properties` if provided
-  * Lookup by
-    * `path` (provided in request)
-    * `user` (authenticated)
-  * Replace
-   * `user` by `Owner`
-   * `path` by `PathMapped`
-  * Overlay
-   * `Properties` if provided
-  * Activate
-   * `permissions_filter` by `Permissions`
-
-#### CxDav request "PROPFIND" with HTTP_DEPTH=1
-
-  * Actions
-    * extend list
-  * Lookup for active shares for `user` in sharing database
-  * Extend list if conditions are met
-   * `permissions_filter` by `Permissions`
-
-#### CxDav request "PROPPATCH"
-
-  * Actions
-    * map
-    * adjust properties of a collection
-  * Lookup by
-    * `path` (provided in request)
-    * `user` (authenticated)
-  * Replace
-   * `user` by `Owner`
-   * `path` by `PathMapped`
-  * Activate
-   * `permissions_filter` by `Permissions`
-  * Depending on `permissions_filter`, global options and `Permissions`
-    * adjust properties of collection
-    * adjust whitelisted properties in `Properties` for overlay (see OVERLAY_PROPERTIES_WHITELIST)
-
-#### CxDav request "(MKCALENDAR|MKCOL)"
-
-  * Action
-    * check for conflicts
-  * Lookup by
-    * `user` (authenticated)
-  * Verify for non-existence as `PathOrToken` in sharing database
-    * `path` (provided in request)
-
-#### CxDav request "(MOVE)"
-
-  * Action
-    * map source
-    * map destination
-  * Lookup by
-    * `path` (provided in request)
-    * `user` (authenticated)
-    * `to_path` (provided in request)
-    * `to_user` (same as `user`)
-  * Replace
-   * `user` by `Owner` (of `path`)
-   * `path` by `PathMapped` (of path)
-   * `to_user` by `Owner` (of `to_path`)
-   * `to_path` by `PathMapped` (of `to_path`)
-  * Activate
-   * `permissions_filter` by `Permissions` (of `to_path`)
-   * `to_permissions_filter` by `Permissions` (of `to_path`)
+New section `[sharing]` controls sharing configuration, see [DOCUMENTATION:Sharing](DOCUMENTATION.md#sharing) for details
 
 ## Sharing Configuration Store
 
 Types of supported sharing configuration:
 
- * csv (_>= 3.7.0_)
- * files (_>= 3.7.0_)
+ * *csv* (_>= 3.7.0_)
+ * *files* (_>= 3.7.0_)
 
 ### Sharing Configuration Entry Data
 
@@ -151,6 +59,107 @@ If given, properties are stored in JSON format in CSV.
 #### Files
 
 File-based configuration store is using encoded `PathOrToken` as filename for each config. File contains the data stored as "dict" in binary Python "pickle" format (same is also used for item cache files).
+
+## Sharing Request Handling
+
+### CxDAV requests
+
+#### CxDav request "(DELETE|GET|HEAD|PUT)"
+
+  * Actions
+    * map
+  * Lookup by
+    * `path` (provided in request)
+    * `user` (authenticated)
+  * Replace
+   * `path` by `PathMapped`
+   * `user` by `Owner`
+  * Activate
+   * `permissions_filter` by `Permissions`
+
+#### CxDav request "REPORT"
+
+  * Actions
+    * map
+    * back-map response
+  * Lookup by
+    * `path` (provided in request)
+    * `user` (authenticated)
+  * Replace
+   * `path` by `PathMapped`
+   * `user` by `Owner`
+  * Activate
+   * `permissions_filter` by `Permissions`
+
+#### CxDav request "PROPFIND" without HTTP_DEPTH=1
+
+  * Actions
+    * map
+    * back-map response
+    * overwrite `Properties` if provided
+  * Lookup by
+    * `path` (provided in request)
+    * `user` (authenticated)
+  * Replace
+   * `path` by `PathMapped`
+   * `user` by `Owner`
+  * Overlay
+   * `Properties` if provided
+  * Activate
+   * `permissions_filter` by `Permissions`
+
+#### CxDav request "PROPFIND" with HTTP_DEPTH=1
+
+  * Actions
+    * extend list
+  * Lookup for active shares for `user` in sharing database
+  * Extend list if conditions are met
+   * `permissions_filter` by `Permissions`
+
+#### CxDav request "PROPPATCH"
+
+  * Actions
+    * map
+    * adjust properties of a collection
+  * Lookup by
+    * `path` (provided in request)
+    * `user` (authenticated)
+  * Replace
+   * `path` by `PathMapped`
+   * `user` by `Owner`
+  * Activate
+   * `permissions_filter` by `Permissions`
+  * Depending on `permissions_filter`, global options and `Permissions`
+    * adjust properties of collection
+    * adjust whitelisted properties in `Properties` for overlay (see OVERLAY_PROPERTIES_WHITELIST)
+
+#### CxDav request "(MKCALENDAR|MKCOL)"
+
+  * Action
+    * check for conflicts
+  * Lookup by
+    * `user` (authenticated)
+  * Verify for non-existence as `PathOrToken` in sharing database
+    * `path` (provided in request)
+
+#### CxDav request "(MOVE)"
+
+  * Action
+    * map source
+    * map destination
+  * Lookup by
+    * `path` (provided in request)
+    * `user` (authenticated)
+    * `to_path` (provided in request)
+    * `to_user` (same as `user`)
+  * Replace
+   * `path` by `PathMapped` (of path)
+   * `user` by `Owner` (of `path`)
+   * `to_path` by `PathMapped` (of `to_path`)
+   * `to_user` by `Owner` (of `to_path`)
+  * Activate
+   * `permissions_filter` by `Permissions` (of `to_path`)
+   * `to_permissions_filter` by `Permissions` (of `to_path`)
 
 ## Sharing Access
 
@@ -579,7 +588,7 @@ Whitelisted ones are defined in `OVERLAY_PROPERTIES_WHITELIST` in `radicale/shar
 
 #### Requirements
 
-  * sharing / permit_properties_overlay = True
+  * `permit_properties_overlay = True`
 
 #### Test sequence
 

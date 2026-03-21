@@ -244,7 +244,8 @@ class Sharing(sharing.BaseSharing):
                "HiddenByOwner": HiddenByOwner,
                "HiddenByUser": HiddenByUser,
                "TimestampCreated": Timestamp,
-               "TimestampUpdated": Timestamp}
+               "TimestampUpdated": Timestamp,
+               "Properties": Properties}
 
         version = DB_VERSION
 

@@ -942,6 +942,7 @@ class TestSharingApiSanity(BaseTest):
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared
+            json_dict['Properties'] = {"D:displayname": "Test"}
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
@@ -962,6 +963,7 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['Content'][0]['HiddenByOwner'] is True
             assert answer_dict['Content'][0]['HiddenByUser'] is True
             assert answer_dict['Content'][0]['Permissions'] == "r"
+            assert answer_dict['Content'][0]['Properties'] == {"D:displayname": "Test"}
 
             logging.info("\n*** enable map by owner (json->json) -> 200")
             json_dict = {}
@@ -4288,6 +4290,7 @@ permissions: RrWw""")
             assert "DTSTART;VALUE=DATE:19700101" in answer
             assert "DTEND;VALUE=DATE:19700102" in answer
             assert "TRANSP:TRANSPARENT" in answer
+            assert "DESCRIPTION:BDAY=1970-01-01" in answer
 
             # verify report as user
             logging.info("\n*** REPORT collection user -> ok")

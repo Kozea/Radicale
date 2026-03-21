@@ -60,7 +60,7 @@ setup(
     license="GNU GPL v3",
     platforms="Any",
     packages=find_packages(
-        exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
+        exclude=["*.tests", "*.tests.*", "tests.*", "tests", "integ_tests"]),
     package_data={"radicale": [*web_files, "py.typed"]},
     entry_points={"console_scripts": ["radicale = radicale.__main__:run"]},
     install_requires=install_requires,
