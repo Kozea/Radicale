@@ -4288,6 +4288,7 @@ permissions: RrWw""")
             assert "DTSTART;VALUE=DATE:19700101" in answer
             assert "DTEND;VALUE=DATE:19700102" in answer
             assert "TRANSP:TRANSPARENT" in answer
+            assert "DESCRIPTION:BDAY=1970-01-01" in answer
 
             # verify report as user
             logging.info("\n*** REPORT collection user -> ok")
