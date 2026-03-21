@@ -537,6 +537,7 @@ class Item:
             pass
 
         bdayS = match[1] + match[2] + match[3]
+        bdaySdesc = match[1] + "-" + match[2] + "-" + match[3]
         bdayY = int(match[1])
         bdayM = int(match[2])
         bdayD = int(match[3])
@@ -593,6 +594,9 @@ class Item:
 
         # add transparency
         item_ics.vevent.add('transp').value = "TRANSPARENT"
+
+        # add description
+        item_ics.vevent.add('description').value = "BDAY=" + bdaySdesc
 
         href = self.href
         if href is not None:
