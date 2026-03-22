@@ -49,6 +49,8 @@ jobs:
           apt-get install -y git
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: Install Python dependencies
         run: |
           apt-get install -y tox rust-all cargo
