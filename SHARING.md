@@ -43,6 +43,8 @@ Types of supported sharing configuration:
  * `TimestampCreated`: unixtime of creation
  * `TimestampUpdated`: unixtime of last update
  * `Properties`: overlay properties (limited set whitelisted)
+ * `Conversion`: conversion method
+ * `Actions`: (reserved for future usage)
  
 `Enabled*`: owner AND user have to enable a share to become usable
 
