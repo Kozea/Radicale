@@ -34,7 +34,7 @@ from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("csv", "files", "none")
 
-DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Owner', 'User', 'Permissions', 'EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser', 'TimestampCreated', 'TimestampUpdated', 'Properties')
+DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Owner', 'User', 'Permissions', 'EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser', 'TimestampCreated', 'TimestampUpdated', 'Properties', 'Conversion', 'Actions')
 # ShareType:        <token|map>
 # PathOrToken:      <path|token> [PrimaryKey]
 # PathMapped:       <path>
@@ -48,6 +48,10 @@ DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Owner'
 # TimestampCreated: <unixtime> (when created)
 # TimestampUpdated: <unixtime> (last update)
 # Properties:       Overlay of collection properties in JSON
+# Conversion:       None|bday
+#                     bday: check VCARD(vcf) for BDAY and convert to reoccuring VEVENT(ics)
+# Actions:          Actions structure in JSON
+#                     (future reserved for e.g. "filter", "filter_pre", "filter_post" or anything else, implemented on request)
 
 DB_TYPES_V1: dict[str, type] = {
         "ShareType": str,
@@ -62,7 +66,9 @@ DB_TYPES_V1: dict[str, type] = {
         "HiddenByUser": bool,
         "TimestampCreated": int,
         "TimestampUpdated": int,
-        "Properties": dict
+        "Properties": dict,
+        "Conversion": str,
+        "Actions": dict,
 }
 
 DB_FIELDS_V1_USER_PERMITTED: Sequence[str] = ('EnabledByUser', 'HiddenByUser', 'Properties')
@@ -106,7 +112,11 @@ API_TYPES_V1: dict[str, type] = {
         "Permissions": str,
         "Enabled": bool,
         "Hidden": bool,
-        "Properties": dict}
+        "Properties": dict,
+        "Conversion": str,
+        "Actions": dict,
+}
+
 
 TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 
@@ -115,6 +125,8 @@ PATH_PATTERN: str = "([a-zA-Z0-9/.\\-]+)"  # TODO: extend or find better source
 USER_PATTERN: str = "([a-zA-Z0-9@]+)"  # TODO: extend or find better source
 
 OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname")
+
+CONVERSIONS_WHITELIST: Sequence[str] = ("bday")
 
 
 def load(configuration: "config.Configuration") -> "BaseSharing":
@@ -216,9 +228,11 @@ class BaseSharing:
                               PathMapped: Union[str, None] = None,
                               User: Union[str, None] = None,
                               EnabledByOwner: Union[bool, None] = None,
-                              EnabledByUser:  Union[bool, None] = None,
-                              HiddenByOwner:  Union[bool, None] = None,
-                              HiddenByUser:   Union[bool, None] = None) -> list[dict]:
+                              EnabledByUser: Union[bool, None] = None,
+                              HiddenByOwner: Union[bool, None] = None,
+                              HiddenByUser: Union[bool, None] = None,
+                              Conversion: Union[str, None] = None,
+                              ) -> list[dict]:
         """ retrieve sharing """
         return []
 
@@ -238,7 +252,10 @@ class BaseSharing:
                                 EnabledByOwner: bool = False, EnabledByUser: bool = False,
                                 HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
                                 Timestamp: int = 0,
-                                Properties: Union[dict, None] = None) -> dict:
+                                Properties: Union[dict, None] = None,
+                                Conversion: Union[str, None] = None,
+                                Actions: Union[dict, None] = None,
+                                ) -> dict:
         """ create sharing """
         return {"status": "not-implemented"}
 
@@ -254,7 +271,10 @@ class BaseSharing:
                                 HiddenByOwner:  Union[bool, None] = None,
                                 HiddenByUser:   Union[bool, None] = None,
                                 Timestamp: int = 0,
-                                Properties: Union[dict, None] = None) -> dict:
+                                Properties: Union[dict, None] = None,
+                                Conversion: Union[str, None] = None,
+                                Actions: Union[dict, None] = None,
+                                ) -> dict:
         """ update sharing """
         return {"status": "not-implemented"}
 
@@ -446,7 +466,7 @@ class BaseSharing:
                             ShareType="token",
                             PathOrToken=match[1])
                     if result is not None:
-                        logger.info("Sharing/%s: resolved %r->%r, user ->%r, permissions %r", "token", path, result['PathMapped'], result['Owner'], result['Permissions'])
+                        logger.info("Sharing/%s: resolved %r->%r, User=%r, Permissions=%r Conversion=%r", "token", path, result['PathMapped'], result['Owner'], result['Permissions'], result['Conversion'])
                     return result
             else:
                 if logger.isEnabledFor(logging.DEBUG):
@@ -487,7 +507,7 @@ class BaseSharing:
                         logger.debug("TRACE/sharing/map: not found")
                     return None
 
-            logger.info("Sharing/%s: resolved path %r->%r, user %r->%r, permissions %r", "map", path, result['PathMapped'], user, result['Owner'], result['Permissions'])
+            logger.info("Sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r", "map", path, result['PathMapped'], user, result['Owner'], result['Permissions'], result['Conversion'])
             return result
         else:
             if logger.isEnabledFor(logging.DEBUG):
@@ -524,7 +544,9 @@ class BaseSharing:
                         logger.debug("TRACE/sharing/bday: not found")
                     return None
 
-            logger.info("Sharing/%s: resolved path %r->%r, user %r->%r, permissions %r", "bday", path, result['PathMapped'], user, result['Owner'], result['Permissions'])
+            if not result['Conversion']:
+                result['Conversion'] = "bday"
+            logger.info("Sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r", "bday", path, result['PathMapped'], user, result['Owner'], result['Permissions'], result['Conversion'])
             return result
         else:
             if logger.isEnabledFor(logging.DEBUG):
@@ -738,12 +760,14 @@ class BaseSharing:
 
         # parameters default
         PathOrToken: Union[str, None] = None
-        PathMapped: Union[str, None] = None
-        User: Union[str, None] = None
+        PathMapped:  Union[str, None] = None
+        User:        Union[str, None] = None
         Permissions: Union[str, None] = None  # no permissions by default
-        Enabled: Union[bool, None] = None
-        Hidden:  Union[bool, None] = None
-        Properties:     Union[dict, None] = None
+        Enabled:     Union[bool, None] = None
+        Hidden:      Union[bool, None] = None
+        Properties:  Union[dict, None] = None
+        Conversion:  Union[str, None] = None
+        Actions:     Union[dict, None] = None  # reserved so far
 
         # parameters sanity check
         for key in request_data:
@@ -804,6 +828,16 @@ class BaseSharing:
                 if entry not in OVERLAY_PROPERTIES_WHITELIST:
                     return httputils.bad_request("Property not supported to overlay: %r" % entry)
             Properties = request_data['Properties']
+
+        if 'Conversion' in request_data:
+            # verify against whitelist
+            for entry in request_data['Conversion']:
+                if entry not in CONVERSIONS_WHITELIST:
+                    return httputils.bad_request("Conversion not supported: %r" % entry)
+            Conversion = request_data['Conversion']
+
+        if 'Actions' in request_data:
+            return httputils.bad_request("Actions currently not supported (reserved for future needs)")
 
         if 'Enabled' in request_data:
             Enabled = request_data['Enabled']
@@ -946,7 +980,10 @@ class BaseSharing:
                         HiddenByOwner=Hidden,
                         HiddenByUser=HiddenByUser,
                         Timestamp=Timestamp,
-                        Properties=Properties)
+                        Properties=Properties,
+                        Conversion=Conversion,
+                        Actions=Actions,
+                        )
 
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/" + api_info + ": result=%r", result)
@@ -992,6 +1029,7 @@ class BaseSharing:
                             return httputils.NOT_ALLOWED
 
                 elif ShareType == "bday":
+                    Conversion = "bday"
                     if self.permit_create_bday is False:
                         if "b" not in access.permissions:
                             logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explicit grant misses 'b')", PathMapped, user)
@@ -1030,7 +1068,10 @@ class BaseSharing:
                         HiddenByOwner=Hidden,
                         HiddenByUser=HiddenByUser,
                         Timestamp=Timestamp,
-                        Properties=Properties)
+                        Properties=Properties,
+                        Conversion=Conversion,
+                        Actions=Actions,
+                        )
 
             else:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)

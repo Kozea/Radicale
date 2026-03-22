@@ -131,8 +131,14 @@ class Sharing(sharing.BaseSharing):
             Permissions = row['Permissions']
             Hidden: bool = (row['HiddenByOwner'] or row['HiddenByUser'])
             Properties: Union[dict, None] = None
+            Conversion: Union[str, None] = None
+            Actions: Union[dict, None] = None
             if 'Properties' in row:
                 Properties = row['Properties']
+            if 'Conversion' in row:
+                Conversion = row['Conversion']
+            if 'Actions' in row:
+                Actions = row['Actions']
             return {
                     "mapped": True,
                     "ShareType": ShareType,
@@ -142,7 +148,10 @@ class Sharing(sharing.BaseSharing):
                     "User": UserShare,
                     "Hidden": Hidden,
                     "Permissions": Permissions,
-                    "Properties": Properties}
+                    "Properties": Properties,
+                    "Conversion": Conversion,
+                    "Actions": Actions,
+                    }
         return None
 
     def database_list_sharing(self,
@@ -154,7 +163,9 @@ class Sharing(sharing.BaseSharing):
                               EnabledByOwner: Union[bool, None] = None,
                               EnabledByUser: Union[bool, None] = None,
                               HiddenByOwner: Union[bool, None] = None,
-                              HiddenByUser: Union[bool, None] = None) -> list[dict]:
+                              HiddenByUser: Union[bool, None] = None,
+                              Conversion: Union[str, None] = None,
+                              ) -> list[dict]:
         """ retrieve sharing """
         row: dict
         index = 0
@@ -212,7 +223,10 @@ class Sharing(sharing.BaseSharing):
                                 EnabledByOwner: bool = False, EnabledByUser: bool = False,
                                 HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
                                 Timestamp: int = 0,
-                                Properties: Union[dict, None] = None) -> dict:
+                                Properties: Union[dict, None] = None,
+                                Conversion: Union[str, None] = None,
+                                Actions: Union[dict, None] = None,
+                                ) -> dict:
         """ create sharing """
         row: dict
 
@@ -267,7 +281,10 @@ class Sharing(sharing.BaseSharing):
                    "HiddenByUser": HiddenByUser,
                    "TimestampCreated": Timestamp,
                    "TimestampUpdated": Timestamp,
-                   "Properties": Properties}
+                   "Properties": Properties,
+                   "Conversion": Conversion,
+                   "Actions": Actions,
+                   }
 
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/*/create: add row: %r", row)
@@ -293,7 +310,10 @@ class Sharing(sharing.BaseSharing):
                                 HiddenByOwner:  Union[bool, None] = None,
                                 HiddenByUser:   Union[bool, None] = None,
                                 Timestamp: int = 0,
-                                Properties: Union[dict, None] = None) -> dict:
+                                Properties: Union[dict, None] = None,
+                                Conversion: Union[str, None] = None,
+                                Actions: Union[dict, None] = None,
+                                ) -> dict:
         """ update sharing """
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/%s/update: PathOrToken=%r OwnerOrUser=%r PathMapped=%r Properties=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s", ShareType, PathOrToken, OwnerOrUser, PathMapped, Properties, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser)
@@ -336,6 +356,10 @@ class Sharing(sharing.BaseSharing):
                     self._sharing_cache[index]["HiddenByUser"] = HiddenByUser
                 if Properties is not None:
                     self._sharing_cache[index]["Properties"] = Properties
+                if Conversion is not None:
+                    self._sharing_cache[index]["Conversion"] = Conversion
+                if Actions is not None:
+                    self._sharing_cache[index]["Actions"] = Actions
                 # update timestamp
                 self._sharing_cache[index]["TimestampUpdated"] = Timestamp
 

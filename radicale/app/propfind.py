@@ -124,7 +124,7 @@ def xml_propfind_response(
                     break
 
     share_bday_automap = False
-    if share and share['ShareType'] == "bday":
+    if share and share['Conversion'] == "bday":
         share_bday_automap = True
 
     if share:
@@ -546,7 +546,7 @@ class ApplicationPartPropfind(ApplicationBase):
             items_iter = itertools.chain([item], items_iter)
             for item, permission in list(self._collect_allowed_items(items_iter, user)):
                 if self._sharing._enabled and share:
-                    if share['ShareType'] == "bday" and not isinstance(item, storage.BaseCollection):
+                    if share['Conversion'] == "bday" and not isinstance(item, storage.BaseCollection):
                         if not item.convert_vcf_to_ics():
                             continue
                     allowed_items.append((item, permission, share['ShareType']))

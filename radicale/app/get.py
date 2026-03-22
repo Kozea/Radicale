@@ -31,7 +31,7 @@ from radicale.log import logger
 def propose_filename(collection: storage.BaseCollection, share: Union[dict, None] = None) -> str:
     """Propose a filename for a collection."""
     share_bday_automap = False
-    if share and share['ShareType'] == "bday":
+    if share and share['Conversion'] == "bday":
         share_bday_automap = True
     if collection.tag == "VADDRESSBOOK" and not share_bday_automap:
         fallback_title = "Address book"
@@ -112,7 +112,7 @@ class ApplicationPartGet(ApplicationBase):
                 if not item.tag:
                     return (httputils.NOT_ALLOWED if limited_access else
                             httputils.DIRECTORY_LISTING)
-                if share and share['ShareType'] == "bday":
+                if share and share['Conversion'] == "bday":
                     content_type = xmlutils.MIMETYPES["VCALENDAR"]
                 else:
                     content_type = xmlutils.MIMETYPES[item.tag]
@@ -130,7 +130,7 @@ class ApplicationPartGet(ApplicationBase):
                 "ETag": item.etag}
             if content_disposition:
                 headers["Content-Disposition"] = content_disposition
-            if isinstance(item, storage.BaseCollection) and self._sharing._enabled and share and share['ShareType'] == "bday":
+            if isinstance(item, storage.BaseCollection) and share and share['Conversion'] == "bday":
                 # convert VCF to ICS
                 answer = item.serialize(vcf_to_ics=True)
             else:
