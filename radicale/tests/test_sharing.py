@@ -4250,8 +4250,8 @@ permissions: RrWw""")
             _, headers, answer = self.request("GET", path_mapped, login="owner:ownerpw")
             assert "contact1" in answer
             assert "contact2" in answer
-            assert 'Content-Disposition' in headers
             # title from fallback
+            assert 'Content-Disposition' in headers
             assert 'Address%20book.vcf' in headers['Content-Disposition']
 
             # create map
