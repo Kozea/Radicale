@@ -153,11 +153,33 @@ def test_create_collection_works(
 
     create_collection(page, radicale_server)
 
-    # Verify that the new collection exists afterwards
-    # By default it's called "Untitled Collection" or similar?
-    # Let's check what create_collection does.
-    # It clicks .fabcontainer a[data-name="new"] and then #createcollectionscene button[data-name="submit"]
-
     expect(page.locator("article:not(.hidden)")).to_have_count(1)
-    # The title might be the HREF if no display name is set
     expect(page.locator("article:not(.hidden) .title")).to_be_visible()
+
+
+def test_download_works_with_remote_user(
+    context: BrowserContext, page: Page, radicale_server: str
+) -> None:
+    """Test downloading a collection with remote user."""
+    context.set_extra_http_headers({"X-Remote-User": "admin"})
+    page.goto(radicale_server)
+
+    # Wait for auto-login
+    expect(
+        page.locator(
+            '#logoutview span[data-name="user"]', has_text="admin's Collections"
+        )
+    ).to_be_visible()
+
+    create_collection(page, radicale_server)
+
+    # Start waiting for the download
+    with page.expect_download() as download_info:
+        # Perform the action that initiates download
+        page.hover("article:not(.hidden)")
+        page.click('article:not(.hidden) a[data-name="download"]')
+
+    download = download_info.value
+    assert download.suggested_filename.endswith(
+        ".ics"
+    ) or download.suggested_filename.endswith(".vcf")

@@ -33,6 +33,18 @@ export function to_error_message(request) {
 }
 
 /**
+ * @param {?string} user
+ * @param {?string} password
+ * @returns {?string}
+ */
+export function get_auth_header(user, password) {
+    if (user !== null && password !== null && password !== "") {
+        return 'Basic ' + btoa(user + ':' + encodeURIComponent(password));
+    }
+    return null;
+}
+
+/**
  * @param {string} method
  * @param {string} url
  * @param {?string} user
@@ -41,10 +53,10 @@ export function to_error_message(request) {
  */
 export function create_request(method, url, user, password) {
     let request = new XMLHttpRequest();
-    if (user !== null && password !== null) {
-        request.open(method, url, true, user, encodeURIComponent(password));
-    } else {
-        request.open(method, url, true);
+    request.open(method, url, true);
+    let auth = get_auth_header(user, password);
+    if (auth !== null) {
+        request.setRequestHeader('Authorization', auth);
     }
     return request;
 }
