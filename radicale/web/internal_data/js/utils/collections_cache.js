@@ -26,7 +26,7 @@ import { is_current_scene, pop_scene, push_scene } from "../scenes/scene_manager
 
 class CollectionsCache {
     constructor() {
-        this.child_collections = null;
+        /** @type {?Array<import("../models/collection.js").Collection>} */ this.child_collections = null;
         /** @type {?Array<import("../api/sharing.js").Share>} */ this.incoming_shares = null;
         this.server_features = null;
         /** @type {?XMLHttpRequest} */ this.collections_req = null;
@@ -52,11 +52,11 @@ class CollectionsCache {
      * @param {string} password
      * @param {import("../models/collection.js").Collection} principal_collection
      * @param {function(string):void} onerror
-     * @param {function(Array<import("../models/collection.js").Collection>, Array<import("../api/sharing.js").Share>):void} displayData
+     * @param {function(Array<import("../models/collection.js").Collection>, Array<import("../api/sharing.js").Share>, boolean):void} displayData
      */
     getChildCollections(user, password, principal_collection, onerror, displayData) {
         if (this.child_collections !== null && this.incoming_shares !== null) {
-            displayData(this.child_collections, this.incoming_shares);
+            displayData(this.child_collections, this.incoming_shares, false);
             return;
         }
 
@@ -73,11 +73,13 @@ class CollectionsCache {
             }
             if (error) {
                 onerror(error);
+                this.child_collections = [];
+                this.incoming_shares = [];
                 pop_scene();
             } else if (collections !== null && shares !== null) {
                 this.child_collections = collections;
                 this.incoming_shares = shares;
-                displayData(this.child_collections, this.incoming_shares);
+                displayData(this.child_collections, this.incoming_shares, true);
                 pop_scene();
             }
         };
