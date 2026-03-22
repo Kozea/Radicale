@@ -31,3 +31,20 @@ export function to_error_message(request) {
 
     return request.status + " " + request.statusText;
 }
+
+/**
+ * @param {string} method
+ * @param {string} url
+ * @param {?string} user
+ * @param {?string} password
+ * @returns {XMLHttpRequest}
+ */
+export function create_request(method, url, user, password) {
+    let request = new XMLHttpRequest();
+    if (user !== null && password !== null) {
+        request.open(method, url, true, user, encodeURIComponent(password));
+    } else {
+        request.open(method, url, true);
+    }
+    return request;
+}
