@@ -4568,6 +4568,7 @@ permissions: RrWw""")
                                     "enforce_properties_overlay": "True",
                                     "collection_by_bday": "True"},
                         "logging": {"request_header_on_debug": "False",
+                                    "response_header_on_debug": "True",
                                     "response_content_on_debug": "True",
                                     "request_content_on_debug": "True"},
                         "rights": {"type": "owner_only"}})
@@ -4693,3 +4694,12 @@ permissions: RrWw""")
             assert "D:sync-token" not in response
             assert "C:supported-calendar-component-set" in response
             assert "D:current-user-privilege-set" in response
+
+            # verify content as owner
+            logging.info("\n*** GET collection owner -> ok")
+            _, headers, answer = self.request("GET", path_shared, login="owner:ownerpw")
+            assert 'Content-Type' in headers
+            assert 'text/calendar' in headers['Content-Type']
+            # title from default
+            assert 'Content-Disposition' in headers
+            assert 'Calendar.ics' in headers['Content-Disposition']
