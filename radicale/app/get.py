@@ -20,6 +20,7 @@
 
 import posixpath
 from http import client
+from typing import Union
 from urllib.parse import quote
 
 from radicale import httputils, pathutils, storage, types, xmlutils
@@ -27,18 +28,26 @@ from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
 
 
-def propose_filename(collection: storage.BaseCollection) -> str:
+def propose_filename(collection: storage.BaseCollection, share: Union[dict, None] = None) -> str:
     """Propose a filename for a collection."""
-    if collection.tag == "VADDRESSBOOK":
+    share_bday_automap = False
+    if share and share['ShareType'] == "bday":
+        share_bday_automap = True
+    if collection.tag == "VADDRESSBOOK" and not share_bday_automap:
         fallback_title = "Address book"
         suffix = ".vcf"
-    elif collection.tag == "VCALENDAR":
+    elif collection.tag == "VCALENDAR" or share_bday_automap:
         fallback_title = "Calendar"
         suffix = ".ics"
     else:
         fallback_title = posixpath.basename(collection.path)
         suffix = ""
-    title = collection.get_meta("D:displayname") or fallback_title
+    if share and 'Properties' in share and share['Properties'] and "D:displayname" in share['Properties']:
+        title = share['Properties']["D:displayname"]
+    elif share_bday_automap:
+        title = fallback_title
+    else:
+        title = collection.get_meta("D:displayname") or fallback_title
     if title and not title.lower().endswith(suffix.lower()):
         title += suffix
     return title
@@ -77,6 +86,7 @@ class ApplicationPartGet(ApplicationBase):
             # Dispatch /.web path to web module
             return self._web.get(environ, base_prefix, path, user)
         permissions_filter = None
+        share = None
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
             share = self._sharing.sharing_collection_resolver(path, user)
@@ -102,9 +112,12 @@ class ApplicationPartGet(ApplicationBase):
                 if not item.tag:
                     return (httputils.NOT_ALLOWED if limited_access else
                             httputils.DIRECTORY_LISTING)
-                content_type = xmlutils.MIMETYPES[item.tag]
+                if share and share['ShareType'] == "bday":
+                    content_type = xmlutils.MIMETYPES["VCALENDAR"]
+                else:
+                    content_type = xmlutils.MIMETYPES[item.tag]
                 content_disposition = self._content_disposition_attachment(
-                    propose_filename(item))
+                    propose_filename(item, share))
             elif limited_access:
                 return httputils.NOT_ALLOWED
             else:

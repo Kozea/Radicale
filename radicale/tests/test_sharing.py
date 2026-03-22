@@ -903,6 +903,8 @@ class TestSharingApiSanity(BaseTest):
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
+                                    "response_header_on_debug": "True",
+                                    "response_content_on_debug": "True",
                                     "request_content_on_debug": "False"},
                         "rights": {"type": "owner_only"}})
 
@@ -983,6 +985,9 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** fetch collection (with credentials) as owner")
             _, headers, answer = self.request("GET", path_mapped, check=200, login="owner:ownerpw")
             assert "UID:event" in answer
+            assert 'Content-Disposition' in headers
+            # fallback title
+            assert 'Calendar.ics' in headers['Content-Disposition']
 
             logging.info("\n*** fetch item (with credentials) as owner")
             _, headers, answer = self.request("GET", path_mapped_item1, check=200, login="owner:ownerpw")
@@ -995,6 +1000,9 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self.request("GET", path_shared, check=200, login="user:userpw")
             assert "UID:event1" in answer
             assert "UID:event2" in answer
+            assert 'Content-Disposition' in headers
+            # title from Properties
+            assert 'Test.ics' in headers['Content-Disposition']
 
             logging.info("\n*** fetch item via map (with credentials) as user")
             _, headers, answer = self.request("GET", path_shared_item1, check=200, login="user:userpw")
@@ -4197,6 +4205,7 @@ permissions: RrWw""")
                                     "collection_by_bday": "True"},
                         "logging": {"request_header_on_debug": "False",
                                     "response_content_on_debug": "True",
+                                    "response_header_on_debug": "True",
                                     "request_content_on_debug": "True"},
                         "rights": {"type": "owner_only"}})
 
@@ -4238,9 +4247,12 @@ permissions: RrWw""")
 
             # execute GET as owner
             logging.info("\n*** GET VCF collection owner -> ok")
-            _, answer = self.get(path_mapped, login="owner:ownerpw")
+            _, headers, answer = self.request("GET", path_mapped, login="owner:ownerpw")
             assert "contact1" in answer
             assert "contact2" in answer
+            # title from fallback
+            assert 'Content-Disposition' in headers
+            assert 'Address%20book.vcf' in headers['Content-Disposition']
 
             # create map
             logging.info("\n*** create bday user/owner:r -> ok")
@@ -4251,6 +4263,7 @@ permissions: RrWw""")
             json_dict['Permissions'] = "r"
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
+            json_dict['Properties'] = {"D:displayname": "Test-BDAY"}
             _, headers, answer = self._sharing_api_json("bday", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
@@ -4283,7 +4296,7 @@ permissions: RrWw""")
 
             # verify content as user
             logging.info("\n*** GET collection user -> ok")
-            _, answer = self.get(path_shared_r, login="user:userpw")
+            _, headers, answer = self.request("GET", path_shared_r, login="user:userpw")
             assert "BEGIN:VCARD" not in answer
             assert "BEGIN:VCALENDAR" in answer
             assert "RRULE:FREQ=YEARLY" in answer
@@ -4291,6 +4304,12 @@ permissions: RrWw""")
             assert "DTEND;VALUE=DATE:19700102" in answer
             assert "TRANSP:TRANSPARENT" in answer
             assert "DESCRIPTION:BDAY=1970-01-01" in answer
+            # content type must be adjusted
+            assert 'Content-Type' in headers
+            assert 'text/calendar' in headers['Content-Type']
+            # title from Properties
+            assert 'Content-Disposition' in headers
+            assert 'Test-BDAY.ics' in headers['Content-Disposition']
 
             # verify report as user
             logging.info("\n*** REPORT collection user -> ok")
@@ -4549,6 +4568,7 @@ permissions: RrWw""")
                                     "enforce_properties_overlay": "True",
                                     "collection_by_bday": "True"},
                         "logging": {"request_header_on_debug": "False",
+                                    "response_header_on_debug": "True",
                                     "response_content_on_debug": "True",
                                     "request_content_on_debug": "True"},
                         "rights": {"type": "owner_only"}})
@@ -4674,3 +4694,12 @@ permissions: RrWw""")
             assert "D:sync-token" not in response
             assert "C:supported-calendar-component-set" in response
             assert "D:current-user-privilege-set" in response
+
+            # verify content as owner
+            logging.info("\n*** GET collection owner -> ok")
+            _, headers, answer = self.request("GET", path_shared, login="owner:ownerpw")
+            assert 'Content-Type' in headers
+            assert 'text/calendar' in headers['Content-Type']
+            # title from default
+            assert 'Content-Disposition' in headers
+            assert 'Calendar.ics' in headers['Content-Disposition']
