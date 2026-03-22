@@ -11,13 +11,13 @@ caldav.example.com {
 
     redir @get-root /.web/
 
-    # Do not auth on /.web/* 
-    @not-webui {
-        not path /.web/*
+    # Do not auth on /.web/* or /.token/*
+    @not-auth {
+        not path /.web/* /.token/*
     }
 
     # disable this in case authentication is handled by Radicale
-    basic_auth @not-webui {
+    basic_auth @not-auth {
         USER HASH
     }
 
