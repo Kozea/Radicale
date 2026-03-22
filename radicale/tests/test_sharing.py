@@ -71,7 +71,7 @@ class TestSharingApiSanity(BaseTest):
         _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept)
         return _, headers, answer
 
-    def _propfind_allprop(self, path: str, login) -> dict:
+    def _propfind_allprop(self, path: str, login: str = "") -> dict:
         propfind_allprop = get_file_content("allprop.xml")
         _, responses = self.propfind(path=path, data=propfind_allprop, login=login)
         logging.info("response: %r", responses)
