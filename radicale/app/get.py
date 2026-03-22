@@ -112,7 +112,7 @@ class ApplicationPartGet(ApplicationBase):
                 if not item.tag:
                     return (httputils.NOT_ALLOWED if limited_access else
                             httputils.DIRECTORY_LISTING)
-                if self._sharing._enabled and share and share['ShareType'] == "bday":
+                if share and share['ShareType'] == "bday":
                     content_type = xmlutils.MIMETYPES["VCALENDAR"]
                 else:
                     content_type = xmlutils.MIMETYPES[item.tag]
