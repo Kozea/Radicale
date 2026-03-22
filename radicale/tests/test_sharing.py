@@ -4702,3 +4702,104 @@ permissions: RrWw""")
             # title from default
             assert 'Content-Disposition' in headers
             assert 'Calendar.ics' in headers['Content-Disposition']
+
+    def test_sharing_api_bday_token(self) -> None:
+        """share-by-bday to a token tests."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_bday": True,
+                                    "permit_create_token": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_token": "True",
+                                    "collection_by_bday": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_header_on_debug": "True",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/adressbook-" + db_type + ".vcf/"
+            self.create_addressbook(path_mapped, login="owner:ownerpw")
+
+            contact = get_file_content("contact1.vcf")
+            path = path_mapped + "/contact1.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact2-with-bday.vcf")
+            path = path_mapped + "/contact2-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            contact = get_file_content("contact3-with-bday.vcf")
+            path = path_mapped + "/contact3-with-bday.vcf"
+            self.put(path, contact, login="owner:ownerpw")
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+<propname />
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int)
+            assert "CR:supported-address-data" in response
+
+            # execute GET as owner
+            logging.info("\n*** GET VCF collection owner -> ok")
+            _, answer = self.get(path_mapped, login="owner:ownerpw")
+            assert "contact1" in answer
+            assert "contact2" in answer
+            assert "NICKNAME-C3" in answer
+
+            # create map
+            logging.info("\n*** create token with bday conversion -> ok")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            json_dict['Conversion'] = "bday"
+            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert "Status" in answer_dict
+            assert "PathOrToken" in answer_dict
+            Token = answer_dict["PathOrToken"]
+            path_shared = Token
+
+            # execute GET with token
+            logging.info("\n*** GET bday with token")
+            _, answer = self.get(path_shared)
+            assert "VCARD" not in answer
+            assert "Test-FN-C3 (BDAY)" in answer
+            assert "Test-FN (BDAY)" in answer
+
+            # check PROPFIND item with token
+            logging.info("\n*** PROPFIND item with token -> calendar")
+            response = self._propfind_allprop(path_shared)
+            logging.debug("response: %r", response)
+            assert "CR:supported-address-data" not in response
+            assert "D:sync-token" not in response
+            assert "C:supported-calendar-component-set" in response
+            assert "D:current-user-privilege-set" in response
+
+            # verify content as owner
+            logging.info("\n*** GET collection owner -> ok")
+            _, headers, answer = self.request("GET", path_shared)
+            assert 'Content-Type' in headers
+            assert 'text/calendar' in headers['Content-Type']
+            # title from default
+            assert 'Content-Disposition' in headers
+            assert 'Calendar.ics' in headers['Content-Disposition']
