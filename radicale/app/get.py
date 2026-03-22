@@ -43,7 +43,9 @@ def propose_filename(collection: storage.BaseCollection, share: Union[dict, None
         fallback_title = posixpath.basename(collection.path)
         suffix = ""
     if share and 'Properties' in share and share['Properties'] and "D:displayname" in share['Properties']:
-        title = share['Properties']["D:displayname"] or fallback_title
+        title = share['Properties']["D:displayname"]
+    elif share_bday_automap:
+        title = fallback_title
     else:
         title = collection.get_meta("D:displayname") or fallback_title
     if title and not title.lower().endswith(suffix.lower()):
