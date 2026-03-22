@@ -703,7 +703,6 @@ class TestSharingApiSanity(BaseTest):
         form_array: Sequence[str]
         json_dict: dict
 
-        path_token = "/.token/"
         path_base = "/owner/calendar.ics/"
         path_base2 = "/owner/calendar2.ics/"
 
@@ -761,10 +760,10 @@ class TestSharingApiSanity(BaseTest):
             assert "Status='success'" in answer
 
             logging.info("\n*** fetch collection using invalid token (without credentials)")
-            _, headers, answer = self.request("GET", path_token + "v1/invalidtoken", check=401)
+            _, headers, answer = self.request("GET", "/.token/v1/invalidtoken/", check=401)
 
             logging.info("\n*** fetch collection using token (without credentials)")
-            _, headers, answer = self.request("GET", path_token + token, check=200)
+            _, headers, answer = self.request("GET", token, check=200)
             assert "UID:event" in answer
 
             logging.info("\n*** disable token (form->text)")
@@ -773,7 +772,7 @@ class TestSharingApiSanity(BaseTest):
             assert "Status='success'" in answer
 
             logging.info("\n*** fetch collection using disabled token (without credentials)")
-            _, headers, answer = self.request("GET", path_token + token, check=401)
+            _, headers, answer = self.request("GET", token, check=401)
 
             logging.info("\n*** enable token (form->text)")
             form_array = ["PathOrToken=" + token]
@@ -781,7 +780,7 @@ class TestSharingApiSanity(BaseTest):
             assert "Status='success'" in answer
 
             logging.info("\n*** fetch collection using token (without credentials)")
-            _, headers, answer = self.request("GET", path_token + token, check=200)
+            _, headers, answer = self.request("GET", token, check=200)
             assert "UID:event" in answer
 
             logging.info("\n*** delete token#2 (json->json)")
@@ -804,7 +803,7 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "delete", check=404, login="owner:ownerpw", form_array=form_array)
 
             logging.info("\n*** fetch collection using deleted token (without credentials)")
-            _, headers, answer = self.request("GET", path_token + token, check=401)
+            _, headers, answer = self.request("GET", token, check=401)
 
     def test_sharing_api_map_basic(self) -> None:
         """share-by-map API basic tests."""

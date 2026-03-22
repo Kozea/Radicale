@@ -108,7 +108,7 @@ API_TYPES_V1: dict[str, type] = {
         "Hidden": bool,
         "Properties": dict}
 
-TOKEN_PATTERN_V1: str = "(v1/[a-zA-Z0-9_=\\-]{44})"
+TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 
 PATH_PATTERN: str = "([a-zA-Z0-9/.\\-]+)"  # TODO: extend or find better source
 
@@ -432,7 +432,7 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/token: check path: %r", path)
             if path.startswith("/.token/"):
-                pattern = re.compile('^/\\.token/' + TOKEN_PATTERN_V1 + '$')
+                pattern = re.compile('^(/\\.token/' + TOKEN_PATTERN_V1 + '/)$')
                 match = pattern.match(path)
                 if not match:
                     if logger.isEnabledFor(logging.DEBUG):
@@ -753,7 +753,7 @@ class BaseSharing:
                         return httputils.bad_request("Invalid value for Permissions")
             elif key == "PathOrToken":
                 if ShareType == "token":
-                    if not re.search('^' + TOKEN_PATTERN_V1 + '$', request_data[key]):
+                    if not re.search('^/.token/' + TOKEN_PATTERN_V1 + '/$', request_data[key]):
                         logger.warning(api_info + ": unsupported " + key)
                         return httputils.bad_request("Invalid value for PathOrToken")
                 else:
@@ -928,8 +928,8 @@ class BaseSharing:
                 else:
                     User = user
 
-                # v1: create uuid token with 2x 32 bytes = 256 bit
-                token = "v1/" + str(base64.urlsafe_b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes), 'utf-8')
+                # v1: create uuid token with 2x 32 bytes = 256 bit with base64 encoding but replace '=' with '0' to avoid any additional encoding issues issues
+                token = "/.token/v1/" + str(base64.urlsafe_b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes), 'utf-8').replace('=', '0') + "/"
 
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/" + api_info + ": %r (Permissions=%r token=%r)", PathMapped, Permissions, token)

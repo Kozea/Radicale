@@ -323,14 +323,14 @@ Create a share by mapping a collection of an `Owner` to a token.
 curl -u user:$userpw -d "PathMapped=/user/testcalendar1/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/token/create
 ApiVersion=1
 Status='success'
-PathOrToken='v1/VQR7AmsVRi2ZlFj_JwGpFx-ES5Goyku-gP_YkLh1zUw='
+PathOrToken='/.token/v1/VQR7AmsVRi2ZlFj_JwGpFx-ES5Goyku-gP_YkLh1zUw0/'
 ```
 
   * json->json
 
 ```bash
 curl -u user:$userpw -H "Content-Type: application/json" -d '{ "PathMapped": "/user/testcalendar1/", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/token/create
-{"ApiVersion": 1, "Status": "success", "PathOrToken": "v1/aMsmGqOsRwSH-2-6tEa8EMr4RMYzMU7WvPmjnp5qDnw="}
+{"ApiVersion": 1, "Status": "success", "PathOrToken": "/.token/v1/aMsmGqOsRwSH-2-6tEa8EMr4RMYzMU7WvPmjnp5qDnw0/"}
 ```
 
 ###### API Hook "(map|bday)/create"
