@@ -152,6 +152,7 @@ class BaseTest:
                     prop_responses[human_tag] = (status_code, element)
             status = response.find(xmlutils.make_clark("D:status"))
             if status is not None:
+                logging.debug("test: prop_responses")
                 assert not prop_responses
                 assert status.text.startswith("HTTP/1.1 ")
                 status_code = int(status.text.split(" ")[1])

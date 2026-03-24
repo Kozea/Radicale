@@ -256,7 +256,6 @@ class TestSharingApiSanity(BaseTest):
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "collection_by_map": "True",
-                                    "collection_by_bday": "True",
                                     "collection_by_token": "True"},
                         "rights": {"type": "owner_only"}})
 
@@ -334,7 +333,6 @@ class TestSharingApiSanity(BaseTest):
             # path with valid API and hook and all enabled
             self.configure({"sharing": {
                                         "collection_by_map": "True",
-                                        "collection_by_bday": "True",
                                         "collection_by_token": "True"}
                             })
             for sharetype in sharing.SHARE_TYPES:
@@ -357,10 +355,8 @@ class TestSharingApiSanity(BaseTest):
             # When turning on permission to create
             self.configure({"sharing": {
                                         "collection_by_map": "True",
-                                        "collection_by_bday": "True",
                                         "collection_by_token": "True",
                                         "permit_create_map": "True",
-                                        "permit_create_bday": "True",
                                         "permit_create_token": "True"}
                             })
             logging.info("\n*** check API hook: info/all")
@@ -369,10 +365,9 @@ class TestSharingApiSanity(BaseTest):
             answer_dict = json.loads(answer)
             assert answer_dict['FeatureEnabledCollectionByMap'] is True, f'FeatureEnabledCollectionByMap {db_type}'
             assert answer_dict['FeatureEnabledCollectionByToken'] is True, f'FeatureEnabledCollectionByToken {db_type}'
-            assert answer_dict['FeatureEnabledCollectionByBday'] is True, f'FeatureEnabledCollectionByBday {db_type}'
             assert answer_dict['PermittedCreateCollectionByMap'] is True, f'PermittedCreateCollectionByMap {db_type}'
             assert answer_dict['PermittedCreateCollectionByToken'] is True, f'PermittedCreateCollectionByToken {db_type}'
-            assert answer_dict['PermittedCreateCollectionByBday'] is True, f'PermittedCreateCollectionByBday {db_type}'
+            assert answer_dict['SupportedConversions'] == ["bday", "none"]
 
     def test_sharing_api_list_with_auth(self) -> None:
         """POST/list with authentication."""
@@ -4191,17 +4186,17 @@ permissions: RrWw""")
             assert 'ICAL:calendar-color' not in answer_dict['Content'][0]['Properties']
             assert 'C:calendar-description' not in answer_dict['Content'][0]['Properties']
 
-    def test_sharing_api_bday_basic(self) -> None:
-        """share-by-bday basic tests."""
+    def test_sharing_api_map_vcf_bday_basic(self) -> None:
+        """share-by-map with conversion=bday basic tests."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
-                                    "permit_create_bday": True,
+                                    "permit_create_map": True,
                                     "permit_properties_overlay": "True",
                                     "enforce_properties_overlay": "True",
-                                    "collection_by_bday": "True"},
+                                    "collection_by_map": "True"},
                         "logging": {"request_header_on_debug": "False",
                                     "response_content_on_debug": "True",
                                     "response_header_on_debug": "True",
@@ -4253,27 +4248,40 @@ permissions: RrWw""")
             assert 'Content-Disposition' in headers
             assert 'Address%20book.vcf' in headers['Content-Disposition']
 
-            # create map
-            logging.info("\n*** create bday user/owner:r -> ok")
+            # create map with unsupported permissions
+            logging.info("\n*** create map(bday) user/owner:r -> fail")
             json_dict = {}
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_r
-            json_dict['Permissions'] = "r"
+            json_dict['Conversion'] = "bday"
+            json_dict['Permissions'] = "rw"
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
             json_dict['Properties'] = {"D:displayname": "Test-BDAY"}
-            _, headers, answer = self._sharing_api_json("bday", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "create", check=405, login="owner:ownerpw", json_dict=json_dict)
+
+            # create map
+            logging.info("\n*** create map(bday) user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Conversion'] = "bday"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            json_dict['Properties'] = {"D:displayname": "Test-BDAY"}
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
 
             # enable map by user
-            logging.info("\n*** enable bday by user")
+            logging.info("\n*** enable map(bday) by user")
             json_dict = {}
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_r
-            _, headers, answer = self._sharing_api_json("bday", "enable", check=200, login="user:userpw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
             # check PROPFIND item as user
             logging.info("\n*** PROPFIND item as user -> calendar")
@@ -4383,19 +4391,17 @@ permissions: RrWw""")
             status, prop = response["D:getcontenttype"]
             assert "text/calendar" in str(prop.text)
 
-    def test_sharing_api_bday_complex(self) -> None:
-        """share-by-bday complex tests."""
+    def test_sharing_api_map_vcf_bday_complex(self) -> None:
+        """share-by-map with conversion=bday complex tests."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
-                                    "permit_create_bday": True,
                                     "permit_create_map": True,
                                     "permit_properties_overlay": "True",
                                     "enforce_properties_overlay": "True",
-                                    "collection_by_map": "True",
-                                    "collection_by_bday": "True"},
+                                    "collection_by_map": "True"},
                         "logging": {"request_header_on_debug": "False",
                                     "response_content_on_debug": "True",
                                     "request_content_on_debug": "True"},
@@ -4446,33 +4452,33 @@ permissions: RrWw""")
             assert "contact2" in answer
 
             # create bday
-            logging.info("\n*** create bday user/owner:r -> ok")
+            logging.info("\n*** create map(bday) user/owner:r -> ok")
             json_dict = {}
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_bday
-            json_dict['Permissions'] = "r"
+            json_dict['Conversion'] = "bday"
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
-            _, headers, answer = self._sharing_api_json("bday", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
 
             # enable bday by user
-            logging.info("\n*** enable bday by user")
+            logging.info("\n*** enable map(bday) by user")
             json_dict = {}
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_bday
-            _, headers, answer = self._sharing_api_json("bday", "enable", check=200, login="user:userpw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
             # unhide bday by user
-            logging.info("\n*** unhide bday by user")
+            logging.info("\n*** unhide map(bday) by user")
             json_dict = {}
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_bday
-            _, headers, answer = self._sharing_api_json("bday", "unhide", check=200, login="user:userpw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "unhide", check=200, login="user:userpw", json_dict=json_dict)
 
             # create map
             logging.info("\n*** create map user/owner:r -> ok")
@@ -4521,7 +4527,7 @@ permissions: RrWw""")
     <getcontentlength />
   </prop>
 </propfind>""", login="user:userpw", HTTP_DEPTH="1")
-            # logging.debug("responses: %r", responses)
+            logging.debug("responses: %r", responses)
             response = responses[path_shared_map]
             assert not isinstance(response, int)
             logging.debug("response %r: %r", path_shared_map, response)
@@ -4555,17 +4561,17 @@ permissions: RrWw""")
             status, prop = response["RADICALE:getcontentcount"]
             assert int(str(prop.text)) == 2
 
-    def test_sharing_api_bday_self(self) -> None:
-        """share-by-bday to self tests."""
+    def test_sharing_api_map_vcf_bday_self(self) -> None:
+        """share-by-map with conversion=bday to self tests."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
-                                    "permit_create_bday": True,
+                                    "permit_create_map": True,
                                     "permit_properties_overlay": "True",
                                     "enforce_properties_overlay": "True",
-                                    "collection_by_bday": "True"},
+                                    "collection_by_map": "True"},
                         "logging": {"request_header_on_debug": "False",
                                     "response_header_on_debug": "True",
                                     "response_content_on_debug": "True",
@@ -4623,9 +4629,10 @@ permissions: RrWw""")
             json_dict['User'] = "owner"
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared
+            json_dict['Conversion'] = "bday"
             json_dict['Enabled'] = False
             json_dict['Hidden'] = True
-            _, headers, answer = self._sharing_api_json("bday", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
 
             # check PROPFIND item as owner
             logging.info("\n*** PROPFIND all as owner")
@@ -4658,7 +4665,7 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_shared
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
-            _, headers, answer = self._sharing_api_json("bday", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
 
             # check PROPFIND item as owner
             logging.info("\n*** PROPFIND all as owner")
@@ -4703,7 +4710,7 @@ permissions: RrWw""")
             assert 'Content-Disposition' in headers
             assert 'Calendar.ics' in headers['Content-Disposition']
 
-    def test_sharing_api_bday_token(self) -> None:
+    def test_sharing_api_token_vcf_bday(self) -> None:
         """share-by-bday to a token tests."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
@@ -4803,3 +4810,54 @@ permissions: RrWw""")
             # title from default
             assert 'Content-Disposition' in headers
             assert 'Calendar.ics' in headers['Content-Disposition']
+
+            # create map
+            logging.info("\n*** create token with bday conversion but unsupported permissions -> fail")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['Enabled'] = True
+            json_dict['Permissions'] = "rw"
+            json_dict['Hidden'] = False
+            json_dict['Conversion'] = "bday"
+            _, headers, answer = self._sharing_api_json("token", "create", check=405, login="owner:ownerpw", json_dict=json_dict)
+
+    def test_sharing_api_token_ics_bday(self) -> None:
+        """share-by-token ics with bday conversion (has to fail)."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_bday": True,
+                                    "permit_create_token": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_token": "True",
+                                    "collection_by_bday": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_header_on_debug": "True",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/calendar-" + db_type + ".ics/"
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+            # create map
+            logging.info("\n*** create token of calendar with bday conversion -> fail")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            json_dict['Conversion'] = "bday"
+            _, headers, answer = self._sharing_api_json("token", "create", check=405, login="owner:ownerpw", json_dict=json_dict)
