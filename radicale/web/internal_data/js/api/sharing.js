@@ -18,7 +18,7 @@
 
 import { ROOT_PATH, SERVER } from "../constants.js";
 import { CollectionType } from "../models/collection.js";
-import { to_error_message } from "./common.js";
+import { create_request, to_error_message } from "./common.js";
 
 /**
  * @typedef {Object} SharingFeatures
@@ -56,13 +56,11 @@ function call_sharing_api(
     on_not_found = null,
     on_error = null,
 ) {
-    let request = new XMLHttpRequest();
-    request.open(
+    let request = create_request(
         "POST",
         SERVER + ROOT_PATH + ".sharing/v1/" + path,
-        true,
         user,
-        encodeURIComponent(password),
+        password,
     );
     request.onreadystatechange = function () {
         if (request.readyState !== 4) {

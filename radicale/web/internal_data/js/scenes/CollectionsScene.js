@@ -20,6 +20,7 @@
  */
 
 import { delete_collection } from "../api/api.js";
+import { get_auth_header } from "../api/common.js";
 import { SERVER } from "../constants.js";
 import { Collection, CollectionType } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
@@ -219,6 +220,30 @@ export class CollectionsScene {
                 let href = SERVER + collection.href;
                 url_form.value = href;
                 download_btn.href = href;
+                download_btn.onclick = function (event) {
+                    event.preventDefault();
+                    let auth = get_auth_header(user, password);
+                    let headers = auth ? { 'Authorization': auth } : {};
+                    fetch(href, {
+                        headers: headers
+                    }).then(function (response) {
+                        if (response.ok) {
+                            return response.blob();
+                        }
+                        throw new Error("Download failed: " + response.statusText);
+                    }).then(function (blob) {
+                        let url = window.URL.createObjectURL(blob);
+                        let a = document.createElement("a");
+                        a.href = url;
+                        a.download = (collection.displayname || collection.href).replace(/\/+$/, "") + (collection.type === CollectionType.ADDRESSBOOK ? ".vcf" : ".ics");
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    })["catch"](function (error) {
+                        errorHandler.setError(error.message);
+                    });
+                };
                 if (collection.type == CollectionType.WEBCAL) {
                     download_btn.parentElement.classList.add("hidden");
                 }

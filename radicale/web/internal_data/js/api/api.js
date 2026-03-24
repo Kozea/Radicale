@@ -22,7 +22,7 @@
 import { COLOR_RE, ROOT_PATH, SERVER } from "../constants.js";
 import { Collection, CollectionType } from "../models/collection.js";
 import { escape_xml } from "../utils/misc.js";
-import { to_error_message } from "./common.js";
+import { create_request, to_error_message } from "./common.js";
 
 /**
  * Find the principal collection.
@@ -32,8 +32,7 @@ import { to_error_message } from "./common.js";
  * @return {XMLHttpRequest}
  */
 export function get_principal(user, password, callback) {
-    let request = new XMLHttpRequest();
-    request.open("PROPFIND", SERVER + ROOT_PATH, true, user, encodeURIComponent(password));
+    let request = create_request("PROPFIND", SERVER + ROOT_PATH, user, password);
     request.onreadystatechange = function () {
         if (request.readyState !== 4) {
             return;
@@ -78,8 +77,7 @@ export function get_principal(user, password, callback) {
  * @return {XMLHttpRequest}
  */
 export function get_collections(user, password, collection, callback) {
-    let request = new XMLHttpRequest();
-    request.open("PROPFIND", SERVER + collection.href, true, user, encodeURIComponent(password));
+    let request = create_request("PROPFIND", SERVER + collection.href, user, password);
     request.setRequestHeader("depth", "1");
     request.onreadystatechange = function () {
         if (request.readyState !== 4) {
@@ -201,8 +199,7 @@ export function get_collections(user, password, collection, callback) {
  * @return {XMLHttpRequest}
  */
 export function upload_collection(user, password, collection_href, file, callback) {
-    let request = new XMLHttpRequest();
-    request.open("PUT", SERVER + collection_href, true, user, encodeURIComponent(password));
+    let request = create_request("PUT", SERVER + collection_href, user, password);
     request.onreadystatechange = function () {
         if (request.readyState !== 4) {
             return;
@@ -226,8 +223,7 @@ export function upload_collection(user, password, collection_href, file, callbac
  * @return {XMLHttpRequest}
  */
 export function delete_collection(user, password, collection, callback) {
-    let request = new XMLHttpRequest();
-    request.open("DELETE", SERVER + collection.href, true, user, encodeURIComponent(password));
+    let request = create_request("DELETE", SERVER + collection.href, user, password);
     request.onreadystatechange = function () {
         if (request.readyState !== 4) {
             return;
@@ -251,8 +247,7 @@ export function delete_collection(user, password, collection, callback) {
  * @return {XMLHttpRequest}
  */
 function create_edit_collection(user, password, collection, create, callback) {
-    let request = new XMLHttpRequest();
-    request.open(create ? "MKCOL" : "PROPPATCH", SERVER + collection.href, true, user, encodeURIComponent(password));
+    let request = create_request(create ? "MKCOL" : "PROPPATCH", SERVER + collection.href, user, password);
     request.onreadystatechange = function () {
         if (request.readyState !== 4) {
             return;

@@ -20,6 +20,7 @@
  */
 
 import { get_principal } from "../api/api.js";
+import { ROOT_PATH, SERVER } from "../constants.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_non_empty } from "../utils/form_validator.js";
@@ -57,6 +58,47 @@ export class LoginScene {
             password_form.value = "";
         }
 
+        /**
+         * @param {string} p_user
+         * @param {string} p_password
+         */
+        function perform_login(p_user, p_password) {
+            user = p_user;
+            // setup logout
+            logout_view.classList.remove("hidden");
+            if (p_password === null) {
+                logout_btn.classList.add("hidden");
+            } else {
+                logout_btn.classList.remove("hidden");
+            }
+            logout_btn.onclick = onlogout;
+            refresh_btn.onclick = refresh;
+            logout_user_form.textContent = user + "'s Collections";
+            // Fetch principal
+            let loading_scene = new LoadingScene();
+            push_scene(loading_scene);
+            principal_req = get_principal(user, p_password, function (principal_collection, error1) {
+                if (!is_current_scene(loading_scene)) {
+                    return;
+                }
+                principal_req = null;
+                if (error1) {
+                    errorHandler.setError(error1);
+                    pop_scene();
+                } else {
+                    // show collections
+                    let saved_user = user;
+                    user = "";
+                    let collections_scene = new CollectionsScene(
+                        saved_user, p_password, principal_collection, function (error1) {
+                            errorHandler.setError(error1);
+                            user = saved_user;
+                        });
+                    replace_scene(collections_scene);
+                }
+            });
+        }
+
         function onlogin() {
             try {
                 collectionsCache.invalidate();
@@ -65,34 +107,7 @@ export class LoginScene {
                 if (!validator.validate()) {
                     return false;
                 }
-                // setup logout
-                logout_view.classList.remove("hidden");
-                logout_btn.onclick = onlogout;
-                refresh_btn.onclick = refresh;
-                logout_user_form.textContent = user + "'s Collections";
-                // Fetch principal
-                let loading_scene = new LoadingScene();
-                push_scene(loading_scene);
-                principal_req = get_principal(user, password, function (principal_collection, error1) {
-                    if (!is_current_scene(loading_scene)) {
-                        return;
-                    }
-                    principal_req = null;
-                    if (error1) {
-                        errorHandler.setError(error1);
-                        pop_scene();
-                    } else {
-                        // show collections
-                        let saved_user = user;
-                        user = "";
-                        let collections_scene = new CollectionsScene(
-                            saved_user, password, principal_collection, function (error1) {
-                                errorHandler.setError(error1);
-                                user = saved_user;
-                            });
-                        replace_scene(collections_scene);
-                    }
-                });
+                perform_login(user, password);
             } catch (err) {
                 console.error(err);
             }
@@ -132,6 +147,32 @@ export class LoginScene {
             form.onsubmit = onlogin;
             html_scene.classList.remove("hidden");
             user_form.focus();
+
+            // Probe for existing authentication (e.g. X-Remote-User)
+            // Use fetch with credentials: 'omit' to avoid browser login prompt on 401
+            if (window.fetch) {
+                fetch(SERVER + ROOT_PATH, {
+                    method: 'PROPFIND',
+                    headers: { 'Depth': '0' },
+                    credentials: 'omit'
+                }).then(function (response) {
+                    if (response.ok) {
+                        // Authenticated! Now it's safe to call get_principal
+                        get_principal(null, null, function (principal_collection, error) {
+                            if (!error && principal_collection) {
+                                let authenticated_user = principal_collection.displayname;
+                                if (!authenticated_user) {
+                                    let href = principal_collection.href.replace(/\/+$/, "");
+                                    authenticated_user = href.substring(href.lastIndexOf("/") + 1);
+                                }
+                                perform_login(authenticated_user, null);
+                            }
+                        });
+                    }
+                })["catch"](function () {
+                    // Ignore error: we are not authenticated or something else went wrong
+                });
+            }
         };
         this.hide = function () {
             read_form();
