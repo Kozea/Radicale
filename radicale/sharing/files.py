@@ -142,6 +142,8 @@ class Sharing(sharing.BaseSharing):
                     "Owner": Owner,
                     "User": UserShare,
                     "Hidden": Hidden,
+                    "EnabledByOwner": row['EnabledByOwner'],
+                    "EnabledByUser": row['EnabledByUser'],
                     "Permissions": Permissions,
                     "Properties": Properties,
                     "Conversion": Conversion,
@@ -166,7 +168,7 @@ class Sharing(sharing.BaseSharing):
         result = []
 
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/sharing/list/called: ShareType=%r OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser)
+            logger.debug("TRACE/sharing/list/called: ShareType=%r OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s Conversion=%r", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser, Conversion)
 
         for _ShareType in sharing.SHARE_TYPES_V1:
             if ShareType is not None and _ShareType != ShareType:
@@ -217,6 +219,8 @@ class Sharing(sharing.BaseSharing):
                         pass
                     elif HiddenByUser is not None and row['HiddenByUser'] != HiddenByUser:
                         pass
+                    elif Conversion is not None and row['Conversion'] != Conversion:
+                        pass
                     else:
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.debug("TRACE/sharing/list/row: add: %r", row)
@@ -227,13 +231,13 @@ class Sharing(sharing.BaseSharing):
     def database_create_sharing(self,
                                 ShareType: str,
                                 PathOrToken: str, PathMapped: str,
+                                Conversion: str,
                                 Owner: str, User: str,
                                 Permissions: str = "r",
                                 EnabledByOwner: bool = False, EnabledByUser: bool = False,
                                 HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
                                 Timestamp: int = 0,
                                 Properties: Union[dict, None] = None,
-                                Conversion: Union[str, None] = None,
                                 Actions: Union[dict, None] = None,
                                 ) -> dict:
         """ create sharing """
