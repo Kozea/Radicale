@@ -750,9 +750,9 @@ def xml_item_response(base_prefix: str, href: str,
     if share:
         # backmap
         if href_element.text.startswith(share['PathMapped']):
-            href_element.text = share['PathOrToken'] + href_element.text.removeprefix(share['PathMapped'])
-        if share_bday_automap:
-            href_element.text = href_element.text.rstrip(".vcf") + ".ics"
+            href_element.text = str(share['PathOrToken']) + href_element.text.removeprefix(share['PathMapped'])
+        if share_bday_automap and href_element.text.endswith(".vcf"):
+            href_element.text = href_element.text.removesuffix(".vcf") + ".ics"
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/REPORT/xml_report: href=%r (backmapped)", href_element.text)
     response.append(href_element)
@@ -798,10 +798,10 @@ def retrieve_items(
             if share:
                 # map back to owner
                 if hreference.startswith(share['PathOrToken']):
-                    hreference = share['PathMapped'] + hreference.removeprefix(share['PathOrToken'])
+                    hreference = str(share['PathMapped']) + hreference.removeprefix(share['PathOrToken'])
                 if share['Conversion'] == "bday":
-                    if not hreference.endswith('/'):
-                        hreference = hreference.rstrip(".ics") + ".vcf"
+                    if hreference.endswith(".ics"):
+                        hreference = hreference.removesuffix(".ics") + ".vcf"
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/REPORT/xml_report: hreference=%r (backmapped)", hreference)
             try:

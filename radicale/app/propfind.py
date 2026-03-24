@@ -130,7 +130,7 @@ def xml_propfind_response(
     if share:
         # backmap
         if uri.startswith(share['PathMapped']):
-            uri = share['PathOrToken'] + uri.removeprefix(share['PathMapped'])
+            uri = str(share['PathOrToken']) + uri.removeprefix(share['PathMapped'])
         if share_bday_automap and not uri.endswith("/"):
             uri = uri.rstrip(".vcf") + ".ics"
 
@@ -219,9 +219,9 @@ def xml_propfind_response(
             if share:
                 # backmap
                 if child_element.text.startswith(share['PathMapped']):
-                    child_element.text = share['PathOrToken'] + child_element.text.removeprefix(share['PathMapped'])
-                if share_bday_automap:
-                    child_element.text = child_element.text.rstrip(".vcf") + ".ics"
+                    child_element.text = str(share['PathOrToken']) + child_element.text.removeprefix(share['PathMapped'])
+                if share_bday_automap and child_element.text.endswith(".vcf"):
+                    child_element.text = child_element.text.removesuffix(".vcf") + ".ics"
             element.append(child_element)
         elif tag == xmlutils.make_clark("C:supported-calendar-component-set"):
             human_tag = xmlutils.make_human_tag(tag)
@@ -262,8 +262,8 @@ def xml_propfind_response(
                     # backmap
                     child_element.text = xmlutils.make_href(
                         base_prefix, "/%s/" % share['User'])
-                    if share_bday_automap:
-                        child_element.text = child_element.text.rstrip(".vcf") + ".ics"
+                    if share_bday_automap and child_element.text.endswith(".vcf"):
+                        child_element.text = child_element.text.removesuffix(".vcf") + ".ics"
                 else:
                     child_element.text = xmlutils.make_href(
                         base_prefix, "/%s/" % user)
