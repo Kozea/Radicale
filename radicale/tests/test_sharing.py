@@ -49,31 +49,39 @@ class TestSharingApiSanity(BaseTest):
             f.write(htpasswd_content)
 
     # Helper functions
-    def _sharing_api(self, sharing_type: str, action: str, check: int, login: Union[str, None], data: str, content_type: str, accept: Union[str, None]) -> Tuple[int, Dict[str, str], str]:
+    def _sharing_api(self, sharing_type: str, action: str, check: int, login: Union[str, None], data: str, content_type: str, accept: Union[str, None], prefix: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
         path_base = "/.sharing/v1/" + sharing_type + "/"
-        _, headers, answer = self.request("POST", path_base + action, check=check, login=login, data=data, content_type=content_type, accept=accept)
+        if prefix is not None:
+            path_base = prefix + path_base
+            _, headers, answer = self.request("POST", path_base + action, check=check, login=login, data=data, content_type=content_type, accept=accept, x_forwarded_for="127.0.0.2")
+        else:
+            _, headers, answer = self.request("POST", path_base + action, check=check, login=login, data=data, content_type=content_type, accept=accept)
         logging.info("received answer:\n%s", "\n".join(answer.splitlines()))
         return _, headers, answer
 
-    def _sharing_api_form(self, sharing_type: str, action: str, check: int, login: Union[str, None], form_array: Sequence[str], accept: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
+    def _sharing_api_form(self, sharing_type: str, action: str, check: int, login: Union[str, None], form_array: Sequence[str], accept: Union[str, None] = None, prefix: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
         data = "&".join(form_array)
         content_type = "application/x-www-form-urlencoded"
         if accept is None:
             accept = "text/plain"
-        _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept)
+        _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept, prefix=prefix)
         return _, headers, answer
 
-    def _sharing_api_json(self, sharing_type: str, action: str, check: int, login: Union[str, None], json_dict: dict, accept: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
+    def _sharing_api_json(self, sharing_type: str, action: str, check: int, login: Union[str, None], json_dict: dict, accept: Union[str, None] = None, prefix: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
         data = json.dumps(json_dict)
         content_type = "application/json"
         if accept is None:
             accept = "application/json"
-        _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept)
+        _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept, prefix=prefix)
         return _, headers, answer
 
-    def _propfind_allprop(self, path: str, login: str = "") -> dict:
+    def _propfind_allprop(self, path: str, login: str = "", prefix: Union[str, None] = None) -> dict:
         propfind_allprop = get_file_content("allprop.xml")
-        _, responses = self.propfind(path=path, data=propfind_allprop, login=login)
+        if prefix is not None:
+            path = prefix + path
+            _, responses = self.propfind(path=path, data=propfind_allprop, login=login, x_forwarded_for="127.0.0.2")
+        else:
+            _, responses = self.propfind(path=path, data=propfind_allprop, login=login)
         logging.info("response: %r", responses)
         response = responses[path]
         assert not isinstance(response, int)
@@ -678,6 +686,69 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** delete collection*")
             self.delete(path_base1, login="owner:ownerpw")
             self.delete(path_base2, login="owner:ownerpw")
+
+    def test_sharing_api_token_usage_proxy(self) -> None:
+        """share-by-token API tests simulating a reverse proxy - real usage."""
+        script_name = "/radicale"
+
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "True",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "server": {"script_name": script_name},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        path_base = "/owner/calendar.ics/"
+        event = get_file_content("event1.ics")
+        path = path_base + "/event1.ics"
+
+        logging.info("\n*** prepare")
+        self.mkcalendar(path_base, login="owner:ownerpw")
+        self.put(path, event, login="owner:ownerpw")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            logging.info("\n*** test access to collection")
+            _, headers, answer = self.request("GET", path_base, check=200, login="owner:ownerpw")
+            assert "UID:event" in answer
+
+            logging.info("\n*** test access to item")
+            _, headers, answer = self.request("GET", path, check=200, login="owner:ownerpw")
+            assert "UID:event" in answer
+
+            logging.info("\n*** create token")
+            json_dict = {}
+            json_dict["PathMapped"] = script_name + path_base
+            json_dict["Enabled"] = True
+            json_dict["Hidden"] = False
+            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner:ownerpw", json_dict=json_dict, prefix=script_name)
+            answer_dict = json.loads(answer)
+            assert "Status" in answer_dict
+            assert "PathOrToken" in answer_dict
+            Token = answer_dict["PathOrToken"]
+            logging.debug("Token: %r", Token)
+            assert Token.startswith(script_name) is True
+            path_shared = Token
+
+            # check PROPFIND item as owner (remove prefix again as added later)
+            logging.info("\n*** PROPFIND item as owner -> calendar")
+            response = self._propfind_allprop(path_shared.removeprefix(script_name), login="owner:ownerpw", prefix=script_name)
+            logging.debug("response: %r", response)
+            assert "CR:supported-address-data" not in response
+            assert "C:supported-calendar-component-set" in response
+            assert "D:current-user-privilege-set" in response
 
     def test_sharing_api_token_usage(self) -> None:
         """share-by-token API tests - real usage."""

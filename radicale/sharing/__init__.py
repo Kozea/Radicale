@@ -779,7 +779,11 @@ class BaseSharing:
         # check for optional parameters
         if 'PathMapped' in request_data:
             # used by create or list(filter)
-            PathMapped = request_data['PathMapped']
+            if base_prefix:
+                PathMapped = request_data['PathMapped'].removeprefix(base_prefix)
+                logger.debug(api_info + ": remove base_prefix PathMapped=%r->%r", request_data['PathMapped'], PathMapped)
+            else:
+                PathMapped = request_data['PathMapped']
 
         if 'PathOrToken' not in request_data:
             if action == 'info':
@@ -1080,7 +1084,10 @@ class BaseSharing:
 
             if ShareType == "token":
                 PathOrToken = token
-                answer['PathOrToken'] = token
+                if base_prefix:
+                    answer['PathOrToken'] = base_prefix + token
+                else:
+                    answer['PathOrToken'] = token
 
             logger.info(api_info + " success: PathMapped=%r Permissions=%r PathOrToken=%r", PathMapped, Permissions, PathOrToken)
 
