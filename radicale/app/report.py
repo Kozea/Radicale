@@ -161,7 +161,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         logger.debug("TRACE/REPORT/xml_report: base_prefix=%r path=%r", base_prefix, path)
 
     share_bday_automap = False
-    if share and share['ShareType'] == "bday":
+    if share and share['Conversion'] == "bday":
         share_bday_automap = True
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("TRACE/REPORT/xml_report(1): share=%r", share)
@@ -263,7 +263,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
     collection_tag = collection.tag
     # !!! Don't access storage after this !!!
     unlock_storage_fn()
-    if share and share['ShareType'] == "bday":
+    if share and share['Conversion'] == "bday":
         collection_tag = "VCALENDAR"
         # autoconvert
         retrieved_items_vcf_to_ics = []
@@ -740,7 +740,7 @@ def xml_item_response(base_prefix: str, href: str,
         logger.debug("TRACE/REPORT/xml_item_response: found=%s share=%r", found_item, share)
 
     share_bday_automap = False
-    if share and share['ShareType'] == "bday":
+    if share and share['Conversion'] == "bday":
         share_bday_automap = True
 
     href_element = ET.Element(xmlutils.make_clark("D:href"))
@@ -793,7 +793,7 @@ def retrieve_items(
             if share:
                 # map back to owner
                 hreference = hreference.replace(share['PathOrToken'], share['PathMapped'])
-                if share['ShareType'] == "bday":
+                if share['Conversion'] == "bday":
                     if not hreference.endswith('/'):
                         hreference = hreference.rstrip(".ics") + ".vcf"
             try:
