@@ -749,9 +749,12 @@ def xml_item_response(base_prefix: str, href: str,
         logger.debug("TRACE/REPORT/xml_report: href=%r", href_element.text)
     if share:
         # backmap
-        href_element.text = href_element.text.replace(share['PathMapped'], share['PathOrToken'])
+        if href_element.text.startswith(share['PathMapped']):
+            href_element.text = share['PathOrToken'] + href_element.text.removeprefix(share['PathMapped'])
         if share_bday_automap:
             href_element.text = href_element.text.rstrip(".vcf") + ".ics"
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("TRACE/REPORT/xml_report: href=%r (backmapped)", href_element.text)
     response.append(href_element)
 
     if found_item:
@@ -790,12 +793,17 @@ def retrieve_items(
            gets set to ``True``."""
         nonlocal collection_requested
         for hreference in hreferences:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("TRACE/REPORT/xml_report: hreference=%r", hreference)
             if share:
                 # map back to owner
-                hreference = hreference.replace(share['PathOrToken'], share['PathMapped'])
+                if hreference.startswith(share['PathOrToken']):
+                    hreference = share['PathMapped'] + hreference.removeprefix(share['PathOrToken'])
                 if share['Conversion'] == "bday":
                     if not hreference.endswith('/'):
                         hreference = hreference.rstrip(".ics") + ".vcf"
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("TRACE/REPORT/xml_report: hreference=%r (backmapped)", hreference)
             try:
                 name = pathutils.name_from_path(hreference, collection)
             except ValueError as e:

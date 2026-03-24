@@ -129,7 +129,8 @@ def xml_propfind_response(
 
     if share:
         # backmap
-        uri = uri.replace(share['PathMapped'], share['PathOrToken'])
+        if uri.startswith(share['PathMapped']):
+            uri = share['PathOrToken'] + uri.removeprefix(share['PathMapped'])
         if share_bday_automap and not uri.endswith("/"):
             uri = uri.rstrip(".vcf") + ".ics"
 
@@ -217,7 +218,8 @@ def xml_propfind_response(
             child_element.text = xmlutils.make_href(base_prefix, path)
             if share:
                 # backmap
-                child_element.text = child_element.text.replace(share['PathMapped'], share['PathOrToken'])
+                if child_element.text.startswith(share['PathMapped']):
+                    child_element.text = share['PathOrToken'] + child_element.text.removeprefix(share['PathMapped'])
                 if share_bday_automap:
                     child_element.text = child_element.text.rstrip(".vcf") + ".ics"
             element.append(child_element)
@@ -256,13 +258,15 @@ def xml_propfind_response(
         elif tag == xmlutils.make_clark("D:current-user-principal"):
             if user:
                 child_element = ET.Element(xmlutils.make_clark("D:href"))
-                child_element.text = xmlutils.make_href(
-                    base_prefix, "/%s/" % user)
                 if share:
                     # backmap
-                    child_element.text = child_element.text.replace(share['Owner'], share['User'])
+                    child_element.text = xmlutils.make_href(
+                        base_prefix, "/%s/" % share['User'])
                     if share_bday_automap:
                         child_element.text = child_element.text.rstrip(".vcf") + ".ics"
+                else:
+                    child_element.text = xmlutils.make_href(
+                        base_prefix, "/%s/" % user)
                 element.append(child_element)
             else:
                 element.append(ET.Element(
