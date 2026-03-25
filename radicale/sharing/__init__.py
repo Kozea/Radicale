@@ -16,9 +16,11 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import base64
+import copy  # TODO: remove/3.7.0-final
 import io
 import json
 import logging
+import os  # TODO: remove/3.7.0-final
 import re
 import socket
 import uuid
@@ -34,7 +36,7 @@ from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("csv", "files", "none")
 
-DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Owner', 'User', 'Permissions', 'EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser', 'TimestampCreated', 'TimestampUpdated', 'Properties')
+DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Conversion', 'Owner', 'User', 'Permissions', 'EnabledByOwner', 'EnabledByUser', 'HiddenByOwner', 'HiddenByUser', 'TimestampCreated', 'TimestampUpdated', 'Properties', 'Actions')
 # ShareType:        <token|map>
 # PathOrToken:      <path|token> [PrimaryKey]
 # PathMapped:       <path>
@@ -48,6 +50,10 @@ DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Owner'
 # TimestampCreated: <unixtime> (when created)
 # TimestampUpdated: <unixtime> (last update)
 # Properties:       Overlay of collection properties in JSON
+# Conversion:       none|bday
+#                     bday: check VADDRESSBOOK VCARD(vcf) entries for BDAY and convert to VCALENDAR reoccuring VEVENT(ics)
+# Actions:          Actions structure in JSON
+#                     (future reserved for e.g. "filter", "filter_pre", "filter_post" or anything else, implemented on request)
 
 DB_TYPES_V1: dict[str, type] = {
         "ShareType": str,
@@ -62,18 +68,23 @@ DB_TYPES_V1: dict[str, type] = {
         "HiddenByUser": bool,
         "TimestampCreated": int,
         "TimestampUpdated": int,
-        "Properties": dict
+        "Properties": dict,
+        "Conversion": str,
+        "Actions": dict,
 }
 
 DB_FIELDS_V1_USER_PERMITTED: Sequence[str] = ('EnabledByUser', 'HiddenByUser', 'Properties')
 
-SHARE_TYPES: Sequence[str] = ('token', 'map', 'bday', 'all')
-
-SHARE_TYPES_V1: Sequence[str] = ('token', 'map', 'bday')
+SHARE_TYPES: Sequence[str] = ('token', 'map', 'all')
 # token: share by secret token (does not require authentication)
 # map  : share by mapping collection of one user to another as virtual
-# bday : share by mapping addressbook-collection of one user to another as virtual calendar-collection
 # all  : only supported for "list" and "info"
+
+SHARE_TYPES_V1: Sequence[str] = ('token', 'map')
+
+if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
+    SHARE_TYPES: Sequence[str] = ('token', 'map', 'bday', 'all')  # type: ignore[no-redef] # TODO: remove/3.7.0-final
+    SHARE_TYPES_V1: Sequence[str] = ('token', 'map', 'bday')  # type: ignore[no-redef] # TODO: remove/3.7.0-final
 
 API_HOOKS_V1: Sequence[str] = ('list', 'create', 'delete', 'update', 'hide', 'unhide', 'enable', 'disable', 'info')
 # list  : list sharings (optional filtered)
@@ -106,15 +117,22 @@ API_TYPES_V1: dict[str, type] = {
         "Permissions": str,
         "Enabled": bool,
         "Hidden": bool,
-        "Properties": dict}
+        "Properties": dict,
+        "Conversion": str,
+        "Actions": dict,
+        "SupportedConversions": list,
+}
 
-TOKEN_PATTERN_V1: str = "(v1/[a-zA-Z0-9_=\\-]{44})"
+
+TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 
 PATH_PATTERN: str = "([a-zA-Z0-9/.\\-]+)"  # TODO: extend or find better source
 
 USER_PATTERN: str = "([a-zA-Z0-9@]+)"  # TODO: extend or find better source
 
 OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname")
+
+CONVERSIONS_WHITELIST: Sequence[str] = ("bday", "none")
 
 
 def load(configuration: "config.Configuration") -> "BaseSharing":
@@ -145,20 +163,21 @@ class BaseSharing:
         # Sharing
         self.sharing_collection_by_map = configuration.get("sharing", "collection_by_map")
         self.sharing_collection_by_token = configuration.get("sharing", "collection_by_token")
-        self.sharing_collection_by_bday = configuration.get("sharing", "collection_by_bday")
+        if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
+            self.sharing_collection_by_map = self.sharing_collection_by_map or configuration.get("sharing", "collection_by_bday")  # TODO: remove/3.7.0-final
         self.permit_create_token = configuration.get("sharing", "permit_create_token")
         self.permit_create_map = configuration.get("sharing", "permit_create_map")
-        self.permit_create_bday = configuration.get("sharing", "permit_create_bday")
+        if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
+            self.permit_create_map = self.permit_create_map or configuration.get("sharing", "permit_create_bday")  # TODO: remove/3.7.0-final
         self.default_permissions_create_token = configuration.get("sharing", "default_permissions_create_token")
         self.default_permissions_create_map = configuration.get("sharing", "default_permissions_create_map")
         self.permit_properties_overlay = configuration.get("sharing", "permit_properties_overlay")
         self.enforce_properties_overlay = configuration.get("sharing", "enforce_properties_overlay")
+
         logger.info("sharing.collection_by_map  : %s", self.sharing_collection_by_map)
         logger.info("sharing.collection_by_token: %s", self.sharing_collection_by_token)
-        logger.info("sharing.collection_by_bday : %s", self.sharing_collection_by_bday)
         logger.info("sharing.permit_create_token: %s", self.permit_create_token)
         logger.info("sharing.permit_create_map  : %s", self.permit_create_map)
-        logger.info("sharing.permit_create_bday : %s", self.permit_create_bday)
         logger.info("sharing.default_permissions_create_token: %r", self.default_permissions_create_token)
         logger.info("sharing.default_permissions_create_map  : %r", self.default_permissions_create_map)
         logger.info("sharing.permit_properties_overlay: %s", self.permit_properties_overlay)
@@ -168,7 +187,7 @@ class BaseSharing:
         self.sharing_db_type = configuration.get("sharing", "type")
         logger.info("sharing.database_type: %s", self.sharing_db_type)
 
-        if ((self.sharing_collection_by_map is False) and (self.sharing_collection_by_token is False) and (self.sharing_collection_by_bday is False)):
+        if ((self.sharing_collection_by_map is False) and (self.sharing_collection_by_token is False)):
             logger.info("sharing disabled as no feature is enabled")
             self._enabled = False
             return
@@ -183,7 +202,7 @@ class BaseSharing:
         """
         try:
             if self.database_init() is False:
-                logger.info("sharing disabled as no database is active")
+                logger.warning("sharing disabled as no database is active")
                 self._enabled = False
                 return False
         except Exception as e:
@@ -216,9 +235,11 @@ class BaseSharing:
                               PathMapped: Union[str, None] = None,
                               User: Union[str, None] = None,
                               EnabledByOwner: Union[bool, None] = None,
-                              EnabledByUser:  Union[bool, None] = None,
-                              HiddenByOwner:  Union[bool, None] = None,
-                              HiddenByUser:   Union[bool, None] = None) -> list[dict]:
+                              EnabledByUser: Union[bool, None] = None,
+                              HiddenByOwner: Union[bool, None] = None,
+                              HiddenByUser: Union[bool, None] = None,
+                              Conversion: Union[str, None] = None,
+                              ) -> list[dict]:
         """ retrieve sharing """
         return []
 
@@ -233,12 +254,15 @@ class BaseSharing:
     def database_create_sharing(self,
                                 ShareType: str,
                                 PathOrToken: str, PathMapped: str,
+                                Conversion: str,
                                 Owner: str, User: str,
                                 Permissions: str = "r",
                                 EnabledByOwner: bool = False, EnabledByUser: bool = False,
                                 HiddenByOwner:  bool = True, HiddenByUser:  bool = True,
                                 Timestamp: int = 0,
-                                Properties: Union[dict, None] = None) -> dict:
+                                Properties: Union[dict, None] = None,
+                                Actions: Union[dict, None] = None,
+                                ) -> dict:
         """ create sharing """
         return {"status": "not-implemented"}
 
@@ -254,7 +278,10 @@ class BaseSharing:
                                 HiddenByOwner:  Union[bool, None] = None,
                                 HiddenByUser:   Union[bool, None] = None,
                                 Timestamp: int = 0,
-                                Properties: Union[dict, None] = None) -> dict:
+                                Properties: Union[dict, None] = None,
+                                Conversion: Union[str, None] = None,
+                                Actions: Union[dict, None] = None,
+                                ) -> dict:
         """ update sharing """
         return {"status": "not-implemented"}
 
@@ -330,7 +357,12 @@ class BaseSharing:
 
     # *** sharing functions called by request methods ***
     # list sharings
-    def sharing_collection_list(self, User: Union[str, None] = None, Enabled: Union[bool, None] = None, Hidden: Union[bool, None] = None) -> list[dict]:
+    def sharing_collection_list(self,
+                                User: Union[str, None] = None,
+                                Enabled: Union[bool, None] = None,
+                                Hidden: Union[bool, None] = None,
+                                Conversion: Union[str, None] = None,
+                                ) -> list[dict]:
         """ returning dict with shared collections by filter(User/Enabled/Hidden) or None if not found"""
         sharing_collection_list = []
 
@@ -346,27 +378,16 @@ class BaseSharing:
                 EnabledByOwner=Enabled,
                 EnabledByUser=Enabled,
                 HiddenByOwner=Hidden,
-                HiddenByUser=Hidden)
-
-        if not self.sharing_collection_by_bday:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/bday: not active")
-        else:
-            # retrieve collections depending on filter
-            sharing_collection_list += self.database_list_sharing(
-                ShareType="bday",
-                OwnerOrUser=User,
-                User=User,
-                EnabledByOwner=Enabled,
-                EnabledByUser=Enabled,
-                HiddenByOwner=Hidden,
-                HiddenByUser=Hidden)
+                HiddenByUser=Hidden,
+                Conversion=Conversion,
+                )
 
         return sharing_collection_list
 
     # resolves a path to a share
     def sharing_collection_resolver(self, path: str, user: str) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if not found"""
+        logger.debug("TRACE/sharing/resolver: lookup path=%r user=%r", path, user)
         share = None
 
         if path == "/":
@@ -376,6 +397,8 @@ class BaseSharing:
         if self.sharing_collection_by_token:
             if share is None:
                 share = self.sharing_collection_by_token_resolver(path)
+                if share is not None and 'error' in share:
+                    return None
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/token: not active")
@@ -383,16 +406,11 @@ class BaseSharing:
         if self.sharing_collection_by_map:
             if share is None:
                 share = self.sharing_collection_by_map_resolver(path, user)
+                if share is not None and 'error' in share:
+                    return None
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
-
-        if self.sharing_collection_by_bday:
-            if share is None:
-                share = self.sharing_collection_by_bday_resolver(path, user)
-        else:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/bday: not active")
 
         if share is not None:
             if self.permit_properties_overlay:
@@ -426,31 +444,44 @@ class BaseSharing:
 
     # *** internal sharing functions ***
     # resolves a token "path" to a share
+    #   dict: share
+    #   None: not supported
+    #   False: supported but not found
     def sharing_collection_by_token_resolver(self, path) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if invalid"""
         if self.sharing_collection_by_token:
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/token: check path: %r", path)
+                logger.debug("TRACE/sharing/token/resolver: check path: %r", path)
             if path.startswith("/.token/"):
-                pattern = re.compile('^/\\.token/' + TOKEN_PATTERN_V1 + '$')
+                pattern = re.compile('^(/\\.token/' + TOKEN_PATTERN_V1 + '/)$')
                 match = pattern.match(path)
                 if not match:
                     if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/token: unsupported token: %r", path)
-                    return None
+                        logger.debug("TRACE/sharing/token/resolver: unsupported token: %r", path)
+                    return {'error': 'token-not-supported'}
                 else:
                     # TODO add token validity checks
                     if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/token: supported token found in path: %r (token=%r)", path, match[1])
+                        logger.debug("TRACE/sharing/token/resolver: supported token: %r", path)
                     result = self.database_get_sharing(
                             ShareType="token",
+                            OnlyEnabled=False,
                             PathOrToken=match[1])
-                    if result is not None:
-                        logger.info("Sharing/%s: resolved %r->%r, user ->%r, permissions %r", "token", path, result['PathMapped'], result['Owner'], result['Permissions'])
+
+                    if result is None:
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug("TRACE/sharing/token/resolver: supported token not found: %r", path)
+                        return {'error': 'token-not-found'}
+
+                    if result['EnabledByOwner'] is not True:
+                        logger.info("Sharing/%s: resolved path %r->%r, User=%r not enabled by owner", "token", path, result['PathMapped'], result['Owner'])
+                        return {'error': 'token-not-enabled'}
+
+                    logger.info("Sharing/%s: resolved %r->%r, User=%r, Permissions=%r Conversion=%r", "token", path, result['PathMapped'], result['Owner'], result['Permissions'], result['Conversion'])
                     return result
             else:
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/token: no supported prefix found in path: %r", path)
+                    logger.debug("TRACE/sharing/token/resolver: no supported prefix found in path: %r", path)
                 return None
         else:
             if logger.isEnabledFor(logging.DEBUG):
@@ -463,13 +494,14 @@ class BaseSharing:
         if self.sharing_collection_by_map:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map/resolver: check path: %r", path)
+
             result = self.database_get_sharing(
-                    ShareType="map",
-                    PathOrToken=path,
-                    User=user)
-            if result:
-                pass
-            else:
+                ShareType="map",
+                PathOrToken=path,
+                OnlyEnabled=False,
+                User=user)
+
+            if not result:
                 # fallback to parent path
                 parent_path = pathutils.parent_path(path)
                 if logger.isEnabledFor(logging.DEBUG):
@@ -477,6 +509,7 @@ class BaseSharing:
                 result = self.database_get_sharing(
                         ShareType="map",
                         PathOrToken=parent_path,
+                        OnlyEnabled=False,
                         User=user)
                 if result:
                     result['PathMapped'] = path.replace(parent_path, result['PathMapped'])
@@ -484,51 +517,24 @@ class BaseSharing:
                         logger.debug("TRACE/sharing/map/resolver: PathMapped=%r Permissions=%r by parent_path=%r", result['PathMapped'], result['Permissions'], parent_path)
                 else:
                     if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/map: not found")
+                        logger.debug("TRACE/sharing/map/resolver: not found")
                     return None
 
-            logger.info("Sharing/%s: resolved path %r->%r, user %r->%r, permissions %r", "map", path, result['PathMapped'], user, result['Owner'], result['Permissions'])
-            return result
+            if result:
+                if result['EnabledByOwner'] is not True:
+                    logger.info("Sharing/%s: resolved path %r->%r, user %r->%r not enabled by owner", "map", path, result['PathMapped'], user, result['Owner'])
+                    return {'error': 'map-not-enabled'}
+                if result['EnabledByUser'] is not True:
+                    logger.info("Sharing/%s: resolved path %r->%r, user %r->%r not enabled by user", "map", path, result['PathMapped'], user, result['Owner'])
+                    return {'error': 'map-not-enabled'}
+
+                logger.info("Sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r", "map", path, result['PathMapped'], user, result['Owner'], result['Permissions'], result['Conversion'])
+                return result
+
+            return None
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
-            return None
-
-    # resolves a bday "path" to a share
-    def sharing_collection_by_bday_resolver(self, path: str, user: str) -> Union[dict, None]:
-        """ returning dict with PathMapped, Owner, Permissions or None if invalid"""
-        if self.sharing_collection_by_bday:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/bday/resolver: check path: %r", path)
-            result = self.database_get_sharing(
-                    ShareType="bday",
-                    PathOrToken=path,
-                    User=user)
-            if result:
-                pass
-            else:
-                # fallback to parent path
-                parent_path = pathutils.parent_path(path)
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/bday/resolver: check parent path: %r", parent_path)
-                result = self.database_get_sharing(
-                        ShareType="bday",
-                        PathOrToken=parent_path,
-                        User=user)
-                if result:
-                    result['PathMapped'] = path.replace(parent_path, result['PathMapped'])
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/bday/resolver: PathMapped=%r Permissions=%r by parent_path=%r", result['PathMapped'], result['Permissions'], parent_path)
-                else:
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/bday: not found")
-                    return None
-
-            logger.info("Sharing/%s: resolved path %r->%r, user %r->%r, permissions %r", "bday", path, result['PathMapped'], user, result['Owner'], result['Permissions'])
-            return result
-        else:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/bday: not active")
             return None
 
     # *** POST API ***
@@ -545,27 +551,28 @@ class BaseSharing:
         ``user`` is empty for anonymous users.
 
         Request:
-            action: (token|map|bday)/list
+            action: (token|map)/list
                 PathOrToken: <path|token> (optional for filter)
 
-            action: (token|map|bday)/create
+            action: (token|map)/create
                 PathMapped: <path> (mandatory)
                 Permissions: <Permissions> (default: r)
 
                 token -> returns <token>
 
-                map|bday
+                map
                     PathOrToken: <path> (mandatory)
                     User: <target_user> (mandatory)
+                    Conversion: None|bday (optional)
 
-            action: (token|map|bday)/update
+            action: (token|map)/update
 
-            action: (token|map|bday)/(delete|disable|enable|hide|unhide)
+            action: (token|map)/(delete|disable|enable|hide|unhide)
                 PathOrToken: <path|token> (mandatory)
 
                 token
 
-                map|bday
+                map
                     PathMapped: <path> (mandatory)
                     User: <target_user>
 
@@ -624,11 +631,6 @@ class BaseSharing:
         if not self.sharing_collection_by_map and ShareType == "map":
             # API "map" is not enabled
             logger.warning(api_info + ": not enabled by config (collection_by_map)")
-            return httputils.NOT_FOUND
-
-        if not self.sharing_collection_by_bday and ShareType == "bday":
-            # API "token" is not enabled
-            logger.warning(api_info + ": not enabled by config (collection_by_bday)")
             return httputils.NOT_FOUND
 
         # check for valid API hooks
@@ -738,12 +740,14 @@ class BaseSharing:
 
         # parameters default
         PathOrToken: Union[str, None] = None
-        PathMapped: Union[str, None] = None
-        User: Union[str, None] = None
+        PathMapped:  Union[str, None] = None
+        User:        Union[str, None] = None
         Permissions: Union[str, None] = None  # no permissions by default
-        Enabled: Union[bool, None] = None
-        Hidden:  Union[bool, None] = None
-        Properties:     Union[dict, None] = None
+        Enabled:     Union[bool, None] = None
+        Hidden:      Union[bool, None] = None
+        Properties:  Union[dict, None] = None
+        Conversion:  Union[str, None] = None
+        Actions:     Union[dict, None] = None  # reserved so far
 
         # parameters sanity check
         for key in request_data:
@@ -753,7 +757,7 @@ class BaseSharing:
                         return httputils.bad_request("Invalid value for Permissions")
             elif key == "PathOrToken":
                 if ShareType == "token":
-                    if not re.search('^' + TOKEN_PATTERN_V1 + '$', request_data[key]):
+                    if not re.search('^/.token/' + TOKEN_PATTERN_V1 + '/$', request_data[key]):
                         logger.warning(api_info + ": unsupported " + key)
                         return httputils.bad_request("Invalid value for PathOrToken")
                 else:
@@ -776,7 +780,11 @@ class BaseSharing:
         # check for optional parameters
         if 'PathMapped' in request_data:
             # used by create or list(filter)
-            PathMapped = request_data['PathMapped']
+            if base_prefix:
+                PathMapped = request_data['PathMapped'].removeprefix(base_prefix)
+                logger.debug(api_info + ": remove base_prefix PathMapped=%r->%r", request_data['PathMapped'], PathMapped)
+            else:
+                PathMapped = request_data['PathMapped']
 
         if 'PathOrToken' not in request_data:
             if action == 'info':
@@ -805,6 +813,15 @@ class BaseSharing:
                     return httputils.bad_request("Property not supported to overlay: %r" % entry)
             Properties = request_data['Properties']
 
+        if 'Conversion' in request_data:
+            Conversion = request_data['Conversion']
+            # verify against whitelist
+            if Conversion not in CONVERSIONS_WHITELIST:
+                return httputils.bad_request("Conversion not supported: %r" % Conversion)
+
+        if 'Actions' in request_data:
+            return httputils.bad_request("Actions currently not supported (reserved for future needs)")
+
         if 'Enabled' in request_data:
             Enabled = request_data['Enabled']
         else:
@@ -826,7 +843,12 @@ class BaseSharing:
         answer['ApiVersion'] = 1
         Timestamp = int((datetime.now() - datetime(1970, 1, 1)).total_seconds())
 
-        if not self.sharing_collection_by_map and not self.sharing_collection_by_token and not self.sharing_collection_by_bday:
+        if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
+            if ShareType == "bday":  # TODO: remove/3.7.0-final
+                ShareType = "map"  # TODO: remove/3.7.0-final
+                Conversion = "bday"  # TODO: remove/3.7.0-final
+
+        if not self.sharing_collection_by_map and not self.sharing_collection_by_token:
             if not action == 'info':
                 # API is not enabled
                 logger.warning(api_info + ": API is not enabled")
@@ -846,12 +868,24 @@ class BaseSharing:
                         ShareType=ShareType,
                         OwnerOrUser=user,
                         PathMapped=PathMapped,
-                        PathOrToken=PathOrToken)
+                        PathOrToken=PathOrToken,
+                        Conversion=Conversion,
+                        )
             else:
                 result_array = self.database_list_sharing(
                         OwnerOrUser=user,
                         PathMapped=PathMapped,
-                        PathOrToken=PathOrToken)
+                        PathOrToken=PathOrToken,
+                        Conversion=Conversion,
+                        )
+
+            if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
+                # check and change to legacy ShareType  # TODO: remove/3.7.0-final
+                result_array_adj = copy.deepcopy(result_array)  # TODO: remove/3.7.0-final
+                for index in range(0, len(result_array_adj)):  # TODO: remove/3.7.0-final
+                    if result_array_adj[index]['Conversion'] == "bday":  # TODO: remove/3.7.0-final
+                        result_array_adj[index]['ShareType'] = "bday"  # TODO: remove/3.7.0-final
+                result_array = result_array_adj
 
             answer['Lines'] = len(result_array)
             if len(result_array) == 0:
@@ -871,6 +905,9 @@ class BaseSharing:
                 logger.warning(api_info + ": missing PathMapped")
                 return httputils.bad_request("Missing PathMapped")
 
+            if Conversion is None:
+                Conversion = "none"
+
             # check whether collection exists
             with self._storage.acquire_lock("r", user, path=PathMapped):
                 item = next(iter(self._storage.discover(PathMapped)), None)
@@ -878,7 +915,12 @@ class BaseSharing:
                     logger.warning(api_info + ": cannot find PathMapped=%r", PathMapped)
                     return httputils.NOT_FOUND
                 if not isinstance(item, storage.BaseCollection):
+                    logger.warning(api_info + ": PathMapped=%r is not a collection", PathMapped)
                     return httputils.METHOD_NOT_ALLOWED
+                if Conversion == "bday":
+                    if item.tag != "VADDRESSBOOK":
+                        logger.warning(api_info + ": PathMapped=%r is not a VADDRESSBOOK collection (mandatory for Conversion=%r)", PathMapped, Conversion)
+                        return httputils.METHOD_NOT_ALLOWED
 
             if Permissions is None:
                 if ShareType == "token":
@@ -890,6 +932,12 @@ class BaseSharing:
                     Permissions = "r"
             else:
                 Permissions = str(Permissions)
+                if Conversion == "bday":
+                    # bday is read-only
+                    for permission in Permissions:
+                        if permission not in "r":
+                            logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported  for Conversion=%r", PathMapped, Permissions, Conversion)
+                            return httputils.METHOD_NOT_ALLOWED
 
             if Enabled is None:
                 Enabled = False # security by default
@@ -928,8 +976,8 @@ class BaseSharing:
                 else:
                     User = user
 
-                # v1: create uuid token with 2x 32 bytes = 256 bit
-                token = "v1/" + str(base64.urlsafe_b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes), 'utf-8')
+                # v1: create uuid token with 2x 32 bytes = 256 bit with base64 encoding but replace '=' with '0' to avoid any additional encoding issues issues
+                token = "/.token/v1/" + str(base64.urlsafe_b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes), 'utf-8').replace('=', '0') + "/"
 
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/" + api_info + ": %r (Permissions=%r token=%r)", PathMapped, Permissions, token)
@@ -946,12 +994,15 @@ class BaseSharing:
                         HiddenByOwner=Hidden,
                         HiddenByUser=HiddenByUser,
                         Timestamp=Timestamp,
-                        Properties=Properties)
+                        Properties=Properties,
+                        Conversion=Conversion,
+                        Actions=Actions,
+                        )
 
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/" + api_info + ": result=%r", result)
 
-            elif ShareType in ["map", "bday"]:
+            elif ShareType == "map":
                 # check preconditions
                 if PathOrToken is None:
                     return httputils.bad_request("Missing PathOrToken")
@@ -969,10 +1020,10 @@ class BaseSharing:
                 else:
                     User = str(User)
 
-                # lookup existing shares with requested PathMapped for same User
-                shares = self.database_list_sharing(ShareType=ShareType, PathMapped=PathMapped, User=User)
+                # lookup existing shares with requested PathMapped for same User and same Conversion
+                shares = self.database_list_sharing(ShareType=ShareType, PathMapped=PathMapped, User=User, Conversion=Conversion)
                 if len(shares) > 0:
-                    logger.warning(api_info + ": share already exists with PathMapped=%r User=%r", PathMapped, User)
+                    logger.warning(api_info + ": share already exists with PathMapped=%r User=%r Conversion=%r", PathMapped, User, Conversion)
                     return httputils.CONFLICT
 
                 # check access Permissions
@@ -981,25 +1032,14 @@ class BaseSharing:
                     logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
                     return httputils.NOT_ALLOWED
 
-                if ShareType == "map":
-                    if self.permit_create_map is False:
-                        if "m" not in access.permissions:
-                            logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explicit grant misses 'm')", PathMapped, user)
-                            return httputils.NOT_ALLOWED
-                    else:
-                        if "M" in access.permissions:
-                            logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but denied by 'M')", PathMapped, user)
-                            return httputils.NOT_ALLOWED
-
-                elif ShareType == "bday":
-                    if self.permit_create_bday is False:
-                        if "b" not in access.permissions:
-                            logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explicit grant misses 'b')", PathMapped, user)
-                            return httputils.NOT_ALLOWED
-                    else:
-                        if "B" in access.permissions:
-                            logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but denied by 'B')", PathMapped, user)
-                            return httputils.NOT_ALLOWED
+                if self.permit_create_map is False:
+                    if "m" not in access.permissions:
+                        logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explicit grant misses 'm')", PathMapped, user)
+                        return httputils.NOT_ALLOWED
+                else:
+                    if "M" in access.permissions:
+                        logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but denied by 'M')", PathMapped, user)
+                        return httputils.NOT_ALLOWED
 
                 access = Access(self._rights, User, PathOrToken)
                 if not access.check("r"):
@@ -1030,7 +1070,10 @@ class BaseSharing:
                         HiddenByOwner=Hidden,
                         HiddenByUser=HiddenByUser,
                         Timestamp=Timestamp,
-                        Properties=Properties)
+                        Properties=Properties,
+                        Conversion=Conversion,
+                        Actions=Actions,
+                        )
 
             else:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
@@ -1050,7 +1093,10 @@ class BaseSharing:
 
             if ShareType == "token":
                 PathOrToken = token
-                answer['PathOrToken'] = token
+                if base_prefix:
+                    answer['PathOrToken'] = base_prefix + token
+                else:
+                    answer['PathOrToken'] = token
 
             logger.info(api_info + " success: PathMapped=%r Permissions=%r PathOrToken=%r", PathMapped, Permissions, PathOrToken)
 
@@ -1059,7 +1105,7 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + ": start")
 
-            if ShareType not in ["token", "map", "bday"]:
+            if ShareType not in SHARE_TYPES_V1:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
 
@@ -1185,7 +1231,7 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/" + api_info + ": start")
 
-            if ShareType not in ["token", "map", "bday"]:
+            if ShareType not in SHARE_TYPES_V1:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
 
@@ -1227,19 +1273,21 @@ class BaseSharing:
             if ShareType in ["all", "map"]:
                 answer['FeatureEnabledCollectionByMap'] = self.sharing_collection_by_map
                 answer['PermittedCreateCollectionByMap'] = self.permit_create_map
+                if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
+                    answer['FeatureEnabledCollectionByBday'] = self.sharing_collection_by_map  # TODO: remove/3.7.0-final
+                    answer['PermittedCreateCollectionByBday'] = self.permit_create_map  # TODO: remove/3.7.0-final
             if ShareType in ["all", "token"]:
                 answer['FeatureEnabledCollectionByToken'] = self.sharing_collection_by_token
                 answer['PermittedCreateCollectionByToken'] = self.permit_create_token
-            if ShareType in ["all", "bday"]:
-                answer['FeatureEnabledCollectionByBday'] = self.sharing_collection_by_bday
-                answer['PermittedCreateCollectionByBday'] = self.permit_create_bday
+            if ShareType in ["all", "map", "token"]:
+                answer['SupportedConversions'] = CONVERSIONS_WHITELIST
 
         # action: TOGGLE
         elif action in API_SHARE_TOGGLES_V1:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/API/POST/" + action)
 
-            if ShareType not in ["token", "map", "bday"]:
+            if ShareType not in SHARE_TYPES_V1:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
 
@@ -1324,6 +1372,8 @@ class BaseSharing:
                     if key != 'Content':
                         if API_TYPES_V1[key] is bool or API_TYPES_V1[key] is int:
                             answer_array.append(key + '=' + str(answer[key]))
+                        elif API_TYPES_V1[key] is list:
+                            answer_array.append(key + '=(' + str(" ".join(answer[key])) + ')')
                         else:
                             answer_array.append(key + "='" + str(answer[key]) + "'")
             if 'Content' in answer and answer['Content'] is not None:

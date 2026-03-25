@@ -30,12 +30,12 @@ Types of supported sharing configuration:
  * `ShareType`: type of share
     * `token`: token-based share (do not require user authentication)
     * `map`: map-based share (requires user authentication)
-    * `bday`: map-based share (requires user authentication) with on-the-fly auto-conversion
  * `PathOrToken`: token or "virtual" collection, has to be unique (PRIMARY KEY)
  * `PathMapped`: target collection
+ * `Conversion`: conversion method
  * `Owner`: owner of the share
  * `User`: user of the share
- * `Permissions`: effective permission of the share (*bday* is always read-only)
+ * `Permissions`: effective permission of the share
  * `EnabledByOwner`: control by owner
  * `EnabledByUser`: control by user
  * `HiddenByOwner`: control by owner 
@@ -43,10 +43,17 @@ Types of supported sharing configuration:
  * `TimestampCreated`: unixtime of creation
  * `TimestampUpdated`: unixtime of last update
  * `Properties`: overlay properties (limited set whitelisted)
+ * `Actions`: (reserved for future usage)
  
 `Enabled*`: owner AND user have to enable a share to become usable
 
 `Hidden*`: owner AND user have to disable a share to become visible in PROPFIND
+
+#### Supported Conversions
+
+ * `none`: no conversion
+ * `bday`: auto-mapping on-the-fly a VADDRESSBOOK to a VCALENDAR of all entries containing a `BDAY`
+   * Permissions enforced to read-only
 
 ### Sharing Configuration Entry Storage
 
@@ -168,14 +175,11 @@ File-based configuration store is using encoded `PathOrToken` as filename for ea
 Map-based sharing can be accessed as usual after authentication and authorization.
 
  * *map* is a standard sharing of one collection to another user
- * *bday* is special sharing auto-mapping on-the-fly a VADDRESSBOOK to a VCALENDAR of all entries containing a `BDAY`
 
 #### Permission Control
 
  * `permit_create_map`
    * supported *rights* permissions: `Mm`
- * `permit_create_bday`
-   * supported *rights* permissions: `Bb`
 
 #### Workflow
 
@@ -264,7 +268,8 @@ Status='success'
 FeatureEnabledCollectionByMap=True
 PermittedCreateCollectionByMap=True
 FeatureEnabledCollectionByToken=True
-PermittedCreateCollectionByToken=True  
+PermittedCreateCollectionByToken=True
+SupportedConversions=(bday none)
 ```
 
   * json->json, parsed with `jq`
@@ -279,12 +284,11 @@ curl -u user:$userpw --silent -H "accept: application/json" -d "" http://localho
   "PermittedCreateCollectionByMap": true,
   "FeatureEnabledCollectionByToken": true,
   "PermittedCreateCollectionByToken": true,
-  "FeatureEnabledCollectionByBday": true,
-  "PermittedCreateCollectionByBday": true
+  "SupportedConversions": ["bday", "none"]
 }
 ```
 
-##### API Hook "(token|map|bday)/create"
+##### API Hook "(token|map)/create"
 
  * Authorization
    * Authenticated user is `Owner`
@@ -304,6 +308,7 @@ Create a share by mapping a collection of an `Owner` to a token.
 | Parameter | Type | Requirement |
 | - | - | - |
 | PathMapped | str | mandatory |
+| Conversion | str | optional(default:none) |
 | User | str | optional(default:owner) |
 | Permissions | str | optional(default:r) |
 | Enabled | bool | optional(owner/default:False) |
@@ -323,17 +328,17 @@ Create a share by mapping a collection of an `Owner` to a token.
 curl -u user:$userpw -d "PathMapped=/user/testcalendar1/" -d "Enabled=True" -d "Hidden=False" http://localhost:5232/.sharing/v1/token/create
 ApiVersion=1
 Status='success'
-PathOrToken='v1/VQR7AmsVRi2ZlFj_JwGpFx-ES5Goyku-gP_YkLh1zUw='
+PathOrToken='/.token/v1/VQR7AmsVRi2ZlFj_JwGpFx-ES5Goyku-gP_YkLh1zUw0/'
 ```
 
   * json->json
 
 ```bash
 curl -u user:$userpw -H "Content-Type: application/json" -d '{ "PathMapped": "/user/testcalendar1/", "Enabled": true, "Hidden": false}' http://localhost:5232/.sharing/v1/token/create
-{"ApiVersion": 1, "Status": "success", "PathOrToken": "v1/aMsmGqOsRwSH-2-6tEa8EMr4RMYzMU7WvPmjnp5qDnw="}
+{"ApiVersion": 1, "Status": "success", "PathOrToken": "/.token/v1/aMsmGqOsRwSH-2-6tEa8EMr4RMYzMU7WvPmjnp5qDnw0/"}
 ```
 
-###### API Hook "(map|bday)/create"
+###### API Hook "map/create"
 
 Create a share by mapping a collection of an `Owner` to an `User`.
 
@@ -342,13 +347,8 @@ Create a share by mapping a collection of an `Owner` to an `User`.
   * `PathMapped` is not existing already as a share target for same `User`
   * Authenticated user as `Owner` has at least read access to `PathMapped`
   * Provided `User` has at least read access to `PathOrToken`
-  * *map*
-      * Global permitted by `permit_create_map = True` or `rights` permission `m`
-      * Global denied by `permit_create_map = False` or `rights` permission `M`
-  * *bday*
-      * Global permitted by `permit_create_map = True` or `rights` permission `b`
-      * Global denied by `permit_create_map = False` or `rights` permission `B`
-      * `PathMapped` is a VCALENDAR collection
+  * Global permitted by `permit_create_map = True` or `rights` permission `m`
+  * Global denied by `permit_create_map = False` or `rights` permission `M`
 
  * Input
 
@@ -356,6 +356,7 @@ Create a share by mapping a collection of an `Owner` to an `User`.
 | - | - |
 | PathOrToken | str | mandatory |
 | PathMapped | str | mandatory |
+| Conversion | str | optional(default:none) |
 | User | str | mandatory |
 | Permissions | str | optional(default:r) |
 | Enabled | bool | optional(owner/default:False) |
@@ -380,7 +381,7 @@ curl -u owner:$ownerpw -H "Content-Type: application/json" -d '{ "PathOrToken": 
 {"ApiVersion": 1, "Status": "success"}
 ```
 
-##### API Hook "(all|token|map|bday)/list"
+##### API Hook "(all|token|map)/list"
 
 List shares (optional with filter) either owned or assigned as user.
 
@@ -461,7 +462,7 @@ curl -s -H "Content-Type: application/json" -u user:$userpw -d "{}" http://local
 ```
 
 
-##### API Hook "(token|map|bday)/delete"
+##### API Hook "(token|map)/delete"
 
 Delete a share selected by `PathOrToken`.
 
@@ -494,7 +495,7 @@ curl -u user:$userpw -H "Content-Type: application/json" -d '{ "PathOrToken": "v
 {"ApiVersion": 1, "Status": "success"}
 ```
 
-##### API Hook "(token|map|bday)/update"
+##### API Hook "(token|map)/update"
 
 Update a share selected by `PathOrToken`.
 
@@ -534,7 +535,7 @@ curl -u user:$userpw -H "Content-Type: application/json" -d '{ "PathOrToken": "/
 {"ApiVersion": 1, "Status": "success"}
 ```
 
-##### API Hooks "(token|map|bday)/(enable|disable|hide|unhide)"
+##### API Hooks "(token|map)/(enable|disable|hide|unhide)"
 
 Toggle enable|disable|hide|unhide of `Owner` or `User` of a share selected by `PathOrToken`
 
@@ -659,17 +660,16 @@ Preconditions:
 
  * Collection with type *adressbook* is existing
  * Config options enabled in section `sharing`:
-   * `collection_by_bday`
-   * `permit_create_bday`
+   * `collection_by_map`
+   * `permit_create_map`
 
 #### Examples using API
 
-  * Create
+  * Create as *map*
 
 ```bash
-## Create sharing of type "bday"
-curl -u owner:$ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" -d "PathMapped=/owner/addressbook/" -d "User=owner" http://localhost:5232/.sharing/v1/bday/create
-
+## Create sharing of type *map* with conversion *bday*
+curl -u owner:$ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" -d "PathMapped=/owner/addressbook/" -d "User=owner" -d "Conversion=bday" http://localhost:5232/.sharing/v1/map/create
 
 ## Enable
 curl -u owner:$ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" http://localhost:5232/.sharing/v1/bday/enable
@@ -678,6 +678,34 @@ curl -u owner:$ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" http://local
 curl -u owner:$ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" http://localhost:5232/.sharing/v1/bday/unhide
 ```
 
-  * Check
+  * Fetch *map*
 
-Use e.g. WebUI, an additional (virtual) calendar collection appears
+```bash
+## Fetch VCALENDAR auto-created from VADDRESSBOOK
+curl -u owner:$ownerpw http://localhost:5232/owner/bday-of-addressbook/
+BEGIN:VCALENDAR
+...
+END:VCALENDAR
+```
+
+Via WebUI an additional (virtual) calendar collection appears
+
+  * Create as *token*
+
+```bash
+## Create sharing of type *token* with conversion *bday* (shown PathOrToken is an example)
+curl -u owner:$ownerpw -d "Enabled=true" -d "Hidden=false" -d "PathMapped=/owner/addressbook/" -d "User=owner" -d "Conversion=bday" http://localhost:5232/.sharing/v1/token/create
+ApiVersion=1
+Status='success'
+PathOrToken='/.token/v1/lqqwqhZYTGi9uSPsixien_8G5jiSK0FfhNFRGG_t8UA0/'
+```
+
+  * Fetch *map*
+
+```bash
+## Fetch VCALENDAR auto-created from VADDRESSBOOK
+curl http://localhost:5232/.token/v1/lqqwqhZYTGi9uSPsixien_8G5jiSK0FfhNFRGG_t8UA0/
+BEGIN:VCALENDAR
+...
+END:VCALENDAR
+```

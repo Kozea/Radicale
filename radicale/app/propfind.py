@@ -73,11 +73,11 @@ def xml_propfind(base_prefix: str, path: str,
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("TRACE/PROPFIND/xml_propfind: shares=%r", shares)
 
-    for item, permission, sharetype in allowed_items:
+    for item, permission, conversion in allowed_items:
         write = permission == "w"
         multistatus.append(xml_propfind_response(
             base_prefix, path, item, props, user, encoding, write=write,
-            allprop=allprop, propname=propname, max_resource_size=max_resource_size, shares=shares, sharetype=sharetype))
+            allprop=allprop, propname=propname, max_resource_size=max_resource_size, shares=shares, conversion=conversion))
 
     return multistatus
 
@@ -85,7 +85,7 @@ def xml_propfind(base_prefix: str, path: str,
 def xml_propfind_response(
         base_prefix: str, path: str, item: types.CollectionOrItem,
         props: Sequence[str], user: str, encoding: str, max_resource_size: int, write: bool = False,
-        propname: bool = False, allprop: bool = False, shares: dict = {}, sharetype: Union[str, None] = None) -> ET.Element:
+        propname: bool = False, allprop: bool = False, shares: dict = {}, conversion: Union[str, None] = None) -> ET.Element:
     """Build and return a PROPFIND response."""
     if propname and allprop or (props and (propname or allprop)):
         raise ValueError("Only use one of props, propname and allprops")
@@ -109,7 +109,7 @@ def xml_propfind_response(
     # lookup share
     share = None
     if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("TRACE/PROPFIND/xml_propfind: sharetype=%r item.path=%r", sharetype, uri)
+        logger.debug("TRACE/PROPFIND/xml_propfind: conversion=%r item.path=%r", conversion, uri)
     for entry in shares:
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/PROPFIND/xml_propfind: check entry=%r", entry)
@@ -117,19 +117,20 @@ def xml_propfind_response(
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/PROPFIND/xml_propfind: PathMapped=%r uri=%r", shares[entry]['PathMapped'], uri)
             if uri.startswith(shares[entry]['PathMapped']):
-                if sharetype is not None and shares[entry]['ShareType'] == sharetype:
+                if conversion is not None and shares[entry]['Conversion'] == conversion:
                     share = shares[entry]
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.debug("TRACE/PROPFIND/xml_propfind: found share=%r", share)
                     break
 
     share_bday_automap = False
-    if share and share['ShareType'] == "bday":
+    if share and share['Conversion'] == "bday":
         share_bday_automap = True
 
     if share:
         # backmap
-        uri = uri.replace(share['PathMapped'], share['PathOrToken'])
+        if uri.startswith(share['PathMapped']):
+            uri = str(share['PathOrToken']) + uri.removeprefix(share['PathMapped'])
         if share_bday_automap and not uri.endswith("/"):
             uri = uri.rstrip(".vcf") + ".ics"
 
@@ -217,9 +218,10 @@ def xml_propfind_response(
             child_element.text = xmlutils.make_href(base_prefix, path)
             if share:
                 # backmap
-                child_element.text = child_element.text.replace(share['PathMapped'], share['PathOrToken'])
-                if share_bday_automap:
-                    child_element.text = child_element.text.rstrip(".vcf") + ".ics"
+                if child_element.text.startswith(share['PathMapped']):
+                    child_element.text = str(share['PathOrToken']) + child_element.text.removeprefix(share['PathMapped'])
+                if share_bday_automap and child_element.text.endswith(".vcf"):
+                    child_element.text = child_element.text.removesuffix(".vcf") + ".ics"
             element.append(child_element)
         elif tag == xmlutils.make_clark("C:supported-calendar-component-set"):
             human_tag = xmlutils.make_human_tag(tag)
@@ -256,13 +258,15 @@ def xml_propfind_response(
         elif tag == xmlutils.make_clark("D:current-user-principal"):
             if user:
                 child_element = ET.Element(xmlutils.make_clark("D:href"))
-                child_element.text = xmlutils.make_href(
-                    base_prefix, "/%s/" % user)
                 if share:
                     # backmap
-                    child_element.text = child_element.text.replace(share['Owner'], share['User'])
-                    if share_bday_automap:
-                        child_element.text = child_element.text.rstrip(".vcf") + ".ics"
+                    child_element.text = xmlutils.make_href(
+                        base_prefix, "/%s/" % share['User'])
+                    if share_bday_automap and child_element.text.endswith(".vcf"):
+                        child_element.text = child_element.text.removesuffix(".vcf") + ".ics"
+                else:
+                    child_element.text = xmlutils.make_href(
+                        base_prefix, "/%s/" % user)
                 element.append(child_element)
             else:
                 element.append(ET.Element(
@@ -546,10 +550,10 @@ class ApplicationPartPropfind(ApplicationBase):
             items_iter = itertools.chain([item], items_iter)
             for item, permission in list(self._collect_allowed_items(items_iter, user)):
                 if self._sharing._enabled and share:
-                    if share['ShareType'] == "bday" and not isinstance(item, storage.BaseCollection):
+                    if share['Conversion'] == "bday" and not isinstance(item, storage.BaseCollection):
                         if not item.convert_vcf_to_ics():
                             continue
-                    allowed_items.append((item, permission, share['ShareType']))
+                    allowed_items.append((item, permission, share['Conversion']))
                 else:
                     allowed_items.append((item, permission, None))
         if self._sharing._enabled:
@@ -577,7 +581,7 @@ class ApplicationPartPropfind(ApplicationBase):
                             c_items_iter = iter(self._storage.discover(c_path, "0"))
                             c_allowed_items = list(self._collect_allowed_items(c_items_iter, c_user))
                         for item, permission in c_allowed_items:
-                            allowed_items.append((item, permission, share['ShareType']))
+                            allowed_items.append((item, permission, share['Conversion']))
                         shares[c_share] = share
 
         headers = {"DAV": httputils.DAV_HEADERS,

@@ -90,6 +90,7 @@ class BaseTest:
         remote_useragent = kwargs.pop("remote_useragent", None)
         remote_host = kwargs.pop("remote_host", None)
         content_type = kwargs.pop("content_type", None)
+        x_forwarded_for = kwargs.pop("x_forwarded_for", None)
         accept = kwargs.pop("accept", None)
         environ: Dict[str, Any] = {k.upper(): v for k, v in kwargs.items()}
         for k, v in environ.items():
@@ -108,6 +109,8 @@ class BaseTest:
             environ["REMOTE_ADDR"] = remote_host
         if content_type:
             environ["CONTENT_TYPE"] = content_type
+        if x_forwarded_for:
+            environ["HTTP_X_FORWARDED_FOR"] = x_forwarded_for
         if accept:
             environ["HTTP_ACCEPT"] = accept
         environ["REQUEST_METHOD"] = method.upper()
@@ -152,6 +155,7 @@ class BaseTest:
                     prop_responses[human_tag] = (status_code, element)
             status = response.find(xmlutils.make_clark("D:status"))
             if status is not None:
+                logging.debug("test: prop_responses")
                 assert not prop_responses
                 assert status.text.startswith("HTTP/1.1 ")
                 status_code = int(status.text.split(" ")[1])
