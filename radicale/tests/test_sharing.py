@@ -385,10 +385,8 @@ class TestSharingApiSanity(BaseTest):
                         "sharing": {
                                     "type": "csv",
                                     "permit_create_map": True,
-                                    "permit_create_bday": True,
                                     "permit_create_token": True,
                                     "collection_by_map": "True",
-                                    "collection_by_bday": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "true",
                                     "request_content_on_debug": "True"},
@@ -491,7 +489,6 @@ class TestSharingApiSanity(BaseTest):
                                     "permit_create_map": True,
                                     "permit_create_token": True,
                                     "collection_by_map": "True",
-                                    "collection_by_bday": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
                                     "response_content_on_debug": "True",
